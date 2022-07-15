@@ -1,0 +1,4 @@
+name = "Lobster"
+uuid = "a49af516-9db8-4be4-be45-1dad61c5a376"
+authors = ["Si Chen <sc2350@cam.ac.uk>"]
+version = "0.1.0"
