@@ -113,7 +113,7 @@ cᴰ = 2.5e-3  # dimensionless drag coefficient
 Qᵘ = - ρₐ / ρₒ * cᴰ * u₁₀ * abs(u₁₀) # m² s⁻²
 u_bcs = FieldBoundaryConditions(top = FluxBoundaryCondition(Qᵘ))
 
-bgc_tracers, bgc_forcing, bgc_boundaries = Lobster.lobster(grid, params)
+bgc = Lobster.lobster(grid, params)
 
 #κₜ(x, y, z, t) = 1e-2*max(1-(z+50)^2/50^2,0)+1e-5;
 κₜ(x, y, z, t) = 1e-2*max(1-(z+mld_itp(mod(t,364days))/2)^2/(mld_itp(mod(t,364days))/2)^2,0)+1e-5;
@@ -132,12 +132,12 @@ par_bcs = FieldBoundaryConditions(top = FluxBoundaryCondition(0), bottom = FluxB
 model = NonhydrostaticModel(advection = UpwindBiasedFifthOrder(),
                             timestepper = :RungeKutta3,
                             grid = grid,
-                            tracers = (bgc_tracers..., :b, :T, :S, :PAR),
+                            tracers = (:b, :T, :S, :PAR, bgc.tracers...),
                             coriolis = FPlane(f=1e-4),
                             buoyancy = BuoyancyTracer(), 
                             closure = ScalarDiffusivity(ν=κₜ, κ=κₜ), 
-                            forcing = merge((T=t_forcing, S=s_forcing, PAR=par_forcing), bgc_forcing),
-                            boundary_conditions = merge((u=u_bcs, b=buoyancy_bcs, T=t_bcs, S=s_bcs, PAR=par_bcs), bgc_boundaries))
+                            forcing = merge((T=t_forcing, S=s_forcing, PAR=par_forcing), bgc.forcing),
+                            boundary_conditions = merge((u=u_bcs, b=buoyancy_bcs, T=t_bcs, S=s_bcs, PAR=par_bcs), bgc.boundary_conditions))
 
 ## Random noise damped at top and bottom
 Ξ(z) = randn() * z / model.grid.Lz * (1 + z / model.grid.Lz) # noise

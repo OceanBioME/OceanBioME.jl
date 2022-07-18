@@ -60,6 +60,12 @@ DOM_forcing(x, y, z, t, NO₃, NH₄, P, Z, D, DD, DOM, DIC, ALK, PAR, params) =
 DIC_forcing(x, y, z, t, NO₃, NH₄, P, Z, D, DD, DOM, DIC, ALK, PAR, params) = -params.μ_p*L_I(PAR, params)*(L_NO₃(NO₃, NH₄, params)+L_NH₄(NH₄, params))*params.Rd_phy*(1+params.ρ_caco3)*P+params.α_p*params.γ*params.μ_p*L_I(PAR, params)*(L_NO₃(NO₃, NH₄, params)+L_NH₄(NH₄, params))*params.Rd_phy*P+params.α_z*params.μ_z*params.Rd_phy*Z+params.α_d*params.μ_d*params.Rd_phy*D+params.α_dd*params.μ_dd*params.Rd_phy*DD+params.μ_dom*DOM*params.Rd_dom #+ delta(z-grid.zᵃᵃᶜ[Nz])*air_sea_flux(16, 2.002e-3, 2.311e-3, 8.0)/grid.Δzᵃᵃᶜ
 ALK_forcing(x, y, z, t, NO₃, NH₄, P, Z, D, DD, DOM, DIC, ALK, PAR, params) = params.μ_p*L_I(PAR, params)*L_NO₃(NO₃, NH₄, params)*P-2*params.ρ_caco3*params.μ_p*L_I(PAR, params)*(L_NO₃(NO₃, NH₄, params)+L_NH₄(NH₄, params))*params.Rd_phy*P
 
+struct BGCModel{T, F, B}
+    tracers :: T
+    forcing :: F
+    boundary_conditions :: B
+end
+
 function lobster(grid, parameters)
     #setup forcings
     slip_vel_D = zeros(0:grid.Nx+2,0:grid.Ny+2,0:grid.Nz+2)
@@ -94,8 +100,10 @@ function lobster(grid, parameters)
     DIC_bcs = FieldBoundaryConditions(top = airseaflux_bc, bottom = FluxBoundaryCondition(0))             #airseaflux_bc, #FluxBoundaryCondition(-1.3e-4)                                
     ALK_bcs = FieldBoundaryConditions(top = FluxBoundaryCondition(0), bottom = FluxBoundaryCondition(0))
 
-    return ((:NO₃, :NH₄, :P, :Z, :D, :DD, :DOM, :DIC, :ALK), #tracers
-                (Z=Z_RHS, D=(D_RHS_nonslip, D_RHS_slip), DD=(DD_RHS_nonslip, DD_RHS_slip), P=P_RHS, NO₃=NO₃_RHS, NH₄=NH₄_RHS, DOM=DOM_RHS, DIC=DIC_RHS, ALK=ALK_RHS), #forcing
-                (P=P_bcs, Z=Z_bcs, D=D_bcs, DD=DD_bcs, NO₃=NO₃_bcs, NH₄=NH₄_bcs, DOM=DOM_bcs, DIC=DIC_bcs, ALK=ALK_bcs)) #boundaries
+    lobster = BGCModel((:NO₃, :NH₄, :P, :Z, :D, :DD, :DOM, :DIC, :ALK), #tracers
+        (Z=Z_RHS, D=(D_RHS_nonslip, D_RHS_slip), DD=(DD_RHS_nonslip, DD_RHS_slip), P=P_RHS, NO₃=NO₃_RHS, NH₄=NH₄_RHS, DOM=DOM_RHS, DIC=DIC_RHS, ALK=ALK_RHS), #forcing
+        (P=P_bcs, Z=Z_bcs, D=D_bcs, DD=DD_bcs, NO₃=NO₃_bcs, NH₄=NH₄_bcs, DOM=DOM_bcs, DIC=DIC_bcs, ALK=ALK_bcs)) #boundaries
+
+    return lobster
 end
 end # module
