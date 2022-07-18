@@ -113,12 +113,15 @@ cᴰ = 2.5e-3  # dimensionless drag coefficient
 Qᵘ = - ρₐ / ρₒ * cᴰ * u₁₀ * abs(u₁₀) # m² s⁻²
 u_bcs = FieldBoundaryConditions(top = FluxBoundaryCondition(Qᵘ))
 
-bgc = Lobster.lobster(grid, params)
+bgc = Lobster.setup(grid, params)
 
 #κₜ(x, y, z, t) = 1e-2*max(1-(z+50)^2/50^2,0)+1e-5;
 κₜ(x, y, z, t) = 1e-2*max(1-(z+mld_itp(mod(t,364days))/2)^2/(mld_itp(mod(t,364days))/2)^2,0)+1e-5;
 
-#for now I'm going to make the fields not be forced at all by Oceanigans, and then use a call back to update them once a day (see below)
+t_background(x, y, z, t) = temperature_itp(mod(t, 364days)) .+ 273.15
+s_background(x, y, z, t) = salinity_itp(mod(t, 364days))
+par_background(x, y, z, t) = PAR_extrap(z, mod(t, 364days))
+
 no_forcing(x, y, z, t) = 0
 t_forcing = Forcing(no_forcing)
 s_forcing = Forcing(no_forcing)
@@ -133,6 +136,7 @@ model = NonhydrostaticModel(advection = UpwindBiasedFifthOrder(),
                             timestepper = :RungeKutta3,
                             grid = grid,
                             tracers = (:b, :T, :S, :PAR, bgc.tracers...),
+                            background_fields = (T=t_background, S=s_background, PAR=par_background),
                             coriolis = FPlane(f=1e-4),
                             buoyancy = BuoyancyTracer(), 
                             closure = ScalarDiffusivity(ν=κₜ, κ=κₜ), 
@@ -166,19 +170,6 @@ set!(model, b=bᵢ, P=Pᵢ, Z=Zᵢ, D=Dᵢ, DD=DDᵢ, NO₃=NO₃ᵢ, NH₄=NH�
 # ## Setting up a simulation
 
 simulation = Simulation(model, Δt=200, stop_time=duration)  #Δt=0.5*(Lz/Nz)^2/1e-2,
-
-#now sorting out T/S/PAR fields
-#Not sure this is a very efficent way of doing this
-function update_fields(sim)
-    sim.model.tracers.T .= temperature_itp(mod(sim.model.clock.time, 364days)) .+ 273.15
-    sim.model.tracers.S .= salinity_itp(mod(sim.model.clock.time, 364days))
-
-    for (k, z) in enumerate(Oceananigans.Grids.znodes(Center,grid))
-        sim.model.tracers.PAR[:, :, k] .= PAR_extrap(z, mod(sim.model.clock.time, 364days))
-    end
-end
-
-simulation.callbacks[:update_fields] = Callback(update_fields)
 
 
 ## Print a progress message

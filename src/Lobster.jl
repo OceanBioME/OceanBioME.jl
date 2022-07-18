@@ -32,6 +32,7 @@ function air_sea_flux(x, y, t, DIC, ALK, T, S, params) # has to be only includin
 
     H = 10^(-params.pH) # initial guess from arg list
 
+    #potential peformance bott;eneck
     @inline CA(H) = ALK - (KB/(KB + H))*Boron
     @inline H_eq(H) = CA(H)*H^2 + K1*(CA(H)-DIC)*H + K1*K2*(CA(H)-2*DIC)
     H = find_zero(H_eq, H)
@@ -60,7 +61,7 @@ DOM_forcing(x, y, z, t, NO₃, NH₄, P, Z, D, DD, DOM, DIC, ALK, PAR, params) =
 DIC_forcing(x, y, z, t, NO₃, NH₄, P, Z, D, DD, DOM, DIC, ALK, PAR, params) = -params.μ_p*L_I(PAR, params)*(L_NO₃(NO₃, NH₄, params)+L_NH₄(NH₄, params))*params.Rd_phy*(1+params.ρ_caco3)*P+params.α_p*params.γ*params.μ_p*L_I(PAR, params)*(L_NO₃(NO₃, NH₄, params)+L_NH₄(NH₄, params))*params.Rd_phy*P+params.α_z*params.μ_z*params.Rd_phy*Z+params.α_d*params.μ_d*params.Rd_phy*D+params.α_dd*params.μ_dd*params.Rd_phy*DD+params.μ_dom*DOM*params.Rd_dom #+ delta(z-grid.zᵃᵃᶜ[Nz])*air_sea_flux(16, 2.002e-3, 2.311e-3, 8.0)/grid.Δzᵃᵃᶜ
 ALK_forcing(x, y, z, t, NO₃, NH₄, P, Z, D, DD, DOM, DIC, ALK, PAR, params) = params.μ_p*L_I(PAR, params)*L_NO₃(NO₃, NH₄, params)*P-2*params.ρ_caco3*params.μ_p*L_I(PAR, params)*(L_NO₃(NO₃, NH₄, params)+L_NH₄(NH₄, params))*params.Rd_phy*P
 
-struct BGCModel{T, F, B}
+mutable struct BGCModel{T, F, B}
     tracers :: T
     forcing :: F
     boundary_conditions :: B
@@ -70,10 +71,10 @@ function lobster(grid, parameters)
     #setup forcings
     slip_vel_D = zeros(0:grid.Nx+2,0:grid.Ny+2,0:grid.Nz+2)
     slip_vel_DD = zeros(0:grid.Nx+2,0:grid.Ny+2,0:grid.Nz+2)
-    for k=0:grid.Nz-2           #0:Nz+2   3:Nz-2
+    @simd for k=0:grid.Nz-2           #0:Nz+2   3:Nz-2
         #slip_vel_D[:,:,k].+=V_d*(tanh(max(-grid.zᵃᵃᶠ[k]/λ,0)))#*tanh(max((grid.zᵃᵃᶠ[k]+Lz)/λ,0)));
-        slip_vel_D[:,:,k].+=parameters.V_d*tanh(max(-grid.zᵃᵃᶠ[k]/parameters.λ,0))#*tanh(max((grid.zᵃᵃᶠ[k]+Lz)/λ,0));
-        slip_vel_DD[:,:,k].+=parameters.V_dd*tanh(max(-grid.zᵃᵃᶠ[k]/parameters.λ,0))#*tanh(max((grid.zᵃᵃᶠ[k]+Lz)/λ,0));
+        @inbounds slip_vel_D[:,:,k].+=parameters.V_d*tanh(max(-grid.zᵃᵃᶠ[k]/parameters.λ,0))#*tanh(max((grid.zᵃᵃᶠ[k]+Lz)/λ,0));
+        @inbounds slip_vel_DD[:,:,k].+=parameters.V_dd*tanh(max(-grid.zᵃᵃᶠ[k]/parameters.λ,0))#*tanh(max((grid.zᵃᵃᶠ[k]+Lz)/λ,0));
     end
     D_RHS_slip = AdvectiveForcing(WENO5(; grid), w=slip_vel_D)
     DD_RHS_slip = AdvectiveForcing(WENO5(; grid), w=slip_vel_DD)
@@ -105,5 +106,13 @@ function lobster(grid, parameters)
         (P=P_bcs, Z=Z_bcs, D=D_bcs, DD=DD_bcs, NO₃=NO₃_bcs, NH₄=NH₄_bcs, DOM=DOM_bcs, DIC=DIC_bcs, ALK=ALK_bcs)) #boundaries
 
     return lobster
+end
+
+function setup(grid, parameters, tracers = (:NO₃, :NH₄, :P, :Z, :D, :DD, :DOM, :DIC, :ALK)) #could here use the tracers argument to use different models, e.g. tracers = (:N, :P, :Z) and then change this setup function to return different functions
+    if tracers != (:NO₃, :NH₄, :P, :Z, :D, :DD, :DOM, :DIC, :ALK)
+        throw(ArgumentError("Only tracer combination implimented is  (:NO₃, :NH₄, :P, :Z, :D, :DD, :DOM, :DIC, :ALK)"))
+    else
+        return lobster(grid, parameters)
+    end
 end
 end # module
