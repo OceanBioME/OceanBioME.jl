@@ -58,5 +58,10 @@ const default = (
     pCO2_air = 413.3, #  in Jan 2020   https://www.co2.earth/  for CO2 flux calculation only
     μ_dom = 3.86e-7, # DOM breakdown rate    s⁻¹
 
-    ρₒ = 1026 # kg m⁻³, average density at the surface of the world ocean
+    ρₒ = 1026, # kg m⁻³, average density at the surface of the world ocean
+
+    #light attenuation parameters
+    kw_bands = (0.0111435, 0.064959, 0.3636705),
+    e_bands = (0.6724815, 0.6511319999999999, 0.6593),
+    χ_bands = (0.10119049999999999, 0.044412999999999994, 0.04265000000000001)
 )

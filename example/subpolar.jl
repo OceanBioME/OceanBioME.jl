@@ -58,15 +58,17 @@ depth_chl = ncread(filename2, "depth");
 
 ######## 3: import annual cycle PAR data #Ocean Color  VIIRS-SNPP PAR daily 9km
 path="./subpolar/"    #subtropical   #./subpolar/
-par_mean_timeseries=zeros(1,365)
+par_mean_timeseries=zeros(365)
 for i in 1:365    #https://discourse.julialang.org/t/leading-zeros/30450
     string_i = lpad(string(i), 3, '0')
     filename3=path*"V2020"*string_i*".L3b_DAY_SNPP_PAR.x.nc"
     fid = h5open(filename3, "r")
     par=read(fid["level-3_binned_data/par"])
     BinList=read(fid["level-3_binned_data/BinList"])  #(:bin_num, :nobs, :nscenes, :weights, :time_rec) 
-    par_mean_timeseries[1,i] = mean([par[i][1]/BinList[i][4] for i in 1:length(par)])*3.99e-10*545e12/(1day)  #from einstin/m^2/day to W/m^2
+    par_mean_timeseries[i] = mean([par[i][1]/BinList[i][4] for i in 1:length(par)])*3.99e-10*545e12/(1day)  #from einstin/m^2/day to W/m^2
 end
+
+surface_PAR = LinearInterpolation((0:364)day, par_mean_timeseries)
 
 #PAR with depth
 PAR = zeros(length(depth_chl),365)
@@ -84,6 +86,7 @@ end
 #heatmap(1:365, -depth_chl[end:-1:1], PAR[end:-1:1,:])
 PAR_itp = Interpolations.interpolate((-depth_chl[end:-1:1], (0:364)day), PAR[end:-1:1,:], Gridded(Linear()))
 PAR_extrap = extrapolate(PAR_itp, (Line(),Throw()))  #  PAR_extrap(z, mod(t,364days))  Interpolations.extrapolate Method
+
 
 # Simulation duration    30days years
 duration=2years    #2years
@@ -120,7 +123,6 @@ bgc = Lobster.setup(grid, params)
 
 t_background(x, y, z, t) = temperature_itp(mod(t, 364days)) .+ 273.15
 s_background(x, y, z, t) = salinity_itp(mod(t, 364days))
-par_background(x, y, z, t) = PAR_extrap(z, mod(t, 364days))
 
 no_forcing(x, y, z, t) = 0
 t_forcing = Forcing(no_forcing)
@@ -136,12 +138,12 @@ model = NonhydrostaticModel(advection = UpwindBiasedFifthOrder(),
                             timestepper = :RungeKutta3,
                             grid = grid,
                             tracers = (:b, :T, :S, :PAR, bgc.tracers...),
-                            background_fields = (T=t_background, S=s_background, PAR=par_background),
+                            background_fields = (T=t_background, S=s_background),
                             coriolis = FPlane(f=1e-4),
                             buoyancy = BuoyancyTracer(), 
                             closure = ScalarDiffusivity(ν=κₜ, κ=κₜ), 
                             forcing = merge((T=t_forcing, S=s_forcing, PAR=par_forcing), bgc.forcing),
-                            boundary_conditions = merge((u=u_bcs, b=buoyancy_bcs, T=t_bcs, S=s_bcs, PAR=par_bcs), bgc.boundary_conditions))
+                            boundary_conditions = merge((u=u_bcs, b=buoyancy_bcs, T=t_bcs, S=s_bcs), bgc.boundary_conditions))
 
 ## Random noise damped at top and bottom
 Ξ(z) = randn() * z / model.grid.Lz * (1 + z / model.grid.Lz) # noise
@@ -152,6 +154,7 @@ initial_mixed_layer_depth = -100 # m
 stratification(z) = z < initial_mixed_layer_depth ? N² * z : N² * (initial_mixed_layer_depth)
 bᵢ(x, y, z) = stratification(z)         #+ 1e-1 * Ξ(z) * N² * model.grid.Lz
 
+#could initiate P from chl data?
 Pᵢ(x,y,z)= (tanh((z+250)/100)+1)/2*(0.038)+0.002          # ((tanh((z+100)/50)-1)/2*0.23+0.23)*16/106  
 Zᵢ(x,y,z)= (tanh((z+250)/100)+1)/2*(0.038)+0.008          # ((tanh((z+100)/50)-1)/2*0.3+0.3)*16/106         
 Dᵢ(x,y,z)=0
@@ -171,6 +174,7 @@ set!(model, b=bᵢ, P=Pᵢ, Z=Zᵢ, D=Dᵢ, DD=DDᵢ, NO₃=NO₃ᵢ, NH₄=NH�
 
 simulation = Simulation(model, Δt=200, stop_time=duration)  #Δt=0.5*(Lz/Nz)^2/1e-2,
 
+simulation.callbacks[:compute_par] = Callback(Lobster.update_par!, IterationInterval(1), merge(params, (surface_PAR=surface_PAR,)))
 
 ## Print a progress message
 progress_message(sim) = @printf("Iteration: %04d, time: %s, Δt: %s, wall time: %s\n",
@@ -333,4 +337,4 @@ DIC_map=heatmap(time_save/(1day),zb,DIC_save,titlefontsize=fs, guidefontsize=fs,
 ALK_map=heatmap(time_save/(1day),zb,ALK_save,titlefontsize=fs, guidefontsize=fs,tickfontsize=fs,legendfontsize=fs, xlabel="time (days)", ylabel="z (m)", xlims=(0,365*2))
 #Budget_map=heatmap(time_save/(1day),zb,Budget_save,xlabel="time (days)", ylabel="z (m)", xlims=(0,365*2))
 plot(NO₃_map,NH₄_map,P_map,Z_map,D_map,DD_map,DOM_map,DIC_map,ALK_map,title=["Nitrate" "Ammonium" "Phytoplankton" "Zooplankton" "Detritus" "Large Detritus" "DOM" "DIC" "ALK"])
-#savefig("annual_cycle_subpolar_highinit.pdf")
+savefig("annual_cycle_subpolar_highinit.pdf")

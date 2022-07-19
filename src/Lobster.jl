@@ -3,6 +3,9 @@ module Lobster
 using Oceananigans
 using Oceananigans.Units: second,minute, minutes, hour, hours, day, days, year, years
 using Roots
+using KernelAbstractions
+using KernelAbstractions.Extras.LoopInfo: @unroll
+using Oceananigans.Architectures: device
 
 include("parameters.jl")
 
@@ -114,5 +117,35 @@ function setup(grid, parameters, tracers = (:NO₃, :NH₄, :P, :Z, :D, :DD, :DO
     else
         return lobster(grid, parameters)
     end
+end
+
+@kernel function _update_par!(par, grid, chl, t, params) 
+    #from https://agupubs.onlinelibrary.wiley.com/doi/epdf/10.1029/JC093iC09p10749 and https://agupubs.onlinelibrary.wiley.com/doi/epdf/10.1029/2000JC000319
+    i, j = @index(Global, NTuple) 
+ 
+    ∫chl = chl[i, j, grid.Nz] * Oceananigans.Operators.Δzᶜᶜᶜ(i, j, grid.Nz, grid) 
+    beta = 0.0
+    @unroll for band in [1:length(params.kw_bands);]
+        beta += params.kw_bands[band]+params.χ_bands[band]*∫chl^params.e_bands[band]
+    end
+    @inbounds par[i, j, grid.Nz] = params.surface_PAR(mod(t, 364days))*exp(beta*grid.zᵃᵃᶜ[grid.Nz])
+ 
+    #@unroll for k in grid.Nz-1 : -1 : 1 
+    for k in grid.Nz-1 : -1 : 1 
+        @inbounds ∫chl += chl[i, j, k+1] * Oceananigans.Operators.Δzᶜᶜᶜ(i, j, k+1, grid) 
+        beta = 0.0
+        #@unroll for band in [1:length(params.kw_bands)]
+        for band in [1:length(params.kw_bands);]
+            beta += params.kw_bands[band]+params.χ_bands[band]*∫chl^params.e_bands[band]
+        end
+        @inbounds par[i, j, k] = params.surface_PAR(mod(t, 364days))*exp(beta*grid.zᵃᵃᶜ[k])
+    end 
+end 
+function update_par!(sim, params)
+    par_calculation = Oceananigans.Utils.launch!(sim.model.architecture, sim.model.grid, :xy, _update_par!,
+                                   sim.model.tracers.PAR, sim.model.grid, sim.model.tracers.P .* params.Rd_phy, time(sim), params,
+                                   dependencies = Event(device(sim.model.architecture)))
+
+    wait(device(sim.model.architecture), par_calculation)
 end
 end # module
