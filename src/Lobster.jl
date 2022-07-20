@@ -15,7 +15,7 @@ include("parameters.jl")
 @inline L_NO₃(NO₃, NH₄, params) = NO₃*exp(-params.ψ*NH₄)/(NO₃+params.K_no₃)
 @inline L_NH₄(NH₄, params) = max(NH₄/(NH₄+params.K_nh₄),0)    # NH₄/(NH₄+K_nh₄)
 
-function air_sea_flux(x, y, t, DIC, ALK, T, S, params) # has to be only including x,y,t without z, because this will apply to the z direction. f(x, y, t) on z-boundaries.
+function air_sea_flux(x, y, t, DIC, ALK, T::AbstractFloat, S::AbstractFloat, params) # has to be only including x,y,t without z, because this will apply to the z direction. f(x, y, t) on z-boundaries.
     #https://clima.github.io/OceananigansDocumentation/stable/model_setup/boundary_conditions/
     #https://biocycle.atmos.colostate.edu/shiny/carbonate/
     #ALK *= 1.e-6 # microequivalents to equivalents
@@ -50,16 +50,30 @@ function air_sea_flux(x, y, t, DIC, ALK, T, S, params) # has to be only includin
     return flux      #Wanninkhof 2014 equ.6 positive value means upward flux meaning losing Carbon 
 end
 
+function air_sea_flux(x, y, t, DIC, ALK, params)
+    return air_sea_flux(x, y, t, DIC, ALK, params.T(x, y, 0, t), params.S(x, y, 0, t), params)
+end
+
 #source functions
-Z_forcing(x, y, z, t, NO₃, NH₄, P, Z, D, DD, DOM, DIC, ALK, PAR, params) = params.a_z*(G_d(P, Z, D, params) + G_p(P, Z, D, params)) - params.m_z*Z^2 - params.μ_z*Z
-D_forcing_nonslip(x, y, z, t, NO₃, NH₄, P, Z, D, DD, DOM, DIC, ALK, PAR, params) = (1-params.f_d)*(1-params.a_z)*(G_d(P, Z, D, params)+G_p(P, Z, D, params)) + (1-params.f_d)*params.m_p*P^2 - G_d(P, Z, D, params) + params.f_z*params.m_z*Z^2 - params.μ_d*D #- aggreg_D2DD(z, D, DD) + aggreg_DOM2D(z, D, DOM) 
-DD_forcing_nonslip(x, y, z, t, NO₃, NH₄, P, Z, D, DD, DOM, DIC, ALK, PAR, params) = params.f_d*(1-params.a_z)*(G_d(P, Z, D, params)+G_p(P, Z, D, params)) + params.f_d*params.m_p*P^2 + (1-params.f_z)*params.m_z*Z^2 - params.μ_dd*DD #+ aggreg_D2DD(z, D, DD) + aggreg_DOM2DD(z, DD, DOM) 
-P_forcing(x, y, z, t, NO₃, NH₄, P, Z, D, DD, DOM, DIC, ALK, PAR, params) = (1-params.γ)*params.μ_p*L_I(PAR, params)*(L_NO₃(NO₃, NH₄, params)+L_NH₄(NH₄, params))*P - G_p(P, Z, D, params) - params.m_p*P^2
-NO₃_forcing(x, y, z, t, NO₃, NH₄, P, Z, D, DD, DOM, DIC, ALK, PAR, params) = -params.μ_p*L_I(PAR, params)*L_NO₃(NO₃, NH₄, params)*P + params.μ_n*NH₄ #+ delta(t-t_inject)*exp(-(z+50)^2/10^2)*NO₃_flux
-NH₄_forcing(x, y, z, t, NO₃, NH₄, P, Z, D, DD, DOM, DIC, ALK, PAR, params) = params.α_p*params.γ*params.μ_p*L_I(PAR, params)*(L_NO₃(NO₃, NH₄, params)+L_NH₄(NH₄, params))*P - params.μ_p*L_I(PAR, params)*L_NH₄(NH₄, params)*P - params.μ_n*NH₄ + params.α_z*params.μ_z*Z + params.α_d*params.μ_d*D + params.α_dd*params.μ_dd*DD + params.μ_dom*DOM + (1-params.Rd_phy/params.Rd_dom)*((1-params.α_p)*params.μ_p*L_I(PAR, params)*(L_NO₃(NO₃, NH₄, params)+L_NH₄(NH₄, params))*P+(1-params.α_z)*params.μ_z*Z+(1-params.α_d)*params.μ_d*D+(1-params.α_dd)*params.μ_dd*DD) #+ exp(-(z+50)^2/10^2)*delta(t-t_inject)*NH₄_flux
-DOM_forcing(x, y, z, t, NO₃, NH₄, P, Z, D, DD, DOM, DIC, ALK, PAR, params) = (1-params.α_p)*params.γ*params.μ_p*L_I(PAR, params)*(L_NO₃(NO₃, NH₄, params)+L_NH₄(NH₄, params))*P - params.μ_dom*DOM +(1-params.α_z)*params.μ_z*Z+(1-params.α_d)*params.μ_d*D +(1-params.α_dd)*params.μ_dd*DD - (1-params.Rd_phy/params.Rd_dom)*((1-params.α_p)*params.μ_p*L_I(PAR, params)*(L_NO₃(NO₃, NH₄, params)+L_NH₄(NH₄, params))*P+(1-params.α_z)*params.μ_z*Z+(1-params.α_d)*params.μ_d*D+(1-params.α_dd)*params.μ_dd*DD) #- aggreg_DOM2D(z, D, DOM)- aggreg_DOM2DD(z, DD, DOM)
-DIC_forcing(x, y, z, t, NO₃, NH₄, P, Z, D, DD, DOM, DIC, ALK, PAR, params) = -params.μ_p*L_I(PAR, params)*(L_NO₃(NO₃, NH₄, params)+L_NH₄(NH₄, params))*params.Rd_phy*(1+params.ρ_caco3)*P+params.α_p*params.γ*params.μ_p*L_I(PAR, params)*(L_NO₃(NO₃, NH₄, params)+L_NH₄(NH₄, params))*params.Rd_phy*P+params.α_z*params.μ_z*params.Rd_phy*Z+params.α_d*params.μ_d*params.Rd_phy*D+params.α_dd*params.μ_dd*params.Rd_phy*DD+params.μ_dom*DOM*params.Rd_dom #+ delta(z-grid.zᵃᵃᶜ[Nz])*air_sea_flux(16, 2.002e-3, 2.311e-3, 8.0)/grid.Δzᵃᵃᶜ
-ALK_forcing(x, y, z, t, NO₃, NH₄, P, Z, D, DD, DOM, DIC, ALK, PAR, params) = params.μ_p*L_I(PAR, params)*L_NO₃(NO₃, NH₄, params)*P-2*params.ρ_caco3*params.μ_p*L_I(PAR, params)*(L_NO₃(NO₃, NH₄, params)+L_NH₄(NH₄, params))*params.Rd_phy*P
+Z_forcing(x, y, z, t, NO₃, NH₄, P, Z, D, DD, DOM, DIC, ALK, PAR::AbstractFloat, params) = params.a_z*(G_d(P, Z, D, params) + G_p(P, Z, D, params)) - params.m_z*Z^2 - params.μ_z*Z
+D_forcing_nonslip(x, y, z, t, NO₃, NH₄, P, Z, D, DD, DOM, DIC, ALK, PAR::AbstractFloat, params) = (1-params.f_d)*(1-params.a_z)*(G_d(P, Z, D, params)+G_p(P, Z, D, params)) + (1-params.f_d)*params.m_p*P^2 - G_d(P, Z, D, params) + params.f_z*params.m_z*Z^2 - params.μ_d*D #- aggreg_D2DD(z, D, DD) + aggreg_DOM2D(z, D, DOM) 
+DD_forcing_nonslip(x, y, z, t, NO₃, NH₄, P, Z, D, DD, DOM, DIC, ALK, PAR::AbstractFloat, params) = params.f_d*(1-params.a_z)*(G_d(P, Z, D, params)+G_p(P, Z, D, params)) + params.f_d*params.m_p*P^2 + (1-params.f_z)*params.m_z*Z^2 - params.μ_dd*DD #+ aggreg_D2DD(z, D, DD) + aggreg_DOM2DD(z, DD, DOM) 
+P_forcing(x, y, z, t, NO₃, NH₄, P, Z, D, DD, DOM, DIC, ALK, PAR::AbstractFloat, params) = (1-params.γ)*params.μ_p*L_I(PAR, params)*(L_NO₃(NO₃, NH₄, params)+L_NH₄(NH₄, params))*P - G_p(P, Z, D, params) - params.m_p*P^2
+NO₃_forcing(x, y, z, t, NO₃, NH₄, P, Z, D, DD, DOM, DIC, ALK, PAR::AbstractFloat, params) = -params.μ_p*L_I(PAR, params)*L_NO₃(NO₃, NH₄, params)*P + params.μ_n*NH₄ #+ delta(t-t_inject)*exp(-(z+50)^2/10^2)*NO₃_flux
+NH₄_forcing(x, y, z, t, NO₃, NH₄, P, Z, D, DD, DOM, DIC, ALK, PAR::AbstractFloat, params) = params.α_p*params.γ*params.μ_p*L_I(PAR, params)*(L_NO₃(NO₃, NH₄, params)+L_NH₄(NH₄, params))*P - params.μ_p*L_I(PAR, params)*L_NH₄(NH₄, params)*P - params.μ_n*NH₄ + params.α_z*params.μ_z*Z + params.α_d*params.μ_d*D + params.α_dd*params.μ_dd*DD + params.μ_dom*DOM + (1-params.Rd_phy/params.Rd_dom)*((1-params.α_p)*params.μ_p*L_I(PAR, params)*(L_NO₃(NO₃, NH₄, params)+L_NH₄(NH₄, params))*P+(1-params.α_z)*params.μ_z*Z+(1-params.α_d)*params.μ_d*D+(1-params.α_dd)*params.μ_dd*DD) #+ exp(-(z+50)^2/10^2)*delta(t-t_inject)*NH₄_flux
+DOM_forcing(x, y, z, t, NO₃, NH₄, P, Z, D, DD, DOM, DIC, ALK, PAR::AbstractFloat, params) = (1-params.α_p)*params.γ*params.μ_p*L_I(PAR, params)*(L_NO₃(NO₃, NH₄, params)+L_NH₄(NH₄, params))*P - params.μ_dom*DOM +(1-params.α_z)*params.μ_z*Z+(1-params.α_d)*params.μ_d*D +(1-params.α_dd)*params.μ_dd*DD - (1-params.Rd_phy/params.Rd_dom)*((1-params.α_p)*params.μ_p*L_I(PAR, params)*(L_NO₃(NO₃, NH₄, params)+L_NH₄(NH₄, params))*P+(1-params.α_z)*params.μ_z*Z+(1-params.α_d)*params.μ_d*D+(1-params.α_dd)*params.μ_dd*DD) #- aggreg_DOM2D(z, D, DOM)- aggreg_DOM2DD(z, DD, DOM)
+DIC_forcing(x, y, z, t, NO₃, NH₄, P, Z, D, DD, DOM, DIC, ALK, PAR::AbstractFloat, params) = -params.μ_p*L_I(PAR, params)*(L_NO₃(NO₃, NH₄, params)+L_NH₄(NH₄, params))*params.Rd_phy*(1+params.ρ_caco3)*P+params.α_p*params.γ*params.μ_p*L_I(PAR, params)*(L_NO₃(NO₃, NH₄, params)+L_NH₄(NH₄, params))*params.Rd_phy*P+params.α_z*params.μ_z*params.Rd_phy*Z+params.α_d*params.μ_d*params.Rd_phy*D+params.α_dd*params.μ_dd*params.Rd_phy*DD+params.μ_dom*DOM*params.Rd_dom #+ delta(z-grid.zᵃᵃᶜ[Nz])*air_sea_flux(16, 2.002e-3, 2.311e-3, 8.0)/grid.Δzᵃᵃᶜ
+ALK_forcing(x, y, z, t, NO₃, NH₄, P, Z, D, DD, DOM, DIC, ALK, PAR::AbstractFloat, params) = params.μ_p*L_I(PAR, params)*L_NO₃(NO₃, NH₄, params)*P-2*params.ρ_caco3*params.μ_p*L_I(PAR, params)*(L_NO₃(NO₃, NH₄, params)+L_NH₄(NH₄, params))*params.Rd_phy*P
+
+Z_forcing(x, y, z, t, NO₃, NH₄, P, Z, D, DD, DOM, DIC, ALK, params) = Z_forcing(x, y, z, t, NO₃, NH₄, P, Z, D, DD, DOM, DIC, ALK, params.PAR(x, y, z, t), params)
+D_forcing_nonslip(x, y, z, t, NO₃, NH₄, P, Z, D, DD, DOM, DIC, ALK, params) = D_forcing_nonslip(x, y, z, t, NO₃, NH₄, P, Z, D, DD, DOM, DIC, ALK, params.PAR(x, y, z, t), params)
+DD_forcing_nonslip(x, y, z, t, NO₃, NH₄, P, Z, D, DD, DOM, DIC, ALK, params) = DD_forcing_nonslip(x, y, z, t, NO₃, NH₄, P, Z, D, DD, DOM, DIC, ALK, params.PAR(x, y, z, t), params)
+P_forcing(x, y, z, t, NO₃, NH₄, P, Z, D, DD, DOM, DIC, ALK, params) =P_forcing(x, y, z, t, NO₃, NH₄, P, Z, D, DD, DOM, DIC, ALK, params.PAR(x, y, z, t), params)
+NO₃_forcing(x, y, z, t, NO₃, NH₄, P, Z, D, DD, DOM, DIC, ALK, params) = NO₃_forcing(x, y, z, t, NO₃, NH₄, P, Z, D, DD, DOM, DIC, ALK, params.PAR(x, y, z, t), params)
+NH₄_forcing(x, y, z, t, NO₃, NH₄, P, Z, D, DD, DOM, DIC, ALK, params) = NH₄_forcing(x, y, z, t, NO₃, NH₄, P, Z, D, DD, DOM, DIC, ALK, params.PAR(x, y, z, t), params)
+DOM_forcing(x, y, z, t, NO₃, NH₄, P, Z, D, DD, DOM, DIC, ALK, params) = DOM_forcing(x, y, z, t, NO₃, NH₄, P, Z, D, DD, DOM, DIC, ALK, params.PAR(x, y, z, t), params)
+DIC_forcing(x, y, z, t, NO₃, NH₄, P, Z, D, DD, DOM, DIC, ALK, params) = DIC_forcing(x, y, z, t, NO₃, NH₄, P, Z, D, DD, DOM, DIC, ALK, params.PAR(x, y, z, t), params)
+ALK_forcing(x, y, z, t, NO₃, NH₄, P, Z, D, DD, DOM, DIC, ALK, params) = ALK_forcing(x, y, z, t, NO₃, NH₄, P, Z, D, DD, DOM, DIC, ALK, params.PAR(x, y, z, t), params)
 
 mutable struct BGCModel{T, F, B}
     tracers :: T
@@ -67,7 +81,10 @@ mutable struct BGCModel{T, F, B}
     boundary_conditions :: B
 end
 
-function lobster(grid, parameters)
+function lobster(grid, parameters, forcings=(T=nothing, S=nothing, PAR=nothing))
+    if keys(forcings) != (:T, :S, :PAR)
+        throw(ArgumentError("Need to provide all external forcings (T, S, PAR), either pass 'nothing' for a field to be used, or pass a function of x, y, z, t"))
+    end
     #setup forcings
     slip_vel_D = zeros(0:grid.Nx+2,0:grid.Ny+2,0:grid.Nz+2)
     slip_vel_DD = zeros(0:grid.Nx+2,0:grid.Ny+2,0:grid.Nz+2)
@@ -78,15 +95,23 @@ function lobster(grid, parameters)
     end
     D_RHS_slip = AdvectiveForcing(WENO5(; grid), w=slip_vel_D)
     DD_RHS_slip = AdvectiveForcing(WENO5(; grid), w=slip_vel_DD)
-    Z_RHS = Forcing(Z_forcing, field_dependencies = (:NO₃, :NH₄, :P, :Z, :D, :DD, :DOM, :DIC, :ALK, :PAR), parameters = parameters)
-    D_RHS_nonslip = Forcing(D_forcing_nonslip, field_dependencies = (:NO₃, :NH₄, :P, :Z, :D, :DD, :DOM, :DIC, :ALK, :PAR), parameters = parameters)
-    DD_RHS_nonslip = Forcing(DD_forcing_nonslip, field_dependencies = (:NO₃, :NH₄, :P, :Z, :D, :DD, :DOM, :DIC, :ALK, :PAR), parameters = parameters)
-    P_RHS = Forcing(P_forcing, field_dependencies = (:NO₃, :NH₄, :P, :Z, :D, :DD, :DOM, :DIC, :ALK, :PAR), parameters = parameters)
-    NO₃_RHS = Forcing(NO₃_forcing, field_dependencies = (:NO₃, :NH₄, :P, :Z, :D, :DD, :DOM, :DIC, :ALK, :PAR), parameters = parameters)
-    NH₄_RHS = Forcing(NH₄_forcing, field_dependencies = (:NO₃, :NH₄, :P, :Z, :D, :DD, :DOM, :DIC, :ALK, :PAR), parameters = parameters)
-    DOM_RHS = Forcing(DOM_forcing, field_dependencies = (:NO₃, :NH₄, :P, :Z, :D, :DD, :DOM, :DIC, :ALK, :PAR), parameters = parameters)
-    DIC_RHS = Forcing(DIC_forcing, field_dependencies = (:NO₃, :NH₄, :P, :Z, :D, :DD, :DOM, :DIC, :ALK, :PAR), parameters = parameters)
-    ALK_RHS = Forcing(ALK_forcing, field_dependencies = (:NO₃, :NH₄, :P, :Z, :D, :DD, :DOM, :DIC, :ALK, :PAR), parameters = parameters)
+
+    if isnothing(forcings.T)
+        function_field_dependencies = (:NO₃, :NH₄, :P, :Z, :D, :DD, :DOM, :DIC, :ALK, :PAR)
+    else 
+        function_field_dependencies = (:NO₃, :NH₄, :P, :Z, :D, :DD, :DOM, :DIC, :ALK)
+        function_parameters = merge(parameters, (PAR = forcings.PAR, ))
+    end
+
+    Z_RHS = Forcing(Z_forcing, field_dependencies = function_field_dependencies, parameters = function_parameters)
+    D_RHS_nonslip = Forcing(D_forcing_nonslip, field_dependencies = function_field_dependencies, parameters = function_parameters)
+    DD_RHS_nonslip = Forcing(DD_forcing_nonslip, field_dependencies = function_field_dependencies, parameters = function_parameters)
+    P_RHS = Forcing(P_forcing, field_dependencies = function_field_dependencies, parameters = function_parameters)
+    NO₃_RHS = Forcing(NO₃_forcing, field_dependencies = function_field_dependencies, parameters = function_parameters)
+    NH₄_RHS = Forcing(NH₄_forcing, field_dependencies = function_field_dependencies, parameters = function_parameters)
+    DOM_RHS = Forcing(DOM_forcing, field_dependencies = function_field_dependencies, parameters = function_parameters)
+    DIC_RHS = Forcing(DIC_forcing, field_dependencies = function_field_dependencies, parameters = function_parameters)
+    ALK_RHS = Forcing(ALK_forcing, field_dependencies = function_field_dependencies, parameters = function_parameters)
 
     #setup boundary conditions
     NO₃_bcs = FieldBoundaryConditions(top = FluxBoundaryCondition(0), bottom = FluxBoundaryCondition(0))
@@ -97,7 +122,22 @@ function lobster(grid, parameters)
     D_bcs = FieldBoundaryConditions(top = FluxBoundaryCondition(0), bottom = FluxBoundaryCondition(0))
     DD_bcs = FieldBoundaryConditions(top = FluxBoundaryCondition(0), bottom = FluxBoundaryCondition(0))                                
     DOM_bcs = FieldBoundaryConditions(top = FluxBoundaryCondition(0), bottom = FluxBoundaryCondition(0))
-    airseaflux_bc = FluxBoundaryCondition(air_sea_flux, field_dependencies = (:DIC, :ALK, :T, :S), parameters = parameters)
+    
+    if (isnothing(forcings.T) & isnothing(forcings.S))
+        bcs_field_dependencies = (:DIC, :ALK, :T, :S)
+        bcs_parameters = parameters
+    elseif isnothing(forcings.T)
+        bcs_field_dependencies = (:DIC, :ALK, :T)
+        bcs_parameters = merge(parameters, (S=forcings.S, ))
+    elseif isnothing(forcings.S)
+        bcs_field_dependencies = (:DIC, :ALK, :S)
+        bcs_parameters = merge(parameters, (T=forcings.T, ))
+    else
+        bcs_field_dependencies = (:DIC, :ALK)
+        bcs_parameters = merge(parameters, (T=forcings.T, S=forcings.S))
+    end
+
+    airseaflux_bc = FluxBoundaryCondition(air_sea_flux, field_dependencies = bcs_field_dependencies, parameters = bcs_parameters)
     DIC_bcs = FieldBoundaryConditions(top = airseaflux_bc, bottom = FluxBoundaryCondition(0))             #airseaflux_bc, #FluxBoundaryCondition(-1.3e-4)                                
     ALK_bcs = FieldBoundaryConditions(top = FluxBoundaryCondition(0), bottom = FluxBoundaryCondition(0))
 

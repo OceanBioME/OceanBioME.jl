@@ -86,14 +86,14 @@ PAR_itp = Interpolations.interpolate((-depth_chl[end:-1:1], (0:364)day), PAR[end
 PAR_extrap = extrapolate(PAR_itp, (Line(),Throw()))  #  PAR_extrap(z, mod(t,364days))  Interpolations.extrapolate Method
 
 # Simulation duration    30days years
-duration=2years    #2years
+duration=30days#2years    #2years
 # Define the grid
 
 Lx = 1   #500
 Ly = 500
 Nx = 1
 Ny = 1
-Nz = 150 # number of points in the vertical direction
+Nz = 10#150 # number of points in the vertical direction
 Lz = 600 # domain depth             # subpolar mixed layer depth max 427m 
 
 grid = RectilinearGrid(
@@ -113,35 +113,26 @@ cᴰ = 2.5e-3  # dimensionless drag coefficient
 Qᵘ = - ρₐ / ρₒ * cᴰ * u₁₀ * abs(u₁₀) # m² s⁻²
 u_bcs = FieldBoundaryConditions(top = FluxBoundaryCondition(Qᵘ))
 
-bgc = Lobster.setup(grid, params)
+t_function(x, y, z, t) = temperature_itp(mod(t, 364days)) .+ 273.15
+s_function(x, y, z, t) = salinity_itp(mod(t, 364days))
+par_function(x, y, z, t) = PAR_extrap(z, mod(t, 364days))
+
+
+bgc = Lobster.lobster(grid, params, (T=t_function, S=s_function, PAR=par_function))
 
 #κₜ(x, y, z, t) = 1e-2*max(1-(z+50)^2/50^2,0)+1e-5;
 κₜ(x, y, z, t) = 1e-2*max(1-(z+mld_itp(mod(t,364days))/2)^2/(mld_itp(mod(t,364days))/2)^2,0)+1e-5;
-
-t_background(x, y, z, t) = temperature_itp(mod(t, 364days)) .+ 273.15
-s_background(x, y, z, t) = salinity_itp(mod(t, 364days))
-par_background(x, y, z, t) = PAR_extrap(z, mod(t, 364days))
-
-no_forcing(x, y, z, t) = 0
-t_forcing = Forcing(no_forcing)
-s_forcing = Forcing(no_forcing)
-par_forcing = Forcing(no_forcing)
-
-t_bcs = FieldBoundaryConditions(top = FluxBoundaryCondition(0), bottom = FluxBoundaryCondition(0))
-s_bcs = FieldBoundaryConditions(top = FluxBoundaryCondition(0), bottom = FluxBoundaryCondition(0))
-par_bcs = FieldBoundaryConditions(top = FluxBoundaryCondition(0), bottom = FluxBoundaryCondition(0))
 
 ###Model instantiation
 model = NonhydrostaticModel(advection = UpwindBiasedFifthOrder(),
                             timestepper = :RungeKutta3,
                             grid = grid,
-                            tracers = (:b, :T, :S, :PAR, bgc.tracers...),
-                            background_fields = (T=t_background, S=s_background, PAR=par_background),
+                            tracers = (:b, bgc.tracers...),
                             coriolis = FPlane(f=1e-4),
                             buoyancy = BuoyancyTracer(), 
                             closure = ScalarDiffusivity(ν=κₜ, κ=κₜ), 
-                            forcing = merge((T=t_forcing, S=s_forcing, PAR=par_forcing), bgc.forcing),
-                            boundary_conditions = merge((u=u_bcs, b=buoyancy_bcs, T=t_bcs, S=s_bcs, PAR=par_bcs), bgc.boundary_conditions))
+                            forcing =  bgc.forcing,
+                            boundary_conditions = merge((u=u_bcs, b=buoyancy_bcs), bgc.boundary_conditions))
 
 ## Random noise damped at top and bottom
 Ξ(z) = randn() * z / model.grid.Lz * (1 + z / model.grid.Lz) # noise
@@ -162,15 +153,12 @@ DOMᵢ(x,y,z)= 0
 DICᵢ(x,y,z)= 2380   #  mmol/m^-3
 ALKᵢ(x,y,z)= 2720   #  mmol/m^-3
 
-PARᵢ(x,y,z) =  PAR_extrap(z, 0)
-
 ## `set!` the `model` fields using functions or constants:
-set!(model, b=bᵢ, P=Pᵢ, Z=Zᵢ, D=Dᵢ, DD=DDᵢ, NO₃=NO₃ᵢ, NH₄=NH₄ᵢ, DOM=DOMᵢ,DIC=DICᵢ,ALK=ALKᵢ, u=0, v=0, w=0, T=temperature_itp(0), S=salinity_itp(0), PAR = PARᵢ)
+set!(model, b=bᵢ, P=Pᵢ, Z=Zᵢ, D=Dᵢ, DD=DDᵢ, NO₃=NO₃ᵢ, NH₄=NH₄ᵢ, DOM=DOMᵢ,DIC=DICᵢ,ALK=ALKᵢ, u=0, v=0, w=0)
 
 # ## Setting up a simulation
 
 simulation = Simulation(model, Δt=200, stop_time=duration)  #Δt=0.5*(Lz/Nz)^2/1e-2,
-
 
 ## Print a progress message
 progress_message(sim) = @printf("Iteration: %04d, time: %s, Δt: %s, wall time: %s\n",
@@ -180,6 +168,7 @@ progress_message(sim) = @printf("Iteration: %04d, time: %s, Δt: %s, wall time: 
                                 prettytime(sim.run_wall_time))
 
 simulation.callbacks[:progress] = Callback(progress_message, IterationInterval(100))
+
 #=
 #this can move into Lobster.jl at some point
 pco2_bc = zeros(2,round(Int,duration/1day)+3)   #Int(duration/simulation.Δt)
