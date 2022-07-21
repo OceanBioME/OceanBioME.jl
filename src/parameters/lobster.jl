@@ -13,7 +13,7 @@ const default = (
     e_b = 0.674, 
     #R_C2N = 6.625,  #   ratio   mmoleC/mmoleN
     #R_C2Chl = 60,  #     ratio   mmoleC/mgChl
-    #r_pig = 0.7,
+    r_pig = 0.7,
     K_par = 33,  # Light limitation half-saturation value  Wm⁻²
     ψ = 3,  # Inhibition of nitrate uptake by ammonium
     K_no₃ = 0.7,  # Nitrate limitation half-saturation value   mmolm⁻³
@@ -48,6 +48,7 @@ const default = (
 
     Rd_phy = 6.56, # C:N ratio for P molC mol N -1
     Rd_dom = 6.56,
+    Rd_chl = 1.31,
     ρ_caco3 = 0.1, # rain ratio of organic carbon to CaCO3 
 
     f_z = 0.5, #  Fraction of slow sinking mortality   0.5  
@@ -58,10 +59,5 @@ const default = (
     pCO2_air = 413.3, #  in Jan 2020   https://www.co2.earth/  for CO2 flux calculation only
     μ_dom = 3.86e-7, # DOM breakdown rate    s⁻¹
 
-    ρₒ = 1026, # kg m⁻³, average density at the surface of the world ocean
-
-    #light attenuation parameters
-    kw_bands = (0.0111435, 0.064959, 0.3636705),
-    e_bands = (0.6724815, 0.6511319999999999, 0.6593),
-    χ_bands = (0.10119049999999999, 0.044412999999999994, 0.04265000000000001)
+    ρₒ = 1026 # kg m⁻³, average density at the surface of the world ocean
 )

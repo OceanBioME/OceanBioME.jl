@@ -21,7 +21,7 @@ using Statistics
 using Oceananigans#9e8cae18-63c1-5223-a75c-80ca9d6e9a09
 using Oceananigans.Units: second,minute, minutes, hour, hours, day, days, year, years
 
-using Lobster
+using BGC
 
 params = Lobster.default
 
@@ -51,7 +51,7 @@ mld_itp = LinearInterpolation(time_series_second, mixed_layer_depth)
 
 ######## 2: import annual cycle chl data  #Global Ocean Biogeochemistry Analysis and Forecast
 filename2 = "subpolar_chl.nc"    #subpolar_chl.nc
-chl = ncread(filename2, "chl");  #chl scale_factor=1 add_offset=0
+chl = ncread(filename2, "chl");  #chl scale_factor=1 add_offset=089639299014
 chl_mean = mean(chl, dims=(1,2))[1,1,:,1:365] # mg m-3, unit no need to change. 
 depth_chl = ncread(filename2, "depth");
 #heatmap(1:365, -depth_chl[end:-1:1], chl_mean[end:-1:1,:])
@@ -68,7 +68,8 @@ for i in 1:365    #https://discourse.julialang.org/t/leading-zeros/30450
     par_mean_timeseries[i] = mean([par[i][1]/BinList[i][4] for i in 1:length(par)])*3.99e-10*545e12/(1day)  #from einstin/m^2/day to W/m^2
 end
 
-surface_PAR = LinearInterpolation((0:364)day, par_mean_timeseries)
+surface_PAR_itp = LinearInterpolation((0:364)day, par_mean_timeseries)
+surface_PAR(t) = surface_PAR_itp(mod(t, 364days))
 
 #PAR with depth
 PAR = zeros(length(depth_chl),365)
@@ -87,9 +88,8 @@ end
 PAR_itp = Interpolations.interpolate((-depth_chl[end:-1:1], (0:364)day), PAR[end:-1:1,:], Gridded(Linear()))
 PAR_extrap = extrapolate(PAR_itp, (Line(),Throw()))  #  PAR_extrap(z, mod(t,364days))  Interpolations.extrapolate Method
 
-
 # Simulation duration    30days years
-duration=30days#2years    #2years
+duration=1years    #2years
 # Define the grid
 
 Lx = 1   #500
@@ -118,10 +118,11 @@ u_bcs = FieldBoundaryConditions(top = FluxBoundaryCondition(Qᵘ))
 
 t_function(x, y, z, t) = temperature_itp(mod(t, 364days)) .+ 273.15
 s_function(x, y, z, t) = salinity_itp(mod(t, 364days))
-par_function(x, y, z, t) = PAR_extrap(z, mod(t, 364days))
 
+PAR = Oceananigans.Fields.Field{Center, Center, Center}(grid)
+#PAR(x, y, z, t) = PAR_extrap(mod(t, 364days), z)
 
-bgc = Lobster.lobster(grid, params, (T=t_function, S=s_function, PAR=par_function))
+bgc = Lobster.setup(grid, params, (T=t_function, S=s_function, PAR=PAR))
 
 #κₜ(x, y, z, t) = 1e-2*max(1-(z+50)^2/50^2,0)+1e-5;
 κₜ(x, y, z, t) = 1e-2*max(1-(z+mld_itp(mod(t,364days))/2)^2/(mld_itp(mod(t,364days))/2)^2,0)+1e-5;
@@ -135,7 +136,8 @@ model = NonhydrostaticModel(advection = UpwindBiasedFifthOrder(),
                             buoyancy = BuoyancyTracer(), 
                             closure = ScalarDiffusivity(ν=κₜ, κ=κₜ), 
                             forcing =  bgc.forcing,
-                            boundary_conditions = merge((u=u_bcs, b=buoyancy_bcs), bgc.boundary_conditions))
+                            boundary_conditions = merge((u=u_bcs, b=buoyancy_bcs), bgc.boundary_conditions),
+                            auxiliary_fields = (PAR=PAR, ))#comment out this line if using functional form of PAR
 
 ## Random noise damped at top and bottom
 Ξ(z) = randn() * z / model.grid.Lz * (1 + z / model.grid.Lz) # noise
@@ -164,6 +166,8 @@ set!(model, b=bᵢ, P=Pᵢ, Z=Zᵢ, D=Dᵢ, DD=DDᵢ, NO₃=NO₃ᵢ, NH₄=NH�
 
 simulation = Simulation(model, Δt=200, stop_time=duration)  #Δt=0.5*(Lz/Nz)^2/1e-2,
 
+simulation.callbacks[:update_par] = Callback(Light.update_2λ!, IterationInterval(1), merge(params, (surface_PAR=surface_PAR,)))#comment out if using PAR functiuon
+
 ## Print a progress message
 progress_message(sim) = @printf("Iteration: %04d, time: %s, Δt: %s, wall time: %s\n",
                                 iteration(sim),
@@ -190,7 +194,7 @@ simulation.callbacks[:pco2] = Callback(pco2, IterationInterval(Int(1day/simulati
 
 # Vertical slice
 simulation.output_writers[:profiles] =
-    JLD2OutputWriter(model, merge(model.velocities, model.tracers),
+    JLD2OutputWriter(model, merge(model.velocities, model.tracers, model.auxiliary_fields),
                           filename = "profile_subpolar3.jld2",
                           indices = (1, 1, :),
                           schedule = TimeInterval(1days),     #TimeInterval(1days),
@@ -241,6 +245,8 @@ DD_save=zeros(Nz,size(iterations)[1]);
 DIC_save=zeros(Nz,size(iterations)[1]);
 ALK_save=zeros(Nz,size(iterations)[1]);
 Budget_save=zeros(Nz,size(iterations)[1]);
+PAR=zeros(Nz,size(iterations)[1]);
+PAR_old=zeros(Nz,size(iterations)[1]);
 time_save=zeros(size(iterations)[1])
 
 #global flux_save=zeros(size(iterations)[1]-1);

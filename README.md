@@ -1,16 +1,56 @@
-# Lobster.jl (placeholder name)
+# BGC.jl (placeholder name, changed to reduce confusion)
 
-If this is working the example should be runnable by going into the example folder and running `julia -i --project=.. subpolar.jl`. The first time you run it here you might have todo something for the dependencies listed in Project.toml.
+## To use (before release):
 
-(JSW) I have also changed the root finding for H to use `find_zero` from the Roots package instead of the manual way it was before.
+- Activate julia with the `--project` flag pointed to this directory, i.e. `julia --project`
+- Ensure all the dependencies are installed by typing `] instantiate` or `using Pkg; Pkg,instantiate()` (if the dependencies are not currently listed properly you may have to manually add them)
+- Now you can `using BGC` as usual
 
-Lobster model based on
-- 2005 A four-dimensional mesoscale map of the spring bloom in the northeast Atlantic (POMME experiment): Results of a prognostic model
-- 2001 Impact of sub-mesoscale physics on production and subduction of phytoplankton in an oligotrophic regime
-- 2012How does dynamical spatial variability impact 234Th-derived estimates of organic export
+## Usage overview:
 
-Notes
-- using flux boundary condition
-- ignore aggregation term 
-- annual cycle 
-- add callback to diagnose pCO2
+1. Define the physical dependencies: `T`, `S`, and `PAR`. Currently, these can be functions of `(x, y, z, t)`, or, for `T` and `S` tracer fields (performs much slower). Additionally, for `PAR` can be an auxiliary field calculated by callbacks provided by BGC.jl. For example:
+```
+t_function(x, y, z, t) = temperature_itp(mod(t, 364days)) .+ 273.15
+s_function(x, y, z, t) = salinity_itp(mod(t, 364days))
+surface_PAR(t) = surface_PAR_itp(mod(t, 364days))
+
+PAR = Oceananigans.Fields.Field{Center, Center, Center}(grid)
+```
+This does require that the grid is already defined.
+
+2. Pass these fields and the grid to a setup function (currently Lobster is the only one implimented)
+```
+bgc = Lobster.setup(grid, params, (T=t_function, S=s_function, PAR=PAR))
+```
+This returns a model with fields `tracers`, `forcing`, and `boundary_conditions`.
+
+3. Pass the result to an Oceananigans model (along with the auxiliary fields if necessary)
+```
+model = NonhydrostaticModel(...
+                            tracers = (:b, bgc.tracers...),
+                            ...
+                            forcing =  bgc.forcing,
+                            boundary_conditions = merge((u=u_bcs, b=buoyancy_bcs), bgc.boundary_conditions),
+                            auxiliary_fields = (PAR=PAR, ))
+```
+
+4. Finally, once you have otherwise defined the simulation, setup the callback to update the PAR (here Light.update_2λ! is a function provided by BGC.jl that requires a surface PAR interplant be passed to it, at some point this will need to be updated to be an x, y, t interpolation).
+```
+simulation.callbacks[:update_par] = Callback(Light.update_2λ!, IterationInterval(1), merge(params, (surface_PAR=surface_PAR,)))
+
+```
+
+## Notes on library structure
+I think having the models (e.g. Lobster) as submodules which are exported by the library works quite well because it allows their forcing functions etc. to be accessed/extended with no ambiguity about what model they belong to. For example, if I want to know about the phytoplankton forcing in the Lobster model I can type:
+```
+?Lobster.P_forcing
+  No documentation found.
+
+  BGC.Lobster.P_forcing is a Function.
+
+  # 2 methods for generic function "P_forcing":
+  [1] P_forcing(x, y, z, t, NO₃, NH₄, P, Z, D, DD, DOM, DIC, ALK, PAR::AbstractFloat, params) in BGC.Lobster at /home/jago/Documents/Projects/Lobster/src/Lobster.jl:21
+  [2] P_forcing(x, y, z, t, NO₃, NH₄, P, Z, D, DD, DOM, DIC, ALK, params) in BGC.Lobster at /home/jago/Documents/Projects/Lobster/src/Lobster.jl:34
+
+```
+And if other models existed this could be e.g. `PNZ.P_forcing`. 
