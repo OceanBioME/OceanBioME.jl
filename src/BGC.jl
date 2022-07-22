@@ -16,5 +16,6 @@ end
 include("AirSeaFlux.jl")
 include("Light.jl")
 include("Lobster.jl")
+include("Plot.jl")
 
 end
