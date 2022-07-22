@@ -13,7 +13,7 @@ const default = (
     e_b = 0.674, 
     #R_C2N = 6.625,  #   ratio   mmoleC/mmoleN
     #R_C2Chl = 60,  #     ratio   mmoleC/mgChl
-    #r_pig = 0.7,
+    r_pig = 0.7,
     K_par = 33,  # Light limitation half-saturation value  Wm⁻²
     ψ = 3,  # Inhibition of nitrate uptake by ammonium
     K_no₃ = 0.7,  # Nitrate limitation half-saturation value   mmolm⁻³
@@ -48,6 +48,7 @@ const default = (
 
     Rd_phy = 6.56, # C:N ratio for P molC mol N -1
     Rd_dom = 6.56,
+    Rd_chl = 1.31,
     ρ_caco3 = 0.1, # rain ratio of organic carbon to CaCO3 
 
     f_z = 0.5, #  Fraction of slow sinking mortality   0.5  
