@@ -1,5 +1,5 @@
 """
-Lobster model based on
+LOBSTER model based on
 2005 A four-dimensional mesoscale map of the spring bloom in the northeast Atlantic (POMME experiment): Results of a prognostic model
 2001 Impact of sub-mesoscale physics on production and subduction of phytoplankton in an oligotrophic regime
 2012How does dynamical spatial variability impact 234Th-derived estimates of organic export
@@ -10,6 +10,7 @@ add callback to diagnose pCO2
 """
 
 using Random
+using Printf
 using Plots
 using JLD2
 using NetCDF
@@ -22,7 +23,7 @@ using Oceananigans.Units: second,minute, minutes, hour, hours, day, days, year, 
 
 using BGC, SugarKelp, StructArrays
 
-params = Lobster.default
+params = LOBSTER.default
 
 
 begin#Load data
@@ -34,20 +35,17 @@ begin#Load data
     so_scale_factor = ncgetatt(filename1, "so", "scale_factor") #Real_Value = (Display_Value X scale_factor) + add_offset
     so_add_offset = ncgetatt(filename1, "so", "add_offset")
     salinity = mean(so, dims=(1,2))[1:365]*so_scale_factor.+so_add_offset # use [1:365] cause sometimes one year has 366 days. 
-    salinity_itp = LinearInterpolation(time_series_second, salinity) 
     #converted to interpolations to access them at arbitary time, how to use it: salinity_itp(mod(timeinseconds,364days))
     #plot(salinity)
     thetao = ncread(filename1, "thetao");  #temperature
     thetao_scale_factor = ncgetatt(filename1, "thetao", "scale_factor") 
     thetao_add_offset = ncgetatt(filename1, "thetao", "add_offset")
     temperature = mean(thetao, dims=(1,2))[1:365]*thetao_scale_factor.+thetao_add_offset
-    temperature_itp = LinearInterpolation(time_series_second, temperature)  
     #plot(temperature)
     mlotst = ncread(filename1, "mlotst"); #mixed_layer_depth
     mlotst_scale_factor = ncgetatt(filename1, "mlotst", "scale_factor") 
     mlotst_add_offset = ncgetatt(filename1, "mlotst", "add_offset")
     mixed_layer_depth = mean(mlotst, dims=(1,2))[1:365]*mlotst_scale_factor.+mlotst_add_offset
-    mld_itp = LinearInterpolation(time_series_second, mixed_layer_depth)  
     #plot(mixed_layer_depth)
 
     ######## 2: import annual cycle chl data  #Global Ocean Biogeochemistry Analysis and Forecast
@@ -74,7 +72,6 @@ temperature_itp = LinearInterpolation(time_series_second, temperature)
 surface_PAR_itp = LinearInterpolation((0:364)day, par_mean_timeseries)
 mld_itp = LinearInterpolation(time_series_second, mixed_layer_depth)  
 surface_PAR(t) = surface_PAR_itp(mod(t, 364days))
-PAR = Oceananigans.Fields.Field{Center, Center, Center}(grid)
 
 t_function(x, y, z, t) = temperature_itp(mod(t, 364days)) .+ 273.15
 s_function(x, y, z, t) = salinity_itp(mod(t, 364days))
@@ -90,10 +87,11 @@ Ny = 1
 Nz = 10#150 # number of points in the vertical direction
 Lz = 600 # domain depth             # subpolar mixed layer depth max 427m 
 
-grid = RectilinearGrid(
+grd = RectilinearGrid(
                 size=(Nx, Ny, Nz), 
                 extent=(Lx, Ly, Lz))
 
+PAR = Oceananigans.Fields.Field{Center, Center, Center}(grd)
 begin #setup bouyancy
     B₀ = 0e-8    #m²s⁻³  B₀ = 4.24e-8  
     N² = 9e-6    #dbdz=N^2, s⁻²
@@ -110,13 +108,14 @@ begin #setup bouyancy
 end
 
 #Load the BGC model
-bgc = Lobster.setup(grid, params, (T=t_function, S=s_function, PAR=PAR))
+bgc = LOBSTER.setup(grd, params, (T=t_function, S=s_function, PAR=PAR))
+@info "Setup BGC model"
 
 begin #Setup the kelp particles
     ##refactor equations so they return in the correct units etc
     function sugarkelpequations(x, y, z, t, A, N, C, NO₃, irr, params, Δt)
         dA, dN, dC, j = SugarKelp.equations(A, N, C, params.urel, params.temp(mod(t, 364days)), 
-                                                irr, NO₃, params.λ[floor(Int, mod(t, 364days))], params.resp_model, Δt, params.paramset)
+                                                irr, NO₃, params.λ[1+floor(Int, mod(t, 364days)/day)], params.resp_model, Δt, params.paramset)
         return (A = dA / (60*60*24), N = dN / (60*60*24), C = dC / (60*60*24), j = (A+Δt*dA / (60*60*24)) * j / (60*60*24*14*0.001))#fix units
     end
 
@@ -142,11 +141,11 @@ begin #Setup the kelp particles
         PAR :: AbstractFloat
     end
 
-    n_kelp = 101
+    n_kelp = 1#01
 
     x₀ₖ = Lx*rand(n_kelp)
     y₀ₖ = Ly*rand(n_kelp)
-    z₀ₖ = [-100:0;]
+    z₀ₖ = [-10]#[-100:0;]
 
     #incluidng velocity for later use
     u₀ₖ = zeros(n_kelp)
@@ -163,7 +162,7 @@ begin #Setup the kelp particles
     particles = StructArray{Kelp}((x₀ₖ, y₀ₖ, z₀ₖ, u₀ₖ, v₀ₖ, w₀ₖ, a₀, n₀, c₀, j₀, NO₃₀, PAR₀))
 
     source_fields = ((tracer=:NO₃, property=:NO₃, scalefactor=1.0), (tracer=:PAR, property=:PAR, scalefactor=1.0))
-    sink_fields = ((tracer=:j, property=:NO₃, scalefactor=-1.0), )
+    sink_fields = ((tracer=:NO₃, property=:j, scalefactor=-1.0), )
     #need to change urel at some point
     kelp_particles = Particles.setup(particles, sugarkelpequations, 
                                         (:A, :N, :C, :NO₃, :PAR), 
@@ -174,14 +173,14 @@ begin #Setup the kelp particles
                                         sink_fields,
                                         100.0)#100 per meter down
 end
-
+@info "Defined kelp particles"
 #κₜ(x, y, z, t) = 1e-2*max(1-(z+50)^2/50^2,0)+1e-5;
 κₜ(x, y, z, t) = 1e-2*max(1-(z+mld_itp(mod(t,364days))/2)^2/(mld_itp(mod(t,364days))/2)^2,0)+1e-5;
 
 ###Model instantiation
 model = NonhydrostaticModel(advection = UpwindBiasedFifthOrder(),
                             timestepper = :RungeKutta3,
-                            grid = grid,
+                            grid = grd,
                             tracers = (:b, bgc.tracers...),
                             coriolis = FPlane(f=1e-4),
                             buoyancy = BuoyancyTracer(), 
@@ -190,7 +189,7 @@ model = NonhydrostaticModel(advection = UpwindBiasedFifthOrder(),
                             boundary_conditions = merge((u=u_bcs, b=buoyancy_bcs), bgc.boundary_conditions),
                             auxiliary_fields = (PAR=PAR, ),
                             particles = kelp_particles)#comment out this line if using functional form of PAR
-
+@info "Setup model"
 #set initial conditions
 initial_mixed_layer_depth = -100 # m
 stratification(z) = z < initial_mixed_layer_depth ? N² * z : N² * (initial_mixed_layer_depth)
@@ -235,9 +234,10 @@ simulation.output_writers[:particles] = JLD2OutputWriter(model, (particles=model
                           filename = "particles.jld2",
                           schedule = TimeInterval(1day),
                           overwrite_existing = true)
+@info "Setup simulation"
 
 run!(simulation)
-
+@info "Simulation finished"
 ## Coordinate arrays
 xw, yw, zw = nodes(model.velocities.w)
 xb, yb, zb = nodes(model.tracers.b)

@@ -4,7 +4,7 @@ using KernelAbstractions, Oceananigans, StructArrays
 using Oceananigans.Architectures: device
 
 @kernel function source_sink!(model, loc, source_properties, scalefactors, tracers, Δt)
-    #standing by this implimentation over doing it for single tracer at a time as identifying the particle mask takes time
+    #this implimentation over doing it for single tracer at a time (to better match Oceananigans kernal function format) as identifying the particle mask takes time
     #don't like all the looping in this fucntion
     p = @index(Global)
     (fi, i::Int), (fj, j::Int), (fk, k::Int) = modf.(Oceananigans.Fields.fractional_indices(model.particles.properties.x[p], model.particles.properties.y[p], model.particles.properties.z[p], loc, model.grid))
@@ -58,7 +58,7 @@ function dynamics!(particles, model, Δt)
     workgroup = min(num_particles, 256)
     worksize = num_particles
     
-    #update tracked fields
+    #update tracked fields, won't need this when Oceananigans is fixed (https://github.com/CliMA/Oceananigans.jl/pull/2662)
     for tracked_field in particles.parameters.tracked_fields
         if tracked_field.tracer in keys(model.tracers)
             tracer = getproperty(model.tracers, tracked_field.tracer)
@@ -75,12 +75,11 @@ function dynamics!(particles, model, Δt)
         wait(source_event)
     end
     #update particle properties
-    function_arguments = getproperty.(model.particles.properties, model.particles.parameters.equation_arguments)
+    function_arguments = [getproperty.(model.particles.properties, arg) for arg in model.particles.parameters.equation_arguments]
     function_parameters = model.particles.parameters.equation_parameters
 
     property_update_kernal! = property_update!(device(model.architecture), workgroup, worksize)
-    ##I don't like this nomeclature equation_integrals and equation_values
-    property_update_event = property_update_kernal!(model.particles, model.particles.parameters.equation, function_arguments, function_parameters, model.particles.parameters.equation_integrals, model.particles.parameters.equation_statics, Δt, model.clock.time)
+    property_update_event = property_update_kernal!(model.particles, model.particles.parameters.equation, function_arguments, function_parameters, model.particles.parameters.integrals, model.particles.parameters.diagnostics, Δt, model.clock.time)
     wait(property_update_event)
 
     #update source/sinks
@@ -102,13 +101,13 @@ end
 
 #Perhaps this should just be an overloading of the function name LagrangianParticles with different arguments
 function setup(particles::StructArray, equation::Function, equation_arguments::NTuple{N, Symbol} where N, 
-    equation_parameters::NamedTuple, equation_integrals::NTuple{N, Symbol} where N, 
-    equation_statics::NTuple{N, Symbol} where N, 
+    equation_parameters::NamedTuple, integrals::NTuple{N, Symbol} where N, 
+    diagnostics::NTuple{N, Symbol} where N, 
     tracked_fields::NTuple{N, NamedTuple{(:tracer, :property, :scalefactor), Tuple{Symbol, Symbol, Float64}}} where N, 
     sink_fields::NTuple{N, NamedTuple{(:tracer, :property, :scalefactor), Tuple{Symbol, Symbol, Float64}}} where N, 
     density::AbstractFloat, custom_dynamics=no_dynamics)
     
-    for property in (equation_arguments..., equation_integrals..., equation_statics...)
+    for property in (equation_arguments..., integrals..., diagnostics...)
         if !(property in propertynames(particles))
             throw(ArgumentError("$property is a required field but $(eltype(particles)) has no property $property."))
         end
@@ -126,8 +125,8 @@ function setup(particles::StructArray, equation::Function, equation_arguments::N
                                     equation=equation,
                                     equation_arguments=equation_arguments,
                                     equation_parameters=equation_parameters,
-                                    equation_integrals=equation_integrals,
-                                    equation_statics=equation_statics,
+                                    integrals=integrals,
+                                    diagnostics=diagnostics,
                                     density=density, 
                                     tracked_fields=tracked_fields,
                                     sink_fields=sink_fields,

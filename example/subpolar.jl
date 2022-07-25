@@ -23,7 +23,7 @@ using Oceananigans.Units: second,minute, minutes, hour, hours, day, days, year, 
 
 using BGC
 
-params = Lobster.default
+params = LOBSTER.default
 
 ######## 1: import annual cycle physics data  #Global Ocean 1/12° Physics Analysis and Forecast updated Daily
 filename1 = "subpolar_physics.nc" # subtropical_physics.nc  subpolar_physics.nc
@@ -122,7 +122,7 @@ s_function(x, y, z, t) = salinity_itp(mod(t, 364days))
 PAR = Oceananigans.Fields.Field{Center, Center, Center}(grid)
 #PAR(x, y, z, t) = PAR_extrap(mod(t, 364days), z)
 
-bgc = Lobster.setup(grid, params, (T=t_function, S=s_function, PAR=PAR))
+bgc = LOBSTER.setup(grid, params, (T=t_function, S=s_function, PAR=PAR))
 
 #κₜ(x, y, z, t) = 1e-2*max(1-(z+50)^2/50^2,0)+1e-5;
 κₜ(x, y, z, t) = 1e-2*max(1-(z+mld_itp(mod(t,364days))/2)^2/(mld_itp(mod(t,364days))/2)^2,0)+1e-5;
@@ -178,11 +178,11 @@ progress_message(sim) = @printf("Iteration: %04d, time: %s, Δt: %s, wall time: 
 simulation.callbacks[:progress] = Callback(progress_message, IterationInterval(100))
 
 #=
-#this can move into Lobster.jl at some point
+#this can move into LOBSTER.jl at some point
 pco2_bc = zeros(2,round(Int,duration/1day)+3)   #Int(duration/simulation.Δt)
 function pco2(sim)  #https://clima.github.io/OceananigansDocumentation/stable/generated/baroclinic_adjustment/
     #i+=1
-    pco2_bc[2,round(Int,sim.model.clock.time/1day)+1] = Lobster.air_sea_flux(1, 1, sim.model.clock.time, model.tracers.DIC[1,1,end-3], model.tracers.ALK[1,1,end-3], params)*(1years/1000)/(7.7e-4*params.U_10^2)+params.pCO2_air   #1×1×150 Field
+    pco2_bc[2,round(Int,sim.model.clock.time/1day)+1] = LOBSTER.air_sea_flux(1, 1, sim.model.clock.time, model.tracers.DIC[1,1,end-3], model.tracers.ALK[1,1,end-3], params)*(1years/1000)/(7.7e-4*params.U_10^2)+params.pCO2_air   #1×1×150 Field
     pco2_bc[1,round(Int,sim.model.clock.time/1day)+1] = sim.model.clock.time/1day
     #sim.model.clock.iteration
 end 
