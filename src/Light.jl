@@ -18,7 +18,7 @@ using Oceananigans.Architectures: device
     @inbounds ∫chlᵉᵇ[grid.Nz] = (chl[i, j, grid.Nz]/params.r_pig)^params.e_b*zpar[grid.Nz]
 
     for k=grid.Nz-1:-1:1
-        mean_chl::Float64 = (chl[i, j, k]+chl[i, j, k+1])/(2*params.r_pig)
+        mean_pig::Float64 = (chl[i, j, k]+chl[i, j, k+1])/(2*params.r_pig)
         @inbounds ∫chlᵉʳ[k] = ∫chlᵉʳ[k+1] + (mean_pig^params.e_r)*(zpar[k]-zpar[k+1])
         @inbounds ∫chlᵉᵇ[k] = ∫chlᵉᵇ[k+1] + (mean_pig^params.e_b)*(zpar[k]-zpar[k+1])
     end
