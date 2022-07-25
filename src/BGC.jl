@@ -1,6 +1,6 @@
 module BGC
 
-export Lobster, Light, AirSeaFlux
+export LOBSTER, NPZ, Light, AirSeaFlux
 
 using Oceananigans
 using Oceananigans.Units: second,minute, minutes, hour, hours, day, days, year, years
@@ -15,6 +15,7 @@ end
 
 include("AirSeaFlux.jl")
 include("Light.jl")
-include("Lobster.jl")
+include("LOBSTER.jl")
+include("NPZ.jl")
 
 end

@@ -42,7 +42,7 @@ function setup(grid, parameters, forcings=(T=nothing, S=nothing, PAR=nothing), f
     P_bcs = FieldBoundaryConditions(top = FluxBoundaryCondition(0), bottom = FluxBoundaryCondition(0))
     Z_bcs = FieldBoundaryConditions(top = FluxBoundaryCondition(0), bottom = FluxBoundaryCondition(0))  
 
-   return BGCModel((:N, :P, :Z, #tracers
+   return BGCModel((:N, :P, :Z), #tracers
             (N=N_RHS, P=P_RHS, Z=Z_RHS), #forcing
             (N=N_bcs, P=P_bcs, Z=Z_bcs)) #boundaries
 end

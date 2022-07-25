@@ -1,4 +1,4 @@
-module Lobster
+module LOBSTER
 #https://agupubs.onlinelibrary.wiley.com/doi/epdf/10.1029/2004JC002588
 using Oceananigans
 
