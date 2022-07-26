@@ -3,7 +3,7 @@ module NPZ
 #The reduction of plankton biomass induced by mesoscale stirring: A modeling study in the Benguela upwelling
 # Ismael Hernández-Carrascoa et al 
 using Oceananigans
-
+using Oceananigans.Units: second,minute, minutes, hour, hours, day, days, year, years
 import BGC: BGCModel
 
 #source functions
