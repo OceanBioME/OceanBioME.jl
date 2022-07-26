@@ -13,6 +13,12 @@ mutable struct model_results{T, X, Y, Z, t, R}
     results :: R
 end
 
+mutable struct particle_results{P, t, R}
+    properties :: P
+    t :: t
+    results :: R
+end
+
 function load_tracers(path)
     file_profiles = jldopen(path)
 
@@ -37,10 +43,39 @@ function load_tracers(path)
     return model_results(tracers, x, y, z, times, results)
 end
 
+load_particles(sim::Simulation, save_name=:profiles) = load_tracers(sim.output_writers[save_name].filepath)
+
+function load_particles(path)
+    file_profiles = jldopen(path)
+
+    iterations = parse.(Int, keys(file_profiles["timeseries/t"]))
+    tracers=keys(file_profiles["timeseries/particles/$(iterations[1])"])
+
+    times = [file_profiles["timeseries/t/$iter"] for iter in iterations]
+
+    results = zeros(length(tracers), length(getproperty(file_profiles["timeseries/particles/$(iterations[1])"], tracers[1])), length(iterations))
+    times = zeros(length(iterations))
+    for (i, iter) in enumerate(iterations)
+        times[i] = file_profiles["timeseries/t/$iter"]
+        for (j, tracer) in enumerate(tracers)
+            results[j, :, i] .= getproperty(file_profiles["timeseries/particles/$iter"], tracer)
+        end
+    end
+    return particle_results(tracers, times, results)
+end
+
 function profiles(results::model_results, fs=4, xlabel="time (days)", ylabel="z (m)")
     plts=[]
     for (j, tracer) in enumerate(results.tracers)
         push!(plts, heatmap(results.t/(1day),results.z,mean(results.results[j, :, :, :, :], dims=(1, 2))[1, 1, :, :], titlefontsize=fs, guidefontsize=fs, tickfontsize=fs, legendfontsize=fs, xlabel=xlabel, ylabel=ylabel, title=tracer))
+    end
+    plot(plts...)
+end
+
+function particles(results::particle_results, fs=4, xlabel="time (days)")
+    plts=[]
+    for (j, tracer) in enumerate(results.properties)
+        push!(plts, plot(results.t/(1day), results.results[j, :, :], titlefontsize=fs, guidefontsize=fs, tickfontsize=fs, legendfontsize=fs, xlabel=xlabel, ylabel=tracer))
     end
     plot(plts...)
 end

@@ -114,9 +114,13 @@ bgc = LOBSTER.setup(grd, params, (T=t_function, S=s_function, PAR=PAR))
 begin #Setup the kelp particles
     ##refactor equations so they return in the correct units etc
     function sugarkelpequations(x, y, z, t, A, N, C, NO₃, irr, params, Δt)
-        dA, dN, dC, j = SugarKelp.equations(A, N, C, params.urel, params.temp(mod(t, 364days)), 
+        temp=params.temp(mod(t, 364days))
+        dA, dN, dC, j = SugarKelp.equations(A, N, C, params.urel, temp, 
                                                 irr, NO₃, params.λ[1+floor(Int, mod(t, 364days)/day)], params.resp_model, Δt, params.paramset)
-        return (A = dA / (60*60*24), N = dN / (60*60*24), C = dC / (60*60*24), j = (A+Δt*dA / (60*60*24)) * j / (60*60*24*14*0.001))#fix units
+        A_new = A+dA*Δt / (60*60*24)
+        SugarKelp.p(temp, irr, params.paramset)
+        
+        return (A = dA / (60*60*24), N = dN / (60*60*24), C = dC / (60*60*24), j = A_new * j / (60*60*24*14*0.001))#fix units
     end
 
     lat=57.5
@@ -243,5 +247,5 @@ xw, yw, zw = nodes(model.velocities.w)
 xb, yb, zb = nodes(model.tracers.b)
 
 results = BGC.Plot.load_tracers(simulation)
-BGC.Plot.profiles(res)
+BGC.Plot.profiles(results)
 savefig("annual_cycle_subpolar_highinit_kelp.pdf")
