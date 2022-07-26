@@ -16,11 +16,10 @@ function dic(x, y, t, DIC, ALK, T::AbstractFloat, S::AbstractFloat, params) # ha
     KB = exp( (-8966.90 - 2890.51*sqrt(S) - 77.942*S + 1.726*S^1.5 - 0.0993*S^2)/T + (148.0248 + 137.194*sqrt(S) + 1.62247*S) + (-24.4344 - 25.085*sqrt(S) - 0.2474*S)*log(T) + 0.053105*sqrt(S)*T)
 
     H = 10^(-params.pH) # initial guess from arg list
-
-    #potential peformance bott;eneck
+    #potential peformance botteneck
     @inline CA(H) = ALK - (KB/(KB + H))*Boron
     @inline H_eq(H) = CA(H)*H^2 + K1*(CA(H)-DIC)*H + K1*K2*(CA(H)-2*DIC)
-    H = find_zero(H_eq, H)
+    H = find_zero(H_eq, H, atol=1.e-15)
     
     #pH = -log10(H)
     CO2aq = CA(H)/(K1/H + 2*K1*K2/H^2)*1e6 # Eq 11  μmol/kg

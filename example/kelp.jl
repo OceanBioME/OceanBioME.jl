@@ -84,12 +84,27 @@ Lx = 1   #500
 Ly = 500
 Nx = 1
 Ny = 1
-Nz = 10#150 # number of points in the vertical direction
+Nz = 150
 Lz = 600 # domain depth             # subpolar mixed layer depth max 427m 
+
+#inspired by the grid spacing in Copurnicus' models
+#spaced_z_faces(k) = 0.5*(1-exp((7.1388/Nz)*(Nz-k)))
+#=
+#inspired by example
+stretching = 5
+refinement = 2.5
+h(k) = (k-1)/ Nz
+ζ₀(k) = 1 + (h(k) - 1) / refinement
+Σ(k) = (1 - exp(-stretching * h(k))) / (1 - exp(-stretching))
+z_faces(k) = Lz * (ζ₀(k) * Σ(k) - 1)
 
 grd = RectilinearGrid(
                 size=(Nx, Ny, Nz), 
-                extent=(Lx, Ly, Lz))
+                x=(0,Lx),
+                y=(0,Ly),
+                z=z_faces)=#
+
+grd = RectilinearGrid(size=(Nx, Ny, Nz), extent=(Lx, Ly, Lz))
 
 PAR = Oceananigans.Fields.Field{Center, Center, Center}(grd)
 begin #setup bouyancy
@@ -115,12 +130,31 @@ begin #Setup the kelp particles
     ##refactor equations so they return in the correct units etc
     function sugarkelpequations(x, y, z, t, A, N, C, NO₃, irr, params, Δt)
         temp=params.temp(mod(t, 364days))
-        dA, dN, dC, j = SugarKelp.equations(A, N, C, params.urel, temp, 
-                                                irr, NO₃, params.λ[1+floor(Int, mod(t, 364days)/day)], params.resp_model, Δt, params.paramset)
-        A_new = A+dA*Δt / (60*60*24)
-        SugarKelp.p(temp, irr, params.paramset)
-        
-        return (A = dA / (60*60*24), N = dN / (60*60*24), C = dC / (60*60*24), j = A_new * j / (60*60*24*14*0.001))#fix units
+
+        p=SugarKelp.p(temp, irr, params.paramset)
+        e=SugarKelp.e(C, params.paramset)
+        μ = SugarKelp.eval_μ(A, N, C, temp, params.λ[1+floor(Int, mod(t, 364days)/day)], params.paramset)
+        j = SugarKelp.eval_j(NO₃, N, params.urel, params.paramset)
+        ν = SugarKelp.ν(A, params.paramset)
+
+        dA = (μ - ν) * A / (60*60*24)
+        dN = (j / params.paramset.K_A - μ * (N + params.paramset.N_struct)) / (60*60*24)
+        dC = ((p* (1 - e) - SugarKelp.r(temp, μ, j, params.resp_model, params.paramset)) / params.paramset.K_A - μ * (C + params.paramset.C_struct)) / (60*60*24)
+
+        A_new = A+dA*Δt 
+        N_new = N+dN*Δt 
+        C_new = C+dC*Δt
+
+        if C_new < params.paramset.C_min
+            A_new *= (1-(params.paramset.C_min - C)/params.paramset.C_struct)
+            C_new = params.paramset.C_min
+        end
+
+        p *= A_new / (60*60*24*12*0.001)#gC/dm^2/hr to mmol C/s
+        e *= p#mmol C/s
+        ν *= A_new*N_new / (60*60*24*14*0.001)#1/hr to mmol N/s
+        j *= A_new / (60*60*24*14*0.001)#gN/dm^2/hr to mmol N/s
+        return (A = dA, N = dN, C = dC, j = j, p = p, e = e, ν = ν)
     end
 
     lat=57.5
@@ -136,20 +170,25 @@ begin #Setup the kelp particles
         v :: AbstractFloat
         w :: AbstractFloat
         #properties
+        ##integral fields
         A :: AbstractFloat
         N :: AbstractFloat
         C :: AbstractFloat
+        ##diagnostic fields
         j :: AbstractFloat
+        p :: AbstractFloat
+        e :: AbstractFloat
+        ν :: AbstractFloat
         #tracked fields
         NO₃  :: AbstractFloat
         PAR :: AbstractFloat
     end
 
-    n_kelp = 1#01
+    n_kelp = 100
 
     x₀ₖ = Lx*rand(n_kelp)
     y₀ₖ = Ly*rand(n_kelp)
-    z₀ₖ = [-10]#[-100:0;]
+    z₀ₖ = [-100:-1;]
 
     #incluidng velocity for later use
     u₀ₖ = zeros(n_kelp)
@@ -160,26 +199,33 @@ begin #Setup the kelp particles
     n₀ = 0.01*ones(n_kelp)
     c₀ = 0.1*ones(n_kelp)
     j₀ = zeros(n_kelp)
+    p₀ = zeros(n_kelp)
+    e₀ = zeros(n_kelp)
+    ν₀ = zeros(n_kelp)
     NO₃₀ = zeros(n_kelp)
     PAR₀ = zeros(n_kelp)
 
-    particles = StructArray{Kelp}((x₀ₖ, y₀ₖ, z₀ₖ, u₀ₖ, v₀ₖ, w₀ₖ, a₀, n₀, c₀, j₀, NO₃₀, PAR₀))
+    particles = StructArray{Kelp}((x₀ₖ, y₀ₖ, z₀ₖ, u₀ₖ, v₀ₖ, w₀ₖ, a₀, n₀, c₀, j₀, p₀, e₀, ν₀, NO₃₀, PAR₀))
 
-    source_fields = ((tracer=:NO₃, property=:NO₃, scalefactor=1.0), (tracer=:PAR, property=:PAR, scalefactor=1.0))
-    sink_fields = ((tracer=:NO₃, property=:j, scalefactor=-1.0), )
+    source_fields = ((tracer=:NO₃, property=:NO₃, scalefactor=1.0), 
+                            (tracer=:PAR, property=:PAR, scalefactor=1.0))
+    sink_fields = ((tracer=:NO₃, property=:j, scalefactor=-1.0), 
+                        (tracer=:DIC, property=:p, scalefactor=-1.0),
+                        (tracer=:DOM, property=:e, scalefactor=1.0),
+                        (tracer=:DD, property=:ν, scalefactor=1.0))
     #need to change urel at some point
     kelp_particles = Particles.setup(particles, sugarkelpequations, 
                                         (:A, :N, :C, :NO₃, :PAR), #forcing function property dependencies
                                         (urel=0.15, temp=temperature_itp, λ=λ_arr, resp_model=2, paramset=SugarKelp.broch2013params), #forcing function parameters
-                                        (:A, :N, :C), #forcing function integrals
-                                        (:j, ), #forcing function diagnostic fields
+                                        (), #forcing function integrals - changed all kelp model variables to diagnostic since it is much easier to enforce the extreme carbon limit correctly
+                                        (:A, :N, :C, :j), #forcing function diagnostic fields
                                         source_fields,
                                         sink_fields,
                                         100.0)#density (100 per meter down)
 end
 @info "Defined kelp particles"
 #κₜ(x, y, z, t) = 1e-2*max(1-(z+50)^2/50^2,0)+1e-5;
-κₜ(x, y, z, t) = 1e-2*max(1-(z+mld_itp(mod(t,364days))/2)^2/(mld_itp(mod(t,364days))/2)^2,0)+1e-5;
+@inline κₜ(x, y, z, t) = 1e-2*max(1-(z+mld_itp(mod(t,364days))/2)^2/(mld_itp(mod(t,364days))/2)^2,0)+1e-5;
 
 ###Model instantiation
 model = NonhydrostaticModel(advection = UpwindBiasedFifthOrder(),
@@ -216,7 +262,7 @@ set!(model, b=bᵢ, P=Pᵢ, Z=Zᵢ, D=Dᵢ, DD=DDᵢ, NO₃=NO₃ᵢ, NH₄=NH�
 # ## Setting up a simulation
 simulation = Simulation(model, Δt=200, stop_time=duration)  #Δt=0.5*(Lz/Nz)^2/1e-2,
 
-simulation.callbacks[:update_par] = Callback(Light.update_2λ!, IterationInterval(1), merge(params, (surface_PAR=surface_PAR,)))#comment out if using PAR functiuon
+simulation.callbacks[:update_par] = Callback(Light.update_2λ!, IterationInterval(1), merge(params, (surface_PAR=surface_PAR,)));#comment out if using PAR functiuon
 
 ## Print a progress message
 progress_message(sim) = @printf("Iteration: %04d, time: %s, Δt: %s, wall time: %s\n",
@@ -238,6 +284,8 @@ simulation.output_writers[:particles] = JLD2OutputWriter(model, (particles=model
                           filename = "particles.jld2",
                           schedule = TimeInterval(1day),
                           overwrite_existing = true)
+
+simulation.output_writers[:checkpointer] = Checkpointer(model, schedule=TimeInterval(30days), prefix="model_checkpoint")
 @info "Setup simulation"
 
 run!(simulation)

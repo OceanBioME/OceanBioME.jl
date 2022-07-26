@@ -115,7 +115,7 @@ function setup(particles::StructArray, equation::Function, equation_arguments::N
 
     for field in (tracked_fields..., sink_fields...)
         if !(field.property in propertynames(particles))
-            throw(ArgumentError("$property is a required field for field tracking or source/sinking but $(eltype(particles)) has no property $property."))
+            throw(ArgumentError("$(field.property) is a required field for field tracking or source/sinking but $(eltype(particles)) has no property $property."))
         end
     end
 
