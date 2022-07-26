@@ -165,13 +165,13 @@ begin #Setup the kelp particles
     sink_fields = ((tracer=:NO₃, property=:j, scalefactor=-1.0), )
     #need to change urel at some point
     kelp_particles = Particles.setup(particles, sugarkelpequations, 
-                                        (:A, :N, :C, :NO₃, :PAR), 
-                                        (urel=0.15, temp=temperature_itp, λ=λ_arr, resp_model=2, paramset=SugarKelp.broch2013params), 
-                                        (:A, :N, :C), 
-                                        (:j, ), 
+                                        (:A, :N, :C, :NO₃, :PAR), #forcing function property dependencies
+                                        (urel=0.15, temp=temperature_itp, λ=λ_arr, resp_model=2, paramset=SugarKelp.broch2013params), #forcing function parameters
+                                        (:A, :N, :C), #forcing function integrals
+                                        (:j, ), #forcing function diagnostic fields
                                         source_fields,
                                         sink_fields,
-                                        100.0)#100 per meter down
+                                        100.0)#density (100 per meter down)
 end
 @info "Defined kelp particles"
 #κₜ(x, y, z, t) = 1e-2*max(1-(z+50)^2/50^2,0)+1e-5;

@@ -54,3 +54,70 @@ I think having the models (e.g. LOBSTER, NPZ, etc.) as submodules which are expo
 
 ```
 And if other models existed this could be e.g. `NPZ.P_forcing`. 
+
+## Particles
+To include particles which interact with the BGC model setup the model as above, but before the Oceananigans model is defined set up the particles by:
+
+1. Define a function of `(x, y, z, t, property dependencies..., params, Δt)`, for example:
+```
+function sugarkelpequations(x, y, z, t, A, N, C, NO₃, irr, params, Δt)
+  dA, dN, dC, j = SugarKelp.equations(A, N, C, params.urel, params.temp(mod(t, 364days), 
+                                                irr, NO₃, params.λ[1+floor(Int, mod(t, 364days)/day)], params.resp_model, Δt, params.paramset)
+  return (A = dA / (60*60*24), N = dN / (60*60*24), C = dC / (60*60*24), j = (A+Δt*dA / (60*60*24)) * j / (60*60*24*14*0.001))#fix units
+end
+lat=57.5
+λ_arr=SugarKelp.gen_λ(lat)
+```
+2. Next create the particle structure as is done with Oceananigans
+```
+struct Kelp
+  #position
+  x :: AbstractFloat
+  y :: AbstractFloat
+  z :: AbstractFloat
+  #velocity
+  u :: AbstractFloat
+  v :: AbstractFloat
+  w :: AbstractFloat
+  #properties
+  A :: AbstractFloat
+  N :: AbstractFloat
+  C :: AbstractFloat
+  j :: AbstractFloat
+  #tracked fields
+  NO₃  :: AbstractFloat
+  PAR :: AbstractFloat
+end
+... #define initial value arrays
+particles = StructArray{Kelp}((x₀ₖ, y₀ₖ, z₀ₖ, u₀ₖ, v₀ₖ, w₀ₖ, a₀, n₀, c₀, j₀, NO₃₀, PAR₀))
+```
+3. Define the "source fields" which are those tracked by the particle (usually arguments of the function), and "sink fields" which are the connection between particle properties and tracers
+```
+source_fields = ((tracer=:NO₃, property=:NO₃, scalefactor=1.0), (tracer=:PAR, property=:PAR, scalefactor=1.0))
+sink_fields = ((tracer=:NO₃, property=:j, scalefactor=-1.0), )
+``` 
+4. Call the particle setup function to define Oceananigans LagrangianParticles
+``` 
+kelp_particles = Particles.setup(particles, sugarkelpequations, 
+                                        (:A, :N, :C, :NO₃, :PAR), #forcing function property dependencies
+                                        (urel=0.15, temp=temperature_itp, λ=λ_arr, resp_model=2, paramset=SugarKelp.broch2013params), #forcing function parameters
+                                        (:A, :N, :C), #forcing function integrals
+                                        (:j, ), #forcing function diagnostic fields
+                                        source_fields,
+                                        sink_fields,
+                                        100.0)#density
+``` 
+5. Finally, setup the model with the particles
+``` 
+model = NonhydrostaticModel(advection = UpwindBiasedFifthOrder(),
+                            timestepper = :RungeKutta3,
+                            grid = grd,
+                            tracers = (:b, bgc.tracers...),
+                            coriolis = FPlane(f=1e-4),
+                            buoyancy = BuoyancyTracer(), 
+                            closure = ScalarDiffusivity(ν=κₜ, κ=κₜ), 
+                            forcing =  bgc.forcing,
+                            boundary_conditions = merge((u=u_bcs, b=buoyancy_bcs), bgc.boundary_conditions),
+                            auxiliary_fields = (PAR=PAR, ),
+                            particles = kelp_particles)
+``` 
