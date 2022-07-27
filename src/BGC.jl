@@ -1,6 +1,6 @@
 module BGC
 
-export LOBSTER, NPZ, Light, Boundaries, Particles, Setup
+export LOBSTER, NPZ, Light, Boundaries, Particles, Setup, run!
 
 using Oceananigans
 using Oceananigans.Units: second,minute, minutes, hour, hours, day, days, year, years

@@ -49,8 +49,8 @@ NH₄_forcing(x, y, z, t, NO₃, NH₄, P, Z, D, DD, DOM, params) = NH₄_forcin
 DOM_forcing(x, y, z, t, NO₃, NH₄, P, Z, D, DD, DOM, params) = DOM_forcing(x, y, z, t, NO₃, NH₄, P, Z, D, DD, DOM, 0.0, 0.0, getPAR(params.PAR, x, y, z, t), params)
 
 #advective forcings
-D_sinking(x, y, z, V_d, λ) = V_d*tanh(max(-z/λ,0))
-DD_sinking(x, y, z, V_dd, λ) = V_dd*tanh(max(-z/λ,0))
+D_sinking(z, params) = params.V_d*tanh(max(-z/params.λ,0))
+DD_sinking(z, params) = params.V_dd*tanh(max(-z/params.λ,0))
 
 #tracers
 tracers=(:NO₃, :NH₄, :P, :Z, :D, :DD, :DOM)
