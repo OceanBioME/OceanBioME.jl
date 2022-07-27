@@ -89,7 +89,7 @@ PAR_itp = Interpolations.interpolate((-depth_chl[end:-1:1], (0:364)day), PAR[end
 PAR_extrap = extrapolate(PAR_itp, (Line(),Throw()))  #  PAR_extrap(z, mod(t,364days))  Interpolations.extrapolate Method
 
 # Simulation duration    30days years
-duration=1years    #2years
+duration=30days#1years    #2years
 # Define the grid
 
 Lx = 1   #500
@@ -116,15 +116,15 @@ cᴰ = 2.5e-3  # dimensionless drag coefficient
 Qᵘ = - ρₐ / ρₒ * cᴰ * u₁₀ * abs(u₁₀) # m² s⁻²
 u_bcs = FieldBoundaryConditions(top = FluxBoundaryCondition(Qᵘ))
 
-t_function(x, y, z, t) = temperature_itp(mod(t, 364days)) .+ 273.15
+t_function(x, y, z, t) = temperature_itp(mod(t, 364days))
 s_function(x, y, z, t) = salinity_itp(mod(t, 364days))
 
 PAR = Oceananigans.Fields.Field{Center, Center, Center}(grid)
 #PAR(x, y, z, t) = PAR_extrap(mod(t, 364days), z)
 
-dic_bc = Boundaries.setupdicflux(params; forcings=(T=t_function, S=s_function))
+dic_bc = Boundaries.setup(:CO₂, forcings=(T=t_function, S=s_function))
 bgc = Setup.Oceananigans(:LOBSTER, grid, params, PAR, topboundaries=(DIC=dic_bc, ), optional_sets=(:carbonates, ))
-
+@info "Setup BGC"
 #npz = Setup.Oceananigans(:NPZ, grid, NPZ.defaults)
 #κₜ(x, y, z, t) = 1e-2*max(1-(z+50)^2/50^2,0)+1e-5;
 κₜ(x, y, z, t) = 1e-2*max(1-(z+mld_itp(mod(t,364days))/2)^2/(mld_itp(mod(t,364days))/2)^2,0)+1e-5;
@@ -197,7 +197,7 @@ simulation.callbacks[:pco2] = Callback(pco2, IterationInterval(Int(1day/simulati
 # Vertical slice
 simulation.output_writers[:profiles] =
     JLD2OutputWriter(model, merge(model.velocities, model.tracers, model.auxiliary_fields),
-                          filename = "profile_subpolar3.jld2",
+                          filename = "profile_subpolar_airsea.jld2",
                           indices = (1, 1, :),
                           schedule = TimeInterval(1days),     #TimeInterval(1days),
                             overwrite_existing = true)
@@ -208,7 +208,7 @@ simulation.output_writers[:profiles] =
 #                             force = true)
 
 # We're ready:
-
+@info "Setup  sim - running"
 run!(simulation)
 #jldsave("pco2_water_subpolar.jld2"; pco2_bc)  
 #jldopen("pco2_water_subpolar.jld2", "r")
@@ -226,5 +226,5 @@ xw, yw, zw = nodes(model.velocities.w)
 xb, yb, zb = nodes(model.tracers.b)
 
 results = BGC.Plot.load_tracers(simulation)
-BGC.Plot.profiles(res)
-savefig("annual_cycle_subpolar_highinit.pdf")
+BGC.Plot.profiles(results)
+#savefig("annual_cycle_subpolar_highinit.pdf")

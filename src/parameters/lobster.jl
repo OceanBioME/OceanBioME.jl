@@ -54,10 +54,5 @@ const default = (
     f_z = 0.5, #  Fraction of slow sinking mortality   0.5  
     f_d = 0.5, # Faecal pellets and P mortality fraction to DD   0.5
 
-    pH=8.0, # initial pH value guess for air-sea flux calculation
-    U_10 = 10.0,  # 10m/s for CO2 flux calculation only
-    pCO2_air = 413.3, #  in Jan 2020   https://www.co2.earth/  for CO2 flux calculation only
     μ_dom = 3.86e-7, # DOM breakdown rate    s⁻¹
-
-    ρₒ = 1026 # kg m⁻³, average density at the surface of the world ocean
 )

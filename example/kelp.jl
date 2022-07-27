@@ -123,7 +123,7 @@ begin #setup bouyancy
 end
 
 #Load the BGC model
-dic_bc = Boundaries.setupdicflux(params; forcings=(T=t_function, S=s_function))
+dic_bc = Boundaries.setup(:CO₂, forcings=(T=t_function, S=s_function))
 bgc = Setup.Oceananigans(:LOBSTER, grid, params, PAR, topboundaries=(DIC=dic_bc, ), optional_sets=(:carbonates, ))
 
 @info "Setup BGC model"
