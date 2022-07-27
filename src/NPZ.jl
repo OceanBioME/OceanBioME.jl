@@ -22,4 +22,10 @@ default = (β=1/day, # Phytoplankton growth rate
 hₗ=5, # Light (growth) e-folding depth
 Sₙ=1/day, # rate of nutrient restoring
 Nᵦ=8) # Nutrient concentration below mixed layer
+
+tracers=(:N, :P, :Z)
+optional_tracers=NamedTuple()
+
+forcing_functions=(N=N_forcing, P=P_forcing, Z=Z_forcing)
+sinking=NamedTuple()
 end # module
