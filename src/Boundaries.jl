@@ -1,5 +1,5 @@
-module AirSeaFlux
-using Roots
+module Boundaries
+using Roots, Oceananigans
 function dic(x, y, t, DIC, ALK, T::AbstractFloat, S::AbstractFloat, params) # has to be only including x,y,t without z, because this will apply to the z direction. f(x, y, t) on z-boundaries.
     #https://clima.github.io/OceananigansDocumentation/stable/model_setup/boundary_conditions/
     #https://biocycle.atmos.colostate.edu/shiny/carbonate/
@@ -43,5 +43,23 @@ function dic(x, y, t, DIC, ALK, TorS, params)
     else 
         return dic(x, y, t, DIC, ALK, TorS, params.S(x, y, 0, t), params)
     end
+end
+
+function setupdicflux(parameters; forcings=(T=nothing, S=nothing))
+    if (isnothing(forcings.T) & isnothing(forcings.S))
+        bcs_field_dependencies = (:DIC, :ALK, :T, :S)
+        bcs_parameters = parameters
+    elseif isnothing(forcings.T)
+        bcs_field_dependencies = (:DIC, :ALK, :T)
+        bcs_parameters = merge(parameters, (S=forcings.S, ))
+    elseif isnothing(forcings.S)
+        bcs_field_dependencies = (:DIC, :ALK, :S)
+        bcs_parameters = merge(parameters, (T=forcings.T, ))
+    else
+        bcs_field_dependencies = (:DIC, :ALK)
+        bcs_parameters = merge(parameters, (T=forcings.T, S=forcings.S))
+    end
+
+    return FluxBoundaryCondition(dic, field_dependencies = bcs_field_dependencies, parameters = bcs_parameters)
 end
 end

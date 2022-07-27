@@ -75,7 +75,7 @@ end
 function particles(results::particle_results, fs=4, xlabel="time (days)")
     plts=[]
     for (j, tracer) in enumerate(results.properties)
-        push!(plts, plot(results.t/(1day), results.results[j, :, :], titlefontsize=fs, guidefontsize=fs, tickfontsize=fs, legendfontsize=fs, xlabel=xlabel, ylabel=tracer))
+        push!(plts, plot(results.t/(1day), results.results[j, :, :]', titlefontsize=fs, guidefontsize=fs, tickfontsize=fs, legendfontsize=fs, xlabel=xlabel, ylabel=tracer))
     end
     plot(plts...)
 end
