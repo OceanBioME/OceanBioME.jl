@@ -123,7 +123,9 @@ begin #setup bouyancy
 end
 
 #Load the BGC model
-bgc = LOBSTER.setup(grd, params, (T=t_function, S=s_function, PAR=PAR))
+dic_bc = Boundaries.setupdicflux(params; forcings=(T=t_function, S=s_function))
+bgc = Setup.Oceananigans(:LOBSTER, grid, params, PAR, topboundaries=(DIC=dic_bc, ), optional_sets=(:carbonates, ))
+
 @info "Setup BGC model"
 
 begin #Setup the kelp particles

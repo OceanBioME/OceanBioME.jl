@@ -1,5 +1,4 @@
 module Particles
-#export of structs is frowned upon I think
 using KernelAbstractions, Oceananigans, StructArrays
 using Oceananigans.Architectures: device
 

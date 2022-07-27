@@ -122,8 +122,10 @@ s_function(x, y, z, t) = salinity_itp(mod(t, 364days))
 PAR = Oceananigans.Fields.Field{Center, Center, Center}(grid)
 #PAR(x, y, z, t) = PAR_extrap(mod(t, 364days), z)
 
-bgc = LOBSTER.setup(grid, params, (T=t_function, S=s_function, PAR=PAR))
+dic_bc = Boundaries.setupdicflux(params; forcings=(T=t_function, S=s_function))
+bgc = Setup.Oceananigans(:LOBSTER, grid, params, PAR, topboundaries=(DIC=dic_bc, ), optional_sets=(:carbonates, ))
 
+#npz = Setup.Oceananigans(:NPZ, grid, NPZ.defaults)
 #κₜ(x, y, z, t) = 1e-2*max(1-(z+50)^2/50^2,0)+1e-5;
 κₜ(x, y, z, t) = 1e-2*max(1-(z+mld_itp(mod(t,364days))/2)^2/(mld_itp(mod(t,364days))/2)^2,0)+1e-5;
 
