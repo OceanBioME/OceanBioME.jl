@@ -11,7 +11,7 @@ N_forcing(x, y, z, t, P, N, Z, params) = params.Sₙ*(params.Nᵦ-N) - params.β
 Z_forcing(x, y, z, t, P, N, Z, params) = params.γ*params.α*params.η*P^2*Z/(params.α+params.η*P^2) - params.μZ*Z^2
 
 # Define parameters
-defaults = (β=1/day, # Phytoplankton growth rate
+default = (β=1/day, # Phytoplankton growth rate
 η=1/day, # Prey capture rate
 γ=0.75, # Assimilation efficiency of zooplankton
 α=2/day, # Maximum grazing rate
@@ -22,4 +22,10 @@ defaults = (β=1/day, # Phytoplankton growth rate
 hₗ=5, # Light (growth) e-folding depth
 Sₙ=1/day, # rate of nutrient restoring
 Nᵦ=8) # Nutrient concentration below mixed layer
+
+tracers=(:N, :P, :Z)
+optional_tracers=NamedTuple()
+
+forcing_functions=(N=N_forcing, P=P_forcing, Z=Z_forcing)
+sinking=NamedTuple()
 end # module

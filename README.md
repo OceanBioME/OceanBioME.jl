@@ -115,3 +115,17 @@ The models can now be used as 1D box models where the forcing functions are simp
 model = Setup.BoxModel(:LOBSTER, params, (P=Pᵢ, Z=Zᵢ, D=Dᵢ, DD=DDᵢ, NO₃=NO₃ᵢ, NH₄=NH₄ᵢ, DOM=DOMᵢ), 0.0, 1.0*year)
 ``` 
 Where `Pᵢ` etc. are the initial values. Then call solution = `BoxModel.run(model)` which will give the results and timestamps.
+
+### Defining a model
+To setup a new model:
+1.  Create a file structured like a module (i.e. starting with `module MODELNAME`  and ending ` end` )
+2. In this file write the forcing function with arguments `x, y, z, t` , then ALL core tracers (i.e. even if a function doesn't depend on some fields include them as arguments anyway), and finally `params` 
+3. Define a tuple with the core tracers listed called `tracers` 
+4. Define a NamedTuple of the forcing functions for each tracer named `forcing_functions` 
+5. Define a named tuple `sinking`  where any fields which have a sinking forcing should be listed with a function of `z`  and `params` which calculates their sinking velocity
+6. For optional tracer sets (e.g. carbonate chemistry) define the forcing functions as above
+7. Define a NamedTuple for the sets of optional tracers named `optional_tracers`, where the optional sets are listed with a tuple of their tracers. E.g. `optional_tracers=(carbonates=(:DIC, :ALK), oxygen=(:OXY,))`
+8. If you are NOT defining any optional sets you must still define the optional tracers tuple but leave it empty (i.e. `optional_tracers=NameTuple()`), and the same for sinking
+9. Finally it is most likely useful to define the default parameters, hese can be listed in a separate file and included or listed directly as a NamedTuple. So far the default set has been named `default`     
+
+See the LOBSTER model for how functional PAR dependance can be dealt with.
