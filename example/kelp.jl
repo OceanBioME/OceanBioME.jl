@@ -77,7 +77,7 @@ t_function(x, y, z, t) = temperature_itp(mod(t, 364days)) .+ 273.15
 s_function(x, y, z, t) = salinity_itp(mod(t, 364days))
 
 # Simulation duration  
-duration=1years    #2years
+duration=2years
 # Define the grid
 
 Lx = 1   #500
@@ -98,15 +98,15 @@ h(k) = (k-1)/ Nz
 Σ(k) = (1 - exp(-stretching * h(k))) / (1 - exp(-stretching))
 z_faces(k) = Lz * (ζ₀(k) * Σ(k) - 1)
 
-grd = RectilinearGrid(
+grid = RectilinearGrid(
                 size=(Nx, Ny, Nz), 
                 x=(0,Lx),
                 y=(0,Ly),
                 z=z_faces)=#
 
-grd = RectilinearGrid(size=(Nx, Ny, Nz), extent=(Lx, Ly, Lz))
+grid = RectilinearGrid(size=(Nx, Ny, Nz), extent=(Lx, Ly, Lz))
 
-PAR = Oceananigans.Fields.Field{Center, Center, Center}(grd)
+PAR = Oceananigans.Fields.Field{Center, Center, Center}(grid)
 begin #setup bouyancy
     B₀ = 0e-8    #m²s⁻³  B₀ = 4.24e-8  
     N² = 9e-6    #dbdz=N^2, s⁻²
@@ -232,7 +232,7 @@ end
 ###Model instantiation
 model = NonhydrostaticModel(advection = UpwindBiasedFifthOrder(),
                             timestepper = :RungeKutta3,
-                            grid = grd,
+                            grid = grid,
                             tracers = (:b, bgc.tracers...),
                             coriolis = FPlane(f=1e-4),
                             buoyancy = BuoyancyTracer(), 

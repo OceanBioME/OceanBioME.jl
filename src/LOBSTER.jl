@@ -40,6 +40,14 @@ DIC_forcing(x, y, z, t, NO₃, NH₄, P, Z, D, DD, DOM, DIC, ALK, params) = DIC_
 ALK_forcing(x, y, z, t, NO₃, NH₄, P, Z, D, DD, DOM, DIC, ALK, params) = ALK_forcing(x, y, z, t, NO₃, NH₄, P, Z, D, DD, DOM, DIC, ALK, getPAR(params.PAR, x, y, z, t), params)
 
 #source functions without  DIC/ALK/O2
+Z_forcing(x, y, z, t, NO₃, NH₄, P, Z, D, DD, DOM, PAR::AbstractFloat, params) = Z_forcing(x, y, z, t, NO₃, NH₄, P, Z, D, DD, DOM, 0.0, 0.0, PAR, params)
+D_forcing(x, y, z, t, NO₃, NH₄, P, Z, D, DD, DOM, PAR::AbstractFloat, params) = D_forcing(x, y, z, t, NO₃, NH₄, P, Z, D, DD, DOM, 0.0, 0.0, PAR, params)
+DD_forcing(x, y, z, t, NO₃, NH₄, P, Z, D, DD, DOM, PAR::AbstractFloat, params) = DD_forcing(x, y, z, t, NO₃, NH₄, P, Z, D, DD, DOM, 0.0, 0.0, PAR, params)
+P_forcing(x, y, z, t, NO₃, NH₄, P, Z, D, DD, DOM, PAR::AbstractFloat, params) =P_forcing(x, y, z, t, NO₃, NH₄, P, Z, D, DD, DOM, 0.0, 0.0, PAR, params)
+NO₃_forcing(x, y, z, t, NO₃, NH₄, P, Z, D, DD, DOM, PAR::AbstractFloat, params) = NO₃_forcing(x, y, z, t, NO₃, NH₄, P, Z, D, DD, DOM, 0.0, 0.0, PAR, params)
+NH₄_forcing(x, y, z, t, NO₃, NH₄, P, Z, D, DD, DOM, PAR::AbstractFloat, params) = NH₄_forcing(x, y, z, t, NO₃, NH₄, P, Z, D, DD, DOM, 0.0, 0.0, PAR, params)
+DOM_forcing(x, y, z, t, NO₃, NH₄, P, Z, D, DD, DOM, PAR::AbstractFloat, params) = DOM_forcing(x, y, z, t, NO₃, NH₄, P, Z, D, DD, DOM, 0.0, 0.0, PAR, params)
+
 Z_forcing(x, y, z, t, NO₃, NH₄, P, Z, D, DD, DOM, params) = Z_forcing(x, y, z, t, NO₃, NH₄, P, Z, D, DD, DOM, 0.0, 0.0, getPAR(params.PAR, x, y, z, t), params)
 D_forcing(x, y, z, t, NO₃, NH₄, P, Z, D, DD, DOM, params) = D_forcing(x, y, z, t, NO₃, NH₄, P, Z, D, DD, DOM, 0.0, 0.0, getPAR(params.PAR, x, y, z, t), params)
 DD_forcing(x, y, z, t, NO₃, NH₄, P, Z, D, DD, DOM, params) = DD_forcing(x, y, z, t, NO₃, NH₄, P, Z, D, DD, DOM, 0.0, 0.0, getPAR(params.PAR, x, y, z, t), params)

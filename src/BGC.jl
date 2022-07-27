@@ -1,6 +1,6 @@
 module BGC
 
-export LOBSTER, NPZ, Light, Boundaries, Particles, Setup, run!
+export LOBSTER, NPZ, Light, Boundaries, Particles, Setup, BoxModel
 
 using Oceananigans
 using Oceananigans.Units: second,minute, minutes, hour, hours, day, days, year, years
@@ -14,5 +14,5 @@ include("Plot.jl")
 include("LOBSTER.jl")
 include("NPZ.jl")
 include("Setup.jl")
-
+include("BoxModel.jl")
 end

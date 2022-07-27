@@ -1,12 +1,14 @@
 # BGC.jl (placeholder name, changed to reduce confusion)
 
-## To use (before release):
+## Installation (before release):
 
 - Activate julia with the `--project` flag pointed to this directory, i.e. `julia --project`
 - Ensure all the dependencies are installed by typing `] instantiate` or `using Pkg; Pkg,instantiate()` (if the dependencies are not currently listed properly you may have to manually add them)
 - Now you can use the package with `using BGC` as usual
 
-## Usage overview:
+## Usage overview
+
+### Oceananigans
 
 1. Define the physical dependencies: `T`, `S`, and `PAR`. Currently, these can be functions of `(x, y, z, t)`, or, for `T` and `S` tracer fields (performs much slower). Additionally, `PAR` can be an auxiliary field calculated by callbacks provided by BGC.jl. For example:
 ```
@@ -40,22 +42,7 @@ simulation.callbacks[:update_par] = Callback(Light.update_2λ!, IterationInterva
 
 ```
 
-## Notes on library structure
-I think having the models (e.g. LOBSTER, NPZ, etc.) as submodules which are exported by the library works quite well because it allows their forcing functions etc. to be accessed/extended with no ambiguity about which model they belong to. For example, if I want to know about the phytoplankton forcing in the Lobster model I can type:
-```
-?Lobster.P_forcing
-  No documentation found.
-
-  BGC.Lobster.P_forcing is a Function.
-
-  # 2 methods for generic function "P_forcing":
-  [1] P_forcing(x, y, z, t, NO₃, NH₄, P, Z, D, DD, DOM, DIC, ALK, PAR::AbstractFloat, params) in BGC.Lobster at /home/jago/Documents/Projects/Lobster/src/Lobster.jl:21
-  [2] P_forcing(x, y, z, t, NO₃, NH₄, P, Z, D, DD, DOM, DIC, ALK, params) in BGC.Lobster at /home/jago/Documents/Projects/Lobster/src/Lobster.jl:34
-
-```
-And if other models existed this could be e.g. `NPZ.P_forcing`. 
-
-## Particles
+### Particles
 To include particles which interact with the BGC model setup the model as above, but before the Oceananigans model is defined set up the particles by:
 
 1. Define a function of `(x, y, z, t, property dependencies..., params, Δt)`, for example:
@@ -121,3 +108,10 @@ model = NonhydrostaticModel(advection = UpwindBiasedFifthOrder(),
                             auxiliary_fields = (PAR=PAR, ),
                             particles = kelp_particles)
 ``` 
+
+### Box model
+The models can now be used as 1D box models where the forcing functions are simply integrated. To set this up you just need to call `Setup.BoxModel`, for example:
+``` 
+model = Setup.BoxModel(:LOBSTER, params, (P=Pᵢ, Z=Zᵢ, D=Dᵢ, DD=DDᵢ, NO₃=NO₃ᵢ, NH₄=NH₄ᵢ, DOM=DOMᵢ), 0.0, 1.0*year)
+``` 
+Where `Pᵢ` etc. are the initial values. Then call solution = `BoxModel.run(model)` which will give the results and timestamps.

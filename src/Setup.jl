@@ -68,41 +68,22 @@ function Oceananigans(model::Symbol,
     return (tracers=tracers, forcing=forcing, boundary_conditions=boundaries)
 end
 
-mutable struct BoxModel
-    tracers
-    forcing
-    problem
-    Δt
-    solver
-    adaptive
-    solution
-end
-
-function BoxModelRHS(y, params, t)
-    return (vcat([params.forcing[i](0, 0, 0, t, y..., params) for i in 1:length(y)]...))
-end
-
-function BoxModel(model::Symbol, params::NamedTuple, initial_values::NamedTuple, tᵢ::AbstractFloat, tₑ::AbstractFloat; optional_sets::Tuple=(), Δt=200, solver=RK4(), adaptive=false)
+function BoxModel(model::Symbol, params::NamedTuple, initial_values::NamedTuple, tᵢ::AbstractFloat, tₑ::AbstractFloat; optional_sets::Tuple=(), Δt=200, solver=Euler(), adaptive=false)
     model=loadmodel(model)
     tracers=loadtracers(model, optional_sets)
 
     if length(initial_values) != length(tracers)
         throw(ArgumentError("The incorrect number of initial values have been provided, need initial values for $tracers"))
     end
-    y₀ = values(initial_values)
 
-    forcing_functions=()
+    y₀ = []
+    forcing_functions=[]
     for tracer in tracers
-        forcing = getproperty(model.forcing_functions, tracer)
+        push!(forcing_functions, getproperty(model.forcing_functions, tracer))
+        push!(y₀, getproperty(initial_values, tracer))
     end
-
-    params = merge(params, (forcing=forcing_functions, ))
-    problem = ODEProblem(BoxModelRHS, y₀, (tᵢ, tₑ), params)
-    return BoxModel(tracers, forcing, problem, Δt, solver, adaptive, [])
-end
-
-function run!(model::BoxModel)
-    solution = solve(model.problem, model.solver, dt=model.Δt, adaptive=model.adaptive)
-    model.solution = solution
+    params = (forcing=forcing_functions,  parameters=params)
+    problem = ODEProblem(BGC.BoxModel.BoxModelRHS, vcat(y₀...), (tᵢ, tₑ), params)
+    return (tracers=tracers, forcing=forcing_functions, problem=problem, Δt=Δt, solver=solver, adaptive=adaptive, solution=vcat([]...), t=vcat([]...))
 end
 end
