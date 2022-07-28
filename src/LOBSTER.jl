@@ -26,7 +26,13 @@ ALK_forcing(x, y, z, t, NO₃, NH₄, P, Z, D, DD, DOM, DIC, ALK, PAR::AbstractF
 
 OXY_forcing(x, y, z, t, NO₃, NH₄, P, Z, D, DD, DOM, OXY, PAR::AbstractFloat, params) = params.μ_p*L_I(PAR, params)*L_NO₃(NO₃, NH₄, params)*params.Rd_oxy*P-(params.Rd_oxy-params.ON)*NH₄_forcing(x, y, z, t, NO₃, NH₄, P, Z, D, DD, DOM, PAR, params) - params.Rd_oxy*params.μ_n*NH₄#there is a typo in https://agupubs.onlinelibrary.wiley.com/doi/10.1029/2010JC006446 so I am not sure the first term of this is correct, but this makes sense
 
-getPAR(PAR::Field, x, y, z, t) = Oceananigans.Fields.interpolate(PAR, Center(), Center(), Center(), PAR.grid, x, y, z)
+function getPAR(PAR::Field, x, y, z, t)
+    #assuming both are center fields, otherwise need to revert to interpolations
+    #new method is about 1/3 faster
+    #Oceananigans.Fields.interpolate(PAR, Center(), Center(), Center(), PAR.grid, x, y, z)
+    (fi, i::Int), (fj, j::Int), (fk, k::Int) = modf.(Oceananigans.Fields.fractional_indices(x, y, z, (Center(), Center(), Center()), PAR.grid))
+    return PAR[i, j, k]
+end
 getPAR(PAR, x, y, z, t) = PAR(x, y, z, t)
 
 #source functions with PAR func

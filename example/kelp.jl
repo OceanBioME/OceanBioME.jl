@@ -123,7 +123,7 @@ begin #setup bouyancy
 end
 
 #Load the BGC model
-dic_bc = Boundaries.setup(:CO₂, forcings=(T=t_function, S=s_function))
+dic_bc = Boundaries.airseasetup(:CO₂, forcings=(T=t_function, S=s_function))
 bgc = Setup.Oceananigans(:LOBSTER, grid, params, PAR, topboundaries=(DIC=dic_bc, ), optional_sets=(:carbonates, ))
 
 @info "Setup BGC model"
@@ -262,7 +262,8 @@ ALKᵢ(x,y,z)= 2720   #  mmol/m^-3
 set!(model, b=bᵢ, P=Pᵢ, Z=Zᵢ, D=Dᵢ, DD=DDᵢ, NO₃=NO₃ᵢ, NH₄=NH₄ᵢ, DOM=DOMᵢ,DIC=DICᵢ,ALK=ALKᵢ, u=0, v=0, w=0)
 
 # ## Setting up a simulation
-simulation = Simulation(model, Δt=200, stop_time=duration)  #Δt=0.5*(Lz/Nz)^2/1e-2,
+simulation = Simulation(model, Δt=200, stop_time=6*31day+3*30day+28*day)  #Δt=0.5*(Lz/Nz)^2/1e-2,
+#run to start of november
 
 simulation.callbacks[:update_par] = Callback(Light.update_2λ!, IterationInterval(1), merge(params, (surface_PAR=surface_PAR,)));#comment out if using PAR functiuon
 
@@ -282,13 +283,24 @@ simulation.output_writers[:profiles] =
                           indices = (1, 1, :),
                           schedule = TimeInterval(1days),     #TimeInterval(1days),
                             overwrite_existing = true)
+
+#checkpoint after burnin so we can just reset to there next time
+simulation.output_writers[:checkpointer] = Checkpointer(model, schedule=SpecifiedTimes([6*31day+3*30day+28*day]), prefix="model_checkpoint")
+@info "Setup simulation"
+
+run!(simulation)
+#reset particles
+model.particles.properties.A .= a₀,
+model.particles.properties.N .= n₀
+model.particles.properties.C .= c₀
+
+#start recording particles
 simulation.output_writers[:particles] = JLD2OutputWriter(model, (particles=model.particles,), 
                           filename = "particles.jld2",
                           schedule = TimeInterval(1day),
                           overwrite_existing = true)
 
-simulation.output_writers[:checkpointer] = Checkpointer(model, schedule=TimeInterval(30days), prefix="model_checkpoint")
-@info "Setup simulation"
+simulation.stop_time = duration
 
 run!(simulation)
 @info "Simulation finished"
@@ -299,3 +311,7 @@ xb, yb, zb = nodes(model.tracers.b)
 results = BGC.Plot.load_tracers(simulation)
 BGC.Plot.profiles(results)
 savefig("annual_cycle_subpolar_highinit_kelp.pdf")
+
+particles = BGC.Plot.load_particles(simulation)
+BGC.Plot.particles(results)
+savefig("annual_cycle_subpolar_highinit_kelp_particles.pdf")

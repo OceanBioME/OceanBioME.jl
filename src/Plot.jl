@@ -43,7 +43,7 @@ function load_tracers(path)
     return model_results(tracers, x, y, z, times, results)
 end
 
-load_particles(sim::Simulation, save_name=:profiles) = load_tracers(sim.output_writers[save_name].filepath)
+load_particles(sim::Simulation, save_name=:particles) = load_tracers(sim.output_writers[save_name].filepath)
 
 function load_particles(path)
     file_profiles = jldopen(path)

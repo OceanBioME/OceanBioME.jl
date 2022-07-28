@@ -1,30 +1,40 @@
 module Boundaries
 using Roots, Oceananigans
+using Oceananigans.Units: second, minute, minutes, hour, hours, day, days, year, years
 
 const defaults = (
-    field_dependencies = (
-        O₂ = (:O₂, ),
-        CO₂ = (:DIC, :ALK)
+    airseaflux = (
+        field_dependencies = (
+            O₂ = (:O₂, ),
+            CO₂ = (:DIC, :ALK)
+        ),
+        Sc_params = (
+            O₂ = (A=1953.4, B=128.0, C=3.9918, D=0.050091),
+            CO₂ = (A=2073.1, B=125.62, C=3.6276, D=0.043219)
+        ),
+        β_params = (
+            O₂ = (A₁=-58.3877, A₂=85.8079, A₃=23.8439, B₁=-0.034892, B₂=0.015568, B₃=-0.0019387),
+            CO₂ = (A₁=-60.2409, A₂=93.4517, A₃=23.3585, B₁=0.023517, B₂=-0.023656, B₃=0.0047036)#(returns K₀ rather than β)
+        ),
+        pH=8.0, # initial pH value guess for air-sea flux calculation
+        ρₒ = 1026, # kg m⁻³, average density at the surface of the world ocean
+        conc_air = (
+            CO₂=413.3,#ppmv
+            O₂=209*0.0409/32#ppm from https://agupubs.onlinelibrary.wiley.com/doi/10.1029/2010JC006446 to mmolO₂/m³ (https://teesing.com/en/library/tools/ppm-mg3-converter not a very good source I know)
+        #this conversion is at STP(?)
+        ),#may want to make these variable at some point (along with wind speed)
+        molecular_weight = (
+            CO₂=12+14*2.0,#g/mol
+        ),
+        uₐᵥ=10#m/s https://rmets.onlinelibrary.wiley.com/doi/10.1002/joc.6957
     ),
-    Sc_params = (
-        O₂ = (A=1953.4, B=128.0, C=3.9918, D=0.050091),
-        CO₂ = (A=2073.1, B=125.62, C=3.6276, D=0.043219)
-    ),
-    β_params = (
-        O₂ = (A₁=-58.3877, A₂=85.8079, A₃=23.8439, B₁=-0.034892, B₂=0.015568, B₃=-0.0019387),
-        CO₂ = (A₁=-60.2409, A₂=93.4517, A₃=23.3585, B₁=0.023517, B₂=-0.023656, B₃=0.0047036)#(returns K₀ rather than β)
-    ),
-    pH=8.0, # initial pH value guess for air-sea flux calculation
-    ρₒ = 1026, # kg m⁻³, average density at the surface of the world ocean
-    conc_air = (
-        CO₂=413.3,#ppmv
-        O₂=209*0.0409/32#ppm from https://agupubs.onlinelibrary.wiley.com/doi/10.1029/2010JC006446 to mmolO₂/m³ (https://teesing.com/en/library/tools/ppm-mg3-converter not a very good source I know)
-    #this conversion is at STP(?)
-    ),#may want to make these variable at some point (along with wind speed)
-    molecular_weight = (
-        CO₂=12+14*2#g/mol
-    ),
-    uₐᵥ=10#m/s https://rmets.onlinelibrary.wiley.com/doi/10.1002/joc.6957   
+    sediment = (
+        #https://aslopubs.onlinelibrary.wiley.com/doi/epdf/10.4319/lo.1996.41.8.1651
+        λᵣᵣ = 2/year,# 1/year to 1/s
+        λᵣ = 0.2/year,#s   
+        Rdᵣᵣ = 0.1509,#mmol N/mmol C
+        Rdᵣ = 0.13#mmol N/mmol C
+    )
 )
 
 function pCO₂(DIC, ALK, T, S, params)
@@ -55,29 +65,29 @@ Sc(T, params) = params.A-params.B*T+params.C*T^2-params.D*T^3
 α(gas::Symbol, T, params)=β(T+273.15, S, getproperty(params.β_params, gas))/T
 β(T, S, params) = exp(params.A₁+params.A₂*(100/T)+params.A₃*log(T/100)+S*(params.B₁+params.B₂*(T/100)+params.B₃*(T/100)^2))
 
-K(gas::Symbol, T, S, params)=k(gas, T, params)*params.ρ₀*β(T+273.15, S, getproperty(params.β_params, gas)) #L=ρ\_wK₀ ->  https://reader.elsevier.com/reader/sd/pii/0304420374900152 and here K₀=β
+K(gas::Symbol, T, S, params)=k(gas, T, params)*params.ρₒ*β(T+273.15, S, getproperty(params.β_params, gas)) #L=ρ\_wK₀ ->  https://reader.elsevier.com/reader/sd/pii/0304420374900152 and here K₀=β
 
 function airseaflux(x, y, t, T::AbstractFloat, S::AbstractFloat, conc::AbstractFloat, params)
     #https://agupubs.onlinelibrary.wiley.com/doi/epdf/10.1029/92JC00188 could add chemical enhancement factor
     if params.gas in (:O₂, )#doing like this for flexability in the future
         return k(params.gas, T, params)*(conc-α(T, S)*getproperty(params.conc_air, params.gas))
     elseif params.gas in (:CO₂, )
-        return K(params.gas, T, S, params)*(conc-getproperty(params.conc_air, params.gas))*params.ρ₀*0.001/(getproperty(params.molecular_weight, gas))#ppmv to mmolC/m³ not sure this is correct
+        return K(params.gas, T, S, params)*(conc-getproperty(params.conc_air, params.gas))*params.ρₒ*0.001/(getproperty(params.molecular_weight, params.gas))#ppmv to mmolC/m³ not sure this is correct
     end
 end
 
-function airseaflux(x, y, t, T::AbstractFloat, S::AbstractFloat, DIC::AbstractFloat, ALK::AbstractFloat, params)
+function airseaflux(x, y, t, DIC::AbstractFloat, ALK::AbstractFloat, T::AbstractFloat, S::AbstractFloat, params)
     if !(params.gas in (:CO₂, ))
         throw(ArgumentError("Too many arguments for gas type $(params.gas)"))
     end
-    conc = pCO₂(DIC, ALK, T, S, params)
+    conc = pCO₂(DIC, ALK, T+273.15, S, params)
     return airseaflux(x, y, t, T, S, conc, params)
 end
 
 airseaflux(x, y, t, conc, params) = airseaflux(x, y, t, params.T(x, y, 0, t), params.S(x, y, 0, t), conc, params)
-airseaflux(x, y, t, DIC, ALK, params) = airseaflux(x, y, t, params.T(x, y, 0, t), params.S(x, y, 0, t), DIC, ALK, params)
+airseaflux(x, y, t, DIC, ALK, params) = airseaflux(x, y, t, DIC, ALK, params.T(x, y, 0, t), params.S(x, y, 0, t), params)
 
-function setup(gas::Symbol; forcings=(T=nothing, S=nothing), parameters=defaults)
+function airseasetup(gas::Symbol; forcings=(T=nothing, S=nothing), parameters=defaults.airseaflux)
     #don't like this but oh well
     if !(gas in keys(parameters.Sc_params))
         throw(ArgumentError("Boundary conditions not defined for gas $gas, available are $(keys(parameters.Sc_params))"))

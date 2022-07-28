@@ -89,14 +89,14 @@ PAR_itp = Interpolations.interpolate((-depth_chl[end:-1:1], (0:364)day), PAR[end
 PAR_extrap = extrapolate(PAR_itp, (Line(),Throw()))  #  PAR_extrap(z, mod(t,364days))  Interpolations.extrapolate Method
 
 # Simulation duration    30days years
-duration=30days#1years    #2years
+duration=1year#2years
 # Define the grid
 
 Lx = 1   #500
 Ly = 500
 Nx = 1
 Ny = 1
-Nz = 10#150 # number of points in the vertical direction
+Nz = 50 # number of points in the vertical direction
 Lz = 600 # domain depth             # subpolar mixed layer depth max 427m 
 
 grid = RectilinearGrid(
@@ -122,7 +122,7 @@ s_function(x, y, z, t) = salinity_itp(mod(t, 364days))
 PAR = Oceananigans.Fields.Field{Center, Center, Center}(grid)
 #PAR(x, y, z, t) = PAR_extrap(mod(t, 364days), z)
 
-dic_bc = Boundaries.setup(:CO₂, forcings=(T=t_function, S=s_function))
+dic_bc = Boundaries.airseasetup(:CO₂, forcings=(T=t_function, S=s_function))
 bgc = Setup.Oceananigans(:LOBSTER, grid, params, PAR, topboundaries=(DIC=dic_bc, ), optional_sets=(:carbonates, ))
 @info "Setup BGC"
 #npz = Setup.Oceananigans(:NPZ, grid, NPZ.defaults)
