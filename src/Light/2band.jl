@@ -1,12 +1,3 @@
-#This can not be computed as a computed field since then it would have to integrate on every grid point
-#A better solution than callbacks may exist
-
-module Light
-using Oceananigans
-using KernelAbstractions
-using KernelAbstractions.Extras.LoopInfo: @unroll
-using Oceananigans.Architectures: device
-
 @kernel function _update_2λ!(par, grid, chl, t, params) 
     i, j = @index(Global, NTuple) 
     zpar=Oceananigans.Operators.znodes(par)
@@ -32,5 +23,4 @@ function  update_2λ!(sim, params)
                                    dependencies = Event(device(sim.model.architecture)))
 
     wait(device(sim.model.architecture), par_calculation)
-end
 end

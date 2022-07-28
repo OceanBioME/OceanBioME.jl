@@ -1,3 +1,6 @@
+"
+Integrates the biogeochemical models in a closed box
+"
 module BoxModel
 using DiffEqBase, OrdinaryDiffEq, KernelAbstractions
 using Oceananigans.Architectures: device

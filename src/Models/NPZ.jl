@@ -1,3 +1,14 @@
+"
+NPZ biogeochemistry model as described by Hernández-Carrasco et al. 2014 and earlier publications.
+
+Variables: NO₃, NH₄, P, Z, D, DD, DOM
+Optional tracers: (DIC, ALK), O₂
+
+Forcing: PAR
+
+References:
+Hernández-Carrasco, I., Rossi, V., Hernández-García, E., Garçon, V. and López, C., 2014. The reduction of plankton biomass induced by mesoscale stirring: A modeling study in the Benguela upwelling. Deep Sea Research Part I: Oceanographic Research Papers, 83, pp.65-80.
+"
 module NPZ
 # NPZ model based on: 
 #The reduction of plankton biomass induced by mesoscale stirring: A modeling study in the Benguela upwelling

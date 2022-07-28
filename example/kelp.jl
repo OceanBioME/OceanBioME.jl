@@ -23,7 +23,7 @@ using Oceananigans.Units: second,minute, minutes, hour, hours, day, days, year, 
 
 using BGC, SugarKelp, StructArrays
 
-params = LOBSTER.default
+params = LOBSTER.defaults
 
 
 begin#Load data
@@ -73,7 +73,7 @@ surface_PAR_itp = LinearInterpolation((0:364)day, par_mean_timeseries)
 mld_itp = LinearInterpolation(time_series_second, mixed_layer_depth)  
 surface_PAR(t) = surface_PAR_itp(mod(t, 364days))
 
-t_function(x, y, z, t) = temperature_itp(mod(t, 364days)) .+ 273.15
+t_function(x, y, z, t) = temperature_itp(mod(t, 364days))
 s_function(x, y, z, t) = salinity_itp(mod(t, 364days))
 
 # Simulation duration  
@@ -131,32 +131,35 @@ bgc = Setup.Oceananigans(:LOBSTER, grid, params, PAR, topboundaries=(DIC=dic_bc,
 begin #Setup the kelp particles
     ##refactor equations so they return in the correct units etc
     function sugarkelpequations(x, y, z, t, A, N, C, NO₃, irr, params, Δt)
-        temp=params.temp(mod(t, 364days))
+        if !iszero(A)
+            temp=params.temp(mod(t, 364days))
 
-        p=SugarKelp.p(temp, irr, params.paramset)
-        e=SugarKelp.e(C, params.paramset)
-        μ = SugarKelp.eval_μ(A, N, C, temp, params.λ[1+floor(Int, mod(t, 364days)/day)], params.paramset)
-        j = SugarKelp.eval_j(NO₃, N, params.urel, params.paramset)
-        ν = SugarKelp.ν(A, params.paramset)
+            p=SugarKelp.p(temp, irr, params.paramset)
+            e=SugarKelp.e(C, params.paramset)
+            μ = SugarKelp.eval_μ(A, N, C, temp, params.λ[1+floor(Int, mod(t, 364days)/day)], params.paramset)
+            j = SugarKelp.eval_j(NO₃, N, params.urel, params.paramset)
+            ν = SugarKelp.ν(A, params.paramset)
+            dA = (μ - ν) * A / (60*60*24)
+            dN = (j / params.paramset.K_A - μ * (N + params.paramset.N_struct)) / (60*60*24)
+            dC = ((p* (1 - e) - SugarKelp.r(temp, μ, j, params.resp_model, params.paramset)) / params.paramset.K_A - μ * (C + params.paramset.C_struct)) / (60*60*24)
 
-        dA = (μ - ν) * A / (60*60*24)
-        dN = (j / params.paramset.K_A - μ * (N + params.paramset.N_struct)) / (60*60*24)
-        dC = ((p* (1 - e) - SugarKelp.r(temp, μ, j, params.resp_model, params.paramset)) / params.paramset.K_A - μ * (C + params.paramset.C_struct)) / (60*60*24)
+            A_new = A+dA*Δt 
+            N_new = N+dN*Δt 
+            C_new = C+dC*Δt
 
-        A_new = A+dA*Δt 
-        N_new = N+dN*Δt 
-        C_new = C+dC*Δt
+            if C_new < params.paramset.C_min
+                A_new *= (1-(params.paramset.C_min - C)/params.paramset.C_struct)
+                C_new = params.paramset.C_min
+            end
 
-        if C_new < params.paramset.C_min
-            A_new *= (1-(params.paramset.C_min - C)/params.paramset.C_struct)
-            C_new = params.paramset.C_min
+            p *= A_new / (60*60*24*12*0.001)#gC/dm^2/hr to mmol C/s
+            e *= p#mmol C/s
+            ν *= A_new*N_new / (60*60*24*14*0.001)#1/hr to mmol N/s
+            j *= A_new / (60*60*24*14*0.001)#gN/dm^2/hr to mmol N/s
+        else
+            A_new, N_new, C_new, j, p, e, ν = 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0
         end
-
-        p *= A_new / (60*60*24*12*0.001)#gC/dm^2/hr to mmol C/s
-        e *= p#mmol C/s
-        ν *= A_new*N_new / (60*60*24*14*0.001)#1/hr to mmol N/s
-        j *= A_new / (60*60*24*14*0.001)#gN/dm^2/hr to mmol N/s
-        return (A = dA, N = dN, C = dC, j = j, p = p, e = e, ν = ν)
+        return (A = A_new, N = N_new, C = C_new, j = j, p = p, e = e, ν = ν)
     end
 
     lat=57.5
@@ -197,9 +200,10 @@ begin #Setup the kelp particles
     v₀ₖ = zeros(n_kelp)
     w₀ₖ = zeros(n_kelp)
 
-    a₀ = 30.0*ones(n_kelp)
-    n₀ = 0.01*ones(n_kelp)
-    c₀ = 0.1*ones(n_kelp)
+    #start it off dead so it doesn't effect the BGC burnin
+    a₀ = zeros(n_kelp)
+    n₀ = zeros(n_kelp)
+    c₀ = zeros(n_kelp)
     j₀ = zeros(n_kelp)
     p₀ = zeros(n_kelp)
     e₀ = zeros(n_kelp)
@@ -290,9 +294,10 @@ simulation.output_writers[:checkpointer] = Checkpointer(model, schedule=Specifie
 
 run!(simulation)
 #reset particles
-model.particles.properties.A .= a₀,
-model.particles.properties.N .= n₀
-model.particles.properties.C .= c₀
+
+model.particles.properties.A .= 30.0*ones(n_kelp)
+model.particles.properties.N .= 0.01*ones(n_kelp)
+model.particles.properties.C .= 0.1*ones(n_kelp)
 
 #start recording particles
 simulation.output_writers[:particles] = JLD2OutputWriter(model, (particles=model.particles,), 
@@ -313,5 +318,5 @@ BGC.Plot.profiles(results)
 savefig("annual_cycle_subpolar_highinit_kelp.pdf")
 
 particles = BGC.Plot.load_particles(simulation)
-BGC.Plot.particles(results)
+BGC.Plot.particles(particles)
 savefig("annual_cycle_subpolar_highinit_kelp_particles.pdf")

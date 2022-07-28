@@ -23,7 +23,7 @@ using Oceananigans.Units: second,minute, minutes, hour, hours, day, days, year, 
 
 using BGC
 
-params = LOBSTER.default
+params = LOBSTER.defaults
 
 ######## 1: import annual cycle physics data  #Global Ocean 1/12° Physics Analysis and Forecast updated Daily
 filename1 = "subpolar_physics.nc" # subtropical_physics.nc  subpolar_physics.nc
