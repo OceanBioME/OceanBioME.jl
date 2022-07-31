@@ -216,8 +216,8 @@ begin #Setup the kelp particles
     source_fields = ((tracer=:NO₃, property=:NO₃, scalefactor=1.0), 
                             (tracer=:PAR, property=:PAR, scalefactor=1.0))
     sink_fields = ((tracer=:NO₃, property=:j, scalefactor=-1.0), 
-                        (tracer=:DIC, property=:p, scalefactor=-1.0),
-                        (tracer=:DOM, property=:e, scalefactor=1.0),
+                        (tracer=:DIC, property=:p, scalefactor=-1.0
+                        (tracer=:DOM, property=:e, scalefactor=1.0/Rd_dom),
                         (tracer=:DD, property=:ν, scalefactor=1.0))
     #need to change urel at some point
     kelp_particles = Particles.setup(particles, sugarkelpequations, 

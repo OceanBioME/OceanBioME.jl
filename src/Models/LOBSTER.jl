@@ -43,7 +43,7 @@ function getPAR(PAR::Field, x, y, z, t)
     #new method is about 1/3 faster
     #Oceananigans.Fields.interpolate(PAR, Center(), Center(), Center(), PAR.grid, x, y, z)
     (fi, i::Int), (fj, j::Int), (fk, k::Int) = modf.(Oceananigans.Fields.fractional_indices(x, y, z, (Center(), Center(), Center()), PAR.grid))
-    return PAR[i, j, k]
+    return PAR[i+1, j+1, k+1]
 end
 getPAR(PAR, x, y, z, t) = PAR(x, y, z, t)
 
