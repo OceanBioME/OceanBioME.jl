@@ -1,4 +1,10 @@
-# BGC.jl (placeholder name, changed to reduce confusion)
+# OceanBioME.jl
+Ocean Biogeochemial Modelling Environment
+
+## Description
+OceanBioME was developed with generous support from the Cambridge Centre for Climate Repair as a tool to study the effectiveness and impacts of ocean carbon dioxide removal (CDR) strategies.
+
+OceanBioME is a flexible modelling enviornment written in Julia for modelling the coupled interactions between ocean biogeochemistry, carbonate chemistry, and physics. OceanBioME can be run as a stand-alone box model, or coupled with Oceananigans.jl to run as a 1D column model or with 3D physics. 
 
 ## Installation (before release):
 
@@ -7,6 +13,28 @@
 - Now you can use the package with `using BGC` as usual
 
 ## Usage overview
+OceanBioME can be used as a stand-alone box model or coupled with ocean physics using Oceananigans.jl
+
+### Box model
+To set up OceanBioME as a box model, call `Setup.BoxModel` with the biogeochemical model of your choice. For example to use the LOBSETER model:
+``` 
+model = Setup.BoxModel(:LOBSTER, params, (P=Pᵢ, Z=Zᵢ, D=Dᵢ, DD=DDᵢ, NO₃=NO₃ᵢ, NH₄=NH₄ᵢ, DOM=DOMᵢ), 0.0, 1.0*year)
+``` 
+Where `Pᵢ` etc. are the initial values. Then call solution = `BoxModel.run(model)` which will give the results and timestamps.
+
+### Defining a model
+To setup a new model:
+1.  Create a file structured like a module (i.e. starting with `module MODELNAME`  and ending ` end` )
+2. In this file write the forcing function with arguments `x, y, z, t` , then ALL core tracers (i.e. even if a function doesn't depend on some fields include them as arguments anyway), and finally `params` 
+3. Define a tuple with the core tracers listed called `tracers` 
+4. Define a NamedTuple of the forcing functions for each tracer named `forcing_functions` 
+5. Define a named tuple `sinking`  where any fields which have a sinking forcing should be listed with a function of `z`  and `params` which calculates their sinking velocity
+6. For optional tracer sets (e.g. carbonate chemistry) define the forcing functions as above
+7. Define a NamedTuple for the sets of optional tracers named `optional_tracers`, where the optional sets are listed with a tuple of their tracers. E.g. `optional_tracers=(carbonates=(:DIC, :ALK), oxygen=(:OXY,))`
+8. If you are NOT defining any optional sets you must still define the optional tracers tuple but leave it empty (i.e. `optional_tracers=NameTuple()`), and the same for sinking
+9. Finally it is most likely useful to define the default parameters, hese can be listed in a separate file and included or listed directly as a NamedTuple. So far the default set has been named `default`     
+
+See the LOBSTER model for how functional PAR dependance can be dealt with.
 
 ### Oceananigans
 
@@ -109,23 +137,3 @@ model = NonhydrostaticModel(advection = UpwindBiasedFifthOrder(),
                             particles = kelp_particles)
 ``` 
 
-### Box model
-The models can now be used as 1D box models where the forcing functions are simply integrated. To set this up you just need to call `Setup.BoxModel`, for example:
-``` 
-model = Setup.BoxModel(:LOBSTER, params, (P=Pᵢ, Z=Zᵢ, D=Dᵢ, DD=DDᵢ, NO₃=NO₃ᵢ, NH₄=NH₄ᵢ, DOM=DOMᵢ), 0.0, 1.0*year)
-``` 
-Where `Pᵢ` etc. are the initial values. Then call solution = `BoxModel.run(model)` which will give the results and timestamps.
-
-### Defining a model
-To setup a new model:
-1.  Create a file structured like a module (i.e. starting with `module MODELNAME`  and ending ` end` )
-2. In this file write the forcing function with arguments `x, y, z, t` , then ALL core tracers (i.e. even if a function doesn't depend on some fields include them as arguments anyway), and finally `params` 
-3. Define a tuple with the core tracers listed called `tracers` 
-4. Define a NamedTuple of the forcing functions for each tracer named `forcing_functions` 
-5. Define a named tuple `sinking`  where any fields which have a sinking forcing should be listed with a function of `z`  and `params` which calculates their sinking velocity
-6. For optional tracer sets (e.g. carbonate chemistry) define the forcing functions as above
-7. Define a NamedTuple for the sets of optional tracers named `optional_tracers`, where the optional sets are listed with a tuple of their tracers. E.g. `optional_tracers=(carbonates=(:DIC, :ALK), oxygen=(:OXY,))`
-8. If you are NOT defining any optional sets you must still define the optional tracers tuple but leave it empty (i.e. `optional_tracers=NameTuple()`), and the same for sinking
-9. Finally it is most likely useful to define the default parameters, hese can be listed in a separate file and included or listed directly as a NamedTuple. So far the default set has been named `default`     
-
-See the LOBSTER model for how functional PAR dependance can be dealt with.
