@@ -27,7 +27,7 @@ ALK_forcing(x, y, z, t, NO₃, NH₄, P, Z, D, DD, DOM, DIC, ALK, PAR::AbstractF
 OXY_forcing(x, y, z, t, NO₃, NH₄, P, Z, D, DD, DOM, OXY, PAR::AbstractFloat, params) = nothing
 
 getPAR(PAR::Field, x, y, z, t) = Oceananigans.Fields.interpolate(PAR, Center(), Center(), Center(), PAR.grid, x, y, z)
-getPAR(PAR, x, y, z, t) = PAR(x, y, z, t)
+getPAR(PAR_func, x, y, z, t) = PAR_func(x, y, z, t)
 
 #source functions with PAR func
 Z_forcing(x, y, z, t, NO₃, NH₄, P, Z, D, DD, DOM, params) = Z_forcing(x, y, z, t, NO₃, NH₄, P, Z, D, DD, DOM, getPAR(params.PAR, x, y, z, t), params)

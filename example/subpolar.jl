@@ -26,7 +26,7 @@ using BGC
 params = LOBSTER.default
 
 ######## 1: import annual cycle physics data  #Global Ocean 1/12° Physics Analysis and Forecast updated Daily
-filename1 = "subpolar_physics.nc" # subtropical_physics.nc  subpolar_physics.nc
+filename1 = "subpolar_physics.nc" # subtropical_physics.nc  subpolar_physics.nc   #./example/
 #ncinfo(filename1)
 time_series_second = (0:364)days # start from zero if we don't use extrapolation, we cannot use extrapolation if we wana use annual cycle  
 so = ncread(filename1, "so");  #salinity
@@ -89,7 +89,7 @@ PAR_itp = Interpolations.interpolate((-depth_chl[end:-1:1], (0:364)day), PAR[end
 PAR_extrap = extrapolate(PAR_itp, (Line(),Throw()))  #  PAR_extrap(z, mod(t,364days))  Interpolations.extrapolate Method
 
 # Simulation duration    30days years
-duration=1years    #2years
+duration=20days    #2years
 # Define the grid
 
 Lx = 1   #500
@@ -119,11 +119,11 @@ u_bcs = FieldBoundaryConditions(top = FluxBoundaryCondition(Qᵘ))
 t_function(x, y, z, t) = temperature_itp(mod(t, 364days)) .+ 273.15
 s_function(x, y, z, t) = salinity_itp(mod(t, 364days))
 
-PAR = Oceananigans.Fields.Field{Center, Center, Center}(grid)
-#PAR(x, y, z, t) = PAR_extrap(mod(t, 364days), z)
+#PAR = Oceananigans.Fields.Field{Center, Center, Center}(grid)
+PAR_func(x, y, z, t) = PAR_extrap(z, mod(t, 364days))    #LoadError: cannot define function PAR; it already has a value. So I renamed it as PAR_func. z goes first, then t. 
 
 dic_bc = Boundaries.setupdicflux(params; forcings=(T=t_function, S=s_function))
-bgc = Setup.Oceananigans(:LOBSTER, grid, params, PAR, topboundaries=(DIC=dic_bc, ), optional_sets=(:carbonates, ))
+bgc = Setup.Oceananigans(:LOBSTER, grid, params, PAR_func, topboundaries=(DIC=dic_bc, ), optional_sets=(:carbonates, )) #renamed PAR as PAR_func
 
 #npz = Setup.Oceananigans(:NPZ, grid, NPZ.defaults)
 #κₜ(x, y, z, t) = 1e-2*max(1-(z+50)^2/50^2,0)+1e-5;
@@ -139,7 +139,8 @@ model = NonhydrostaticModel(advection = UpwindBiasedFifthOrder(),
                             closure = ScalarDiffusivity(ν=κₜ, κ=κₜ), 
                             forcing =  bgc.forcing,
                             boundary_conditions = merge((u=u_bcs, b=buoyancy_bcs), bgc.boundary_conditions),
-                            auxiliary_fields = (PAR=PAR, ))#comment out this line if using functional form of PAR
+                            #auxiliary_fields = (PAR=PAR, )  #comment out this line if using functional form of PAR
+                            )
 
 ## Random noise damped at top and bottom
 Ξ(z) = randn() * z / model.grid.Lz * (1 + z / model.grid.Lz) # noise
@@ -158,8 +159,8 @@ DDᵢ(x,y,z)=0
 NO₃ᵢ(x,y,z)= (1-tanh((z+300)/150))/2*6+11.4   #  # 17.5*(1-tanh((z+100)/10))/2
 NH₄ᵢ(x,y,z)= (1-tanh((z+300)/150))/2*0.05+0.05       #1e-1*(1-tanh((z+100)/10))/2
 DOMᵢ(x,y,z)= 0 
-DICᵢ(x,y,z)= 2380   #  mmol/m^-3
-ALKᵢ(x,y,z)= 2720   #  mmol/m^-3
+DICᵢ(x,y,z)= 2200   #  mmol/m^-3
+ALKᵢ(x,y,z)= 2400   #  mmol/m^-3
 
 ## `set!` the `model` fields using functions or constants:
 set!(model, b=bᵢ, P=Pᵢ, Z=Zᵢ, D=Dᵢ, DD=DDᵢ, NO₃=NO₃ᵢ, NH₄=NH₄ᵢ, DOM=DOMᵢ,DIC=DICᵢ,ALK=ALKᵢ, u=0, v=0, w=0)
@@ -167,8 +168,7 @@ set!(model, b=bᵢ, P=Pᵢ, Z=Zᵢ, D=Dᵢ, DD=DDᵢ, NO₃=NO₃ᵢ, NH₄=NH�
 # ## Setting up a simulation
 
 simulation = Simulation(model, Δt=200, stop_time=duration)  #Δt=0.5*(Lz/Nz)^2/1e-2,
-
-simulation.callbacks[:update_par] = Callback(Light.update_2λ!, IterationInterval(1), merge(params, (surface_PAR=surface_PAR,)))#comment out if using PAR functiuon
+#simulation.callbacks[:update_par] = Callback(Light.update_2λ!, IterationInterval(1), merge(params, (surface_PAR=surface_PAR,)))#comment out if using PAR functiuon
 
 ## Print a progress message
 progress_message(sim) = @printf("Iteration: %04d, time: %s, Δt: %s, wall time: %s\n",
@@ -197,7 +197,7 @@ simulation.callbacks[:pco2] = Callback(pco2, IterationInterval(Int(1day/simulati
 # Vertical slice
 simulation.output_writers[:profiles] =
     JLD2OutputWriter(model, merge(model.velocities, model.tracers, model.auxiliary_fields),
-                          filename = "profile_subpolar3.jld2",
+                          filename = "profile_subpolar.jld2",
                           indices = (1, 1, :),
                           schedule = TimeInterval(1days),     #TimeInterval(1days),
                             overwrite_existing = true)
@@ -226,5 +226,5 @@ xw, yw, zw = nodes(model.velocities.w)
 xb, yb, zb = nodes(model.tracers.b)
 
 results = BGC.Plot.load_tracers(simulation)
-BGC.Plot.profiles(res)
-savefig("annual_cycle_subpolar_highinit.pdf")
+BGC.Plot.profiles(results)
+savefig("annual_cycle_subpolar_test.pdf")
