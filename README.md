@@ -1,5 +1,6 @@
 ![](Logo_text.jpg?raw=true)
-Ocean Biogeochemial Modelling Environment
+
+### Ocean Biogeochemial Modelling Environment
 
 ## Description
 OceanBioME was developed with generous support from the Cambridge Centre for Climate Repair [CCRC](https://www.climaterepair.cam.ac.uk) as a tool to study the effectiveness and impacts of ocean carbon dioxide removal (CDR) strategies.
