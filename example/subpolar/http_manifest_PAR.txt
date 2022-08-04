@@ -1,0 +1,3 @@
+https://oceandata.sci.gsfc.nasa.gov/cgi/getfile/requested_files_1.tar?h=ocdist302&p=/data1/006022c068b1216b/requested_files
+
+this is for PAR
