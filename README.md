@@ -1,4 +1,4 @@
-# OceanBioME.jl
+![](Logo_text.jpg?raw=true)
 Ocean Biogeochemial Modelling Environment
 
 ## Description
