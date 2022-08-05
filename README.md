@@ -10,7 +10,7 @@ OceanBioME is a flexible modelling enviornment written in Julia for modelling th
 
 - Activate julia with the `--project` flag pointed to this directory, i.e. `julia --project`
 - Ensure all the dependencies are installed by typing `] instantiate` or `using Pkg; Pkg,instantiate()` (if the dependencies are not currently listed properly you may have to manually add them)
-- Now you can use the package with `using OceanBioME` as usual
+- Now you can use the package with `using BGC` as usual
 
 ## Usage overview
 OceanBioME can be used as a stand-alone box model or coupled with ocean physics using Oceananigans.jl
