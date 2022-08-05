@@ -35,6 +35,6 @@ solution = BoxModel.run(model)
 values = vcat(transpose.(solution.u)...)
 plts=[]
 for (i, tracer) in enumerate(model.tracers)
-    push!(plts, plot(solution.t[1:400:end]/day, values[1:400:end, i], ylabel=tracer, xlabel="Day"))
+    push!(plts, plot(solution.t[1:400:end]/day, values[1:400:end, i], ylabel=tracer, xlabel="Day", legend=false))
 end
 plot(plts...)
