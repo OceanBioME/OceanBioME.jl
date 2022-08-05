@@ -16,7 +16,7 @@ OceanBioME is a flexible modelling enviornment written in Julia for modelling th
 OceanBioME can be used as a stand-alone box model or coupled with ocean physics using Oceananigans.jl
 
 ### Box model
-To set up OceanBioME as a box model, call `Setup.BoxModel` with the biogeochemical model of your choice. For example to use the LOBSETER model:
+To set up OceanBioME as a box model, call `Setup.BoxModel` with the biogeochemical model of your choice. For example to use the LOBSTER model:
 ``` 
 model = Setup.BoxModel(:LOBSTER, params, (P=Pᵢ, Z=Zᵢ, D=Dᵢ, DD=DDᵢ, NO₃=NO₃ᵢ, NH₄=NH₄ᵢ, DOM=DOMᵢ), 0.0, 1.0*year)
 ``` 
