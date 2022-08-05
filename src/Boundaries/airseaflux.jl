@@ -24,7 +24,7 @@ end
 k(gas::Symbol, T, params)=0.39*(0.01/3600)*params.uₐᵥ^2*(Sc(T, getproperty(params.Sc_params, gas))/660)^(-0.5)#m/s, may want to add variable wind speed instead of average wind here at some point
 Sc(T, params) = params.A-params.B*T+params.C*T^2-params.D*T^3
 
-α(gas::Symbol, T, params)=β(T+273.15, S, getproperty(params.β_params, gas))/(T+273.15)
+α(gas::Symbol, T, S, params)=β(T+273.15, S, getproperty(params.β_params, gas))/(T+273.15)
 β(T, S, params) = exp(params.A₁+params.A₂*(100/T)+params.A₃*log(T/100)+S*(params.B₁+params.B₂*(T/100)+params.B₃*(T/100)^2))
 
 #now fairly sure that this is giving the correct result (for CO₂  as βρ is the henrys coefficient which sould be ∼34mol/m³ atm
@@ -33,9 +33,11 @@ K(gas::Symbol, T, S, params)=k(gas, T, params)*β(T+273.15, S, getproperty(param
 function airseaflux(x, y, t, T::AbstractFloat, S::AbstractFloat, conc::AbstractFloat, params)
     #https://agupubs.onlinelibrary.wiley.com/doi/epdf/10.1029/92JC00188 could add chemical enhancement factor
     if params.gas in (:O₂, )#doing like this for flexability in the future
-        return k(params.gas, T, params)*(conc-α(T, S)*getproperty(params.conc_air, params.gas))
+        return k(params.gas, T, params)*(conc-α(params.gas, T, S, params)*getproperty(params.conc_air, params.gas))
     elseif params.gas in (:CO₂, )
         return K(params.gas, T, S, params)*(conc-getproperty(params.conc_air, params.gas))/(1000)#mol*ppmv/m^2*atm*s to mmolC/m²s not sure this is correct
+    else
+        throw(ArgumentError("Invalid gas choice for airseaflux"))
     end
 end
 

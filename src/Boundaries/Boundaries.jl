@@ -17,13 +17,14 @@ Soetaert, K., Middelburg, J., Herman, P. and Buis, K., 2000. On the coupling of 
 Wanninkhof, R., 1992. Relationship between wind speed and gas exchange over the ocean. Journal of Geophysical Research, 97(C5), p.7373.
 "
 module Boundaries
-using Roots, Oceananigans
+using Roots, Oceananigans, KernelAbstractions
 using Oceananigans.Units: second, minute, minutes, hour, hours, day, days, year, years
+using Oceananigans.Architectures: device
 
 const defaults = (
     airseaflux = (
         field_dependencies = (
-            O₂ = (:O₂, ),
+            O₂ = (:OXY, ),
             CO₂ = (:DIC, :ALK)
         ),
         Sc_params = (
@@ -38,7 +39,7 @@ const defaults = (
         ρₒ = 1026, # kg m⁻³, average density at the surface of the world ocean
         conc_air = (
             CO₂=413.3,#ppmv
-            O₂=209*0.0409/32#ppm from https://agupubs.onlinelibrary.wiley.com/doi/10.1029/2010JC006446 to mmolO₂/m³ (https://teesing.com/en/library/tools/ppm-mg3-converter not a very good source I know)
+            O₂=209*0.0409*100/32#ppm from https://agupubs.onlinelibrary.wiley.com/doi/10.1029/2010JC006446 to mmolO₂/m³ (https://teesing.com/en/library/tools/ppm-mg3-converter not a very good source I know)
         #this conversion is at STP(?)
         ),#may want to make these variable at some point (along with wind speed)
         uₐᵥ=10#m/s https://rmets.onlinelibrary.wiley.com/doi/10.1002/joc.6957
@@ -53,5 +54,5 @@ const defaults = (
 )
 
 include("airseaflux.jl")
-#include("sediment.jl")
+include("sediment.jl")
 end

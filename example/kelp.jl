@@ -154,7 +154,7 @@ begin #Setup the kelp particles
 
             p *= A_new / (60*60*24*12*0.001)#gC/dm^2/hr to mmol C/s
             e *= p#mmol C/s
-            ν *= A_new*N_new / (60*60*24*14*0.001)#1/hr to mmol N/s
+            ν *= A_new*(N_new + params.paramset.N_struct) / (60*60*24*14*0.001)#1/hr to mmol N/s
             j *= A_new / (60*60*24*14*0.001)#gN/dm^2/hr to mmol N/s
         else
             A_new, N_new, C_new, j, p, e, ν = 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0
@@ -191,8 +191,8 @@ begin #Setup the kelp particles
 
     n_kelp = 100
 
-    x₀ₖ = Lx*rand(n_kelp)
-    y₀ₖ = Ly*rand(n_kelp)
+    x₀ₖ = (Lx/2)*ones(n_kelp)
+    y₀ₖ = (Ly/2)*ones(n_kelp)
     z₀ₖ = [-100:-1;]
 
     #incluidng velocity for later use
@@ -216,15 +216,15 @@ begin #Setup the kelp particles
     source_fields = ((tracer=:NO₃, property=:NO₃, scalefactor=1.0), 
                             (tracer=:PAR, property=:PAR, scalefactor=1.0))
     sink_fields = ((tracer=:NO₃, property=:j, scalefactor=-1.0), 
-                        (tracer=:DIC, property=:p, scalefactor=-1.0
-                        (tracer=:DOM, property=:e, scalefactor=1.0/Rd_dom),
+                        (tracer=:DIC, property=:p, scalefactor=-1.0),
+                        (tracer=:DOM, property=:e, scalefactor=1.0/params.Rd_dom),
                         (tracer=:DD, property=:ν, scalefactor=1.0))
     #need to change urel at some point
     kelp_particles = Particles.setup(particles, sugarkelpequations, 
                                         (:A, :N, :C, :NO₃, :PAR), #forcing function property dependencies
                                         (urel=0.15, temp=temperature_itp, λ=λ_arr, resp_model=2, paramset=SugarKelp.broch2013params), #forcing function parameters
                                         (), #forcing function integrals - changed all kelp model variables to diagnostic since it is much easier to enforce the extreme carbon limit correctly
-                                        (:A, :N, :C, :j), #forcing function diagnostic fields
+                                        (:A, :N, :C, :j, :p, :e, :ν), #forcing function diagnostic fields
                                         source_fields,
                                         sink_fields,
                                         100.0)#density (100 per meter down)

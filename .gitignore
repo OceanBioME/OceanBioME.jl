@@ -1,0 +1,54 @@
+# Julia stuff
+*.jl.cov
+*.jl.*.cov
+*.jl.mem
+*.mem
+deps/deps.jl
+
+# Swap files.
+*.swp
+*~
+
+# Documenter.jl and MkDocs
+docs/build
+docs/site
+docs/src/generated
+
+# Model output
+*.dat
+*.data
+*.nc
+*.jld2
+
+# Checkpointer model serialization
+*.jlser
+*.jld
+
+# Plots
+*.png
+*.svg
+*.gif
+*.mp4
+
+# Benchmark output
+*.html
+*.json
+*.bson
+
+# Profiler output
+*.qdrep
+
+# Grid files
+*.tgz
+*.bin
+*.m
+
+# Jupyter Lab stuff and notebooks
+*.ipynb
+.ipynb_checkpoints
+
+# MacOS stuff
+*.DS_Store
+
+# VSCode
+.vscode

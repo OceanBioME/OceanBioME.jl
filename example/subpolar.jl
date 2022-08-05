@@ -89,19 +89,31 @@ PAR_itp = Interpolations.interpolate((-depth_chl[end:-1:1], (0:364)day), PAR[end
 PAR_extrap = extrapolate(PAR_itp, (Line(),Throw()))  #  PAR_extrap(z, mod(t,364days))  Interpolations.extrapolate Method
 
 # Simulation duration    30days years
-duration=1year#2years
+duration=2years
 # Define the grid
 
 Lx = 1   #500
 Ly = 500
 Nx = 1
 Ny = 1
-Nz = 50 # number of points in the vertical direction
+Nz = 33 # number of points in the vertical direction
 Lz = 600 # domain depth             # subpolar mixed layer depth max 427m 
+
+#inspired by mixing layer example and fitted parameters to copurnicus grid profile
+refinement = -4.9118e9
+stretching = 5.754
+h(k) = (k-1)/ Nz
+ζ₀(k) = 1 + (h(k) - 1) / refinement
+Σ(k) = (1 - exp(-stretching * h(k))) / (1 - exp(-stretching))
+z_faces(k) = Lz * (ζ₀(k) * Σ(k) - 1)
+
 
 grid = RectilinearGrid(
                 size=(Nx, Ny, Nz), 
-                extent=(Lx, Ly, Lz))
+                x=(0,Lx),
+                y=(0,Ly),
+                z=z_faces)
+
 
 B₀ = 0e-8    #m²s⁻³  B₀ = 4.24e-8  
 N² = 9e-6    #dbdz=N^2, s⁻²
@@ -123,7 +135,9 @@ PAR = Oceananigans.Fields.Field{Center, Center, Center}(grid)
 #PAR(x, y, z, t) = PAR_extrap(mod(t, 364days), z)
 
 dic_bc = Boundaries.airseasetup(:CO₂, forcings=(T=t_function, S=s_function))
-bgc = Setup.Oceananigans(:LOBSTER, grid, params, PAR, topboundaries=(DIC=dic_bc, ), optional_sets=(:carbonates, ))
+oxy_bc = Boundaries.airseasetup(:O₂, forcings=(T=t_function, S=s_function))
+
+bgc = Setup.Oceananigans(:LOBSTER, grid, params, PAR, topboundaries=(DIC=dic_bc, OXY=oxy_bc), optional_sets=(:carbonates, :oxygen))
 @info "Setup BGC"
 #npz = Setup.Oceananigans(:NPZ, grid, NPZ.defaults)
 #κₜ(x, y, z, t) = 1e-2*max(1-(z+50)^2/50^2,0)+1e-5;
@@ -139,7 +153,7 @@ model = NonhydrostaticModel(advection = UpwindBiasedFifthOrder(),
                             closure = ScalarDiffusivity(ν=κₜ, κ=κₜ), 
                             forcing =  bgc.forcing,
                             boundary_conditions = merge((u=u_bcs, b=buoyancy_bcs), bgc.boundary_conditions),
-                            auxiliary_fields = (PAR=PAR, ))#comment out this line if using functional form of PAR
+                            auxiliary_fields = (PAR=PAR,))#merge((PAR=PAR, ), sediment_bcs.auxiliary_fields))#comment out this line if using functional form of PAR
 
 ## Random noise damped at top and bottom
 Ξ(z) = randn() * z / model.grid.Lz * (1 + z / model.grid.Lz) # noise
@@ -160,9 +174,10 @@ NH₄ᵢ(x,y,z)= (1-tanh((z+300)/150))/2*0.05+0.05       #1e-1*(1-tanh((z+100)/1
 DOMᵢ(x,y,z)= 0 
 DICᵢ(x,y,z)= 2380   #  mmol/m^-3
 ALKᵢ(x,y,z)= 2720   #  mmol/m^-3
+OXYᵢ(x, y, z) = 240 #mmol/m^-3
 
 ## `set!` the `model` fields using functions or constants:
-set!(model, b=bᵢ, P=Pᵢ, Z=Zᵢ, D=Dᵢ, DD=DDᵢ, NO₃=NO₃ᵢ, NH₄=NH₄ᵢ, DOM=DOMᵢ,DIC=DICᵢ,ALK=ALKᵢ, u=0, v=0, w=0)
+set!(model, b=bᵢ, P=Pᵢ, Z=Zᵢ, D=Dᵢ, DD=DDᵢ, NO₃=NO₃ᵢ, NH₄=NH₄ᵢ, DOM=DOMᵢ,DIC=DICᵢ, ALK=ALKᵢ, OXY=OXYᵢ, u=0, v=0, w=0)
 
 # ## Setting up a simulation
 
@@ -197,10 +212,10 @@ simulation.callbacks[:pco2] = Callback(pco2, IterationInterval(Int(1day/simulati
 # Vertical slice
 simulation.output_writers[:profiles] =
     JLD2OutputWriter(model, merge(model.velocities, model.tracers, model.auxiliary_fields),
-                          filename = "profile_subpolar_airsea.jld2",
+                          filename = "profile_subpolar_nonlin_grid.jld2",
                           indices = (1, 1, :),
                           schedule = TimeInterval(1days),     #TimeInterval(1days),
-                            overwrite_existing = true)
+                          overwrite_existing = true)
 
 #simulation.output_writers[:particles] = JLD2OutputWriter(model, (particles=model.particles,), 
 #                            prefix = "particles",
@@ -227,4 +242,4 @@ xb, yb, zb = nodes(model.tracers.b)
 
 results = BGC.Plot.load_tracers(simulation)
 BGC.Plot.profiles(results)
-#savefig("annual_cycle_subpolar_highinit.pdf")
+savefig("subpolar_nonlin_grid.pdf")
