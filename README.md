@@ -8,7 +8,7 @@ OceanBioME is a flexible modelling enviornment written in Julia for modelling th
 
 ## Installation (before release):
 
-- Activate julia with the `--project` flag pointed to this directory, i.e. `julia --project`, or using '] activate .' from the Julia REPL
+- Activate julia with the `--project` flag pointed to this directory, i.e. `julia --project`, or using `] activate .` from the Julia REPL
 - Ensure all the dependencies are installed by typing `] instantiate` or `using Pkg; Pkg,instantiate()` (if the dependencies are not currently listed properly you may have to manually add them)
 - Now you can use the package with `using BGC` as usual
 
