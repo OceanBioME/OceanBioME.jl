@@ -1,4 +1,4 @@
-![](Logo_text.jpg?raw=true)
+![](Logo_text_CCRC.jpg?raw=true)
 ### Ocean Biogeochemial Modelling Environment
 
 ## Description
