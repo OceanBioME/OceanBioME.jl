@@ -19,17 +19,18 @@ end
 
 surface_PAR_itp = LinearInterpolation((0:364)*day, par_mean_timeseries) # create a function to interpolate
 
-z=-10 # specify the depth
 
-Pᵢ = (tanh((z+250)/100)+1)/2*(0.038)+0.002          # ((tanh((z+100)/50)-1)/2*0.23+0.23)*16/106  
-Zᵢ = (tanh((z+250)/100)+1)/2*(0.038)+0.008          # ((tanh((z+100)/50)-1)/2*0.3+0.3)*16/106         
-Dᵢ =0
-DDᵢ =0
-NO₃ᵢ = (1-tanh((z+300)/150))/2*6+11.4   #  # 17.5*(1-tanh((z+100)/10))/2
-NH₄ᵢ = (1-tanh((z+300)/150))/2*0.05+0.05       #1e-1*(1-tanh((z+100)/10))/2
+# Set the initial conditions
+Pᵢ = 0.1
+Zᵢ = 0.01            
+Dᵢ = 0
+DDᵢ = 0
+NO₃ᵢ = 1
+NH₄ᵢ = 0.1
 DOMᵢ = 0 
 
-PAR(x, y, z, t) = surface_PAR_itp(mod(t,364*day))*exp(z*0.2) # 
+z=-10 # specify the depth for the light level
+PAR(x, y, z, t) = surface_PAR_itp(mod(t,364*day))*exp(z*0.2) # Set the PAR
 
 # Create a list of parameters.  Here, use the default parameters from the LOBSTER model with the PAR function
 params = merge(LOBSTER.default, (PAR=PAR, ))
