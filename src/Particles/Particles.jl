@@ -61,8 +61,12 @@ function dynamics!(particles, model, Δt)
     for tracked_field in particles.parameters.tracked_fields
         if tracked_field.tracer in keys(model.tracers)
             tracer = getproperty(model.tracers, tracked_field.tracer)
-        else
+        elseif tracked_field.tracer in keys(model.auxiliary_fields)
             tracer = getproperty(model.auxiliary_fields, tracked_field.tracer)
+        elseif tracked_field.tracer in (:u, :v, :w)
+            tracer = getproperty(model.velocities, tracked_field.tracer)
+        else
+            throw(ArgumentError("$(tracked_field.tracer) is not a model field that can be tracked"))
         end
         
         particle_property = getproperty(particles.properties, tracked_field.property)
@@ -78,7 +82,7 @@ function dynamics!(particles, model, Δt)
     function_parameters = model.particles.parameters.equation_parameters
 
     property_update_kernal! = property_update!(device(model.architecture), workgroup, worksize)
-    property_update_event = property_update_kernal!(model.particles, model.particles.parameters.equation, function_arguments, function_parameters, model.particles.parameters.integrals, model.particles.parameters.diagnostics, Δt, model.clock.time)
+    property_update_event = property_update_kernal!(model.particles, model.particles.parameters.equation, function_arguments, function_parameters, model.particles.parameters.integrals, model.particles.parameters.tracked, Δt, model.clock.time)
     wait(property_update_event)
 
     #update source/sinks
@@ -101,12 +105,12 @@ end
 #Perhaps this should just be an overloading of the function name LagrangianParticles with different arguments
 function setup(particles::StructArray, equation::Function, equation_arguments::NTuple{N, Symbol} where N, 
     equation_parameters::NamedTuple, integrals::NTuple{N, Symbol} where N, 
-    diagnostics::NTuple{N, Symbol} where N, 
+    tracked::NTuple{N, Symbol} where N, 
     tracked_fields::NTuple{N, NamedTuple{(:tracer, :property, :scalefactor), Tuple{Symbol, Symbol, Float64}}} where N, 
     sink_fields::NTuple{N, NamedTuple{(:tracer, :property, :scalefactor), Tuple{Symbol, Symbol, Float64}}} where N, 
     density::AbstractFloat, custom_dynamics=no_dynamics)
     
-    for property in (equation_arguments..., integrals..., diagnostics...)
+    for property in (equation_arguments..., integrals..., tracked...)
         if !(property in propertynames(particles))
             throw(ArgumentError("$property is a required field but $(eltype(particles)) has no property $property."))
         end
@@ -125,7 +129,7 @@ function setup(particles::StructArray, equation::Function, equation_arguments::N
                                     equation_arguments=equation_arguments,
                                     equation_parameters=equation_parameters,
                                     integrals=integrals,
-                                    diagnostics=diagnostics,
+                                    tracked=tracked,
                                     density=density, 
                                     tracked_fields=tracked_fields,
                                     sink_fields=sink_fields,
