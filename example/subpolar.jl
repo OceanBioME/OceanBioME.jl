@@ -209,13 +209,17 @@ simulation.callbacks[:pco2] = Callback(pco2, IterationInterval(Int(1day/simulati
 # We then set up the simulation:
 
 # Vertical slice
+#=doesn't work with nonlin grid apparently
 simulation.output_writers[:profiles] =
     JLD2OutputWriter(model, merge(model.velocities, model.tracers, model.auxiliary_fields),
                           filename = "profile_subpolar_nonlin_grid.jld2",
                           indices = (1, 1, :),
                           schedule = TimeInterval(1days),     #TimeInterval(1days),
-                          overwrite_existing = true)
-
+                          overwrite_existing = true)=#
+                          
+fields = Dict("P" => model.tracers.P, "Z" => model.tracers.Z, "D" => model.tracers.D, "DD" => model.tracers.DD, "DOM" => model.tracers.DOM, "DIC" => model.tracers.DIC, "ALK" => model.tracers.ALK, "OXY" => model.tracers.OXY, "PAR" => model.auxiliary_fields.PAR, "NO₃" => model.tracers.NO₃, "NH₄" => model.tracers.NH₄)
+simulation.output_writers[:field_writer] =
+                              NetCDFOutputWriter(model, fields, filename="nonlin_grid.nc", schedule=TimeInterval(1days))
 #simulation.output_writers[:particles] = JLD2OutputWriter(model, (particles=model.particles,), 
 #                            prefix = "particles",
 #                          schedule = TimeInterval(1minute),
