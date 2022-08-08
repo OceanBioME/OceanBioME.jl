@@ -126,8 +126,113 @@ end
 dic_bc = Boundaries.airseasetup(:CO₂, forcings=(T=t_function, S=s_function))
 bgc = Setup.Oceananigans(:LOBSTER, grid, params, PAR, topboundaries=(DIC=dic_bc, ), optional_sets=(:carbonates, ))
 @info "Setup BGC model"
+<<<<<<< HEAD
 z₀ = [-100:-1;]
 kelp_particles = SLatissima.setup(100, Lx/2, Ly/2, z₀, 30.0, 0.1, 0.01, 57.5, 100.0, t_function, s_function, 0.15)#0.0, 0.0, 0.0, 57.5, 100.0, T=t_function, S=s_function, urel=0.15)
+=======
+
+begin #Setup the kelp particles
+    ##refactor equations so they return in the correct units etc
+    function sugarkelpequations(x, y, z, t, A, N, C, NO₃, irr, params, Δt)
+        if !iszero(A)
+            temp=params.temp(mod(t, 364days))
+
+            p=SugarKelp.p(temp, irr, params.paramset)
+            e=SugarKelp.e(C, params.paramset)
+            μ = SugarKelp.eval_μ(A, N, C, temp, params.λ[1+floor(Int, mod(t, 364days)/day)], params.paramset)
+            j = SugarKelp.eval_j(NO₃, N, params.urel, params.paramset)
+            ν = SugarKelp.ν(A, params.paramset)
+            dA = (μ - ν) * A / (60*60*24)
+            dN = (j / params.paramset.K_A - μ * (N + params.paramset.N_struct)) / (60*60*24)
+            dC = ((p* (1 - e) - SugarKelp.r(temp, μ, j, params.resp_model, params.paramset)) / params.paramset.K_A - μ * (C + params.paramset.C_struct)) / (60*60*24)
+
+            A_new = A+dA*Δt 
+            N_new = N+dN*Δt 
+            C_new = C+dC*Δt
+
+            if C_new < params.paramset.C_min
+                A_new *= (1-(params.paramset.C_min - C)/params.paramset.C_struct)
+                C_new = params.paramset.C_min
+            end
+
+            p *= A_new / (60*60*24*12*0.001)#gC/dm^2/hr to mmol C/s
+            e *= p#mmol C/s
+            ν *= A_new*(N_new + params.paramset.N_struct) / (60*60*24*14*0.001)#1/hr to mmol N/s
+            j *= A_new / (60*60*24*14*0.001)#gN/dm^2/hr to mmol N/s
+        else
+            A_new, N_new, C_new, j, p, e, ν = 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0
+        end
+        return (A = A_new, N = N_new, C = C_new, j = j, p = p, e = e, ν = ν)
+    end
+
+    lat=57.5
+    λ_arr=SugarKelp.gen_λ(lat)
+
+    struct Kelp
+        #position
+        x :: AbstractFloat
+        y :: AbstractFloat
+        z :: AbstractFloat
+        #velocity
+        u :: AbstractFloat
+        v :: AbstractFloat
+        w :: AbstractFloat
+        #properties
+        ##integral fields
+        A :: AbstractFloat
+        N :: AbstractFloat
+        C :: AbstractFloat
+        ##diagnostic fields
+        j :: AbstractFloat
+        p :: AbstractFloat
+        e :: AbstractFloat
+        ν :: AbstractFloat
+        #tracked fields
+        NO₃  :: AbstractFloat
+        PAR :: AbstractFloat
+    end
+
+    n_kelp = 100
+
+    x₀ₖ = (Lx/2)*ones(n_kelp)
+    y₀ₖ = (Ly/2)*ones(n_kelp)
+    z₀ₖ = [-100:-1;]
+
+    #incluidng velocity for later use
+    u₀ₖ = zeros(n_kelp)
+    v₀ₖ = zeros(n_kelp)
+    w₀ₖ = zeros(n_kelp)
+
+    #start it off dead so it doesn't effect the BGC burnin
+    a₀ = zeros(n_kelp)
+    n₀ = zeros(n_kelp)
+    c₀ = zeros(n_kelp)
+    j₀ = zeros(n_kelp)
+    p₀ = zeros(n_kelp)
+    e₀ = zeros(n_kelp)
+    ν₀ = zeros(n_kelp)
+    NO₃₀ = zeros(n_kelp)
+    PAR₀ = zeros(n_kelp)
+
+    particles = StructArray{Kelp}((x₀ₖ, y₀ₖ, z₀ₖ, u₀ₖ, v₀ₖ, w₀ₖ, a₀, n₀, c₀, j₀, p₀, e₀, ν₀, NO₃₀, PAR₀))
+
+    source_fields = ((tracer=:NO₃, property=:NO₃, scalefactor=1.0), 
+                            (tracer=:PAR, property=:PAR, scalefactor=1.0))
+    sink_fields = ((tracer=:NO₃, property=:j, scalefactor=-1.0), 
+                        (tracer=:DIC, property=:p, scalefactor=-1.0),
+                        (tracer=:DOM, property=:e, scalefactor=1.0/params.Rd_dom),
+                        (tracer=:DD, property=:ν, scalefactor=1.0))
+    #need to change urel at some point
+    kelp_particles = Particles.setup(particles, sugarkelpequations, 
+                                        (:A, :N, :C, :NO₃, :PAR), #forcing function property dependencies
+                                        (urel=0.15, temp=temperature_itp, λ=λ_arr, resp_model=2, paramset=SugarKelp.broch2013params), #forcing function parameters
+                                        (), #forcing function integrals - changed all kelp model variables to diagnostic since it is much easier to enforce the extreme carbon limit correctly
+                                        (:A, :N, :C, :j, :p, :e, :ν), #forcing function diagnostic fields
+                                        source_fields,
+                                        sink_fields,
+                                        100.0)#density (100 per meter down)
+end
+>>>>>>> 91be731640d6087f1803b11c23f7c0b444b4b67a
 @info "Defined kelp particles"
 
 @inline κₜ(x, y, z, t) = 1e-2*max(1-(z+mld_itp(mod(t,364days))/2)^2/(mld_itp(mod(t,364days))/2)^2,0)+1e-5;
