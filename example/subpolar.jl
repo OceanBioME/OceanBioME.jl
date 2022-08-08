@@ -26,7 +26,7 @@ using BGC
 params = LOBSTER.defaults
 
 ######## 1: import annual cycle physics data  #Global Ocean 1/12° Physics Analysis and Forecast updated Daily
-filename1 = "subpolar_physics.nc" # subtropical_physics.nc  subpolar_physics.nc
+filename1 = "subpolar_physics.nc" # subtropical_physics.nc  subpolar_physics.nc   #./example/
 #ncinfo(filename1)
 time_series_second = (0:364)days # start from zero if we don't use extrapolation, we cannot use extrapolation if we wana use annual cycle  
 so = ncread(filename1, "so");  #salinity
@@ -131,8 +131,8 @@ u_bcs = FieldBoundaryConditions(top = FluxBoundaryCondition(Qᵘ))
 t_function(x, y, z, t) = temperature_itp(mod(t, 364days))
 s_function(x, y, z, t) = salinity_itp(mod(t, 364days))
 
-PAR = Oceananigans.Fields.Field{Center, Center, Center}(grid)
-#PAR(x, y, z, t) = PAR_extrap(mod(t, 364days), z)
+#PAR = Oceananigans.Fields.Field{Center, Center, Center}(grid)
+PAR_func(x, y, z, t) = PAR_extrap(z, mod(t, 364days))    #LoadError: cannot define function PAR; it already has a value. So I renamed it as PAR_func. z goes first, then t. 
 
 dic_bc = Boundaries.airseasetup(:CO₂, forcings=(T=t_function, S=s_function))
 oxy_bc = Boundaries.airseasetup(:O₂, forcings=(T=t_function, S=s_function))
@@ -182,8 +182,7 @@ set!(model, b=bᵢ, P=Pᵢ, Z=Zᵢ, D=Dᵢ, DD=DDᵢ, NO₃=NO₃ᵢ, NH₄=NH�
 # ## Setting up a simulation
 
 simulation = Simulation(model, Δt=200, stop_time=duration)  #Δt=0.5*(Lz/Nz)^2/1e-2,
-
-simulation.callbacks[:update_par] = Callback(Light.update_2λ!, IterationInterval(1), merge(params, (surface_PAR=surface_PAR,)))#comment out if using PAR functiuon
+#simulation.callbacks[:update_par] = Callback(Light.update_2λ!, IterationInterval(1), merge(params, (surface_PAR=surface_PAR,)))#comment out if using PAR functiuon
 
 ## Print a progress message
 progress_message(sim) = @printf("Iteration: %04d, time: %s, Δt: %s, wall time: %s\n",
