@@ -21,14 +21,14 @@ using Statistics
 using Oceananigans#9e8cae18-63c1-5223-a75c-80ca9d6e9a09
 using Oceananigans.Units: second,minute, minutes, hour, hours, day, days, year, years
 
-using BGC, SugarKelp, StructArrays
+using OceanBioME, SugarKelp, StructArrays
 
 params = LOBSTER.defaults
 
 
 begin#Load data
     ######## 1: import annual cycle physics data  #Global Ocean 1/12° Physics Analysis and Forecast updated Daily
-    filename1 = "subpolar_physics.nc" # subtropical_physics.nc  subpolar_physics.nc
+    filename1 = "OceanBioME_example_data/subpolar_physics.nc" # subtropical_physics.nc  subpolar_physics.nc
     #ncinfo(filename1)
     time_series_second = (0:364)days # start from zero if we don't use extrapolation, we cannot use extrapolation if we wana use annual cycle  
     so = ncread(filename1, "so");  #salinity
@@ -49,14 +49,14 @@ begin#Load data
     #plot(mixed_layer_depth)
 
     ######## 2: import annual cycle chl data  #Global Ocean Biogeochemistry Analysis and Forecast
-    filename2 = "subpolar_chl.nc"    #subpolar_chl.nc
+    filename2 = "OceanBioME_example_data/subpolar_chl.nc"    #subpolar_chl.nc
     chl = ncread(filename2, "chl");  #chl scale_factor=1 add_offset=089639299014
     chl_mean = mean(chl, dims=(1,2))[1,1,:,1:365] # mg m-3, unit no need to change. 
     depth_chl = ncread(filename2, "depth");
     #heatmap(1:365, -depth_chl[end:-1:1], chl_mean[end:-1:1,:])
 
     ######## 3: import annual cycle PAR data #Ocean Color  VIIRS-SNPP PAR daily 9km
-    path="./subpolar/"    #subtropical   #./subpolar/
+    path="./OceanBioME_example_data/subpolar/"    #subtropical   #./subpolar/
     par_mean_timeseries=zeros(365)
     for i in 1:365    #https://discourse.julialang.org/t/leading-zeros/30450
         string_i = lpad(string(i), 3, '0')
@@ -211,12 +211,12 @@ run!(simulation)
 xw, yw, zw = nodes(model.velocities.w)
 xb, yb, zb = nodes(model.tracers.b)
 
-results = BGC.Plot.load_tracers(simulation)
-BGC.Plot.profiles(results)
+results = OceanBioME.Plot.load_tracers(simulation)
+OceanBioME.Plot.profiles(results)
 savefig("annual_cycle_subpolar_highinit_kelp.pdf")
 
-particles = BGC.Plot.load_particles(simulation)
-BGC.Plot.particles(particles)
+particles = OceanBioME.Plot.load_particles(simulation)
+OceanBioME.Plot.particles(particles)
 savefig("annual_cycle_subpolar_highinit_kelp_particles.pdf")
 
 #pCO2 plot

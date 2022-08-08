@@ -4,13 +4,16 @@
 ## Description
 OceanBioME was developed with generous support from the Cambridge Centre for Climate Repair [CCRC](https://www.climaterepair.cam.ac.uk) as a tool to study the effectiveness and impacts of ocean carbon dioxide removal (CDR) strategies.
 
-OceanBioME is a flexible modelling enviornment written in Julia for modelling the coupled interactions between ocean biogeochemistry, carbonate chemistry, and physics. OceanBioME can be run as a stand-alone box model, or coupled with Oceananigans.jl to run as a 1D column model or with 3D physics. 
+OceanBioME is a flexible modelling environment written in Julia for modelling the coupled interactions between ocean biogeochemistry, carbonate chemistry, and physics. OceanBioME can be run as a stand-alone box model, or coupled with Oceananigans.jl to run as a 1D column model or with 3D physics. 
 
 ## Installation (before release):
 
+- Pull this repo `git clone --depth 1 git@github.com:sichen-org/OceanBioME.jl.git` then move into this directory (i.e. `cd OceanBioME`)
 - Activate julia with the `--project` flag pointed to this directory, i.e. `julia --project`, or using `] activate .` from the Julia REPL
 - Ensure all the dependencies are installed by typing `] instantiate` or `using Pkg; Pkg,instantiate()` (if the dependencies are not currently listed properly you may have to manually add them)
-- Now you can use the package with `using BGC` as usual
+- Now you can use the package with `using OceanBioME` as usual
+
+> To use the examples you should also clone the [examples data](https://github.com/sichen-org/OceanBioME_example_data) repo into the examples folder by: `cd example; git clone --depth 1 git@github.com:sichen-org/OceanBioME_example_data.git`
 
 ## Usage overview
 OceanBioME can be used as a stand-alone box model or coupled with ocean physics using Oceananigans.jl
@@ -38,7 +41,7 @@ See the LOBSTER model for how functional PAR dependance can be dealt with.
 
 ### Oceananigans
 
-1. Define the physical dependencies: `T`, `S`, and `PAR`. Currently, these can be functions of `(x, y, z, t)`, or, for `T` and `S` tracer fields (performs much slower). Additionally, `PAR` can be an auxiliary field calculated by callbacks provided by BGC.jl. For example:
+1. Define the physical dependencies: `T`, `S`, and `PAR`. Currently, these can be functions of `(x, y, z, t)`, or, for `T` and `S` tracer fields (performs much slower). Additionally, `PAR` can be an auxiliary field calculated by callbacks provided by OceanBioME.jl. For example:
 ```
 t_function(x, y, z, t) = temperature_itp(mod(t, 364days)) .+ 273.15
 s_function(x, y, z, t) = salinity_itp(mod(t, 364days))
@@ -64,7 +67,7 @@ model = NonhydrostaticModel(...
                             auxiliary_fields = (PAR=PAR, ))
 ```
 
-4. Finally, once you have otherwise defined the simulation, setup the callback to update the PAR (here Light.update_2λ! is a function provided by BGC.jl that requires a surface PAR interpolant be passed to it. (At some point this will need to be updated to be an x, y, t interpolation).
+4. Finally, once you have otherwise defined the simulation, setup the callback to update the PAR (here Light.update_2λ! is a function provided by OceanBioME.jl that requires a surface PAR interpolant be passed to it. (At some point this will need to be updated to be an x, y, t interpolation).
 ```
 simulation.callbacks[:update_par] = Callback(Light.update_2λ!, IterationInterval(1), merge(params, (surface_PAR=surface_PAR,)))
 

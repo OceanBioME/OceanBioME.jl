@@ -1,4 +1,4 @@
-using BGC, Test, Oceananigans
+using OceanBioME, Test, Oceananigans
 
 grid = RectilinearGrid(size=(1,1,2), extent=(1,1,2))
 

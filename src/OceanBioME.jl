@@ -1,4 +1,4 @@
-module BGC
+module OceanBioME
 
 export LOBSTER, NPZ, Light, Boundaries, Particles, Setup, BoxModel, SLatissima
 

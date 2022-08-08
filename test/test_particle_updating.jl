@@ -1,4 +1,4 @@
-using BGC, Test, Oceananigans, StructArrays
+using OceanBioME, Test, Oceananigans, StructArrays
 
 mutable struct CustomParticle
     #position

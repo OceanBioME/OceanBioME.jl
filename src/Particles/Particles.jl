@@ -41,7 +41,7 @@ end
 
     @inbounds argument_values = [arg[p] for arg in arguments]
 
-    results = equation(particles.properties.x, particles.properties.y, particles.properties.z, t, argument_values..., params, Δt)
+    results = equation(particles.properties.x[p], particles.properties.y[p], particles.properties.z[p], t, argument_values..., params, Δt)
 
     for property in update_properties
         @inbounds getproperty(particles.properties, property)[p] += getproperty(results, property) *Δt

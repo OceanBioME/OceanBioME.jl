@@ -1,4 +1,4 @@
-name = "BGC"
+name = "OceanBioME"
 uuid = "a49af516-9db8-4be4-be45-1dad61c5a376"
 authors = ["Si Chen <sc2350@cam.ac.uk>", "Jago Strong-Wright <js2430@cam.ac.uk>", "John R Taylor <j.r.taylor@damtp.cam.ac.uk>"]
 version = "0.1.0"

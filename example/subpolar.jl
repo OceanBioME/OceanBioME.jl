@@ -21,12 +21,12 @@ using Statistics
 using Oceananigans#9e8cae18-63c1-5223-a75c-80ca9d6e9a09
 using Oceananigans.Units: second,minute, minutes, hour, hours, day, days, year, years
 
-using BGC
+using OceanBioME
 
 params = LOBSTER.defaults
 
 ######## 1: import annual cycle physics data  #Global Ocean 1/12° Physics Analysis and Forecast updated Daily
-filename1 = "subpolar_physics.nc" # subtropical_physics.nc  subpolar_physics.nc   #./example/
+filename1 = "OceanBioME_example_data/subpolar_physics.nc" # subtropical_physics.nc  subpolar_physics.nc   #./example/
 #ncinfo(filename1)
 time_series_second = (0:364)days # start from zero if we don't use extrapolation, we cannot use extrapolation if we wana use annual cycle  
 so = ncread(filename1, "so");  #salinity
@@ -50,14 +50,14 @@ mld_itp = LinearInterpolation(time_series_second, mixed_layer_depth)
 #plot(mixed_layer_depth)
 
 ######## 2: import annual cycle chl data  #Global Ocean Biogeochemistry Analysis and Forecast
-filename2 = "subpolar_chl.nc"    #subpolar_chl.nc
+filename2 = "OceanBioME_example_data/subpolar_chl.nc"    #subpolar_chl.nc
 chl = ncread(filename2, "chl");  #chl scale_factor=1 add_offset=089639299014
 chl_mean = mean(chl, dims=(1,2))[1,1,:,1:365] # mg m-3, unit no need to change. 
 depth_chl = ncread(filename2, "depth");
 #heatmap(1:365, -depth_chl[end:-1:1], chl_mean[end:-1:1,:])
 
 ######## 3: import annual cycle PAR data #Ocean Color  VIIRS-SNPP PAR daily 9km
-path="./subpolar/"    #subtropical   #./subpolar/
+path="./OceanBioME_example_data/subpolar/"    #subtropical   #./subpolar/
 par_mean_timeseries=zeros(365)
 for i in 1:365    #https://discourse.julialang.org/t/leading-zeros/30450
     string_i = lpad(string(i), 3, '0')
@@ -96,10 +96,11 @@ Lx = 1   #500
 Ly = 500
 Nx = 1
 Ny = 1
-Nz = 33 # number of points in the vertical direction
+Nz = 150#33 # number of points in the vertical direction
 Lz = 600 # domain depth             # subpolar mixed layer depth max 427m 
-
+#=
 #inspired by mixing layer example and fitted parameters to copurnicus grid profile
+#this still doesn;t work and causes weird NaNs
 refinement = -4.9118e9
 stretching = 5.754
 h(k) = (k-1)/ Nz
@@ -112,7 +113,9 @@ grid = RectilinearGrid(
                 size=(Nx, Ny, Nz), 
                 x=(0,Lx),
                 y=(0,Ly),
-                z=z_faces)
+                z=z_faces)=#
+
+grid = RectilinearGrid(size=(Nx, Ny, Nz), extent=(Lx, Ly, Lz))
 
 
 B₀ = 0e-8    #m²s⁻³  B₀ = 4.24e-8  
@@ -131,8 +134,8 @@ u_bcs = FieldBoundaryConditions(top = FluxBoundaryCondition(Qᵘ))
 t_function(x, y, z, t) = temperature_itp(mod(t, 364days))
 s_function(x, y, z, t) = salinity_itp(mod(t, 364days))
 
-#PAR = Oceananigans.Fields.Field{Center, Center, Center}(grid)
-PAR_func(x, y, z, t) = PAR_extrap(z, mod(t, 364days))    #LoadError: cannot define function PAR; it already has a value. So I renamed it as PAR_func. z goes first, then t. 
+PAR = Oceananigans.Fields.Field{Center, Center, Center}(grid)
+#PAR_func(x, y, z, t) = PAR_extrap(z, mod(t, 364days))    #LoadError: cannot define function PAR; it already has a value. So I renamed it as PAR_func. z goes first, then t. 
 
 dic_bc = Boundaries.airseasetup(:CO₂, forcings=(T=t_function, S=s_function))
 oxy_bc = Boundaries.airseasetup(:O₂, forcings=(T=t_function, S=s_function))
@@ -217,7 +220,7 @@ simulation.output_writers[:profiles] =
                           schedule = TimeInterval(1days),     #TimeInterval(1days),
                           overwrite_existing = true)=#
                           
-fields = Dict("P" => model.tracers.P, "Z" => model.tracers.Z, "D" => model.tracers.D, "DD" => model.tracers.DD, "DOM" => model.tracers.DOM, "DIC" => model.tracers.DIC, "ALK" => model.tracers.ALK, "OXY" => model.tracers.OXY, "PAR" => model.auxiliary_fields.PAR, "NO₃" => model.tracers.NO₃, "NH₄" => model.tracers.NH₄)
+fields = Dict("P" => model.tracers.P, "Z" => model.tracers.Z, "D" => model.tracers.D, "DD" => model.tracers.DD, "DOM" => model.tracers.DOM, "DIC" => model.tracers.DIC, "ALK" => model.tracers.ALK, "OXY" => model.tracers.OXY, "NO₃" => model.tracers.NO₃, "NH₄" => model.tracers.NH₄)
 simulation.output_writers[:field_writer] =
                               NetCDFOutputWriter(model, fields, filename="nonlin_grid.nc", schedule=TimeInterval(1days))
 #simulation.output_writers[:particles] = JLD2OutputWriter(model, (particles=model.particles,), 
@@ -243,6 +246,6 @@ run!(simulation)
 xw, yw, zw = nodes(model.velocities.w)
 xb, yb, zb = nodes(model.tracers.b)
 
-results = BGC.Plot.load_tracers(simulation)
-BGC.Plot.profiles(results)
+results = OceanBioME.Plot.load_tracers(simulation)
+OceanBioME.Plot.profiles(results)
 savefig("subpolar_nonlin_grid.pdf")

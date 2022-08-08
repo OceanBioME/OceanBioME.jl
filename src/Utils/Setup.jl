@@ -1,17 +1,17 @@
 module Setup
 export run!
-using BGC, Oceananigans, DiffEqBase, OrdinaryDiffEq
+using OceanBioME, Oceananigans, DiffEqBase, OrdinaryDiffEq
 using Oceananigans.Grids: AbstractGrid
 using Oceananigans.Architectures: arch_array
 
 function loadmodel(model)
-    models = propertynames(BGC)
-    deleteat!(models, findall(x->x in (:AirSeaFlux, :BGC, :Light, :Particles), models))
+    models = propertynames(OceanBioME)
+    deleteat!(models, findall(x->x in (:AirSeaFlux, :OceanBioME, :Light, :Particles), models))
     if !(model in models)
         throw(ArgumentError("Model '$model' is not an available model, choices are $models"))
     end
 
-    return getproperty(BGC, model)
+    return getproperty(OceanBioME, model)
 end
 
 function loadtracers(model, optional_sets)
@@ -110,7 +110,7 @@ function BoxModel(model::Symbol, params::NamedTuple, initial_values::NamedTuple,
         end
     end
     params = (forcing=forcing_functions, forcing_dependencies = forcing_dependencies, forcing_parameters=params, variable_position=variable_position, architecture=architecture)
-    problem = ODEProblem(BGC.BoxModel.BoxModelRHS, vcat(y₀...), (tᵢ, tₑ), params)
+    problem = ODEProblem(OceanBioME.BoxModel.BoxModelRHS, vcat(y₀...), (tᵢ, tₑ), params)
     return (tracers=(tracers.core..., (tracers.optional...)...), parameters = params, forcing=forcing_functions, problem=problem, Δt=Δt, solver=solver, adaptive=adaptive, solution=vcat([]...), t=vcat([]...))
 end
 end

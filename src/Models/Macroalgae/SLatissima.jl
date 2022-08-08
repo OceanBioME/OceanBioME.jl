@@ -13,7 +13,7 @@ Fossberg, J., Forbord, S., Broch, O. J., Malzahn, A. M., Jansen, H., Handå, A.,
 "
 module SLatissima
 using StructArrays, SugarKelp
-using BGC: Particles
+using OceanBioME: Particles
 
 @inline f_curr(u, params) = 1 - exp(-u/params.u_0p65)
 
