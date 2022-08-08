@@ -14,8 +14,9 @@ Fossberg, J., Forbord, S., Broch, O. J., Malzahn, A. M., Jansen, H., Handå, A.,
 module SLatissima
 using StructArrays, SugarKelp
 using OceanBioME: Particles
+using Oceananigans.Units: second,minute, minutes, hour, hours, day, days, year, years
 
-@inline f_curr(u, params) = 1 - exp(-u/params.u_0p65)
+@inline f_curr(u, params) = params.uₐ*(1-exp(-u/params.u₀))+params.uᵦ
 
 function equations(x::AbstractFloat, y::AbstractFloat, z::AbstractFloat, t::AbstractFloat, A::AbstractFloat, N::AbstractFloat, C::AbstractFloat, NO₃::AbstractFloat, NH₄::AbstractFloat, T::AbstractFloat, S::AbstractFloat, irr::AbstractFloat, u::AbstractFloat, params, Δt::AbstractFloat)
     if !iszero(A)
@@ -31,11 +32,13 @@ function equations(x::AbstractFloat, y::AbstractFloat, z::AbstractFloat, t::Abst
 
         μ = SugarKelp.f_area(A, params)*SugarKelp.f_temp(T, params)*SugarKelp.f_photo(params.λ[1+floor(Int, mod(t, 364days)/day)], params)*min(μ_C, max(μ_NO₃, μ_NH₄))
 
-        j_NH₄ = min(j̃_NH₄, μ*params.K_A*(N+N_struct))
+        j_NH₄ = min(j̃_NH₄, μ*params.K_A*(N+params.N_struct))
+
+        r = SugarKelp.r(T, μ, j_NO₃ + j_NH₄, params.resp_model, params)
 
         dA = (μ - ν) * A / (60*60*24)
         dN = ((j_NO₃ + j_NH₄) / params.K_A - μ * (N + params.N_struct)) / (60*60*24)
-        dC = ((p* (1 - e) - SugarKelp.r(T, μ, j_NO₃ + j_NH₄, params.resp_model, params)) / params.K_A - μ * (C + params.C_struct)) / (60*60*24)
+        dC = ((p* (1 - e) - r) / params.K_A - μ * (C + params.C_struct)) / (60*60*24)
 
         A_new = A+dA*Δt 
         N_new = N+dN*Δt 
@@ -46,15 +49,18 @@ function equations(x::AbstractFloat, y::AbstractFloat, z::AbstractFloat, t::Abst
             C_new = params.C_min
         end
 
+        p -= r #release some DIC back in resp
         p *= A_new / (60*60*24*12*0.001)#gC/dm^2/hr to mmol C/s
         e *= p#mmol C/s
         ν *= A_new*(N_new + params.N_struct) / (60*60*24*14*0.001)#1/hr to mmol N/s
         j_NO₃ *= A_new / (60*60*24*14*0.001)#gN/dm^2/hr to mmol N/s
         j_NH₄ *= A_new / (60*60*24*14*0.001)#gN/dm^2/hr to mmol N/s
+
+        du, dv, dw = 0.0, 0.0, 0.0
     else
-        A_new, N_new, C_new, j_NO₃, j_NH₄, p, e, ν = 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0
+        A_new, N_new, C_new, j_NO₃, j_NH₄, p, e, ν, du, dv, dw = 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0
     end
-    return (A = A_new, N = N_new, C = C_new, j_NO₃ = j_NH₄, p = p, e = e, ν = ν)
+    return (A = A_new, N = N_new, C = C_new, j_NO₃ = j_NO₃, j_NH₄ = j_NH₄, p = p, e = e, ν = ν, u = du, v = dv, w = dw)
 end
 
 #fixed urel, T and S functions
@@ -70,7 +76,10 @@ const defaults = merge(SugarKelp.broch2013params, (
     j_NO₃_max = 7.0e-5, #Ahn 1998
     j_NH₄_max = 8.4e-5, #Ahn 1998
     k_NO₃ = SugarKelp.broch2013params.K_X,
-    k_NH₄ = 1.3 #Fossberg 2018
+    k_NH₄ = 1.3, #Fossberg 2018
+    uₐ = 0.72, #broch 2019
+    uᵦ = 0.28,
+    u₀ = 0.045
 ))
 
 struct Particle
@@ -124,7 +133,7 @@ end
 
 @inline no_dynamics(args...) = nothing
 
-function setup(n, x₀, y₀, z₀, A₀, N₀, C₀, latitude, density, T=nothing, S=nothing, urel=nothing, resp_model=2, paramset=SugarKelp.broch2013params, custom_dynamics=no_dynamics)
+function setup(n, x₀, y₀, z₀, A₀, N₀, C₀, latitude, density, T=nothing, S=nothing, urel=nothing, resp_model=2, paramset=defaults, custom_dynamics=no_dynamics, O₂=false)
     if (!isnothing(T) && !isnothing(S) && isnothing(urel))
         throw(ArgumentError("T and S functions with tracked velocity fields not currently implimented"))
     elseif ((isnothing(T) && !isnothing(S)) | (!isnothing(T) && isnothing(S)))
@@ -132,15 +141,17 @@ function setup(n, x₀, y₀, z₀, A₀, N₀, C₀, latitude, density, T=nothi
     end
 
     particles = defineparticles((x₀=x₀, y₀=y₀, z₀=z₀, A₀=A₀, N₀=N₀, C₀=C₀), n)
-    property_dependencies = (:A, :N, :C, :NO₃, :NH₄)
+    property_dependencies = (:A, :N, :C, :NO₃, :NH₄, :PAR)
     λ_arr=SugarKelp.gen_λ(latitude)
-    parameters = (λ=λ_arr, resp_model=2)
-    tracked_properties = (:A, :N, :C, :j_NO₃, :j_NH₄, :p, :e, :ν, :u, :v, :w)
+    parameters = merge(paramset, (λ=λ_arr, resp_model=2))
+    tracked_properties = (:A, :N, :C, :j_NO₃, :j_NH₄, :p, :e, :ν)
 
     if isnothing(T) property_dependencies = (property_dependencies..., :T, :S) else parameters = merge(parameters, (T=T, S=S)) end
     if isnothing(urel) property_dependencies = (property_dependencies..., :u, :v, :w) else parameters = merge(parameters, (urel = urel, )) end
 
-    integral_properties = ()
+    integral_properties = (:u, :v, :w) #for when I impliment dynamics
+
+    if O₂ merge(sink_fields, ((tracer=:OXY, property=:p, scalefactor=1.0), )) end
     
     return Particles.setup(particles, equations, 
                                         property_dependencies,

@@ -126,7 +126,7 @@ end
 dic_bc = Boundaries.airseasetup(:CO₂, forcings=(T=t_function, S=s_function))
 bgc = Setup.Oceananigans(:LOBSTER, grid, params, PAR, topboundaries=(DIC=dic_bc, ), optional_sets=(:carbonates, ))
 @info "Setup BGC model"
-z₀ = [-100:-1;]
+z₀ = [-100:-1;].*1.0
 kelp_particles = SLatissima.setup(100, Lx/2, Ly/2, z₀, 30.0, 0.1, 0.01, 57.5, 100.0, t_function, s_function, 0.15)#0.0, 0.0, 0.0, 57.5, 100.0, T=t_function, S=s_function, urel=0.15)
 @info "Defined kelp particles"
 
