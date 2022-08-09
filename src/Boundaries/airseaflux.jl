@@ -24,10 +24,10 @@ end
 k(gas::Symbol, T, params)=0.39*(0.01/3600)*params.uₐᵥ^2*(Sc(T, getproperty(params.Sc_params, gas))/660)^(-0.5)#m/s, may want to add variable wind speed instead of average wind here at some point
 Sc(T, params) = params.A-params.B*T+params.C*T^2-params.D*T^3
 
-α(gas::Symbol, T, S, params)=β(T+273.15, S, getproperty(params.β_params, gas))/(T+273.15)
+α(gas::Symbol, T, S, params)=β(T+273.15, S, getproperty(params.β_params, gas))*(T+273.15)*0.00367#/(T+273.15) - disagree with origional paper but this matches dimensionless Henry coefficiet of 3.2x10⁻² at 298.15K, S=0. See https://www.wikiwand.com/en/Henry%27s_law
 β(T, S, params) = exp(params.A₁+params.A₂*(100/T)+params.A₃*log(T/100)+S*(params.B₁+params.B₂*(T/100)+params.B₃*(T/100)^2))
 
-#now fairly sure that this is giving the correct result (for CO₂  as βρ is the henrys coefficient which sould be ∼34mol/m³ atm
+#now fairly sure that this is giving the correct result for CO₂  as βρ is the henrys coefficient which sould be ∼34mol/m³ atm
 K(gas::Symbol, T, S, params)=k(gas, T, params)*β(T+273.15, S, getproperty(params.β_params, gas))*params.ρₒ #L=ρ\_wK₀ ->  https://reader.elsevier.com/reader/sd/pii/0304420374900152 and here K₀=β
 
 function airseaflux(x, y, t, T::AbstractFloat, S::AbstractFloat, conc::AbstractFloat, params)

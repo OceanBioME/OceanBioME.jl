@@ -38,8 +38,8 @@ const defaults = (
         pH=8.0, # initial pH value guess for air-sea flux calculation
         ρₒ = 1026, # kg m⁻³, average density at the surface of the world ocean
         conc_air = (
-            CO₂=413.3,#ppmv
-            O₂=209*0.0409*100/32#ppm from https://agupubs.onlinelibrary.wiley.com/doi/10.1029/2010JC006446 to mmolO₂/m³ (https://teesing.com/en/library/tools/ppm-mg3-converter not a very good source I know)
+            CO₂= 413.3,#ppmv
+            O₂= 1#mmolO₂/m³ (20.95 mol O₂/mol air, 0.0224m^3/mol air)
         #this conversion is at STP(?)
         ),#may want to make these variable at some point (along with wind speed)
         uₐᵥ=10#m/s https://rmets.onlinelibrary.wiley.com/doi/10.1002/joc.6957

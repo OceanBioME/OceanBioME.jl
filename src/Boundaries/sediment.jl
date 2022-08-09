@@ -29,11 +29,11 @@ function sedimentO₂(i, j, grid, clock, model_fields, params)
     return -(Cₘ*(1-p_denit(Cₘ, model_fields.OXY[i, j, 1], model_fields.NO₃[i, j, 1], 1)-p_anox(Cₘ, model_fields.OXY[i, j, 1], model_fields.NO₃[i, j, 1], 1)*p_soliddep(isa(params.d, Number) ? params.d : params.d[i,j])) + Nₘ*p_nit(Nₘ, Cₘ, model_fields.OXY[i, j, 1], model_fields.NH₄[i, j, 1], 1)*2)
 end
 
-sedimenting(x, y, t, N, params) = -N*params.w*tanh(max(-params.d/params.λ))
+sedimenting(x, y, t, N, params) = -N*params.w*tanh(max(-params.d/params.λ, 0))
 
 @kernel function _integrate_sediment!(D, DD, Nᵣᵣ, Nᵣ, Nᵣₑ, Δt, params)
     i, j = @index(Global, NTuple) 
-    N_dep = params.w_slow * D[i, j, 1] + params.w_fast * DD[i, j, 1]
+    N_dep = params.w_slow*tanh(max(-params.d/params.λ, 0)) * D[i, j, 1] + params.w_fast*tanh(max(-params.d/params.λ, 0)) * DD[i, j, 1]
     Nᵣᵣ[i, j, 1] += (N_dep*params.f_fast*(1-params.f_ref) - params.λᵣᵣ*Nᵣᵣ[i, j, 1])*Δt
     Nᵣ[i, j, 1] += (N_dep*params.f_slow*(1-params.f_ref) - params.λᵣ*Nᵣ[i, j, 1])*Δt
     Nᵣₑ[i, j, 1] += N_dep*params.f_ref

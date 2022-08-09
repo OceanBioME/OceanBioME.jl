@@ -77,14 +77,14 @@ t_function(x, y, z, t) = temperature_itp(mod(t, 364days))
 s_function(x, y, z, t) = salinity_itp(mod(t, 364days))
 
 # Simulation duration  
-duration=30days#2years
+duration=2years
 # Define the grid
 
 Lx = 1   #500
 Ly = 500
 Nx = 1
 Ny = 1
-Nz = 10#150
+Nz = 150
 Lz = 600 # domain depth             # subpolar mixed layer depth max 427m 
 
 #inspired by the grid spacing in Copurnicus' models
@@ -126,8 +126,9 @@ end
 dic_bc = Boundaries.airseasetup(:CO₂, forcings=(T=t_function, S=s_function))
 bgc = Setup.Oceananigans(:LOBSTER, grid, params, PAR, topboundaries=(DIC=dic_bc, ), optional_sets=(:carbonates, ))
 @info "Setup BGC model"
-z₀ = [-100:-1;].*1.0
-kelp_particles = SLatissima.setup(100, Lx/2, Ly/2, z₀, 30.0, 0.1, 0.01, 57.5, 100.0, t_function, s_function, 0.15)#0.0, 0.0, 0.0, 57.5, 100.0, T=t_function, S=s_function, urel=0.15)
+n_kelp=100
+z₀ = [-100:-1;]*1.0
+kelp_particles = SLatissima.setup(n_kelp, Lx/2, Ly/2, z₀, 0.0, 0.0, 0.0, 57.5, 100.0, t_function, s_function, 0.15)#0.0, 0.0, 0.0, 57.5, 100.0, T=t_function, S=s_function, urel=0.15)
 @info "Defined kelp particles"
 
 @inline κₜ(x, y, z, t) = 1e-2*max(1-(z+mld_itp(mod(t,364days))/2)^2/(mld_itp(mod(t,364days))/2)^2,0)+1e-5;

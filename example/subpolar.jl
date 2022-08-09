@@ -175,9 +175,9 @@ DDᵢ(x,y,z)=0
 NO₃ᵢ(x,y,z)= (1-tanh((z+300)/150))/2*6+11.4   #  # 17.5*(1-tanh((z+100)/10))/2
 NH₄ᵢ(x,y,z)= (1-tanh((z+300)/150))/2*0.05+0.05       #1e-1*(1-tanh((z+100)/10))/2
 DOMᵢ(x,y,z)= 0 
-DICᵢ(x,y,z)= 2380   #  mmol/m^-3
-ALKᵢ(x,y,z)= 2720   #  mmol/m^-3
-OXYᵢ(x, y, z) = 240 #mmol/m^-3
+DICᵢ(x,y,z)= 2380   #  mmol/m^3
+ALKᵢ(x,y,z)= 2720   #  mmol/m^3
+OXYᵢ(x, y, z) = 240 #mmol/m^3
 
 ## `set!` the `model` fields using functions or constants:
 set!(model, b=bᵢ, P=Pᵢ, Z=Zᵢ, D=Dᵢ, DD=DDᵢ, NO₃=NO₃ᵢ, NH₄=NH₄ᵢ, DOM=DOMᵢ,DIC=DICᵢ, ALK=ALKᵢ, OXY=OXYᵢ, u=0, v=0, w=0)
