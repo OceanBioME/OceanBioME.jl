@@ -1,9 +1,10 @@
 """
 This script illustrates how to run OceanBioME as a LOBSTER model
-Lobster model based on
-2005 A four-dimensional mesoscale map of the spring bloom in the northeast Atlantic (POMME experiment): Results of a prognostic model
-2001 Impact of sub-mesoscale physics on production and subduction of phytoplankton in an oligotrophic regime
-2012How does dynamical spatial variability impact 234Th-derived estimates of organic export
+References
+(1)2005 A four-dimensional mesoscale map of the spring bloom in the northeast Atlantic (POMME experiment): Results of a prognostic model
+(2)2001 Impact of sub-mesoscale physics on production and subduction of phytoplankton in an oligotrophic regime
+(3)2012 How does dynamical spatial variability impact 234Th-derived estimates of organic export
+(4)2001 Bio-optical properties of oceanic waters: A reappraisal
 """
 
 using Random   # load required modules
@@ -75,9 +76,14 @@ Take the following configs:
 * comment out simulation.callbacks[:update_par]
 * indicate PAR_func as an input in bgc = Setup.Oceananigans()
 
-reference: 
-(1) 2001 Bio-optical properties of oceanic waters: A reappraisal
-(2) 2001 Impact of sub-mesoscale physics on production and subduction of phytoplankton in an oligotrophic regime
+Option 2: calculate PAR as a field
+Initialize PAR_field = Oceananigans.Fields.Field{Center, Center, Center}(grid)
+Update PAR_field through simulation.callbacks[:update_par] and src/Light.jl. Instead of using annual cycle data chl_mean as input, one uses chl as
+a function of phytoplankton to calculate PAR. See (A22) in reference (2).
+Take the following configs:
+* keep auxiliary_fields = (PAR=PAR_field, ) in Model instantiation model = NonhydrostaticModel(..., #auxiliary_fields = (PAR=PAR_field, ))
+* keep simulation.callbacks[:update_par]
+* indicate PAR_field as an input in bgc = Setup.Oceananigans()
 =#
 
 PAR = zeros(length(depth_chl),365)   # initialize PAR
@@ -130,11 +136,11 @@ u_bcs = FieldBoundaryConditions(top = FluxBoundaryCondition(Qᵘ))
 t_function(x, y, z, t) = temperature_itp(mod(t, 364days)) .+ 273.15  # will be used to calculate air-sea-flux 
 s_function(x, y, z, t) = salinity_itp(mod(t, 364days))               # will be used to calculate air-sea-flux 
 
-PAR_field = Oceananigans.Fields.Field{Center, Center, Center}(grid)
+PAR_field = Oceananigans.Fields.Field{Center, Center, Center}(grid) #initialize a PAR field 
 PAR_func(x, y, z, t) = PAR_extrap(z, mod(t, 364days))    #LoadError: cannot define function PAR; it already has a value. So I renamed it as PAR_func. z goes first, then t. 
 
 dic_bc = Boundaries.setupdicflux(params; forcings=(T=t_function, S=s_function)) #calculate air-sea-flux using DIC, ALK, temperature and salinity. 
-bgc = Setup.Oceananigans(:LOBSTER, grid, params, PAR_func, topboundaries=(DIC=dic_bc, ), optional_sets=(:carbonates, )) #input either PAR_func or PAR_field
+bgc = Setup.Oceananigans(:LOBSTER, grid, params, PAR_field, topboundaries=(DIC=dic_bc, ), optional_sets=(:carbonates, )) #input either PAR_func or PAR_field
 
 #npz = Setup.Oceananigans(:NPZ, grid, NPZ.defaults)
 #κₜ(x, y, z, t) = 1e-2*max(1-(z+50)^2/50^2,0)+1e-5;
@@ -150,7 +156,7 @@ model = NonhydrostaticModel(advection = UpwindBiasedFifthOrder(),
                             closure = ScalarDiffusivity(ν=κₜ, κ=κₜ), 
                             forcing =  bgc.forcing,
                             boundary_conditions = merge((u=u_bcs, b=buoyancy_bcs), bgc.boundary_conditions),
-                            #auxiliary_fields = (PAR=PAR_field, )  #comment out this line if using functional form of PAR
+                            auxiliary_fields = (PAR=PAR_field, )  #comment out this line if using functional form of PAR
                             )
 
 ## Random noise damped at top and bottom
@@ -179,7 +185,7 @@ set!(model, b=bᵢ, P=Pᵢ, Z=Zᵢ, D=Dᵢ, DD=DDᵢ, NO₃=NO₃ᵢ, NH₄=NH�
 ## Setting up a simulation
 
 simulation = Simulation(model, Δt=200, stop_time=duration)  #Δt=0.5*(Lz/Nz)^2/1e-2,
-#simulation.callbacks[:update_par] = Callback(Light.update_2λ!, IterationInterval(1), merge(params, (surface_PAR=surface_PAR,)))#comment out if using PAR as a function, PAR_func
+simulation.callbacks[:update_par] = Callback(Light.update_2λ!, IterationInterval(1), merge(params, (surface_PAR=surface_PAR,)))#comment out if using PAR as a function, PAR_func
 
 ## Print a progress message
 progress_message(sim) = @printf("Iteration: %04d, time: %s, Δt: %s, wall time: %s\n",
@@ -208,7 +214,7 @@ simulation.callbacks[:pco2] = Callback(pco2, IterationInterval(Int(1day/simulati
 # Vertical slice
 simulation.output_writers[:profiles] =
     JLD2OutputWriter(model, merge(model.velocities, model.tracers, model.auxiliary_fields),
-                          filename = "profile_subpolar_test_PARfunc.jld2",
+                          filename = "profile_subpolar_test_PARfield.jld2",
                           indices = (1, 1, :),
                           schedule = TimeInterval(1days),     #TimeInterval(1days),
                             overwrite_existing = true)
@@ -238,4 +244,4 @@ xb, yb, zb = nodes(model.tracers.b)
 
 results = BGC.Plot.load_tracers(simulation)
 BGC.Plot.profiles(results)
-savefig("subpolar_test_PARfunc.pdf")
+savefig("subpolar_test_PARfield.pdf")
