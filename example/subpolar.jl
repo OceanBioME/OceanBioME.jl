@@ -106,7 +106,7 @@ PAR_itp = Interpolations.interpolate((-depth_chl[end:-1:1], (0:364)day), PAR[end
 PAR_extrap = extrapolate(PAR_itp, (Line(),Throw()))  #  PAR_extrap(z, mod(t,364days))  Interpolations.extrapolate Method
 
 # Simulation duration    
-duration=2days    #2years
+duration=1days    #2years
 
 # Define the grid
 Lx = 1   #500
@@ -116,9 +116,27 @@ Ny = 1
 Nz = 150#150 # number of points in the vertical direction
 Lz = 600 # domain depth             # subpolar mixed layer depth max 427m 
 
+
+refinement = 5 # controls spacing near surface (higher means finer spaced)  #1.2 5 -4.9118e9
+stretching = 2.5   # controls rate of stretching at bottom    #24 2.5  5.754
+                
+## Normalized height ranging from 0 to 1
+h(k) = (k - 1) / Nz
+## Linear near-surface generator
+ζ₀(k) = 1 + (h(k) - 1) / refinement
+## Bottom-intensified stretching function 
+Σ(k) = (1 - exp(-stretching * h(k))) / (1 - exp(-stretching))
+## Generating function
+z_faces(k) = Lz * (ζ₀(k) * Σ(k) - 1)
+grid = RectilinearGrid(size = (Nx, Ny, Nz), 
+                       x = (0, Lx),
+                       y = (0, Ly),
+                       z = z_faces)
+#=
 grid = RectilinearGrid(
                 size=(Nx, Ny, Nz), 
                 extent=(Lx, Ly, Lz))
+=#
 
 B₀ = 0e-8    #m²s⁻³     #buoyancy tracer 
 N² = 9e-6    #dbdz=N^2, s⁻²
@@ -144,7 +162,7 @@ bgc = Setup.Oceananigans(:LOBSTER, grid, params, PAR_field, topboundaries=(DIC=d
 
 #npz = Setup.Oceananigans(:NPZ, grid, NPZ.defaults)
 #κₜ(x, y, z, t) = 1e-2*max(1-(z+50)^2/50^2,0)+1e-5;
-κₜ(x, y, z, t) = 1e-2*max(1-(z+mld_itp(mod(t,364days))/2)^2/(mld_itp(mod(t,364days))/2)^2,0)+1e-5; #setup viscosity and diffusivity in the following Model instantiation
+κₜ(x, y, z, t) = 8e-2*max(1-(z+mld_itp(mod(t,364days))/2)^2/(mld_itp(mod(t,364days))/2)^2,0)+1e-4; #setup viscosity and diffusivity in the following Model instantiation
 
 ###Model instantiation
 model = NonhydrostaticModel(advection = UpwindBiasedFifthOrder(),
@@ -184,7 +202,7 @@ set!(model, b=bᵢ, P=Pᵢ, Z=Zᵢ, D=Dᵢ, DD=DDᵢ, NO₃=NO₃ᵢ, NH₄=NH�
 
 ## Setting up a simulation
 
-simulation = Simulation(model, Δt=200, stop_time=duration)  #Δt=0.5*(Lz/Nz)^2/1e-2,
+simulation = Simulation(model, Δt=50, stop_time=duration)  #Δt=0.5*(Lz/Nz)^2/1e-2,
 simulation.callbacks[:update_par] = Callback(Light.update_2λ!, IterationInterval(1), merge(params, (surface_PAR=surface_PAR,)))#comment out if using PAR as a function, PAR_func
 
 ## Print a progress message
