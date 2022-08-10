@@ -1,15 +1,9 @@
 """
-LOBSTER model based on
-2005 A four-dimensional mesoscale map of the spring bloom in the northeast Atlantic (POMME experiment): Results of a prognostic model
-2001 Impact of sub-mesoscale physics on production and subduction of phytoplankton in an oligotrophic regime
-2012How does dynamical spatial variability impact 234Th-derived estimates of organic export
-using flux boundary condition
-ignore aggregation term 
-annual cycle 
-add callback to diagnose pCO2
+References
+2012 Modelling seasonal growth and composition of the kelp Saccharina latissima
 """
 
-using Random
+using Random  # load required modules
 using Printf
 using Plots
 using JLD2
@@ -23,26 +17,26 @@ using Oceananigans.Units: second,minute, minutes, hour, hours, day, days, year, 
 
 using BGC, SugarKelp, StructArrays
 
-params = LOBSTER.default
+params = LOBSTER.default #load parameters in src/parameters/lobster.jl 
 
 
 begin#Load data
     ######## 1: import annual cycle physics data  #Global Ocean 1/12° Physics Analysis and Forecast updated Daily
-    filename1 = "subpolar_physics.nc" # subtropical_physics.nc  subpolar_physics.nc
-    #ncinfo(filename1)
+    filename1 = "subpolar_physics.nc" #  One may need to modify path if necessary.  
+    #ncinfo(filename1)                # ncinfo can be used to check out info in .nc files.
     time_series_second = (0:364)days # start from zero if we don't use extrapolation, we cannot use extrapolation if we wana use annual cycle  
-    so = ncread(filename1, "so");  #salinity
+    so = ncread(filename1, "so");  #salinity Practical Salinity Unit
     so_scale_factor = ncgetatt(filename1, "so", "scale_factor") #Real_Value = (Display_Value X scale_factor) + add_offset
     so_add_offset = ncgetatt(filename1, "so", "add_offset")
-    salinity = mean(so, dims=(1,2))[1:365]*so_scale_factor.+so_add_offset # use [1:365] cause sometimes one year has 366 days. 
-    #converted to interpolations to access them at arbitary time, how to use it: salinity_itp(mod(timeinseconds,364days))
+    salinity = mean(so, dims=(1,2))[1:365]*so_scale_factor.+so_add_offset # use [1:365] because sometimes one year has 366 days. 
+    
     #plot(salinity)
-    thetao = ncread(filename1, "thetao");  #temperature
+    thetao = ncread(filename1, "thetao");  #temperature Degrees Celsius
     thetao_scale_factor = ncgetatt(filename1, "thetao", "scale_factor") 
     thetao_add_offset = ncgetatt(filename1, "thetao", "add_offset")
     temperature = mean(thetao, dims=(1,2))[1:365]*thetao_scale_factor.+thetao_add_offset
     #plot(temperature)
-    mlotst = ncread(filename1, "mlotst"); #mixed_layer_depth
+    mlotst = ncread(filename1, "mlotst"); #mixed_layer_depth,Meters
     mlotst_scale_factor = ncgetatt(filename1, "mlotst", "scale_factor") 
     mlotst_add_offset = ncgetatt(filename1, "mlotst", "add_offset")
     mixed_layer_depth = mean(mlotst, dims=(1,2))[1:365]*mlotst_scale_factor.+mlotst_add_offset
@@ -50,34 +44,34 @@ begin#Load data
 
     ######## 2: import annual cycle chl data  #Global Ocean Biogeochemistry Analysis and Forecast
     filename2 = "subpolar_chl.nc"    #subpolar_chl.nc
-    chl = ncread(filename2, "chl");  #chl scale_factor=1 add_offset=089639299014
+    chl = ncread(filename2, "chl");  #chl scale_factor=1 add_offset=0
     chl_mean = mean(chl, dims=(1,2))[1,1,:,1:365] # mg m-3, unit no need to change. 
     depth_chl = ncread(filename2, "depth");
     #heatmap(1:365, -depth_chl[end:-1:1], chl_mean[end:-1:1,:])
 
-    ######## 3: import annual cycle PAR data #Ocean Color  VIIRS-SNPP PAR daily 9km
+    ######## 3: import annual cycle photosynthetic available radiation (PAR) data #Ocean Color  VIIRS-SNPP PAR daily 9km
     path="./subpolar/"    #subtropical   #./subpolar/
     par_mean_timeseries=zeros(365)
     for i in 1:365    #https://discourse.julialang.org/t/leading-zeros/30450
         string_i = lpad(string(i), 3, '0')
         filename3=path*"V2020"*string_i*".L3b_DAY_SNPP_PAR.x.nc"
         fid = h5open(filename3, "r")
-        par=read(fid["level-3_binned_data/par"])
-        BinList=read(fid["level-3_binned_data/BinList"])  #(:bin_num, :nobs, :nscenes, :weights, :time_rec) 
-        par_mean_timeseries[i] = mean([par[i][1]/BinList[i][4] for i in 1:length(par)])*3.99e-10*545e12/(1day)  #from einstin/m^2/day to W/m^2
+        par=read(fid["level-3_binned_data/par"]) # read PAR data from file
+        BinList=read(fid["level-3_binned_data/BinList"])  # read information on PAR bins. (:bin_num, :nobs, :nscenes, :weights, :time_rec) 
+        par_mean_timeseries[i] = mean([par[i][1]/BinList[i][4] for i in 1:length(par)])*3.99e-10*545e12/(1day)  #average PAR values in bins and convert from einstin/m^2/day to W/m^2
     end
 end
-salinity_itp = LinearInterpolation(time_series_second, salinity) 
+salinity_itp = LinearInterpolation(time_series_second, salinity)  #converted to interpolations to access them at arbitary time, how to use it: salinity_itp(mod(timeinseconds,364days))
 temperature_itp = LinearInterpolation(time_series_second, temperature)  
 surface_PAR_itp = LinearInterpolation((0:364)day, par_mean_timeseries)
 mld_itp = LinearInterpolation(time_series_second, mixed_layer_depth)  
 surface_PAR(t) = surface_PAR_itp(mod(t, 364days))
 
-t_function(x, y, z, t) = temperature_itp(mod(t, 364days)) .+ 273.15
-s_function(x, y, z, t) = salinity_itp(mod(t, 364days))
+t_function(x, y, z, t) = temperature_itp(mod(t, 364days)) .+ 273.15 # will be used to calculate air-sea-flux 
+s_function(x, y, z, t) = salinity_itp(mod(t, 364days))              # will be used to calculate air-sea-flux 
 
 # Simulation duration  
-duration=2years
+duration=2days #years
 # Define the grid
 
 Lx = 1   #500
@@ -106,7 +100,7 @@ grid = RectilinearGrid(
 
 grid = RectilinearGrid(size=(Nx, Ny, Nz), extent=(Lx, Ly, Lz))
 
-PAR = Oceananigans.Fields.Field{Center, Center, Center}(grid)
+PAR = Oceananigans.Fields.Field{Center, Center, Center}(grid)  #initialize a PAR field, which is an input of the following bgc = Setup.Oceananigans()
 begin #setup bouyancy
     B₀ = 0e-8    #m²s⁻³  B₀ = 4.24e-8  
     N² = 9e-6    #dbdz=N^2, s⁻²
@@ -123,7 +117,7 @@ begin #setup bouyancy
 end
 
 #Load the BGC model
-dic_bc = Boundaries.setupdicflux(params; forcings=(T=t_function, S=s_function))
+dic_bc = Boundaries.setupdicflux(params; forcings=(T=t_function, S=s_function)) #calculate air-sea-flux using DIC, ALK, temperature and salinity.
 bgc = Setup.Oceananigans(:LOBSTER, grid, params, PAR, topboundaries=(DIC=dic_bc, ), optional_sets=(:carbonates, ))
 
 @info "Setup BGC model"
@@ -227,7 +221,7 @@ begin #Setup the kelp particles
 end
 @info "Defined kelp particles"
 #κₜ(x, y, z, t) = 1e-2*max(1-(z+50)^2/50^2,0)+1e-5;
-@inline κₜ(x, y, z, t) = 1e-2*max(1-(z+mld_itp(mod(t,364days))/2)^2/(mld_itp(mod(t,364days))/2)^2,0)+1e-5;
+@inline κₜ(x, y, z, t) = 1e-2*max(1-(z+mld_itp(mod(t,364days))/2)^2/(mld_itp(mod(t,364days))/2)^2,0)+1e-5; #setup viscosity and diffusivity in the following Model instantiation
 
 ###Model instantiation
 model = NonhydrostaticModel(advection = UpwindBiasedFifthOrder(),
@@ -239,8 +233,8 @@ model = NonhydrostaticModel(advection = UpwindBiasedFifthOrder(),
                             closure = ScalarDiffusivity(ν=κₜ, κ=κₜ), 
                             forcing =  bgc.forcing,
                             boundary_conditions = merge((u=u_bcs, b=buoyancy_bcs), bgc.boundary_conditions),
-                            auxiliary_fields = (PAR=PAR, ),
-                            particles = kelp_particles)#comment out this line if using functional form of PAR
+                            auxiliary_fields = (PAR=PAR, ),  #comment out this line if using functional form of PAR
+                            particles = kelp_particles)
 @info "Setup model"
 #set initial conditions
 initial_mixed_layer_depth = -100 # m
@@ -255,8 +249,8 @@ DDᵢ(x,y,z)=0
 NO₃ᵢ(x,y,z)= (1-tanh((z+300)/150))/2*6+11.4   #  # 17.5*(1-tanh((z+100)/10))/2
 NH₄ᵢ(x,y,z)= (1-tanh((z+300)/150))/2*0.05+0.05       #1e-1*(1-tanh((z+100)/10))/2
 DOMᵢ(x,y,z)= 0 
-DICᵢ(x,y,z)= 2380   #  mmol/m^-3
-ALKᵢ(x,y,z)= 2720   #  mmol/m^-3
+DICᵢ(x,y,z)= 2200   #  mmol/m^-3
+ALKᵢ(x,y,z)= 2400   #  mmol/m^-3
 
 ## `set!` the `model` fields using functions or constants:
 set!(model, b=bᵢ, P=Pᵢ, Z=Zᵢ, D=Dᵢ, DD=DDᵢ, NO₃=NO₃ᵢ, NH₄=NH₄ᵢ, DOM=DOMᵢ,DIC=DICᵢ,ALK=ALKᵢ, u=0, v=0, w=0)
@@ -278,12 +272,12 @@ simulation.callbacks[:progress] = Callback(progress_message, IterationInterval(1
 # Vertical slice
 simulation.output_writers[:profiles] =
     JLD2OutputWriter(model, merge(model.velocities, model.tracers, model.auxiliary_fields),
-                          filename = "profile_subpolar.jld2",
+                          filename = "profile_subpolar_test_kelp.jld2",
                           indices = (1, 1, :),
                           schedule = TimeInterval(1days),     #TimeInterval(1days),
                             overwrite_existing = true)
 simulation.output_writers[:particles] = JLD2OutputWriter(model, (particles=model.particles,), 
-                          filename = "particles.jld2",
+                          filename = "subpolar_test_particles.jld2",
                           schedule = TimeInterval(1day),
                           overwrite_existing = true)
 
@@ -298,4 +292,4 @@ xb, yb, zb = nodes(model.tracers.b)
 
 results = BGC.Plot.load_tracers(simulation)
 BGC.Plot.profiles(results)
-savefig("annual_cycle_subpolar_highinit_kelp.pdf")
+savefig("subpolar_test_kelp.pdf")
