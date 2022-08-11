@@ -5,6 +5,7 @@ Currently implimented:
 - airseaflux
     - Generic air sea flux  model describted by Wanninkhof, 1992 but only setup for CO₂ and O₂
     - Forces the DIC field, and requires temp (in centigrade) and salinity, plus current DIC and ALK concentration
+    - Extended to provide boundary conditon on DIC at redfield ratio (mol DIC/mol NH₄) of 106/16 from Table 4 caption
 - sediment
     - simple (integrated) sediment model described by Soetaert, Middelburg, Herman and Buis, 2000 
     where organic matter (D and DD) that sinks to the bottom is stored and decays into NO₃ and NH₄, 
@@ -33,13 +34,13 @@ const defaults = (
         ),
         β_params = (
             O₂ = (A₁=-58.3877, A₂=85.8079, A₃=23.8439, B₁=-0.034892, B₂=0.015568, B₃=-0.0019387),
-            CO₂ = (A₁=-60.2409, A₂=93.4517, A₃=23.3585, B₁=0.023517, B₂=-0.023656, B₃=0.0047036)#(returns K₀ rather than β)
+            CO₂ = (A₁=-60.2409, A₂=93.4517, A₃=23.3585, B₁=0.023517, B₂=-0.023656, B₃=0.0047036)#(returns K₀ rathe1 than β)
         ),
         pH=8.0, # initial pH value guess for air-sea flux calculation
         ρₒ = 1026, # kg m⁻³, average density at the surface of the world ocean
         conc_air = (
             CO₂= 413.3,#ppmv
-            O₂= 1#mmolO₂/m³ (20.95 mol O₂/mol air, 0.0224m^3/mol air)
+            O₂= 9352.7#mmolO₂/m³ (20.95 mol O₂/mol air, 0.0224m^3/mol air)
         #this conversion is at STP(?)
         ),#may want to make these variable at some point (along with wind speed)
         uₐᵥ=10#m/s https://rmets.onlinelibrary.wiley.com/doi/10.1002/joc.6957
@@ -49,7 +50,8 @@ const defaults = (
         λᵣᵣ = 2/year,# 1/year to 1/s
         λᵣ = 0.2/year,#s   
         Rdᵣᵣ = 0.1509,#mmol N/mmol C
-        Rdᵣ = 0.13#mmol N/mmol C
+        Rdᵣ = 0.13,#mmol N/mmol C
+        Rd_red = 106/16#mmol C/mmol N
     )
 )
 

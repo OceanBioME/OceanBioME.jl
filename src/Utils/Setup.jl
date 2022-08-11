@@ -27,14 +27,14 @@ function loadtracers(model, optional_sets)
     return (core=model.tracers, optional=optional_tracers)
 end
 
-function setuptracer(model, grid, tracer, field_dependencies, topboundaries, bottomboundaries, forcing_params)
+function setuptracer(model, grid, tracer, field_dependencies, topboundaries, bottomboundaries, forcing_params; sinking, advection_scheme)
     forcing = Forcing(getproperty(model.forcing_functions, tracer), field_dependencies=field_dependencies, parameters=forcing_params)
-    if tracer in keys(model.sinking)
+    if (sinking && tracer in keys(model.sinking))
         slip_vel = arch_array(grid.architecture, zeros(0:grid.Nx+2,0:grid.Ny+2,0:grid.Nz+2))
         for k=0:grid.Nz-2
             @inbounds slip_vel[:, :, k] .= getproperty(model.sinking, tracer)(grid.zᵃᵃᶜ[k], forcing_params)
         end
-        forcing = (forcing, AdvectiveForcing(WENO5(; grid), w=slip_vel))
+        forcing = (forcing, AdvectiveForcing(advection_scheme(), w=slip_vel))
     end
 
     topboundary = tracer in keys(topboundaries) ? getproperty(topboundaries, tracer) : FluxBoundaryCondition(0)
@@ -51,7 +51,9 @@ function Oceananigans(model::Symbol,
                                     PAR; #should add a test for this to be an auxiliary field or a fucntion (but can't distinguish an aux field or tracer field)
                                     topboundaries::NamedTuple=NamedTuple(),
                                     bottomboundaries::NamedTuple=NamedTuple(),
-                                    optional_sets::Tuple=())
+                                    optional_sets::Tuple=(),
+                                    sinking = true, 
+                                    advection_scheme = UpwindBiasedFifthOrder)
 
     model=loadmodel(model)
     tracers=loadtracers(model, optional_sets)
@@ -62,14 +64,14 @@ function Oceananigans(model::Symbol,
     forcing_params=merge(params, (PAR = PAR, ))
 
     for tracer in tracers.core
-        forcing, bcs = setuptracer(model, grid, tracer, tracers.core, topboundaries, bottomboundaries, forcing_params)
+        forcing, bcs = setuptracer(model, grid, tracer, tracers.core, topboundaries, bottomboundaries, forcing_params; sinking=sinking, advection_scheme=advection_scheme)
         forcing_functions = (forcing_functions..., forcing)
         boundary_functions = (boundary_functions..., bcs)
     end
 
     for optionset in tracers.optional
         for tracer in optionset
-            forcing, bcs = setuptracer(model, grid, tracer, (tracers.core..., optionset...), topboundaries, bottomboundaries, forcing_params)
+            forcing, bcs = setuptracer(model, grid, tracer, (tracers.core..., optionset...), topboundaries, bottomboundaries, forcing_params; sinking=sinking, advection_scheme=advection_scheme)
             forcing_functions = (forcing_functions..., forcing)
             boundary_functions = (boundary_functions..., bcs)
         end

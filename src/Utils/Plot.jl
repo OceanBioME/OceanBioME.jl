@@ -70,6 +70,7 @@ function profiles(results::model_results, fs=4, xlabel="time (days)", ylabel="z 
         push!(plts, heatmap(results.t/(1day),results.z,mean(results.results[j, :, :, :, :], dims=(1, 2))[1, 1, :, :], titlefontsize=fs, guidefontsize=fs, tickfontsize=fs, legendfontsize=fs, xlabel=xlabel, ylabel=ylabel, title=tracer))
     end
     plot(plts...)
+    return plts
 end
 
 function particles(results::particle_results, fs=4, xlabel="time (days)")
@@ -78,5 +79,6 @@ function particles(results::particle_results, fs=4, xlabel="time (days)")
         push!(plts, plot(results.t/(1day), results.results[j, :, :]', titlefontsize=fs, guidefontsize=fs, tickfontsize=fs, legendfontsize=fs, xlabel=xlabel, ylabel=tracer))
     end
     plot(plts...)
+    return plts
 end
 end

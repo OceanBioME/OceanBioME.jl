@@ -20,6 +20,9 @@ function sedimentNH₄(i, j, grid, clock, model_fields, params)
     Nₘ, Cₘ, k = mineralisation(i, j, params)
     return Nₘ*(1-p_nit(Nₘ, Cₘ, model_fields.OXY[i, j, 1], model_fields.NH₄[i, j, 1], 1))
 end
+
+sedimentDIC(i, j, grid, clock, model_fields, params) = params.Rd_red*sedimentNH₄(i, j, grid, clock, model_fields, params)
+
 function sedimentNO₃(i, j, grid, clock, model_fields, params)
     Nₘ, Cₘ, k = mineralisation(i, j, params)
     return Nₘ*p_nit(Nₘ, Cₘ, model_fields.OXY[i, j, 1], model_fields.NH₄[i, j, 1], 1) - Cₘ*p_denit(Cₘ, model_fields.OXY[i, j, 1], model_fields.NO₃[i, j, 1], 1)*0.8
@@ -28,8 +31,6 @@ function sedimentO₂(i, j, grid, clock, model_fields, params)
     Nₘ, Cₘ, k = mineralisation(i, j, params)
     return -(Cₘ*(1-p_denit(Cₘ, model_fields.OXY[i, j, 1], model_fields.NO₃[i, j, 1], 1)-p_anox(Cₘ, model_fields.OXY[i, j, 1], model_fields.NO₃[i, j, 1], 1)*p_soliddep(isa(params.d, Number) ? params.d : params.d[i,j])) + Nₘ*p_nit(Nₘ, Cₘ, model_fields.OXY[i, j, 1], model_fields.NH₄[i, j, 1], 1)*2)
 end
-
-sedimenting(x, y, t, N, params) = -N*params.w*tanh(max(-params.d/params.λ, 0))
 
 @kernel function _integrate_sediment!(D, DD, Nᵣᵣ, Nᵣ, Nᵣₑ, Δt, params)
     i, j = @index(Global, NTuple) 
@@ -44,9 +45,11 @@ function integrate_sediment!(sim, params)
                                    sim.model.tracers.D, sim.model.tracers.DD, sim.model.auxiliary_fields.Nᵣᵣ, sim.model.auxiliary_fields.Nᵣ, sim.model.auxiliary_fields.Nᵣₑ, sim.Δt, params,
                                    dependencies = Event(device(sim.model.architecture)))
     wait(device(sim.model.architecture), calculation)
+    sim.model.tracers.D[:, :, 1] .= 0
+    sim.model.tracers.DD[:, :, 1] .= 0
 end
 
-function setupsediment(grid, w_fast=200/day, w_slow=3.47e-5, λ=1.0, parameters=defaults.sediment, Nᵣᵣᵢ=24.0, Nᵣᵢ=85.0, f_ref=0.1, f_fast=0.74, f_slow=0.26)
+function setupsediment(grid, w_fast=200/day, w_slow=3.47e-5, λ=1.0, parameters=defaults.sediment, Nᵣᵣᵢ=24.0, Nᵣᵢ=85.0, f_ref=0.1, f_fast=0.74, f_slow=0.26, carbonates=true)
     #fractions from Boudreau B. P. and Ruddick B. R. ( 1991) On a reactive continuum representation of organic matter diagenesis. Amer. J. Sci. 291, 507-538.
     #as used by https://reader.elsevier.com/reader/sd/pii/0016703796000130
     #additionally refractory fraction from https://reader.elsevier.com/reader/sd/pii/001670379500042X
@@ -64,14 +67,14 @@ function setupsediment(grid, w_fast=200/day, w_slow=3.47e-5, λ=1.0, parameters=
     Nᵣᵣ .= Nᵣᵣᵢ; Nᵣ .= Nᵣᵢ; Nᵣₑ .= 0.0
     parameters = merge(parameters, (Nᵣᵣ = Nᵣᵣ, Nᵣ = Nᵣ, Nᵣₑ=Nᵣₑ, d = grid.zᵃᵃᶠ[1], λ=λ, f_ref=f_ref, f_fast=f_fast, f_slow=f_slow, w_fast = w_fast, w_slow = w_slow))
 
+    if carbonates DIC_bc = (DIC = FluxBoundaryCondition(sedimentDIC, discrete_form=true, parameters=parameters), ) else DIC_bc = () end
+
     return (
-        boundary_conditions = (
+        boundary_conditions = merge((
             NO₃ = FluxBoundaryCondition(sedimentNO₃, discrete_form=true, parameters=parameters),
             NH₄ = FluxBoundaryCondition(sedimentNH₄, discrete_form=true, parameters=parameters),
             O₂ = FluxBoundaryCondition(sedimentO₂, discrete_form=true, parameters=parameters),
-            D = FluxBoundaryCondition(sedimenting, field_dependencies=:D, parameters=merge(parameters, (w=w_slow, λ=λ, ))),
-            DD = FluxBoundaryCondition(sedimenting, field_dependencies=:DD, parameters=merge(parameters, (w=w_fast, λ=λ, )))
-        ),
+        ), DIC_bc),
         auxiliary_fields = (Nᵣᵣ=Nᵣᵣ, Nᵣ=Nᵣ, Nᵣₑ=Nᵣₑ),
         callback =  Callback(integrate_sediment!, IterationInterval(1), parameters)
     )

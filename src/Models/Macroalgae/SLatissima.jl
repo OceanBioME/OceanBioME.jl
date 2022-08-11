@@ -73,8 +73,8 @@ equations(x::AbstractFloat, y::AbstractFloat, z::AbstractFloat, t::AbstractFloat
 equations(x::AbstractFloat, y::AbstractFloat, z::AbstractFloat, t::AbstractFloat, A::AbstractFloat, N::AbstractFloat, C::AbstractFloat, NO₃::AbstractFloat, NH₄::AbstractFloat, T::AbstractFloat, S::AbstractFloat, irr::AbstractFloat, u::AbstractFloat, v::AbstractFloat, w::AbstractFloat, params, Δt::AbstractFloat) = equations(x, y, z, t, A, N, C, NO₃, NH₄, T, S, irr, sqrt(u^2+v^2+w^2), params, Δt)
 
 const defaults = merge(SugarKelp.broch2013params, (
-    j_NO₃_max = 7.0e-5, #Ahn 1998
-    j_NH₄_max = 8.4e-5, #Ahn 1998
+    j_NO₃_max = 10*0.5*24*14/(10^6), #Ahn 1998
+    j_NH₄_max = 12*0.5*24*14/(10^6), #Ahn 1998
     k_NO₃ = SugarKelp.broch2013params.K_X,
     k_NH₄ = 1.3, #Fossberg 2018
     uₐ = 0.72, #broch 2019

@@ -47,7 +47,7 @@ function getPAR(PAR::Field, x, y, z, t)
     (fi, i::Int), (fj, j::Int), (fk, k::Int) = modf.(Oceananigans.Fields.fractional_indices(x, y, z, (Center(), Center(), Center()), PAR.grid))
     return PAR[i+1, j+1, k+1]
 end=#
-getPAR(PAR::Field, x, y, z, t) = Oceananigans.Fields.interpolate(PAR, Center(), Center(), Center(), PAR.grid, x, y, z)
+getPAR(PAR::Field, x, y, z, t) = Oceananigans.Fields.interpolate(PAR, Center(), Center(), Center(), PAR.grid, x, y, round(z, digits=5))
 getPAR(PAR, x, y, z, t) = PAR(x, y, z, t)
 #source functions with PAR func
 Z_forcing(x, y, z, t, NO₃, NH₄, P, Z, D, DD, DOM, params) = Z_forcing(x, y, z, t, NO₃, NH₄, P, Z, D, DD, DOM, getPAR(params.PAR, x, y, z, t), params)
