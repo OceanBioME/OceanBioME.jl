@@ -1,6 +1,7 @@
 module Particles
 using KernelAbstractions, Oceananigans, StructArrays
-using Oceananigans.Architectures: device
+using Oceananigans.Architectures: device, arch_array
+
 
 @kernel function source_sink!(model, loc, source_properties, scalefactors, tracers, Δt)
     #this implimentation over doing it for single tracer at a time (to better match Oceananigans kernal function format) as identifying the particle mask takes time
@@ -9,12 +10,12 @@ using Oceananigans.Architectures: device
     (fi, i::Int), (fj, j::Int), (fk, k::Int) = modf.(Oceananigans.Fields.fractional_indices(model.particles.properties.x[p], model.particles.properties.y[p], model.particles.properties.z[p], loc, model.grid))
    #possibly not the most efficient implimentation but benchmarked 10x faster than a weird vector solution        
     if (fi, fj, fk) != (0, 0, 0)
-        d=zeros(2,2,2)
-        vols=zeros(2,2,2)
+        d=arch_array(model.grid.architecture, zeros(2,2,2))
+        vols=arch_array(model.grid.architecture, zeros(2,2,2))
 
-        nodesi=zeros(Int, 2, 2, 2)
-        nodesj=zeros(Int, 2, 2, 2)
-        nodesk=zeros(Int, 2, 2, 2)
+        nodesi=arch_array(model.grid.architecture, zeros(Int, 2, 2, 2))
+        nodesj=arch_array(model.grid.architecture, zeros(Int, 2, 2, 2))
+        nodesk=arch_array(model.grid.architecture, zeros(Int, 2, 2, 2))
         for (a, di) in enumerate([fi, 1-fi]), (b, dj) in enumerate([fj, 1-fj]), (c, dk) in enumerate([fk, 1-fk])
             d[a,b,c] = sqrt(di^2+dj^2+dk^2)
             nodesi[a, b, c] = min(max(i+a, 1), model.grid.Nx)
