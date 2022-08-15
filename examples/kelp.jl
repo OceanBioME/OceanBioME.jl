@@ -149,7 +149,7 @@ bgc = Setup.Oceananigans(:LOBSTER, grid, params, PAR_field, optional_sets=(:carb
 #setup the kelp particles (initiallty with zero area for warmup period for BGC model)
 n_kelp=100
 z₀ = [-100:-1;]*1.0
-kelp_particles = SLatissima.setup(n_kelp, Lx/2, Ly/2, z₀, 0.0, 0.0, 0.0, 57.5, 100.0, t_function, s_function, 0.2)
+kelp_particles = SLatissima.setup(n_kelp, Lx/2, Ly/2, z₀, 0.0, 0.0, 0.0, 57.5, 100.0, t_function, s_function, 0.2, grid.architecture)
 @info "Defined kelp particles"
 
 # create a function with the vertical turbulent vertical diffusivity. This is an idealized functional form, but the depth of mixing is based on an interpolation to the mixed layer depth from the Mercator Ocean state estimate

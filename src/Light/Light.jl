@@ -15,7 +15,7 @@ module Light
 using Oceananigans
 using KernelAbstractions
 using KernelAbstractions.Extras.LoopInfo: @unroll
-using Oceananigans.Architectures: device
+using Oceananigans.Architectures: device, arch_array
 
 include("2band.jl")
 
