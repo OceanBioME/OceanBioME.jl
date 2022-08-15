@@ -96,26 +96,29 @@ Lx = 1   #500
 Ly = 500
 Nx = 1
 Ny = 1
-Nz = 150#33 # number of points in the vertical direction
+Nz = 33#150 # number of points in the vertical direction
 Lz = 600 # domain depth             # subpolar mixed layer depth max 427m 
-#=
-#inspired by mixing layer example and fitted parameters to copurnicus grid profile
-#this still doesn;t work and causes weird NaNs
-refinement = -4.9118e9
-stretching = 5.754
-h(k) = (k-1)/ Nz
+
+
+refinement = -4.9118e9 # controls spacing near surface (higher means finer spaced)  #1.2 5 -4.9118e9
+stretching = 5.754   # controls rate of stretching at bottom    #24 2.5  5.754
+                
+h(k) = (k - 1) / Nz
 ζ₀(k) = 1 + (h(k) - 1) / refinement
 Σ(k) = (1 - exp(-stretching * h(k))) / (1 - exp(-stretching))
 z_faces(k) = Lz * (ζ₀(k) * Σ(k) - 1)
-
-
-grid = RectilinearGrid(
-                size=(Nx, Ny, Nz), 
-                x=(0,Lx),
-                y=(0,Ly),
-                z=z_faces)=#
-
-grid = RectilinearGrid(size=(Nx, Ny, Nz), extent=(Lx, Ly, Lz))
+grid = RectilinearGrid(size = (Nx, Ny, Nz), 
+                       x = (0, Lx),
+                       y = (0, Ly),
+                       z = z_faces)
+#=
+Lx = 1   #500
+Ly = 500
+Nx = 1
+Ny = 1
+Nz = 150#150 # number of points in the vertical direction
+Lz = 200
+grid = RectilinearGrid(size=(Nx, Ny, Nz), extent=(Lx, Ly, Lz))=#
 
 
 B₀ = 0e-8    #m²s⁻³  B₀ = 4.24e-8  
@@ -135,19 +138,19 @@ t_function(x, y, z, t) = temperature_itp(mod(t, 364days))
 s_function(x, y, z, t) = salinity_itp(mod(t, 364days))
 
 PAR = Oceananigans.Fields.Field{Center, Center, Center}(grid)
-#PAR_func(x, y, z, t) = PAR_extrap(z, mod(t, 364days))    #LoadError: cannot define function PAR; it already has a value. So I renamed it as PAR_func. z goes first, then t. 
+#PAR_func(x, y, z, t) = PAR_extrap(z, mod(t, 364days))
 
 dic_bc = Boundaries.airseasetup(:CO₂, forcings=(T=t_function, S=s_function))
 oxy_bc = Boundaries.airseasetup(:O₂, forcings=(T=t_function, S=s_function))
 
-bgc = Setup.Oceananigans(:LOBSTER, grid, params, PAR, topboundaries=(DIC=dic_bc, OXY=oxy_bc), optional_sets=(:carbonates, :oxygen))
+bgc = Setup.Oceananigans(:LOBSTER, grid, params, PAR, optional_sets=(:carbonates, :oxygen), sinking=true, topboundaries=(DIC=dic_bc, OXY=oxy_bc))
 @info "Setup BGC"
 #npz = Setup.Oceananigans(:NPZ, grid, NPZ.defaults)
 #κₜ(x, y, z, t) = 1e-2*max(1-(z+50)^2/50^2,0)+1e-5;
-κₜ(x, y, z, t) = 1e-2*max(1-(z+mld_itp(mod(t,364days))/2)^2/(mld_itp(mod(t,364days))/2)^2,0)+1e-5;
+κₜ(x, y, z, t) = 8e-2*max(1-(z+mld_itp(mod(t,364days))/2)^2/(mld_itp(mod(t,364days))/2)^2,0)+1e-4;
 
 ###Model instantiation
-model = NonhydrostaticModel(advection = UpwindBiasedFifthOrder(),
+model = NonhydrostaticModel(advection = UpwindBiasedFifthOrder(),#change this to WENO
                             timestepper = :RungeKutta3,
                             grid = grid,
                             tracers = (:b, bgc.tracers...),
@@ -175,26 +178,30 @@ DDᵢ(x,y,z)=0
 NO₃ᵢ(x,y,z)= (1-tanh((z+300)/150))/2*6+11.4   #  # 17.5*(1-tanh((z+100)/10))/2
 NH₄ᵢ(x,y,z)= (1-tanh((z+300)/150))/2*0.05+0.05       #1e-1*(1-tanh((z+100)/10))/2
 DOMᵢ(x,y,z)= 0 
-DICᵢ(x,y,z)= 2380   #  mmol/m^3
-ALKᵢ(x,y,z)= 2720   #  mmol/m^3
+DICᵢ(x,y,z)= 2200   #  mmol/m^-3
+ALKᵢ(x,y,z)= 2400   #  mmol/m^-3
 OXYᵢ(x, y, z) = 240 #mmol/m^3
 
 ## `set!` the `model` fields using functions or constants:
 set!(model, b=bᵢ, P=Pᵢ, Z=Zᵢ, D=Dᵢ, DD=DDᵢ, NO₃=NO₃ᵢ, NH₄=NH₄ᵢ, DOM=DOMᵢ,DIC=DICᵢ, ALK=ALKᵢ, OXY=OXYᵢ, u=0, v=0, w=0)
-
+cₘᵢₙ = 0.7029022895143299
+dz²_κ=[findmin(grid.Δzᵃᵃᶜ[i]^2 ./(κₜ.(0.5,0.5,grid.zᵃᵃᶜ[i],[0:364;])))[1] for i in 1:Nz]
+Δt=cₘᵢₙ*findmin(dz²_κ)[1]
 # ## Setting up a simulation
-
-simulation = Simulation(model, Δt=200, stop_time=duration)  #Δt=0.5*(Lz/Nz)^2/1e-2,
+#2.4894837468331885e6
+simulation = Simulation(model, Δt=Δt, stop_time=duration)  #Δt=0.5*(Lz/Nz)^2/1e-2,
 #simulation.callbacks[:update_par] = Callback(Light.update_2λ!, IterationInterval(1), merge(params, (surface_PAR=surface_PAR,)))#comment out if using PAR functiuon
 
 ## Print a progress message
-progress_message(sim) = @printf("Iteration: %04d, time: %s, Δt: %s, wall time: %s\n",
+progress_message(sim) = @printf("Iteration: %04d, time: %s, Δt: %s, wall time: %s, %s\n",
                                 iteration(sim),
                                 prettytime(sim),
                                 prettytime(sim.Δt),
-                                prettytime(sim.run_wall_time))
+                                prettytime(sim.run_wall_time),
+                                [getproperty(model.tracers, tracer)[1,1,Nz] for tracer in bgc.tracers])
 
-simulation.callbacks[:progress] = Callback(progress_message, IterationInterval(100))
+simulation.callbacks[:progress] = Callback(progress_message, IterationInterval(1))
+simulation.callbacks[:nan_checker].func.erroring = true
 
 #=
 #this can move into LOBSTER.jl at some point
@@ -212,14 +219,13 @@ simulation.callbacks[:pco2] = Callback(pco2, IterationInterval(Int(1day/simulati
 # We then set up the simulation:
 
 # Vertical slice
-#=doesn't work with nonlin grid apparently
 simulation.output_writers[:profiles] =
     JLD2OutputWriter(model, merge(model.velocities, model.tracers, model.auxiliary_fields),
                           filename = "profile_subpolar_nonlin_grid.jld2",
                           indices = (1, 1, :),
                           schedule = TimeInterval(1days),     #TimeInterval(1days),
                           overwrite_existing = true)=#
-                          
+#=
 fields = Dict("P" => model.tracers.P, "Z" => model.tracers.Z, "D" => model.tracers.D, "DD" => model.tracers.DD, "DOM" => model.tracers.DOM, "DIC" => model.tracers.DIC, "ALK" => model.tracers.ALK, "OXY" => model.tracers.OXY, "NO₃" => model.tracers.NO₃, "NH₄" => model.tracers.NH₄)
 simulation.output_writers[:field_writer] =
                               NetCDFOutputWriter(model, fields, filename="nonlin_grid.nc", schedule=TimeInterval(1days))
@@ -229,8 +235,8 @@ simulation.output_writers[:field_writer] =
 #                             force = true)
 
 # We're ready:
-@info "Setup  sim - running"
-run!(simulation)
+@info "Setup  sim - running"=#
+run!(simulation)#=  
 #jldsave("pco2_water_subpolar.jld2"; pco2_bc)  
 #jldopen("pco2_water_subpolar.jld2", "r")
 
@@ -249,3 +255,4 @@ xb, yb, zb = nodes(model.tracers.b)
 results = OceanBioME.Plot.load_tracers(simulation)
 OceanBioME.Plot.profiles(results)
 savefig("subpolar_nonlin_grid.pdf")
+=#

@@ -71,7 +71,7 @@ DD_sinking(z, params) = params.V_dd*tanh(max(-z/params.λ,0))
 tracers=(:NO₃, :NH₄, :P, :Z, :D, :DD, :DOM)
 optional_tracers=(carbonates=(:DIC, :ALK), oxygen=(:OXY,))
 
-forcing_functions=(NO₃=NO₃_forcing, NH₄=NH₄_forcing, P=P_forcing, Z=Z_forcing, D=D_forcing, DD=D_forcing, DOM=DOM_forcing, DIC=DIC_forcing, ALK=ALK_forcing, OXY=OXY_forcing)
+forcing_functions=(NO₃=NO₃_forcing, NH₄=NH₄_forcing, P=P_forcing, Z=Z_forcing, D=D_forcing, DD=DD_forcing, DOM=DOM_forcing, DIC=DIC_forcing, ALK=ALK_forcing, OXY=OXY_forcing)
 sinking=(D=D_sinking, DD=DD_sinking)
 
 #parameters
