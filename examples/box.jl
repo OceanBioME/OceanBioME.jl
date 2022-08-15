@@ -5,7 +5,7 @@ using BGC, HDF5, Statistics, Interpolations, Plots  # load required modules
 day=60*60*24  # define the length of a day in seconds
 year=day*365  # define the length of a year in days
 
-# This demonstrates how to read in a timeseries of PAR data
+# This demonstrates how to read in a timeseries of photosynthetic available radiation (PAR) data
 path="./subpolar/"  # the folder where the data are stored
 par_mean_timeseries=zeros(365) # create an empty array
 for i in 1:365    #https://discourse.julialang.org/t/leading-zeros/30450
@@ -36,7 +36,7 @@ PAR(x, y, z, t) = surface_PAR_itp(mod(t,364*day))*exp(z*0.2) # Set the PAR
 params = merge(LOBSTER.default, (PAR=PAR, ))
 
 # Set up the model. Here, first specify the biogeochemical model, followed by initial conditions and the start and end times
-model = Setup.BoxModel(:LOBSTER, params, (P=Pᵢ, Z=Zᵢ, D=Dᵢ, DD=DDᵢ, NO₃=NO₃ᵢ, NH₄=NH₄ᵢ, DOM=DOMᵢ), 0.0, 1.0*year)
+model = Setup.BoxModel(:LOBSTER, params, (NO₃=NO₃ᵢ, NH₄=NH₄ᵢ, P=Pᵢ, Z=Zᵢ, D=Dᵢ, DD=DDᵢ, DOM=DOMᵢ), 0.0, 1.0*year)
 
 solution = BoxModel.run(model) # call BoxModel to timestep the biogeochemical model
 

@@ -165,7 +165,8 @@ model = NonhydrostaticModel(advection = UpwindBiasedFifthOrder(),
                             closure = ScalarDiffusivity(ν=κₜ, κ=κₜ), 
                             forcing =  bgc.forcing,
                             boundary_conditions = bgc.boundary_conditions,
-                            auxiliary_fields = merge((PAR=PAR_field, ), sediment_bcs.auxiliary_fields)  #comment out this line if using functional form of PAR
+                            auxiliary_fields = merge((PAR=PAR_field, ), sediment_bcs.auxiliary_fields),  #comment out this line if using functional form of PAR
+                            particles = kelp_particles
                             )
 
 # Initialize the biogeochemical variables
@@ -194,7 +195,7 @@ c_adv = 0.00274
 dz²_κ=[findmax(grid.Δzᵃᵃᶜ[i]^2 ./(κₜ.(0.5,0.5,grid.zᵃᵃᶜ[i],[0:364;])))[1] for i in 1:Nz]
 Δt=max(c_diff*findmax(dz²_κ)[1], -c_adv*findmax(grid.Δzᵃᵃᶜ)[1]/params.V_dd)
 
-simulation = Simulation(model, Δt=93, stop_time=min(duration, 1year)) 
+simulation = Simulation(model, Δt=Δt, stop_time=min(duration, 1year)) 
 # create a model 'callback' to update the light (PAR) profile every 1 timestep
 simulation.callbacks[:update_par] = Callback(Light.update_2λ!, IterationInterval(1), merge(params, (surface_PAR=surface_PAR,)))#comment out if using PAR as a function, PAR_func
 

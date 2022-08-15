@@ -140,3 +140,29 @@ model = NonhydrostaticModel(advection = UpwindBiasedFifthOrder(),
                             particles = kelp_particles)
 ``` 
 
+### Sediment model
+Sediment uses a simple model where the concentration of two types of organic matter with different decomposition rates are tracked at the bottom of the domain, and provide a boundary condition on the detritus, inorganic nitrates, and carbonates. To use:
+1. Setup the boundary conditions
+``` 
+sediment_bcs=Boundaries.setupsediment(grid)
+``` 
+2. Add these in the BGC model definition, and the auxillary fields to the model definition
+``` 
+bgc = Setup.Oceananigans(:LOBSTER, grid, params, PAR_field, optional_sets=(:carbonates, :oxygen), topboundaries=(DIC=dic_bc, OXY=oxy_bc), bottomboundaries = sediment_bcs.boundary_conditions)
+...
+model = NonhydrostaticModel(advection = UpwindBiasedFifthOrder(),
+                            timestepper = :RungeKutta3,
+                            grid = grid,
+                            tracers = (:b, bgc.tracers...),
+                            coriolis = FPlane(f=1e-4),
+                            buoyancy = BuoyancyTracer(), 
+                            closure = ScalarDiffusivity(ν=κₜ, κ=κₜ), 
+                            forcing =  bgc.forcing,
+                            boundary_conditions = bgc.boundary_conditions,
+                            auxiliary_fields = merge((PAR=PAR_field, ), sediment_bcs.auxiliary_fields)  #comment out this line if using functional form of PAR
+                            )
+``` 
+3. Run as normal
+
+## Plotting functionality
+Some plotting utilities are provided.
