@@ -123,7 +123,8 @@ h(k) = (k - 1) / Nz
 Σ(k) = (1 - exp(-stretching * h(k))) / (1 - exp(-stretching))
 ## Generating function
 z_faces(k) = Lz * (ζ₀(k) * Σ(k) - 1)
-grid = RectilinearGrid(size = (Nx, Ny, Nz), 
+grid = RectilinearGrid(
+                       size = (Nx, Ny, Nz), 
                        x = (0, Lx),
                        y = (0, Ly),
                        z = z_faces)
@@ -221,7 +222,7 @@ simulation.output_writers[:profiles] = NetCDFOutputWriter(model, fields, filenam
 run!(simulation)
 
 # Load and plot the results
-results = OceanBioME.Plot.load_tracers(simulation)
+results = OceanBioME.Plot.load_tracers("subpolar.nc", bgc.tracers, 1)
 OceanBioME.Plot.profiles(results)
 
 # Save the plot to a PDF file

@@ -1,8 +1,9 @@
 module Plot
 using Plots, Oceananigans, JLD2, Statistics, NetCDF
 using Oceananigans.Units: second,minute, minutes, hour, hours, day, days, year, years
+using Oceananigans.Architectures: arch_array
 
-load_tracers(sim::Simulation, save_name=:profiles) = load_tracers(sim.output_writers[save_name].filepath)
+load_tracers(sim::Simulation; save_name=:profiles, tracers=(:NO₃, :NH₄, :P, :Z, :D, :DD), tstart=1) = load_tracers(sim.output_writers[save_name].filepath, tracers=tracers, tstart=tstart)
 
 mutable struct model_results{T, X, Y, Z, t, R}
     tracers :: T
@@ -25,7 +26,7 @@ struct NetCDFResults
     tstart
 end
 
-function load_tracers(path::String, tracers=(:NO₃, :NH₄, :P, :Z, :D, :DD), tstart=0)
+function load_tracers(path::String; tracers=(:NO₃, :NH₄, :P, :Z, :D, :DD), tstart=1)
     if path[end-4:end] == ".jld2"
         file_profiles = jldopen(path)
     elseif path[end-2:end] == ".nc"

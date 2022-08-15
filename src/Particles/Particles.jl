@@ -1,6 +1,6 @@
 module Particles
 using KernelAbstractions, Oceananigans, StructArrays
-using Oceananigans.Architectures: device
+using Oceananigans.Architectures: device, arch_array
 
 @kernel function source_sink!(model, loc, source_properties, scalefactors, tracers, Δt)
     #this implimentation over doing it for single tracer at a time (to better match Oceananigans kernal function format) as identifying the particle mask takes time
@@ -9,12 +9,12 @@ using Oceananigans.Architectures: device
     (fi, i::Int), (fj, j::Int), (fk, k::Int) = modf.(Oceananigans.Fields.fractional_indices(model.particles.properties.x[p], model.particles.properties.y[p], model.particles.properties.z[p], loc, model.grid))
    #possibly not the most efficient implimentation but benchmarked 10x faster than a weird vector solution        
     if (fi, fj, fk) != (0, 0, 0)
-        d=zeros(2,2,2)
-        vols=zeros(2,2,2)
+        d=arch_array(model.grid.architecture, zeros(2,2,2))
+        vols=arch_array(model.grid.architecture, zeros(2,2,2))
 
-        nodesi=zeros(Int, 2, 2, 2)
-        nodesj=zeros(Int, 2, 2, 2)
-        nodesk=zeros(Int, 2, 2, 2)
+        nodesi=arch_array(model.grid.architecture, zeros(Int, 2, 2, 2))
+        nodesj=arch_array(model.grid.architecture, zeros(Int, 2, 2, 2))
+        nodesk=arch_array(model.grid.architecture, zeros(Int, 2, 2, 2))
         for (a, di) in enumerate([fi, 1-fi]), (b, dj) in enumerate([fj, 1-fj]), (c, dk) in enumerate([fk, 1-fk])
             d[a,b,c] = sqrt(di^2+dj^2+dk^2)
             nodesi[a, b, c] = min(max(i+a, 1), model.grid.Nx)
@@ -24,14 +24,23 @@ using Oceananigans.Architectures: device
 
         normfactor=1/sum(1 ./ d)
         #have todo second loop to have the normfactor (I think)
+        #rewrite this with small update function once warnings have been tested
         for (ind, i) in enumerate(nodesi)
             for (l, tracer) in enumerate(tracers)
                 getproperty(model.tracers, tracer)[i, nodesj[ind], nodesk[ind]] += scalefactors[l] * Δt * normfactor * getproperty(model.particles.properties, source_properties[l])[p] / (d[ind] * Oceananigans.Operators.Vᶜᶜᶜ(i, nodesj[ind], nodesk[ind], model.grid))
+                if getproperty(model.tracers, tracer)[i, nodesj[ind], nodesk[ind]] < 0
+                    getproperty(model.tracers, tracer)[i, nodesj[ind], nodesk[ind]]  =0
+                    @warn "Particle pulled tracer ($tracer) below 0"
+                end
             end
         end
     else
         for (l, tracer) in enumerate(tracers)
             getproperty(model.tracers, tracer)[i+1, j+1, k+1] += scalefactors[l] * Δt * getproperty(model.particles.properties, source_properties[l])[p] / (Oceananigans.Operators.Vᶜᶜᶜ(i, j, k, model.grid))
+            if getproperty(model.tracers, tracer)[i+1, j+1, k+1] < 0
+                getproperty(model.tracers, tracer)[i+1, j+1, k+1] =0
+                @warn "Particle pulled tracer ($tracer) below 0"
+            end
         end
     end
 end

@@ -149,7 +149,7 @@ bgc = Setup.Oceananigans(:LOBSTER, grid, params, PAR_field, optional_sets=(:carb
 #setup the kelp particles (initiallty with zero area for warmup period for BGC model)
 n_kelp=100
 z₀ = [-100:-1;]*1.0
-kelp_particles = SLatissima.setup(n_kelp, Lx/2, Ly/2, z₀, 0.0, 0.0, 0.0, 57.5, 100.0, t_function, s_function, 0.2)
+kelp_particles = SLatissima.setup(n_kelp, Lx/2, Ly/2, z₀, 0.0, 0.0, 0.0, 57.5, 100.0, t_function, s_function, 0.2, grid.architecture)
 @info "Defined kelp particles"
 
 # create a function with the vertical turbulent vertical diffusivity. This is an idealized functional form, but the depth of mixing is based on an interpolation to the mixed layer depth from the Mercator Ocean state estimate
@@ -191,7 +191,7 @@ set!(model, P=Pᵢ, Z=Zᵢ, D=Dᵢ, DD=DDᵢ, NO₃=NO₃ᵢ, NH₄=NH₄ᵢ, DO
 #91s is about the maximum time step viable with this diffusivity and sinking specified
 #The limit is initially diffusive (needing around 40s timestep), but then becomes advective when sinking particles reach the deeper (larger) cells
 c_diff = 6.803014480377265e-7
-c_adv = 0.00274
+c_adv = 0.002
 dz²_κ=[findmax(grid.Δzᵃᵃᶜ[i]^2 ./(κₜ.(0.5,0.5,grid.zᵃᵃᶜ[i],[0:364;])))[1] for i in 1:Nz]
 Δt=max(c_diff*findmax(dz²_κ)[1], -c_adv*findmax(grid.Δzᵃᵃᶜ)[1]/params.V_dd)
 
@@ -212,7 +212,7 @@ simulation.callbacks[:progress] = Callback(progress_message, IterationInterval(1
 # Specify which data to save 
 #setup dictionary of fields (jld2 saving does not work for irregular grids)
 fields = Dict(zip((["$t" for t in bgc.tracers]..., "PAR", "Nᵣ", "Nᵣᵣ", "Nᵣₑ"), ([getproperty(model.tracers, t) for t in bgc.tracers]..., [getproperty(model.auxiliary_fields, t) for t in (:PAR, :Nᵣ, :Nᵣᵣ, :Nᵣₑ)]...)))
-simulation.output_writers[:profiles] = NetCDFOutputWriter(model, fields, filename="subpolar.nc", schedule=TimeInterval(1days))
+simulation.output_writers[:profiles] = NetCDFOutputWriter(model, fields, filename="kelp.nc", schedule=TimeInterval(1days))
 
 #checkpoint after warmup so we don't have to rerun for different kelp configs
 simulation.output_writers[:checkpointer] = Checkpointer(model, schedule=SpecifiedTimes([1year]), prefix="kelp_checkpoint")
@@ -238,7 +238,7 @@ simulation.stop_time = duration
 run!(simulation)
 
 # Load and plot the results
-results = OceanBioME.Plot.load_tracers(simulation)
+results = OceanBioME.Plot.load_tracers("kelp.nc", bgc.tracers, 1)
 profiles = OceanBioME.Plot.profiles(results)
 savefig("subpolar.pdf")
 
