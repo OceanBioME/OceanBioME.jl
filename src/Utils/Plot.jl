@@ -1,5 +1,5 @@
 module Plot
-using Plots, Oceananigans, JLD2, Statistics
+using Plots, Oceananigans, JLD2, Statistics, NetCDF
 using Oceananigans.Units: second,minute, minutes, hour, hours, day, days, year, years
 
 load_tracers(sim::Simulation, save_name=:profiles) = load_tracers(sim.output_writers[save_name].filepath)
@@ -19,9 +19,25 @@ mutable struct particle_results{P, t, R}
     results :: R
 end
 
-function load_tracers(path)
-    file_profiles = jldopen(path)
+struct NetCDFResults
+    path
+    tracers
+    tstart
+end
 
+function load_tracers(path::String, tracers=(:NO₃, :NH₄, :P, :Z, :D, :DD), tstart=0)
+    if path[end-4:end] == ".jld2"
+        file_profiles = jldopen(path)
+    elseif path[end-2:end] == ".nc"
+        file_profiles = NetCDFResults(path, tracers, tstart)
+    else
+        throw(ArgumentError("$path is not a valid path"))
+    end
+
+    return load_tracers(file_profiles)
+end
+
+function load_tracers(file_profiles::JLD2.JLDFile)
     tracers=keys(file_profiles["timeseries"])
     deleteat!(tracers, findall(x->x in ["u", "v", "w", "t", "b"], tracers))
     x=file_profiles["grid/xᶜᵃᵃ"][4:end-3]
@@ -37,10 +53,27 @@ function load_tracers(path)
     for (i, iter) in enumerate(iterations)
         times[i] = file_profiles["timeseries/t/$iter"]
         for (j, tracer) in enumerate(tracers)
-            results[j, :, :, :, i] .= file_profiles["timeseries/$tracer/$iter"]#permutedims(repeat(file_profiles["timeseries/$tracer/$iter"],1,1,1,1,1), (5, 1, 2, 3, 4))
+            results[j, :, :, :, i] .= file_profiles["timeseries/$tracer/$iter"]
         end
     end
     return model_results(tracers, x, y, z, times, results)
+end
+
+function load_tracers(file::NetCDFResults)
+    x = ncread("nonlin_grid.nc", "xC")
+    y = ncread("nonlin_grid.nc", "yC")
+    z = ncread("nonlin_grid.nc", "zC")
+    t = ncread("nonlin_grid.nc", "time")[file.tstart:end]
+
+    results = zeros(length.([file.tracers, x, y, z, t])...)
+
+    for (i, tracer) in enumerate(file.tracers)
+        if !(tracer in ["u", "v", "w", "t", "b"])
+            results[i, :, :, :, :] =ncread(file.path, "$tracer")[:, :, :, file.tstart:end]
+        end
+    end
+
+    return model_results(file.tracers, x, y, z, t, results)
 end
 
 load_particles(sim::Simulation, save_name=:particles) = load_particles(sim.output_writers[save_name].filepath)
@@ -64,10 +97,14 @@ function load_particles(path)
     return particle_results(tracers, times, results)
 end
 
-function profiles(results::model_results, fs=4, xlabel="time (days)", ylabel="z (m)")
+function profiles(results::model_results; fs=4, xlabel="time (days)", ylabel="z (m)", sediment=("Nᵣ", "Nᵣᵣ", "Nᵣₑ"))
     plts=[]
     for (j, tracer) in enumerate(results.tracers)
-        push!(plts, heatmap(results.t/(1day),results.z,mean(results.results[j, :, :, :, :], dims=(1, 2))[1, 1, :, :], titlefontsize=fs, guidefontsize=fs, tickfontsize=fs, legendfontsize=fs, xlabel=xlabel, ylabel=ylabel, title=tracer))
+        if !(tracer in sediment)
+            push!(plts, heatmap(results.t/(1day),results.z,mean(results.results[j, :, :, :, :], dims=(1, 2))[1, 1, :, :], titlefontsize=fs, guidefontsize=fs, tickfontsize=fs, legendfontsize=fs, xlabel=xlabel, ylabel=ylabel, title=tracer))
+        else
+            push!(plts, plot(results.t/(1day),mean(results.results[j, :, :, 1, :], dims=(1, 2))[1, 1, :], titlefontsize=fs, guidefontsize=fs, tickfontsize=fs, legendfontsize=fs, xlabel=xlabel, ylabel=ylabel, title=tracer, legend=false))
+        end
     end
     plot(plts...)
     return plts
@@ -76,7 +113,7 @@ end
 function particles(results::particle_results, fs=4, xlabel="time (days)")
     plts=[]
     for (j, tracer) in enumerate(results.properties)
-        push!(plts, plot(results.t/(1day), results.results[j, :, :]', titlefontsize=fs, guidefontsize=fs, tickfontsize=fs, legendfontsize=fs, xlabel=xlabel, ylabel=tracer))
+        push!(plts, plot(results.t/(1day), results.results[j, :, :]', titlefontsize=fs, guidefontsize=fs, tickfontsize=fs, legendfontsize=fs, xlabel=xlabel, ylabel=tracer, legend=false))
     end
     plot(plts...)
     return plts
