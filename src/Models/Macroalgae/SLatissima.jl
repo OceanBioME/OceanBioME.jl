@@ -15,6 +15,8 @@ module SLatissima
 using StructArrays, SugarKelp
 using OceanBioME: Particles
 using Oceananigans.Units: second,minute, minutes, hour, hours, day, days, year, years
+using Oceananigans.Architectures: arch_array
+using Oceananigans: CPU()
 
 @inline f_curr(u, params) = params.uₐ*(1-exp(-u/params.u₀))+params.uᵦ
 
@@ -116,7 +118,7 @@ sink_fields = ((tracer=:NO₃, property=:j_NO₃, scalefactor=-1.0),
                     (tracer=:DOM, property=:e, scalefactor=1.0/6.56),#Rd_dom from LOBSTER
                     (tracer=:DD, property=:ν, scalefactor=1.0))
 
-function defineparticles(initials, n)
+function defineparticles(initials, n, arch=CPU())
     x̄₀ = []
     for var in [:x₀, :y₀, :z₀, :A₀, :N₀, :C₀]
         vals=getproperty(initials, var)
@@ -128,19 +130,19 @@ function defineparticles(initials, n)
             throw(ArgumentError("Invalid initial values given for $var, must be a single number or vector of length n"))
         end
     end
-    return StructArray{Particle}((x̄₀[1], x̄₀[2], x̄₀[3], zeros(n), zeros(n), zeros(n), x̄₀[4], x̄₀[5], x̄₀[6], [zeros(n) for i in 1:8]...))
+    return StructArray{Particle}((x̄₀[1], x̄₀[2], x̄₀[3], arch_array(arch, zeros(n)), arch_array(arch, zeros(n)), arch_array(arch, zeros(n)), x̄₀[4], x̄₀[5], x̄₀[6], [arch_array(arch, zeros(n)) for i in 1:8]...))
 end
 
 @inline no_dynamics(args...) = nothing
 
-function setup(n, x₀, y₀, z₀, A₀, N₀, C₀, latitude, density, T=nothing, S=nothing, urel=nothing, resp_model=2, paramset=defaults, custom_dynamics=no_dynamics, O₂=false)
+function setup(n, x₀, y₀, z₀, A₀, N₀, C₀, latitude, density, T=nothing, S=nothing, urel=nothing, resp_model=2, paramset=defaults, custom_dynamics=no_dynamics, O₂=false, arch=CPU())
     if (!isnothing(T) && !isnothing(S) && isnothing(urel))
         throw(ArgumentError("T and S functions with tracked velocity fields not currently implimented"))
     elseif ((isnothing(T) && !isnothing(S)) | (!isnothing(T) && isnothing(S)))
         throw(ArgumentError("T and S must both be functions or both be tracked fields"))
     end
 
-    particles = defineparticles((x₀=x₀, y₀=y₀, z₀=z₀, A₀=A₀, N₀=N₀, C₀=C₀), n)
+    particles = defineparticles((x₀=x₀, y₀=y₀, z₀=z₀, A₀=A₀, N₀=N₀, C₀=C₀), n, arch)
     property_dependencies = (:A, :N, :C, :NO₃, :NH₄, :PAR)
     λ_arr=SugarKelp.gen_λ(latitude)
     parameters = merge(paramset, (λ=λ_arr, resp_model=2))

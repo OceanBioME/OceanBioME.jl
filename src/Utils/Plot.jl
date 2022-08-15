@@ -1,6 +1,7 @@
 module Plot
 using Plots, Oceananigans, JLD2, Statistics, NetCDF
 using Oceananigans.Units: second,minute, minutes, hour, hours, day, days, year, years
+using Oceananigans.Architectures: arch_array
 
 load_tracers(sim::Simulation, save_name=:profiles) = load_tracers(sim.output_writers[save_name].filepath)
 

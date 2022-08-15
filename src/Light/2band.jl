@@ -2,10 +2,10 @@
     i, j = @index(Global, NTuple) 
     zpar=Oceananigans.Operators.znodes(par)
 
-    ∫chlᵉʳ = Oceananigans.Architectures.arch_array(grid.architecture, zeros(grid.Nz))#I've checked and this array conversion doesn't cost anything (on CPU at least)
+    ∫chlᵉʳ = arch_array(grid.architecture, zeros(grid.Nz))#I've checked and this array conversion doesn't cost anything (on CPU at least)
     @inbounds ∫chlᵉʳ[grid.Nz] = (chl[i, j, grid.Nz]/params.r_pig)^params.e_r*zpar[grid.Nz]
 
-    ∫chlᵉᵇ = Oceananigans.Architectures.arch_array(grid.architecture, zeros(grid.Nz))
+    ∫chlᵉᵇ = arch_array(grid.architecture, zeros(grid.Nz))
     @inbounds ∫chlᵉᵇ[grid.Nz] = (chl[i, j, grid.Nz]/params.r_pig)^params.e_b*zpar[grid.Nz]
 
     for k=grid.Nz-1:-1:1
