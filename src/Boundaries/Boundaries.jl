@@ -18,7 +18,7 @@ Soetaert, K., Middelburg, J., Herman, P. and Buis, K., 2000. On the coupling of 
 Wanninkhof, R., 1992. Relationship between wind speed and gas exchange over the ocean. Journal of Geophysical Research, 97(C5), p.7373.
 "
 module Boundaries
-using Roots, Oceananigans, KernelAbstractions
+using Roots, Oceananigans, KernelAbstractions, Adapt
 using Oceananigans.Units: second, minute, minutes, hour, hours, day, days, year, years
 using Oceananigans.Architectures: device
 

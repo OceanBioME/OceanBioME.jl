@@ -26,7 +26,7 @@ using Oceananigans.Units: second,minute, minutes, hour, hours, day, days, year, 
 
 using OceanBioME 
 
-params = LOBSTER.defaults  #load parameters in src/parameters/lobster.jl 
+const params = LOBSTER.defaults  #load parameters in src/parameters/lobster.jl 
 
 # Step 1: import data from the Mercator Ocean state estimate: Global Ocean 1/12° Physics Analysis and Forecast updated Daily
 # The temperature and salinity are needed to calculate the air-sea CO2 flux.  The mixed layer depth is used to construct an idealized diffusivity profile
@@ -35,24 +35,24 @@ time_series_second = (0:364)days # Create an array of times, one per day in unit
 so = ncread(filename1, "so");  # Read the salinity in Practical Salinity Units
 so_scale_factor = ncgetatt(filename1, "so", "scale_factor") #Real_Value = (Display_Value X scale_factor) + add_offset
 so_add_offset = ncgetatt(filename1, "so", "add_offset")
-salinity = mean(so, dims=(1,2))[1:365]*so_scale_factor.+so_add_offset # NEEDS EXPLANATION
-salinity_itp = LinearInterpolation(time_series_second, salinity) # Create a function to interpolate the salinity to a specified time.  To use this function, call: salinity_itp(mod(timeinseconds,364days))
+const salinity = mean(so, dims=(1,2))[1:365]*so_scale_factor.+so_add_offset # NEEDS EXPLANATION
+const salinity_itp = LinearInterpolation(time_series_second, salinity) # Create a function to interpolate the salinity to a specified time.  To use this function, call: salinity_itp(mod(timeinseconds,364days))
 thetao = ncread(filename1, "thetao");  # Read the temperature in units of Degrees Celsius
 thetao_scale_factor = ncgetatt(filename1, "thetao", "scale_factor") 
 thetao_add_offset = ncgetatt(filename1, "thetao", "add_offset")
-temperature = mean(thetao, dims=(1,2))[1:365]*thetao_scale_factor.+thetao_add_offset # NEEDS EXPLANATION
-temperature_itp = LinearInterpolation(time_series_second, temperature) # Create a function to interpolate the temperature to a specified time
+const temperature = mean(thetao, dims=(1,2))[1:365]*thetao_scale_factor.+thetao_add_offset # NEEDS EXPLANATION
+const temperature_itp = LinearInterpolation(time_series_second, temperature) # Create a function to interpolate the temperature to a specified time
 mlotst = ncread(filename1, "mlotst"); # Read the mixed layer depth in units of eters
 mlotst_scale_factor = ncgetatt(filename1, "mlotst", "scale_factor") 
 mlotst_add_offset = ncgetatt(filename1, "mlotst", "add_offset")
-mixed_layer_depth = mean(mlotst, dims=(1,2))[1:365]*mlotst_scale_factor.+mlotst_add_offset # NEEDS EXPLANATION
-mld_itp = LinearInterpolation(time_series_second, mixed_layer_depth) # Create a function to interpolate the mixed layer depth to a specified time  
+const mixed_layer_depth = mean(mlotst, dims=(1,2))[1:365]*mlotst_scale_factor.+mlotst_add_offset # NEEDS EXPLANATION
+const mld_itp = LinearInterpolation(time_series_second, mixed_layer_depth) # Create a function to interpolate the mixed layer depth to a specified time  
 
 # Step 2: import annual cycle chl data (to calculate PAR_func) #Global Ocean Biogeochemistry Analysis and Forecast
 filename2 = "OceanBioME_example_data/subpolar_chl.nc"    #subpolar_chl.nc
-chl = ncread(filename2, "chl");  #chl scale_factor=1, add_offset=0
-chl_mean = mean(chl, dims=(1,2))[1,1,:,1:365] # mg m-3, unit no need to change. 
-depth_chl = ncread(filename2, "depth");
+#chl = ncread(filename2, "chl");  #chl scale_factor=1, add_offset=0
+#chl_mean = mean(chl, dims=(1,2))[1,1,:,1:365] # mg m-3, unit no need to change. 
+#depth_chl = ncread(filename2, "depth");
 
 # Step 3: import annual cycle surface photosynthetic available radiation (PAR) data #Ocean Color  VIIRS-SNPP PAR daily 9km
 path="./OceanBioME_example_data/subpolar/"    #subtropical   #./subpolar/
@@ -66,7 +66,7 @@ for i in 1:365    #https://discourse.julialang.org/t/leading-zeros/30450
     par_mean_timeseries[i] = mean([par[i][1]/BinList[i][4] for i in 1:length(par)])*3.99e-10*545e12/(1day)  #average PAR values in bins and convert from einstin/m^2/day to W/m^2
 end
 
-surface_PAR_itp = LinearInterpolation((0:364)day, par_mean_timeseries)
+const surface_PAR_itp = LinearInterpolation((0:364)day, par_mean_timeseries)
 surface_PAR(t) = surface_PAR_itp(mod(t, 364days))  # will be used as part of Option 2 of PAR_field
 
 #=
@@ -86,7 +86,7 @@ Use the following steps:
 * keep simulation.callbacks[:update_par]
 * indicate PAR_field as an input in bgc = Setup.Oceananigans()
 =#
-
+#=
 PAR = zeros(length(depth_chl),365)   # initialize PAR
 PAR_r = zeros(length(depth_chl),365) # break it down into two wavebands: red and blue.
 PAR_b = zeros(length(depth_chl),365)
@@ -100,9 +100,9 @@ for i =2:length(depth_chl)  # equations refer to the APPENDIX of reference (2) a
 end
 PAR_itp = Interpolations.interpolate((-depth_chl[end:-1:1], (0:364)day), PAR[end:-1:1,:], Gridded(Linear())) # create an interpolation function to allow access to the PAR at arbitary time and depth
 PAR_extrap = extrapolate(PAR_itp, (Line(),Throw()))  #  PAR_extrap(z, mod(t,364days))  Interpolations.extrapolate Method
-
+=#
 # Simulation duration    
-duration=2years    
+const duration=2years    
 
 # Define the grid
 Lx = 1   #500
@@ -136,15 +136,15 @@ PAR_field = Oceananigans.Fields.Field{Center, Center, Center}(grid) #initialize 
 PAR_func(x, y, z, t) = PAR_extrap(z, mod(t, 364days))    # Define the PAR as a function. z goes first, then t. 
 
 # Specify the boundary condition for DIC and OXY based on the air-sea CO₂ and O₂ flux
-dic_bc = Boundaries.airseasetup(:CO₂, forcings=(T=t_function, S=s_function))
-oxy_bc = Boundaries.airseasetup(:O₂, forcings=(T=t_function, S=s_function))
+const dic_bc = Boundaries.airseasetup(:CO₂, forcings=(T=t_function, S=s_function))
+const oxy_bc = Boundaries.airseasetup(:O₂, forcings=(T=t_function, S=s_function))
 
 #Specify the sediment model boundary boundary_conditions
 #The sediment model can be turned of by removing the referances to it in the bgc = Setup ... line, and removing the auxillary fields (except PAR) when the Oceananigans model is setup
-sediment_bcs=Boundaries.setupsediment(grid)
+const sediment_bcs=Boundaries.setupsediment(grid)
 
 #Set up the OceanBioME model with the specified biogeochemical model, light, and boundary conditions
-bgc = Setup.Oceananigans(:LOBSTER, grid, params, PAR_field, optional_sets=(:carbonates, :oxygen), topboundaries=(DIC=dic_bc, OXY=oxy_bc), bottomboundaries = sediment_bcs.boundary_conditions)
+const bgc = Setup.Oceananigans(:LOBSTER, grid, params, PAR_field, optional_sets=(:carbonates, :oxygen), topboundaries=(DIC=dic_bc, OXY=oxy_bc), bottomboundaries = sediment_bcs.boundary_conditions)
 @info "Setup BGC model"
 
 # create a function with the vertical turbulent vertical diffusivity. This is an idealized functional form, but the depth of mixing is based on an interpolation to the mixed layer depth from the Mercator Ocean state estimate

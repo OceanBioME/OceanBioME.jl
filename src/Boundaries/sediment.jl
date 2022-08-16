@@ -65,7 +65,7 @@ function setupsediment(grid, w_fast=200/day, w_slow=3.47e-5, λ=1.0, parameters=
 
     #would like to user smaller grid to concerve memeory butt breaks output writer
     Nᵣᵣ .= Nᵣᵣᵢ; Nᵣ .= Nᵣᵢ; Nᵣₑ .= 0.0
-    parameters = merge(parameters, (Nᵣᵣ = Nᵣᵣ, Nᵣ = Nᵣ, Nᵣₑ=Nᵣₑ, d = grid.zᵃᵃᶠ[1], λ=λ, f_ref=f_ref, f_fast=f_fast, f_slow=f_slow, w_fast = w_fast, w_slow = w_slow))
+    parameters = merge(parameters, (Nᵣᵣ = Nᵣᵣ, Nᵣ = Nᵣ, Nᵣₑ=Nᵣₑ, d = adapt(Array, grid.zᵃᵃᶠ)[1], λ=λ, f_ref=f_ref, f_fast=f_fast, f_slow=f_slow, w_fast = w_fast, w_slow = w_slow))
 
     if carbonates DIC_bc = (DIC = FluxBoundaryCondition(sedimentDIC, discrete_form=true, parameters=parameters), ) else DIC_bc = () end
 

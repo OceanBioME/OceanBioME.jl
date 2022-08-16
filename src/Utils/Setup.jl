@@ -1,8 +1,8 @@
 module Setup
 export run!
-using OceanBioME, Oceananigans, DiffEqBase, OrdinaryDiffEq
+using OceanBioME, Oceananigans, DiffEqBase, OrdinaryDiffEq, KernelAbstractions
 using Oceananigans.Grids: AbstractGrid
-using Oceananigans.Architectures: arch_array
+using Oceananigans.Architectures: device, arch_array
 
 function loadmodel(model)
     models = propertynames(OceanBioME)
@@ -27,13 +27,20 @@ function loadtracers(model, optional_sets)
     return (core=model.tracers, optional=optional_tracers)
 end
 
+@kernel function _setup_slip_vel!(vel, fv, z, params)
+    k = @index(Global)
+    @inbounds vel[:, :, k] .= fv(z[k], params)
+end
+
 function setuptracer(model, grid, tracer, field_dependencies, topboundaries, bottomboundaries, forcing_params; sinking, advection_scheme)
     forcing = Forcing(getproperty(model.forcing_functions, tracer), field_dependencies=field_dependencies, parameters=forcing_params)
     if (sinking && tracer in keys(model.sinking))
-        slip_vel = arch_array(grid.architecture, zeros(0:grid.Nx+2,0:grid.Ny+2,0:grid.Nz+2))
-        for k=0:grid.Nz-2
-            @inbounds slip_vel[:, :, k] .= getproperty(model.sinking, tracer)(grid.zᵃᵃᶜ[k], forcing_params)
-        end
+	slip_vel = arch_array(grid.architecture, zeros(0:grid.Nx+2,0:grid.Ny+2,0:grid.Nz+2))
+	workgroup = min(grid.Nz-1, 256)
+        worksize = workgroup
+        setup_slip_vel! = _setup_slip_vel!(device(grid.architecture), workgroup, worksize)
+        setup_event = setup_slip_vel!(slip_vel, getproperty(model.sinking, tracer), grid.zᵃᵃᶜ, forcing_params)
+        wait(setup_event)
         forcing = (forcing, AdvectiveForcing(advection_scheme(), w=slip_vel))
     end
 
