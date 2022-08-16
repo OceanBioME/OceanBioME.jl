@@ -60,10 +60,10 @@ function load_tracers(file_profiles::JLD2.JLDFile)
 end
 
 function load_tracers(file::NetCDFResults)
-    x = ncread("nonlin_grid.nc", "xC")
-    y = ncread("nonlin_grid.nc", "yC")
-    z = ncread("nonlin_grid.nc", "zC")
-    t = ncread("nonlin_grid.nc", "time")[file.tstart:end]
+    x = ncread(file.path, "xC")
+    y = ncread(file.path, "yC")
+    z = ncread(file.path, "zC")
+    t = ncread(file.path, "time")[file.tstart:end]
 
     results = zeros(length.([file.tracers, x, y, z, t])...)
 
