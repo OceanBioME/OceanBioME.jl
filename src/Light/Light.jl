@@ -16,6 +16,7 @@ using Oceananigans
 using KernelAbstractions
 using KernelAbstractions.Extras.LoopInfo: @unroll
 using Oceananigans.Architectures: device, arch_array
+using Oceananigans.Grids: znode
 
 include("2band.jl")
 

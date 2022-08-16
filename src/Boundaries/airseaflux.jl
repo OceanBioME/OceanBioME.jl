@@ -32,13 +32,13 @@ Sc(T, params) = params.A-params.B*T+params.C*T^2-params.D*T^3
 β(T, S, params) = exp(params.A₁+params.A₂*(100/T)+params.A₃*log(T/100)+S*(params.B₁+params.B₂*(T/100)+params.B₃*(T/100)^2))
 
 #now fairly sure that this is giving the correct result for CO₂  as βρ is the henrys coefficient which sould be ∼34mol/m³ atm
-K(T, S, params)=k(gas, T, params)*β(T+273.15, S, params.β_params)*params.ρₒ #L=ρ\_wK₀ ->  https://reader.elsevier.com/reader/sd/pii/0304420374900152 and here K₀=β
+K(T, S, params)=k(T, params)*β(T+273.15, S, params.β_params)*params.ρₒ #L=ρ\_wK₀ ->  https://reader.elsevier.com/reader/sd/pii/0304420374900152 and here K₀=β
 
 function airseaflux(x, y, t, T::AbstractFloat, S::AbstractFloat, conc::AbstractFloat, params)
     #https://agupubs.onlinelibrary.wiley.com/doi/epdf/10.1029/92JC00188 could add chemical enhancement factor
-    if params.gas in ("O₂", )#doing like this for flexability in the future
+    if params.conc_type == 1
         return k(T, params)*(conc-α(T, S, params)*params.conc_air)
-    elseif params.gas in ("CO₂", )
+    elseif params.conc_type == 2
         return K(T, S, params)*(conc-params.conc_air)/(1000)#mol*ppmv/m^2*atm*s to mmolC/m²s not sure this is correct
     else
         throw(ArgumentError("Invalid gas choice for airseaflux"))
@@ -46,7 +46,7 @@ function airseaflux(x, y, t, T::AbstractFloat, S::AbstractFloat, conc::AbstractF
 end
 
 function airseaflux(x, y, t, DIC::AbstractFloat, ALK::AbstractFloat, T::AbstractFloat, S::AbstractFloat, params)
-    if !(params.gas in ("CO₂", ))
+    if !params.isCO₂
         throw(ArgumentError("Too many arguments for gas type $(params.gas)"))
     end
     conc = pCO₂(DIC, ALK, T+273.15, S, params)
@@ -55,6 +55,7 @@ end
 
 airseaflux(x, y, t, conc, params) = airseaflux(x, y, t, params.T(x, y, 0, t), params.S(x, y, 0, t), conc, params)
 airseaflux(x, y, t, DIC, ALK, params) = airseaflux(x, y, t, DIC, ALK, params.T(x, y, 0, t), params.S(x, y, 0, t), params)
+
 
 function airseasetup(gas::Symbol; forcings=(T=nothing, S=nothing), parameters=defaults.airseaflux)
     #don't like this but oh well
@@ -86,7 +87,7 @@ function airseasetup(gas::Symbol; forcings=(T=nothing, S=nothing), parameters=de
         parameters = merge(function_parameters, (T=forcings.T, S=forcings.S))
     end
 
-    parameters = merge(parameters, (gas="$gas", ))
+    parameters = merge(parameters, (conc_type = gas in (:O₂, ) ? 1 : (gas in (:CO₂, ) ? 2 : throw(ArgumentError("Boundary conditions not defined for gas $gas"))), isCO₂ = (gas == :CO₂)))
 
     return FluxBoundaryCondition(airseaflux, field_dependencies = field_dependencies, parameters = parameters)
 end

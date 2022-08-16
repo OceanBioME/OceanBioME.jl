@@ -12,7 +12,7 @@ References
 """
 
 # First, load the needed modules
-using Random   
+using Random 
 using Printf
 using Plots
 using JLD2
@@ -20,6 +20,7 @@ using NetCDF
 using HDF5
 using Interpolations
 using Statistics 
+using Adapt 
 
 using Oceananigans
 using Oceananigans.Units: second,minute, minutes, hour, hours, day, days, year, years
@@ -186,8 +187,8 @@ set!(model, P=Pᵢ, Z=Zᵢ, D=Dᵢ, DD=DDᵢ, NO₃=NO₃ᵢ, NH₄=NH₄ᵢ, DO
 #The limit is initially diffusive (needing around 40s timestep), but then becomes advective when sinking particles reach the deeper (larger) cells
 c_diff = 6.803014480377265e-7
 c_adv = 0.00274
-dz²_κ=[findmax(grid.Δzᵃᵃᶜ[i]^2 ./(κₜ.(0.5,0.5,grid.zᵃᵃᶜ[i],[0:364;])))[1] for i in 1:Nz]
-Δt=max(c_diff*findmax(dz²_κ)[1], -c_adv*findmax(grid.Δzᵃᵃᶜ)[1]/params.V_dd)
+dz²_κ=[findmax(adapt(Array, grid.Δzᵃᵃᶜ)[i]^2 ./(κₜ.(0.5,0.5,adapt(Array, grid.zᵃᵃᶜ)[i],[0:364;])))[1] for i in 1:Nz]
+Δt=max(c_diff*findmax(dz²_κ)[1], -c_adv*findmax(adapt(Array, grid.Δzᵃᵃᶜ))[1]/params.V_dd)
 
 simulation = Simulation(model, Δt=Δt, stop_time=duration) 
 
