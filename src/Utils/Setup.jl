@@ -29,7 +29,7 @@ end
 
 @kernel function _setup_slip_vel!(vel, fv, z, params)
     k = @index(Global)
-    @inbounds vel[:, :, k] .= fv(z[k], params)
+    vel[:, :, k] .= fv(z[k], params)
 end
 
 function setuptracer(model, grid, tracer, field_dependencies, topboundaries, bottomboundaries, forcing_params; sinking, advection_scheme)

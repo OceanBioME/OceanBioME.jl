@@ -106,10 +106,10 @@ PAR_extrap = extrapolate(PAR_itp, (Line(),Throw()))  #  PAR_extrap(z, mod(t,364d
 const duration=2years    
 
 # Define the grid
-Lx = 1   #500
+Lx = 500
 Ly = 500
-Nx = 1
-Ny = 1
+Nx = 3
+Ny = 3
 Nz = 33#150 # number of points in the vertical direction
 Lz = 600 # domain depth             # subpolar mixed layer depth max 427m 
 
@@ -215,8 +215,8 @@ simulation.output_writers[:profiles] =
                             overwrite_existing = true)=#
 
 #setup dictionary of fields
-fields = Dict(zip((["$t" for t in bgc.tracers]..., "PAR", "Nᵣ", "Nᵣᵣ", "Nᵣₑ"), ([getproperty(model.tracers, t) for t in bgc.tracers]..., [getproperty(model.auxiliary_fields, t) for t in (:PAR, :Nᵣ, :Nᵣᵣ, :Nᵣₑ)]...)))
-simulation.output_writers[:profiles] = NetCDFOutputWriter(model, fields, filename="subpolar.nc", schedule=TimeInterval(1days))
+#fields = Dict(zip((["$t" for t in bgc.tracers]..., "PAR", "Nᵣ", "Nᵣᵣ", "Nᵣₑ"), ([getproperty(model.tracers, t) for t in bgc.tracers]..., [getproperty(model.auxiliary_fields, t) for t in (:PAR, :Nᵣ, :Nᵣᵣ, :Nᵣₑ)]...)))
+#simulation.output_writers[:profiles] = NetCDFOutputWriter(model, fields, filename="subpolar.nc", schedule=TimeInterval(1days), overwrite_existing=true)
 
 @info "Setup simulation"
 # Run the simulation                            
