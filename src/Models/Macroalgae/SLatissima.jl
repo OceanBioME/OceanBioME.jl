@@ -16,7 +16,7 @@ using StructArrays, SugarKelp
 using OceanBioME: Particles
 using Oceananigans.Units: second,minute, minutes, hour, hours, day, days, year, years
 using Oceananigans.Architectures: arch_array
-using Oceananigans: CPU()
+using Oceananigans: CPU
 
 @inline f_curr(u, params) = params.uₐ*(1-exp(-u/params.u₀))+params.uᵦ
 

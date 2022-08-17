@@ -123,7 +123,8 @@ h(k) = (k - 1) / Nz
 Σ(k) = (1 - exp(-stretching * h(k))) / (1 - exp(-stretching))
 ## Generating function
 z_faces(k) = Lz * (ζ₀(k) * Σ(k) - 1)
-grid = RectilinearGrid(size = (Nx, Ny, Nz), 
+grid = RectilinearGrid(GPU(),
+                       size = (Nx, Ny, Nz), 
                        x = (0, Lx),
                        y = (0, Ly),
                        z = z_faces)
