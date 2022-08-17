@@ -1,12 +1,12 @@
 # This script illustrates how to run OceanBioME as a box model
 
-using BGC, HDF5, Statistics, Interpolations, Plots  # load required modules
+using OceanBioME, HDF5, Statistics, Interpolations, Plots  # load required modules
 
 day=60*60*24  # define the length of a day in seconds
 year=day*365  # define the length of a year in days
 
 # This demonstrates how to read in a timeseries of photosynthetic available radiation (PAR) data
-path="./subpolar/"  # the folder where the data are stored
+path="./OceanBioME_example_data/subpolar/"  # the folder where the data are stored
 par_mean_timeseries=zeros(365) # create an empty array
 for i in 1:365    #https://discourse.julialang.org/t/leading-zeros/30450
     string_i = lpad(string(i), 3, '0')  # create string with day number
