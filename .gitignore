@@ -19,8 +19,8 @@ docs/src/generated
 *.data
 *.nc
 *.jld2
-example/OceanBioME_example_data/*
-example/OceanBioME_example_data
+examples/OceanBioME_example_data/*
+examples/OceanBioME_example_data
 # Checkpointer model serialization
 *.jlser
 *.jld

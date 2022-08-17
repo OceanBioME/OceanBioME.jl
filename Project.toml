@@ -4,6 +4,7 @@ authors = ["Si Chen <sc2350@cam.ac.uk>", "Jago Strong-Wright <js2430@cam.ac.uk>"
 version = "0.1.0"
 
 [deps]
+Adapt = "79e6a3ab-5dfb-504d-930d-738a2a938a0e"
 DiffEqBase = "2b5f629d-d688-5b77-993f-72d75c75574e"
 HDF5 = "f67ccb44-e63f-5c2f-98bd-6dc0ccc4ba2f"
 InteractiveErrors = "6cff3a6f-7015-4b3b-b269-4b312a73b9bf"

@@ -112,21 +112,28 @@ Ny = 1
 Nz = 33#150 # number of points in the vertical direction
 Lz = 600 # domain depth             # subpolar mixed layer depth max 427m 
 
-refinement = 5 # controls spacing near surface (higher means finer spaced)  #1.2 5 -4.9118e9
-stretching = 5.754   # controls rate of stretching at bottom    #24 2.5  5.754
-                
+#hard to choose these 
+stretching, refinement, b₁, stretching_bottom, refinement_bottom = 10, 11, 0.1, 16, -.2
 ## Normalized height ranging from 0 to 1
 h(k) = (k - 1) / Nz
 ## Linear near-surface generator
 ζ₀(k) = 1 + (h(k) - 1) / refinement
-## Bottom-intensified stretching function 
+
+## Bottom-intensified refinement function 
 Σ(k) = (1 - exp(-stretching * h(k))) / (1 - exp(-stretching))
+Σᵦ(k) = exp(-stretching_bottom*h(k))
+ζᵦ(k) = 1 + (h(k) - 1) / refinement_bottom
 ## Generating function
-z_faces(k) = Lz * (ζ₀(k) * Σ(k) - 1)
+z_faces(k) = Lz * (ζ₀(k) * Σ(k) + b₁*(Σᵦ(k)+(h(k)-1))*ζᵦ(k) - 1)
+
 grid = RectilinearGrid(size = (Nx, Ny, Nz), 
                        x = (0, Lx),
                        y = (0, Ly),
                        z = z_faces)
+
+if findmin(grid.zᵃᵃᶠ[1:Nz])[2] != 1
+    throw(ArgumentError("Invalid grid refinement parameters leading to turning point:\n$(grid.zᵃᵃᶠ[1:Nz])"))
+end
 
 t_function(x, y, z, t) = temperature_itp(mod(t, 364days))
 s_function(x, y, z, t) = salinity_itp(mod(t, 364days))
@@ -181,17 +188,18 @@ set!(model, P=Pᵢ, Z=Zᵢ, D=Dᵢ, DD=DDᵢ, NO₃=NO₃ᵢ, NH₄=NH₄ᵢ, DO
 ## Set up th simulation
 #Find the maximum timestep (inefficient as this is only required later on (around 100 days in) when sinking particles speed up)
 #Timestep wizard can not be used in this instance as the diffusivity is functional otherwise would be better to use
-#91s is about the maximum time step viable with this diffusivity and sinking specified
-#The limit is initially diffusive (needing around 40s timestep), but then becomes advective when sinking particles reach the deeper (larger) cells
-c_diff = 6.803014480377265e-7
-c_adv = 0.00274
-dz²_κ=[findmax(grid.Δzᵃᵃᶜ[i]^2 ./(κₜ.(0.5,0.5,grid.zᵃᵃᶜ[i],[0:364;])))[1] for i in 1:Nz]
-Δt=max(c_diff*findmax(dz²_κ)[1], -c_adv*findmax(grid.Δzᵃᵃᶜ)[1]/params.V_dd)
+#Can do about 90s timestep early on but reduces to about 40s later on
+#Not sure advective one is relivant
+c_diff = 0.18
+#c_adv = 0.05
+dz²_κ=[findmin(grid.Δzᵃᵃᶜ[i]^2 ./(κₜ.(0.5,0.5,grid.zᵃᵃᶜ[i],[0:364;])))[1] for i in 1:Nz]
+Δt=c_diff*findmin(dz²_κ)[1] #min(c_diff*findmin(dz²_κ)[1], -c_adv*findmin(grid.Δzᵃᵃᶜ)[1]/params.V_dd)
 
 simulation = Simulation(model, Δt=Δt, stop_time=duration) 
 
-# create a model 'callback' to update the light (PAR) profile every 1 timestep
+# create a model 'callback' to update the light (PAR) profile every 1 timestep and integrate sediment model
 simulation.callbacks[:update_par] = Callback(Light.update_2λ!, IterationInterval(1), merge(params, (surface_PAR=surface_PAR,)))#comment out if using PAR as a function, PAR_func
+simulation.callbacks[:integrate_sediment] = sediment_bcs.callback
 
 ## Print a progress message
 progress_message(sim) = @printf("Iteration: %04d, time: %s, Δt: %s, wall time: %s\n",
@@ -214,7 +222,7 @@ simulation.output_writers[:profiles] =
 
 #setup dictionary of fields
 fields = Dict(zip((["$t" for t in bgc.tracers]..., "PAR", "Nᵣ", "Nᵣᵣ", "Nᵣₑ"), ([getproperty(model.tracers, t) for t in bgc.tracers]..., [getproperty(model.auxiliary_fields, t) for t in (:PAR, :Nᵣ, :Nᵣᵣ, :Nᵣₑ)]...)))
-simulation.output_writers[:profiles] = NetCDFOutputWriter(model, fields, filename="subpolar.nc", schedule=TimeInterval(1days))
+simulation.output_writers[:profiles] = NetCDFOutputWriter(model, fields, filename="subpolar.nc", schedule=TimeInterval(1days), overwrite_existing=true)
 
 @info "Setup simulation"
 # Run the simulation                            
@@ -222,7 +230,7 @@ run!(simulation)
 
 # Load and plot the results
 results = OceanBioME.Plot.load_tracers(simulation)
-OceanBioME.Plot.profiles(results)
+plot(OceanBioME.Plot.profiles(results)...)
 
 # Save the plot to a PDF file
 savefig("subpolar.pdf")

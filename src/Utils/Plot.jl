@@ -97,10 +97,10 @@ function load_particles(path)
     return particle_results(tracers, times, results)
 end
 
-function profiles(results::model_results; fs=4, xlabel="time (days)", ylabel="z (m)", sediment=("Nᵣ", "Nᵣᵣ", "Nᵣₑ"))
+function profiles(results::model_results; fs=4, xlabel="time (days)", ylabel="z (m)", sediment=(:Nᵣ, :Nᵣᵣ, :Nᵣₑ))
     plts=[]
     for (j, tracer) in enumerate(results.tracers)
-        if !(tracer in sediment)
+        if (!(tracer in sediment) && !(tracer in ["$t" for t in sediment]))
             push!(plts, heatmap(results.t/(1day),results.z,mean(results.results[j, :, :, :, :], dims=(1, 2))[1, 1, :, :], titlefontsize=fs, guidefontsize=fs, tickfontsize=fs, legendfontsize=fs, xlabel=xlabel, ylabel=ylabel, title=tracer))
         else
             push!(plts, plot(results.t/(1day),mean(results.results[j, :, :, 1, :], dims=(1, 2))[1, 1, :], titlefontsize=fs, guidefontsize=fs, tickfontsize=fs, legendfontsize=fs, xlabel=xlabel, ylabel=ylabel, title=tracer, legend=false))

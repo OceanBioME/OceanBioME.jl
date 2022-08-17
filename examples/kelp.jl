@@ -185,19 +185,20 @@ OXYᵢ(x, y, z) = 240
 ## set the initial conditions using functions or constants:
 set!(model, P=Pᵢ, Z=Zᵢ, D=Dᵢ, DD=DDᵢ, NO₃=NO₃ᵢ, NH₄=NH₄ᵢ, DOM=DOMᵢ, DIC=DICᵢ, ALK=ALKᵢ, OXY=OXYᵢ, u=0, v=0, w=0, b=0)
 
-## Set up th simulation
+## Set up the simulation
 #Find the maximum timestep (inefficient as this is only required later on (around 100 days in) when sinking particles speed up)
 #Timestep wizard can not be used in this instance as the diffusivity is functional otherwise would be better to use
-#91s is about the maximum time step viable with this diffusivity and sinking specified
-#The limit is initially diffusive (needing around 40s timestep), but then becomes advective when sinking particles reach the deeper (larger) cells
-c_diff = 6.803014480377265e-7
-c_adv = 0.00274
-dz²_κ=[findmax(grid.Δzᵃᵃᶜ[i]^2 ./(κₜ.(0.5,0.5,grid.zᵃᵃᶜ[i],[0:364;])))[1] for i in 1:Nz]
-Δt=max(c_diff*findmax(dz²_κ)[1], -c_adv*findmax(grid.Δzᵃᵃᶜ)[1]/params.V_dd)
+#Can do about 90s timestep early on but reduces to about 40s later on
+#Not sure advective one is relivant
+c_diff = 0.18
+#c_adv = 0.05
+dz²_κ=[findmin(grid.Δzᵃᵃᶜ[i]^2 ./(κₜ.(0.5,0.5,grid.zᵃᵃᶜ[i],[0:364;])))[1] for i in 1:Nz]
+Δt=c_diff*findmin(dz²_κ)[1] #min(c_diff*findmin(dz²_κ)[1], -c_adv*findmin(grid.Δzᵃᵃᶜ)[1]/params.V_dd)
 
 simulation = Simulation(model, Δt=Δt, stop_time=min(duration, 1year)) 
-# create a model 'callback' to update the light (PAR) profile every 1 timestep
+# create a model 'callback' to update the light (PAR) profile every 1 timestep and integrate sediment model
 simulation.callbacks[:update_par] = Callback(Light.update_2λ!, IterationInterval(1), merge(params, (surface_PAR=surface_PAR,)))#comment out if using PAR as a function, PAR_func
+simulation.callbacks[:integrate_sediment] = sediment_bcs.callback
 
 ## Print a progress message
 progress_message(sim) = @printf("Iteration: %04d, time: %s, Δt: %s, wall time: %s\n",
@@ -212,14 +213,14 @@ simulation.callbacks[:progress] = Callback(progress_message, IterationInterval(1
 # Specify which data to save 
 #setup dictionary of fields (jld2 saving does not work for irregular grids)
 fields = Dict(zip((["$t" for t in bgc.tracers]..., "PAR", "Nᵣ", "Nᵣᵣ", "Nᵣₑ"), ([getproperty(model.tracers, t) for t in bgc.tracers]..., [getproperty(model.auxiliary_fields, t) for t in (:PAR, :Nᵣ, :Nᵣᵣ, :Nᵣₑ)]...)))
-simulation.output_writers[:profiles] = NetCDFOutputWriter(model, fields, filename="subpolar.nc", schedule=TimeInterval(1days))
+simulation.output_writers[:profiles] = NetCDFOutputWriter(model, fields, filename="kelp.nc", schedule=TimeInterval(1days))
 
 #checkpoint after warmup so we don't have to rerun for different kelp configs
 simulation.output_writers[:checkpointer] = Checkpointer(model, schedule=SpecifiedTimes([1year]), prefix="kelp_checkpoint")
 
 @info "Setup simulation"
 # Run the simulation                           
-run!(simulation)
+run!(simulation, pickup=true)
 
 #reset the kelp properties after warmup
 model.particles.properties.A .= 30.0*ones(n_kelp)
@@ -233,7 +234,7 @@ simulation.output_writers[:particles] = JLD2OutputWriter(model, (particles=model
                           overwrite_existing = true)
 
 simulation.stop_time = duration
-
+simulation.Δt = 65 #seems to be some kind of instability occuring just after kelp is added with the longer timesteps
 #run rest of simulation
 run!(simulation)
 
