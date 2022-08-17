@@ -33,7 +33,7 @@ z=-10 # specify the depth for the light level
 PAR(x, y, z, t) = surface_PAR_itp(mod(t,364*day))*exp(z*0.2) # Set the PAR
 
 # Create a list of parameters.  Here, use the default parameters from the LOBSTER model with the PAR function
-params = merge(LOBSTER.default, (PAR=PAR, ))
+params = merge(LOBSTER.defaults, (PAR=PAR, ))
 
 # Set up the model. Here, first specify the biogeochemical model, followed by initial conditions and the start and end times
 model = Setup.BoxModel(:LOBSTER, params, (NO₃=NO₃ᵢ, NH₄=NH₄ᵢ, P=Pᵢ, Z=Zᵢ, D=Dᵢ, DD=DDᵢ, DOM=DOMᵢ), 0.0, 1.0*year)
