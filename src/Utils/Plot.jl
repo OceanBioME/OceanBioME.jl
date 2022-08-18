@@ -25,7 +25,7 @@ struct NetCDFResults
     tstart
 end
 
-function load_tracers(path::String, tracers=(:NO₃, :NH₄, :P, :Z, :D, :DD), tstart=0)
+function load_tracers(path::String, tracers=(:NO₃, :NH₄, :P, :Z, :D, :DD), tstart=1)
     if path[end-4:end] == ".jld2"
         file_profiles = jldopen(path)
     elseif path[end-2:end] == ".nc"
