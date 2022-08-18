@@ -2,7 +2,7 @@ using OceanBioME, Test, Oceananigans
 
 grid = RectilinearGrid(size=(1,1,2), extent=(1,1,2))
 
-params=LOBSTER.default
+params=LOBSTER.defaults
 
 @testset "Light attenuation" begin
     PAR = Oceananigans.Fields.Field{Center, Center, Center}(grid)
