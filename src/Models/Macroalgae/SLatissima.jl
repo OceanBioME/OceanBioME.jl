@@ -20,6 +20,7 @@ using Oceananigans.Units: second,minute, minutes, hour, hours, day, days, year, 
 
 function equations(x::AbstractFloat, y::AbstractFloat, z::AbstractFloat, t::AbstractFloat, A::AbstractFloat, N::AbstractFloat, C::AbstractFloat, NO₃::AbstractFloat, NH₄::AbstractFloat, T::AbstractFloat, S::AbstractFloat, irr::AbstractFloat, u::AbstractFloat, params, Δt::AbstractFloat)
     if !iszero(A)
+        irr/=3.99e-10*545e12/(1day) #W/m²/s to einstein/m²/day
         p=SugarKelp.p(T, irr, params)
         e=SugarKelp.e(C, params)
         ν = SugarKelp.ν(A, params)

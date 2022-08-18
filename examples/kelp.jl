@@ -28,92 +28,37 @@ using OceanBioME
 
 params = LOBSTER.defaults  #load parameters in src/parameters/lobster.jl 
 
-# Step 1: import data from the Mercator Ocean state estimate: Global Ocean 1/12° Physics Analysis and Forecast updated Daily
+# Step 1: import data
 # The temperature and salinity are needed to calculate the air-sea CO2 flux.  The mixed layer depth is used to construct an idealized diffusivity profile
-filename1 = "OceanBioME_example_data/subpolar_physics.nc" # Specify the file containing the Mercator model output. One may need to modify path if necessary.  
-time_series_second = (0:364)days # Create an array of times, one per day in units of seconds. Start from zero if we don't use extrapolation. We cannot use extrapolation if we want to use annual cycle.  
-so = ncread(filename1, "so");  # Read the salinity in Practical Salinity Units
-so_scale_factor = ncgetatt(filename1, "so", "scale_factor") #Real_Value = (Display_Value X scale_factor) + add_offset
-so_add_offset = ncgetatt(filename1, "so", "add_offset")
-salinity = mean(so, dims=(1,2))[1:365]*so_scale_factor.+so_add_offset # NEEDS EXPLANATION
-salinity_itp = LinearInterpolation(time_series_second, salinity) # Create a function to interpolate the salinity to a specified time.  To use this function, call: salinity_itp(mod(timeinseconds,364days))
-thetao = ncread(filename1, "thetao");  # Read the temperature in units of Degrees Celsius
-thetao_scale_factor = ncgetatt(filename1, "thetao", "scale_factor") 
-thetao_add_offset = ncgetatt(filename1, "thetao", "add_offset")
-temperature = mean(thetao, dims=(1,2))[1:365]*thetao_scale_factor.+thetao_add_offset # NEEDS EXPLANATION
-temperature_itp = LinearInterpolation(time_series_second, temperature) # Create a function to interpolate the temperature to a specified time
-mlotst = ncread(filename1, "mlotst"); # Read the mixed layer depth in units of eters
-mlotst_scale_factor = ncgetatt(filename1, "mlotst", "scale_factor") 
-mlotst_add_offset = ncgetatt(filename1, "mlotst", "add_offset")
-mixed_layer_depth = mean(mlotst, dims=(1,2))[1:365]*mlotst_scale_factor.+mlotst_add_offset # NEEDS EXPLANATION
-mld_itp = LinearInterpolation(time_series_second, mixed_layer_depth) # Create a function to interpolate the mixed layer depth to a specified time  
+filename = "./OceanBioME_example_data/subpolar.nc" 
+time = ncread(filename, "time")
+temp = ncread(filename, "temp")
+salinity = ncread(filename, "so")
+mld = ncread(filename, "mld")
+par = ncread(filename, "par")
 
-# Step 2: import annual cycle chl data (to calculate PAR_func) #Global Ocean Biogeochemistry Analysis and Forecast
-filename2 = "OceanBioME_example_data/subpolar_chl.nc"    #subpolar_chl.nc
-chl = ncread(filename2, "chl");  #chl scale_factor=1, add_offset=0
-chl_mean = mean(chl, dims=(1,2))[1,1,:,1:365] # mg m-3, unit no need to change. 
-depth_chl = ncread(filename2, "depth");
+temp_itp = LinearInterpolation(time, temp) 
+salinity_itp = LinearInterpolation(time, salinity) 
+mld_itp = LinearInterpolation(time, mld) 
+PAR_itp = LinearInterpolation(time, par)
 
-# Step 3: import annual cycle surface photosynthetic available radiation (PAR) data #Ocean Color  VIIRS-SNPP PAR daily 9km
-path="./OceanBioME_example_data/subpolar/"    #subtropical   #./subpolar/
-par_mean_timeseries=zeros(365)
-for i in 1:365    #https://discourse.julialang.org/t/leading-zeros/30450
-    string_i = lpad(string(i), 3, '0')
-    filename3=path*"V2020"*string_i*".L3b_DAY_SNPP_PAR.x.nc"
-    fid = h5open(filename3, "r")
-    par=read(fid["level-3_binned_data/par"]) # read PAR data from file
-    BinList=read(fid["level-3_binned_data/BinList"])  # read information on PAR bins.   (:bin_num, :nobs, :nscenes, :weights, :time_rec) 
-    par_mean_timeseries[i] = mean([par[i][1]/BinList[i][4] for i in 1:length(par)])*3.99e-10*545e12/(1day)  #average PAR values in bins and convert from einstin/m^2/day to W/m^2
-end
-
-surface_PAR_itp = LinearInterpolation((0:364)day, par_mean_timeseries)
-surface_PAR(t) = surface_PAR_itp(mod(t, 364days))  # will be used as part of Option 2 of PAR_field
-
-#=
-The light (PAR) can be specified in 1 of 2 ways:
-Option 1: use PAR as a function, see below PAR_func(x, y, z, t) = PAR_extrap(z, mod(t, 364days))
-Obtain PAR_extrap(z, mod(t, 364days)) with annual cycle data chl_mean and surface PAR data par_mean_timeseries as input 
-Use the following steps:
-* comment out auxiliary_fields = (PAR=PAR_field, ) in Model instantiation model = NonhydrostaticModel(..., #auxiliary_fields = (PAR=PAR_field, ))
-* comment out simulation.callbacks[:update_par]
-* indicate PAR_func as an input in bgc = Setup.Oceananigans()
-Option 2: calculate PAR as a field
-Initialize PAR_field = Oceananigans.Fields.Field{Center, Center, Center}(grid)
-Update PAR_field through simulation.callbacks[:update_par] and src/Light.jl. Instead of using annual cycle data chl_mean as input, one uses chl as
-a function of phytoplankton to calculate PAR. See (A22) in reference (2).
-Use the following steps:
-* keep auxiliary_fields = (PAR=PAR_field, ) in Model instantiation model = NonhydrostaticModel(..., #auxiliary_fields = (PAR=PAR_field, ))
-* keep simulation.callbacks[:update_par]
-* indicate PAR_field as an input in bgc = Setup.Oceananigans()
-=#
-
-PAR = zeros(length(depth_chl),365)   # initialize PAR
-PAR_r = zeros(length(depth_chl),365) # break it down into two wavebands: red and blue.
-PAR_b = zeros(length(depth_chl),365)
-PAR[1,:] = par_mean_timeseries       # surface PAR was obtained from Ocean Color shown above
-PAR_r[1,:] = par_mean_timeseries/2   # visible light is split equally between two bands. 
-PAR_b[1,:] = par_mean_timeseries/2
-for i =2:length(depth_chl)  # equations refer to the APPENDIX of reference (2) above 
-    PAR_r[i,:]=PAR_r[i-1,:].*exp.(-(params.k_r0.+params.Χ_rp*(chl_mean[i-1,:]).^params.e_r)*(depth_chl[i]-depth_chl[i-1]))
-    PAR_b[i,:]=PAR_b[i-1,:].*exp.(-(params.k_b0.+params.Χ_bp*(chl_mean[i-1,:]).^params.e_b)*(depth_chl[i]-depth_chl[i-1]))
-    PAR[i,:]=PAR_b[i,:]+PAR_r[i,:]
-end
-PAR_itp = Interpolations.interpolate((-depth_chl[end:-1:1], (0:364)day), PAR[end:-1:1,:], Gridded(Linear())) # create an interpolation function to allow access to the PAR at arbitary time and depth
-PAR_extrap = extrapolate(PAR_itp, (Line(),Throw()))  #  PAR_extrap(z, mod(t,364days))  Interpolations.extrapolate Method
+t_function(x, y, z, t) = temperature_itp(mod(t, 364days))
+s_function(x, y, z, t) = salinity_itp(mod(t, 364days))
+surface_PAR(t) = PAR_itp(mod(t, 364days))  # will be used as part of Option 2 of PAR_field
 
 # Simulation duration    
 duration=2years    
 
 # Define the grid
-Lx = 1   
-Ly = 1
+Lx = 500
+Ly = 500
 Nx = 1
 Ny = 1
 Nz = 33 # number of points in the vertical direction
-Lz = 600 # domain depth 
+Lz = 600 # domain depth             # subpolar mixed layer depth max 427m 
 
-refinement = 5 # controls spacing near surface (higher means finer spaced)  
-stretching = 5.754   # controls rate of stretching at bottom  
+refinement = 10 # controls spacing near surface (higher means finer spaced)  #1.2 5 -4.9118e9
+stretching = 5.754   # controls rate of stretching at bottom
                 
 ## Normalized height ranging from 0 to 1
 h(k) = (k - 1) / Nz
@@ -122,14 +67,11 @@ h(k) = (k - 1) / Nz
 ## Bottom-intensified stretching function 
 Σ(k) = (1 - exp(-stretching * h(k))) / (1 - exp(-stretching))
 ## Generating function
-z_faces(k) = Lz * (ζ₀(k) * Σ(k) - 1)
-grid = RectilinearGrid(size = (Nx, Ny, Nz), 
+z_faces(k) = k == 1 ? -(Lz + 4) : Lz * (ζ₀(k-1) * Σ(k-1) - 1)
+grid = RectilinearGrid(size = (Nx, Ny, Nz+1), 
                        x = (0, Lx),
                        y = (0, Ly),
                        z = z_faces)
-
-t_function(x, y, z, t) = temperature_itp(mod(t, 364days)) 
-s_function(x, y, z, t) = salinity_itp(mod(t, 364days)) 
 
 PAR_field = Oceananigans.Fields.Field{Center, Center, Center}(grid) #initialize a PAR field 
 PAR_func(x, y, z, t) = PAR_extrap(z, mod(t, 364days))    # Define the PAR as a function. z goes first, then t. 

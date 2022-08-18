@@ -79,8 +79,11 @@ PAR_field = Oceananigans.Fields.Field{Center, Center, Center}(grid) #initialize 
 dic_bc = Boundaries.airseasetup(:CO₂, forcings=(T=t_function, S=s_function))
 oxy_bc = Boundaries.airseasetup(:O₂, forcings=(T=t_function, S=s_function))
 
+#sediment boundary conditions
+sediment_bcs=Boundaries.setupsediment(grid)
+
 #Set up the OceanBioME model with the specified biogeochemical model, light, and boundary conditions
-bgc = Setup.Oceananigans(:LOBSTER, grid, params, PAR_field, optional_sets=(:carbonates, :oxygen), topboundaries=(DIC=dic_bc, OXY=oxy_bc))
+bgc = Setup.Oceananigans(:LOBSTER, grid, params, PAR_field, optional_sets=(:carbonates, :oxygen), topboundaries=(DIC=dic_bc, OXY=oxy_bc), bottomboundaries = sediment_bcs.boundary_conditions)
 @info "Setup BGC model"
 
 # create a function with the vertical turbulent vertical diffusivity. This is an idealized functional form, but the depth of mixing is based on an interpolation to the mixed layer depth from the Mercator Ocean state estimate
@@ -96,7 +99,7 @@ model = NonhydrostaticModel(advection = UpwindBiasedFifthOrder(),
                             closure = ScalarDiffusivity(ν=κₜ, κ=κₜ), 
                             forcing =  bgc.forcing,
                             boundary_conditions = bgc.boundary_conditions,
-                            auxiliary_fields = (PAR=PAR_field, )
+                            auxiliary_fields =  merge((PAR=PAR_field, ), sediment_bcs.auxiliary_fields)
                             )
 
 # Initialize the biogeochemical variables
@@ -129,6 +132,7 @@ simulation = Simulation(model, Δt=Δt, stop_time=duration)
 
 # create a model 'callback' to update the light (PAR) profile every 1 timestep and integrate sediment model
 simulation.callbacks[:update_par] = Callback(Light.update_2λ!, IterationInterval(1), merge(params, (surface_PAR=surface_PAR,)))#comment out if using PAR as a function, PAR_func
+simulation.callbacks[:integrate_sediment] = sediment_bcs.callback
 
 ## Print a progress message
 progress_message(sim) = @printf("Iteration: %04d, time: %s, Δt: %s, wall time: %s\n",
@@ -150,8 +154,8 @@ simulation.output_writers[:profiles] =
                             overwrite_existing = true)=#
 
 #setup dictionary of fields
-fields = Dict(zip((["$t" for t in bgc.tracers]..., "PAR"), ([getproperty(model.tracers, t) for t in bgc.tracers]..., [getproperty(model.auxiliary_fields, t) for t in (:PAR, )]...)))
-simulation.output_writers[:profiles] = NetCDFOutputWriter(model, fields, filename="subpolar_no_sedi.nc", schedule=TimeInterval(1days), overwrite_existing=true)
+fields = Dict(zip((["$t" for t in bgc.tracers]..., "PAR", "Nᵣ", "Nᵣᵣ", "Nᵣₑ"), ([getproperty(model.tracers, t) for t in bgc.tracers]..., [getproperty(model.auxiliary_fields, t) for t in (:PAR, :Nᵣ, :Nᵣᵣ, :Nᵣₑ)]...)))
+simulation.output_writers[:profiles] = NetCDFOutputWriter(model, fields, filename="subpolar_sediment.nc", schedule=TimeInterval(1days), overwrite_existing=true)
 
 @info "Setup simulation"
 # Run the simulation                            
@@ -162,4 +166,4 @@ results = OceanBioME.Plot.load_tracers(simulation)
 plot(OceanBioME.Plot.profiles(results)...)
 
 # Save the plot to a PDF file
-savefig("subpolar.pdf")
+savefig("subpolar_sediment.pdf")
