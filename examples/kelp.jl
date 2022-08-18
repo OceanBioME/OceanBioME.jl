@@ -85,19 +85,21 @@ oxy_bc = Boundaries.airseasetup(:O₂, forcings=(T=t_function, S=s_function))
 sediment_bcs=Boundaries.setupsediment(grid)
 
 #Set up the OceanBioME model with the specified biogeochemical model, light, and boundary conditions
+@info "Setting up biogeochemical model"
 bgc = Setup.Oceananigans(:LOBSTER, grid, params, PAR_field, optional_sets=(:carbonates, :oxygen), topboundaries=(DIC=dic_bc, OXY=oxy_bc), bottomboundaries = sediment_bcs.boundary_conditions)
-@info "Setup BGC model"
 
-#setup the kelp particles (initiallty with zero area for warmup period for BGC model)
-n_kelp=100
-z₀ = [-100:-1;]*1.0
+# Setup the kelp particles 
+# The first year of model run time won't have any kelp, so we set the area to 0.  We will re-initialize the kelp model after 1 year of model time
+@info "Setting up kelp particles"
+n_kelp=100 # number of kelp fronds
+z₀ = [-100:-1;]*1.0 # depth of kelp fronds
 kelp_particles = SLatissima.setup(n_kelp, Lx/2, Ly/2, z₀, 0.0, 0.0, 0.0, 57.5, 100.0, t_function, s_function, 0.2)
-@info "Defined kelp particles"
 
 # create a function with the vertical turbulent vertical diffusivity. This is an idealized functional form, but the depth of mixing is based on an interpolation to the mixed layer depth from the Mercator Ocean state estimate
-κₜ(x, y, z, t) = 8e-2*max(1-(z+mld_itp(mod(t,364days))/2)^2/(mld_itp(mod(t,364days))/2)^2,0)+1e-4; #setup viscosity and diffusivity in the following Model instantiation
+κₜ(x, y, z, t) = 1e-2*max(1-(z+mld_itp(mod(t,364days))/2)^2/(mld_itp(mod(t,364days))/2)^2,0)+1e-4; #setup viscosity and diffusivity in the following Model instantiation
 
 # Now, create a 'model' to run in Oceananignas
+@info "Creating and initalizing Oceananigans model"
 model = NonhydrostaticModel(advection = UpwindBiasedFifthOrder(),
                             timestepper = :RungeKutta3,
                             grid = grid,
@@ -128,6 +130,7 @@ OXYᵢ(x, y, z) = 240
 set!(model, P=Pᵢ, Z=Zᵢ, D=Dᵢ, DD=DDᵢ, NO₃=NO₃ᵢ, NH₄=NH₄ᵢ, DOM=DOMᵢ, DIC=DICᵢ, ALK=ALKᵢ, OXY=OXYᵢ, u=0, v=0, w=0, b=0)
 
 ## Set up the simulation
+@info "Setting up the simulation"
 #Find the maximum timestep (inefficient as this is only required later on (around 100 days in) when sinking particles speed up)
 #Timestep wizard can not be used in this instance as the diffusivity is functional otherwise would be better to use
 #Can do about 90s timestep early on but reduces to about 40s later on
@@ -160,10 +163,12 @@ simulation.output_writers[:profiles] = NetCDFOutputWriter(model, fields, filenam
 #checkpoint after warmup so we don't have to rerun for different kelp configs
 simulation.output_writers[:checkpointer] = Checkpointer(model, schedule=SpecifiedTimes([1year]), prefix="kelp_checkpoint")
 
-@info "Setup simulation"
+@info "Running simulation for the first year (without kelp)"
+@info "(Note that the first timestep will take some time to complete)"
 # Run the simulation                           
-run!(simulation, pickup=true)
+run!(simulation)
 
+@info "Initializing kelp"
 #reset the kelp properties after warmup
 model.particles.properties.A .= 30.0*ones(n_kelp)
 model.particles.properties.N .= 0.01*ones(n_kelp)
@@ -177,7 +182,9 @@ simulation.output_writers[:particles] = JLD2OutputWriter(model, (particles=model
 
 simulation.stop_time = duration
 simulation.Δt = 65 #seems to be some kind of instability occuring just after kelp is added with the longer timesteps
+
 #run rest of simulation
+@info "Restarting simulation to run for the year, now with kelp"
 run!(simulation)
 
 # Load and plot the results

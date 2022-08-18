@@ -8,8 +8,8 @@ year=day*365  # define the length of a year in days
 # This demonstrates how to read in a timeseries of photosynthetic available radiation (PAR) data
 path="./OceanBioME_example_data/subpolar/"  # the folder where the data are stored
 par_mean_timeseries=zeros(365) # create an empty array
-for i in 1:365    #https://discourse.julialang.org/t/leading-zeros/30450
-    string_i = lpad(string(i), 3, '0')  # create string with day number
+for i in 1:365  # loop over day number  
+    string_i = lpad(string(i), 3, '0')  # create string with day number, padding with zeros to get a 3 digit number, e.g. 001
     filename3=path*"V2020"*string_i*".L3b_DAY_SNPP_PAR.x.nc" 
     fid = h5open(filename3, "r") 
     par=read(fid["level-3_binned_data/par"])  # read PAR data from file

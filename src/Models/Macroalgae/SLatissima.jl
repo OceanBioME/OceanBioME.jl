@@ -111,11 +111,11 @@ end
 source_fields = ((tracer=:NO₃, property=:NO₃, scalefactor=1.0), 
                         (tracer=:NH₄, property=:NH₄, scalefactor=1.0),
                         (tracer=:PAR, property=:PAR, scalefactor=1.0))
-sink_fields = ((tracer=:NO₃, property=:j_NO₃, scalefactor=-1.0), 
-                    (tracer=:NH₄, property=:j_NH₄, scalefactor=-1.0), 
-                    (tracer=:DIC, property=:p, scalefactor=-1.0),
-                    (tracer=:DOM, property=:e, scalefactor=1.0/6.56),#Rd_dom from LOBSTER
-                    (tracer=:DD, property=:ν, scalefactor=1.0))
+sink_fields = ((tracer=:NO₃, property=:j_NO₃, scalefactor=-1.0, fallback=:N, fallback_scalefactor=(property=:A, constant=14*0.001/defaults.K_A)), 
+                    (tracer=:NH₄, property=:j_NH₄, scalefactor=-1.0, fallback=:N, fallback_scalefactor=(property=:A, constant=14*0.001/defaults.K_A)), 
+                    (tracer=:DIC, property=:p, scalefactor=-1.0, fallback=:C, fallback_scalefactor=(property=:A, constant=14*0.001)),
+                    (tracer=:DOM, property=:e, scalefactor=1.0/6.56, fallback=:A, fallback_scalefactor=0),#Rd_dom from LOBSTER, placeholder fallbacks because if these are taking away something has gone very wrong
+                    (tracer=:DD, property=:ν, scalefactor=1.0, fallback=:A, fallback_scalefactor=0))
 
 function defineparticles(initials, n)
     x̄₀ = []
