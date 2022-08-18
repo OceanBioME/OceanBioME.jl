@@ -60,6 +60,7 @@ end
     function particleupdate(x, y, z, t, A, B, params, Δt)
         return (A=0.1, B=t)
     end
+    particlestruct=StructArray{CustomParticle}(([0.25], [0.25], [-0.25], [1.0], [0.0], [0.0]))
     particles = Particles.setup(
         particlestruct, 
         particleupdate, 
@@ -68,7 +69,7 @@ end
         (), 
         (:A, :B), 
         ((tracer=:C, property=:C, scalefactor=1.0), ),
-        ((tracer=:C, property=:A, scalefactor=-1.0), ),
+        ((tracer=:C, property=:A, scalefactor=-1.0, fallback=:A, fallback_scalefactor=0), ),#placeholder fallback scale factor as testing further down), ),
         1.0
     )
 
@@ -78,6 +79,32 @@ end
     run!(sim)
 
     @test model.tracers.C[1, 1, 1] ≈ 0.9 atol = 0.05
+
+    #pull tracer below zero
+    function particleupdate(x, y, z, t, A, params, Δt)
+        return (A=2.0, )
+    end
+    
+    particlestruct=StructArray{CustomParticle}(([0.25], [0.25], [-0.25], [1.0], [0.0], [0.0]))
+    particles = Particles.setup(
+        particlestruct, 
+        particleupdate, 
+        (:A, ), 
+        NamedTuple(), 
+        (), 
+        (:A, ), 
+        ((tracer=:C, property=:C, scalefactor=1.0), ),
+        ((tracer=:C, property=:A, scalefactor=-1.0, fallback=:B, fallback_scalefactor=1.0), ),
+        1.0
+    )
+    
+    model = NonhydrostaticModel(; grid, timestepper=:RungeKutta3, particles=particles, tracers=(:C, ))
+    set!(model, u=0, v=0, w=0, C=1)
+    sim = Simulation(model, Δt=1, stop_time=1)
+    run!(sim)
+    
+    @test model.tracers.C[1, 1, 1] ≈ 0.0
+    @test model.particles.properties.B[1] ≈ -1.0
 
     @testset "Larger grid for point assignment" begin
         grid = RectilinearGrid(size=(2,1,1), extent=(2,1,1), topology=(Periodic, Periodic, Periodic))
@@ -91,7 +118,7 @@ end
             (), 
             (:A, :B), 
             ((tracer=:C, property=:C, scalefactor=1.0), ),
-            ((tracer=:C, property=:A, scalefactor=-1.0), ),
+            ((tracer=:C, property=:A, scalefactor=-1.0, fallback=:A, fallback_scalefactor=0), ),#placeholder fallback scale factor as testing further down), ),
             1.0
         )
 
@@ -116,7 +143,7 @@ end
             (), 
             (:A, :B), 
             ((tracer=:C, property=:C, scalefactor=1.0), ),
-            ((tracer=:C, property=:A, scalefactor=-1.0), ),
+            ((tracer=:C, property=:A, scalefactor=-1.0, fallback=:A, fallback_scalefactor=0), ),#placeholder fallback scale factor as testing further down), ),
             1.0
         )
 
@@ -137,7 +164,7 @@ end
             (), 
             (:A, :B), 
             ((tracer=:C, property=:C, scalefactor=1.0), ),
-            ((tracer=:C, property=:A, scalefactor=-1.0), ),
+            ((tracer=:C, property=:A, scalefactor=-1.0, fallback=:A, fallback_scalefactor=0), ),#placeholder fallback scale factor as testing further down), ),
             1.0
         )
 
@@ -159,7 +186,7 @@ end
             (), 
             (:A, :B), 
             ((tracer=:C, property=:C, scalefactor=1.0), ),
-            ((tracer=:C, property=:A, scalefactor=-1.0), ),
+            ((tracer=:C, property=:A, scalefactor=-1.0, fallback=:A, fallback_scalefactor=0), ),#placeholder fallback scale factor as testing further down), ),
             10.0
         )
 
