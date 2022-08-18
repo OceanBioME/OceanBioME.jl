@@ -106,6 +106,27 @@ end
     @test model.tracers.C[1, 1, 1] ≈ 0.0
     @test model.particles.properties.B[1] ≈ -1.0
 
+    particlestruct=StructArray{CustomParticle}(([0.25], [0.25], [-0.25], [1.0], [0.0], [0.0]))
+    particles = Particles.setup(
+        particlestruct, 
+        particleupdate, 
+        (:A, ), 
+        NamedTuple(), 
+        (), 
+        (:A, ), 
+        ((tracer=:C, property=:C, scalefactor=1.0), ),
+        ((tracer=:C, property=:A, scalefactor=-1.0, fallback=:B, fallback_scalefactor=(property=:A, constant=0.5)), ), #other property dependant scale factor
+        1.0
+    )
+    
+    model = NonhydrostaticModel(; grid, timestepper=:RungeKutta3, particles=particles, tracers=(:C, ))
+    set!(model, u=0, v=0, w=0, C=1)
+    sim = Simulation(model, Δt=1, stop_time=1)
+    run!(sim)
+    
+    @test model.tracers.C[1, 1, 1] ≈ 0.0
+    @test model.particles.properties.B[1] ≈ -0.25
+
     @testset "Larger grid for point assignment" begin
         grid = RectilinearGrid(size=(2,1,1), extent=(2,1,1), topology=(Periodic, Periodic, Periodic))
         particlestruct=StructArray{CustomParticle}(([1], [0.25], [-0.25], [1.0], [0.0], [0.0]))

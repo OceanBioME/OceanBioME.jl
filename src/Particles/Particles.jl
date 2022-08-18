@@ -41,7 +41,7 @@ end
 
 fallback(particles, p, diff, fallback_scalefactor::Number) = diff*fallback_scalefactor
 
-fallback(particles, p, diff, fallback_scalefactor::NamedTuple{(:property, :constant), Tuple{Symbol, Number}}) = diff*fallback_scalefactor.constant/(getproperty(particles.properties, fallback_scalefactor.property)[p])
+fallback(particles, p, diff, fallback_scalefactor::NamedTuple{(:property, :constant), Tuple{Symbol, Float64}}) = diff*fallback_scalefactor.constant/(getproperty(particles.properties, fallback_scalefactor.property)[p])
 
 @kernel function source_sink!(model, loc, Δt)
     p = @index(Global)
