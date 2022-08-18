@@ -5,9 +5,9 @@
 
     z = grid.zᵃᵃᶜ[grid.Nz]
 
-    ∫chlᵉʳ = (P[i, j, grid.Nz]*params.Rd_chl/params.r_pig)^params.e_r*z
-    ∫chlᵉᵇ = (P[i, j, grid.Nz]*params.Rd_chl/params.r_pig)^params.e_b*z
-    PAR[i, j, grid.Nz] =  sp*(exp(params.k_r0 * z + params.Χ_rp * ∫chlᵉʳ).+ exp(params.k_b0 * z + params.Χ_bp * ∫chlᵉᵇ))/2
+    ∫chlᵉʳ = -(P[i, j, grid.Nz]*params.Rd_chl/params.r_pig)^params.e_r*z
+    ∫chlᵉᵇ = -(P[i, j, grid.Nz]*params.Rd_chl/params.r_pig)^params.e_b*z
+    PAR[i, j, grid.Nz] =  sp*(exp(params.k_r0 * z - params.Χ_rp * ∫chlᵉʳ).+ exp(params.k_b0 * z - params.Χ_bp * ∫chlᵉᵇ))/2
     for k=grid.Nz-1:-1:1
         z = grid.zᵃᵃᶜ[k]
         dz = grid.zᵃᵃᶜ[k+1] - z 
@@ -16,7 +16,7 @@
         ∫chlᵉʳ += (mean_pig^params.e_r)*dz
         ∫chlᵉᵇ += (mean_pig^params.e_b)*dz
 
-        PAR[i, j, k] =  sp*(exp(params.k_r0 * z + params.Χ_rp * ∫chlᵉʳ) + exp(params.k_b0 * z + params.Χ_bp * ∫chlᵉᵇ))/2
+        PAR[i, j, k] =  sp*(exp(params.k_r0 * z - params.Χ_rp * ∫chlᵉʳ) + exp(params.k_b0 * z - params.Χ_bp * ∫chlᵉᵇ))/2
     end
 end 
 
