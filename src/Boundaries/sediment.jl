@@ -54,10 +54,10 @@ end
 
 @kernel function _integrate_sediment!(D, DD, Nᵣᵣ, Nᵣ, Nᵣₑ, Δt, params)
     i, j = @index(Global, NTuple) 
-    N_dep = (params.w_slow*tanh(max(-params.d/params.λ, 0)) * D[i, j, 1] + params.w_fast*tanh(max(-params.d/params.λ, 0)) * DD[i, j, 1]) * volume(i, j, 1, grid, Center(), Center(), Face()) / Az(i, j, 1, grid, Center(), Center(), Face())
+    N_dep = (params.w_slow*tanh(max(-params.d/params.λ, 0)) * D[i, j, 1] + params.w_fast*tanh(max(-params.d/params.λ, 0)) * DD[i, j, 1])
     Nᵣᵣ[i, j, 1] += (N_dep*params.f_fast*(1-params.f_ref) - params.λᵣᵣ*Nᵣᵣ[i, j, 1])*Δt
     Nᵣ[i, j, 1] += (N_dep*params.f_slow*(1-params.f_ref) - params.λᵣ*Nᵣ[i, j, 1])*Δt
-    Nᵣₑ[i, j, 1] += N_dep*params.f_ref
+    Nᵣₑ[i, j, 1] += N_dep*params.f_ref*Δt
 end
 
 function integrate_sediment!(sim, params)
