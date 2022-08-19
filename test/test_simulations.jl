@@ -1,6 +1,6 @@
 using OceanBioME, Test, Oceananigans, Printf
 using Oceananigans.Units: second,minute, minutes, hour, hours, day, days, year, years
-
+using Oceananigans.Operators: Vᶜᶜᶜ
 #forcing functions
 t_function(x, y, z, t) = 15.0
 s_function(x, y, z, t) = 35.0
@@ -21,7 +21,7 @@ function run_simulation(bgc_model, optionsets, sediment, arch, c)
 
     #setup sediment
     if sediment
-        sediment_bcs=Boundaries.setupsediment(grid)
+        sediment_bcs=Boundaries.setupsediment(grid; Nᵣᵣᵢ=0.0, Nᵣᵢ=0.0)
     else
         sediment_bcs=NamedTuple()
     end
@@ -95,26 +95,26 @@ end
 function calculate_budget(model, sediment, tracers)
     budget = 0.0
     for tracer in tracers
-        budget += sum(getproperty(model.tracers, tracer)[1, 1, 1:model.grid.Nz])
+        budget += sum(getproperty(model.tracers, tracer)[1, 1, 1:model.grid.Nz] .* [Vᶜᶜᶜ(1, 1, k, model.grid) for k in [1:model.grid.Nz;]])
     end
     if sediment
         for sed_tracer in (:Nᵣ, :Nᵣᵣ, :Nᵣₑ)
-            budget += getproperty(model.auxiliary_fields, sed_tracer)
+            budget += getproperty(model.auxiliary_fields, sed_tracer)[1, 1, 1] * (model.grid.Δxᶜᵃᵃ*model.grid.Δyᵃᶜᵃ)
         end
     end
     return budget
 end
 
-function calculate_budget(results::OceanBioME.Plot.model_results, bgc_model, sediment)
+function calculate_budget(results::OceanBioME.Plot.model_results, grid, bgc_model, sediment)
     budget = zeros(length(results.t))
     for tracer in getproperty(budget_tracers, bgc_model)
         ind = findfirst(results.tracers.=="$tracer")
-        budget += sum(results.results[ind, 1, 1, :, :], dims=1)[1, :]
+        budget += sum(results.results[ind, 1, 1, :, :]  .* [Vᶜᶜᶜ(1, 1, k, model.grid) for k in [1:model.grid.Nz;]], dims=1)[1, :]
     end
     if sediment
         for sed_tracer in (:Nᵣ, :Nᵣᵣ, :Nᵣₑ)
             ind = findfirst(results.tracers.=="$tracer")
-            budget += sum(results.results[ind, 1, 1, :, :], dims=1)[1, :]
+            budget += results.results[ind, 1, 1, 1, :] * (model.grid.Δxᶜᵃᵃ*model.grid.Δyᵃᶜᵃ)
         end
     end
     return budget
