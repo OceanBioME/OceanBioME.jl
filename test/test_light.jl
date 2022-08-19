@@ -12,7 +12,7 @@ params=LOBSTER.defaults
     set!(model, u=0, v=0, w=0, P=Pᵢ)
     sim = Simulation(model, Δt=0.1, stop_time=1)
     surface_PAR(t) = 1
-    sim.callbacks[:update_par] = Callback(Light.update_2λ!, IterationInterval(1), merge(params, (surface_PAR=surface_PAR,)));
+    sim.callbacks[:update_par] = Callback(Light.update_2λ!, IterationInterval(1), merge(merge(params, Light.defaults), (surface_PAR=surface_PAR,)));
     run!(sim)
 
     expected_PAR = [
