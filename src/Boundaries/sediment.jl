@@ -38,9 +38,6 @@ end
     Nᵣᵣ[i, j, 1] += (N_dep*params.f_fast*(1-params.f_ref) - params.λᵣᵣ*Nᵣᵣ[i, j, 1])*Δt
     Nᵣ[i, j, 1] += (N_dep*params.f_slow*(1-params.f_ref) - params.λᵣ*Nᵣ[i, j, 1])*Δt
     Nᵣₑ[i, j, 1] += N_dep*params.f_ref
-
-    D[i, j, 1] = 0
-    DD[i, j, 1] = 0
 end
 
 function integrate_sediment!(sim, params)
@@ -48,6 +45,8 @@ function integrate_sediment!(sim, params)
                                    sim.model.tracers.D, sim.model.tracers.DD, sim.model.auxiliary_fields.Nᵣᵣ, sim.model.auxiliary_fields.Nᵣ, sim.model.auxiliary_fields.Nᵣₑ, sim.Δt, params,
                                    dependencies = Event(device(sim.model.architecture)))
     wait(device(sim.model.architecture), calculation)
+    sim.model.tracers.D[:, :, 1] .= 0
+    sim.model.tracers.DD[:, :, 1] .= 0
 end
 
 function setupsediment(grid, w_fast=200/day, w_slow=3.47e-5, λ=1.0, parameters=defaults.sediment, Nᵣᵣᵢ=24.0, Nᵣᵢ=85.0, f_ref=0.1, f_fast=0.74, f_slow=0.26, carbonates=true)
