@@ -21,6 +21,7 @@ module Boundaries
 using Roots, Oceananigans, KernelAbstractions
 using Oceananigans.Units: second, minute, minutes, hour, hours, day, days, year, years
 using Oceananigans.Architectures: device
+using Oceananigans.Operators: volume, Az
 
 const defaults = (
     airseaflux = (

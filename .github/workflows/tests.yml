@@ -7,12 +7,13 @@ on:
       - 'src/*'
       - 'test/*'
       - '.github/workflows/*'
-    paths-ignore:
-      - 'examples/*'
-      - '*.md'
   pull_request:
     branches: 
       - main
+    paths:
+      - 'src/*'
+      - 'test/*'
+      - '.github/workflows/*'
 jobs:
   test:
     name: Julia ${{ matrix.version }} - ${{ matrix.os }} - ${{ matrix.arch }} - ${{ github.event_name }}

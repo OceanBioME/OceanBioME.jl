@@ -7,7 +7,7 @@ s_function(x, y, z, t) = 35.0
 surface_PAR(t) = 5
 
 function run_simulation(bgc_model, optionsets, sediment, arch, c)
-    grid = RectilinearGrid(arch, size=(1, 1, 10), extent=(1, 1, 100))
+    grid = RectilinearGrid(arch, size=(1, 1, 5), extent=(1, 1, 100))
     params = getproperty(OceanBioME, bgc_model).defaults
 
     #setup optional tracers
@@ -21,16 +21,20 @@ function run_simulation(bgc_model, optionsets, sediment, arch, c)
 
     #setup sediment
     if sediment
-        sediment_bcs=Boundaries.setupsediment(grid; Nᵣᵣᵢ=0.0, Nᵣᵢ=0.0)
+        sediment_bcs=Boundaries.setupsediment(grid; Nᵣᵣᵢ=0.0, Nᵣᵢ=0.0, parameters=(λᵣᵣ = 0,
+        λᵣ = 0,   
+        Rdᵣᵣ = 0.1509,#mmol N/mmol C
+        Rdᵣ = 0.13,#mmol N/mmol C
+        Rd_red = 106/16))
     else
-        sediment_bcs=NamedTuple()
+        sediment_bcs=(boundary_conditions=NamedTuple(), )
     end
 
     #setup PAR 
     PAR = Oceananigans.Fields.Field{Center, Center, Center}(grid) 
 
     #load bgc model
-    bgc = Setup.Oceananigans(bgc_model, grid, params, PAR, optional_sets=optionsets, topboundaries=topboundaries, bottomboundaries=sediment_bcs, sinking=sediment) #with sinking and no sediment Oceananigans doesn't conserve the tracers (i.e. doesn't collect them at the bottom of the domain)
+    bgc = Setup.Oceananigans(bgc_model, grid, params, PAR, optional_sets=optionsets, topboundaries=topboundaries, bottomboundaries=sediment_bcs.boundary_conditions, sinking=sediment) #with sinking and no sediment Oceananigans doesn't conserve the tracers (i.e. doesn't collect them at the bottom of the domain)
 
     #fix diffusivity
     κₜ(x, y, z, t) = 2e-2
@@ -45,7 +49,7 @@ function run_simulation(bgc_model, optionsets, sediment, arch, c)
                             closure = ScalarDiffusivity(ν=κₜ, κ=κₜ), 
                             forcing =  bgc.forcing,
                             boundary_conditions = bgc.boundary_conditions,
-                            auxiliary_fields =  !(sediment_bcs == NamedTuple()) ? merge((PAR=PAR, ), sediment_bcs.auxiliary_fields) : (PAR = PAR, )
+                            auxiliary_fields =  sediment ? merge((PAR=PAR, ), sediment_bcs.auxiliary_fields) : (PAR = PAR, )
     )
 
     #set default values for tracers
@@ -60,7 +64,7 @@ function run_simulation(bgc_model, optionsets, sediment, arch, c)
     prettytime(sim.Δt),
     prettytime(sim.run_wall_time))
     Δt = c*grid.Δzᵃᵃᶜ^2/κₜ(0, 0, 0, 0)
-    duration = 100day
+    duration = 50day
 
     simulation = Simulation(model, Δt=Δt, stop_time=duration) 
     simulation.callbacks[:update_par] = Callback(Light.update_2λ!, IterationInterval(1), merge(params, (surface_PAR=surface_PAR,)))
@@ -87,11 +91,6 @@ function run_simulation(bgc_model, optionsets, sediment, arch, c)
     return bgc, model, simulation, initial_budget, final_budget, results
 end
 
-#for diagnostics
-function record_budget!(sim, params)
-    push!(budget, calculate_budget(sim.model, params.sediment, params.tracers))
-end
-
 function calculate_budget(model, sediment, tracers)
     budget = 0.0
     for tracer in tracers
@@ -109,40 +108,30 @@ function calculate_budget(results::OceanBioME.Plot.model_results, grid, bgc_mode
     budget = zeros(length(results.t))
     for tracer in getproperty(budget_tracers, bgc_model)
         ind = findfirst(results.tracers.=="$tracer")
-        budget += sum(results.results[ind, 1, 1, :, :]  .* [Vᶜᶜᶜ(1, 1, k, model.grid) for k in [1:model.grid.Nz;]], dims=1)[1, :]
+        budget += sum(results.results[ind, 1, 1, :, :]  .* [Vᶜᶜᶜ(1, 1, k, grid) for k in [1:grid.Nz;]], dims=1)[1, :]
     end
     if sediment
         for sed_tracer in (:Nᵣ, :Nᵣᵣ, :Nᵣₑ)
-            ind = findfirst(results.tracers.=="$tracer")
-            budget += results.results[ind, 1, 1, 1, :] * (model.grid.Δxᶜᵃᵃ*model.grid.Δyᵃᶜᵃ)
+            ind = findfirst(results.tracers.=="$sed_tracer")
+            budget += results.results[ind, 1, 1, 1, :] * (grid.Δxᶜᵃᵃ*grid.Δyᵃᶜᵃ)
         end
     end
     return budget
 end
 
-function calculate_C_budget(results::OceanBioME.Plot.model_results, bgc_model)
-    budget = zeros(length(results.t))
-    for tracer in getproperty(c_budget_tracers, bgc_model)
-        ind = findfirst(results.tracers.=="$tracer")
-        if !isnothing(ind) #incase carbonate model is turned off
-            budget += sum(results.results[ind, 1, 1, 1:model.grid.Nz, :], dims=1)[1, :]
+function calculate_N₂_loss(results::OceanBioME.Plot.model_results, grid, bgc_model)
+    N₂_loss = zeros(length(results.t))
+    for (t_ind, t) in enumerate(results.t)
+        Nᵣᵣ = results.results[findfirst(results.tracers .== "Nᵣᵣ"), 1, 1, 1, t_ind]
+        Nᵣ = results.results[findfirst(results.tracers .=="Nᵣ"), 1, 1, 1, t_ind]
+        Nₘ=Boundaries._Nₘ(Nᵣᵣ, Nᵣ, Boundaries.defaults.sediment)*day
+        Cₘ=Boundaries._Cₘ(Nᵣᵣ, Nᵣ, Boundaries.defaults.sediment)*day
+        k = Nₘ/(Nᵣᵣ+Nᵣ)
+        if (Nₘ>0 && Cₘ>0 && k > 0)
+            N₂_loss[t_ind] = Cₘ*Boundaries.p_denit(Cₘ, results.results[findfirst(results.tracers .=="OXY"), 1, 1, 1, t_ind], results.results[findfirst(results.tracers .=="NO₃"), 1, 1, 1, t_ind], k)*0.4
         end
     end
-    if sediment
-        sed_rd_sym = (:Rdᵣ, :Rdᵣᵣ, :Rd_red)
-        for (j, sed_tracer) in enumerate((:Nᵣ, :Nᵣᵣ, :Nᵣₑ))
-            ind = findfirst(results.tracers.=="$tracer")
-            budget += sum(results.results[ind, 1, 1, 1:model.grid.Nz, :], dims=1)[1, :]*getproperty(OceanBioME.Boundaries.sediment, sed_rd_sym[j])
-        end
-    end
-
-    airseaparams=merge(Boundaries.defaults.airseaflux, (gas=:CO₂, T=t_function, S=s_function))
-    DIC_ind = findfirst(results.tracers.=="DIC")
-    ALK_ind = findfirst(results.tracers.=="ALK")
-    for (i, t) in enumerate(results.t)
-         budget[i] += Boundaries.airseaflux(.5, .5, t, results.results[DIC_ind, 1, 1, end, i], results.results[ALK_ind, 1, 1, end, i], airseaparams) #if the example does not have a 1x1m x-y grid need to update this to be multipled by area
-    end
-    return budget
+    return cumsum(N₂_loss)
 end
 
 function run_test(bgc_model, optionsets, sediment, arch, c)
