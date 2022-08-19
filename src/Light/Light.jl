@@ -19,4 +19,14 @@ using Oceananigans.Architectures: device
 
 include("2band.jl")
 
+defaults = (
+    k_r0 = 0.225,  # m⁻¹
+    k_b0 = 0.0232,  # m⁻¹
+    Χ_rp = 0.037,  # m⁻¹(mgChlm⁻³)⁻ᵉʳ
+    Χ_bp = 0.074,  # m⁻¹(mgChlm⁻³)⁻ᵉᵇ
+    e_r = 0.629, 
+    e_b = 0.674, 
+    r_pig = 0.7,
+)
+
 end

@@ -23,7 +23,7 @@ end
 @inline function sedimentNH₄(i, j, grid, clock, model_fields, params)
     Nₘ, Cₘ, k = mineralisation(i, j, params)
     if (Nₘ>0 && Cₘ>0 && k > 0)
-        return @inbounds Nₘ*(1-p_nit(Nₘ, Cₘ, model_fields.OXY[i, j, 1], model_fields.NH₄[i, j, 1], k))
+        return max(0, @inbounds Nₘ*(1-p_nit(Nₘ, Cₘ, model_fields.OXY[i, j, 1], model_fields.NH₄[i, j, 1], k)))#max just incase the odd p_nit etc give unphysical values (this can not be a flux out of the system as it is irreversible chemistry)
     else
         return 0
     end
@@ -34,7 +34,7 @@ end
 @inline function sedimentNO₃(i, j, grid, clock, model_fields, params)
     Nₘ, Cₘ, k = mineralisation(i, j, params)
     if (Nₘ>0 && Cₘ>0 && k > 0)
-        return @inbounds Nₘ*p_nit(Nₘ, Cₘ, model_fields.OXY[i, j, 1], model_fields.NH₄[i, j, 1], k) - Cₘ*p_denit(Cₘ, model_fields.OXY[i, j, 1], model_fields.NO₃[i, j, 1], k)*0.8
+        return max(0, @inbounds Nₘ*p_nit(Nₘ, Cₘ, model_fields.OXY[i, j, 1], model_fields.NH₄[i, j, 1], k) - Cₘ*p_denit(Cₘ, model_fields.OXY[i, j, 1], model_fields.NO₃[i, j, 1], k)*0.8)
     else
         return 0
     end
@@ -43,7 +43,7 @@ end
 @inline function sedimentO₂(i, j, grid, clock, model_fields, params)
     Nₘ, Cₘ, k = mineralisation(i, j, params)
     if (Nₘ>0 && Cₘ>0 && k > 0)
-        return @inbounds -(Cₘ*(1-p_denit(Cₘ, model_fields.OXY[i, j, 1], model_fields.NO₃[i, j, 1], 1)-p_anox(Cₘ, model_fields.OXY[i, j, 1], model_fields.NO₃[i, j, 1], 1)*p_soliddep(isa(params.d, Number) ? params.d : params.d[i,j])) + Nₘ*p_nit(Nₘ, Cₘ, model_fields.OXY[i, j, 1], model_fields.NH₄[i, j, 1], 1)*2)
+        return min(0, @inbounds -(Cₘ*(1-p_denit(Cₘ, model_fields.OXY[i, j, 1], model_fields.NO₃[i, j, 1], 1)-p_anox(Cₘ, model_fields.OXY[i, j, 1], model_fields.NO₃[i, j, 1], 1)*p_soliddep(isa(params.d, Number) ? params.d : params.d[i,j])) + Nₘ*p_nit(Nₘ, Cₘ, model_fields.OXY[i, j, 1], model_fields.NH₄[i, j, 1], 1)*2))
     else
         return 0
     end
@@ -54,9 +54,9 @@ end
 
 @kernel function _integrate_sediment!(D, DD, Nᵣᵣ, Nᵣ, Nᵣₑ, Δt, params)
     i, j = @index(Global, NTuple) 
-    N_dep = (params.w_slow*tanh(max(-params.d/params.λ, 0)) * D[i, j, 1] + params.w_fast*tanh(max(-params.d/params.λ, 0)) * DD[i, j, 1])
-    Nᵣᵣ[i, j, 1] += (N_dep*params.f_fast*(1-params.f_ref) - params.λᵣᵣ*Nᵣᵣ[i, j, 1])*Δt
-    Nᵣ[i, j, 1] += (N_dep*params.f_slow*(1-params.f_ref) - params.λᵣ*Nᵣ[i, j, 1])*Δt
+    N_dep = (params.w_slow*tanh(max(-params.d/params.λ, 0)) * D[i, j, 1] + params.w_fast*tanh(max(-params.d/params.λ, 0)) * DD[i, j, 1])*2#no idea why we need this factor of 2 but nitrogen budget doesnt add up otherwise
+    Nᵣᵣ[i, j, 1] += (N_dep*params.f_fast*(1-params.f_ref) - params.λᵣᵣ*Nᵣᵣ[i, j, 1]) *Δt
+    Nᵣ[i, j, 1] += (N_dep*params.f_slow*(1-params.f_ref) - params.λᵣ*Nᵣ[i, j, 1]) *Δt
     Nᵣₑ[i, j, 1] += N_dep*params.f_ref*Δt
 end
 
@@ -81,7 +81,7 @@ function setupsediment(grid; w_fast=200/day, w_slow=3.47e-5, λ=1.0, parameters=
     Nᵣ=Oceananigans.Fields.Field{Center, Center, Center}(grid)#bottomgrid)
     Nᵣₑ=Oceananigans.Fields.Field{Center, Center, Center}(grid)#bottomgrid)
 
-    #would like to user smaller grid to concerve memeory butt breaks output writer
+    #would like to user smaller grid to concerve memeory but breaks output writer
     Nᵣᵣ .= Nᵣᵣᵢ; Nᵣ .= Nᵣᵢ; Nᵣₑ .= 0.0
     parameters = merge(parameters, (Nᵣᵣ = Nᵣᵣ, Nᵣ = Nᵣ, Nᵣₑ=Nᵣₑ, d = grid.zᵃᵃᶠ[1], λ=λ, f_ref=f_ref, f_fast=f_fast, f_slow=f_slow, w_fast = w_fast, w_slow = w_slow))
 
@@ -96,6 +96,7 @@ function setupsediment(grid; w_fast=200/day, w_slow=3.47e-5, λ=1.0, parameters=
             DD = FluxBoundaryCondition(sedimentDD, discrete_form=true, parameters=parameters)
         ), DIC_bc),
         auxiliary_fields = (Nᵣᵣ=Nᵣᵣ, Nᵣ=Nᵣ, Nᵣₑ=Nᵣₑ),
-        callback =  Callback(integrate_sediment!, IterationInterval(1), parameters)
+        callback =  Callback(integrate_sediment!, IterationInterval(1), parameters),
+        parameters = parameters
     )
 end

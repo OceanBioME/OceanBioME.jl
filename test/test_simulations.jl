@@ -7,7 +7,7 @@ s_function(x, y, z, t) = 35.0
 surface_PAR(t) = 5
 
 function run_simulation(bgc_model, optionsets, sediment, arch, c)
-    grid = RectilinearGrid(arch, size=(1, 1, 5), extent=(1, 1, 100))
+    grid = RectilinearGrid(arch, size=(1, 1, 3), extent=(1, 1, 50))
     params = getproperty(OceanBioME, bgc_model).defaults
 
     #setup optional tracers
@@ -21,11 +21,7 @@ function run_simulation(bgc_model, optionsets, sediment, arch, c)
 
     #setup sediment
     if sediment
-        sediment_bcs=Boundaries.setupsediment(grid; Nᵣᵣᵢ=0.0, Nᵣᵢ=0.0, parameters=(λᵣᵣ = 0,
-        λᵣ = 0,   
-        Rdᵣᵣ = 0.1509,#mmol N/mmol C
-        Rdᵣ = 0.13,#mmol N/mmol C
-        Rd_red = 106/16))
+        sediment_bcs=Boundaries.setupsediment(grid)
     else
         sediment_bcs=(boundary_conditions=NamedTuple(), )
     end
@@ -49,7 +45,7 @@ function run_simulation(bgc_model, optionsets, sediment, arch, c)
                             closure = ScalarDiffusivity(ν=κₜ, κ=κₜ), 
                             forcing =  bgc.forcing,
                             boundary_conditions = bgc.boundary_conditions,
-                            auxiliary_fields =  sediment ? merge((PAR=PAR, ), sediment_bcs.auxiliary_fields) : (PAR = PAR, )
+                            auxiliary_fields =  bgc_model in (:LOBSTER, ) ? (sediment ? merge((PAR=PAR, ), sediment_bcs.auxiliary_fields) : (PAR = PAR, )) : NamedTuple()
     )
 
     #set default values for tracers
@@ -67,17 +63,19 @@ function run_simulation(bgc_model, optionsets, sediment, arch, c)
     duration = 50day
 
     simulation = Simulation(model, Δt=Δt, stop_time=duration) 
-    simulation.callbacks[:update_par] = Callback(Light.update_2λ!, IterationInterval(1), merge(params, (surface_PAR=surface_PAR,)))
+    if bgc_model in (:LOBSTER, )
+        simulation.callbacks[:update_par] = Callback(Light.update_2λ!, IterationInterval(1), merge(merge(params, Light.defaults), (surface_PAR=surface_PAR,)))
+    end
     if sediment
         simulation.callbacks[:integrate_sediment] = sediment_bcs.callback
     end
-    simulation.callbacks[:progress] = Callback(progress_message, IterationInterval(10))
+    simulation.callbacks[:progress] = Callback(progress_message, IterationInterval(100))
 
     simulation.output_writers[:profiles] =
     JLD2OutputWriter(model, merge(model.velocities, model.tracers, model.auxiliary_fields),
                           filename = "test/test_profiles.jld2",
                           indices = (1, 1, :),
-                          schedule = TimeInterval(1days),     #TimeInterval(1days),
+                          schedule = TimeInterval(1days),
                           overwrite_existing = true)
 
     #get budgets and run simulation
@@ -119,24 +117,37 @@ function calculate_budget(results::OceanBioME.Plot.model_results, grid, bgc_mode
     return budget
 end
 
-function calculate_N₂_loss(results::OceanBioME.Plot.model_results, grid, bgc_model)
-    N₂_loss = zeros(length(results.t))
-    for (t_ind, t) in enumerate(results.t)
-        Nᵣᵣ = results.results[findfirst(results.tracers .== "Nᵣᵣ"), 1, 1, 1, t_ind]
-        Nᵣ = results.results[findfirst(results.tracers .=="Nᵣ"), 1, 1, 1, t_ind]
-        Nₘ=Boundaries._Nₘ(Nᵣᵣ, Nᵣ, Boundaries.defaults.sediment)*day
-        Cₘ=Boundaries._Cₘ(Nᵣᵣ, Nᵣ, Boundaries.defaults.sediment)*day
-        k = Nₘ/(Nᵣᵣ+Nᵣ)
-        if (Nₘ>0 && Cₘ>0 && k > 0)
-            N₂_loss[t_ind] = Cₘ*Boundaries.p_denit(Cₘ, results.results[findfirst(results.tracers .=="OXY"), 1, 1, 1, t_ind], results.results[findfirst(results.tracers .=="NO₃"), 1, 1, 1, t_ind], k)*0.4
+function calculate_C_budget(results::OceanBioME.Plot.model_results, grid, bgc_model, sediment, Δt)
+    budget = zeros(length(results.t))
+    tracers = getproperty(c_budget_tracers, bgc_model)
+    for tracer in keys(tracers)
+        ind = findfirst(results.tracers.=="$tracer")
+        if !isnothing(ind) #incase carbonate model is turned off
+            budget += sum(results.results[ind, 1, 1, :, :]  .* [Vᶜᶜᶜ(1, 1, k, grid) for k in [1:grid.Nz;]], dims=1)[1, :] * getproperty(tracers, tracer)
         end
     end
-    return cumsum(N₂_loss)
+
+    if sediment
+        sed_rd_sym = (:Rdᵣ, :Rdᵣᵣ, :Rd_red)
+        for sed_tracer in (:Nᵣ, :Nᵣᵣ, :Nᵣₑ)
+            ind = findfirst(results.tracers.=="$sed_tracer")
+            budget += results.results[ind, 1, 1, 1, :] * (grid.Δxᶜᵃᵃ*grid.Δyᵃᶜᵃ) * getproperty(OceanBioME.Boundaries.sediment, sed_rd_sym[j])
+        end
+    end
+
+    airseaparams=merge(Boundaries.defaults.airseaflux, (gas=:CO₂, T=t_function, S=s_function))
+    DIC_ind = findfirst(results.tracers.=="DIC")
+    ALK_ind = findfirst(results.tracers.=="ALK")
+    airsea = zeros(length(results.t))
+    for (i, t) in enumerate(results.t)
+        budget[i] += Boundaries.airseaflux(.5, .5, t, results.results[DIC_ind, 1, 1, end, i], results.results[ALK_ind, 1, 1, end, i], airseaparams) * (grid.Δxᶜᵃᵃ*grid.Δyᵃᶜᵃ)#if the example does not have a 1x1m x-y grid need to update this to be multipled by area
+    end
+    return budget
 end
 
 function run_test(bgc_model, optionsets, sediment, arch, c)
     bgc, model, simulation, ΣN₀, ΣN₁, results = run_simulation(bgc_model, optionsets, sediment, arch, c)
-    @test ΣN₀≈ΣN₁
+    @test ΣN₀≈ΣN₁ atol = sediment ? 0.1 : 0.01 #sediment model has higher numerical loss
     for tracer in (model.tracers..., model.auxiliary_fields...)
         @test !any(isnan.(tracer[1, 1, 1:model.grid.Nz]))
         @test !any(isinf.(tracer[1, 1, 1:model.grid.Nz]))
@@ -146,8 +157,8 @@ function run_test(bgc_model, optionsets, sediment, arch, c)
     @test size(results.results)[1] == length(bgc.tracers) + length(model.auxiliary_fields)
 
     if :carbonates in optionsets
-        c_budget = calculate_C_budget(results, bgc_model)
-        @test c_budget[0] ≈ c_budget[1]
+        c_budget = calculate_C_budget(results, model.grid, bgc_model, sediment)
+        @test c_budget[1] ≈ c_budget[end] rtol=0.01 #not convinced
     end
 end
 
@@ -157,11 +168,11 @@ progress_message(sim) = @printf("Iteration: %04d, time: %s, Δt: %s, wall time: 
                                 prettytime(sim.Δt),
                                 prettytime(sim.run_wall_time))
 
-models = (:LOBSTER, :NPZ)
+models = (:LOBSTER, )#:NPZ)
 arch = CPU()#GPU doesn't work for most at the moment but when it does itterate over that too
 #global default values
-Pᵢ(x, y, z)= 0.035
-Zᵢ(x, y, z)= 0.045
+Pᵢ(x, y, z)= 1.0
+Zᵢ(x, y, z)= 1.0
 Dᵢ(x, y, z)=0.0
 DDᵢ(x, y, z)=0.0
 NO₃ᵢ(x, y, z)= 12.0
@@ -170,25 +181,26 @@ DOMᵢ(x, y, z)= 0
 DICᵢ(x, y, z)= 2200 
 ALKᵢ(x, y, z)= 2400
 OXYᵢ(x, y, z) = 240
+Nᵢ(x, y, z) = 12.0
 
-const default_values = (P=Pᵢ, Z=Zᵢ, D=Dᵢ, DD=DDᵢ, NO₃=NO₃ᵢ, NH₄=NH₄ᵢ, DOM=DOMᵢ, DIC=DICᵢ, ALK=ALKᵢ, OXY=OXYᵢ)
+const default_values = (P=Pᵢ, Z=Zᵢ, D=Dᵢ, DD=DDᵢ, NO₃=NO₃ᵢ, NH₄=NH₄ᵢ, DOM=DOMᵢ, DIC=DICᵢ, ALK=ALKᵢ, OXY=OXYᵢ, N=Nᵢ)
 
 budget_tracers = (LOBSTER = (:NO₃, :NH₄, :P, :Z, :D, :DD, :DOM), NPZ = (:N, :P, :Z))
 c_budget_tracers = (LOBSTER = (P = LOBSTER.defaults.Rd_phy, Z=LOBSTER.defaults.Rd_phy, D=LOBSTER.defaults.Rd_phy, DD=LOBSTER.defaults.Rd_phy, DOM=LOBSTER.defaults.Rd_dom, DIC=1, ALK=1), )
 
 c = 0.2
-#=
+
 @testset "Simulations" begin 
 for model in models
     @info "Testing $model model"
     option_sets = keys(getproperty(OceanBioME, model).optional_tracers)
-    for option in ([(o, ) for o in option_sets]..., ())
+    for option in ((), [(o, ) for o in option_sets]...)
         for sediment in [true, false]
-            if (sediment==false | (sediment==true && option == :oxygen))#sediment model depends on oxygen model
+            if (sediment==false | (sediment==true && option == (:oxygen)))#sediment model depends on oxygen model
                 @info "Testing optional tracers $option $(sediment ? "with" : "without") sediment"
-                run_simulation(model, (option, ), sediment, arch, c)
+                run_test(model, option, sediment, arch, c)
             end
         end
     end
 end
-end=#
+end

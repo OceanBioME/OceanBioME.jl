@@ -21,6 +21,8 @@ using HDF5
 using Interpolations
 using Statistics 
 
+@warn "Not currently working"
+
 using Oceananigans
 using Oceananigans.Units: second,minute, minutes, hour, hours, day, days, year, years
 
@@ -48,18 +50,18 @@ surface_PAR(t) = PAR_itp(mod(t, 364days))  # will be used as part of Option 2 of
 
 # Simulation duration    
 duration=2years    
-
+#=
 # Define the grid
 Lx = 1
 Ly = 500
 Nx = 1
 Ny = 1
-Nz = 33 # number of points in the vertical direction
+Nz = 40 # number of points in the vertical direction
 Lz = 600 # domain depth             # subpolar mixed layer depth max 427m 
 
 refinement = 10 # controls spacing near surface (higher means finer spaced)  #1.2 5 -4.9118e9
 stretching = 5.754   # controls rate of stretching at bottom
-                
+    
 ## Normalized height ranging from 0 to 1
 h(k) = (k - 1) / Nz
 ## Linear near-surface generator
@@ -67,11 +69,26 @@ h(k) = (k - 1) / Nz
 ## Bottom-intensified stretching function 
 Σ(k) = (1 - exp(-stretching * h(k))) / (1 - exp(-stretching))
 ## Generating function
-z_faces(k) = Lz * (ζ₀(k) * Σ(k) - 1)
+z_faces(k) = k<3 ? -(Lz+5*k) : Lz * (ζ₀(k-2) * Σ(k-2) - 1)
+
+stretching=6
+bias=0
+z_faces(k) = Lz * (ζ₀(k)*(tanh.((h(k)-0.5 .+bias)*stretching).+1)/2 - 1)
+
 grid = RectilinearGrid(size = (Nx, Ny, Nz), 
                        x = (0, Lx),
                        y = (0, Ly),
-                       z = z_faces)
+                       z = z_faces)=#
+
+                       # Define the grid
+Lx = 1
+Ly = 500
+Nx = 1
+Ny = 1
+Nz = 150 # number of points in the vertical direction
+Lz = 600 # domain depth             # subpolar mixed layer depth max 427m 
+
+grid = RectilinearGrid(size = (Nx, Ny, Nz),  extent=(Lx, Ly, Lz))
 
 PAR_field = Oceananigans.Fields.Field{Center, Center, Center}(grid) #initialize a PAR field 
 
@@ -123,15 +140,16 @@ set!(model, P=Pᵢ, Z=Zᵢ, D=Dᵢ, DD=DDᵢ, NO₃=NO₃ᵢ, NH₄=NH₄ᵢ, DO
 #Timestep wizard can not be used in this instance as the diffusivity is functional otherwise would be better to use
 #Can do about 90s timestep early on but reduces to about 40s later on
 #Not sure advective one is relivant
-c_diff = 0.1
+#=c_diff = 0.08
 #c_adv = 0.05
 dz²_κ=[findmin(grid.Δzᵃᵃᶜ[i]^2 ./(κₜ.(0.5,0.5,grid.zᵃᵃᶜ[i],[0:364;])))[1] for i in 1:Nz]
-Δt=c_diff*findmin(dz²_κ)[1] #min(c_diff*findmin(dz²_κ)[1], -c_adv*findmin(grid.Δzᵃᵃᶜ)[1]/params.V_dd)
+Δt=c_diff*findmin(dz²_κ)[1] #min(c_diff*findmin(dz²_κ)[1], -c_adv*findmin(grid.Δzᵃᵃᶜ)[1]/params.V_dd)=#
+Δt=200
 
 simulation = Simulation(model, Δt=Δt, stop_time=duration) 
 
 # create a model 'callback' to update the light (PAR) profile every 1 timestep and integrate sediment model
-simulation.callbacks[:update_par] = Callback(Light.update_2λ!, IterationInterval(1), merge(params, (surface_PAR=surface_PAR,)))#comment out if using PAR as a function, PAR_func
+simulation.callbacks[:update_par] = Callback(Light.update_2λ!, IterationInterval(1), merge(merge(params, Light.defaults), (surface_PAR=surface_PAR,)))#comment out if using PAR as a function, PAR_func
 simulation.callbacks[:integrate_sediment] = sediment_bcs.callback
 
 ## Print a progress message
@@ -155,7 +173,7 @@ simulation.output_writers[:profiles] =
 
 #setup dictionary of fields
 fields = Dict(zip((["$t" for t in bgc.tracers]..., "PAR", "Nᵣ", "Nᵣᵣ", "Nᵣₑ"), ([getproperty(model.tracers, t) for t in bgc.tracers]..., [getproperty(model.auxiliary_fields, t) for t in (:PAR, :Nᵣ, :Nᵣᵣ, :Nᵣₑ)]...)))
-simulation.output_writers[:profiles] = NetCDFOutputWriter(model, fields, filename="subpolar_sediment.nc", schedule=TimeInterval(1days), overwrite_existing=true)
+simulation.output_writers[:profiles] = NetCDFOutputWriter(model, fields, filename="subpolar_sediment_reggrid.nc", schedule=TimeInterval(1days), overwrite_existing=true)
 
 @info "Setup simulation"
 # Run the simulation                            
