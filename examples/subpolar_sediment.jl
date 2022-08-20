@@ -123,7 +123,7 @@ set!(model, P=Pᵢ, Z=Zᵢ, D=Dᵢ, DD=DDᵢ, NO₃=NO₃ᵢ, NH₄=NH₄ᵢ, DO
 #Timestep wizard can not be used in this instance as the diffusivity is functional otherwise would be better to use
 #Can do about 90s timestep early on but reduces to about 40s later on
 #Not sure advective one is relivant
-c_diff = 0.2
+c_diff = 0.1
 #c_adv = 0.05
 dz²_κ=[findmin(grid.Δzᵃᵃᶜ[i]^2 ./(κₜ.(0.5,0.5,grid.zᵃᵃᶜ[i],[0:364;])))[1] for i in 1:Nz]
 Δt=c_diff*findmin(dz²_κ)[1] #min(c_diff*findmin(dz²_κ)[1], -c_adv*findmin(grid.Δzᵃᵃᶜ)[1]/params.V_dd)
