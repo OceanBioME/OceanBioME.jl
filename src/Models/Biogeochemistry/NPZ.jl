@@ -1,8 +1,9 @@
 "
 NPZ biogeochemistry model as described by Hernández-Carrasco et al. 2014 and earlier publications.
 
-Variables: NO₃, NH₄, P, Z, D, DD, DOM
-Optional tracers: (DIC, ALK), O₂
+WARNING: this model currently is not correctly configured
+
+Variables: N, P, Z
 
 Forcing: PAR
 
@@ -22,7 +23,7 @@ N_forcing(x, y, z, t, P, N, Z, params) = params.Sₙ*(params.Nᵦ-N) - params.β
 Z_forcing(x, y, z, t, P, N, Z, params) = params.γ*params.α*params.η*P^2*Z/(params.α+params.η*P^2) - params.μZ*Z^2
 
 # Define parameters
-default = (β=1/day, # Phytoplankton growth rate
+defaults = (β=1/day, # Phytoplankton growth rate
 η=1/day, # Prey capture rate
 γ=0.75, # Assimilation efficiency of zooplankton
 α=2/day, # Maximum grazing rate
@@ -32,7 +33,8 @@ default = (β=1/day, # Phytoplankton growth rate
 μZ=0.2/day, # Zooplankton mortality
 hₗ=5, # Light (growth) e-folding depth
 Sₙ=1/day, # rate of nutrient restoring
-Nᵦ=8) # Nutrient concentration below mixed layer
+Nᵦ=8,# Nutrient concentration below mixed layer
+Rd_chl = 1.31) 
 
 tracers=(:N, :P, :Z)
 optional_tracers=NamedTuple()

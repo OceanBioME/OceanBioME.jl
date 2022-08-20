@@ -1,7 +1,20 @@
 name: CI
 on:
-  - push
-  - pull_request
+  push:
+    branches:
+      - main
+    paths:
+      - 'src/*'
+      - 'test/*'
+      - '.github/workflows/*'
+      - 'Project.toml'
+  pull_request:
+    branches: 
+      - main
+    paths:
+      - 'src/*'
+      - 'test/*'
+      - '.github/workflows/*'
 jobs:
   test:
     name: Julia ${{ matrix.version }} - ${{ matrix.os }} - ${{ matrix.arch }} - ${{ github.event_name }}

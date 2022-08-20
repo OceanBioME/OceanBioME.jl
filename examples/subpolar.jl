@@ -128,7 +128,7 @@ dz²_κ=[findmin(grid.Δzᵃᵃᶜ[i]^2 ./(κₜ.(0.5,0.5,grid.zᵃᵃᶜ[i],[0:
 simulation = Simulation(model, Δt=Δt, stop_time=duration) 
 
 # create a model 'callback' to update the light (PAR) profile every 1 timestep and integrate sediment model
-simulation.callbacks[:update_par] = Callback(Light.update_2λ!, IterationInterval(1), merge(params, (surface_PAR=surface_PAR,)))#comment out if using PAR as a function, PAR_func
+simulation.callbacks[:update_par] = Callback(Light.update_2λ!, IterationInterval(1), merge(merge(params, Light.defaults), (surface_PAR=surface_PAR,)))#comment out if using PAR as a function, PAR_func
 
 ## Print a progress message
 progress_message(sim) = @printf("Iteration: %04d, time: %s, Δt: %s, wall time: %s\n",
