@@ -30,7 +30,7 @@ function run_simulation(bgc_model, optionsets, sediment, arch, c)
     PAR = Oceananigans.Fields.Field{Center, Center, Center}(grid) 
 
     #load bgc model
-    bgc = Setup.Oceananigans(bgc_model, grid, params, PAR, optional_sets=optionsets, topboundaries=topboundaries, bottomboundaries=sediment_bcs.boundary_conditions, sinking=sediment) #with sinking and no sediment Oceananigans doesn't conserve the tracers (i.e. doesn't collect them at the bottom of the domain)
+    bgc = Setup.Oceananigans(bgc_model, grid, params, PAR, optional_sets=optionsets, topboundaries=topboundaries, bottomboundaries=sediment_bcs.boundary_conditions, no_sinking_flux = !sediment) #with sinking and no sediment Oceananigans doesn't conserve the tracers (i.e. doesn't collect them at the bottom of the domain)
 
     #fix diffusivity
     κₜ(x, y, z, t) = 2e-2
