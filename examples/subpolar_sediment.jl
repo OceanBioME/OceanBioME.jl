@@ -21,8 +21,6 @@ using HDF5
 using Interpolations
 using Statistics 
 
-@warn "Not currently working"
-
 using Oceananigans
 using Oceananigans.Units: second,minute, minutes, hour, hours, day, days, year, years
 
@@ -50,18 +48,18 @@ surface_PAR(t) = PAR_itp(mod(t, 364days))  # will be used as part of Option 2 of
 
 # Simulation duration    
 duration=2years    
-#=
+
 # Define the grid
 Lx = 1
 Ly = 500
 Nx = 1
 Ny = 1
-Nz = 40 # number of points in the vertical direction
+Nz = 33 # number of points in the vertical direction
 Lz = 600 # domain depth             # subpolar mixed layer depth max 427m 
 
 refinement = 10 # controls spacing near surface (higher means finer spaced)  #1.2 5 -4.9118e9
 stretching = 5.754   # controls rate of stretching at bottom
-    
+                
 ## Normalized height ranging from 0 to 1
 h(k) = (k - 1) / Nz
 ## Linear near-surface generator
@@ -69,42 +67,27 @@ h(k) = (k - 1) / Nz
 ## Bottom-intensified stretching function 
 Σ(k) = (1 - exp(-stretching * h(k))) / (1 - exp(-stretching))
 ## Generating function
-z_faces(k) = k<3 ? -(Lz+5*k) : Lz * (ζ₀(k-2) * Σ(k-2) - 1)
-
-stretching=6
-bias=0
-z_faces(k) = Lz * (ζ₀(k)*(tanh.((h(k)-0.5 .+bias)*stretching).+1)/2 - 1)
-
+z_faces(k) = Lz * (ζ₀(k) * Σ(k) - 1)
 grid = RectilinearGrid(size = (Nx, Ny, Nz), 
                        x = (0, Lx),
                        y = (0, Ly),
-                       z = z_faces)=#
+                       z = z_faces)
 
-                       # Define the grid
-Lx = 1
-Ly = 500
-Nx = 1
-Ny = 1
-Nz = 150 # number of points in the vertical direction
-Lz = 600 # domain depth             # subpolar mixed layer depth max 427m 
-
-grid = RectilinearGrid(size = (Nx, Ny, Nz),  extent=(Lx, Ly, Lz))
-
-PAR_field = Oceananigans.Fields.Field{Center, Center, Center}(grid) #initialize a PAR field 
+PAR = Oceananigans.Fields.Field{Center, Center, Center}(grid) #initialize a PAR field 
 
 # Specify the boundary condition for DIC and OXY based on the air-sea CO₂ and O₂ flux
 dic_bc = Boundaries.airseasetup(:CO₂, forcings=(T=t_function, S=s_function))
 oxy_bc = Boundaries.airseasetup(:O₂, forcings=(T=t_function, S=s_function))
 
-#sediment boundary conditions
+#sediment bcs
 sediment_bcs=Boundaries.setupsediment(grid)
 
 #Set up the OceanBioME model with the specified biogeochemical model, light, and boundary conditions
-bgc = Setup.Oceananigans(:LOBSTER, grid, params, PAR_field, optional_sets=(:carbonates, :oxygen), topboundaries=(DIC=dic_bc, OXY=oxy_bc), bottomboundaries = sediment_bcs.boundary_conditions)
+bgc = Setup.Oceananigans(:LOBSTER, grid, params, PAR, optional_sets=(:carbonates, :oxygen), topboundaries=(DIC=dic_bc, OXY=oxy_bc), bottomboundaries=sediment_bcs.boundary_conditions)
 @info "Setup BGC model"
 
 # create a function with the vertical turbulent vertical diffusivity. This is an idealized functional form, but the depth of mixing is based on an interpolation to the mixed layer depth from the Mercator Ocean state estimate
-κₜ(x, y, z, t) = 8e-2*max(1-(z+mld_itp(mod(t,364days))/2)^2/(mld_itp(mod(t,364days))/2)^2,0)+1e-4; #setup viscosity and diffusivity in the following Model instantiation
+κₜ(x, y, z, t) = 2e-2*max(1-(z+mld_itp(mod(t,364days))/2)^2/(mld_itp(mod(t,364days))/2)^2,0)+1e-4; #setup viscosity and diffusivity in the following Model instantiation
 
 # Now, create a 'model' to run in Oceananignas
 model = NonhydrostaticModel(advection = UpwindBiasedFifthOrder(),
@@ -116,7 +99,7 @@ model = NonhydrostaticModel(advection = UpwindBiasedFifthOrder(),
                             closure = ScalarDiffusivity(ν=κₜ, κ=κₜ), 
                             forcing =  bgc.forcing,
                             boundary_conditions = bgc.boundary_conditions,
-                            auxiliary_fields =  merge((PAR=PAR_field, ), sediment_bcs.auxiliary_fields)
+                            auxiliary_fields = merge((PAR=PAR, ), sediment_bcs.auxiliary_fields)
                             )
 
 # Initialize the biogeochemical variables
@@ -140,18 +123,16 @@ set!(model, P=Pᵢ, Z=Zᵢ, D=Dᵢ, DD=DDᵢ, NO₃=NO₃ᵢ, NH₄=NH₄ᵢ, DO
 #Timestep wizard can not be used in this instance as the diffusivity is functional otherwise would be better to use
 #Can do about 90s timestep early on but reduces to about 40s later on
 #Not sure advective one is relivant
-#=c_diff = 0.08
+c_diff = 0.2
 #c_adv = 0.05
 dz²_κ=[findmin(grid.Δzᵃᵃᶜ[i]^2 ./(κₜ.(0.5,0.5,grid.zᵃᵃᶜ[i],[0:364;])))[1] for i in 1:Nz]
-Δt=c_diff*findmin(dz²_κ)[1] #min(c_diff*findmin(dz²_κ)[1], -c_adv*findmin(grid.Δzᵃᵃᶜ)[1]/params.V_dd)=#
-Δt=200
+Δt=c_diff*findmin(dz²_κ)[1] #min(c_diff*findmin(dz²_κ)[1], -c_adv*findmin(grid.Δzᵃᵃᶜ)[1]/params.V_dd)
 
 simulation = Simulation(model, Δt=Δt, stop_time=duration) 
 
 # create a model 'callback' to update the light (PAR) profile every 1 timestep and integrate sediment model
 simulation.callbacks[:update_par] = Callback(Light.update_2λ!, IterationInterval(1), merge(merge(params, Light.defaults), (surface_PAR=surface_PAR,)))#comment out if using PAR as a function, PAR_func
 simulation.callbacks[:integrate_sediment] = sediment_bcs.callback
-
 ## Print a progress message
 progress_message(sim) = @printf("Iteration: %04d, time: %s, Δt: %s, wall time: %s\n",
                                 iteration(sim),
@@ -172,8 +153,8 @@ simulation.output_writers[:profiles] =
                             overwrite_existing = true)=#
 
 #setup dictionary of fields
-fields = Dict(zip((["$t" for t in bgc.tracers]..., "PAR", "Nᵣ", "Nᵣᵣ", "Nᵣₑ"), ([getproperty(model.tracers, t) for t in bgc.tracers]..., [getproperty(model.auxiliary_fields, t) for t in (:PAR, :Nᵣ, :Nᵣᵣ, :Nᵣₑ)]...)))
-simulation.output_writers[:profiles] = NetCDFOutputWriter(model, fields, filename="subpolar_sediment_reggrid.nc", schedule=TimeInterval(1days), overwrite_existing=true)
+fields = Dict(zip((["$t" for t in bgc.tracers]..., "PAR"), ([getproperty(model.tracers, t) for t in bgc.tracers]..., [getproperty(model.auxiliary_fields, t) for t in (:PAR, )]...)))
+simulation.output_writers[:profiles] = NetCDFOutputWriter(model, fields, filename="subpolar_sediment.nc", schedule=TimeInterval(1days), overwrite_existing=true)
 
 @info "Setup simulation"
 # Run the simulation                            
