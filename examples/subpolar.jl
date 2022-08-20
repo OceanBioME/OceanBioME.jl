@@ -116,14 +116,8 @@ OXYᵢ(x, y, z) = 240
 set!(model, P=Pᵢ, Z=Zᵢ, D=Dᵢ, DD=DDᵢ, NO₃=NO₃ᵢ, NH₄=NH₄ᵢ, DOM=DOMᵢ, DIC=DICᵢ, ALK=ALKᵢ, OXY=OXYᵢ, u=0, v=0, w=0, b=0)
 
 ## Set up th simulation
-#Find the maximum timestep (inefficient as this is only required later on (around 100 days in) when sinking particles speed up)
-#Timestep wizard can not be used in this instance as the diffusivity is functional otherwise would be better to use
-#Can do about 90s timestep early on but reduces to about 40s later on
-#Not sure advective one is relivant
-c_diff = 0.2
-#c_adv = 0.05
-dz²_κ=[findmin(grid.Δzᵃᵃᶜ[i]^2 ./(κₜ.(0.5,0.5,grid.zᵃᵃᶜ[i],[0:364;])))[1] for i in 1:Nz]
-Δt=c_diff*findmin(dz²_κ)[1] #min(c_diff*findmin(dz²_κ)[1], -c_adv*findmin(grid.Δzᵃᵃᶜ)[1]/params.V_dd)
+c_diff = 2.3
+Δt = c_diff*OceanBioME.diffusion_timescale(model, grid)
 
 simulation = Simulation(model, Δt=Δt, stop_time=duration) 
 
