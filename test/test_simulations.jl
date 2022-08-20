@@ -71,12 +71,12 @@ function run_simulation(bgc_model, optionsets, sediment, arch, c)
     end
     simulation.callbacks[:progress] = Callback(progress_message, IterationInterval(100))
 
-    simulation.output_writers[:profiles] =
+    #=simulation.output_writers[:profiles] =
     JLD2OutputWriter(model, merge(model.velocities, model.tracers, model.auxiliary_fields),
                           filename = "test/test_profiles.jld2",
                           indices = (1, 1, :),
                           schedule = TimeInterval(1days),
-                          overwrite_existing = true)
+                          overwrite_existing = true)=#
 
     #get budgets and run simulation
     initial_budget = calculate_budget(model, sediment, getproperty(budget_tracers, bgc_model))
@@ -84,9 +84,9 @@ function run_simulation(bgc_model, optionsets, sediment, arch, c)
     final_budget = calculate_budget(model, sediment, getproperty(budget_tracers, bgc_model))
 
     #test results loading
-    results = OceanBioME.Plot.load_tracers(simulation)
+    #results = OceanBioME.Plot.load_tracers(simulation)
 
-    return bgc, model, simulation, initial_budget, final_budget, results
+    return bgc, model, simulation, initial_budget, final_budget#, results
 end
 
 function calculate_budget(model, sediment, tracers)
@@ -146,9 +146,9 @@ function calculate_C_budget(results::OceanBioME.Plot.model_results, grid, bgc_mo
 end
 
 function run_test(bgc_model, optionsets, sediment, arch, c)
-    bgc, model, simulation, ΣN₀, ΣN₁, results = run_simulation(bgc_model, optionsets, sediment, arch, c)
+    bgc, model, simulation, ΣN₀, ΣN₁= run_simulation(bgc_model, optionsets, sediment, arch, c)
     @test ΣN₀≈ΣN₁ atol = sediment ? 0.1 : 0.01 #sediment model has higher numerical loss
-    for tracer in (model.tracers..., model.auxiliary_fields...)
+    #=for tracer in (model.tracers..., model.auxiliary_fields...)
         @test !any(isnan.(tracer[1, 1, 1:model.grid.Nz]))
         @test !any(isinf.(tracer[1, 1, 1:model.grid.Nz]))
         @test all(tracer[1, 1, 1:model.grid.Nz] .>= 0)
@@ -159,7 +159,7 @@ function run_test(bgc_model, optionsets, sediment, arch, c)
     if :carbonates in optionsets
         c_budget = calculate_C_budget(results, model.grid, bgc_model, sediment)
         @test c_budget[1] ≈ c_budget[end] rtol=0.01 #not convinced
-    end
+    end=#
 end
 
 progress_message(sim) = @printf("Iteration: %04d, time: %s, Δt: %s, wall time: %s\n",
