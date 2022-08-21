@@ -1,5 +1,7 @@
 # Ocean Biogeochemial Modelling Environment
 
+> Note: the most complex example has been run for >5 years with the grid used in the various LOBSTER examples, with a 2.5 minute timestep without instability. The utility used in complex_LOBSTER.jl and kelp.jl attempt to optimise by changing the timestep but may cause instability if used.
+
 ## Example Lists
 This document lists several examples included in this repository for users to learn how to use OceanBioME.
 
