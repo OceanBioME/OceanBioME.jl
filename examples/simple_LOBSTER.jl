@@ -18,7 +18,6 @@ References
 (5) Resplandy, L., Lévy, M., d'Ovidio, F. and Merlivat, L., 2009. Impact of submesoscale variability in estimating the air‐sea CO2 exchange: Results from a model study of the POMME experiment. Global Biogeochemical Cycles, 23(1).
 """
 
-# Load the needed modules
 using Random   
 using Printf
 using Plots
@@ -44,9 +43,8 @@ temp = ncread(filename, "temp")    # temperature in Degrees Celsius
 salinity = ncread(filename, "so")  # salinity in Practical Salinity Unit
 mld = ncread(filename, "mld")      # mixed layer depth in Meters
 par = ncread(filename, "par")      # photosynthetically available radiation in W/m^2
-ncinfo(filename)                   # prints information on the variables, dimension and attributes contained in the file
 
-# Conduct linear interpolation to access temperature, salinity, mld, and surface PAR at arbitrary time
+# Linear interpolation to access temperature, salinity, mld, and surface PAR at arbitrary time
 temperature_itp = LinearInterpolation(time, temp) 
 salinity_itp = LinearInterpolation(time, salinity) 
 mld_itp = LinearInterpolation(time, mld) 
@@ -59,7 +57,7 @@ s_function(x, y, z, t) = salinity_itp(mod(t, 364days))
 surface_PAR(t) = PAR_itp(mod(t, 364days))  # the remainder of t after floored division by 364days. It creates an annual cycle representation of PAR.
 
 # Simulation duration    
-duration=2days #years    
+duration=1year
 
 # Define the grid
 Lx = 1
@@ -129,10 +127,10 @@ OXYᵢ(x, y, z) = 240                                          #in mmolO m^-3
 set!(model, P=Pᵢ, Z=Zᵢ, D=Dᵢ, DD=DDᵢ, NO₃=NO₃ᵢ, NH₄=NH₄ᵢ, DOM=DOMᵢ, DIC=DICᵢ, ALK=ALKᵢ, OXY=OXYᵢ, u=0, v=0, w=0, b=0)
 
 # Set up the simulation
-Δt=40 #timestep in second 
+Δt=2minutes
 simulation = Simulation(model, Δt=Δt, stop_time=duration) 
 
-# Create a model 'callback' to update the light (PAR) profile every 1 timestep and integrate sediment model
+# Create a model 'callback' to update the light (PAR) profile every 1 timestep
 simulation.callbacks[:update_par] = Callback(Light.update_2λ!, IterationInterval(1), merge(merge(params, Light.defaults), (surface_PAR=surface_PAR,)))
 
 # Print a progress message
@@ -147,7 +145,7 @@ simulation.callbacks[:progress] = Callback(progress_message, IterationInterval(1
 
 # Setup dictionary of fields
 fields = Dict(zip((["$t" for t in bgc.tracers]..., "PAR"), ([getproperty(model.tracers, t) for t in bgc.tracers]..., [getproperty(model.auxiliary_fields, t) for t in (:PAR, )]...)))
-simulation.output_writers[:profiles] = NetCDFOutputWriter(model, fields, filename="lobster_example2.nc", schedule=TimeInterval(1days), overwrite_existing=true)
+simulation.output_writers[:profiles] = NetCDFOutputWriter(model, fields, filename="simple_example.nc", schedule=TimeInterval(1days), overwrite_existing=true)
 
 @info "Setup simulation"
 # Run the simulation                            
@@ -158,4 +156,4 @@ results = OceanBioME.Plot.load_tracers(simulation)
 plot(OceanBioME.Plot.profiles(results)...)
 
 # Save the plot to a PDF file
-savefig("lobster_example2.pdf")
+savefig("simple_example.pdf")

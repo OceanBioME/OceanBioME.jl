@@ -1,6 +1,6 @@
 module OceanBioME
 
-export LOBSTER, NPZ, Light, Boundaries, Particles, Setup, BoxModel, SLatissima
+export LOBSTER, NPZ, Light, Boundaries, Particles, Setup, BoxModel, SLatissima, update_timestep, Budget
 
 include("Boundaries/Boundaries.jl")
 include("Light/Light.jl")
@@ -11,5 +11,7 @@ include("Models/Biogeochemistry/NPZ.jl")
 include("Models/Macroalgae/SLatissima.jl")
 include("Utils/Setup.jl")
 include("Utils/BoxModel.jl")
+include("Utils/Timestep.jl")
+include("Utils/Budget.jl")
 
 end

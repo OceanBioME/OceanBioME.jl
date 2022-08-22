@@ -1,5 +1,7 @@
 # Ocean Biogeochemial Modelling Environment
 
+> Note: the most complex example has been run for >5 years with the grid used in the various LOBSTER examples, with a 2.5 minute timestep without instability. The utility used in complex_LOBSTER.jl and kelp.jl attempt to optimise by changing the timestep but may cause instability if used.
+
 ## Example Lists
 This document lists several examples included in this repository for users to learn how to use OceanBioME.
 
@@ -12,7 +14,7 @@ This script also shows how to read in data files (in netCDF format) for forcing 
 In this case, the script reads in the mixed layer depth from the Mercator Ocean state esimate and uses this to construct an idealized diffusivity profile. 
 The script also reads in a timeseries of the photosynthetically available radiation for forcing the LOBSTER model. 
 
-### lobster_example.jl
+### idealized_LOBSTERjl
 This script illustrates how to run OceanBioME as a 1D column model using the LOBSTER biogeochemical model. 
 
 In this case, the script 
@@ -21,7 +23,7 @@ In this case, the script
     The PAR profile will be updated every 1 timestep as an auxiliary field; and
 - shows how to interpolate a timeseries of data to access to arbitrary time. 
 
-### lobster_example2.jl
+### simple_LOBSTER.jl
 This script illustrates how to run OceanBioME as a 1D column model using the LOBSTER biogeochemical model.
 
 In this case, the script 
@@ -37,7 +39,7 @@ In this case, the script
     The PAR profile will be updated every 1 timestep as an auxiliary field. 
 - shows how to read *.nc files.
 
-### subpolar_sediment.jl
+### complex_LOBSTER.jl
 This script illustrates how to run OceanBioME as a 1D column model using the LOBSTER biogeochemical model using a PAR timeseries from the North Atlantic subpolar gyre. 
 This script also shows how to read in data files (in netCDF format) for forcing the model. 
 In this case, the script reads in the mixed layer depth from the Mercator Ocean state esimate and uses this to construct an idealized diffusivity profile. 

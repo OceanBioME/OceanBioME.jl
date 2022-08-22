@@ -118,7 +118,7 @@ simulation.callbacks[:progress] = Callback(progress_message, IterationInterval(1
 
 # Setup dictionary of fields
 fields = Dict(zip((["$t" for t in bgc.tracers]..., "PAR"), ([getproperty(model.tracers, t) for t in bgc.tracers]..., [getproperty(model.auxiliary_fields, t) for t in (:PAR, )]...)))
-simulation.output_writers[:profiles] = NetCDFOutputWriter(model, fields, filename="lobster_example.nc", schedule=TimeInterval(1days), overwrite_existing=true)
+simulation.output_writers[:profiles] = NetCDFOutputWriter(model, fields, filename="idealized_LOBSTER.nc", schedule=TimeInterval(1days), overwrite_existing=true)
 
 @info "Setup simulation"
 # Run the simulation                            
@@ -129,4 +129,4 @@ results = OceanBioME.Plot.load_tracers(simulation)
 plot(OceanBioME.Plot.profiles(results)...)
 
 # Save the plot to a PDF file
-savefig("lobster_example.pdf")
+savefig("idealized_LOBSTER.pdf")
