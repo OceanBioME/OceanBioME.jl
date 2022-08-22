@@ -1,7 +1,8 @@
 # This script illustrates how to run OceanBioME as a box model
-
+@info "Running box model example..."
 using OceanBioME, HDF5, Statistics, Interpolations, Plots  # load required modules
 
+@info "Setting up model..."
 day=60*60*24  # define the length of a day in seconds
 year=day*365  # define the length of a year in days
 
@@ -38,8 +39,10 @@ params = merge(LOBSTER.defaults, (PAR=PAR, ))
 # Set up the model. Here, first specify the biogeochemical model, followed by initial conditions and the start and end times
 model = Setup.BoxModel(:LOBSTER, params, (NO₃=NO₃ᵢ, NH₄=NH₄ᵢ, P=Pᵢ, Z=Zᵢ, D=Dᵢ, DD=DDᵢ, DOM=DOMᵢ), 0.0, 1.0*year)
 
+@info "Running the model..."
 solution = BoxModel.run(model) # call BoxModel to timestep the biogeochemical model
 
+@info "Plotting the results..."
 # Create an array containing all model varaibles
 # The dimensions of 'values' will be (time, variable number)
 values = vcat(transpose.(solution.u)...)
