@@ -50,9 +50,8 @@ function equations(x::AbstractFloat, y::AbstractFloat, z::AbstractFloat, t::Abst
             C_new = params.C_min
         end
 
-        p -= r #release some DIC back in resp
-        p *= A_new / (60*60*24*12*0.001)#gC/dm^2/hr to mmol C/s
-        e *= p#mmol C/s
+        pp = (p-r)*A_new / (60*60*24*12*0.001) #gC/dm^2/hr to mmol C/s
+        e *= p*A_new / (60*60*24*12*0.001)#mmol C/s
         ν *= params.K_A*A_new*(N_new + params.N_struct) / (60*60*24*14*0.001)#1/hr to mmol N/s
         j_NO₃ *= A_new / (60*60*24*14*0.001)#gN/dm^2/hr to mmol N/s
         j_NH₄ *= A_new / (60*60*24*14*0.001)#gN/dm^2/hr to mmol N/s
@@ -61,7 +60,7 @@ function equations(x::AbstractFloat, y::AbstractFloat, z::AbstractFloat, t::Abst
     else
         A_new, N_new, C_new, j_NO₃, j_NH₄, p, e, ν, du, dv, dw = 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0
     end
-    return (A = A_new, N = N_new, C = C_new, j_NO₃ = j_NO₃, j_NH₄ = j_NH₄, p = p, e = e, ν = ν, u = du, v = dv, w = dw)
+    return (A = A_new, N = N_new, C = C_new, j_NO₃ = j_NO₃, j_NH₄ = j_NH₄, pp = pp, e = e, ν = ν, u = du, v = dv, w = dw)
 end
 
 #fixed urel, T and S functions
@@ -99,7 +98,7 @@ struct Particle
     #feedback
     j_NO₃ :: AbstractFloat
     j_NH₄ :: AbstractFloat
-    p :: AbstractFloat
+    pp :: AbstractFloat
     e :: AbstractFloat
     ν :: AbstractFloat
     #tracked fields
@@ -113,7 +112,7 @@ source_fields = ((tracer=:NO₃, property=:NO₃, scalefactor=1.0),
                         (tracer=:PAR, property=:PAR, scalefactor=1.0))
 sink_fields = ((tracer=:NO₃, property=:j_NO₃, scalefactor=-1.0, fallback=:N, fallback_scalefactor=(property=:A, constant=14*0.001/defaults.K_A)), 
                     (tracer=:NH₄, property=:j_NH₄, scalefactor=-1.0, fallback=:N, fallback_scalefactor=(property=:A, constant=14*0.001/defaults.K_A)), 
-                    (tracer=:DIC, property=:p, scalefactor=-1.0, fallback=:C, fallback_scalefactor=(property=:A, constant=14*0.001)),
+                    (tracer=:DIC, property=:pp, scalefactor=-1.0, fallback=:C, fallback_scalefactor=(property=:A, constant=14*0.001)),
                     (tracer=:DOM, property=:e, scalefactor=1.0/6.56, fallback=:A, fallback_scalefactor=0),#Rd_dom from LOBSTER, placeholder fallbacks because if these are taking away something has gone very wrong
                     (tracer=:DD, property=:ν, scalefactor=1.0, fallback=:A, fallback_scalefactor=0))
 
@@ -145,14 +144,14 @@ function setup(n, x₀, y₀, z₀, A₀, N₀, C₀, latitude, density, T=nothi
     property_dependencies = (:A, :N, :C, :NO₃, :NH₄, :PAR)
     λ_arr=SugarKelp.gen_λ(latitude)
     parameters = merge(paramset, (λ=λ_arr, resp_model=2))
-    tracked_properties = (:A, :N, :C, :j_NO₃, :j_NH₄, :p, :e, :ν)
+    tracked_properties = (:A, :N, :C, :j_NO₃, :j_NH₄, :pp, :e, :ν)
 
     if isnothing(T) property_dependencies = (property_dependencies..., :T, :S) else parameters = merge(parameters, (T=T, S=S)) end
     if isnothing(urel) property_dependencies = (property_dependencies..., :u, :v, :w) else parameters = merge(parameters, (urel = urel, )) end
 
     integral_properties = (:u, :v, :w) #for when I impliment dynamics
 
-    if O₂ merge(sink_fields, ((tracer=:OXY, property=:p, scalefactor=1.0), )) end
+    if O₂ merge(sink_fields, ((tracer=:OXY, property=:pp, scalefactor=1.0), )) end
     
     return Particles.setup(particles, equations, 
                                         property_dependencies,
