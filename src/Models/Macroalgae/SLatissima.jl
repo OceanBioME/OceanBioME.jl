@@ -58,7 +58,7 @@ function equations(x::AbstractFloat, y::AbstractFloat, z::AbstractFloat, t::Abst
 
         du, dv, dw = 0.0, 0.0, 0.0
     else
-        A_new, N_new, C_new, j_NO₃, j_NH₄, p, e, ν, du, dv, dw = 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0
+        A_new, N_new, C_new, j_NO₃, j_NH₄, pp, e, ν, du, dv, dw = 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0
     end
     return (A = A_new, N = N_new, C = C_new, j_NO₃ = j_NO₃, j_NH₄ = j_NH₄, pp = pp, e = e, ν = ν, u = du, v = dv, w = dw)
 end
