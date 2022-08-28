@@ -53,7 +53,7 @@ function equations(x::AbstractFloat, y::AbstractFloat, z::AbstractFloat, t::Abst
         p -= r #release some DIC back in resp
         p *= A_new / (60*60*24*12*0.001)#gC/dm^2/hr to mmol C/s
         e *= p#mmol C/s
-        ν *= A_new*(N_new + params.N_struct) / (60*60*24*14*0.001)#1/hr to mmol N/s
+        ν *= params.K_A*A_new*(N_new + params.N_struct) / (60*60*24*14*0.001)#1/hr to mmol N/s
         j_NO₃ *= A_new / (60*60*24*14*0.001)#gN/dm^2/hr to mmol N/s
         j_NH₄ *= A_new / (60*60*24*14*0.001)#gN/dm^2/hr to mmol N/s
 

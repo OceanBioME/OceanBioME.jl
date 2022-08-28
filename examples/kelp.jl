@@ -155,7 +155,7 @@ fields = Dict(zip((["$t" for t in bgc.tracers]..., "PAR"), ([getproperty(model.t
 simulation.output_writers[:profiles] = NetCDFOutputWriter(model, fields, filename="kelp_example.nc", schedule=TimeInterval(1days), overwrite_existing=true)
 
 #checkpoint after warmup so we don't have to rerun for different kelp configs
-simulation.output_writers[:checkpointer] = Checkpointer(model, schedule=SpecifiedTimes([1year]]), prefix="kelp_checkpoint")
+simulation.output_writers[:checkpointer] = Checkpointer(model, schedule=SpecifiedTimes([1year]), prefix="kelp_checkpoint")
 
 @info "Running simulation for the first year (without kelp)"
 @info "(Note that the first timestep will take some time to complete)"
