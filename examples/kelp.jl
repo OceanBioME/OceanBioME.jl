@@ -151,7 +151,7 @@ simulation.callbacks[:progress] = Callback(progress_message, IterationInterval(1
 simulation.callbacks[:timestep] = Callback(update_timestep!, TimeInterval(1day)) 
 
 #setup dictionary of fields
-fields = Dict(zip((["$t" for t in bgc.tracers]..., "PAR"), ([getproperty(model.tracers, t) for t in bgc.tracers]..., [getproperty(model.auxiliary_fields, t) for t in (:PAR, )]...)))
+fields = Dict(zip((["$t" for t in bgc.tracers]..., "PAR", "Nᵣᵣ", "Nᵣ", "Nᵣₑ"), ([getproperty(model.tracers, t) for t in bgc.tracers]..., [getproperty(model.auxiliary_fields, t) for t in (:PAR, :Nᵣᵣ, :Nᵣ, :Nᵣₑ)]...)))
 simulation.output_writers[:profiles] = NetCDFOutputWriter(model, fields, filename="kelp_example.nc", schedule=TimeInterval(1days), overwrite_existing=true)
 
 #checkpoint after warmup so we don't have to rerun for different kelp configs

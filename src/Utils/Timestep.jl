@@ -48,6 +48,7 @@ function max_c_boundary(model, Δt)
 end
 
 function update_timestep!(sim, params=(w=200/day, Δt_max=10minutes, c_diff = 0.6, c_adv = 0.8, relaxation=0.95))#, c_boundary=0.01))#off by default as computationally intensive and not limiting (as far as I can see)
+    #possibly rewrite these as kernel functions if we're sticking with this kind of thing
     Δt_diff = :c_diff in keys(params) ? sim.Δt^(1-params.relaxation)*(params.c_diff*OceanBioME.diffusion_timescale(sim.model, sim.model.grid; t=sim.model.clock.time))^params.relaxation : Inf
     Δt_adv = :c_adv in keys(params) ? sim.Δt^(1-params.relaxation)*(params.c_adv/(abs(params.w)/OceanBioME.min_Δz(sim.model.grid)))^params.relaxation : Inf #replace with some way to check the actual max sinking velocity
     Δt_boundary = :c_boundary in keys(params) ? sim.Δt * (params.c_boundary/max_c_boundary(sim.model, sim.Δt))^params.relaxation : Inf
