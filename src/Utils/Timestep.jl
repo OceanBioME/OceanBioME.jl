@@ -26,6 +26,8 @@ function diffusion_timescale(model, grid; t=[1.0:365.0;].*day)
     end
 end
 
-function update_timestep(sim, params=(w=200/day, Δt_max=10minutes, c_diff = 2.3, c_adv = 1))
-    sim.Δt = min(params.c_diff*OceanBioME.diffusion_timescale(sim.model, sim.model.grid; t=sim.model.clock.time), params.c_adv*OceanBioME.min_Δz(sim.model.grid)/abs(params.w), params.Δt_max)#replace with some way to check the actual max sinking velocity
+function update_timestep(sim, params=(w=200/day, Δt_max=10minutes, c_diff = 0.6, c_adv = 0.8, relaxation=0.8))
+    sim.Δt = @show min(sim.Δt^(1-params.relaxation)*(params.c_diff*OceanBioME.diffusion_timescale(sim.model, sim.model.grid; t=sim.model.clock.time))^params.relaxation, 
+                        sim.Δt*(params.c_adv/(abs(params.w)*sim.Δt/OceanBioME.min_Δz(sim.model.grid)))^params.relaxation, #replace with some way to check the actual max sinking velocity
+                        params.Δt_max*(sim.Δt/params.Δt_max)^params.relaxation)
 end
