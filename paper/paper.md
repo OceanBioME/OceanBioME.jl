@@ -10,12 +10,12 @@ authors:
   - name: Jago Strong-Wright
     orcid: 0000-0002-7174-5283
     equal-contrib: true
+    corresponding: true
     affiliation: "1, 2" # (Multiple affiliations must be quoted)
   - name: John R Taylor
     equal-contrib: true # (This is how you can denote equal contributions between multiple authors)
     affiliation: "1, 2"
   - name: Si Chen
-    corresponding: true
     affiliation: 1
 affiliations:
  - name: Department of Applied Mathematics and Theoretical Physics, University of Cambridge, Cambridge, United Kingdom
@@ -28,12 +28,11 @@ bibliography: paper.bib
 
 # Summary
 
-Modelling the oceans biological systems is challenging due to the complex interplay of physical, chemical, geological, and biological factors, the mechanisms of which may be poorly understood. An area where improvements in this area are vial is the study of the effectiveness and impacts of ocean based carbon dioxide removal (CDR) strategies. With this application in mind we have written ``OceanBioME.jl``, an ocean biogeochemical modelling environment intended to allow easy access to flexible complexity ocean biogeochemistry modelling with the easy addition of new subsystems. 
+Modelling the oceans biological systems is challenging due to the complex interplay of physical, chemical, geological, and biological factors, the mechanisms of which may be poorly understood. An area where improvements in this area are vital is the study of the effectiveness and impacts of ocean based carbon dioxide removal (CDR) strategies. With this application in mind we have written ``OceanBioME.jl``, an ocean biogeochemical modelling environment intended to allow easy access to flexible complexity ocean biogeochemistry modelling with the easy addition of new subsystems. 
 
 In ``OceanBioME.jl`` we provide a framework and utilities (such as light attenuation integration) to couple biogeochemical models [e.g. LOBSTER @lobster] with the physics model ``Oceananigans.jl`` [@oceananigans], implemented as forced tracer fields. With the provided models (currently LOBSTER and a simple NPZ model) we have set up the framework to be straightforward to turn on and off additional tracers such as carbonate and oxygen chemistry systems. Additionally, we have implemented various air-sea flux models [e.g. @wanninkhof:1992] and sediment models [e.g. @soetaert:2000] which can easily be applied to arbitrary tracers in the models. 
 
 In order to simulate the effects of additional systems such as macroalgae we have expanded upon ``Oceananigans.jl`` *Lagrangian particles* to provide a framework for "active" particles where their internal dynamics and initial positions are provided by the user, along with their field dependencies and "source/sink" variables (e.g. nutrient uptake). The particles are then integrated, and interact, with the tracers. We include an extended version of the sugar kelp model presented in @broch:2012 as an example of the utility of this feature.
-
 
 ![Fig. 1](example.png)
 Fig. 1: (Left) Replication of phytoplankton seasonal cycles in the subpolar regions showing the responses to changing in mixing layer depth, and light and nutrient availability, including deep spring blooms and later summer deep chlorophyll maxima. Additionally, the model is configured with a large amount of sugar kelp added in the third year showing a deepening of the phytoplankton response due to nutrient redistribution and changes to light attenuation. (Right) The air-sea flux of carbon dioxide provides useful insight into the effects of changes to the ecosystem on its CDR, here showing an increase in downward carbon flux after the kelp is added. Plots made with `GLMakie` [@glmakie].
