@@ -140,7 +140,7 @@ progress_message(sim) = @printf("Iteration: %04d, time: %s, Δt: %s, wall time: 
 simulation.callbacks[:progress] = Callback(progress_message, IterationInterval(100))
 #update the timestep length each day
 @warn "Timestep utility may cause instability"
-simulation.callbacks[:timestep] = Callback(update_timestep, TimeInterval(1hour)) 
+simulation.callbacks[:timestep] = Callback(update_timestep!, TimeInterval(1hour), (w=params.V_dd, Δt_max=10minutes, c_diff = 0.75, c_adv = 0.8, relaxation=0.8, boundaries=true, c_boundary=0.005)) 
 
 #setup dictionary of fields
 fields = Dict(zip((["$t" for t in bgc.tracers]..., "PAR"), ([getproperty(model.tracers, t) for t in bgc.tracers]..., [getproperty(model.auxiliary_fields, t) for t in (:PAR, )]...)))

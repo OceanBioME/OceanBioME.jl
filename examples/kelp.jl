@@ -99,7 +99,7 @@ bgc = Setup.Oceananigans(:LOBSTER, grid, params, PAR, optional_sets=(:carbonates
 @info "Setting up kelp particles"
 n_kelp=100 # number of kelp fronds
 z₀ = [-100:-1;]*1.0 # depth of kelp fronds
-kelp_particles = SLatissima.setup(n_kelp, Lx/2, Ly/2, z₀, 0.0, 0.0, 0.0, 57.5, 100.0, t_function, s_function, 0.2)
+kelp_particles = SLatissima.setup(n_kelp, Lx/2, Ly/2, z₀, 0.0, 0.0, 0.0, 57.5, 1.0, t_function, s_function, 0.2)
 
 # Now, create a 'model' to run in Oceananignas
 model = NonhydrostaticModel(advection = UpwindBiasedFifthOrder(),
@@ -148,7 +148,7 @@ progress_message(sim) = @printf("Iteration: %04d, time: %s, Δt: %s, wall time: 
 simulation.callbacks[:progress] = Callback(progress_message, IterationInterval(100))
 #update the timestep length each day
 #@warn "Timestep utility may cause instability"
-#simulation.callbacks[:timestep] = Callback(update_timestep, TimeInterval(1day), (w=params.V_dd, Δt_max=10minutes, c_diff = 2.3, c_adv = 1.52)) 
+simulation.callbacks[:timestep] = Callback(update_timestep!, TimeInterval(1day)) 
 
 #setup dictionary of fields
 fields = Dict(zip((["$t" for t in bgc.tracers]..., "PAR"), ([getproperty(model.tracers, t) for t in bgc.tracers]..., [getproperty(model.auxiliary_fields, t) for t in (:PAR, )]...)))
@@ -175,7 +175,7 @@ simulation.output_writers[:particles] = JLD2OutputWriter(model, (particles=model
                           overwrite_existing = true)
 
 simulation.stop_time = duration
-simulation.callbacks[:timestep] = Callback(update_timestep, TimeInterval(1day), (w=params.V_dd, Δt_max=1minute, c_diff = 2.3, c_adv = 1.52))  #seems to be some kind of instability occuring just after kelp is added with the longer timesteps
+simulation.callbacks[:timestep] = Callback(update_timestep!, TimeInterval(1day),(w=params.V_dd, Δt_max=2minutes, c_diff = 0.75, c_adv = 0.8, relaxation=0.8, c_boundary=0.005))  #seems to be some kind of instability occuring just after kelp is added with the longer timesteps
 
 #run rest of simulation
 @info "Restarting simulation to run for the year, now with kelp"
