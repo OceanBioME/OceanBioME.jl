@@ -23,7 +23,7 @@ end
 @inline function sedimentNH₄(i, j, grid, clock, model_fields, params)
     Nₘ, Cₘ, k = mineralisation(i, j, params)
     if (Nₘ>0 && Cₘ>0 && k > 0)
-        return max(0, @inbounds Nₘ*(1-p_nit(Nₘ, Cₘ, model_fields.OXY[i, j, 1], model_fields.NH₄[i, j, 1], k)))#max just incase the odd p_nit etc give unphysical values (this can not be a flux out of the system as it is irreversible chemistry)
+        return @inbounds Nₘ*(1-p_nit(Nₘ, Cₘ, model_fields.OXY[i, j, 1], model_fields.NH₄[i, j, 1], k))#max just incase the odd p_nit etc give unphysical values (this can not be a flux out of the system as it is irreversible chemistry)
     else
         return 0
     end
@@ -34,7 +34,7 @@ end
 @inline function sedimentNO₃(i, j, grid, clock, model_fields, params)
     Nₘ, Cₘ, k = mineralisation(i, j, params)
     if (Nₘ>0 && Cₘ>0 && k > 0)
-        return max(0, @inbounds Nₘ*p_nit(Nₘ, Cₘ, model_fields.OXY[i, j, 1], model_fields.NH₄[i, j, 1], k) - Cₘ*p_denit(Cₘ, model_fields.OXY[i, j, 1], model_fields.NO₃[i, j, 1], k)*0.8)
+        return @inbounds Nₘ*p_nit(Nₘ, Cₘ, model_fields.OXY[i, j, 1], model_fields.NH₄[i, j, 1], k) - Cₘ*p_denit(Cₘ, model_fields.OXY[i, j, 1], model_fields.NO₃[i, j, 1], k)*0.8
     else
         return 0
     end
@@ -43,7 +43,7 @@ end
 @inline function sedimentO₂(i, j, grid, clock, model_fields, params)
     Nₘ, Cₘ, k = mineralisation(i, j, params)
     if (Nₘ>0 && Cₘ>0 && k > 0)
-        return min(0, @inbounds -(Cₘ*(1-p_denit(Cₘ, model_fields.OXY[i, j, 1], model_fields.NO₃[i, j, 1], 1)-p_anox(Cₘ, model_fields.OXY[i, j, 1], model_fields.NO₃[i, j, 1], 1)*p_soliddep(isa(params.d, Number) ? params.d : params.d[i,j])) + Nₘ*p_nit(Nₘ, Cₘ, model_fields.OXY[i, j, 1], model_fields.NH₄[i, j, 1], 1)*2))
+        return @inbounds -(Cₘ*(1-p_denit(Cₘ, model_fields.OXY[i, j, 1], model_fields.NO₃[i, j, 1], 1)-p_anox(Cₘ, model_fields.OXY[i, j, 1], model_fields.NO₃[i, j, 1], 1)*p_soliddep(isa(params.d, Number) ? params.d : params.d[i,j])) + Nₘ*p_nit(Nₘ, Cₘ, model_fields.OXY[i, j, 1], model_fields.NH₄[i, j, 1], 1)*2)
     else
         return 0
     end
