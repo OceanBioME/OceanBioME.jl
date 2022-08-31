@@ -127,7 +127,7 @@ OXYᵢ(x, y, z) = 240                                          #in mmolO m^-3
 set!(model, P=Pᵢ, Z=Zᵢ, D=Dᵢ, DD=DDᵢ, NO₃=NO₃ᵢ, NH₄=NH₄ᵢ, DOM=DOMᵢ, DIC=DICᵢ, ALK=ALKᵢ, OXY=OXYᵢ, u=0, v=0, w=0, b=0)
 
 # Set up the simulation
-Δt=2minutes
+Δt=0.5minutes
 simulation = Simulation(model, Δt=Δt, stop_time=duration) 
 
 # Create a model 'callback' to update the light (PAR) profile every 1 timestep

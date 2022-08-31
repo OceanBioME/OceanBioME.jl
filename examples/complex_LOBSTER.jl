@@ -124,7 +124,7 @@ OXYᵢ(x, y, z) = 240                                          #in mmolO m^-3
 set!(model, P=Pᵢ, Z=Zᵢ, D=Dᵢ, DD=DDᵢ, NO₃=NO₃ᵢ, NH₄=NH₄ᵢ, DOM=DOMᵢ, DIC=DICᵢ, ALK=ALKᵢ, OXY=OXYᵢ, u=0, v=0, w=0, b=0)
 
 ## Set up the simulation
-simulation = Simulation(model, Δt=2.5minutes, stop_time=duration)
+simulation = Simulation(model, Δt=0.5minutes, stop_time=duration)
 
 # create a model 'callback' to update the light (PAR) profile every 1 timestep and integrate sediment model
 simulation.callbacks[:update_par] = Callback(Light.update_2λ!, IterationInterval(1), merge(merge(params, Light.defaults), (surface_PAR=surface_PAR,)))#comment out if using PAR as a function, PAR_func
@@ -139,8 +139,8 @@ progress_message(sim) = @printf("Iteration: %04d, time: %s, Δt: %s, wall time: 
 # Create a message to display every 100 timesteps                                
 simulation.callbacks[:progress] = Callback(progress_message, IterationInterval(100))
 #update the timestep length each day
-#@warm "Timestep utility may cause instability"
-#simulation.callbacks[:timestep] = Callback(update_timestep, TimeInterval(1day), (w=params.V_dd, Δt_max=10minutes, c_diff = 2.3, c_adv = 1.52)) 
+@warn "Timestep utility may cause instability"
+simulation.callbacks[:timestep] = Callback(update_timestep!, TimeInterval(1hour)) 
 
 #setup dictionary of fields
 fields = Dict(zip((["$t" for t in bgc.tracers]..., "PAR"), ([getproperty(model.tracers, t) for t in bgc.tracers]..., [getproperty(model.auxiliary_fields, t) for t in (:PAR, )]...)))
