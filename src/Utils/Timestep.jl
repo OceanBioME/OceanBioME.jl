@@ -39,7 +39,7 @@ function max_c_boundary(model, Δt)
                 for i=1:model.grid.Nx, j=1:model.grid.Ny
                     flux = Δt*getbc(boundary, i, j, model.grid, model.clock, model_fields)
                     value = tracer[i, j, k]
-                    push!(flux_ratios, value!=0 ? flux/value : 0)
+                    push!(flux_ratios, value!=0 ? abs(flux/value) : 0)
                 end
             end
         end
