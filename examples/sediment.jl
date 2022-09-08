@@ -54,8 +54,8 @@ surface_PAR(t) = PAR_itp(mod(t, 364days))  # the remainder of t after floored di
 duration=1year
 
 # Define the grid
-Lx = 1
-Ly = 1
+Lx = 20
+Ly = 20
 Nx = 1
 Ny = 1
 Nz = 33 # number of points in the vertical direction
@@ -144,7 +144,7 @@ simulation.callbacks[:timestep] = Callback(update_timestep!, TimeInterval(1hour)
 
 #setup dictionary of fields
 fields = Dict(zip((["$t" for t in bgc.tracers]..., "PAR", "Nᵣᵣ", "Nᵣ", "Nᵣₑ"), ([getproperty(model.tracers, t) for t in bgc.tracers]..., [getproperty(model.auxiliary_fields, t) for t in (:PAR, :Nᵣᵣ, :Nᵣ, :Nᵣₑ)]...)))
-simulation.output_writers[:profiles] = NetCDFOutputWriter(model, fields, filename="complex_example.nc", schedule=TimeInterval(1days), overwrite_existing=true)
+simulation.output_writers[:profiles] = NetCDFOutputWriter(model, fields, filename="sediment.nc", schedule=TimeInterval(1days), overwrite_existing=true)
 
 @info "Setup simulation"
 ΣN₀ = Budget.calculate_budget(model, true, (:NO₃, :NH₄, :P, :Z, :D, :DD, :DOM))
@@ -159,4 +159,4 @@ results = OceanBioME.Plot.load_tracers(simulation)
 plot(OceanBioME.Plot.profiles(results)...)
 
 # Save the plot to a PDF file
-savefig("complex_example.pdf")
+savefig("sediment.pdf")

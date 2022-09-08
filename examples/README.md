@@ -1,6 +1,6 @@
 # Ocean Biogeochemial Modelling Environment
 
-> Note: the most complex example has been run for >5 years with the grid used in the various LOBSTER examples, with a 2.5 minute timestep without instability. The utility used in complex_LOBSTER.jl and kelp.jl attempt to optimise by changing the timestep but may cause instability if used.
+> Note: the most complex example has been run for >5 years with the grid used in the various LOBSTER examples, with a 2.5 minute timestep without instability. The utility used in kelp.jl  attempt to optimise by changing the timestep but may cause instability if used.
 
 ## Example Lists
 This document lists several examples included in this repository for users to learn how to use OceanBioME.
@@ -8,13 +8,7 @@ This document lists several examples included in this repository for users to le
 ### box.jl
 This script illustrates how to run OceanBioME as a box model.
 
-### kelp.jl
-This script illustrates how to run OceanBioME as a 1D column model using the LOBSTER biogeochemical model using a PAR timeseries from the North Atlantic subpolar gyre. 
-This script also shows how to read in data files (in netCDF format) for forcing the model. 
-In this case, the script reads in the mixed layer depth from the Mercator Ocean state esimate and uses this to construct an idealized diffusivity profile. 
-The script also reads in a timeseries of the photosynthetically available radiation for forcing the LOBSTER model. 
-
-### idealized_LOBSTERjl
+### column.jl
 This script illustrates how to run OceanBioME as a 1D column model using the LOBSTER biogeochemical model. 
 
 In this case, the script 
@@ -22,8 +16,9 @@ In this case, the script
 - uses an idealized surface photosynthetically available radiation (PAR) timeseries to derive the PAR profile for forcing the LOBSTER model, according to a light absorption model. 
     The PAR profile will be updated every 1 timestep as an auxiliary field; and
 - shows how to interpolate a timeseries of data to access to arbitrary time. 
-
-### simple_LOBSTER.jl
+### kelp.jl
+This script illustrates how to run OceanBioME as a 1D column model using the LOBSTER biogeochemical model with "active" particles simulating the growth of sugar kelp in the top 100m. In this case the model proposed by Broch and Slagstad 2012 is used.
+### data_forced.jl
 This script illustrates how to run OceanBioME as a 1D column model using the LOBSTER biogeochemical model.
 
 In this case, the script 
@@ -39,7 +34,7 @@ In this case, the script
     The PAR profile will be updated every 1 timestep as an auxiliary field. 
 - shows how to read *.nc files.
 
-### complex_LOBSTER.jl
+### sediment.jl
 This script illustrates how to run OceanBioME as a 1D column model using the LOBSTER biogeochemical model using a PAR timeseries from the North Atlantic subpolar gyre. 
 This script also shows how to read in data files (in netCDF format) for forcing the model. 
 In this case, the script reads in the mixed layer depth from the Mercator Ocean state esimate and uses this to construct an idealized diffusivity profile. 

@@ -51,8 +51,8 @@ surface_PAR(t) = PAR_itp(mod(t, 364days))  # the remainder of t after floored di
 duration=100days #2years as another example    
 
 # Define the grid
-Lx = 1
-Ly = 1
+Lx = 20
+Ly = 20
 Nx = 1
 Ny = 1
 Nz = 33 # number of points in the vertical direction
@@ -118,7 +118,7 @@ simulation.callbacks[:progress] = Callback(progress_message, IterationInterval(1
 
 # Setup dictionary of fields
 fields = Dict(zip((["$t" for t in bgc.tracers]..., "PAR"), ([getproperty(model.tracers, t) for t in bgc.tracers]..., [getproperty(model.auxiliary_fields, t) for t in (:PAR, )]...)))
-simulation.output_writers[:profiles] = NetCDFOutputWriter(model, fields, filename="idealized_LOBSTER.nc", schedule=TimeInterval(1days), overwrite_existing=true)
+simulation.output_writers[:profiles] = NetCDFOutputWriter(model, fields, filename="column.nc", schedule=TimeInterval(1days), overwrite_existing=true)
 
 @info "Setup simulation"
 # Run the simulation                            
@@ -129,4 +129,4 @@ results = OceanBioME.Plot.load_tracers(simulation)
 plot(OceanBioME.Plot.profiles(results)...)
 
 # Save the plot to a PDF file
-savefig("idealized_LOBSTER.pdf")
+savefig("column.pdf")
