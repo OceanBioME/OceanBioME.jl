@@ -27,32 +27,32 @@ function diffusion_timescale(model, grid; t=[1.0:365.0;].*day)
     end
 end
 
-function max_c_boundary(model, Δt)
-    #only implimenting for top and bottom bcs for
-    flux_ratios = []
-    model_fields = merge(model.velocities, model.tracers)
+function max_c_forcing(model)
+    max_forcing = 0.0
+
+    model_fields = model.tracers
+    
     for (tracer_idx, tracer) in enumerate(model.tracers)
-        for side in [:top, :bottom]
-            boundary = getproperty(tracer.boundary_conditions, side)
-            k = side==:top ? model.grid.Nz : 1
-            if !isa(boundary.condition, Number) && !isa(boundary.condition, Nothing)
-                for i=1:model.grid.Nx, j=1:model.grid.Ny
-                    flux = Δt*getbc(boundary, i, j, model.grid, model.clock, model_fields)
-                    value = tracer[i, j, k]
-                    push!(flux_ratios, value!=0 ? abs(flux/value) : 0)
-                end
-            end
-        end
+        tendencies = abs.(model.timestepper.Gⁿ[tracer_idx+3][1:model.grid.Nx, 1:model.grid.Ny, 1:model.grid.Nz])
+        values = abs.(tracer[1:model.grid.Nx, 1:model.grid.Ny, 1:model.grid.Nz])
+        ratios = tendencies./values
+        ratios[values.<1e-6] .= NaN
+        tracer_max = findmax(ratios)[1]
+        max_forcing =  !isnan(tracer_max) ? max(max_forcing, tracer_max) : max_forcing
     end
-    return length(flux_ratios)>0 ? findmax(flux_ratios)[1] : 0
+    return max_forcing
 end
 
-function update_timestep!(sim, params=(w=200/day, Δt_max=10minutes, c_diff = 0.6, c_adv = 0.8, relaxation=0.95))#, c_boundary=0.01))#off by default as computationally intensive and not limiting (as far as I can see)
-    #possibly rewrite these as kernel functions if we're sticking with this kind of thing
+function update_timestep!(sim, params=(w=200/day, c_diff = 0.55, c_adv = 0.55, relaxation=0.99, c_forcing=0.5))#, c_boundary=0.01))#off by default as computationally intensive and not limiting (as far as I can see)
     Δt_diff = :c_diff in keys(params) ? sim.Δt^(1-params.relaxation)*(params.c_diff*OceanBioME.diffusion_timescale(sim.model, sim.model.grid; t=sim.model.clock.time))^params.relaxation : Inf
     Δt_adv = :c_adv in keys(params) ? sim.Δt^(1-params.relaxation)*(params.c_adv/(abs(params.w)/OceanBioME.min_Δz(sim.model.grid)))^params.relaxation : Inf #replace with some way to check the actual max sinking velocity
-    Δt_boundary = :c_boundary in keys(params) ? sim.Δt * (params.c_boundary/max_c_boundary(sim.model, sim.Δt))^params.relaxation : Inf
-    Δt_max = :Δt_max in keys(params) ? params.Δt_max*(sim.Δt/params.Δt_max)^params.relaxation : Inf
+    Δt_forcing = :c_forcing in keys(params) ? sim.Δt^(1-params.relaxation) * (params.c_forcing/max_c_forcing(sim.model))^params.relaxation : Inf
+    Δt_max = :Δt_max in keys(params) ? params.Δt_max : Inf
 
-    sim.Δt = min(Δt_diff, Δt_adv, Δt_boundary, Δt_max)
+    sim.Δt = findmin([Δt_diff, Δt_adv, Δt_forcing, Δt_max])[1]
+
+    #Record the different timesteps for diagnostics if possible
+    if :timesteps in keys(sim.model.auxiliary_fields) 
+        sim.model.auxiliary_fields.timesteps[1] = [Δt_diff, Δt_adv, Δt_forcing]
+    end
 end
