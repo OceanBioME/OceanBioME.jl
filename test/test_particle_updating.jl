@@ -129,7 +129,7 @@ end
 
     @testset "Larger grid for point assignment" begin
         grid = RectilinearGrid(size=(2,1,1), extent=(2,1,1), topology=(Periodic, Periodic, Periodic))
-        particlestruct=StructArray{CustomParticle}(([1], [0.25], [-0.25], [1.0], [0.0], [0.0]))
+        particlestruct=StructArray{CustomParticle}(([1.0], [0.25], [-0.25], [1.0], [0.0], [0.0]))
 
         particles = Particles.setup(
             particlestruct, 
@@ -190,8 +190,8 @@ end
         )
 
         model = NonhydrostaticModel(; grid, timestepper=:RungeKutta3, particles=particles, tracers=(:C, ))
-        set!(model, u=0, v=0, w=0, C=1)
-        sim = Simulation(model, Δt=1, stop_time=1)
+        set!(model, u=0, v=0, w=0, C=1.0)
+        sim = Simulation(model, Δt=1.0, stop_time=1)
         run!(sim)
 
         @test sum(model.tracers.C[1:4, 1:4, 1:4]) ≈ 4^3-.1
