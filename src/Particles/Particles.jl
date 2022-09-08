@@ -34,6 +34,7 @@ function apply_sinks!(model, particles, p, i, j, k, d, Δt)
                 getproperty(particles.properties, sink.fallback)[p] += fallback(particles, p, res, sink.fallback_scalefactor)*Vᶜᶜᶜ(i, j, k, model.grid)
             else
                 getproperty(model.tracers, sink.tracer)[i, j, k] += value
+                getproperty(model.timestepper.Gⁿ, sink.tracer)[i, j, k] += value
             end
         end
     end
