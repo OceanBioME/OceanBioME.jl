@@ -88,7 +88,7 @@ oxy_bc = Boundaries.airseasetup(:O₂, forcings=(T=t_function, S=s_function))
 sediment_bcs=Boundaries.setupsediment(grid)
 
 # Set up the OceanBioME model with the specified biogeochemical model, grid, parameters, light, and boundary conditions
-bgc = Setup.Oceananigans(:LOBSTER, grid, params, PAR, optional_sets=(:carbonates, :oxygen), topboundaries=(DIC=dic_bc, OXY=oxy_bc), bottomboundaries=sediment_bcs.boundary_conditions, advection_scheme=WENO5)
+bgc = Setup.Oceananigans(:LOBSTER, grid, params, PAR, optional_sets=(:carbonates, :oxygen), topboundaries=(DIC=dic_bc, OXY=oxy_bc), bottomboundaries=sediment_bcs.boundary_conditions, advection_scheme=WENO)
 @info "Setup BGC model"
 
 # create a function with the vertical turbulent vertical diffusivity. This is an idealized functional form, but the depth of mixing is based on an interpolation to the mixed layer depth from the Mercator Ocean state estimate
@@ -99,10 +99,10 @@ bgc = Setup.Oceananigans(:LOBSTER, grid, params, PAR, optional_sets=(:carbonates
 @info "Setting up kelp particles"
 n_kelp=100 # number of kelp fronds
 z₀ = [-100:-1;]*1.0 # depth of kelp fronds
-kelp_particles = SLatissima.setup(n_kelp, Lx/2, Ly/2, z₀, 0.0, 0.0, 0.0, 57.5, 1.0, t_function, s_function, 0.2)
+kelp_particles = SLatissima.setup(n_kelp, Lx/2, Ly/2, z₀, 0.0, 0.0, 0.0, 57.5, 1.0; T = t_function, S = s_function, urel = 0.2)
 
 # Now, create a 'model' to run in Oceananignas
-model = NonhydrostaticModel(advection = WENO5(),
+model = NonhydrostaticModel(advection = WENO(),
                             timestepper = :RungeKutta3,
                             grid = grid,
                             tracers = (:b, bgc.tracers...),
