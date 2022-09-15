@@ -89,7 +89,7 @@ function equations(x::AbstractFloat, y::AbstractFloat, z::AbstractFloat, t::Abst
     else
         A_new, N_new, C_new, j_NO₃, j_NH₄, pp, e, ν, du, dv, dw = 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0
     end
-    return (A = A_new, N = N_new, C = C_new, j_NO₃ = j_NO₃, j_NH₄ = j_NH₄, pp = pp, e = e, ν = ν, u = du, v = dv, w = dw)
+    return (A = A_new, N = N_new, C = C_new, j_NO₃ = -j_NO₃, j_NH₄ = -j_NH₄, j_DIC = -pp, j_OXY=pp, e = e/6.56, ν = ν, u = du, v = dv, w = dw)
 end
 
 #fixed urel, T and S functions
@@ -190,7 +190,8 @@ struct Particle
     #feedback
     j_NO₃ :: AbstractFloat
     j_NH₄ :: AbstractFloat
-    pp :: AbstractFloat
+    j_DIC :: AbstractFloat
+    j_OXY :: AbstractFloat
     e :: AbstractFloat
     ν :: AbstractFloat
     #tracked fields
@@ -199,14 +200,17 @@ struct Particle
     PAR :: AbstractFloat
 end
 
-source_fields = ((tracer=:NO₃, property=:NO₃, scalefactor=1.0), 
-                        (tracer=:NH₄, property=:NH₄, scalefactor=1.0),
-                        (tracer=:PAR, property=:PAR, scalefactor=1.0))
-sink_fields = ((tracer=:NO₃, property=:j_NO₃, scalefactor=-1.0, fallback=:N, fallback_scalefactor=(property=:A, constant=14*0.001/defaults.K_A)), 
-                    (tracer=:NH₄, property=:j_NH₄, scalefactor=-1.0, fallback=:N, fallback_scalefactor=(property=:A, constant=14*0.001/defaults.K_A)), 
-                    (tracer=:DIC, property=:pp, scalefactor=-1.0, fallback=:C, fallback_scalefactor=(property=:A, constant=14*0.001)),
-                    (tracer=:DOM, property=:e, scalefactor=1.0/6.56, fallback=:A, fallback_scalefactor=0),#Rd_dom from LOBSTER, placeholder fallbacks because if these are taking away something has gone very wrong
-                    (tracer=:DD, property=:ν, scalefactor=1.0, fallback=:A, fallback_scalefactor=0))
+source_fields = (NO₃ = :NO₃, PAR=:PAR)
+
+optional_source_fields = (NH₄ = :NH₄, )
+
+#When Oceananigans PR in place going to simplify this specifcation
+sink_fields = (NO₃ = (property=:j_NO₃, fallback=:N, fallback_scalefactor=(property=:A, constant=14*0.001/defaults.K_A)), )    
+optional_sink_fields = (NH₄ = (property=:j_NH₄, fallback=:N, fallback_scalefactor=(property=:A, constant=14*0.001/defaults.K_A)), 
+                                    DIC = (property=:j_DIC, fallback=:C, fallback_scalefactor=(property=:A, constant=14*0.001)),
+                                    DOM = (property=:e, fallback=:A, fallback_scalefactor=0),#Rd_dom from LOBSTER, placeholder fallbacks because if these are taking away something has gone very wrong
+                                    DD = (property=:ν, fallback=:A, fallback_scalefactor=0),
+                                    OXY = (property=:j_OXY, fallback=:C, fallback_scalefactor=(property=:A, constant=14*0.001)))
 
 function defineparticles(initials, n)
     x̄₀ = []
@@ -220,12 +224,12 @@ function defineparticles(initials, n)
             throw(ArgumentError("Invalid initial values given for $var, must be a single number or vector of length n"))
         end
     end
-    return StructArray{Particle}((x̄₀[1], x̄₀[2], x̄₀[3], zeros(n), zeros(n), zeros(n), x̄₀[4], x̄₀[5], x̄₀[6], [zeros(n) for i in 1:8]...))
+    return StructArray{Particle}((x̄₀[1], x̄₀[2], x̄₀[3], zeros(n), zeros(n), zeros(n), x̄₀[4], x̄₀[5], x̄₀[6], [zeros(n) for i in 1:9]...))
 end
 
 @inline no_dynamics(args...) = nothing
 
-function setup(n, x₀, y₀, z₀, A₀, N₀, C₀, latitude, density; T=nothing, S=nothing, urel=nothing, paramset=defaults, custom_dynamics=no_dynamics, O₂=false)
+function setup(n, x₀, y₀, z₀, A₀, N₀, C₀, latitude, density; T=nothing, S=nothing, urel=nothing, paramset=defaults, custom_dynamics=no_dynamics, optional_sources=(), optional_sinks=(), tracer_names=NamedTuple())
     if (!isnothing(T) && !isnothing(S) && isnothing(urel))
         throw(ArgumentError("T and S functions with tracked velocity fields not currently implimented"))
     elseif ((isnothing(T) && !isnothing(S)) | (!isnothing(T) && isnothing(S)))
@@ -236,22 +240,40 @@ function setup(n, x₀, y₀, z₀, A₀, N₀, C₀, latitude, density; T=nothi
     property_dependencies = (:A, :N, :C, :NO₃, :NH₄, :PAR)
     λ_arr=gen_λ(latitude)
     parameters = merge(paramset, (λ=λ_arr, ))
-    tracked_properties = (:A, :N, :C, :j_NO₃, :j_NH₄, :pp, :e, :ν)
+    tracked_properties = (:A, :N, :C, :j_NO₃, :j_NH₄, :j_DIC, :j_OXY, :e, :ν)
 
     if isnothing(T) property_dependencies = (property_dependencies..., :T, :S) else parameters = merge(parameters, (T=T, S=S)) end
     if isnothing(urel) property_dependencies = (property_dependencies..., :u, :v, :w) else parameters = merge(parameters, (urel = urel, )) end
 
     integral_properties = (:u, :v, :w) #for when I impliment dynamics
 
-    if O₂ merge(sink_fields, ((tracer=:OXY, property=:pp, scalefactor=1.0), )) end
-    
+    sources = source_fields
+    for tracer in optional_sources
+        if tracer in keys(optional_source_fields)
+            sources = merge(sources, NamedTuple{(tracer, )}((getproperty(optional_source_fields, tracer), )))
+        else
+            @warn "$tracer isn't an optional source field for SLatissima model"
+        end
+    end
+
+    sinks = sink_fields
+    for tracer in optional_sinks
+        if tracer in keys(optional_sink_fields)
+            sinks = merge(sinks, NamedTuple{(tracer, )}((getproperty(optional_sink_fields, tracer), )))
+        else
+            @warn "$tracer isn't an optional sink field for SLatissima model"
+        end
+    end
+
+    sources = merge(sources, tracer_names)
+
     return Particles.setup(particles, equations, 
                                         property_dependencies,
                                         parameters,
                                         integral_properties, #changed all kelp model variables to diagnostic since it is much easier to enforce the extreme carbon limit correctly
                                         tracked_properties, 
-                                        source_fields,
-                                        sink_fields,
+                                        sources,
+                                        sinks,
                                         density,
                                         custom_dynamics)
 end

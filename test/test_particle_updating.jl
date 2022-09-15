@@ -30,7 +30,7 @@ particlestruct=StructArray{CustomParticle}(([0.25], [0.25], [-0.25], [1.0], [0.0
         NamedTuple(), 
         (:A, ), 
         (:B, ), 
-        ((tracer=:C, property=:C, scalefactor=1.0), ),
+        (C = :C, ),
         (),#should add multiple dispatch so you do't have to specify these as blank
         1.0
     )
@@ -68,8 +68,8 @@ end
         NamedTuple(), 
         (), 
         (:A, :B), 
-        ((tracer=:C, property=:C, scalefactor=1.0), ),
-        ((tracer=:C, property=:A, scalefactor=-1.0, fallback=:A, fallback_scalefactor=0), ),#placeholder fallback scale factor as testing further down), ),
+        (C = :C, ),
+        (C = (property=:A, scalefactor=-1.0, fallback=:A, fallback_scalefactor=0), ),#placeholder fallback scale factor as testing further down), ),
         1.0
     )
 
@@ -93,8 +93,8 @@ end
         NamedTuple(), 
         (), 
         (:A, ), 
-        ((tracer=:C, property=:C, scalefactor=1.0), ),
-        ((tracer=:C, property=:A, scalefactor=-1.0, fallback=:B, fallback_scalefactor=1.0), ),
+        (C = :C, ),
+        (C = (property=:A, scalefactor=-1.0, fallback=:B, fallback_scalefactor=1.0), ),
         1.0
     )
     
@@ -114,8 +114,8 @@ end
         NamedTuple(), 
         (), 
         (:A, ), 
-        ((tracer=:C, property=:C, scalefactor=1.0), ),
-        ((tracer=:C, property=:A, scalefactor=-1.0, fallback=:B, fallback_scalefactor=(property=:A, constant=0.5)), ), #other property dependant scale factor
+        (C = :C, ),
+        (C = (property=:A, scalefactor=-1.0, fallback=:B, fallback_scalefactor=(property=:A, constant=0.5)), ),
         1.0
     )
     
@@ -138,8 +138,8 @@ end
             NamedTuple(), 
             (), 
             (:A, :B), 
-            ((tracer=:C, property=:C, scalefactor=1.0), ),
-            ((tracer=:C, property=:A, scalefactor=-1.0, fallback=:A, fallback_scalefactor=0), ),#placeholder fallback scale factor as testing further down), ),
+            (C = :C, ),
+            (C = (property=:A, scalefactor=-1.0, fallback=:A, fallback_scalefactor=0), ),
             1.0
         )
 
@@ -163,8 +163,8 @@ end
             NamedTuple(), 
             (), 
             (:A, :B), 
-            ((tracer=:C, property=:C, scalefactor=1.0), ),
-            ((tracer=:C, property=:A, scalefactor=-1.0, fallback=:A, fallback_scalefactor=0), ),#placeholder fallback scale factor as testing further down), ),
+            (C = :C, ),
+            (C = (property=:A, scalefactor=-1.0, fallback=:A, fallback_scalefactor=0), ),
             1.0
         )
 
@@ -184,8 +184,8 @@ end
             NamedTuple(), 
             (), 
             (:A, :B), 
-            ((tracer=:C, property=:C, scalefactor=1.0), ),
-            ((tracer=:C, property=:A, scalefactor=-1.0, fallback=:A, fallback_scalefactor=0), ),#placeholder fallback scale factor as testing further down), ),
+            (C = :C, ),
+            (C = (property=:A, scalefactor=-1.0, fallback=:A, fallback_scalefactor=0), ),
             1.0
         )
 
@@ -206,8 +206,8 @@ end
             NamedTuple(), 
             (), 
             (:A, :B), 
-            ((tracer=:C, property=:C, scalefactor=1.0), ),
-            ((tracer=:C, property=:A, scalefactor=-1.0, fallback=:A, fallback_scalefactor=0), ),#placeholder fallback scale factor as testing further down), ),
+            (C = :C, ),
+            (C = (property=:A, scalefactor=-1.0, fallback=:A, fallback_scalefactor=0), ),
             10.0
         )
 
