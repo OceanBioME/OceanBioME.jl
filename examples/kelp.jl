@@ -100,11 +100,11 @@ bgc = Setup.Oceananigans(:LOBSTER, grid, params, PAR, optional_sets=(:carbonates
 n_kelp=100 # number of kelp fronds
 z₀ = [-100:-1;]*1.0 # depth of kelp fronds
 kelp_particles = SLatissima.setup(n_kelp, Lx/2, Ly/2, z₀, 
-                                                    30.0, 0.01, 0.1, 57.5, 1.0;#0.0, 0.0, 0.0, 57.5, 1.0; 
-                                                    T = t_function, S = s_function, urel = 0.2)#, 
+                                                    0.0, 0.0, 0.0, 57.5, 1.0; 
+                                                    T = t_function, S = s_function, urel = 0.2, 
                                                     #tracer_names=(N=:NO₃, ) #Over ride naming of tracer fields (e.g. for NPZ model) where keys are tracer names and values are the particle property being written to
-                                                    #optional_sources=(:NH₄, ), #can remove this to only depend on NO₃ 
-                                                    #optional_sinks=(:NH₄, :DIC, :DD, :OXY, :DOM))
+                                                    optional_sources=(:NH₄, ), #can remove this to only depend on NO₃ 
+                                                    optional_sinks=(:NH₄, :DIC, :DD, :OXY, :DOM))
 
 # Now, create a 'model' to run in Oceananignas
 model = NonhydrostaticModel(advection = WENO(),
@@ -159,12 +159,12 @@ simulation.callbacks[:timestep] = Callback(update_timestep!, IterationInterval(1
 #fields = Dict(zip((["$t" for t in bgc.tracers]..., "PAR"), ([getproperty(model.tracers, t) for t in bgc.tracers]..., [getproperty(model.auxiliary_fields, t) for t in (:PAR, )]...)))
 fields = Dict(zip((["$t" for t in bgc.tracers]..., "PAR", "Nᵣᵣ", "Nᵣ", "Nᵣₑ"), ([getproperty(model.tracers, t) for t in bgc.tracers]..., [getproperty(model.auxiliary_fields, t) for t in (:PAR, :Nᵣᵣ, :Nᵣ, :Nᵣₑ)]...)))
 
-simulation.output_writers[:profiles] = NetCDFOutputWriter(model, fields, filename="kelp_example_no3_only.nc", schedule=TimeInterval(1days), overwrite_existing=!pickup)
+simulation.output_writers[:profiles] = NetCDFOutputWriter(model, fields, filename="kelp_example.nc", schedule=TimeInterval(1days), overwrite_existing=!pickup)
 
 #checkpoint after warmup so we don't have to rerun for different kelp configs
 #simulation.output_writers[:checkpointer] = Checkpointer(model, schedule=SpecifiedTimes([i*50days for i=1:10]), prefix="kelp_checkpoint")
 simulation.output_writers[:particles] = JLD2OutputWriter(model, (particles=model.particles,), 
-                          filename = "particles_no3_only.jld2",
+                          filename = "particles.jld2",
                           schedule = TimeInterval(1day),
                           overwrite_existing = true)
 @info "Running simulation for the first year (without kelp)"
@@ -172,7 +172,7 @@ simulation.output_writers[:particles] = JLD2OutputWriter(model, (particles=model
 # Run the simulation                           
 
 run!(simulation)
-#=
+
 @info "Initializing kelp"
 #reset the kelp properties after warmup
 model.particles.properties.A .= 30.0*ones(n_kelp)
@@ -192,12 +192,12 @@ simulation.Δt=1.5minutes
 #run rest of simulation
 @info "Restarting simulation to run for the year, now with kelp"
 run!(simulation)
-=#
+
 # Load and plot the results
 results = OceanBioME.Plot.load_tracers(simulation)
 profiles = OceanBioME.Plot.profiles(results)
-savefig("kelp_no3_only.pdf")
+savefig("kelp.pdf")
 
 particles = OceanBioME.Plot.load_particles(simulation)
 particles = OceanBioME.Plot.particles(particles)
-savefig("kelp_particles_no3_only.pdf")
+savefig("kelp_particles.pdf")
