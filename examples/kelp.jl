@@ -162,11 +162,8 @@ fields = Dict(zip((["$t" for t in bgc.tracers]..., "PAR", "Nᵣᵣ", "Nᵣ", "N�
 simulation.output_writers[:profiles] = NetCDFOutputWriter(model, fields, filename="kelp_example.nc", schedule=TimeInterval(1days), overwrite_existing=!pickup)
 
 #checkpoint after warmup so we don't have to rerun for different kelp configs
-#simulation.output_writers[:checkpointer] = Checkpointer(model, schedule=SpecifiedTimes([i*50days for i=1:10]), prefix="kelp_checkpoint")
-simulation.output_writers[:particles] = JLD2OutputWriter(model, (particles=model.particles,), 
-                          filename = "particles.jld2",
-                          schedule = TimeInterval(1day),
-                          overwrite_existing = true)
+simulation.output_writers[:checkpointer] = Checkpointer(model, schedule=SpecifiedTimes([i*50days for i=1:10]), prefix="kelp_checkpoint")
+
 @info "Running simulation for the first year (without kelp)"
 @info "(Note that the first timestep will take some time to complete)"
 # Run the simulation                           
