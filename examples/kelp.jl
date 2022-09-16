@@ -194,10 +194,12 @@ simulation.Δt=1.5minutes
 run!(simulation)
 
 # Load and plot the results
-results = OceanBioME.Plot.load_tracers(simulation)
-profiles = OceanBioME.Plot.profiles(results)
+include("PlottingUtilities.jl")
+
+results = load_tracers(simulation)
+profiles = profiles(results)
 savefig("kelp.pdf")
 
-particles = OceanBioME.Plot.load_particles(simulation)
-particles = OceanBioME.Plot.particles(particles)
+particles = load_particles(simulation)
+particles = particles(particles)
 savefig("kelp_particles.pdf")
