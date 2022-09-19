@@ -1,7 +1,7 @@
 #grazing of zooplankton, here food_consumption = Pᵢᶻ*(I - Iₜₕᵣᶻ), food_total = sum(pⱼᶻ*J) and other variables are as eq 26a
 #foods are (; P, D, POC, Z) for mezozooplankton and  (; P, D, POC) for microzooplankton
-@inline g(food_consumption, gₘ, Fₗᵢₘ, F, K_G, food_total) = gₘ*(Fₗᵢₘ/F)*max(0, food_consumption/(K_G+food_total)
-@inline F(p, Jₜₕᵣ, prey) = sum([p[I]*max(0, C-Jₜₕᵣ[I]) for (I, C) in pairs(prey)])
+@inline g(food_consumption, gₘ, Fₗᵢₘ, F, K_G, food_total) = gₘ*(Fₗᵢₘ/F)*max(0, food_consumption/(K_G+food_total))
+@inline F(p, Jₜₕᵣ, prey) = sum(p[I]*max(0, C-Jₜₕᵣ[I]) for (I, C) in pairs(prey))
 @inline Fₗᵢₘ(p, Jₜₕᵣ, Fₜₕᵣ, prey) = max(0, F(p, Jₜₕᵣ, prey)-min(0.5*F(p, Jₜₕᵣ, prey), Fₜₕᵣ))
 @inline food_total(p, prey) = sum([@inbounds p[I]*C for (I, C) in pairs(prey)])
 
@@ -20,7 +20,8 @@
     return f₂(zₘₓₗ, zₑᵤ, t_dark)*Cₚᵣₒ(P, Chlᴾ, PARᴾ, L_day, α, μₚ, Lₗᵢₘᴾ)*min(Lₚₒ₄ᴾ, Lₙᵖ)
 end
 
-function Z_forcing(x, y, z, t, P, D, Chlᴾ, Chlᴰ, Feᴾ, Feᴰ, Siᴰ, Z, M, DOC, POC, GOC, Feᴾᴼ, Feᴳᴼ, Siᴾᴼ, Siᴳᴼ, NO₃, NH₄, PO₄, Fe, Si, CaCO₃, DIC, O₂, PARᴾ, PARᴰ, T, zₘₓₗ, zₑᵤ, ϕ, params)
+function Z_forcing(x, y, z, t, P, D, Chlᴾ, Chlᴰ, Feᴾ, Feᴰ, Siᴰ, Z, M, DOC, POC, GOC, Feᴾᴼ, Feᴳᴼ, Siᴾᴼ, Siᴳᴼ, NO₃, NH₄, PO₄, Fe, Si, CaCO₃, DIC, O₂, PAR¹, PAR², PAR³, T, zₘₓₗ, zₑᵤ, ϕ, params)
+    PARᴾ, PARᴰ, PAR = PAR_components(PAR¹, PAR², PAR³, params.β₁, params.β₂, params.β₃)
     #grazing
     prey =  (; P, D, POC)
 
@@ -44,8 +45,8 @@ function Z_forcing(x, y, z, t, P, D, Chlᴾ, Chlᴰ, Feᴾ, Feᴰ, Siᴰ, Z, M, 
     gᶻₙ = gᶻₚ*θᴺᴾ + gᶻ_D*θᴺᴰ + gᶻₚₒ*params.θᴺᶜ
 
     #efficiency (from food quality)
-    eₙᶻ = min(1, gᶻₙ/(params.θᴺᶜ*Σgᶻ, gᶻ_Fe/(params.θᶠᵉ.Z*Σgᶻ)
-    eᶻ = eₙᶻ*min(params.eₘₐₓᶻ, (1 - params.σ.Z)*gᶻ_Fe/(params.θᶠᵉ.Z*Σgᶻ)
+    eₙᶻ = min(1, gᶻₙ/(params.θᴺᶜ*Σgᶻ), gᶻ_Fe/(params.θᶠᵉ.Z*Σgᶻ))
+    eᶻ = eₙᶻ*min(params.eₘₐₓᶻ, (1 - params.σ.Z)*gᶻ_Fe/(params.θᶠᵉ.Z*Σgᶻ))
 
     #temperature dependency
     f_z = params.b.Z^T
@@ -53,11 +54,11 @@ function Z_forcing(x, y, z, t, P, D, Chlᴾ, Chlᴰ, Feᴾ, Feᴰ, Siᴰ, Z, M, 
     #getting grazed
     gᴹ_z = g(params.p.M.Z*(Z - params.Jₜₕᵣ.M.Z), params.gₘₐₓ⁰.M*params.b.M^T, Fₗᵢₘ(params.p.M, params.Jₜₕᵣ.M, params.Fₜₕᵣ.M, (; P, D, POC, Z)), F(params.p.M, params.Jₜₕᵣ.M, (; P, D, POC, Z)), params.K_G.M, food_total(params.p.M, (; P, D, POC, Z)))
 
-    return eᶻ*(Σgᶻ*Z - gᴹ_z *M - params.m.Z*Z^2*f_z - params.r.Z*f_z*(Z/(params.Kₘ+z) + 3*ΔO₂(O₂, params.O₂ᵐⁱⁿ¹, params.O₂ᵐⁱⁿ²))*Z
+    return eᶻ*(Σgᶻ*Z - gᴹ_z)*M - params.m.Z*Z^2*f_z - params.r.Z*f_z*(Z/(params.Kₘ+Z) + 3*ΔO₂(O₂, params.O₂ᵐⁱⁿ¹, params.O₂ᵐⁱⁿ²))*Z
 end
 
-
-function M_forcing(x, y, z, t, P, D, Chlᴾ, Chlᴰ, Feᴾ, Feᴰ, Siᴰ, Z, M, DOC, POC, GOC, Feᴾᴼ, Feᴳᴼ, Siᴾᴼ, Siᴳᴼ, NO₃, NH₄, PO₄, Fe, Si, CaCO₃, DIC, O₂, PARᴾ, PARᴰ, T, zₘₓₗ, zₑᵤ, ϕ, params)
+function M_forcing(x, y, z, t, P, D, Chlᴾ, Chlᴰ, Feᴾ, Feᴰ, Siᴰ, Z, M, DOC, POC, GOC, Feᴾᴼ, Feᴳᴼ, Siᴾᴼ, Siᴳᴼ, NO₃, NH₄, PO₄, Fe, Si, CaCO₃, DIC, O₂, PAR¹, PAR², PAR³, T, zₘₓₗ, zₑᵤ, ϕ, params)
+    PARᴾ, PARᴰ, PAR = PAR_components(PAR¹, PAR², PAR³, params.β₁, params.β₂, params.β₃)
     #grazing
     prey =  (; P, D, POC, Z)
 
@@ -72,6 +73,7 @@ function M_forcing(x, y, z, t, P, D, Chlᴾ, Chlᴰ, Feᴾ, Feᴰ, Siᴰ, Z, M, 
     gᴹ_D = g(params.p.M.D*(D-params.Jₜₕᵣ.M.D), gₘᴹ, Fₗᵢₘᴹ, Fᴹ, params.K_G.M, food_totalᴹ) 
     gᴹₚₒ = g(params.p.M.POC*(POC-params.Jₜₕᵣ.M.POC), gₘᴹ, Fₗᵢₘᴹ, Fᴹ, params.K_G.M, food_totalᴹ) 
     gᴹ_Z = g(params.p.M.Z*(Z - params.Jₜₕᵣ.M.Z), gₘᴹ, Fₗᵢₘᴹ, Fᴹ, params.K_G.M, food_totalᴹ)
+    Σgᴹ = gᴹₚ + gᴹ_D + gᴹₚₒ + gᴹ_Z
 
     θᴺᴾ = θᴺᴵ(P, Chlᴾ, Feᴾ, Siᴰ, NO₃, NH₄, PO₄, Inf, PARᴾ, T, zₘₓₗ, zₑᵤ, params.Kᵐⁱⁿₚₒ₄.P, params.Sᵣₐₜ.P, params.Pₘₐₓ.P, params.K_NO₃.P, params.K_NH₄.P, params.θᶠᵉₒₚₜ.P, params.Kₛᵢᴰᵐⁱⁿ, params.Si̅, params.Kₛᵢ, params.μₘₐₓ⁰, params.bₚ, params.t_dark.P, L_day, params.α.P)
     θᴺᴰ = θᴺᴵ(D, Chlᴰ, Feᴰ, Siᴰ, NO₃, NH₄, PO₄, Si, PARᴰ, T, zₘₓₗ, zₑᵤ, params.Kᵐⁱⁿₚₒ₄.D, params.Sᵣₐₜ.D, params.Pₘₐₓ.D, params.K_NO₃.D, params.K_NH₄.D, params.θᶠᵉₒₚₜ.D, params.Kₛᵢᴰᵐⁱⁿ, params.Si̅, params.Kₛᵢ, params.μₘₐₓ⁰, params.bₚ, params.t_dark.D, L_day, params.α.D)
@@ -81,16 +83,14 @@ function M_forcing(x, y, z, t, P, D, Chlᴾ, Chlᴰ, Feᴾ, Feᴰ, Siᴰ, Z, M, 
 
     #flux feeding on POC - will need to be changed for Kriest Model
     gᴹₚₒ_FF = params.g_ff*f_M*params.wₚₒ*POC
-    gᴹ_GO_FF = params.g_ff*f_M*(params._GOᵐⁱⁿ + (200-params._GOᵐⁱⁿ)*max(0, z - max(zₑᵤ, zₘₓₗ))/5000)*GOC
-    
-    Σgᴹ = gᴹₚ + gᴹ_D + gᴹₚₒ + gᴹ_Z
+    gᴹ_GO_FF = params.g_ff*f_M*(params.w_GOᵐⁱⁿ + (200-params._GOᵐⁱⁿ)*max(0, z - max(zₑᵤ, zₘₓₗ))/5000)*GOC
 
     #total Fe and N grazing - based on paragraph after eq 32 I don't think flux feeding is included in the quality
     gᴹ_Fe = gᴹₚ*Feᴾ/P + gᴹ_D*Feᴰ/D + gᴹₚₒ*Feᴾᴼ/POC + gᴹ_Z*params.θᶠᵉ.Z
     gᴹₙ = gᴹₚ*θᴺᴾ + gᴹ_D*θᴺᴰ + (gᴹₚₒ + gᴹ_Z)*params.θᴺᶜ
 
     #efficiency (from food quality)
-    eₙᴹ = min(1, gᴹₙ/(params.θᴺᶜ*Σgᴹ, gᴹ_Fe/(params.θᶠᵉ.M*Σgᴹ))
+    eₙᴹ = min(1, gᴹₙ/(params.θᴺᶜ*Σgᴹ), gᴹ_Fe/(params.θᶠᵉ.M*Σgᴹ))
     eᴹ = eₙᴹ*min(params.eₘₐₓᴹ, (1 - params.σ.M)*gᴹ_Fe/(params.θᶠᵉ.M*Σgᴹ))
 
     #Mortality from upper trophic feeding or density dependency (e.g. viral disease) - if a separate feeding model is coupled fallback to microzooplankton mortality

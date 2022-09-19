@@ -12,11 +12,6 @@
 @inline L_Fe(P, Chlᴾ, Feᴾ, θᶠᵉₒₚₜ, Lₙᴾ, Lₙₒ₃ᴾ) = min(1, max(0, ((Feᴾ/P) - θᶠᵉₘᵢₙ(P, Chlᴾ, Lₙᴾ, Lₙₒ₃ᴾ))/θᶠᵉₒₚₜ)) #eq 6f
 @inline θᶠᵉₘᵢₙ(P, Chlᴾ, Lₙᴾ, Lₙₒ₃ᴾ) = 0.0016*Chlᴾ/(55.85*P) + 1.21e-5*14*Lₙᴾ/(55.85*7.625)*1.5+1.15*14*L_NO₃ᴾ/(55.85*7.625) #eq 20 -> Lₙ could be meant to be L_NH₄?
 
-@inline Lₗᵢₘ(P, Chlᴾ, Feᴾ, NO₃, NH₄, PO₄, Fe, ) = min(Lₚₒ₄(PO₄, P, I, params), 
-                                                                            Lₙ(NO₃, NH₄, I, params),
-                                                                            L_Fe(p, Chlᴾ, Feᴾ, NO₃, NH₄, I, params),
-                                                                            I==:D ? params.Kₛᵢᴰᵐⁱⁿ + 7*params.Si̅^2/(params.Kₛᵢ^2+params.Si̅^2) : Inf)
-
 @inline K(P, Kᵐⁱⁿ, Sᵣₐₜ, Pₘₐₓ) = Kᵐⁱⁿ*(P₁(P, Pₘₐₓ)+Sᵣₐₜ*P₂(P, Pₘₐₓ))/(P₁(P, Pₘₐₓ)+P₂(P, Pₘₐₓ))
 @inline P₁(P, Pₘₐₓ) = min(P, params.Pₘₐₓ[I])
 @inline P₂(P, Pₘₐₓ) = min(0, P - params.Pₘₐₓ[I])
@@ -34,18 +29,19 @@
 
     μₚ = μₘₐₓ⁰*b^T
 
-    return  μₚ*f₁(L_day)*f₂(zₘₓₗ, zₑᵤ, t_dark)*Cₚᵣₒ(P, Chlᴾ, PARᴾ, L_day, α, μₚ, Lₗᵢₘᴾ)*min(Lₚₒ₄ᴾ, Lₙᵖ)
+    return  μₚ*f₁(L_day)*f₂(zₘₓₗ, zₑᵤ, t_dark)*Cₚᵣₒ(P, Chlᴾ, PARᴾ, L_day, α, μₚ, Lₗᵢₘᴾ)*min(Lₚₒ₄ᴾ, Lₙᵖ), Lₗᵢₘᴾ
 end
 
 #perhaps should add an auxiliary forcing before to compute all of the reused values such as z_food_total, F_lim^Z etc.? which otherwise get computed 4 times minimum
 #think the trade off here varies for CPU vs GPU where we might want to not recompute them on CPU but we may want to store less in memory on GPU
-function P_forcing(x, y, z, t, P, D, Chlᴾ, Chlᴰ, Feᴾ, Feᴰ, Siᴰ, Z, M, DOC, POC, GOC, Feᴾᴼ, Feᴳᴼ, Siᴾᴼ, Siᴳᴼ, NO₃, NH₄, PO₄, Fe, Si, CaCO₃, DIC, O₂, PARᴾ, PARᴰ, T, zₘₓₗ, zₑᵤ, ϕ, params)
+function P_forcing(x, y, z, t, P, D, Chlᴾ, Chlᴰ, Feᴾ, Feᴰ, Siᴰ, Z, M, DOC, POC, GOC, Feᴾᴼ, Feᴳᴼ, Siᴾᴼ, Siᴳᴼ, NO₃, NH₄, PO₄, Fe, Si, CaCO₃, DIC, O₂, PAR¹, PAR², PAR³, T, zₘₓₗ, zₑᵤ, ϕ, params)
+    PARᴾ, PARᴰ, PAR = PAR_components(PAR¹, PAR², PAR³, params.β₁, params.β₂, params.β₃)
     #growth
     L_day = params.L_day(t)
-    μᴾ = μᵢ(P, Chlᴾ, Feᴾ, Siᴰ, NO₃, NH₄, PO₄, Inf, PARᴾ, T, zₘₓₗ, zₑᵤ, params.Kᵐⁱⁿₚₒ₄.P, params.Sᵣₐₜ.P, params.Pₘₐₓ.P, params.K_NO₃.P, params.K_NH₄.P, params.θᶠᵉₒₚₜ.P, params.Kₛᵢᴰᵐⁱⁿ, params.Si̅, params.Kₛᵢ, params.μₘₐₓ⁰, params.bₚ, params.t_dark.P, L_day, params.α.P)
+    μᴾ, Lₗᵢₘᴾ = μᵢ(P, Chlᴾ, Feᴾ, Siᴰ, NO₃, NH₄, PO₄, Inf, PARᴾ, T, zₘₓₗ, zₑᵤ, params.Kᵐⁱⁿₚₒ₄.P, params.Sᵣₐₜ.P, params.Pₘₐₓ.P, params.K_NO₃.P, params.K_NH₄.P, params.θᶠᵉₒₚₜ.P, params.Kₛᵢᴰᵐⁱⁿ, params.Si̅, params.Kₛᵢ, params.μₘₐₓ⁰, params.bₚ, params.t_dark.P, L_day, params.α.P)
 
     #shear
-    sh = if(zₘₓₗ<z, params.shₘₓₗ, params.shₛᵤ)
+    sh = get_sh(z, zₘₓₗ, params.shₘₓₗ, params.shₛᵤ)
 
     #grazing
     z_food_total = food_total(params.p.Z, (; P, D, POC)) #could store this as an auxiliary field that is forced so it doesn't need to be computed for P, D, POC and Z
@@ -57,13 +53,14 @@ function P_forcing(x, y, z, t, P, D, Chlᴾ, Chlᴰ, Feᴾ, Feᴰ, Siᴰ, Z, M, 
     return (1 - params.δ.P)*μᴾ*P - params.m.P*P^2/(params.Kₘ+P) - sh*params.wᴾ*P^2 - gᶻₚ*Z - gᴹₚ*M#eq 1
 end
 
-function D_forcing(x, y, z, t, P, D, Chlᴾ, Chlᴰ, Feᴾ, Feᴰ, Siᴰ, Z, M, DOC, POC, GOC, Feᴾᴼ, Feᴳᴼ, Siᴾᴼ, Siᴳᴼ, NO₃, NH₄, PO₄, Fe, Si, CaCO₃, DIC, O₂, PARᴾ, PARᴰ, T, zₘₓₗ, zₑᵤ, ϕ, params)
+function D_forcing(x, y, z, t, P, D, Chlᴾ, Chlᴰ, Feᴾ, Feᴰ, Siᴰ, Z, M, DOC, POC, GOC, Feᴾᴼ, Feᴳᴼ, Siᴾᴼ, Siᴳᴼ, NO₃, NH₄, PO₄, Fe, Si, CaCO₃, DIC, O₂, PAR¹, PAR², PAR³, T, zₘₓₗ, zₑᵤ, ϕ, params)
+    PARᴾ, PARᴰ, PAR = PAR_components(PAR¹, PAR², PAR³, params.β₁, params.β₂, params.β₃)
     #growth
     L_day = params.L_day(t)
-    μᴰ = μᵢ(D, Chlᴰ, Feᴰ, Siᴰ, NO₃, NH₄, PO₄, Si, PARᴰ, T, zₘₓₗ, zₑᵤ, params.Kᵐⁱⁿₚₒ₄.D, params.Sᵣₐₜ.D, params.Pₘₐₓ.D, params.K_NO₃.D, params.K_NH₄.D, params.θᶠᵉₒₚₜ.D, params.Kₛᵢᴰᵐⁱⁿ, params.Si̅, params.Kₛᵢ, params.μₘₐₓ⁰, params.bₚ, params.t_dark.D, L_day, params.α.D)
+    μᴰ, Lₗᵢₘᴰ  = μᵢ(D, Chlᴰ, Feᴰ, Siᴰ, NO₃, NH₄, PO₄, Si, PARᴰ, T, zₘₓₗ, zₑᵤ, params.Kᵐⁱⁿₚₒ₄.D, params.Sᵣₐₜ.D, params.Pₘₐₓ.D, params.K_NO₃.D, params.K_NH₄.D, params.θᶠᵉₒₚₜ.D, params.Kₛᵢᴰᵐⁱⁿ, params.Si̅, params.Kₛᵢ, params.μₘₐₓ⁰, params.bₚ, params.t_dark.D, L_day, params.α.D)
 
     #shear
-    sh = if(zₘₓₗ<z, params.shₘₓₗ, params.shₛᵤ) 
+    sh = get_sh(z, zₘₓₗ, params.shₘₓₗ, params.shₛᵤ)
 
     #grazing
     z_food_total = food_total(params.p.Z, (; P, D, POC)) #could store this as an auxiliary field that is forced so it doesn't need to be computed for P, D, POC and Z
@@ -75,15 +72,16 @@ function D_forcing(x, y, z, t, P, D, Chlᴾ, Chlᴰ, Feᴾ, Feᴰ, Siᴰ, Z, M, 
     return (1 - params.δ.D)*μᴰ*D - params.m.D*D^2/(params.Kₘ+D) - sh*(params.wᴾ+ params.wₘₐₓᴰ*(1-Lₗᵢₘᴰ))*D^2 - gᶻ_D*Z - gᴹ_D*M#eq 9
 end
 
-function Chlᴾ_forcing(x, y, z, t, P, D, Chlᴾ, Chlᴰ, Feᴾ, Feᴰ, Siᴰ, Z, M, DOC, POC, GOC, Feᴾᴼ, Feᴳᴼ, Siᴾᴼ, Siᴳᴼ, NO₃, NH₄, PO₄, Fe, Si, CaCO₃, DIC, O₂, PARᴾ, PARᴰ, T, zₘₓₗ, zₑᵤ, ϕ, params)
+function Chlᴾ_forcing(x, y, z, t, P, D, Chlᴾ, Chlᴰ, Feᴾ, Feᴰ, Siᴰ, Z, M, DOC, POC, GOC, Feᴾᴼ, Feᴳᴼ, Siᴾᴼ, Siᴳᴼ, NO₃, NH₄, PO₄, Fe, Si, CaCO₃, DIC, O₂, PAR¹, PAR², PAR³, T, zₘₓₗ, zₑᵤ, ϕ, params)
+    PARᴾ, PARᴰ, PAR = PAR_components(PAR¹, PAR², PAR³, params.β₁, params.β₂, params.β₃)
     #growth
     L_day = params.L_day(t)
-    μᴾ = μᵢ(P, Chlᴾ, Feᴾ, Siᴰ, NO₃, NH₄, PO₄, Inf, PARᴾ, T, zₘₓₗ, zₑᵤ, params.Kᵐⁱⁿₚₒ₄.P, params.Sᵣₐₜ.P, params.Pₘₐₓ.P, params.K_NO₃.P, params.K_NH₄.P, params.θᶠᵉₒₚₜ.P, params.Kₛᵢᴰᵐⁱⁿ, params.Si̅, params.Kₛᵢ, params.μₘₐₓ⁰, params.bₚ, params.t_dark.P, L_day, params.α.P)
+    μᴾ, Lₗᵢₘᴾ  = μᵢ(P, Chlᴾ, Feᴾ, Siᴰ, NO₃, NH₄, PO₄, Inf, PARᴾ, T, zₘₓₗ, zₑᵤ, params.Kᵐⁱⁿₚₒ₄.P, params.Sᵣₐₜ.P, params.Pₘₐₓ.P, params.K_NO₃.P, params.K_NH₄.P, params.θᶠᵉₒₚₜ.P, params.Kₛᵢᴰᵐⁱⁿ, params.Si̅, params.Kₛᵢ, params.μₘₐₓ⁰, params.bₚ, params.t_dark.P, L_day, params.α.P)
 
     μ̌ᴾ = (μᴾ/f₁(L_day))
     ρᶜʰˡᵖ = 144*μ̌ᴾ*P/(params.α.P*Chlᴾ*PARᴾ/L_day)
     #shear
-    sh = if(zₘₓₗ<z, params.shₘₓₗ, params.shₛᵤ)
+    sh = ifelse(zₘₓₗ<z, params.shₘₓₗ, params.shₛᵤ)
 
     #grazing
     z_food_total = food_total(params.p.Z, (; P, D, POC)) #could store this as an auxiliary field that is forced so it doesn't need to be computed for P, D, POC and Z
@@ -95,15 +93,16 @@ function Chlᴾ_forcing(x, y, z, t, P, D, Chlᴾ, Chlᴰ, Feᴾ, Feᴰ, Siᴰ, Z
     return (1 - params.δ.P)*(12*params.θᶜʰˡₘᵢₙ + (θᶜʰˡₘₐₓ.P-θᶜʰˡₘᵢₙ)*ρᶜʰˡᴾ)*μᴾ*P - params.m.P*P*Chlᴾ/(params.Kₘ+P) - sh*params.wᴾ*P*Chlᴾ - (Chlᴾ/P)*(gᶻₚ*Z + gᴹₚ*M)#eq 14
 end
 
-function Chlᴰ_forcing(x, y, z, t, P, D, Chlᴾ, Chlᴰ, Feᴾ, Feᴰ, Siᴰ, Z, M, DOC, POC, GOC, Feᴾᴼ, Feᴳᴼ, Siᴾᴼ, Siᴳᴼ, NO₃, NH₄, PO₄, Fe, Si, CaCO₃, DIC, O₂, PARᴾ, PARᴰ, T, zₘₓₗ, zₑᵤ, ϕ, params)
+function Chlᴰ_forcing(x, y, z, t, P, D, Chlᴾ, Chlᴰ, Feᴾ, Feᴰ, Siᴰ, Z, M, DOC, POC, GOC, Feᴾᴼ, Feᴳᴼ, Siᴾᴼ, Siᴳᴼ, NO₃, NH₄, PO₄, Fe, Si, CaCO₃, DIC, O₂, PAR¹, PAR², PAR³, T, zₘₓₗ, zₑᵤ, ϕ, params)
+    PARᴾ, PARᴰ, PAR = PAR_components(PAR¹, PAR², PAR³, params.β₁, params.β₂, params.β₃)
     #growth
     L_day = params.L_day(t)
-    μᴰ = μᵢ(D, Chlᴰ, Feᴰ, Siᴰ, NO₃, NH₄, PO₄, Si, PARᴰ, T, zₘₓₗ, zₑᵤ, params.Kᵐⁱⁿₚₒ₄.D, params.Sᵣₐₜ.D, params.Pₘₐₓ.D, params.K_NO₃.D, params.K_NH₄.D, params.θᶠᵉₒₚₜ.D, params.Kₛᵢᴰᵐⁱⁿ, params.Si̅, params.Kₛᵢ, params.μₘₐₓ⁰, params.bₚ, params.t_dark.D, L_day, params.α.D)
+    μᴰ, Lₗᵢₘᴰ = μᵢ(D, Chlᴰ, Feᴰ, Siᴰ, NO₃, NH₄, PO₄, Si, PARᴰ, T, zₘₓₗ, zₑᵤ, params.Kᵐⁱⁿₚₒ₄.D, params.Sᵣₐₜ.D, params.Pₘₐₓ.D, params.K_NO₃.D, params.K_NH₄.D, params.θᶠᵉₒₚₜ.D, params.Kₛᵢᴰᵐⁱⁿ, params.Si̅, params.Kₛᵢ, params.μₘₐₓ⁰, params.bₚ, params.t_dark.D, L_day, params.α.D)
 
     μ̌ᴰ = (μᴰ/f₁(L_day)) #eq 15a
     ρᶜʰˡᴰ = 144*μ̌ᴰ*D/(params.α.D*Chlᴰ*PARᴰ/L_day) #eq 15a
     #shear
-    sh = if(zₘₓₗ<z, params.shₘₓₗ, params.shₛᵤ) 
+    sh = get_sh(z, zₘₓₗ, params.shₘₓₗ, params.shₛᵤ)
 
     #grazing
     z_food_total = food_total(params.p.Z, (; P, D, POC)) #could store this as an auxiliary field that is forced so it doesn't need to be computed for P, D, POC and Z
@@ -115,7 +114,8 @@ function Chlᴰ_forcing(x, y, z, t, P, D, Chlᴾ, Chlᴰ, Feᴾ, Feᴰ, Siᴰ, Z
     return (1 - params.δ.D)*(12*params.θᶜʰˡₘᵢₙ + (θᶜʰˡₘₐₓ.P-θᶜʰˡₘᵢₙ)*ρᶜʰˡᴾ)*μᴰ*D - params.m.D*D*Chlᴰ/(params.Kₘ+D) - sh*(params.wᴾ+ params.wₘₐₓᴰ*(1-Lₗᵢₘᴰ))*D*Chlᴰ - (Chlᴰ/D)*(gᶻ_D*Z + gᴹ_D*M)#eq 14
 end
 
-function Feᴾ_forcing(x, y, z, t, P, D, Chlᴾ, Chlᴰ, Feᴾ, Feᴰ, Siᴰ, Z, M, DOC, POC, GOC, Feᴾᴼ, Feᴳᴼ, Siᴾᴼ, Siᴳᴼ, NO₃, NH₄, PO₄, Fe, Si, CaCO₃, DIC, O₂, PARᴾ, PARᴰ, T, zₘₓₗ, zₑᵤ, ϕ, params)
+function Feᴾ_forcing(x, y, z, t, P, D, Chlᴾ, Chlᴰ, Feᴾ, Feᴰ, Siᴰ, Z, M, DOC, POC, GOC, Feᴾᴼ, Feᴳᴼ, Siᴾᴼ, Siᴳᴼ, NO₃, NH₄, PO₄, Fe, Si, CaCO₃, DIC, O₂, PAR¹, PAR², PAR³, T, zₘₓₗ, zₑᵤ, ϕ, params)
+    PARᴾ, PARᴰ, PAR = PAR_components(PAR¹, PAR², PAR³, params.β₁, params.β₂, params.β₃)
     #growth
     L_day = params.L_day(t)
     μₚ = (μₘₐₓ⁰*params.bₚ^T)
@@ -134,7 +134,7 @@ function Feᴾ_forcing(x, y, z, t, P, D, Chlᴾ, Chlᴰ, Feᴾ, Feᴰ, Siᴰ, Z,
     #Not really sure why it defined θᶠᵉₘᵢₙ, perhaps a typo or used somewhere else
    
     #shear
-    sh = if(zₘₓₗ<z, params.shₘₓₗ, params.shₛᵤ)
+    sh = ifelse(zₘₓₗ<z, params.shₘₓₗ, params.shₛᵤ)
 
     #grazing
     z_food_total = food_total(params.p.Z, (; P, D, POC)) #could store this as an auxiliary field that is forced so it doesn't need to be computed for P, D, POC and Z
@@ -146,7 +146,8 @@ function Feᴾ_forcing(x, y, z, t, P, D, Chlᴾ, Chlᴰ, Feᴾ, Feᴰ, Siᴰ, Z,
     return (1 - params.δ.P)*μᶠᵉᴾ*P - params.m.P*P*Feᴾ/(params.Kₘ+P) - sh*params.wᴾ*P*Feᴾ - (Feᴾ/P)*(gᶻₚ*Z + gᴹₚ*M)#eq 16
 end
 
-function Feᴰ_forcing(x, y, z, t, P, D, Chlᴾ, Chlᴰ, Feᴾ, Feᴰ, Siᴰ, Z, M, DOC, POC, GOC, Feᴾᴼ, Feᴳᴼ, Siᴾᴼ, Siᴳᴼ, NO₃, NH₄, PO₄, Fe, Si, CaCO₃, DIC, O₂, PARᴾ, PARᴰ, T, zₘₓₗ, zₑᵤ, ϕ, params)
+function Feᴰ_forcing(x, y, z, t, P, D, Chlᴾ, Chlᴰ, Feᴾ, Feᴰ, Siᴰ, Z, M, DOC, POC, GOC, Feᴾᴼ, Feᴳᴼ, Siᴾᴼ, Siᴳᴼ, NO₃, NH₄, PO₄, Fe, Si, CaCO₃, DIC, O₂, PAR¹, PAR², PAR³, T, zₘₓₗ, zₑᵤ, ϕ, params)
+    PARᴾ, PARᴰ, PAR = PAR_components(PAR¹, PAR², PAR³, params.β₁, params.β₂, params.β₃)
     #growth
     L_day = params.L_day(t)
     μ_D = (μₘₐₓ⁰*params.bₚ^T)
@@ -167,7 +168,7 @@ function Feᴰ_forcing(x, y, z, t, P, D, Chlᴾ, Chlᴰ, Feᴾ, Feᴰ, Siᴰ, Z,
     μᶠᵉᴰ = params.θᶠᵉₘₐₓ.D*L_mondo(bFe, K_Feᶠᵉᴰ)*((4-4.5*L_Feᴰ)/(L_Feᴰ+0.5))*((1 - (Feᴰ/D)/params.θᶠᵉₘₐₓ.D)/(1.05 - (Feᴰ/D)/params.θᶠᵉₘₐₓ.D))*μ_D
     
     #shear
-    sh = if(zₘₓₗ<z, params.shₘₓₗ, params.shₛᵤ) 
+    sh = get_sh(z, zₘₓₗ, params.shₘₓₗ, params.shₛᵤ)
 
     #grazing
     z_food_total = food_total(params.p.Z, (; P, D, POC)) #could store this as an auxiliary field that is forced so it doesn't need to be computed for P, D, POC and Z
@@ -179,10 +180,11 @@ function Feᴰ_forcing(x, y, z, t, P, D, Chlᴾ, Chlᴰ, Feᴾ, Feᴰ, Siᴰ, Z,
     return (1 - params.δ.D)*μᶠᵉᴰ*D - params.m.D*D*Feᴰ/(params.Kₘ+D) - sh*(params.wᴾ+ params.wₘₐₓᴰ*(1-Lₗᵢₘᴰ))*D*Feᴰ - (Feᴰ/D)*(gᶻ_D*Z + gᴹ_D*M)#eq 17
 end
 
-function Siᴰ_forcing(x, y, z, t, P, D, Chlᴾ, Chlᴰ, Feᴾ, Feᴰ, Siᴰ, Z, M, DOC, POC, GOC, Feᴾᴼ, Feᴳᴼ, Siᴾᴼ, Siᴳᴼ, NO₃, NH₄, PO₄, Fe, Si, CaCO₃, DIC, O₂, PARᴾ, PARᴰ, T, zₘₓₗ, zₑᵤ, ϕ, params)
+function Siᴰ_forcing(x, y, z, t, P, D, Chlᴾ, Chlᴰ, Feᴾ, Feᴰ, Siᴰ, Z, M, DOC, POC, GOC, Feᴾᴼ, Feᴳᴼ, Siᴾᴼ, Siᴳᴼ, NO₃, NH₄, PO₄, Fe, Si, CaCO₃, DIC, O₂, PAR¹, PAR², PAR³, T, zₘₓₗ, zₑᵤ, ϕ, params)
+    PARᴾ, PARᴰ, PAR = PAR_components(PAR¹, PAR², PAR³, params.β₁, params.β₂, params.β₃)
     #growth
     L_day = params.L_day(t)
-    μᴰ = μᵢ(D, Chlᴰ, Feᴰ, Siᴰ, NO₃, NH₄, PO₄, Si, PARᴰ, T, zₘₓₗ, zₑᵤ, params.Kᵐⁱⁿₚₒ₄.D, params.Sᵣₐₜ.D, params.Pₘₐₓ.D, params.K_NO₃.D, params.K_NH₄.D, params.θᶠᵉₒₚₜ.D, params.Kₛᵢᴰᵐⁱⁿ, params.Si̅, params.Kₛᵢ, params.μₘₐₓ⁰, params.bₚ, params.t_dark.D, L_day, params.α.D)
+    μᴰ, Lₗᵢₘᴰ = μᵢ(D, Chlᴰ, Feᴰ, Siᴰ, NO₃, NH₄, PO₄, Si, PARᴰ, T, zₘₓₗ, zₑᵤ, params.Kᵐⁱⁿₚₒ₄.D, params.Sᵣₐₜ.D, params.Pₘₐₓ.D, params.K_NO₃.D, params.K_NH₄.D, params.θᶠᵉₒₚₜ.D, params.Kₛᵢᴰᵐⁱⁿ, params.Si̅, params.Kₛᵢ, params.μₘₐₓ⁰, params.bₚ, params.t_dark.D, L_day, params.α.D)
 
 
     #optimum quota
@@ -194,7 +196,7 @@ function Siᴰ_forcing(x, y, z, t, P, D, Chlᴾ, Chlᴰ, Feᴾ, Feᴰ, Siᴰ, Z,
     θₒₚₜˢⁱᴰ = params.θˢⁱᴰₘ*Lₗᵢₘ₁ˢⁱᴰ*min(5.4, (4.4*exp(-4.23*Fₗᵢₘ₁ˢⁱᴰ)*Fₗᵢₘ₂ˢⁱᴰ+1)*(1+2*Lₗᵢₘ₂ˢⁱᴰ))#eq 22
     
     #shear
-    sh = if(zₘₓₗ<z, params.shₘₓₗ, params.shₛᵤ) 
+    sh = get_sh(z, zₘₓₗ, params.shₘₓₗ, params.shₛᵤ)
 
     #grazing
     z_food_total = food_total(params.p.Z, (; P, D, POC)) #could store this as an auxiliary field that is forced so it doesn't need to be computed for P, D, POC and Z

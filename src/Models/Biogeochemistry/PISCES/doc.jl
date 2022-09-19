@@ -9,6 +9,7 @@ end
 function DOC_forcing(i, j, k, grid, clock, model_fields, params)
     P, D, Chlᴾ, Chlᴰ, Feᴾ, Feᴰ, Siᴰ, Z, M, DOC, POC, GOC, Feᴾᴼ, Feᴳᴼ, Siᴾᴼ, Siᴳᴼ, NO₃, NH₄, PO₄, Fe, Si, CaCO₃, DIC, O₂, PARᴾ, PARᴰ, T, zₘₓₗ, zₑᵤ, ϕ = get_local_value.(i, j, k, values(model_fields[(:P, :D, :Chlᴾ, :Chlᴰ, :Feᴾ, :Feᴰ, :Siᴰ, :Z, :M, :DOC, :POC, :GOC, :Feᴾᴼ, :Feᴳᴼ, :Siᴾᴼ, :Siᴳᴼ, :NO₃, :NH₄, :PO₄, :Fe, :Si, :CaCO₃, :DIC, :O₂, :PARᴾ, :PARᴰ, :T, :zₘₓₗ, :zₑᵤ, :ϕ)]))
     x, y, z, t = grid.xᶜᵃᵃ[i], grid.yᵃᶜᵃ[j], grid.zᵃᵃᶜ[k], clock
+    PARᴾ, PARᴰ, PAR = PAR_components(PAR¹, PAR², PAR³, params.β₁, params.β₂, params.β₃)
 
     L_day = params.L_day(t)
     #Plankton quality
@@ -63,8 +64,8 @@ function DOC_forcing(i, j, k, grid, clock, model_fields, params)
     gᴹ_GO_FF = params.g_ff*f_M*(params._GOᵐⁱⁿ + (200-params._GOᵐⁱⁿ)*max(0, z - max(zₑᵤ, zₘₓₗ))/5000)*GOC
 
     #plankton growth
-    μᴾ = μᵢ(P, Chlᴾ, Feᴾ, Siᴰ, NO₃, NH₄, PO₄, Inf, PARᴾ, T, zₘₓₗ, zₑᵤ, params.Kᵐⁱⁿₚₒ₄.P, params.Sᵣₐₜ.P, params.Pₘₐₓ.P, params.K_NO₃.P, params.K_NH₄.P, params.θᶠᵉₒₚₜ.P, params.Kₛᵢᴰᵐⁱⁿ, params.Si̅, params.Kₛᵢ, params.μₘₐₓ⁰, params.bₚ, params.t_dark.P, L_day, params.α.P)
-    μᴰ = μᵢ(D, Chlᴰ, Feᴰ, Siᴰ, NO₃, NH₄, PO₄, Si, PARᴰ, T, zₘₓₗ, zₑᵤ, params.Kᵐⁱⁿₚₒ₄.D, params.Sᵣₐₜ.D, params.Pₘₐₓ.D, params.K_NO₃.D, params.K_NH₄.D, params.θᶠᵉₒₚₜ.D, params.Kₛᵢᴰᵐⁱⁿ, params.Si̅, params.Kₛᵢ, params.μₘₐₓ⁰, params.bₚ, params.t_dark.D, L_day, params.α.D)
+    μᴾ, Lₗᵢₘᴾ  = μᵢ(P, Chlᴾ, Feᴾ, Siᴰ, NO₃, NH₄, PO₄, Inf, PARᴾ, T, zₘₓₗ, zₑᵤ, params.Kᵐⁱⁿₚₒ₄.P, params.Sᵣₐₜ.P, params.Pₘₐₓ.P, params.K_NO₃.P, params.K_NH₄.P, params.θᶠᵉₒₚₜ.P, params.Kₛᵢᴰᵐⁱⁿ, params.Si̅, params.Kₛᵢ, params.μₘₐₓ⁰, params.bₚ, params.t_dark.P, L_day, params.α.P)
+    μᴰ, Lₗᵢₘᴰ = μᵢ(D, Chlᴰ, Feᴰ, Siᴰ, NO₃, NH₄, PO₄, Si, PARᴰ, T, zₘₓₗ, zₑᵤ, params.Kᵐⁱⁿₚₒ₄.D, params.Sᵣₐₜ.D, params.Pₘₐₓ.D, params.K_NO₃.D, params.K_NH₄.D, params.θᶠᵉₒₚₜ.D, params.Kₛᵢᴰᵐⁱⁿ, params.Si̅, params.Kₛᵢ, params.μₘₐₓ⁰, params.bₚ, params.t_dark.D, L_day, params.α.D)
 
     #Upper trophic mesozooplankton feeding
     if params.upper_trophic_feeding
@@ -77,23 +78,26 @@ function DOC_forcing(i, j, k, grid, clock, model_fields, params)
     Bactᵢⱼₖ = Bact(x, y, z, model_fields.Z, model_fields.M, max(zₘₓₗ, zₑᵤ))
 
     bFe = Fe
-    L_Feᴮᵃᶜᵗ = L_mondo(Fe, params.K_Fe.Bact)
-    Lₚₒ₄ᴮᵃᶜᵗ = L_mondo(PO₄, params.Kₚₒ₄ᴮᵃᶜᵗ)
-    L_NO₃ᴮᵃᶜᵗ = L_NO₃(NO₃, NH₄, params.K_NO₃.Bact, params.K_NH₄.Bact)
-    Lₙᴮᵃᶜᵗ = L_NO₃ᴮᵃᶜᵗ + L_NH₄(NO₃, NH₄, params.K_NO₃.Bact, params.K_NH₄.Bact) 
-    Lₗᵢₘᴮᵃᶜᵗ = min(Lₙᴮᵃᶜᵗ, Lₚₒ₄ᴮᵃᶜᵗ, L_Feᴮᵃᶜᵗ)#eq 34c, assuming typo of Lₙₕ₄ vs Lₙ because why else is it defined?
     
-    Lᴮᵃᶜᵗ = Lₗᵢₘᴮᵃᶜᵗ*L_mondo(DOC, params.K_DOC)
+    Lᴮᵃᶜᵗ = Lₗᵢₘᴮᵃᶜᵗ(bFe, PO₄, NO₃, NH₄, params.K_Fe.Bact, params.Kₚₒ₄.Bact, params.K_NO₃.Bact, params.K_NH₄.bact)*L_mondo(DOC, params.K_DOC)
     μ_Bact = params.λ_DOC*params.bₚ*Bact*DOC*Lᴮᵃᶜᵗ/params.Bactᵣₑ #eq 33a, b say Lₗᵢₘᴮᵃᶜᵗ but think this must be Lᴮᵃᶜᵗ
 
     Remin = min(O₂/params.O₂ᵘᵗ, μ_Bact*(1-ΔO₂(O₂, params.O₂ᵐⁱⁿ¹, params.O₂ᵐⁱⁿ²)))
-    Denit = min(NO₃/params.rₙₒ₃⋆, μ_Bact*ΔO₂(O₂, params.O₂ᵐⁱⁿ¹, params.O₂ᵐⁱⁿ²))
+    Denit = min(NO₃/params.rₙₒ₃, μ_Bact*ΔO₂(O₂, params.O₂ᵐⁱⁿ¹, params.O₂ᵐⁱⁿ²))
 
     #aggregation
-    sh = if(zₘₓₗ<z, params.shₘₓₗ, params.shₛᵤ)
+    sh = get_sh(z, zₘₓₗ, params.shₘₓₗ, params.shₛᵤ)
     
     ϕ₁ᴰᴼᶜ = sh*(params.a₁*DOC + params.a₂*POC)*DOC 
     ϕ₂ᴰᴼᶜ = sh*params.a₃*GOC*DOC
     ϕ₃ᴰᴼᶜ = (params.a₄*POC + params.a₅*DOC)*DOC
-    return (1-params.γ.Z)*(1 - eᶻ - params.σᶻ)*Σgᶻ*Z + (1-γ.M)*(1 - eᴹ - params.σᴹ)*(Σgᴹ + gᴹ_GO_FF)*M + params.δ.P*μᴾ*P + params.δ.D*μᴰ*D + λₚₒ⋆*POC + (1 - params.γ.M)*Rᵤₚᴹ - Remin - Denit - ϕ₁ᴰᴼᶜ - ϕ₂ᴰᴼᶜ - ϕ₃ᴰᴼᶜ
+    return (1-params.γ.Z)*(1 - eᶻ - params.σᶻ)*Σgᶻ*Z + (1-γ.M)*(1 - eᴹ - params.σᴹ)*(Σgᴹ + gᴹ_GO_FF)*M + params.δ.P*μᴾ*P + params.δ.D*μᴰ*D + λₚₒ*POC + (1 - params.γ.M)*Rᵤₚᴹ - Remin - Denit - ϕ₁ᴰᴼᶜ - ϕ₂ᴰᴼᶜ - ϕ₃ᴰᴼᶜ
+end
+
+@inline function Lₗᵢₘᴮᵃᶜᵗ(bFe, PO₄, NO₃, NH₄, K_Feᴮᵃᶜᵗ, Kₚₒ₄ᴮᵃᶜᵗ, K_NO₃, K_NH₄)
+    L_Feᴮᵃᶜᵗ = L_mondo(Fe, K_Feᴮᵃᶜᵗ)
+    Lₚₒ₄ᴮᵃᶜᵗ = L_mondo(PO₄, Kₚₒ₄ᴮᵃᶜᵗ)
+    L_NO₃ᴮᵃᶜᵗ = L_NO₃(NO₃, NH₄, K_NO₃, K_NH₄)
+    Lₙᴮᵃᶜᵗ = L_NO₃ᴮᵃᶜᵗ + L_NH₄(NO₃, NH₄, K_NO₃, K_NH₄) 
+    return min(Lₙᴮᵃᶜᵗ, Lₚₒ₄ᴮᵃᶜᵗ, L_Feᴮᵃᶜᵗ)#eq 34c, assuming typo of Lₙₕ₄ vs Lₙ because why else is it defined?
 end
