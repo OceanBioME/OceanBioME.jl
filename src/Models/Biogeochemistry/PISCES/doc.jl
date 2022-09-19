@@ -1,13 +1,6 @@
-@inline function Bact(x, y, z, Z, M, zₘₐₓ)
-    #Do macroalgaes not contribute to the bacteria pool? So need to add some proxy from their biomass
-    Zᵢⱼₖ = interpolate(Z, x, y, z)
-    Mᵢⱼₖ = interpolate(M, x, y, z)
-    return ifelse(z<=zₘₐₓ, min(0.7*(Zᵢⱼₖ + 2*Mᵢⱼₖ), 4), Bact(x, y, zₘₐₓ, k, Z, M, zₘₐₓ)*(zₘₐₓ/z)^0.683)
-end
-
 #since Bact needs access to the whole column of Z and M need to use discrete forcings anything that depends on it
 function DOC_forcing(i, j, k, grid, clock, model_fields, params)
-    P, D, Chlᴾ, Chlᴰ, Feᴾ, Feᴰ, Siᴰ, Z, M, DOC, POC, GOC, Feᴾᴼ, Feᴳᴼ, Siᴾᴼ, Siᴳᴼ, NO₃, NH₄, PO₄, Fe, Si, CaCO₃, DIC, O₂, PARᴾ, PARᴰ, T, zₘₓₗ, zₑᵤ, ϕ = get_local_value.(i, j, k, values(model_fields[(:P, :D, :Chlᴾ, :Chlᴰ, :Feᴾ, :Feᴰ, :Siᴰ, :Z, :M, :DOC, :POC, :GOC, :Feᴾᴼ, :Feᴳᴼ, :Siᴾᴼ, :Siᴳᴼ, :NO₃, :NH₄, :PO₄, :Fe, :Si, :CaCO₃, :DIC, :O₂, :PARᴾ, :PARᴰ, :T, :zₘₓₗ, :zₑᵤ, :ϕ)]))
+    P, D, Chlᴾ, Chlᴰ, Feᴾ, Feᴰ, Siᴰ, Z, M, DOC, POC, GOC, Feᴾᴼ, Feᴳᴼ, Siᴾᴼ, Siᴳᴼ, NO₃, NH₄, PO₄, Fe, Si, CaCO₃, DIC, O₂, PAR¹, PAR², PAR³, T, S, zₘₓₗ, zₑᵤ, ϕ = get_local_value.(i, j, k, values(model_fields[(:P, :D, :Chlᴾ, :Chlᴰ, :Feᴾ, :Feᴰ, :Siᴰ, :Z, :M, :DOC, :POC, :GOC, :Feᴾᴼ, :Feᴳᴼ, :Siᴾᴼ, :Siᴳᴼ, :NO₃, :NH₄, :PO₄, :Fe, :Si, :CaCO₃, :DIC, :O₂, :PAR¹, :PAR², :PAR³, :T, :S, :zₘₓₗ, :zₑᵤ, :ϕ)]))
     x, y, z, t = grid.xᶜᵃᵃ[i], grid.yᵃᶜᵃ[j], grid.zᵃᵃᶜ[k], clock
     PARᴾ, PARᴰ, PAR = PAR_components(PAR¹, PAR², PAR³, params.β₁, params.β₂, params.β₃)
 
@@ -91,13 +84,5 @@ function DOC_forcing(i, j, k, grid, clock, model_fields, params)
     ϕ₁ᴰᴼᶜ = sh*(params.a₁*DOC + params.a₂*POC)*DOC 
     ϕ₂ᴰᴼᶜ = sh*params.a₃*GOC*DOC
     ϕ₃ᴰᴼᶜ = (params.a₄*POC + params.a₅*DOC)*DOC
-    return (1-params.γ.Z)*(1 - eᶻ - params.σᶻ)*Σgᶻ*Z + (1-γ.M)*(1 - eᴹ - params.σᴹ)*(Σgᴹ + gᴹ_GO_FF)*M + params.δ.P*μᴾ*P + params.δ.D*μᴰ*D + λₚₒ*POC + (1 - params.γ.M)*Rᵤₚᴹ - Remin - Denit - ϕ₁ᴰᴼᶜ - ϕ₂ᴰᴼᶜ - ϕ₃ᴰᴼᶜ
-end
-
-@inline function Lₗᵢₘᴮᵃᶜᵗ(bFe, PO₄, NO₃, NH₄, K_Feᴮᵃᶜᵗ, Kₚₒ₄ᴮᵃᶜᵗ, K_NO₃, K_NH₄)
-    L_Feᴮᵃᶜᵗ = L_mondo(Fe, K_Feᴮᵃᶜᵗ)
-    Lₚₒ₄ᴮᵃᶜᵗ = L_mondo(PO₄, Kₚₒ₄ᴮᵃᶜᵗ)
-    L_NO₃ᴮᵃᶜᵗ = L_NO₃(NO₃, NH₄, K_NO₃, K_NH₄)
-    Lₙᴮᵃᶜᵗ = L_NO₃ᴮᵃᶜᵗ + L_NH₄(NO₃, NH₄, K_NO₃, K_NH₄) 
-    return min(Lₙᴮᵃᶜᵗ, Lₚₒ₄ᴮᵃᶜᵗ, L_Feᴮᵃᶜᵗ)#eq 34c, assuming typo of Lₙₕ₄ vs Lₙ because why else is it defined?
+    return (1-params.γ.Z)*(1 - eᶻ - params.σᶻ)*Σgᶻ*Z + (1-γ.M)*(1 - eᴹ - params.σ.M)*(Σgᴹ + gᴹ_GO_FF)*M + params.δ.P*μᴾ*P + params.δ.D*μᴰ*D + λₚₒ*POC + (1 - params.γ.M)*Rᵤₚᴹ - Remin - Denit - ϕ₁ᴰᴼᶜ - ϕ₂ᴰᴼᶜ - ϕ₃ᴰᴼᶜ
 end

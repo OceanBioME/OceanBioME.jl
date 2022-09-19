@@ -24,7 +24,7 @@ include("par.jl")
 @inline get_sh(z, zₘₓₗ, shₘₓₗ, shₛᵤ) = ifelse(zₘₓₗ<z, shₘₓₗ, shₛᵤ)
 
 tracers=(:P, :D, :Chlᴾ, :Chlᴰ, :Feᴾ, :Feᴰ, :Siᴰ, :Z, :M, :DOC, :POC, :GOC, :Feᴾᴼ, :Feᴳᴼ, :Siᴾ, :NO₃, :NH₄, :PO₄, :Fe, :Si, :CaCO₃, :DIC, :O₂)
-required_auxiliary_fields = (:PAR¹, :PAR², :PAR³, :T, :zₑᵤ, :zₘₓₗ, :ϕ) #PAR for phytoplankton, PAR for diatoms, temperature, euphotic layer depth (2D field), mixing layer depth (2D field), latitude (2D field)
+required_auxiliary_fields = (:PAR¹, :PAR², :PAR³, :T, :S, :zₑᵤ, :zₘₓₗ, :ϕ) #PAR for phytoplankton, PAR for diatoms, temperature, euphotic layer depth (2D field), mixing layer depth (2D field), latitude (2D field)
 
 optional_tracers=NamedTuple()
 
