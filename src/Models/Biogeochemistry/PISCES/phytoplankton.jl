@@ -21,23 +21,31 @@
 @inline P₁(P, Pₘₐₓ) = min(P, params.Pₘₐₓ[I])
 @inline P₂(P, Pₘₐₓ) = min(0, P - params.Pₘₐₓ[I])
 
+@inline function μᵢ(P, Chlᴾ, Feᴾ, Siᴰ, NO₃, NH₄, PO₄, Si, PARᴾ, T, zₘₓₗ, zₑᵤ, Kᵐⁱⁿₚₒ₄, Sᵣₐₜ, Pₘₐₓ, K_NO₃, K_NH₄, θᶠᵉₒₚₜ, Kₛᵢᴰᵐⁱⁿ, Si̅, Kₛᵢ, μₘₐₓ⁰, b, t_dark, L_day, α)
+    #eq2a and 11b
+    #Not convinced this is correct as no explicit definition of θᴺᴵ after eq 27b so infered from NEMO source code
+    Lₚₒ₄ᴾ = L_mondo(PO₄, K(P, Kᵐⁱⁿₚₒ₄, Sᵣₐₜ, Pₘₐₓ))
+    L_NO₃ᴾ = L_NO₃(NO₃, NH₄, K_NO₃, K_NH₄)
+    Lₙᴾ = L_NO₃ᴾ + L_NH₄(NO₃, NH₄, K_NO₃, K_NH₄) #eq 6c
+    L_Feᴾ = L_Fe(P, Chlᴾ, Feᴾ, θᶠᵉₒₚₜ, Lₙᴾ, Lₙₒ₃ᴾ)
+    Lₛᵢᴾ = L_mondo(Si, Kₛᵢᴰᵐⁱⁿ + 7*Si̅^2/(Kₛᵢ^2+Si̅^2)) # eq 11b, 12. Need a callback that records Sī
+
+    Lₗᵢₘᴾ = min(Lₚₒ₄ᴾ, Lₙᴾ, L_Feᴾ, Lₛᵢᴾ)
+
+    μₚ = μₘₐₓ⁰*b^T
+
+    return  μₚ*f₁(L_day)*f₂(zₘₓₗ, zₑᵤ, t_dark)*Cₚᵣₒ(P, Chlᴾ, PARᴾ, L_day, α, μₚ, Lₗᵢₘᴾ)*min(Lₚₒ₄ᴾ, Lₙᵖ)
+end
+
 #perhaps should add an auxiliary forcing before to compute all of the reused values such as z_food_total, F_lim^Z etc.? which otherwise get computed 4 times minimum
 #think the trade off here varies for CPU vs GPU where we might want to not recompute them on CPU but we may want to store less in memory on GPU
 function P_forcing(x, y, z, t, P, D, Chlᴾ, Chlᴰ, Feᴾ, Feᴰ, Siᴰ, Z, M, DOC, POC, GOC, Feᴾᴼ, Feᴳᴼ, Siᴾᴼ, Siᴳᴼ, NO₃, NH₄, PO₄, Fe, Si, CaCO₃, DIC, O₂, PARᴾ, PARᴰ, T, zₘₓₗ, zₑᵤ, ϕ, params)
     #growth
     L_day = params.L_day(t)
-
-    Lₚₒ₄ᴾ = L_mondo(PO₄, K(P, params.Kᵐⁱⁿ.PO₄.P, params.Sᵣₐₜ.P, params.Pₘₐₓ.P))
-    L_NO₃ᴾ = L_NO₃ᴾ(NO₃, NH₄, params.K_NO₃.P, params.K_NH₄.P)
-    Lₙᴾ = L_NO₃ᴾ + L_NH₄(NO₃, NH₄, params.K_NO₃.P, params.K_NH₄.P) #eq 6c
-    L_Feᴾ = L_Fe(P, Chlᴾ, Feᴾ, params.θᶠᵉₒₚₜ.P, Lₙᴾ, Lₙₒ₃ᴾ)
-    Lₗᵢₘᴾ = min(Lₚₒ₄ᴾ, Lₙᴾ, L_Feᴾ)
-
-    μₚ = (μₘₐₓ⁰*params.b.P^T)
-    μᴾ = μₚ*f₁(L_day)*f₂(zₘₓₗ, zₑᵤ, params.t_dark.P)*Cₚᵣₒ(P, Chlᴾ, PARᴾ, L_day, params.α.P, μₚ, Lₗᵢₘᴾ)*Lₗᵢₘᴾ #eq2a
+    μᴾ = μᵢ(P, Chlᴾ, Feᴾ, Siᴰ, NO₃, NH₄, PO₄, Inf, PARᴾ, T, zₘₓₗ, zₑᵤ, params.Kᵐⁱⁿₚₒ₄.P, params.Sᵣₐₜ.P, params.Pₘₐₓ.P, params.K_NO₃.P, params.K_NH₄.P, params.θᶠᵉₒₚₜ.P, params.Kₛᵢᴰᵐⁱⁿ, params.Si̅, params.Kₛᵢ, params.μₘₐₓ⁰, params.bₚ, params.t_dark.P, L_day, params.α.P)
 
     #shear
-    sh = zₘₓₗ<z ? params.shₘₓₗ : params.shₛᵤ
+    sh = if(zₘₓₗ<z, params.shₘₓₗ, params.shₛᵤ)
 
     #grazing
     z_food_total = food_total(params.p.Z, (; P, D, POC)) #could store this as an auxiliary field that is forced so it doesn't need to be computed for P, D, POC and Z
@@ -52,20 +60,10 @@ end
 function D_forcing(x, y, z, t, P, D, Chlᴾ, Chlᴰ, Feᴾ, Feᴰ, Siᴰ, Z, M, DOC, POC, GOC, Feᴾᴼ, Feᴳᴼ, Siᴾᴼ, Siᴳᴼ, NO₃, NH₄, PO₄, Fe, Si, CaCO₃, DIC, O₂, PARᴾ, PARᴰ, T, zₘₓₗ, zₑᵤ, ϕ, params)
     #growth
     L_day = params.L_day(t)
-
-    Lₚₒ₄ᴰ = L_mondo(PO₄, K(D, params.Kᵐⁱⁿ.PO₄.D, params.Sᵣₐₜ.D, params.Pₘₐₓ.D))
-    L_NO₃ᴰ = L_NO₃ᴾ(NO₃, NH₄, params.K_NO₃.D, params.K_NH₄.D)
-    Lₙᴰ = L_NO₃ᴰ + L_NH₄(NO₃, NH₄, params.K_NO₃.D, params.K_NH₄.D) #eq 6c
-    L_Feᴰ = L_Fe(P, Chlᴰ, Feᴰ, params.θᶠᵉₒₚₜ.D, Lₙᴰ, Lₙₒ₃ᴰ)
-    Lₛᵢᴰ = L_mondo(Si, params.Kₛᵢᴰᵐⁱⁿ + 7*params.Si̅^2/(params.Kₛᵢ^2+params.Si̅^2)) # eq 11b, 12. Need a callback that records Sī
-
-    Lₗᵢₘᴰ = min(Lₚₒ₄ᴰ, Lₙᴰ, L_Feᴰ, Lₛᵢᴰ)
-
-    μ_d = (μₘₐₓ⁰*params.b.D^T)
-    μᴰ = μ_d*f₁(L_day)*f₂(zₘₓₗ, zₑᵤ, params.t_dark.D)*Cₚᵣₒ(D, Chlᴰ, PARᴰ, L_day, params.α.D, μ_d, Lₗᵢₘᴰ)*Lₗᵢₘᴰ #eq2a
+    μᴰ = μᵢ(D, Chlᴰ, Feᴰ, Siᴰ, NO₃, NH₄, PO₄, Si, PARᴰ, T, zₘₓₗ, zₑᵤ, params.Kᵐⁱⁿₚₒ₄.D, params.Sᵣₐₜ.D, params.Pₘₐₓ.D, params.K_NO₃.D, params.K_NH₄.D, params.θᶠᵉₒₚₜ.D, params.Kₛᵢᴰᵐⁱⁿ, params.Si̅, params.Kₛᵢ, params.μₘₐₓ⁰, params.bₚ, params.t_dark.D, L_day, params.α.D)
 
     #shear
-    sh = zₘₓₗ<z ? params.shₘₓₗ : params.shₛᵤ 
+    sh = if(zₘₓₗ<z, params.shₘₓₗ, params.shₛᵤ) 
 
     #grazing
     z_food_total = food_total(params.p.Z, (; P, D, POC)) #could store this as an auxiliary field that is forced so it doesn't need to be computed for P, D, POC and Z
@@ -80,19 +78,12 @@ end
 function Chlᴾ_forcing(x, y, z, t, P, D, Chlᴾ, Chlᴰ, Feᴾ, Feᴰ, Siᴰ, Z, M, DOC, POC, GOC, Feᴾᴼ, Feᴳᴼ, Siᴾᴼ, Siᴳᴼ, NO₃, NH₄, PO₄, Fe, Si, CaCO₃, DIC, O₂, PARᴾ, PARᴰ, T, zₘₓₗ, zₑᵤ, ϕ, params)
     #growth
     L_day = params.L_day(t)
-
-    Lₚₒ₄ᴾ = L_mondo(PO₄, K(P, params.Kᵐⁱⁿ.PO₄.P, params.Sᵣₐₜ.P, params.Pₘₐₓ.P))
-    L_NO₃ᴾ = L_NO₃ᴾ(NO₃, NH₄, params.K_NO₃.P, params.K_NH₄.P)
-    Lₙᴾ = L_NO₃ᴾ + L_NH₄(NO₃, NH₄, params.K_NO₃.P, params.K_NH₄.P) #eq 6c
-    L_Feᴾ = L_Fe(P, Chlᴾ, Feᴾ, params.θᶠᵉₒₚₜ.P, Lₙᴾ, Lₙₒ₃ᴾ)
-
-    μₚ = (μₘₐₓ⁰*params.b.P^T)
-    μᴾ = μₚ*f₁(L_day)*f₂(zₘₓₗ, zₑᵤ, params.t_dark.P)*Cₚᵣₒ(P, Chlᴾ, PARᴾ, L_day, params.α.P, params.μᵣₑ, params.bᵣₑₛₚ)*min(Lₚₒ₄ᴾ, Lₙᴾ, L_Feᴾ) #eq2a
+    μᴾ = μᵢ(P, Chlᴾ, Feᴾ, Siᴰ, NO₃, NH₄, PO₄, Inf, PARᴾ, T, zₘₓₗ, zₑᵤ, params.Kᵐⁱⁿₚₒ₄.P, params.Sᵣₐₜ.P, params.Pₘₐₓ.P, params.K_NO₃.P, params.K_NH₄.P, params.θᶠᵉₒₚₜ.P, params.Kₛᵢᴰᵐⁱⁿ, params.Si̅, params.Kₛᵢ, params.μₘₐₓ⁰, params.bₚ, params.t_dark.P, L_day, params.α.P)
 
     μ̌ᴾ = (μᴾ/f₁(L_day))
     ρᶜʰˡᵖ = 144*μ̌ᴾ*P/(params.α.P*Chlᴾ*PARᴾ/L_day)
     #shear
-    sh = zₘₓₗ<z ? params.shₘₓₗ : params.shₛᵤ
+    sh = if(zₘₓₗ<z, params.shₘₓₗ, params.shₛᵤ)
 
     #grazing
     z_food_total = food_total(params.p.Z, (; P, D, POC)) #could store this as an auxiliary field that is forced so it doesn't need to be computed for P, D, POC and Z
@@ -107,22 +98,12 @@ end
 function Chlᴰ_forcing(x, y, z, t, P, D, Chlᴾ, Chlᴰ, Feᴾ, Feᴰ, Siᴰ, Z, M, DOC, POC, GOC, Feᴾᴼ, Feᴳᴼ, Siᴾᴼ, Siᴳᴼ, NO₃, NH₄, PO₄, Fe, Si, CaCO₃, DIC, O₂, PARᴾ, PARᴰ, T, zₘₓₗ, zₑᵤ, ϕ, params)
     #growth
     L_day = params.L_day(t)
-
-    Lₚₒ₄ᴰ = L_mondo(PO₄, K(D, params.Kᵐⁱⁿ.PO₄.D, params.Sᵣₐₜ.D, params.Pₘₐₓ.D))
-    L_NO₃ᴰ = L_NO₃ᴾ(NO₃, NH₄, params.K_NO₃.D, params.K_NH₄.D)
-    Lₙᴰ = L_NO₃ᴰ + L_NH₄(NO₃, NH₄, params.K_NO₃.D, params.K_NH₄.D) #eq 6c
-    L_Feᴰ = L_Fe(P, Chlᴰ, Feᴰ, params.θᶠᵉₒₚₜ.D, Lₙᴰ, Lₙₒ₃ᴰ)
-    Lₛᵢᴰ = L_mondo(Si, params.Kₛᵢᴰᵐⁱⁿ + 7*params.Si̅^2/(params.Kₛᵢ^2+params.Si̅^2)) # eq 11b, 12. Need a callback that records Sī
-
-    Lₗᵢₘᴰ = min(Lₚₒ₄ᴰ, Lₙᴰ, L_Feᴰ, Lₛᵢᴰ)
-
-    μ_d = (μₘₐₓ⁰*params.b.D^T)
-    μᴰ = μ_d*f₁(L_day)*f₂(zₘₓₗ, zₑᵤ, params.t_dark.D)*Cₚᵣₒ(D, Chlᴰ, PARᴰ, L_day, params.α.D, μ_d, Lₗᵢₘᴰ)*Lₗᵢₘᴰ #eq2a
+    μᴰ = μᵢ(D, Chlᴰ, Feᴰ, Siᴰ, NO₃, NH₄, PO₄, Si, PARᴰ, T, zₘₓₗ, zₑᵤ, params.Kᵐⁱⁿₚₒ₄.D, params.Sᵣₐₜ.D, params.Pₘₐₓ.D, params.K_NO₃.D, params.K_NH₄.D, params.θᶠᵉₒₚₜ.D, params.Kₛᵢᴰᵐⁱⁿ, params.Si̅, params.Kₛᵢ, params.μₘₐₓ⁰, params.bₚ, params.t_dark.D, L_day, params.α.D)
 
     μ̌ᴰ = (μᴰ/f₁(L_day)) #eq 15a
     ρᶜʰˡᴰ = 144*μ̌ᴰ*D/(params.α.D*Chlᴰ*PARᴰ/L_day) #eq 15a
     #shear
-    sh = zₘₓₗ<z ? params.shₘₓₗ : params.shₛᵤ 
+    sh = if(zₘₓₗ<z, params.shₘₓₗ, params.shₛᵤ) 
 
     #grazing
     z_food_total = food_total(params.p.Z, (; P, D, POC)) #could store this as an auxiliary field that is forced so it doesn't need to be computed for P, D, POC and Z
@@ -137,13 +118,13 @@ end
 function Feᴾ_forcing(x, y, z, t, P, D, Chlᴾ, Chlᴰ, Feᴾ, Feᴰ, Siᴰ, Z, M, DOC, POC, GOC, Feᴾᴼ, Feᴳᴼ, Siᴾᴼ, Siᴳᴼ, NO₃, NH₄, PO₄, Fe, Si, CaCO₃, DIC, O₂, PARᴾ, PARᴰ, T, zₘₓₗ, zₑᵤ, ϕ, params)
     #growth
     L_day = params.L_day(t)
-    μₚ = (μₘₐₓ⁰*params.b.P^T)
+    μₚ = (μₘₐₓ⁰*params.bₚ^T)
 
     P₂ = max(0, P - params.Pₘₐₓ)
     P₁ = P - P₂
     K_Feᶠᵉᴾ = params.K_Feᵐⁱⁿ.P*(P₁ + params.Sᵣₐₜ.P*P₂)/(P₁ + P₂)
 
-    L_NO₃ᴾ = L_NO₃ᴾ(NO₃, NH₄, params.K_NO₃.P, params.K_NH₄.P)
+    L_NO₃ᴾ = L_NO₃(NO₃, NH₄, params.K_NO₃.P, params.K_NH₄.P)
     Lₙᴾ = L_NO₃ᴾ + L_NH₄(NO₃, NH₄, params.K_NO₃.P, params.K_NH₄.P) #eq 6c
     L_Feᴾ = L_Fe(P, Chlᴾ, Feᴾ, params.θᶠᵉₒₚₜ.P, Lₙᴾ, Lₙₒ₃ᴾ)
 
@@ -153,7 +134,7 @@ function Feᴾ_forcing(x, y, z, t, P, D, Chlᴾ, Chlᴰ, Feᴾ, Feᴰ, Siᴰ, Z,
     #Not really sure why it defined θᶠᵉₘᵢₙ, perhaps a typo or used somewhere else
    
     #shear
-    sh = zₘₓₗ<z ? params.shₘₓₗ : params.shₛᵤ
+    sh = if(zₘₓₗ<z, params.shₘₓₗ, params.shₛᵤ)
 
     #grazing
     z_food_total = food_total(params.p.Z, (; P, D, POC)) #could store this as an auxiliary field that is forced so it doesn't need to be computed for P, D, POC and Z
@@ -168,14 +149,14 @@ end
 function Feᴰ_forcing(x, y, z, t, P, D, Chlᴾ, Chlᴰ, Feᴾ, Feᴰ, Siᴰ, Z, M, DOC, POC, GOC, Feᴾᴼ, Feᴳᴼ, Siᴾᴼ, Siᴳᴼ, NO₃, NH₄, PO₄, Fe, Si, CaCO₃, DIC, O₂, PARᴾ, PARᴰ, T, zₘₓₗ, zₑᵤ, ϕ, params)
     #growth
     L_day = params.L_day(t)
-    μ_D = (μₘₐₓ⁰*params.b.D^T)
+    μ_D = (μₘₐₓ⁰*params.bₚ^T)
 
     D₂ = max(0, D - params.Dₘₐₓ)
     D₁ = D - D₂
     K_Feᶠᵉᴰ = params.K_Feᵐⁱⁿ.D*(D₁ + params.Sᵣₐₜ.D*D₂)/(D₁ + D₂)
 
     Lₚₒ₄ᴰ = L_mondo(PO₄, K(D, params.Kᵐⁱⁿ.PO₄.D, params.Sᵣₐₜ.D, params.Pₘₐₓ.D))
-    L_NO₃ᴰ = L_NO₃ᴾ(NO₃, NH₄, params.K_NO₃.D, params.K_NH₄.D)
+    L_NO₃ᴰ = L_NO₃(NO₃, NH₄, params.K_NO₃.D, params.K_NH₄.D)
     Lₙᴰ = L_NO₃ᴰ + L_NH₄(NO₃, NH₄, params.K_NO₃.D, params.K_NH₄.D) #eq 6c
     L_Feᴰ = L_Fe(P, Chlᴰ, Feᴰ, params.θᶠᵉₒₚₜ.D, Lₙᴰ, Lₙₒ₃ᴰ)
     Lₛᵢᴰ = L_mondo(Si, params.Kₛᵢᴰᵐⁱⁿ + 7*params.Si̅^2/(params.Kₛᵢ^2+params.Si̅^2)) # eq 11b, 12. Need a callback that records Sī
@@ -186,7 +167,7 @@ function Feᴰ_forcing(x, y, z, t, P, D, Chlᴾ, Chlᴰ, Feᴾ, Feᴰ, Siᴰ, Z,
     μᶠᵉᴰ = params.θᶠᵉₘₐₓ.D*L_mondo(bFe, K_Feᶠᵉᴰ)*((4-4.5*L_Feᴰ)/(L_Feᴰ+0.5))*((1 - (Feᴰ/D)/params.θᶠᵉₘₐₓ.D)/(1.05 - (Feᴰ/D)/params.θᶠᵉₘₐₓ.D))*μ_D
     
     #shear
-    sh = zₘₓₗ<z ? params.shₘₓₗ : params.shₛᵤ 
+    sh = if(zₘₓₗ<z, params.shₘₓₗ, params.shₛᵤ) 
 
     #grazing
     z_food_total = food_total(params.p.Z, (; P, D, POC)) #could store this as an auxiliary field that is forced so it doesn't need to be computed for P, D, POC and Z
@@ -201,17 +182,8 @@ end
 function Siᴰ_forcing(x, y, z, t, P, D, Chlᴾ, Chlᴰ, Feᴾ, Feᴰ, Siᴰ, Z, M, DOC, POC, GOC, Feᴾᴼ, Feᴳᴼ, Siᴾᴼ, Siᴳᴼ, NO₃, NH₄, PO₄, Fe, Si, CaCO₃, DIC, O₂, PARᴾ, PARᴰ, T, zₘₓₗ, zₑᵤ, ϕ, params)
     #growth
     L_day = params.L_day(t)
+    μᴰ = μᵢ(D, Chlᴰ, Feᴰ, Siᴰ, NO₃, NH₄, PO₄, Si, PARᴰ, T, zₘₓₗ, zₑᵤ, params.Kᵐⁱⁿₚₒ₄.D, params.Sᵣₐₜ.D, params.Pₘₐₓ.D, params.K_NO₃.D, params.K_NH₄.D, params.θᶠᵉₒₚₜ.D, params.Kₛᵢᴰᵐⁱⁿ, params.Si̅, params.Kₛᵢ, params.μₘₐₓ⁰, params.bₚ, params.t_dark.D, L_day, params.α.D)
 
-    Lₚₒ₄ᴰ = L_mondo(PO₄, K(D, params.Kᵐⁱⁿ.PO₄.D, params.Sᵣₐₜ.D, params.Pₘₐₓ.D))
-    L_NO₃ᴰ = L_NO₃ᴾ(NO₃, NH₄, params.K_NO₃.D, params.K_NH₄.D)
-    Lₙᴰ = L_NO₃ᴰ + L_NH₄(NO₃, NH₄, params.K_NO₃.D, params.K_NH₄.D) #eq 6c
-    L_Feᴰ = L_Fe(P, Chlᴰ, Feᴰ, params.θᶠᵉₒₚₜ.D, Lₙᴰ, Lₙₒ₃ᴰ)
-    Lₛᵢᴰ = L_mondo(Si, params.Kₛᵢᴰᵐⁱⁿ + 7*params.Si̅^2/(params.Kₛᵢ^2+params.Si̅^2)) # eq 11b, 12. Need a callback that records Sī
-
-    Lₗᵢₘᴰ = min(Lₚₒ₄ᴰ, Lₙᴰ, L_Feᴰ, Lₛᵢᴰ)
-
-    μ_d = (μₘₐₓ⁰*params.b.D^T)
-    μᴰ = μ_d*f₁(L_day)*f₂(zₘₓₗ, zₑᵤ, params.t_dark.D)*Cₚᵣₒ(D, Chlᴰ, PARᴰ, L_day, params.α.D, μ_d, Lₗᵢₘᴰ)*Lₗᵢₘᴰ #eq2a
 
     #optimum quota
     Lₗₘ₁ˢⁱᴰ = L_mondo(Si, params.Kₛᵢ¹) #eq 23c
@@ -222,7 +194,7 @@ function Siᴰ_forcing(x, y, z, t, P, D, Chlᴾ, Chlᴰ, Feᴾ, Feᴰ, Siᴰ, Z,
     θₒₚₜˢⁱᴰ = params.θˢⁱᴰₘ*Lₗᵢₘ₁ˢⁱᴰ*min(5.4, (4.4*exp(-4.23*Fₗᵢₘ₁ˢⁱᴰ)*Fₗᵢₘ₂ˢⁱᴰ+1)*(1+2*Lₗᵢₘ₂ˢⁱᴰ))#eq 22
     
     #shear
-    sh = zₘₓₗ<z ? params.shₘₓₗ : params.shₛᵤ 
+    sh = if(zₘₓₗ<z, params.shₘₓₗ, params.shₛᵤ) 
 
     #grazing
     z_food_total = food_total(params.p.Z, (; P, D, POC)) #could store this as an auxiliary field that is forced so it doesn't need to be computed for P, D, POC and Z

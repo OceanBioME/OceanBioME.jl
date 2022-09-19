@@ -9,9 +9,11 @@ Notes
 "
 #module PISCES
 using Oceananigans.Units: second, minute, minutes, hour, hours, day, days, year, years
+using Oceananigans.Fields: interpolate
 
 include("phytoplankton.jl")
 include("zooplankton.jl")
+include("doc.jl")
 
 
 tracers=(:P, :D, :Chlᴾ, :Chlᴰ, :Feᴾ, :Feᴰ, :Siᴰ, :Z, :M, :DOC, :POC, :GOC, :Feᴾᴼ, :Feᴳᴼ, :Siᴾᴼ, :Siᴳᴼ, :NO₃, :NH₄, :PO₄, :Fe, :Si, :CaCO₃, :DIC, :O₂)
