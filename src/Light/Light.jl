@@ -18,6 +18,7 @@ using KernelAbstractions.Extras.LoopInfo: @unroll
 using Oceananigans.Architectures: device
 
 include("2band.jl")
+include("morel.jl")
 
 defaults = (
     k_r0 = 0.225,  # m⁻¹
