@@ -236,5 +236,6 @@ function Alk_forcing(i, j, k, grid, clock, model_fields, params) #needs to be di
         + 2*λ_CaCO₃*CaCO₃ 
         + params.θᴺᶜ*(N_fix - 2*Nitrif)
         + params.θᴺᶜ*ΔO₂ᵢⱼₖ*(params.rₙₕ₄ - 1)*params.λₙₕ₄*NH₄
+        + params.θᴺᶜ*((μₙₒ₃ᴾ - μₙₕ₄ᴾ)*P + (μₙₒ₃ᴰ - μₙₕ₄ᴰ)*D)
     ) 
 end
