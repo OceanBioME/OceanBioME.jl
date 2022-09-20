@@ -4,7 +4,7 @@
     #Do macroalgaes not contribute to the bacteria pool? So need to add some proxy from their biomass
     Zᵢⱼₖ = interpolate(Z, x, y, z)
     Mᵢⱼₖ = interpolate(M, x, y, z)
-    return ifelse(z<=zₘₐₓ, min(0.7*(Zᵢⱼₖ + 2*Mᵢⱼₖ), 4), Bact(x, y, zₘₐₓ, k, Z, M, zₘₐₓ)*(zₘₐₓ/z)^0.683)
+    return ifelse(-z<=zₘₐₓ, min(0.7*(Zᵢⱼₖ + 2*Mᵢⱼₖ), 4), Bact(x, y, zₘₐₓ, k, Z, M, zₘₐₓ)*(zₘₐₓ/z)^0.683)
 end
 
 @inline function Lₗᵢₘᴮᵃᶜᵗ(bFe, PO₄, NO₃, NH₄, K_Feᴮᵃᶜᵗ, Kₚₒ₄ᴮᵃᶜᵗ, K_NO₃, K_NH₄)

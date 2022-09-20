@@ -6,6 +6,7 @@ References
 
 Notes
     All phytoplankton andzooplankton biomasses are in carbon units (mol C L−1) ex-cept  for  the  silicon,  chlorophyll  and  iron  content  of  phy-toplankton,  which  are  respectively  in  Si,  Chl  and  Fe  units(mol Si L−1,  g Chl L−1,  and  mol Fe L−1,  respectively)
+    Convention in PISCES is for z, zₘₓₗ and zₑᵤ to be positive numbers where as in Oceananigans it is conventially a negative number so care must be taken
 "
 module PISCES
 using Oceananigans.Units: second, minute, minutes, hour, hours, day, days, year, years
@@ -24,7 +25,7 @@ include("oxygen.jl")
 include("par.jl")
 
 @inline get_local_value(i, j, k, C) = ifelse(length(size(C)) == 3, C[i, j, k], C[i, j, 1]) #for getting 2D field values
-@inline get_sh(z, zₘₓₗ, shₘₓₗ, shₛᵤ) = ifelse(zₘₓₗ<z, shₘₓₗ, shₛᵤ)
+@inline get_sh(z, zₘₓₗ, shₘₓₗ, shₛᵤ) = ifelse(-zₘₓₗ<z, shₘₓₗ, shₛᵤ)
 
 tracers=(:P, :D, :Chlᴾ, :Chlᴰ, :Feᴾ, :Feᴰ, :Siᴰ, :Z, :M, :DOC, :POC, :GOC, :Feᴾᴼ, :Feᴳᴼ, :Siᴾ, :NO₃, :NH₄, :PO₄, :Fe, :Si, :CaCO₃, :DIC, :Alk, :O₂)
 required_fields = (:PAR¹, :PAR², :PAR³, :T, :S, :zₑᵤ, :zₘₓₗ, :ϕ) #PAR bands, temperature, euphotic layer depth (2D field), mixing layer depth (2D field), latitude (2D field)

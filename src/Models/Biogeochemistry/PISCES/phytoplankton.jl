@@ -84,7 +84,7 @@ function Chlᴾ_forcing(x, y, z, t, P, D, Chlᴾ, Chlᴰ, Feᴾ, Feᴰ, Siᴰ, Z
     μ̌ᴾ = (μᴾ/f₁(L_day))
     ρᶜʰˡᵖ = 144*μ̌ᴾ*P/(params.α.P*Chlᴾ*PARᴾ/L_day)
     #shear
-    sh = ifelse(zₘₓₗ<z, params.shₘₓₗ, params.shₛᵤ)
+    sh = get_sh(z, zₘₓₗ, params.shₘₓₗ, params.shₛᵤ)
 
     #grazing
     z_food_total = food_total(params.p.Z, (; P, D, POC)) #could store this as an auxiliary field that is forced so it doesn't need to be computed for P, D, POC and Z
@@ -140,7 +140,7 @@ function Feᴾ_forcing(x, y, z, t, P, D, Chlᴾ, Chlᴰ, Feᴾ, Feᴰ, Siᴰ, Z,
     #Not really sure why it defined θᶠᵉₘᵢₙ, perhaps a typo or used somewhere else
    
     #shear
-    sh = ifelse(zₘₓₗ<z, params.shₘₓₗ, params.shₛᵤ)
+    sh = get_sh(z, zₘₓₗ, params.shₘₓₗ, params.shₛᵤ)
 
     #grazing
     z_food_total = food_total(params.p.Z, (; P, D, POC)) #could store this as an auxiliary field that is forced so it doesn't need to be computed for P, D, POC and Z

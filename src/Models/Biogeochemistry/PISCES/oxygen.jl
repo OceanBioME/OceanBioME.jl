@@ -73,7 +73,7 @@ function O₂_forcing(i, j, k, grid, clock, model_fields, params) #needs to be d
     f_M = params.b.M^T
 
     gᴹₚₒ_FF = params.g_ff*f_M*params.wₚₒ*POC
-    gᴹ_GO_FF = params.g_ff*f_M*(params.w_GOᵐⁱⁿ + (200-params._GOᵐⁱⁿ)*max(0, z - max(zₑᵤ, zₘₓₗ))/5000)*GOC
+    gᴹ_GO_FF = params.g_ff*f_M*(params.w_GOᵐⁱⁿ + (200-params._GOᵐⁱⁿ)*max(0, -z - max(zₑᵤ, zₘₓₗ))/5000)*GOC
 
     gᴹ_Fe = gᴹₚ*Feᴾ/P + gᴹ_D*Feᴰ/D + gᴹₚₒ*Feᴾᴼ/POC + gᴹ_Z*params.θᶠᵉ.Z
     gᴹₙ = gᴹₚ*θᴺᴾ + gᴹ_D*θᴺᴰ + (gᴹₚₒ + gᴹ_Z)*params.θᴺᶜ
@@ -97,7 +97,7 @@ function O₂_forcing(i, j, k, grid, clock, model_fields, params) #needs to be d
     Remin = min(O₂/params.O₂ᵘᵗ, μ_Bact*(1-ΔO₂(O₂, params.O₂ᵐⁱⁿ¹, params.O₂ᵐⁱⁿ²)))
     Denit = min(NO₃/params.rₙₒ₃, μ_Bact*ΔO₂ᵢⱼₖ)
 
-    kₘₓₗ = round(Int, fractional_z_index(zₘₓₗ, Center(), grid))+1
+    kₘₓₗ = round(Int, fractional_z_index(-zₘₓₗ, Center(), grid))+1
     PAR̄ = sum(PAR[i, j, kₘₓₗ:grid.Nz])/zₘₓₗ
     Nitrif =  params.λ.NH₄*NH₄*(1-ΔO₂ᵢⱼₖ)/(1+PAR̄)
 
