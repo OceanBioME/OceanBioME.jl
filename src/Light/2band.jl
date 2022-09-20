@@ -16,7 +16,7 @@
         ∫chlᵉʳ += (mean_pig^params.e_r)*dz
         ∫chlᵉᵇ += (mean_pig^params.e_b)*dz
 
-        PAR[i, j, k] =  sp*(exp(params.k_r0 * z - params.Χ_rp * ∫chlᵉʳ) + exp(params.k_b0 * z - params.Χ_bp * ∫chlᵉᵇ))/2
+        PAR[i, j, k] =  sp*(exp(params.k_r0 * dz - params.Χ_rp * ∫chlᵉʳ) + exp(params.k_b0 * dz - params.Χ_bp * ∫chlᵉᵇ))/2
     end
 end 
 
