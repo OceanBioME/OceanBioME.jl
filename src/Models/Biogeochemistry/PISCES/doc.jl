@@ -1,6 +1,6 @@
 #since Bact needs access to the whole column of Z and M need to use discrete forcings anything that depends on it
 function DOC_forcing(i, j, k, grid, clock, model_fields, params)
-    P, D, Chlᴾ, Chlᴰ, Feᴾ, Feᴰ, Siᴰ, Z, M, DOC, POC, GOC, Feᴾᴼ, Feᴳᴼ, Siᴾᴼ, Siᴳᴼ, NO₃, NH₄, PO₄, Fe, Si, CaCO₃, DIC, Alk, O₂, PAR¹, PAR², PAR³, T, S, zₘₓₗ, zₑᵤ, ϕ = get_local_value.(i, j, k, values(model_fields[(:P, :D, :Chlᴾ, :Chlᴰ, :Feᴾ, :Feᴰ, :Siᴰ, :Z, :M, :DOC, :POC, :GOC, :Feᴾᴼ, :Feᴳᴼ, :Siᴾᴼ, :Siᴳᴼ, :NO₃, :NH₄, :PO₄, :Fe, :Si, :CaCO₃, :DIC, :Alk, :O₂, :PAR¹, :PAR², :PAR³, :T, :S, :zₘₓₗ, :zₑᵤ, :ϕ)]))
+    P, D, Chlᴾ, Chlᴰ, Feᴾ, Feᴰ, Siᴰ, Z, M, DOC, POC, GOC, Feᴾᴼ, Feᴳᴼ, Siᴾᴼ, Siᴳᴼ, NO₃, NH₄, PO₄, Fe, Si, CaCO₃, DIC, Alk, O₂, PAR¹, PAR², PAR³, T, S, zₘₓₗ, zₑᵤ = get_local_value.(i, j, k, values(model_fields[(:P, :D, :Chlᴾ, :Chlᴰ, :Feᴾ, :Feᴰ, :Siᴰ, :Z, :M, :DOC, :POC, :GOC, :Feᴾᴼ, :Feᴳᴼ, :Siᴾᴼ, :Siᴳᴼ, :NO₃, :NH₄, :PO₄, :Fe, :Si, :CaCO₃, :DIC, :Alk, :O₂, :PAR¹, :PAR², :PAR³, :T, :S, :zₘₓₗ, :zₑᵤ)]))
     x, y, z, t = grid.xᶜᵃᵃ[i], grid.yᵃᶜᵃ[j], grid.zᵃᵃᶜ[k], clock
     PARᴾ, PARᴰ, PAR = PAR_components(PAR¹, PAR², PAR³, params.β₁, params.β₂, params.β₃)
 
@@ -31,7 +31,7 @@ function DOC_forcing(i, j, k, grid, clock, model_fields, params)
     gᶻₙ = gᶻₚ*θᴺᴾ + gᶻ_D*θᴺᴰ + gᶻₚₒ*params.θᴺᶜ
 
     eₙᶻ = min(1, gᶻₙ/(params.θᴺᶜ*(gᶻₚ + gᶻ_D + gᶻₚₒ)), gᶻ_Fe/(params.θᶠᵉ.Z*(gᶻₚ + gᶻ_D + gᶻₚₒ)))
-    eᶻ = eₙᶻ*min(params.eₘₐₓᶻ, (1 - params.σ.Z)*gᶻ_Fe/(params.θᶠᵉ.Z*(gᶻₚ + gᶻ_D + gᶻₚₒ)))
+    eᶻ = eₙᶻ*min(params.eₘₐₓ.Z, (1 - params.σ.Z)*gᶻ_Fe/(params.θᶠᵉ.Z*(gᶻₚ + gᶻ_D + gᶻₚₒ)))
 
     #Mezozooplankton efficiency
     prey =  (; P, D, POC, Z)
@@ -55,7 +55,7 @@ function DOC_forcing(i, j, k, grid, clock, model_fields, params)
     gᴹₙ = gᴹₚ*θᴺᴾ + gᴹ_D*θᴺᴰ + (gᴹₚₒ + gᴹ_Z)*params.θᴺᶜ
 
     eₙᴹ = min(1, gᴹₙ/(params.θᴺᶜ*Σgᴹ, gᴹ_Fe/(params.θᶠᵉ.M*Σgᴹ)))
-    eᴹ = eₙᴹ*min(params.eₘₐₓᴹ, (1 - params.σ.M)*gᴹ_Fe/(params.θᶠᵉ.M*Σgᴹ))
+    eᴹ = eₙᴹ*min(params.eₘₐₓ.M, (1 - params.σ.M)*gᴹ_Fe/(params.θᶠᵉ.M*Σgᴹ))
 
     gᴹ_GO_FF = params.g_ff*f_M*(params._GOᵐⁱⁿ + (200-params._GOᵐⁱⁿ)*max(0, z - max(zₑᵤ, zₘₓₗ))/5000)*GOC
 
@@ -68,7 +68,7 @@ function DOC_forcing(i, j, k, grid, clock, model_fields, params)
 
     #Upper trophic mesozooplankton feeding
     if params.upper_trophic_feeding
-        Rᵤₚᴹ = (1 - params.eₘₐₓᴹ- params.σᴹ)*(1/(1-params.eₘₐₓᴹ))*params.m.M*f_M*M^2
+        Rᵤₚᴹ = (1 - params.eₘₐₓ.M- params.σᴹ)*(1/(1-params.eₘₐₓ.M))*params.m.M*f_M*M^2
     else
         Rᵤₚᴹ = 0.0
     end

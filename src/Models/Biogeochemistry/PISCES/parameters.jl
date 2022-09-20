@@ -1,6 +1,7 @@
 const defaults = (
-    # Settings
+    # Settings - these can be over ridden by merging defaults with a NamedTuple with the same key(s)
     upper_trophic_feeding = true, #By default Mezozooplankton are grazed by infinite chain of carnivors
+    #add setting to turn on/off submesoscale effects like aggregation?
     
     # Parameters, default units are μmol, seconds, Litres, Joules unless otherwise specified
     ## Phytoplankton growth
@@ -14,7 +15,7 @@ const defaults = (
     ## Light absorbsion
     β₁ = (P = 2.1, D = 1.6),
     β₂ = (P = 0.42, D = 0.69),
-    β₂ = (P = 0.4, D = 0.7),
+    β₃ = (P = 0.4, D = 0.7),
 
     ## Phytoplankton nutrient uptakes
     Kₚₒ₄ᵐⁱⁿ = (P = 0.8, D = 2.4), #nmol P L⁻¹
@@ -113,7 +114,7 @@ const defaults = (
     Lₜ = 0.6, #for constant ligand concentration (not used in this implimentation)
     N_fixᵐ = 0.013/day,
     K_Feᴰᶻ = 0.1,
-    E_fix = 50 #Wm⁻² - so presumably PAR needs to be in this units too?
+    E_fix = 50, #Wm⁻² - so presumably PAR needs to be in this units too?
     Feᵢ = 15, #Fe conc in ice, not used here yet
     F_Feₘᵢₙˢᵉᵈ = 2/day, #Maximum (or minimum as the name would suggest?) sediment flux of Fe
     Sol_Fe = 0.02, #Solubility of iron in dust
