@@ -132,7 +132,7 @@ function NH₄_forcing(i, j, k, grid, clock, model_fields, params) #needs to be 
     return params.γ.Z*(1 - eᶻ - params.σᶻ)*Σgᶻ*Z + params.γ.M*(1 - eᴹ - params.σ.M)*(Σgᴹ + gᴹₚₒ_FF + gᴹ_GO_FF)*M + params.γ.M*Rᵤₚᴹ + Remin + Denit + N_fix - Nitrif - params.λₙₕ₄*ΔO₂ᵢⱼₖ*NH₄ - μₙₕ₄ᴾ*P - μₙₕ₄ᴰ*D
 end
 
-function PO₄_forcing(x, y, z, t, P, D, Chlᴾ, Chlᴰ, Feᴾ, Feᴰ, Siᴰ, Z, M, DOC, POC, GOC, Feᴾᴼ, Feᴳᴼ, Siᴾᴼ, Siᴳᴼ, NO₃, NH₄, PO₄, Fe, Si, CaCO₃, DIC, O₂, PAR¹, PAR², PAR³, T, S, zₘₓₗ, zₑᵤ, ϕ, params)
+function PO₄_forcing(x, y, z, t, P, D, Chlᴾ, Chlᴰ, Feᴾ, Feᴰ, Siᴰ, Z, M, DOC, POC, GOC, Feᴾᴼ, Feᴳᴼ, Siᴾᴼ, Siᴳᴼ, NO₃, NH₄, PO₄, Fe, Si, CaCO₃, DIC, Alk, O₂, PAR¹, PAR², PAR³, T, S, zₘₓₗ, zₑᵤ, ϕ, params)
     PARᴾ, PARᴰ, PAR = PAR_components(PAR¹, PAR², PAR³, params.β₁, params.β₂, params.β₃)
     sh = get_sh(z, zₘₓₗ, params.shₘₓₗ, params.shₛᵤ)
     L_day = params.L_day(t)
@@ -239,7 +239,7 @@ end
 
 @inline Aggfe(Fe, DOC, T, λᶠᵉ) = return 1000*λᶠᵉ*max(0, Fe - Lₜ(DOC))* Feᶠ(Fe, DOC, T)
 
-function Fe_forcing(x, y, z, t, P, D, Chlᴾ, Chlᴰ, Feᴾ, Feᴰ, Siᴰ, Z, M, DOC, POC, GOC, Feᴾᴼ, Feᴳᴼ, Siᴾᴼ, Siᴳᴼ, NO₃, NH₄, PO₄, Fe, Si, CaCO₃, DIC, O₂, PAR¹, PAR², PAR³, T, S, zₘₓₗ, zₑᵤ, ϕ, params)
+function Fe_forcing(x, y, z, t, P, D, Chlᴾ, Chlᴰ, Feᴾ, Feᴰ, Siᴰ, Z, M, DOC, POC, GOC, Feᴾᴼ, Feᴳᴼ, Siᴾᴼ, Siᴳᴼ, NO₃, NH₄, PO₄, Fe, Si, CaCO₃, DIC, Alk, O₂, PAR¹, PAR², PAR³, T, S, zₘₓₗ, zₑᵤ, ϕ, params)
     PARᴾ, PARᴰ, PAR = PAR_components(PAR¹, PAR², PAR³, params.β₁, params.β₂, params.β₃)
     sh = get_sh(z, zₘₓₗ, params.shₘₓₗ, params.shₛᵤ)
     L_day = params.L_day(t)
@@ -356,7 +356,7 @@ function Fe_forcing(x, y, z, t, P, D, Chlᴾ, Chlᴰ, Feᴾ, Feᴰ, Siᴰ, Z, M,
     )
 end
 
-function Si_forcing(x, y, z, t, P, D, Chlᴾ, Chlᴰ, Feᴾ, Feᴰ, Siᴰ, Z, M, DOC, POC, GOC, Feᴾᴼ, Feᴳᴼ, Siᴾᴼ, Siᴳᴼ, NO₃, NH₄, PO₄, Fe, Si, CaCO₃, DIC, O₂, PAR¹, PAR², PAR³, T, S, zₘₓₗ, zₑᵤ, ϕ, params)
+function Si_forcing(x, y, z, t, P, D, Chlᴾ, Chlᴰ, Feᴾ, Feᴰ, Siᴰ, Z, M, DOC, POC, GOC, Feᴾᴼ, Feᴳᴼ, Siᴾᴼ, Siᴳᴼ, NO₃, NH₄, PO₄, Fe, Si, CaCO₃, DIC, Alk, O₂, PAR¹, PAR², PAR³, T, S, zₘₓₗ, zₑᵤ, ϕ, params)
     PARᴾ, PARᴰ, PAR = PAR_components(PAR¹, PAR², PAR³, params.β₁, params.β₂, params.β₃)
     sh = get_sh(z, zₘₓₗ, params.shₘₓₗ, params.shₛᵤ)
 
@@ -424,3 +424,4 @@ function CaCO₃_forcing(i, j, k, grid, clock, model_fields, params) #needs to b
         - λ_CaCO₃*CaCO₃ 
         - w_GOC*∂zᶜᶜᶜ(i, j, k, grid, model_fields.CaCO₃)
     )
+end

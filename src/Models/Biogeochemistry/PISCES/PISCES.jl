@@ -17,13 +17,16 @@ include("zooplankton.jl")
 include("doc.jl")
 include("two_compartement_POC.jl") #at some point can make this configurable
 include("bacteria.jl")
-include("iron.jl")
+include("nutrients.jl")
+include("carbonates.jl")
+include("oxygen.jl")
+
 include("par.jl")
 
 @inline get_local_value(i, j, k, C) = ifelse(length(size(C)) == 3, C[i, j, k], C[i, j, 1]) #for getting 2D field values
 @inline get_sh(z, zₘₓₗ, shₘₓₗ, shₛᵤ) = ifelse(zₘₓₗ<z, shₘₓₗ, shₛᵤ)
 
-tracers=(:P, :D, :Chlᴾ, :Chlᴰ, :Feᴾ, :Feᴰ, :Siᴰ, :Z, :M, :DOC, :POC, :GOC, :Feᴾᴼ, :Feᴳᴼ, :Siᴾ, :NO₃, :NH₄, :PO₄, :Fe, :Si, :CaCO₃, :DIC, :O₂)
+tracers=(:P, :D, :Chlᴾ, :Chlᴰ, :Feᴾ, :Feᴰ, :Siᴰ, :Z, :M, :DOC, :POC, :GOC, :Feᴾᴼ, :Feᴳᴼ, :Siᴾ, :NO₃, :NH₄, :PO₄, :Fe, :Si, :CaCO₃, :DIC :Alk, :O₂)
 required_auxiliary_fields = (:PAR¹, :PAR², :PAR³, :T, :S, :zₑᵤ, :zₘₓₗ, :ϕ) #PAR for phytoplankton, PAR for diatoms, temperature, euphotic layer depth (2D field), mixing layer depth (2D field), latitude (2D field)
 
 optional_tracers=NamedTuple()
