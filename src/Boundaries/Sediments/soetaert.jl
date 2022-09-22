@@ -1,7 +1,24 @@
+module Soetaert
+
+using Roots, Oceananigans, KernelAbstractions
+using Oceananigans.Units: second, minute, minutes, hour, hours, day, days, year, years
+using Oceananigans.Architectures: device
+using Oceananigans.Operators: volume, Az
+
 #These were determined by fitting data from a different model by the paper this is from
-#Clearly they are not generally valid (e.g. if anything is zero we get NaN or Inf)
+#Clearly they are not  closed (e.g. if anything is zero we get NaN or Inf)
 #It is also very uncomfortable to log dimensional things + we get a nondimensional parameter p_whatever when we have "nondimensional"/dimensional value
 #also slightly concerned that these are per day values but its unclear where I'd change the units
+
+const defaults= (
+    #https://aslopubs.onlinelibrary.wiley.com/doi/epdf/10.4319/lo.1996.41.8.1651
+    λᵣᵣ = 2/year,# 1/year to 1/s
+    λᵣ = 0.2/year,#s   
+    Rdᵣᵣ = 0.1509,#mmol N/mmol C
+    Rdᵣ = 0.13,#mmol N/mmol C
+    Rd_red = 106/16#mmol C/mmol N
+)
+
 @inline p_nit(Nₘ, Cₘ, O₂, NH₄, k) = min(1, exp(-1.9785+0.2261*log(Cₘ)*log(O₂)-0.0615*log(Cₘ)^2-0.0289*log(k)*log(NH₄)-0.36109*log(Cₘ)-0.0232*log(Cₘ)*log(NH₄))/Nₘ)
 @inline p_denit(Cₘ, O₂, NO₃, k) = min(1, exp(-3.0790+1.7509*log(Cₘ)+0.0593*log(NO₃)^2-0.1923*log(Cₘ)^2+0.0604*log(k)^2+0.0662*log(O₂)*log(k))/Cₘ)
 @inline p_anox(Cₘ, O₂, NO₃, k) = min(1, exp(-3.9476+2.6269*log(Cₘ)-0.2426*log(Cₘ)^2-1.3349*log(k)+0.1826*log(O₂)*log(k)-0.0143*log(NO₃)^2)/Cₘ)
@@ -67,7 +84,7 @@ function integrate_sediment!(sim, params)
     wait(device(sim.model.architecture), calculation)
 end
 
-function setupsediment(grid; w_fast=200/day, w_slow=3.47e-5, λ=1.0, parameters=defaults.sediment, Nᵣᵣᵢ=24.0, Nᵣᵢ=85.0, f_ref=0.1, f_fast=0.74, f_slow=0.26, carbonates=true)
+function setupsediment(grid; w_fast=200/day, w_slow=3.47e-5, λ=1.0, parameters=defaults, Nᵣᵣᵢ=24.0, Nᵣᵢ=85.0, f_ref=0.1, f_fast=0.74, f_slow=0.26, carbonates=true)
     @warn "Sediment model will corrently produce incorrect results with non-zero water velocity (currently the deposition simply the concentration*sinking speed which is incorrect if detritus has other w components"
     #fractions from Boudreau B. P. and Ruddick B. R. ( 1991) On a reactive continuum representation of organic matter diagenesis. Amer. J. Sci. 291, 507-538.
     #as used by https://reader.elsevier.com/reader/sd/pii/0016703796000130
@@ -100,4 +117,5 @@ function setupsediment(grid; w_fast=200/day, w_slow=3.47e-5, λ=1.0, parameters=
         callback =  Callback(integrate_sediment!, IterationInterval(1), parameters),
         parameters = parameters
     )
+end
 end
