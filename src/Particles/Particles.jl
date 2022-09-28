@@ -24,17 +24,17 @@ function getmask(i, j, k, fi, fj, fk, grid)
 end
 
 function apply_sinks!(model, particles, p, i, j, k, d, Δt)
-    for sink in particles.parameters.sink_fields
-        value =particles.parameters.density * sink.scalefactor * Δt * getproperty(model.particles.properties, sink.property)[p] / (d * Vᶜᶜᶜ(i, j, k, model.grid))
+    for (tracer_name, sink) in pairs(particles.parameters.sink_fields)
+        value =particles.parameters.density * Δt * getproperty(model.particles.properties, sink.property)[p] / (d * Vᶜᶜᶜ(i, j, k, model.grid))
         if abs(value) > 0
-            res = value + getproperty(model.tracers, sink.tracer)[i, j, k]
+            res = value + getproperty(model.tracers, tracer_name)[i, j, k]
             if res < 0
                 @warn "Particle tried to take tracer below zero, conserving tracer (may cause adverse effects on particle dynamics)"
-                getproperty(model.tracers, sink.tracer)[i, j, k] = 0
+                getproperty(model.tracers, tracer_name)[i, j, k] = 0
                 getproperty(particles.properties, sink.fallback)[p] += fallback(particles, p, res, sink.fallback_scalefactor)*Vᶜᶜᶜ(i, j, k, model.grid)
             else
-                getproperty(model.tracers, sink.tracer)[i, j, k] += value
-                getproperty(model.timestepper.Gⁿ, sink.tracer)[i, j, k] += value
+                getproperty(model.tracers, tracer_name)[i, j, k] += value
+                getproperty(model.timestepper.Gⁿ, tracer_name)[i, j, k] += value
             end
         end
     end
@@ -80,18 +80,18 @@ function dynamics!(particles, model, Δt)
     worksize = num_particles
     
     #update tracked fields, won't need this when Oceananigans is fixed (https://github.com/CliMA/Oceananigans.jl/pull/2662)
-    for tracked_field in particles.parameters.tracked_fields
-        if tracked_field.tracer in keys(model.tracers)
-            tracer = getproperty(model.tracers, tracked_field.tracer)
-        elseif tracked_field.tracer in keys(model.auxiliary_fields)
-            tracer = getproperty(model.auxiliary_fields, tracked_field.tracer)
-        elseif tracked_field.tracer in (:u, :v, :w)
-            tracer = getproperty(model.velocities, tracked_field.tracer)
+    for (tracer_name, property_name) in pairs(particles.parameters.tracked_fields)
+        if tracer_name in keys(model.tracers)
+            tracer = getproperty(model.tracers, tracer_name)
+        elseif tracer_name in keys(model.auxiliary_fields)
+            tracer = getproperty(model.auxiliary_fields, tracer_name)
+        elseif tracer_name in (:u, :v, :w)
+            tracer = getproperty(model.velocities, tracer_name)
         else
-            throw(ArgumentError("$(tracked_field.tracer) is not a model field that can be tracked"))
+            throw(ArgumentError("$tracer_name is not a model field that can be tracked"))
         end
         
-        particle_property = getproperty(particles.properties, tracked_field.property)
+        particle_property = getproperty(particles.properties, property_name)
 
         LX, LY, LZ = location(tracer)
 
@@ -109,7 +109,7 @@ function dynamics!(particles, model, Δt)
 
     #update source/sinks
     if length(particles.parameters.sink_fields)>0#probably not the most julian way todo this and would also be fixed if the next line was more generic
-        LX, LY, LZ = location(getproperty(model.tracers, particles.parameters.sink_fields[1].tracer))#this will not be right if they are different between the differnet fields
+        LX, LY, LZ = location(getproperty(model.tracers, keys(particles.parameters.sink_fields)[1]))#this will not be right if they are different between the differnet fields
 
         sourcesink_kernal! = source_sink!(device(model.architecture), workgroup, worksize)
         sourcesink_event = sourcesink_kernal!(model, (LX(),LY(),LZ()), Δt)
@@ -125,7 +125,7 @@ end
 function setup(particles::StructArray, equation::Function, equation_arguments::NTuple{N, Symbol} where N, 
     equation_parameters::NamedTuple, integrals::NTuple{N, Symbol} where N, 
     tracked::NTuple{N, Symbol} where N, 
-    tracked_fields::NTuple{N, NamedTuple{(:tracer, :property, :scalefactor), Tuple{Symbol, Symbol, Float64}}} where N, 
+    tracked_fields::NamedTuple, 
     sink_fields, #::NTuple{N, NamedTuple{(:tracer, :property, :scalefactor, :fallback, :fallback_scalefactor), Tuple{Symbol, Symbol, Float64, Symbol, NamedTuple}}} where N - got too complicated
     density::AbstractFloat, custom_dynamics=no_dynamics)
     
@@ -135,13 +135,18 @@ function setup(particles::StructArray, equation::Function, equation_arguments::N
         end
     end
 
-    for field in (tracked_fields..., sink_fields...)
-        if !(field.property in propertynames(particles))
-            throw(ArgumentError("$(field.property) is a required field for field tracking or source/sinking but $(eltype(particles)) has no property $property."))
+    for (tracer, property) in pairs(tracked_fields)
+        if !(property in propertynames(particles))
+            throw(ArgumentError("$(property) is a required field for field tracking or source/sinking but $(eltype(particles)) has no property $property."))
         end
     end
 
-    #add checks (e.g. check that all tracked fields properties are properties of the particles)
+    for (tracer, sink) in pairs(sink_fields)
+        if !(sink.property in propertynames(particles))
+            throw(ArgumentError("$(sink.property) is a required field for field tracking or source/sinking but $(eltype(particles)) has no property $property."))
+        end
+    end
+
     return LagrangianParticles(particles; 
                                 dynamics=dynamics!, parameters=(
                                     equation=equation,

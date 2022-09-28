@@ -99,7 +99,12 @@ bgc = Setup.Oceananigans(:LOBSTER, grid, params, optional_sets=(:carbonates, :ox
 @info "Setting up kelp particles"
 n_kelp=100 # number of kelp fronds
 z₀ = [-100:-1;]*1.0 # depth of kelp fronds
-kelp_particles = SLatissima.setup(n_kelp, Lx/2, Ly/2, z₀, 0.0, 0.0, 0.0, 57.5, 1.0; T = t_function, S = s_function, urel = 0.2)
+kelp_particles = SLatissima.setup(n_kelp, Lx/2, Ly/2, z₀, 
+                                                    0.0, 0.0, 0.0, 57.5, 1.0; 
+                                                    T = t_function, S = s_function, urel = 0.2, 
+                                                    #tracer_names=(N=:NO₃, ) #Over ride naming of tracer fields (e.g. for NPZ model) where keys are tracer names and values are the particle property being written to
+                                                    optional_sources=(:NH₄, ), #can remove this to only depend on NO₃ 
+                                                    optional_sinks=(:NH₄, :DIC, :DD, :OXY, :DOM))
 
 # Now, create a 'model' to run in Oceananignas
 model = NonhydrostaticModel(advection = WENO(),
@@ -186,10 +191,12 @@ simulation.Δt=1.5minutes
 run!(simulation)
 
 # Load and plot the results
-results = OceanBioME.Plot.load_tracers(simulation)
-profiles = OceanBioME.Plot.profiles(results)
+include("PlottingUtilities.jl")
+
+results = load_tracers(simulation)
+profiles = profiles(results)
 savefig("kelp.pdf")
 
-particles = OceanBioME.Plot.load_particles(simulation)
-particles = OceanBioME.Plot.particles(particles)
+particles = load_particles(simulation)
+particles = particles(particles)
 savefig("kelp_particles.pdf")

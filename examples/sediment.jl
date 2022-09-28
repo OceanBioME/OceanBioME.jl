@@ -155,8 +155,9 @@ run!(simulation)
 @info "Nitrogen budget varied from $ΣN₀ to $ΣN₁"
 
 # Load and plot the results
-results = OceanBioME.Plot.load_tracers(simulation)
-plot(OceanBioME.Plot.profiles(results)...)
+include("PlottingUtilities.jl")
+results = load_tracers(simulation)
+plot(profiles(results)...)
 
 # Save the plot to a PDF file
 savefig("sediment.pdf")

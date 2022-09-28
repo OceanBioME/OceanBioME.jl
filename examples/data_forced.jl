@@ -151,9 +151,10 @@ simulation.output_writers[:profiles] = NetCDFOutputWriter(model, fields, filenam
 # Run the simulation                            
 run!(simulation)
 
+include("PlottingUtilities.jl")
 # Load and plot the results
-results = OceanBioME.Plot.load_tracers(simulation)
-plot(OceanBioME.Plot.profiles(results)...)
+results = load_tracers(simulation)
+plot(profiles(results)...)
 
 # Save the plot to a PDF file
 savefig("data_forced.pdf")

@@ -30,7 +30,7 @@ particlestruct=StructArray{CustomParticle}(([0.25], [0.25], [-0.25], [1.0], [0.0
         NamedTuple(), 
         (:A, ), 
         (:B, ), 
-        ((tracer=:C, property=:C, scalefactor=1.0), ),
+        (C = :C, ),
         (),#should add multiple dispatch so you do't have to specify these as blank
         1.0
     )
@@ -58,7 +58,7 @@ end
 
 @testset "Active particles" begin
     function particleupdate(x, y, z, t, A, B, params, Δt)
-        return (A=0.1, B=t)
+        return (A=-0.1, B=t)
     end
     particlestruct=StructArray{CustomParticle}(([0.25], [0.25], [-0.25], [1.0], [0.0], [0.0]))
     particles = Particles.setup(
@@ -68,8 +68,8 @@ end
         NamedTuple(), 
         (), 
         (:A, :B), 
-        ((tracer=:C, property=:C, scalefactor=1.0), ),
-        ((tracer=:C, property=:A, scalefactor=-1.0, fallback=:A, fallback_scalefactor=0), ),#placeholder fallback scale factor as testing further down), ),
+        (C = :C, ),
+        (C = (property=:A, fallback=:A, fallback_scalefactor=0), ),#placeholder fallback scale factor as testing further down), ),
         1.0
     )
 
@@ -82,7 +82,7 @@ end
 
     #pull tracer below zero
     function particleupdate(x, y, z, t, A, params, Δt)
-        return (A=2.0, )
+        return (A=-2.0, )
     end
     
     particlestruct=StructArray{CustomParticle}(([0.25], [0.25], [-0.25], [1.0], [0.0], [0.0]))
@@ -93,8 +93,8 @@ end
         NamedTuple(), 
         (), 
         (:A, ), 
-        ((tracer=:C, property=:C, scalefactor=1.0), ),
-        ((tracer=:C, property=:A, scalefactor=-1.0, fallback=:B, fallback_scalefactor=1.0), ),
+        (C = :C, ),
+        (C = (property=:A, fallback=:B, fallback_scalefactor=1.0), ),
         1.0
     )
     
@@ -114,15 +114,14 @@ end
         NamedTuple(), 
         (), 
         (:A, ), 
-        ((tracer=:C, property=:C, scalefactor=1.0), ),
-        ((tracer=:C, property=:A, scalefactor=-1.0, fallback=:B, fallback_scalefactor=(property=:A, constant=0.5)), ), #other property dependant scale factor
+        (C = :C, ),
+        (C = (property=:A, fallback=:B, fallback_scalefactor=(property=:A, constant=-0.5)), ),
         1.0
     )
     
-    model = NonhydrostaticModel(; grid, timestepper=:RungeKutta3, particles=particles, tracers=(:C, ))
+    model = NonhydrostaticModel(; grid, particles=particles, tracers=(:C, ))
     set!(model, u=0, v=0, w=0, C=1)
-    sim = Simulation(model, Δt=1, stop_time=1)
-    run!(sim)
+    time_step!(model, 1, euler=true)
     
     @test model.tracers.C[1, 1, 1] ≈ 0.0
     @test model.particles.properties.B[1] ≈ -0.25
@@ -138,8 +137,8 @@ end
             NamedTuple(), 
             (), 
             (:A, :B), 
-            ((tracer=:C, property=:C, scalefactor=1.0), ),
-            ((tracer=:C, property=:A, scalefactor=-1.0, fallback=:A, fallback_scalefactor=0), ),#placeholder fallback scale factor as testing further down), ),
+            (C = :C, ),
+            (C = (property=:A, fallback=:A, fallback_scalefactor=0), ),
             1.0
         )
 
@@ -163,8 +162,8 @@ end
             NamedTuple(), 
             (), 
             (:A, :B), 
-            ((tracer=:C, property=:C, scalefactor=1.0), ),
-            ((tracer=:C, property=:A, scalefactor=-1.0, fallback=:A, fallback_scalefactor=0), ),#placeholder fallback scale factor as testing further down), ),
+            (C = :C, ),
+            (C = (property=:A, fallback=:A, fallback_scalefactor=0), ),
             1.0
         )
 
@@ -184,8 +183,8 @@ end
             NamedTuple(), 
             (), 
             (:A, :B), 
-            ((tracer=:C, property=:C, scalefactor=1.0), ),
-            ((tracer=:C, property=:A, scalefactor=-1.0, fallback=:A, fallback_scalefactor=0), ),#placeholder fallback scale factor as testing further down), ),
+            (C = :C, ),
+            (C = (property=:A, fallback=:A, fallback_scalefactor=0), ),
             1.0
         )
 
@@ -206,8 +205,8 @@ end
             NamedTuple(), 
             (), 
             (:A, :B), 
-            ((tracer=:C, property=:C, scalefactor=1.0), ),
-            ((tracer=:C, property=:A, scalefactor=-1.0, fallback=:A, fallback_scalefactor=0), ),#placeholder fallback scale factor as testing further down), ),
+            (C = :C, ),
+            (C = (property=:A, scalefactor=-1.0, fallback=:A, fallback_scalefactor=0), ),
             10.0
         )
 
