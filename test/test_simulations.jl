@@ -31,7 +31,7 @@ function run_simulation(bgc_model, optionsets, sediment, arch, c)
     PAR = Oceananigans.Fields.Field{Center, Center, Center}(grid) 
 
     #load bgc model
-    bgc = Setup.Oceananigans(bgc_model, grid, params, PAR, optional_sets=optionsets, topboundaries=topboundaries, bottomboundaries=sediment_bcs.boundary_conditions, no_sinking_flux = !sediment) #with sinking and no sediment Oceananigans doesn't conserve the tracers (i.e. doesn't collect them at the bottom of the domain)
+    bgc = Setup.Oceananigans(bgc_model, grid, params; optional_sets=optionsets, topboundaries=topboundaries, bottomboundaries=sediment_bcs.boundary_conditions, no_sinking_flux = !sediment) #with sinking and no sediment Oceananigans doesn't conserve the tracers (i.e. doesn't collect them at the bottom of the domain)
 
     #fix diffusivity
     κₜ(x, y, z, t) = 2e-2
@@ -65,7 +65,7 @@ function run_simulation(bgc_model, optionsets, sediment, arch, c)
 
     simulation = Simulation(model, Δt=Δt, stop_time=duration) 
     if bgc_model in (:LOBSTER, )
-        simulation.callbacks[:update_par] = Callback(Light.update_2λ!, IterationInterval(1), merge(merge(params, Light.defaults), (surface_PAR=surface_PAR,)))
+        simulation.callbacks[:update_par] = Callback(Light.twoBands.update!, IterationInterval(1), merge(merge(params, Light.twoBands.defaults), (surface_PAR=surface_PAR,)));
     end
     if sediment
         simulation.callbacks[:integrate_sediment] = sediment_bcs.callback
