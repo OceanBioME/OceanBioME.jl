@@ -1,5 +1,5 @@
 using Oceananigans.Fields: fractional_indices, _interpolate, location
-
+using Oceananigans: Center
 import Oceananigans.Fields: interpolate
 
 """
@@ -20,10 +20,9 @@ Interpolate `field` to the physical point `(x, y, z)` using trilinear interpolat
     # and integer indices (with 0-based indexing).
     ξ, i = modf(i)
     η, j = modf(j)
-    ζ, k = modf(k)
 
     # Convert indices to proper integers and shift to 1-based indexing.
-    return _interpolate(field, ξ, η, ζ, Int(i+1), Int(j+1), Int(k+1))
+    return _interpolate(field, ξ, η, 0, Int(i+1), Int(j+1), 1)
 end
 
 """
