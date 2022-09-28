@@ -3,7 +3,6 @@ module Soetaert
 using Roots, Oceananigans, KernelAbstractions
 using Oceananigans.Units: second, minute, minutes, hour, hours, day, days, year, years
 using Oceananigans.Architectures: device
-using Oceananigans.Operators: volume, Az
 
 #These were determined by fitting data from a different model by the paper this is from
 #Clearly they are not  closed (e.g. if anything is zero we get NaN or Inf)

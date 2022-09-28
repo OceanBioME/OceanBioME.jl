@@ -9,7 +9,7 @@ export Setup, BoxModel
 #Particles
 export Particles
 #Utilities
-export Light, Boundaries, update_timestep!, Budget
+export Light, Boundaries, update_timestep!, Budget, Sediments
 #Oceananigans extensions
 export ColumnField, isacolumn
 
