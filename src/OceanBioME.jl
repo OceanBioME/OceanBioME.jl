@@ -8,9 +8,6 @@ include("Particles/Particles.jl")
 include("Models/Biogeochemistry/LOBSTER.jl")
 include("Models/Biogeochemistry/NPZ.jl")
 include("Models/Macroalgae/SLatissima.jl")
-include("Utils/Setup.jl")
-include("Utils/BoxModel.jl")
-include("Utils/Timestep.jl")
-include("Utils/Budget.jl")
+include("Utils/Utils.jl")
 
 end

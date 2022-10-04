@@ -100,7 +100,7 @@ bgc = Setup.Oceananigans(:LOBSTER, grid, params, PAR, optional_sets=(:carbonates
 n_kelp=100 # number of kelp fronds
 z₀ = [-100:-1;]*1.0 # depth of kelp fronds
 kelp_particles = SLatissima.setup(n_kelp, Lx/2, Ly/2, z₀, 
-                                                    0.0, 0.0, 0.0, 57.5, 1.0; 
+                                                    0.0, 0.0, 0.0, 57.5, 100.0; 
                                                     T = t_function, S = s_function, urel = 0.2, 
                                                     #tracer_names=(N=:NO₃, ) #Over ride naming of tracer fields (e.g. for NPZ model) where keys are tracer names and values are the particle property being written to
                                                     optional_sources=(:NH₄, ), #can remove this to only depend on NO₃ 
@@ -153,7 +153,24 @@ progress_message(sim) = @printf("Iteration: %04d, time: %s, Δt: %s, wall time: 
 simulation.callbacks[:progress] = Callback(progress_message, IterationInterval(100))
 #update the timestep length each day
 @warn "Timestep utility may cause instability"
-simulation.callbacks[:timestep] = Callback(update_timestep!, IterationInterval(1), (w=200/day, c_diff = 0.5, c_adv = 0.55, relaxation=0.75, c_forcing=0.1)) 
+simulation.callbacks[:timestep] = Callback(update_timestep!, IterationInterval(1), (w=200/day, c_diff = 0.5, c_adv = 0.55, relaxation=0.75)) 
+simulation.callbacks[:neg_tracers] = Callback(OceanBioME.no_negative_tracers!)
+
+budget = []
+
+function check_budget!(sim)
+    b = 0.0
+    @unroll for tracer in [:NO₃, :NH₄, :D, :DD, :P, :Z, :DOM]
+        b += sum(getproperty(sim.model.tracers, tracer)[1, 1, 1:sim.model.grid.Nz] .* [Vᶜᶜᶜ(1, 1, k, sim.model.grid) for k in [1:sim.model.grid.Nz;]])
+    end
+    @unroll for sed_tracer in (:Nᵣ, :Nᵣᵣ, :Nᵣₑ)
+        b += getproperty(sim.model.auxiliary_fields, sed_tracer)[1, 1, 1] * (sim.model.grid.Δxᶜᵃᵃ*sim.model.grid.Δyᵃᶜᵃ)
+    end
+    b += sum(sim.model.particles.properties.A*(SLatissima.defaults.N_struct + sim.model.properties.N))/(14*1000)
+    push!(budget, b)
+end
+
+simulation.callback[:budget] = Callback(check_budget!)
 
 #setup dictionary of fields
 #fields = Dict(zip((["$t" for t in bgc.tracers]..., "PAR"), ([getproperty(model.tracers, t) for t in bgc.tracers]..., [getproperty(model.auxiliary_fields, t) for t in (:PAR, )]...)))
