@@ -3,6 +3,7 @@ using KernelAbstractions
 using KernelAbstractions.Extras.LoopInfo: @unroll
 using Oceananigans.Architectures: device
 using Oceananigans.Utils: launch!
+
 @kernel function _update_PAR!(PAR, grid, P, t, params) 
     i, j = @index(Global, NTuple) 
 
@@ -19,7 +20,7 @@ using Oceananigans.Utils: launch!
 
         mean_pig = (P[i, j, k]+P[i, j, k+1])*params.Rd_chl/(2*params.r_pig)
         ∫chlᵉʳ += (mean_pig^params.e_r)*dz
-        ∫chlᵉᵇ += (mean_pig^params.e_b)*dz
+        ∫chlᵉᵇ += (mean_pig^params.e_b)*dz  
 
         PAR[i, j, k] =  sp*(exp(params.k_r0 * z - params.Χ_rp * ∫chlᵉʳ) + exp(params.k_b0 * z - params.Χ_bp * ∫chlᵉᵇ))/2
     end

@@ -37,7 +37,7 @@ using Oceananigans.Utils: launch!
     end
 end 
 
-function  update(sim, params)
+function update(sim, params)
     PAR¹, PAR², PAR³ = sim.model.auxiliary_fields.PAR¹, sim.model.auxiliary_fields.PAR², sim.model.auxiliary_fields.PAR³
     Chl = (sim.model.tracers.Chlᴾ .+ sim.model.tracers.Chlᴰ).*10^6
 
