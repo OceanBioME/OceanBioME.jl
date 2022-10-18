@@ -29,7 +29,7 @@ using Statistics
 
 using Oceananigans
 using Oceananigans.Units: second, minute, minutes, hour, hours, day, days, year, years
-
+using Oceananigans.Operators: ∂zᶜᶜᶜ
 using OceanBioME 
 
 # Load parameters from src/Models/Biogeochemistry/LOBSTER.jl
@@ -64,11 +64,11 @@ Lx = 20
 Ly = 20
 Nx = 1
 Ny = 1
-Nz = 33 # number of points in the vertical direction
+Nz = 45 # number of points in the vertical direction
 Lz = 600 # domain depth
 
 # Generate vertically stretched grid 
-refinement = 10 # controls spacing near surface (higher means finer spaced)  
+refinement = 8 # controls spacing near surface (higher means finer spaced)  
 stretching = 5.754   # controls rate of stretching at bottom      
 # Normalized height ranging from 0 to 1
 h(k) = (k - 1) / Nz
@@ -91,14 +91,14 @@ dic_bc = Boundaries.airseasetup(:CO₂, forcings=(T=t_function, S=s_function))
 oxy_bc = Boundaries.airseasetup(:O₂, forcings=(T=t_function, S=s_function))
 
 # Set up the OceanBioME model with the specified biogeochemical model, grid, parameters, light, and boundary conditions
-bgc = Setup.Oceananigans(:LOBSTER, grid, params, optional_sets=(:carbonates, :oxygen), topboundaries=(DIC=dic_bc, OXY=oxy_bc))
+bgc = Setup.Oceananigans(:LOBSTER, grid, params, optional_sets=(:carbonates, :oxygen), topboundaries=(DIC=dic_bc, OXY=oxy_bc), open_bottom=false)
 @info "Set up OceanBioME model"
 
 # Create a function with the turbulent vertical diffusivity. This is an idealized functional form, but the depth of mixing is based on an interpolation to the mixed layer depth from the Mercator Ocean state estimate.
-κₜ(x, y, z, t) = 8e-2*max(1-(z+mld_itp(mod(t,364days))/2)^2/(mld_itp(mod(t,364days))/2)^2,0)+1e-4;   #m^2 s^-1
+κₜ(x, y, z, t) = 2e-2*max(1-(z+mld_itp(mod(t,364days))/2)^2/(mld_itp(mod(t,364days))/2)^2,0)+1e-4;   #m^2 s^-1
 
 # Create a 'model' to run in Oceananignas
-model = NonhydrostaticModel(advection = UpwindBiasedFifthOrder(),
+model = NonhydrostaticModel(
                             timestepper = :RungeKutta3,
                             grid = grid,
                             tracers = (:b, bgc.tracers...),
@@ -147,15 +147,22 @@ simulation.callbacks[:progress] = Callback(progress_message, IterationInterval(1
 fields = Dict(zip((["$t" for t in bgc.tracers]..., "PAR"), ([getproperty(model.tracers, t) for t in bgc.tracers]..., [getproperty(model.auxiliary_fields, t) for t in (:PAR, )]...)))
 simulation.output_writers[:profiles] = NetCDFOutputWriter(model, fields, filename="data_forced.nc", schedule=TimeInterval(1days), overwrite_existing=true)
 
-@info "Setup simulation"
-# Run the simulation                            
-run!(simulation)
+budget = []
 
+function disp_budget(sim)
+    push!(budget, sum(sim.model.tracers.NO₃[1, 1, 1:Nz])+sum(sim.model.tracers.NH₄[1, 1, 1:Nz])+sum(sim.model.tracers.P[1, 1, 1:Nz])+sum(sim.model.tracers.Z[1, 1, 1:Nz])+sum(sim.model.tracers.DOM[1, 1, 1:Nz])+sum(sim.model.tracers.D[1, 1, 1:Nz])+sum(sim.model.tracers.DD[1, 1, 1:Nz]))
+end
+simulation.callbacks[:budget] = Callback(disp_budget, IterationInterval(1))
+@info "Setup simulation"
+
+simulation.callbacks[:timestep] = Callback(update_timestep!, IterationInterval(1), (w=200/day, c_diff = 0.45, c_adv = 0.45, relaxation=0.75))
+
+run!(simulation)
+#=
 include("PlottingUtilities.jl")
 # Load and plot the results
 results = load_tracers(simulation)
 plot(profiles(results)...)
-
 # Save the plot to a PDF file
 savefig("data_forced.pdf")
-
+=#

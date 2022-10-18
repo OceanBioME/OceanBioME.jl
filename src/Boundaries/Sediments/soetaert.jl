@@ -84,7 +84,6 @@ function integrate_sediment!(sim, params)
 end
 
 function setupsediment(grid; w_fast=200/day, w_slow=3.47e-5, λ=1.0, parameters=defaults, Nᵣᵣᵢ=24.0, Nᵣᵢ=85.0, f_ref=0.1, f_fast=0.74, f_slow=0.26, carbonates=true)
-    @warn "Sediment model will corrently produce incorrect results with non-zero water velocity (currently the deposition simply the concentration*sinking speed which is incorrect if detritus has other w components"
     #fractions from Boudreau B. P. and Ruddick B. R. ( 1991) On a reactive continuum representation of organic matter diagenesis. Amer. J. Sci. 291, 507-538.
     #as used by https://reader.elsevier.com/reader/sd/pii/0016703796000130
     #additionally refractory fraction from https://reader.elsevier.com/reader/sd/pii/001670379500042X

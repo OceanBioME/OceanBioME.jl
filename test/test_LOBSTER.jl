@@ -4,8 +4,8 @@ using Oceananigans
 using Oceananigans.Fields: TracerFields, fill_halo_regions!
 
 #initial values
-P = 0.004; Z = 0.004; D = 0.002; DD = 0.002; NO₃ = 11.4; NH₄ = 0.05; DOM = 0.0; DIC = 2200; ALK = 2400; OXY = 240; 
-PAR = 10; 
+P = 0.004*rand(); Z = 0.004*rand(); D = 0.002*rand(); DD = 0.002*rand(); NO₃ = 11.4*rand(); NH₄ = 0.05*rand(); DOM = 0.0*rand(); DIC = 2200*rand(); ALK = 2400*rand(); OXY = 240*rand(); 
+PAR = 10*rand(); 
 
 function test_forcing(val)
     @test !isnan(val)

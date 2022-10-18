@@ -13,6 +13,8 @@ export Light, Boundaries, update_timestep!, Budget, Sediments
 #Oceananigans extensions
 export ColumnField, isacolumn
 
+@inline get_local_value(i, j, k, C) = size(C)[3] == 1 ? C[i, j, 1] : C[i, j, k] #for getting 2D field values
+
 #Overload some Oceananigans functions
 include("Oceananigans/Oceananigans.jl")
 
