@@ -3,6 +3,8 @@ export run!
 using OceanBioME, Oceananigans, DiffEqBase, OrdinaryDiffEq
 using Oceananigans.Grids: AbstractGrid
 using Oceananigans.Architectures: arch_array
+using Oceananigans.BoundaryConditions: ImpenetrableBoundaryCondition, OpenBoundaryCondition
+using Oceananigans.Fields: ZFaceField
 
 function loadmodel(model)
     models = propertynames(OceanBioME)
@@ -27,15 +29,21 @@ function loadtracers(model, optional_sets)
     return (core=model.tracers, optional=optional_tracers)
 end
 
-function setuptracer(model, grid, tracer, field_dependencies, topboundaries, bottomboundaries, forcing_params; sinking, advection_scheme, no_sinking_flux)
+function setuptracer(model, grid, tracer, field_dependencies, topboundaries, bottomboundaries, forcing_params; sinking, advection_scheme, open_bottom)
     forcing = Forcing(getproperty(model.forcing_functions, tracer), field_dependencies=field_dependencies, parameters=forcing_params)
     if (sinking && tracer in keys(model.sinking))
-        slip_vel = arch_array(grid.architecture, zeros(0:grid.Nx+2,0:grid.Ny+2,0:grid.Nz+2))
-        depth = abs(grid.zᵃᵃᶜ[1])
-        for k=0:grid.Nz-2
-            @inbounds slip_vel[:, :, k] .= getproperty(model.sinking, tracer)(grid.zᵃᵃᶜ[k], forcing_params)*(no_sinking_flux ? (1-exp(5*(abs(grid.zᵃᵃᶜ[k]) - depth))) : 1)
+        slip_bcs = FieldBoundaryConditions(grid, (Center, Center, Face), top=ImpenetrableBoundaryCondition(), bottom=(!open_bottom ? ImpenetrableBoundaryCondition() : OpenBoundaryCondition(model.sinking[tracer](grid.zᵃᵃᶠ[1], forcing_params))))
+        w_slip = ZFaceField(grid, boundary_conditions=slip_bcs)
+        for k=1-grid.Hz:grid.Nz+grid.Hz+1 
+            @inbounds w_slip[:, :, k] .= model.sinking[tracer](grid.zᵃᵃᶠ[k], forcing_params)
         end
-        forcing = (forcing, AdvectiveForcing(advection_scheme(), w=slip_vel))
+        forcing = (forcing, AdvectiveForcing(advection_scheme(), w=w_slip))
+        #=w_slip = zeros(grid.Nx+2*grid.Hx, grid.Ny+2*grid.Hy, grid.Nz+2*grid.Hz)
+        for k=1:grid.Nz+2*grid.Hz
+            @inbounds w_slip[:, :, k] .= model.sinking[tracer](grid.zᵃᵃᶜ[k], forcing_params)
+        end
+        if !open_bottom w_slip[:, :, 1] .= 0.0 end
+        forcing = (forcing, AdvectiveForcing(advection_scheme(), w=w_slip))=#
     end
 
     topboundary = tracer in keys(topboundaries) ? getproperty(topboundaries, tracer) : FluxBoundaryCondition(0)
@@ -55,7 +63,7 @@ function Oceananigans(model::Symbol,
                                     optional_sets::Tuple=(),
                                     sinking = true, 
                                     advection_scheme = UpwindBiasedFifthOrder,
-                                    no_sinking_flux = true)
+                                    open_bottom = false)
 
     model=loadmodel(model)
     tracers=loadtracers(model, optional_sets)
@@ -66,14 +74,14 @@ function Oceananigans(model::Symbol,
     forcing_params=merge(params, (PAR = PAR, ))
 
     for tracer in tracers.core
-        forcing, bcs = setuptracer(model, grid, tracer, tracers.core, topboundaries, bottomboundaries, forcing_params; sinking=sinking, advection_scheme=advection_scheme, no_sinking_flux=no_sinking_flux)
+        forcing, bcs = setuptracer(model, grid, tracer, tracers.core, topboundaries, bottomboundaries, forcing_params; sinking=sinking, advection_scheme=advection_scheme, open_bottom=open_bottom)
         forcing_functions = (forcing_functions..., forcing)
         boundary_functions = (boundary_functions..., bcs)
     end
 
     for optionset in tracers.optional
         for tracer in optionset
-            forcing, bcs = setuptracer(model, grid, tracer, (tracers.core..., optionset...), topboundaries, bottomboundaries, forcing_params; sinking=sinking, advection_scheme=advection_scheme, no_sinking_flux=no_sinking_flux)
+            forcing, bcs = setuptracer(model, grid, tracer, (tracers.core..., optionset...), topboundaries, bottomboundaries, forcing_params; sinking=sinking, advection_scheme=advection_scheme, open_bottom=open_bottom)
             forcing_functions = (forcing_functions..., forcing)
             boundary_functions = (boundary_functions..., bcs)
         end
