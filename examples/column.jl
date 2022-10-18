@@ -67,7 +67,7 @@ PAR_field = Oceananigans.Fields.Field{Center, Center, Center}(grid)
 
 # Set up the OceanBioME model with the specified biogeochemical model, grid, parameters, light, and optional boundary conditions(More examples will be provided.)
 # If optional tracers are included, add e.g. optional_sets=(:carbonates, :oxygen), topboundaries=(DIC=dic_bc, OXY=oxy_bc). 
-bgc = Setup.Oceananigans(:LOBSTER, grid, params, PAR_field) 
+bgc = Setup.Oceananigans(:LOBSTER, grid, params) 
 
 @info "Setup OceanBioME model"
 # Create a function of the turbulent vertical diffusivity. This is an idealized functional form, and the depth of mixing is based on an interpolation to the idealized mixed layer depth

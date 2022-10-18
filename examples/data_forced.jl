@@ -91,7 +91,7 @@ dic_bc = Boundaries.airseasetup(:CO₂, forcings=(T=t_function, S=s_function))
 oxy_bc = Boundaries.airseasetup(:O₂, forcings=(T=t_function, S=s_function))
 
 # Set up the OceanBioME model with the specified biogeochemical model, grid, parameters, light, and boundary conditions
-bgc = Setup.Oceananigans(:LOBSTER, grid, params, PAR_field, optional_sets=(:carbonates, :oxygen), topboundaries=(DIC=dic_bc, OXY=oxy_bc))
+bgc = Setup.Oceananigans(:LOBSTER, grid, params, optional_sets=(:carbonates, :oxygen), topboundaries=(DIC=dic_bc, OXY=oxy_bc))
 @info "Set up OceanBioME model"
 
 # Create a function with the turbulent vertical diffusivity. This is an idealized functional form, but the depth of mixing is based on an interpolation to the mixed layer depth from the Mercator Ocean state estimate.
