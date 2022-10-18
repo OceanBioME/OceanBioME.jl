@@ -1,8 +1,10 @@
 "
-Model of Sacharina Latissima from Broch and Slagstad 2012, updated with parameters of Broch 2013.
-TODO: Also extended to depend on salinity and current by Broch 2019.
+Model of Sacharina Latissima from Broch and Slagstad 2012, updated with parameters of Broch 2013, and current from Broch 2019
+TODO: Also extended to depend on salinity by Broch 2019.
 
 Extending to consider uptake of NO₃ vs NH₄ by Fossberg 2018, with parameter values from Ahn 1998
+
+Extended to remove from nitrogen pool when carbon is exuded as DOM
 
 References:
 Ahn, O., Petrell, R. J., & Harrison, P. J. (1998). Ammonium and nitrate uptake by Laminaria saccharina and Nereocystis luetkeana originating from a salmon sea cage farm. In Journal of Applied Phycology (Vol. 10, pp. 333–340)
@@ -67,7 +69,7 @@ function equations(x::AbstractFloat, y::AbstractFloat, z::AbstractFloat, t::Abst
         r = _r(T, μ, j_NO₃ + j_NH₄, params)
 
         dA = (μ - ν) * A / (60*60*24)
-        dN = ((j_NO₃ + j_NH₄) / params.K_A - μ * (N + params.N_struct)) / (60*60*24)
+        dN = ((j_NO₃ + j_NH₄ - p*e*14/(12*6.56)) / params.K_A - μ * (N + params.N_struct)) / (60*60*24)
         dC = ((p* (1 - e) - r) / params.K_A - μ * (C + params.C_struct)) / (60*60*24)
 
         A_new = A+dA*Δt 
