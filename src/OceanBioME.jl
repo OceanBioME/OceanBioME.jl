@@ -1,6 +1,20 @@
 module OceanBioME
 
-export LOBSTER, NPZ, Light, Boundaries, Particles, Setup, BoxModel, SLatissima, update_timestep!, Budget
+#Biogeochemistry models
+export LOBSTER, NPZ, PISCES
+#Macroalgae models
+export SLatissima
+#Setups
+export Setup, BoxModel
+#Particles
+export Particles
+#Utilities
+export Light, Boundaries, update_timestep!, Budget, Sediments
+#Oceananigans extensions
+export ColumnField, isacolumn
+
+#Overload some Oceananigans functions
+include("Oceananigans/Oceananigans.jl")
 
 include("Boundaries/Boundaries.jl")
 include("Light/Light.jl")
@@ -8,6 +22,9 @@ include("Particles/Particles.jl")
 include("Models/Biogeochemistry/LOBSTER.jl")
 include("Models/Biogeochemistry/NPZ.jl")
 include("Models/Macroalgae/SLatissima.jl")
-include("Utils/Utils.jl")
+include("Utils/Setup.jl")
+include("Utils/BoxModel.jl")
+include("Utils/Timestep.jl")
+include("Utils/Budget.jl")
 
 end

@@ -20,8 +20,6 @@ using NetCDF
 using HDF5
 using Interpolations
 using Statistics 
-using KernelAbstractions.Extras.LoopInfo: @unroll
-using Oceananigans.Operators: Vᶜᶜᶜ
 
 using Oceananigans
 using Oceananigans.Units: second, minute, minutes, hour, hours, day, days, year, years
@@ -53,7 +51,7 @@ s_function(x, y, z, t) = salinity_itp(mod(t, 364days))
 surface_PAR(t) = PAR_itp(mod(t, 364days))  # the remainder of t after floored division by 364days. It creates an annual cycle representation of PAR.
 
 # Simulation duration    
-duration=1year
+duration=6year
 
 # Define the grid
 Lx = 20
@@ -87,10 +85,10 @@ dic_bc = Boundaries.airseasetup(:CO₂, forcings=(T=t_function, S=s_function))
 oxy_bc = Boundaries.airseasetup(:O₂, forcings=(T=t_function, S=s_function))
 
 #sediment bcs
-#sediment_bcs=Boundaries.setupsediment(grid)
+sediment_bcs=Boundaries.Sediments.Soetaert.setupsediment(grid)
 
 # Set up the OceanBioME model with the specified biogeochemical model, grid, parameters, light, and boundary conditions
-bgc = Setup.Oceananigans(:LOBSTER, grid, params, PAR, optional_sets=(:carbonates, :oxygen), topboundaries=(DIC=dic_bc, OXY=oxy_bc))#, bottomboundaries=sediment_bcs.boundary_conditions, advection_scheme=WENO)
+bgc = Setup.Oceananigans(:LOBSTER, grid, params, optional_sets=(:carbonates, :oxygen), topboundaries=(DIC=dic_bc, OXY=oxy_bc), bottomboundaries=sediment_bcs.boundary_conditions, advection_scheme=WENO)
 @info "Setup BGC model"
 
 # create a function with the vertical turbulent vertical diffusivity. This is an idealized functional form, but the depth of mixing is based on an interpolation to the mixed layer depth from the Mercator Ocean state estimate
@@ -102,16 +100,14 @@ bgc = Setup.Oceananigans(:LOBSTER, grid, params, PAR, optional_sets=(:carbonates
 n_kelp=100 # number of kelp fronds
 z₀ = [-100:-1;]*1.0 # depth of kelp fronds
 kelp_particles = SLatissima.setup(n_kelp, Lx/2, Ly/2, z₀, 
-                                                    0.0, 0.0, 0.0, 57.5, 100.0; 
+                                                    0.0, 0.0, 0.0, 57.5, 1.0; 
                                                     T = t_function, S = s_function, urel = 0.2, 
                                                     #tracer_names=(N=:NO₃, ) #Over ride naming of tracer fields (e.g. for NPZ model) where keys are tracer names and values are the particle property being written to
                                                     optional_sources=(:NH₄, ), #can remove this to only depend on NO₃ 
                                                     optional_sinks=(:NH₄, :DIC, :DD, :OXY, :DOM))
 
-c_adv = Oceananigans.Fields.Field{Center, Center, Center}(grid)
-c_diff = Oceananigans.Fields.Field{Center, Center, Center}(grid)
 # Now, create a 'model' to run in Oceananignas
-model = NonhydrostaticModel(advection = UpwindBiased(),
+model = NonhydrostaticModel(advection = WENO(),
                             timestepper = :RungeKutta3,
                             grid = grid,
                             tracers = (:b, bgc.tracers...),
@@ -120,7 +116,7 @@ model = NonhydrostaticModel(advection = UpwindBiased(),
                             closure = ScalarDiffusivity(ν=κₜ, κ=κₜ), 
                             forcing =  bgc.forcing,
                             boundary_conditions = bgc.boundary_conditions,
-                            auxiliary_fields = (;PAR, c_adv, c_diff),#merge((PAR=PAR, ), sediment_bcs.auxiliary_fields),
+                            auxiliary_fields = merge((PAR=PAR, ), sediment_bcs.auxiliary_fields),
                             particles = kelp_particles
                             )
 
@@ -141,11 +137,11 @@ OXYᵢ(x, y, z) = 240                                          #in mmolO m^-3
 set!(model, P=Pᵢ, Z=Zᵢ, D=Dᵢ, DD=DDᵢ, NO₃=NO₃ᵢ, NH₄=NH₄ᵢ, DOM=DOMᵢ, DIC=DICᵢ, ALK=ALKᵢ, OXY=OXYᵢ, u=0, v=0, w=0, b=0)
 
 ## Set up the simulation
-simulation = Simulation(model, Δt=2.5minutes, stop_time=1year)#, stop_time=3years)
-
+simulation = Simulation(model, Δt=2.5minutes, stop_time=3years)
+pickup = false
 # create a model 'callback' to update the light (PAR) profile every 1 timestep and integrate sediment model
-simulation.callbacks[:update_par] = Callback(Light.update_2λ!, IterationInterval(1), merge(merge(params, Light.defaults), (surface_PAR=surface_PAR,)))#comment out if using PAR as a function, PAR_func
-#simulation.callbacks[:integrate_sediment] = sediment_bcs.callback
+simulation.callbacks[:update_par] = Callback(Light.twoBands.update!, IterationInterval(1), merge(merge(params, Light.twoBands.defaults), (surface_PAR=surface_PAR,)));
+simulation.callbacks[:integrate_sediment] = sediment_bcs.callback
 ## Print a progress message
 progress_message(sim) = @printf("Iteration: %04d, time: %s, Δt: %s, wall time: %s\n",
                                 iteration(sim),
@@ -157,45 +153,13 @@ progress_message(sim) = @printf("Iteration: %04d, time: %s, Δt: %s, wall time: 
 simulation.callbacks[:progress] = Callback(progress_message, IterationInterval(100))
 #update the timestep length each day
 @warn "Timestep utility may cause instability"
-simulation.callbacks[:timestep] = Callback(update_timestep!, IterationInterval(1), (w=200/day, c_diff = 0.45, c_adv = 0.45, relaxation=0.75)) 
-#simulation.callbacks[:neg_tracers] = Callback(OceanBioME.no_negative_tracers!)
-
-budget = []
-
-function check_budget!(sim)
-    b = 0.0
-    @unroll for tracer in [:NO₃, :NH₄, :D, :DD, :P, :Z, :DOM]
-        b += sum(getproperty(sim.model.tracers, tracer)[1, 1, 1:sim.model.grid.Nz] .* [Vᶜᶜᶜ(1, 1, k, sim.model.grid) for k in [1:sim.model.grid.Nz;]])
-    end
-    #=@unroll for sed_tracer in (:Nᵣ, :Nᵣᵣ, :Nᵣₑ)
-        b += getproperty(sim.model.auxiliary_fields, sed_tracer)[1, 1, 1] * (sim.model.grid.Δxᶜᵃᵃ*sim.model.grid.Δyᵃᶜᵃ)
-    end
-    b += sum(sim.model.particles.properties.A.*(SLatissima.defaults.N_struct .+ sim.model.particles.properties.N))*SLatissima.defaults.K_A*1000*sim.model.particles.parameters.density/14=#
-    push!(budget, b)
-    if (sim.model.clock.iteration/10)%10==0 println(b) end
-end
-
-simulation.callbacks[:budget] = Callback(check_budget!)
-
-function output_cfl!(sim)
-    c_adv = sim.model.auxiliary_fields.c_adv
-    c_diff = sim.model.auxiliary_fields.c_diff
-    Δt = sim.Δt
-    Δz = sim.model.grid.Δzᵃᵃᶜ
-    z = sim.model.grid.zᵃᵃᶜ
-    t = sim.model.clock.time
-    @unroll for k=1:Nz
-        c_adv[1, 1, k] = (200/day)*Δt/Δz[k]
-        c_diff[1, 1, k] = Δt*sim.model.closure.κ.P(0.5, 0.5, z[k], t)/(Δz[k]^2)
-    end
-end
-simulation.callbacks[:cfl] = Callback(output_cfl!, IterationInterval(100))
+simulation.callbacks[:timestep] = Callback(update_timestep!, IterationInterval(1), (w=200/day, c_diff = 0.5, c_adv = 0.55, relaxation=0.75, c_forcing=0.1)) 
 
 #setup dictionary of fields
 #fields = Dict(zip((["$t" for t in bgc.tracers]..., "PAR"), ([getproperty(model.tracers, t) for t in bgc.tracers]..., [getproperty(model.auxiliary_fields, t) for t in (:PAR, )]...)))
-#fields = Dict(zip((["$t" for t in bgc.tracers]..., "PAR", "Nᵣᵣ", "Nᵣ", "Nᵣₑ"), ([getproperty(model.tracers, t) for t in bgc.tracers]..., [getproperty(model.auxiliary_fields, t) for t in (:PAR, :Nᵣᵣ, :Nᵣ, :Nᵣₑ)]...)))
-fields = Dict(zip(["$t" for t in [keys(model.tracers)..., keys(model.auxiliary_fields)...]], [model.tracers..., model.auxiliary_fields...]))
-simulation.output_writers[:profiles] = NetCDFOutputWriter(model, fields, filename="kelp_example.nc", schedule=IterationInterval(100))
+fields = Dict(zip((["$t" for t in bgc.tracers]..., "PAR", "Nᵣᵣ", "Nᵣ", "Nᵣₑ"), ([getproperty(model.tracers, t) for t in bgc.tracers]..., [getproperty(model.auxiliary_fields, t) for t in (:PAR, :Nᵣᵣ, :Nᵣ, :Nᵣₑ)]...)))
+
+simulation.output_writers[:profiles] = NetCDFOutputWriter(model, fields, filename="kelp_example.nc", schedule=TimeInterval(1days), overwrite_existing=!pickup)
 
 #checkpoint after warmup so we don't have to rerun for different kelp configs
 simulation.output_writers[:checkpointer] = Checkpointer(model, schedule=SpecifiedTimes([i*50days for i=1:10]), prefix="kelp_checkpoint")
@@ -203,10 +167,9 @@ simulation.output_writers[:checkpointer] = Checkpointer(model, schedule=Specifie
 @info "Running simulation for the first year (without kelp)"
 @info "(Note that the first timestep will take some time to complete)"
 # Run the simulation                           
-simulation.callbacks[:nan_checker] = Callback(Oceananigans.Simulations.NaNChecker(model.tracers))
-Oceananigans.Simulations.erroring_NaNChecker!(simulation)
-run!(simulation, pickup=false)
-#=
+
+run!(simulation)
+
 @info "Initializing kelp"
 #reset the kelp properties after warmup
 model.particles.properties.A .= 30.0*ones(n_kelp)
@@ -236,4 +199,4 @@ savefig("kelp.pdf")
 
 particles = load_particles(simulation)
 particles = particles(particles)
-savefig("kelp_particles.pdf")=#
+savefig("kelp_particles.pdf")

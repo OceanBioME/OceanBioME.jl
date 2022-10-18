@@ -12,21 +12,14 @@ Karleskind, P., Lévy, M., and Memery, L. (2011), Subduction of carbon, nitrogen
 Morel, A., and Maritorena, S. (2001). Bio-optical properties of oceanic waters: a reappraisal. J. Geophys. Res. Oceans 106, 7163–7180. doi: 10.1029/2000JC000319
 "
 module Light
+#should refactor this to be more object orientated, i.e. have a light attenuation object, specify a model and use the same functions for each, like how OCeananigans differen tmodels work
+
 using Oceananigans
 using KernelAbstractions
 using KernelAbstractions.Extras.LoopInfo: @unroll
 using Oceananigans.Architectures: device
 
 include("2band.jl")
-
-defaults = (
-    k_r0 = 0.225,  # m⁻¹
-    k_b0 = 0.0232,  # m⁻¹
-    Χ_rp = 0.037,  # m⁻¹(mgChlm⁻³)⁻ᵉʳ
-    Χ_bp = 0.074,  # m⁻¹(mgChlm⁻³)⁻ᵉᵇ
-    e_r = 0.629, 
-    e_b = 0.674, 
-    r_pig = 0.7,
-)
+include("morel.jl")
 
 end
