@@ -11,6 +11,8 @@ Details of the model can be found in the following references:
     (6) Karleskind, P., Lévy, M., and Memery, L. (2011), Subduction of carbon, nitrogen, and oxygen in the northeast Atlantic, J. Geophys. Res., 116, C02025, doi:10.1029/2010JC006446. 
 "
 module LOBSTER
+using OceanBioME: get_local_value
+using Oceananigans.Operators: ∂zᶜᶜᶜ
 using Oceananigans
 using Oceananigans.Units: second, minute, minutes, hour, hours, day, days, year, years
 
@@ -60,21 +62,31 @@ Z_forcing(x, y, z, t, NO₃, NH₄, P, Z, D, DD, DOM, PAR, params) = (
 )
 
 # Detritus
-D_forcing(x, y, z, t, NO₃, NH₄, P, Z, D, DD, DOM, PAR, params) = (
-    (1-params.f_d)*(1-params.a_z)*(G_d(P, Z, D, params)+G_p(P, Z, D, params)) 
-    + (1-params.f_d)*params.m_p*P^2 
-    - G_d(P, Z, D, params) 
-    + params.f_z*params.m_z*Z^2 
-    - params.μ_d*D 
-    #- aggreg_D2DD(z, D, DD) + aggreg_DOM2D(z, D, DOM) 
-)
-DD_forcing(x, y, z, t, NO₃, NH₄, P, Z, D, DD, DOM, PAR, params) = (
-    params.f_d*(1-params.a_z)*(G_d(P, Z, D, params)+G_p(P, Z, D, params)) 
-    + params.f_d*params.m_p*P^2 
-    + (1-params.f_z)*params.m_z*Z^2 
-    - params.μ_dd*DD 
-    #+ aggreg_D2DD(z, D, DD) + aggreg_DOM2DD(z, DD, DOM) 
-)
+function D_forcing(i, j, k, grid, clock, model_fields, params)
+    P, Z, DOM, D, DD, NO₃, NH₄, PAR = get_local_value.(i, j, k, values(model_fields[(:P, :Z, :DOM, :D, :DD, :NO₃, :NH₄, :PAR)]))
+    x, y, z, t = grid.xᶜᵃᵃ[i], grid.yᵃᶜᵃ[j], grid.zᵃᵃᶜ[k], clock.time
+    return (
+        (1-params.f_d)*(1-params.a_z)*(G_d(P, Z, D, params)+G_p(P, Z, D, params)) 
+        + (1-params.f_d)*params.m_p*P^2 
+        - G_d(P, Z, D, params) 
+        + params.f_z*params.m_z*Z^2 
+        - params.μ_d*D 
+        + params.V_d*tanh(max(-z/params.λ,0))*∂zᶜᶜᶜ(i, j, k, grid, model_fields.D)
+        #- aggreg_D2DD(z, D, DD) + aggreg_DOM2D(z, D, DOM) 
+    )
+end
+function DD_forcing(i, j, k, grid, clock, model_fields, params)
+    P, Z, DOM, D, DD, NO₃, NH₄, PAR = get_local_value.(i, j, k, values(model_fields[(:P, :Z, :DOM, :D, :DD, :NO₃, :NH₄, :PAR)]))
+    x, y, z, t = grid.xᶜᵃᵃ[i], grid.yᵃᶜᵃ[j], grid.zᵃᵃᶜ[k], clock.time
+    return (
+        params.f_d*(1-params.a_z)*(G_d(P, Z, D, params)+G_p(P, Z, D, params)) 
+        + params.f_d*params.m_p*P^2 
+        + (1-params.f_z)*params.m_z*Z^2 
+        - params.μ_dd*DD 
+        + params.V_dd*tanh(max(-z/params.λ,0))*∂zᶜᶜᶜ(i, j, k, grid, model_fields.DD)
+        #+ aggreg_D2DD(z, D, DD) + aggreg_DOM2DD(z, DD, DOM) 
+    )
+end
 
 # source functions for the carbonate chemistry model as described in reference (5)
 DIC_forcing(x, y, z, t, NO₃, NH₄, P, Z, D, DD, DOM, DIC, ALK, PAR, params) = (
@@ -98,16 +110,12 @@ OXY_forcing(x, y, z, t, NO₃, NH₄, P, Z, D, DD, DOM, OXY, PAR, params) = (
     - params.Rd_oxy*params.μ_n*NH₄#there is a typo in https://agupubs.onlinelibrary.wiley.com/doi/10.1029/2010JC006446 so I am not sure the first term of this is correct, but this makes sense
 )
 
-# Define the detritus sinking speed profiles
-D_sinking(z, params) = params.V_d*tanh(max(-z/params.λ,0))
-DD_sinking(z, params) = params.V_dd*tanh(max(-z/params.λ,0))
-
 tracers=(:NO₃, :NH₄, :P, :Z, :D, :DD, :DOM)
 optional_tracers=(carbonates=(:DIC, :ALK), oxygen=(:OXY,))
 
 forcing_functions=(NO₃=NO₃_forcing, NH₄=NH₄_forcing, P=P_forcing, Z=Z_forcing, D=D_forcing, DD=DD_forcing, DOM=DOM_forcing, DIC=DIC_forcing, ALK=ALK_forcing, OXY=OXY_forcing)
-sinking=(D=D_sinking, DD=DD_sinking)
-
+discrete_forcing = (NO₃=false, NH₄=false, P=false, Z=false, D=true, DD=true, DOM=false, DIC=false, ALK=false, OXY=false)
+sinking = NamedTuple()
 required_fields = (:PAR, )
 requried_parameters = NamedTuple()
 
@@ -117,16 +125,16 @@ const defaults = (
     g_z = 9.26e-6,   # Zooplankton maximal grazing rate  s⁻¹
     K_z = 1.0,    # Grazing half-saturation value    mmolm⁻³
     #Q_sol = 600,  # incoming solar radiation   Wm⁻², need to check the number
-    Kₚₐᵣ = 33,  # Light limitation half-saturation value  Wm⁻²
-    ψ = 3,  # Inhibition of nitrate uptake by ammonium
+    Kₚₐᵣ = 33.0,  # Light limitation half-saturation value  Wm⁻²
+    ψ = 3.0,  # Inhibition of nitrate uptake by ammonium
     Kₙₒ₃ = 0.7,  # Nitrate limitation half-saturation value   mmolm⁻³
     Kₙₕ₄ = 0.001,  # Ammonium limitation half-saturation value   mmolm⁻³
-    v_dd_min = 50/day, #DD min sinking speed  50/day
-    v_dd_max = 200/day, #DD max sinking speed
+    v_dd_min = 50.0/day, #DD min sinking speed  50/day
+    v_dd_max = 200.0/day, #DD max sinking speed
     #detritus sinking parameters
     V_d = -3.47e-5,  #  Detritus sedimentation speed   ms⁻¹
-    V_dd = -200/day,  #  Detritus sedimentation speed  -v_dd_min       50m/day=0.0005878  ms⁻¹
-    λ = 1, # I think it should be deeper than the first grid point     
+    V_dd = -200.0/day,  #  Detritus sedimentation speed  -v_dd_min       50m/day=0.0005878  ms⁻¹
+    λ = 1.0, # I think it should be deeper than the first grid point     
     μ_p = 1.21e-5, #  s⁻¹   Phytoplankton maximal growth rate   1/day
 
     #"Lobster_parameters"
@@ -146,8 +154,8 @@ const defaults = (
     #f_n = 0.75, #  Ammonium/DOM redistribution ratio
     α_p = 0.75,  #NH4 fraction of P exsudation
     α_z = 0.5,  #NH4 fraction of Z excretion
-    α_d = 0, #NH4 fraction of D degradation
-    α_dd = 0, #NH4 fraction of  DD degradation
+    α_d = 0.0, #NH4 fraction of D degradation
+    α_dd = 0.0, #NH4 fraction of  DD degradation
 
     Rd_phy = 6.56, # C:N ratio for P molC mol N -1
     Rd_dom = 6.56,
