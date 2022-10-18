@@ -25,17 +25,18 @@ end
 
 function apply_sinks!(model, particles, p, i, j, k, d, Δt)
     for (tracer_name, sink) in pairs(particles.parameters.sink_fields)
-        value =particles.parameters.density * Δt * getproperty(model.particles.properties, sink.property)[p] / (d * Vᶜᶜᶜ(i, j, k, model.grid))
-        if abs(value) > 0
+        value = particles.parameters.density * Δt * getproperty(model.particles.properties, sink.property)[p] / (d * Vᶜᶜᶜ(i, j, k, model.grid))
+        if abs(value)!=0 #its annoying when we have 0-0 apparently being < 0 so throws the warning
             res = value + getproperty(model.tracers, tracer_name)[i, j, k]
             if res < 0
                 @warn "Particle tried to take tracer below zero, conserving tracer (may cause adverse effects on particle dynamics)"
+            end#=
                 getproperty(model.tracers, tracer_name)[i, j, k] = 0
                 getproperty(particles.properties, sink.fallback)[p] += fallback(particles, p, res, sink.fallback_scalefactor)*Vᶜᶜᶜ(i, j, k, model.grid)
-            else
+            else=#
                 getproperty(model.tracers, tracer_name)[i, j, k] += value
                 getproperty(model.timestepper.Gⁿ, tracer_name)[i, j, k] += value
-            end
+            #end
         end
     end
 end
