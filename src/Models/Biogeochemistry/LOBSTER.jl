@@ -65,25 +65,25 @@ Z_forcing(x, y, z, t, NO₃, NH₄, P, Z, D, DD, DOM, PAR, params) = (
 function D_forcing(i, j, k, grid, clock, model_fields, params)
     P, Z, DOM, D, DD, NO₃, NH₄, PAR = get_local_value.(i, j, k, values(model_fields[(:P, :Z, :DOM, :D, :DD, :NO₃, :NH₄, :PAR)]))
     x, y, z, t = grid.xᶜᵃᵃ[i], grid.yᵃᶜᵃ[j], grid.zᵃᵃᶜ[k], clock.time
-    return (
+    return @show (
         (1-params.f_d)*(1-params.a_z)*(G_d(P, Z, D, params)+G_p(P, Z, D, params)) 
         + (1-params.f_d)*params.m_p*P^2 
         - G_d(P, Z, D, params) 
         + params.f_z*params.m_z*Z^2 
         - params.μ_d*D 
-        + params.V_d*tanh(max(-z/params.λ,0))*∂zᶜᶜᶜ(i, j, k, grid, model_fields.D)
+        + @show params.V_d*∂zᶜᶜᶜ(i, j, k, grid, model_fields.D)
         #- aggreg_D2DD(z, D, DD) + aggreg_DOM2D(z, D, DOM) 
     )
 end
 function DD_forcing(i, j, k, grid, clock, model_fields, params)
     P, Z, DOM, D, DD, NO₃, NH₄, PAR = get_local_value.(i, j, k, values(model_fields[(:P, :Z, :DOM, :D, :DD, :NO₃, :NH₄, :PAR)]))
     x, y, z, t = grid.xᶜᵃᵃ[i], grid.yᵃᶜᵃ[j], grid.zᵃᵃᶜ[k], clock.time
-    return (
+    return @show (
         params.f_d*(1-params.a_z)*(G_d(P, Z, D, params)+G_p(P, Z, D, params)) 
         + params.f_d*params.m_p*P^2 
         + (1-params.f_z)*params.m_z*Z^2 
         - params.μ_dd*DD 
-        + params.V_dd*tanh(max(-z/params.λ,0))*∂zᶜᶜᶜ(i, j, k, grid, model_fields.DD)
+        + @show params.V_dd*∂zᶜᶜᶜ(i, j, k, grid, model_fields.DD) #at some point update to be non constant 
         #+ aggreg_D2DD(z, D, DD) + aggreg_DOM2DD(z, DD, DOM) 
     )
 end
