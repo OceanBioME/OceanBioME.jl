@@ -23,7 +23,7 @@ using Oceananigans.Units: second, minute, minutes, hour, hours, day, days, year,
 # Limiting equations
 @inline Lₚₐᵣ(PAR, params) = 1-exp(-PAR/params.Kₚₐᵣ) # reference (4) #Light limitation
 @inline L_NO₃(NO₃, NH₄, params) = NO₃*exp(-params.ψ*NH₄)/(NO₃+params.Kₙₒ₃) #Nitrate limitation
-@inline L_NH₄(NH₄, params) = NH₄/(NH₄+params.Kₙₕ₄) #Ammonium limitation
+@inline L_NH₄(NH₄, params) = max(0.0, NH₄/(NH₄+params.Kₙₕ₄)) #Ammonium limitation
 
 # Nutrients
 NO₃_forcing(x, y, z, t, NO₃, NH₄, P, Z, D, DD, DOM, PAR, params) = (

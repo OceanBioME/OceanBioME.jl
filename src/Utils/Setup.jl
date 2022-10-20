@@ -3,7 +3,7 @@ export run!
 using OceanBioME, Oceananigans, DiffEqBase, OrdinaryDiffEq
 using Oceananigans.Grids: AbstractGrid
 using Oceananigans.Architectures: arch_array
-using Oceananigans.BoundaryConditions: ImpenetrableBoundaryCondition, OpenBoundaryCondition
+using Oceananigans.BoundaryConditions: ImpenetrableBoundaryCondition, ValueBoundaryCondition
 using Oceananigans.Fields: ZFaceField
 
 function loadmodel(model)
@@ -62,7 +62,8 @@ function setuptracer(model, grid, tracer, field_dependencies, topboundaries, bot
     forcing = Forcing(getproperty(model.forcing_functions, tracer), field_dependencies=field_dependencies, parameters=forcing_params, discrete_form = discrete)
     if (sinking && tracer in keys(sinking_forcings))
         if isa(model.sinking[tracer], Function)
-            slip_bcs = FieldBoundaryConditions(grid, (Center, Center, Face), top=ImpenetrableBoundaryCondition(), bottom=OpenBoundaryCondition(model.sinking[tracer](grid.zᵃᵃᶠ[1], forcing_params)))
+            no_penetration = ImpenetrableBoundaryCondition()
+            slip_bcs = FieldBoundaryConditions(grid, (Center, Center, Face), top=no_penetration, bottom=no_penetration)
             w_slip = ZFaceField(grid, boundary_conditions=slip_bcs)
             for k=1-grid.Hz:grid.Nz+grid.Hz+1 
                 @inbounds w_slip[:, :, k] .= model.sinking[tracer](grid.zᵃᵃᶠ[k], forcing_params)

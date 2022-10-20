@@ -8,3 +8,11 @@ function no_negative_tracers!(sim; params = (exclude=(), ))
         end
     end
 end
+
+function error_on_neg!(sim; params = (exclude=(), ))
+    @unroll for (tracer_name, tracer) in pairs(sim.model.tracers)
+        if !(tracer_name in params.exclude)
+            if any(tracer .< 0.0) error("$tracer_name < 0") end
+        end
+    end
+end
