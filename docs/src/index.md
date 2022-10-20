@@ -27,6 +27,8 @@ Future development ideas include:
 - Complete changes for [GPU compatibility](https://github.com/OceanBioME/OceanBioME.jl/pull/23) (may require upstream Oceananigans.jl or even CUDA.jl changes)
 - Expand examples (e.g. global circulation example)
 
+Please see [this project board](https://github.com/orgs/OceanBioME/projects/4) for our current roadmap/progress.
+
 
 ## Quick install
 

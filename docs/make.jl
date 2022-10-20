@@ -46,18 +46,13 @@ sed_pages = [
 
 stat_pop_pages = [
     "Overview" => "model_components/quasi-stationary-populations/index.md",
-    "Seagrass (X et al. Y)" => "model_components/quasi-stationary-populations/seagrass.md",
-    "Nektons (Z et al. A)" => "model_components/quasi-stationary-populations/nekton.md",
+    #"Seagrass (X et al. Y)" => "model_components/quasi-stationary-populations/seagrass.md",
+    #"Nektons (Z et al. A)" => "model_components/quasi-stationary-populations/nekton.md",
 ]
 
 individuals_pages = [
     "Overview" => "model_components/individuals/index.md",
-    "SLatissima (Broch and Slagstad 2012 ++)" => "model_components/individuals/slatissima.md",
-]
-
-util_pages = [
-    "Budget" => "model_components/utils/budget.md",
-    "Catch negative tracers" => "model_components/utils/negative.md"
+    "Sugar Kelp (Broch and Slagstad 2012 ++)" => "model_components/individuals/slatissima.md",
 ]
 
 component_pages = [
@@ -67,12 +62,13 @@ component_pages = [
     "Light attenuation models" => "model_components/light.md",
     "Quasi-stationary populations" => stat_pop_pages,
     "Individuals" => individuals_pages,
-    "Utilities" => util_pages
+    "Utilities" => "model_components/utils.md"
 ]
 
 numerical_pages = [
     "Individuals" => "numerical_implimentation/individuals.md",
-    "Sediments" => "numerical_implimentation/sediments.md"
+    "Sediments" => "numerical_implimentation/sediments.md",
+    "Forced auxiliary fields" => "numerical_implimentation/forced-aux-fields.md"
 ]
 
 setup_pages = [
@@ -82,7 +78,9 @@ setup_pages = [
 
 param_pages = [
     "Overview" => "appendix/params/index.md",
-    "PISCES" => "appendix/params/PISCES.md"
+    "PISCES" => "appendix/params/PISCES.md",
+    "LOBSTER" => "appendix/params/LOBSTER.md",
+    "SLatissima" => "appendix/params/SLatissima.md"
 ]
 
 appendix_pages = [
@@ -120,7 +118,7 @@ makedocs(bib,
     format = format,
     pages = pages,
     modules = Module[OceanBioME],
-    doctest = true,
+    doctest = false,#true,
     strict = false,#true,
     clean = true,
     checkdocs = :exports
