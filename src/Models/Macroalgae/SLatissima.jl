@@ -67,7 +67,7 @@ function equations(x::AbstractFloat, y::AbstractFloat, z::AbstractFloat, t::Abst
         r = _r(T, μ, j_NO₃ + j_NH₄, params)
 
         dA = (μ - ν) * A / (60*60*24)
-        dN = ((j_NO₃ + j_NH₄) / params.K_A - μ * (N + params.N_struct)) / (60*60*24)
+        dN = ((j_NO₃ + j_NH₄ - p*e*14/(12*6.56)) / params.K_A - μ * (N + params.N_struct)) / (60*60*24)
         dC = ((p* (1 - e) - r) / params.K_A - μ * (C + params.C_struct)) / (60*60*24)
 
         A_new = A+dA*Δt 
