@@ -66,9 +66,9 @@ function setuptracer(model, grid, tracer, field_dependencies, topboundaries, bot
     if (sinking && tracer in keys(sinking_forcings))
         w_slip = ZFaceField(grid)
         for k=1:grid.Nz 
-            @inbounds w_slip[:, :, k] .= get_sinking_vel(model.sinking[tracer], grid.zᵃᵃᶠ[k], forcing_params)*(open_bottom ? 1.0 : (1 - exp(1-k)))
+            @inbounds w_slip[:, :, k] .= get_sinking_vel(model.sinking[tracer], grid.zᵃᵃᶠ[k], forcing_params)*(open_bottom ? 1.0 : (1 - exp((1-k)/2)))
         end
-        forcing = (forcing, AdvectiveForcing(WENO(), w=w_slip))
+        forcing = (forcing, AdvectiveForcing(WENO(;grid), w=w_slip))
     end
 
     topboundary = tracer in keys(topboundaries) ? getproperty(topboundaries, tracer) : FluxBoundaryCondition(0)
