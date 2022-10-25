@@ -4,7 +4,8 @@ using Oceananigans.BoundaryConditions: getbc
 
 function minimum_timescale(κ::Function, grid, t::Number) 
     if !(grid.Nz==1 && grid.Ny ==1)
-        return findmin([1/κ(0.5, 0.5, z, t) for z in grid.zᵃᵃᶜ[1:grid.Nz]].*grid.Δzᵃᵃᶜ[1:grid.Nz].^2)[1]
+        Δz = isa(grid.Δzᵃᵃᶜ, Number) ? grid.Δzᵃᵃᶜ : grid.Δzᵃᵃᶜ[1:grid.Nz]
+        return findmin([1/κ(0.5, 0.5, z, t) for z in grid.zᵃᵃᶜ[1:grid.Nz]].*Δz.^2)[1]
     else
         @warn "Multidimensional grid may take some time to find max functional diffusivity"
         diffs = zeros(grid.Nx, grid.Ny, grid.Nz)

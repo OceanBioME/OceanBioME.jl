@@ -21,7 +21,7 @@ using Oceananigans.Units: second, minute, minutes, hour, hours, day, days, year,
 @inline G_p(P, Z, D, params) = params.g_z*p(P, D, params)*P*Z/(params.K_z+P*p(P, D, params)+(1-p(P, D, params))*D) #Grazing of phytoplankton
 
 # Limiting equations
-@inline Lₚₐᵣ(PAR, params) = 1-exp(-PAR/params.Kₚₐᵣ) # reference (4) #Light limitation
+@inline Lₚₐᵣ(PAR, params) = 1 - exp(-PAR/params.Kₚₐᵣ) # reference (4) #Light limitation
 @inline L_NO₃(NO₃, NH₄, params) = NO₃*exp(-params.ψ*NH₄)/(NO₃+params.Kₙₒ₃) #Nitrate limitation
 @inline L_NH₄(NH₄, params) = max(0.0, NH₄/(NH₄+params.Kₙₕ₄)) #Ammonium limitation
 
@@ -128,10 +128,9 @@ const defaults = (
     #detritus sinking parameters
     w_d = -3.47e-5,  #  Detritus sedimentation speed   ms⁻¹
     w_dd = -200.0/day,  #  Detritus sedimentation speed  -v_dd_min       50m/day=0.0005878  ms⁻¹
-    λ = 1.0, # I think it should be deeper than the first grid point     
+    λ = 1.0, 
     μ_p = 1.21e-5, #  s⁻¹   Phytoplankton maximal growth rate   1/day
 
-    #"Lobster_parameters"
     a_z = 0.7,  # Assimilated food fraction by zooplankton
     m_z = 2.31e-6,  # Zooplankton mortality rate  s⁻¹mmol⁻¹m³
     μ_z = 5.8e-7, # Zooplankton excretion rate  s⁻¹
