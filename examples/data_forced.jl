@@ -18,14 +18,7 @@ References
 (5) Resplandy, L., Lévy, M., d'Ovidio, F. and Merlivat, L., 2009. Impact of submesoscale variability in estimating the air‐sea CO2 exchange: Results from a model study of the POMME experiment. Global Biogeochemical Cycles, 23(1).
 """
 
-using Random   
-using Printf
-using Plots
-using JLD2
-using NetCDF
-using HDF5
-using Interpolations
-using Statistics 
+using Random, Printf, NetCDF, Interpolations, DataDeps
 
 using Oceananigans
 using Oceananigans.Units: second, minute, minutes, hour, hours, day, days, year, years
@@ -36,8 +29,14 @@ using OceanBioME
 params = LOBSTER.defaults  
 
 # Import data
+dd = DataDep(
+    "example_data",
+    "example data from subpolar re analysis and observational products", 
+    "https://github.com/OceanBioME/OceanBioME_example_data/raw/main/subpolar.nc"
+)
+register(dd)
 # The temperature and salinity are needed to calculate the air-sea CO2 flux.  The mixed layer depth is used to construct an idealized diffusivity profile.
-filename = "./OceanBioME_example_data/subpolar.nc" #A small sample of data downloaded is stored in subpolar.nc for ease of use.
+filename = datadep"example_data/subpolar.nc" #A small sample of data downloaded is stored in subpolar.nc for ease of use.
 time = ncread(filename, "time")    # time in seconds
 temp = ncread(filename, "temp")    # temperature in Degrees Celsius 
 salinity = ncread(filename, "so")  # salinity in Practical Salinity Unit
@@ -84,7 +83,7 @@ grid = RectilinearGrid(size = (Nx, Ny, Nz),
                        z = z_faces)     
 
 # Initialize a PAR field                       
-PAR_field = Oceananigans.Fields.Field{Center, Center, Center}(grid)
+PAR = Oceananigans.Fields.Field{Center, Center, Center}(grid)
 
 # Specify the boundary conditions for DIC and OXY based on the air-sea CO₂ and O₂ flux
 #dic_bc = Boundaries.airseasetup(:CO₂, forcings=(T=t_function, S=s_function))
@@ -106,7 +105,7 @@ model = NonhydrostaticModel(
                                                 closure = ScalarDiffusivity(ν=κₜ, κ=κₜ), 
                                                 forcing = bgc.forcing,
                                                 boundary_conditions = bgc.boundary_conditions,
-                                                auxiliary_fields = (PAR=PAR_field, )
+                                                auxiliary_fields = (; PAR)
 )
 
 # Initialize the biogeochemical variables

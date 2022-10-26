@@ -20,21 +20,6 @@ using OceanBioME
 # Load parameters from src/Models/Biogeochemistry/LOBSTER.jl
 params = LOBSTER.defaults  
 
-# Import data
-# The temperature and salinity are needed to calculate the air-sea CO2 flux.  The mixed layer depth is used to construct an idealized diffusivity profile.
-filename = "./OceanBioME_example_data/subpolar.nc" #A small sample of data downloaded is stored in subpolar.nc for ease of use.
-time = ncread(filename, "time")    # time in seconds
-temp = ncread(filename, "temp")    # temperature in Degrees Celsius 
-salinity = ncread(filename, "so")  # salinity in Practical Salinity Unit
-mld = ncread(filename, "mld")      # mixed layer depth in Meters
-par = ncread(filename, "par")      # photosynthetically available radiation in W/m^2
-
-# Linear interpolation to access temperature, salinity, mld, and surface PAR at arbitrary time
-temperature_itp = LinearInterpolation(time, temp) 
-salinity_itp = LinearInterpolation(time, salinity) 
-mld_itp = LinearInterpolation(time, mld) 
-PAR_itp = LinearInterpolation(time, par)
-
 # Define temperature and salinity as functions of x, y, z, and t(in seconds). The temperature and salinity functions are needed to calculate the air-sea CO2 flux.
 t_function(x, y, z, t) = 2.4*cos(t*2π/year + 50day) + 10
 s_function(x, y, z, t) = 35
@@ -89,7 +74,7 @@ model = NonhydrostaticModel(
                                                 closure = ScalarDiffusivity(ν=κₜ, κ=κₜ), 
                                                 forcing = bgc.forcing,
                                                 boundary_conditions = bgc.boundary_conditions,
-                                                auxiliary_fields = (PAR=PAR_field, ),
+                                                auxiliary_fields = (; PAR),
                                                 particles = kelp_particles
 )
 

@@ -38,7 +38,7 @@ Lz = 200 # domain depth
 grid = RectilinearGrid(size=(Nx, Ny, Nz), extent=(Lx, Ly, Lz)) #A regular rectilinear grid in this case. 
 
 # Initialize a PAR field
-PAR_field = Oceananigans.Fields.Field{Center, Center, Center}(grid)  
+PAR = Oceananigans.Fields.Field{Center, Center, Center}(grid)  
 
 # Set up the OceanBioME model with the specified biogeochemical model, grid, parameters, and optionally boundary conditions and other tracer sets (e.g. carbonate chemistry)
 bgc = Setup.Oceananigans(:LOBSTER, grid, params; sinking=true, open_bottom=true) 
@@ -60,7 +60,7 @@ model = NonhydrostaticModel(
                                                 closure = ScalarDiffusivity(ν=κₜ, κ=κₜ), 
                                                 forcing = bgc.forcing,
                                                 boundary_conditions = bgc.boundary_conditions,
-                                                auxiliary_fields = (PAR=PAR_field, )
+                                                auxiliary_fields = (; PAR)
 )
 
 # Initialize the biogeochemical variables
