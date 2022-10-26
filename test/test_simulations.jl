@@ -1,4 +1,4 @@
-using OceanBioME, Test, Oceananigans, Printf
+using OceanBioME, Test, Oceananigans
 using OceanBioME.Budget: calculate_budget, calculate_C_budget
 using Oceananigans.Units: second,minute, minutes, hour, hours, day, days, year, years
 using Oceananigans.Operators: Vᶜᶜᶜ
@@ -55,11 +55,6 @@ function run_simulation(bgc_model, optionsets, sediment, arch, c)
     end
     
     set!(model, u=0, v=0, w=0, b=0)
-    progress_message(sim) = @printf("Iteration: %04d, time: %s, Δt: %s, wall time: %s\n",
-    iteration(sim),
-    prettytime(sim),
-    prettytime(sim.Δt),
-    prettytime(sim.run_wall_time))
     Δt = c*grid.Δzᵃᵃᶜ^2/κₜ(0, 0, 0, 0)
     duration = 50day
 
@@ -70,7 +65,6 @@ function run_simulation(bgc_model, optionsets, sediment, arch, c)
     if sediment
         simulation.callbacks[:integrate_sediment] = sediment_bcs.callback
     end
-    simulation.callbacks[:progress] = Callback(progress_message, IterationInterval(100))
 
     #=simulation.output_writers[:profiles] =
     JLD2OutputWriter(model, merge(model.velocities, model.tracers, model.auxiliary_fields),
@@ -106,12 +100,6 @@ function run_test(bgc_model, optionsets, sediment, arch, c)
         @test c_budget[1] ≈ c_budget[end] rtol=0.01 #not convinced
     end=#
 end
-
-progress_message(sim) = @printf("Iteration: %04d, time: %s, Δt: %s, wall time: %s\n",
-                                iteration(sim),
-                                prettytime(sim),
-                                prettytime(sim.Δt),
-                                prettytime(sim.run_wall_time))
 
 models = (:LOBSTER, )#:NPZ)
 arch = CPU()#GPU doesn't work for most at the moment but when it does itterate over that too

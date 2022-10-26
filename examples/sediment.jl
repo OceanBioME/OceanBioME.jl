@@ -93,7 +93,8 @@ progress_message(sim) = @printf("Iteration: %04d, time: %s, Δt: %s, wall time: 
                                 iteration(sim),
                                 prettytime(sim),
                                 prettytime(sim.Δt),
-                                prettytime(sim.ruNO₃, :NH₄, :P, :Z, :D, :DD, :DOM100 timesteps                                
+                                prettytime(sim.run_wall_time))
+
 simulation.callbacks[:progress] = Callback(progress_message, IterationInterval(100))
 #update the timestep length each day
 @warn "Timestep utility may cause instability"
@@ -103,13 +104,29 @@ simulation.callbacks[:timestep] = Callback(update_timestep!, TimeInterval(1hour)
 fields = Dict(zip((["$t" for t in bgc.tracers]..., "PAR"), ([getproperty(model.tracers, t) for t in bgc.tracers]..., model.auxiliary_fields.PAR)))
 simulation.output_writers[:profiles] = NetCDFOutputWriter(model, fields, filename="sediment.nc", schedule=TimeInterval(1days), overwrite_existing=true)
 
+# Oceananians storage of sliced fields is currently broken (https://github.com/CliMA/Oceananigans.jl/issues/2770) so here is a work around
+using JLD2
+sediment_file = jldopen("sediment.jld2", "w+")
+save_Nᵣ = JLD2.Group(sediment_file, "Nᵣ")
+save_Nᵣᵣ = JLD2.Group(sediment_file, "Nᵣᵣ")
+save_Nᵣₑ = JLD2.Group(sediment_file, "Nᵣₑ")
+
+function store_sediment!(sim)
+    save_Nᵣ["$(sim.model.clock.time)"] = sim.model.auxiliary_fields.Nᵣ[1, 1, 1]
+    save_Nᵣᵣ["$(sim.model.clock.time)"] = sim.model.auxiliary_fields.Nᵣᵣ[1, 1, 1]
+    save_Nᵣₑ["$(sim.model.clock.time)"] = sim.model.auxiliary_fields.Nᵣₑ[1, 1, 1]
+end
+
+simulation.callbacks[:save_sediment] = Callback(store_sediment!, TimeInterval(1days))
+
 #=
-# This is currently broken in Oceananigans https://github.com/CliMA/Oceananigans.jl/issues/2770
+# This is currently broken in Oceananigans 
 sediment_fields = Dict(zip(("Nᵣᵣ", "Nᵣ", "Nᵣₑ"), model.auxiliary_fields[(:Nᵣᵣ, :Nᵣ, :Nᵣₑ)]))
 simulation.output_writers[:sediment_profiles] = NetCDFOutputWriter(model, sediment_fields, filename="sediment_sediment.nc", schedule=TimeInterval(1days), overwrite_existing=true, indices=(:, :, 1:1))
 =#
 
-simulation.callbacks[:neg_sed] = Callback(scale_negative_tracers!; parameters=(conserved_group=(:Nᵣᵣ, :Nᵣ, :Nᵣₑ), warn=true))
+#doesn't work yet
+#simulation.callbacks[:neg_sed] = Callback(scale_negative_tracers!; parameters=(conserved_group=(:Nᵣᵣ, :Nᵣ, :Nᵣₑ), warn=true))
 
 @info "Setup simulation"
 ΣN₀ = Budget.calculate_budget(model, true, (:NO₃, :NH₄, :P, :Z, :D, :DD, :DOM))
