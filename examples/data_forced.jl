@@ -125,7 +125,7 @@ OXYᵢ(x, y, z) = 240                                          #in mmolO m^-3
 set!(model, P=Pᵢ, Z=Zᵢ, D=Dᵢ, DD=DDᵢ, NO₃=NO₃ᵢ, NH₄=NH₄ᵢ, DOM=DOMᵢ)#, DIC=DICᵢ, ALK=ALKᵢ, OXY=OXYᵢ, u=0, v=0, w=0, b=0)
 
 # Set up the simulation
-Δt=2.5minutes
+Δt=3minutes
 simulation = Simulation(model, Δt=Δt, stop_time=duration) 
 
 # Create a model 'callback' to update the light (PAR) profile every 1 timestep
@@ -144,13 +144,6 @@ simulation.callbacks[:progress] = Callback(progress_message, IterationInterval(1
 # Setup dictionary of fields
 fields = Dict(zip((["$t" for t in bgc.tracers]..., "PAR"), ([getproperty(model.tracers, t) for t in bgc.tracers]..., [getproperty(model.auxiliary_fields, t) for t in (:PAR, )]...)))
 simulation.output_writers[:profiles] = NetCDFOutputWriter(model, fields, filename="data_forced.nc", schedule=TimeInterval(1days), overwrite_existing=true)
-
-budget = []
-
-function disp_budget(sim)
-    push!(budget, sum(sim.model.tracers.NO₃[1, 1, 1:grid.Nz])+sum(sim.model.tracers.NH₄[1, 1, 1:grid.Nz])+sum(sim.model.tracers.P[1, 1, 1:grid.Nz])+sum(sim.model.tracers.Z[1, 1, 1:grid.Nz])+sum(sim.model.tracers.DOM[1, 1, 1:grid.Nz])+sum(sim.model.tracers.D[1, 1, 1:grid.Nz])+sum(sim.model.tracers.DD[1, 1, 1:grid.Nz]))
-end
-simulation.callbacks[:budget] = Callback(disp_budget, IterationInterval(1))
 
 simulation.callbacks[:neg] = Callback(scale_negative_tracers!; parameters=(conserved_group=(:NO₃, :NH₄, :P, :Z, :D, :DD, :DOM), warn=true))
 @info "Setup simulation"

@@ -22,8 +22,8 @@ params = LOBSTER.defaults
 
 # Define temperature and salinity as functions of x, y, z, and t(in seconds). The temperature and salinity functions are needed to calculate the air-sea CO2 flux.
 t_function(x, y, z, t) = 2.4*cos(t*2π/year + 50day) + 10
-s_function(x, y, z, t) = 35
-surface_PAR(t) = 60*(1-cos((t+15days)*2π/(365days)))*(1 /(1 +0.2*exp(-((t-200days)/50days)^2))) .+ 2
+s_function(x, y, z, t) = 35.0
+PAR⁰(t) = 60*(1-cos((t+15days)*2π/(365days)))*(1 /(1 +0.2*exp(-((t-200days)/50days)^2))) .+ 2
 
 # Define the grid
 Lx = 20
@@ -60,7 +60,7 @@ z₀ = [-100:10:-1;]*1.0 # depth of kelp fronds
 
 #particles API to be updated imminently to make it less horrible
 kelp_particles = SLatissima.setup(n_kelp, Lx/2, Ly/2, z₀, 
-                                                    30.0, 0.01, 0.1, 57.5, 100.0; 
+                                                    30.0, 0.01, 0.1, 57.5, 500.0; 
                                                     T = t_function, S = s_function, urel = 0.2, 
                                                     optional_sources=(:NH₄, ), #can remove this to only depend on NO₃ 
                                                     optional_sinks=(:NH₄, :DIC, :DD, :OXY, :DOM))
@@ -122,7 +122,7 @@ run!(simulation)
 # Load and plot the results
 include("PlottingUtilities.jl")
 # Load and plot the results
-results = load_tracersload_tracers("kepl.nc", (LOBSTER.tracers..., :PAR), 1)
+results = load_tracers("kelp.nc", (LOBSTER.tracers..., :PAR), 1)
 Plots.plot(profiles(results)...)
 savefig("kelp.png")
 f = plot_particles("kelp_particles.jld2")
