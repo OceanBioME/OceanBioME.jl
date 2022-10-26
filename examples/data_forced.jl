@@ -64,11 +64,11 @@ Lx = 20
 Ly = 20
 Nx = 1
 Ny = 1
-Nz = 45 # number of points in the vertical direction
+Nz = 33 # number of points in the vertical direction
 Lz = 600 # domain depth
 
 # Generate vertically stretched grid 
-refinement = 8 # controls spacing near surface (higher means finer spaced)  
+refinement = 10 # controls spacing near surface (higher means finer spaced)  
 stretching = 5.754   # controls rate of stretching at bottom      
 # Normalized height ranging from 0 to 1
 h(k) = (k - 1) / Nz
@@ -87,11 +87,11 @@ grid = RectilinearGrid(size = (Nx, Ny, Nz),
 PAR_field = Oceananigans.Fields.Field{Center, Center, Center}(grid)
 
 # Specify the boundary conditions for DIC and OXY based on the air-sea CO₂ and O₂ flux
-dic_bc = Boundaries.airseasetup(:CO₂, forcings=(T=t_function, S=s_function))
-oxy_bc = Boundaries.airseasetup(:O₂, forcings=(T=t_function, S=s_function))
+#dic_bc = Boundaries.airseasetup(:CO₂, forcings=(T=t_function, S=s_function))
+#oxy_bc = Boundaries.airseasetup(:O₂, forcings=(T=t_function, S=s_function))
 
 # Set up the OceanBioME model with the specified biogeochemical model, grid, parameters, light, and boundary conditions
-bgc = Setup.Oceananigans(:LOBSTER, grid, params, optional_sets=(:carbonates, :oxygen), topboundaries=(DIC=dic_bc, OXY=oxy_bc), open_bottom=false)
+bgc = Setup.Oceananigans(:LOBSTER, grid, params, sinking=true, open_bottom=false) #optional_sets=(:carbonates, :oxygen), topboundaries=(DIC=dic_bc, OXY=oxy_bc))
 @info "Set up OceanBioME model"
 
 # Create a function with the turbulent vertical diffusivity. This is an idealized functional form, but the depth of mixing is based on an interpolation to the mixed layer depth from the Mercator Ocean state estimate.
@@ -99,16 +99,15 @@ bgc = Setup.Oceananigans(:LOBSTER, grid, params, optional_sets=(:carbonates, :ox
 
 # Create a 'model' to run in Oceananignas
 model = NonhydrostaticModel(
-                            timestepper = :RungeKutta3,
-                            grid = grid,
-                            tracers = (:b, bgc.tracers...),
-                            coriolis = FPlane(f=1e-4),
-                            buoyancy = BuoyancyTracer(), 
-                            closure = ScalarDiffusivity(ν=κₜ, κ=κₜ), 
-                            forcing =  bgc.forcing,
-                            boundary_conditions = bgc.boundary_conditions,
-                            auxiliary_fields = (PAR=PAR_field, )
-                            )
+                                                advection = WENO(;grid),
+                                                timestepper = :RungeKutta3,
+                                                grid = grid,
+                                                tracers = bgc.tracers,
+                                                closure = ScalarDiffusivity(ν=κₜ, κ=κₜ), 
+                                                forcing = bgc.forcing,
+                                                boundary_conditions = bgc.boundary_conditions,
+                                                auxiliary_fields = (PAR=PAR_field, )
+)
 
 # Initialize the biogeochemical variables
 # These initial conditions are set rather arbitrarily in the hope that the model will converge to a repeatable annual cycle if run long enough
@@ -124,10 +123,10 @@ ALKᵢ(x, y, z)= 2400                                          #in mmolN m^-3
 OXYᵢ(x, y, z) = 240                                          #in mmolO m^-3
 
 # Set the initial conditions using functions or constants:
-set!(model, P=Pᵢ, Z=Zᵢ, D=Dᵢ, DD=DDᵢ, NO₃=NO₃ᵢ, NH₄=NH₄ᵢ, DOM=DOMᵢ, DIC=DICᵢ, ALK=ALKᵢ, OXY=OXYᵢ, u=0, v=0, w=0, b=0)
+set!(model, P=Pᵢ, Z=Zᵢ, D=Dᵢ, DD=DDᵢ, NO₃=NO₃ᵢ, NH₄=NH₄ᵢ, DOM=DOMᵢ)#, DIC=DICᵢ, ALK=ALKᵢ, OXY=OXYᵢ, u=0, v=0, w=0, b=0)
 
 # Set up the simulation
-Δt=0.5minutes
+Δt=2.5minutes
 simulation = Simulation(model, Δt=Δt, stop_time=duration) 
 
 # Create a model 'callback' to update the light (PAR) profile every 1 timestep
@@ -150,12 +149,14 @@ simulation.output_writers[:profiles] = NetCDFOutputWriter(model, fields, filenam
 budget = []
 
 function disp_budget(sim)
-    push!(budget, sum(sim.model.tracers.NO₃[1, 1, 1:Nz])+sum(sim.model.tracers.NH₄[1, 1, 1:Nz])+sum(sim.model.tracers.P[1, 1, 1:Nz])+sum(sim.model.tracers.Z[1, 1, 1:Nz])+sum(sim.model.tracers.DOM[1, 1, 1:Nz])+sum(sim.model.tracers.D[1, 1, 1:Nz])+sum(sim.model.tracers.DD[1, 1, 1:Nz]))
+    push!(budget, sum(sim.model.tracers.NO₃[1, 1, 1:grid.Nz])+sum(sim.model.tracers.NH₄[1, 1, 1:grid.Nz])+sum(sim.model.tracers.P[1, 1, 1:grid.Nz])+sum(sim.model.tracers.Z[1, 1, 1:grid.Nz])+sum(sim.model.tracers.DOM[1, 1, 1:grid.Nz])+sum(sim.model.tracers.D[1, 1, 1:grid.Nz])+sum(sim.model.tracers.DD[1, 1, 1:grid.Nz]))
 end
 simulation.callbacks[:budget] = Callback(disp_budget, IterationInterval(1))
+
+simulation.callbacks[:neg] = Callback(scale_negative_tracers!; parameters=(conserved_group=(:NO₃, :NH₄, :P, :Z, :D, :DD, :DOM), warn=true))
 @info "Setup simulation"
 
-simulation.callbacks[:timestep] = Callback(update_timestep!, IterationInterval(1), (w=200/day, c_diff = 0.45, c_adv = 0.45, relaxation=0.75))
+#§simulation.callbacks[:timestep] = Callback(update_timestep!, IterationInterval(1), (w=200/day, c_diff = 0.35, c_adv = 0.45, relaxation=0.75))
 
 run!(simulation)
 #=
