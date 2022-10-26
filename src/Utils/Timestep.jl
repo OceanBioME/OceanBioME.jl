@@ -44,7 +44,7 @@ function max_c_forcing(model)
     return max_forcing
 end
 
-function update_timestep!(sim, params=(w=200/day, c_diff = 0.55, c_adv = 0.55, relaxation=0.99, c_forcing=0.5))#, c_boundary=0.01))#off by default as computationally intensive and not limiting (as far as I can see)
+function update_timestep!(sim, params=(w=200/day, c_diff = 0.45, c_adv = 0.45, relaxation=0.75))#, c_boundary=0.01))#off by default as computationally intensive and not limiting (as far as I can see)
     Δt_diff = :c_diff in keys(params) ? sim.Δt^(1-params.relaxation)*(params.c_diff*OceanBioME.diffusion_timescale(sim.model, sim.model.grid; t=sim.model.clock.time))^params.relaxation : Inf
     Δt_adv = :c_adv in keys(params) ? sim.Δt^(1-params.relaxation)*(params.c_adv/(abs(params.w)/OceanBioME.min_Δz(sim.model.grid)))^params.relaxation : Inf #replace with some way to check the actual max sinking velocity
     Δt_forcing = :c_forcing in keys(params) ? sim.Δt^(1-params.relaxation) * (params.c_forcing/max_c_forcing(sim.model))^params.relaxation : Inf
