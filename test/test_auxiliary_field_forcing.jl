@@ -48,7 +48,7 @@ end
     function forcing4(i, j, k, grid, clock, model_fields)
         Ā = mean(model_fields.A, dims=3)
         B̄ = mean(model_fields.B, dims=3)
-        return @inbounds (Ā[i, j, 1] + B̄[i, j, 1])
+        return Ā[i, j, 1] + B̄[i, j, 1]
     end
     Forcing4 = Forcing(forcing4, discrete_form=true)
 
