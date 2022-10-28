@@ -21,6 +21,14 @@ function error_on_neg!(sim; params = (exclude=(), ))
     end
 end
 
+function warn_on_neg!(sim; params = (exclude=(), ))
+    @unroll for (tracer_name, tracer) in pairs(sim.model.tracers)
+        if !(tracer_name in params.exclude)
+            if any(tracer .< 0.0) @warn "$tracer_name < 0" end
+        end
+    end
+end
+
 @kernel function scale_for_negs!(fields, warn)
     i, j, k = @index(Global, NTuple)
     t, p = 0.0, 0.0

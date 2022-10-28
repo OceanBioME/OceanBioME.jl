@@ -125,7 +125,7 @@ OXYᵢ(x, y, z) = 240                                          #in mmolO m^-3
 set!(model, P=Pᵢ, Z=Zᵢ, D=Dᵢ, DD=DDᵢ, NO₃=NO₃ᵢ, NH₄=NH₄ᵢ, DOM=DOMᵢ)#, DIC=DICᵢ, ALK=ALKᵢ, OXY=OXYᵢ, u=0, v=0, w=0, b=0)
 
 # Set up the simulation
-Δt=3minutes
+Δt=1minutes
 simulation = Simulation(model, Δt=Δt, stop_time=duration) 
 
 # Create a model 'callback' to update the light (PAR) profile every 1 timestep
@@ -145,10 +145,10 @@ simulation.callbacks[:progress] = Callback(progress_message, IterationInterval(1
 fields = Dict(zip((["$t" for t in bgc.tracers]..., "PAR"), ([getproperty(model.tracers, t) for t in bgc.tracers]..., [getproperty(model.auxiliary_fields, t) for t in (:PAR, )]...)))
 simulation.output_writers[:profiles] = NetCDFOutputWriter(model, fields, filename="data_forced.nc", schedule=TimeInterval(1days), overwrite_existing=true)
 
-simulation.callbacks[:neg] = Callback(scale_negative_tracers!; parameters=(conserved_group=(:NO₃, :NH₄, :P, :Z, :D, :DD, :DOM), warn=true))
+simulation.callbacks[:neg] = Callback(error_on_neg!)
 @info "Setup simulation"
 
-#§simulation.callbacks[:timestep] = Callback(update_timestep!, IterationInterval(1), (w=200/day, c_diff = 0.35, c_adv = 0.45, relaxation=0.75))
+simulation.callbacks[:timestep] = Callback(update_timestep!, IterationInterval(1), (c_forcing=0.5, c_adv=0.6, c_diff=0.6, w = 200/day, relaxation=0.75))
 
 run!(simulation)
 #=

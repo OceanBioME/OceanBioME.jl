@@ -1,7 +1,7 @@
 using Oceananigans.TurbulenceClosures: min_Δxyz, cell_diffusion_timescale, formulation, min_Δz
 using Oceananigans.Units: day, minutes
 using Oceananigans.BoundaryConditions: getbc
-
+using Oceananigans: fields
 function minimum_timescale(κ::Function, grid, t::Number) 
     if !(grid.Nz==1 && grid.Ny ==1)
         Δz = isa(grid.Δzᵃᵃᶜ, Number) ? grid.Δzᵃᵃᶜ : grid.Δzᵃᵃᶜ[1:grid.Nz]
@@ -28,26 +28,28 @@ function diffusion_timescale(model, grid; t=[1.0:365.0;].*day)
     end
 end
 
-function max_c_forcing(model)
-    max_forcing = 0.0
-
-    model_fields = model.tracers
+function forcing_error_timescale(model)
+    min_forcing = Inf
     
     for (tracer_idx, tracer) in enumerate(model.tracers)
-        tendencies = abs.(model.timestepper.Gⁿ[tracer_idx+3][1:model.grid.Nx, 1:model.grid.Ny, 1:model.grid.Nz])
-        values = abs.(tracer[1:model.grid.Nx, 1:model.grid.Ny, 1:model.grid.Nz])
-        ratios = tendencies./values
-        ratios[values.<1e-6] .= NaN
-        tracer_max = findmax(ratios)[1]
-        max_forcing =  !isnan(tracer_max) ? max(max_forcing, tracer_max) : max_forcing
+        Gⁿ = @inbounds model.timestepper.Gⁿ[tracer_idx+3][1:model.grid.Nx, 1:model.grid.Ny, 1:model.grid.Nz]
+        Gⁿ⁻¹ = @inbounds model.timestepper.G⁻[tracer_idx+3][1:model.grid.Nx, 1:model.grid.Ny, 1:model.grid.Nz]
+        τⁿ⁺¹ = abs.(Gⁿ .- Gⁿ⁻¹)
+        y = @inbounds tracer[1:model.grid.Nx, 1:model.grid.Ny, 1:model.grid.Nz]
+        Δt = sqrt.(y./τⁿ⁺¹)
+        Δt = Δt[isfinite.(Δt)]
+        if length(Δt) > 0
+            tracer_min = @inbounds findmin(Δt)[1]
+            min_forcing =  min(min_forcing, tracer_min)
+        end
     end
-    return max_forcing
+    return min_forcing
 end
 
-function update_timestep!(sim, params=(w=200/day, c_diff = 0.45, c_adv = 0.45, relaxation=0.75))#, c_boundary=0.01))#off by default as computationally intensive and not limiting (as far as I can see)
+function update_timestep!(sim, params=(w=200/day, c_diff = 0.45, c_adv = 0.45, relaxation=0.75))#, c_boundary=0.01))#oqff by default as computationally intensive and not limiting (as far as I can see)
     Δt_diff = :c_diff in keys(params) ? sim.Δt^(1-params.relaxation)*(params.c_diff*OceanBioME.diffusion_timescale(sim.model, sim.model.grid; t=sim.model.clock.time))^params.relaxation : Inf
     Δt_adv = :c_adv in keys(params) ? sim.Δt^(1-params.relaxation)*(params.c_adv/(abs(params.w)/OceanBioME.min_Δz(sim.model.grid)))^params.relaxation : Inf #replace with some way to check the actual max sinking velocity
-    Δt_forcing = :c_forcing in keys(params) ? sim.Δt^(1-params.relaxation) * (params.c_forcing/max_c_forcing(sim.model))^params.relaxation : Inf
+    Δt_forcing = :c_forcing in keys(params) ? sim.Δt^(1-params.relaxation) * (params.c_forcing*forcing_error_timescale(sim.model))^params.relaxation : Inf
     Δt_max = :Δt_max in keys(params) ? params.Δt_max : Inf
 
     sim.Δt = findmin([Δt_diff, Δt_adv, Δt_forcing, Δt_max])[1]
