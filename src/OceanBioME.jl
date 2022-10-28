@@ -10,7 +10,7 @@ export Setup, BoxModel
 export Particles
 #Utilities
 export Light, Boundaries, update_timestep!, Budget, Sediments
-export zero_negative_tracers!, error_on_neg!, scale_negative_tracers!
+export zero_negative_tracers!, error_on_neg!, warn_on_neg!, scale_negative_tracers!
 #Oceananigans extensions
 export ColumnField, isacolumn
 

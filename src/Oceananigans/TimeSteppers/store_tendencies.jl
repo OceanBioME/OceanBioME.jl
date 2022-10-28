@@ -1,31 +1,26 @@
-#=using Oceananigans: prognostic_fields
-using Oceananigans.Grids: AbstractGrid
-using Oceananigans.Architectures: device_event
-
-using Oceananigans.Utils: launch!
-
-""" Store source terms for `u`, `v`, and `w`. """
-@kernel function store_field_tendencies!(G⁻, grid, G⁰)
-    i, j, k = @index(Global, NTuple)
-    @inbounds G⁻[i, j, k] = G⁰[i, j, k]
-end
+import Oceananigans.TimeSteppers: store_tendencies!, store_field_tendencies!
 
 """ Store previous source terms before updating them. """
 function store_tendencies!(model)
 
-    barrier = device_event(model.architecture)
+    workgroup, worksize = work_layout(model.grid, :xyz)
+    arch = model.architecture
+    store_kernel! = store_field_tendencies!(device(arch), workgroup, worksize)
+    store_column_kernel! = store_field_tendencies!(device(arch), workgroup, (worksize[1], worksize[2], 1))
 
     model_fields = prognostic_fields(model)
 
     events = []
 
     for field_name in keys(model_fields)
-
-        field_event = launch!(model.architecture, model.grid, :xyz, store_field_tendencies!,
-                              model.timestepper.G⁻[field_name],
-                              model.grid,
-                              model.timestepper.Gⁿ[field_name],
-                              dependencies = barrier)
+        G⁻ = model.timestepper.G⁻[field_name]
+        field_event = isacolumn(G⁻) ? store_column_kernel!(G⁻,
+                                                                    model.grid,
+                                                                    model.timestepper.Gⁿ[field_name],
+                                                                    dependencies = device_event(arch)) : store_kernel!(model.timestepper.G⁻[field_name],
+                                                                                                                                            model.grid,
+                                                                                                                                            model.timestepper.Gⁿ[field_name],
+                                                                                                                                            dependencies = device_event(arch))
 
         push!(events, field_event)
     end
@@ -34,5 +29,3 @@ function store_tendencies!(model)
 
     return nothing
 end
-=#
-nothing
