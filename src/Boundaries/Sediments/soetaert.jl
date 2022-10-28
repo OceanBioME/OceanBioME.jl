@@ -55,15 +55,15 @@ end
     return @inbounds -(Cₘ*(1-p_denit(Cₘ, model_fields.OXY[i, j, 1], model_fields.NO₃[i, j, 1], 1)-p_anox(Cₘ, model_fields.OXY[i, j, 1], model_fields.NO₃[i, j, 1], 1)*p_soliddep(isa(params.d, Number) ? params.d : params.d[i, j])) + Nₘ*p_nit(Nₘ, Cₘ, model_fields.OXY[i, j, 1], model_fields.NH₄[i, j, 1], 1)*2)
 end
 
-@inline POM_deposition(i, j, grid, clock, model_fields, params) = @inbounds - model_fields[params.POM][i, j, 1]*params.w
+@inline POM_deposition(i, j, grid, clock, model_fields, params) = @inbounds - model_fields[params.POM][i, j, 1]*params.w*grid.Δzᵃᵃᶜ[1]
 
-fPOM(i, j, POMs, Wₚₒₘₛ) = sum(@inbounds POM[i, j, 1]*Wₚₒₘₛ[p] for (p, POM) in enumerate(POMs))
+fPOM(i, j, POMs, Wₚₒₘₛ, Δz) = sum(@inbounds POM[i, j, 1]*Wₚₒₘₛ[p]*Δz for (p, POM) in enumerate(POMs))
 
-@inline Nᵣ_forcing(i, j, k, grid, clock, model_fields, params) = @inbounds (fPOM(i, j, model_fields[params.POM_fields], params.POM_w)*params.f_slow*(1-params.f_ref) - params.λᵣ*model_fields.Nᵣ[i, j, 1])
-@inline Nᵣᵣ_forcing(i, j, k, grid, clock, model_fields, params) = @inbounds (fPOM(i, j, model_fields[params.POM_fields], params.POM_w)*params.f_fast*(1-params.f_ref) - params.λᵣᵣ*model_fields.Nᵣ[i, j, 1])
-@inline Nᵣₑ_forcing(i, j, k, grid, clock, model_fields, params) = @inbounds fPOM(i, j, model_fields[params.POM_fields], params.POM_w)*params.f_ref
+@inline Nᵣ_forcing(i, j, k, grid, clock, model_fields, params) = @inbounds (fPOM(i, j, model_fields[params.POM_fields], params.POM_w, grid.Δzᵃᵃᶜ[1])*params.f_slow*(1-params.f_ref) - params.λᵣ*model_fields.Nᵣ[i, j, 1])
+@inline Nᵣᵣ_forcing(i, j, k, grid, clock, model_fields, params) = @inbounds (fPOM(i, j, model_fields[params.POM_fields], params.POM_w, grid.Δzᵃᵃᶜ[1])*params.f_fast*(1-params.f_ref) - params.λᵣᵣ*model_fields.Nᵣ[i, j, 1])
+@inline Nᵣₑ_forcing(i, j, k, grid, clock, model_fields, params) = @inbounds fPOM(i, j, model_fields[params.POM_fields], params.POM_w, grid.Δzᵃᵃᶜ[1])*params.f_ref
 
-function setupsediment(grid; POM_fields = (:D, :DD), POM_w = (200/day, 3.47e-5), parameters=defaults, Nᵣᵣᵢ=24.0, Nᵣᵢ=85.0, f_ref=0.1, f_fast=0.74, f_slow=0.26, carbonates=true)
+function setupsediment(grid; POM_fields = (:DD, :D), POM_w = (200/day, 3.47e-5), parameters=defaults, Nᵣᵣᵢ=24.0, Nᵣᵢ=85.0, f_ref=0.1, f_fast=0.74, f_slow=0.26, carbonates=true)
     #fractions from Boudreau B. P. and Ruddick B. R. ( 1991) On a reactive continuum representation of organic matter diagenesis. Amer. J. Sci. 291, 507-538.
     #as used by https://reader.elsevier.com/reader/sd/pii/0016703796000130
     #additionally refractory fraction from https://reader.elsevier.com/reader/sd/pii/001670379500042X\

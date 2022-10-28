@@ -5,7 +5,7 @@ grid = RectilinearGrid(size=(2, 2, 3), extent=(1, 1, 1))
 B=Oceananigans.Fields.Field{Center, Center, Center}(grid)
 C=Oceananigans.Fields.Field{Center, Center, Center}(grid; indices=(:, :, 1:1)) 
 
-for timestepper in (:QuasiAdamsBashforth2,  :RungeKutta3)
+@testset "Auxiliary field forcing" for timestepper in (:QuasiAdamsBashforth2,  :RungeKutta3)
     @testset "Constant Forcing with $timestepper" begin
         forcing1(x, y, z, t) = 1.0
 

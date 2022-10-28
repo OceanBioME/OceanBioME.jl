@@ -106,15 +106,13 @@ simulation.output_writers[:profiles] = NetCDFOutputWriter(model, fields, filenam
 
 # Oceananians storage of sliced fields is currently broken (https://github.com/CliMA/Oceananigans.jl/issues/2770) so here is a work around
 using JLD2
-sediment_file = jldopen("sediment.jld2", "w+")
-save_Nᵣ = JLD2.Group(sediment_file, "Nᵣ")
-save_Nᵣᵣ = JLD2.Group(sediment_file, "Nᵣᵣ")
-save_Nᵣₑ = JLD2.Group(sediment_file, "Nᵣₑ")
 
 function store_sediment!(sim)
-    save_Nᵣ["$(sim.model.clock.time)"] = sim.model.auxiliary_fields.Nᵣ[1, 1, 1]
-    save_Nᵣᵣ["$(sim.model.clock.time)"] = sim.model.auxiliary_fields.Nᵣᵣ[1, 1, 1]
-    save_Nᵣₑ["$(sim.model.clock.time)"] = sim.model.auxiliary_fields.Nᵣₑ[1, 1, 1]
+    jldopen("sediment.jld2", "a+") do file
+        file["Nᵣ/$(sim.model.clock.time)"] = sim.model.auxiliary_fields.Nᵣ[1, 1, 1]
+        file["Nᵣᵣ/$(sim.model.clock.time)"] = sim.model.auxiliary_fields.Nᵣᵣ[1, 1, 1]
+        file["Nᵣₑ/$(sim.model.clock.time)"] = sim.model.auxiliary_fields.Nᵣₑ[1, 1, 1]
+    end
 end
 
 simulation.callbacks[:save_sediment] = Callback(store_sediment!, TimeInterval(1days))
@@ -135,7 +133,7 @@ run!(simulation)
 
 ΣN₁ = Budget.calculate_budget(model, true, (:NO₃, :NH₄, :P, :Z, :D, :DD, :DOM))
 @info "Nitrogen budget varied from $ΣN₀ to $ΣN₁"
-
+#=
 # Load and plot the results
 include("PlottingUtilities.jl")
 results = load_tracers(simulation)
@@ -143,3 +141,4 @@ plot(profiles(results)...)
 
 # Save the plot to a PDF file
 savefig("sediment.pdf")
+=#
