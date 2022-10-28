@@ -1,4 +1,9 @@
-@kernel function _update_2λ!(PAR, grid, P, t, params) 
+module twoBands
+using KernelAbstractions
+using KernelAbstractions.Extras.LoopInfo: @unroll
+using Oceananigans.Architectures: device
+using Oceananigans.Utils: launch!
+@kernel function _update_PAR!(PAR, grid, P, t, params) 
     i, j = @index(Global, NTuple) 
 
     sp = params.surface_PAR(t)
@@ -20,10 +25,22 @@
     end
 end 
 
-function  update_2λ!(sim, params)
-    par_calculation = Oceananigans.Utils.launch!(sim.model.architecture, sim.model.grid, :xy, _update_2λ!,
+function  update!(sim, params)
+    par_calculation =  launch!(sim.model.architecture, sim.model.grid, :xy, _update_PAR!,
                                    sim.model.auxiliary_fields.PAR, sim.model.grid, sim.model.tracers.P, time(sim), params,
                                    dependencies = Event(device(sim.model.architecture)))
 
     wait(device(sim.model.architecture), par_calculation)
+end
+
+defaults = (
+    k_r0 = 0.225,  # m⁻¹
+    k_b0 = 0.0232,  # m⁻¹
+    Χ_rp = 0.037,  # m⁻¹(mgChlm⁻³)⁻ᵉʳ
+    Χ_bp = 0.074,  # m⁻¹(mgChlm⁻³)⁻ᵉᵇ
+    e_r = 0.629, 
+    e_b = 0.674, 
+    r_pig = 0.7,
+)
+
 end

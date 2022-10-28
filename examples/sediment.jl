@@ -11,17 +11,8 @@ References
 (5) Resplandy, L., Lévy, M., d'Ovidio, F. and Merlivat, L., 2009. Impact of submesoscale variability in estimating the air‐sea CO2 exchange: Results from a model study of the POMME experiment. Global Biogeochemical Cycles, 23(1).
 """
 
-# First, load the needed modules
-using Random   
-using Printf
-using Plots
-using JLD2
-using NetCDF
-using HDF5
-using Interpolations
-using Statistics 
-
-using Oceananigans
+# First, load the needed modules  
+using Printf, Oceananigans
 using Oceananigans.Units: second, minute, minutes, hour, hours, day, days, year, years
 
 using OceanBioME 
@@ -29,83 +20,51 @@ using OceanBioME
 # Load parameters from src/Models/Biogeochemistry/LOBSTER.jl
 params = LOBSTER.defaults  
 
-# Import data
-# The temperature and salinity are needed to calculate the air-sea CO2 flux.  The mixed layer depth is used to construct an idealized diffusivity profile.
-filename = "./OceanBioME_example_data/subpolar.nc" #A small sample of data downloaded is stored in subpolar.nc for ease of use.
-time = ncread(filename, "time")    # time in seconds
-temp = ncread(filename, "temp")    # temperature in Degrees Celsius 
-salinity = ncread(filename, "so")  # salinity in Practical Salinity Unit
-mld = ncread(filename, "mld")      # mixed layer depth in Meters
-par = ncread(filename, "par")      # photosynthetically available radiation in W/m^2
-
-# Linear interpolation to access temperature, salinity, mld, and surface PAR at arbitrary time
-temperature_itp = LinearInterpolation(time, temp) 
-salinity_itp = LinearInterpolation(time, salinity) 
-mld_itp = LinearInterpolation(time, mld) 
-PAR_itp = LinearInterpolation(time, par)
-
 # Define temperature and salinity as functions of x, y, z, and t(in seconds). The temperature and salinity functions are needed to calculate the air-sea CO2 flux.
-t_function(x, y, z, t) = temperature_itp(mod(t, 364days)) # the remainder of t after floored division by 364days. It creates an annual cycle representation of temperature. 
-s_function(x, y, z, t) = salinity_itp(mod(t, 364days))
-# Define surface_PAR as a function of time(in seconds). 
-surface_PAR(t) = PAR_itp(mod(t, 364days))  # the remainder of t after floored division by 364days. It creates an annual cycle representation of PAR.
-
-# Simulation duration    
-duration=1year
+t_function(x, y, z, t) = 2.4*cos(t*2π/year + 50day) + 10
+s_function(x, y, z, t) = 35.0
+PAR⁰(t) = 60*(1-cos((t+15days)*2π/(365days)))*(1 /(1 +0.2*exp(-((t-200days)/50days)^2))) .+ 2
 
 # Define the grid
 Lx = 20
 Ly = 20
 Nx = 1
 Ny = 1
-Nz = 33 # number of points in the vertical direction
-Lz = 600 # domain depth
+Nz = 50 # number of points in the vertical direction
+Lz = 200 # domain depth            
 
-# Generate vertically stretched grid 
-refinement = 10 # controls spacing near surface (higher means finer spaced)  
-stretching = 5.754   # controls rate of stretching at bottom      
-# Normalized height ranging from 0 to 1
-h(k) = (k - 1) / Nz
-# Linear near-surface generator
-ζ₀(k) = 1 + (h(k) - 1) / refinement
-# Bottom-intensified stretching function 
-Σ(k) = (1 - exp(-stretching * h(k))) / (1 - exp(-stretching))
-# Generating function
-z_faces(k) = Lz * (ζ₀(k) * Σ(k) - 1)
-grid = RectilinearGrid(size = (Nx, Ny, Nz), 
-                       x = (0, Lx),
-                       y = (0, Ly),
-                       z = z_faces)     
+grid = RectilinearGrid(size=(Nx, Ny, Nz), extent=(Lx, Ly, Lz)) #A regular rectilinear grid in this case. 
 
-# Initialize a PAR field                       
-PAR = Oceananigans.Fields.Field{Center, Center, Center}(grid)
+# Initialize a PAR field
+PAR = Oceananigans.Fields.Field{Center, Center, Center}(grid)  
 
 # Specify the boundary conditions for DIC and OXY based on the air-sea CO₂ and O₂ flux
 dic_bc = Boundaries.airseasetup(:CO₂, forcings=(T=t_function, S=s_function))
 oxy_bc = Boundaries.airseasetup(:O₂, forcings=(T=t_function, S=s_function))
 
 #sediment bcs
-sediment_bcs=Boundaries.setupsediment(grid)
+sediment=Boundaries.Sediments.Soetaert.setupsediment(grid)
 
 # Set up the OceanBioME model with the specified biogeochemical model, grid, parameters, light, and boundary conditions
-bgc = Setup.Oceananigans(:LOBSTER, grid, params, PAR, optional_sets=(:carbonates, :oxygen), topboundaries=(DIC=dic_bc, OXY=oxy_bc), bottomboundaries=sediment_bcs.boundary_conditions)
+bgc = Setup.Oceananigans(:LOBSTER, grid, params, optional_sets=(:carbonates, :oxygen), topboundaries=(DIC=dic_bc, OXY=oxy_bc), bottomboundaries=sediment.boundary_conditions, sinking=true, open_bottom=true)
 @info "Setup BGC model"
 
-# Create a function with the turbulent vertical diffusivity. This is an idealized functional form, but the depth of mixing is based on an interpolation to the mixed layer depth from the Mercator Ocean state estimate.
-κₜ(x, y, z, t) = 8e-2*max(1-(z+mld_itp(mod(t,364days))/2)^2/(mld_itp(mod(t,364days))/2)^2,0)+1e-4;   #m^2 s^-1
+# Function of the turbulent vertical diffusivity. This is an idealized functional form, and the depth of mixing is based on an analtytical approximation
+H(t, t₀, t₁) = ifelse(t₀<t<t₁, 1.0, 0.0)
+fmld1(t) = H.(t, 50days, 365days).*(1 ./(1 .+exp.(-(t-100days)/(5days)))).*(1 ./(1 .+exp.((t .-330days)./(25days))))
+MLD(t) = (-10 .-340 .*(1 .-fmld1(364.99999days).*exp.(-t/25days).-fmld1.(mod.(t, 365days))))
+κₜ(x, y, z, t) = 1e-2*max(1-(z+MLD(t)/2)^2/(MLD(t)/2)^2,0)+1e-4; 
 
-# Create a 'model' to run in Oceananignas
-model = NonhydrostaticModel(advection = UpwindBiasedFifthOrder(),
-                            timestepper = :RungeKutta3,
-                            grid = grid,
-                            tracers = (:b, bgc.tracers...),
-                            coriolis = FPlane(f=1e-4),
-                            buoyancy = BuoyancyTracer(), 
-                            closure = ScalarDiffusivity(ν=κₜ, κ=κₜ), 
-                            forcing =  bgc.forcing,
-                            boundary_conditions = bgc.boundary_conditions,
-                            auxiliary_fields = merge((PAR=PAR, ), sediment_bcs.auxiliary_fields)
-                            )
+model = NonhydrostaticModel(
+                                advection = WENO(;grid),
+                                timestepper = :RungeKutta3,
+                                grid = grid,
+                                tracers = bgc.tracers,
+                                closure = ScalarDiffusivity(ν=κₜ, κ=κₜ), 
+                                forcing =  merge(bgc.forcing, sediment.forcing),
+                                boundary_conditions = bgc.boundary_conditions,
+                                auxiliary_fields = merge((; PAR), sediment.auxiliary_fields)
+)
 
 # Initialize the biogeochemical variables
 # These initial conditions are set rather arbitrarily in the hope that the model will converge to a repeatable annual cycle if run long enough
@@ -121,14 +80,14 @@ ALKᵢ(x, y, z)= 2400                                          #in mmolN m^-3
 OXYᵢ(x, y, z) = 240                                          #in mmolO m^-3
 
 # Set the initial conditions using functions or constants:
-set!(model, P=Pᵢ, Z=Zᵢ, D=Dᵢ, DD=DDᵢ, NO₃=NO₃ᵢ, NH₄=NH₄ᵢ, DOM=DOMᵢ, DIC=DICᵢ, ALK=ALKᵢ, OXY=OXYᵢ, u=0, v=0, w=0, b=0)
+set!(model, P=Pᵢ, Z=Zᵢ, D=Dᵢ, DD=DDᵢ, NO₃=NO₃ᵢ, NH₄=NH₄ᵢ, DOM=DOMᵢ, DIC=DICᵢ, ALK=ALKᵢ, OXY=OXYᵢ)
 
 ## Set up the simulation
-simulation = Simulation(model, Δt=0.5minutes, stop_time=duration)
+simulation = Simulation(model, Δt=5minutes, stop_time=100days)
 
 # create a model 'callback' to update the light (PAR) profile every 1 timestep and integrate sediment model
-simulation.callbacks[:update_par] = Callback(Light.update_2λ!, IterationInterval(1), merge(merge(params, Light.defaults), (surface_PAR=surface_PAR,)))#comment out if using PAR as a function, PAR_func
-simulation.callbacks[:integrate_sediment] = sediment_bcs.callback
+simulation.callbacks[:update_par] = Callback(Light.twoBands.update!, IterationInterval(1), merge(merge(params, Light.twoBands.defaults), (surface_PAR=PAR⁰,)));
+
 ## Print a progress message
 progress_message(sim) = @printf("Iteration: %04d, time: %s, Δt: %s, wall time: %s\n",
                                 iteration(sim),
@@ -136,15 +95,38 @@ progress_message(sim) = @printf("Iteration: %04d, time: %s, Δt: %s, wall time: 
                                 prettytime(sim.Δt),
                                 prettytime(sim.run_wall_time))
 
-# Create a message to display every 100 timesteps                                
 simulation.callbacks[:progress] = Callback(progress_message, IterationInterval(100))
 #update the timestep length each day
 @warn "Timestep utility may cause instability"
-simulation.callbacks[:timestep] = Callback(update_timestep!, TimeInterval(1hour)) 
+simulation.callbacks[:timestep] = Callback(update_timestep!, TimeInterval(1hour), parameters = (w=200/day, c_diff = 0.45, c_adv = 0.45, relaxation=0.75, c_forcing=1.0, Δt_max=3minute)) 
 
 #setup dictionary of fields
-fields = Dict(zip((["$t" for t in bgc.tracers]..., "PAR", "Nᵣᵣ", "Nᵣ", "Nᵣₑ"), ([getproperty(model.tracers, t) for t in bgc.tracers]..., [getproperty(model.auxiliary_fields, t) for t in (:PAR, :Nᵣᵣ, :Nᵣ, :Nᵣₑ)]...)))
+fields = Dict(zip((["$t" for t in bgc.tracers]..., "PAR"), ([getproperty(model.tracers, t) for t in bgc.tracers]..., model.auxiliary_fields.PAR)))
 simulation.output_writers[:profiles] = NetCDFOutputWriter(model, fields, filename="sediment.nc", schedule=TimeInterval(1days), overwrite_existing=true)
+
+# Oceananians storage of sliced fields is currently broken (https://github.com/CliMA/Oceananigans.jl/issues/2770) so here is a work around
+using JLD2
+sediment_file = jldopen("sediment.jld2", "w+")
+save_Nᵣ = JLD2.Group(sediment_file, "Nᵣ")
+save_Nᵣᵣ = JLD2.Group(sediment_file, "Nᵣᵣ")
+save_Nᵣₑ = JLD2.Group(sediment_file, "Nᵣₑ")
+
+function store_sediment!(sim)
+    save_Nᵣ["$(sim.model.clock.time)"] = sim.model.auxiliary_fields.Nᵣ[1, 1, 1]
+    save_Nᵣᵣ["$(sim.model.clock.time)"] = sim.model.auxiliary_fields.Nᵣᵣ[1, 1, 1]
+    save_Nᵣₑ["$(sim.model.clock.time)"] = sim.model.auxiliary_fields.Nᵣₑ[1, 1, 1]
+end
+
+simulation.callbacks[:save_sediment] = Callback(store_sediment!, TimeInterval(1days))
+
+#=
+# This is currently broken in Oceananigans 
+sediment_fields = Dict(zip(("Nᵣᵣ", "Nᵣ", "Nᵣₑ"), model.auxiliary_fields[(:Nᵣᵣ, :Nᵣ, :Nᵣₑ)]))
+simulation.output_writers[:sediment_profiles] = NetCDFOutputWriter(model, sediment_fields, filename="sediment_sediment.nc", schedule=TimeInterval(1days), overwrite_existing=true, indices=(:, :, 1:1))
+=#
+
+#doesn't work yet
+#simulation.callbacks[:neg_sed] = Callback(scale_negative_tracers!; parameters=(conserved_group=(:Nᵣᵣ, :Nᵣ, :Nᵣₑ), warn=true))
 
 @info "Setup simulation"
 ΣN₀ = Budget.calculate_budget(model, true, (:NO₃, :NH₄, :P, :Z, :D, :DD, :DOM))

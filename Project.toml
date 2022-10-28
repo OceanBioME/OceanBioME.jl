@@ -6,24 +6,31 @@ version = "0.1.0"
 [deps]
 Adapt = "79e6a3ab-5dfb-504d-930d-738a2a938a0e"
 DiffEqBase = "2b5f629d-d688-5b77-993f-72d75c75574e"
-HDF5 = "f67ccb44-e63f-5c2f-98bd-6dc0ccc4ba2f"
-Interpolations = "a98d9a8b-a2ab-59e6-89dd-64a1c18fca59"
-JLD2 = "033835bb-8acc-5ee8-8aae-3f567f8a3819"
 KernelAbstractions = "63c18a36-062a-441e-b654-da1e3ab1ce7c"
-NetCDF = "30363a11-5582-574a-97bb-aa9a979735b9"
-NetCDF_jll = "7243133f-43d8-5620-bbf4-c2c921802cf3"
 Oceananigans = "9e8cae18-63c1-5223-a75c-80ca9d6e9a09"
 OrdinaryDiffEq = "1dea7af3-3e70-54e6-95c3-0bf5283fa5ed"
-Printf = "de0858da-6303-5e67-8744-51eddeeeb8d7"
 Roots = "f2b01f46-fcfa-551c-844a-d8ac1e96c665"
 Statistics = "10745b16-79ce-11e8-11f9-7d13ad32a3b2"
 StructArrays = "09ab397b-f2b6-538f-b94a-2f83cf4a842a"
 
+[compat]
+Adapt = "^3.4"
+DiffEqBase = "^6.100"
+KernelAbstractions = "0.7, 0.8"
+Oceananigans = "^0.78"
+OrdinaryDiffEq = "^6.26"
+Roots = "^2.0"
+StructArrays = "^0.6"
+
 [extras]
+DataDeps = "124859b0-ceae-595e-8997-d05f6a7a8dfe"
 GLMakie = "e9467ef8-e4e7-5192-8a1a-b1aee30e663a"
+Interpolations = "a98d9a8b-a2ab-59e6-89dd-64a1c18fca59"
+NetCDF = "30363a11-5582-574a-97bb-aa9a979735b9"
 Plots = "91a5bcdd-55d7-5caf-9e0b-520d859cae80"
+Printf = "de0858da-6303-5e67-8744-51eddeeeb8d7"
 Test = "8dfed614-e22c-5e08-85e1-65c5234f0b40"
 
 [targets]
+examples = ["Plots", "GLMakie", "Printf", "NetCDF", "Interpolations", "DataDeps"]
 test = ["Test"]
-examples = ["Plots", "GLMakie"]
