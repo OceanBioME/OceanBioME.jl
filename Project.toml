@@ -30,7 +30,12 @@ NetCDF = "30363a11-5582-574a-97bb-aa9a979735b9"
 Plots = "91a5bcdd-55d7-5caf-9e0b-520d859cae80"
 Printf = "de0858da-6303-5e67-8744-51eddeeeb8d7"
 Test = "8dfed614-e22c-5e08-85e1-65c5234f0b40"
+Glob = "c27321d9-0574-5035-807b-f59d2c89b15c"
+Literate = "98b081ad-f1c9-55d3-8b20-4c87d4299306"
+Documenter = "e30172f5-a6a5-5a46-863b-614d45cd2de4"
+DocumenterCitations = "daee34ce-89f3-4625-b898-19384cb65244"
 
 [targets]
 examples = ["Plots", "GLMakie", "Printf", "NetCDF", "Interpolations", "DataDeps"]
 test = ["Test"]
+docs = ["Documenter", "DocumenterCitations", "Literate", "Glob"]
