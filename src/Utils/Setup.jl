@@ -87,7 +87,7 @@ function Oceananigans(model::Symbol,
                                     optional_sets::Tuple=(),
                                     sinking = true, 
                                     supress_required_fields_warning = false,
-                                    open_bottom=false)
+                                    open_bottom=true)
 
     model, dependencies, discrete_forcings, dependencies, sinking_forcings, optional_tracers = loadmodel(model)
     tracers=loadtracers(model, optional_tracers, optional_sets)
