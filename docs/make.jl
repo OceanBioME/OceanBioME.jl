@@ -10,30 +10,29 @@ const EXAMPLES_DIR = joinpath(@__DIR__, "..", "examples")
 const OUTPUT_DIR   = joinpath(@__DIR__, "src/generated")
 
 examples = [
-    "box.jl",
+    #"box.jl",
     "column.jl",
     "data_forced.jl",
     "kelp.jl",
     "sediment.jl"
 ]
 # going to need some work done on the formatting of the comments in examples to get them to render properly
-#This *runs* all of the example so can't really use this (currently have #example replaced with #example so they won't run)
-#=for example in examples
+for example in examples
     example_filepath = joinpath(EXAMPLES_DIR, example)
-    Literate.markdown(example_filepath, OUTPUT_DIR; flavor = Literate.DocumenterFlavor())
+    Literate.markdown(example_filepath, OUTPUT_DIR; flavor = Literate.DocumenterFlavor(), repo_root_url="coming.soon")
 end
-=#
+
 example_pages = [
     "Simple virtual aquarium (column model)" => "generated/column.md",
     "Data forced virtual aquarium" => "generated/data_forced.md",
     "Virtual aquarium with sediment" => "generated/sediment.md",
     "Virtual aquarium with kelp" => "generated/kelp.md",
-    "Box model" => "generated/box.md"
+    #"Box model" => "generated/box.md"
 ]
 
 bgc_pages = [
     "Overview" => "model_components/biogeochemical/index.md",
-    "PISCES" => "model_components/biogeochemical/PISCES.md",
+    #"PISCES" => "model_components/biogeochemical/PISCES.md",
     "LOBSTER" => "model_components/biogeochemical/LOBSTER.md",
     "NPZ" => "model_components/biogeochemical/NPZ.md"
 ]
@@ -68,7 +67,8 @@ component_pages = [
 numerical_pages = [
     "Individuals" => "numerical_implimentation/individuals.md",
     "Sediments" => "numerical_implimentation/sediments.md",
-    "Forced auxiliary fields" => "numerical_implimentation/forced-aux-fields.md"
+    "Forced auxiliary fields" => "numerical_implimentation/forced-aux-fields.md",
+    "Positivity preservation" => "numerical_implimentation/positivity-preservation.md"
 ]
 
 setup_pages = [
@@ -78,7 +78,7 @@ setup_pages = [
 
 param_pages = [
     "Overview" => "appendix/params/index.md",
-    "PISCES" => "appendix/params/PISCES.md",
+    #"PISCES" => "appendix/params/PISCES.md",
     "LOBSTER" => "appendix/params/LOBSTER.md",
     "SLatissima" => "appendix/params/SLatissima.md"
 ]
