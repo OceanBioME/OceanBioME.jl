@@ -4,7 +4,7 @@ using Oceananigans.Operators: Vᶜᶜᶜ
 function calculate_budget(model, sediment, tracers)
     budget = 0.0
     for tracer in tracers
-        budget += sum(getproperty(model.tracers, tracer)[1, 1, 1:model.grid.Nz])# .* [Vᶜᶜᶜ(1, 1, k, model.grid) for k in [1:model.grid.Nz;]])
+        budget += sum(getproperty(model.tracers, tracer)[1, 1, 1:model.grid.Nz] .* [Vᶜᶜᶜ(1, 1, k, model.grid) for k in [1:model.grid.Nz;]])
     end
     if sediment
         for sed_tracer in (:Nᵣ, :Nᵣᵣ, :Nᵣₑ)

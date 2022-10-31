@@ -3,6 +3,9 @@ module Soetaert
 using Roots, Oceananigans, KernelAbstractions
 using Oceananigans.Units: second, minute, minutes, hour, hours, day, days, year, years
 using Oceananigans.Architectures: device
+using Oceananigans: AdvectiveForcing
+using Oceananigans.Forcings: maybe_constant_field
+using Oceananigans.Advection: div_Uc
 
 #These were determined by fitting data from a different model by the paper this is from
 #Clearly they are not  closed (e.g. if anything is zero we get NaN or Inf)
@@ -13,9 +16,9 @@ const defaults= (
     #https://aslopubs.onlinelibrary.wiley.com/doi/epdf/10.4319/lo.1996.41.8.1651
     λᵣᵣ = 2/year,# 1/year to 1/s
     λᵣ = 0.2/year,#s   
-    Rdᵣᵣ = 0.1509,#mmol N/mmol C
+    Rdᵣᵣ = 0.1509,#mmol N/mmol C@inline Nᵣₑ_forcing(i, j, k, grid, clock, model_fields, params) = nothing
     Rdᵣ = 0.13,#mmol N/mmol C
-    Rd_red = 106/16#mmol C/mmol N
+    Rd_red = 6.56#106/16#mmol C/mmol N
 )
 
 @inline p_nit(Nₘ, Cₘ, O₂, NH₄, k) = min(1, exp(-1.9785+0.2261*log(Cₘ)*log(O₂)-0.0615*log(Cₘ)^2-0.0289*log(k)*log(NH₄)-0.36109*log(Cₘ)-0.0232*log(Cₘ)*log(NH₄))/Nₘ)
@@ -37,7 +40,7 @@ end
 @inline function sedimentNH₄(i, j, grid, clock, model_fields, params)
     Nₘ, Cₘ, k = mineralisation(model_fields.Nᵣᵣ[i, j, 1],  model_fields.Nᵣ[i, j, 1], params)
     if (Nₘ>0 && Cₘ>0 && k > 0)
-        return @inbounds Nₘ*(1-p_nit(Nₘ, Cₘ, model_fields.OXY[i, j, 1], model_fields.NH₄[i, j, 1], k))#max just incase the odd p_nit etc give unphysical values (this can not be a flux out of the system as it is irreversible chemistry)
+        return @inbounds Nₘ*(1-p_nit(Nₘ, Cₘ, model_fields.OXY[i, j, 1], model_fields.NH₄[i, j, 1], k))
     else
         return 0
     end
@@ -57,13 +60,12 @@ end
 
 @inline POM_deposition(i, j, grid, clock, model_fields, params) = @inbounds - model_fields[params.POM][i, j, 1]*params.w*grid.Δzᵃᵃᶜ[1]
 
-fPOM(i, j, POMs, Wₚₒₘₛ, Δz) = sum(@inbounds POM[i, j, 1]*Wₚₒₘₛ[p]*Δz for (p, POM) in enumerate(POMs))
+@inline fPOM(i, j, k, grid, clock, model_fields, params) = sum([-dep.advection_kernel_function(i, j, k, grid, dep.advection_scheme, dep.velocities, dep.advected_field) for dep in params.adv_funcs]).*params.f.*params.Δz
 
-@inline Nᵣ_forcing(i, j, k, grid, clock, model_fields, params) = @inbounds (fPOM(i, j, model_fields[params.POM_fields], params.POM_w, grid.Δzᵃᵃᶜ[1])*params.f_slow*(1-params.f_ref) - params.λᵣ*model_fields.Nᵣ[i, j, 1])
-@inline Nᵣᵣ_forcing(i, j, k, grid, clock, model_fields, params) = @inbounds (fPOM(i, j, model_fields[params.POM_fields], params.POM_w, grid.Δzᵃᵃᶜ[1])*params.f_fast*(1-params.f_ref) - params.λᵣᵣ*model_fields.Nᵣ[i, j, 1])
-@inline Nᵣₑ_forcing(i, j, k, grid, clock, model_fields, params) = @inbounds fPOM(i, j, model_fields[params.POM_fields], params.POM_w, grid.Δzᵃᵃᶜ[1])*params.f_ref
+@inline Nᵣ_forcing(i, j, k, grid, clock, model_fields, params) = @inbounds - params.λᵣ*model_fields.Nᵣ[i, j, 1]
+@inline Nᵣᵣ_forcing(i, j, k, grid, clock, model_fields, params) = @inbounds - params.λᵣᵣ*model_fields.Nᵣ[i, j, 1]
 
-function setupsediment(grid; POM_fields = (:DD, :D), POM_w = (200/day, 3.47e-5), parameters=defaults, Nᵣᵣᵢ=24.0, Nᵣᵢ=85.0, f_ref=0.1, f_fast=0.74, f_slow=0.26, carbonates=true)
+function setupsediment(grid, POM_fields::NamedTuple; POM_w = (DD = 200/day, D = 3.47e-5), parameters=defaults, Nᵣᵣᵢ=24.0, Nᵣᵢ=85.0, f_ref=0.1, f_fast=0.74, f_slow=0.26, carbonates=true)
     #fractions from Boudreau B. P. and Ruddick B. R. ( 1991) On a reactive continuum representation of organic matter diagenesis. Amer. J. Sci. 291, 507-538.
     #as used by https://reader.elsevier.com/reader/sd/pii/0016703796000130
     #additionally refractory fraction from https://reader.elsevier.com/reader/sd/pii/001670379500042X\
@@ -81,26 +83,26 @@ function setupsediment(grid; POM_fields = (:DD, :D), POM_w = (200/day, 3.47e-5),
     parameters = merge(parameters, (; d, Nᵣᵣ, Nᵣ, Nᵣₑ, f_ref, f_fast, f_slow, POM_fields, POM_w))
 
     if carbonates DIC_bc = (DIC = FluxBoundaryCondition(sedimentDIC, discrete_form=true, parameters=parameters), ) else DIC_bc = () end
-
-    POM_bcs = []
-    for (p, POM) in enumerate(POM_fields)
-        w = POM_w[p]
-        push!(POM_bcs, FluxBoundaryCondition(POM_deposition, discrete_form=true, parameters=(;POM, w)))
+    
+    fPOM_forcings=[]
+    for (POM_name, POM) in pairs(POM_fields)
+        u, v, w = maybe_constant_field.((0.0, 0.0, POM_w[POM_name]))
+        velocities = (; u, v, w)
+        push!(fPOM_forcings, AdvectiveForcing(velocities, WENO(;grid), div_Uc, POM))
     end
-    POM_boundaries = NamedTuple{POM_fields}(POM_bcs)
+
     return (
         boundary_conditions = merge((
                 NO₃ = FluxBoundaryCondition(sedimentNO₃, discrete_form=true, parameters=parameters),
                 NH₄ = FluxBoundaryCondition(sedimentNH₄, discrete_form=true, parameters=parameters),
                 OXY = FluxBoundaryCondition(sedimentO₂, discrete_form=true, parameters=parameters)
             ), 
-            DIC_bc, 
-            POM_boundaries
+            DIC_bc
         ),
         forcing = (
-            Nᵣ = Forcing(Nᵣ_forcing, discrete_form=true, parameters=parameters), 
-            Nᵣᵣ = Forcing(Nᵣᵣ_forcing, discrete_form=true, parameters=parameters), 
-            Nᵣₑ = Forcing(Nᵣₑ_forcing, discrete_form=true, parameters=parameters)
+            Nᵣ = (Forcing(Nᵣ_forcing, discrete_form=true, parameters=parameters), Forcing(fPOM, discrete_form=true, parameters=(adv_funcs = fPOM_forcings, f = (1 - f_ref)*f_slow, Δz = grid.Δzᵃᵃᶜ[1]))), 
+            Nᵣᵣ = (Forcing(Nᵣᵣ_forcing, discrete_form=true, parameters=parameters), Forcing(fPOM, discrete_form=true, parameters=(adv_funcs = fPOM_forcings, f = (1 - f_ref)*f_fast, Δz = grid.Δzᵃᵃᶜ[1]))), 
+            Nᵣₑ = Forcing(fPOM, discrete_form=true, parameters=(adv_funcs = fPOM_forcings, f = f_ref, Δz = grid.Δzᵃᵃᶜ[1]))
         ),
         auxiliary_fields = (Nᵣᵣ=Nᵣᵣ, Nᵣ=Nᵣ, Nᵣₑ=Nᵣₑ),
         parameters = parameters

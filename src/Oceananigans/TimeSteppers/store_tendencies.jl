@@ -17,7 +17,7 @@ function store_tendencies!(model)
         field_event = isacolumn(G⁻) ? store_column_kernel!(G⁻,
                                                                     model.grid,
                                                                     model.timestepper.Gⁿ[field_name],
-                                                                    dependencies = device_event(arch)) : store_kernel!(model.timestepper.G⁻[field_name],
+                                                                    dependencies = device_event(arch)) : store_kernel!(G⁻,
                                                                                                                                             model.grid,
                                                                                                                                             model.timestepper.Gⁿ[field_name],
                                                                                                                                             dependencies = device_event(arch))
