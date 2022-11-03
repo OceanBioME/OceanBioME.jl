@@ -42,8 +42,11 @@ PAR = Oceananigans.Fields.Field{Center, Center, Center}(grid)
 dic_bc = Boundaries.airseasetup(:CO₂, forcings=(T=t_function, S=s_function))
 oxy_bc = Boundaries.airseasetup(:O₂, forcings=(T=t_function, S=s_function))
 
+# Have to prespecify fields for sediment model
+NO₃, NH₄, P, Z, D, DD, DOM, DIC, ALK, OXY = CenterField(grid), CenterField(grid), CenterField(grid), CenterField(grid), CenterField(grid), CenterField(grid), CenterField(grid), CenterField(grid), CenterField(grid), CenterField(grid)
+
 #sediment bcs
-sediment=Boundaries.Sediments.Soetaert.setupsediment(grid)
+sediment=Boundaries.Sediments.Soetaert.setupsediment(grid, (;D, DD); POM_w=(D=LOBSTER.D_sinking, DD=LOBSTER.DD_sinking))
 
 # Set up the OceanBioME model with the specified biogeochemical model, grid, parameters, light, and boundary conditions
 bgc = Setup.Oceananigans(:LOBSTER, grid, params, optional_sets=(:carbonates, :oxygen), topboundaries=(DIC=dic_bc, OXY=oxy_bc), bottomboundaries=sediment.boundary_conditions, sinking=true, open_bottom=true)
@@ -59,7 +62,7 @@ model = NonhydrostaticModel(
                                 advection = WENO(;grid),
                                 timestepper = :RungeKutta3,
                                 grid = grid,
-                                tracers = bgc.tracers,
+                                tracers = (; NO₃, NH₄, P, Z, D, DD, DOM, DIC, ALK, OXY),
                                 closure = ScalarDiffusivity(ν=κₜ, κ=κₜ), 
                                 forcing =  merge(bgc.forcing, sediment.forcing),
                                 boundary_conditions = bgc.boundary_conditions,
