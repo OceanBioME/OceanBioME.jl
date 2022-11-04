@@ -62,8 +62,8 @@ z₀ = [-100:10:-1;]*1.0 # depth of kelp fronds
 kelp_particles = SLatissima.setup(n_kelp, Lx/2, Ly/2, z₀, 
                                                     30.0, 0.01, 0.1, 57.5, 500.0; 
                                                     T = t_function, S = s_function, urel = 0.2, 
-                                                    optional_sources=(:NH₄, ), #can remove this to only depend on NO₃ 
-                                                    optional_sinks=(:NH₄, :DIC, :DD, :OXY, :DOM))
+                                                    optional_tracers = (:NH₄, :DIC, :DD, :OXY, :DOM))
+
 
 # Now, create a 'model' to run in Oceananignas
 model = NonhydrostaticModel(
@@ -98,7 +98,7 @@ set!(model, P=Pᵢ, Z=Zᵢ, D=Dᵢ, DD=DDᵢ, NO₃=NO₃ᵢ, NH₄=NH₄ᵢ, DO
 simulation = Simulation(model, Δt=5minutes, stop_time=100days)
 
 # Create a model 'callback' to update the light (PAR) profile every 1 timestep and integrate sediment model
-simulation.callbacks[:update_par] = Callback(Light.twoBands.update!, IterationInterval(1), merge(merge(params, Light.twoBands.defaults), (surface_PAR=PAR⁰,)));
+simulation.callbacks[:update_par] = Callback(Light.twoBands.update!, IterationInterval(1), merge(merge(params, Light.twoBands.defaults), (surface_PAR=PAR⁰,)), UpdateStateCallsite);
 
 ## Print a progress message
 progress_message(sim) = @printf("Iteration: %04d, time: %s, Δt: %s, wall time: %s\n",

@@ -1,4 +1,5 @@
 module Particles
+export ActiveLagrangianParticles
 using KernelAbstractions, Oceananigans, StructArrays
 using Oceananigans.Architectures: device, arch_array
 using Oceananigans.Operators: Vᶜᶜᶜ

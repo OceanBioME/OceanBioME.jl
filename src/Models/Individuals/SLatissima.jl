@@ -15,7 +15,7 @@ Fossberg, J., Forbord, S., Broch, O. J., Malzahn, A. M., Jansen, H., Handå, A.,
 "
 module SLatissima
 using StructArrays, Roots
-using OceanBioME: Particles
+using OceanBioME.Particles: ActiveLagrangianParticles
 using Oceananigans.Units: second,minute, minutes, hour, hours, day, days, year, years
 
 @inline f_curr(u, params) = params.uₐ*(1-exp(-u/params.u₀))+params.uᵦ
@@ -81,11 +81,11 @@ function equations(x::AbstractFloat, y::AbstractFloat, z::AbstractFloat, t::Abst
             C_new = params.C_min
         end
 
-        pp = (p-r)*A_new / (60*60*24*12*0.001) #gC/dm^2/hr to mmol C/s
-        e *= p*A_new / (60*60*24*12*0.001)#mmol C/s
-        ν *= params.K_A*A_new*(N_new + params.N_struct) / (60*60*24*14*0.001)#1/hr to mmol N/s
-        j_NO₃ *= A_new / (60*60*24*14*0.001)#gN/dm^2/hr to mmol N/s
-        j_NH₄ *= A_new / (60*60*24*14*0.001)#gN/dm^2/hr to mmol N/s
+        pp = (p-r)*A / (60*60*24*12*0.001) #gC/dm^2/hr to mmol C/s
+        e *= p*A / (60*60*24*12*0.001)#mmol C/s
+        ν *= params.K_A*A*(N + params.N_struct) / (60*60*24*14*0.001)#1/hr to mmol N/s
+        j_NO₃ *= A / (60*60*24*14*0.001)#gN/dm^2/hr to mmol N/s
+        j_NH₄ *= A / (60*60*24*14*0.001)#gN/dm^2/hr to mmol N/s
 
         du, dv, dw = 0.0, 0.0, 0.0
     else
@@ -202,17 +202,13 @@ struct Particle
     PAR :: AbstractFloat
 end
 
-source_fields = (NO₃ = :NO₃, PAR=:PAR)
+default_tracers = (NO₃ = :NO₃, PAR=:PAR) # tracer = property
 
-optional_source_fields = (NH₄ = :NH₄, )
+optional_tracer_dependencies = (NH₄ = :NH₄, )
 
 #When Oceananigans PR in place going to simplify this specifcation
-sink_fields = (NO₃ = (property=:j_NO₃, fallback=:N, fallback_scalefactor=(property=:A, constant=14*0.001/defaults.K_A)), )    
-optional_sink_fields = (NH₄ = (property=:j_NH₄, fallback=:N, fallback_scalefactor=(property=:A, constant=14*0.001/defaults.K_A)), 
-                                    DIC = (property=:j_DIC, fallback=:C, fallback_scalefactor=(property=:A, constant=14*0.001)),
-                                    DOM = (property=:e, fallback=:A, fallback_scalefactor=0),#Rd_dom from LOBSTER, placeholder fallbacks because if these are taking away something has gone very wrong
-                                    DD = (property=:ν, fallback=:A, fallback_scalefactor=0),
-                                    OXY = (property=:j_OXY, fallback=:C, fallback_scalefactor=(property=:A, constant=14*0.001)))
+default_coupling = (NO₃ = :j_NO₃, )    
+optional_tracer_coupling = (NH₄ = :j_NH₄, DIC = :j_DIC, DOM = :e, DD = :ν, OXY = :j_OXY)
 
 function defineparticles(initials, n)
     x̄₀ = []
@@ -231,52 +227,73 @@ end
 
 @inline no_dynamics(args...) = nothing
 
-function setup(n, x₀, y₀, z₀, A₀, N₀, C₀, latitude, density; T=nothing, S=nothing, urel=nothing, paramset=defaults, custom_dynamics=no_dynamics, optional_sources=(), optional_sinks=(), tracer_names=NamedTuple())
+function setup(n, x₀, y₀, z₀, A₀, N₀, C₀, latitude, density; 
+    T=nothing, 
+    S=nothing, 
+    urel=nothing, 
+    paramset=defaults, 
+    custom_dynamics=no_dynamics, 
+    optional_tracers=(),
+    tracer_names=NamedTuple())
+
+    # this is a mess, we're not even using salinity at the moment
     if (!isnothing(T) && !isnothing(S) && isnothing(urel))
         throw(ArgumentError("T and S functions with tracked velocity fields not currently implimented"))
     elseif ((isnothing(T) && !isnothing(S)) | (!isnothing(T) && isnothing(S)))
         throw(ArgumentError("T and S must both be functions or both be tracked fields"))
     end
 
+    # fills out particles in case we weren't given arrays
     particles = defineparticles((x₀=x₀, y₀=y₀, z₀=z₀, A₀=A₀, N₀=N₀, C₀=C₀), n)
+
     property_dependencies = (:A, :N, :C, :NO₃, :NH₄, :PAR)
     λ_arr=gen_λ(latitude)
     parameters = merge(paramset, (λ=λ_arr, ))
-    tracked_properties = (:A, :N, :C, :j_NO₃, :j_NH₄, :j_DIC, :j_OXY, :e, :ν)
+    diagnostic_properties = (:A, :N, :C, :j_NO₃, :j_NH₄, :j_DIC, :j_OXY, :e, :ν) # all diagnostic for the sake of enforcing C limit
 
     if isnothing(T) property_dependencies = (property_dependencies..., :T, :S) else parameters = merge(parameters, (T=T, S=S)) end
     if isnothing(urel) property_dependencies = (property_dependencies..., :u, :v, :w) else parameters = merge(parameters, (urel = urel, )) end
 
-    integral_properties = (:u, :v, :w) #for when I impliment dynamics
+    prognostic_properties = (:u, :v, :w) #for when I impliment dynamics
 
-    sources = source_fields
-    for tracer in optional_sources
-        if tracer in keys(optional_source_fields)
-            sources = merge(sources, NamedTuple{(tracer, )}((getproperty(optional_source_fields, tracer), )))
-        else
-            @warn "$tracer isn't an optional source field for SLatissima model"
+    tracers = default_tracers
+    coupled = default_coupling
+    for tracer in optional_tracers
+        if tracer in optional_tracer_dependencies
+            tracers = merge(tracers, NamedTuple{(tracer, )}((getproperty(optional_tracer_dependencies, tracer), )))
+        end
+        if tracer in optional_tracer_coupling
+            coupled = merge(coupled, NamedTuple{(tracer, )}((getproperty(optional_tracer_coupling, tracer), )))
         end
     end
 
-    sinks = sink_fields
-    for tracer in optional_sinks
-        if tracer in keys(optional_sink_fields)
-            sinks = merge(sinks, NamedTuple{(tracer, )}((getproperty(optional_sink_fields, tracer), )))
-        else
-            @warn "$tracer isn't an optional sink field for SLatissima model"
+    # over writing tracer names with chosen names, would be a lot easier if we did property = tracer
+    tracers_inverse = NamedTuple{values(tracers)}(keys(tracers))
+    coupled_inverse = NamedTuple{values(coupled)}(keys(coupled))
+
+    for (new_name, tracer) in pairs(tracer_names)
+        if tracer in keys(tracers)
+            tracer_inverse[tracers[tracer]] = new_name
+        end
+        
+        if tracer in keys(coupled)
+            coupled_inverse[coupled[tracer]] = new_name
         end
     end
 
-    sources = merge(sources, tracer_names)
+    tracers = NamedTuple{values(tracers_inverse)}(keys(tracers_inverse))
+    coupled = NamedTuple{values(coupled_inverse)}(keys(coupled_inverse))
 
-    return Particles.setup(particles, equations, 
-                                        property_dependencies,
-                                        parameters,
-                                        integral_properties, #changed all kelp model variables to diagnostic since it is much easier to enforce the extreme carbon limit correctly
-                                        tracked_properties, 
-                                        sources,
-                                        sinks,
-                                        density,
-                                        custom_dynamics)
+
+    return ActiveLagrangianParticles(particles;
+                                                        equation = equations, 
+                                                        equation_arguments = property_dependencies, 
+                                                        equation_parameters = parameters, 
+                                                        prognostic = prognostic_properties, 
+                                                        diagnostic = diagnostic_properties, 
+                                                        tracked_fields = tracers, 
+                                                        coupled_fields = coupled,
+                                                        density = density, 
+                                                        custom_dynamics=custom_dynamics)
 end
 end
