@@ -71,7 +71,7 @@ model = NonhydrostaticModel(
                                                 boundary_conditions = bgc.boundary_conditions,
                                                 auxiliary_fields = (; PAR)
 )
-set!(model, P=0.03, Z=0.03, D=0.0, DD=0.0, Dᶜ=0.0, DDᶜ=0.0  NO₃=11, NH₄=0.05, DOM=0.0, DIC=2200.0, ALK=2400.0, OXY=240.0)
+set!(model, P=0.03, Z=0.03, D=0.0, DD=0.0, Dᶜ=0.0, DDᶜ=0.0, NO₃=11, NH₄=0.05, DOM=0.0, DIC=2200.0, ALK=2400.0, OXY=240.0)
 
 
 # ## Simulation
