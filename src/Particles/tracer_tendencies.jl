@@ -44,7 +44,7 @@ end
 
 @kernel function calculate_particle_tendency!(property, tendency, particles, grid::AbstractGrid{FT, TX, TY, TZ}) where {FT, TX, TY, TZ}
     p = @index(Global)
-    density = :density in keys(particles.parameters) ? particles.parameters.density : 1
+    scalefactor = :scalefactor in keys(particles.parameters) ? particles.parameters.scalefactor : 1.0
 
     LX, LY, LZ = location(tendency)
     nodes, normfactor = @inbounds get_nearest_nodes(particles.properties.x[p], particles.properties.y[p], particles.properties.z[p], grid, (LX(), LY(), LZ()))
@@ -54,7 +54,7 @@ end
         i, j, k = (get_node(TX(), i, grid.Nx), get_node(TY(), j, grid.Ny), get_node(TZ(), k, grid.Nz))
 
         node_volume = volume(i, j, k, grid, LX(), LY(), LZ())
-        value = density * @inbounds property[p] * normfactor / (d * node_volume)
+        value = scalefactor * @inbounds property[p] * normfactor / (d * node_volume)
         @inbounds tendency[i, j, k] += value	
     end
 end

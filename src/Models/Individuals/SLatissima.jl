@@ -83,15 +83,16 @@ function equations(x::AbstractFloat, y::AbstractFloat, z::AbstractFloat, t::Abst
 
         pp = (p-r)*A / (60*60*24*12*0.001) #gC/dm^2/hr to mmol C/s
         e *= p*A / (60*60*24*12*0.001)#mmol C/s
-        ν *= params.K_A*A*(N + params.N_struct) / (60*60*24*14*0.001)#1/hr to mmol N/s
+        νⁿ = ν*params.K_A*A*(N + params.N_struct) / (60*60*24*14*0.001)#1/hr to mmol N/s
+        νᶜ = ν*params.K_A*A*(C + params.C_struct) / (60*60*24*14*0.001)#1/hr to mmol C/s
         j_NO₃ *= A / (60*60*24*14*0.001)#gN/dm^2/hr to mmol N/s
         j_NH₄ *= A / (60*60*24*14*0.001)#gN/dm^2/hr to mmol N/s
 
         du, dv, dw = 0.0, 0.0, 0.0
     else
-        A_new, N_new, C_new, j_NO₃, j_NH₄, pp, e, ν, du, dv, dw = 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0
+        A_new, N_new, C_new, j_NO₃, j_NH₄, pp, e, νⁿ, νᶜ, du, dv, dw = 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0
     end
-    return (A = A_new, N = N_new, C = C_new, j_NO₃ = -j_NO₃, j_NH₄ = -j_NH₄, j_DIC = -pp, j_OXY=pp, e = e/6.56, ν = ν, u = du, v = dv, w = dw)
+    return (A = A_new, N = N_new, C = C_new, j_NO₃ = -j_NO₃, j_NH₄ = -j_NH₄, j_DIC = -pp, j_OXY=pp, e = e/6.56, νⁿ = νⁿ, νᶜ = νᶜ, u = du, v = dv, w = dw)
 end
 
 #fixed urel, T and S functions
@@ -195,7 +196,8 @@ struct Particle
     j_DIC :: AbstractFloat
     j_OXY :: AbstractFloat
     e :: AbstractFloat
-    ν :: AbstractFloat
+    νⁿ :: AbstractFloat
+    νᶜ :: AbstractFloat
     #tracked fields
     NO₃  :: AbstractFloat
     NH₄  :: AbstractFloat
@@ -208,7 +210,7 @@ optional_tracer_dependencies = (NH₄ = :NH₄, )
 
 #When Oceananigans PR in place going to simplify this specifcation
 default_coupling = (NO₃ = :j_NO₃, )    
-optional_tracer_coupling = (NH₄ = :j_NH₄, DIC = :j_DIC, DOM = :e, DD = :ν, OXY = :j_OXY)
+optional_tracer_coupling = (NH₄ = :j_NH₄, DIC = :j_DIC, DOM = :e, DD = :νⁿ, DDᶜ = :νᶜ, OXY = :j_OXY)
 
 function defineparticles(initials, n)
     x̄₀ = []
@@ -222,12 +224,13 @@ function defineparticles(initials, n)
             throw(ArgumentError("Invalid initial values given for $var, must be a single number or vector of length n"))
         end
     end
-    return StructArray{Particle}((x̄₀[1], x̄₀[2], x̄₀[3], zeros(n), zeros(n), zeros(n), x̄₀[4], x̄₀[5], x̄₀[6], [zeros(n) for i in 1:9]...))
+    return StructArray{Particle}((x̄₀[1], x̄₀[2], x̄₀[3], zeros(n), zeros(n), zeros(n), x̄₀[4], x̄₀[5], x̄₀[6], [zeros(n) for i in 1:10]...))
 end
 
 @inline no_dynamics(args...) = nothing
 
-function setup(n, x₀, y₀, z₀, A₀, N₀, C₀, latitude, density; 
+function setup(n, x₀, y₀, z₀, A₀, N₀, C₀, latitude;
+    scalefactor = 1.0, 
     T=nothing, 
     S=nothing, 
     urel=nothing, 
@@ -249,7 +252,7 @@ function setup(n, x₀, y₀, z₀, A₀, N₀, C₀, latitude, density;
     property_dependencies = (:A, :N, :C, :NO₃, :NH₄, :PAR)
     λ_arr=gen_λ(latitude)
     parameters = merge(paramset, (λ=λ_arr, ))
-    diagnostic_properties = (:A, :N, :C, :j_NO₃, :j_NH₄, :j_DIC, :j_OXY, :e, :ν) # all diagnostic for the sake of enforcing C limit
+    diagnostic_properties = (:A, :N, :C, :j_NO₃, :j_NH₄, :j_DIC, :j_OXY, :e, :νⁿ, :νᶜ) # all diagnostic for the sake of enforcing C limit
 
     if isnothing(T) property_dependencies = (property_dependencies..., :T, :S) else parameters = merge(parameters, (T=T, S=S)) end
     if isnothing(urel) property_dependencies = (property_dependencies..., :u, :v, :w) else parameters = merge(parameters, (urel = urel, )) end
@@ -293,7 +296,7 @@ function setup(n, x₀, y₀, z₀, A₀, N₀, C₀, latitude, density;
                                                         diagnostic = diagnostic_properties, 
                                                         tracked_fields = tracers, 
                                                         coupled_fields = coupled,
-                                                        density = density, 
+                                                        scalefactor = scalefactor, 
                                                         custom_dynamics=custom_dynamics)
 end
 end

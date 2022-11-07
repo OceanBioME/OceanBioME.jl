@@ -136,7 +136,7 @@ end
 
         @test sum(model.tracers.C[1:4, 1:4, 1:4]) ≈ 4^3-.1
 
-        #higher density
+        #higher scalefactor
         particlestruct=StructArray{CustomParticle}(([1.66], [1.55], [-1.74], [-0.1], [0.0], [0.0]))
 
         function particleupdate(x, y, z, t, A, B, params, Δt)
@@ -149,7 +149,7 @@ end
             diagnostic = (:A, :B), 
             tracked_fields = (C = :C, ),
             coupled_fields = (C = :A, ),
-            density = 10.0
+            scalefactor = 10.0
         )
 
         model = NonhydrostaticModel(; grid, timestepper=:RungeKutta3, particles=particles, tracers=(:C, ))

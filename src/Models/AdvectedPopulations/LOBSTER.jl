@@ -9,9 +9,11 @@ Details of the model can be found in the following references:
     (4) Morel, A. and Maritorena, S., 2001. Bio‐optical properties of oceanic waters: A reappraisal. Journal of Geophysical Research: Oceans, 106(C4), pp.7163-7180.
     (5) Resplandy, L., Lévy, M., d'Ovidio, F. and Merlivat, L., 2009. Impact of submesoscale variability in estimating the air‐sea CO2 exchange: Results from a model study of the POMME experiment. Global Biogeochemical Cycles, 23(1).
     (6) Karleskind, P., Lévy, M., and Memery, L. (2011), Subduction of carbon, nitrogen, and oxygen in the northeast Atlantic, J. Geophys. Res., 116, C02025, doi:10.1029/2010JC006446. 
+
+
+Additionally the model has been modified to track the carbon content of detritus separatly to allow for non-Redfield additions to the detritus pool (e.g. from kelp degredation)   
 "
 module LOBSTER
-using OceanBioME: get_local_value
 using Oceananigans
 using Oceananigans.Units: second, minute, minutes, hour, hours, day, days, year, years
 
@@ -26,11 +28,11 @@ using Oceananigans.Units: second, minute, minutes, hour, hours, day, days, year,
 @inline L_NH₄(NH₄, params) = max(0.0, NH₄/(NH₄+params.Kₙₕ₄)) #Ammonium limitation
 
 # Nutrients
-NO₃_forcing(x, y, z, t, NO₃, NH₄, P, Z, D, DD, DOM, PAR, params) = (
+NO₃_forcing(x, y, z, t, NO₃, NH₄, P, Z, D, DD, Dᶜ, DDᶜ, DOM, PAR, params) = (
     -params.μ_p*Lₚₐᵣ(PAR, params)*L_NO₃(NO₃, NH₄, params)*P  #phytoplankton consumption
     + params.μ_n*NH₄ #nitrification
 )
-NH₄_forcing(x, y, z, t, NO₃, NH₄, P, Z, D, DD, DOM, PAR, params) = (
+NH₄_forcing(x, y, z, t, NO₃, NH₄, P, Z, D, DD, Dᶜ, DDᶜ, DOM, PAR, params) = (
     params.α_p*params.γ*params.μ_p*Lₚₐᵣ(PAR, params)*(L_NO₃(NO₃, NH₄, params)+L_NH₄(NH₄, params))*P 
     - params.μ_p*Lₚₐᵣ(PAR, params)*L_NH₄(NH₄, params)*P 
     - params.μ_n*NH₄ 
@@ -39,7 +41,7 @@ NH₄_forcing(x, y, z, t, NO₃, NH₄, P, Z, D, DD, DOM, PAR, params) = (
     + params.α_dd*params.μ_dd*DD 
     + params.μ_dom*DOM 
 )
-DOM_forcing(x, y, z, t, NO₃, NH₄, P, Z, D, DD, DOM, PAR, params) = (
+DOM_forcing(x, y, z, t, NO₃, NH₄, P, Z, D, DD, Dᶜ, DDᶜ, DOM, PAR, params) = (
     (1-params.α_p)*params.γ*params.μ_p*Lₚₐᵣ(PAR, params)*(L_NO₃(NO₃, NH₄, params)+L_NH₄(NH₄, params))*P 
     - params.μ_dom*DOM 
     +(1-params.α_z)*params.μ_z*Z
@@ -49,19 +51,19 @@ DOM_forcing(x, y, z, t, NO₃, NH₄, P, Z, D, DD, DOM, PAR, params) = (
 )
 
 # Planktons
-P_forcing(x, y, z, t, NO₃, NH₄, P, Z, D, DD, DOM, PAR, params) = (
+P_forcing(x, y, z, t, NO₃, NH₄, P, Z, D, DD, Dᶜ, DDᶜ, DOM, PAR, params) = (
     (1-params.γ)*params.μ_p*Lₚₐᵣ(PAR, params)*(L_NO₃(NO₃, NH₄, params)+L_NH₄(NH₄, params))*P 
     - G_p(P, Z, D, params) 
     - params.m_p*P^2
 )
-Z_forcing(x, y, z, t, NO₃, NH₄, P, Z, D, DD, DOM, PAR, params) = (
+Z_forcing(x, y, z, t, NO₃, NH₄, P, Z, D, DD, Dᶜ, DDᶜ, DOM, PAR, params) = (
     params.a_z*(G_d(P, Z, D, params) + G_p(P, Z, D, params)) 
     - params.m_z*Z^2 
     - params.μ_z*Z
 )
 
 # Detritus
-D_forcing(x, y, z, t, NO₃, NH₄, P, Z, D, DD, DOM, PAR, params) = (
+D_forcing(x, y, z, t, NO₃, NH₄, P, Z, D, DD, Dᶜ, DDᶜ, DOM, PAR, params) = (
     (1-params.f_d)*(1-params.a_z)*(G_d(P, Z, D, params)+G_p(P, Z, D, params)) 
     + (1-params.f_d)*params.m_p*P^2 
     - G_d(P, Z, D, params) 
@@ -70,7 +72,7 @@ D_forcing(x, y, z, t, NO₃, NH₄, P, Z, D, DD, DOM, PAR, params) = (
     #- aggreg_D2DD(z, D, DD) + aggreg_DOM2D(z, D, DOM) 
 )
 
-DD_forcing(x, y, z, t, NO₃, NH₄, P, Z, D, DD, DOM, PAR, params) = (
+DD_forcing(x, y, z, t, NO₃, NH₄, P, Z, D, DD, Dᶜ, DDᶜ, DOM, PAR, params) = (
     params.f_d*(1-params.a_z)*(G_d(P, Z, D, params)+G_p(P, Z, D, params)) 
     + params.f_d*params.m_p*P^2 
     + (1-params.f_z)*params.m_z*Z^2 
@@ -78,38 +80,56 @@ DD_forcing(x, y, z, t, NO₃, NH₄, P, Z, D, DD, DOM, PAR, params) = (
     #+ aggreg_D2DD(z, D, DD) + aggreg_DOM2DD(z, DD, DOM) 
 )
 
+# Detritus carbon
+Dᶜ_forcing(x, y, z, t, NO₃, NH₄, P, Z, D, DD, Dᶜ, DDᶜ, DOM, PAR, params) = (
+    ((1-params.f_d)*(1-params.a_z)*(G_d(P, Z, D, params)+G_p(P, Z, D, params)) 
+    + (1-params.f_d)*params.m_p*P^2 
+    - G_d(P, Z, D, params) 
+    + params.f_z*params.m_z*Z^2)*params.Rd_phy
+    - params.μ_d*Dᶜ
+    #- aggreg_D2DD(z, D, DD) + aggreg_DOM2D(z, D, DOM) 
+)
+
+DDᶜ_forcing(x, y, z, t, NO₃, NH₄, P, Z, D, DD, Dᶜ, DDᶜ, DOM, PAR, params) = (
+    (params.f_d*(1-params.a_z)*(G_d(P, Z, D, params)+G_p(P, Z, D, params)) 
+    + params.f_d*params.m_p*P^2 
+    + (1-params.f_z)*params.m_z*Z^2)*params.Rd_phy
+    - params.μ_dd*DDᶜ
+    #+ aggreg_D2DD(z, D, DD) + aggreg_DOM2DD(z, DD, DOM) 
+)
+
 
 # source functions for the carbonate chemistry model as described in reference (5)
-DIC_forcing(x, y, z, t, NO₃, NH₄, P, Z, D, DD, DOM, DIC, ALK, PAR, params) = (
+DIC_forcing(x, y, z, t, NO₃, NH₄, P, Z, D, DD, Dᶜ, DDᶜ, DOM, DIC, ALK, PAR, params) = (
     -params.μ_p*Lₚₐᵣ(PAR, params)*(L_NO₃(NO₃, NH₄, params)
     +L_NH₄(NH₄, params))*params.Rd_phy*(1+params.ρ_caco3)*P
     +params.α_p*params.γ*params.μ_p*Lₚₐᵣ(PAR, params)*(L_NO₃(NO₃, NH₄, params)+L_NH₄(NH₄, params))*params.Rd_phy*P
     +params.α_z*params.μ_z*params.Rd_phy*Z
-    +params.α_d*params.μ_d*params.Rd_phy*D
-    +params.α_dd*params.μ_dd*params.Rd_phy*DD
+    +params.α_d*params.μ_d*(Dᶜ/D)*D
+    +params.α_dd*params.μ_dd*(DDᶜ/DD)*DD
     +params.μ_dom*DOM*params.Rd_dom
 )
-ALK_forcing(x, y, z, t, NO₃, NH₄, P, Z, D, DD, DOM, DIC, ALK, PAR, params) = (
+ALK_forcing(x, y, z, t, NO₃, NH₄, P, Z, D, DD, Dᶜ, DDᶜ, DOM, DIC, ALK, PAR, params) = (
     params.μ_p*Lₚₐᵣ(PAR, params)*L_NO₃(NO₃, NH₄, params)*P
     -2*params.ρ_caco3*params.μ_p*Lₚₐᵣ(PAR, params)*(L_NO₃(NO₃, NH₄, params)+L_NH₄(NH₄, params))*params.Rd_phy*P
 )
 
 # oxygen chemistry as per reference (6)
-OXY_forcing(x, y, z, t, NO₃, NH₄, P, Z, D, DD, DOM, OXY, PAR, params) = (
+OXY_forcing(x, y, z, t, NO₃, NH₄, P, Z, D, DD, Dᶜ, DDᶜ, DOM, OXY, PAR, params) = (
     params.μ_p*Lₚₐᵣ(PAR, params)*L_NO₃(NO₃, NH₄, params)*params.Rd_oxy*P
-    - (params.Rd_oxy-params.Rd_nit)*NH₄_forcing(x, y, z, t, NO₃, NH₄, P, Z, D, DD, DOM, PAR, params) 
+    - (params.Rd_oxy-params.Rd_nit)*NH₄_forcing(x, y, z, t, NO₃, NH₄, P, Z, D, DD, Dᶜ, DDᶜ, DOM, PAR, params) 
     - params.Rd_oxy*params.μ_n*NH₄#there is a typo in https://agupubs.onlinelibrary.wiley.com/doi/10.1029/2010JC006446 so I am not sure the first term of this is correct, but this makes sense
 )
 
 D_sinking = -3.47e-5
 DD_sinking = -200/day
 
-tracers=(:NO₃, :NH₄, :P, :Z, :D, :DD, :DOM)
+tracers=(:NO₃, :NH₄, :P, :Z, :D, :DD, :Dᶜ, :DDᶜ, :DOM)
 optional_tracers=(carbonates=(:DIC, :ALK), oxygen=(:OXY,))
 
-forcing_functions=(NO₃=NO₃_forcing, NH₄=NH₄_forcing, P=P_forcing, Z=Z_forcing, D=D_forcing, DD=DD_forcing, DOM=DOM_forcing, DIC=DIC_forcing, ALK=ALK_forcing, OXY=OXY_forcing)
+forcing_functions=(NO₃=NO₃_forcing, NH₄=NH₄_forcing, P=P_forcing, Z=Z_forcing, D=D_forcing, DD=DD_forcing, Dᶜ = Dᶜ_forcing, DDᶜ = DDᶜ_forcing, DOM=DOM_forcing, DIC=DIC_forcing, ALK=ALK_forcing, OXY=OXY_forcing)
 
-sinking = (D = D_sinking, DD=DD_sinking)
+sinking = (D = D_sinking, DD=DD_sinking, Dᶜ = D_sinking, DDᶜ=DD_sinking)
 required_fields = (:PAR, )
 requried_parameters = NamedTuple()
 

@@ -81,7 +81,7 @@ function ActiveLagrangianParticles(particles::StructArray;
     diagnostic::NTuple{N, Symbol} where N = NamedTuple(), 
     tracked_fields::NamedTuple = NamedTuple(), 
     coupled_fields::NamedTuple = NamedTuple(),
-    density::AbstractFloat = 1.0, 
+    scalefactor::AbstractFloat = 1.0, 
     custom_dynamics=no_dynamics)
     
     required_fields = (equation_arguments..., prognostic..., diagnostic..., keys(tracked_fields)..., keys(coupled_fields)...)
@@ -99,7 +99,7 @@ function ActiveLagrangianParticles(particles::StructArray;
                                             equation_parameters=equation_parameters,
                                             prognostic=prognostic,
                                             diagnostic=diagnostic,
-                                            density=density, 
+                                            scalefactor=scalefactor, 
                                             tracked_fields=tracked_fields,
                                             coupled_fields=coupled_fields,
                                             custom_dynamics=custom_dynamics
