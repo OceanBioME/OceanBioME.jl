@@ -69,7 +69,8 @@ model = NonhydrostaticModel(
                                                 closure = ScalarDiffusivity(ν=κₜ, κ=κₜ), 
                                                 forcing = bgc.forcing,
                                                 boundary_conditions = bgc.boundary_conditions,
-                                                auxiliary_fields = (; PAR)
+                                                auxiliary_fields = (; PAR),
+                                                particles = kelp_particles
 )
 set!(model, P=0.03, Z=0.03, D=0.0, DD=0.0, Dᶜ=0.0, DDᶜ=0.0, NO₃=11, NH₄=0.05, DOM=0.0, DIC=2200.0, ALK=2400.0, OXY=240.0)
 
@@ -94,9 +95,10 @@ simulation.callbacks[:progress] = Callback(progress_message, IterationInterval(1
 
 filename = "kelp"
 simulation.output_writers[:profiles] = JLD2OutputWriter(model, merge(model.tracers, model.auxiliary_fields), filename = "$filename.jld2", schedule = TimeInterval(1day))
-simulation.output_writers[:particles] = JLD2OutputWriter(model, (particles=model.particles,), filename = "$filename_particles.jld2", schedule = TimeInterval(1day), overwrite_existing = true)
+simulation.output_writers[:particles] = JLD2OutputWriter(model, (particles=model.particles,), filename = "$(filename)_particles.jld2", schedule = TimeInterval(1day), overwrite_existing = true)
 
 simulation.callbacks[:neg] = Callback(scale_negative_tracers!; parameters=(conserved_group=(:NO₃, :NH₄, :P, :Z, :D, :DD, :DOM), warn=false))
+simulation.callbacks[:timestep] = Callback(update_timestep!, IterationInterval(1), (c_forcing=0.5, c_adv=0.6, c_diff=0.6, w = 200/day, relaxation=0.75), TimeStepCallsite())
 
 # ## Run!
 # Finally we run the simulation
