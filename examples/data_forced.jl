@@ -35,7 +35,7 @@ dd = DataDep(
 )
 register(dd)
 filename = datadep"example_data/subpolar.nc"
-times = ncread(filename, "time")
+time = ncread(filename, "time")
 temp = ncread(filename, "temp")
 salinity = ncread(filename, "so")
 mld = ncread(filename, "mld")
@@ -69,9 +69,7 @@ PAR = Oceananigans.Fields.Field{Center, Center, Center}(grid)
 # Here we instantiate the LOBSTER model with a surface flux of DIC (CO₂) which will return all of the information we then need to pass onto Oceananigans and set the initial conditions.
 # > We are being a bit picky about the Oceananigans model setup (e.g. specifying the advection scheme) as this gives the best simple results but you may find differently.
 dic_bc = Boundaries.airseasetup(:CO₂, forcings=(T=t_function, S=s_function))
-
 bgc = Setup.Oceananigans(:LOBSTER, grid, params, optional_sets=(:carbonates, ), topboundaries=(DIC=dic_bc, ))
-
 model = NonhydrostaticModel(
                                                 advection = WENO(;grid),
                                                 timestepper = :RungeKutta3,
@@ -106,8 +104,6 @@ filename = "data_forced"
 simulation.output_writers[:profiles] = JLD2OutputWriter(model, merge(model.tracers, model.auxiliary_fields), filename = "$filename.jld2", schedule = TimeInterval(1day))
 simulation.callbacks[:neg] = Callback(scale_negative_tracers!; parameters=(conserved_group=(:NO₃, :NH₄, :P, :Z, :D, :DD, :DOM), warn=false))
 
-simulation.callbacks[:timestep] = Callback(update_timestep!, IterationInterval(1), (c_forcing=0.5, c_adv=0.6, c_diff=0.6, w = 200/day, relaxation=0.75))
-
 # ## Run!
 # Finally we run the simulation
 run!(simulation)
@@ -131,8 +127,6 @@ for (i, t) in enumerate(times)
     air_sea_CO₂_flux[i] = Boundaries.airseaflux(0.0, 0.0, t, DIC[1, 1, Nz, i], ALK[1, 1, Nz, i], t_function(1, 1, 0, t), s_function(1, 1, 0, t),  merge(Boundaries.defaults.airseaflux, (T=t_function, S=s_function, gas=:CO₂)))
     carbon_export[i] = (D[1, 1, end-20, i]*LOBSTER.D_sinking .+ DD[1, 1, end-20, i]*LOBSTER.DD_sinking).*LOBSTER.defaults.Rd_dom
 end
-
-
 
 using GLMakie
 f=Figure(backgroundcolor=RGBf(1, 1, 1), fontsize=30)
