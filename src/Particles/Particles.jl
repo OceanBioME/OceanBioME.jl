@@ -9,15 +9,17 @@ include("tracer_tendencies.jl")
 
 @kernel function solve_growth!(particles, equation::Function, arguments, params, prognostic, diagnostic, Δt, t)
     p = @index(Global)
+    @inbounds begin
+        arg_values = ntuple(n->arguments[n][p], length(arguments))
+        results = equation(particles.properties.x[p], particles.properties.y[p], particles.properties.z[p], t, arg_values..., params, Δt)
 
-    results = @inbounds equation(particles.properties.x[p], particles.properties.y[p], particles.properties.z[p], t, [arg[p] for arg in arguments]..., params, Δt)
+        for property in prognostic
+            getproperty(particles.properties, property)[p] += getproperty(results, property) *Δt
+        end
 
-    for property in prognostic
-        @inbounds getproperty(particles.properties, property)[p] += getproperty(results, property) *Δt
-    end
-
-    for property in diagnostic
-        @inbounds getproperty(particles.properties, property)[p] = getproperty(results, property)
+        for property in diagnostic
+            getproperty(particles.properties, property)[p] = getproperty(results, property)
+        end
     end
 end
 

@@ -32,7 +32,7 @@ using Oceananigans.Fields: fractional_indices
             c = 0^(1+(-1)^floor(n/4))
             dk = 0^abs(1-c)+ζ*(-1)^c
 
-            nodes[n] = (Int(i+1)+a, 
+            @inbounds nodes[n] = (Int(i+1)+a, 
                             Int(j+1)+b, 
                             Int(k+1)+c, 
                             sqrt(di^2+dj^2+dk^2))
