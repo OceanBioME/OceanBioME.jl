@@ -21,9 +21,9 @@ const defaults= (
     Rd_red = 6.56#106/16#mmol C/mmol N
 )
 
-@inline p_nit(Nₘ, Cₘ, O₂, NH₄, k) = min(1, exp(-1.9785+0.2261*log(Cₘ)*log(O₂)-0.0615*log(Cₘ)^2-0.0289*log(k)*log(NH₄)-0.36109*log(Cₘ)-0.0232*log(Cₘ)*log(NH₄))/Nₘ)
-@inline p_denit(Cₘ, O₂, NO₃, k) = min(1, exp(-3.0790+1.7509*log(Cₘ)+0.0593*log(NO₃)^2-0.1923*log(Cₘ)^2+0.0604*log(k)^2+0.0662*log(O₂)*log(k))/Cₘ)
-@inline p_anox(Cₘ, O₂, NO₃, k) = min(1, exp(-3.9476+2.6269*log(Cₘ)-0.2426*log(Cₘ)^2-1.3349*log(k)+0.1826*log(O₂)*log(k)-0.0143*log(NO₃)^2)/Cₘ)
+@inline p_nit(Nₘ, Cₘ, O₂, NH₄, k) = exp(-1.9785+0.2261*log(Cₘ)*log(O₂)-0.0615*log(Cₘ)^2-0.0289*log(k)*log(NH₄)-0.36109*log(Cₘ)-0.0232*log(Cₘ)*log(NH₄))/Nₘ
+@inline p_denit(Cₘ, O₂, NO₃, k) = exp(-3.0790+1.7509*log(Cₘ)+0.0593*log(NO₃)^2-0.1923*log(Cₘ)^2+0.0604*log(k)^2+0.0662*log(O₂)*log(k))/Cₘ
+@inline p_anox(Cₘ, O₂, NO₃, k) = exp(-3.9476+2.6269*log(Cₘ)-0.2426*log(Cₘ)^2-1.3349*log(k)+0.1826*log(O₂)*log(k)-0.0143*log(NO₃)^2)/Cₘ
 #values too hight for d<100 so (for now) maxing at d=100
 @inline p_soliddep(d) = 0.233*(982*max(d, 100)^(-1.548))^0.336
 
@@ -57,8 +57,6 @@ end
     Nₘ, Cₘ, k = mineralisation(model_fields.Nᵣᵣ[i, j, 1],  model_fields.Nᵣ[i, j, 1], params)
     return @inbounds -(Cₘ*(1-p_denit(Cₘ, model_fields.OXY[i, j, 1], model_fields.NO₃[i, j, 1], 1)-p_anox(Cₘ, model_fields.OXY[i, j, 1], model_fields.NO₃[i, j, 1], 1)*p_soliddep(isa(params.d, Number) ? params.d : params.d[i, j])) + Nₘ*p_nit(Nₘ, Cₘ, model_fields.OXY[i, j, 1], model_fields.NH₄[i, j, 1], 1)*2)
 end
-
-@inline POM_deposition(i, j, grid, clock, model_fields, params) = @inbounds - model_fields[params.POM][i, j, 1]*params.w*grid.Δzᵃᵃᶜ[1]
 
 @inline eval_advection(i, j, k, grid, func) = func.advection_kernel_function(i, j, k, grid, func.advection_scheme, func.velocities, func.advected_field)
 @inline getflux(i, j, k, grid, funcs) = length(funcs) < 11 ? ntuple(n->eval_advection(i, j, k, grid, funcs[n]), length(funcs)) : map(n -> eval_advection(i, j, k, grid, funcs[n]), 1:length(args))

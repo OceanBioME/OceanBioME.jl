@@ -29,7 +29,7 @@ function benchmark_LOBSTER(n)
     # warmup
     run!(simulation)
 
-    trials = @benchmark run!($sim) samples=5
+    trials = @benchmark run!($simulation) samples=5
 
     return trials
 end
@@ -73,7 +73,7 @@ function benchmark_sediment(n)
     # warmup
     run!(simulation)
 
-    trials = benchmark_sim!(simulation, 1)
+    trials = @benchmark run!($simulation) samples=5
 
     return trials
 end
@@ -119,7 +119,7 @@ function benchmark_SLatissima(n)
     # warmup
     run!(simulation)
 
-    trials = benchmark_sim!(simulation, 1)
+    trials = @benchmark run!($simulation) samples=5
 
     return trials
 end
