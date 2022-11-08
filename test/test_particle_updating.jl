@@ -1,6 +1,5 @@
 using OceanBioME, Test, Oceananigans, StructArrays
 using OceanBioME.Particles: infinitesimal_particle_field_coupling!
-using Oceananigans: TendencyCallsite
 mutable struct CustomParticle
     #position
     x :: AbstractFloat
