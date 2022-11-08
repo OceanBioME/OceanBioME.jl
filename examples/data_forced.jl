@@ -1,161 +1,159 @@
-"""
-This script illustrates how to run OceanBioME as a 1D column model using the LOBSTER biogeochemical model.
-In this case, the script 
-*introduces two additonal tracer types: carbonates (DIC and ALK) and oxygen (OXY);
-*reads in the temperature, salinity, and mixed layer depth from the Mercator Ocean state esimate of the North Atlantic subpolar gyre;
-    The temperature and salinity are needed to calculate the air-sea CO2 flux.  
-    The mixed layer depth is used to construct an idealized diffusivity profile.
-*reads in the surface PAR timeseries data of the same geographic region as above from the NASA's OceanColor Web; 
-    Both the data downloaded are saved seperately and a small sample of them are stored in subpolar.nc for ease of use.
-    The surface PAR timeseries is used to derive the PAR profile for forcing the LOBSTER model based on a light absorption model.
-    The PAR profile will be updated every 1 timestep as an auxiliary field.
-*shows how to read *.nc files.
-References
-(1) Lévy, M., Gavart, M., Mémery, L., Caniaux, G. and Paci, A., 2005. A four‐dimensional mesoscale map of the spring bloom in the northeast Atlantic (POMME experiment): Results of a prognostic model. Journal of Geophysical Research: Oceans, 110(C7).
-(2) Lévy, M., Klein, P. and Treguier, A.M., 2001. Impact of sub-mesoscale physics on production and subduction of phytoplankton in an oligotrophic regime. Journal of marine research, 59(4), pp.535-565.
-(3) Resplandy, L., Martin, A.P., Le Moigne, F., Martin, P., Aquilina, A., Mémery, L., Lévy, M. and Sanders, R., 2012. How does dynamical spatial variability impact 234Th-derived estimates of organic export?. Deep Sea Research Part I: Oceanographic Research Papers, 68, pp.24-45.
-(4) Morel, A. and Maritorena, S., 2001. Bio‐optical properties of oceanic waters: A reappraisal. Journal of Geophysical Research: Oceans, 106(C4), pp.7163-7180.
-(5) Resplandy, L., Lévy, M., d'Ovidio, F. and Merlivat, L., 2009. Impact of submesoscale variability in estimating the air‐sea CO2 exchange: Results from a model study of the POMME experiment. Global Biogeochemical Cycles, 23(1).
-"""
+# # One dimensional column forced by external data with carbonate chemistry
+# In this example we will setup a simple 1D column with the [LOBSTER](@ref LOBSTER) biogeochemical model and observe its evolution. This demonstraits:
+# - How to setup OceanBioME's biogeochemical models
+# - How to setup light attenuation
+# - How to load external forcing data
+# - How to run with optional tracer sets such as carbonate chemistry
+# - How to setup a non-uniform grid for better near surface resolution
+# - How to visulise results
 
-using Random   
-using Printf
-using Plots
-using JLD2
-using NetCDF
-using HDF5
-using Interpolations
-using Statistics 
+# This is forced by mixing layer depth and surface photosynthetically available radiation (PAR) data from the Mercator Ocean model and NASA VIIRS observations
 
-using Oceananigans
+# ## Install dependencies
+# First we will check we have the dependencies installed
+# ```julia
+# using Pkg
+# pkg"add OceanBioME, Oceananigans, Printf, Plots, GLMakie, NetCDF, JLD2, DataDeps"
+# ```
+
+# ## Model setup
+# We load the packages and choose the default LOBSTER parameter set
+
+using Oceananigans, Random, Printf, NetCDF, Interpolations, DataDeps
 using Oceananigans.Units: second, minute, minutes, hour, hours, day, days, year, years
-
+using Oceananigans.Operators: ∂zᶜᶜᶜ
 using OceanBioME 
 
-# Load parameters from src/Models/Biogeochemistry/LOBSTER.jl
 params = LOBSTER.defaults  
 
-# Import data
-# The temperature and salinity are needed to calculate the air-sea CO2 flux.  The mixed layer depth is used to construct an idealized diffusivity profile.
-filename = "./OceanBioME_example_data/subpolar.nc" #A small sample of data downloaded is stored in subpolar.nc for ease of use.
-time = ncread(filename, "time")    # time in seconds
-temp = ncread(filename, "temp")    # temperature in Degrees Celsius 
-salinity = ncread(filename, "so")  # salinity in Practical Salinity Unit
-mld = ncread(filename, "mld")      # mixed layer depth in Meters
-par = ncread(filename, "par")      # photosynthetically available radiation in W/m^2
+# ## Load external forcing data
+# Loading the forcing data from our online copy
+dd = DataDep(
+    "example_data",
+    "example data from subpolar re analysis and observational products", 
+    "https://github.com/OceanBioME/OceanBioME_example_data/raw/main/subpolar.nc"
+)
+register(dd)
+filename = datadep"example_data/subpolar.nc"
+times = ncread(filename, "time")
+temp = ncread(filename, "temp")
+salinity = ncread(filename, "so")
+mld = ncread(filename, "mld")
+par = ncread(filename, "par")
 
-# Linear interpolation to access temperature, salinity, mld, and surface PAR at arbitrary time
-temperature_itp = LinearInterpolation(time, temp) 
-salinity_itp = LinearInterpolation(time, salinity) 
-mld_itp = LinearInterpolation(time, mld) 
-PAR_itp = LinearInterpolation(time, par)
+temperature_itp = LinearInterpolation(times, temp) 
+salinity_itp = LinearInterpolation(times, salinity) 
+mld_itp = LinearInterpolation(times, mld) 
+PAR_itp = LinearInterpolation(times, par)
 
-# Define temperature and salinity as functions of x, y, z, and t(in seconds). The temperature and salinity functions are needed to calculate the air-sea CO2 flux.
-t_function(x, y, z, t) = temperature_itp(mod(t, 364days)) # the remainder of t after floored division by 364days. It creates an annual cycle representation of temperature. 
+t_function(x, y, z, t) = temperature_itp(mod(t, 364days))
 s_function(x, y, z, t) = salinity_itp(mod(t, 364days))
-# Define surface_PAR as a function of time(in seconds). 
-surface_PAR(t) = PAR_itp(mod(t, 364days))  # the remainder of t after floored division by 364days. It creates an annual cycle representation of PAR.
+surface_PAR(t) = PAR_itp(mod(t, 364days))
+κₜ(x, y, z, t) = 2e-2*max(1-(z+mld_itp(mod(t,364days))/2)^2/(mld_itp(mod(t,364days))/2)^2,0)+1e-4
 
-# Simulation duration    
-duration=1year
-
-# Define the grid
-Lx = 20
-Ly = 20
-Nx = 1
-Ny = 1
-Nz = 33 # number of points in the vertical direction
-Lz = 600 # domain depth
-
-# Generate vertically stretched grid 
-refinement = 10 # controls spacing near surface (higher means finer spaced)  
-stretching = 5.754   # controls rate of stretching at bottom      
-# Normalized height ranging from 0 to 1
+# ## Grid and PAR field
+# Define the grid (in this case a non uniform grid for better resolution near the surface) and an extra Oceananigans field for the PAR to be stored in
+Nz = 33
+Lz = 600
+refinement = 10 
+stretching = 5.754
 h(k) = (k - 1) / Nz
-# Linear near-surface generator
 ζ₀(k) = 1 + (h(k) - 1) / refinement
-# Bottom-intensified stretching function 
 Σ(k) = (1 - exp(-stretching * h(k))) / (1 - exp(-stretching))
-# Generating function
 z_faces(k) = Lz * (ζ₀(k) * Σ(k) - 1)
-grid = RectilinearGrid(size = (Nx, Ny, Nz), 
-                       x = (0, Lx),
-                       y = (0, Ly),
-                       z = z_faces)     
 
-# Initialize a PAR field                       
-PAR_field = Oceananigans.Fields.Field{Center, Center, Center}(grid)
+grid = RectilinearGrid(size = (1, 1, Nz), x = (0, 20), y = (0, 20), z = z_faces)        
+PAR = Oceananigans.Fields.Field{Center, Center, Center}(grid)
 
-# Specify the boundary conditions for DIC and OXY based on the air-sea CO₂ and O₂ flux
+# ## Biogeochemical and Oceananigans model
+# Here we instantiate the LOBSTER model with a surface flux of DIC (CO₂) which will return all of the information we then need to pass onto Oceananigans and set the initial conditions.
+# > We are being a bit picky about the Oceananigans model setup (e.g. specifying the advection scheme) as this gives the best simple results but you may find differently.
 dic_bc = Boundaries.airseasetup(:CO₂, forcings=(T=t_function, S=s_function))
-oxy_bc = Boundaries.airseasetup(:O₂, forcings=(T=t_function, S=s_function))
+bgc = Setup.Oceananigans(:LOBSTER, grid, params, optional_sets=(:carbonates, ), topboundaries=(DIC=dic_bc, ))
+model = NonhydrostaticModel(
+                                                advection = WENO(;grid),
+                                                timestepper = :RungeKutta3,
+                                                grid = grid,
+                                                tracers = bgc.tracers,
+                                                closure = ScalarDiffusivity(ν=κₜ, κ=κₜ), 
+                                                forcing = bgc.forcing,
+                                                boundary_conditions = bgc.boundary_conditions,
+                                                auxiliary_fields = (; PAR)
+)
+set!(model, P=0.03, Z=0.03, D=0.0, DD=0.0, Dᶜ=0.0, DDᶜ=0.0, NO₃=11, NH₄=0.05, DOM=0.0, DIC=2200.0, ALK=2400.0)
 
-# Set up the OceanBioME model with the specified biogeochemical model, grid, parameters, light, and boundary conditions
-bgc = Setup.Oceananigans(:LOBSTER, grid, params, PAR_field, optional_sets=(:carbonates, :oxygen), topboundaries=(DIC=dic_bc, OXY=oxy_bc))
-@info "Set up OceanBioME model"
+# ## Simulation
+# Next we setup the simulation along with some callbacks that:
+# - Update the PAR field from the surface PAR and phytoplankton concentration
+# - Show the progress of the simulation
+# - Store the output
+# - Prevent the tracers from going negative from numerical error (see discussion of this in the [positivity preservation](@ref pos-preservation) implimentation page)
+# - Adapt the timestep length to reduce the run time
+simulation = Simulation(model, Δt=1minutes, stop_time=100days) 
 
-# Create a function with the turbulent vertical diffusivity. This is an idealized functional form, but the depth of mixing is based on an interpolation to the mixed layer depth from the Mercator Ocean state estimate.
-κₜ(x, y, z, t) = 8e-2*max(1-(z+mld_itp(mod(t,364days))/2)^2/(mld_itp(mod(t,364days))/2)^2,0)+1e-4;   #m^2 s^-1
+simulation.callbacks[:update_par] = Callback(Light.twoBands.update!, IterationInterval(1), merge(merge(params, Light.twoBands.defaults), (; surface_PAR)), TimeStepCallsite());
 
-# Create a 'model' to run in Oceananignas
-model = NonhydrostaticModel(advection = UpwindBiasedFifthOrder(),
-                            timestepper = :RungeKutta3,
-                            grid = grid,
-                            tracers = (:b, bgc.tracers...),
-                            coriolis = FPlane(f=1e-4),
-                            buoyancy = BuoyancyTracer(), 
-                            closure = ScalarDiffusivity(ν=κₜ, κ=κₜ), 
-                            forcing =  bgc.forcing,
-                            boundary_conditions = bgc.boundary_conditions,
-                            auxiliary_fields = (PAR=PAR_field, )
-                            )
-
-# Initialize the biogeochemical variables
-# These initial conditions are set rather arbitrarily in the hope that the model will converge to a repeatable annual cycle if run long enough
-Pᵢ(x, y, z)= (tanh((z+250)/100)+1)/2*(0.038)+0.002           #in mmolN m^-3
-Zᵢ(x, y, z)= (tanh((z+250)/100)+1)/2*(0.038)+0.008           #in mmolN m^-3
-Dᵢ(x, y, z)=0                                                #in mmolN m^-3
-DDᵢ(x, y, z)=0                                               #in mmolN m^-3
-NO₃ᵢ(x, y, z)= (1-tanh((z+300)/150))/2*6+11.4                #in mmolN m^-3
-NH₄ᵢ(x, y, z)= (1-tanh((z+300)/150))/2*0.05+0.05             #in mmolN m^-3
-DOMᵢ(x, y, z)= 0                                             #in mmolN m^-3
-DICᵢ(x, y, z)= 2200                                          #in mmolC m^-3
-ALKᵢ(x, y, z)= 2400                                          #in mmolN m^-3
-OXYᵢ(x, y, z) = 240                                          #in mmolO m^-3
-
-# Set the initial conditions using functions or constants:
-set!(model, P=Pᵢ, Z=Zᵢ, D=Dᵢ, DD=DDᵢ, NO₃=NO₃ᵢ, NH₄=NH₄ᵢ, DOM=DOMᵢ, DIC=DICᵢ, ALK=ALKᵢ, OXY=OXYᵢ, u=0, v=0, w=0, b=0)
-
-# Set up the simulation
-Δt=0.5minutes
-simulation = Simulation(model, Δt=Δt, stop_time=duration) 
-
-# Create a model 'callback' to update the light (PAR) profile every 1 timestep
-simulation.callbacks[:update_par] = Callback(Light.update_2λ!, IterationInterval(1), merge(merge(params, Light.defaults), (surface_PAR=surface_PAR,)))
-
-# Print a progress message
 progress_message(sim) = @printf("Iteration: %04d, time: %s, Δt: %s, wall time: %s\n",
-                                iteration(sim),
-                                prettytime(sim),
-                                prettytime(sim.Δt),
-                                prettytime(sim.run_wall_time))
-
-# Create a message to display every 100 timesteps                                
+                                                        iteration(sim),
+                                                        prettytime(sim),
+                                                        prettytime(sim.Δt),
+                                                        prettytime(sim.run_wall_time))                
 simulation.callbacks[:progress] = Callback(progress_message, IterationInterval(100))
 
-# Setup dictionary of fields
-fields = Dict(zip((["$t" for t in bgc.tracers]..., "PAR"), ([getproperty(model.tracers, t) for t in bgc.tracers]..., [getproperty(model.auxiliary_fields, t) for t in (:PAR, )]...)))
-simulation.output_writers[:profiles] = NetCDFOutputWriter(model, fields, filename="data_forced.nc", schedule=TimeInterval(1days), overwrite_existing=true)
+filename = "data_forced"
+simulation.output_writers[:profiles] = JLD2OutputWriter(model, merge(model.tracers, model.auxiliary_fields), filename = "$filename.jld2", schedule = TimeInterval(1day))
+simulation.callbacks[:neg] = Callback(scale_negative_tracers!; parameters=(conserved_group=(:NO₃, :NH₄, :P, :Z, :D, :DD, :DOM), warn=false))
+simulation.callbacks[:timestep] = Callback(update_timestep!, IterationInterval(1), (c_forcing=0.5, c_adv=0.6, c_diff=0.6, w = 200/day, relaxation=0.75), TimeStepCallsite())
 
-@info "Setup simulation"
-# Run the simulation                            
+# ## Run!
+# Finally we run the simulation
 run!(simulation)
 
-include("PlottingUtilities.jl")
-# Load and plot the results
-results = load_tracers(simulation)
-plot(profiles(results)...)
+# Now we can visulise the results with some post processing to diagnose the air-sea CO₂ flux
 
-# Save the plot to a PDF file
-savefig("data_forced.pdf")
+P = FieldTimeSeries("$filename.jld2", "P")
+NO₃ = FieldTimeSeries("$filename.jld2", "NO₃")
+Z = FieldTimeSeries("$filename.jld2", "Z")
+D = FieldTimeSeries("$filename.jld2", "D") 
+DD = FieldTimeSeries("$filename.jld2", "DD")
+DIC = FieldTimeSeries("$filename.jld2", "DIC")
+Dᶜ = FieldTimeSeries("$filename.jld2", "Dᶜ")
+DDᶜ = FieldTimeSeries("$filename.jld2", "DDᶜ")
+ALK = FieldTimeSeries("$filename.jld2", "ALK")
 
+x, y, z = nodes(P)
+times = P.times
+
+air_sea_CO₂_flux = zeros(size(P)[4])
+carbon_export = zeros(size(P)[4])
+for (i, t) in enumerate(times)
+    air_sea_CO₂_flux[i] = Boundaries.airseaflux(0.0, 0.0, t, DIC[1, 1, Nz, i], ALK[1, 1, Nz, i], t_function(1, 1, 0, t), s_function(1, 1, 0, t),  merge(Boundaries.defaults.airseaflux, (T=t_function, S=s_function, gas=:CO₂)))
+    carbon_export[i] = (Dᶜ[1, 1, end-20, i]*LOBSTER.D_sinking .+ DDᶜ[1, 1, end-20, i]*LOBSTER.DD_sinking)
+end
+
+using GLMakie
+f=Figure(backgroundcolor=RGBf(1, 1, 1), fontsize=30)
+
+axP = Axis(f[1, 1:2], ylabel="z (m)", xlabel="Time (days)", title="Phytoplankton concentration (mmol N/m³)")
+hmP = GLMakie.heatmap!(times./days, float.(z[end-23:end]), float.(P[1, 1, end-23:end, 1:101])', interpolate=true, colormap=:batlow)
+cbP = Colorbar(f[1, 3], hmP)
+
+axNO₃ = Axis(f[1, 4:5], ylabel="z (m)", xlabel="Time (days)", title="Nitrate concentration (mmol N/m³)")
+hmNO₃ = GLMakie.heatmap!(times./days, float.(z[end-23:end]), float.(NO₃[1, 1, end-23:end, 1:101])', interpolate=true, colormap=:batlow)
+cbNO₃ = Colorbar(f[1, 6], hmNO₃)
+
+axZ = Axis(f[2, 1:2], ylabel="z (m)", xlabel="Time (days)", title="Zooplankton concentration (mmol N/m³)")
+hmZ = GLMakie.heatmap!(times./days, float.(z[end-23:end]), float.(Z[1, 1, end-23:end, 1:101])', interpolate=true, colormap=:batlow)
+cbZ = Colorbar(f[2, 3], hmZ)
+
+axD = Axis(f[2, 4:5], ylabel="z (m)", xlabel="Time (days)", title="Detritus concentration (mmol N/m³)")
+hmD = GLMakie.heatmap!(times./days, float.(z[end-23:end]), float.(D[1, 1, end-23:end, 1:101])' .+ float.(DD[1, 1, end-23:end, 1:101])', interpolate=true, colormap=:batlow)
+cbD = Colorbar(f[2, 6], hmD)
+
+axfDIC = Axis(f[3, 1:4], xlabel="Time (days)", title="Air-sea CO₂ flux and Sinking", ylabel="Flux (kgCO₂/m²/year)")
+hmfDIC = GLMakie.lines!(times./days, air_sea_CO₂_flux.*(12+16*2).*year/(1000*1000), label="Air-sea flux")
+hmfExp = GLMakie.lines!(times./days, carbon_export.*(12+16*2).*year/(1000*1000), label="Sinking export")
+
+f[3, 5] = Legend(f, axfDIC, "", framevisible = false)
+
+save("examples/data_forced.png", f)

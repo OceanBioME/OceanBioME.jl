@@ -2,9 +2,9 @@ using OceanBioME, Test, Oceananigans
 
 grid = RectilinearGrid(size=(1,1,2), extent=(1,1,2))
 
-params=merge(LOBSTER.defaults, Light.defaults)
+params=merge(LOBSTER.defaults, Light.twoBands.defaults)
 
-@testset "Light attenuation" begin
+@testset "2 band attenuation" begin
     PAR = Oceananigans.Fields.Field{Center, Center, Center}(grid)
 
     model = NonhydrostaticModel(; grid, timestepper=:RungeKutta3, tracers=(:P, ), auxiliary_fields = (PAR=PAR, ))
@@ -12,7 +12,7 @@ params=merge(LOBSTER.defaults, Light.defaults)
     set!(model, u=0, v=0, w=0, P=Pᵢ)
     sim = Simulation(model, Δt=0.1, stop_time=1)
     surface_PAR(t) = 1
-    sim.callbacks[:update_par] = Callback(Light.update_2λ!, IterationInterval(1), merge(params, (surface_PAR=surface_PAR,)));
+    sim.callbacks[:update_par] = Callback(Light.twoBands.update!, IterationInterval(1), merge(params, (surface_PAR=surface_PAR,)), TimeStepCallsite());
     run!(sim)
 
     expected_PAR = [

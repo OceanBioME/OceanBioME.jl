@@ -3,6 +3,8 @@ export run!
 using OceanBioME, Oceananigans, DiffEqBase, OrdinaryDiffEq
 using Oceananigans.Grids: AbstractGrid
 using Oceananigans.Architectures: arch_array
+using Oceananigans.BoundaryConditions: ImpenetrableBoundaryCondition, ValueBoundaryCondition
+using Oceananigans.Fields: ZFaceField
 
 function loadmodel(model)
     models = propertynames(OceanBioME)
@@ -10,32 +12,63 @@ function loadmodel(model)
     if !(model in models)
         throw(ArgumentError("Model '$model' is not an available model, choices are $models"))
     end
+    properties = getproperty(OceanBioME, model)
 
-    return getproperty(OceanBioME, model)
-end
-
-function loadtracers(model, optional_sets)
-    optional_tracers = []
-    available_optionsets = keys(model.optional_tracers)
-    for option in optional_sets
-        if !(option in available_optionsets)
-            throw(ArgumentError("$option is not an available option set in the model '$model', available are $available_optionsets"))
-        end
-        push!(optional_tracers, getproperty(model.optional_tracers, option))
+    #horrible but don't know how else todo this
+    discrete_forcings = NamedTuple()
+    try 
+        discrete_forcings = properties.discrete_forcing
+    catch
+        true
     end
 
-    return (core=model.tracers, optional=optional_tracers)
+    sinking = NamedTuple()
+    try 
+        sinking = properties.sinking
+    catch
+        true
+    end
+
+    optional = NamedTuple()
+    try 
+        optional = properties.optional_tracers
+    catch
+        true
+    end
+
+    dependencies = properties.tracers
+    try
+        dependencies = (dependencies..., properties.required_fields...)
+    catch
+        true
+    end
+    return properties, dependencies, discrete_forcings, dependencies, sinking, optional
 end
 
-function setuptracer(model, grid, tracer, field_dependencies, topboundaries, bottomboundaries, forcing_params; sinking, advection_scheme, no_sinking_flux)
-    forcing = Forcing(getproperty(model.forcing_functions, tracer), field_dependencies=field_dependencies, parameters=forcing_params)
-    if (sinking && tracer in keys(model.sinking))
-        slip_vel = arch_array(grid.architecture, zeros(0:grid.Nx+2,0:grid.Ny+2,0:grid.Nz+2))
-        depth = abs(grid.zᵃᵃᶜ[1])
-        for k=0:grid.Nz-2
-            @inbounds slip_vel[:, :, k] .= getproperty(model.sinking, tracer)(grid.zᵃᵃᶜ[k], forcing_params)*(no_sinking_flux ? (1-exp(5*(abs(grid.zᵃᵃᶜ[k]) - depth))) : 1)
+function loadtracers(model, optional_tracers, optional_sets)
+    optionals = []
+    for option in optional_sets
+        if !(option in keys(optional_tracers))
+            throw(ArgumentError("$option is not an available option set, available are $(keys(optional_tracers)))"))
         end
-        forcing = (forcing, AdvectiveForcing(advection_scheme(), w=slip_vel))
+        push!(optionals, getproperty(optional_tracers, option))
+    end
+
+    return (core=model.tracers, optional=optionals)
+end
+
+@inline get_sinking_vel(slip_vel::Function, z, args...) = slip_vel(z, args...)
+@inline get_sinking_vel(slip_vel::Number, z, args...) = slip_vel
+
+function setuptracer(model, grid, tracer, field_dependencies, topboundaries, bottomboundaries, forcing_params, discrete_forcings, sinking_forcings; sinking, open_bottom)
+    discrete = ifelse(tracer in keys(discrete_forcings), getproperty(discrete_forcings, tracer), false)
+    forcing = Forcing(getproperty(model.forcing_functions, tracer), field_dependencies=field_dependencies, parameters=forcing_params, discrete_form = discrete)
+    if (sinking && tracer in keys(sinking_forcings))
+        w_slip = ZFaceField(grid)
+        for k=1:grid.Nz 
+            @inbounds w_slip[:, :, k] .= get_sinking_vel(model.sinking[tracer], grid.zᵃᵃᶠ[k], forcing_params)*(open_bottom ? 1.0 : (1 - exp((1-k)/2)))
+        end
+        forcing = (forcing, AdvectiveForcing(WENO(;grid), w=w_slip))
     end
 
     topboundary = tracer in keys(topboundaries) ? getproperty(topboundaries, tracer) : FluxBoundaryCondition(0)
@@ -48,32 +81,31 @@ end
 
 function Oceananigans(model::Symbol, 
                                     grid::AbstractGrid,  
-                                    params::NamedTuple, 
-                                    PAR; #should add a test for this to be an auxiliary field or a fucntion (but can't distinguish an aux field or tracer field)
+                                    forcing_params::NamedTuple; 
                                     topboundaries::NamedTuple=NamedTuple(),
                                     bottomboundaries::NamedTuple=NamedTuple(),
                                     optional_sets::Tuple=(),
                                     sinking = true, 
-                                    advection_scheme = UpwindBiasedFifthOrder,
-                                    no_sinking_flux = true)
+                                    supress_required_fields_warning = false,
+                                    open_bottom=false)
 
-    model=loadmodel(model)
-    tracers=loadtracers(model, optional_sets)
+    model, dependencies, discrete_forcings, dependencies, sinking_forcings, optional_tracers = loadmodel(model)
+    tracers=loadtracers(model, optional_tracers, optional_sets)
 
-    forcing_functions=()
-    boundary_functions=()
+    discrete_forcings = ifelse(length(discrete_forcings) == 0, NamedTuple{(tracers.core..., (tracers.optional...)...)}(repeat([false], length((tracers.core..., (tracers.optional...)...)))), discrete_forcings)
 
-    forcing_params=merge(params, (PAR = PAR, ))
+    forcing_functions = ()
+    boundary_functions = ()
 
     for tracer in tracers.core
-        forcing, bcs = setuptracer(model, grid, tracer, tracers.core, topboundaries, bottomboundaries, forcing_params; sinking=sinking, advection_scheme=advection_scheme, no_sinking_flux=no_sinking_flux)
+        forcing, bcs = setuptracer(model, grid, tracer, dependencies, topboundaries, bottomboundaries, forcing_params, discrete_forcings, sinking_forcings; sinking=sinking, open_bottom=open_bottom)
         forcing_functions = (forcing_functions..., forcing)
         boundary_functions = (boundary_functions..., bcs)
     end
 
     for optionset in tracers.optional
         for tracer in optionset
-            forcing, bcs = setuptracer(model, grid, tracer, (tracers.core..., optionset...), topboundaries, bottomboundaries, forcing_params; sinking=sinking, advection_scheme=advection_scheme, no_sinking_flux=no_sinking_flux)
+            forcing, bcs = setuptracer(model, grid, tracer, (dependencies..., optionset...), topboundaries, bottomboundaries, forcing_params, discrete_forcings, sinking_forcings; sinking=sinking, open_bottom=open_bottom)
             forcing_functions = (forcing_functions..., forcing)
             boundary_functions = (boundary_functions..., bcs)
         end
@@ -82,13 +114,26 @@ function Oceananigans(model::Symbol,
     tracers = (tracers.core..., (tracers.optional...)...)
     forcing = (; zip(tracers, forcing_functions)...)
     boundaries = (; zip(tracers, boundary_functions)...)
+    
+    if !supress_required_fields_warning
+        try
+            @warn "This model requires $(model.required_fields) to be separatly defined (as tracer or auxiliary fields)"
+        catch
+            true
+        end
 
+        try
+            @warn "This model requires $(model.requried_parameters) to be separatly defined in addition to the default parameters (MODEL_NAME.defaults)"
+        catch
+            true
+        end
+    end
     return (tracers=tracers, forcing=forcing, boundary_conditions=boundaries)
 end
 
 function BoxModel(model::Symbol, params::NamedTuple, initial_values::NamedTuple, tᵢ::AbstractFloat, tₑ::AbstractFloat; optional_sets::Tuple=(), Δt=200, solver=Euler(), adaptive=false, architecture=CPU())
-    model=loadmodel(model)
-    tracers=loadtracers(model, optional_sets)
+    model, dependencies, discrete_forcings, sinking_forcings, optional_tracers=loadmodel(model)
+    tracers=loadtracers(model, optional_tracers, optional_sets)
 
     if length(initial_values) != length((tracers.core..., (tracers.optional...)...))
         throw(ArgumentError("The incorrect number of initial values have been provided, need initial values for $tracers"))

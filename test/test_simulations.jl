@@ -1,4 +1,4 @@
-using OceanBioME, Test, Oceananigans, Printf
+using OceanBioME, Test, Oceananigans
 using OceanBioME.Budget: calculate_budget, calculate_C_budget
 using Oceananigans.Units: second,minute, minutes, hour, hours, day, days, year, years
 using Oceananigans.Operators: Vᶜᶜᶜ
@@ -31,7 +31,7 @@ function run_simulation(bgc_model, optionsets, sediment, arch, c)
     PAR = Oceananigans.Fields.Field{Center, Center, Center}(grid) 
 
     #load bgc model
-    bgc = Setup.Oceananigans(bgc_model, grid, params, PAR, optional_sets=optionsets, topboundaries=topboundaries, bottomboundaries=sediment_bcs.boundary_conditions, no_sinking_flux = !sediment) #with sinking and no sediment Oceananigans doesn't conserve the tracers (i.e. doesn't collect them at the bottom of the domain)
+    bgc = Setup.Oceananigans(bgc_model, grid, params; optional_sets=optionsets, topboundaries=topboundaries, bottomboundaries=sediment_bcs.boundary_conditions, open_bottom = sediment) #with sinking and no sediment Oceananigans doesn't conserve the tracers (i.e. doesn't collect them at the bottom of the domain)
 
     #fix diffusivity
     κₜ(x, y, z, t) = 2e-2
@@ -55,22 +55,13 @@ function run_simulation(bgc_model, optionsets, sediment, arch, c)
     end
     
     set!(model, u=0, v=0, w=0, b=0)
-    progress_message(sim) = @printf("Iteration: %04d, time: %s, Δt: %s, wall time: %s\n",
-    iteration(sim),
-    prettytime(sim),
-    prettytime(sim.Δt),
-    prettytime(sim.run_wall_time))
     Δt = c*grid.Δzᵃᵃᶜ^2/κₜ(0, 0, 0, 0)
     duration = 50day
 
     simulation = Simulation(model, Δt=Δt, stop_time=duration) 
     if bgc_model in (:LOBSTER, )
-        simulation.callbacks[:update_par] = Callback(Light.update_2λ!, IterationInterval(1), merge(merge(params, Light.defaults), (surface_PAR=surface_PAR,)))
+        simulation.callbacks[:update_par] = Callback(Light.twoBands.update!, IterationInterval(1), merge(merge(params, Light.twoBands.defaults), (surface_PAR=surface_PAR,)), TimeStepCallsite());
     end
-    if sediment
-        simulation.callbacks[:integrate_sediment] = sediment_bcs.callback
-    end
-    simulation.callbacks[:progress] = Callback(progress_message, IterationInterval(100))
 
     #=simulation.output_writers[:profiles] =
     JLD2OutputWriter(model, merge(model.velocities, model.tracers, model.auxiliary_fields),
@@ -107,28 +98,19 @@ function run_test(bgc_model, optionsets, sediment, arch, c)
     end=#
 end
 
-progress_message(sim) = @printf("Iteration: %04d, time: %s, Δt: %s, wall time: %s\n",
-                                iteration(sim),
-                                prettytime(sim),
-                                prettytime(sim.Δt),
-                                prettytime(sim.run_wall_time))
-
 models = (:LOBSTER, )#:NPZ)
 arch = CPU()#GPU doesn't work for most at the moment but when it does itterate over that too
 #global default values
 Pᵢ(x, y, z)= 1.0
 Zᵢ(x, y, z)= 1.0
-Dᵢ(x, y, z)=0.0
-DDᵢ(x, y, z)=0.0
 NO₃ᵢ(x, y, z)= 12.0
 NH₄ᵢ(x, y, z)= 0.05 
-DOMᵢ(x, y, z)= 0 
 DICᵢ(x, y, z)= 2200 
 ALKᵢ(x, y, z)= 2400
 OXYᵢ(x, y, z) = 240
 Nᵢ(x, y, z) = 12.0
 
-const default_values = (P=Pᵢ, Z=Zᵢ, D=Dᵢ, DD=DDᵢ, NO₃=NO₃ᵢ, NH₄=NH₄ᵢ, DOM=DOMᵢ, DIC=DICᵢ, ALK=ALKᵢ, OXY=OXYᵢ, N=Nᵢ)
+default_values = (P=Pᵢ, Z=Zᵢ, D=0.0, DD=0.0, Dᶜ=0.0, DDᶜ=0.0, NO₃=NO₃ᵢ, NH₄=NH₄ᵢ, DOM=0.0, DIC=DICᵢ, ALK=ALKᵢ, OXY=OXYᵢ, N=Nᵢ)
 
 budget_tracers = (LOBSTER = (:NO₃, :NH₄, :P, :Z, :D, :DD, :DOM), NPZ = (:N, :P, :Z))
 c_budget_tracers = (LOBSTER = (P = LOBSTER.defaults.Rd_phy, Z=LOBSTER.defaults.Rd_phy, D=LOBSTER.defaults.Rd_phy, DD=LOBSTER.defaults.Rd_phy, DOM=LOBSTER.defaults.Rd_dom, DIC=1, ALK=1), )

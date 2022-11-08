@@ -13,8 +13,6 @@ OceanBioME is a flexible modelling environment written in Julia for modelling th
 - Ensure all the dependencies are installed by typing `] instantiate` or `using Pkg; Pkg,instantiate()` (if the dependencies are not currently listed properly you may have to manually add them)
 - Now you can use the package with `using OceanBioME` as usual
 
-> To use the examples you should also clone the [examples data](https://github.com/sichen-org/OceanBioME_example_data) repo into the examples folder by: `cd example; git clone --depth 1 USERNAME@github.com:OceanBioME/OceanBioME_example_data.git`
-
 ## Usage overview
 OceanBioME can be used as a stand-alone box model or coupled with ocean physics using Oceananigans.jl
 
