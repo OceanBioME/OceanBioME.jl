@@ -105,8 +105,8 @@ using Oceananigans.Units: second, minute, minutes, hour, hours, day, days, year,
     +L_NH₄(NH₄, params))*params.Rd_phy*(1+params.ρ_caco3)*P
     +params.α_p*params.γ*params.μ_p*Lₚₐᵣ(PAR, params)*(L_NO₃(NO₃, NH₄, params)+L_NH₄(NH₄, params))*params.Rd_phy*P
     +params.α_z*params.μ_z*params.Rd_phy*Z
-    +params.α_d*params.μ_d*(Dᶜ/D)*D
-    +params.α_dd*params.μ_dd*(DDᶜ/DD)*DD
+    +params.α_d*params.μ_d*Dᶜ # this is equivilant to (Dᶜ/D)*D which is the same as Rd*D for a fixed stocheometry
+    +params.α_dd*params.μ_dd*DDᶜ
     +params.μ_dom*DOM*params.Rd_dom
 )
 @inline ALK_forcing(x, y, z, t, NO₃, NH₄, P, Z, D, DD, Dᶜ, DDᶜ, DOM, DIC, ALK, PAR, params) = (
