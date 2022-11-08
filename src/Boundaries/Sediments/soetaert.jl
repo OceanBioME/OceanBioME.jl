@@ -60,7 +60,9 @@ end
 
 @inline POM_deposition(i, j, grid, clock, model_fields, params) = @inbounds - model_fields[params.POM][i, j, 1]*params.w*grid.Δzᵃᵃᶜ[1]
 
-@inline fPOM(i, j, k, grid, clock, model_fields, params) = sum([-dep.advection_kernel_function(i, j, k, grid, dep.advection_scheme, dep.velocities, dep.advected_field) for dep in params.adv_funcs]).*params.f.*params.Δz
+@inline eval_advection(i, j, k, grid, func) = func.advection_kernel_function(i, j, k, grid, func.advection_scheme, func.velocities, func.advected_field)
+@inline getflux(i, j, k, grid, funcs) = length(funcs) < 11 ? ntuple(n->eval_advection(i, j, k, grid, funcs[n]), length(funcs)) : map(n -> eval_advection(i, j, k, grid, funcs[n]), 1:length(args))
+@inline fPOM(i, j, k, grid, clock, model_fields, params) = - sum(getflux(i, j, k, grid, params.adv_funcs)).*params.f.*params.Δz
 
 @inline Nᵣ_forcing(i, j, k, grid, clock, model_fields, params) = @inbounds - params.λᵣ*model_fields.Nᵣ[i, j, 1]
 @inline Nᵣᵣ_forcing(i, j, k, grid, clock, model_fields, params) = @inbounds - params.λᵣᵣ*model_fields.Nᵣ[i, j, 1]

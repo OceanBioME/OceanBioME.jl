@@ -7,10 +7,13 @@ using Oceananigans.LagrangianParticleTracking: update_field_property!
 
 include("tracer_tendencies.jl")
 
+# some how this is much faster for any length(args), but wrote because ntuple method is only fast for length(args)<11 as hard coded https://github.com/JuliaLang/julia/blob/master/base/ntuple.jl
+@inline getargs(args, p) = length(args) < 11 ? ntuple(n->args[n][p], length(args)) : map(n -> arguments[n][p], 1:length(args))
+
 @kernel function solve_growth!(particles, equation::Function, arguments, params, prognostic, diagnostic, Δt, t)
     p = @index(Global)
     @inbounds begin
-        arg_values = ntuple(n->arguments[n][p], length(arguments))
+        arg_values = getargs(arguments, p)
         results = equation(particles.properties.x[p], particles.properties.y[p], particles.properties.z[p], t, arg_values..., params, Δt)
 
         for property in prognostic
