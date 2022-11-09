@@ -83,8 +83,8 @@ function equations(x::AbstractFloat, y::AbstractFloat, z::AbstractFloat, t::Abst
 
         pp = (p-r)*A / (60*60*24*12*0.001) #gC/dm^2/hr to mmol C/s
         e *= p*A / (60*60*24*12*0.001)#mmol C/s
-        νⁿ = ν*params.K_A*A*(N + params.N_struct) / (60*60*24*14*0.001)#1/hr to mmol N/s
-        νᶜ = ν*params.K_A*A*(C + params.C_struct) / (60*60*24*14*0.001)#1/hr to mmol C/s
+        νⁿ = ν*params.K_A*A*params.N_struct / (60*60*24*14*0.001)#1/hr to mmol N/s
+        νᶜ = ν*params.K_A*A*params.C_struct / (60*60*24*12*0.001)#1/hr to mmol C/s
         j_NO₃ *= A / (60*60*24*14*0.001)#gN/dm^2/hr to mmol N/s
         j_NH₄ *= A / (60*60*24*14*0.001)#gN/dm^2/hr to mmol N/s
 
