@@ -12,9 +12,9 @@ const OUTPUT_DIR   = joinpath(@__DIR__, "src/generated")
 examples = [
     #"box.jl",
     "column.jl",
-    "data_forced.jl",
-    "kelp.jl",
-    "sediment.jl"
+    #"data_forced.jl",
+    #"kelp.jl",
+    #"sediment.jl"
 ]
 # going to need some work done on the formatting of the comments in examples to get them to render properly
 for example in examples
@@ -24,9 +24,9 @@ end
 
 example_pages = [
     "Simple virtual aquarium (column model)" => "generated/column.md",
-    "Data forced virtual aquarium" => "generated/data_forced.md",
-    "Virtual aquarium with sediment" => "generated/sediment.md",
-    "Virtual aquarium with kelp" => "generated/kelp.md",
+    #"Data forced virtual aquarium" => "generated/data_forced.md",
+    #"Virtual aquarium with sediment" => "generated/sediment.md",
+    #"Virtual aquarium with kelp" => "generated/kelp.md",
     #"Box model" => "generated/box.md"
 ]
 
