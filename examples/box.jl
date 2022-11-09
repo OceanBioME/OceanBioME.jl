@@ -22,23 +22,22 @@ PAR⁰(t) = 60*(1-cos((t+15days)*2π/(365days)))*(1 /(1 +0.2*exp(-((mod(t, 365da
 z=-10 # specify the depth for the light level
 PAR(t) = PAR⁰(t)*exp(z*0.2) # Set the PAR
 params = merge(LOBSTER.defaults, (;PAR))
+
 # Set up the model. Here, first specify the biogeochemical model, followed by initial conditions and the start and end times
 model = Setup.BoxModel(:LOBSTER, params, (NO₃=10.0, NH₄=0.1, P=0.1, Z=0.01, D=0.0, DD=0.0, Dᶜ=0.0, DDᶜ=0.0, DOM=0.0), 0.0, 2.0*year)
 
+# ## Run the model (should only take a few seconds)
 @info "Running the model..."
 solution = BoxModel.run(model) # call BoxModel to timestep the biogeochemical model
 
 @info "Plotting the results..."
-# Create an array containing all model varaibles
-# The dimensions of 'values' will be (time, variable number)
+# ## Plot the results
 values = vcat(transpose.(solution.u)...)
 
-# build a series of plots for all tracers contained in model.tracers
 plts=[]
 for (i, tracer) in enumerate([:NO₃, :NH₄, :P, :Z, :DOM, :D, :DD])
     push!(plts, plot(solution.t/day, values[:, i], ylabel=tracer, xlabel="Day", legend=false))
 end
 push!(plts, plot(solution.t/day, PAR.(solution.t), xlabel="Day", ylabel="PAR",  legend=false))
-
-# Display the resulting figure
 plot(plts...)
+savefig("examples/box.png")
