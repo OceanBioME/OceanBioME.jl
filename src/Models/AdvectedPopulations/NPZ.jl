@@ -1,4 +1,5 @@
 "
+Will fix docs when this code is fixed
 NPZ biogeochemistry model as described by Hernández-Carrasco et al. 2014 and earlier publications.
 
 WARNING: this model currently is not correctly configured

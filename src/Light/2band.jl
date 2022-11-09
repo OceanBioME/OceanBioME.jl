@@ -3,6 +3,7 @@ using KernelAbstractions
 using KernelAbstractions.Extras.LoopInfo: @unroll
 using Oceananigans.Architectures: device
 using Oceananigans.Utils: launch!
+
 @kernel function _update_PAR!(PAR, grid, P, t, params) 
     i, j = @index(Global, NTuple) 
 
@@ -25,6 +26,13 @@ using Oceananigans.Utils: launch!
     end
 end 
 
+"""
+    Light.twoBands.update!(sim, params)
+
+Function to integrate light attenuation using [Karleskind2011](@cite) model which should be called in a callback as often as possible.
+
+Requires a single `PAR` field to be defined in the auxiliary fields and a single `P` phytoplankton class.
+"""
 function  update!(sim, params)
     par_calculation =  launch!(sim.model.architecture, sim.model.grid, :xy, _update_PAR!,
                                    sim.model.auxiliary_fields.PAR, sim.model.grid, sim.model.tracers.P, time(sim), params,

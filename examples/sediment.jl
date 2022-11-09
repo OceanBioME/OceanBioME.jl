@@ -47,7 +47,7 @@ oxy_bc = Boundaries.airseasetup(:O₂, forcings=(T=t_function, S=s_function))
 
 # For the sediment model we have to setup the tracer field first and then pass these to the sediment model
 NO₃, NH₄, P, Z, D, DD, Dᶜ, DDᶜ, DOM, DIC, ALK, OXY = CenterField(grid), CenterField(grid), CenterField(grid), CenterField(grid), CenterField(grid), CenterField(grid), CenterField(grid), CenterField(grid), CenterField(grid), CenterField(grid), CenterField(grid), CenterField(grid)
-sediment=Boundaries.Sediments.Soetaert.setupsediment(grid, (;D, DD); POM_w=(D=LOBSTER.D_sinking, DD=LOBSTER.DD_sinking))
+sediment=Boundaries.Sediments.Soetaert.setup(grid, (;D, DD); POM_w=(D=LOBSTER.D_sinking, DD=LOBSTER.DD_sinking))
 
 # ## Biogeochemical and Oceananigans model
 bgc = Setup.Oceananigans(:LOBSTER, grid, params, optional_sets=(:carbonates, :oxygen), topboundaries=(DIC=dic_bc, OXY=oxy_bc), open_bottom=true, bottomboundaries=sediment.boundary_conditions) 

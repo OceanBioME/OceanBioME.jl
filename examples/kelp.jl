@@ -77,12 +77,15 @@ set!(model, P=0.03, Z=0.03, D=0.0, DD=0.0, Dᶜ=0.0, DDᶜ=0.0, NO₃=11, NH₄=
 
 # ## Simulation
 # Next we setup the simulation along with some callbacks that:
+# - Couples the particles to the biodeochemical model
 # - Update the PAR field from the surface PAR and phytoplankton concentration
 # - Show the progress of the simulation
 # - Store the model and particles output
 # - Prevent the tracers from going negative from numerical error (see discussion of this in the [positivity preservation](@ref pos-preservation) implimentation page)
 
 simulation = Simulation(model, Δt=10minutes, stop_time=100days) 
+
+sim.callbacks[:couple_particles] = Callback(Particles.infinitesimal_particle_field_coupling!; callsite = TendencyCallsite())
 
 simulation.callbacks[:update_par] = Callback(Light.twoBands.update!, IterationInterval(1), merge(merge(params, Light.twoBands.defaults), (surface_PAR=PAR⁰,)), TimeStepCallsite());
 

@@ -6,6 +6,10 @@ using Oceananigans.Architectures: arch_array
 using Oceananigans.BoundaryConditions: ImpenetrableBoundaryCondition, ValueBoundaryCondition
 using Oceananigans.Fields: ZFaceField
 
+#####
+##### Infastructure to load biogeochemical models
+#####
+
 function loadmodel(model)
     models = propertynames(OceanBioME)
     deleteat!(models, findall(x->x in (:AirSeaFlux, :OceanBioME, :Light, :Particles), models))
@@ -79,6 +83,31 @@ function setuptracer(model, grid, tracer, field_dependencies, topboundaries, bot
     return forcing, bcs
 end
 
+"""
+    Setup.Oceananigans(model::Symbol, 
+                                    grid::AbstractGrid,  
+                                    forcing_params::NamedTuple; 
+                                    topboundaries::NamedTuple=NamedTuple(),
+                                    bottomboundaries::NamedTuple=NamedTuple(),
+                                    optional_sets::Tuple=(),
+                                    sinking = true, 
+                                    supress_required_fields_warning = false,
+                                    open_bottom=true)
+
+Returns the tracers, forcing functions, and boundary conditions for a biogeochemical model.
+Arguments
+==========
+* `model`: Symbol name of model to be used (e.g. `:LOBSTER`)
+* `grid`: Oceananigans grid (used to setup sinking if present)
+* `forcing_params`: Parameters for model, usually `model.defaults` (no way for us to automagically get that for now)
+Keyword arguments
+==============
+* `topboundaries` and `bottomboundaries`: NamedTuple of boundary conditions (values) for tracers (keys)
+* `optional_sets`: Tuple of Symbols with names of optional tracer sets, you can usually see what is available by `MODEL_NAME.optional_tracers`
+* `sinking`: turn off particle sinking
+* `supress_required_fields_warning`: turn off the warning of additional required model fields (e.g. PAR)
+* `open_bottom`: if true particles may fall out of model, if false then sinking speed is smoothly brought to zero near bottom boundary (may cause odd behaviour/very slow sinking on small grids)
+"""
 function Oceananigans(model::Symbol, 
                                     grid::AbstractGrid,  
                                     forcing_params::NamedTuple; 
@@ -131,7 +160,46 @@ function Oceananigans(model::Symbol,
     return (tracers=tracers, forcing=forcing, boundary_conditions=boundaries)
 end
 
-function BoxModel(model::Symbol, params::NamedTuple, initial_values::NamedTuple, tᵢ::AbstractFloat, tₑ::AbstractFloat; optional_sets::Tuple=(), Δt=200, solver=Euler(), adaptive=false, architecture=CPU())
+"""
+    Setup.Oceananigans(model::Symbol, 
+                                    params::NamedTuple, 
+                                    initial_values::NamedTuple, 
+                                    tᵢ::AbstractFloat, 
+                                    tₑ::AbstractFloat; 
+                                    optional_sets::Tuple=(), 
+                                    Δt=200, 
+                                    solver=Euler(), 
+                                    adaptive=false, 
+                                    architecture=CPU())
+
+Returns a box model (actual type coming soon) which can be solved by `BoxModel.run`.
+Arguments
+==========
+* `model`: Symbol name of model to be used (e.g. `:LOBSTER`)
+* `params`: Parameters for model, usually `model.defaults` (no way for us to automagically get that for now)
+* `initial_vales`: NamedTuple of initial values for tracers
+* `tᵢ`: start time
+* `tₑ`: end time
+Keyword arguments
+==============
+* `optional_sets`: Tuple of Symbols with names of optional tracer sets, you can usually see what is available by `MODEL_NAME.optional_tracers`
+* `Δt`: time step for integrator
+* `solver`: `OrdinaryDiffEq` solver 
+* `adaptive`: adapt timestep length?
+* `architecture`: `KernelAbstractions` architecture for distribution of computation
+"""
+
+function BoxModel(model::Symbol, 
+                              params::NamedTuple, 
+                              initial_values::NamedTuple, 
+                              tᵢ::AbstractFloat, 
+                              tₑ::AbstractFloat; 
+                              optional_sets::Tuple=(), 
+                              Δt=200, 
+                              solver=Euler(), 
+                              adaptive=false, 
+                              architecture=CPU())
+
     model, dependencies, discrete_forcings, sinking_forcings, optional_tracers=loadmodel(model)
     tracers=loadtracers(model, optional_tracers, optional_sets)
 

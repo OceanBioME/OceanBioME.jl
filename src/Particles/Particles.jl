@@ -56,6 +56,18 @@ function particle_dynamics!(particles, model, Δt)
     particles.parameters.custom_dynamics(particles, model, Δt)
 end
 
+"""
+    Particles.infinitesimal_particle_field_coupling!(model)
+
+Applies tendencies specified for ActiveLagrangianParticles to fields in `model`.
+Specifically with this coupling the tendencies are applied across the nearest nodes to the particle.
+
+This should be used as a callback and the `TendencyCallsite` like:
+```julia
+sim.callbacks[:couple_particles] = Callback(Particles.infinitesimal_particle_field_coupling!; callsite = TendencyCallsite())
+```
+"""
+
 function infinitesimal_particle_field_coupling!(model)
     num_particles = length(model.particles)
     workgroup = min(num_particles, 256)
@@ -77,17 +89,48 @@ end
 
 @inline no_dynamics(args...) = nothing
 
-#Perhaps this should just be an overloading of the function name LagrangianParticles with different arguments
+
+"""
+    Particles.ActiveLagrangianParticles(particles::StructArray;
+                                                            equation::Function = no_dynamics, 
+                                                            equation_arguments::NTuple{N, Symbol} where N = (), 
+                                                            equation_parameters::NamedTuple = NamedTuple(), 
+                                                            prognostic::NTuple{N, Symbol} where N = (), 
+                                                            diagnostic::NTuple{N, Symbol} where N = NamedTuple(), 
+                                                            tracked_fields::NamedTuple = NamedTuple(), 
+                                                            coupled_fields::NamedTuple = NamedTuple(),
+                                                            scalefactor::AbstractFloat = 1.0, 
+                                                            custom_dynamics=no_dynamics)
+
+Returns Oceananigans `LagrangianParticles` which will evolve and interact with biogeochemistry
+Arguments
+========
+* `particles`: StructArray of the particles as per Oceananigans
+Keyword arguments
+=============
+* `equation`: equation specifying how the particles properties and coupling evolves, should be of the form `equation(x, y, z, t, args..., params, Δt)` where args are specified by:
+* `equation_arguments`: Tuple of Symbols specifying arguments for `equation`, arguments must be properties of `particles`
+* `equation_parameters`: NamedTuple of parameters to pass to `equation`
+* `prognostic`: properties for which `equation` returns dP/dt
+* `diagnostic`: properties for which `equation` returns the new value (and therefore does not need to be integrarted)
+* `tracked_fields`: NamedTuple specifying model fields to track where keys are the name of the field and values are names of the particle properties to store the fields in
+* `coupled_fields`: NamedTuple specifying model fields coupled to the particles where keys are the field name and values are the property name to modify the fields *tendency* (i.e. the property should be a rate)
+* `scalefactor`: multiplier to apply to field coupling, can be thought of as number of individuals that each particle represents
+* `custom_dynamics`: custom function to apply to particles after `equation`, should be of the form `dynamics!(particles, model, Δt)`
+```
+"""
+
+# Perhaps this should just be an overloading of the function name LagrangianParticles with different arguments
 function ActiveLagrangianParticles(particles::StructArray;
-    equation::Function = no_dynamics, 
-    equation_arguments::NTuple{N, Symbol} where N = (), 
-    equation_parameters::NamedTuple = NamedTuple(), 
-    prognostic::NTuple{N, Symbol} where N = (), 
-    diagnostic::NTuple{N, Symbol} where N = NamedTuple(), 
-    tracked_fields::NamedTuple = NamedTuple(), 
-    coupled_fields::NamedTuple = NamedTuple(),
-    scalefactor::AbstractFloat = 1.0, 
-    custom_dynamics=no_dynamics)
+                                                        equation::Function = no_dynamics, 
+                                                        equation_arguments::NTuple{N, Symbol} where N = (), 
+                                                        equation_parameters::NamedTuple = NamedTuple(), 
+                                                        prognostic::NTuple{N, Symbol} where N = (), 
+                                                        diagnostic::NTuple{N, Symbol} where N = NamedTuple(), 
+                                                        tracked_fields::NamedTuple = NamedTuple(), 
+                                                        coupled_fields::NamedTuple = NamedTuple(),
+                                                        scalefactor::AbstractFloat = 1.0, 
+                                                        custom_dynamics=no_dynamics)
     
     required_fields = (equation_arguments..., prognostic..., diagnostic..., keys(tracked_fields)..., keys(coupled_fields)...)
     for property in required_fields

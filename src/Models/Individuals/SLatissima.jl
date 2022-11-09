@@ -1,27 +1,42 @@
-"
-Model of Sacharina Latissima from Broch and Slagstad 2012, updated with parameters of Broch 2013, and current from Broch 2019
-TODO: Also extended to depend on salinity by Broch 2019.
+"""
+    Sugar kelp model of [Broch2012](@cite) and updated by [Broch2013](@cite), [Fossberg2018](@cite), and [Broch2019](@cite).
 
-Extending to consider uptake of NO₃ vs NH₄ by Fossberg 2018, with parameter values from Ahn 1998
+Prognostic properties
+===============
+* Area: A (dm²)
+* Nitrogen reserve: N (gN/gSW)
+* Carbon reserve: C (gC/gSW)
 
-Extended to remove from nitrogen pool when carbon is exuded as DOM
+Tracer dependencies
+==============
+* Nitrates: NO₃ (mmol N/m³)
+* Photosynthetically available radiation: PAR (einstein/m²/day)
 
-References:
-Ahn, O., Petrell, R. J., & Harrison, P. J. (1998). Ammonium and nitrate uptake by Laminaria saccharina and Nereocystis luetkeana originating from a salmon sea cage farm. In Journal of Applied Phycology (Vol. 10, pp. 333–340)
-Broch, OJ. and Slagstad, D., 2012. Modelling seasonal growth and composition of the kelp Saccharina latissima. Journal of Applied Phycology, 24(4), pp.759-776.
-Broch, OJ., Ellingsen, I. H., Forbord, S., Wang, X., Volent, Z., Alver, M. O., Handå, A., Andresen, K., Slagstad, D., Reitan, K. I., Olsen, Y., & Skjermo, J. (2013). Modelling the cultivation and bioremediation potential of the kelp Saccharina latissima in close proximity to an exposed salmon farm in Norway. Aquaculture Environment Interactions, 4(2), 187–206. https://doi.org/10.3354/aei00080 
-Broch OJ., Alver MO, Bekkby T, Gundersen H, Forbord S, Handå A, Skjermo J and Hancke K (2019) The Kelp Cultivation Potential in Coastal and Offshore Regions of Norway. Front. Mar. Sci. 5:529. doi: 10.3389/fmars.2018.00529
-Fossberg, J., Forbord, S., Broch, O. J., Malzahn, A. M., Jansen, H., Handå, A., Førde, H., Bergvik, M., Fleddum, A. L., Skjermo, J., & Olsen, Y. (2018). The potential for upscaling kelp (Saccharina latissima) cultivation in salmon-driven integrated multi-trophic aquaculture (IMTA). Frontiers in Marine Science, 9(NOV). https://doi.org/10.3389/fmars.2018.00418 
-"
+Optionally:
+* Ammonia: NH₄ (mmol N/m³)
+
+Tracer coupling
+===========
+* j_NO₃ and j_NH₄: uptake of nitrates and Ammonia
+* j_DIC and j_OXY: update of disolved inorganic carbon and release/uptake of oxygen
+* e: exudation of disolved organic matter
+* νⁿ and νᶜ: loss of mass as large particles (nitrogen and carbon content)
+
+Notes
+=====
+SW is the structural weight and is equal to K_A*A
+"""
 module SLatissima
 using StructArrays, Roots
 using OceanBioME.Particles: ActiveLagrangianParticles
 using Oceananigans.Units: second,minute, minutes, hour, hours, day, days, year, years
 
-@inline f_curr(u, params) = params.uₐ*(1-exp(-u/params.u₀))+params.uᵦ
+#####
+##### Photosynthesis
+#####
 
-#Restated from SugarKelp.jl to reduce dependency maintinance complexity
 @inline β_func(x, params) = params.p_max - (params.α * params.I_sat / log(1 + params.α / x)) * (params.α / (params.α + x)) * (x / (params.α + x))^(x / params.α)
+
 @inline function _p(temp, irr, params)
     p_max = params.P_1 * exp(params.T_AP / params.T_P1 - params.T_AP / (temp + 273.15)) / (1 + exp(params.T_APL / (temp + 273.15) - params.T_APL / params.T_PL) + exp(params.T_APH / params.T_PH - params.T_APH / (temp + 273.15)))
     β = find_zero(β_func, (0, 0.1), Bisection(); p=merge(params, (; p_max)))
@@ -29,9 +44,22 @@ using Oceananigans.Units: second,minute, minutes, hour, hours, day, days, year, 
     return p_s * (1 - exp(-params.α * irr / p_s)) * exp(-β * irr / p_s) 
 end
 
+#####
+##### Mass loss
+#####
+
 @inline _e(c, params) = 1 - exp(params.γ * (params.C_min - c))
+
 @inline _ν(a, params) = 1e-6 * exp(params.ϵ * a) / (1 + 1e-6 * (exp(params.ϵ * a) - 1))
+
+#####
+##### Growth limitation
+#####
+
+@inline f_curr(u, params) = params.uₐ*(1-exp(-u/params.u₀))+params.uᵦ
+
 @inline f_area(a, params) = params.m_1 * exp(-(a / params.A_0)^2) + params.m_2
+
 @inline function f_temp(temp, params)
     if -1.8 <= temp < 10 
         return 0.08 * temp + 0.2
@@ -45,9 +73,17 @@ end
         return 0
     end
 end
+
 @inline f_photo(λ, params) = params.a_1 * (1 + sign(λ) * abs(λ)^.5) + params.a_2
 
+#####
+##### Respiration
+#####
 @inline _r(temp, μ, j, params) = (params.R_A * (μ / params.μ_max + j / params.J_max) + params.R_B) * exp(params.T_AR / params.T_R1 - params.T_AR / (temp + 273.15))
+
+#####
+##### Growth equations
+#####
 
 function equations(x::AbstractFloat, y::AbstractFloat, z::AbstractFloat, t::AbstractFloat, A::AbstractFloat, N::AbstractFloat, C::AbstractFloat, NO₃::AbstractFloat, NH₄::AbstractFloat, T::AbstractFloat, S::AbstractFloat, irr::AbstractFloat, u::AbstractFloat, params, Δt::AbstractFloat)
     if !iszero(A)
@@ -104,7 +140,10 @@ equations(x::AbstractFloat, y::AbstractFloat, z::AbstractFloat, t::AbstractFloat
 #tracked u, T and S fields
 equations(x::AbstractFloat, y::AbstractFloat, z::AbstractFloat, t::AbstractFloat, A::AbstractFloat, N::AbstractFloat, C::AbstractFloat, NO₃::AbstractFloat, NH₄::AbstractFloat, T::AbstractFloat, S::AbstractFloat, irr::AbstractFloat, u::AbstractFloat, v::AbstractFloat, w::AbstractFloat, params, Δt::AbstractFloat) = equations(x, y, z, t, A, N, C, NO₃, NH₄, T, S, irr, sqrt(u^2+v^2+w^2), params, Δt)
 
-#parameters (some derived so need to be pre specified)
+#####
+##### Parameters (some diagnostic so have to define before)
+#####
+
 N_min = 0.0126
 N_max = 0.0216
 m_2 = 0.039/(2*(1-N_min/N_max))
@@ -167,6 +206,10 @@ const defaults = (
     R_B=5.57e-5*24
 )
 
+#####
+##### Seasonality function
+#####
+
 function gen_λ(lat)
     θ = 0.2163108 .+ 2 .* atan.(0.9671396 .* tan.(0.00860 .* ([1:365;] .- 186)))
     δ = asin.(0.39795 .* cos.(θ))
@@ -176,6 +219,10 @@ function gen_λ(lat)
     push!(λ, λ[end])
     return λ ./ findmax(λ)[1]
 end
+
+#####
+##### Model definition for use in OceanBioME
+#####
 
 struct Particle
     #position
@@ -205,13 +252,11 @@ struct Particle
 end
 
 default_tracers = (NO₃ = :NO₃, PAR=:PAR) # tracer = property
-
 optional_tracer_dependencies = (NH₄ = :NH₄, )
-
-#When Oceananigans PR in place going to simplify this specifcation
 default_coupling = (NO₃ = :j_NO₃, )    
 optional_tracer_coupling = (NH₄ = :j_NH₄, DIC = :j_DIC, DOM = :e, DD = :νⁿ, DDᶜ = :νᶜ, OXY = :j_OXY)
 
+# Expands initial conditions to fill particles
 function defineparticles(initials, n)
     x̄₀ = []
     for var in [:x₀, :y₀, :z₀, :A₀, :N₀, :C₀]
@@ -229,15 +274,44 @@ end
 
 @inline no_dynamics(args...) = nothing
 
+"""
+    SLatissima.setup(n, x₀, y₀, z₀, A₀, N₀, C₀, latitude;
+                                scalefactor = 1.0, 
+                                T=nothing, 
+                                S=nothing, 
+                                urel=nothing, 
+                                paramset=defaults, 
+                                custom_dynamics=no_dynamics, 
+                                optional_tracers=(),
+                                tracer_names=NamedTuple())
+
+Returns Oceananigans `LagrangianParticles` which will evolve and interact with biogeochemistry as sugar kelp
+Arguments
+========
+* `n`: number of particles
+* `x₀`, `y₀`, `z₀`: intial position, should be array of length `n`
+* `A₀`, `N₀`, `C₀`: Initial area/nitrogen reserve/carbon reserve, can be arrays of length `n` or single values
+* `latitude`: latitude of growth (used for seasonality parameterisation)
+Keyword arguments
+=============
+* `scalefactor`: multiplier on particle uptake/release of tracers, can be though of as the number of kelp frond represented by each particle
+* `T` and `S`: functions of form `func(x, y, z, t)` for the temperature and salinity, if not defined then model will look for tracer fields (useful if physics are resolved)
+* `urel`: relative water velocity (single number), if this is not specified then actual local relative water velocity will be used (moderates nutrient uptake)
+* `paramset`: parameters for growth model
+* `custom_dynamics`: any other dynamics you wish to be run on the particles as they evolve, should be of the form `dynamics!(particles, model, Δt)`
+* `optional_tracers`: Tuple of optional tracers to couple with
+* `tracer_names`: rename coupled tracers with NamedTuple with keys as new name and values as the property this feeds/depends on (e.g. `(N = :NO₃, )`)
+"""
+
 function setup(n, x₀, y₀, z₀, A₀, N₀, C₀, latitude;
-    scalefactor = 1.0, 
-    T=nothing, 
-    S=nothing, 
-    urel=nothing, 
-    paramset=defaults, 
-    custom_dynamics=no_dynamics, 
-    optional_tracers=(),
-    tracer_names=NamedTuple())
+                        scalefactor = 1.0, 
+                        T=nothing, 
+                        S=nothing, 
+                        urel=nothing, 
+                        paramset=defaults, 
+                        custom_dynamics=no_dynamics, 
+                        optional_tracers=(),
+                        tracer_names=NamedTuple())
 
     # this is a mess, we're not even using salinity at the moment
     if (!isnothing(T) && !isnothing(S) && isnothing(urel))
