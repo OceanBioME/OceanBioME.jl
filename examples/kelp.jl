@@ -84,6 +84,9 @@ set!(model, P=0.03, Z=0.03, D=0.0, DD=0.0, Dᶜ=0.0, DDᶜ=0.0, NO₃=11, NH₄=
 
 simulation = Simulation(model, Δt=10minutes, stop_time=100days) 
 
+# couple the particles and tracers
+sim.callbacks[:couple_particles] = Callback(OceanBioME.Particles.infinitesimal_particle_field_coupling!; callsite = TendencyCallsite())
+
 simulation.callbacks[:update_par] = Callback(Light.twoBands.update!, IterationInterval(1), merge(merge(params, Light.twoBands.defaults), (surface_PAR=PAR⁰,)), TimeStepCallsite());
 
 progress_message(sim) = @printf("Iteration: %04d, time: %s, Δt: %s, wall time: %s\n",
