@@ -60,10 +60,7 @@ function run_simulation(bgc_model, optionsets, sediment, arch, c)
 
     simulation = Simulation(model, Δt=Δt, stop_time=duration) 
     if bgc_model in (:LOBSTER, )
-        simulation.callbacks[:update_par] = Callback(Light.twoBands.update!, IterationInterval(1), merge(merge(params, Light.twoBands.defaults), (surface_PAR=surface_PAR,)));
-    end
-    if sediment
-        simulation.callbacks[:integrate_sediment] = sediment_bcs.callback
+        simulation.callbacks[:update_par] = Callback(Light.twoBands.update!, IterationInterval(1), merge(merge(params, Light.twoBands.defaults), (surface_PAR=surface_PAR,)), TimeStepCallsite());
     end
 
     #=simulation.output_writers[:profiles] =
@@ -106,17 +103,14 @@ arch = CPU()#GPU doesn't work for most at the moment but when it does itterate o
 #global default values
 Pᵢ(x, y, z)= 1.0
 Zᵢ(x, y, z)= 1.0
-Dᵢ(x, y, z)=0.0
-DDᵢ(x, y, z)=0.0
 NO₃ᵢ(x, y, z)= 12.0
 NH₄ᵢ(x, y, z)= 0.05 
-DOMᵢ(x, y, z)= 0 
 DICᵢ(x, y, z)= 2200 
 ALKᵢ(x, y, z)= 2400
 OXYᵢ(x, y, z) = 240
 Nᵢ(x, y, z) = 12.0
 
-const default_values = (P=Pᵢ, Z=Zᵢ, D=Dᵢ, DD=DDᵢ, NO₃=NO₃ᵢ, NH₄=NH₄ᵢ, DOM=DOMᵢ, DIC=DICᵢ, ALK=ALKᵢ, OXY=OXYᵢ, N=Nᵢ)
+default_values = (P=Pᵢ, Z=Zᵢ, D=0.0, DD=0.0, Dᶜ=0.0, DDᶜ=0.0, NO₃=NO₃ᵢ, NH₄=NH₄ᵢ, DOM=0.0, DIC=DICᵢ, ALK=ALKᵢ, OXY=OXYᵢ, N=Nᵢ)
 
 budget_tracers = (LOBSTER = (:NO₃, :NH₄, :P, :Z, :D, :DD, :DOM), NPZ = (:N, :P, :Z))
 c_budget_tracers = (LOBSTER = (P = LOBSTER.defaults.Rd_phy, Z=LOBSTER.defaults.Rd_phy, D=LOBSTER.defaults.Rd_phy, DD=LOBSTER.defaults.Rd_phy, DOM=LOBSTER.defaults.Rd_dom, DIC=1, ALK=1), )

@@ -60,7 +60,7 @@ set!(model, P=0.03, Z=0.03, D=0.0, DD=0.0, NO₃=11, NH₄=0.05, DOM=0.0)
 
 simulation = Simulation(model, Δt=10minutes, stop_time=100days) 
 
-simulation.callbacks[:update_par] = Callback(Light.twoBands.update!, IterationInterval(1), merge(merge(params, Light.twoBands.defaults), (surface_PAR=PAR⁰,)));
+simulation.callbacks[:update_par] = Callback(Light.twoBands.update!, IterationInterval(1), merge(merge(params, Light.twoBands.defaults), (surface_PAR=PAR⁰,)), TimeStepCallsite());
 
 progress_message(sim) = @printf("Iteration: %04d, time: %s, Δt: %s, wall time: %s\n",
                                                         iteration(sim),

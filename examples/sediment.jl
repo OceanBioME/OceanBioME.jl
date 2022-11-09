@@ -42,11 +42,14 @@ PAR = Oceananigans.Fields.Field{Center, Center, Center}(grid)
 dic_bc = Boundaries.airseasetup(:CO₂, forcings=(T=t_function, S=s_function))
 oxy_bc = Boundaries.airseasetup(:O₂, forcings=(T=t_function, S=s_function))
 
+# Have to prespecify fields for sediment model
+NO₃, NH₄, P, Z, D, DD, Dᶜ, DDᶜ, DOM, DIC, ALK, OXY = CenterField(grid), CenterField(grid), CenterField(grid), CenterField(grid), CenterField(grid), CenterField(grid), CenterField(grid), CenterField(grid), CenterField(grid), CenterField(grid), CenterField(grid), CenterField(grid)
+
 #sediment bcs
-sediment=Boundaries.Sediments.Soetaert.setupsediment(grid)
+sediment=Boundaries.Sediments.Soetaert.setupsediment(grid, (;D, DD); POM_w=(D=LOBSTER.D_sinking, DD=LOBSTER.DD_sinking))
 
 # Set up the OceanBioME model with the specified biogeochemical model, grid, parameters, light, and boundary conditions
-bgc = Setup.Oceananigans(:LOBSTER, grid, params, optional_sets=(:carbonates, :oxygen), topboundaries=(DIC=dic_bc, OXY=oxy_bc), bottomboundaries=sediment.boundary_conditions, sinking=true, open_bottom=true)
+bgc = Setup.Oceananigans(:LOBSTER, grid, params, optional_sets=(:carbonates, :oxygen), topboundaries=(DIC=dic_bc, OXY=oxy_bc), sinking=true, open_bottom=true, bottomboundaries=sediment.boundary_conditions)
 @info "Setup BGC model"
 
 # Function of the turbulent vertical diffusivity. This is an idealized functional form, and the depth of mixing is based on an analtytical approximation
@@ -59,7 +62,7 @@ model = NonhydrostaticModel(
                                 advection = WENO(;grid),
                                 timestepper = :RungeKutta3,
                                 grid = grid,
-                                tracers = bgc.tracers,
+                                tracers = (; NO₃, NH₄, P, Z, D, DD, Dᶜ, DDᶜ, DOM, DIC, ALK, OXY),
                                 closure = ScalarDiffusivity(ν=κₜ, κ=κₜ), 
                                 forcing =  merge(bgc.forcing, sediment.forcing),
                                 boundary_conditions = bgc.boundary_conditions,
@@ -70,23 +73,20 @@ model = NonhydrostaticModel(
 # These initial conditions are set rather arbitrarily in the hope that the model will converge to a repeatable annual cycle if run long enough
 Pᵢ(x, y, z)= (tanh((z+250)/100)+1)/2*(0.038)+0.002           #in mmolN m^-3
 Zᵢ(x, y, z)= (tanh((z+250)/100)+1)/2*(0.038)+0.008           #in mmolN m^-3
-Dᵢ(x, y, z)=0                                                #in mmolN m^-3
-DDᵢ(x, y, z)=0                                               #in mmolN m^-3
 NO₃ᵢ(x, y, z)= (1-tanh((z+300)/150))/2*6+11.4                #in mmolN m^-3
 NH₄ᵢ(x, y, z)= (1-tanh((z+300)/150))/2*0.05+0.05             #in mmolN m^-3
-DOMᵢ(x, y, z)= 0                                             #in mmolN m^-3
 DICᵢ(x, y, z)= 2200                                          #in mmolC m^-3
 ALKᵢ(x, y, z)= 2400                                          #in mmolN m^-3
 OXYᵢ(x, y, z) = 240                                          #in mmolO m^-3
 
 # Set the initial conditions using functions or constants:
-set!(model, P=Pᵢ, Z=Zᵢ, D=Dᵢ, DD=DDᵢ, NO₃=NO₃ᵢ, NH₄=NH₄ᵢ, DOM=DOMᵢ, DIC=DICᵢ, ALK=ALKᵢ, OXY=OXYᵢ)
+set!(model, P=Pᵢ, Z=Zᵢ, NO₃=NO₃ᵢ, NH₄=NH₄ᵢ, DIC=DICᵢ, ALK=ALKᵢ, OXY=OXYᵢ)
 
 ## Set up the simulation
 simulation = Simulation(model, Δt=5minutes, stop_time=100days)
 
 # create a model 'callback' to update the light (PAR) profile every 1 timestep and integrate sediment model
-simulation.callbacks[:update_par] = Callback(Light.twoBands.update!, IterationInterval(1), merge(merge(params, Light.twoBands.defaults), (surface_PAR=PAR⁰,)));
+simulation.callbacks[:update_par] = Callback(Light.twoBands.update!, IterationInterval(1), merge(merge(params, Light.twoBands.defaults), (surface_PAR=PAR⁰,)), TimeStepCallsite());
 
 ## Print a progress message
 progress_message(sim) = @printf("Iteration: %04d, time: %s, Δt: %s, wall time: %s\n",
@@ -106,19 +106,17 @@ simulation.output_writers[:profiles] = NetCDFOutputWriter(model, fields, filenam
 
 # Oceananians storage of sliced fields is currently broken (https://github.com/CliMA/Oceananigans.jl/issues/2770) so here is a work around
 using JLD2
-sediment_file = jldopen("sediment.jld2", "w+")
-save_Nᵣ = JLD2.Group(sediment_file, "Nᵣ")
-save_Nᵣᵣ = JLD2.Group(sediment_file, "Nᵣᵣ")
-save_Nᵣₑ = JLD2.Group(sediment_file, "Nᵣₑ")
-
+#=
 function store_sediment!(sim)
-    save_Nᵣ["$(sim.model.clock.time)"] = sim.model.auxiliary_fields.Nᵣ[1, 1, 1]
-    save_Nᵣᵣ["$(sim.model.clock.time)"] = sim.model.auxiliary_fields.Nᵣᵣ[1, 1, 1]
-    save_Nᵣₑ["$(sim.model.clock.time)"] = sim.model.auxiliary_fields.Nᵣₑ[1, 1, 1]
+    jldopen("sediment.jld2", "a+") do file
+        file["Nᵣ/$(sim.model.clock.time)"] = sim.model.auxiliary_fields.Nᵣ[1, 1, 1]
+        file["Nᵣᵣ/$(sim.model.clock.time)"] = sim.model.auxiliary_fields.Nᵣᵣ[1, 1, 1]
+        file["Nᵣₑ/$(sim.model.clock.time)"] = sim.model.auxiliary_fields.Nᵣₑ[1, 1, 1]
+    end
 end
 
 simulation.callbacks[:save_sediment] = Callback(store_sediment!, TimeInterval(1days))
-
+=#
 #=
 # This is currently broken in Oceananigans 
 sediment_fields = Dict(zip(("Nᵣᵣ", "Nᵣ", "Nᵣₑ"), model.auxiliary_fields[(:Nᵣᵣ, :Nᵣ, :Nᵣₑ)]))
@@ -135,7 +133,7 @@ run!(simulation)
 
 ΣN₁ = Budget.calculate_budget(model, true, (:NO₃, :NH₄, :P, :Z, :D, :DD, :DOM))
 @info "Nitrogen budget varied from $ΣN₀ to $ΣN₁"
-
+#=
 # Load and plot the results
 include("PlottingUtilities.jl")
 results = load_tracers(simulation)
@@ -143,3 +141,4 @@ plot(profiles(results)...)
 
 # Save the plot to a PDF file
 savefig("sediment.pdf")
+=#

@@ -35,7 +35,7 @@ dd = DataDep(
 )
 register(dd)
 filename = datadep"example_data/subpolar.nc"
-time = ncread(filename, "time")
+times = ncread(filename, "time")
 temp = ncread(filename, "temp")
 salinity = ncread(filename, "so")
 mld = ncread(filename, "mld")
@@ -80,7 +80,7 @@ model = NonhydrostaticModel(
                                                 boundary_conditions = bgc.boundary_conditions,
                                                 auxiliary_fields = (; PAR)
 )
-set!(model, P=0.03, Z=0.03, D=0.0, DD=0.0, NO₃=11, NH₄=0.05, DOM=0.0, DIC=2200.0, ALK=2400.0)
+set!(model, P=0.03, Z=0.03, D=0.0, DD=0.0, Dᶜ=0.0, DDᶜ=0.0, NO₃=11, NH₄=0.05, DOM=0.0, DIC=2200.0, ALK=2400.0)
 
 # ## Simulation
 # Next we setup the simulation along with some callbacks that:
@@ -91,7 +91,7 @@ set!(model, P=0.03, Z=0.03, D=0.0, DD=0.0, NO₃=11, NH₄=0.05, DOM=0.0, DIC=22
 # - Adapt the timestep length to reduce the run time
 simulation = Simulation(model, Δt=1minutes, stop_time=100days) 
 
-simulation.callbacks[:update_par] = Callback(Light.twoBands.update!, IterationInterval(1), merge(merge(params, Light.twoBands.defaults), (; surface_PAR)));
+simulation.callbacks[:update_par] = Callback(Light.twoBands.update!, IterationInterval(1), merge(merge(params, Light.twoBands.defaults), (; surface_PAR)), TimeStepCallsite());
 
 progress_message(sim) = @printf("Iteration: %04d, time: %s, Δt: %s, wall time: %s\n",
                                                         iteration(sim),
@@ -103,6 +103,7 @@ simulation.callbacks[:progress] = Callback(progress_message, IterationInterval(1
 filename = "data_forced"
 simulation.output_writers[:profiles] = JLD2OutputWriter(model, merge(model.tracers, model.auxiliary_fields), filename = "$filename.jld2", schedule = TimeInterval(1day))
 simulation.callbacks[:neg] = Callback(scale_negative_tracers!; parameters=(conserved_group=(:NO₃, :NH₄, :P, :Z, :D, :DD, :DOM), warn=false))
+simulation.callbacks[:timestep] = Callback(update_timestep!, IterationInterval(1), (c_forcing=0.5, c_adv=0.6, c_diff=0.6, w = 200/day, relaxation=0.75), TimeStepCallsite())
 
 # ## Run!
 # Finally we run the simulation
@@ -116,6 +117,8 @@ Z = FieldTimeSeries("$filename.jld2", "Z")
 D = FieldTimeSeries("$filename.jld2", "D") 
 DD = FieldTimeSeries("$filename.jld2", "DD")
 DIC = FieldTimeSeries("$filename.jld2", "DIC")
+Dᶜ = FieldTimeSeries("$filename.jld2", "Dᶜ")
+DDᶜ = FieldTimeSeries("$filename.jld2", "DDᶜ")
 ALK = FieldTimeSeries("$filename.jld2", "ALK")
 
 x, y, z = nodes(P)
@@ -125,7 +128,7 @@ air_sea_CO₂_flux = zeros(size(P)[4])
 carbon_export = zeros(size(P)[4])
 for (i, t) in enumerate(times)
     air_sea_CO₂_flux[i] = Boundaries.airseaflux(0.0, 0.0, t, DIC[1, 1, Nz, i], ALK[1, 1, Nz, i], t_function(1, 1, 0, t), s_function(1, 1, 0, t),  merge(Boundaries.defaults.airseaflux, (T=t_function, S=s_function, gas=:CO₂)))
-    carbon_export[i] = (D[1, 1, end-20, i]*LOBSTER.D_sinking .+ DD[1, 1, end-20, i]*LOBSTER.DD_sinking).*LOBSTER.defaults.Rd_dom
+    carbon_export[i] = (Dᶜ[1, 1, end-20, i]*LOBSTER.D_sinking .+ DDᶜ[1, 1, end-20, i]*LOBSTER.DD_sinking)
 end
 
 using GLMakie
