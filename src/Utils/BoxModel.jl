@@ -13,7 +13,7 @@ using Oceananigans.Architectures: device
             push!(yᵢ, y[i])
         end
     end
-    dy[p] = params.forcing[p](0, 0, 0, t, yᵢ..., params.forcing_parameters)
+    dy[p] = params.forcing[p](0, 0, 0, t, yᵢ..., params.forcing_parameters.PAR(t), params.forcing_parameters)
 end
 
 function BoxModelRHS(dy, y, params, t)
@@ -29,4 +29,5 @@ end
 function run(model)
     return solve(model.problem, model.solver, dt=model.Δt, adaptive=model.adaptive)
 end
+
 end

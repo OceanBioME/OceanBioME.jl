@@ -37,6 +37,14 @@ using Oceananigans.Utils: launch!
     end
 end 
 
+"""
+    Light.Morel.update!(sim, params)
+
+Function to integrate light attenuation using [Morel1988](@cite) model which should be called in a callback as often as possible.
+
+Requires a three PAR bands to be supplied as auxiliary fields: `PAR¹`, `PAR²`, and `PAR³` as well as `Chlᴾ` and `Chlᴰ` chlorophyll tracer fields.
+"""
+
 function  update(sim, params)
     PAR¹, PAR², PAR³ = sim.model.auxiliary_fields.PAR¹, sim.model.auxiliary_fields.PAR², sim.model.auxiliary_fields.PAR³
     Chl = (sim.model.tracers.Chlᴾ .+ sim.model.tracers.Chlᴰ).*10^6

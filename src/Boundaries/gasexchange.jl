@@ -1,4 +1,14 @@
+#####
+##### Gas exchange model of [Wanninkhof1992](@cite)
+#####
+# TODO: Impliment Ho et al. 2006 wind speed dependence
+
+##### 
+##### Carbonate chemistry to determine pCO₂
+#####
+
 @inline CA_eq(H, params) = params.ALK - (params.KB/(params.KB + H))*params.Boron
+
 @inline H_eq(H, params) = CA_eq(H, params)*H^2 + params.K1*(CA_eq(H, params)-params.DIC)*H + params.K1*params.K2*(CA_eq(H, params)-2*params.DIC)
 
 function pCO₂(DIC, ALK, T, S, params)
@@ -19,11 +29,14 @@ function pCO₂(DIC, ALK, T, S, params)
 
     H = find_zero(H_eq, H, atol=1e-100, p=p)
     CA = CA_eq(H, p)
-    
-    #pH = -log10(H)
+
     CO2aq = CA/(K1/H + 2*K1*K2/H^2)*1e6 # Eq 11  μmol/kg
     return CO2aq/K0 #ppm
 end
+
+#####
+##### Gas exchange velocity
+#####
 
 k(gas::Symbol, T, params)=0.39*(0.01/3600)*params.uₐᵥ^2*(Sc(T, getproperty(params.Sc_params, gas))/660)^(-0.5)#m/s, may want to add variable wind speed instead of average wind here at some point
 Sc(T, params) = params.A-params.B*T+params.C*T^2-params.D*T^3
@@ -33,6 +46,10 @@ Sc(T, params) = params.A-params.B*T+params.C*T^2-params.D*T^3
 
 #now fairly sure that this is giving the correct result for CO₂  as βρ is the henrys coefficient which sould be ∼34mol/m³ atm
 K(gas::Symbol, T, S, params)=k(gas, T, params)*β(T+273.15, S, getproperty(params.β_params, gas))*params.ρₒ #L=ρ\_wK₀ ->  https://reader.elsevier.com/reader/sd/pii/0304420374900152 and here K₀=β
+
+#####
+##### Air sea gas flux boundary functions
+#####
 
 function airseaflux(x, y, t, T::AbstractFloat, S::AbstractFloat, conc::AbstractFloat, params)
     #https://agupubs.onlinelibrary.wiley.com/doi/epdf/10.1029/92JC00188 could add chemical enhancement factor
@@ -56,8 +73,24 @@ end
 airseaflux(x, y, t, conc, params) = airseaflux(x, y, t, params.T(x, y, 0, t), params.S(x, y, 0, t), conc, params)
 airseaflux(x, y, t, DIC, ALK, params) = airseaflux(x, y, t, DIC, ALK, params.T(x, y, 0, t), params.S(x, y, 0, t), params)
 
+#####
+##### Boundary condition setup
+#####
+"""
+    airseasetup(gas::Symbol; forcing=(T=nothing, S=nothing), parameters=defaults.airseaflux)
+
+Returns an Oceananigans `FluxBoundaryCondition` for the tracer relivant to the specified gas (i.e. DIC for CO₂ and oxygen for O₂).
+Arguments
+=========
+* `gas`: Symbol specifying the gas to exchange into the water, current choices are `:CO₂` and `:O₂`
+Keyword arguments
+=================
+* `forcing`: NamedTuple of functions in the form `func(x, y, z, t)` for temperature, `T`, and salinity `S`
+    Optional as the fallback is to look for tracer fields by these names (the prefered method where the physics are being resolved).
+* `parameters`: NamedTuple of parameters to replace the defaults
+"""
+
 function airseasetup(gas::Symbol; forcings=(T=nothing, S=nothing), parameters=defaults.airseaflux)
-    #don't like this but oh well
     if !(gas in keys(parameters.Sc_params))
         throw(ArgumentError("Boundary conditions not defined for gas $gas, available are $(keys(parameters.Sc_params))"))
     end

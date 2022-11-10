@@ -1,37 +1,66 @@
-"
-The Lodyc Ocean Biogeochemical Simulation Tools for Ecosystem and Resources (LOBSTER) model consists of six prognostic variables 
-expressed in terms of their nitrogen content: nitrate (NO₃), ammonium (NH₄), phytoplankton (P), zooplankton (Z), small detritus(D) and semilabile dissolved organic matter (DOM).
-The current version has been expanded to include Large detritus (DD) and optional tracers: dissolved inorganic carbon (DIC), alkalinity (ALK) and oxygen (OXY). 
-Details of the model can be found in the following references: 
-    (1) Lévy, M., Gavart, M., Mémery, L., Caniaux, G. and Paci, A., 2005. A four‐dimensional mesoscale map of the spring bloom in the northeast Atlantic (POMME experiment): Results of a prognostic model. Journal of Geophysical Research: Oceans, 110(C7).
-    (2) Lévy, M., Klein, P. and Treguier, A.M., 2001. Impact of sub-mesoscale physics on production and subduction of phytoplankton in an oligotrophic regime. Journal of marine research, 59(4), pp.535-565.
-    (3) Resplandy, L., Martin, A.P., Le Moigne, F., Martin, P., Aquilina, A., Mémery, L., Lévy, M. and Sanders, R., 2012. How does dynamical spatial variability impact 234Th-derived estimates of organic export?. Deep Sea Research Part I: Oceanographic Research Papers, 68, pp.24-45.
-    (4) Morel, A. and Maritorena, S., 2001. Bio‐optical properties of oceanic waters: A reappraisal. Journal of Geophysical Research: Oceans, 106(C4), pp.7163-7180.
-    (5) Resplandy, L., Lévy, M., d'Ovidio, F. and Merlivat, L., 2009. Impact of submesoscale variability in estimating the air‐sea CO2 exchange: Results from a model study of the POMME experiment. Global Biogeochemical Cycles, 23(1).
-    (6) Karleskind, P., Lévy, M., and Memery, L. (2011), Subduction of carbon, nitrogen, and oxygen in the northeast Atlantic, J. Geophys. Res., 116, C02025, doi:10.1029/2010JC006446. 
+"""
+The Lodyc Ocean Biogeochemical Simulation Tools for Ecosystem and Resources (LOBSTER) model
 
+Tracers
+========
+* Nitrates: NO₃ (mmol N/m³)
+* Ammonia: NH₄ (mmol N/m³)
+* Phytoplankton: P (mmol N/m³)
+* Zooplankton: Z (mmol N/m³)
+* Small (slow sinking) detritus: D (mmol N/m³)
+* Large (fast sinking) detritus: DD (mmol N/m³)
+* Small (slow sinking) detritus carbon content: Dᶜ (mmol C/m³)
+* Large (fast sinking) detritus carbon content: DDᶜ (mmol C/m³)
+* Disolved organic matter: DOM (mmol N/m³)
 
-Additionally the model has been modified to track the carbon content of detritus separatly to allow for non-Redfield additions to the detritus pool (e.g. from kelp degredation)   
-"
+Optional tracers
+===========
+* Disolved inorganic carbon: DIC (mmol C/m³)
+* Alkalinity: ALK (mmol ⁻/m³)
+
+* Oxygen: OXY (mmol O₂/m³)
+
+Required forcing
+===========
+* Photosynthetically available radiation: PAR (W/m²)
+
+For optional tracers:
+* Temperature: T (ᵒC)
+* Salinity: S (‰)
+"""
 module LOBSTER
 using Oceananigans
 using Oceananigans.Units: second, minute, minutes, hour, hours, day, days, year, years
 
-# grazing
-@inline p(P, D, params) = params.p̃*P/(params.p̃*P+(1-params.p̃)*D + eps(0.0)) #Preference for phytoplankton
-@inline G_d(P, Z, D, params) = params.g_z*(1-p(P, D, params))*D*Z/(params.K_z+P*p(P, D, params)+(1-p(P, D, params))*D) #Grazing of detritus
-@inline G_p(P, Z, D, params) = params.g_z*p(P, D, params)*P*Z/(params.K_z+P*p(P, D, params)+(1-p(P, D, params))*D) #Grazing of phytoplankton
+#####
+##### Grazing
+#####
 
-# Limiting equations
+@inline p(P, D, params) = params.p̃*P/(params.p̃*P+(1-params.p̃)*D + eps(0.0)) # Preference for phytoplankton
+
+@inline G_d(P, Z, D, params) = params.g_z*(1-p(P, D, params))*D*Z/(params.K_z+P*p(P, D, params)+(1-p(P, D, params))*D) # Grazing of detritus
+
+@inline G_p(P, Z, D, params) = params.g_z*p(P, D, params)*P*Z/(params.K_z+P*p(P, D, params)+(1-p(P, D, params))*D) # Grazing of phytoplankton
+
+#####
+##### Autotrophic growth limitations
+#####
+
 @inline Lₚₐᵣ(PAR, params) = 1 - exp(-PAR/params.Kₚₐᵣ) # reference (4) #Light limitation
+
 @inline L_NO₃(NO₃, NH₄, params) = NO₃*exp(-params.ψ*NH₄)/(NO₃+params.Kₙₒ₃) #Nitrate limitation
+
 @inline L_NH₄(NH₄, params) = max(0.0, NH₄/(NH₄+params.Kₙₕ₄)) #Ammonium limitation
 
-# Nutrients
+#####
+##### Nutrient forcing
+#####
+
 @inline NO₃_forcing(x, y, z, t, NO₃, NH₄, P, Z, D, DD, Dᶜ, DDᶜ, DOM, PAR, params) = (
     -params.μ_p*Lₚₐᵣ(PAR, params)*L_NO₃(NO₃, NH₄, params)*P  #phytoplankton consumption
     + params.μ_n*NH₄ #nitrification
 )
+
 @inline NH₄_forcing(x, y, z, t, NO₃, NH₄, P, Z, D, DD, Dᶜ, DDᶜ, DOM, PAR, params) = (
     params.α_p*params.γ*params.μ_p*Lₚₐᵣ(PAR, params)*(L_NO₃(NO₃, NH₄, params)+L_NH₄(NH₄, params))*P 
     - params.μ_p*Lₚₐᵣ(PAR, params)*L_NH₄(NH₄, params)*P 
@@ -41,16 +70,19 @@ using Oceananigans.Units: second, minute, minutes, hour, hours, day, days, year,
     + params.α_dd*params.μ_dd*DD 
     + params.μ_dom*DOM 
 )
+
 @inline DOM_forcing(x, y, z, t, NO₃, NH₄, P, Z, D, DD, Dᶜ, DDᶜ, DOM, PAR, params) = (
     (1-params.α_p)*params.γ*params.μ_p*Lₚₐᵣ(PAR, params)*(L_NO₃(NO₃, NH₄, params)+L_NH₄(NH₄, params))*P 
     - params.μ_dom*DOM 
     +(1-params.α_z)*params.μ_z*Z
     +(1-params.α_d)*params.μ_d*D 
     +(1-params.α_dd)*params.μ_dd*DD 
-    #- aggreg_DOM2D(z, D, DOM)- aggreg_DOM2DD(z, DD, DOM)
 )
 
-# Planktons
+#####
+##### Plankton forcing
+#####
+
 @inline P_forcing(x, y, z, t, NO₃, NH₄, P, Z, D, DD, Dᶜ, DDᶜ, DOM, PAR, params) = (
     (1-params.γ)*params.μ_p*Lₚₐᵣ(PAR, params)*(L_NO₃(NO₃, NH₄, params)+L_NH₄(NH₄, params))*P 
     - G_p(P, Z, D, params) 
@@ -62,14 +94,16 @@ using Oceananigans.Units: second, minute, minutes, hour, hours, day, days, year,
     - params.μ_z*Z
 )
 
-# Detritus
+#####
+##### Detritus forcing
+#####
+
 @inline D_forcing(x, y, z, t, NO₃, NH₄, P, Z, D, DD, Dᶜ, DDᶜ, DOM, PAR, params) = (
     (1-params.f_d)*(1-params.a_z)*(G_d(P, Z, D, params)+G_p(P, Z, D, params)) 
     + (1-params.f_d)*params.m_p*P^2 
     - G_d(P, Z, D, params) 
     + params.f_z*params.m_z*Z^2 
     - params.μ_d*D 
-    #- aggreg_D2DD(z, D, DD) + aggreg_DOM2D(z, D, DOM) 
 )
 
 @inline DD_forcing(x, y, z, t, NO₃, NH₄, P, Z, D, DD, Dᶜ, DDᶜ, DOM, PAR, params) = (
@@ -77,17 +111,18 @@ using Oceananigans.Units: second, minute, minutes, hour, hours, day, days, year,
     + params.f_d*params.m_p*P^2 
     + (1-params.f_z)*params.m_z*Z^2 
     - params.μ_dd*DD 
-    #+ aggreg_D2DD(z, D, DD) + aggreg_DOM2DD(z, DD, DOM) 
 )
 
-# Detritus carbon
+#####
+###### Detritus carbon content forcing
+#####
+
 @inline Dᶜ_forcing(x, y, z, t, NO₃, NH₄, P, Z, D, DD, Dᶜ, DDᶜ, DOM, PAR, params) = (
     ((1-params.f_d)*(1-params.a_z)*(G_d(P, Z, D, params)+G_p(P, Z, D, params)) 
     + (1-params.f_d)*params.m_p*P^2 
     - G_d(P, Z, D, params) 
     + params.f_z*params.m_z*Z^2)*params.Rd_phy
     - params.μ_d*Dᶜ
-    #- aggreg_D2DD(z, D, DD) + aggreg_DOM2D(z, D, DOM) 
 )
 
 @inline DDᶜ_forcing(x, y, z, t, NO₃, NH₄, P, Z, D, DD, Dᶜ, DDᶜ, DOM, PAR, params) = (
@@ -95,11 +130,12 @@ using Oceananigans.Units: second, minute, minutes, hour, hours, day, days, year,
     + params.f_d*params.m_p*P^2 
     + (1-params.f_z)*params.m_z*Z^2)*params.Rd_phy
     - params.μ_dd*DDᶜ
-    #+ aggreg_D2DD(z, D, DD) + aggreg_DOM2DD(z, DD, DOM) 
 )
 
+#####
+##### Carbonate chemistry (optional)
+#####
 
-# source functions for the carbonate chemistry model as described in reference (5)
 @inline DIC_forcing(x, y, z, t, NO₃, NH₄, P, Z, D, DD, Dᶜ, DDᶜ, DOM, DIC, ALK, PAR, params) = (
     -params.μ_p*Lₚₐᵣ(PAR, params)*(L_NO₃(NO₃, NH₄, params)
     +L_NH₄(NH₄, params))*params.Rd_phy*(1+params.ρ_caco3)*P
@@ -109,18 +145,26 @@ using Oceananigans.Units: second, minute, minutes, hour, hours, day, days, year,
     +params.α_dd*params.μ_dd*DDᶜ
     +params.μ_dom*DOM*params.Rd_dom
 )
+
 @inline ALK_forcing(x, y, z, t, NO₃, NH₄, P, Z, D, DD, Dᶜ, DDᶜ, DOM, DIC, ALK, PAR, params) = (
     params.μ_p*Lₚₐᵣ(PAR, params)*L_NO₃(NO₃, NH₄, params)*P
     -2*params.ρ_caco3*params.μ_p*Lₚₐᵣ(PAR, params)*(L_NO₃(NO₃, NH₄, params)+L_NH₄(NH₄, params))*params.Rd_phy*P
 )
 
-# oxygen chemistry as per reference (6)
+#####
+##### Oxygen chemistry (optional)
+#####
+
+# XXX there is a typo in https://agupubs.onlinelibrary.wiley.com/doi/10.1029/2010JC006446 so I am not sure the first term of this is correct, but this makes sense
 @inline OXY_forcing(x, y, z, t, NO₃, NH₄, P, Z, D, DD, Dᶜ, DDᶜ, DOM, OXY, PAR, params) = (
     params.μ_p*Lₚₐᵣ(PAR, params)*L_NO₃(NO₃, NH₄, params)*params.Rd_oxy*P
     - (params.Rd_oxy-params.Rd_nit)*NH₄_forcing(x, y, z, t, NO₃, NH₄, P, Z, D, DD, Dᶜ, DDᶜ, DOM, PAR, params) 
-    - params.Rd_oxy*params.μ_n*NH₄#there is a typo in https://agupubs.onlinelibrary.wiley.com/doi/10.1029/2010JC006446 so I am not sure the first term of this is correct, but this makes sense
+    - params.Rd_oxy*params.μ_n*NH₄ 
 )
 
+#####
+##### Model definition for OceanBioME to setup
+#####
 D_sinking = -3.47e-5
 DD_sinking = -200/day
 
@@ -133,7 +177,6 @@ sinking = (D = D_sinking, DD=DD_sinking, Dᶜ = D_sinking, DDᶜ=DD_sinking)
 required_fields = (:PAR, )
 requried_parameters = NamedTuple()
 
-#parameters
 const defaults = (
     p̃ = 0.5,  # Preference for phytoplankton
     g_z = 9.26e-6,   # Zooplankton maximal grazing rate  s⁻¹
