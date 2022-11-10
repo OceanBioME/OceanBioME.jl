@@ -124,11 +124,11 @@ function benchmark_SLatissima(n)
     return trials
 end
 
-Ns = [16, 32, 64]
+Ns = [16, 32]#, 64]
 
 # Run and summarize benchmarks
 
-for (model, name) in zip((:LOBSTER, :sediment, :particles), ("LOBSTER", "sediment", "SLatissima"))
+for (model, name) in zip((:LOBSTER, :sediment, :SLatissima), ("LOBSTER", "sediment", "SLatissima"))
     @info "Benchmarking $name"
     benchmark_func = Symbol(:benchmark_, model)
     @eval begin

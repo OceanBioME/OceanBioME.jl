@@ -46,7 +46,7 @@ oxy_bc = Boundaries.airseasetup(:O₂, forcings=(T=t_function, S=s_function))
 NO₃, NH₄, P, Z, D, DD, Dᶜ, DDᶜ, DOM, DIC, ALK, OXY = CenterField(grid), CenterField(grid), CenterField(grid), CenterField(grid), CenterField(grid), CenterField(grid), CenterField(grid), CenterField(grid), CenterField(grid), CenterField(grid), CenterField(grid), CenterField(grid)
 
 #sediment bcs
-sediment=Boundaries.Sediments.Soetaert.setupsediment(grid, (;D, DD); POM_w=(D=LOBSTER.D_sinking, DD=LOBSTER.DD_sinking))
+sediment=Boundaries.Sediments.Soetaert.setupsediment(grid, (;D, DD); POM_w=(D=LOBSTER.D_sinking, DD=LOBSTER.DD_sinking), f_ref=1.0)
 
 # Set up the OceanBioME model with the specified biogeochemical model, grid, parameters, light, and boundary conditions
 bgc = Setup.Oceananigans(:LOBSTER, grid, params, optional_sets=(:carbonates, :oxygen), topboundaries=(DIC=dic_bc, OXY=oxy_bc), sinking=true, open_bottom=true, bottomboundaries=sediment.boundary_conditions)
@@ -83,7 +83,7 @@ OXYᵢ(x, y, z) = 240                                          #in mmolO m^-3
 set!(model, P=Pᵢ, Z=Zᵢ, NO₃=NO₃ᵢ, NH₄=NH₄ᵢ, DIC=DICᵢ, ALK=ALKᵢ, OXY=OXYᵢ)
 
 ## Set up the simulation
-simulation = Simulation(model, Δt=5minutes, stop_time=100days)
+simulation = Simulation(model, Δt=5minutes, stop_time=50days)
 
 # create a model 'callback' to update the light (PAR) profile every 1 timestep and integrate sediment model
 simulation.callbacks[:update_par] = Callback(Light.twoBands.update!, IterationInterval(1), merge(merge(params, Light.twoBands.defaults), (surface_PAR=PAR⁰,)), TimeStepCallsite());
@@ -106,7 +106,7 @@ simulation.output_writers[:profiles] = NetCDFOutputWriter(model, fields, filenam
 
 # Oceananians storage of sliced fields is currently broken (https://github.com/CliMA/Oceananigans.jl/issues/2770) so here is a work around
 using JLD2
-#=
+
 function store_sediment!(sim)
     jldopen("sediment.jld2", "a+") do file
         file["Nᵣ/$(sim.model.clock.time)"] = sim.model.auxiliary_fields.Nᵣ[1, 1, 1]
@@ -116,7 +116,7 @@ function store_sediment!(sim)
 end
 
 simulation.callbacks[:save_sediment] = Callback(store_sediment!, TimeInterval(1days))
-=#
+
 #=
 # This is currently broken in Oceananigans 
 sediment_fields = Dict(zip(("Nᵣᵣ", "Nᵣ", "Nᵣₑ"), model.auxiliary_fields[(:Nᵣᵣ, :Nᵣ, :Nᵣₑ)]))
