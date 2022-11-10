@@ -15,7 +15,7 @@ model = NonhydrostaticModel(
 ```
 Finally, once the simulation is defined you need to add the callback to update the field:
 ```
-simulation.callbacks[:update_par] = Callback(Light.twoBands.update!, IterationInterval(1), merge(params, Light.twoBands.defaults, (;surface_PAR)));
+simulation.callbacks[:update_par] = Callback(Light.twoBands.update!, IterationInterval(1), merge(params, Light.twoBands.defaults, (;surface_PAR)), TimeStepCallsite());
 ```
 Where `surface_PAR` is some function `surface_PAR(t)` which gives the light level at the surface at time `t`. 
 
@@ -28,7 +28,7 @@ model = NonhydrostaticModel(
     auxiliary_fields = (; PAR¹, PAR², PAR³)
 )
 ...
-simulation.callbacks[:update_PAR] = Callback(Light.Morel.update, IterationInterval(1), merge(Light.Morel.defaults, (; PAR⁰)))
+simulation.callbacks[:update_PAR] = Callback(Light.Morel.update, IterationInterval(1), merge(Light.Morel.defaults, (; PAR⁰)), TimeStepCallsite())
 ```
 
 Since this clearly wouldn't have the correct fields for a model expecting a single PAR field (e.g. LOBSTER) you could also define a custom field and callback which converts them, making the setup:
@@ -44,5 +44,5 @@ function update_PAR!(sim, params)
     Light.Morel.update(sim, params)
     PAR .= PAR¹ .+ PAR² .+ PAR³
 end
-simulation.callbacks[:update_PAR] = Callback(update_PAR!, IterationInterval(1), merge(Light.Morel.defaults, (; PAR⁰)))
+simulation.callbacks[:update_PAR] = Callback(update_PAR!, IterationInterval(1), merge(Light.Morel.defaults, (; PAR⁰)), TimeStepCallsite())
 ```

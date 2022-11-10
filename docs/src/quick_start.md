@@ -1,5 +1,5 @@
 # Quick start
-This code will run one month of a single column, 7 variable (P, Z, D, DD, DOM, NO₃, NH₄) biogeochemical situation with constant forcing.
+This code will run one month of a single column, 9 variable (P, Z, D, DD, Dᶜ, DDᶜ, DOM, NO₃, NH₄) biogeochemical situation with constant forcing.
 
 ```@meta
 DocTestSetup = quote

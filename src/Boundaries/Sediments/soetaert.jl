@@ -1,5 +1,5 @@
 """
-    Soetaert
+Soetaert
 
 Soetaert et al. 2000 vertically integrated sediment diagenesis model.
 
@@ -102,6 +102,7 @@ end
 
 Returns the boundary conditions, forcing, auxiliary fields, and parameters for the [Soetaert2000](@cite)
 vertically integrated sediment diagenesis model. 
+
 Arguments
 =========
 * `grid`: Oceananigans grid.

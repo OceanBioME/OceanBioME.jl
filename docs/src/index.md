@@ -6,9 +6,6 @@ DocTestSetup = quote
     using OceanBioME
 end
 ```
-```@autodocs
-Modules = [OceanBioME]
-```
 
 OceanBioME.jl aims to be a flexible and friendly ocean biogeochemical modelling environment for simulating coupled physics-biogeochemical models across a range of ocean scenarios. It is built within [Oceananigans.jl](https://github.com/CliMA/Oceananigans.jl) which resolves the transport of the biogeochemical tracers and individuals and provides an excellent framework for implementing advanced features such as complex boundary conditions (e.g. sediment models).
 
@@ -49,7 +46,7 @@ shell> cd OceanBioME/examples
 
 shell> git clone --depth 1 USERNAME@github.com:OceanBioME/OceanBioME_example_data.git
 ```
-!!! compat "Julia 1.6 or newer"
+!!! compat "Julia 1.8 or newer"
     The latest version of OceanBioME strongly suggests _at least_ Julia 1.8 or later to run.
     While most scripts will run on Julia 1.6 or 1.7, OceanBioME is _only_ tested on Julia 1.8.
 

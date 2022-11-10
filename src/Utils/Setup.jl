@@ -173,8 +173,9 @@ end
                                     architecture=CPU())
 
 Returns a box model (actual type coming soon) which can be solved by `BoxModel.run`.
+
 Arguments
-==========
+=========
 * `model`: Symbol name of model to be used (e.g. `:LOBSTER`)
 * `params`: Parameters for model, usually `model.defaults` (no way for us to automagically get that for now)
 * `initial_vales`: NamedTuple of initial values for tracers

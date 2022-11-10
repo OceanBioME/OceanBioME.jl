@@ -1,5 +1,5 @@
 """
-    Sugar kelp model of [Broch2012](@cite) and updated by [Broch2013](@cite), [Fossberg2018](@cite), and [Broch2019](@cite).
+Sugar kelp model of [Broch2012](@cite) and updated by [Broch2013](@cite), [Fossberg2018](@cite), and [Broch2019](@cite).
 
 Prognostic properties
 ===============

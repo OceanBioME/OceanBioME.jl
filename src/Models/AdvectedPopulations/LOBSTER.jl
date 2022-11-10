@@ -1,5 +1,5 @@
 """
-    The Lodyc Ocean Biogeochemical Simulation Tools for Ecosystem and Resources (LOBSTER) model
+The Lodyc Ocean Biogeochemical Simulation Tools for Ecosystem and Resources (LOBSTER) model
 
 Tracers
 ========

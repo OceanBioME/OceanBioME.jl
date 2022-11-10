@@ -40,4 +40,4 @@ for (i, tracer) in enumerate([:NO₃, :NH₄, :P, :Z, :DOM, :D, :DD])
 end
 push!(plts, plot(solution.t/day, PAR.(solution.t), xlabel="Day", ylabel="PAR",  legend=false))
 plot(plts...)
-savefig("examples/box.png")
+savefig("box.png")

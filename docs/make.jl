@@ -1,3 +1,5 @@
+pushfirst!(LOAD_PATH, joinpath(@__DIR__, "..")) # add OceanBioME to environment stack
+
 using Documenter, DocumenterCitations, Literate, Glob
 using OceanBioME
 
@@ -10,24 +12,27 @@ const EXAMPLES_DIR = joinpath(@__DIR__, "..", "examples")
 const OUTPUT_DIR   = joinpath(@__DIR__, "src/generated")
 
 examples = [
-    #"box.jl",
+    "box.jl",
     "column.jl",
-    #"data_forced.jl",
-    #"kelp.jl",
-    #"sediment.jl"
+    "data_forced.jl",
+    "kelp.jl",
+    "sediment.jl"
 ]
-# going to need some work done on the formatting of the comments in examples to get them to render properly
+
 for example in examples
     example_filepath = joinpath(EXAMPLES_DIR, example)
-    Literate.markdown(example_filepath, OUTPUT_DIR; flavor = Literate.DocumenterFlavor(), repo_root_url="coming.soon")
+
+    withenv("JULIA_DEBUG" => "Literate") do
+        Literate.markdown(example_filepath, OUTPUT_DIR; flavor = Literate.DocumenterFlavor(), repo_root_url="coming.soon", execute=true)
+    end
 end
 
 example_pages = [
-    "Simple virtual aquarium (column model)" => "generated/column.md",
-    #"Data forced virtual aquarium" => "generated/data_forced.md",
-    #"Virtual aquarium with sediment" => "generated/sediment.md",
-    #"Virtual aquarium with kelp" => "generated/kelp.md",
-    #"Box model" => "generated/box.md"
+    "Simple column model" => "generated/column.md",
+    "Data forced column model" => "generated/data_forced.md",
+    "Model with particles (kelp) interacting with the biogeochemistry" => "generated/kelp.md",
+    "Simple column with a sediment boundary" => "generated/sediment.md",
+    "Box model" => "generated/box.md"
 ]
 
 bgc_pages = [
@@ -71,10 +76,6 @@ numerical_pages = [
     "Positivity preservation" => "numerical_implimentation/positivity-preservation.md"
 ]
 
-setup_pages = [
-    "Overview" => "setup/index.md",
-    #...
-]
 
 param_pages = [
     "Overview" => "appendix/params/index.md",
@@ -84,7 +85,7 @@ param_pages = [
 ]
 
 appendix_pages = [
-    "Function index" => "appendix/function_index.md",
+    "Function Library" => "appendix/function_index.md",
     "Parameters" => param_pages
 ]
 
@@ -92,10 +93,9 @@ pages = [
     "Home" => "index.md",
     "Quick start" => "quick_start.md",
     "Examples" => example_pages,
-    "Model components" => component_pages,
+    "Model components and setup" => component_pages,
     "Numerical implimentation" => numerical_pages,
     #"Model setup" => setup_pages,
-    "Notes" => "notes.md",
     "Gallery" => "gallery.md",
     "References" => "references.md",
     "Appendix" => appendix_pages
@@ -117,7 +117,7 @@ makedocs(bib,
     authors = "Jago Strong-Wrigt, John R. Taylor, and Si Chen",
     format = format,
     pages = pages,
-    modules = Module[OceanBioME],
+    modules = Module[OceanBioME, OceanBioME.LOBSTER],
     doctest = false,#true,
     strict = false,#true,
     clean = true,

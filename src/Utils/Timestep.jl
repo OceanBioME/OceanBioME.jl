@@ -58,6 +58,7 @@ end
     update_timestep!(sim, params=(w=200/day, c_diff = 0.45, c_adv = 0.45, relaxation=0.75))
 
 Adapts the timestep (Δt) of `sim` to maintain stability.
+
 Parameters
 ========
 * `w`: maximum velocity for AdvectiveForcing
