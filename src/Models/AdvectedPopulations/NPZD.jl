@@ -8,7 +8,9 @@ export NutrientPhytoplanktonZooplanktonDetritus
 
 using Oceananigans.Biogeochemistry: AbstractBiogeochemistry
 using Oceananigans.Advection: div_Uc
+using Oceananigans.Forcings: maybe_constant_field
 using Oceananigans.Units: day
+using Oceananigans.Advection: WENO
 
 import Oceananigans.Biogeochemistry: required_biogeochemical_tracers
 
@@ -39,22 +41,22 @@ end
 # default parameters
 function NutrientPhytoplanktonZooplanktonDetritus(; advection_scheme = WENO())
    #uᵖ, vᵖ, wᵖ = maybe_constant_field.((0.0, 0.0, -0.2551/day))
-    uᵖ, vᵖ, wᵖ = maybe_constant_field.((0.0, 0.0, 0.0))
-    u⃗ᵖ = (;uᵖ, vᵖ, wᵖ)
+    u, v, w = maybe_constant_field.((0.0, 0.0, 0.0))
+    u⃗ᵖ = (;u, v, w)
 
     #uᵈ, vᵈ, wᵈ = maybe_constant_field.((0.0, 0.0, -2.7489/day))
-    uᵈ, vᵈ, wᵈ = maybe_constant_field.((0.0, 0.0, 0.0))
-    u⃗ᵈ = (;uᵈ, vᵈ, wᵈ)
+    u, v, w = maybe_constant_field.((0.0, 0.0, 0.0))
+    u⃗ᵈ = (;u, v, w)
 
     return NutrientPhytoplanktonZooplanktonDetritus(0.1953/day, 0.6989/day, 2.3868, 0.066/day, 0.0101/day, u⃗ᵖ, 2.1522/day, sqrt(0.5573), 0.9116, 0.0102/day, 0.3395/day, 0.1213/day, u⃗ᵈ, advection_scheme)
 end
 
 function NutrientPhytoplanktonZooplanktonDetritus(α, μ₀, kₙ, lᵖⁿ, lᵖᵈ, wᴾ, gₘₐₓ, kₚ, β, lᶻⁿ, lᶻᵈ, rᵈⁿ, wᴰ; advection_scheme = WENO())
-    uᵖ, vᵖ, wᵖ = maybe_constant_field.((0.0, 0.0, -wᴾ))
-    u⃗ᵖ = (;uᵖ, vᵖ, wᵖ)
+    u, v, w = maybe_constant_field.((0.0, 0.0, -wᴾ))
+    u⃗ᵖ = (;u, v, w)
 
-    uᵈ, vᵈ, wᵈ = maybe_constant_field.((0.0, 0.0, -wᴰ))
-    u⃗ᵈ = (;uᵈ, vᵈ, wᵈ)
+    u, v, w = maybe_constant_field.((0.0, 0.0, -wᴰ))
+    u⃗ᵈ = (;u, v, w)
 
     return NutrientPhytoplanktonZooplanktonDetritus(α, μ₀, kₙ, lᵖⁿ, lᵖᵈ, u⃗ᵖ, gₘₐₓ, kₚ, β, lᶻⁿ, lᶻᵈ, rᵈⁿ, u⃗ᵈ, advection_scheme)
 end
@@ -92,7 +94,7 @@ end
     metabolic_loss = bgc.lᵖⁿ*Q₁₀(T)*P
     mortality_loss = bgc.lᵖᵈ*Q₁₀(T)*P
 
-    sinking = div_Uc(i, j, k, grid, bgc.adv_scheme, bgc.u⃗ᵖ, P)
+    sinking = div_Uc(i, j, k, grid, bgc.adv_scheme, bgc.u⃗ᵖ, fields.P)
 
     return growth - grazing - metabolic_loss - mortality_loss + sinking # hopefully sinking is signed right if we pass sinking speed as a positive number
 end
@@ -116,7 +118,7 @@ end
 
     remineralization = bgc.rᵈⁿ*D
 
-    sinking = div_Uc(i, j, k, grid, bgc.adv_scheme, bgc.u⃗ᵈ, D)
+    sinking = div_Uc(i, j, k, grid, bgc.adv_scheme, bgc.u⃗ᵈ, fields.D)
 
     return phytoplankton_mortality_loss + zooplankton_assimilation_loss + zooplankton_mortality_loss - remineralization + sinking
 end

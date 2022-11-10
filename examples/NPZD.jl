@@ -16,7 +16,7 @@
 # ## Model setup
 # We load the packages and choose the default LOBSTER parameter set
 using OceanBioME, Oceananigans, Oceananigans.Units, Printf
-
+using OceanBioME.NPZD: NutrientPhytoplanktonZooplanktonDetritus
 # ## Surface PAR
 
 PAR⁰(t) = 100*(1-cos((t+15days)*2π/(365days)))*(1 /(1 +0.2*exp(-((t-200days)/50days)^2))) .+ 2
@@ -128,11 +128,12 @@ model = NonhydrostaticModel(; grid, buoyancy,
                             advection = UpwindBiasedFifthOrder(),
                             timestepper = :RungeKutta3,
                             tracers = (:T, :S, :N, :P, :Z, :D),
+                            biogeochemistry = NutrientPhytoplanktonZooplanktonDetritus(),
                             coriolis = FPlane(f=1e-4),
                             closure = AnisotropicMinimumDissipation(),
                             boundary_conditions = (u=u_bcs, T=T_bcs, S=S_bcs),
                             auxiliary_fields = (; PAR)
-                            )
+                           )
 
 ## Random noise damped at top and bottom
 Ξ(z) = randn() * z / model.grid.Lz * (1 + z / model.grid.Lz) # noise
@@ -158,9 +159,10 @@ simulation = Simulation(model, Δt=1.0, stop_time=100days)
 # The `TimeStepWizard` helps ensure stable time-stepping
 # with a Courant-Freidrichs-Lewy (CFL) number of 1.0.
 
-simulation.callbacks[:timestep] = Callback(update_timestep!, TimeInterval(1minute), parameters = (w=200/day, c_adv = 0.45, relaxation=0.75, c_forcing=0.1)) 
+#simulation.callbacks[:timestep] = Callback(update_timestep!, TimeInterval(1minute), parameters = (w=200/day, c_adv = 0.45, relaxation=0.75, c_forcing=0.1)) 
 
-
+wizard = TimeStepWizard(cfl=1.0, max_change=1.1, max_Δt=1minute)
+simulation.callbacks[:wizard] = Callback(wizard, IterationInterval(10))
 # Nice progress messaging is helpful:
 
 ## Print a progress message
