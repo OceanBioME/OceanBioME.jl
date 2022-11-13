@@ -1,4 +1,5 @@
 using OceanBioME, Oceananigans, BenchmarkTools
+using OceanBioME.Particles: infinitesimal_particle_field_coupling!
 using Oceananigans.Units
 include("Benchmark.jl")
 
@@ -89,7 +90,7 @@ function benchmark_SLatissima(n)
     n_kelp = floor(Int, n/4) # number of kelp fronds
     z₀ = [-101+100/n_kelp:100/n_kelp:-1;]*1.0 # depth of kelp fronds
 
-    kelp_particles = SLatissima.setup(n_kelp, Lx/2, Ly/2, z₀, 
+    kelp_particles = SLatissima.setup(n_kelp, 200*rand(n_kelp), 200*rand(n_kelp), z₀, 
                                                         30.0, 0.01, 0.1, 57.5;
                                                         scalefactor = 5.0, 
                                                         T = t_function, S = s_function, urel = 0.2, 
@@ -115,7 +116,7 @@ function benchmark_SLatissima(n)
 
     simulation.callbacks[:update_par] = Callback(Light.twoBands.update!, IterationInterval(1), merge(merge(LOBSTER.defaults, Light.twoBands.defaults), (surface_PAR=PAR⁰,)), TimeStepCallsite());
     simulation.callbacks[:neg] = Callback(scale_negative_tracers!; parameters=(conserved_group=(:NO₃, :NH₄, :P, :Z, :D, :DD, :DOM), warn=false))
-    sim.callbacks[:couple_particles] = Callback(infinitesimal_particle_field_coupling!; callsite = TendencyCallsite())
+    simulation.callbacks[:couple_particles] = Callback(infinitesimal_particle_field_coupling!; callsite = TendencyCallsite())
     # warmup
     run!(simulation)
 
@@ -124,11 +125,11 @@ function benchmark_SLatissima(n)
     return trials
 end
 
-Ns = [16, 32, 64]
+Ns = [16, 32]#, 64]
 
 # Run and summarize benchmarks
 
-for (model, name) in zip((:LOBSTER, :sediment, :particles), ("LOBSTER", "sediment", "SLatissima"))
+for (model, name) in zip((:LOBSTER, :SLatissima), ("LOBSTER", "SLatissima"))#zip((:LOBSTER, :sediment, :particles), ("LOBSTER", "sediment", "SLatissima"))
     @info "Benchmarking $name"
     benchmark_func = Symbol(:benchmark_, model)
     @eval begin
