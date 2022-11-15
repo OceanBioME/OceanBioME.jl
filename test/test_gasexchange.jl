@@ -1,7 +1,7 @@
 using Test
 using OceanBioME: Boundaries
 
-@testset "Gas exchange"
+@testset "Gas exchange" begin
     # approximatly correct sized pCO₂ from DIC and ALK
     pCO₂ = Boundaries.pCO₂(2220, 2500, 15+273.15, 35, Boundaries.defaults.airseaflux)
     @test pCO₂ ≈ 400 atol = 100

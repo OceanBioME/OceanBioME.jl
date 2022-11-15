@@ -39,7 +39,7 @@ function airseaflux(x, y, t, T::AbstractFloat, S::AbstractFloat, conc::AbstractF
     if params.gas in (:O₂, )#doing like this for flexability in the future
         return k(params.gas, T, params)*(conc-α(params.gas, T, S, params)*getproperty(params.conc_air, params.gas))
     elseif params.gas in (:CO₂, )
-        return K(params.gas, T, S, params)*(conc-getproperty(params.conc_air, params.gas)*params.pAir)*1000#μatm/m²s to mmolC/m²s not sure this is correct
+        return K(params.gas, T, S, params)*(conc-getproperty(params.conc_air, params.gas)*params.pAir)/1000#μatm/m²s to mmolC/m²s not sure this is correct
     else
         throw(ArgumentError("Invalid gas choice for airseaflux"))
     end
