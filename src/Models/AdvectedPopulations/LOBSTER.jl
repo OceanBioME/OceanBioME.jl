@@ -98,7 +98,6 @@ using Oceananigans.Units: second, minute, minutes, hour, hours, day, days, year,
     #+ aggreg_D2DD(z, D, DD) + aggreg_DOM2DD(z, DD, DOM) 
 )
 
-
 # source functions for the carbonate chemistry model as described in reference (5)
 @inline DIC_forcing(x, y, z, t, NO₃, NH₄, P, Z, D, DD, Dᶜ, DDᶜ, DOM, DIC, ALK, PAR, params) = (
     -params.μ_p*Lₚₐᵣ(PAR, params)*(L_NO₃(NO₃, NH₄, params)
@@ -109,6 +108,7 @@ using Oceananigans.Units: second, minute, minutes, hour, hours, day, days, year,
     +params.α_dd*params.μ_dd*DDᶜ
     +params.μ_dom*DOM*params.Rd_dom
 )
+
 @inline ALK_forcing(x, y, z, t, NO₃, NH₄, P, Z, D, DD, Dᶜ, DDᶜ, DOM, DIC, ALK, PAR, params) = (
     params.μ_p*Lₚₐᵣ(PAR, params)*L_NO₃(NO₃, NH₄, params)*P
     -2*params.ρ_caco3*params.μ_p*Lₚₐᵣ(PAR, params)*(L_NO₃(NO₃, NH₄, params)+L_NH₄(NH₄, params))*params.Rd_phy*P

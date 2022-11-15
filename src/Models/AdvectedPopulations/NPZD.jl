@@ -99,7 +99,7 @@ end
     return growth - grazing - metabolic_loss - mortality_loss + sinking # hopefully sinking is signed right if we pass sinking speed as a positive number
 end
 
-@inline function (bgc::NutrientPhytoplanktonZooplanktonDetritus)(i, j, k, grid, ::Val{:P}, clock, fields)
+@inline function (bgc::NutrientPhytoplanktonZooplanktonDetritus)(i, j, k, grid, ::Val{:Z}, clock, fields)
     P, Z, T = get_fields(i, j, k, (:P, :Z, :T), fields)
 
     grazing = bgc.β*bgc.gₘₐₓ*nutrient_limitation(P^2, bgc.kₚ^2)*Z
