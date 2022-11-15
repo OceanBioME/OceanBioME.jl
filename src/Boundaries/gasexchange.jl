@@ -1,3 +1,12 @@
+#####
+##### Gas exchange model of [Wanninkhof1992](@cite)
+#####
+# TODO: Impliment Ho et al. 2006 wind speed dependence
+
+##### 
+##### Carbonate chemistry to determine pCO₂
+#####
+
 @inline CA_eq(H, params) = params.ALK - (params.KB/(params.KB + H))*params.Boron
 @inline H_eq(H, params) = CA_eq(H, params)*H^2 + params.K1*(CA_eq(H, params)-params.DIC)*H + params.K1*params.K2*(CA_eq(H, params)-2*params.DIC)
 
@@ -39,7 +48,7 @@ function airseaflux(x, y, t, T::AbstractFloat, S::AbstractFloat, conc::AbstractF
     if params.gas in (:O₂, )#doing like this for flexability in the future
         return k(params.gas, T, params)*(conc-α(params.gas, T, S, params)*getproperty(params.conc_air, params.gas))
     elseif params.gas in (:CO₂, )
-        return K(params.gas, T, S, params)*(conc-getproperty(params.conc_air, params.gas)*params.pAir)/1000#μatm/m²s to mmolC/m²s not sure this is correct
+        return K(params.gas, T, S, params)*(conc-getproperty(params.conc_air, params.gas)*params.pAir)/1000#μmol/m²s to mmolC/m²s not sure this is correct
     else
         throw(ArgumentError("Invalid gas choice for airseaflux"))
     end
@@ -55,6 +64,23 @@ end
 
 airseaflux(x, y, t, conc, params) = airseaflux(x, y, t, params.T(x, y, 0, t), params.S(x, y, 0, t), conc, params)
 airseaflux(x, y, t, DIC, ALK, params) = airseaflux(x, y, t, DIC, ALK, params.T(x, y, 0, t), params.S(x, y, 0, t), params)
+
+#####
+##### Boundary condition setup
+#####
+"""
+    airseasetup(gas::Symbol; forcing=(T=nothing, S=nothing), parameters=defaults.airseaflux)
+Returns an Oceananigans `FluxBoundaryCondition` for the tracer relivant to the specified gas (i.e. DIC for CO₂ and oxygen for O₂).
+Arguments
+=========
+* `gas`: Symbol specifying the gas to exchange into the water, current choices are `:CO₂` and `:O₂`
+Keyword arguments
+=================
+* `forcing`: NamedTuple of functions in the form `func(x, y, z, t)` for temperature, `T`, and salinity `S`
+    Optional as the fallback is to look for tracer fields by these names (the prefered method where the physics are being resolved).
+* `parameters`: NamedTuple of parameters to replace the defaults
+"""
+
 
 function airseasetup(gas::Symbol; forcings=(T=nothing, S=nothing), parameters=defaults.airseaflux)
     #don't like this but oh well
