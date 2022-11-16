@@ -136,17 +136,16 @@ using Oceananigans.Units: second, minute, minutes, hour, hours, day, days, year,
 ##### Carbonate chemistry (optional)
 #####
 
-@inline DIC_forcing(x, y, z, t, NO₃, NH₄, P, Z, D, DD, Dᶜ, DDᶜ, DOM, DIC, ALK, PAR, params) = (
-    -params.μ_p*Lₚₐᵣ(PAR, params)*(L_NO₃(NO₃, NH₄, params)
-    +L_NH₄(NH₄, params))*params.Rd_phy*(1+params.ρ_caco3)*P
+@inline DIC_forcing(x, y, z, t, NO₃, NH₄, P, Z, D, DD, Dᶜ, DDᶜ, DOM, PAR, DIC, ALK, params) = (
+    -params.μ_p*Lₚₐᵣ(PAR, params)*(L_NO₃(NO₃, NH₄, params) + L_NH₄(NH₄, params))*params.Rd_phy*(1+params.ρ_caco3)*P
     +params.α_p*params.γ*params.μ_p*Lₚₐᵣ(PAR, params)*(L_NO₃(NO₃, NH₄, params)+L_NH₄(NH₄, params))*params.Rd_phy*P
     +params.α_z*params.μ_z*params.Rd_phy*Z
-    +params.α_d*params.μ_d*Dᶜ # this is equivilant to (Dᶜ/D)*D which is the same as Rd*D for a fixed stocheometry
-    +params.α_dd*params.μ_dd*DDᶜ
+    #+params.α_d*params.μ_d*D*(Dᶜ/(D+eps(0.0)))
+    #+params.α_dd*params.μ_dd*DD*(DDᶜ/(DD+eps(0.0)))
     +params.μ_dom*DOM*params.Rd_dom
 )
 
-@inline ALK_forcing(x, y, z, t, NO₃, NH₄, P, Z, D, DD, Dᶜ, DDᶜ, DOM, DIC, ALK, PAR, params) = (
+@inline ALK_forcing(x, y, z, t, NO₃, NH₄, P, Z, D, DD, Dᶜ, DDᶜ, DOM, PAR, DIC, ALK, params) = (
     params.μ_p*Lₚₐᵣ(PAR, params)*L_NO₃(NO₃, NH₄, params)*P
     -2*params.ρ_caco3*params.μ_p*Lₚₐᵣ(PAR, params)*(L_NO₃(NO₃, NH₄, params)+L_NH₄(NH₄, params))*params.Rd_phy*P
 )
@@ -156,7 +155,7 @@ using Oceananigans.Units: second, minute, minutes, hour, hours, day, days, year,
 #####
 
 # XXX there is a typo in https://agupubs.onlinelibrary.wiley.com/doi/10.1029/2010JC006446 so I am not sure the first term of this is correct, but this makes sense
-@inline OXY_forcing(x, y, z, t, NO₃, NH₄, P, Z, D, DD, Dᶜ, DDᶜ, DOM, OXY, PAR, params) = (
+@inline OXY_forcing(x, y, z, t, NO₃, NH₄, P, Z, D, DD, Dᶜ, DDᶜ, DOM, PAR, OXY, params) = (
     params.μ_p*Lₚₐᵣ(PAR, params)*L_NO₃(NO₃, NH₄, params)*params.Rd_oxy*P
     - (params.Rd_oxy-params.Rd_nit)*NH₄_forcing(x, y, z, t, NO₃, NH₄, P, Z, D, DD, Dᶜ, DDᶜ, DOM, PAR, params) 
     - params.Rd_oxy*params.μ_n*NH₄ 
@@ -173,7 +172,7 @@ optional_tracers=(carbonates=(:DIC, :ALK), oxygen=(:OXY,))
 
 forcing_functions=(NO₃=NO₃_forcing, NH₄=NH₄_forcing, P=P_forcing, Z=Z_forcing, D=D_forcing, DD=DD_forcing, Dᶜ = Dᶜ_forcing, DDᶜ = DDᶜ_forcing, DOM=DOM_forcing, DIC=DIC_forcing, ALK=ALK_forcing, OXY=OXY_forcing)
 
-sinking = (D = D_sinking, DD=DD_sinking, Dᶜ = D_sinking, DDᶜ=DD_sinking)
+sinking = (D = D_sinking, DD = DD_sinking, Dᶜ = D_sinking, DDᶜ = DD_sinking)
 required_fields = (:PAR, )
 requried_parameters = NamedTuple()
 

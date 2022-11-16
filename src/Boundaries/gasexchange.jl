@@ -8,7 +8,6 @@
 #####
 
 @inline CA_eq(H, params) = params.ALK - (params.KB/(params.KB + H))*params.Boron
-
 @inline H_eq(H, params) = CA_eq(H, params)*H^2 + params.K1*(CA_eq(H, params)-params.DIC)*H + params.K1*params.K2*(CA_eq(H, params)-2*params.DIC)
 
 function pCO₂(DIC, ALK, T, S, params)
@@ -25,18 +24,15 @@ function pCO₂(DIC, ALK, T, S, params)
 
     H = 10^(-params.pH) # initial guess from arg list
 
-    p=(DIC=DIC, ALK=ALK, K0=K0, K1=K1, K2=K2, KB=KB, Boron=Boron)
+    p = (DIC=DIC, ALK=ALK, K0=K0, K1=K1, K2=K2, KB=KB, Boron=Boron)
 
     H = find_zero(H_eq, H, atol=1e-100, p=p)
     CA = CA_eq(H, p)
-
-    CO2aq = CA/(K1/H + 2*K1*K2/H^2)*1e6 # Eq 11  μmol/kg
-    return CO2aq/K0 #ppm
+    
+    #pH = -log10(H)
+    CO2aq = 1e6*CA/(K1/H + 2*K1*K2/H^2) # Eq 11  μmol/kg
+    return CO2aq/K0 #μatm
 end
-
-#####
-##### Gas exchange velocity
-#####
 
 k(gas::Symbol, T, params)=0.39*(0.01/3600)*params.uₐᵥ^2*(Sc(T, getproperty(params.Sc_params, gas))/660)^(-0.5)#m/s, may want to add variable wind speed instead of average wind here at some point
 Sc(T, params) = params.A-params.B*T+params.C*T^2-params.D*T^3
@@ -47,16 +43,12 @@ Sc(T, params) = params.A-params.B*T+params.C*T^2-params.D*T^3
 #now fairly sure that this is giving the correct result for CO₂  as βρ is the henrys coefficient which sould be ∼34mol/m³ atm
 K(gas::Symbol, T, S, params)=k(gas, T, params)*β(T+273.15, S, getproperty(params.β_params, gas))*params.ρₒ #L=ρ\_wK₀ ->  https://reader.elsevier.com/reader/sd/pii/0304420374900152 and here K₀=β
 
-#####
-##### Air sea gas flux boundary functions
-#####
-
 function airseaflux(x, y, t, T::AbstractFloat, S::AbstractFloat, conc::AbstractFloat, params)
     #https://agupubs.onlinelibrary.wiley.com/doi/epdf/10.1029/92JC00188 could add chemical enhancement factor
     if params.gas in (:O₂, )#doing like this for flexability in the future
         return k(params.gas, T, params)*(conc-α(params.gas, T, S, params)*getproperty(params.conc_air, params.gas))
     elseif params.gas in (:CO₂, )
-        return K(params.gas, T, S, params)*(conc-getproperty(params.conc_air, params.gas))/(1000)#mol*ppmv/m^2*atm*s to mmolC/m²s not sure this is correct
+        return K(params.gas, T, S, params)*(conc-getproperty(params.conc_air, params.gas)*params.pAir)/1000#μmol/m²s to mmolC/m²s not sure this is correct
     else
         throw(ArgumentError("Invalid gas choice for airseaflux"))
     end
@@ -78,7 +70,6 @@ airseaflux(x, y, t, DIC, ALK, params) = airseaflux(x, y, t, DIC, ALK, params.T(x
 #####
 """
     airseasetup(gas::Symbol; forcing=(T=nothing, S=nothing), parameters=defaults.airseaflux)
-
 Returns an Oceananigans `FluxBoundaryCondition` for the tracer relivant to the specified gas (i.e. DIC for CO₂ and oxygen for O₂).
 Arguments
 =========
@@ -90,7 +81,9 @@ Keyword arguments
 * `parameters`: NamedTuple of parameters to replace the defaults
 """
 
+
 function airseasetup(gas::Symbol; forcings=(T=nothing, S=nothing), parameters=defaults.airseaflux)
+    #don't like this but oh well
     if !(gas in keys(parameters.Sc_params))
         throw(ArgumentError("Boundary conditions not defined for gas $gas, available are $(keys(parameters.Sc_params))"))
     end
