@@ -105,8 +105,8 @@ function equations(x::AbstractFloat, y::AbstractFloat, z::AbstractFloat, t::Abst
         r = _r(T, μ, j_NO₃ + j_NH₄, params)
 
         dA = (μ - ν) * A / (60*60*24)
-        dN = ((j_NO₃ + j_NH₄ - p*e*14/(12*6.56)) / params.K_A - μ * (N + params.N_struct)) / (60*60*24)
-        dC = ((p* (1 - e) - r) / params.K_A - μ * (C + params.C_struct)) / (60*60*24)
+        dN = ((j_NO₃ + j_NH₄ - p * e * 14/(12*6.56)) / params.K_A - μ * (N + params.N_struct)) / (60*60*24)
+        dC = ((p * (1 - e) - r) / params.K_A - μ * (C + params.C_struct)) / (60*60*24)
 
         A_new = A+dA*Δt 
         N_new = N+dN*Δt 
@@ -117,7 +117,7 @@ function equations(x::AbstractFloat, y::AbstractFloat, z::AbstractFloat, t::Abst
             C_new = params.C_min
         end
 
-        pp = (p-r)*A / (60*60*24*12*0.001) #gC/dm^2/hr to mmol C/s
+        pp = (p - r)*A / (60*60*24*12*0.001) #gC/dm^2/hr to mmol C/s
         e *= p*A / (60*60*24*12*0.001)#mmol C/s
         νⁿ = ν*params.K_A*A*(params.N_struct + N) / (60*60*24*14*0.001)#1/hr to mmol N/s
         νᶜ = ν*params.K_A*A*(params.C_struct + C) / (60*60*24*12*0.001)#1/hr to mmol C/s
@@ -249,6 +249,8 @@ struct Particle
     NO₃  :: AbstractFloat
     NH₄  :: AbstractFloat
     PAR :: AbstractFloat
+    T :: AbstractFloat
+    S :: AbstractFloat
 end
 
 default_tracers = (NO₃ = :NO₃, PAR=:PAR) # tracer = property
@@ -269,7 +271,7 @@ function defineparticles(initials, n)
             throw(ArgumentError("Invalid initial values given for $var, must be a single number or vector of length n"))
         end
     end
-    return StructArray{Particle}((x̄₀[1], x̄₀[2], x̄₀[3], zeros(n), zeros(n), zeros(n), x̄₀[4], x̄₀[5], x̄₀[6], [zeros(n) for i in 1:10]...))
+    return StructArray{Particle}((x̄₀[1], x̄₀[2], x̄₀[3], zeros(n), zeros(n), zeros(n), x̄₀[4], x̄₀[5], x̄₀[6], [zeros(n) for i in 1:12]...))
 end
 
 @inline no_dynamics(args...) = nothing
@@ -339,7 +341,7 @@ function setup(n, x₀, y₀, z₀, A₀, N₀, C₀, latitude;
         if tracer in optional_tracer_dependencies
             tracers = merge(tracers, NamedTuple{(tracer, )}((getproperty(optional_tracer_dependencies, tracer), )))
         end
-        if tracer in optional_tracer_coupling
+        if tracer in keys(optional_tracer_coupling)
             coupled = merge(coupled, NamedTuple{(tracer, )}((getproperty(optional_tracer_coupling, tracer), )))
         end
     end
