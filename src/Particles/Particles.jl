@@ -132,7 +132,7 @@ function ActiveLagrangianParticles(particles::StructArray;
                                                         scalefactor::AbstractFloat = 1.0, 
                                                         custom_dynamics=no_dynamics)
     
-    required_fields = (equation_arguments..., prognostic..., diagnostic..., keys(tracked_fields)..., keys(coupled_fields)...)
+    required_fields = (equation_arguments..., prognostic..., diagnostic..., keys(tracked_fields)..., values(coupled_fields)...)
     for property in required_fields
         if !(property in propertynames(particles))
             throw(ArgumentError("$property is a required particle property but $(eltype(particles)) has no property $property."))
