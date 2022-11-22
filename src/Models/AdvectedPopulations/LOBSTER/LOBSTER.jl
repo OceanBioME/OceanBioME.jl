@@ -180,6 +180,7 @@ end
 const small_detritus = Union{Val{:D}, Val{:Dᶜ}}
 const large_detritus = Union{Val{:DD}, Val{:DDᶜ}}
 
+# not sure this is the most computationally efficient method
 @inline biogeochemical_drift_velocity(bgc::LOBSTER, ::Val{:Dᶜ}) = biogeochemical_drift_velocity(bgc, Val(:D))
 @inline biogeochemical_drift_velocity(bgc::LOBSTER, ::Val{:DDᶜ}) = biogeochemical_drift_velocity(bgc, Val(:DD))
 

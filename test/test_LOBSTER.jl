@@ -13,7 +13,7 @@ function test_LOBSTER(grid, carbonates, oxygen, sinking, open_bottom)
     end
 
     # correct tracers and auxiliary fields have been setup, and order has not changed
-    required_tracers = !(carbonates && oxygen) ? (:NO₃, :NH₄, :P, :Z, :D, :DD, :Dᶜ, :DDᶜ, :DOM) : 
+    required_tracers = !carbonates && !oxygen ? (:NO₃, :NH₄, :P, :Z, :D, :DD, :Dᶜ, :DDᶜ, :DOM) : 
                         (carbonates && !oxygen ? (:NO₃, :NH₄, :P, :Z, :D, :DD, :Dᶜ, :DDᶜ, :DOM, :DIC, :ALK) :
                         (oxygen && !carbonates ? (:NO₃, :NH₄, :P, :Z, :D, :DD, :Dᶜ, :DDᶜ, :DOM, :OXY) :
                                                  (:NO₃, :NH₄, :P, :Z, :D, :DD, :Dᶜ, :DDᶜ, :DOM, :DIC, :ALK, :OXY)))
@@ -29,7 +29,7 @@ function test_LOBSTER(grid, carbonates, oxygen, sinking, open_bottom)
     @test all([all(values .== 0) for values in values(model.tracers)]) 
 
     # mass conservation
-    
+
     
     return nothing
 end
