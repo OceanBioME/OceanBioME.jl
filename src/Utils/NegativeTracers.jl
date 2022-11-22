@@ -4,6 +4,17 @@ using KernelAbstractions.Extras.LoopInfo: @unroll
 using Oceananigans.Utils: work_layout
 using Oceananigans.Architectures: device
 
+"""
+    zero_negative_tracers!(sim; params = (exclude=(), warn=false))
+
+Sets any tracers in `sim.model` which are negative to zero. Use like:
+```julia
+simulation.callbacks[:neg] = Callback(zero_negative_tracers!)
+```
+This is *NOT* a reccomended method to preserve positivity as it strongly does not conserve tracers.
+
+Tracers to exclude can be set in the parameters and if `params.warn` is set to true a warning will be displayed when negative values are modified.
+"""
 function zero_negative_tracers!(sim; params = (exclude=(), warn=false))
     @unroll for (tracer_name, tracer) in pairs(sim.model.tracers)
         if !(tracer_name in params.exclude)
@@ -13,6 +24,16 @@ function zero_negative_tracers!(sim; params = (exclude=(), warn=false))
     end
 end
 
+"""
+    error_on_neg(sim; params = (exclude=(), ))
+
+Throws an error if any tracers in `sim.model` are negative. Use like:
+```julia
+simulation.callbacks[:neg] = Callback(error_on_neg!)
+```
+
+Tracers to exclude can be set in the parameters.
+"""
 function error_on_neg!(sim; params = (exclude=(), ))
     @unroll for (tracer_name, tracer) in pairs(sim.model.tracers)
         if !(tracer_name in params.exclude)
@@ -21,6 +42,16 @@ function error_on_neg!(sim; params = (exclude=(), ))
     end
 end
 
+"""
+    warn_on_neg(sim; params = (exclude=(), ))
+
+Raises a warning if any tracers in `sim.model` are negative. Use like:
+```julia
+simulation.callbacks[:neg] = Callback(warn_on_neg!)
+```
+
+Tracers to exclude can be set in the parameters.
+"""
 function warn_on_neg!(sim; params = (exclude=(), ))
     @unroll for (tracer_name, tracer) in pairs(sim.model.tracers)
         if !(tracer_name in params.exclude)
@@ -28,6 +59,10 @@ function warn_on_neg!(sim; params = (exclude=(), ))
         end
     end
 end
+
+#####
+##### Infastructure to rescale negative values
+#####
 
 @kernel function scale_for_negs!(fields, warn)
     i, j, k = @index(Global, NTuple)
@@ -48,6 +83,18 @@ end
     end
 end
 
+"""
+    scale_negative_tracers!(sim, params=(conserved_group = (), warn=false))
+
+Scales tracers in `conserved_group` so that none are negative. Use like:
+```julia
+simulation.callbacks[:neg] = Callback(scale_negative_tracers!; parameters=(conserved_group=(:NO₃, :NH₄, :P, :Z, :D, :DD, :DOM), warn=false))
+```
+This is a better but imperfect way to prevent numerical errors causing negative tracers. Please see discussion [here](https://github.com/OceanBioME/OceanBioME.jl/discussions/48). 
+We plan to impliment positivity preserving timestepping in the future as the perfect alternative.
+
+Tracers conserve should be set in the parameters and if `params.warn` is set to true a warning will be displayed when negative values are modified.
+"""
 function scale_negative_tracers!(sim, params=(conserved_group = (), warn=false)) #this can be used to conserve sub groups e.g. just saying NO₃ and NH₄ 
     workgroup, worksize = work_layout(sim.model.grid, :xyz)
     scale_for_negs_kernel! = scale_for_negs!(device(sim.model.grid.architecture), workgroup, worksize)

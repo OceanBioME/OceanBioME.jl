@@ -1,0 +1,3 @@
+# [The Lodyc Ocean Biogeochemical Simulation Tools for Ecosystem and Resources (LOBSTER)](@id LOBSTER)
+
+LOBSTER is a medium complexity BGC model with seven core prognostic variables: phytoplankton, zooplankton, small and large detritus, nitrates, ammonia, and dissolved organic matter. LOBSTER was originally proposed by in [Levy2005](@cite) and subsequently added to by [Levy2001](@cite), [Resplandy2009](@cite), [Karleskind2011](@cite), and [Resplandy2012](@cite). It now also includes optional carbonate chemistry (dissolved inorganic carbon and alkalinity), and oxygen models which both may be coupled with [air-sea gas exchange models](@ref air-sea-gas).

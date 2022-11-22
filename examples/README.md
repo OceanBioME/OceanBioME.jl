@@ -1,7 +1,8 @@
 # Ocean Biogeochemial Modelling Environment Examples
 
 ## box.jl
-This script illustrates how to run OceanBioME as a box model.
+In this example we will setup a [LOBSTER](@ref LOBSTER) biogeochemical model in a single box configuration. This demonstrates:
+- How to setup OceanBioME's biogeochemical models as box models
 
 ## column.jl
 In this example we will setup a simple 1D column with the [LOBSTER](@ref LOBSTER) biogeochemical model and observe its evolution. This demonstrates:
@@ -34,9 +35,10 @@ The forcing data for this example is automatically downloaded before running, an
 
 
 ## sediment.jl
-<del>This script illustrates how to run OceanBioME as a 1D column model using the LOBSTER biogeochemical model using a PAR timeseries from the North Atlantic subpolar gyre. 
-This script also shows how to read in data files (in netCDF format) for forcing the model. 
-In this case, the script reads in the mixed layer depth from the Mercator Ocean state esimate and uses this to construct an idealized diffusivity profile. 
-The script also reads in a timeseries of the photosynthetically available radiation for forcing the LOBSTER model</del>
-
-The sediment example currently doesn't really work
+In this example we will setup a simple 1D column with the [LOBSTER](@ref LOBSTER) biogeochemical model with a sediment model coupled providing the bottom boundary condition. This shows:
+- How to setup OceanBioME's biogeochemical models
+- How to setup light attenuation
+- How to add a sediment (or other complicated) boundary model
+- How to include optional tracer sets (carbonate chemistry and oxygen)
+- How to visulise results
+> WARNING: This sediment model is currently wrong and will not produce correct results

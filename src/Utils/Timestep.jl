@@ -2,6 +2,11 @@ using Oceananigans.TurbulenceClosures: min_Δxyz, cell_diffusion_timescale, form
 using Oceananigans.Units: day, minutes
 using Oceananigans.BoundaryConditions: getbc
 using Oceananigans: fields
+
+#####
+##### Find minimum diffusion timescale
+#####
+
 function minimum_timescale(κ::Function, grid, t::Number) 
     if !(grid.Nz==1 && grid.Ny ==1)
         Δz = isa(grid.Δzᵃᵃᶜ, Number) ? grid.Δzᵃᵃᶜ : grid.Δzᵃᵃᶜ[1:grid.Nz]
@@ -28,6 +33,9 @@ function diffusion_timescale(model, grid; t=[1.0:365.0;].*day)
     end
 end
 
+#####
+##### Find forcing error timescale
+#####
 function forcing_error_timescale(model)
     min_forcing = Inf
     
@@ -46,7 +54,21 @@ function forcing_error_timescale(model)
     return min_forcing
 end
 
-function update_timestep!(sim, params=(w=200/day, c_diff = 0.45, c_adv = 0.45, relaxation=0.75))#, c_boundary=0.01))#oqff by default as computationally intensive and not limiting (as far as I can see)
+"""
+    update_timestep!(sim, params=(w=200/day, c_diff = 0.45, c_adv = 0.45, relaxation=0.75))
+
+Adapts the timestep (Δt) of `sim` to maintain stability.
+
+Parameters
+========
+* `w`: maximum velocity for AdvectiveForcing
+* `c_adv`: advective Courant number
+* `c_diff`: diffusive Courant number
+* `c_forcing`: forcing Courant number
+* `Δt_max`: maximum timestep
+* `relaxation`: exponent damping where Δtⁱ⁺¹ = Δtⁱ*(Cₘₐₓ/C)^relaxation
+"""
+function update_timestep!(sim, params=(w=200/day, c_diff = 0.45, c_adv = 0.45, relaxation=0.75))
     Δt_diff = :c_diff in keys(params) ? sim.Δt^(1-params.relaxation)*(params.c_diff*OceanBioME.diffusion_timescale(sim.model, sim.model.grid; t=sim.model.clock.time))^params.relaxation : Inf
     Δt_adv = :c_adv in keys(params) ? sim.Δt^(1-params.relaxation)*(params.c_adv/(abs(params.w)/OceanBioME.min_Δz(sim.model.grid)))^params.relaxation : Inf #replace with some way to check the actual max sinking velocity
     Δt_forcing = :c_forcing in keys(params) ? sim.Δt^(1-params.relaxation) * (params.c_forcing*forcing_error_timescale(sim.model))^params.relaxation : Inf

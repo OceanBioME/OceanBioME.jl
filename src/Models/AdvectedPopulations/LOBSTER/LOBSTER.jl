@@ -1,3 +1,34 @@
+"""
+The Lodyc Ocean Biogeochemical Simulation Tools for Ecosystem and Resources (LOBSTER) model
+
+Tracers
+========
+* Nitrates: NO₃ (mmol N/m³)
+* Ammonia: NH₄ (mmol N/m³)
+* Phytoplankton: P (mmol N/m³)
+* Zooplankton: Z (mmol N/m³)
+* Small (slow sinking) detritus: D (mmol N/m³)
+* Large (fast sinking) detritus: DD (mmol N/m³)
+* Small (slow sinking) detritus carbon content: Dᶜ (mmol C/m³)
+* Large (fast sinking) detritus carbon content: DDᶜ (mmol C/m³)
+* Disolved organic matter: DOM (mmol N/m³)
+
+Optional tracers
+===========
+* Disolved inorganic carbon: DIC (mmol C/m³)
+* Alkalinity: ALK (mmol ⁻/m³)
+
+* Oxygen: OXY (mmol O₂/m³)
+
+Required forcing
+===========
+* Photosynthetically available radiation: PAR (W/m²)
+
+For optional tracers:
+* Temperature: T (ᵒC)
+* Salinity: S (‰)
+"""
+
 using Oceananigans.Biogeochemistry: AbstractContinuousFormBiogeochemistry, all_fields_present
 using Oceananigans.Units
 using Oceananigans.Advection: CenteredSecondOrder
