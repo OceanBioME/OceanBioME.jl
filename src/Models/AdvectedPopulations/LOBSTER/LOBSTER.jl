@@ -1,9 +1,10 @@
-using Oceananigans.Biogeochemistry: AbstractContinuousFormBiogeochemistry, all_fields_present, maybe_velocity_fields
+using Oceananigans.Biogeochemistry: AbstractContinuousFormBiogeochemistry, all_fields_present
 using Oceananigans.Units
 using Oceananigans.Advection: CenteredSecondOrder
 using Oceananigans.Fields: Field, TracerFields, CenterField
 
 using OceanBioME.Light: TwoBandPhotosyntheticallyActiveRatiation
+using OceanBioME: setup_velocity_fields
 
 import Oceananigans.Biogeochemistry:
        required_biogeochemical_tracers,
@@ -88,10 +89,13 @@ struct LOBSTER{FT, L, SPAR, B, W, A} <: AbstractContinuousFormBiogeochemistry
                       oxygen = false,
                 
                       sinking_velocities = (D = (0.0, 0.0, -3.47e-5), DD = (0.0, 0.0, -200/day)),
+                      open_bottom = true,
                       advection_schemes::A = NamedTuple{keys(sinking_velocities)}(repeat([CenteredSecondOrder()], 
                                                                                     length(sinking_velocities)))) where {FT, L, SPAR, A}
 
-        sinking_velocities = maybe_velocity_fields(sinking_velocities)
+        
+
+        sinking_velocities = setup_velocity_fields(sinking_velocities, grid, open_bottom)
         W = typeof(sinking_velocities)
         optionals = Val((carbonates, oxygen))
         B = typeof(optionals)
@@ -145,11 +149,11 @@ end
 const small_detritus = Union{Val{:D}, Val{:Dᶜ}}
 const large_detritus = Union{Val{:DD}, Val{:DDᶜ}}
 
-@inline biogeochemical_drift_velocity(bgc::LOBSTER, ::small_detritus) = bgc.sinking_velocity.D
-@inline biogeochemical_drift_velocity(bgc::LOBSTER, ::large_detritus) = bgc.sinking_velocity.DD
+@inline biogeochemical_drift_velocity(bgc::LOBSTER, ::small_detritus) = bgc.sinking_velocities.D
+@inline biogeochemical_drift_velocity(bgc::LOBSTER, ::large_detritus) = bgc.sinking_velocities.DD
 
-@inline biogeochemical_advection_scheme(bgc::LOBSTER, ::small_detritus) = bgc.advection_scheme.D
-@inline biogeochemical_advection_scheme(bgc::LOBSTER, ::large_detritus) = bgc.advection_scheme.DD
+@inline biogeochemical_advection_scheme(bgc::LOBSTER, ::small_detritus) = bgc.advection_schemes.D
+@inline biogeochemical_advection_scheme(bgc::LOBSTER, ::large_detritus) = bgc.advection_schemes.DD
 
 @inline function validate_biogeochemistry(tracers, auxiliary_fields, bgc::LOBSTER, grid, clock)
     req_tracers = required_biogeochemical_tracers(bgc)
