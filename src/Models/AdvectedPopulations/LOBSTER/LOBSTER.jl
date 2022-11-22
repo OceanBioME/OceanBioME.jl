@@ -1,0 +1,144 @@
+using Oceananigans.Biogeochemistry: AbstractBiogeochemistry, maybe_velocity_fields
+using Oceananigans.Units
+using Oceananigans.Advection: CenteredSecondOrder
+
+import Oceananigans.Biogeochemistry:
+       required_biogeochemical_tracers,
+       required_biogeochemical_auxiliary_fields,
+       biogeochemical_drift_velocity,
+       biogeochemical_advection_scheme
+
+
+struct LOBSTER{FT, B, W, A} <: AbstractBiogeochemistry
+    phytoplankton_preference :: FT
+    maximum_grazing_rate :: FT
+    grazing_half_saturation :: FT
+    light_half_saturation :: FT
+    nitrate_ammonia_inhibition :: FT
+    nitrate_half_saturation :: FT
+    ammonia_half_saturation :: FT
+    maximum_phytoplankton_growthrate :: FT
+    zooplankton_assimilation_fraction :: FT
+    zooplankton_mortality :: FT
+    zooplankton_excretion_rate :: FT
+    phytoplankon_mortality :: FT
+    small_detritus_remineralisation_rate :: FT
+    large_detritus_remineralisation_rate :: FT
+    phytoplankton_exudation_fraction :: FT
+    nitrifcaiton_rate :: FT
+    ammonia_fraction_of_exudate :: FT
+    ammonia_fraction_of_excriment :: FT
+    ammonia_fraction_of_detritus :: FT
+    phytoplankton_redfield :: FT
+    disolved_organic_redfield :: FT
+    phytoplankton_chlorophyll_ratio :: FT
+    organic_carbon_calcate_ratio :: FT
+    respiraiton_oxygen_nitrogen_ratio :: FT
+    nitrifcation_oxygen_nitrogen_ratio :: FT
+    slow_sinking_mortality_fraction :: FT
+    fast_sinking_mortality_fraction :: FT
+    disolved_organic_breakdown_rate :: FT
+
+    optionals :: B
+
+    sinking_velocities :: W
+    advection_schemes :: A
+
+    function LOBSTER(;phytoplankton_preference::FT = 0.5,
+                      maximum_grazing_rate::FT = 9.26e-6, # 1/s
+                      grazing_half_saturation::FT = 1.0, # mmol N/m³
+                      light_half_saturation::FT = 33.0, # W/m² (?)
+                      nitrate_ammonia_inhibition::FT = 3.0,
+                      nitrate_half_saturation::FT = 0.7, # mmol N/m³
+                      ammonia_half_saturation::FT = 0.001, # mmol N/m³
+                      maximum_phytoplankton_growthrate::FT = 1.21e-5, # 1/s
+                      zooplankton_assimilation_fraction::FT = 0.7,
+                      zooplankton_mortality::FT = 2.31e-6, # 1/s/mmol N/m³
+                      zooplankton_excretion_rate::FT = 5.8e-7, # 1/s
+                      phytoplankon_mortality::FT = 5.8e-7, # 1/s
+                      small_detritus_remineralisation_rate::FT = 5.88e-7, # 1/s
+                      large_detritus_remineralisation_rate::FT = 5.88e-7, # 1/s
+                      phytoplankton_exudation_fraction::FT = 0.05,
+                      nitrifcaiton_rate::FT = 5.8e-7, # 1/s
+                      ammonia_fraction_of_exudate::FT = 0.75, 
+                      ammonia_fraction_of_excriment::FT = 0.5,
+                      ammonia_fraction_of_detritus::FT = 0.0,
+                      phytoplankton_redfield::FT = 6.56, # mol C/mol N
+                      disolved_organic_redfield::FT = 6.56, # mol C/mol N
+                      phytoplankton_chlorophyll_ratio::FT = 1.31, # mol Chl/mol N
+                      organic_carbon_calcate_ratio::FT = 0.1, # mol CaCO₃/mol N
+                      respiraiton_oxygen_nitrogen_ratio::FT = 10.75, # mol O/molN
+                      nitrifcation_oxygen_nitrogen_ratio::FT = 2.0, # mol O/molN
+                      slow_sinking_mortality_fraction::FT = 0.5, 
+                      fast_sinking_mortality_fraction::FT = 0.5,
+                      disolved_organic_breakdown_rate::FT = 3.86e-7, # 1/s
+
+                      carbonates = true,
+                      oxygen = false,
+                
+                      sinking_velocities = (D = (0.0, 0.0, -3.47e-5), DD = (0.0, 0.0, -200/day)),
+                      advection_schemes::A = NamedTuple{keys(sinking_velocities)}(repeat([CenteredSecondOrder()], 
+                                                                                    length(sinking_velocities)))) where {FT, A}
+
+        sinking_velocities = maybe_velocity_fields(sinking_velocities)
+        W = typeof(sinking_velocities)
+        optionals = Val((carbonates, oxygen))
+        B = typeof(optionals)
+
+        return new{FT, B, W, A}(phytoplankton_preference,
+                                maximum_grazing_rate,
+                                grazing_half_saturation,
+                                light_half_saturation,
+                                nitrate_ammonia_inhibition,
+                                nitrate_half_saturation,
+                                ammonia_half_saturation,
+                                maximum_phytoplankton_growthrate,
+                                zooplankton_assimilation_fraction,
+                                zooplankton_mortality,
+                                zooplankton_excretion_rate,
+                                phytoplankon_mortality,
+                                small_detritus_remineralisation_rate,
+                                large_detritus_remineralisation_rate,
+                                phytoplankton_exudation_fraction,
+                                nitrifcaiton_rate,
+                                ammonia_fraction_of_exudate,
+                                ammonia_fraction_of_excriment,
+                                ammonia_fraction_of_detritus,
+                                phytoplankton_redfield,
+                                disolved_organic_redfield,
+                                phytoplankton_chlorophyll_ratio,
+                                organic_carbon_calcate_ratio,
+                                respiraiton_oxygen_nitrogen_ratio,
+                                nitrifcation_oxygen_nitrogen_ratio,
+                                slow_sinking_mortality_fraction,
+                                fast_sinking_mortality_fraction,
+                                disolved_organic_breakdown_rate,
+
+                                optionals,
+                            
+                                sinking_velocities,
+                                advection_schemes)
+    end
+end
+
+@inline required_biogeochemical_tracers(::LOBSTER{<:Any, <:Val{(false, false)}, <:Any, <:Any}) = (:NO₃, :NH₄, :P, :Z, :D, :DD, :Dᶜ, :DDᶜ, :DOM)
+@inline required_biogeochemical_tracers(::LOBSTER{<:Any, <:Val{(true, false)}, <:Any, <:Any}) = (:NO₃, :NH₄, :P, :Z, :D, :DD, :Dᶜ, :DDᶜ, :DOM, :DIC, :ALK)
+@inline required_biogeochemical_tracers(::LOBSTER{<:Any, <:Val{(false, true)}, <:Any, <:Any}) = (:NO₃, :NH₄, :P, :Z, :D, :DD, :Dᶜ, :DDᶜ, :DOM, :OXY)
+@inline required_biogeochemical_tracers(::LOBSTER{<:Any, <:Val{(true, true)}, <:Any, <:Any}) = (:NO₃, :NH₄, :P, :Z, :D, :DD, :Dᶜ, :DDᶜ, :DOM, :DIC, :ALK, :OXY)
+
+@inline required_biogeochemical_auxiliary_fields(::LOBSTER) = (:PAR, )
+
+const small_detritus = Union{Val{:D}, Val{:Dᶜ}}
+const large_detritus = Union{Val{:DD}, Val{:DDᶜ}}
+
+@inline biogeochemical_drift_velocity(bgc::LOBSTER, ::small_detritus) = bgc.sinking_velocity.D
+@inline biogeochemical_drift_velocity(bgc::LOBSTER, ::large_detritus) = bgc.sinking_velocity.DD
+
+@inline biogeochemical_advection_scheme(bgc::LOBSTER, ::small_detritus) = bgc.advection_scheme.D
+@inline biogeochemical_advection_scheme(bgc::LOBSTER, ::large_detritus) = bgc.advection_scheme.DD
+
+include("core.jl")
+include("carbonate_chemistry.jl")
+include("oxygen_chemistry.jl")
+
+include("fallbacks.jl")
