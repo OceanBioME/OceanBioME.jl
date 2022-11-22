@@ -29,7 +29,23 @@ function test_LOBSTER(grid, carbonates, oxygen, sinking, open_bottom)
     @test all([all(values .== 0) for values in values(model.tracers)]) 
 
     # mass conservation
+    model.tracers.NO₃ .= rand()
+    model.tracers.NH₄ .= rand()
+    model.tracers.P .= rand()
+    model.tracers.Z .= rand()
+    model.tracers.D .= rand()
+    model.tracers.DD .= rand()
+    model.tracers.Dᶜ .= model.tracers.D*model.biogeochemistry.phytoplankton_redfield
+    model.tracers.DDᶜ .= model.tracers.DD*model.biogeochemistry.phytoplankton_redfield
+    model.tracers.DOM .= rand()
 
+    ΣN₀ = sum(model.tracers.NO₃) + sum(model.tracers.NH₄) + sum(model.tracers.P) + sum(model.tracers.Z) + sum(model.tracers.D) + sum(model.tracers.DD) + sum(model.tracers.DOM)
+
+    time_step!(model, 1.0)
+
+    ΣN₁ = sum(model.tracers.NO₃) + sum(model.tracers.NH₄) + sum(model.tracers.P) + sum(model.tracers.Z) + sum(model.tracers.D) + sum(model.tracers.DD) + sum(model.tracers.DOM)
+    
+    @test ΣN₀ ≈ ΣN₁
     
     return nothing
 end
