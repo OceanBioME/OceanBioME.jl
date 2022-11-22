@@ -1,15 +1,19 @@
-using Oceananigans.Biogeochemistry: AbstractBiogeochemistry, maybe_velocity_fields
+using Oceananigans.Biogeochemistry: AbstractContinuousFormBiogeochemistry, all_fields_present, maybe_velocity_fields
 using Oceananigans.Units
 using Oceananigans.Advection: CenteredSecondOrder
+using Oceananigans.Fields: Field, TracerFields, CenterField
+
+using OceanBioME.Light: TwoBandPhotosyntheticallyActiveRatiation
 
 import Oceananigans.Biogeochemistry:
        required_biogeochemical_tracers,
        required_biogeochemical_auxiliary_fields,
        biogeochemical_drift_velocity,
-       biogeochemical_advection_scheme
+       biogeochemical_advection_scheme,
+       validate_biogeochemistry
 
 
-struct LOBSTER{FT, B, W, A} <: AbstractBiogeochemistry
+struct LOBSTER{FT, L, SPAR, B, W, A} <: AbstractContinuousFormBiogeochemistry
     phytoplankton_preference :: FT
     maximum_grazing_rate :: FT
     grazing_half_saturation :: FT
@@ -39,12 +43,16 @@ struct LOBSTER{FT, B, W, A} <: AbstractBiogeochemistry
     fast_sinking_mortality_fraction :: FT
     disolved_organic_breakdown_rate :: FT
 
+    light_attenuation_model :: L
+    surface_phytosynthetically_active_radiation :: SPAR
+
     optionals :: B
 
     sinking_velocities :: W
     advection_schemes :: A
 
-    function LOBSTER(;phytoplankton_preference::FT = 0.5,
+    function LOBSTER(;grid,
+                      phytoplankton_preference::FT = 0.5,
                       maximum_grazing_rate::FT = 9.26e-6, # 1/s
                       grazing_half_saturation::FT = 1.0, # mmol N/m³
                       light_half_saturation::FT = 33.0, # W/m² (?)
@@ -65,7 +73,7 @@ struct LOBSTER{FT, B, W, A} <: AbstractBiogeochemistry
                       ammonia_fraction_of_detritus::FT = 0.0,
                       phytoplankton_redfield::FT = 6.56, # mol C/mol N
                       disolved_organic_redfield::FT = 6.56, # mol C/mol N
-                      phytoplankton_chlorophyll_ratio::FT = 1.31, # mol Chl/mol N
+                      phytoplankton_chlorophyll_ratio::FT = 1.31, # mgChl/mol N
                       organic_carbon_calcate_ratio::FT = 0.1, # mol CaCO₃/mol N
                       respiraiton_oxygen_nitrogen_ratio::FT = 10.75, # mol O/molN
                       nitrifcation_oxygen_nitrogen_ratio::FT = 2.0, # mol O/molN
@@ -73,58 +81,64 @@ struct LOBSTER{FT, B, W, A} <: AbstractBiogeochemistry
                       fast_sinking_mortality_fraction::FT = 0.5,
                       disolved_organic_breakdown_rate::FT = 3.86e-7, # 1/s
 
+                      light_attenuation_model::L = TwoBandPhotosyntheticallyActiveRatiation, # user could specify some other model separatly (I think)
+                      surface_phytosynthetically_active_radiation::SPAR = t -> 100*max(0.0, cos(t*π/(12hours))),
+
                       carbonates = true,
                       oxygen = false,
                 
                       sinking_velocities = (D = (0.0, 0.0, -3.47e-5), DD = (0.0, 0.0, -200/day)),
                       advection_schemes::A = NamedTuple{keys(sinking_velocities)}(repeat([CenteredSecondOrder()], 
-                                                                                    length(sinking_velocities)))) where {FT, A}
+                                                                                    length(sinking_velocities)))) where {FT, L, SPAR, A}
 
         sinking_velocities = maybe_velocity_fields(sinking_velocities)
         W = typeof(sinking_velocities)
         optionals = Val((carbonates, oxygen))
         B = typeof(optionals)
 
-        return new{FT, B, W, A}(phytoplankton_preference,
-                                maximum_grazing_rate,
-                                grazing_half_saturation,
-                                light_half_saturation,
-                                nitrate_ammonia_inhibition,
-                                nitrate_half_saturation,
-                                ammonia_half_saturation,
-                                maximum_phytoplankton_growthrate,
-                                zooplankton_assimilation_fraction,
-                                zooplankton_mortality,
-                                zooplankton_excretion_rate,
-                                phytoplankon_mortality,
-                                small_detritus_remineralisation_rate,
-                                large_detritus_remineralisation_rate,
-                                phytoplankton_exudation_fraction,
-                                nitrifcaiton_rate,
-                                ammonia_fraction_of_exudate,
-                                ammonia_fraction_of_excriment,
-                                ammonia_fraction_of_detritus,
-                                phytoplankton_redfield,
-                                disolved_organic_redfield,
-                                phytoplankton_chlorophyll_ratio,
-                                organic_carbon_calcate_ratio,
-                                respiraiton_oxygen_nitrogen_ratio,
-                                nitrifcation_oxygen_nitrogen_ratio,
-                                slow_sinking_mortality_fraction,
-                                fast_sinking_mortality_fraction,
-                                disolved_organic_breakdown_rate,
+        return new{FT, L, SPAR, B, W, A}(phytoplankton_preference,
+                                         maximum_grazing_rate,
+                                         grazing_half_saturation,
+                                         light_half_saturation,
+                                         nitrate_ammonia_inhibition,
+                                         nitrate_half_saturation,
+                                         ammonia_half_saturation,
+                                         maximum_phytoplankton_growthrate,
+                                         zooplankton_assimilation_fraction,
+                                         zooplankton_mortality,
+                                         zooplankton_excretion_rate,
+                                         phytoplankon_mortality,
+                                         small_detritus_remineralisation_rate,
+                                         large_detritus_remineralisation_rate,
+                                         phytoplankton_exudation_fraction,
+                                         nitrifcaiton_rate,
+                                         ammonia_fraction_of_exudate,
+                                         ammonia_fraction_of_excriment,
+                                         ammonia_fraction_of_detritus,
+                                         phytoplankton_redfield,
+                                         disolved_organic_redfield,
+                                         phytoplankton_chlorophyll_ratio,
+                                         organic_carbon_calcate_ratio,
+                                         respiraiton_oxygen_nitrogen_ratio,
+                                         nitrifcation_oxygen_nitrogen_ratio,
+                                         slow_sinking_mortality_fraction,
+                                         fast_sinking_mortality_fraction,
+                                         disolved_organic_breakdown_rate,
 
-                                optionals,
-                            
-                                sinking_velocities,
-                                advection_schemes)
+                                         light_attenuation_model,
+                                         surface_phytosynthetically_active_radiation,
+
+                                         optionals,
+                                    
+                                         sinking_velocities,
+                                         advection_schemes)
     end
 end
 
-@inline required_biogeochemical_tracers(::LOBSTER{<:Any, <:Val{(false, false)}, <:Any, <:Any}) = (:NO₃, :NH₄, :P, :Z, :D, :DD, :Dᶜ, :DDᶜ, :DOM)
-@inline required_biogeochemical_tracers(::LOBSTER{<:Any, <:Val{(true, false)}, <:Any, <:Any}) = (:NO₃, :NH₄, :P, :Z, :D, :DD, :Dᶜ, :DDᶜ, :DOM, :DIC, :ALK)
-@inline required_biogeochemical_tracers(::LOBSTER{<:Any, <:Val{(false, true)}, <:Any, <:Any}) = (:NO₃, :NH₄, :P, :Z, :D, :DD, :Dᶜ, :DDᶜ, :DOM, :OXY)
-@inline required_biogeochemical_tracers(::LOBSTER{<:Any, <:Val{(true, true)}, <:Any, <:Any}) = (:NO₃, :NH₄, :P, :Z, :D, :DD, :Dᶜ, :DDᶜ, :DOM, :DIC, :ALK, :OXY)
+@inline required_biogeochemical_tracers(::LOBSTER{<:Any, <:Any, <:Any, <:Val{(false, false)}, <:Any, <:Any}) = (:NO₃, :NH₄, :P, :Z, :D, :DD, :Dᶜ, :DDᶜ, :DOM)
+@inline required_biogeochemical_tracers(::LOBSTER{<:Any, <:Any, <:Any, <:Val{(true, false)}, <:Any, <:Any}) = (:NO₃, :NH₄, :P, :Z, :D, :DD, :Dᶜ, :DDᶜ, :DOM, :DIC, :ALK)
+@inline required_biogeochemical_tracers(::LOBSTER{<:Any, <:Any, <:Any, <:Val{(false, true)}, <:Any, <:Any}) = (:NO₃, :NH₄, :P, :Z, :D, :DD, :Dᶜ, :DDᶜ, :DOM, :OXY)
+@inline required_biogeochemical_tracers(::LOBSTER{<:Any, <:Any, <:Any, <:Val{(true, true)}, <:Any, <:Any}) = (:NO₃, :NH₄, :P, :Z, :D, :DD, :Dᶜ, :DDᶜ, :DOM, :DIC, :ALK, :OXY)
 
 @inline required_biogeochemical_auxiliary_fields(::LOBSTER) = (:PAR, )
 
@@ -136,6 +150,18 @@ const large_detritus = Union{Val{:DD}, Val{:DDᶜ}}
 
 @inline biogeochemical_advection_scheme(bgc::LOBSTER, ::small_detritus) = bgc.advection_scheme.D
 @inline biogeochemical_advection_scheme(bgc::LOBSTER, ::large_detritus) = bgc.advection_scheme.DD
+
+@inline function validate_biogeochemistry(tracers, auxiliary_fields, bgc::LOBSTER, grid, clock)
+    req_tracers = required_biogeochemical_tracers(bgc)
+    tracers = TracerFields(all_fields_present(tracers, req_tracers, grid), grid)
+
+    if !(:PAR in keys(auxiliary_fields)) || isa(auxiliary_fields.PAR, Field)
+        PAR = bgc.light_attenuation_model(;grid, P = tracers.P, clock=clock, surface_intensity = bgc.surface_phytosynthetically_active_radiation)
+        return tracers, merge(auxiliary_fields, (; PAR))
+    else
+        return tracers, auxiliary_fields
+    end
+end
 
 include("core.jl")
 include("carbonate_chemistry.jl")
