@@ -5,8 +5,9 @@ function setup_velocity_fields(drift_speeds, grid, open_bottom)
     drift_velocities = []
     for (u, v, w) in values(drift_speeds)
         if isa(values(w), Number)
+            u, v = maybe_constant_field.((u, v))
             if open_bottom
-                u, v, w = maybe_constant_field.((u, v, w))
+                w = maybe_constant_field(w)
             else
                 w_field = ZFaceField(grid)
                 for k=1:grid.Nz 

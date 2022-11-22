@@ -13,10 +13,10 @@ function test_LOBSTER(grid, carbonates, oxygen, sinking, open_bottom)
     end
 
     # correct tracers and auxiliary fields have been setup, and order has not changed
-    required_tracers = @show !(carbonates && oxygen) ? (:NO₃, :NH₄, :P, :Z, :D, :DD, :Dᶜ, :DDᶜ, :DOM) : 
-                            (carbonates && !oxygen ? (:NO₃, :NH₄, :P, :Z, :D, :DD, :Dᶜ, :DDᶜ, :DOM, :DIC, :ALK) :
-                            (oxygen && !carbonates ? (:NO₃, :NH₄, :P, :Z, :D, :DD, :Dᶜ, :DDᶜ, :DOM, :OXY) :
-                            (:NO₃, :NH₄, :P, :Z, :D, :DD, :Dᶜ, :DDᶜ, :DOM, :DIC, :ALK, :OXY)))
+    required_tracers = !(carbonates && oxygen) ? (:NO₃, :NH₄, :P, :Z, :D, :DD, :Dᶜ, :DDᶜ, :DOM) : 
+                        (carbonates && !oxygen ? (:NO₃, :NH₄, :P, :Z, :D, :DD, :Dᶜ, :DDᶜ, :DOM, :DIC, :ALK) :
+                        (oxygen && !carbonates ? (:NO₃, :NH₄, :P, :Z, :D, :DD, :Dᶜ, :DDᶜ, :DOM, :OXY) :
+                                                 (:NO₃, :NH₄, :P, :Z, :D, :DD, :Dᶜ, :DDᶜ, :DOM, :DIC, :ALK, :OXY)))
 
     @test Oceananigans.Biogeochemistry.required_biogeochemical_tracers(model.biogeochemistry) == required_tracers
     @test all(tracer ∈ keys(model.tracers) for tracer in required_tracers)
@@ -27,6 +27,9 @@ function test_LOBSTER(grid, carbonates, oxygen, sinking, open_bottom)
 
     # and that they all return zero
     @test all([all(values .== 0) for values in values(model.tracers)]) 
+
+    # mass conservation
+    
     
     return nothing
 end

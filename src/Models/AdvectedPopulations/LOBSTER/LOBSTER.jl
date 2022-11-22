@@ -180,11 +180,27 @@ end
 const small_detritus = Union{Val{:D}, Val{:Dᶜ}}
 const large_detritus = Union{Val{:DD}, Val{:DDᶜ}}
 
-@inline biogeochemical_drift_velocity(bgc::LOBSTER, ::small_detritus) = bgc.sinking_velocities.D
-@inline biogeochemical_drift_velocity(bgc::LOBSTER, ::large_detritus) = bgc.sinking_velocities.DD
+@inline biogeochemical_drift_velocity(bgc::LOBSTER, ::Val{:Dᶜ}) = biogeochemical_drift_velocity(bgc, Val(:D))
+@inline biogeochemical_drift_velocity(bgc::LOBSTER, ::Val{:DDᶜ}) = biogeochemical_drift_velocity(bgc, Val(:DD))
 
-@inline biogeochemical_advection_scheme(bgc::LOBSTER, ::small_detritus) = bgc.advection_schemes.D
-@inline biogeochemical_advection_scheme(bgc::LOBSTER, ::large_detritus) = bgc.advection_schemes.DD
+@inline function biogeochemical_drift_velocity(bgc::LOBSTER, ::Val{tracer_name}) where tracer_name
+    if tracer_name in keys(bgc.sinking_velocities)
+        return bgc.sinking_velocities[tracer_name]
+    else
+        return nothing
+    end
+end
+
+@inline biogeochemical_advection_scheme(bgc::LOBSTER, ::Val{:Dᶜ}) = biogeochemical_advection_scheme(bgc, Val(:D))
+@inline biogeochemical_advection_scheme(bgc::LOBSTER, ::Val{:DDᶜ}) = biogeochemical_advection_scheme(bgc, Val(:DD))
+
+@inline function biogeochemical_advection_scheme(bgc::LOBSTER, ::Val{tracer_name}) where tracer_name
+    if tracer_name in keys(bgc.sinking_velocities)
+        return bgc.advection_schemes[tracer_name]
+    else
+        return nothing
+    end
+end
 
 @inline function validate_biogeochemistry(tracers, auxiliary_fields, bgc::LOBSTER, grid, clock)
     req_tracers = required_biogeochemical_tracers(bgc)
