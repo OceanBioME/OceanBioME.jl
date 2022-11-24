@@ -22,7 +22,7 @@ end
     PAR = CenterField(grid)
     model = NonhydrostaticModel(;grid, 
                                  tracers = (:T, :S),
-                                 biogeochemistry = LOBSTER(;grid, open_bottom=false), 
+                                 biogeochemistry = LOBSTER(;grid, carbonates = true), 
                                  auxiliary_fields=(; PAR),
                                  boundary_conditions = (DIC = FieldBoundaryConditions(top = GasExchange(; gas = :CO₂)), ))
 

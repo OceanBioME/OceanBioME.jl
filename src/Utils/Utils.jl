@@ -1,6 +1,3 @@
-include("Setup.jl")
-include("BoxModel.jl")
-include("Timestep.jl")
-include("Budget.jl")
-include("NegativeTracers.jl")
+include("timestep.jl")
+include("negative_tracers.jl")
 include("sinking_velocity_fields.jl")
