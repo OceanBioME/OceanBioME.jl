@@ -16,13 +16,13 @@
     zᶜ = znodes(Center, grid)
     zᶠ = znodes(Face, grid)
     
-    ∫chlʳ = @inbounds - (zᶜ[grid.Nz] - zᶠ[grid.Nz]) * (P[i, j, grid.Nz] * Rᶜₚ / r) ^ eʳ
-    ∫chlᵇ = @inbounds - (zᶜ[grid.Nz] - zᶠ[grid.Nz]) * (P[i, j, grid.Nz] * Rᶜₚ / r) ^ eᵇ
+    ∫chlʳ = @inbounds (zᶠ[grid.Nz + 1] - zᶜ[grid.Nz]) * (P[i, j, grid.Nz] * Rᶜₚ / r) ^ eʳ
+    ∫chlᵇ = @inbounds (zᶠ[grid.Nz + 1] - zᶜ[grid.Nz]) * (P[i, j, grid.Nz] * Rᶜₚ / r) ^ eᵇ
     @inbounds PAR[i, j, grid.Nz] =  PAR⁰ * (exp(kʳ * zᶜ[grid.Nz] - χʳ * ∫chlʳ) + exp(kᵇ * zᶜ[grid.Nz] - χᵇ * ∫chlᵇ)) / 2
 
     @inbounds for k in grid.Nz-1:-1:1
-        ∫chlʳ += (zᶜ[k + 1] - zᶠ[k]) * (P[i, j, k+1] * Rᶜₚ / r) ^ eʳ + (zᶠ[k] - zᶜ[k]) * (P[i, j, k] * Rᶜₚ / r) ^ eʳ
-        ∫chlᵇ += (zᶜ[k + 1] - zᶠ[k]) * (P[i, j, k+1] * Rᶜₚ / r) ^ eᵇ + (zᶠ[k] - zᶜ[k]) * (P[i, j, k] * Rᶜₚ / r) ^ eᵇ
+        ∫chlʳ += (zᶜ[k + 1] - zᶠ[k + 1]) * (P[i, j, k+1] * Rᶜₚ / r) ^ eʳ + (zᶠ[k + 1] - zᶜ[k]) * (P[i, j, k] * Rᶜₚ / r) ^ eʳ
+        ∫chlᵇ += (zᶜ[k + 1] - zᶠ[k + 1]) * (P[i, j, k+1] * Rᶜₚ / r) ^ eᵇ + (zᶠ[k + 1] - zᶜ[k]) * (P[i, j, k] * Rᶜₚ / r) ^ eᵇ
         PAR[i, j, k] =  PAR⁰ * (exp(kʳ * zᶜ[k] - χʳ * ∫chlʳ) + exp(kᵇ * zᶜ[k] - χᵇ * ∫chlᵇ)) / 2
     end
 end 

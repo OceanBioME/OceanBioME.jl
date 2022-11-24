@@ -34,7 +34,8 @@ using Oceananigans.Units
 using Oceananigans.Advection: CenteredSecondOrder
 using Oceananigans.Fields: Field, TracerFields, CenterField
 
-using OceanBioME: TwoBandPhotosyntheticallyActiveRatiation, update_PAR!, setup_velocity_fields
+using OceanBioME.Light: TwoBandPhotosyntheticallyActiveRatiation, update_PAR!
+using OceanBioME: setup_velocity_fields
 
 import Oceananigans.Biogeochemistry:
        required_biogeochemical_tracers,

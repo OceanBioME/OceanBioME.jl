@@ -1,15 +1,18 @@
 using Test
 using OceanBioME: LOBSTER
-using OceanBioME.Light: TwoBandPhotosyntheticallyActiveRatiationField
 using Oceananigans
 
 function test_LOBSTER(grid, carbonates, oxygen, sinking, open_bottom)
+    PAR = CenterField(grid)
+
     if sinking
         model = NonhydrostaticModel(;grid,
-                                    biogeochemistry = LOBSTER(;grid, carbonates, oxygen, open_bottom))
+                                     biogeochemistry = LOBSTER(;grid, carbonates, oxygen, open_bottom),
+                                     auxiliary_fields = (; PAR))
     else
         model = NonhydrostaticModel(;grid,
-                                    biogeochemistry = LOBSTER(;grid, carbonates, oxygen, sinking_velocities = NamedTuple()))
+                                     biogeochemistry = LOBSTER(;grid, carbonates, oxygen, sinking_velocities = NamedTuple()),
+                                     auxiliary_fields = (; PAR))
     end
 
     # correct tracers and auxiliary fields have been setup, and order has not changed
@@ -20,7 +23,7 @@ function test_LOBSTER(grid, carbonates, oxygen, sinking, open_bottom)
 
     @test Oceananigans.Biogeochemistry.required_biogeochemical_tracers(model.biogeochemistry) == required_tracers
     @test all(tracer ∈ keys(model.tracers) for tracer in required_tracers)
-    @test :PAR ∈ keys(model.auxiliary_fields) && isa(model.auxiliary_fields.PAR, TwoBandPhotosyntheticallyActiveRatiationField)
+    @test :PAR ∈ keys(model.auxiliary_fields)
 
     # checks model works with zero values
     time_step!(model, 1.0)
@@ -45,8 +48,8 @@ function test_LOBSTER(grid, carbonates, oxygen, sinking, open_bottom)
 
     ΣN₁ = sum(model.tracers.NO₃) + sum(model.tracers.NH₄) + sum(model.tracers.P) + sum(model.tracers.Z) + sum(model.tracers.D) + sum(model.tracers.DD) + sum(model.tracers.DOM)
     
-    @test ΣN₀ ≈ ΣN₁
-    
+    @test ΣN₀ ≈ ΣN₁ # guess this should actually fail with a high enough accuracy when sinking is on with an open bottom
+
     return nothing
 end
 
