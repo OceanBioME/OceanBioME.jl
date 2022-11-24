@@ -27,7 +27,7 @@
     end
 end 
 
-struct TwoBandPhotosyntheticallyActiveRatiation{FT}
+struct TwoBandPhotosyntheticallyActiveRatiation{FT} <: AbstractLightAttenuation
     water_red_attenuation :: FT
     water_blue_attenuation :: FT
     chlorophyll_red_attenuation :: FT
@@ -62,3 +62,5 @@ function update_PAR!(model, PAR::TwoBandPhotosyntheticallyActiveRatiation, surfa
     event = launch!(arch, model.grid, :xy, update_TwoBandPhotosyntheticallyActiveRatiation!, model.auxiliary_fields.PAR, model.grid, model.tracers.P, surface_PAR, model.clock.time, PAR)
     wait(event)
 end
+
+required_PAR_fields(::TwoBandPhotosyntheticallyActiveRatiation) = (:PAR, )
