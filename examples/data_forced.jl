@@ -1,7 +1,6 @@
 # # One dimensional column forced by external data with carbonate chemistry
 # In this example we will setup a simple 1D column with the [LOBSTER](@ref LOBSTER) biogeochemical model and observe its evolution. This demonstraits:
 # - How to setup OceanBioME's biogeochemical models
-# - How to setup light attenuation
 # - How to load external forcing data
 # - How to run with optional tracer sets such as carbonate chemistry
 # - How to setup a non-uniform grid for better near surface resolution
@@ -13,7 +12,7 @@
 # First we will check we have the dependencies installed
 # ```julia
 # using Pkg
-# pkg"add OceanBioME, Oceananigans, Printf, Plots, GLMakie, NetCDF, JLD2, DataDeps"
+# pkg"add OceanBioME, Oceananigans, Printf, Plots, GLMakie, NetCDF, JLD2, DataDeps, Interpolations"
 # ```
 
 # ## Model setup
@@ -23,8 +22,6 @@ using Oceananigans, Random, Printf, NetCDF, Interpolations, DataDeps
 using Oceananigans.Units: second, minute, minutes, hour, hours, day, days, year, years
 using Oceananigans.Operators: ∂zᶜᶜᶜ
 using OceanBioME 
-
-params = LOBSTER.defaults  
 
 # ## Load external forcing data
 # Loading the forcing data from our online copy
@@ -63,46 +60,46 @@ h(k) = (k - 1) / Nz
 z_faces(k) = Lz * (ζ₀(k) * Σ(k) - 1)
 
 grid = RectilinearGrid(size = (1, 1, Nz), x = (0, 20), y = (0, 20), z = z_faces)        
-PAR = Oceananigans.Fields.Field{Center, Center, Center}(grid)
+PAR = CenterField(grid)
 
 # ## Biogeochemical and Oceananigans model
-# Here we instantiate the LOBSTER model with a surface flux of DIC (CO₂) which will return all of the information we then need to pass onto Oceananigans and set the initial conditions.
-# > We are being a bit picky about the Oceananigans model setup (e.g. specifying the advection scheme) as this gives the best simple results but you may find differently.
-dic_bc = Boundaries.airseasetup(:CO₂, forcings=(T=t_function, S=s_function))
-bgc = Setup.Oceananigans(:LOBSTER, grid, params, optional_sets=(:carbonates, ), topboundaries=(DIC=dic_bc, ))
-model = NonhydrostaticModel(
-                                                advection = WENO(;grid),
-                                                timestepper = :RungeKutta3,
-                                                grid = grid,
-                                                tracers = bgc.tracers,
-                                                closure = ScalarDiffusivity(ν=κₜ, κ=κₜ), 
-                                                forcing = bgc.forcing,
-                                                boundary_conditions = bgc.boundary_conditions,
-                                                auxiliary_fields = (; PAR)
-)
-set!(model, P=0.03, Z=0.03, D=0.0, DD=0.0, Dᶜ=0.0, DDᶜ=0.0, NO₃=11, NH₄=0.05, DOM=0.0, DIC=2200.0, ALK=2400.0)
+# Here we instantiate the LOBSTER model with carbonate chemistry and a surface flux of DIC (CO₂)
+CO₂_flux = GasExchange(; gas = :CO₂, temperature = t_function, salinity = s_function)
+model = NonhydrostaticModel(; grid,
+                              closure = ScalarDiffusivity(ν=κₜ, κ=κₜ), 
+                              biogeochemistry = LOBSTER(; grid,
+                                                          surface_phytosynthetically_active_radiation = PAR⁰,
+                                                          carbonates = true),
+                              boundary_conditions = (DIC = FieldBoundaryConditions(top = CO₂_flux), ),
+                              auxiliary_fields = (; PAR))
+
+set!(model, P=0.03, Z=0.03, NO₃=11.0, NH₄=0.05, DIC=2200.0, ALK=2400.0)
 
 # ## Simulation
 # Next we setup the simulation along with some callbacks that:
-# - Update the PAR field from the surface PAR and phytoplankton concentration
 # - Show the progress of the simulation
 # - Store the output
 # - Prevent the tracers from going negative from numerical error (see discussion of this in the [positivity preservation](@ref pos-preservation) implimentation page)
 # - Adapt the timestep length to reduce the run time
+
 simulation = Simulation(model, Δt=1minutes, stop_time=100days) 
 
-simulation.callbacks[:update_par] = Callback(Light.twoBands.update!, IterationInterval(1), merge(merge(params, Light.twoBands.defaults), (; surface_PAR)), TimeStepCallsite());
-
 progress_message(sim) = @printf("Iteration: %04d, time: %s, Δt: %s, wall time: %s\n",
-                                                        iteration(sim),
-                                                        prettytime(sim),
-                                                        prettytime(sim.Δt),
-                                                        prettytime(sim.run_wall_time))                
+                                iteration(sim),
+                                prettytime(sim),
+                                prettytime(sim.Δt),
+                                prettytime(sim.run_wall_time))                       
 simulation.callbacks[:progress] = Callback(progress_message, IterationInterval(100))
 
 filename = "data_forced"
-simulation.output_writers[:profiles] = JLD2OutputWriter(model, merge(model.tracers, model.auxiliary_fields), filename = "$filename.jld2", schedule = TimeInterval(1day))
+simulation.output_writers[:profiles] = JLD2OutputWriter(model, 
+                                                        merge(model.tracers, model.auxiliary_fields), 
+                                                        filename = "$filename.jld2", 
+                                                        schedule = TimeInterval(1day), 
+                                                        overwrite_existing = true)
+
 simulation.callbacks[:neg] = Callback(scale_negative_tracers!; parameters=(conserved_group=(:NO₃, :NH₄, :P, :Z, :D, :DD, :DOM), warn=false))
+
 simulation.callbacks[:timestep] = Callback(update_timestep!, IterationInterval(1), (c_forcing=0.5, c_adv=0.6, c_diff=0.6, w = 200/day, relaxation=0.75), TimeStepCallsite())
 
 # ## Run!
