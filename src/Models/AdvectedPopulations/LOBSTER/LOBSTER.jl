@@ -34,15 +34,14 @@ using Oceananigans.Units
 using Oceananigans.Advection: CenteredSecondOrder
 using Oceananigans.Fields: Field, TracerFields, CenterField
 
-using OceanBioME.Light: TwoBandPhotosyntheticallyActiveRatiation
-using OceanBioME: setup_velocity_fields
+using OceanBioME: TwoBandPhotosyntheticallyActiveRatiation, update_PAR!, setup_velocity_fields
 
 import Oceananigans.Biogeochemistry:
        required_biogeochemical_tracers,
        required_biogeochemical_auxiliary_fields,
        biogeochemical_drift_velocity,
        biogeochemical_advection_scheme,
-       validate_biogeochemistry
+       update_biogeochemical_state!
 
 
 struct LOBSTER{FT, L, SPAR, B, W, A} <: AbstractContinuousFormBiogeochemistry
@@ -113,8 +112,8 @@ struct LOBSTER{FT, L, SPAR, B, W, A} <: AbstractContinuousFormBiogeochemistry
                       fast_sinking_mortality_fraction::FT = 0.5,
                       disolved_organic_breakdown_rate::FT = 3.86e-7, # 1/s
 
-                      light_attenuation_model::L = TwoBandPhotosyntheticallyActiveRatiation, # user could specify some other model separatly (I think)
-                      surface_phytosynthetically_active_radiation::SPAR = t -> 100*max(0.0, cos(t*π/(12hours))),
+                      light_attenuation_model::L = TwoBandPhotosyntheticallyActiveRatiation(), # user could specify some other model separatly (I think)
+                      surface_phytosynthetically_active_radiation::SPAR = (x, y, t) -> 100*max(0.0, cos(t*π/(12hours))),
 
                       carbonates = true,
                       oxygen = false,
@@ -203,16 +202,8 @@ end
     end
 end
 
-@inline function validate_biogeochemistry(tracers, auxiliary_fields, bgc::LOBSTER, grid, clock)
-    req_tracers = required_biogeochemical_tracers(bgc)
-    tracers = TracerFields(all_fields_present(tracers, req_tracers, grid), grid)
-
-    if !(:PAR in keys(auxiliary_fields)) || isa(auxiliary_fields.PAR, Field)
-        PAR = bgc.light_attenuation_model(;grid, P = tracers.P, clock=clock, surface_intensity = bgc.surface_phytosynthetically_active_radiation)
-        return tracers, merge(auxiliary_fields, (; PAR))
-    else
-        return tracers, auxiliary_fields
-    end
+function update_biogeochemical_state!(bgc::LOBSTER, model)
+    update_PAR!(model, bgc.light_attenuation_model, bgc.surface_phytosynthetically_active_radiation)
 end
 
 include("core.jl")

@@ -5,12 +5,17 @@ These should be used by setting up a callback like:
 `simulation.callbacks[:update_par] = Callback(Light.update_2λ!, IterationInterval(1), merge(params, (surface_PAR=surface_PAR,)), TimeStepCallsite())`
 "
 module Light
-export TwoBandPhotosyntheticallyActiveRatiation
+export TwoBandPhotosyntheticallyActiveRatiation, update_PAR!
 
-using Oceananigans
 using KernelAbstractions
 using KernelAbstractions.Extras.LoopInfo: @unroll
-using Oceananigans.Architectures: device
+using Oceananigans.Architectures: device, architecture
+using Oceananigans.Utils: launch!
+using Oceananigans: Center, Face
+using Oceananigans.Grids: xnode, ynode, znodes
+
+# Fallback
+update_PAR!(model, PAR, surface_PAR) = nothing
 
 include("2band.jl")
 include("morel.jl")

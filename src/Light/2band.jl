@@ -1,42 +1,33 @@
-using KernelAbstractions
-using KernelAbstractions.Extras.LoopInfo: @unroll
-using Oceananigans.Architectures: device, architecture
-using Oceananigans.Utils: launch!
-
-import Oceananigans.Fields: compute!
-
-@kernel function update_TwoBandPhotosyntheticallyActiveRatiation!(PAR, grid, t) 
+@kernel function update_TwoBandPhotosyntheticallyActiveRatiation!(PAR, grid, P, surface_PAR, t, PAR_model) 
     i, j = @index(Global, NTuple)
-
-    data = PAR.data
-    P = PAR.operand.P_field
+    x, y = xnode(Center(), i, grid), ynode(Center(), j, grid)
     
-    PAR⁰ = PAR.operand.surface_intensity(t)
+    PAR⁰ = surface_PAR(x, y, t)
 
-    kʳ = PAR.operand.water_red_attenuation
-    kᵇ = PAR.operand.water_blue_attenuation
-    χʳ = PAR.operand.chlorophyll_red_attenuation
-    χᵇ = PAR.operand.chlorophyll_blue_attenuation
-    eʳ = PAR.operand.chlorophyll_red_exponent
-    eᵇ = PAR.operand.chlorophyll_blue_exponent
-    r = PAR.operand.pigment_ratio
-    Rᶜₚ = PAR.operand.phytoplankton_chlorophyll_ratio
+    kʳ = PAR_model.water_red_attenuation
+    kᵇ = PAR_model.water_blue_attenuation
+    χʳ = PAR_model.chlorophyll_red_attenuation
+    χᵇ = PAR_model.chlorophyll_blue_attenuation
+    eʳ = PAR_model.chlorophyll_red_exponent
+    eᵇ = PAR_model.chlorophyll_blue_exponent
+    r = PAR_model.pigment_ratio
+    Rᶜₚ = PAR_model.phytoplankton_chlorophyll_ratio
 
     zᶜ = znodes(Center, grid)
     zᶠ = znodes(Face, grid)
     
     ∫chlʳ = @inbounds - (zᶜ[grid.Nz] - zᶠ[grid.Nz]) * (P[i, j, grid.Nz] * Rᶜₚ / r) ^ eʳ
     ∫chlᵇ = @inbounds - (zᶜ[grid.Nz] - zᶠ[grid.Nz]) * (P[i, j, grid.Nz] * Rᶜₚ / r) ^ eᵇ
-    @inbounds data[i, j, grid.Nz] =  PAR⁰ * (exp(kʳ * zᶜ[grid.Nz] - χʳ * ∫chlʳ) + exp(kᵇ * zᶜ[grid.Nz] - χᵇ * ∫chlᵇ)) / 2
+    @inbounds PAR[i, j, grid.Nz] =  PAR⁰ * (exp(kʳ * zᶜ[grid.Nz] - χʳ * ∫chlʳ) + exp(kᵇ * zᶜ[grid.Nz] - χᵇ * ∫chlᵇ)) / 2
 
     @inbounds for k in grid.Nz-1:-1:1
         ∫chlʳ += (zᶜ[k + 1] - zᶠ[k]) * (P[i, j, k+1] * Rᶜₚ / r) ^ eʳ + (zᶠ[k] - zᶜ[k]) * (P[i, j, k] * Rᶜₚ / r) ^ eʳ
         ∫chlᵇ += (zᶜ[k + 1] - zᶠ[k]) * (P[i, j, k+1] * Rᶜₚ / r) ^ eᵇ + (zᶠ[k] - zᶜ[k]) * (P[i, j, k] * Rᶜₚ / r) ^ eᵇ
-        data[i, j, k] =  PAR⁰ * (exp(kʳ * zᶜ[k] - χʳ * ∫chlʳ) + exp(kᵇ * zᶜ[k] - χᵇ * ∫chlᵇ)) / 2
+        PAR[i, j, k] =  PAR⁰ * (exp(kʳ * zᶜ[k] - χʳ * ∫chlʳ) + exp(kᵇ * zᶜ[k] - χᵇ * ∫chlᵇ)) / 2
     end
 end 
 
-struct TwoBandPhotosyntheticallyActiveRatiationOperand{FT, SI, P, C}
+struct TwoBandPhotosyntheticallyActiveRatiation{FT}
     water_red_attenuation :: FT
     water_blue_attenuation :: FT
     chlorophyll_red_attenuation :: FT
@@ -47,38 +38,27 @@ struct TwoBandPhotosyntheticallyActiveRatiationOperand{FT, SI, P, C}
 
     phytoplankton_chlorophyll_ratio :: FT
 
-    surface_intensity :: SI
-    P_field :: P
-    clock :: C
+    function TwoBandPhotosyntheticallyActiveRatiation(;water_red_attenuation::FT = 0.225, # 1/m
+                                                       water_blue_attenuation::FT = 0.0232, # 1/m
+                                                       chlorophyll_red_attenuation::FT = 0.037, # 1/(m * (mgChl/m³) ^ eʳ)
+                                                       chlorophyll_blue_attenuation::FT = 0.074, # 1/(m * (mgChl/m³) ^ eᵇ)
+                                                       chlorophyll_red_exponent::FT = 0.629,
+                                                       chlorophyll_blue_exponent::FT = 0.674,
+                                                       pigment_ratio::FT = 0.7,
+                                                       phytoplankton_chlorophyll_ratio::FT = 1.31) where FT # mgChl/mol N
+        return new{FT}(water_red_attenuation,
+                       water_blue_attenuation,
+                       chlorophyll_red_attenuation,
+                       chlorophyll_blue_attenuation,
+                       chlorophyll_red_exponent,
+                       chlorophyll_blue_exponent,
+                       pigment_ratio,
+                       phytoplankton_chlorophyll_ratio)
+    end
 end
 
-const TwoBandPhotosyntheticallyActiveRatiationField = Field{<:Center, <:Center, <:Center, <:TwoBandPhotosyntheticallyActiveRatiationOperand}
-
-function TwoBandPhotosyntheticallyActiveRatiation(;grid, P, clock,
-                                                   water_red_attenuation = 0.225, # 1/m
-                                                   water_blue_attenuation = 0.0232, # 1/m
-                                                   chlorophyll_red_attenuation = 0.037, # 1/(m * (mgChl/m³) ^ eʳ)
-                                                   chlorophyll_blue_attenuation = 0.074, # 1/(m * (mgChl/m³) ^ eᵇ)
-                                                   chlorophyll_red_exponent = 0.629,
-                                                   chlorophyll_blue_exponent = 0.674,
-                                                   pigment_ratio = 0.7,
-                                                   phytoplankton_chlorophyll_ratio = 1.31, # mgChl/mol N
-                                                   surface_intensity = t -> 100.0)
-    return CenterField(grid, operand=TwoBandPhotosyntheticallyActiveRatiationOperand(water_red_attenuation,
-                                                                                     water_blue_attenuation,
-                                                                                     chlorophyll_red_attenuation,
-                                                                                     chlorophyll_blue_attenuation,
-                                                                                     chlorophyll_red_exponent,
-                                                                                     chlorophyll_blue_exponent,
-                                                                                     pigment_ratio,
-                                                                                     phytoplankton_chlorophyll_ratio,
-                                                                                     surface_intensity,
-                                                                                     P,
-                                                                                     clock))
-end
-
-function compute!(par::TwoBandPhotosyntheticallyActiveRatiationField)
-    arch = architecture(par.grid)
-    event = launch!(arch, par.grid, :xy, update_TwoBandPhotosyntheticallyActiveRatiation!, par, par.grid, par.operand.clock.time)
+function update_PAR!(model, PAR::TwoBandPhotosyntheticallyActiveRatiation, surface_PAR)
+    arch = architecture(model.grid)
+    event = launch!(arch, model.grid, :xy, update_TwoBandPhotosyntheticallyActiveRatiation!, model.auxiliary_fields.PAR, model.grid, model.tracers.P, surface_PAR, model.clock.time, PAR)
     wait(event)
 end
