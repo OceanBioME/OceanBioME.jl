@@ -1,5 +1,7 @@
 using Test
 using OceanBioME: Boundaries, GasExchange, LOBSTER
+using Oceananigans
+using Oceananigans.Grids: xnode, ynode
 
 @testset "Gas exchange values" begin
     # approximatly correct sized pCO₂ from DIC and ALK
@@ -14,7 +16,23 @@ using OceanBioME: Boundaries, GasExchange, LOBSTER
     O₂_exchange_model = GasExchange(;gas = :O₂)
     @test O₂_exchange_model.condition.parameters(0.0, 0.0, 0.0, 270.0, 15.0, 35.0) ≈ -0.0004 atol = 0.0001
 end
-#=
+
 @testset "Gas exchange coupling" begin
     grid = RectilinearGrid(size=(1, 1, 1), extent=(1, 1, 1))
-    CO₂_flux = Boundar=#
+    PAR = CenterField(grid)
+    model = NonhydrostaticModel(;grid, 
+                                 tracers = (:T, :S),
+                                 biogeochemistry = LOBSTER(;grid, open_bottom=false), 
+                                 auxiliary_fields=(; PAR),
+                                 boundary_conditions = (DIC = FieldBoundaryConditions(top = GasExchange(; gas = :CO₂)), ))
+
+    @test isa(model.tracers.DIC.boundary_conditions.top.condition.parameters, GasExchange)
+
+    set!(model, T = 15.0, S = 35.0, DIC = 2220, ALK = 2500)
+
+    # is everything communicating properly?
+    @test Oceananigans.getbc(model.tracers.DIC.boundary_conditions.top, 1, 1, grid, model.clock, fields(model)) ≈ -0.0003 atol = 0.0001
+
+    # just incase we broke something
+    @test isnothing(time_step!(model, 1.0))
+end
