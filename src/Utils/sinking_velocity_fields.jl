@@ -1,7 +1,8 @@
 using Oceananigans.Fields: ZFaceField
 using Oceananigans.Forcings: maybe_constant_field
+using Oceananigans.Grids: AbstractGrid
 
-function setup_velocity_fields(drift_speeds, grid, open_bottom)
+function setup_velocity_fields(drift_speeds, grid::AbstractGrid, open_bottom)
     drift_velocities = []
     for (u, v, w) in values(drift_speeds)
         if isa(values(w), Number)
@@ -22,3 +23,5 @@ function setup_velocity_fields(drift_speeds, grid, open_bottom)
 
     return NamedTuple{keys(drift_speeds)}(drift_velocities)
 end
+
+setup_velocity_fields(drift_speeds, grid::BoxModelGrid, open_bottom) = drift_speeds

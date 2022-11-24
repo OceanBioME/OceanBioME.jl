@@ -45,7 +45,7 @@ PAR_itp = LinearInterpolation(times, par)
 
 t_function(x, y, z, t) = temperature_itp(mod(t, 364days))
 s_function(x, y, z, t) = salinity_itp(mod(t, 364days))
-surface_PAR(t) = PAR_itp(mod(t, 364days))
+surface_PAR(x, y, t) = PAR_itp(mod(t, 364days))
 κₜ(x, y, z, t) = 2e-2*max(1-(z+mld_itp(mod(t,364days))/2)^2/(mld_itp(mod(t,364days))/2)^2,0)+1e-4
 
 # ## Grid and PAR field
@@ -68,7 +68,7 @@ CO₂_flux = GasExchange(; gas = :CO₂, temperature = t_function, salinity = s_
 model = NonhydrostaticModel(; grid,
                               closure = ScalarDiffusivity(ν=κₜ, κ=κₜ), 
                               biogeochemistry = LOBSTER(; grid,
-                                                          surface_phytosynthetically_active_radiation = PAR⁰,
+                                                          surface_phytosynthetically_active_radiation = surface_PAR,
                                                           carbonates = true),
                               boundary_conditions = (DIC = FieldBoundaryConditions(top = CO₂_flux), ),
                               auxiliary_fields = (; PAR))
@@ -100,7 +100,7 @@ simulation.output_writers[:profiles] = JLD2OutputWriter(model,
 
 simulation.callbacks[:neg] = Callback(scale_negative_tracers!; parameters=(conserved_group=(:NO₃, :NH₄, :P, :Z, :D, :DD, :DOM), warn=false))
 
-simulation.callbacks[:timestep] = Callback(update_timestep!, IterationInterval(1), (c_forcing=0.5, c_adv=0.6, c_diff=0.6, w = 200/day, relaxation=0.75), TimeStepCallsite())
+simulation.callbacks[:timestep] = Callback(update_timestep!, IterationInterval(1), (c_forcing=0.1, c_adv=0.5, c_diff=0.5, w = 200/day, relaxation=0.75), TimeStepCallsite())
 
 # ## Run!
 # Finally we run the simulation

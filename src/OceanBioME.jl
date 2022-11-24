@@ -4,8 +4,8 @@ module OceanBioME
 export LOBSTER, NutrientPhytoplanktonZooplanktonDetritus, PISCES
 # Macroalgae models
 export SLatissima
-# Setups
-export Setup, BoxModel
+# Box model
+export BoxModel, BoxModelGrid, SaveBoxModel, run!, set!
 # Particles
 export Particles
 # Light models
@@ -19,13 +19,17 @@ export ColumnField, isacolumn
 
 @inline get_local_value(i, j, k, C) = size(C)[3] == 1 ? C[i, j, 1] : C[i, j, k] #for getting 2D field values
 
+struct BoxModelGrid end
+
 include("Utils/Utils.jl")
 include("Boundaries/Boundaries.jl")
 include("Light/Light.jl")
 include("Particles/Particles.jl")
+include("BoxModel/boxmodel.jl")
 include("Models/Models.jl")
 
 using .Boundaries
 using .Light
+using .BoxModels
 
 end
