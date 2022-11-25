@@ -29,7 +29,7 @@ For optional tracers:
 * Salinity: S (‰)
 """
 
-using Oceananigans.Biogeochemistry: AbstractContinuousFormBiogeochemistry, all_fields_present
+using Oceananigans.Biogeochemistry: AbstractContinuousFormBiogeochemistry
 using Oceananigans.Units
 using Oceananigans.Advection: CenteredSecondOrder
 using Oceananigans.Fields: Field, TracerFields, CenterField
@@ -168,7 +168,7 @@ struct LOBSTER{FT, L, SPAR, B, W, A} <: AbstractContinuousFormBiogeochemistry
                       fast_sinking_mortality_fraction::FT = 0.5,
                       disolved_organic_breakdown_rate::FT = 3.86e-7, # 1/s
 
-                      light_attenuation_model::AbstractLightAttenuation = TwoBandPhotosyntheticallyActiveRatiation(), # user could specify some other model separatly (I think)
+                      light_attenuation_model::AbstractLightAttenuation = TwoBandPhotosyntheticallyActiveRatiation(),
                       surface_phytosynthetically_active_radiation::SPAR = (x, y, t) -> 100*max(0.0, cos(t*π/(12hours))),
 
                       carbonates::Bool = false,
