@@ -278,42 +278,43 @@ end
 
 """
     SLatissima.setup(n, x₀, y₀, z₀, A₀, N₀, C₀, latitude;
-                                scalefactor = 1.0, 
-                                T=nothing, 
-                                S=nothing, 
-                                urel=nothing, 
-                                paramset=defaults, 
-                                custom_dynamics=no_dynamics, 
-                                optional_tracers=(),
-                                tracer_names=NamedTuple())
+                     scalefactor = 1.0, 
+                     T=nothing, 
+                     S=nothing, 
+                     urel=nothing, 
+                     paramset=defaults, 
+                     custom_dynamics=no_dynamics, 
+                     optional_tracers=(),
+                     tracer_names=NamedTuple())
 
 Returns Oceananigans `LagrangianParticles` which will evolve and interact with biogeochemistry as sugar kelp
-Arguments
-========
-* `n`: number of particles
-* `x₀`, `y₀`, `z₀`: intial position, should be array of length `n`
-* `A₀`, `N₀`, `C₀`: Initial area/nitrogen reserve/carbon reserve, can be arrays of length `n` or single values
-* `latitude`: latitude of growth (used for seasonality parameterisation)
+
 Keyword arguments
 =============
-* `scalefactor`: multiplier on particle uptake/release of tracers, can be though of as the number of kelp frond represented by each particle
-* `T` and `S`: functions of form `func(x, y, z, t)` for the temperature and salinity, if not defined then model will look for tracer fields (useful if physics are resolved)
-* `urel`: relative water velocity (single number), if this is not specified then actual local relative water velocity will be used (moderates nutrient uptake)
-* `paramset`: parameters for growth model
-* `custom_dynamics`: any other dynamics you wish to be run on the particles as they evolve, should be of the form `dynamics!(particles, model, Δt)`
-* `optional_tracers`: Tuple of optional tracers to couple with
-* `tracer_names`: rename coupled tracers with NamedTuple with keys as new name and values as the property this feeds/depends on (e.g. `(N = :NO₃, )`)
+
+    - `n`: number of particles
+    - `x₀`, `y₀`, `z₀`: intial position, should be array of length `n`
+    - `A₀`, `N₀`, `C₀`: Initial area/nitrogen reserve/carbon reserve, can be arrays of length `n` or single values
+    - `latitude`: latitude of growth (used for seasonality parameterisation)
+    - `scalefactor`: multiplier on particle uptake/release of tracers, can be though of as the number of kelp frond represented by each particle
+    - `T` and `S`: functions of form `func(x, y, z, t)` for the temperature and salinity, if not defined then model will look for tracer fields (useful if physics are resolved)
+    - `urel`: relative water velocity (single number), if this is not specified then actual local relative water velocity will be used (moderates nutrient uptake)
+    - `paramset`: parameters for growth model
+    - `custom_dynamics`: any other dynamics you wish to be run on the particles as they evolve, should be of the form `dynamics!(particles, model, Δt)`
+    - `optional_tracers`: Tuple of optional tracers to couple with
+    - `tracer_names`: rename coupled tracers with NamedTuple with keys as new name and values as the property this feeds/depends on (e.g. `(N = :NO₃, )`)
 """
 
-function setup(n, x₀, y₀, z₀, A₀, N₀, C₀, latitude;
-                        scalefactor = 1.0, 
-                        T=nothing, 
-                        S=nothing, 
-                        urel=nothing, 
-                        paramset=defaults, 
-                        custom_dynamics=no_dynamics, 
-                        optional_tracers=(),
-                        tracer_names=NamedTuple())
+function setup(;
+               n, x₀, y₀, z₀, A₀, N₀, C₀, latitude,
+               scalefactor = 1.0, 
+               T=nothing, 
+               S=nothing, 
+               urel=nothing, 
+               paramset=defaults, 
+               custom_dynamics=no_dynamics, 
+               optional_tracers=(),
+               tracer_names=NamedTuple())
 
     # this is a mess, we're not even using salinity at the moment
     if (!isnothing(T) && !isnothing(S) && isnothing(urel))

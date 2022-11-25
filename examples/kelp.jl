@@ -19,12 +19,11 @@
 # We load the packages and choose the default LOBSTER parameter set
 using OceanBioME, Oceananigans,Printf
 using Oceananigans.Units: second, minute, minutes, hour, hours, day, days, year, years
-params = LOBSTER.defaults  
 
 # ## Surface PAR and turbulent vertical diffusivity based on idealised mixed layer depth 
 # Setting up idealised functions for PAR and diffusivity (details here can be ignored but these are typical of the North Atlantic)
 
-PAR⁰(t) = 60*(1-cos((t+15days)*2π/(365days)))*(1 /(1 +0.2*exp(-((mod(t, 365days)-200days)/50days)^2))) .+ 2
+PAR⁰(x, y, t) = 60*(1-cos((t+15days)*2π/(365days)))*(1 /(1 +0.2*exp(-((mod(t, 365days)-200days)/50days)^2))) .+ 2
 
 H(t, t₀, t₁) = ifelse(t₀<t<t₁, 1.0, 0.0)
 fmld1(t) = H.(t, 50days, 365days).*(1 ./(1 .+exp.(-(t-100days)/(5days)))).*(1 ./(1 .+exp.((t .-330days)./(25days))))
@@ -42,37 +41,31 @@ PAR = Oceananigans.Fields.Field{Center, Center, Center}(grid)
 
 # ## Kelp Particle setup
 @info "Setting up kelp particles"
-n_kelp = 5 # number of kelp fronds
+n = 5 # number of kelp fronds
 z₀ = [-21:5:-1;]*1.0 # depth of kelp fronds
 
-kelp_particles = SLatissima.setup(n_kelp, Lx/2, Ly/2, z₀, 
-                                                    30.0, 0.01, 0.1, 57.5;
-                                                    scalefactor = 500.0, 
-                                                    T = t_function, S = s_function, urel = 0.2, 
-                                                    optional_tracers = (:NH₄, :DIC, :DD, :DDᶜ, :OXY, :DOM))
+kelp_particles = SLatissima.setup(;n, 
+                                  x₀ = Lx/2, y₀ = Ly/2, z₀, 
+                                  A₀ = 30.0, N₀ = 0.01, C₀ = 0.1, 
+                                  latitude = 57.5,
+                                  scalefactor = 500.0, 
+                                  T = t_function, S = s_function, urel = 0.2, 
+                                  optional_tracers = (:NH₄, :DIC, :DD, :DDᶜ, :OXY, :DOM))
 
 # Specify the boundary conditions for DIC and OXY based on the air-sea CO₂ and O₂ flux
-dic_bc = Boundaries.airseasetup(:CO₂, forcings=(T=t_function, S=s_function))
-oxy_bc = Boundaries.airseasetup(:O₂, forcings=(T=t_function, S=s_function))
-# ## Biogeochemical and Oceananigans model
-# Here we instantiate the LOBSTER model which will return all of the information we then need to pass onto Oceananigans and set the initial conditions.
-# > We are being a bit picky about the Oceananigans model setup (e.g. specifying the advection scheme) as this gives the best simple results but you may find differently.
-bgc = Setup.Oceananigans(:LOBSTER, grid, params, optional_sets=(:carbonates, :oxygen), topboundaries=(DIC=dic_bc, OXY=oxy_bc)) 
+CO₂_flux = GasExchange(; gas = :CO₂, temperature = t_function, salinity = s_function)
+O₂_flux = GasExchange(; gas = :O₂, temperature = t_function, salinity = s_function)
+model = NonhydrostaticModel(; grid,
+                              closure = ScalarDiffusivity(ν=κₜ, κ=κₜ), 
+                              biogeochemistry = LOBSTER(; grid,
+                                                          surface_phytosynthetically_active_radiation = PAR⁰,
+                                                          carbonates = true,
+                                                          oxygen = true),
+                              boundary_conditions = (DIC = FieldBoundaryConditions(top = CO₂_flux),
+                                                     OXY = FieldBoundaryConditions(top = O₂_flux), ),
+                              auxiliary_fields = (; PAR))
 
-@info "Setup BGC model"
-
-model = NonhydrostaticModel(
-                                                advection = WENO(;grid),
-                                                timestepper = :RungeKutta3,
-                                                grid = grid,
-                                                tracers = bgc.tracers,
-                                                closure = ScalarDiffusivity(ν=κₜ, κ=κₜ), 
-                                                forcing = bgc.forcing,
-                                                boundary_conditions = bgc.boundary_conditions,
-                                                auxiliary_fields = (; PAR),
-                                                particles = kelp_particles
-)
-set!(model, P=0.03, Z=0.03, D=0.0, DD=0.0, Dᶜ=0.0, DDᶜ=0.0, NO₃=11, NH₄=0.05, DOM=0.0, DIC=2200.0, ALK=2400.0, OXY=240.0)
+set!(model, P=0.03, Z=0.03, NO₃=11.0, NH₄=0.05, DIC=2200.0, ALK=2400.0, OXY=240.0)
 
 
 # ## Simulation
@@ -85,7 +78,7 @@ set!(model, P=0.03, Z=0.03, D=0.0, DD=0.0, Dᶜ=0.0, DDᶜ=0.0, NO₃=11, NH₄=
 
 simulation = Simulation(model, Δt=10minutes, stop_time=100days) 
 
-sim.callbacks[:couple_particles] = Callback(Particles.infinitesimal_particle_field_coupling!; callsite = TendencyCallsite())
+simulation.callbacks[:couple_particles] = Callback(Particles.infinitesimal_particle_field_coupling!; callsite = TendencyCallsite())
 
 simulation.callbacks[:update_par] = Callback(Light.twoBands.update!, IterationInterval(1), merge(merge(params, Light.twoBands.defaults), (surface_PAR=PAR⁰,)), TimeStepCallsite());
 
