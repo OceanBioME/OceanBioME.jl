@@ -15,7 +15,7 @@ mutable struct CustomParticle
     C  :: AbstractFloat
 end
 
-grid = RectilinearGrid(size=(1,1,1), extent=(1,1,1), topology=(Periodic, Periodic, Periodic))#needs to be periodic in z or some weird bouncing around happens
+grid = RectilinearGrid(size=(1,1,1), extent=(1,1,1), topology=(Periodic, Periodic, Periodic))
 
 particlestruct=StructArray{CustomParticle}(([0.25], [0.25], [-0.25], [1.0], [0.0], [0.0]))
 
