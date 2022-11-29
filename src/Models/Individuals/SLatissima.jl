@@ -94,6 +94,7 @@ function equations(x::AbstractFloat, y::AbstractFloat, z::AbstractFloat, t::Abst
 
         j_NO₃ = params.j_NO₃_max*f_curr(u, params)*((params.N_max-N)/(params.N_max-params.N_min))*NO₃/(params.k_NO₃+NO₃)
         j̃_NH₄ = params.j_NH₄_max*f_curr(u, params)*NH₄/(params.k_NH₄+NH₄)
+
         μ_NH₄ = j̃_NH₄/(params.K_A*(N+params.N_struct))
         μ_NO₃ = 1 - params.N_min/N
         μ_C = 1 - params.C_min/C

@@ -79,7 +79,9 @@ function calculate_tendencies!(model)
     end
 
     for variable in required_biogeochemical_auxiliary_fields(model.biogeochemistry)
-        @inbounds getproperty(Gⁿ, variable) .= model.forcing[variable](model.clock.time, model.values[1]...)
+        if !(variable == :PAR)
+            @inbounds getproperty(Gⁿ, variable) .= model.forcing[variable](model.clock.time, model.values[1]...)
+        end
     end
 end
 

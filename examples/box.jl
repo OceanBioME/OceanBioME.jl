@@ -15,8 +15,6 @@
 # We load the packages and setup the initial and forcing conditions
 using OceanBioME
 
-import OceanBioME.BoxModels: update_boxmodel_state!
-
 minute=minutes=60
 hour=hours=60*minutes
 day=days=hours*24  # define the length of a day in seconds
@@ -27,13 +25,8 @@ PAR⁰(t) = 60*(1-cos((t+15days)*2π/(365days)))*(1 /(1 +0.2*exp(-((mod(t, 365da
 z=-10 # specify the depth for the light level
 PAR(t) = PAR⁰(t)*exp(z*0.2) # Set the PAR
 
-# Clumsily setup how we will modify the PAR in the model
-function update_boxmodel_state!(model::BoxModel{<:LOBSTER, <:Any, <:Any, <:Any, <:Any, <:Any})
-    getproperty(model.values, :PAR) .= PAR(model.clock.time)
-end
-
 # Set up the model. Here, first specify the biogeochemical model, followed by initial conditions and the start and end times
-model = BoxModel(biogeochemistry = LOBSTER(grid = BoxModelGrid()))
+model = BoxModel(biogeochemistry = LOBSTER(grid = BoxModelGrid()), forcing = (; PAR))
 model.Δt = 5minutes
 model.stop_time = 2years
 

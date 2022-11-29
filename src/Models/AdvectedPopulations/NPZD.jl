@@ -75,6 +75,7 @@ struct NutrientPhytoplanktonZooplanktonDetritus{FT, AbstractLightAttenuation, SP
                                                              remineralization_rate,
                                                              light_attenuation_model,
                                                              surface_phytosynthetically_active_radiation,
+                                                             sinking_velocities,
                                                              advection_schemes)
     end
 end

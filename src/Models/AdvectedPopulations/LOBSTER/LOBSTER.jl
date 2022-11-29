@@ -36,6 +36,9 @@ using Oceananigans.Fields: Field, TracerFields, CenterField
 
 using OceanBioME.Light: TwoBandPhotosyntheticallyActiveRatiation, update_PAR!, required_PAR_fields, AbstractLightAttenuation
 using OceanBioME: setup_velocity_fields
+using OceanBioME.BoxModels: BoxModel
+
+import OceanBioME.BoxModels: update_boxmodel_state!
 
 import Oceananigans.Biogeochemistry:
        required_biogeochemical_tracers,
@@ -260,6 +263,10 @@ end
 
 function update_biogeochemical_state!(bgc::LOBSTER, model)
     update_PAR!(model, bgc.light_attenuation_model, bgc.surface_phytosynthetically_active_radiation)
+end
+
+function update_boxmodel_state!(model::BoxModel{<:LOBSTER, <:Any, <:Any, <:Any, <:Any, <:Any})
+    getproperty(model.values, :PAR) .= model.forcing.PAR(model.clock.time)
 end
 
 include("core.jl")
