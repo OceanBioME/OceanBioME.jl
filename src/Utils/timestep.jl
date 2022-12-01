@@ -44,7 +44,7 @@ function forcing_error_timescale(model)
         Gⁿ⁻¹ = @inbounds model.timestepper.G⁻[tracer_idx+3][1:model.grid.Nx, 1:model.grid.Ny, 1:model.grid.Nz]
         τⁿ⁺¹ = abs.(Gⁿ .- Gⁿ⁻¹)
         y = @inbounds tracer[1:model.grid.Nx, 1:model.grid.Ny, 1:model.grid.Nz]
-        Δt = sqrt.(y./τⁿ⁺¹)
+        Δt = sqrt.(abs.(y./τⁿ⁺¹))
         Δt = Δt[isfinite.(Δt)]
         if length(Δt) > 0
             tracer_min = @inbounds findmin(Δt)[1]

@@ -1,4 +1,4 @@
-using Oceananigans: fields
+using Oceananigans: fields, Simulation
 using KernelAbstractions
 using KernelAbstractions.Extras.LoopInfo: @unroll
 using Oceananigans.Utils: work_layout
@@ -95,10 +95,11 @@ We plan to impliment positivity preserving timestepping in the future as the per
 
 Tracers conserve should be set in the parameters and if `params.warn` is set to true a warning will be displayed when negative values are modified.
 """
-function scale_negative_tracers!(sim, params=(conserved_group = (), warn=false)) #this can be used to conserve sub groups e.g. just saying NO₃ and NH₄ 
-    workgroup, worksize = work_layout(sim.model.grid, :xyz)
-    scale_for_negs_kernel! = scale_for_negs!(device(sim.model.grid.architecture), workgroup, worksize)
-    model_fields = fields(sim.model)
+function scale_negative_tracers!(model, params=(conserved_group = (), warn=false)) #this can be used to conserve sub groups e.g. just saying NO₃ and NH₄ 
+    workgroup, worksize = work_layout(model.grid, :xyz)
+    scale_for_negs_kernel! = scale_for_negs!(device(model.grid.architecture), workgroup, worksize)
+    model_fields = fields(model)
     event = scale_for_negs_kernel!(model_fields[params.conserved_group], params.warn)
     wait(event)
 end
+@inline scale_negative_tracers!(sim::Simulation, args...) = scale_negative_tracers!(sim.model, args...) 

@@ -92,7 +92,8 @@ filename = "kelp"
 simulation.output_writers[:profiles] = JLD2OutputWriter(model, merge(model.tracers, model.auxiliary_fields), filename = "$filename.jld2", schedule = TimeInterval(1day), overwrite_existing=true)
 simulation.output_writers[:particles] = JLD2OutputWriter(model, (particles=model.particles, ), filename = "$(filename)_particles.jld2", schedule = TimeInterval(1day), overwrite_existing = true)
 
-simulation.callbacks[:neg] = Callback(scale_negative_tracers!; parameters=(conserved_group=(:NO₃, :NH₄, :P, :Z, :D, :DD, :DOM), warn=false))
+simulation.callbacks[:neg] = Callback(scale_negative_tracers!; parameters=(conserved_group=(:NO₃, :NH₄, :P, :Z, :D, :DD, :DOM), warn=false), callsite = UpdateStateCallsite())
+simulation.callbacks[:neg2] = Callback(scale_negative_tracers!; parameters=(conserved_group=(:NO₃, :NH₄, :P, :Z, :D, :DD, :DOM), warn=false), callsite = TendencyCallsite())
 simulation.callbacks[:timestep] = Callback(update_timestep!, IterationInterval(1), (c_forcing=0.05, c_adv=0.2, c_diff=0.2, w = 200/day, relaxation=0.95), TimeStepCallsite())
 
 # ## Run!
@@ -218,4 +219,4 @@ ax5, hm5 = GLMakie.heatmap(gOutput[5, 1], xs, ys, res_kelp.results[16,:,:]')
 ax5.title = "Frond errosion (POM output)"
 ax5.xlabel = "time (day)"
 cb5 = Colorbar(gOutput[5, 1:2], hm5, label = "mmol C/s")
-save("examples/$(filename)_particles.png")
+save("examples/$(filename)_particles.png", f)
