@@ -18,7 +18,7 @@
 using OceanBioME, Oceananigans, Oceananigans.Units, Printf
 
 # ## Surface PAR
-PAR⁰(x, y, t) = 100*(1-cos((t+15days)*2π/(365days)))*(1 /(1 +0.2*exp(-((t-200days)/50days)^2))) .+ 2
+PAR⁰(x, y, t) = max(0.0, sin(t*π/(12hours)))*(100*(1-cos((t+15days)*2π/(365days)))*(1 / (1 +0.2*exp(-((t-200days)/50days)^2))) .+ 2)*20
 
 # ## Grid and PAR field
 # Define the grid and an extra Oceananigans field for the PAR to be stored in
@@ -41,19 +41,21 @@ model = NonhydrostaticModel(; grid,
                               tracers = (:S, ), # T will be defined by the biogeochemistry
                               buoyancy=SeawaterBuoyancy(),
                               boundary_conditions = (T = T_bcs, ),
-                              auxiliary_fields = (; PAR))
+                              auxiliary_fields = (; PAR),
+                              advection = WENO(grid),
+                              closure = ScalarDiffusivity(ν=1e-4, κ=1e-4))
 
 ## Random noise damped at top and bottom
 Ξ(z) = randn() * z / model.grid.Lz * (1 + z / model.grid.Lz) # noise
 
 ## Temperature initial condition: a stable density gradient with random noise superposed.
-Tᵢ(x, y, z) = 13 + dTdz * z + dTdz * model.grid.Lz * 1e-6 * Ξ(z)
+Tᵢ(x, y, z) = 14 + dTdz * z + dTdz * model.grid.Lz * 1e-6 * Ξ(z)
 
 ## Velocity initial condition: random noise scaled by the friction velocity.
 uᵢ(x, y, z) = 1e-3 * Ξ(z)
 
 ## `set!` the `model` fields using functions or constants:
-set!(model, u=uᵢ, w=uᵢ, T=Tᵢ, S=35.0, N=10.0, P=0.1, Z=0.01, D=0.1)
+set!(model, u=uᵢ, w=uᵢ, T=Tᵢ, S=35.0, N=10.0, P=0.2, Z=0.1, D=0.1)
 
 # ## Simulation
 # Next we setup the simulation along with some callbacks that:
@@ -62,7 +64,7 @@ set!(model, u=uᵢ, w=uᵢ, T=Tᵢ, S=35.0, N=10.0, P=0.1, Z=0.01, D=0.1)
 # - Store the output
 # - Prevent the tracers from going negative from numerical error (see discussion of this in the [positivity preservation](@ref pos-preservation) implimentation page)
 
-simulation = Simulation(model, Δt=1.0, stop_time=300days)
+simulation = Simulation(model, Δt=1.0, stop_time=1years)
 
 # The `TimeStepWizard` helps ensure stable time-stepping
 # with a Courant-Freidrichs-Lewy (CFL) number of 1.0.
@@ -71,7 +73,6 @@ simulation = Simulation(model, Δt=1.0, stop_time=300days)
 
 wizard = TimeStepWizard(cfl = 0.75, diffusive_cfl = 0.75, max_change = 1.1, max_Δt = 1minutes)
 simulation.callbacks[:wizard] = Callback(wizard, IterationInterval(10))
-# Nice progress messaging is helpful:
 
 ## Print a progress message
 progress(sim) = @printf("Iteration: %d, time: %s, Δt: %s\n",
@@ -80,8 +81,9 @@ progress(sim) = @printf("Iteration: %d, time: %s, Δt: %s\n",
 simulation.callbacks[:progress] = Callback(progress, IterationInterval(100))
 
 filename = "npdz"
-simulation.output_writers[:profiles] = JLD2OutputWriter(model, merge(model.tracers, model.auxiliary_fields), filename = "$filename.jld2", schedule = TimeInterval(10minutes), overwrite_existing=true)
-simulation.callbacks[:neg] = Callback(scale_negative_tracers!; parameters=(conserved_group=(:N, :P, :Z, :D), warn=true))
+simulation.output_writers[:profiles] = JLD2OutputWriter(model, merge(model.tracers, model.auxiliary_fields), filename = "$filename.jld2", schedule = TimeInterval(1hour), overwrite_existing=true)
+simulation.callbacks[:neg] = Callback(scale_negative_tracers!; parameters=(conserved_group=(:N, :P, :Z, :D), warn=false), callsite=TendencyCallsite())
+simulation.callbacks[:neg2] = Callback(scale_negative_tracers!; parameters=(conserved_group=(:N, :P, :Z, :D), warn=false), callsite=UpdateStateCallsite())
 
 # ## Run!
 # Finally we run the simulation
@@ -107,10 +109,10 @@ D_plt = @lift D[1:20, 1, 1:20, $n]
 
 title = @lift @sprintf("t = %s", prettytime(times[$n]))
 
-N_range = (minimum(N[:, :, :, 3000:4000]), maximum(N[:, :, :, 3000:4000]))
-P_range = (minimum(P[:, :, :, 3000:4000]), maximum(P[:, :, :, 3000:4000]))
-Z_range = (minimum(Z[:, :, :, 3000:4000]), maximum(Z[:, :, :, 3000:4000]))
-D_range = (minimum(D[:, :, :, 3000:4000]), maximum(D[:, :, :, 3000:4000]))
+N_range = (minimum(N), maximum(N))
+P_range = (minimum(P), maximum(P))
+Z_range = (minimum(Z), maximum(Z))
+D_range = (minimum(D), maximum(D))
 
 f=Figure(backgroundcolor=RGBf(1, 1, 1), fontsize=30, resolution=(2400, 2000))
 
@@ -133,8 +135,8 @@ hmD = heatmap!(axD, x, z, D_plt, interpolate=true, colormap=:batlow, colorrange=
 cbD = Colorbar(f[3, 6], hmD)
 
 nframes = length(times)
-frame_iterator = 3000:nframes
-framerate = floor(Int, (nframes-3000)/30)
+frame_iterator = 1:nframes
+framerate = floor(Int, nframes/30)
 
 record(f, "NPZD.mp4", frame_iterator; framerate = framerate) do i
     n[] = i

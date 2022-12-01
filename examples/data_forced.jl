@@ -124,7 +124,7 @@ times = P.times
 air_sea_CO₂_flux = zeros(size(P)[4])
 carbon_export = zeros(size(P)[4])
 for (i, t) in enumerate(times)
-    air_sea_CO₂_flux[i] = CO₂_flux.condition.parameters(0.0, 0.0, t, DIC[1, 1, Nz, i], ALK[1, 1, Nz, i], t_function(1, 1, 0, t), s_function(1, 1, 0, t), )
+    air_sea_CO₂_flux[i] = CO₂_flux.condition.parameters(0.0, 0.0, t, DIC[1, 1, Nz, i], ALK[1, 1, Nz, i], t_function(1, 1, 0, t), s_function(1, 1, 0, t), )*Oceananigans.Operators.Ax(1, 1, Nz, grid, Center(), Center(), Center())
     carbon_export[i] = (Dᶜ[1, 1, end-20, i]*model.biogeochemistry.sinking_velocities.D.w[1] .+ DDᶜ[1, 1, end-20, i]*model.biogeochemistry.sinking_velocities.DD.w[1])
 end
 
