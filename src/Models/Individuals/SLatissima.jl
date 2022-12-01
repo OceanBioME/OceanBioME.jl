@@ -92,16 +92,16 @@ function equations(x::AbstractFloat, y::AbstractFloat, z::AbstractFloat, t::Abst
         e = _e(C, params)
         ν  = _ν(A, params)
 
-        j_NO₃ = params.j_NO₃_max*f_curr(u, params)*((params.N_max-N)/(params.N_max-params.N_min))*NO₃/(params.k_NO₃+NO₃)
-        j̃_NH₄ = params.j_NH₄_max*f_curr(u, params)*NH₄/(params.k_NH₄+NH₄)
+        j_NO₃ = max(0.0, params.j_NO₃_max * f_curr(u, params) * ((params.N_max - N) / (params.N_max - params.N_min)) * NO₃ / (params.k_NO₃ + NO₃))
+        j̃_NH₄ = max(0.0, params.j_NH₄_max * f_curr(u, params) * NH₄ / (params.k_NH₄ + NH₄))
 
-        μ_NH₄ = j̃_NH₄/(params.K_A*(N+params.N_struct))
-        μ_NO₃ = 1 - params.N_min/N
-        μ_C = 1 - params.C_min/C
+        μ_NH₄ = j̃_NH₄ / (params.K_A * (N + params.N_struct))
+        μ_NO₃ = 1 - params.N_min / N
+        μ_C = 1 - params.C_min / C
 
-        μ = @inbounds f_area(A, params)*f_temp(T, params)*f_photo(params.λ[1+floor(Int, mod(t, 364days)/day)], params)*min(μ_C, max(μ_NO₃, μ_NH₄))
+        μ = @inbounds f_area(A, params) * f_temp(T, params) * f_photo(params.λ[1 + floor(Int, mod(t, 364days) / day)], params) * min(μ_C, max(μ_NO₃, μ_NH₄))
 
-        j_NH₄ = min(j̃_NH₄, μ*params.K_A*(N+params.N_struct))
+        j_NH₄ = min(j̃_NH₄, μ * params.K_A * (N + params.N_struct))
 
         r = _r(T, μ, j_NO₃ + j_NH₄, params)
 
@@ -114,8 +114,15 @@ function equations(x::AbstractFloat, y::AbstractFloat, z::AbstractFloat, t::Abst
         C_new = C+dC*Δt
 
         if C_new < params.C_min
-            A_new *= (1-(params.C_min - C)/params.C_struct)
+            A_new *= (1 - (params.C_min - C) / params.C_struct)
             C_new = params.C_min
+            N_new += params.N_struct * A * (params.C_min - C) / params.C_struct
+        end
+        
+        if N_new < params.N_min
+            A_new *= (1 - (params.N_min - N) / params.N_struct)
+            N_new = params.N_min
+            C_new += params.C_struct * A * (params.N_min - N) / params.N_struct
         end
 
         pp = (p - r)*A / (60*60*24*12*0.001) #gC/dm^2/hr to mmol C/s
