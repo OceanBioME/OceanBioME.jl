@@ -10,7 +10,7 @@
 @inline Lₙₕ₄(NH₄, kₙₕ₄) = max(0.0, NH₄/(NH₄+kₙₕ₄)) 
 
 # Nutrients
-@inline function (bgc::LOBSTER)(::Val{:NO₃}, x, y, z, t, NO₃, NH₄, P, Z, D, DD, Dᶜ, DDᶜ, DOM, PAR)
+@inline function (bgc::LOBSTER)(::Val{:NO₃}, x, y, z, t, NO₃, NH₄, P, Z, D, DD, DOM, PAR)
     μₚ = bgc.maximum_phytoplankton_growthrate
     kₚₐᵣ = bgc.light_half_saturation
     ψ = bgc.nitrate_ammonia_inhibition
@@ -20,7 +20,7 @@
     return μₙ*NH₄ - μₚ*Lₚₐᵣ(PAR, kₚₐᵣ)*Lₙₒ₃(NO₃, NH₄, ψ, kₙₒ₃)*P
 end
 
-@inline function (bgc::LOBSTER)(::Val{:NH₄}, x, y, z, t, NO₃, NH₄, P, Z, D, DD, Dᶜ, DDᶜ, DOM, PAR)
+@inline function (bgc::LOBSTER)(::Val{:NH₄}, x, y, z, t, NO₃, NH₄, P, Z, D, DD, DOM, PAR)
     αᵖ = bgc.ammonia_fraction_of_exudate
     γ = bgc.phytoplankton_exudation_fraction
     μₚ = bgc.maximum_phytoplankton_growthrate
@@ -45,8 +45,7 @@ end
             + μᵈᵒᵐ * DOM)
 end
 
-
-@inline function (bgc::LOBSTER)(::Val{:DOM}, x, y, z, t, NO₃, NH₄, P, Z, D, DD, Dᶜ, DDᶜ, DOM, PAR)
+@inline function (bgc::LOBSTER)(::Val{:DOM}, x, y, z, t, NO₃, NH₄, P, Z, D, DD, DOM, PAR)
     αᵖ = bgc.ammonia_fraction_of_exudate
     γ = bgc.phytoplankton_exudation_fraction
     μₚ = bgc.maximum_phytoplankton_growthrate
@@ -69,7 +68,7 @@ end
 end
 
 # Planktons
-@inline function (bgc::LOBSTER)(::Val{:P}, x, y, z, t, NO₃, NH₄, P, Z, D, DD, Dᶜ, DDᶜ, DOM, PAR)
+@inline function (bgc::LOBSTER)(::Val{:P}, x, y, z, t, NO₃, NH₄, P, Z, D, DD, DOM, PAR)
     γ = bgc.phytoplankton_exudation_fraction
     μₚ = bgc.maximum_phytoplankton_growthrate
     kₚₐᵣ = bgc.light_half_saturation
@@ -86,7 +85,7 @@ end
             - mᵖ * P^2)
 end
 
-@inline function (bgc::LOBSTER)(::Val{:Z}, x, y, z, t, NO₃, NH₄, P, Z, D, DD, Dᶜ, DDᶜ, DOM, PAR)
+@inline function (bgc::LOBSTER)(::Val{:Z}, x, y, z, t, NO₃, NH₄, P, Z, D, DD, DOM, PAR)
     αᶻ = bgc.zooplankton_assimilation_fraction
     gᶻ = bgc.maximum_grazing_rate
     p̃ = bgc.phytoplankton_preference
@@ -101,7 +100,7 @@ end
 
 # Detritus
 
-@inline function (bgc::LOBSTER)(::Val{:D}, x, y, z, t, NO₃, NH₄, P, Z, D, DD, Dᶜ, DDᶜ, DOM, PAR)
+@inline function (bgc::LOBSTER)(::Val{:D}, x, y, z, t, NO₃, NH₄, P, Z, D, DD, DOM, PAR)
     αᶻ = bgc.zooplankton_assimilation_fraction
     gᶻ = bgc.maximum_grazing_rate
     p̃ = bgc.phytoplankton_preference
@@ -119,7 +118,7 @@ end
             - μᵈ * D)
 end
 
-@inline function (bgc::LOBSTER)(::Val{:DD}, x, y, z, t, NO₃, NH₄, P, Z, D, DD, Dᶜ, DDᶜ, DOM, PAR)
+@inline function (bgc::LOBSTER)(::Val{:DD}, x, y, z, t, NO₃, NH₄, P, Z, D, DD, DOM, PAR)
     αᶻ = bgc.zooplankton_assimilation_fraction
     gᶻ = bgc.maximum_grazing_rate
     p̃ = bgc.phytoplankton_preference
@@ -134,43 +133,4 @@ end
             + fᵈ * mᵖ * P^2
             + (1 - fᶻ) * mᶻ * Z^2 
             - μᵈᵈ * DD)
-end
-
-# Detritus carbon - these could be optional but could be complicated to add another option set with two optional variables
-# as we won't be able to unequaly define forcing functions purely on the number of argumemnts
-@inline function (bgc::LOBSTER)(::Val{:Dᶜ}, x, y, z, t, NO₃, NH₄, P, Z, D, DD, Dᶜ, DDᶜ, DOM, PAR)
-    αᶻ = bgc.zooplankton_assimilation_fraction
-    gᶻ = bgc.maximum_grazing_rate
-    p̃ = bgc.phytoplankton_preference
-    kᶻ = bgc.grazing_half_saturation
-    mᶻ = bgc.zooplankton_mortality
-    fᵈ = bgc.fast_sinking_mortality_fraction # really dumb definitions
-    fᶻ = bgc.slow_sinking_mortality_fraction
-    mᵖ = bgc.phytoplankon_mortality
-    μᵈ = bgc.small_detritus_remineralisation_rate
-    Rᵈ = bgc.phytoplankton_redfield
-
-    return (((1 - fᵈ) * (1 - αᶻ) * (Gᵖ(P, Z, D, gᶻ, p̃, kᶻ) + Gᵈ(P, Z, D, gᶻ, p̃, kᶻ))
-            + (1 - fᵈ) * mᵖ * P^2
-            - Gᵈ(P, Z, D, gᶻ, p̃, kᶻ)
-            + fᶻ * mᶻ * Z^2) * Rᵈ
-            - μᵈ * Dᶜ)
-end
-
-@inline function (bgc::LOBSTER)(::Val{:DDᶜ}, x, y, z, t, NO₃, NH₄, P, Z, D, DD, Dᶜ, DDᶜ, DOM, PAR)
-    αᶻ = bgc.zooplankton_assimilation_fraction
-    gᶻ = bgc.maximum_grazing_rate
-    p̃ = bgc.phytoplankton_preference
-    kᶻ = bgc.grazing_half_saturation
-    mᶻ = bgc.zooplankton_mortality
-    fᵈ = bgc.fast_sinking_mortality_fraction # really dumb definitions
-    fᶻ = bgc.slow_sinking_mortality_fraction
-    mᵖ = bgc.phytoplankon_mortality
-    μᵈᵈ = bgc.large_detritus_remineralisation_rate
-    Rᵈ = bgc.phytoplankton_redfield
-
-    return ((fᵈ * (1 - αᶻ) * (Gᵖ(P, Z, D, gᶻ, p̃, kᶻ) + Gᵈ(P, Z, D, gᶻ, p̃, kᶻ))
-            + fᵈ * mᵖ * P^2
-            + (1 - fᶻ) * mᶻ * Z^2) * Rᵈ
-            - μᵈᵈ * DDᶜ)
 end

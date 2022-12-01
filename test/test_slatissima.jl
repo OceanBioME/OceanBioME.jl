@@ -35,4 +35,6 @@ using OceanBioME: SLatissima
 
     @test kelp_particles.parameters.tracked_fields == (NO₃ = :NO₃, PAR = :PAR, NH₄ = :NH₄)
     @test kelp_particles.parameters.coupled_fields == (NO₃ = :j_NO₃, NH₄ = :j_NH₄, DIC = :j_DIC, DD = :νⁿ, DDᶜ = :νᶜ, OXY = :j_OXY, DOM = :e)
+
+    return nothing
 end

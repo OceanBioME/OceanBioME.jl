@@ -9,16 +9,21 @@ Tracers
 * Zooplankton: Z (mmol N/m³)
 * Small (slow sinking) detritus: D (mmol N/m³)
 * Large (fast sinking) detritus: DD (mmol N/m³)
-* Small (slow sinking) detritus carbon content: Dᶜ (mmol C/m³)
-* Large (fast sinking) detritus carbon content: DDᶜ (mmol C/m³)
 * Disolved organic matter: DOM (mmol N/m³)
 
 Optional tracers
 ===========
+Carbonate chemistry
 * Disolved inorganic carbon: DIC (mmol C/m³)
 * Alkalinity: ALK (mmol ⁻/m³)
 
+Oxygen chemistry
 * Oxygen: OXY (mmol O₂/m³)
+
+Variable redfield ratios
+* Small (slow sinking) detritus carbon content: Dᶜ (mmol C/m³)
+* Large (fast sinking) detritus carbon content: DDᶜ (mmol C/m³)
+* Disolved organic matter carbon content: DOMᶜ (mmol C/m³)
 
 Required forcing
 ===========
@@ -83,6 +88,7 @@ import Oceananigans.Biogeochemistry:
 
              carbonates::Bool = false,
              oxygen::Bool = false,
+             variable_redfield = false,
 
              sinking_velocities = (D = (0.0, 0.0, -3.47e-5), DD = (0.0, 0.0, -200/day)),
              open_bottom::Bool = true,
@@ -98,7 +104,7 @@ Keywork Arguments
     - `phytoplankton_preference`, ..., `disolved_organic_breakdown_rate`: LOBSTER parameter values
     - `light_attenuation_model`: light attenuation model which integrated the attenuation of available light as an `AbstractLightAttenuation` model
     - `surface_phytosynthetically_active_radiation`: funciton (or array in the future) for the photosynthetically available radiaiton at the surface, should be shape `f(x, y, t)`
-    - `carbonates` and `oxygen`: include models for carbonate chemistry and/or oxygen chemistry
+    - `carbonates`, `oxygen`, and `variable_redfield`: include models for carbonate chemistry and/or oxygen chemistry and/or variable redfield ratio disolved and particulate organic matter
     - `sinking_velocities`: named tuple of either scalar `(u, v, w)` constant sinking velocities, or of named tuples of fields (i.e. `(u = XFaceField(...), v = YFaceField(...), w = ZFaceField(...))`) for any tracers which sink
     - `open_bottom`: should the sinking velocity be smoothly brought to zero at the bottom to prevent the tracers leaving the domain
     - `advection_schemes`: named tuple of advection scheme to use for sinking
@@ -176,6 +182,7 @@ struct LOBSTER{FT, L, SPAR, B, W, A} <: AbstractContinuousFormBiogeochemistry
 
                       carbonates::Bool = false,
                       oxygen::Bool = false,
+                      variable_redfield::Bool = false,
                 
                       sinking_velocities = (D = (0.0, 0.0, -3.47e-5), DD = (0.0, 0.0, -200/day)),
                       open_bottom::Bool = true,
@@ -186,7 +193,7 @@ struct LOBSTER{FT, L, SPAR, B, W, A} <: AbstractContinuousFormBiogeochemistry
 
         sinking_velocities = setup_velocity_fields(sinking_velocities, grid, open_bottom)
         W = typeof(sinking_velocities)
-        optionals = Val((carbonates, oxygen))
+        optionals = Val((carbonates, oxygen, variable_redfield))
         B = typeof(optionals)
 
         return new{FT, AbstractLightAttenuation, SPAR, B, W, A}(phytoplankton_preference,
@@ -228,19 +235,30 @@ struct LOBSTER{FT, L, SPAR, B, W, A} <: AbstractContinuousFormBiogeochemistry
     end
 end
 
-@inline required_biogeochemical_tracers(::LOBSTER{<:Any, <:Any, <:Any, <:Val{(false, false)}, <:Any, <:Any}) = (:NO₃, :NH₄, :P, :Z, :D, :DD, :Dᶜ, :DDᶜ, :DOM)
-@inline required_biogeochemical_tracers(::LOBSTER{<:Any, <:Any, <:Any, <:Val{(true, false)}, <:Any, <:Any}) = (:NO₃, :NH₄, :P, :Z, :D, :DD, :Dᶜ, :DDᶜ, :DOM, :DIC, :ALK)
-@inline required_biogeochemical_tracers(::LOBSTER{<:Any, <:Any, <:Any, <:Val{(false, true)}, <:Any, <:Any}) = (:NO₃, :NH₄, :P, :Z, :D, :DD, :Dᶜ, :DDᶜ, :DOM, :OXY)
-@inline required_biogeochemical_tracers(::LOBSTER{<:Any, <:Any, <:Any, <:Val{(true, true)}, <:Any, <:Any}) = (:NO₃, :NH₄, :P, :Z, :D, :DD, :Dᶜ, :DDᶜ, :DOM, :DIC, :ALK, :OXY)
+const core_tracers = (:NO₃, :NH₄, :P, :Z, :D, :DD, :DOM)
+const carbonate_tracers = (:DIC, :ALK)
+const oxygen_tracers = (:OXY, )
+const variable_redfield_tracers = (:Dᶜ, :DDᶜ, :DOMᶜ)
+
+# wrote this functionally and it took 2.5x longer so even though this is long going to use this way instead
+@inline required_biogeochemical_tracers(::LOBSTER{<:Any, <:Any, <:Any, <:Val{(false, false, false)}, <:Any, <:Any}) = (:NO₃, :NH₄, :P, :Z, :D, :DD, :DOM)
+@inline required_biogeochemical_tracers(::LOBSTER{<:Any, <:Any, <:Any, <:Val{(true, false, false)}, <:Any, <:Any}) = (:NO₃, :NH₄, :P, :Z, :D, :DD, :DOM, :DIC, :ALK)
+@inline required_biogeochemical_tracers(::LOBSTER{<:Any, <:Any, <:Any, <:Val{(false, true, false)}, <:Any, <:Any}) = (:NO₃, :NH₄, :P, :Z, :D, :DD, :DOM, :OXY)
+@inline required_biogeochemical_tracers(::LOBSTER{<:Any, <:Any, <:Any, <:Val{(false, false, true)}, <:Any, <:Any}) = (:NO₃, :NH₄, :P, :Z, :D, :DD, :DOM, :Dᶜ, :DDᶜ, :DOMᶜ)
+@inline required_biogeochemical_tracers(::LOBSTER{<:Any, <:Any, <:Any, <:Val{(true, true, false)}, <:Any, <:Any}) = (:NO₃, :NH₄, :P, :Z, :D, :DD, :DOM, :DIC, :ALK, :OXY)
+@inline required_biogeochemical_tracers(::LOBSTER{<:Any, <:Any, <:Any, <:Val{(true, false, true)}, <:Any, <:Any}) = (:NO₃, :NH₄, :P, :Z, :D, :DD, :DOM, :DIC, :ALK, :Dᶜ, :DDᶜ, :DOMᶜ)
+@inline required_biogeochemical_tracers(::LOBSTER{<:Any, <:Any, <:Any, <:Val{(false, true, true)}, <:Any, <:Any}) = (:NO₃, :NH₄, :P, :Z, :D, :DD, :DOM, :OXY, :Dᶜ, :DDᶜ, :DOMᶜ)
+@inline required_biogeochemical_tracers(::LOBSTER{<:Any, <:Any, <:Any, <:Val{(true, true, true)}, <:Any, <:Any}) = (:NO₃, :NH₄, :P, :Z, :D, :DD, :DOM, :DIC, :ALK, :OXY, :Dᶜ, :DDᶜ, :DOMᶜ)
 
 @inline required_biogeochemical_auxiliary_fields(model::LOBSTER) = required_PAR_fields(model.light_attenuation_model)
 
 const small_detritus = Union{Val{:D}, Val{:Dᶜ}}
 const large_detritus = Union{Val{:DD}, Val{:DDᶜ}}
+const disolved_organic_matter = Union{Val{:DOM}, Val{:DOᶜ}}
 
-# not sure this is the most computationally efficient method
 @inline biogeochemical_drift_velocity(bgc::LOBSTER, ::Val{:Dᶜ}) = biogeochemical_drift_velocity(bgc, Val(:D))
 @inline biogeochemical_drift_velocity(bgc::LOBSTER, ::Val{:DDᶜ}) = biogeochemical_drift_velocity(bgc, Val(:DD))
+@inline biogeochemical_drift_velocity(bgc::LOBSTER, ::Val{:DOMᶜ}) = biogeochemical_drift_velocity(bgc, Val(:DOM))
 
 @inline function biogeochemical_drift_velocity(bgc::LOBSTER, ::Val{tracer_name}) where tracer_name
     if tracer_name in keys(bgc.sinking_velocities)
