@@ -92,15 +92,16 @@ function equations(x::AbstractFloat, y::AbstractFloat, z::AbstractFloat, t::Abst
         e = _e(C, params)
         ν  = _ν(A, params)
 
-        j_NO₃ = params.j_NO₃_max*f_curr(u, params)*((params.N_max-N)/(params.N_max-params.N_min))*NO₃/(params.k_NO₃+NO₃)
-        j̃_NH₄ = params.j_NH₄_max*f_curr(u, params)*NH₄/(params.k_NH₄+NH₄)
-        μ_NH₄ = j̃_NH₄/(params.K_A*(N+params.N_struct))
-        μ_NO₃ = 1 - params.N_min/N
-        μ_C = 1 - params.C_min/C
+        j_NO₃ = max(0.0, params.j_NO₃_max * f_curr(u, params) * ((params.N_max - N) / (params.N_max - params.N_min)) * NO₃ / (params.k_NO₃ + NO₃))
+        j̃_NH₄ = max(0.0, params.j_NH₄_max * f_curr(u, params) * NH₄ / (params.k_NH₄ + NH₄))
 
-        μ = @inbounds f_area(A, params)*f_temp(T, params)*f_photo(params.λ[1+floor(Int, mod(t, 364days)/day)], params)*min(μ_C, max(μ_NO₃, μ_NH₄))
+        μ_NH₄ = j̃_NH₄ / (params.K_A * (N + params.N_struct))
+        μ_NO₃ = 1 - params.N_min / N
+        μ_C = 1 - params.C_min / C
 
-        j_NH₄ = min(j̃_NH₄, μ*params.K_A*(N+params.N_struct))
+        μ = @inbounds f_area(A, params) * f_temp(T, params) * f_photo(params.λ[1 + floor(Int, mod(t, 364days) / day)], params) * min(μ_C, max(μ_NO₃, μ_NH₄))
+
+        j_NH₄ = min(j̃_NH₄, μ * params.K_A * (N + params.N_struct))
 
         r = _r(T, μ, j_NO₃ + j_NH₄, params)
 
@@ -113,8 +114,15 @@ function equations(x::AbstractFloat, y::AbstractFloat, z::AbstractFloat, t::Abst
         C_new = C+dC*Δt
 
         if C_new < params.C_min
-            A_new *= (1-(params.C_min - C)/params.C_struct)
+            A_new *= (1 - (params.C_min - C) / params.C_struct)
             C_new = params.C_min
+            N_new += params.N_struct * A * (params.C_min - C) / params.C_struct
+        end
+        
+        if N_new < params.N_min
+            A_new *= (1 - (params.N_min - N) / params.N_struct)
+            N_new = params.N_min
+            C_new += params.C_struct * A * (params.N_min - N) / params.N_struct
         end
 
         pp = (p - r)*A / (60*60*24*12*0.001) #gC/dm^2/hr to mmol C/s
@@ -278,42 +286,43 @@ end
 
 """
     SLatissima.setup(n, x₀, y₀, z₀, A₀, N₀, C₀, latitude;
-                                scalefactor = 1.0, 
-                                T=nothing, 
-                                S=nothing, 
-                                urel=nothing, 
-                                paramset=defaults, 
-                                custom_dynamics=no_dynamics, 
-                                optional_tracers=(),
-                                tracer_names=NamedTuple())
+                     scalefactor = 1.0, 
+                     T=nothing, 
+                     S=nothing, 
+                     urel=nothing, 
+                     paramset=defaults, 
+                     custom_dynamics=no_dynamics, 
+                     optional_tracers=(),
+                     tracer_names=NamedTuple())
 
 Returns Oceananigans `LagrangianParticles` which will evolve and interact with biogeochemistry as sugar kelp
-Arguments
-========
-* `n`: number of particles
-* `x₀`, `y₀`, `z₀`: intial position, should be array of length `n`
-* `A₀`, `N₀`, `C₀`: Initial area/nitrogen reserve/carbon reserve, can be arrays of length `n` or single values
-* `latitude`: latitude of growth (used for seasonality parameterisation)
+
 Keyword arguments
 =============
-* `scalefactor`: multiplier on particle uptake/release of tracers, can be though of as the number of kelp frond represented by each particle
-* `T` and `S`: functions of form `func(x, y, z, t)` for the temperature and salinity, if not defined then model will look for tracer fields (useful if physics are resolved)
-* `urel`: relative water velocity (single number), if this is not specified then actual local relative water velocity will be used (moderates nutrient uptake)
-* `paramset`: parameters for growth model
-* `custom_dynamics`: any other dynamics you wish to be run on the particles as they evolve, should be of the form `dynamics!(particles, model, Δt)`
-* `optional_tracers`: Tuple of optional tracers to couple with
-* `tracer_names`: rename coupled tracers with NamedTuple with keys as new name and values as the property this feeds/depends on (e.g. `(N = :NO₃, )`)
+
+    - `n`: number of particles
+    - `x₀`, `y₀`, `z₀`: intial position, should be array of length `n`
+    - `A₀`, `N₀`, `C₀`: Initial area/nitrogen reserve/carbon reserve, can be arrays of length `n` or single values
+    - `latitude`: latitude of growth (used for seasonality parameterisation)
+    - `scalefactor`: multiplier on particle uptake/release of tracers, can be though of as the number of kelp frond represented by each particle
+    - `T` and `S`: functions of form `func(x, y, z, t)` for the temperature and salinity, if not defined then model will look for tracer fields (useful if physics are resolved)
+    - `urel`: relative water velocity (single number), if this is not specified then actual local relative water velocity will be used (moderates nutrient uptake)
+    - `paramset`: parameters for growth model
+    - `custom_dynamics`: any other dynamics you wish to be run on the particles as they evolve, should be of the form `dynamics!(particles, model, Δt)`
+    - `optional_tracers`: Tuple of optional tracers to couple with
+    - `tracer_names`: rename coupled tracers with NamedTuple with keys as new name and values as the property this feeds/depends on (e.g. `(N = :NO₃, )`)
 """
 
-function setup(n, x₀, y₀, z₀, A₀, N₀, C₀, latitude;
-                        scalefactor = 1.0, 
-                        T=nothing, 
-                        S=nothing, 
-                        urel=nothing, 
-                        paramset=defaults, 
-                        custom_dynamics=no_dynamics, 
-                        optional_tracers=(),
-                        tracer_names=NamedTuple())
+function setup(;
+               n, x₀, y₀, z₀, A₀, N₀, C₀, latitude,
+               scalefactor = 1.0, 
+               T=nothing, 
+               S=nothing, 
+               urel=nothing, 
+               paramset=defaults, 
+               custom_dynamics=no_dynamics, 
+               optional_tracers=(),
+               tracer_names=NamedTuple())
 
     # this is a mess, we're not even using salinity at the moment
     if (!isnothing(T) && !isnothing(S) && isnothing(urel))

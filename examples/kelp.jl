@@ -42,14 +42,16 @@ PAR = Oceananigans.Fields.Field{Center, Center, Center}(grid)
 
 # ## Kelp Particle setup
 @info "Setting up kelp particles"
-n_kelp = 5 # number of kelp fronds
+n = 5 # number of kelp fronds
 z₀ = [-21:5:-1;]*1.0 # depth of kelp fronds
 
-kelp_particles = SLatissima.setup(n_kelp, Lx/2, Ly/2, z₀, 
-                                                    30.0, 0.01, 0.1, 57.5;
-                                                    scalefactor = 500.0, 
-                                                    T = t_function, S = s_function, urel = 0.2, 
-                                                    optional_tracers = (:NH₄, :DIC, :DD, :DDᶜ, :OXY, :DOM))
+kelp_particles = SLatissima.setup(;n, 
+                                  x₀ = Lx/2, y₀ = Ly/2, z₀, 
+                                  A₀ = 30.0, N₀ = 0.01, C₀ = 0.1, 
+                                  latitude = 57.5,
+                                  scalefactor = 500.0, 
+                                  T = t_function, S = s_function, urel = 0.2, 
+                                  optional_tracers = (:NH₄, :DIC, :DD, :DDᶜ, :OXY, :DOM))
 
 # Specify the boundary conditions for DIC and OXY based on the air-sea CO₂ and O₂ flux
 dic_bc = Boundaries.airseasetup(:CO₂, forcings=(T=t_function, S=s_function))
@@ -85,7 +87,7 @@ set!(model, P=0.03, Z=0.03, D=0.0, DD=0.0, Dᶜ=0.0, DDᶜ=0.0, NO₃=11, NH₄=
 
 simulation = Simulation(model, Δt=10minutes, stop_time=100days) 
 
-sim.callbacks[:couple_particles] = Callback(Particles.infinitesimal_particle_field_coupling!; callsite = TendencyCallsite())
+simulation.callbacks[:couple_particles] = Callback(Particles.infinitesimal_particle_field_coupling!; callsite = TendencyCallsite())
 
 simulation.callbacks[:update_par] = Callback(Light.twoBands.update!, IterationInterval(1), merge(merge(params, Light.twoBands.defaults), (surface_PAR=PAR⁰,)), TimeStepCallsite());
 
