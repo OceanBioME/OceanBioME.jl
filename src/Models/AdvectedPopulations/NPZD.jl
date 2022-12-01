@@ -12,7 +12,8 @@ using OceanBioME: setup_velocity_fields
 
 import Oceananigans.Biogeochemistry: 
     required_biogeochemical_tracers,
-    required_biogeochemical_auxiliary_fields
+    required_biogeochemical_auxiliary_fields,
+    update_biogeochemical_state!
 
 struct NutrientPhytoplanktonZooplanktonDetritus{FT, AbstractLightAttenuation, SPAR, W, A} <: AbstractContinuousFormBiogeochemistry
     # phytoplankton
@@ -151,4 +152,8 @@ end
     remineralization = rᵈⁿ * D
 
     return phytoplankton_mortality_loss + zooplankton_assimilation_loss + zooplankton_mortality_loss - remineralization
+end
+
+function update_biogeochemical_state!(bgc::NutrientPhytoplanktonZooplanktonDetritus, model)
+    update_PAR!(model, bgc.light_attenuation_model, bgc.surface_phytosynthetically_active_radiation)
 end
