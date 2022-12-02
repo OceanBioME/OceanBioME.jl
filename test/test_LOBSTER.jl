@@ -6,6 +6,25 @@ using Oceananigans
     sum(model.tracers.NO₃) + sum(model.tracers.NH₄) + sum(model.tracers.P) + sum(model.tracers.Z) + sum(model.tracers.sPON) + sum(model.tracers.bPON) + sum(model.tracers.DON)) : (
     sum(model.tracers.NO₃) + sum(model.tracers.NH₄) + sum(model.tracers.P) + sum(model.tracers.Z) + sum(model.tracers.sPOM) + sum(model.tracers.bPOM) + sum(model.tracers.DOM))
 
+function ΣC(model, carbonates, variable_redfield)
+    # *will only be conserved if carbonates on*
+    if variable_redfield
+        OC = sum(model.tracers.sPOC .+ model.tracers.bPOC .+ model.tracers.DOC)
+    else
+        OC = sum(model.tracers.sPOM .+ model.tracers.bPOM .+ model.tracers.DOM) * model.biogeochemistry.disolved_organic_redfield
+    end
+    
+    if carbonates
+        IC = sum(model.tracers.DIC)
+    else
+        IC = 0.0
+    end
+
+    LC = (model.tracers.P .+ model.tracers.Z) * model.biogeochemistry.phytoplankton_redfield
+
+    return OC + IC + LC
+end
+
 function test_LOBSTER(grid, carbonates, oxygen, variable_redfield, sinking, open_bottom)
     PAR = CenterField(grid)
 
@@ -58,11 +77,19 @@ function test_LOBSTER(grid, carbonates, oxygen, variable_redfield, sinking, open
 
     ΣN₀ = ΣN(model, variable_redfield)
 
+    ΣC₀ = ΣC(model, carbonates, variable_redfield)
+
     time_step!(model, 1.0)
 
     ΣN₁ = ΣN(model, variable_redfield)
     
     @test ΣN₀ ≈ ΣN₁ # guess this should actually fail with a high enough accuracy when sinking is on with an open bottom
+
+    if carbonates
+        ΣC₁ = ΣC(model, carbonates, variable_redfield)
+
+        @test ΣC₀ ≈ ΣC₁
+    end
 
     return nothing
 end
