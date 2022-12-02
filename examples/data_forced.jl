@@ -73,7 +73,7 @@ model = NonhydrostaticModel(; grid,
                               boundary_conditions = (DIC = FieldBoundaryConditions(top = CO₂_flux), ),
                               auxiliary_fields = (; PAR))
 
-set!(model, P=0.03, Z=0.03, NO₃=11.0, NH₄=0.05, DIC=2200.0, ALK=2400.0)
+set!(model, P=0.03, Z=0.03, NO₃=11.0, NH₄=0.05, DIC=2200.0, Alk=2400.0)
 
 # ## Simulation
 # Next we setup the simulation along with some callbacks that:
@@ -116,7 +116,7 @@ DD = FieldTimeSeries("$filename.jld2", "DD")
 DIC = FieldTimeSeries("$filename.jld2", "DIC")
 Dᶜ = FieldTimeSeries("$filename.jld2", "Dᶜ")
 DDᶜ = FieldTimeSeries("$filename.jld2", "DDᶜ")
-ALK = FieldTimeSeries("$filename.jld2", "ALK")
+Alk = FieldTimeSeries("$filename.jld2", "Alk")
 
 x, y, z = nodes(P)
 times = P.times
@@ -124,7 +124,7 @@ times = P.times
 air_sea_CO₂_flux = zeros(size(P)[4])
 carbon_export = zeros(size(P)[4])
 for (i, t) in enumerate(times)
-    air_sea_CO₂_flux[i] = CO₂_flux.condition.parameters(0.0, 0.0, t, DIC[1, 1, Nz, i], ALK[1, 1, Nz, i], t_function(1, 1, 0, t), s_function(1, 1, 0, t), )*Oceananigans.Operators.Ax(1, 1, Nz, grid, Center(), Center(), Center())
+    air_sea_CO₂_flux[i] = CO₂_flux.condition.parameters(0.0, 0.0, t, DIC[1, 1, Nz, i], Alk[1, 1, Nz, i], t_function(1, 1, 0, t), s_function(1, 1, 0, t), )*Oceananigans.Operators.Ax(1, 1, Nz, grid, Center(), Center(), Center())
     carbon_export[i] = (Dᶜ[1, 1, end-20, i]*model.biogeochemistry.sinking_velocities.D.w[1] .+ DDᶜ[1, 1, end-20, i]*model.biogeochemistry.sinking_velocities.DD.w[1])
 end
 

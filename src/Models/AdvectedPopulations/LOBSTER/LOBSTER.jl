@@ -7,23 +7,24 @@ Tracers
 * Ammonia: NH₄ (mmol N/m³)
 * Phytoplankton: P (mmol N/m³)
 * Zooplankton: Z (mmol N/m³)
-* Small (slow sinking) detritus: D (mmol N/m³)
-* Large (fast sinking) detritus: DD (mmol N/m³)
+* Small (slow sinking) particulate organic matter: sPOM (mmol N/m³)
+* Large (fast sinking) particulate organic matter: bPOM (mmol N/m³)
 * Disolved organic matter: DOM (mmol N/m³)
 
 Optional tracers
 ===========
 Carbonate chemistry
 * Disolved inorganic carbon: DIC (mmol C/m³)
-* Alkalinity: ALK (mmol ⁻/m³)
+* Alkalinity: Alk (mmol ⁻/m³)
 
 Oxygen chemistry
-* Oxygen: OXY (mmol O₂/m³)
+* Oxygen: O₂ (mmol O₂/m³)
 
 Variable redfield
-* Small (slow sinking) detritus carbon content: Dᶜ (mmol C/m³)
-* Large (fast sinking) detritus carbon content: DDᶜ (mmol C/m³)
+* Small (slow sinking) particulate organic matter carbon content: sPOC (mmol C/m³)
+* Large (fast sinking) particulate organic matter carbon content: bPOC (mmol C/m³)
 * Disolved organic matter carbon content: DOMᶜ (mmol C/m³)
+* When this option is enabled then the usual sPOM and bPOM change to sPON and bPON as they explicitly represent the nitrogen contained in the particulate matter
 
 Required forcing
 ===========
@@ -237,13 +238,13 @@ end
 
 # wrote this functionally and it took 2.5x longer so even though this is long going to use this way instead
 @inline required_biogeochemical_tracers(::LOBSTER{<:Any, <:Any, <:Any, <:Val{(false, false, false)}, <:Any, <:Any}) = (:NO₃, :NH₄, :P, :Z, :sPOM, :bPOM, :DOM)
-@inline required_biogeochemical_tracers(::LOBSTER{<:Any, <:Any, <:Any, <:Val{(true, false, false)}, <:Any, <:Any}) = (:NO₃, :NH₄, :P, :Z, :sPOM, :bPOM, :DOM, :DIC, :ALK)
-@inline required_biogeochemical_tracers(::LOBSTER{<:Any, <:Any, <:Any, <:Val{(false, true, false)}, <:Any, <:Any}) = (:NO₃, :NH₄, :P, :Z, :sPOM, :bPOM, :DOM, :OXY)
+@inline required_biogeochemical_tracers(::LOBSTER{<:Any, <:Any, <:Any, <:Val{(true, false, false)}, <:Any, <:Any}) = (:NO₃, :NH₄, :P, :Z, :sPOM, :bPOM, :DOM, :DIC, :Alk)
+@inline required_biogeochemical_tracers(::LOBSTER{<:Any, <:Any, <:Any, <:Val{(false, true, false)}, <:Any, <:Any}) = (:NO₃, :NH₄, :P, :Z, :sPOM, :bPOM, :DOM, :O₂)
 @inline required_biogeochemical_tracers(::LOBSTER{<:Any, <:Any, <:Any, <:Val{(false, false, true)}, <:Any, <:Any}) = (:NO₃, :NH₄, :P, :Z, :sPON, :bPON, :DON, :sPOC, :bPOC, :DOC)
-@inline required_biogeochemical_tracers(::LOBSTER{<:Any, <:Any, <:Any, <:Val{(true, true, false)}, <:Any, <:Any}) = (:NO₃, :NH₄, :P, :Z, :sPOM, :bPOM, :DOM, :DIC, :ALK, :OXY)
-@inline required_biogeochemical_tracers(::LOBSTER{<:Any, <:Any, <:Any, <:Val{(true, false, true)}, <:Any, <:Any}) = (:NO₃, :NH₄, :P, :Z, :sPON, :bPON, :DON, :DIC, :ALK, :sPOC, :bPOC, :DOC)
-@inline required_biogeochemical_tracers(::LOBSTER{<:Any, <:Any, <:Any, <:Val{(false, true, true)}, <:Any, <:Any}) = (:NO₃, :NH₄, :P, :Z, :sPON, :bPON, :DON, :OXY, :sPOC, :bPOC, :DOC)
-@inline required_biogeochemical_tracers(::LOBSTER{<:Any, <:Any, <:Any, <:Val{(true, true, true)}, <:Any, <:Any}) = (:NO₃, :NH₄, :P, :Z, :sPON, :bPON, :DON, :DIC, :ALK, :OXY, :sPOC, :bPOC, :DOC)
+@inline required_biogeochemical_tracers(::LOBSTER{<:Any, <:Any, <:Any, <:Val{(true, true, false)}, <:Any, <:Any}) = (:NO₃, :NH₄, :P, :Z, :sPOM, :bPOM, :DOM, :DIC, :Alk, :O₂)
+@inline required_biogeochemical_tracers(::LOBSTER{<:Any, <:Any, <:Any, <:Val{(true, false, true)}, <:Any, <:Any}) = (:NO₃, :NH₄, :P, :Z, :sPON, :bPON, :DON, :DIC, :Alk, :sPOC, :bPOC, :DOC)
+@inline required_biogeochemical_tracers(::LOBSTER{<:Any, <:Any, <:Any, <:Val{(false, true, true)}, <:Any, <:Any}) = (:NO₃, :NH₄, :P, :Z, :sPON, :bPON, :DON, :O₂, :sPOC, :bPOC, :DOC)
+@inline required_biogeochemical_tracers(::LOBSTER{<:Any, <:Any, <:Any, <:Val{(true, true, true)}, <:Any, <:Any}) = (:NO₃, :NH₄, :P, :Z, :sPON, :bPON, :DON, :DIC, :Alk, :O₂, :sPOC, :bPOC, :DOC)
 
 @inline required_biogeochemical_auxiliary_fields(model::LOBSTER) = required_PAR_fields(model.light_attenuation_model)
 
@@ -267,8 +268,9 @@ const DOM = Union{Val{:DOM}, Val{:DON}}
     end
 end
 
-@inline biogeochemical_advection_scheme(bgc::LOBSTER, ::Val{:Dᶜ}) = biogeochemical_advection_scheme(bgc, Val(:D))
-@inline biogeochemical_advection_scheme(bgc::LOBSTER, ::Val{:DDᶜ}) = biogeochemical_advection_scheme(bgc, Val(:DD))
+@inline biogeochemical_advection_scheme(bgc::LOBSTER, ::small_detritus) = biogeochemical_advection_scheme(bgc, Val(:sPOM))
+@inline biogeochemical_advection_scheme(bgc::LOBSTER, ::large_detritus) = biogeochemical_advection_scheme(bgc, Val(:bPOM))
+@inline biogeochemical_advection_scheme(bgc::LOBSTER, ::disolved_organic_matter) = biogeochemical_advection_scheme(bgc, Val(:DOM))
 
 @inline function biogeochemical_advection_scheme(bgc::LOBSTER, ::Val{tracer_name}) where tracer_name
     if tracer_name in keys(bgc.sinking_velocities)

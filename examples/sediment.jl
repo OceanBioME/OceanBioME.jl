@@ -41,16 +41,16 @@ Lx, Ly = 20, 20
 grid = RectilinearGrid(size=(1, 1, 50), extent=(Lx, Ly, 200)) 
 PAR = Oceananigans.Fields.Field{Center, Center, Center}(grid)  
 
-# Specify the boundary conditions for DIC and OXY based on the air-sea CO₂ and O₂ flux
+# Specify the boundary conditions for DIC and O₂ based on the air-sea CO₂ and O₂ flux
 dic_bc = Boundaries.airseasetup(:CO₂, forcings=(T=t_function, S=s_function))
 oxy_bc = Boundaries.airseasetup(:O₂, forcings=(T=t_function, S=s_function))
 
 # For the sediment model we have to setup the tracer field first and then pass these to the sediment model
-NO₃, NH₄, P, Z, D, DD, Dᶜ, DDᶜ, DOM, DIC, ALK, OXY = CenterField(grid), CenterField(grid), CenterField(grid), CenterField(grid), CenterField(grid), CenterField(grid), CenterField(grid), CenterField(grid), CenterField(grid), CenterField(grid), CenterField(grid), CenterField(grid)
+NO₃, NH₄, P, Z, D, DD, Dᶜ, DDᶜ, DOM, DIC, Alk, O₂ = CenterField(grid), CenterField(grid), CenterField(grid), CenterField(grid), CenterField(grid), CenterField(grid), CenterField(grid), CenterField(grid), CenterField(grid), CenterField(grid), CenterField(grid), CenterField(grid)
 sediment=Boundaries.Sediments.Soetaert.setup(grid, (;D, DD); POM_w=(D=LOBSTER.D_sinking, DD=LOBSTER.DD_sinking))
 
 # ## Biogeochemical and Oceananigans model
-bgc = Setup.Oceananigans(:LOBSTER, grid, params, optional_sets=(:carbonates, :oxygen), topboundaries=(DIC=dic_bc, OXY=oxy_bc), open_bottom=true, bottomboundaries=sediment.boundary_conditions) 
+bgc = Setup.Oceananigans(:LOBSTER, grid, params, optional_sets=(:carbonates, :oxygen), topboundaries=(DIC=dic_bc, O₂=oxy_bc), open_bottom=true, bottomboundaries=sediment.boundary_conditions) 
 
 @info "Setup BGC model"
 
@@ -64,7 +64,7 @@ model = NonhydrostaticModel(
                                                 boundary_conditions = bgc.boundary_conditions,
                                                 auxiliary_fields = merge((; PAR), sediment.auxiliary_fields)
 )
-set!(model, P=0.03, Z=0.03, D=0.0, DD=0.0, Dᶜ=0.0, DDᶜ=0.0, NO₃=11, NH₄=0.05, DOM=0.0, DIC=2200.0, ALK=2400.0, OXY=240.0)
+set!(model, P=0.03, Z=0.03, D=0.0, DD=0.0, Dᶜ=0.0, DDᶜ=0.0, NO₃=11, NH₄=0.05, DOM=0.0, DIC=2200.0, Alk=2400.0, O₂=240.0)
 
 
 # ## Simulation

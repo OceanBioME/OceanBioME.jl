@@ -22,10 +22,10 @@ function test_LOBSTER(grid, carbonates, oxygen, variable_redfield, sinking, open
     # correct tracers and auxiliary fields have been setup, and order has not changed
     required_tracers = variable_redfield ? (:NO₃, :NH₄, :P, :Z, :sPON, :bPON, :DON) : (:NO₃, :NH₄, :P, :Z, :sPOM, :bPOM, :DOM)
     if carbonates
-        required_tracers = (required_tracers..., :DIC, :ALK)
+        required_tracers = (required_tracers..., :DIC, :Alk)
     end
     if oxygen
-        required_tracers = (required_tracers..., :OXY)
+        required_tracers = (required_tracers..., :O₂)
     end
     if variable_redfield
         required_tracers = (required_tracers..., :sPOC, :bPOC, :DOC)

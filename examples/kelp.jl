@@ -50,9 +50,9 @@ kelp_particles = SLatissima.setup(;n,
                                   latitude = 57.5,
                                   scalefactor = 500.0, 
                                   T = t_function, S = s_function, urel = 0.2, 
-                                  optional_tracers = (:NH₄, :DIC, :DD, :DDᶜ, :OXY, :DOM))
+                                  optional_tracers = (:NH₄, :DIC, :DD, :DDᶜ, :O₂, :DOM))
 
-# Specify the boundary conditions for DIC and OXY based on the air-sea CO₂ and O₂ flux
+# Specify the boundary conditions for DIC and O₂ based on the air-sea CO₂ and O₂ flux
 CO₂_flux = GasExchange(; gas = :CO₂, temperature = t_function, salinity = s_function)
 O₂_flux = GasExchange(; gas = :O₂, temperature = t_function, salinity = s_function)
 model = NonhydrostaticModel(; grid,
@@ -63,11 +63,11 @@ model = NonhydrostaticModel(; grid,
                                                           oxygen = true,
                                                           variable_redfield = true),
                               boundary_conditions = (DIC = FieldBoundaryConditions(top = CO₂_flux),
-                                                     OXY = FieldBoundaryConditions(top = O₂_flux), ),
+                                                     O₂ = FieldBoundaryConditions(top = O₂_flux), ),
                               auxiliary_fields = (; PAR),
                               particles = kelp_particles)
 
-set!(model, P=0.03, Z=0.03, NO₃=11.0, NH₄=0.05, DIC=2200.0, ALK=2400.0, OXY=240.0)
+set!(model, P=0.03, Z=0.03, NO₃=11.0, NH₄=0.05, DIC=2200.0, Alk=2400.0, O₂=240.0)
 
 
 # ## Simulation
@@ -111,7 +111,7 @@ DD = FieldTimeSeries("$filename.jld2", "DD")
 DIC = FieldTimeSeries("$filename.jld2", "DIC")
 Dᶜ = FieldTimeSeries("$filename.jld2", "Dᶜ")
 DDᶜ = FieldTimeSeries("$filename.jld2", "DDᶜ")
-ALK = FieldTimeSeries("$filename.jld2", "ALK")
+Alk = FieldTimeSeries("$filename.jld2", "Alk")
 
 x, y, z = nodes(P)
 times = P.times
@@ -119,7 +119,7 @@ times = P.times
 air_sea_CO₂_flux = zeros(size(P)[4])
 carbon_export = zeros(size(P)[4])
 for (i, t) in enumerate(times)
-    air_sea_CO₂_flux[i] = CO₂_flux.condition.parameters(0.0, 0.0, t, DIC[1, 1, 50, i], ALK[1, 1, 50, i], t_function(1, 1, 0, t), s_function(1, 1, 0, t))*Oceananigans.Operators.Ax(1, 1, 50, grid, Center(), Center(), Center())
+    air_sea_CO₂_flux[i] = CO₂_flux.condition.parameters(0.0, 0.0, t, DIC[1, 1, 50, i], Alk[1, 1, 50, i], t_function(1, 1, 0, t), s_function(1, 1, 0, t))*Oceananigans.Operators.Ax(1, 1, 50, grid, Center(), Center(), Center())
     carbon_export[i] = (Dᶜ[1, 1, end-20, i]*model.biogeochemistry.sinking_velocities.D.w[1] .+ DDᶜ[1, 1, end-20, i]*model.biogeochemistry.sinking_velocities.DD.w[1])
 end
 
