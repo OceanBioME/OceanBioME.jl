@@ -93,8 +93,8 @@ filename = "kelp"
 simulation.output_writers[:profiles] = JLD2OutputWriter(model, merge(model.tracers, model.auxiliary_fields), filename = "$filename.jld2", schedule = TimeInterval(1day), overwrite_existing=true)
 simulation.output_writers[:particles] = JLD2OutputWriter(model, (particles=model.particles, ), filename = "$(filename)_particles.jld2", schedule = TimeInterval(1day), overwrite_existing = true)
 
-simulation.callbacks[:neg] = Callback(scale_negative_tracers!; parameters=(conserved_group=(:NO₃, :NH₄, :P, :Z, :D, :DD, :DOM), warn=false), callsite = UpdateStateCallsite())
-simulation.callbacks[:neg2] = Callback(scale_negative_tracers!; parameters=(conserved_group=(:NO₃, :NH₄, :P, :Z, :D, :DD, :DOM), warn=false), callsite = TendencyCallsite())
+simulation.callbacks[:neg] = Callback(scale_negative_tracers!; parameters=(conserved_group=(:NO₃, :NH₄, :P, :Z, :sPON, :lPON, :DON), warn=false), callsite = UpdateStateCallsite())
+simulation.callbacks[:neg2] = Callback(scale_negative_tracers!; parameters=(conserved_group=(:NO₃, :NH₄, :P, :Z, :sPON, :lPON, :DON), warn=false), callsite = TendencyCallsite())
 simulation.callbacks[:timestep] = Callback(update_timestep!, IterationInterval(1), (c_forcing=0.05, c_adv=0.2, c_diff=0.2, w = 200/day, relaxation=0.95), TimeStepCallsite())
 
 # ## Run!
@@ -106,11 +106,11 @@ run!(simulation)
 P = FieldTimeSeries("$filename.jld2", "P")
 NO₃ = FieldTimeSeries("$filename.jld2", "NO₃")
 Z = FieldTimeSeries("$filename.jld2", "Z")
-D = FieldTimeSeries("$filename.jld2", "D") 
-DD = FieldTimeSeries("$filename.jld2", "DD")
+sPON = FieldTimeSeries("$filename.jld2", "sPON") 
+lPON = FieldTimeSeries("$filename.jld2", "lPON")
 DIC = FieldTimeSeries("$filename.jld2", "DIC")
-Dᶜ = FieldTimeSeries("$filename.jld2", "Dᶜ")
-DDᶜ = FieldTimeSeries("$filename.jld2", "DDᶜ")
+sPOC = FieldTimeSeries("$filename.jld2", "sPOC")
+lPOC = FieldTimeSeries("$filename.jld2", "lPOC")
 Alk = FieldTimeSeries("$filename.jld2", "Alk")
 
 x, y, z = nodes(P)
@@ -120,7 +120,7 @@ air_sea_CO₂_flux = zeros(size(P)[4])
 carbon_export = zeros(size(P)[4])
 for (i, t) in enumerate(times)
     air_sea_CO₂_flux[i] = CO₂_flux.condition.parameters(0.0, 0.0, t, DIC[1, 1, 50, i], Alk[1, 1, 50, i], t_function(1, 1, 0, t), s_function(1, 1, 0, t))*Oceananigans.Operators.Ax(1, 1, 50, grid, Center(), Center(), Center())
-    carbon_export[i] = (Dᶜ[1, 1, end-20, i]*model.biogeochemistry.sinking_velocities.D.w[1] .+ DDᶜ[1, 1, end-20, i]*model.biogeochemistry.sinking_velocities.DD.w[1])
+    carbon_export[i] = (sPOC[1, 1, end-20, i]*model.biogeochemistry.sinking_velocities.sPOM.w[1] .+ lPOC[1, 1, end-20, i]*model.biogeochemistry.sinking_velocities.lPOM.w[1])
 end
 
 using GLMakie
@@ -138,8 +138,8 @@ axZ = Axis(f[2, 1:2], ylabel="z (m)", xlabel="Time (days)", title="Zooplankton c
 hmZ = GLMakie.heatmap!(times./days, float.(z[end-23:end]), float.(Z[1, 1, end-23:end, 1:101])', interpolate=true, colormap=:batlow)
 cbZ = Colorbar(f[2, 3], hmZ)
 
-axD = Axis(f[2, 4:5], ylabel="z (m)", xlabel="Time (days)", title="Detritus concentration (mmol N/m³)")
-hmD = GLMakie.heatmap!(times./days, float.(z[end-23:end]), float.(D[1, 1, end-23:end, 1:101])' .+ float.(DD[1, 1, end-23:end, 1:101])', interpolate=true, colormap=:batlow)
+axD = Axis(f[2, 4:5], ylabel="z (m)", xlabel="Time (days)", title="Detritus concentration (mmol C/m³)")
+hmD = GLMakie.heatmap!(times./days, float.(z[end-23:end]), float.(sPOC[1, 1, end-23:end, 1:101])' .+ float.(lPOC[1, 1, end-23:end, 1:101])', interpolate=true, colormap=:batlow)
 cbD = Colorbar(f[2, 6], hmD)
 
 axfDIC = Axis(f[3, 1:4], xlabel="Time (days)", title="Air-sea CO₂ flux and Sinking", ylabel="Flux (kgCO₂/m²/year)")

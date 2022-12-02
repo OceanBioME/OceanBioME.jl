@@ -20,7 +20,7 @@ function ΣC(model, carbonates, variable_redfield)
         IC = 0.0
     end
 
-    LC = (model.tracers.P .+ model.tracers.Z) * model.biogeochemistry.phytoplankton_redfield
+    LC = sum(model.tracers.P .+ model.tracers.Z) * model.biogeochemistry.phytoplankton_redfield
 
     return OC + IC + LC
 end
