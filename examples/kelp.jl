@@ -163,18 +163,18 @@ gInput = f[1, 1] = GridLayout()
 gProperties = f[1, 2] = GridLayout()
 gOutput = f[1, 3] = GridLayout()
 
-ax1, hm1 = GLMakie.heatmap(gInput[1, 1], xs, ys, res_kelp.results[17,:,:]')
+ax1, hm1 = GLMakie.heatmap(gInput[1, 1], xs, ys, res_kelp.results[18,:,:]')
 ax1.title = "NO₃"
 ax1.xticklabelsvisible= false
 cb1 = Colorbar(gInput[1, 1:2], hm1, label = "mmol N/m³")
 
-ax2, hm2 = GLMakie.heatmap(gInput[2, 1], xs, ys, res_kelp.results[18,:,:]')
+ax2, hm2 = GLMakie.heatmap(gInput[2, 1], xs, ys, res_kelp.results[19,:,:]')
 ax2.title = "NH₄"
 ax2.ylabel = "depth (m)"
 ax2.xticklabelsvisible= false
 cb2 = Colorbar(gInput[2, 1:2], hm2, label = "mmol N/m³")
 
-ax3, hm3 = GLMakie.heatmap(gInput[3, 1], xs, ys, res_kelp.results[19,:,:]')
+ax3, hm3 = GLMakie.heatmap(gInput[3, 1], xs, ys, res_kelp.results[20,:,:]')
 ax3.title = "PAR"
 ax3.xlabel = "time (day)"
 cb3 = Colorbar(gInput[3, 1:2], hm3, label = "einstein/m²/day")
@@ -211,12 +211,12 @@ ax3.xticklabelsvisible= false
 ax3.ylabel = "depth (m)"
 cb3 = Colorbar(gOutput[3, 1:2], hm3, label = "mmol C/s")
 
-ax4, hm4 = GLMakie.heatmap(gOutput[4, 1], xs, ys, res_kelp.results[14,:,:]')
+ax4, hm4 = GLMakie.heatmap(gOutput[4, 1], xs, ys, res_kelp.results[15,:,:]')
 ax4.title = "Exudation (DOC output)"
 ax4.xticklabelsvisible= false
 cb4 = Colorbar(gOutput[4, 1:2], hm4, label = "mmol C/s")
 
-ax5, hm5 = GLMakie.heatmap(gOutput[5, 1], xs, ys, res_kelp.results[16,:,:]')
+ax5, hm5 = GLMakie.heatmap(gOutput[5, 1], xs, ys, res_kelp.results[17,:,:]')
 ax5.title = "Frond errosion (POM output)"
 ax5.xlabel = "time (day)"
 cb5 = Colorbar(gOutput[5, 1:2], hm5, label = "mmol C/s")

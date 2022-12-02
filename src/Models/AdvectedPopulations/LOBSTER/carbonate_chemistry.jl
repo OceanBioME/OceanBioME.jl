@@ -14,7 +14,7 @@
     μᶻ = bgc.zooplankton_excretion_rate
     ρᶜᵃᶜᵒ³ = bgc.organic_carbon_calcate_ratio
 
-    return (μₚ * Lₚₐᵣ(PAR, kₚₐᵣ) * (Lₙₒ₃(NO₃, NH₄, ψ, kₙₒ₃) + Lₙₕ₄(NH₄, kₙₕ₄)) * (αᵖ * γ - (1 + ρᶜᵃᶜᵒ³)) * P
+    return (μₚ * Lₚₐᵣ(PAR, kₚₐᵣ) * (Lₙₒ₃(NO₃, NH₄, ψ, kₙₒ₃) + Lₙₕ₄(NH₄, kₙₕ₄)) * (αᵖ * γ - (1 + ρᶜᵃᶜᵒ³)) * Pᶜ
             + αᶻ * μᶻ * Zᶜ
             + αᵈ * μᵈ * sPOC
             + αᵈ * μᵈᵈ * bPOC

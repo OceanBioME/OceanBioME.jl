@@ -5,9 +5,9 @@
 @inline (bgc::LOBSTER)(tracer::Val{:NH₄}, x, y, z, t, NO₃, NH₄, P, Z, sPOM, bPOM, DOM, args...) = @inbounds bgc(tracer, x, y, z, t, NO₃, NH₄, P, Z, sPOM, bPOM, DOM, args[end])
 @inline (bgc::LOBSTER)(tracer::Val{:P}, x, y, z, t, NO₃, NH₄, P, Z, sPOM, bPOM, DOM, args...) = @inbounds bgc(tracer, x, y, z, t, NO₃, NH₄, P, Z, sPOM, bPOM, DOM, args[end])
 @inline (bgc::LOBSTER)(tracer::Val{:Z}, x, y, z, t, NO₃, NH₄, P, Z, sPOM, bPOM, DOM, args...) = @inbounds bgc(tracer, x, y, z, t, NO₃, NH₄, P, Z, sPOM, bPOM, DOM, args[end])
-@inline (bgc::LOBSTER)(tracer::Val{:sPOM}, x, y, z, t, NO₃, NH₄, P, Z, sPOM, bPOM, DOM, args...) = @inbounds bgc(tracer, x, y, z, t, NO₃, NH₄, P, Z, sPOM, bPOM, DOM, args[end])
-@inline (bgc::LOBSTER)(tracer::Val{:bPOM}, x, y, z, t, NO₃, NH₄, P, Z, sPOM, bPOM, DOM, args...) = @inbounds bgc(tracer, x, y, z, t, NO₃, NH₄, P, Z, sPOM, bPOM, DOM, args[end])
-@inline (bgc::LOBSTER)(tracer::Val{:DOM}, x, y, z, t, NO₃, NH₄, P, Z, sPOM, bPOM, DOM, args...) = @inbounds bgc(tracer, x, y, z, t, NO₃, NH₄, P, Z, D, bPOM, DOM, args[end])
+@inline (bgc::LOBSTER)(tracer::sPOM, x, y, z, t, NO₃, NH₄, P, Z, sPOM, bPOM, DOM, args...) = @inbounds bgc(Val(:sPOM), x, y, z, t, NO₃, NH₄, P, Z, sPOM, bPOM, DOM, args[end])
+@inline (bgc::LOBSTER)(tracer::bPOM, x, y, z, t, NO₃, NH₄, P, Z, sPOM, bPOM, DOM, args...) = @inbounds bgc(Val(:bPOM), x, y, z, t, NO₃, NH₄, P, Z, sPOM, bPOM, DOM, args[end])
+@inline (bgc::LOBSTER)(tracer::DOM, x, y, z, t, NO₃, NH₄, P, Z, sPOM, bPOM, DOM, args...) = @inbounds bgc(Val(:DOM), x, y, z, t, NO₃, NH₄, P, Z, sPOM, bPOM, DOM, args[end])
 
 # Carbonates and oxygen
 # We can't tell the difference between carbonates and oxygen, and variable redfields without specifying more 
