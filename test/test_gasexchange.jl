@@ -28,7 +28,7 @@ end
 
     @test isa(model.tracers.DIC.boundary_conditions.top.condition.parameters, GasExchange)
 
-    set!(model, T = 15.0, S = 35.0, DIC = 2220, ALK = 2500)
+    set!(model, T = 15.0, S = 35.0, DIC = 2220, Alk = 2500)
 
     # is everything communicating properly?
     @test Oceananigans.getbc(model.tracers.DIC.boundary_conditions.top, 1, 1, grid, model.clock, fields(model)) ≈ -0.0003 atol = 0.0001

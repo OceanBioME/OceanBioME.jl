@@ -14,7 +14,7 @@
     μᶻ = bgc.zooplankton_excretion_rate
     ρᶜᵃᶜᵒ³ = bgc.organic_carbon_calcate_ratio
     Rdᵖ = bgc.phytoplankton_redfield
-    Rdᵒ = bgc.disolved_organic_redfield
+    Rdᵒ = bgc. organic_redfield
 
     return (- μₚ * Lₚₐᵣ(PAR, kₚₐᵣ) * (Lₙₒ₃(NO₃, NH₄, ψ, kₙₒ₃) + Lₙₕ₄(NH₄, kₙₕ₄)) * (1 + ρᶜᵃᶜᵒ³) * P * Rdᵖ
             + αᵖ * γ * μₚ * Lₚₐᵣ(PAR, kₚₐᵣ) * (Lₙₒ₃(NO₃, NH₄, ψ, kₙₒ₃) + Lₙₕ₄(NH₄, kₙₕ₄)) * P * Rdᵖ

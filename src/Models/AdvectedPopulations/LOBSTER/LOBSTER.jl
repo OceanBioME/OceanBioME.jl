@@ -15,7 +15,7 @@ Optional tracers
 ===========
 Carbonate chemistry
 * Disolved inorganic carbon: DIC (mmol C/m³)
-* Alkalinity: Alk (mmol ⁻/m³)
+* Alkalinity: Alk (meq/m³)
 
 Oxygen chemistry
 * Oxygen: O₂ (mmol O₂/m³)
@@ -23,7 +23,7 @@ Oxygen chemistry
 Variable redfield
 * Small (slow sinking) particulate organic matter carbon content: sPOC (mmol C/m³)
 * Large (fast sinking) particulate organic matter carbon content: bPOC (mmol C/m³)
-* Disolved organic matter carbon content: DOMᶜ (mmol C/m³)
+* Disolved organic matter carbon content: DOC (mmol C/m³)
 * When this option is enabled then the usual sPOM and bPOM change to sPON and bPON as they explicitly represent the nitrogen contained in the particulate matter
 
 Required forcing
@@ -75,7 +75,7 @@ import Oceananigans.Biogeochemistry:
              ammonia_fraction_of_excriment::FT = 0.5,
              ammonia_fraction_of_detritus::FT = 0.0,
              phytoplankton_redfield::FT = 6.56, # mol C/mol N
-             disolved_organic_redfield::FT = 6.56, # mol C/mol N
+             organic_redfield::FT = 6.56, # mol C/mol N
              phytoplankton_chlorophyll_ratio::FT = 1.31, # mgChl/mol N
              organic_carbon_calcate_ratio::FT = 0.1, # mol CaCO₃/mol N
              respiraiton_oxygen_nitrogen_ratio::FT = 10.75, # mol O/molN
@@ -131,7 +131,7 @@ struct LOBSTER{FT, L, SPAR, B, W, A} <: AbstractContinuousFormBiogeochemistry
     ammonia_fraction_of_excriment :: FT
     ammonia_fraction_of_detritus :: FT
     phytoplankton_redfield :: FT
-    disolved_organic_redfield :: FT
+    organic_redfield :: FT
     phytoplankton_chlorophyll_ratio :: FT
     organic_carbon_calcate_ratio :: FT
     respiraiton_oxygen_nitrogen_ratio :: FT
@@ -169,7 +169,7 @@ struct LOBSTER{FT, L, SPAR, B, W, A} <: AbstractContinuousFormBiogeochemistry
                       ammonia_fraction_of_excriment::FT = 0.5,
                       ammonia_fraction_of_detritus::FT = 0.0,
                       phytoplankton_redfield::FT = 6.56, # mol C/mol N
-                      disolved_organic_redfield::FT = 6.56, # mol C/mol N
+                      organic_redfield::FT = 6.56, # mol C/mol N
                       phytoplankton_chlorophyll_ratio::FT = 1.31, # mgChl/mol N
                       organic_carbon_calcate_ratio::FT = 0.1, # mol CaCO₃/mol N
                       respiraiton_oxygen_nitrogen_ratio::FT = 10.75, # mol O/molN
@@ -217,7 +217,7 @@ struct LOBSTER{FT, L, SPAR, B, W, A} <: AbstractContinuousFormBiogeochemistry
                                                                 ammonia_fraction_of_excriment,
                                                                 ammonia_fraction_of_detritus,
                                                                 phytoplankton_redfield,
-                                                                disolved_organic_redfield,
+                                                                organic_redfield,
                                                                 phytoplankton_chlorophyll_ratio,
                                                                 organic_carbon_calcate_ratio,
                                                                 respiraiton_oxygen_nitrogen_ratio,

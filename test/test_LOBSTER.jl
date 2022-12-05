@@ -11,7 +11,7 @@ function ΣC(model, carbonates, variable_redfield)
     if variable_redfield
         OC = sum(model.tracers.sPOC .+ model.tracers.bPOC .+ model.tracers.DOC)
     else
-        OC = sum(model.tracers.sPOM .+ model.tracers.bPOM .+ model.tracers.DOM) * model.biogeochemistry.disolved_organic_redfield
+        OC = sum(model.tracers.sPOM .+ model.tracers.bPOM .+ model.tracers.DOM) * model.biogeochemistry. organic_redfield
     end
     
     if carbonates
@@ -35,7 +35,7 @@ function ΣGᶜ(model, carbonates, variable_redfield)
     if variable_redfield
         OC = sum(model.timestepper.Gⁿ.sPOC .+ model.timestepper.Gⁿ.bPOC .+ model.timestepper.Gⁿ.DOC)
     else
-        OC = sum(model.timestepper.Gⁿ.sPOM .+ model.timestepper.Gⁿ.bPOM .+ model.timestepper.Gⁿ.DOM) * model.biogeochemistry.disolved_organic_redfield
+        OC = sum(model.timestepper.Gⁿ.sPOM .+ model.timestepper.Gⁿ.bPOM .+ model.timestepper.Gⁿ.DOM) * model.biogeochemistry. organic_redfield
     end
     
     if carbonates
