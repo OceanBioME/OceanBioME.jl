@@ -267,7 +267,7 @@ end
 default_tracers = (NO₃ = :NO₃, PAR=:PAR) # tracer = property
 optional_tracer_dependencies = (NH₄ = :NH₄, )
 default_coupling = (NO₃ = :j_NO₃, )    
-optional_tracer_coupling = (NH₄ = :j_NH₄, DIC = :j_DIC, DON = :eⁿ, DOC = :eᶜ, lPON = :νⁿ, lPOC = :νᶜ, O₂ = :j_OXY)
+optional_tracer_coupling = (NH₄ = :j_NH₄, DIC = :j_DIC, DON = :eⁿ, DOC = :eᶜ, bPON = :νⁿ, bPOC = :νᶜ, O₂ = :j_OXY)
 
 # Expands initial conditions to fill particles
 function defineparticles(initials, n)

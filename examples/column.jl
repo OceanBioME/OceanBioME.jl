@@ -67,7 +67,7 @@ simulation.output_writers[:profiles] = JLD2OutputWriter(model,
                                                         schedule = TimeInterval(1day), 
                                                         overwrite_existing = true)
 
-simulation.callbacks[:neg] = Callback(scale_negative_tracers!; parameters=(conserved_group=(:NO₃, :NH₄, :P, :Z, :D, :DD, :DOM), warn=false))
+simulation.callbacks[:neg] = Callback(scale_negative_tracers!; parameters=(conserved_group=(:NO₃, :NH₄, :P, :Z, :sPOM, :bPOM, :DOM), warn=false))
 
 # ## Run!
 # Finally we run the simulation
@@ -78,7 +78,7 @@ run!(simulation)
 P = FieldTimeSeries("$filename.jld2", "P")
 NO₃ = FieldTimeSeries("$filename.jld2", "NO₃")
 Z = FieldTimeSeries("$filename.jld2", "Z")
-D = FieldTimeSeries("$filename.jld2", "D") .+ FieldTimeSeries("$filename.jld2", "DD")
+D = FieldTimeSeries("$filename.jld2", "sPOM") .+ FieldTimeSeries("$filename.jld2", "bPOM")
 x, y, z = nodes(P)
 times = P.times
 

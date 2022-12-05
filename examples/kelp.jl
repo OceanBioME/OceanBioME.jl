@@ -50,7 +50,7 @@ kelp_particles = SLatissima.setup(;n,
                                   latitude = 57.5,
                                   scalefactor = 500.0, 
                                   T = t_function, S = s_function, urel = 0.2, 
-                                  optional_tracers = (:NH₄, :DIC, :DD, :DDᶜ, :O₂, :DOM))
+                                  optional_tracers = (:NH₄, :DIC, :bPOM, :bPOC, :O₂, :DON, :DOC))
 
 # Specify the boundary conditions for DIC and O₂ based on the air-sea CO₂ and O₂ flux
 CO₂_flux = GasExchange(; gas = :CO₂, temperature = t_function, salinity = s_function)
@@ -107,10 +107,10 @@ P = FieldTimeSeries("$filename.jld2", "P")
 NO₃ = FieldTimeSeries("$filename.jld2", "NO₃")
 Z = FieldTimeSeries("$filename.jld2", "Z")
 sPON = FieldTimeSeries("$filename.jld2", "sPON") 
-lPON = FieldTimeSeries("$filename.jld2", "lPON")
+bPON = FieldTimeSeries("$filename.jld2", "bPON")
 DIC = FieldTimeSeries("$filename.jld2", "DIC")
 sPOC = FieldTimeSeries("$filename.jld2", "sPOC")
-lPOC = FieldTimeSeries("$filename.jld2", "lPOC")
+bPOC = FieldTimeSeries("$filename.jld2", "bPOC")
 Alk = FieldTimeSeries("$filename.jld2", "Alk")
 
 x, y, z = nodes(P)
@@ -120,7 +120,7 @@ air_sea_CO₂_flux = zeros(size(P)[4])
 carbon_export = zeros(size(P)[4])
 for (i, t) in enumerate(times)
     air_sea_CO₂_flux[i] = CO₂_flux.condition.parameters(0.0, 0.0, t, DIC[1, 1, 50, i], Alk[1, 1, 50, i], t_function(1, 1, 0, t), s_function(1, 1, 0, t))*Oceananigans.Operators.Ax(1, 1, 50, grid, Center(), Center(), Center())
-    carbon_export[i] = (sPOC[1, 1, end-20, i]*model.biogeochemistry.sinking_velocities.sPOM.w[1] .+ lPOC[1, 1, end-20, i]*model.biogeochemistry.sinking_velocities.lPOM.w[1])
+    carbon_export[i] = (sPOC[1, 1, end-20, i]*model.biogeochemistry.sinking_velocities.sPOM.w[1] .+ bPOC[1, 1, end-20, i]*model.biogeochemistry.sinking_velocities.bPOM.w[1])
 end
 
 using GLMakie
@@ -139,7 +139,7 @@ hmZ = GLMakie.heatmap!(times./days, float.(z[end-23:end]), float.(Z[1, 1, end-23
 cbZ = Colorbar(f[2, 3], hmZ)
 
 axD = Axis(f[2, 4:5], ylabel="z (m)", xlabel="Time (days)", title="Detritus concentration (mmol C/m³)")
-hmD = GLMakie.heatmap!(times./days, float.(z[end-23:end]), float.(sPOC[1, 1, end-23:end, 1:101])' .+ float.(lPOC[1, 1, end-23:end, 1:101])', interpolate=true, colormap=:batlow)
+hmD = GLMakie.heatmap!(times./days, float.(z[end-23:end]), float.(sPOC[1, 1, end-23:end, 1:101])' .+ float.(bPOC[1, 1, end-23:end, 1:101])', interpolate=true, colormap=:batlow)
 cbD = Colorbar(f[2, 6], hmD)
 
 axfDIC = Axis(f[3, 1:4], xlabel="Time (days)", title="Air-sea CO₂ flux and Sinking", ylabel="Flux (kgCO₂/m²/year)")
@@ -217,7 +217,7 @@ ax4.xticklabelsvisible= false
 cb4 = Colorbar(gOutput[4, 1:2], hm4, label = "mmol C/s")
 
 ax5, hm5 = GLMakie.heatmap(gOutput[5, 1], xs, ys, res_kelp.results[17,:,:]')
-ax5.title = "Frond errosion (POM output)"
+ax5.title = "Frond errosion (POC output)"
 ax5.xlabel = "time (day)"
 cb5 = Colorbar(gOutput[5, 1:2], hm5, label = "mmol C/s")
 save("examples/$(filename)_particles.png", f)

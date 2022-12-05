@@ -25,6 +25,29 @@ function ΣC(model, carbonates, variable_redfield)
     return OC + IC + LC
 end
 
+ΣGⁿ(model, variable_redfield) = variable_redfield ? (
+    sum(model.timestepper.Gⁿ.NO₃) + sum(model.timestepper.Gⁿ.NH₄) + sum(model.timestepper.Gⁿ.P) + sum(model.timestepper.Gⁿ.Z) + sum(model.timestepper.Gⁿ.sPON) + sum(model.timestepper.Gⁿ.bPON) + sum(model.timestepper.Gⁿ.DON)) : (
+    sum(model.timestepper.Gⁿ.NO₃) + sum(model.timestepper.Gⁿ.NH₄) + sum(model.timestepper.Gⁿ.P) + sum(model.timestepper.Gⁿ.Z) + sum(model.timestepper.Gⁿ.sPOM) + sum(model.timestepper.Gⁿ.bPOM) + sum(model.timestepper.Gⁿ.DOM))
+
+
+function ΣGᶜ(model, carbonates, variable_redfield)
+    # *will only be conserved if carbonates on*
+    if variable_redfield
+        OC = sum(model.timestepper.Gⁿ.sPOC .+ model.timestepper.Gⁿ.bPOC .+ model.timestepper.Gⁿ.DOC)
+    else
+        OC = sum(model.timestepper.Gⁿ.sPOM .+ model.timestepper.Gⁿ.bPOM .+ model.timestepper.Gⁿ.DOM) * model.biogeochemistry.disolved_organic_redfield
+    end
+    
+    if carbonates
+        IC = sum(model.timestepper.Gⁿ.DIC)
+    else
+        IC = 0.0
+    end
+
+    LC = sum(model.timestepper.Gⁿ.P .+ model.timestepper.Gⁿ.Z) * model.biogeochemistry.phytoplankton_redfield 
+
+    return OC + IC + LC
+end
 function test_LOBSTER(grid, carbonates, oxygen, variable_redfield, sinking, open_bottom, n_timesteps)
     PAR = CenterField(grid)
 
@@ -96,15 +119,16 @@ function test_LOBSTER(grid, carbonates, oxygen, variable_redfield, sinking, open
     
     if !(sinking && open_bottom) #when we have open bottom sinking we won't conserve anything
         @test ΣN₀ ≈ ΣN₁
+        @test ΣGⁿ(model, variable_redfield) ≈ 0.0 atol = 1e-15 # rtol=sqrt(eps) so is usually much larger than even this
 
         if carbonates
             ΣC₁ = ΣC(model, carbonates, variable_redfield)
+            @test ΣC₀ ≈ ΣC₁# atol = 0.0001 # when we convert to and from 
 
-            @test ΣC₀ ≈ ΣC₁
+            @test ΣGᶜ(model, carbonates, variable_redfield) ≈ 0.0 atol = 1e-15
         end
     end
-
-    return nothing
+    return model
 end
 
 n_timesteps = 1

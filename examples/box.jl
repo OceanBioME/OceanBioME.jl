@@ -38,7 +38,7 @@ run!(model, save_interval = 100, save = SaveBoxModel("box.jld2"))
 @info "Plotting the results..."
 # ## Plot the results
 using JLD2, Plots
-vars =(:NO₃, :NH₄, :P, :Z, :DOM, :D, :DD, :PAR)
+vars =(:NO₃, :NH₄, :P, :Z, :DOM, :sPOM, :bPOM, :PAR)
 file = jldopen("box.jld2")
 times = keys(file["values"])
 timeseries = NamedTuple{vars}(ntuple(t -> zeros(length(times)), length(vars)))
