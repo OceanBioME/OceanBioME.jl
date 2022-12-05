@@ -78,7 +78,7 @@ end
     gᶻ = bgc.maximum_grazing_rate
     p̃ = bgc.phytoplankton_preference
     kᶻ = bgc.grazing_half_saturation
-    mᵖ = bgc.phytoplankon_mortality
+    mᵖ = bgc.phytoplankton_mortality
 
     return ((1 - γ) * μₚ * Lₚₐᵣ(PAR, kₚₐᵣ) * (Lₙₒ₃(NO₃, NH₄, ψ, kₙₒ₃) + Lₙₕ₄(NH₄, kₙₕ₄)) * P 
             - Gᵖ(P, Z, sPOM, gᶻ, p̃, kᶻ)
@@ -108,7 +108,7 @@ end
     mᶻ = bgc.zooplankton_mortality
     fᵈ = bgc.fast_sinking_mortality_fraction # really dumb definitions
     fᶻ = bgc.slow_sinking_mortality_fraction
-    mᵖ = bgc.phytoplankon_mortality
+    mᵖ = bgc.phytoplankton_mortality
     μᵈ = bgc.small_detritus_remineralisation_rate
 
     return ((1 - fᵈ) * (1 - αᶻ) * (Gᵖ(P, Z, sPOM, gᶻ, p̃, kᶻ) + Gᵈ(P, Z, sPOM, gᶻ, p̃, kᶻ))
@@ -126,7 +126,7 @@ end
     mᶻ = bgc.zooplankton_mortality
     fᵈ = bgc.fast_sinking_mortality_fraction # really dumb definitions
     fᶻ = bgc.slow_sinking_mortality_fraction
-    mᵖ = bgc.phytoplankon_mortality
+    mᵖ = bgc.phytoplankton_mortality
     μᵈᵈ = bgc.large_detritus_remineralisation_rate
 
     return (fᵈ * (1 - αᶻ) * (Gᵖ(P, Z, sPOM, gᶻ, p̃, kᶻ) + Gᵈ(P, Z, sPOM, gᶻ, p̃, kᶻ))

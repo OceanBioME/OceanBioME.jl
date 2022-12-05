@@ -66,7 +66,7 @@ import Oceananigans.Biogeochemistry:
              zooplankton_assimilation_fraction::FT = 0.7,
              zooplankton_mortality::FT = 2.31e-6, # 1/s/mmol N/m³
              zooplankton_excretion_rate::FT = 5.8e-7, # 1/s
-             phytoplankon_mortality::FT = 5.8e-7, # 1/s
+             phytoplankton_mortality::FT = 5.8e-7, # 1/s
              small_detritus_remineralisation_rate::FT = 5.88e-7, # 1/s
              large_detritus_remineralisation_rate::FT = 5.88e-7, # 1/s
              phytoplankton_exudation_fraction::FT = 0.05,
@@ -122,7 +122,7 @@ struct LOBSTER{FT, L, SPAR, B, W, A} <: AbstractContinuousFormBiogeochemistry
     zooplankton_assimilation_fraction :: FT
     zooplankton_mortality :: FT
     zooplankton_excretion_rate :: FT
-    phytoplankon_mortality :: FT
+    phytoplankton_mortality :: FT
     small_detritus_remineralisation_rate :: FT
     large_detritus_remineralisation_rate :: FT
     phytoplankton_exudation_fraction :: FT
@@ -160,7 +160,7 @@ struct LOBSTER{FT, L, SPAR, B, W, A} <: AbstractContinuousFormBiogeochemistry
                       zooplankton_assimilation_fraction::FT = 0.7,
                       zooplankton_mortality::FT = 2.31e-6, # 1/s/mmol N/m³
                       zooplankton_excretion_rate::FT = 5.8e-7, # 1/s
-                      phytoplankon_mortality::FT = 5.8e-7, # 1/s
+                      phytoplankton_mortality::FT = 5.8e-7, # 1/s
                       small_detritus_remineralisation_rate::FT = 5.88e-7, # 1/s
                       large_detritus_remineralisation_rate::FT = 5.88e-7, # 1/s
                       phytoplankton_exudation_fraction::FT = 0.05,
@@ -208,7 +208,7 @@ struct LOBSTER{FT, L, SPAR, B, W, A} <: AbstractContinuousFormBiogeochemistry
                                                                 zooplankton_assimilation_fraction,
                                                                 zooplankton_mortality,
                                                                 zooplankton_excretion_rate,
-                                                                phytoplankon_mortality,
+                                                                phytoplankton_mortality,
                                                                 small_detritus_remineralisation_rate,
                                                                 large_detritus_remineralisation_rate,
                                                                 phytoplankton_exudation_fraction,

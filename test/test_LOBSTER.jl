@@ -20,21 +20,21 @@ function ΣC(model, carbonates, variable_redfield)
         IC = 0.0
     end
 
-    LC = sum(model.tracers.P .+ model.tracers.Z) * model.biogeochemistry.phytoplankton_redfield
+    LC = sum(model.tracers.P .+ model.tracers.Z) * model.biogeochemistry.phytoplankton_redfield 
 
     return OC + IC + LC
 end
 
-function test_LOBSTER(grid, carbonates, oxygen, variable_redfield, sinking, open_bottom)
+function test_LOBSTER(grid, carbonates, oxygen, variable_redfield, sinking, open_bottom, n_timesteps)
     PAR = CenterField(grid)
 
     if sinking
         model = NonhydrostaticModel(;grid,
-                                     biogeochemistry = LOBSTER(;grid, carbonates, oxygen, variable_redfield, open_bottom),
+                                     biogeochemistry = LOBSTER(;grid, carbonates, oxygen, variable_redfield, open_bottom, organic_carbon_calcate_ratio = 0.0),
                                      auxiliary_fields = (; PAR))
     else
         model = NonhydrostaticModel(;grid,
-                                     biogeochemistry = LOBSTER(;grid, carbonates, oxygen, variable_redfield, sinking_velocities = NamedTuple()),
+                                     biogeochemistry = LOBSTER(;grid, carbonates, oxygen, variable_redfield, sinking_velocities = NamedTuple(), organic_carbon_calcate_ratio = 0.0),
                                      auxiliary_fields = (; PAR))
     end
 
@@ -61,7 +61,7 @@ function test_LOBSTER(grid, carbonates, oxygen, variable_redfield, sinking, open
     @test all([all(values .== 0) for values in values(model.tracers)]) 
 
     # mass conservation
-    model.tracers.NO₃ .= rand()
+    model.tracers.NO₃ .= 10 * rand()
     model.tracers.NH₄ .= rand()
     model.tracers.P .= rand()
     model.tracers.Z .= rand()
@@ -69,38 +69,53 @@ function test_LOBSTER(grid, carbonates, oxygen, variable_redfield, sinking, open
         model.tracers.sPON .= rand()
         model.tracers.bPON .= rand()
         model.tracers.DON .= rand()
+
+        model.tracers.sPOC .= model.tracers.sPON * model.biogeochemistry.phytoplankton_redfield
+        model.tracers.bPOC .= model.tracers.bPON * model.biogeochemistry.phytoplankton_redfield
+        model.tracers.DOC .= model.tracers.DON * model.biogeochemistry.phytoplankton_redfield
     else
         model.tracers.sPOM .= rand()
         model.tracers.bPOM .= rand()
         model.tracers.DOM .= rand()
     end
 
+    if carbonates
+        model.tracers.DIC .= 2000 * rand()
+        model.tracers.Alk .= 200 * rand()
+    end
+
     ΣN₀ = ΣN(model, variable_redfield)
 
     ΣC₀ = ΣC(model, carbonates, variable_redfield)
-
-    time_step!(model, 1.0)
+    
+    for i in 1:n_timesteps
+        time_step!(model, 1.0)
+    end
 
     ΣN₁ = ΣN(model, variable_redfield)
     
-    @test ΣN₀ ≈ ΣN₁ # guess this should actually fail with a high enough accuracy when sinking is on with an open bottom
+    if !(sinking && open_bottom) #when we have open bottom sinking we won't conserve anything
+        @test ΣN₀ ≈ ΣN₁
 
-    if carbonates
-        ΣC₁ = ΣC(model, carbonates, variable_redfield)
+        if carbonates
+            ΣC₁ = ΣC(model, carbonates, variable_redfield)
 
-        @test ΣC₀ ≈ ΣC₁
+            @test ΣC₀ ≈ ΣC₁
+        end
     end
 
     return nothing
 end
 
+n_timesteps = 1
+
 for arch in (CPU(), )
-    grid = RectilinearGrid(arch; size=(3, 3, 6), extent=(1, 1, 2))
-    for carbonates = (false, true), oxygen = (false, true), variable_redfield = (false, true), sinking = (false, true), open_bottom = (false, true)
+    grid = RectilinearGrid(arch; size=(1, 1, 1), extent=(1, 1, 2))
+    for open_bottom = (false, true), sinking = (false, true), variable_redfield = (false, true), oxygen = (false, true), carbonates = (false, true)
         if !(sinking && open_bottom) # no sinking is the same with and without open bottom
             @info "Testing on $arch with carbonates $(carbonates ? :✅ : :❌), oxygen $(oxygen ? :✅ : :❌), variable redfield $(variable_redfield ? :✅ : :❌), sinking $(sinking ? :✅ : :❌), open bottom $(open_bottom ? :✅ : :❌))"
             @testset "$arch, $carbonates, $oxygen, $variable_redfield, $sinking, $open_bottom" begin
-                test_LOBSTER(grid, carbonates, oxygen, variable_redfield, sinking, open_bottom)
+                test_LOBSTER(grid, carbonates, oxygen, variable_redfield, sinking, open_bottom, n_timesteps)
             end
         end
     end
