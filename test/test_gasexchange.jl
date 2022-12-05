@@ -42,8 +42,9 @@ end
 @testset "Gas exchange coupling" begin
     grid = RectilinearGrid(size=(1, 1, 1), extent=(1, 1, 1))
     conc_field = CenterField(grid, indices=(:, :, 1))
-    conc_field .= 410.0 + 10.0*rand()
-    for air_concentration in [410, 410.1, (x, y, t) -> 410.0 + 10.0*sin(t*π/(1year)), conc_field]
+    conc_field .= 413.0 + 1.0*rand()
+    conc_function(x, y, t) = 413.0 + 10.0*sin(t*π/(1year))
+    for air_concentration in [413, 413.1, conc_function, conc_field]
         @info "Testing with $(typeof(air_concentration))"
         test_gas_exchange_model(grid, air_concentration)
     end

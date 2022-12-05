@@ -114,7 +114,7 @@ function GasExchange(;gas,
                       air_concentration::AC = (CO₂ = 413.4, O₂ = 9352.7)[gas], # ppmv, mmolO₂/m³ (20.95 mol O₂/mol air, 0.0224m^3/mol air)
                       air_pressure::AP = 1.0, # atm
                       average_wind_speed::FT = 10.0, # m/s
-                      field_dependencies = (CO₂ = (:DIC, :ALK), O₂ = (:OXY, ))[gas],
+                      field_dependencies = (CO₂ = (:DIC, :Alk), O₂ = (:O₂, ))[gas],
                       temperature::T = nothing,
                       salinity::S = nothing) where {ScP, βP, FT, AC, AP, T, S}
 
