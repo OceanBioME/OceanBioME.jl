@@ -27,7 +27,7 @@
     end
 end 
 
-struct TwoBandPhotosyntheticallyActiveRatiation{FT} <: AbstractLightAttenuation
+struct TwoBandPhotosyntheticallyActiveRatiation{FT}
     water_red_attenuation :: FT
     water_blue_attenuation :: FT
     chlorophyll_red_attenuation :: FT

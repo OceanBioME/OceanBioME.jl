@@ -14,11 +14,9 @@ using Oceananigans.Utils: launch!
 using Oceananigans: Center, Face
 using Oceananigans.Grids: xnode, ynode, znodes
 
-abstract type AbstractLightAttenuation end
-
 # Fallback
 update_PAR!(model, PAR, surface_PAR) = nothing
-required_PAR_fields(PAR::AbstractLightAttenuation) = ()
+required_PAR_fields(PAR) = ()
 
 include("2band.jl")
 include("morel.jl")

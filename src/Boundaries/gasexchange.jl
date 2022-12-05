@@ -7,7 +7,7 @@
 ##### Carbonate chemistry to determine pCO₂
 #####
 
-@inline CA_eq(H, params) = params.ALK - (params.KB/(params.KB + H))*params.Boron
+@inline CA_eq(H, params) = params.ALK - (params.KB/(params.KB + H)) * params.Boron
 @inline H_eq(H, params) = CA_eq(H, params)*H^2 + params.K1*(CA_eq(H, params)-params.DIC)*H + params.K1*params.K2*(CA_eq(H, params)-2*params.DIC)
 
 function pCO₂(DIC, ALK, T, S, ρₒ, pH)
@@ -15,7 +15,7 @@ function pCO₂(DIC, ALK, T, S, ρₒ, pH)
     ALK *= 1.e-3/ρₒ # microequivalents to equivalents  from mmol/m^-3 to mol/kg
     DIC *= 1.e-3/ρₒ # micromoles to moles    
 
-    Boron = 1.179e-5*S # Total Boron mole/kg as a fraction of salinity
+    Boron = 1.179e-5 * S # Total Boron mole/kg as a fraction of salinity
 
     K0 = exp(-60.2409 + 9345.17/T + 23.3585*log(T/100) + S*(0.023517 - 0.00023656*T + 0.0047036*(T/100)^2))   # mol/kg/atm 
     K1 = exp(2.18867 - 2275.036/T - 1.468591*log(T) + (-0.138681 - 9.33291/T)*sqrt(S) + 0.0726483*S - 0.00574938*S^1.5)

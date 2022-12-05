@@ -7,7 +7,7 @@ using Oceananigans.Biogeochemistry: AbstractContinuousFormBiogeochemistry
 using Oceananigans.Units
 using Oceananigans.Advection: CenteredSecondOrder
 
-using OceanBioME.Light: TwoBandPhotosyntheticallyActiveRatiation, update_PAR!, required_PAR_fields, AbstractLightAttenuation
+using OceanBioME.Light: TwoBandPhotosyntheticallyActiveRatiation, update_PAR!, required_PAR_fields
 using OceanBioME: setup_velocity_fields
 
 import Oceananigans.Biogeochemistry: 
@@ -15,7 +15,7 @@ import Oceananigans.Biogeochemistry:
     required_biogeochemical_auxiliary_fields,
     update_biogeochemical_state!
 
-struct NutrientPhytoplanktonZooplanktonDetritus{FT, AbstractLightAttenuation, SPAR, W, A} <: AbstractContinuousFormBiogeochemistry
+struct NutrientPhytoplanktonZooplanktonDetritus{FT, LA, SPAR, W, A} <: AbstractContinuousFormBiogeochemistry
     # phytoplankton
     initial_photosynthetic_slope :: FT # α, 1/(W/m²)/s
     base_maximum_growth :: FT # μ₀, 1/s
@@ -34,7 +34,7 @@ struct NutrientPhytoplanktonZooplanktonDetritus{FT, AbstractLightAttenuation, SP
     remineralization_rate :: FT # rᵈⁿ, 1/s
 
     # light attenuation
-    light_attenuation_model :: AbstractLightAttenuation
+    light_attenuation_model :: LA
     surface_phytosynthetically_active_radiation :: SPAR
 
     # sinking
@@ -54,30 +54,30 @@ struct NutrientPhytoplanktonZooplanktonDetritus{FT, AbstractLightAttenuation, SP
                                                        zoo_base_mortality_rate::FT = 0.3395/day, # 1/s
                                                        remineralization_rate::FT = 0.1213/day, # 1/s
 
-                                                       light_attenuation_model::AbstractLightAttenuation = TwoBandPhotosyntheticallyActiveRatiation(),
+                                                       light_attenuation_model::LA = TwoBandPhotosyntheticallyActiveRatiation(),
                                                        surface_phytosynthetically_active_radiation::SPAR = (x, y, t) -> 100*max(0.0, cos(t*π/(12hours))),
                 
                                                        sinking_velocities = (P = (0.0, 0.0, -0.2551/day), DD = (0.0, 0.0, -2.7489/day)),
                                                        open_bottom::Bool = true,
                                                        advection_schemes::A = NamedTuple{keys(sinking_velocities)}(repeat([CenteredSecondOrder()], 
-                                                                                                                    length(sinking_velocities)))) where {FT, AbstractLightAttenuation, SPAR, A}
+                                                                                              length(sinking_velocities)))) where {FT, LA, SPAR, A}
         sinking_velocities = setup_velocity_fields(sinking_velocities, grid, open_bottom)
         W = typeof(sinking_velocities)
-        return new{FT, AbstractLightAttenuation, SPAR, W, A}(initial_photosynthetic_slope,
-                                                             base_maximum_growth,
-                                                             nutrient_half_saturation,
-                                                             base_respiration_rate,
-                                                             phyto_base_mortality_rate,
-                                                             maximum_grazing_rate,
-                                                             grazing_half_saturation,
-                                                             assimulation_efficiency,
-                                                             base_excretion_rate,
-                                                             zoo_base_mortality_rate,
-                                                             remineralization_rate,
-                                                             light_attenuation_model,
-                                                             surface_phytosynthetically_active_radiation,
-                                                             sinking_velocities,
-                                                             advection_schemes)
+        return new{FT, LA, SPAR, W, A}(initial_photosynthetic_slope,
+                                       base_maximum_growth,
+                                       nutrient_half_saturation,
+                                       base_respiration_rate,
+                                       phyto_base_mortality_rate,
+                                       maximum_grazing_rate,
+                                       grazing_half_saturation,
+                                       assimulation_efficiency,
+                                       base_excretion_rate,
+                                       zoo_base_mortality_rate,
+                                       remineralization_rate,
+                                       light_attenuation_model,
+                                       surface_phytosynthetically_active_radiation,
+                                       sinking_velocities,
+                                       advection_schemes)
     end
 end
 
