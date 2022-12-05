@@ -47,15 +47,15 @@ K(T, S, uₐᵥ, Sc_params, β_params, ρₒ) = k(T, uₐᵥ, Sc_params) * β(T+
 ##### Boundary condition setup
 #####
 
-struct GasExchange{G, ScP, βP, FT, T, S}
+struct GasExchange{G, ScP, βP, FT, AC, AP, T, S}
     gas :: G
 
     schmidt_params :: ScP
     solubility_params :: βP
     pH_initial_guess :: FT
     ocean_density :: FT
-    air_concentration :: FT
-    air_pressure :: FT
+    air_concentration :: AC
+    air_pressure :: AP
     average_wind_speed :: FT
 
     temperature :: T
@@ -70,7 +70,7 @@ end
                                     O₂ = (A₁=-58.3877, A₂=85.8079, A₃=23.8439, B₁=-0.034892, B₂=0.015568, B₃=-0.0019387))[gas],
                 pH_initial_guess::FT = 8.0,
                 ocean_density::FT = 1026, # kg/m³
-                air_concentration::FT = (CO₂ = 413.4, O₂ = 9352.7)[gas], # ppmv, mmolO₂/m³ (20.95 mol O₂/mol air, 0.0224m^3/mol air)
+                air_concentration::AC = (CO₂ = 413.4, O₂ = 9352.7)[gas], # ppmv, mmolO₂/m³ (20.95 mol O₂/mol air, 0.0224m^3/mol air)
                 air_pressure::FT = 1.0, # atm
                 average_wind_speed::FT = 10, # m/s
                 field_dependencies = (CO₂ = (:DIC, :ALK), O₂ = (:OXY, ))[gas],
@@ -88,8 +88,8 @@ Keyword arguments
     - `solubility_params` : named tuple of parameters for calculating the solubility (for O₂ the Bunsen solubility and CO₂ K₀, see note)
     - `pH_initial_guess` : initial guess of pH for calculating pCO₂ - is not used for other gases
     - `ocean_density` : density of the ocean in kg/m³
-    - `air_concentratio` : concentration of the gas in air in relivant units (i.e. ppmv for CO₂ and mmol O₂/m³ for O₂)
-    - `air_pressure` : air pressure in atm (only used for CO₂)
+    - `air_concentratio` : concentration of the gas in air in relivant units (i.e. ppmv for CO₂ and mmol O₂/m³ for O₂), can also be a function of x, y, t, or a field
+    - `air_pressure` : air pressure in atm (only used for CO₂), can also be a function of x, y, t, or a field
     - `average_wind_speed` : average wind speed at 10m used to calculate the gas transfer velocity by the [Wanninkhof1992](@cite) parameterisation
     - `field_dependencies` : tracer fields that gas exchange depends on, if the defaults have different names in your model you can specify as long as they are in the same order
     - `temperature` : either `nothing` to track a temperature tracer field, or a function or shape `f(x, y, z, t)` for the temperature in °C
@@ -111,26 +111,26 @@ function GasExchange(;gas,
                                             O₂ = (A₁=-58.3877, A₂=85.8079, A₃=23.8439, B₁=-0.034892, B₂=0.015568, B₃=-0.0019387))[gas],
                       pH_initial_guess::FT = 8.0,
                       ocean_density::FT = 1026.0, # kg/m³
-                      air_concentration::FT = (CO₂ = 413.4, O₂ = 9352.7)[gas], # ppmv, mmolO₂/m³ (20.95 mol O₂/mol air, 0.0224m^3/mol air)
-                      air_pressure::FT = 1.0, # atm
+                      air_concentration::AC = (CO₂ = 413.4, O₂ = 9352.7)[gas], # ppmv, mmolO₂/m³ (20.95 mol O₂/mol air, 0.0224m^3/mol air)
+                      air_pressure::AP = 1.0, # atm
                       average_wind_speed::FT = 10.0, # m/s
                       field_dependencies = (CO₂ = (:DIC, :ALK), O₂ = (:OXY, ))[gas],
                       temperature::T = nothing,
-                      salinity::S = nothing) where {ScP, βP, FT, T, S}
+                      salinity::S = nothing) where {ScP, βP, FT, AC, AP, T, S}
 
     gas = Val(gas)
     G = typeof(gas)
 
-    gasexchange =  GasExchange{G, ScP, βP, FT, T, S}(gas, 
-                                                     schmidt_params, 
-                                                     solubility_params, 
-                                                     pH_initial_guess, 
-                                                     ocean_density, 
-                                                     air_concentration, 
-                                                     air_pressure, 
-                                                     average_wind_speed, 
-                                                     temperature, 
-                                                     salinity)
+    gasexchange =  GasExchange{G, ScP, βP, FT, AC, AP, T, S}(gas, 
+                                                             schmidt_params, 
+                                                             solubility_params, 
+                                                             pH_initial_guess, 
+                                                             ocean_density, 
+                                                             air_concentration, 
+                                                             air_pressure, 
+                                                             average_wind_speed, 
+                                                             temperature, 
+                                                             salinity)
 
     if isnothing(temperature)
         field_dependencies = (field_dependencies..., :T)
@@ -161,3 +161,4 @@ end
 
 @inline get_value(x, y, t, air_concentration::Number) = air_concentration
 @inline get_value(x, y, t, air_concentration::Function) = air_concentration(x, y, t)
+@inline get_value(x, y, t, air_concentration::Field) = interpolate(air_concentration, x, y, 0.0)

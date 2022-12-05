@@ -22,6 +22,7 @@ using Oceananigans.Units: second, minute, minutes, hour, hours, day, days, year,
 using Oceananigans.Architectures: device
 using Oceananigans.Operators: volume, Az
 using Oceananigans.BoundaryConditions: FluxBoundaryCondition
+using Oceananigans.Fields: Field, interpolate
 
 include("gasexchange.jl")
 include("Sediments/Sediments.jl")
