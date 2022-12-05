@@ -153,8 +153,11 @@ end
     return gasexchange(x, y, t, conc, T, S)
 end
 @inline function (gasexchange::GasExchange)(x, y, t, conc, T, S) 
-    return k(T, gasexchange.average_wind_speed, gasexchange.schmidt_params) * (conc - α(T, S, gasexchange.solubility_params) * gasexchange.air_concentration)
+    return k(T, gasexchange.average_wind_speed, gasexchange.schmidt_params) * (conc - α(T, S, gasexchange.solubility_params) * get_value(x, y, t, gasexchange.air_concentration))
 end
 @inline function (gasexchange::GasExchange{<:Val{:CO₂}, <:Any, <:Any, <:Any, <:Any, <:Any})(x, y, t, conc, T, S) 
-    return K(T, S, gasexchange.average_wind_speed, gasexchange.schmidt_params, gasexchange.solubility_params, gasexchange.ocean_density) * (conc - gasexchange.air_concentration * gasexchange.air_pressure) / 1000#μmol/m²s to mmolC/m²s not sure this is correct
+    return K(T, S, gasexchange.average_wind_speed, gasexchange.schmidt_params, gasexchange.solubility_params, gasexchange.ocean_density) * (conc - get_value(x, y, t, gasexchange.air_concentration) * get_value(x, y, t, gasexchange.air_pressure)) / 1000#μmol/m²s to mmolC/m²s not sure this is correct
 end
+
+@inline get_value(x, y, t, air_concentration::Number) = air_concentration
+@inline get_value(x, y, t, air_concentration::Function) = air_concentration(x, y, t)
