@@ -161,4 +161,9 @@ end
 
 @inline get_value(x, y, t, air_concentration::Number) = air_concentration
 @inline get_value(x, y, t, air_concentration::Function) = air_concentration(x, y, t)
-@inline get_value(x, y, t, air_concentration::Field) = interpolate(air_concentration, x, y, 0.0)
+
+# interpolation does not work on 2d grids as trilinear interpolation fails but we're only ever going to be asking for values on grid points
+@inline function get_value(x, y, t, air_concentration::Field{Center, Center, Center})
+    (ξ, i), (η, j), (ζ, k) = modf.(fractional_indices(x, y, znodes(air_concentration)[end], (Center(), Center(), Center()), air_concentration.grid))
+    return air_concentration[floor(Int, i) + 1, floor(Int, j) + 1, floor(Int, k) + 1]
+end
