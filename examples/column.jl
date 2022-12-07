@@ -38,13 +38,14 @@ PAR = CenterField(grid)
 # We also need to give it the PAR field and then we set some initial values.
 
 model = NonhydrostaticModel(; grid,
+                              advection = nothing, # we don't need to calculate advection because we have no velocity
                               closure = ScalarDiffusivity(ν=κₜ, κ=κₜ), 
                               biogeochemistry = LOBSTER(; grid,
                                                           surface_phytosynthetically_active_radiation = PAR⁰),
                               auxiliary_fields = (; PAR))
 
 set!(model, P=0.03, Z=0.03, NO₃=11.0, NH₄=0.05)
-
+N₀ = sum(model.tracers.P) + sum(model.tracers.Z) + sum(model.tracers.NO₃) + sum(model.tracers.NH₄) + sum(model.tracers.sPOM) + sum(model.tracers.bPOM) + sum(model.tracers.DOM)
 # ## Simulation
 # Next we setup the simulation along with some callbacks that:
 # - Show the progress of the simulation
@@ -72,7 +73,7 @@ simulation.callbacks[:neg] = Callback(scale_negative_tracers!; parameters=(conse
 # ## Run!
 # Finally we run the simulation
 run!(simulation)
-
+N₁ = sum(model.tracers.P) + sum(model.tracers.Z) + sum(model.tracers.NO₃) + sum(model.tracers.NH₄) + sum(model.tracers.sPOM) + sum(model.tracers.bPOM) + sum(model.tracers.DOM)
 # Now we can visulise the results
 
 P = FieldTimeSeries("$filename.jld2", "P")

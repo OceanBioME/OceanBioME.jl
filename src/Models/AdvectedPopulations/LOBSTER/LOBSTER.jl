@@ -91,7 +91,7 @@ import Oceananigans.Biogeochemistry:
              oxygen::Bool = false,
              variable_redfield = false,
 
-             sinking_velocities = (D = (0.0, 0.0, -3.47e-5), DD = (0.0, 0.0, -200/day)),
+             sinking_speed = (sPOM = 3.47e-5, bPOM = 200/day),
              open_bottom::Bool = true,
              advection_schemes::A = NamedTuple{keys(sinking_velocities)}(repeat([CenteredSecondOrder()], 
                                                                          length(sinking_velocities))))
@@ -106,7 +106,7 @@ Keywork Arguments
     - `light_attenuation_model`: light attenuation model which integrated the attenuation of available light
     - `surface_phytosynthetically_active_radiation`: funciton (or array in the future) for the photosynthetically available radiaiton at the surface, should be shape `f(x, y, t)`
     - `carbonates`, `oxygen`, and `variable_redfield`: include models for carbonate chemistry and/or oxygen chemistry and/or variable redfield ratio disolved and particulate organic matter
-    - `sinking_velocities`: named tuple of either scalar `(u, v, w)` constant sinking velocities, or of named tuples of fields (i.e. `(u = XFaceField(...), v = YFaceField(...), w = ZFaceField(...))`) for any tracers which sink
+    - `sinking_speed`: named tuple of constant sinking, of fields (i.e. `ZFaceField(...)`) for any tracers which sink (convention is that a sinking speed is positive, but a field will need to follow the usual down being negative)
     - `open_bottom`: should the sinking velocity be smoothly brought to zero at the bottom to prevent the tracers leaving the domain
     - `advection_schemes`: named tuple of advection scheme to use for sinking
 """
@@ -185,14 +185,14 @@ struct LOBSTER{FT, LA, SPAR, B, W, A} <: AbstractContinuousFormBiogeochemistry
                       oxygen::Bool = false,
                       variable_redfield::Bool = false,
                 
-                      sinking_velocities = (sPOM = (0.0, 0.0, -3.47e-5), bPOM = (0.0, 0.0, -200/day)),
+                      sinking_speeds = (sPOM = 3.47e-5, bPOM = 200/day),
                       open_bottom::Bool = true,
-                      advection_schemes::A = NamedTuple{keys(sinking_velocities)}(repeat([CenteredSecondOrder()], 
-                                                                                    length(sinking_velocities)))) where {FT, LA, SPAR, A}
+                      advection_schemes::A = NamedTuple{keys(sinking_speeds)}(repeat([CenteredSecondOrder(grid)], 
+                                                                                    length(sinking_speeds)))) where {FT, LA, SPAR, A}
 
         
 
-        sinking_velocities = setup_velocity_fields(sinking_velocities, grid, open_bottom)
+        sinking_velocities = setup_velocity_fields(sinking_speeds, grid, open_bottom)
         W = typeof(sinking_velocities)
         optionals = Val((carbonates, oxygen, variable_redfield))
         B = typeof(optionals)
