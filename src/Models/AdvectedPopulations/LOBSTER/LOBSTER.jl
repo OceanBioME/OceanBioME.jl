@@ -76,8 +76,8 @@ import Oceananigans.Biogeochemistry:
              ammonia_fraction_of_detritus::FT = 0.0,
              phytoplankton_redfield::FT = 6.56, # mol C/mol N
              organic_redfield::FT = 6.56, # mol C/mol N
-             phytoplankton_chlorophyll_ratio::FT = 1.31, # mgChl/mol N
-             organic_carbon_calcate_ratio::FT = 0.1, # mol CaCO₃/mol N
+             phytoplankton_chlorophyll_ratio::FT = 1.31, # g Chl/mol N
+             organic_carbon_calcate_ratio::FT = 0.1, # mol CaCO₃/mol C
              respiraiton_oxygen_nitrogen_ratio::FT = 10.75, # mol O/molN
              nitrifcation_oxygen_nitrogen_ratio::FT = 2.0, # mol O/molN
              slow_sinking_mortality_fraction::FT = 0.5, 
@@ -170,8 +170,8 @@ struct LOBSTER{FT, LA, SPAR, B, W, A} <: AbstractContinuousFormBiogeochemistry
                       ammonia_fraction_of_detritus::FT = 0.0,
                       phytoplankton_redfield::FT = 6.56, # mol C/mol N
                       organic_redfield::FT = 6.56, # mol C/mol N
-                      phytoplankton_chlorophyll_ratio::FT = 1.31, # mgChl/mol N
-                      organic_carbon_calcate_ratio::FT = 0.1, # mol CaCO₃/mol N
+                      phytoplankton_chlorophyll_ratio::FT = 1.31, # g Chl/mol N
+                      organic_carbon_calcate_ratio::FT = 0.1, # mol CaCO₃/mol C
                       respiraiton_oxygen_nitrogen_ratio::FT = 10.75, # mol O/molN
                       nitrifcation_oxygen_nitrogen_ratio::FT = 2.0, # mol O/molN
                       slow_sinking_mortality_fraction::FT = 0.5, 
