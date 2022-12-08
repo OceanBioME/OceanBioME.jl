@@ -83,6 +83,7 @@ import Oceananigans.Biogeochemistry:
              slow_sinking_mortality_fraction::FT = 0.5, 
              fast_sinking_mortality_fraction::FT = 0.5,
              disolved_organic_breakdown_rate::FT = 3.86e-7, # 1/s
+             zooplankton_calcite_dissolution::FT = 0.3,
 
              light_attenuation_model = TwoBandPhotosyntheticallyActiveRatiation(),
              surface_phytosynthetically_active_radiation::SPAR = (x, y, t) -> 100*max(0.0, cos(t*π/(12hours))),
@@ -139,6 +140,7 @@ struct LOBSTER{FT, LA, SPAR, B, W, A} <: AbstractContinuousFormBiogeochemistry
     slow_sinking_mortality_fraction :: FT
     fast_sinking_mortality_fraction :: FT
     disolved_organic_breakdown_rate :: FT
+    zooplankton_calcite_dissolution :: FT
 
     light_attenuation_model :: LA
     surface_phytosynthetically_active_radiation :: SPAR
@@ -177,6 +179,7 @@ struct LOBSTER{FT, LA, SPAR, B, W, A} <: AbstractContinuousFormBiogeochemistry
                       slow_sinking_mortality_fraction::FT = 0.5, 
                       fast_sinking_mortality_fraction::FT = 0.5,
                       disolved_organic_breakdown_rate::FT = 3.86e-7, # 1/s
+                      zooplankton_calcite_dissolution::FT = 0.3,
 
                       light_attenuation_model::LA = TwoBandPhotosyntheticallyActiveRatiation(),
                       surface_phytosynthetically_active_radiation::SPAR = (x, y, t) -> 100*max(0.0, cos(t*π/(12hours))),
@@ -225,6 +228,7 @@ struct LOBSTER{FT, LA, SPAR, B, W, A} <: AbstractContinuousFormBiogeochemistry
                                           slow_sinking_mortality_fraction,
                                           fast_sinking_mortality_fraction,
                                           disolved_organic_breakdown_rate,
+                                          zooplankton_calcite_dissolution,
 
                                           light_attenuation_model,
                                           surface_phytosynthetically_active_radiation,

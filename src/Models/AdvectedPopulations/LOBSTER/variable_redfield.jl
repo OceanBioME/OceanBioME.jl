@@ -29,9 +29,13 @@ end
     mᵖ = bgc.phytoplankton_mortality
     μᵈᵈ = bgc.large_detritus_remineralisation_rate
     Rᵖ = bgc.phytoplankton_redfield
+    η = bgc.zooplankton_calcite_dissolution
+    ρᶜᵃᶜᵒ³ = bgc.organic_carbon_calcate_ratio
 
-    return ((fᵈ * (1 - aᶻ) * (Gᵖ(P, Z, sPON, gᶻ, p̃, kᶻ) + Gᵈ(P, Z, sPON, gᶻ, p̃, kᶻ))
+    Gₚ = Gᵖ(P, Z, sPON, gᶻ, p̃, kᶻ)
+    return ((fᵈ * (1 - aᶻ) * (Gₚ + Gᵈ(P, Z, sPON, gᶻ, p̃, kᶻ))
             + fᵈ * mᵖ * P^2
-            + (1 - fᶻ) * mᶻ * Z^2)  * Rᵖ
+            + (1 - fᶻ) * mᶻ * Z^2
+            + (Gₚ * η + mᵖ * P^2) * ρᶜᵃᶜᵒ³) * Rᵖ
             - μᵈᵈ * bPOC)
 end

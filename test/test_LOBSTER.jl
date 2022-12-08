@@ -20,7 +20,7 @@ function ΣC(model, carbonates, variable_redfield)
         IC = 0.0
     end
 
-    LC = sum(model.tracers.P .+ model.tracers.Z) * model.biogeochemistry.phytoplankton_redfield 
+    LC = sum(model.tracers.P * (1 + model.biogeochemistry.organic_carbon_calcate_ratio) .+ model.tracers.Z) * model.biogeochemistry.phytoplankton_redfield 
 
     return OC + IC + LC
 end
@@ -53,11 +53,11 @@ function test_LOBSTER(grid, carbonates, oxygen, variable_redfield, sinking, open
 
     if sinking
         model = NonhydrostaticModel(;grid,
-                                     biogeochemistry = LOBSTER(;grid, carbonates, oxygen, variable_redfield, open_bottom, organic_carbon_calcate_ratio = 0.0),
+                                     biogeochemistry = LOBSTER(;grid, carbonates, oxygen, variable_redfield, open_bottom),
                                      auxiliary_fields = (; PAR))
     else
         model = NonhydrostaticModel(;grid,
-                                     biogeochemistry = LOBSTER(;grid, carbonates, oxygen, variable_redfield, sinking_velocities = NamedTuple(), organic_carbon_calcate_ratio = 0.0),
+                                     biogeochemistry = LOBSTER(;grid, carbonates, oxygen, variable_redfield, sinking_velocities = NamedTuple()),
                                      auxiliary_fields = (; PAR))
     end
 
