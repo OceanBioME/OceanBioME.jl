@@ -15,13 +15,18 @@
     ρᶜᵃᶜᵒ³ = bgc.organic_carbon_calcate_ratio
     Rdᵖ = bgc.phytoplankton_redfield
     Rdᵒ = bgc. organic_redfield
+    η = bgc.zooplankton_calcite_dissolution
+    gᶻ = bgc.maximum_grazing_rate
+    p̃ = bgc.phytoplankton_preference
+    kᶻ = bgc.grazing_half_saturation
 
-    return (- μₚ * Lₚₐᵣ(PAR, kₚₐᵣ) * (Lₙₒ₃(NO₃, NH₄, ψ, kₙₒ₃) + Lₙₕ₄(NH₄, kₙₕ₄)) * (1 + ρᶜᵃᶜᵒ³) * P * Rdᵖ
+    return (- μₚ * Lₚₐᵣ(PAR, kₚₐᵣ) * (Lₙₒ₃(NO₃, NH₄, ψ, kₙₒ₃) + Lₙₕ₄(NH₄, kₙₕ₄)) * (1 + ρᶜᵃᶜᵒ³ * (1 - γ)) * P * Rdᵖ
             + αᵖ * γ * μₚ * Lₚₐᵣ(PAR, kₚₐᵣ) * (Lₙₒ₃(NO₃, NH₄, ψ, kₙₒ₃) + Lₙₕ₄(NH₄, kₙₕ₄)) * P * Rdᵖ
             + αᶻ * μᶻ * Z * Rdᵖ
             + αᵈ * μˢᵖᵒᶜ * sPOM * Rdᵒ
             + αᵈ * μᵇᵖᵒᶜ * bPOM * Rdᵒ
-            + μᵈᵒᵐ * DOM * Rdᵒ)
+            + μᵈᵒᵐ * DOM * Rdᵒ
+            + Gᵖ(P, Z, sPOM, gᶻ, p̃, kᶻ) * (1 - η) * Rdᵖ * ρᶜᵃᶜᵒ³)
 end
 
 
@@ -34,6 +39,6 @@ end
     ρᶜᵃᶜᵒ³ = bgc.organic_carbon_calcate_ratio
     Rd = bgc.phytoplankton_redfield
 
-    return (μₚ * Lₚₐᵣ(PAR, kₚₐᵣ) * Lₙₒ₃(NO₃, NH₄, ψ, kₙₒ₃) * P * Rd
+    return (μₚ * Lₚₐᵣ(PAR, kₚₐᵣ) * Lₙₒ₃(NO₃, NH₄, ψ, kₙₒ₃) * P
             - 2 * ρᶜᵃᶜᵒ³ * μₚ * Lₚₐᵣ(PAR, kₚₐᵣ) * (Lₙₒ₃(NO₃, NH₄, ψ, kₙₒ₃) + Lₙₕ₄(NH₄, kₙₕ₄)) * P * Rd)
 end

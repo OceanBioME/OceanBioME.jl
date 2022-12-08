@@ -20,7 +20,7 @@ function ΣC(model, carbonates, variable_redfield)
         IC = 0.0
     end
 
-    LC = sum(model.tracers.P .+ model.tracers.Z) * model.biogeochemistry.phytoplankton_redfield 
+    LC = sum(model.tracers.P * (1 + model.biogeochemistry.organic_carbon_calcate_ratio) .+ model.tracers.Z) * model.biogeochemistry.phytoplankton_redfield 
 
     return OC + IC + LC
 end
@@ -44,7 +44,7 @@ function ΣGᶜ(model, carbonates, variable_redfield)
         IC = 0.0
     end
 
-    LC = sum(model.timestepper.Gⁿ.P .+ model.timestepper.Gⁿ.Z) * model.biogeochemistry.phytoplankton_redfield 
+    LC = sum(model.timestepper.Gⁿ.P * (1 + model.biogeochemistry.organic_carbon_calcate_ratio) .+ model.timestepper.Gⁿ.Z) * model.biogeochemistry.phytoplankton_redfield 
 
     return OC + IC + LC
 end
@@ -53,11 +53,11 @@ function test_LOBSTER(grid, carbonates, oxygen, variable_redfield, sinking, open
 
     if sinking
         model = NonhydrostaticModel(;grid,
-                                     biogeochemistry = LOBSTER(;grid, carbonates, oxygen, variable_redfield, open_bottom, organic_carbon_calcate_ratio = 0.0),
+                                     biogeochemistry = LOBSTER(;grid, carbonates, oxygen, variable_redfield, open_bottom),
                                      auxiliary_fields = (; PAR))
     else
         model = NonhydrostaticModel(;grid,
-                                     biogeochemistry = LOBSTER(;grid, carbonates, oxygen, variable_redfield, sinking_velocities = NamedTuple(), organic_carbon_calcate_ratio = 0.0),
+                                     biogeochemistry = LOBSTER(;grid, carbonates, oxygen, variable_redfield, sinking_speeds = NamedTuple()),
                                      auxiliary_fields = (; PAR))
     end
 
@@ -121,7 +121,7 @@ function test_LOBSTER(grid, carbonates, oxygen, variable_redfield, sinking, open
         @test ΣN₀ ≈ ΣN₁
         @test ΣGⁿ(model, variable_redfield) ≈ 0.0 atol = 1e-15 # rtol=sqrt(eps) so is usually much larger than even this
 
-        if carbonates
+        if (carbonates && variable_redfield)
             ΣC₁ = ΣC(model, carbonates, variable_redfield)
             @test ΣC₀ ≈ ΣC₁# atol = 0.0001 # when we convert to and from 
 
