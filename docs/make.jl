@@ -15,8 +15,7 @@ examples = [
     "box.jl",
     "column.jl",
     "data_forced.jl",
-    "kelp.jl",
-    "sediment.jl"
+    "kelp.jl"
 ]
 
 for example in examples
@@ -31,7 +30,7 @@ example_pages = [
     "Simple column model" => "generated/column.md",
     "Data forced column model" => "generated/data_forced.md",
     "Model with particles (kelp) interacting with the biogeochemistry" => "generated/kelp.md",
-    "Simple column with a sediment boundary" => "generated/sediment.md",
+    #"Simple column with a sediment boundary" => "generated/sediment.md",
     "Box model" => "generated/box.md"
 ]
 
@@ -92,8 +91,8 @@ appendix_pages = [
 pages = [
     "Home" => "index.md",
     "Quick start" => "quick_start.md",
-    "Examples" => example_pages,
     "Model components and setup" => component_pages,
+    "Examples" => example_pages,
     "Numerical implimentation" => numerical_pages,
     #"Model setup" => setup_pages,
     "Gallery" => "gallery.md",
@@ -117,7 +116,7 @@ makedocs(bib,
     authors = "Jago Strong-Wrigt, John R. Taylor, and Si Chen",
     format = format,
     pages = pages,
-    modules = Module[OceanBioME, OceanBioME.LOBSTER],
+    modules = Module[OceanBioME],
     doctest = false,#true,
     strict = false,#true,
     clean = true,

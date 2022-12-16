@@ -18,7 +18,7 @@
 using OceanBioME, Oceananigans, Oceananigans.Units, Printf
 
 # ## Surface PAR
-PAR⁰(x, y, t) = max(0.0, sin(t*π/(12hours)))*(100*(1-cos((t+15days)*2π/(365days)))*(1 / (1 +0.2*exp(-((t-200days)/50days)^2))) .+ 2)*20
+PAR⁰(x, y, t) = (100*(1-cos((t+15days)*2π/(365days)))*(1 / (1 +0.2*exp(-((t-200days)/50days)^2))) .+ 2)*20
 
 # ## Grid and PAR field
 # Define the grid and an extra Oceananigans field for the PAR to be stored in
@@ -29,7 +29,7 @@ PAR = CenterField(grid)
 ρₒ = 1026.0 # kg m⁻³, average density at the surface of the world ocean
 cᴾ = 3991.0 # J K⁻¹ kg⁻¹, typical heat capacity for seawater
 
-Qᵀ(x, y, t) = PAR⁰(x, y, t) / (ρₒ * cᴾ) # K m s⁻¹, surface _temperature_ flux
+Qᵀ(x, y, t) = PAR⁰(x, y, t) * 0.42 / (ρₒ * cᴾ) # K m s⁻¹, surface _temperature_ flux
 
 dTdz = 0.01 # K m⁻¹
 
@@ -71,7 +71,7 @@ simulation = Simulation(model, Δt=1.0, stop_time=1years)
 
 #simulation.callbacks[:timestep] = Callback(update_timestep!, TimeInterval(1minute), parameters = (w=200/day, c_adv = 0.45, relaxation=0.75, c_forcing=0.1)) 
 
-wizard = TimeStepWizard(cfl = 0.75, diffusive_cfl = 0.75, max_change = 1.1, max_Δt = 1minutes)
+wizard = TimeStepWizard(cfl = 0.75, diffusive_cfl = 0.75, max_change = 1.1, max_Δt = 0.5minute)
 simulation.callbacks[:wizard] = Callback(wizard, IterationInterval(10))
 
 ## Print a progress message

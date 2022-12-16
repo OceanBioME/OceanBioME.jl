@@ -102,4 +102,6 @@ axD = Axis(f[2, 4:5], ylabel="z (m)", xlabel="Time (days)", title="Detritus conc
 hmD = GLMakie.heatmap!(times./days, z[35:50], D[1, 1, 35:50, 1:101]', interpolate=true, colormap=:batlow)
 cbD = Colorbar(f[2, 6], hmD)
 
-save("examples/column.png", f)
+save("column.png", f)
+
+# ![Results](column.png)

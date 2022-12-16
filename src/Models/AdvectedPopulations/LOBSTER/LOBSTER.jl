@@ -97,7 +97,7 @@ import Oceananigans.Biogeochemistry:
              advection_schemes::A = NamedTuple{keys(sinking_velocities)}(repeat([CenteredSecondOrder()], 
                                                                          length(sinking_velocities))))
 
-Construct an instance of the LOBSTER ([LOBSTER](@cite)) biogeochemical model.
+Construct an instance of the LOBSTER ([LOBSTER](@ref LOBSTER)) biogeochemical model.
 
 Keywork Arguments
 ===================

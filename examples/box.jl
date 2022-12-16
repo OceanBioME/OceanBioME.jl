@@ -6,7 +6,7 @@
 # First we will check we have the dependencies installed
 # ```julia
 # using Pkg
-# pkg"add OceanBioME, Plots, DiffEqBase, OrdinaryDiffEq"
+# pkg"add OceanBioME, CairoMakie, DiffEqBase, OrdinaryDiffEq"
 # ```
 
 # ## Model setup
@@ -37,8 +37,8 @@ run!(model, save_interval = 100, save = SaveBoxModel("box.jld2"))
 
 @info "Plotting the results..."
 # ## Plot the results
-using JLD2, Plots
-vars =(:NO₃, :NH₄, :P, :Z, :DOM, :sPOM, :bPOM, :PAR)
+using JLD2, CairoMakie
+vars = (:NO₃, :NH₄, :P, :Z, :DOM, :sPOM, :bPOM, :PAR)
 file = jldopen("box.jld2")
 times = keys(file["values"])
 timeseries = NamedTuple{vars}(ntuple(t -> zeros(length(times)), length(vars)))
@@ -52,10 +52,16 @@ end
 
 close(file)
 
-plts=[]
-# ## Loop over all tracers in the list, making a plot of the timeseries of each
-for tracer in vars
-    push!(plts, plot(parse.(Float64, times)./day, timeseries[tracer], ylabel=tracer, xlabel="Day", legend=false))
+fig = Figure(resolution = (1600, 1000))
+
+plt_times = parse.(Float64, times)./day
+
+axs = []
+
+for (idx, tracer) in enumerate(vars)
+    push!(axs, Axis(fig[floor(Int, (idx - 1)/4) + 1, (idx - 1) % 4 + 1], ylabel="$tracer", xlabel="Day"))
+    lines!(axs[end], plt_times, timeseries[tracer])
 end
-plot(plts...)
-savefig("examples/box.png")
+save("box.png", fig)
+
+# ![Results](box.png)

@@ -71,7 +71,8 @@ model = NonhydrostaticModel(; grid,
                                                           surface_phytosynthetically_active_radiation = surface_PAR,
                                                           carbonates = true),
                               boundary_conditions = (DIC = FieldBoundaryConditions(top = CO₂_flux), ),
-                              auxiliary_fields = (; PAR))
+                              auxiliary_fields = (; PAR),
+                              advection = nothing,)
 
 set!(model, P=0.03, Z=0.03, NO₃=11.0, NH₄=0.05, DIC=2200.0, Alk=2400.0)
 
@@ -88,7 +89,8 @@ progress_message(sim) = @printf("Iteration: %04d, time: %s, Δt: %s, wall time: 
                                 iteration(sim),
                                 prettytime(sim),
                                 prettytime(sim.Δt),
-                                prettytime(sim.run_wall_time))                       
+                                prettytime(sim.run_wall_time))
+
 simulation.callbacks[:progress] = Callback(progress_message, IterationInterval(100))
 
 filename = "data_forced"
@@ -98,7 +100,7 @@ simulation.output_writers[:profiles] = JLD2OutputWriter(model,
                                                         schedule = TimeInterval(1day), 
                                                         overwrite_existing = true)
 
-simulation.callbacks[:neg] = Callback(scale_negative_tracers!; parameters=(conserved_group=(:NO₃, :NH₄, :P, :Z, :D, :DD, :DOM), warn=false))
+simulation.callbacks[:neg] = Callback(scale_negative_tracers!; parameters=(conserved_group=(:NO₃, :NH₄, :P, :Z, :sPOM, :bPOM, :DOM), warn=false))
 
 simulation.callbacks[:timestep] = Callback(update_timestep!, IterationInterval(1), (c_forcing=0.2, c_adv=0.2, c_diff=0.2, w = 200/day, relaxation=0.95), TimeStepCallsite())
 
@@ -106,16 +108,14 @@ simulation.callbacks[:timestep] = Callback(update_timestep!, IterationInterval(1
 # Finally we run the simulation
 run!(simulation)
 
-# Now we can visulise the results with some post processing to diagnose the air-sea CO₂ flux
+# Now we can visualise the results with some post processing to diagnose the air-sea CO₂ flux
 
 P = FieldTimeSeries("$filename.jld2", "P")
 NO₃ = FieldTimeSeries("$filename.jld2", "NO₃")
 Z = FieldTimeSeries("$filename.jld2", "Z")
-sPON = FieldTimeSeries("$filename.jld2", "sPON") 
-bPON = FieldTimeSeries("$filename.jld2", "bPO")
+sPOM = FieldTimeSeries("$filename.jld2", "sPOM") 
+bPOM = FieldTimeSeries("$filename.jld2", "bPOM")
 DIC = FieldTimeSeries("$filename.jld2", "DIC")
-sPOC = FieldTimeSeries("$filename.jld2", "sPOC")
-bPOC = FieldTimeSeries("$filename.jld2", "bPOC")
 Alk = FieldTimeSeries("$filename.jld2", "Alk")
 
 x, y, z = nodes(P)
@@ -125,11 +125,11 @@ air_sea_CO₂_flux = zeros(size(P)[4])
 carbon_export = zeros(size(P)[4])
 for (i, t) in enumerate(times)
     air_sea_CO₂_flux[i] = CO₂_flux.condition.parameters(0.0, 0.0, t, DIC[1, 1, Nz, i], Alk[1, 1, Nz, i], t_function(1, 1, 0, t), s_function(1, 1, 0, t), )*Oceananigans.Operators.Ax(1, 1, Nz, grid, Center(), Center(), Center())
-    carbon_export[i] = (sPOC[1, 1, end-20, i]*model.biogeochemistry.sinking_velocities.sPOM.w[1] .+ bPOC[1, 1, end-20, i]*model.biogeochemistry.sinking_velocities.bPOM.w[1])
+    carbon_export[i] = - (sPOM[1, 1, end - 20, i] * model.biogeochemistry.sinking_velocities.sPOM.w[1, 1, end - 20] .+ bPOM[1, 1, end-20, i] * model.biogeochemistry.sinking_velocities.bPOM.w[1, 1, end - 20] .+ bPOM[1, 1, end-20, i]) * model.biogeochemistry.organic_redfield
 end
 
 using GLMakie
-f=Figure(backgroundcolor=RGBf(1, 1, 1), fontsize=30)
+f=Figure(backgroundcolor=RGBf(1, 1, 1), fontsize=30, resolution = (1920, 1050))
 
 axP = Axis(f[1, 1:2], ylabel="z (m)", xlabel="Time (days)", title="Phytoplankton concentration (mmol N/m³)")
 hmP = GLMakie.heatmap!(times./days, float.(z[end-23:end]), float.(P[1, 1, end-23:end, 1:101])', interpolate=true, colormap=:batlow)
@@ -153,4 +153,6 @@ hmfExp = GLMakie.lines!(times./days, carbon_export.*(12+16*2).*year/(1000*1000),
 
 f[3, 5] = Legend(f, axfDIC, "", framevisible = false)
 
-save("examples/data_forced.png", f)
+save("data_forced.png", f)
+
+# ![Results](data_forced.png)
