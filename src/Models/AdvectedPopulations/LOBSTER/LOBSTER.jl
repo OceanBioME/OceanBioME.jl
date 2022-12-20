@@ -34,6 +34,9 @@ For optional tracers:
 * Temperature: T (ᵒC)
 * Salinity: S (‰)
 """
+module LOBSTERModel
+
+export LOBSTER
 
 using Oceananigans.Biogeochemistry: AbstractContinuousFormBiogeochemistry
 using Oceananigans.Units
@@ -298,3 +301,5 @@ include("core.jl")
 include("carbonate_chemistry.jl")
 include("oxygen_chemistry.jl")
 include("variable_redfield.jl")
+
+end # module

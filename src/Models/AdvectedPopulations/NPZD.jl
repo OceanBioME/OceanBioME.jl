@@ -3,6 +3,10 @@ Nutrient-Phytoplankton-Zooplankton-Detritus model of [Kuhn2015](@cite)
 http://dx.doi.org/10.1016/j.pocean.2015.07.004
 """
 
+module NPZDModel
+
+export NutrientPhytoplanktonZooplanktonDetritus
+
 using Oceananigans.Biogeochemistry: AbstractContinuousFormBiogeochemistry
 using Oceananigans.Units
 using Oceananigans.Advection: CenteredSecondOrder
@@ -117,7 +121,7 @@ end
     lᵖᵈ = bgc.phyto_base_mortality_rate
 
     growth = μ₀ * Q₁₀(T) * nutrient_limitation(N, kₙ) * light_limitation(PAR, T, α, μ₀ * Q₁₀(T)) * P
-    grazing = gₘₐₓ * nutrient_limitation(P  ^2, kₚ ^ 2) * Z
+    grazing = gₘₐₓ * nutrient_limitation(P ^ 2, kₚ ^ 2) * Z
     metabolic_loss = lᵖⁿ * Q₁₀(T) * P
     mortality_loss = lᵖᵈ * Q₁₀(T) * P
 
@@ -131,7 +135,7 @@ end
     lᶻᵈ = bgc.zoo_base_mortality_rate
     β = bgc.assimulation_efficiency
 
-    grazing = β * gₘₐₓ * nutrient_limitation(P  ^2, kₚ ^ 2) * Z
+    grazing = β * gₘₐₓ * nutrient_limitation(P ^ 2, kₚ ^ 2) * Z
     metabolic_loss = lᶻⁿ * Q₁₀(T) * Z
     mortality_loss = lᶻᵈ * Q₁₀(T) * Z
 
@@ -157,3 +161,5 @@ end
 function update_biogeochemical_state!(bgc::NutrientPhytoplanktonZooplanktonDetritus, model)
     update_PAR!(model, bgc.light_attenuation_model, bgc.surface_phytosynthetically_active_radiation)
 end
+
+end # module

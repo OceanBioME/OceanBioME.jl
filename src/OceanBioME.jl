@@ -31,5 +31,7 @@ include("Models/Models.jl")
 using .Boundaries
 using .Light
 using .BoxModels
+using .LOBSTERModel
+using .NPZDModel
 
 end
