@@ -163,6 +163,7 @@ T_R1 = 285
 T_R2 = 290
 R_1 =  2.785e-4 * 24
 R_2 = 5.429e-4 * 24
+K_A = 0.5
 
 const defaults = (
     A_0 = 4.5,#6,# Growth rate adjustment parameter
@@ -173,7 +174,7 @@ const defaults = (
     ϵ = 0.22,# Frond erosion parameter
     I_sat = 90 * 24*60*60/(10^6),#200 * 24 * 60 * 60 / (10^6),# Irradiance for maximal photosynthesis
     J_max = 1.4e-4 * 24,# Maximal nitrate uptake (gN/dm^2/h converted to gN/dm^2/day)
-    K_A = .5,#0.6,# Structural dry weight per unit area
+    K_A = K_A,#0.6,# Structural dry weight per unit area
     K_DW = 0.0785,# Dry weight to wet weight ratio of structural mass
     K_C = 2.1213,# Mass of carbon reserves per gram carbon
     K_N = 2.72,# Mass of nitrogen reserves per gram nitrogen
@@ -203,8 +204,8 @@ const defaults = (
     k_NO₃ = 4,# Nitrate uptake half saturation constant, converted to mmol/m^3
     k_NH₄ = 1.3, #Fossberg 2018
 
-    j_NO₃_max = 10*0.5*24*14/(10^6), #Ahn 1998
-    j_NH₄_max = 12*0.5*24*14/(10^6), #Ahn 1998
+    j_NO₃_max = 10 * K_A * 24 * 14 / (10^6), #Ahn 1998
+    j_NH₄_max = 12 * K_A * 24 * 14 / (10^6), #Ahn 1998
 
     uₐ = 0.72, #broch 2019
     uᵦ = 0.28,
@@ -318,13 +319,13 @@ Keyword arguments
 
 function setup(; n, x₀, y₀, z₀, A₀, N₀, C₀, latitude,
                  scalefactor = 1.0, 
-                 T=nothing, 
-                 S=nothing, 
-                 urel=nothing, 
-                 paramset=defaults, 
-                 custom_dynamics=no_dynamics, 
-                 optional_tracers=(),
-                 tracer_names=NamedTuple())
+                 T = nothing, 
+                 S = nothing, 
+                 urel = nothing, 
+                 paramset = defaults, 
+                 custom_dynamics = no_dynamics, 
+                 optional_tracers = (),
+                 tracer_names = NamedTuple())
 
     # this is a mess, we're not even using salinity at the moment
     if (!isnothing(T) && !isnothing(S) && isnothing(urel))
@@ -376,14 +377,14 @@ function setup(; n, x₀, y₀, z₀, A₀, N₀, C₀, latitude,
 
 
     return ActiveLagrangianParticles(particles;
-                                                        equation = equations, 
-                                                        equation_arguments = property_dependencies, 
-                                                        equation_parameters = parameters, 
-                                                        prognostic = prognostic_properties, 
-                                                        diagnostic = diagnostic_properties, 
-                                                        tracked_fields = tracers, 
-                                                        coupled_fields = coupled,
-                                                        scalefactor = scalefactor, 
-                                                        custom_dynamics=custom_dynamics)
+                                     equation = equations, 
+                                     equation_arguments = property_dependencies, 
+                                     equation_parameters = parameters, 
+                                     prognostic = prognostic_properties, 
+                                     diagnostic = diagnostic_properties, 
+                                     tracked_fields = tracers, 
+                                     coupled_fields = coupled,
+                                     scalefactor = scalefactor, 
+                                     custom_dynamics=custom_dynamics)
 end
 end
