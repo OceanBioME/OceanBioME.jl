@@ -21,7 +21,8 @@ import Oceananigans.Biogeochemistry:
     required_biogeochemical_tracers,
     required_biogeochemical_auxiliary_fields,
     update_biogeochemical_state!,
-    biogeochemical_drift_velocity
+    biogeochemical_drift_velocity,
+    biogeochemical_advection_scheme
 
 struct NutrientPhytoplanktonZooplanktonDetritus{FT, LA, SPAR, W, A} <: AbstractContinuousFormBiogeochemistry
     # phytoplankton
@@ -92,7 +93,6 @@ end
 required_biogeochemical_tracers(::NutrientPhytoplanktonZooplanktonDetritus) = (:N, :P, :Z, :D, :T)
 required_biogeochemical_auxiliary_fields(::NutrientPhytoplanktonZooplanktonDetritus) = (:PAR, )
 
-
 @inline nutrient_limitation(N, kₙ) = N / (kₙ + N)
 
 @inline Q₁₀(T) = 1.88 ^ (T / 10) # T in °C
@@ -162,8 +162,21 @@ end
     return phytoplankton_mortality_loss + zooplankton_assimilation_loss + zooplankton_mortality_loss - remineralization
 end
 
-@inline biogeochemical_drift_velocity(bgc::NutrientPhytoplanktonZooplanktonDetritus, ::Val{:P}) = bgc.sinking_velocities.P
-@inline biogeochemical_drift_velocity(bgc::NutrientPhytoplanktonZooplanktonDetritus, ::Val{:D}) = bgc.sinking_velocities.D
+@inline function biogeochemical_drift_velocity(bgc::NutrientPhytoplanktonZooplanktonDetritus, ::Val{tracer_name}) where tracer_name
+    if tracer_name in keys(bgc.sinking_velocities)
+        return bgc.sinking_velocities[tracer_name]
+    else
+        return nothing
+    end
+end
+
+@inline function biogeochemical_advection_scheme(bgc::NutrientPhytoplanktonZooplanktonDetritus, ::Val{tracer_name}) where tracer_name
+    if tracer_name in keys(bgc.sinking_velocities)
+        return bgc.advection_schemes[tracer_name]
+    else
+        return nothing
+    end
+end
 
 function update_biogeochemical_state!(bgc::NutrientPhytoplanktonZooplanktonDetritus, model)
     update_PAR!(model, bgc.light_attenuation_model, bgc.surface_phytosynthetically_active_radiation)
