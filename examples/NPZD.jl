@@ -18,27 +18,25 @@
 using OceanBioME, Oceananigans, Oceananigans.Units, Printf
 
 # ## Surface PAR
-PAR⁰(x, y, t) = (100*(1-cos((t+15days)*2π/(365days)))*(1 / (1 +0.2*exp(-((t-200days)/50days)^2))) .+ 2)*20
+PAR⁰(x, y, t) = 50 * (1 - cos((t + 15days) * 2π / (365days))) * (1 / (1 + 0.2 * exp(-((mod(t, 365days)-200days)/50days)^2))) / 2
 
 # ## Grid and PAR field
 # Define the grid and an extra Oceananigans field for the PAR to be stored in
-grid = RectilinearGrid(size=(20, 20), extent=(200, 200), topology=(Periodic, Flat, Bounded)) 
+grid = RectilinearGrid(size=(20, 30), extent=(200, 300), topology=(Periodic, Flat, Bounded)) 
 PAR = CenterField(grid)  
 
 # ## Model instantiation
-ρₒ = 1026.0 # kg m⁻³, average density at the surface of the world ocean
-cᴾ = 3991.0 # J K⁻¹ kg⁻¹, typical heat capacity for seawater
-
-Qᵀ(x, y, t) = PAR⁰(x, y, t) * 0.42 / (ρₒ * cᴾ) # K m s⁻¹, surface _temperature_ flux
+Tᵃ(t) = 18 + 2 * sin((t + 15days) * 2π / (365days))
+dTdz_0(x, y, t, T) = (Tᵃ(t) - T) * 10 ^ -3 / 1.1 
 
 dTdz = 0.01 # K m⁻¹
 
-T_bcs = FieldBoundaryConditions(top = FluxBoundaryCondition(Qᵀ),
+T_bcs = FieldBoundaryConditions(top = GradientBoundaryCondition(dTdz_0, field_dependencies = (:T, )),
                                 bottom = GradientBoundaryCondition(dTdz))
 
 model = NonhydrostaticModel(; grid,
-                              biogeochemistry = NutrientPhytoplanktonZooplanktonDetritus(; grid, surface_phytosynthetically_active_radiation = PAR⁰),
-                              tracers = (:S, ), # T will be defined by the biogeochemistry
+                              #biogeochemistry = NutrientPhytoplanktonZooplanktonDetritus(; grid, surface_phytosynthetically_active_radiation = PAR⁰),
+                              tracers = (:T, :S, ), # T will be defined by the biogeochemistry
                               buoyancy=SeawaterBuoyancy(),
                               boundary_conditions = (T = T_bcs, ),
                               auxiliary_fields = (; PAR),
@@ -49,13 +47,13 @@ model = NonhydrostaticModel(; grid,
 Ξ(z) = randn() * z / model.grid.Lz * (1 + z / model.grid.Lz) # noise
 
 ## Temperature initial condition: a stable density gradient with random noise superposed.
-Tᵢ(x, y, z) = 14 + dTdz * z + dTdz * model.grid.Lz * 1e-6 * Ξ(z)
+Tᵢ(x, y, z) = 16 + dTdz * z + dTdz * model.grid.Lz * 1e-6 * Ξ(z)
 
 ## Velocity initial condition: random noise scaled by the friction velocity.
 uᵢ(x, y, z) = 1e-3 * Ξ(z)
 
 ## `set!` the `model` fields using functions or constants:
-set!(model, u=uᵢ, w=uᵢ, T=Tᵢ, S=35.0, N=10.0, P=0.2, Z=0.1, D=0.1)
+set!(model, u=uᵢ, w=uᵢ, T=Tᵢ, S=35.0)#, N = 2.0, P = 0.1, Z = 0.01)
 
 # ## Simulation
 # Next we setup the simulation along with some callbacks that:
@@ -64,15 +62,15 @@ set!(model, u=uᵢ, w=uᵢ, T=Tᵢ, S=35.0, N=10.0, P=0.2, Z=0.1, D=0.1)
 # - Store the output
 # - Prevent the tracers from going negative from numerical error (see discussion of this in the [positivity preservation](@ref pos-preservation) implimentation page)
 
-simulation = Simulation(model, Δt=1.0, stop_time=1years)
+simulation = Simulation(model, Δt=0.5minute, stop_time=2years)
 
 # The `TimeStepWizard` helps ensure stable time-stepping
 # with a Courant-Freidrichs-Lewy (CFL) number of 1.0.
 
 #simulation.callbacks[:timestep] = Callback(update_timestep!, TimeInterval(1minute), parameters = (w=200/day, c_adv = 0.45, relaxation=0.75, c_forcing=0.1)) 
 
-wizard = TimeStepWizard(cfl = 0.75, diffusive_cfl = 0.75, max_change = 1.1, max_Δt = 0.5minute)
-simulation.callbacks[:wizard] = Callback(wizard, IterationInterval(10))
+wizard = TimeStepWizard(cfl = 0.6, diffusive_cfl = 0.5, max_change = 1.5, min_change = 0.5)#, max_Δt = 1.5minutes)
+simulation.callbacks[:wizard] = Callback(wizard, IterationInterval(1))
 
 ## Print a progress message
 progress(sim) = @printf("Iteration: %d, time: %s, Δt: %s\n",
@@ -80,10 +78,11 @@ progress(sim) = @printf("Iteration: %d, time: %s, Δt: %s\n",
  
 simulation.callbacks[:progress] = Callback(progress, IterationInterval(100))
 
-filename = "npdz"
-simulation.output_writers[:profiles] = JLD2OutputWriter(model, merge(model.tracers, model.auxiliary_fields), filename = "$filename.jld2", schedule = TimeInterval(1hour), overwrite_existing=true)
-simulation.callbacks[:neg] = Callback(scale_negative_tracers!; parameters=(conserved_group=(:N, :P, :Z, :D), warn=false), callsite=TendencyCallsite())
-simulation.callbacks[:neg2] = Callback(scale_negative_tracers!; parameters=(conserved_group=(:N, :P, :Z, :D), warn=false), callsite=UpdateStateCallsite())
+filename = "npdz_less_N"
+simulation.output_writers[:profiles] = JLD2OutputWriter(model, merge(model.velocities, model.tracers, model.auxiliary_fields), filename = "$filename.jld2", schedule = TimeInterval(1hour), overwrite_existing=true)
+#simulation.callbacks[:neg] = Callback(scale_negative_tracers!; parameters=(conserved_group=(:N, :P, :Z, :D), warn=false), callsite=TendencyCallsite())
+#simulation.callbacks[:neg2] = Callback(scale_negative_tracers!; parameters=(conserved_group=(:N, :P, :Z, :D), warn=false), callsite=UpdateStateCallsite())
+#simulation.callbacks[:timestep] = Callback(update_timestep!, IterationInterval(1), 0.05, TimeStepCallsite())
 
 # ## Run!
 # Finally we run the simulation
@@ -138,7 +137,7 @@ nframes = length(times)
 frame_iterator = 1:nframes
 framerate = floor(Int, nframes/30)
 
-record(f, "NPZD.mp4", frame_iterator; framerate = framerate) do i
+record(f, "$filename.mp4", frame_iterator; framerate = framerate) do i
     n[] = i
     msg = string("Plotting frame ", i, " of ", nframes)
     print(msg * " \r")
