@@ -50,7 +50,7 @@ kelp_particles = SLatissima.setup(;n,
                                   latitude = 57.5,
                                   scalefactor = 500.0, 
                                   T = t_function, S = s_function, urel = 0.2, 
-                                  optional_tracers = (:NH₄, :DIC, :bPOM, :bPOC, :O₂, :DON, :DOC))
+                                  optional_tracers = (:NH₄, :DIC, :bPON, :bPOC, :O₂, :DON, :DOC))
 
 # Specify the boundary conditions for DIC and O₂ based on the air-sea CO₂ and O₂ flux
 CO₂_flux = GasExchange(; gas = :CO₂, temperature = t_function, salinity = s_function)
