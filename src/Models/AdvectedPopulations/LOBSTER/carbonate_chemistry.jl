@@ -26,7 +26,7 @@
             + αᵈ * μˢᵖᵒᶜ * sPOM * Rdᵒ
             + αᵈ * μᵇᵖᵒᶜ * bPOM * Rdᵒ
             + μᵈᵒᵐ * DOM * Rdᵒ
-            + Gᵖ(P, Z, sPOM, gᶻ, p̃, kᶻ) * (1 - η) * Rdᵖ * ρᶜᵃᶜᵒ³)
+            + Gᵖ(P, Z, sPOM, gᶻ, p̃, kᶻ) * η * Rdᵖ * ρᶜᵃᶜᵒ³)
 end
 
 
