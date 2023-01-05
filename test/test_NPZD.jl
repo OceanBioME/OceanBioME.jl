@@ -11,7 +11,7 @@ function test_NPZD(grid, sinking, open_bottom)
                                      auxiliary_fields = (; PAR))
     else
         model = NonhydrostaticModel(;grid,
-                                     biogeochemistry = NutrientPhytoplanktonZooplanktonDetritus(;grid, sinking_velocities = NamedTuple()),
+                                     biogeochemistry = NutrientPhytoplanktonZooplanktonDetritus(;grid, sinking_speeds = NamedTuple()),
                                      auxiliary_fields = (; PAR))
     end
 

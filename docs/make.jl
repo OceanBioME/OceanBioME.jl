@@ -71,7 +71,6 @@ component_pages = [
 numerical_pages = [
     "Individuals" => "numerical_implimentation/individuals.md",
     "Sediments" => "numerical_implimentation/sediments.md",
-    "Forced auxiliary fields" => "numerical_implimentation/forced-aux-fields.md",
     "Positivity preservation" => "numerical_implimentation/positivity-preservation.md"
 ]
 
