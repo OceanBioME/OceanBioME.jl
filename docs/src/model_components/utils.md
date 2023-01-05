@@ -12,12 +12,16 @@ simulation.callbacks[:timestep] = Callback(update_timestep!, IterationInterval(1
 Optionally you can also specify a maximum time step length `Δt_max` and experimentally `c_forcing`, although we do not define this in the usual Courant number way but instead as `max(G/C)`. This reduces the time step when the tendency becomes large/the concentration becomes small in an attempt to prevent numerical error taking tracers below zero, but there is no mathematical reason for the instability to scale like this. We [plan](https://github.com/orgs/OceanBioME/projects/4) on implementing a positivity preserving time stepper in the future which would overcome this issue.
 
 ## Negative tracer detection
-As a temporary measure we have implemented a callback to either detect negative tracers and force them back to zero, or throw an error. This can be set up by:
+As a temporary measure we have implemented a callback to either detect negative tracers and either scale a conserved group, force them back to zero, or throw an error. Please see the numerical implementations page for details. This can be set up by:
 ```
-simulation.callbacks[:timestep] = Callback(OceanBioME.no_negative_tracers!)
+simulation.callbacks[:neg] = Callback(scale_negative_tracers!; parameters=(conserved_group=(:NO₃, :NH₄, :P, :Z, :sPON, :bPON, :DON), warn=false), callsite = UpdateStateCallsite())
 ```
-or 
+Here you should carefully consider which tracers form a conserved group (if at all). Alternatively, force to zero by:
 ```
-simulation.callbacks[:timestep] = Callback(OceanBioME.error_on_neg!)
+simulation.callbacks[:neg] = Callback(OceanBioME.no_negative_tracers!, callsite = UpdateStateCallsite())
 ```
-These both optionally take a named tuple of parameters which may include `exclude` which can be a tuple of tracer names (Symbols) which are allowed to be negative.
+or throw an error:
+```
+simulation.callbacks[:neg] = Callback(OceanBioME.error_on_neg!, callsite = UpdateStateCallsite())
+```
+The latter two both optionally take a named tuple of parameters which may include `exclude` which can be a tuple of tracer names (Symbols) which are allowed to be negative.
