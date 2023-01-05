@@ -13,11 +13,15 @@ using Oceananigans.Advection: CenteredSecondOrder
 
 using OceanBioME.Light: TwoBandPhotosyntheticallyActiveRatiation, update_PAR!, required_PAR_fields
 using OceanBioME: setup_velocity_fields
+using OceanBioME.BoxModels: BoxModel
+
+import OceanBioME.BoxModels: update_boxmodel_state!
 
 import Oceananigans.Biogeochemistry: 
     required_biogeochemical_tracers,
     required_biogeochemical_auxiliary_fields,
-    update_biogeochemical_state!
+    update_biogeochemical_state!,
+    biogeochemical_drift_velocity
 
 struct NutrientPhytoplanktonZooplanktonDetritus{FT, LA, SPAR, W, A} <: AbstractContinuousFormBiogeochemistry
     # phytoplankton
@@ -46,22 +50,22 @@ struct NutrientPhytoplanktonZooplanktonDetritus{FT, LA, SPAR, W, A} <: AbstractC
     advection_schemes :: A
 
     function NutrientPhytoplanktonZooplanktonDetritus(;grid,
-                                                       initial_photosynthetic_slope::FT = 0.1953/day, # 1/(W/m²)/s
-                                                       base_maximum_growth::FT = 0.6989/day, # 1/s
+                                                       initial_photosynthetic_slope::FT = 0.1953 / day, # 1/(W/m²)/s
+                                                       base_maximum_growth::FT = 0.6989 / day, # 1/s
                                                        nutrient_half_saturation::FT = 2.3868, # mmol N/m³
-                                                       base_respiration_rate::FT = 0.066/day, # 1/s
-                                                       phyto_base_mortality_rate::FT = 0.0101/day, # 1/s
-                                                       maximum_grazing_rate::FT = 2.1522/day, # 1/s
-                                                       grazing_half_saturation::FT = sqrt(0.5573), # mmol N/m³
+                                                       base_respiration_rate::FT = 0.066 / day, # 1/s/(mmol N / m³)
+                                                       phyto_base_mortality_rate::FT = 0.0101 / day, # 1/s/(mmol N / m³)
+                                                       maximum_grazing_rate::FT = 2.1522 / day, # 1/s
+                                                       grazing_half_saturation::FT = 0.5573, # mmol N/m³
                                                        assimulation_efficiency::FT = 0.9116, 
-                                                       base_excretion_rate::FT = 0.0102/day, # 1/s
-                                                       zoo_base_mortality_rate::FT = 0.3395/day, # 1/s
-                                                       remineralization_rate::FT = 0.1213/day, # 1/s
+                                                       base_excretion_rate::FT = 0.0102 / day, # 1/s/(mmol N / m³)
+                                                       zoo_base_mortality_rate::FT = 0.3395 / day, # 1/s/(mmol N / m³)²
+                                                       remineralization_rate::FT = 0.1213 / day, # 1/s
 
                                                        light_attenuation_model::LA = TwoBandPhotosyntheticallyActiveRatiation(),
                                                        surface_phytosynthetically_active_radiation::SPAR = (x, y, t) -> 100*max(0.0, cos(t*π/(12hours))),
                 
-                                                       sinking_velocities = (P = (0.0, 0.0, -0.2551/day), DD = (0.0, 0.0, -2.7489/day)),
+                                                       sinking_velocities = (P = (0.0, 0.0, -0.2551/day), D = (0.0, 0.0, -2.7489/day)),
                                                        open_bottom::Bool = true,
                                                        advection_schemes::A = NamedTuple{keys(sinking_velocities)}(repeat([CenteredSecondOrder()], 
                                                                                               length(sinking_velocities)))) where {FT, LA, SPAR, A}
@@ -89,11 +93,11 @@ required_biogeochemical_tracers(::NutrientPhytoplanktonZooplanktonDetritus) = (:
 required_biogeochemical_auxiliary_fields(::NutrientPhytoplanktonZooplanktonDetritus) = (:PAR, )
 
 
-@inline nutrient_limitation(N, kₙ) = N/(kₙ + N)
+@inline nutrient_limitation(N, kₙ) = N / (kₙ + N)
 
-@inline Q₁₀(T) = 1.88^(T/10) # T in °C
+@inline Q₁₀(T) = 1.88 ^ (T / 10) # T in °C
 
-@inline light_limitation(PAR, T, α, μ₀) = α*PAR/sqrt((μ₀*Q₁₀(T))^2 + α^2*PAR^2)
+@inline light_limitation(PAR, T, α, μ₀) = α * PAR / sqrt((μ₀ * Q₁₀(T)) ^ 2 + α ^ 2 * PAR ^ 2)
 
 @inline function (bgc::NutrientPhytoplanktonZooplanktonDetritus)(::Val{:N}, x, y, z, t, N, P, Z, D, T, PAR)
     μ₀ = bgc.base_maximum_growth
@@ -137,7 +141,7 @@ end
 
     grazing = β * gₘₐₓ * nutrient_limitation(P ^ 2, kₚ ^ 2) * Z
     metabolic_loss = lᶻⁿ * Q₁₀(T) * Z
-    mortality_loss = lᶻᵈ * Q₁₀(T) * Z
+    mortality_loss = lᶻᵈ * Q₁₀(T) * Z ^ 2
 
     return grazing - metabolic_loss - mortality_loss 
 end
@@ -151,15 +155,23 @@ end
     rᵈⁿ = bgc.remineralization_rate
 
     phytoplankton_mortality_loss = lᵖᵈ * Q₁₀(T) * P
-    zooplankton_assimilation_loss = (1 - β) * gₘₐₓ * nutrient_limitation(P  ^2, kₚ ^ 2) * Z
-    zooplankton_mortality_loss = lᶻᵈ * Q₁₀(T) * Z
+    zooplankton_assimilation_loss = (1 - β) * gₘₐₓ * nutrient_limitation(P ^ 2, kₚ ^ 2) * Z
+    zooplankton_mortality_loss = lᶻᵈ * Q₁₀(T) * Z ^ 2
     remineralization = rᵈⁿ * D
 
     return phytoplankton_mortality_loss + zooplankton_assimilation_loss + zooplankton_mortality_loss - remineralization
 end
 
+@inline biogeochemical_drift_velocity(bgc::NutrientPhytoplanktonZooplanktonDetritus, ::Val{:P}) = bgc.sinking_velocities.P
+@inline biogeochemical_drift_velocity(bgc::NutrientPhytoplanktonZooplanktonDetritus, ::Val{:D}) = bgc.sinking_velocities.D
+
 function update_biogeochemical_state!(bgc::NutrientPhytoplanktonZooplanktonDetritus, model)
     update_PAR!(model, bgc.light_attenuation_model, bgc.surface_phytosynthetically_active_radiation)
+end
+
+function update_boxmodel_state!(model::BoxModel{<:NutrientPhytoplanktonZooplanktonDetritus, <:Any, <:Any, <:Any, <:Any, <:Any})
+    getproperty(model.values, :PAR) .= model.forcing.PAR(model.clock.time)
+    getproperty(model.values, :T) .= model.forcing.T(model.clock.time)
 end
 
 end # module
