@@ -66,11 +66,11 @@ struct NutrientPhytoplanktonZooplanktonDetritus{FT, LA, SPAR, W, A} <: AbstractC
                                                        light_attenuation_model::LA = TwoBandPhotosyntheticallyActiveRatiation(),
                                                        surface_phytosynthetically_active_radiation::SPAR = (x, y, t) -> 100*max(0.0, cos(t*π/(12hours))),
                 
-                                                       sinking_velocities = (P = (0.0, 0.0, -0.2551/day), D = (0.0, 0.0, -2.7489/day)),
+                                                       sinking_speeds = (P = 0.2551/day, D = 2.7489/day),
                                                        open_bottom::Bool = true,
-                                                       advection_schemes::A = NamedTuple{keys(sinking_velocities)}(repeat([CenteredSecondOrder()], 
-                                                                                              length(sinking_velocities)))) where {FT, LA, SPAR, A}
-        sinking_velocities = setup_velocity_fields(sinking_velocities, grid, open_bottom)
+                                                       advection_schemes::A = NamedTuple{keys(sinking_speeds)}(repeat([CenteredSecondOrder()], 
+                                                                                              length(sinking_speeds)))) where {FT, LA, SPAR, A}
+        sinking_velocities = setup_velocity_fields(sinking_speeds, grid, open_bottom)
         W = typeof(sinking_velocities)
         return new{FT, LA, SPAR, W, A}(initial_photosynthetic_slope,
                                        base_maximum_growth,
