@@ -2,6 +2,8 @@ using Oceananigans.Fields: ZFaceField, AbstractField
 using Oceananigans.Forcings: maybe_constant_field
 using Oceananigans.Grids: AbstractGrid
 
+import Adapt: adapt_structure
+
 function setup_velocity_fields(drift_speeds, grid::AbstractGrid, open_bottom)
     drift_velocities = []
     for w in values(drift_speeds)
@@ -23,3 +25,5 @@ function setup_velocity_fields(drift_speeds, grid::AbstractGrid, open_bottom)
 end
 
 setup_velocity_fields(drift_speeds, grid::BoxModelGrid, open_bottom) = drift_speeds
+
+adapt_structure(to, velocities::NamedTuple{(:u, :v, :w), Tuple{AbstractField, AbstractField, AbstractField}}) = NamedTuple{(:u, :v, :w)}(adapt_structure.(to, values(velocities)))
