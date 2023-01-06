@@ -1,6 +1,6 @@
 using Test
 using OceanBioME: LOBSTER
-using Oceananigans
+using Oceananigans, CUDA
 
 ΣN(model, variable_redfield) = variable_redfield ? (
     sum(model.tracers.NO₃) + sum(model.tracers.NH₄) + sum(model.tracers.P) + sum(model.tracers.Z) + sum(model.tracers.sPON) + sum(model.tracers.bPON) + sum(model.tracers.DON)) : (
@@ -84,40 +84,42 @@ function test_LOBSTER(grid, carbonates, oxygen, variable_redfield, sinking, open
     @test all([all(values .== 0) for values in values(model.tracers)]) 
 
     # mass conservation
-    model.tracers.NO₃ .= 10 * rand()
-    model.tracers.NH₄ .= rand()
-    model.tracers.P .= rand()
-    model.tracers.Z .= rand()
-    if variable_redfield
-        model.tracers.sPON .= rand()
-        model.tracers.bPON .= rand()
-        model.tracers.DON .= rand()
+    CUDA.@allowscalar begin 
+        model.tracers.NO₃ .= 10 * rand()
+        model.tracers.NH₄ .= rand()
+        model.tracers.P .= rand()
+        model.tracers.Z .= rand()
+        if variable_redfield
+            model.tracers.sPON .= rand()
+            model.tracers.bPON .= rand()
+            model.tracers.DON .= rand()
 
-        model.tracers.sPOC .= model.tracers.sPON * model.biogeochemistry.phytoplankton_redfield
-        model.tracers.bPOC .= model.tracers.bPON * model.biogeochemistry.phytoplankton_redfield
-        model.tracers.DOC .= model.tracers.DON * model.biogeochemistry.phytoplankton_redfield
-    else
-        model.tracers.sPOM .= rand()
-        model.tracers.bPOM .= rand()
-        model.tracers.DOM .= rand()
+            model.tracers.sPOC .= model.tracers.sPON * model.biogeochemistry.phytoplankton_redfield
+            model.tracers.bPOC .= model.tracers.bPON * model.biogeochemistry.phytoplankton_redfield
+            model.tracers.DOC .= model.tracers.DON * model.biogeochemistry.phytoplankton_redfield
+        else
+            model.tracers.sPOM .= rand()
+            model.tracers.bPOM .= rand()
+            model.tracers.DOM .= rand()
+        end
+
+        if carbonates
+            model.tracers.DIC .= 2000 * rand()
+            model.tracers.Alk .= 200 * rand()
+        end
+
+        ΣN₀ = ΣN(model, variable_redfield)
+
+        ΣC₀ = ΣC(model, carbonates, variable_redfield)
     end
-
-    if carbonates
-        model.tracers.DIC .= 2000 * rand()
-        model.tracers.Alk .= 200 * rand()
-    end
-
-    ΣN₀ = ΣN(model, variable_redfield)
-
-    ΣC₀ = ΣC(model, carbonates, variable_redfield)
     
     for i in 1:n_timesteps
         time_step!(model, 1.0)
     end
 
-    ΣN₁ = ΣN(model, variable_redfield)
+    ΣN₁ = CUDA.@allowscalar ΣN(model, variable_redfield)
     
-    if !(sinking && open_bottom) #when we have open bottom sinking we won't conserve anything
+    CUDA.@allowscalar if !(sinking && open_bottom) #when we have open bottom sinking we won't conserve anything
         @test ΣN₀ ≈ ΣN₁
         @test ΣGⁿ(model, variable_redfield) ≈ 0.0 atol = 1e-15 # rtol=sqrt(eps) so is usually much larger than even this
 
@@ -131,7 +133,7 @@ function test_LOBSTER(grid, carbonates, oxygen, variable_redfield, sinking, open
     return model
 end
 
-n_timesteps = 1
+n_timesteps = 100
 
 for arch in (CPU(), )
     grid = RectilinearGrid(arch; size=(1, 1, 1), extent=(1, 1, 2))
