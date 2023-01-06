@@ -1,5 +1,6 @@
 using Test
 using OceanBioME: SLatissima
+using CUDA
 
 @testset "Sugar Kelp Particle Setup" begin
     # Initial properties

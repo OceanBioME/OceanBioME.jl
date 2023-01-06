@@ -80,11 +80,11 @@ function test_LOBSTER(grid, carbonates, oxygen, variable_redfield, sinking, open
     # checks model works with zero values
     time_step!(model, 1.0)
 
-    # and that they all return zero
-    @test all([all(values .== 0) for values in values(model.tracers)]) 
-
     # mass conservation
     CUDA.@allowscalar begin 
+        # and that they all return zero
+        @test all([all(values .== 0) for values in values(model.tracers)]) 
+
         model.tracers.NO₃ .= 10 * rand()
         model.tracers.NH₄ .= rand()
         model.tracers.P .= rand()
@@ -107,11 +107,11 @@ function test_LOBSTER(grid, carbonates, oxygen, variable_redfield, sinking, open
             model.tracers.DIC .= 2000 * rand()
             model.tracers.Alk .= 200 * rand()
         end
-
-        ΣN₀ = ΣN(model, variable_redfield)
-
-        ΣC₀ = ΣC(model, carbonates, variable_redfield)
     end
+    
+    ΣN₀ = CUDA.@allowscalar ΣN(model, variable_redfield)
+
+    ΣC₀ = CUDA.@allowscalar ΣC(model, carbonates, variable_redfield)
     
     for i in 1:n_timesteps
         time_step!(model, 1.0)
