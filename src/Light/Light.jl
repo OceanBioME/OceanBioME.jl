@@ -14,6 +14,9 @@ using Oceananigans.Utils: launch!
 using Oceananigans: Center, Face
 using Oceananigans.Grids: xnode, ynode, znodes
 
+import Adapt: adapt_structure
+import Base: show, summary
+
 # Fallback
 update_PAR!(model, PAR, surface_PAR) = nothing
 required_PAR_fields(PAR) = ()

@@ -64,3 +64,6 @@ function update_PAR!(model, PAR::TwoBandPhotosyntheticallyActiveRatiation, surfa
 end
 
 required_PAR_fields(::TwoBandPhotosyntheticallyActiveRatiation) = (:PAR, )
+
+summary(::TwoBandPhotosyntheticallyActiveRatiation{FT}) where {FT} = string("Two-band light attenuation model ($FT)")
+show(io::IO, model::TwoBandPhotosyntheticallyActiveRatiation{FT}) where {FT} = print(io, summary(model))

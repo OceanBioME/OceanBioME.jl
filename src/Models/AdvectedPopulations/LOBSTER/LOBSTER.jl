@@ -1,5 +1,5 @@
 """
-The Lodyc Ocean Biogeochemical Simulation Tools for Ecosystem and Resources (LOBSTER) model
+The Lodyc-DAMTP Ocean Biogeochemical Simulation Tools for Ecosystem and Resources (LOBSTER) model
 
 Tracers
 ========
@@ -44,7 +44,7 @@ using Oceananigans.Advection: CenteredSecondOrder
 using Oceananigans.Fields: Field, TracerFields, CenterField
 
 using OceanBioME.Light: TwoBandPhotosyntheticallyActiveRatiation, update_PAR!, required_PAR_fields
-using OceanBioME: setup_velocity_fields
+using OceanBioME: setup_velocity_fields, show_sinking_velocities
 using OceanBioME.BoxModels: BoxModel
 
 import OceanBioME.BoxModels: update_boxmodel_state!
@@ -57,6 +57,7 @@ import Oceananigans.Biogeochemistry:
        update_biogeochemical_state!
 
 import Adapt: adapt_structure
+import Base: show, summary
 
 """
     LOBSTER(; grid,
@@ -408,6 +409,17 @@ adapt_structure(to, lobster::LOBSTER{FT, LA, SPAR, B, W, A}) where {FT, LA, SPAR
             lobster.optionals,
             NamedTuple{keys(lobster.sinking_velocities)}(ntuple(n -> adapt_structure(to, lobster.sinking_velocities[n]), length(lobster.sinking_velocities))), # not sure this is the most efficient way todo this
             NamedTuple{keys(lobster.advection_schemes)}(ntuple(n -> adapt_structure(to, lobster.advection_schemes[n]), length(lobster.advection_schemes))))
+
+summary(::LOBSTER{FT, LA, SPAR, B, W, A}) where {FT, LA, SPAR, B, W, A} = string("Lodyc-DAMTP Ocean Biogeochemical Simulation Tools for Ecosystem and Resources (LOBSTER) model ($FT)")
+show(io::IO, model::LOBSTER{FT, LA, SPAR, Val{B}, W, A}) where {FT, LA, SPAR, B, W, A} =
+       print(io, summary(model), " \n",
+                " Light Attenuation Model: ", "\n",
+                "    └── ", summary(model.light_attenuation_model), "\n",
+                " Optional components:", "\n",
+                "    ├── Carbonates $(B[1] ? :✅ : :❌) \n",
+                "    ├── Oxygen $(B[2] ? :✅ : :❌) \n",
+                "    └── Variable Redfield Ratio $(B[3] ? :✅ : :❌)", "\n",
+                " Sinking Velocities:", "\n", show_sinking_velocities(model.sinking_velocities))
 
 include("fallbacks.jl")
 

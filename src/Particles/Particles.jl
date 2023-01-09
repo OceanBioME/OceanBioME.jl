@@ -140,16 +140,15 @@ function ActiveLagrangianParticles(particles::StructArray;
     end
 
     return LagrangianParticles(particles; 
-                               dynamics=particle_dynamics!, 
-                               parameters=(
-                                   equation=equation,
-                                   equation_arguments=equation_arguments,
-                                   equation_parameters=equation_parameters,
-                                   prognostic=prognostic,
-                                   diagnostic=diagnostic,
-                                   scalefactor=scalefactor, 
-                                   tracked_fields=tracked_fields,
-                                   coupled_fields=coupled_fields,
-                                   custom_dynamics=custom_dynamics))
+                               dynamics = particle_dynamics!, 
+                               parameters =(; equation,
+                                              equation_arguments,
+                                              equation_parameters,
+                                              prognostic,
+                                              diagnostic,
+                                              scalefactor,
+                                              tracked_fields,
+                                              coupled_fields,
+                                              custom_dynamics))
 end
 end#module

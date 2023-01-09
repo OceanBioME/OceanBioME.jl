@@ -12,10 +12,11 @@ using Oceananigans.Units
 using Oceananigans.Advection: CenteredSecondOrder
 
 using OceanBioME.Light: TwoBandPhotosyntheticallyActiveRatiation, update_PAR!, required_PAR_fields
-using OceanBioME: setup_velocity_fields
+using OceanBioME: setup_velocity_fields, show_sinking_velocities
 using OceanBioME.BoxModels: BoxModel
 
 import OceanBioME.BoxModels: update_boxmodel_state!
+import Base: show, summary
 
 import Oceananigans.Biogeochemistry: 
     required_biogeochemical_tracers,
@@ -186,5 +187,12 @@ function update_boxmodel_state!(model::BoxModel{<:NutrientPhytoplanktonZooplankt
     getproperty(model.values, :PAR) .= model.forcing.PAR(model.clock.time)
     getproperty(model.values, :T) .= model.forcing.T(model.clock.time)
 end
+
+summary(::NutrientPhytoplanktonZooplanktonDetritus{FT, LA, SPAR, W, A}) where {FT, LA, SPAR, W, A} = string("Nutrient Phytoplankton Zooplankton Detritus model ($FT)")
+show(io::IO, model::NutrientPhytoplanktonZooplanktonDetritus{FT, LA, SPAR, W, A}) where {FT, LA, SPAR, W, A} =
+       print(io, summary(model), " \n",
+                " Light Attenuation Model: ", "\n",
+                "    └── ", summary(model.light_attenuation_model), "\n",
+                " Sinking Velocities:", "\n", show_sinking_velocities(model.sinking_velocities))
 
 end # module
