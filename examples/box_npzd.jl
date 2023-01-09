@@ -13,10 +13,10 @@
 # Load the packages and setup the initial and forcing conditions
 using OceanBioME
 
-minute=minutes=60
-hour=hours=60*minutes
-day=days=hours*24  # define the length of a day in seconds
-year=years=day*365  # define the length of a year in days
+minute = minutes = 60
+hour = hour = 60 * minutes
+day = days = hours * 24  # define the length of a day in seconds
+year = years = day * 365  # define the length of a year in days
 
 # This is forced by a prescribed time-dependent photosynthetically available radiation (PAR)
 PAR⁰(t) = 50 * (1 - cos((t + 15days) * 2π / (365days))) * (1 / (1 + 0.2 * exp(-((mod(t, 365days)-200days)/50days)^2))) .+ 10

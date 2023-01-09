@@ -18,6 +18,7 @@ using StructArrays, JLD2
 
 import Oceananigans.Simulations: run!
 import Oceananigans: set!
+import Base: show, summary
 
 @inline no_func(args...) = 0.0
 
@@ -162,5 +163,15 @@ end
 (save::SaveBoxModel)(model) = save.file["values/$(model.clock.time)"] = model.values[1]
 
 include("timesteppers.jl")
+
+summary(::BoxModel{B, V, FT, F, TS, C}) where {B, V, FT, F, TS, C} = string("Biogeochemical box model")
+show(io::IO, model::BoxModel{B, V, FT, F, TS, C}) where {B, V, FT, F, TS, C} = 
+       print(io, summary(model), "\n",
+                "  Biogeochemical model: ", "\n",
+                "    └── ", summary(model.biogeochemistry), "\n",
+                "  Time-stepper:", "\n", 
+                "    └── ", summary(model.timestepper), "\n",
+                "  Time:", "\n",
+                "    └── $(prettytime(model.clock.time)) with Δt = $(prettytime(model.Δt))")
 
 end # module

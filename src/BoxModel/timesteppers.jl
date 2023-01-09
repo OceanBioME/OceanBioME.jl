@@ -86,3 +86,6 @@ function store_tendencies!(model)
         getproperty(model.timestepper.G⁻, tracer) .= getproperty(model.timestepper.Gⁿ, tracer)
     end
 end
+
+summary(::RungeKutta3TimeStepper{FT, TG}) where {FT, TG} = string("Runge-Kutta 3 Timetepper")
+show(io::IO, model::RungeKutta3TimeStepper{FT, TG}) where {FT, TG} = print(io, summary(model))
