@@ -69,5 +69,9 @@ particles = ActiveLagrangianParticles(particles;
 └── dynamics: dynamics!
 
 ```
+Finally, once the simulation is configired you will need to setup a callback to couple the particles:
+```julia
+simulation.callbacks[:couple_particles] = Callback(Particles.infinitesimal_particle_field_coupling!; callsite = TendencyCallsite())
+```
 
 Please see the coming pages for specific particle models we have implemented (e.g. kelp).

@@ -40,12 +40,7 @@ julia> using Pkg
 
 julia> Pkg.add("https://github.com/OceanBioME/OceanBioME.jl")
 ```
-If you wish to run the examples, until we move to a better system, please then move into the examples directory and download our example data files:
-```shell
-shell> cd OceanBioME/examples
 
-shell> git clone --depth 1 USERNAME@github.com:OceanBioME/OceanBioME_example_data.git
-```
 !!! compat "Julia 1.8 or newer"
     The latest version of OceanBioME strongly suggests _at least_ Julia 1.8 or later to run.
     While most scripts will run on Julia 1.6 or 1.7, OceanBioME is _only_ tested on Julia 1.8.
