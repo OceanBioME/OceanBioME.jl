@@ -94,9 +94,9 @@ filename = "kelp"
 simulation.output_writers[:profiles] = JLD2OutputWriter(model, merge(model.tracers, model.auxiliary_fields), filename = "$filename.jld2", schedule = TimeInterval(1day), overwrite_existing=true)
 simulation.output_writers[:particles] = JLD2OutputWriter(model, (particles=model.particles, ), filename = "$(filename)_particles.jld2", schedule = TimeInterval(1day), overwrite_existing = true)
 
-simulation.callbacks[:neg] = Callback(scale_negative_tracers!; parameters=(conserved_group=(:NO₃, :NH₄, :P, :Z, :sPON, :bPON, :DON), warn=false), callsite = UpdateStateCallsite())
-simulation.callbacks[:neg2] = Callback(scale_negative_tracers!; parameters=(conserved_group=(:NO₃, :NH₄, :P, :Z, :sPON, :bPON, :DON), warn=false), callsite = TendencyCallsite())
-simulation.callbacks[:timestep] = Callback(update_timestep!, IterationInterval(1), (c_forcing=0.05, c_adv=0.2, c_diff=0.2, w = 200/day, relaxation=0.95), TimeStepCallsite())
+scale_negative_tracers = ScaleNegativeTracers(tracers = (:NO₃, :NH₄, :P, :Z, :sPON, :bPON, :DON))
+simulation.callbacks[:neg] = Callback(scale_negative_tracers; callsite = UpdateStateCallsite())
+#simulation.callbacks[:timestep] = Callback(update_timestep!, IterationInterval(1), (c_forcing=0.05, c_adv=0.2, c_diff=0.2, w = 200/day, relaxation=0.95), TimeStepCallsite())
 
 # ## Run!
 # Finally we run the simulation

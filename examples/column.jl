@@ -68,7 +68,8 @@ simulation.output_writers[:profiles] = JLD2OutputWriter(model,
                                                         schedule = TimeInterval(1day), 
                                                         overwrite_existing = true)
 
-simulation.callbacks[:neg] = Callback(scale_negative_tracers!; parameters=(conserved_group=(:NO₃, :NH₄, :P, :Z, :sPOM, :bPOM, :DOM), warn=false))
+scale_negative_tracers = ScaleNegativeTracers(tracers = (:NO₃, :NH₄, :P, :Z, :sPOM, :bPOM, :DOM))
+simulation.callbacks[:neg] = Callback(scale_negative_tracers; callsite = UpdateStateCallsite())
 
 # ## Run!
 # Finally we run the simulation
