@@ -73,7 +73,7 @@ function infinitesimal_particle_field_coupling!(model)
     workgroup = min(num_particles, 256)
     worksize = num_particles
 
-    calculate_particle_tendency_kernel! =  calculate_particle_tendency!(device(model.architecture), workgroup, worksize)
+    calculate_particle_tendency_kernel! = calculate_particle_tendency!(device(model.architecture), workgroup, worksize)
 
     events = []
     for (tracer, property) in pairs(model.particles.parameters.coupled_fields)

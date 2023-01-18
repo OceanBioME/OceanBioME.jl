@@ -151,7 +151,7 @@ f[3, 5] = Legend(f, axfDIC, "", framevisible = false)
 
 save("$(filename).png", f)
 
-# ![Results]("kelp.png")
+# ![Results-bgc](kelp.png)
 
 # We can also have a look at how the kelp particles evolve
 using JLD2
