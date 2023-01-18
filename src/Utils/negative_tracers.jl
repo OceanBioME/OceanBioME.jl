@@ -4,6 +4,8 @@ using KernelAbstractions.Extras.LoopInfo: @unroll
 using Oceananigans.Utils: work_layout
 using Oceananigans.Architectures: device
 
+import Adapt: adapt_structure
+
 """
     zero_negative_tracers!(sim; params = (exclude=(), warn=false))
 
@@ -64,18 +66,18 @@ end
 ##### Infastructure to rescale negative values
 #####
 
-@kernel function scale_for_negs!(fields, warn)
+@kernel function scale_for_negs!(fields, scalefactors, warn)
     i, j, k = @index(Global, NTuple)
     t, p = 0.0, 0.0
-    @unroll for field in fields
-        t += @inbounds field[i, j, k]
+    @unroll for (name, field) in pairs(fields)
+        t += @inbounds field[i, j, k] * scalefactors[name]
         if field[i, j, k] > 0
-            p += @inbounds field[i, j, k]
+            p += @inbounds field[i, j, k] * scalefactors[name]
         end
     end 
     @unroll for field in fields
-        if @inbounds field[i, j, k]>0
-            @inbounds field[i, j, k] *= t/p
+        if @inbounds field[i, j, k] > 0
+            @inbounds field[i, j, k] *= t / p
         else
             if warn @warn "Scaling negative" end
             @inbounds field[i, j, k] = 0
@@ -83,23 +85,46 @@ end
     end
 end
 
-"""
-    scale_negative_tracers!(sim, params=(conserved_group = (), warn=false))
+struct ScaleNegativeTracers{FA, SA, W}
+    tracers :: FA
+    scalefactors :: SA
+    warn :: W
 
-Scales tracers in `conserved_group` so that none are negative. Use like:
+    function ScaleNegativeTracers(tracers::FA, scalefactors::SA, warn::W) where {FA, SA, W}
+        return new{FA, SA, W}(tracers, scalefactors, warn)
+    end
+end
+
+adapt_structure(to, snt::ScaleNegativeTracers) = ScaleNegativeTracers(adapt_structure(to, snt.tracers),
+                                                                      adapt_structure(to, snt.scalefactors),
+                                                                      adapt_structure(to, snt.warn))
+
+"""
+    ScaleNegativeTracers(; tracers, scalefactors = ones(length(tracers)), warn = false)
+
+Returns a callback that scales `tracers` so that none are negative. Use like:
 ```julia
-simulation.callbacks[:neg] = Callback(scale_negative_tracers!; parameters=(conserved_group=(:NO₃, :NH₄, :P, :Z, :D, :DD, :DOM), warn=false))
+negativity_protection! = ScaleNegativeTracers(tracers = (:P, :Z, :N))
+simulation.callbacks[:neg] = Callback(negativity_protection!; callsite = UpdateStateCallsite())
 ```
 This is a better but imperfect way to prevent numerical errors causing negative tracers. Please see discussion [here](https://github.com/OceanBioME/OceanBioME.jl/discussions/48). 
 We plan to impliment positivity preserving timestepping in the future as the perfect alternative.
-
-Tracers conserve should be set in the parameters and if `params.warn` is set to true a warning will be displayed when negative values are modified.
 """
-function scale_negative_tracers!(model, params=(conserved_group = (), warn=false)) #this can be used to conserve sub groups e.g. just saying NO₃ and NH₄ 
+
+function ScaleNegativeTracers(; tracers, scalefactors = NamedTuple{tracers}(ones(length(tracers))), warn = false)
+    if length(scalefactors) != length(tracers)
+        error("Incorrect number of scale factors provided")
+    end
+
+    return ScaleNegativeTracers(tracers, scalefactors, warn)
+end
+
+function (scale::ScaleNegativeTracers)(model)
     workgroup, worksize = work_layout(model.grid, :xyz)
     scale_for_negs_kernel! = scale_for_negs!(device(model.grid.architecture), workgroup, worksize)
     model_fields = fields(model)
-    event = scale_for_negs_kernel!(model_fields[params.conserved_group], params.warn)
+    event = scale_for_negs_kernel!(model_fields[scale.tracers], scale.scalefactors, scale.warn)
     wait(event)
 end
-@inline scale_negative_tracers!(sim::Simulation, args...) = scale_negative_tracers!(sim.model, args...) 
+@inline (scale::ScaleNegativeTracers)(sim::Simulation) = scale(sim.model) 
+
