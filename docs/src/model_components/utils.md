@@ -14,7 +14,13 @@ Optionally you can also specify a maximum time step length `Δt_max` and experim
 ## Negative tracer detection
 As a temporary measure we have implemented a callback to either detect negative tracers and either scale a conserved group, force them back to zero, or throw an error. Please see the numerical implementations page for details. This can be set up by:
 ```
-simulation.callbacks[:neg] = Callback(scale_negative_tracers!; parameters=(conserved_group=(:NO₃, :NH₄, :P, :Z, :sPON, :bPON, :DON), warn=false), callsite = UpdateStateCallsite())
+negativity_protection! = ScaleNegativeTracers(tracers = (:P, :Z, :N))
+simulation.callbacks[:neg] = Callback(negativity_protection!; callsite = UpdateStateCallsite())
+```
+You may also pass a scale factor for each component (e.g. in case they have different redfield raitos):
+```
+negativity_protection! = ScaleNegativeTracers(tracers = (:P, :Z, :D), scalefactors = (P = 1, Z = 1, D = 2))
+simulation.callbacks[:neg] = Callback(negativity_protection!; callsite = UpdateStateCallsite())
 ```
 Here you should carefully consider which tracers form a conserved group (if at all). Alternatively, force to zero by:
 ```

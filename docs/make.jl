@@ -38,19 +38,13 @@ bgc_pages = [
     "Overview" => "model_components/biogeochemical/index.md",
     #"PISCES" => "model_components/biogeochemical/PISCES.md",
     "LOBSTER" => "model_components/biogeochemical/LOBSTER.md",
-    "NPZ" => "model_components/biogeochemical/NPZ.md"
+    "NPZD" => "model_components/biogeochemical/NPZ.md"
 ]
 
 sed_pages = [
     "Overview" => "model_components/sediment/index.md",
     "Wang et al. 2020" => "model_components/sediment/wang.md",
     "Soetaert et al. 2000" => "model_components/sediment/soetaert.md",
-]
-
-stat_pop_pages = [
-    "Overview" => "model_components/quasi-stationary-populations/index.md",
-    #"Seagrass (X et al. Y)" => "model_components/quasi-stationary-populations/seagrass.md",
-    #"Nektons (Z et al. A)" => "model_components/quasi-stationary-populations/nekton.md",
 ]
 
 individuals_pages = [
@@ -63,21 +57,18 @@ component_pages = [
     "Air-sea gas exchange" => "model_components/air-sea-gas.md",
     "Sediment models" => sed_pages,
     "Light attenuation models" => "model_components/light.md",
-    "Quasi-stationary populations" => stat_pop_pages,
     "Individuals" => individuals_pages,
     "Utilities" => "model_components/utils.md"
 ]
 
 numerical_pages = [
     "Individuals" => "numerical_implimentation/individuals.md",
-    "Sediments" => "numerical_implimentation/sediments.md",
     "Positivity preservation" => "numerical_implimentation/positivity-preservation.md"
 ]
 
 
 param_pages = [
     "Overview" => "appendix/params/index.md",
-    #"PISCES" => "appendix/params/PISCES.md",
     "LOBSTER" => "appendix/params/LOBSTER.md",
     "SLatissima" => "appendix/params/SLatissima.md"
 ]
@@ -93,7 +84,6 @@ pages = [
     "Model components and setup" => component_pages,
     "Examples" => example_pages,
     "Numerical implimentation" => numerical_pages,
-    #"Model setup" => setup_pages,
     "Gallery" => "gallery.md",
     "References" => "references.md",
     "Appendix" => appendix_pages
