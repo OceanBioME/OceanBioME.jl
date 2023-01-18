@@ -1,4 +1,4 @@
-# Individuals
+# [Individuals](@id individuals)
 
 The effects of individuals can be modelled in OceanBioME. We have implemented this through custom dynamics in the [Lagrangian Particle tracking feature of Oceananigans](https://clima.github.io/OceananigansDocumentation/stable/model_setup/lagrangian_particles/). We have provided the tools to simulate spatially infinitesimal particles which can take nutrients etc. from a BGC model, and return waste. We also hope to provide models such as giant kelp which can act as a template for more complex individual behaviour.
 
