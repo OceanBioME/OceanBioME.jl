@@ -19,7 +19,7 @@ wizard = TimeStepWizard(cfl = 0.6, diffusive_cfl = 0.5, max_change = 1.5, min_ch
 simulation.callbacks[:wizard] = Callback(wizard, IterationInterval(10))
 ```
 ## Negative tracer detection
-As a temporary measure we have implemented a callback to either detect negative tracers and either scale a conserved group, force them back to zero, or throw an error. Please see the numerical implementations page for details. This can be set up by:
+As a temporary measure we have implemented a callback to either detect negative tracers and either scale a conserved group, force them back to zero, or throw an error. Please see the numerical implementations' page for details. This can be set up by:
 ```
 negativity_protection! = ScaleNegativeTracers(tracers = (:P, :Z, :N))
 simulation.callbacks[:neg] = Callback(negativity_protection!; callsite = UpdateStateCallsite())

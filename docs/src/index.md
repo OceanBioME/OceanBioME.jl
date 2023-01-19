@@ -1,4 +1,4 @@
-# OceanBioME.jl
+# `Ocean` `Bio`geochemical `M`odelling `E`nvironment - OceanBioME
 
 ```@meta
 CurrentModule = OceanBioME

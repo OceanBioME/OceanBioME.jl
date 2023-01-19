@@ -74,7 +74,7 @@ model = NonhydrostaticModel(; grid,
                               auxiliary_fields = (; PAR),
                               advection = nothing,)
 
-set!(model, P=0.03, Z=0.03, NO₃=11.0, NH₄=0.05, DIC=2200.0, Alk=2400.0)
+set!(model, P = 0.03, Z = 0.03, NO₃ = 11.0, NH₄ = 0.05, DIC = 2200.0, Alk = 2400.0)
 
 # ## Simulation
 # Next we setup the simulation along with some callbacks that:
@@ -126,8 +126,8 @@ times = P.times
 air_sea_CO₂_flux = zeros(size(P)[4])
 carbon_export = zeros(size(P)[4])
 for (i, t) in enumerate(times)
-    air_sea_CO₂_flux[i] = CO₂_flux.condition.parameters(0.0, 0.0, t, DIC[1, 1, Nz, i], Alk[1, 1, Nz, i], t_function(1, 1, 0, t), s_function(1, 1, 0, t), )*Oceananigans.Operators.Ax(1, 1, Nz, grid, Center(), Center(), Center())
-    carbon_export[i] = - (sPOM[1, 1, end - 20, i] * model.biogeochemistry.sinking_velocities.sPOM.w[1, 1, end - 20] .+ bPOM[1, 1, end-20, i] * model.biogeochemistry.sinking_velocities.bPOM.w[1, 1, end - 20] .+ bPOM[1, 1, end-20, i]) * model.biogeochemistry.organic_redfield
+    air_sea_CO₂_flux[i] = CO₂_flux.condition.parameters(0.0, 0.0, t, DIC[1, 1, end, i], Alk[1, 1, end, i], t_function(1, 1, 0, t), s_function(1, 1, 0, t)) 
+    carbon_export[i] = abs(z_faces(Nz - 20)) * model.biogeochemistry.organic_redfield * (sPOM[1, 1, end - 20, i] * model.biogeochemistry.sinking_velocities.sPOM.w[1, 1, end - 20] .+ bPOM[1, 1, end - 20, i] * model.biogeochemistry.sinking_velocities.bPOM.w[1, 1, end - 20])
 end
 
 using GLMakie
@@ -150,8 +150,8 @@ hmD = GLMakie.heatmap!(times./days, float.(z[end-23:end]), float.(sPOM[1, 1, end
 cbD = Colorbar(f[2, 6], hmD)
 
 axfDIC = Axis(f[3, 1:4], xlabel="Time (days)", title="Air-sea CO₂ flux and Sinking", ylabel="Flux (kgCO₂/m²/year)")
-hmfDIC = GLMakie.lines!(times./days, air_sea_CO₂_flux.*(12+16*2).*year/(1000*1000), label="Air-sea flux")
-hmfExp = GLMakie.lines!(times./days, carbon_export.*(12+16*2).*year/(1000*1000), label="Sinking export")
+hmfDIC = GLMakie.lines!(times ./ days, air_sea_CO₂_flux .* (12 + 16 * 2) .* year /(1000 * 1000), label="Air-sea flux")
+hmfExp = GLMakie.lines!(times ./ days, carbon_export .* (12 + 16 * 2) .* year / (1000 * 1000), label="Sinking export")
 
 f[3, 5] = Legend(f, axfDIC, "", framevisible = false)
 
