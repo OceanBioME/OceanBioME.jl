@@ -49,12 +49,13 @@ using OceanBioME.BoxModels: BoxModel
 
 import OceanBioME.BoxModels: update_boxmodel_state!
 
-import Oceananigans.Biogeochemistry:
-       required_biogeochemical_tracers,
-       required_biogeochemical_auxiliary_fields,
-       biogeochemical_drift_velocity,
-       biogeochemical_advection_scheme,
-       update_biogeochemical_state!
+import Oceananigans.Biogeochemistry: required_biogeochemical_tracers,
+                                     required_biogeochemical_auxiliary_fields,
+                                     biogeochemical_drift_velocity,
+                                     biogeochemical_advection_scheme,
+                                     update_biogeochemical_state!
+
+import OceanBioME: maximum_sinking_velocity
 
 import Adapt: adapt_structure
 import Base: show, summary
@@ -420,6 +421,8 @@ show(io::IO, model::LOBSTER{FT, LA, SPAR, Val{B}, W, A}) where {FT, LA, SPAR, B,
                 "    ├── Oxygen $(B[2] ? :✅ : :❌) \n",
                 "    └── Variable Redfield Ratio $(B[3] ? :✅ : :❌)", "\n",
                 " Sinking Velocities:", "\n", show_sinking_velocities(model.sinking_velocities))
+
+@inline maximum_sinking_velocity(bgc::LOBSTER) = maximum(abs, bgc.sinking_velocities.bPOM.w)
 
 include("fallbacks.jl")
 

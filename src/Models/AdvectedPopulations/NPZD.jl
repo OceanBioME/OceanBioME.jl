@@ -18,12 +18,13 @@ using OceanBioME.BoxModels: BoxModel
 import OceanBioME.BoxModels: update_boxmodel_state!
 import Base: show, summary
 
-import Oceananigans.Biogeochemistry: 
-    required_biogeochemical_tracers,
-    required_biogeochemical_auxiliary_fields,
-    update_biogeochemical_state!,
-    biogeochemical_drift_velocity,
-    biogeochemical_advection_scheme
+import Oceananigans.Biogeochemistry: required_biogeochemical_tracers,
+                                     required_biogeochemical_auxiliary_fields,
+                                     update_biogeochemical_state!,
+                                     biogeochemical_drift_velocity,
+                                     biogeochemical_advection_scheme
+
+import OceanBioME: maximum_sinking_velocity
 
 struct NutrientPhytoplanktonZooplanktonDetritus{FT, LA, SPAR, W, A} <: AbstractContinuousFormBiogeochemistry
     # phytoplankton
@@ -194,5 +195,7 @@ show(io::IO, model::NutrientPhytoplanktonZooplanktonDetritus{FT, LA, SPAR, W, A}
                 " Light Attenuation Model: ", "\n",
                 "    └── ", summary(model.light_attenuation_model), "\n",
                 " Sinking Velocities:", "\n", show_sinking_velocities(model.sinking_velocities))
+
+@inline maximum_sinking_velocity(bgc::NutrientPhytoplanktonZooplanktonDetritus) = maximum(abs, bgc.sinking_velocities.D.w)
 
 end # module

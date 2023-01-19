@@ -3,14 +3,21 @@
 We provide some utilities that may be useful.
 
 ## Time step adaptation
-To automatically adapt the time step length you may add a callback like:
+We have added a few additional utilities which extend the capabilities of Oceananigans' time step wizard. For column models where there is no water velocity we have added functions to calculate the advection timescale from the biogeochemical model defined sinking velocities. This could be used by:
 ```
-simulation.callbacks[:timestep] = Callback(update_timestep!, IterationInterval(1), (w=200/day, c_diff = 0.45, c_adv = 0.45, relaxation=0.75))
+wizard = TimeStepWizard(cfl = 0.2, diffusive_cfl = 0.2, max_change = 2.0, min_change = 0.5, cell_advection_timescale = column_advection_timescale)
+simulation.callbacks[:wizard] = Callback(wizard, IterationInterval(10))
 ```
-`c_diff` and `c_adv` are the diffusive and advective [Courant Numbers](https://www.wikiwand.com/en/Courant%E2%80%93Friedrichs%E2%80%93Lewy_condition), and the relaxation damps the change in step length as the new step is ``\Delta t_{i+1} = \Delta t_i \left(\frac{C_{max}}{C}\right)^{relaxation}``.
-
-Optionally you can also specify a maximum time step length `Δt_max` and experimentally `c_forcing`, although we do not define this in the usual Courant number way but instead as `max(G/C)`. This reduces the time step when the tendency becomes large/the concentration becomes small in an attempt to prevent numerical error taking tracers below zero, but there is no mathematical reason for the instability to scale like this. We [plan](https://github.com/orgs/OceanBioME/projects/4) on implementing a positivity preserving time stepper in the future which would overcome this issue.
-
+Additionally, in a column model you may have a functional definition for the viscosity, so we define an additional diffusion timescale function:
+```
+wizard = TimeStepWizard(cfl = 0.2, diffusive_cfl = 0.2, max_change = 2.0, min_change = 0.5, cell_diffusion_timescale = column_diffusion_timescale, cell_advection_timescale = column_advection_timescale)
+simulation.callbacks[:wizard] = Callback(wizard, IterationInterval(10))
+```
+Finally, sinking may be more limiting than the normal advective CFL conditions so, we have an additional cell advection timescale defined for 3D models:
+```
+wizard = TimeStepWizard(cfl = 0.6, diffusive_cfl = 0.5, max_change = 1.5, min_change = 0., cell_advection_timescale = sinking_adveciton_timescale)
+simulation.callbacks[:wizard] = Callback(wizard, IterationInterval(10))
+```
 ## Negative tracer detection
 As a temporary measure we have implemented a callback to either detect negative tracers and either scale a conserved group, force them back to zero, or throw an error. Please see the numerical implementations page for details. This can be set up by:
 ```

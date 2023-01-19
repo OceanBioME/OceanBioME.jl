@@ -23,15 +23,18 @@ using Oceananigans.Units: second, minute, minutes, hour, hours, day, days, year,
 # ## Surface PAR and turbulent vertical diffusivity based on idealised mixed layer depth 
 # Setting up idealised functions for PAR and diffusivity (details here can be ignored but these are typical of the North Atlantic)
 
-PAR⁰(x, y, t) = 60*(1-cos((t+15days)*2π/(365days)))*(1 /(1 +0.2*exp(-((mod(t, 365days)-200days)/50days)^2))) .+ 2
+@inline PAR⁰(x, y, t) = 60*(1-cos((t+15days)*2π/(365days)))*(1 /(1 +0.2*exp(-((mod(t, 365days)-200days)/50days)^2))) .+ 2
 
-H(t, t₀, t₁) = ifelse(t₀<t<t₁, 1.0, 0.0)
-fmld1(t) = H.(t, 50days, 365days).*(1 ./(1 .+exp.(-(t-100days)/(5days)))).*(1 ./(1 .+exp.((t .-330days)./(25days))))
-MLD(t) = (-10 .-340 .*(1 .-fmld1(364.99999days).*exp.(-t/25days).-fmld1.(mod.(t, 365days))))
-κₜ(x, y, z, t) = 1e-2*max(1-(z+MLD(t)/2)^2/(MLD(t)/2)^2,0)+1e-4; 
+@inline H(t, t₀, t₁) = ifelse(t₀ < t < t₁, 1.0, 0.0)
 
-t_function(x, y, z, t) = 2.4*cos(t*2π/year + 50day) + 10
-s_function(x, y, z, t) = 35.0
+@inline fmld1(t) = H(t, 50days, 365days) * (1 / (1 +exp(-(t - 100days) / (5days)))) * (1 / (1 + exp((t - 330days) / (25days))))
+
+@inline MLD(t) = (-10 - 340 * (1 - fmld1(364.99999days) * exp(-t / 25days) - fmld1(mod(t, 365days))))
+
+@inline κₜ(x, y, z, t) = 1e-2 * max(1 - (z + MLD(t) / 2) ^ 2 / (MLD(t) / 2) ^ 2, 0) + 1e-4
+
+@inline t_function(x, y, z, t) = 2.4 * cos(t * 2π / year + 50day) + 10
+@inline s_function(x, y, z, t) = 35.0
 
 # ## Grid and PAR field
 # Define the grid and an extra Oceananigans field for the PAR to be stored in
@@ -96,7 +99,9 @@ simulation.output_writers[:particles] = JLD2OutputWriter(model, (particles=model
 
 scale_negative_tracers = ScaleNegativeTracers(tracers = (:NO₃, :NH₄, :P, :Z, :sPON, :bPON, :DON))
 simulation.callbacks[:neg] = Callback(scale_negative_tracers; callsite = UpdateStateCallsite())
-#simulation.callbacks[:timestep] = Callback(update_timestep!, IterationInterval(1), (c_forcing=0.05, c_adv=0.2, c_diff=0.2, w = 200/day, relaxation=0.95), TimeStepCallsite())
+
+wizard = TimeStepWizard(cfl = 0.2, diffusive_cfl = 0.2, max_change = 2.0, min_change = 0.5, cell_diffusion_timescale = column_diffusion_timescale, cell_advection_timescale = column_advection_timescale)
+simulation.callbacks[:wizard] = Callback(wizard, IterationInterval(10))
 
 # ## Run!
 # Finally we run the simulation
