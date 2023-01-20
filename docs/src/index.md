@@ -18,14 +18,6 @@ As it was originally conceived for the study of submesoscale systems such as kel
 An overview of the current and planned future design of OceanBioME is shown in the diagram below:
 ![Diagram of high level structure of OceanBioME.jl showing interlink between different components ... (improve this alt text)](overview.png)
 
-Future development ideas include:
-- [Completing testing of PISCES](https://github.com/OceanBioME/OceanBioME.jl/tree/PISCES) and perform validation experiments
-- Explore the potential for fixed plant populations (e.g. seagrass) models which may be implemented with the [forced column fields developed for sediment modelling](numerical_implimentation/sediments.md)
-- Complete changes for [GPU compatibility](https://github.com/OceanBioME/OceanBioME.jl/pull/23) (may require upstream Oceananigans.jl or even CUDA.jl changes)
-- Expand examples (e.g. global circulation example)
-
-Please see [this project board](https://github.com/orgs/OceanBioME/projects/4) for our current roadmap/progress.
-
 
 ## Quick install
 
@@ -69,7 +61,6 @@ Whether you need help getting started with OceanBioME, found a bug, want OceanBi
 
 ## Citing
 
-If you use OceanBioME as part of your research, teaching, or other activities, we would be grateful if you could
-cite our work and mention OceanBioME by name, as well as citing and [acknowledging Oceananigans](https://clima.github.io/OceananigansDocumentation/stable/#Citing) as without them this package would not be possible.
+If you use OceanBioME as part of your research, teaching, or other activities, we would be grateful if you could cite our work and mention OceanBioME by name, as well as citing and [acknowledging Oceananigans](https://clima.github.io/OceananigansDocumentation/stable/#Citing) as without them this package would not be possible.
 
 We do not currently have a citation for OceanBioME so please reach out if you wish to cite it, and we will expedite the process of [making it citable](https://joss.theoj.org/about).
