@@ -7,6 +7,9 @@ on:
     tags: '*'
   pull_request:
 
+env:
+  DATADEPS_ALWAYS_ACCEPT: true
+
 jobs:
   build:
     permissions:
