@@ -117,7 +117,7 @@ makedocs(bib,
 for file in vcat(glob("docs/*.jld2"), glob("docs/*.nc"))
     rm(file)
 end
-#=
+
 deploydocs(
           repo = "github.com/OceanBioME/OceanBioME/Documentation.git",
       versions = ["stable" => "v^", "v#.#.#", "dev" => "dev"],
@@ -125,4 +125,4 @@ deploydocs(
   push_preview = true,
      devbranch = "main"
 )
-=#
+
