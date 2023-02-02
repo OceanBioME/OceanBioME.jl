@@ -18,6 +18,7 @@ using StructArrays, JLD2
 
 import Oceananigans.Simulations: run!
 import Oceananigans: set!
+import Oceananigans.Fields: CenterField
 import Base: show, summary
 
 @inline no_func(args...) = 0.0
@@ -31,7 +32,6 @@ mutable struct BoxModel{B, V, FT, F, TS, C}
     Δt :: FT
     clock :: C
 end
-
 
 """
     BoxModel(;biogeochemistry::B,
@@ -173,5 +173,7 @@ show(io::IO, model::BoxModel{B, V, FT, F, TS, C}) where {B, V, FT, F, TS, C} =
                 "    └── ", summary(model.timestepper), "\n",
                 "  Time:", "\n",
                 "    └── $(prettytime(model.clock.time)) with Δt = $(prettytime(model.Δt))")
+
+CenterField(::BoxModelGrid) = nothing
 
 end # module

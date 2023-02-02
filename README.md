@@ -16,6 +16,6 @@ using Pkg
 Pkg.add("https://github.com/OceanBioME/OceanBioME.jl")
 ```
 
-## Documentation
+## Documentation
 
-See the [documentation](coming soon) for full description and examples.
+See the [documentation](https://comming-soon) for full description and examples.
