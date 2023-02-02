@@ -40,7 +40,6 @@ using Oceananigans.Units: second, minute, minutes, hour, hours, day, days, year,
 # Define the grid and an extra Oceananigans field for the PAR to be stored in
 Lx, Ly = 20, 20
 grid = RectilinearGrid(size=(1, 1, 50), extent=(Lx, Ly, 200)) 
-PAR = Oceananigans.Fields.Field{Center, Center, Center}(grid)  
 
 # ## Kelp Particle setup
 @info "Setting up kelp particles"
@@ -67,7 +66,6 @@ model = NonhydrostaticModel(; grid,
                                                           variable_redfield = true),
                               boundary_conditions = (DIC = FieldBoundaryConditions(top = CO₂_flux),
                                                      O₂ = FieldBoundaryConditions(top = O₂_flux), ),
-                              auxiliary_fields = (; PAR),
                               advection = nothing,
                               particles = kelp_particles)
 

@@ -23,7 +23,6 @@ PAR⁰(x, y, t) = 50 * (1 - cos((t + 15days) * 2π / (365days))) * (1 / (1 + 0.2
 # ## Grid and PAR field
 # Define the grid and an extra Oceananigans field for the PAR to be stored in
 grid = RectilinearGrid(size=(20, 30), extent=(200, 300), topology=(Periodic, Flat, Bounded)) 
-PAR = CenterField(grid)  
 
 # ## Model instantiation
 Tᵃ(t) = 18 + 2 * sin((t + 15days) * 2π / (365days))
@@ -39,7 +38,6 @@ model = NonhydrostaticModel(; grid,
                               tracers = (:T, :S, ), # T will be defined by the biogeochemistry
                               buoyancy=SeawaterBuoyancy(),
                               boundary_conditions = (T = T_bcs, ),
-                              auxiliary_fields = (; PAR),
                               advection = WENO(grid),
                               closure = ScalarDiffusivity(ν=1e-4, κ=1e-4))
 

@@ -60,7 +60,6 @@ h(k) = (k - 1) / Nz
 z_faces(k) = Lz * (ζ₀(k) * Σ(k) - 1)
 
 grid = RectilinearGrid(size = (1, 1, Nz), x = (0, 20), y = (0, 20), z = z_faces)        
-PAR = CenterField(grid)
 
 # ## Biogeochemical and Oceananigans model
 # Here we instantiate the LOBSTER model with carbonate chemistry and a surface flux of DIC (CO₂)
@@ -71,7 +70,6 @@ model = NonhydrostaticModel(; grid,
                                                           surface_phytosynthetically_active_radiation = surface_PAR,
                                                           carbonates = true),
                               boundary_conditions = (DIC = FieldBoundaryConditions(top = CO₂_flux), ),
-                              auxiliary_fields = (; PAR),
                               advection = nothing,)
 
 set!(model, P = 0.03, Z = 0.03, NO₃ = 11.0, NH₄ = 0.05, DIC = 2200.0, Alk = 2400.0)

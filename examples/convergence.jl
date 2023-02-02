@@ -44,7 +44,6 @@ h(k) = (k - 1) / Nz
 z_faces(k) = Lz * (ζ₀(k) * Σ(k) - 1)
 
 grid = RectilinearGrid(size = (1, 1, Nz), x = (0, 20), y = (0, 20), z = z_faces)        
-PAR = Oceananigans.Fields.Field{Center, Center, Center}(grid)
 
 dic_bc = Boundaries.airseasetup(:CO₂, forcings=(T=t_function, S=s_function))
 oxy_bc = Boundaries.airseasetup(:O₂, forcings=(T=t_function, S=s_function))
@@ -63,7 +62,6 @@ model = NonhydrostaticModel(
                                                 closure = ScalarDiffusivity(ν=κₜ, κ=κₜ), 
                                                 forcing = bgc.forcing,
                                                 boundary_conditions = bgc.boundary_conditions,
-                                                auxiliary_fields = (; PAR)
 )
 set!(model, P=0.03, Z=0.03, D=0.0, DD=0.0, Dᶜ=0.0, DDᶜ=0.0, NO₃=11, NH₄=0.05, DOM=0.0, DIC=2200.0, ALK=2400.0, OXY=240.0)
 

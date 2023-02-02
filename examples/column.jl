@@ -30,7 +30,6 @@ MLD(t) = (-10 - 340 *(1 - fmld1(364.99999days) * exp( -mod(t, 365days)/25days) -
 # ## Grid and PAR field
 # Define the grid and an extra Oceananigans field for the PAR to be stored in
 grid = RectilinearGrid(size=(1, 1, 50), extent=(20, 20, 200)) 
-PAR = CenterField(grid)  
 
 # ## Biogeochemical and Oceananigans model
 # Here we setup the Oceananigans model using the LOBSTER biogeochemical model in its default configuration. 
@@ -41,8 +40,7 @@ model = NonhydrostaticModel(; grid,
                               advection = nothing, # we don't need to calculate advection because we have no velocity
                               closure = ScalarDiffusivity(ν=κₜ, κ=κₜ), 
                               biogeochemistry = LOBSTER(; grid,
-                                                          surface_phytosynthetically_active_radiation = PAR⁰),
-                              auxiliary_fields = (; PAR))
+                                                          surface_phytosynthetically_active_radiation = PAR⁰))
 
 set!(model, P=0.03, Z=0.03, NO₃=11.0, NH₄=0.05)
 N₀ = sum(model.tracers.P) + sum(model.tracers.Z) + sum(model.tracers.NO₃) + sum(model.tracers.NH₄) + sum(model.tracers.sPOM) + sum(model.tracers.bPOM) + sum(model.tracers.DOM)

@@ -405,7 +405,7 @@ adapt_structure(to, lobster::LOBSTER{FT, LA, SPAR, B, W, A}) where {FT, LA, SPAR
             lobster.fast_sinking_mortality_fraction,
             lobster.disolved_organic_breakdown_rate,
             lobster.zooplankton_calcite_dissolution,
-            lobster.light_attenuation_model, #TODO in update to newer oceananigans stuff
+            lobster.light_attenuation_model,
             lobster.surface_phytosynthetically_active_radiation, 
             lobster.optionals,
             NamedTuple{keys(lobster.sinking_velocities)}(ntuple(n -> adapt_structure(to, lobster.sinking_velocities[n]), length(lobster.sinking_velocities))), # not sure this is the most efficient way todo this
