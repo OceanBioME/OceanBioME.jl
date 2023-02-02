@@ -13,7 +13,6 @@ DataFrames = "a93c6f00-e57d-5684-b7b6-d8193f3e46c0"
 DiffEqBase = "2b5f629d-d688-5b77-993f-72d75c75574e"
 Documenter = "e30172f5-a6a5-5a46-863b-614d45cd2de4"
 DocumenterCitations = "daee34ce-89f3-4625-b898-19384cb65244"
-GLMakie = "e9467ef8-e4e7-5192-8a1a-b1aee30e663a"
 Glob = "c27321d9-0574-5035-807b-f59d2c89b15c"
 GridInterpolations = "bb4c363b-b914-514b-8517-4eb369bc008a"
 InteractiveErrors = "6cff3a6f-7015-4b3b-b269-4b312a73b9bf"
@@ -54,5 +53,5 @@ Printf = "de0858da-6303-5e67-8744-51eddeeeb8d7"
 Test = "8dfed614-e22c-5e08-85e1-65c5234f0b40"
 
 [targets]
-examples = ["Plots", "GLMakie", "Printf", "NetCDF", "Interpolations", "DataDeps"]
+examples = ["Plots", "CairoMakie", "Printf", "NetCDF", "Interpolations", "DataDeps"]
 test = ["Test"]

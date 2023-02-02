@@ -127,28 +127,28 @@ for (i, t) in enumerate(times)
     carbon_export[i] = (200 / 50) * (sPOC[1, 1, end-20, i] * model.biogeochemistry.sinking_velocities.sPOM.w[1, 1, end - 20] .+ bPOC[1, 1, end-20, i] * model.biogeochemistry.sinking_velocities.bPOM.w[1, 1, end - 20])
 end
 
-using GLMakie
+using CairoMakie
 f=Figure(backgroundcolor=RGBf(1, 1, 1), fontsize=30, resolution = (1920, 1050))
 
 axP = Axis(f[1, 1:2], ylabel="z (m)", xlabel="Time (days)", title="Phytoplankton concentration (mmol N/m³)")
-hmP = GLMakie.heatmap!(times./days, float.(z[end-23:end]), float.(P[1, 1, end-23:end, 1:end])', interpolate=true, colormap=:batlow)
+hmP = heatmap!(times./days, float.(z[end-23:end]), float.(P[1, 1, end-23:end, 1:end])', interpolate=true, colormap=:batlow)
 cbP = Colorbar(f[1, 3], hmP)
 
 axNO₃ = Axis(f[1, 4:5], ylabel="z (m)", xlabel="Time (days)", title="Nitrate concentration (mmol N/m³)")
-hmNO₃ = GLMakie.heatmap!(times./days, float.(z[end-23:end]), float.(NO₃[1, 1, end-23:end, 1:end])', interpolate=true, colormap=:batlow)
+hmNO₃ = heatmap!(times./days, float.(z[end-23:end]), float.(NO₃[1, 1, end-23:end, 1:end])', interpolate=true, colormap=:batlow)
 cbNO₃ = Colorbar(f[1, 6], hmNO₃)
 
 axZ = Axis(f[2, 1:2], ylabel="z (m)", xlabel="Time (days)", title="Zooplankton concentration (mmol N/m³)")
-hmZ = GLMakie.heatmap!(times./days, float.(z[end-23:end]), float.(Z[1, 1, end-23:end, 1:end])', interpolate=true, colormap=:batlow)
+hmZ = heatmap!(times./days, float.(z[end-23:end]), float.(Z[1, 1, end-23:end, 1:end])', interpolate=true, colormap=:batlow)
 cbZ = Colorbar(f[2, 3], hmZ)
 
 axD = Axis(f[2, 4:5], ylabel="z (m)", xlabel="Time (days)", title="Detritus concentration (mmol C/m³)")
-hmD = GLMakie.heatmap!(times./days, float.(z[end-23:end]), float.(sPOC[1, 1, end-23:end, 1:end])' .+ float.(bPOC[1, 1, end-23:end, 1:end])', interpolate=true, colormap=:batlow)
+hmD = heatmap!(times./days, float.(z[end-23:end]), float.(sPOC[1, 1, end-23:end, 1:end])' .+ float.(bPOC[1, 1, end-23:end, 1:end])', interpolate=true, colormap=:batlow)
 cbD = Colorbar(f[2, 6], hmD)
 
 axfDIC = Axis(f[3, 1:4], xlabel="Time (days)", title="Air-sea CO₂ flux and Sinking", ylabel="Flux (kgCO₂/m²/year)")
-hmfDIC = GLMakie.lines!(times ./ days, air_sea_CO₂_flux .* (12 + 16 * 2) .* year /(1000 * 1000), label="Air-sea flux")
-hmfExp = GLMakie.lines!(times ./ days, carbon_export .* (12 + 16 * 2) .* year / (1000 * 1000), label="Sinking export")
+hmfDIC = lines!(times ./ days, air_sea_CO₂_flux .* (12 + 16 * 2) .* year /(1000 * 1000), label="Air-sea flux")
+hmfExp = lines!(times ./ days, carbon_export .* (12 + 16 * 2) .* year / (1000 * 1000), label="Sinking export")
 
 f[3, 5] = Legend(f, axfDIC, "", framevisible = false)
 
@@ -182,60 +182,60 @@ gInput = f[1, 1] = GridLayout()
 gProperties = f[1, 2] = GridLayout()
 gOutput = f[1, 3] = GridLayout()
 
-ax1, hm1 = GLMakie.heatmap(gInput[1, 1], xs, ys, results[18,:,:]')
+ax1, hm1 = heatmap(gInput[1, 1], xs, ys, results[18,:,:]')
 ax1.title = "NO₃"
 ax1.xticklabelsvisible= false
 cb1 = Colorbar(gInput[1, 1:2], hm1, label = "mmol N/m³")
 
-ax2, hm2 = GLMakie.heatmap(gInput[2, 1], xs, ys, results[19,:,:]')
+ax2, hm2 = heatmap(gInput[2, 1], xs, ys, results[19,:,:]')
 ax2.title = "NH₄"
 ax2.ylabel = "depth (m)"
 ax2.xticklabelsvisible= false
 cb2 = Colorbar(gInput[2, 1:2], hm2, label = "mmol N/m³")
 
-ax3, hm3 = GLMakie.heatmap(gInput[3, 1], xs, ys, results[20,:,:]')
+ax3, hm3 = heatmap(gInput[3, 1], xs, ys, results[20,:,:]')
 ax3.title = "PAR"
 ax3.xlabel = "time (day)"
 cb3 = Colorbar(gInput[3, 1:2], hm3, label = "einstein/m²/day")
 
-ax1, hm1 = GLMakie.heatmap(gProperties[1, 1], xs, ys, results[7,:,:]')
+ax1, hm1 = heatmap(gProperties[1, 1], xs, ys, results[7,:,:]')
 ax1.title = "Area"
 ax1.xticklabelsvisible= false
 cb1 = Colorbar(gProperties[1, 1:2], hm1, label = "dm²")
 
-ax2, hm2 = GLMakie.heatmap(gProperties[2, 1], xs, ys, ((results[8,:,:] .+ SLatissima.defaults.N_struct) .* SLatissima.defaults.K_A .* results[7, :, :])')
+ax2, hm2 = heatmap(gProperties[2, 1], xs, ys, ((results[8,:,:] .+ SLatissima.defaults.N_struct) .* SLatissima.defaults.K_A .* results[7, :, :])')
 ax2.title = "Total Nitrogen (structural + reserve)"
 ax2.ylabel = "depth (m)"
 ax2.xticklabelsvisible= false
 cb2 = Colorbar(gProperties[2, 1:2], hm2, label = "gN/frond")
 
-ax3, hm3 = GLMakie.heatmap(gProperties[3, 1], xs, ys, ((results[9,:,:] .+ SLatissima.defaults.C_struct) .* SLatissima.defaults.K_A .* results[7, :, :])')
+ax3, hm3 = heatmap(gProperties[3, 1], xs, ys, ((results[9,:,:] .+ SLatissima.defaults.C_struct) .* SLatissima.defaults.K_A .* results[7, :, :])')
 ax3.title = "Total Carbon (structural + reserve)"
 ax3.xlabel = "time (day)"
 cb3 = Colorbar(gProperties[3, 1:2], hm3, label = "gC/frond")
 
-ax1, hm1 = GLMakie.heatmap(gOutput[1, 1], xs, ys, -results[10,:,:]')
+ax1, hm1 = heatmap(gOutput[1, 1], xs, ys, -results[10,:,:]')
 ax1.title = "NO₃ uptake"
 cb1 = Colorbar(gOutput[1, 1:2], hm1, label = "mmol N/s")
 ax1.xticklabelsvisible= false
 
-ax2, hm2 = GLMakie.heatmap(gOutput[2, 1], xs, ys, -results[11,:,:]')
+ax2, hm2 = heatmap(gOutput[2, 1], xs, ys, -results[11,:,:]')
 ax2.title = "NH₄ uptake"
 ax2.xticklabelsvisible= false
 cb2 = Colorbar(gOutput[2, 1:2], hm2, label = "mmol N/s")
 
-ax3, hm3 = GLMakie.heatmap(gOutput[3, 1], xs, ys, -results[12,:,:]')
+ax3, hm3 = heatmap(gOutput[3, 1], xs, ys, -results[12,:,:]')
 ax3.title = "Primary production (photosynthesis - respiration)"
 ax3.xticklabelsvisible= false
 ax3.ylabel = "depth (m)"
 cb3 = Colorbar(gOutput[3, 1:2], hm3, label = "mmol C/s")
 
-ax4, hm4 = GLMakie.heatmap(gOutput[4, 1], xs, ys, results[15,:,:]')
+ax4, hm4 = heatmap(gOutput[4, 1], xs, ys, results[15,:,:]')
 ax4.title = "Exudation (DOC output)"
 ax4.xticklabelsvisible= false
 cb4 = Colorbar(gOutput[4, 1:2], hm4, label = "mmol C/s")
 
-ax5, hm5 = GLMakie.heatmap(gOutput[5, 1], xs, ys, results[17,:,:]')
+ax5, hm5 = heatmap(gOutput[5, 1], xs, ys, results[17,:,:]')
 ax5.title = "Frond errosion (POC output)"
 ax5.xlabel = "time (day)"
 cb5 = Colorbar(gOutput[5, 1:2], hm5, label = "mmol C/s")

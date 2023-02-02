@@ -9,7 +9,7 @@
 # First we will check we have the dependencies installed
 # ```julia
 # using Pkg
-# pkg"add OceanBioME, Oceananigans, Printf, Plots, GLMakie, NetCDF, JLD2"
+# pkg"add OceanBioME, Oceananigans, Printf, Plots, CairoMakie, NetCDF, JLD2"
 # ```
 
 # ## Model setup
@@ -82,23 +82,23 @@ D = FieldTimeSeries("$filename.jld2", "sPOM") .+ FieldTimeSeries("$filename.jld2
 x, y, z = nodes(P)
 times = P.times
 
-using GLMakie
+using CairoMakie
 f=Figure(backgroundcolor=RGBf(1, 1, 1), fontsize=30, resolution = (2400, 2000))
 
 axP = Axis(f[1, 1:2], ylabel="z (m)", xlabel="Time (days)", title="Phytoplankton concentration (mmol N/m³)")
-hmP = GLMakie.heatmap!(times./days, z[35:50], P[1, 1, 35:50, 1:101]', interpolate=true, colormap=:batlow)
+hmP = heatmap!(times./days, z[35:50], P[1, 1, 35:50, 1:101]', interpolate=true, colormap=:batlow)
 cbP = Colorbar(f[1, 3], hmP)
 
 axNO₃ = Axis(f[1, 4:5], ylabel="z (m)", xlabel="Time (days)", title="Nitrate concentration (mmol N/m³)")
-hmNO₃ = GLMakie.heatmap!(times./days, z[35:50], NO₃[1, 1, 35:50, 1:101]', interpolate=true, colormap=:batlow)
+hmNO₃ = heatmap!(times./days, z[35:50], NO₃[1, 1, 35:50, 1:101]', interpolate=true, colormap=:batlow)
 cbNO₃ = Colorbar(f[1, 6], hmNO₃)
 
 axZ = Axis(f[2, 1:2], ylabel="z (m)", xlabel="Time (days)", title="Zooplankton concentration (mmol N/m³)")
-hmZ = GLMakie.heatmap!(times./days, z[35:50], Z[1, 1, 35:50, 1:101]', interpolate=true, colormap=:batlow)
+hmZ = heatmap!(times./days, z[35:50], Z[1, 1, 35:50, 1:101]', interpolate=true, colormap=:batlow)
 cbZ = Colorbar(f[2, 3], hmZ)
 
 axD = Axis(f[2, 4:5], ylabel="z (m)", xlabel="Time (days)", title="Detritus concentration (mmol N/m³)")
-hmD = GLMakie.heatmap!(times./days, z[35:50], D[1, 1, 35:50, 1:101]', interpolate=true, colormap=:batlow)
+hmD = heatmap!(times./days, z[35:50], D[1, 1, 35:50, 1:101]', interpolate=true, colormap=:batlow)
 cbD = Colorbar(f[2, 6], hmD)
 
 save("column.png", f)

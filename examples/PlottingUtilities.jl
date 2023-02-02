@@ -1,4 +1,4 @@
-using Plots, Oceananigans, JLD2, Statistics, NetCDF, GLMakie
+using Plots, Oceananigans, JLD2, Statistics, NetCDF, CairoMakie
 using Oceananigans.Units: second, minute, minutes, hour, hours, day, days, year, years
 using OceanBioME
 load_tracers(sim::Simulation, save_name=:profiles) = load_tracers(sim.output_writers[save_name].filepath)
@@ -138,7 +138,7 @@ function particles(results::particle_results, fs=4, xlabel="time (days)")
 end
 
 function plot_particles(path)
-    @warn "GLMakie has a memory leak error if you call save lots of times (and various other things)"
+    @warn "CairoMakie has a memory leak error if you call save lots of times (and various other things)"
 
     res_kelp = load_particles(path)
 
@@ -149,60 +149,60 @@ function plot_particles(path)
     gProperties = f[1, 2] = GridLayout()
     gOutput = f[1, 3] = GridLayout()
 
-    ax1, hm1 = GLMakie.heatmap(gInput[1, 1], xs, ys, res_kelp.results[16,:,:]')
+    ax1, hm1 = CairoMakie.heatmap(gInput[1, 1], xs, ys, res_kelp.results[16,:,:]')
     ax1.title = "NO₃"
     ax1.xticklabelsvisible= false
     cb1 = Colorbar(gInput[1, 1:2], hm1, label = "mmol N/m³")
 
-    ax2, hm2 = GLMakie.heatmap(gInput[2, 1], xs, ys, res_kelp.results[17,:,:]')
+    ax2, hm2 = CairoMakie.heatmap(gInput[2, 1], xs, ys, res_kelp.results[17,:,:]')
     ax2.title = "NH₄"
     ax2.ylabel = "depth (m)"
     ax2.xticklabelsvisible= false
     cb2 = Colorbar(gInput[2, 1:2], hm2, label = "mmol N/m³")
 
-    ax3, hm3 = GLMakie.heatmap(gInput[3, 1], xs, ys, res_kelp.results[18,:,:]')
+    ax3, hm3 = CairoMakie.heatmap(gInput[3, 1], xs, ys, res_kelp.results[18,:,:]')
     ax3.title = "PAR"
     ax3.xlabel = "time (day)"
     cb3 = Colorbar(gInput[3, 1:2], hm3, label = "einstein/m²/day")
 
-    ax1, hm1 = GLMakie.heatmap(gProperties[1, 1], xs, ys, res_kelp.results[7,:,:]')
+    ax1, hm1 = CairoMakie.heatmap(gProperties[1, 1], xs, ys, res_kelp.results[7,:,:]')
     ax1.title = "Area"
     ax1.xticklabelsvisible= false
     cb1 = Colorbar(gProperties[1, 1:2], hm1, label = "dm²")
 
-    ax2, hm2 = GLMakie.heatmap(gProperties[2, 1], xs, ys, ((res_kelp.results[8,:,:].+SLatissima.defaults.N_struct).*SLatissima.defaults.K_A .*res_kelp.results[7, :, :])')
+    ax2, hm2 = CairoMakie.heatmap(gProperties[2, 1], xs, ys, ((res_kelp.results[8,:,:].+SLatissima.defaults.N_struct).*SLatissima.defaults.K_A .*res_kelp.results[7, :, :])')
     ax2.title = "Total Nitrogen (structural + reserve)"
     ax2.ylabel = "depth (m)"
     ax2.xticklabelsvisible= false
     cb2 = Colorbar(gProperties[2, 1:2], hm2, label = "gN/frond")
 
-    ax3, hm3 = GLMakie.heatmap(gProperties[3, 1], xs, ys, ((res_kelp.results[9,:,:].+SLatissima.defaults.C_struct).*SLatissima.defaults.K_A .*res_kelp.results[7, :, :])')
+    ax3, hm3 = CairoMakie.heatmap(gProperties[3, 1], xs, ys, ((res_kelp.results[9,:,:].+SLatissima.defaults.C_struct).*SLatissima.defaults.K_A .*res_kelp.results[7, :, :])')
     ax3.title = "Total Carbon (structural + reserve)"
     ax3.xlabel = "time (day)"
     cb3 = Colorbar(gProperties[3, 1:2], hm3, label = "gC/frond")
 
-    ax1, hm1 = GLMakie.heatmap(gOutput[1, 1], xs, ys, res_kelp.results[10,:,:]')
+    ax1, hm1 = CairoMakie.heatmap(gOutput[1, 1], xs, ys, res_kelp.results[10,:,:]')
     ax1.title = "NO₃ uptake"
     cb1 = Colorbar(gOutput[1, 1:2], hm1, label = "mmol N/s")
     ax1.xticklabelsvisible= false
 
-    ax2, hm2 = GLMakie.heatmap(gOutput[2, 1], xs, ys, res_kelp.results[11,:,:]')
+    ax2, hm2 = CairoMakie.heatmap(gOutput[2, 1], xs, ys, res_kelp.results[11,:,:]')
     ax2.title = "NH₄ uptake"
     ax2.xticklabelsvisible= false
     cb2 = Colorbar(gOutput[2, 1:2], hm2, label = "mmol N/s")
 
-    ax3, hm3 = GLMakie.heatmap(gOutput[3, 1], xs, ys, res_kelp.results[12,:,:]')
+    ax3, hm3 = CairoMakie.heatmap(gOutput[3, 1], xs, ys, res_kelp.results[12,:,:]')
     ax3.title = "Primary production (photosynthesis - respiration)"
     ax3.xticklabelsvisible= false
     ax3.ylabel = "depth (m)"
     cb3 = Colorbar(gOutput[3, 1:2], hm3, label = "mmol C/s")
 
-    ax4, hm4 = GLMakie.heatmap(gOutput[4, 1], xs, ys, res_kelp.results[14,:,:]')
+    ax4, hm4 = CairoMakie.heatmap(gOutput[4, 1], xs, ys, res_kelp.results[14,:,:]')
     ax4.title = "Exudation (DOC output)"
     ax4.xticklabelsvisible= false
     cb4 = Colorbar(gOutput[4, 1:2], hm4, label = "mmol C/s")
 
-    ax5, hm5 = GLMakie.heatmap(gOutput[5, 1], xs, ys, res_kelp.results[15,:,:]')
+    ax5, hm5 = CairoMakie.heatmap(gOutput[5, 1], xs, ys, res_kelp.results[15,:,:]')
     ax5.title = "Frond errosion (POM output)"
     ax5.xlabel = "time (day)"
     cb5 = Colorbar(gOutput[5, 1:2], hm5, label = "mmol N/s")
