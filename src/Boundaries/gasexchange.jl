@@ -1,38 +1,116 @@
+##### 
+##### Carbonate chemistry to determine pCO₂
+##### As per OCMIP Phase 2 http://ocmip5.ipsl.jussieu.fr/OCMIP/phase2/simulations/Abiotic/Cchem/co2calc.f simplified as in PISCESv2
+#####
+
+struct pCO₂{P0, P1, P2, PB, PW, FT}
+                  solubility :: P0
+    bicarbonate_dissociation :: P1
+      carbonate_dissociation :: P2
+     boric_acid_dissociation :: PB 
+          water_dissociaiton :: PW # don't think this is the right name for it
+              lower_pH_bound :: FT
+              upper_pH_bound :: FT
+                 boron_ratio :: FT
+           thermal_expansion :: FT
+          haline_contraction :: FT
+
+
+    function pCO₂(solubility::P0,
+                  bicarbonate_dissociation::P1,
+                  carbonate_dissociation::P2,
+                  boric_acid_dissociation::PB,
+                  water_dissociaiton::PW,
+                  lower_pH_bound::FT,
+                  upper_pH_bound::FT,
+                  boron_ratio::FT,
+                  thermal_expansion::FT,
+                  haline_contraction::FT) where {P0, P1, P2, PB, PW, FT}
+        return new{P0, P1, P2, PB, PW, FT}(solubility, 
+                                           bicarbonate_dissociation, 
+                                           carbonate_dissociation, 
+                                           boric_acid_dissociation, 
+                                           water_dissociaiton, 
+                                           lower_pH_bound, upper_pH_bound, 
+                                           boron_ratio, 
+                                           thermal_expansion, haline_contraction)
+    end
+end
+
+@inline function titrate_alkalinity(H, p)
+    return p.DIC * (p.k¹ * H + 2 * p.k¹ * p.k²) / (H ^ 2 + p.k¹ * H + p.k¹ * p.k²) -
+           (p.Alk - p.kʷ / H - p.boron / (1 + H / p.kᵇ))
+end
+
+@inline function (p::pCO₂)(DIC, Alk, T, S)
+    ρₒ = 1027 * (1 - p.thermal_expansion * T + p.haline_contraction * S)
+
+    T += 273.15
+
+    Alk *= 1.e-3 / ρₒ
+    DIC *= 1.e-3 / ρₒ
+
+    pk⁰ = p.solubility
+    pk¹ = p.bicarbonate_dissociation
+    pk² = p.carbonate_dissociation
+    pkᵇ = p.boric_acid_dissociation
+    pkʷ = p.water_dissociaiton
+
+    k¹ = 10 ^ (pk¹.C + pk¹.invT / T + pk¹.logT * log(T) + pk¹.S * S + pk¹.S² * S ^ 2)
+
+    k² = 10 ^ (pk².C + pk².invT / T + pk².S * S + pk².S² * S ^ 2)
+
+    kᵇ = exp(pkᵇ.C + (pkᵇ.invT + pkᵇ.invTsqrtS * sqrt(S) + pkᵇ.invTS * S + pkᵇ.invTS¹⁵ * S ^ 1.5 + pkᵇ.invTS² * S ^ 2) / T
+    		+ pkᵇ.sqrtS * sqrt(S) + pkᵇ.S * S + (pkᵇ.logT + pkᵇ.logTsqrtS * sqrt(S) + pkᵇ.logTS * S) * log(T) + pkᵇ.TsqrtS * sqrt(S) * T)
+
+    kʷ = exp(pkʷ.C + pkʷ.invT / T + pkʷ.logT * log(T) +
+    		 (pkʷ.sqrtS + pkʷ.sqrtSinvT / T + pkʷ.sqrtSlogT * log(T)) * sqrt(S)
+             + pkʷ.S * S)
+
+    boron = p.boron_ratio * S
+    
+    params = (; k¹, k², kᵇ, kʷ, DIC, Alk, boron)
+
+    if titrate_alkalinity(10 ^ - p.upper_pH_bound, params) * titrate_alkalinity(10 ^ - p.lower_pH_bound, params) < 0
+        H = solve(ZeroProblem(titrate_alkalinity, (10 ^ - p.upper_pH_bound, 10 ^ - p.lower_pH_bound)), Bisection, atol = 1e-10, p = params)
+    else
+        H = NaN
+    end
+
+    ff = exp(pk⁰.C + pk⁰.invT / T  +
+             pk⁰.ClogT * log(T * pk⁰.logCT) + pk⁰.T² * T ^ 2 +
+    		 S * (pk⁰.S + pk⁰.ST * T + pk⁰.ST² * T ^ 2))
+
+    CO₂ = DIC * H ^ 2/ (H ^ 2 + k¹ * H + k¹ * k²)
+    pCO₂ = (CO₂ / ff) * 10 ^ 6
+
+    return pCO₂ # μatm
+end
+
+OCMIP_solubility = (C = -162.8301, invT = 218.2968 * 100, logCT = 1 / 100, ClogT = 90.9241, T² = - 1.47696 / (100 ^ 2), ST² = 0.0049867 / (100 ^ 2), ST = -0.025225 / 100, S = .025695)#
+
+OCMIP_bicarbonate_dissociation = (C = 62.008, S = 0.0118, S² = -0.000116, invT = -3670.7, logT = -9.7944)
+
+OCMIP_carbonate_dissociation = (C = -4.777, S = 0.0184, S² = -0.000118, invT = -1394.7, logT = 0.0)
+
+OCMIP_boric_acid_dissociation = (C = 148.0248, invT = -8966.9, invTsqrtS = -2890.53, invTS = -77.942, invTS¹⁵ = 1.728, invTS² = - 0.0996,
+                                 sqrtS = 137.1942, S = 1.62142, logT = - 24.4344, logTsqrtS = - 25.085, logTS = - 0.2474, TsqrtS = 0.053105)
+
+OCMIP_water_dissociaiton = (C = 148.9652, invT = - 13847.26, logT = - 23.6521, sqrtSinvT = 118.67, sqrtS = -5.977, sqrtSlogT = 1.0495, S = -0.01615)
+
+OCMIP_default = pCO₂(OCMIP_solubility, 
+                     OCMIP_bicarbonate_dissociation, 
+                     OCMIP_carbonate_dissociation, 
+                     OCMIP_boric_acid_dissociation, 
+                     OCMIP_water_dissociaiton, 
+                     0.0, 14.0, 
+                     0.000232 / 1.80655 / 10.811,
+                     1.67e-4, 7.80e-4)
+
 #####
 ##### Gas exchange model of [Wanninkhof1992](@cite)
 #####
 # TODO: Impliment Ho et al. 2006 wind speed dependence
-
-##### 
-##### Carbonate chemistry to determine pCO₂
-#####
-
-@inline CA_eq(H, params) = params.ALK - (params.KB / (params.KB + H)) * params.Boron
-@inline H_eq(H, params) = CA_eq(H, params) * H ^ 2 + params.K1 * (CA_eq(H, params) - params.DIC) * H + params.K1 * params.K2 * (CA_eq(H, params) - 2 * params.DIC)
-
-function pCO₂(DIC, ALK, T, S, ρₒ, pH)
-    #https://biocycle.atmos.colostate.edu/shiny/carbonate/
-    ALK *= 1.e-3 / ρₒ # microequivalents to equivalents  from mmol/m^-3 to mol/kg
-    DIC *= 1.e-3 / ρₒ # micromoles to moles    
-
-    Boron = 1.179e-5 * S # Total Boron mole/kg as a fraction of salinity
-
-    K0 = exp(-60.2409 + 9345.17 / T + 23.3585 * log(T / 100) + S * (0.023517 - 0.00023656 * T + 0.0047036 * (T / 100) ^ 2))   # mol/kg/atm 
-    K1 = exp(2.18867 - 2275.036 / T - 1.468591 * log(T) + (-0.138681 - 9.33291 / T) * sqrt(S) + 0.0726483 * S - 0.00574938 * S ^ 1.5)
-    K2 = exp(-0.84226 - 3741.1288 / T -1.437139 * log(T) + (-0.128417 - 24.41239 / T) * sqrt(S) + 0.1195308 * S - 0.0091284 * S ^ 1.5)
-    KB = exp((-8966.90 - 2890.51 * sqrt(S) - 77.942 * S + 1.726 * S ^ 1.5 - 0.0993 * S ^ 2) / T + (148.0248 + 137.194 * sqrt(S) + 1.62247 * S) + (-24.4344 - 25.085 * sqrt(S) - 0.2474 * S) * log(T) + 0.053105 * sqrt(S) * T)
-
-    H = 10^(-pH) # initial guess from arg list
-
-    p = (DIC = DIC, ALK = ALK, K0 = K0, K1 = K1, K2 = K2, KB = KB, Boron = Boron)
-
-    H = max(0.0, find_zero(H_eq, H, atol=1e-100, p=p))
-    CA = CA_eq(H, p)
-    
-    #pH = -log10(H)
-    CO2aq = 1e6 * CA / (K1 / H + 2 * K1 * K2 / H ^ 2) # Eq 11  μmol/kg
-    return CO2aq / K0 #μatm
-end
 
 k(T, uₐᵥ, Sc_params) = 0.39 * (0.01 / 3600) * uₐᵥ ^ 2 * (Sc(T, Sc_params) / 660) ^ (-0.5)# m/s, may want to add variable wind speed instead of average wind here at some point
 Sc(T, params) = params.A - params.B * T + params.C * T ^ 2 - params.D * T ^ 3
@@ -47,12 +125,11 @@ K(T, S, uₐᵥ, Sc_params, β_params, ρₒ) = k(T, uₐᵥ, Sc_params) * β(T 
 ##### Boundary condition setup
 #####
 
-struct GasExchange{G, ScP, βP, FT, AC, AP, T, S}
+struct GasExchange{G, ScP, βP, FT, AC, AP, T, S, PCO}
     gas :: G
 
     schmidt_params :: ScP
     solubility_params :: βP
-    pH_initial_guess :: FT
     ocean_density :: FT
     air_concentration :: AC
     air_pressure :: AP
@@ -60,6 +137,8 @@ struct GasExchange{G, ScP, βP, FT, AC, AP, T, S}
 
     temperature :: T
     salinity :: S
+
+    pCO₂ :: PCO
 end
 
 """
@@ -68,7 +147,6 @@ end
                                 O₂ = (A=1953.4, B=128.0, C=3.9918, D=0.050091))[gas],
                 solubility_params::βP = (CO₂ = (A₁=-60.2409, A₂=93.4517, A₃=23.3585, B₁=0.023517, B₂=-0.023656, B₃=0.0047036),
                                     O₂ = (A₁=-58.3877, A₂=85.8079, A₃=23.8439, B₁=-0.034892, B₂=0.015568, B₃=-0.0019387))[gas],
-                pH_initial_guess::FT = 8.0,
                 ocean_density::FT = 1026, # kg/m³
                 air_concentration::AC = (CO₂ = 413.4, O₂ = 9352.7)[gas], # ppmv, mmolO₂/m³ (20.95 mol O₂/mol air, 0.0224m^3/mol air)
                 air_pressure::FT = 1.0, # atm
@@ -86,7 +164,6 @@ Keyword arguments
     - `gas`: (required) the gas to be exchanged, if `:CO₂` or `:O₂` are specified then all other settings may be infered
     - `schmidt_params` : named tuple of parameters for calculating the Schmidt number using the parameterisation of [Wanninkhof1992](@cite)
     - `solubility_params` : named tuple of parameters for calculating the solubility (for O₂ the Bunsen solubility and CO₂ K₀, see note)
-    - `pH_initial_guess` : initial guess of pH for calculating pCO₂ - is not used for other gases
     - `ocean_density` : density of the ocean in kg/m³
     - `air_concentratio` : concentration of the gas in air in relivant units (i.e. ppmv for CO₂ and mmol O₂/m³ for O₂), can also be a function of x, y, t, or a field
     - `air_pressure` : air pressure in atm (only used for CO₂), can also be a function of x, y, t, or a field
@@ -94,6 +171,7 @@ Keyword arguments
     - `field_dependencies` : tracer fields that gas exchange depends on, if the defaults have different names in your model you can specify as long as they are in the same order
     - `temperature` : either `nothing` to track a temperature tracer field, or a function or shape `f(x, y, z, t)` for the temperature in °C
     - `salinity` : either `nothing` to track a salinity tracer field, or a function or shape `f(x, y, z, t)` for the salinity in ‰
+    - `pCO₂` : pCO₂ calculator
 
 Note
 =====
@@ -104,33 +182,33 @@ this model will work out of the box and can just be passed new parameters. For t
 to overload the `(gasexchange::GasExchange)` function to ensure the correct formulaiton.
 """
 
-function GasExchange(;gas,
-                      schmidt_params::ScP = (CO₂ = (A = 2073.1, B = 125.62, C = 3.6276, D = 0.043219),
-                                      O₂ = (A = 1953.4, B = 128.0, C = 3.9918, D = 0.050091))[gas],
-                      solubility_params::βP = (CO₂ = (A₁ = -60.2409, A₂ = 93.4517, A₃ = 23.3585, B₁ = 0.023517, B₂ = -0.023656, B₃ = 0.0047036),
-                                            O₂ = (A₁ = -58.3877, A₂ = 85.8079, A₃ = 23.8439, B₁ = -0.034892, B₂ = 0.015568, B₃ = -0.0019387))[gas],
-                      pH_initial_guess::FT = 8.0,
-                      ocean_density::FT = 1026.0, # kg/m³
-                      air_concentration::AC = (CO₂ = 413.4, O₂ = 9352.7)[gas], # ppmv, mmolO₂/m³ (20.95 mol O₂/mol air, 0.0224m^3/mol air)
-                      air_pressure::AP = 1.0, # atm
-                      average_wind_speed::FT = 10.0, # m/s
-                      field_dependencies = (CO₂ = (:DIC, :Alk), O₂ = (:O₂, ))[gas],
-                      temperature::T = nothing,
-                      salinity::S = nothing) where {ScP, βP, FT, AC, AP, T, S}
+function GasExchange(; gas,
+                       schmidt_params::ScP = (CO₂ = (A = 2073.1, B = 125.62, C = 3.6276, D = 0.043219),
+                                              O₂ = (A = 1953.4, B = 128.0, C = 3.9918, D = 0.050091))[gas],
+                       solubility_params::βP = (CO₂ = (A₁ = -60.2409, A₂ = 93.4517, A₃ = 23.3585, B₁ = 0.023517, B₂ = -0.023656, B₃ = 0.0047036),
+                                                O₂ = (A₁ = -58.3877, A₂ = 85.8079, A₃ = 23.8439, B₁ = -0.034892, B₂ = 0.015568, B₃ = -0.0019387))[gas],
+                       ocean_density::FT = 1024.5, # kg/m³
+                       air_concentration::AC = (CO₂ = 413.4, O₂ = 9352.7)[gas], # ppmv, mmolO₂/m³ (20.95 mol O₂/mol air, 0.0224m^3/mol air)
+                       air_pressure::AP = 1.0, # atm
+                       average_wind_speed::FT = 10.0, # m/s
+                       field_dependencies = (CO₂ = (:DIC, :Alk), O₂ = (:O₂, ))[gas],
+                       temperature::T = nothing,
+                       salinity::S = nothing,
+                       pCO₂::PCO = gas == :CO₂ ? OCMIP_default : nothing) where {ScP, βP, FT, AC, AP, T, S, PCO}
 
     gas = Val(gas)
     G = typeof(gas)
 
-    gasexchange =  GasExchange{G, ScP, βP, FT, AC, AP, T, S}(gas, 
-                                                             schmidt_params, 
-                                                             solubility_params, 
-                                                             pH_initial_guess, 
-                                                             ocean_density, 
-                                                             air_concentration, 
-                                                             air_pressure, 
-                                                             average_wind_speed, 
-                                                             temperature, 
-                                                             salinity)
+    gasexchange =  GasExchange{G, ScP, βP, FT, AC, AP, T, S, PCO}(gas, 
+                                                                  schmidt_params, 
+                                                                  solubility_params, 
+                                                                  ocean_density, 
+                                                                  air_concentration, 
+                                                                  air_pressure, 
+                                                                  average_wind_speed, 
+                                                                  temperature, 
+                                                                  salinity,
+                                                                  pCO₂)
 
     if isnothing(temperature)
         field_dependencies = (field_dependencies..., :T)
@@ -148,13 +226,16 @@ end
 
 @inline (gasexchange::GasExchange)(x, y, t, conc) = gasexchange(x, y, t, conc, gasexchange.temperature(x, y, 0.0, t), gasexchange.salinity(x, y, 0.0, t))
 @inline (gasexchange::GasExchange)(x, y, t, DIC, ALK) = gasexchange(x, y, t, DIC, ALK, gasexchange.temperature(x, y, 0.0, t), gasexchange.salinity(x, y, 0.0, t))
+
 @inline function (gasexchange::GasExchange)(x, y, t, DIC, ALK, T, S) 
-    conc = pCO₂(DIC, ALK, T + 273.15, S, gasexchange.ocean_density, gasexchange.pH_initial_guess)
+    conc = gasexchange.pCO₂(DIC, ALK, T, S)
     return gasexchange(x, y, t, conc, T, S)
 end
+
 @inline function (gasexchange::GasExchange)(x, y, t, conc, T, S) 
     return k(T, gasexchange.average_wind_speed, gasexchange.schmidt_params) * (conc - α(T, S, gasexchange.solubility_params) * get_value(x, y, t, gasexchange.air_concentration))
 end
+
 @inline function (gasexchange::GasExchange{<:Val{:CO₂}, <:Any, <:Any, <:Any, <:Any, <:Any})(x, y, t, conc, T, S) 
     return K(T, S, gasexchange.average_wind_speed, gasexchange.schmidt_params, gasexchange.solubility_params, gasexchange.ocean_density) * (conc - get_value(x, y, t, gasexchange.air_concentration) * get_value(x, y, t, gasexchange.air_pressure)) / 1000#μmol/m²s to mmolC/m²s not sure this is correct
 end

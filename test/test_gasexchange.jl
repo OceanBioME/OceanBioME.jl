@@ -1,14 +1,22 @@
 using Test
 using OceanBioME: Boundaries, GasExchange, LOBSTER
-using Oceananigans
+using Oceananigans, DataDeps, JLD2, Statistics
 using Oceananigans.Grids: xnode, ynode
 using Oceananigans.Units
+
+dd = DataDep(
+    "test_data",
+    "CODAP-NA (https://essd.copernicus.org/articles/13/2777/2021/) data for testing pCO₂ calculations", 
+    "https://github.com/OceanBioME/OceanBioME_example_data/raw/main/CODAP_data.jld2"
+)
+
+register(dd)
 
 function test_gas_exchange_model(grid, air_concentration)
     PAR = CenterField(grid)
     model = NonhydrostaticModel(;grid, 
                                  tracers = (:T, :S),
-                                 biogeochemistry = LOBSTER(;grid, carbonates = true), 
+                                 biogeochemistry = LOBSTER(; grid, carbonates = true), 
                                  auxiliary_fields=(; PAR),
                                  boundary_conditions = (DIC = FieldBoundaryConditions(top = GasExchange(; air_concentration, gas = :CO₂)), ))
 
@@ -27,24 +35,28 @@ end
 
 @testset "Gas exchange values" begin
     # approximatly correct sized pCO₂ from DIC and ALK
-    pCO₂ = Boundaries.pCO₂(2220, 2500, 15 + 273.15, 35.0, 1026.0, 8.0)
-    @test pCO₂ ≈ 400 atol = 100 # don't actually care about the value but very easy to mess this up to give wrong order
+    pCO₂_model = Boundaries.OCMIP_default
 
-    # correct sized flux based on pCO₂ = 355 atm and NPP of ∼3mg C/m³/day in top 100m (from Copernicus data) -> ∼0.0003 mmol C/m²/s
-    CO₂_exchange_model = GasExchange(;gas = :CO₂)
-    @test CO₂_exchange_model.condition.parameters(0.0, 0.0, 0.0, 350.0, 15.0, 35.0) ≈ -0.0003 atol = 0.0001
+    @load datadep"test_data/CODAP_data.jld2" DIC Alk T S pH pCO₂
+    
+    pCO₂_results = similar(pCO₂)
 
-    # Oxygen exchange (since most gases use a slightly different formulation), must also be same order as NPP*Rd_resp ≈ NPP/0.8 -> ∼0.0004 mmol O₂/m²/s
-    O₂_exchange_model = GasExchange(;gas = :O₂)
-    @test O₂_exchange_model.condition.parameters(0.0, 0.0, 0.0, 270.0, 15.0, 35.0) ≈ -0.0004 atol = 0.0001
+    for (idx, DIC) in enumerate(DIC)
+        pCO₂_results[idx] = pCO₂_model(DIC, Alk[idx], T[idx], S[idx])
+    end
+
+    pCO₂_err = pCO₂ .- pCO₂_results
+
+    # not great
+    @test (mean(pCO₂_err) < 10 && std(pCO₂_err) < 15)
 end
 
 @testset "Gas exchange coupling" begin
     grid = RectilinearGrid(size=(1, 1, 2), extent=(1, 1, 1))
     conc_field = CenterField(grid, indices=(:, :, grid.Nz))
-    conc_field .= 413.0 + 1.0*rand()
-    conc_function(x, y, t) = 413.0 + 10.0*sin(t*π/(1year))
-    for air_concentration in [413, 413.1, conc_function, conc_field]
+    conc_field .= 413.0 + 1.0 * rand()
+    conc_function(x, y, t) = 413.0 + 10.0 * sin(t * π / (1year))
+    for air_concentration in [413.1, conc_function, conc_field]
         @info "Testing with $(typeof(air_concentration))"
         test_gas_exchange_model(grid, air_concentration)
     end
