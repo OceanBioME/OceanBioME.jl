@@ -1,19 +1,18 @@
 using Oceananigans, Test
-using OceanBioME: TwoBandPhotosyntheticallyActiveRatiation
+using OceanBioME: TwoBandPhotosyntheticallyActiveRatiation, LOBSTER
 using Oceananigans.Biogeochemistry: update_biogeochemical_state!
 
 grid = RectilinearGrid(size=(1,1,2), extent=(1,1,2))
 
 @testset "Two band attenuation" begin
-    PAR = CenterField(grid)
 
     model = NonhydrostaticModel(; grid, 
                                   biogeochemistry = LOBSTER(; grid,
-                                                              light_attenuation_model = TwoBandPhotosyntheticallyActiveRatiation(),
-                                                              surface_phytosynthetically_active_radiation = (x, y, t) -> 100.0),
-                                  auxiliary_fields = (; PAR))
+                                                              light_attenuation_model = TwoBandPhotosyntheticallyActiveRatiation(; grid),
+                                                              surface_phytosynthetically_active_radiation = (x, y, t) -> 100.0))
     Pᵢ(x,y,z) = 2.5 + z
-    set!(model, P=Pᵢ)
+
+    set!(model, P = Pᵢ)
 
     update_biogeochemical_state!(model.biogeochemistry, model)
 
@@ -37,7 +36,7 @@ grid = RectilinearGrid(size=(1,1,2), extent=(1,1,2))
     expected_PAR = 100.0 .* [exp(- 0.5 * kʳ - ∫Chlʳ[1] * χʳ) + exp(- 0.5 * kᵇ - ∫Chlᵇ[1] * χᵇ),
                              exp(- 1.5 * kʳ - ∫Chlʳ[2] * χʳ) + exp(- 1.5 * kᵇ - ∫Chlᵇ[2] * χᵇ)] ./ 2
 
-    results_PAR = convert(Array, model.auxiliary_fields.PAR)[1, 1, 1:2]
+    results_PAR = convert(Array, model.biogeochemistry.light_attenuation_model.field)[1, 1, 1:2]
 
     @test all(results_PAR .≈ reverse(expected_PAR))
 end

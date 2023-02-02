@@ -53,7 +53,8 @@ import Oceananigans.Biogeochemistry: required_biogeochemical_tracers,
                                      required_biogeochemical_auxiliary_fields,
                                      biogeochemical_drift_velocity,
                                      biogeochemical_advection_scheme,
-                                     update_biogeochemical_state!
+                                     update_biogeochemical_state!,
+                                     biogeochemical_auxiliary_fieilds
 
 import OceanBioME: maximum_sinking_velocity
 
@@ -92,7 +93,7 @@ import Base: show, summary
               disolved_organic_breakdown_rate::FT = 3.86e-7, # 1/s
               zooplankton_calcite_dissolution::FT = 0.3,
 
-              light_attenuation_model = TwoBandPhotosyntheticallyActiveRatiation(),
+              light_attenuation_model = TwoBandPhotosyntheticallyActiveRatiation(; grid),
               surface_phytosynthetically_active_radiation::SPAR = (x, y, t) -> 100*max(0.0, cos(t*π/(12hours))),
 
               carbonates::Bool = false,
@@ -267,7 +268,7 @@ function LOBSTER(; grid,
                    disolved_organic_breakdown_rate::FT = 3.86e-7, # 1/s
                    zooplankton_calcite_dissolution::FT = 0.3,
 
-                   light_attenuation_model::LA = TwoBandPhotosyntheticallyActiveRatiation(),
+                   light_attenuation_model::LA = TwoBandPhotosyntheticallyActiveRatiation(; grid),
                    surface_phytosynthetically_active_radiation::SPAR = (x, y, t) -> 100*max(0.0, cos(t*π/(12hours))),
 
                    carbonates::Bool = false,
@@ -280,9 +281,8 @@ function LOBSTER(; grid,
                                                                                    length(sinking_speeds)))) where {FT, LA, SPAR, A}
 
     sinking_velocities = setup_velocity_fields(sinking_speeds, grid, open_bottom)
-    W = typeof(sinking_velocities)
+
     optionals = Val((carbonates, oxygen, variable_redfield))
-    B = typeof(optionals)
 
     return LOBSTER(phytoplankton_preference,
                    maximum_grazing_rate,
@@ -423,6 +423,8 @@ show(io::IO, model::LOBSTER{FT, LA, SPAR, Val{B}, W, A}) where {FT, LA, SPAR, B,
                 " Sinking Velocities:", "\n", show_sinking_velocities(model.sinking_velocities))
 
 @inline maximum_sinking_velocity(bgc::LOBSTER) = maximum(abs, bgc.sinking_velocities.bPOM.w)
+
+@inline biogeochemical_auxiliary_fieilds(bgc::LOBSTER) = biogeochemical_auxiliary_fieilds(bgc.light_attenuation_model)
 
 include("fallbacks.jl")
 

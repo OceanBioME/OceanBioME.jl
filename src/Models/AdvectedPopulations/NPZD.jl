@@ -52,26 +52,26 @@ struct NutrientPhytoplanktonZooplanktonDetritus{FT, LA, SPAR, W, A} <: AbstractC
     sinking_velocities :: W
     advection_schemes :: A
 
-    function NutrientPhytoplanktonZooplanktonDetritus(;grid,
-                                                       initial_photosynthetic_slope::FT = 0.1953 / day, # 1/(W/m²)/s
-                                                       base_maximum_growth::FT = 0.6989 / day, # 1/s
-                                                       nutrient_half_saturation::FT = 2.3868, # mmol N/m³
-                                                       base_respiration_rate::FT = 0.066 / day, # 1/s/(mmol N / m³)
-                                                       phyto_base_mortality_rate::FT = 0.0101 / day, # 1/s/(mmol N / m³)
-                                                       maximum_grazing_rate::FT = 2.1522 / day, # 1/s
-                                                       grazing_half_saturation::FT = 0.5573, # mmol N/m³
-                                                       assimulation_efficiency::FT = 0.9116, 
-                                                       base_excretion_rate::FT = 0.0102 / day, # 1/s/(mmol N / m³)
-                                                       zoo_base_mortality_rate::FT = 0.3395 / day, # 1/s/(mmol N / m³)²
-                                                       remineralization_rate::FT = 0.1213 / day, # 1/s
+    function NutrientPhytoplanktonZooplanktonDetritus(; grid,
+                                                        initial_photosynthetic_slope::FT = 0.1953 / day, # 1/(W/m²)/s
+                                                        base_maximum_growth::FT = 0.6989 / day, # 1/s
+                                                        nutrient_half_saturation::FT = 2.3868, # mmol N/m³
+                                                        base_respiration_rate::FT = 0.066 / day, # 1/s/(mmol N / m³)
+                                                        phyto_base_mortality_rate::FT = 0.0101 / day, # 1/s/(mmol N / m³)
+                                                        maximum_grazing_rate::FT = 2.1522 / day, # 1/s
+                                                        grazing_half_saturation::FT = 0.5573, # mmol N/m³
+                                                        assimulation_efficiency::FT = 0.9116, 
+                                                        base_excretion_rate::FT = 0.0102 / day, # 1/s/(mmol N / m³)
+                                                        zoo_base_mortality_rate::FT = 0.3395 / day, # 1/s/(mmol N / m³)²
+                                                        remineralization_rate::FT = 0.1213 / day, # 1/s
 
-                                                       light_attenuation_model::LA = TwoBandPhotosyntheticallyActiveRatiation(),
-                                                       surface_phytosynthetically_active_radiation::SPAR = (x, y, t) -> 100*max(0.0, cos(t*π/(12hours))),
+                                                        light_attenuation_model::LA = TwoBandPhotosyntheticallyActiveRatiation(; grid),
+                                                        surface_phytosynthetically_active_radiation::SPAR = (x, y, t) -> 100*max(0.0, cos(t*π/(12hours))),
                 
-                                                       sinking_speeds = (P = 0.2551/day, D = 2.7489/day),
-                                                       open_bottom::Bool = true,
-                                                       advection_schemes::A = NamedTuple{keys(sinking_speeds)}(repeat([CenteredSecondOrder()], 
-                                                                                              length(sinking_speeds)))) where {FT, LA, SPAR, A}
+                                                        sinking_speeds = (P = 0.2551/day, D = 2.7489/day),
+                                                        open_bottom::Bool = true,
+                                                        advection_schemes::A = NamedTuple{keys(sinking_speeds)}(repeat([CenteredSecondOrder()], 
+                                                                                               length(sinking_speeds)))) where {FT, LA, SPAR, A}
         sinking_velocities = setup_velocity_fields(sinking_speeds, grid, open_bottom)
         W = typeof(sinking_velocities)
         return new{FT, LA, SPAR, W, A}(initial_photosynthetic_slope,
@@ -197,5 +197,6 @@ show(io::IO, model::NutrientPhytoplanktonZooplanktonDetritus{FT, LA, SPAR, W, A}
                 " Sinking Velocities:", "\n", show_sinking_velocities(model.sinking_velocities))
 
 @inline maximum_sinking_velocity(bgc::NutrientPhytoplanktonZooplanktonDetritus) = maximum(abs, bgc.sinking_velocities.D.w)
+@inline biogeochemical_auxiliary_fieilds(bgc::NutrientPhytoplanktonZooplanktonDetritus) = biogeochemical_auxiliary_fieilds(bgc.light_attenuation_model)
 
 end # module

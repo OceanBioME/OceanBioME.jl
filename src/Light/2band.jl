@@ -27,7 +27,7 @@
     end
 end 
 
-struct TwoBandPhotosyntheticallyActiveRatiation{FT}
+struct TwoBandPhotosyntheticallyActiveRatiation{FT, F}
     water_red_attenuation :: FT
     water_blue_attenuation :: FT
     chlorophyll_red_attenuation :: FT
@@ -38,24 +38,51 @@ struct TwoBandPhotosyntheticallyActiveRatiation{FT}
 
     phytoplankton_chlorophyll_ratio :: FT
 
-    function TwoBandPhotosyntheticallyActiveRatiation(;water_red_attenuation::FT = 0.225, # 1/m
-                                                       water_blue_attenuation::FT = 0.0232, # 1/m
-                                                       chlorophyll_red_attenuation::FT = 0.037, # 1/(m * (mgChl/m³) ^ eʳ)
-                                                       chlorophyll_blue_attenuation::FT = 0.074, # 1/(m * (mgChl/m³) ^ eᵇ)
-                                                       chlorophyll_red_exponent::FT = 0.629,
-                                                       chlorophyll_blue_exponent::FT = 0.674,
-                                                       pigment_ratio::FT = 0.7,
-                                                       phytoplankton_chlorophyll_ratio::FT = 1.31) where FT # mgChl/mol N
-        return new{FT}(water_red_attenuation,
-                       water_blue_attenuation,
-                       chlorophyll_red_attenuation,
-                       chlorophyll_blue_attenuation,
-                       chlorophyll_red_exponent,
-                       chlorophyll_blue_exponent,
-                       pigment_ratio,
-                       phytoplankton_chlorophyll_ratio)
+    field :: F
+
+    function TwoBandPhotosyntheticallyActiveRatiation(water_red_attenuation::FT,
+                                                      water_blue_attenuation::FT,
+                                                      chlorophyll_red_attenuation::FT,
+                                                      chlorophyll_blue_attenuation::FT,
+                                                      chlorophyll_red_exponent::FT,
+                                                      chlorophyll_blue_exponent::FT,
+                                                      pigment_ratio::FT,
+                                                      phytoplankton_chlorophyll_ratio::FT,
+                                                      field::F) where {FT, F}
+        return new{FT, F}(water_red_attenuation,
+                          water_blue_attenuation,
+                          chlorophyll_red_attenuation,
+                          chlorophyll_blue_attenuation,
+                          chlorophyll_red_exponent,
+                          chlorophyll_blue_exponent,
+                          pigment_ratio,
+                          phytoplankton_chlorophyll_ratio,
+                          field)
     end
 end
+
+function TwoBandPhotosyntheticallyActiveRatiation(; grid, 
+                                                    water_red_attenuation::FT = 0.225, # 1/m
+                                                    water_blue_attenuation::FT = 0.0232, # 1/m
+                                                    chlorophyll_red_attenuation::FT = 0.037, # 1/(m * (mgChl/m³) ^ eʳ)
+                                                    chlorophyll_blue_attenuation::FT = 0.074, # 1/(m * (mgChl/m³) ^ eᵇ)
+                                                    chlorophyll_red_exponent::FT = 0.629,
+                                                    chlorophyll_blue_exponent::FT = 0.674,
+                                                    pigment_ratio::FT = 0.7,
+                                                    phytoplankton_chlorophyll_ratio::FT = 1.31) where FT # mgChl/mol N
+    field = CenterField(grid)
+
+    return TwoBandPhotosyntheticallyActiveRatiation(water_red_attenuation,
+                                                    water_blue_attenuation,
+                                                    chlorophyll_red_attenuation,
+                                                    chlorophyll_blue_attenuation,
+                                                    chlorophyll_red_exponent,
+                                                    chlorophyll_blue_exponent,
+                                                    pigment_ratio,
+                                                    phytoplankton_chlorophyll_ratio,
+                                                    field)
+end
+
 
 function update_PAR!(model, PAR::TwoBandPhotosyntheticallyActiveRatiation, surface_PAR)
     arch = architecture(model.grid)
@@ -67,3 +94,16 @@ required_PAR_fields(::TwoBandPhotosyntheticallyActiveRatiation) = (:PAR, )
 
 summary(::TwoBandPhotosyntheticallyActiveRatiation{FT}) where {FT} = string("Two-band light attenuation model ($FT)")
 show(io::IO, model::TwoBandPhotosyntheticallyActiveRatiation{FT}) where {FT} = print(io, summary(model))
+
+biogeochemical_auxiliary_fieilds(par::TwoBandPhotosyntheticallyActiveRatiation) = (PAR = par.field, )
+
+adapt_structure(to, par::TwoBandPhotosyntheticallyActiveRatiation) = 
+    TwoBandPhotosyntheticallyActiveRatiation(par.water_red_attenuation,
+                                             par.water_blue_attenuation,
+                                             par.chlorophyll_red_attenuation,
+                                             par.chlorophyll_blue_attenuation,
+                                             par.chlorophyll_red_exponent,
+                                             par.chlorophyll_blue_exponent,
+                                             par.pigment_ratio,
+                                             par.phytoplankton_chlorophyll_ratio,
+                                             adapt_structure(to, par.field))

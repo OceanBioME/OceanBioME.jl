@@ -13,9 +13,12 @@ using Oceananigans.Architectures: device, architecture
 using Oceananigans.Utils: launch!
 using Oceananigans: Center, Face
 using Oceananigans.Grids: xnode, ynode, znodes
+using Oceananigans.Fields: CenterField
 
 import Adapt: adapt_structure
 import Base: show, summary
+
+import Oceananigans.Biogeochemistry: biogeochemical_auxiliary_fieilds
 
 # Fallback
 update_PAR!(model, PAR, surface_PAR) = nothing

@@ -3,7 +3,7 @@ using KernelAbstractions
 using KernelAbstractions.Extras.LoopInfo: @unroll
 using Oceananigans.Architectures: device
 using Oceananigans.Utils: launch!
-#TODO: Add diurnal variability
+
 @kernel function _update_PAR(PAR¹, PAR², PAR³, Chl, zₑᵤ, grid, t, params) 
     i, j = @index(Global, NTuple) 
     Nz = grid.Nz
