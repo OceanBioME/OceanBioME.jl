@@ -9,6 +9,7 @@ OceanBioME is a flexible modelling environment written in Julia for modelling th
 ## Installation (before release):
 
 First, download and install Julia (https://julialang.org/downloads/)
+
 From the Julia prompt (REPL), type:
 ```julia
 using Pkg
