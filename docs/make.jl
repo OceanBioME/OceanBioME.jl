@@ -118,4 +118,10 @@ for file in vcat(glob("docs/*.jld2"), glob("docs/*.nc"))
     rm(file)
 end
 
-deploydocs(repo = "github.com/OceanBioME/OceanBioME.jl")
+deploydocs(
+          repo = "github.com/OceanBioME/OceanBioME.jl",
+          forcepush = true,
+          push_preview = false,
+          devbranch = "main"
+)
+
