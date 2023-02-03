@@ -16,6 +16,10 @@ on:
       - 'src/*'
       - 'test/*'
       - '.github/workflows/*'
+
+env:
+  DATADEPS_ALWAYS_ACCEPT: true
+  
 jobs:
   test:
     name: Julia ${{ matrix.version }} - ${{ matrix.os }} - ${{ matrix.arch }} - ${{ github.event_name }}
