@@ -15,8 +15,7 @@ examples = [
     "box.jl",
     "column.jl",
     "data_forced.jl",
-    "kelp.jl",
-    "sediment.jl"
+    "kelp.jl"
 ]
 
 for example in examples
@@ -31,7 +30,7 @@ example_pages = [
     "Simple column model" => "generated/column.md",
     "Data forced column model" => "generated/data_forced.md",
     "Model with particles (kelp) interacting with the biogeochemistry" => "generated/kelp.md",
-    "Simple column with a sediment boundary" => "generated/sediment.md",
+    #"Simple column with a sediment boundary" => "generated/sediment.md",
     "Box model" => "generated/box.md"
 ]
 
@@ -39,19 +38,13 @@ bgc_pages = [
     "Overview" => "model_components/biogeochemical/index.md",
     #"PISCES" => "model_components/biogeochemical/PISCES.md",
     "LOBSTER" => "model_components/biogeochemical/LOBSTER.md",
-    "NPZ" => "model_components/biogeochemical/NPZ.md"
+    "NPZD" => "model_components/biogeochemical/NPZ.md"
 ]
 
 sed_pages = [
     "Overview" => "model_components/sediment/index.md",
     "Wang et al. 2020" => "model_components/sediment/wang.md",
     "Soetaert et al. 2000" => "model_components/sediment/soetaert.md",
-]
-
-stat_pop_pages = [
-    "Overview" => "model_components/quasi-stationary-populations/index.md",
-    #"Seagrass (X et al. Y)" => "model_components/quasi-stationary-populations/seagrass.md",
-    #"Nektons (Z et al. A)" => "model_components/quasi-stationary-populations/nekton.md",
 ]
 
 individuals_pages = [
@@ -64,22 +57,18 @@ component_pages = [
     "Air-sea gas exchange" => "model_components/air-sea-gas.md",
     "Sediment models" => sed_pages,
     "Light attenuation models" => "model_components/light.md",
-    "Quasi-stationary populations" => stat_pop_pages,
     "Individuals" => individuals_pages,
     "Utilities" => "model_components/utils.md"
 ]
 
 numerical_pages = [
     "Individuals" => "numerical_implimentation/individuals.md",
-    "Sediments" => "numerical_implimentation/sediments.md",
-    "Forced auxiliary fields" => "numerical_implimentation/forced-aux-fields.md",
     "Positivity preservation" => "numerical_implimentation/positivity-preservation.md"
 ]
 
 
 param_pages = [
     "Overview" => "appendix/params/index.md",
-    #"PISCES" => "appendix/params/PISCES.md",
     "LOBSTER" => "appendix/params/LOBSTER.md",
     "SLatissima" => "appendix/params/SLatissima.md"
 ]
@@ -92,10 +81,9 @@ appendix_pages = [
 pages = [
     "Home" => "index.md",
     "Quick start" => "quick_start.md",
-    "Examples" => example_pages,
     "Model components and setup" => component_pages,
+    "Examples" => example_pages,
     "Numerical implimentation" => numerical_pages,
-    #"Model setup" => setup_pages,
     "Gallery" => "gallery.md",
     "References" => "references.md",
     "Appendix" => appendix_pages
@@ -117,7 +105,7 @@ makedocs(bib,
     authors = "Jago Strong-Wrigt, John R. Taylor, and Si Chen",
     format = format,
     pages = pages,
-    modules = Module[OceanBioME, OceanBioME.LOBSTER],
+    modules = Module[OceanBioME],
     doctest = false,#true,
     strict = false,#true,
     clean = true,
@@ -129,12 +117,11 @@ makedocs(bib,
 for file in vcat(glob("docs/*.jld2"), glob("docs/*.nc"))
     rm(file)
 end
-#=
+
 deploydocs(
-          repo = "github.com/OceanBioME/OceanBioME/Documentation.git",
-      versions = ["stable" => "v^", "v#.#.#", "dev" => "dev"],
-     forcepush = true,
-  push_preview = true,
-     devbranch = "main"
+          repo = "github.com/OceanBioME/OceanBioME.jl",
+          forcepush = true,
+          push_preview = false,
+          devbranch = "main"
 )
-=#
+

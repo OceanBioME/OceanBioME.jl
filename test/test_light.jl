@@ -1,26 +1,42 @@
-using OceanBioME, Test, Oceananigans
+using Oceananigans, Test
+using OceanBioME: TwoBandPhotosyntheticallyActiveRatiation, LOBSTER
+using Oceananigans.Biogeochemistry: update_biogeochemical_state!
 
 grid = RectilinearGrid(size=(1,1,2), extent=(1,1,2))
 
-params=merge(LOBSTER.defaults, Light.twoBands.defaults)
+@testset "Two band attenuation" begin
 
-@testset "2 band attenuation" begin
-    PAR = Oceananigans.Fields.Field{Center, Center, Center}(grid)
+    model = NonhydrostaticModel(; grid, 
+                                  biogeochemistry = LOBSTER(; grid,
+                                                              light_attenuation_model = TwoBandPhotosyntheticallyActiveRatiation(; grid),
+                                                              surface_phytosynthetically_active_radiation = (x, y, t) -> 100.0))
+    Pᵢ(x,y,z) = 2.5 + z
 
-    model = NonhydrostaticModel(; grid, timestepper=:RungeKutta3, tracers=(:P, ), auxiliary_fields = (PAR=PAR, ))
-    Pᵢ(x,y,z)=2.5+z
-    set!(model, u=0, v=0, w=0, P=Pᵢ)
-    sim = Simulation(model, Δt=0.1, stop_time=1)
-    surface_PAR(t) = 1
-    sim.callbacks[:update_par] = Callback(Light.twoBands.update!, IterationInterval(1), merge(params, (surface_PAR=surface_PAR,)), TimeStepCallsite());
-    run!(sim)
+    set!(model, P = Pᵢ)
 
-    expected_PAR = [
-        (exp(-params.k_r0*0.5-0.5*params.Χ_rp*(2*params.Rd_chl/params.r_pig)^params.e_r)*exp(-params.k_r0*1-1*params.Χ_rp*(1.5*params.Rd_chl/params.r_pig)^params.e_r)+exp(-params.k_b0*0.5-0.5*params.Χ_bp*(2*params.Rd_chl/params.r_pig)^params.e_b)*exp(-params.k_b0*1-1*params.Χ_bp*(1.5*params.Rd_chl/params.r_pig)^params.e_b))/2,
-        (exp(-params.k_r0*0.5-0.5*params.Χ_rp*(2*params.Rd_chl/params.r_pig)^params.e_r)+exp(-params.k_b0*0.5-0.5*params.Χ_bp*(2*params.Rd_chl/params.r_pig)^params.e_b))/2
-    ]
+    update_biogeochemical_state!(model.biogeochemistry, model)
 
-    results_PAR=convert(Array, model.auxiliary_fields.PAR)[1, 1, :]
+    PAR_model = model.biogeochemistry.light_attenuation_model
+    kʳ = PAR_model.water_red_attenuation
+    kᵇ = PAR_model.water_blue_attenuation
+    χʳ = PAR_model.chlorophyll_red_attenuation
+    χᵇ = PAR_model.chlorophyll_blue_attenuation
+    eʳ = PAR_model.chlorophyll_red_exponent
+    eᵇ = PAR_model.chlorophyll_blue_exponent
+    r = PAR_model.pigment_ratio
+    Rᶜₚ = PAR_model.phytoplankton_chlorophyll_ratio
 
-    @test all(results_PAR .≈ expected_PAR)
+
+    ∫Chlʳ = [(2.0 * Rᶜₚ / r) ^ eʳ * 0.5]
+    ∫Chlᵇ = [(2.0 * Rᶜₚ / r) ^ eᵇ * 0.5]
+
+    push!(∫Chlʳ, ∫Chlʳ[1] + (2.0 * Rᶜₚ / r) ^ eʳ * 0.5 + (1.0 * Rᶜₚ / r) ^ eʳ * 0.5)
+    push!(∫Chlᵇ, ∫Chlᵇ[1] + (2.0 * Rᶜₚ / r) ^ eᵇ * 0.5 + (1.0 * Rᶜₚ / r) ^ eᵇ * 0.5)
+
+    expected_PAR = 100.0 .* [exp(- 0.5 * kʳ - ∫Chlʳ[1] * χʳ) + exp(- 0.5 * kᵇ - ∫Chlᵇ[1] * χᵇ),
+                             exp(- 1.5 * kʳ - ∫Chlʳ[2] * χʳ) + exp(- 1.5 * kᵇ - ∫Chlᵇ[2] * χᵇ)] ./ 2
+
+    results_PAR = convert(Array, model.biogeochemistry.light_attenuation_model.field)[1, 1, 1:2]
+
+    @test all(results_PAR .≈ reverse(expected_PAR))
 end

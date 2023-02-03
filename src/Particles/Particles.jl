@@ -73,7 +73,7 @@ function infinitesimal_particle_field_coupling!(model)
     workgroup = min(num_particles, 256)
     worksize = num_particles
 
-    calculate_particle_tendency_kernel! =  calculate_particle_tendency!(device(model.architecture), workgroup, worksize)
+    calculate_particle_tendency_kernel! = calculate_particle_tendency!(device(model.architecture), workgroup, worksize)
 
     events = []
     for (tracer, property) in pairs(model.particles.parameters.coupled_fields)
@@ -92,15 +92,15 @@ end
 
 """
     Particles.ActiveLagrangianParticles(particles::StructArray;
-                                                            equation::Function = no_dynamics, 
-                                                            equation_arguments::NTuple{N, Symbol} where N = (), 
-                                                            equation_parameters::NamedTuple = NamedTuple(), 
-                                                            prognostic::NTuple{N, Symbol} where N = (), 
-                                                            diagnostic::NTuple{N, Symbol} where N = NamedTuple(), 
-                                                            tracked_fields::NamedTuple = NamedTuple(), 
-                                                            coupled_fields::NamedTuple = NamedTuple(),
-                                                            scalefactor::AbstractFloat = 1.0, 
-                                                            custom_dynamics=no_dynamics)
+                                        equation::Function = no_dynamics, 
+                                        equation_arguments::NTuple{N, Symbol} where N = (), 
+                                        equation_parameters::NamedTuple = NamedTuple(), 
+                                        prognostic::NTuple{N, Symbol} where N = (), 
+                                        diagnostic::NTuple{N, Symbol} where N = NamedTuple(), 
+                                        tracked_fields::NamedTuple = NamedTuple(), 
+                                        coupled_fields::NamedTuple = NamedTuple(),
+                                        scalefactor::AbstractFloat = 1.0, 
+                                        custom_dynamics=no_dynamics)
 
 Returns Oceananigans `LagrangianParticles` which will evolve and interact with biogeochemistry
 Arguments
@@ -122,15 +122,15 @@ Keyword arguments
 
 # Perhaps this should just be an overloading of the function name LagrangianParticles with different arguments
 function ActiveLagrangianParticles(particles::StructArray;
-                                                        equation::Function = no_dynamics, 
-                                                        equation_arguments::NTuple{N, Symbol} where N = (), 
-                                                        equation_parameters::NamedTuple = NamedTuple(), 
-                                                        prognostic::NTuple{N, Symbol} where N = (), 
-                                                        diagnostic::NTuple{N, Symbol} where N = NamedTuple(), 
-                                                        tracked_fields::NamedTuple = NamedTuple(), 
-                                                        coupled_fields::NamedTuple = NamedTuple(),
-                                                        scalefactor::AbstractFloat = 1.0, 
-                                                        custom_dynamics=no_dynamics)
+                                   equation::Function = no_dynamics, 
+                                   equation_arguments::NTuple{N, Symbol} where N = (), 
+                                   equation_parameters::NamedTuple = NamedTuple(), 
+                                   prognostic::NTuple{N, Symbol} where N = (), 
+                                   diagnostic::NTuple{N, Symbol} where N = NamedTuple(), 
+                                   tracked_fields::NamedTuple = NamedTuple(), 
+                                   coupled_fields::NamedTuple = NamedTuple(),
+                                   scalefactor::AbstractFloat = 1.0, 
+                                   custom_dynamics=no_dynamics)
     
     required_fields = (equation_arguments..., prognostic..., diagnostic..., keys(tracked_fields)..., values(coupled_fields)...)
     for property in required_fields
@@ -140,18 +140,15 @@ function ActiveLagrangianParticles(particles::StructArray;
     end
 
     return LagrangianParticles(particles; 
-                                        dynamics=particle_dynamics!, 
-                                        parameters=(
-                                            equation=equation,
-                                            equation_arguments=equation_arguments,
-                                            equation_parameters=equation_parameters,
-                                            prognostic=prognostic,
-                                            diagnostic=diagnostic,
-                                            scalefactor=scalefactor, 
-                                            tracked_fields=tracked_fields,
-                                            coupled_fields=coupled_fields,
-                                            custom_dynamics=custom_dynamics
-                                            )
-                                        )
+                               dynamics = particle_dynamics!, 
+                               parameters =(; equation,
+                                              equation_arguments,
+                                              equation_parameters,
+                                              prognostic,
+                                              diagnostic,
+                                              scalefactor,
+                                              tracked_fields,
+                                              coupled_fields,
+                                              custom_dynamics))
 end
 end#module

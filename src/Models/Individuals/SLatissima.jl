@@ -92,43 +92,51 @@ function equations(x::AbstractFloat, y::AbstractFloat, z::AbstractFloat, t::Abst
         e = _e(C, params)
         ν  = _ν(A, params)
 
-        j_NO₃ = params.j_NO₃_max*f_curr(u, params)*((params.N_max-N)/(params.N_max-params.N_min))*NO₃/(params.k_NO₃+NO₃)
-        j̃_NH₄ = params.j_NH₄_max*f_curr(u, params)*NH₄/(params.k_NH₄+NH₄)
-        μ_NH₄ = j̃_NH₄/(params.K_A*(N+params.N_struct))
-        μ_NO₃ = 1 - params.N_min/N
-        μ_C = 1 - params.C_min/C
+        j_NO₃ = max(0.0, params.j_NO₃_max * f_curr(u, params) * ((params.N_max - N) / (params.N_max - params.N_min)) * NO₃ / (params.k_NO₃ + NO₃))
+        j̃_NH₄ = max(0.0, params.j_NH₄_max * f_curr(u, params) * NH₄ / (params.k_NH₄ + NH₄))
 
-        μ = @inbounds f_area(A, params)*f_temp(T, params)*f_photo(params.λ[1+floor(Int, mod(t, 364days)/day)], params)*min(μ_C, max(μ_NO₃, μ_NH₄))
+        μ_NH₄ = j̃_NH₄ / (params.K_A * (N + params.N_struct))
+        μ_NO₃ = 1 - params.N_min / N
+        μ_C = 1 - params.C_min / C
 
-        j_NH₄ = min(j̃_NH₄, μ*params.K_A*(N+params.N_struct))
+        μ = @inbounds f_area(A, params) * f_temp(T, params) * f_photo(params.λ[1 + floor(Int, mod(t, 364days) / day)], params) * min(μ_C, max(μ_NO₃, μ_NH₄))
+
+        j_NH₄ = min(j̃_NH₄, μ * params.K_A * (N + params.N_struct))
 
         r = _r(T, μ, j_NO₃ + j_NH₄, params)
 
         dA = (μ - ν) * A / (60*60*24)
-        dN = ((j_NO₃ + j_NH₄ - p * e * 14/(12*6.56)) / params.K_A - μ * (N + params.N_struct)) / (60*60*24)
-        dC = ((p * (1 - e) - r) / params.K_A - μ * (C + params.C_struct)) / (60*60*24)
+        dN = ((j_NO₃ + j_NH₄ - p * e * 14/(12 * params.exudation_redfield_ratio)) / params.K_A - μ * (N + params.N_struct)) / (60 * 60 * 24)
+        dC = ((p * (1 - e) - r) / params.K_A - μ * (C + params.C_struct)) / (60 * 60 * 24)
 
         A_new = A+dA*Δt 
         N_new = N+dN*Δt 
         C_new = C+dC*Δt
 
         if C_new < params.C_min
-            A_new *= (1-(params.C_min - C)/params.C_struct)
+            A_new *= (1 - (params.C_min - C) / params.C_struct)
             C_new = params.C_min
+            N_new += params.N_struct * (params.C_min - C) / params.C_struct
+        end
+        
+        if N_new < params.N_min
+            A_new *= (1 - (params.N_min - N) / params.N_struct)
+            N_new = params.N_min
+            C_new += params.C_struct * (params.N_min - N) / params.N_struct
         end
 
-        pp = (p - r)*A / (60*60*24*12*0.001) #gC/dm^2/hr to mmol C/s
-        e *= p*A / (60*60*24*12*0.001)#mmol C/s
-        νⁿ = ν*params.K_A*A*(params.N_struct + N) / (60*60*24*14*0.001)#1/hr to mmol N/s
-        νᶜ = ν*params.K_A*A*(params.C_struct + C) / (60*60*24*12*0.001)#1/hr to mmol C/s
-        j_NO₃ *= A / (60*60*24*14*0.001)#gN/dm^2/hr to mmol N/s
-        j_NH₄ *= A / (60*60*24*14*0.001)#gN/dm^2/hr to mmol N/s
+        pp = (p - r) * A / (60 * 60 * 24 * 12 * 0.001) #gC/dm^2/hr to mmol C/s
+        e *= p * A / (60 * 60 * 24 * 12 * 0.001)#mmol C/s
+        νⁿ = ν * params.K_A * A * (params.N_struct + N) / (60 * 60 * 24 * 14 * 0.001)#1/hr to mmol N/s
+        νᶜ = ν * params.K_A * A * (params.C_struct + C) / (60 * 60 * 24 * 12 * 0.001)#1/hr to mmol C/s
+        j_NO₃ *= A / (60 * 60 * 24 * 14 * 0.001)#gN/dm^2/hr to mmol N/s
+        j_NH₄ *= A / (60 * 60 * 24 * 14 * 0.001)#gN/dm^2/hr to mmol N/s
 
         du, dv, dw = 0.0, 0.0, 0.0
     else
         A_new, N_new, C_new, j_NO₃, j_NH₄, pp, e, νⁿ, νᶜ, du, dv, dw = 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0
     end
-    return (A = A_new, N = N_new, C = C_new, j_NO₃ = -j_NO₃, j_NH₄ = -j_NH₄, j_DIC = -pp, j_OXY=pp, e = e/6.56, νⁿ = νⁿ, νᶜ = νᶜ, u = du, v = dv, w = dw)
+    return (A = A_new, N = N_new, C = C_new, j_NO₃ = -j_NO₃, j_NH₄ = -j_NH₄, j_DIC = -pp, j_OXY=pp, eᶜ = e, eⁿ = e / params.exudation_redfield_ratio, νⁿ = νⁿ, νᶜ = νᶜ, u = du, v = dv, w = dw)
 end
 
 #fixed urel, T and S functions
@@ -155,6 +163,7 @@ T_R1 = 285
 T_R2 = 290
 R_1 =  2.785e-4 * 24
 R_2 = 5.429e-4 * 24
+K_A = 0.5
 
 const defaults = (
     A_0 = 4.5,#6,# Growth rate adjustment parameter
@@ -165,7 +174,7 @@ const defaults = (
     ϵ = 0.22,# Frond erosion parameter
     I_sat = 90 * 24*60*60/(10^6),#200 * 24 * 60 * 60 / (10^6),# Irradiance for maximal photosynthesis
     J_max = 1.4e-4 * 24,# Maximal nitrate uptake (gN/dm^2/h converted to gN/dm^2/day)
-    K_A = .5,#0.6,# Structural dry weight per unit area
+    K_A = K_A,#0.6,# Structural dry weight per unit area
     K_DW = 0.0785,# Dry weight to wet weight ratio of structural mass
     K_C = 2.1213,# Mass of carbon reserves per gram carbon
     K_N = 2.72,# Mass of nitrogen reserves per gram nitrogen
@@ -195,22 +204,24 @@ const defaults = (
     k_NO₃ = 4,# Nitrate uptake half saturation constant, converted to mmol/m^3
     k_NH₄ = 1.3, #Fossberg 2018
 
-    j_NO₃_max = 10*0.5*24*14/(10^6), #Ahn 1998
-    j_NH₄_max = 12*0.5*24*14/(10^6), #Ahn 1998
+    j_NO₃_max = 10 * K_A * 24 * 14 / (10^6), #Ahn 1998
+    j_NH₄_max = 12 * K_A * 24 * 14 / (10^6), #Ahn 1998
 
     uₐ = 0.72, #broch 2019
     uᵦ = 0.28,
     u₀ = 0.045,
 
     R_A=1.11e-4*24,
-    R_B=5.57e-5*24
+    R_B=5.57e-5*24,
+
+    exudation_redfield_ratio = Inf,
 )
 
 #####
 ##### Seasonality function
 #####
 
-function gen_λ(lat)
+function generate_seasonality(lat)
     θ = 0.2163108 .+ 2 .* atan.(0.9671396 .* tan.(0.00860 .* ([1:365;] .- 186)))
     δ = asin.(0.39795 .* cos.(θ))
     p = 0.8333
@@ -224,39 +235,40 @@ end
 ##### Model definition for use in OceanBioME
 #####
 
-struct Particle
+struct Particle{FT}
     #position
-    x :: AbstractFloat
-    y :: AbstractFloat
-    z :: AbstractFloat
+    x :: FT
+    y :: FT
+    z :: FT
     #velocity
-    u :: AbstractFloat
-    v :: AbstractFloat
-    w :: AbstractFloat
+    u :: FT
+    v :: FT
+    w :: FT
     #properties
-    A :: AbstractFloat
-    N :: AbstractFloat
-    C :: AbstractFloat
+    A :: FT
+    N :: FT
+    C :: FT
     #feedback
-    j_NO₃ :: AbstractFloat
-    j_NH₄ :: AbstractFloat
-    j_DIC :: AbstractFloat
-    j_OXY :: AbstractFloat
-    e :: AbstractFloat
-    νⁿ :: AbstractFloat
-    νᶜ :: AbstractFloat
+    j_NO₃ :: FT
+    j_NH₄ :: FT
+    j_DIC :: FT
+    j_OXY :: FT
+    eⁿ :: FT
+    eᶜ :: FT
+    νⁿ :: FT
+    νᶜ :: FT
     #tracked fields
-    NO₃  :: AbstractFloat
-    NH₄  :: AbstractFloat
-    PAR :: AbstractFloat
-    T :: AbstractFloat
-    S :: AbstractFloat
+    NO₃  :: FT
+    NH₄  :: FT
+    PAR :: FT
+    T :: FT
+    S :: FT
 end
 
 default_tracers = (NO₃ = :NO₃, PAR=:PAR) # tracer = property
 optional_tracer_dependencies = (NH₄ = :NH₄, )
 default_coupling = (NO₃ = :j_NO₃, )    
-optional_tracer_coupling = (NH₄ = :j_NH₄, DIC = :j_DIC, DOM = :e, DD = :νⁿ, DDᶜ = :νᶜ, OXY = :j_OXY)
+optional_tracer_coupling = (NH₄ = :j_NH₄, DIC = :j_DIC, DON = :eⁿ, DOC = :eᶜ, bPON = :νⁿ, bPOC = :νᶜ, O₂ = :j_OXY)
 
 # Expands initial conditions to fill particles
 function defineparticles(initials, n)
@@ -271,49 +283,49 @@ function defineparticles(initials, n)
             throw(ArgumentError("Invalid initial values given for $var, must be a single number or vector of length n"))
         end
     end
-    return StructArray{Particle}((x̄₀[1], x̄₀[2], x̄₀[3], zeros(n), zeros(n), zeros(n), x̄₀[4], x̄₀[5], x̄₀[6], [zeros(n) for i in 1:12]...))
+    return StructArray{Particle}((x̄₀[1], x̄₀[2], x̄₀[3], zeros(n), zeros(n), zeros(n), x̄₀[4], x̄₀[5], x̄₀[6], [zeros(n) for i in 1:13]...))
 end
 
 @inline no_dynamics(args...) = nothing
 
 """
     SLatissima.setup(n, x₀, y₀, z₀, A₀, N₀, C₀, latitude;
-                                scalefactor = 1.0, 
-                                T=nothing, 
-                                S=nothing, 
-                                urel=nothing, 
-                                paramset=defaults, 
-                                custom_dynamics=no_dynamics, 
-                                optional_tracers=(),
-                                tracer_names=NamedTuple())
+                     scalefactor = 1.0, 
+                     T=nothing, 
+                     S=nothing, 
+                     urel=nothing, 
+                     paramset=defaults, 
+                     custom_dynamics=no_dynamics, 
+                     optional_tracers=(),
+                     tracer_names=NamedTuple())
 
 Returns Oceananigans `LagrangianParticles` which will evolve and interact with biogeochemistry as sugar kelp
-Arguments
-========
-* `n`: number of particles
-* `x₀`, `y₀`, `z₀`: intial position, should be array of length `n`
-* `A₀`, `N₀`, `C₀`: Initial area/nitrogen reserve/carbon reserve, can be arrays of length `n` or single values
-* `latitude`: latitude of growth (used for seasonality parameterisation)
+
 Keyword arguments
 =============
-* `scalefactor`: multiplier on particle uptake/release of tracers, can be though of as the number of kelp frond represented by each particle
-* `T` and `S`: functions of form `func(x, y, z, t)` for the temperature and salinity, if not defined then model will look for tracer fields (useful if physics are resolved)
-* `urel`: relative water velocity (single number), if this is not specified then actual local relative water velocity will be used (moderates nutrient uptake)
-* `paramset`: parameters for growth model
-* `custom_dynamics`: any other dynamics you wish to be run on the particles as they evolve, should be of the form `dynamics!(particles, model, Δt)`
-* `optional_tracers`: Tuple of optional tracers to couple with
-* `tracer_names`: rename coupled tracers with NamedTuple with keys as new name and values as the property this feeds/depends on (e.g. `(N = :NO₃, )`)
+
+    - `n`: number of particles
+    - `x₀`, `y₀`, `z₀`: intial position, should be array of length `n`
+    - `A₀`, `N₀`, `C₀`: Initial area/nitrogen reserve/carbon reserve, can be arrays of length `n` or single values
+    - `latitude`: latitude of growth (used for seasonality parameterisation)
+    - `scalefactor`: multiplier on particle uptake/release of tracers, can be though of as the number of kelp frond represented by each particle
+    - `T` and `S`: functions of form `func(x, y, z, t)` for the temperature and salinity, if not defined then model will look for tracer fields (useful if physics are resolved)
+    - `urel`: relative water velocity (single number), if this is not specified then actual local relative water velocity will be used (moderates nutrient uptake)
+    - `paramset`: parameters for growth model
+    - `custom_dynamics`: any other dynamics you wish to be run on the particles as they evolve, should be of the form `dynamics!(particles, model, Δt)`
+    - `optional_tracers`: Tuple of optional tracers to couple with
+    - `tracer_names`: rename coupled tracers with NamedTuple with keys as new name and values as the property this feeds/depends on (e.g. `(N = :NO₃, )`)
 """
 
-function setup(n, x₀, y₀, z₀, A₀, N₀, C₀, latitude;
-                        scalefactor = 1.0, 
-                        T=nothing, 
-                        S=nothing, 
-                        urel=nothing, 
-                        paramset=defaults, 
-                        custom_dynamics=no_dynamics, 
-                        optional_tracers=(),
-                        tracer_names=NamedTuple())
+function setup(; n, x₀, y₀, z₀, A₀, N₀, C₀, latitude,
+                 scalefactor = 1.0, 
+                 T = nothing, 
+                 S = nothing, 
+                 urel = nothing, 
+                 paramset = defaults, 
+                 custom_dynamics = no_dynamics, 
+                 optional_tracers = (),
+                 tracer_names = NamedTuple())
 
     # this is a mess, we're not even using salinity at the moment
     if (!isnothing(T) && !isnothing(S) && isnothing(urel))
@@ -326,9 +338,9 @@ function setup(n, x₀, y₀, z₀, A₀, N₀, C₀, latitude;
     particles = defineparticles((x₀=x₀, y₀=y₀, z₀=z₀, A₀=A₀, N₀=N₀, C₀=C₀), n)
 
     property_dependencies = (:A, :N, :C, :NO₃, :NH₄, :PAR)
-    λ_arr=gen_λ(latitude)
+    λ_arr = generate_seasonality(latitude)
     parameters = merge(paramset, (λ=λ_arr, ))
-    diagnostic_properties = (:A, :N, :C, :j_NO₃, :j_NH₄, :j_DIC, :j_OXY, :e, :νⁿ, :νᶜ) # all diagnostic for the sake of enforcing C limit
+    diagnostic_properties = (:A, :N, :C, :j_NO₃, :j_NH₄, :j_DIC, :j_OXY, :eⁿ, :eᶜ, :νⁿ, :νᶜ) # all diagnostic for the sake of enforcing C limit
 
     if isnothing(T) property_dependencies = (property_dependencies..., :T, :S) else parameters = merge(parameters, (T=T, S=S)) end
     if isnothing(urel) property_dependencies = (property_dependencies..., :u, :v, :w) else parameters = merge(parameters, (urel = urel, )) end
@@ -365,14 +377,14 @@ function setup(n, x₀, y₀, z₀, A₀, N₀, C₀, latitude;
 
 
     return ActiveLagrangianParticles(particles;
-                                                        equation = equations, 
-                                                        equation_arguments = property_dependencies, 
-                                                        equation_parameters = parameters, 
-                                                        prognostic = prognostic_properties, 
-                                                        diagnostic = diagnostic_properties, 
-                                                        tracked_fields = tracers, 
-                                                        coupled_fields = coupled,
-                                                        scalefactor = scalefactor, 
-                                                        custom_dynamics=custom_dynamics)
+                                     equation = equations, 
+                                     equation_arguments = property_dependencies, 
+                                     equation_parameters = parameters, 
+                                     prognostic = prognostic_properties, 
+                                     diagnostic = diagnostic_properties, 
+                                     tracked_fields = tracers, 
+                                     coupled_fields = coupled,
+                                     scalefactor = scalefactor, 
+                                     custom_dynamics=custom_dynamics)
 end
 end

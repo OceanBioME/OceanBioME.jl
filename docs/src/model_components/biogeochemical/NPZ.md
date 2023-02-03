@@ -1,3 +1,3 @@
-# [NPZD model](@id NPZD)
+# [Nutrient Phytoplankton Zooplankton Detritus (NPZD) model](@id NPZD)
 
-To be completed
+The provided NPZD model is the low complexity model of [KUHN2015176](@cite).

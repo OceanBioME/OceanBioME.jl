@@ -26,8 +26,8 @@ using Oceananigans.Advection: div_Uc
 
 const defaults= (
     #https://aslopubs.onlinelibrary.wiley.com/doi/epdf/10.4319/lo.1996.41.8.1651
-    λᵣᵣ = 2/year,# 1/year to 1/s
-    λᵣ = 0.2/year,#s   
+    λᵣᵣ = 2*day/year,# 1/year to 1/s
+    λᵣ = 0.2*day/year,#s   
     Rdᵣᵣ = 0.1509,#mmol N/mmol C@inline Nᵣₑ_forcing(i, j, k, grid, clock, model_fields, params) = nothing
     Rdᵣ = 0.13,#mmol N/mmol C
     Rd_red = 6.56#106/16#mmol C/mmol N
@@ -45,13 +45,13 @@ const defaults= (
 # XXX values too hight for d<100 so (for now) maxing at d=100
 @inline p_soliddep(d) = 0.233*(982*max(d, 100)^(-1.548))^0.336
 
-@inline _Nₘ(Nᵣᵣ, Nᵣ, params) = params.λᵣᵣ*Nᵣᵣ+params.λᵣ*Nᵣ
-@inline _Cₘ(Nᵣᵣ, Nᵣ, params) = params.λᵣᵣ*params.Rdᵣᵣ*Nᵣᵣ+params.λᵣ*params.Rdᵣ*Nᵣ
+@inline _Nₘ(Nᵣᵣ, Nᵣ, params) = params.λᵣᵣ*Nᵣᵣ+params.λᵣ*Nᵣ #mmol N/day
+@inline _Cₘ(Nᵣᵣ, Nᵣ, params) = params.λᵣᵣ*params.Rdᵣᵣ*Nᵣᵣ+params.λᵣ*params.Rdᵣ*Nᵣ #mmol C/day
 
 @inline function mineralisation(Nᵣᵣ, Nᵣ, params)
     Nₘ=_Nₘ(Nᵣᵣ, Nᵣ, params)
     Cₘ=_Cₘ(Nᵣᵣ, Nᵣ, params)
-    return Nₘ, Cₘ, Nₘ/(Nᵣᵣ+Nᵣ)
+    return Nₘ, Cₘ, Nₘ/(Nᵣᵣ+Nᵣ) #mmol N/day, mmol C/day, 1/day
 end
 
 #####
@@ -60,23 +60,19 @@ end
 
 @inline function sedimentNH₄(i, j, grid, clock, model_fields, params)
     Nₘ, Cₘ, k = mineralisation(model_fields.Nᵣᵣ[i, j, 1],  model_fields.Nᵣ[i, j, 1], params)
-    if (Nₘ>0 && Cₘ>0 && k > 0)
-        return @inbounds Nₘ*(1-p_nit(Nₘ, Cₘ, model_fields.OXY[i, j, 1], model_fields.NH₄[i, j, 1], k))
-    else
-        return 0
-    end
+    return @inbounds (Nₘ*(1-p_nit(Nₘ, Cₘ, model_fields.OXY[i, j, 1], model_fields.NH₄[i, j, 1], k)) + Cₘ*p_denit(Cₘ, model_fields.OXY[i, j, 1], model_fields.NO₃[i, j, 1], k)*0.8)/day
 end
 
 @inline sedimentDIC(i, j, grid, clock, model_fields, params) = params.Rd_red*sedimentNH₄(i, j, grid, clock, model_fields, params)
 
 @inline function sedimentNO₃(i, j, grid, clock, model_fields, params)
     Nₘ, Cₘ, k = mineralisation(model_fields.Nᵣᵣ[i, j, 1],  model_fields.Nᵣ[i, j, 1], params)
-    return @inbounds Nₘ*p_nit(Nₘ, Cₘ, model_fields.OXY[i, j, 1], model_fields.NH₄[i, j, 1], k) - Cₘ*p_denit(Cₘ, model_fields.OXY[i, j, 1], model_fields.NO₃[i, j, 1], k)*0.8
+    return @inbounds (Nₘ*p_nit(Nₘ, Cₘ, model_fields.OXY[i, j, 1], model_fields.NH₄[i, j, 1], k) - Cₘ*p_denit(Cₘ, model_fields.OXY[i, j, 1], model_fields.NO₃[i, j, 1], k)*0.8)/day
 end
 
 @inline function sedimentO₂(i, j, grid, clock, model_fields, params)
     Nₘ, Cₘ, k = mineralisation(model_fields.Nᵣᵣ[i, j, 1],  model_fields.Nᵣ[i, j, 1], params)
-    return @inbounds -(Cₘ*(1-p_denit(Cₘ, model_fields.OXY[i, j, 1], model_fields.NO₃[i, j, 1], 1)-p_anox(Cₘ, model_fields.OXY[i, j, 1], model_fields.NO₃[i, j, 1], 1)*p_soliddep(isa(params.d, Number) ? params.d : params.d[i, j])) + Nₘ*p_nit(Nₘ, Cₘ, model_fields.OXY[i, j, 1], model_fields.NH₄[i, j, 1], 1)*2)
+    return @inbounds -(Cₘ*(1-p_denit(Cₘ, model_fields.OXY[i, j, 1], model_fields.NO₃[i, j, 1], 1)-p_anox(Cₘ, model_fields.OXY[i, j, 1], model_fields.NO₃[i, j, 1], 1)*p_soliddep(isa(params.d, Number) ? params.d : params.d[i, j])) + Nₘ*p_nit(Nₘ, Cₘ, model_fields.OXY[i, j, 1], model_fields.NH₄[i, j, 1], 1)*2)/day
 end
 
 #####
@@ -86,8 +82,8 @@ end
 @inline getflux(i, j, k, grid, funcs) = length(funcs) < 11 ? ntuple(n->eval_advection(i, j, k, grid, funcs[n]), length(funcs)) : map(n -> eval_advection(i, j, k, grid, funcs[n]), 1:length(args))
 @inline fPOM(i, j, k, grid, clock, model_fields, params) = - sum(getflux(i, j, k, grid, params.adv_funcs)).*params.f.*params.Δz
 
-@inline Nᵣ_forcing(i, j, k, grid, clock, model_fields, params) = @inbounds - params.λᵣ*model_fields.Nᵣ[i, j, 1]
-@inline Nᵣᵣ_forcing(i, j, k, grid, clock, model_fields, params) = @inbounds - params.λᵣᵣ*model_fields.Nᵣ[i, j, 1]
+@inline Nᵣ_forcing(i, j, k, grid, clock, model_fields, params) = @inbounds getflux(i, j, grid, params.adv_funcs).*params.f.*params.Δz - params.λᵣ*model_fields.Nᵣ[i, j, 1]/day
+@inline Nᵣᵣ_forcing(i, j, k, grid, clock, model_fields, params) = @inbounds getflux(i, j, grid, params.adv_funcs).*params.f.*params.Δz - params.λᵣᵣ*model_fields.Nᵣ[i, j, 1]/day
 
 """
     Boundaries.Sediments.Soetaert.setup(grid, POM_fields::NamedTuple; 
@@ -160,8 +156,8 @@ function setup(grid, POM_fields::NamedTuple;
             DIC_bc
         ),
         forcing = (
-            Nᵣ = (Forcing(Nᵣ_forcing, discrete_form=true, parameters=parameters), Forcing(fPOM, discrete_form=true, parameters=(adv_funcs = fPOM_forcings, f = (1 - f_ref)*f_slow, Δz = grid.Δzᵃᵃᶜ[1]))), 
-            Nᵣᵣ = (Forcing(Nᵣᵣ_forcing, discrete_form=true, parameters=parameters), Forcing(fPOM, discrete_form=true, parameters=(adv_funcs = fPOM_forcings, f = (1 - f_ref)*f_fast, Δz = grid.Δzᵃᵃᶜ[1]))), 
+            Nᵣ = Forcing(Nᵣ_forcing, discrete_form=true, parameters=merge(parameters,(adv_funcs = fPOM_forcings, f = (1 - f_ref)*f_slow, Δz = grid.Δzᵃᵃᶜ[1]))), 
+            Nᵣᵣ = Forcing(Nᵣᵣ_forcing, discrete_form=true, parameters=merge(parameters, (adv_funcs = fPOM_forcings, f = (1 - f_ref)*f_fast, Δz = grid.Δzᵃᵃᶜ[1]))), 
             Nᵣₑ = Forcing(fPOM, discrete_form=true, parameters=(adv_funcs = fPOM_forcings, f = f_ref, Δz = grid.Δzᵃᵃᶜ[1]))
         ),
         auxiliary_fields = (Nᵣᵣ=Nᵣᵣ, Nᵣ=Nᵣ, Nᵣₑ=Nᵣₑ),

@@ -10,30 +10,6 @@ Documenting the user interface.
 Modules = [OceanBioME]
 ```
 
-## Setup
-```@autodocs
-Modules = [OceanBioME.Setup]
-```
-
-# Biogeochemical models
-
-### LOBSTER
-
-```@autodocs
-Modules = [OceanBioME.LOBSTER]
-```
-
-### NPZ
-```@autodocs
-Modules = [OceanBioME.NPZ]
-```
-
-## Individual models
-### Sugar kelp (SLatissima)
-```@autodocs
-Modules = [OceanBioME.SLatissima]
-```
-
 ## Light
 
 ```@autodocs
@@ -53,5 +29,5 @@ Modules = [OceanBioME.Boundaries.Sediments.Soetaert]
 ## Box Model
 
 ```@autodocs
-Modules = [OceanBioME.BoxModel]
+Modules = [OceanBioME.BoxModels]
 ```

@@ -41,16 +41,16 @@ Lx, Ly = 20, 20
 grid = RectilinearGrid(size=(1, 1, 50), extent=(Lx, Ly, 200)) 
 PAR = Oceananigans.Fields.Field{Center, Center, Center}(grid)  
 
-# Specify the boundary conditions for DIC and OXY based on the air-sea CO₂ and O₂ flux
+# Specify the boundary conditions for DIC and O₂ based on the air-sea CO₂ and O₂ flux
 dic_bc = Boundaries.airseasetup(:CO₂, forcings=(T=t_function, S=s_function))
 oxy_bc = Boundaries.airseasetup(:O₂, forcings=(T=t_function, S=s_function))
 
 # For the sediment model we have to setup the tracer field first and then pass these to the sediment model
-NO₃, NH₄, P, Z, D, DD, Dᶜ, DDᶜ, DOM, DIC, ALK, OXY = CenterField(grid), CenterField(grid), CenterField(grid), CenterField(grid), CenterField(grid), CenterField(grid), CenterField(grid), CenterField(grid), CenterField(grid), CenterField(grid), CenterField(grid), CenterField(grid)
+NO₃, NH₄, P, Z, D, DD, Dᶜ, DDᶜ, DOM, DIC, Alk, O₂ = CenterField(grid), CenterField(grid), CenterField(grid), CenterField(grid), CenterField(grid), CenterField(grid), CenterField(grid), CenterField(grid), CenterField(grid), CenterField(grid), CenterField(grid), CenterField(grid)
 sediment=Boundaries.Sediments.Soetaert.setup(grid, (;D, DD); POM_w=(D=LOBSTER.D_sinking, DD=LOBSTER.DD_sinking))
 
 # ## Biogeochemical and Oceananigans model
-bgc = Setup.Oceananigans(:LOBSTER, grid, params, optional_sets=(:carbonates, :oxygen), topboundaries=(DIC=dic_bc, OXY=oxy_bc), open_bottom=true, bottomboundaries=sediment.boundary_conditions) 
+bgc = Setup.Oceananigans(:LOBSTER, grid, params, optional_sets=(:carbonates, :oxygen), topboundaries=(DIC=dic_bc, O₂=oxy_bc), open_bottom=true, bottomboundaries=sediment.boundary_conditions) 
 
 @info "Setup BGC model"
 
@@ -64,7 +64,7 @@ model = NonhydrostaticModel(
                                                 boundary_conditions = bgc.boundary_conditions,
                                                 auxiliary_fields = merge((; PAR), sediment.auxiliary_fields)
 )
-set!(model, P=0.03, Z=0.03, D=0.0, DD=0.0, Dᶜ=0.0, DDᶜ=0.0, NO₃=11, NH₄=0.05, DOM=0.0, DIC=2200.0, ALK=2400.0, OXY=240.0)
+set!(model, P=0.03, Z=0.03, D=0.0, DD=0.0, Dᶜ=0.0, DDᶜ=0.0, NO₃=11, NH₄=0.05, DOM=0.0, DIC=2200.0, Alk=2400.0, O₂=240.0)
 
 
 # ## Simulation
@@ -74,7 +74,12 @@ set!(model, P=0.03, Z=0.03, D=0.0, DD=0.0, Dᶜ=0.0, DDᶜ=0.0, NO₃=11, NH₄=
 # - Store the model and particles output
 # - Prevent the tracers from going negative from numerical error (see discussion of this in the [positivity preservation](@ref pos-preservation) implimentation page)
 
+<<<<<<< HEAD
+## Set up the simulation
+simulation = Simulation(model, Δt=5minutes, stop_time=50days)
+=======
 simulation = Simulation(model, Δt=10minutes, stop_time=100days) 
+>>>>>>> origin/main
 
 simulation.callbacks[:update_par] = Callback(Light.twoBands.update!, IterationInterval(1), merge(merge(params, Light.twoBands.defaults), (surface_PAR=PAR⁰,)), TimeStepCallsite());
 
@@ -90,6 +95,34 @@ simulation.output_writers[:profiles] = JLD2OutputWriter(model, merge(model.trace
 simulation.callbacks[:neg] = Callback(scale_negative_tracers!; parameters=(conserved_group=(:NO₃, :NH₄, :P, :Z, :D, :DD, :DOM), warn=false))
 simulation.callbacks[:timestep] = Callback(update_timestep!, IterationInterval(1), (c_forcing=0.5, c_adv=0.6, c_diff=0.6, w = 200/day, relaxation=0.75), TimeStepCallsite())
 
+<<<<<<< HEAD
+# Oceananians storage of sliced fields is currently broken (https://github.com/CliMA/Oceananigans.jl/issues/2770) so here is a work around
+using JLD2
+
+function store_sediment!(sim)
+    jldopen("sediment.jld2", "a+") do file
+        file["Nᵣ/$(sim.model.clock.time)"] = sim.model.auxiliary_fields.Nᵣ[1, 1, 1]
+        file["Nᵣᵣ/$(sim.model.clock.time)"] = sim.model.auxiliary_fields.Nᵣᵣ[1, 1, 1]
+        file["Nᵣₑ/$(sim.model.clock.time)"] = sim.model.auxiliary_fields.Nᵣₑ[1, 1, 1]
+    end
+end
+
+simulation.callbacks[:save_sediment] = Callback(store_sediment!, TimeInterval(1days))
+
+#=
+# This is currently broken in Oceananigans 
+sediment_fields = Dict(zip(("Nᵣᵣ", "Nᵣ", "Nᵣₑ"), model.auxiliary_fields[(:Nᵣᵣ, :Nᵣ, :Nᵣₑ)]))
+simulation.output_writers[:sediment_profiles] = NetCDFOutputWriter(model, sediment_fields, filename="sediment_sediment.nc", schedule=TimeInterval(1days), overwrite_existing=true, indices=(:, :, 1:1))
+=#
+
+#doesn't work yet
+#simulation.callbacks[:neg_sed] = Callback(scale_negative_tracers!; parameters=(conserved_group=(:Nᵣᵣ, :Nᵣ, :Nᵣₑ), warn=true))
+
+@info "Setup simulation"
+ΣN₀ = Budget.calculate_budget(model, true, (:NO₃, :NH₄, :P, :Z, :D, :DD, :DOM))
+# Run the simulation                            
+=======
 # ## Run!
 # Finally we run the simulation
+>>>>>>> origin/main
 run!(simulation)

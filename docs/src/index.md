@@ -1,4 +1,4 @@
-# OceanBioME.jl
+# `Ocean` `Bio`geochemical `M`odelling `E`nvironment - OceanBioME
 
 ```@meta
 CurrentModule = OceanBioME
@@ -13,18 +13,10 @@ OceanBioME.jl is currently developed primarily through the generous and greatly 
 
 OceanBioME.jl currently provides a core of several biogeochemical models (NPZD and [LOBSTER](https://doi.org/10.1029/2004JC002588), a medium complexity model, and [PISCES](https://doi.org/10.5194/gmd-8-2465-2015) in an early stage of testing), air-sea gas exchange models to provide appropriate top boundary conditions, and example sediment models for the benthic boundary.
 
-As it was originally conceived for the study of submesoscale systems such as kelp forests we have also implimented a framework for integrating the growth of biological/active Lagrangian particles which move around and can interact with the (Eulerian) tracer fields - consuming nutrients and carbon dioxide, and depositing waste. Currently, included is a simple sugar kelp growth model which can be used in a variety of dynamical scenarios such as free floating or fixed to the ground, with more macroalgae models expected to be ready soon.
+As it was originally conceived for the study of submesoscale systems such as kelp forests we have also implemented a framework for integrating the growth of biological/active Lagrangian particles which move around and can interact with the (Eulerian) tracer fields - consuming nutrients and carbon dioxide, and depositing waste. Currently, included is a simple sugar kelp growth model which can be used in a variety of dynamical scenarios such as free floating or fixed to the ground, with more macroalgae models expected to be ready soon.
 
 An overview of the current and planned future design of OceanBioME is shown in the diagram below:
 ![Diagram of high level structure of OceanBioME.jl showing interlink between different components ... (improve this alt text)](overview.png)
-
-Future development ideas include:
-- [Completing testing of PISCES](https://github.com/OceanBioME/OceanBioME.jl/tree/PISCES) and perform validation experiments
-- Explore the potential for fixed plant populations (e.g. seagrass) models which may be implemented with the [forced column fields developed for sediment modelling](numerical_implimentation/sediments.md)
-- Complete changes for [GPU compatibility](https://github.com/OceanBioME/OceanBioME.jl/pull/23) (may require upstream Oceananigans.jl or even CUDA.jl changes)
-- Expand examples (e.g. global circulation example)
-
-Please see [this project board](https://github.com/orgs/OceanBioME/projects/4) for our current roadmap/progress.
 
 
 ## Quick install
@@ -40,12 +32,7 @@ julia> using Pkg
 
 julia> Pkg.add("https://github.com/OceanBioME/OceanBioME.jl")
 ```
-If you wish to run the examples, until we move to a better system, please then move into the examples directory and download our example data files:
-```shell
-shell> cd OceanBioME/examples
 
-shell> git clone --depth 1 USERNAME@github.com:OceanBioME/OceanBioME_example_data.git
-```
 !!! compat "Julia 1.8 or newer"
     The latest version of OceanBioME strongly suggests _at least_ Julia 1.8 or later to run.
     While most scripts will run on Julia 1.6 or 1.7, OceanBioME is _only_ tested on Julia 1.8.
@@ -74,7 +61,6 @@ Whether you need help getting started with OceanBioME, found a bug, want OceanBi
 
 ## Citing
 
-If you use OceanBioME as part of your research, teaching, or other activities, we would be grateful if you could
-cite our work and mention OceanBioME by name, as well as citing and [acknowledging Oceananigans](https://clima.github.io/OceananigansDocumentation/stable/#Citing) as without them this package would not be possible.
+If you use OceanBioME as part of your research, teaching, or other activities, we would be grateful if you could cite our work and mention OceanBioME by name, as well as citing and [acknowledging Oceananigans](https://clima.github.io/OceananigansDocumentation/stable/#Citing) as without them this package would not be possible.
 
 We do not currently have a citation for OceanBioME so please reach out if you wish to cite it, and we will expedite the process of [making it citable](https://joss.theoj.org/about).

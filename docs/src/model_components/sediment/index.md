@@ -1,6 +1,6 @@
 # [Sediment models](@id sediments)
 
-> WARNING: all sediment models so far implemented may not be stable and have not yet been properly validated
+> WARNING: we are currently overhauling sediment models but will leave what exists here for others to develop on
 
 Sediments are an important bottom boundary. Generally sediment models receive particulate organic matter sinking from the bottom of models, and then simulate some kind of bacterial diagenesis which may store some fraction or release the matter back into the water in different forms. 
 

@@ -13,33 +13,35 @@
 # Load the packages and setup the initial and forcing conditions
 using OceanBioME
 
-minute=minutes=60
-hour=hours=60*minutes
-day=days=hours*24  # define the length of a day in seconds
-year=years=day*365  # define the length of a year in days
+minute = minutes = 60
+hour = hour = 60 * minutes
+day = days = hours * 24  # define the length of a day in seconds
+year = years = day * 365  # define the length of a year in days
 
 # This is forced by a prescribed time-dependent photosynthetically available radiation (PAR)
-PAR⁰(t) = 60*(1-cos((t+15days)*2π/(365days)))*(1 /(1 +0.2*exp(-((mod(t, 365days)-200days)/50days)^2))) .+ 2
+PAR⁰(t) = 50 * (1 - cos((t + 15days) * 2π / (365days))) * (1 / (1 + 0.2 * exp(-((mod(t, 365days)-200days)/50days)^2))) .+ 10
 
-z=-10# specify the nominal depth of the box for the PAR profile
-PAR(t) = PAR⁰(t)*exp(z*0.2) # Modify the PAR based on the nominal depth and exponential decay 
+z = 10# specify the nominal depth of the box for the PAR profile
+PAR(t) = PAR⁰(t) * exp(- z * 0.1) # Modify the PAR based on the nominal depth and exponential decay 
+
+T(t) = 5 * (1 - cos((t + 30days)*2π/(365days)))/2 + 15
 
 # Set up the model. Here, first specify the biogeochemical model, followed by initial conditions and the start and end times
-model = BoxModel(biogeochemistry = LOBSTER(grid = BoxModelGrid()), forcing = (; PAR))
-model.Δt = 5minutes
-model.stop_time = 2years
+model = BoxModel(biogeochemistry = NutrientPhytoplanktonZooplanktonDetritus(grid = BoxModelGrid()), forcing = (; PAR, T))
+model.Δt = 2day
+model.stop_time = 10years
 
-set!(model, NO₃ = 10.0, NH₄ = 0.1, P = 0.1, Z = 0.01)
+set!(model, N = 7.0, P = 0.01, Z = 0.05)
 
 # ## Run the model (should only take a few seconds)
 @info "Running the model..."
-run!(model, save_interval = 100, save = SaveBoxModel("box.jld2"))
+run!(model, save_interval = 1, save = SaveBoxModel("box_npzd.jld2"))
 
 @info "Plotting the results..."
 # ## Plot the results
 using JLD2, CairoMakie
-vars = (:NO₃, :NH₄, :P, :Z, :DOM, :sPOM, :bPOM, :PAR)
-file = jldopen("box.jld2")
+vars = (:N, :P, :Z, :D, :T, :PAR)
+file = jldopen("box_npzd.jld2")
 times = keys(file["values"])
 timeseries = NamedTuple{vars}(ntuple(t -> zeros(length(times)), length(vars)))
 
@@ -59,9 +61,9 @@ plt_times = parse.(Float64, times)./day
 axs = []
 
 for (idx, tracer) in enumerate(vars)
-    push!(axs, Axis(fig[floor(Int, (idx - 1)/4) + 1, (idx - 1) % 4 + 1], ylabel="$tracer", xlabel="Day"))
+    push!(axs, Axis(fig[floor(Int, (idx - 1)/3) + 1, (idx - 1) % 3 + 1], ylabel="$tracer", xlabel="Day"))
     lines!(axs[end], plt_times, timeseries[tracer])
 end
-save("box.png", fig)
+save("box_npzd.png", fig)
 
 # ![Results](box.png)
