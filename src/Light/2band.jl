@@ -18,7 +18,12 @@
     
     ∫chlʳ = @inbounds (zᶠ[grid.Nz + 1] - zᶜ[grid.Nz]) * (P[i, j, grid.Nz] * Rᶜₚ / r) ^ eʳ
     ∫chlᵇ = @inbounds (zᶠ[grid.Nz + 1] - zᶜ[grid.Nz]) * (P[i, j, grid.Nz] * Rᶜₚ / r) ^ eᵇ
+
+    # first point below surface
     @inbounds PAR[i, j, grid.Nz] =  PAR⁰ * (exp(kʳ * zᶜ[grid.Nz] - χʳ * ∫chlʳ) + exp(kᵇ * zᶜ[grid.Nz] - χᵇ * ∫chlᵇ)) / 2
+
+    # first point above surface (so that we interpolate to PAR⁰ at surface)
+    @inbounds PAR[i, j, grid.Nz + 1] = PAR⁰ * (2 - (exp(kʳ * zᶜ[grid.Nz] - χʳ * ∫chlʳ) + exp(kᵇ * zᶜ[grid.Nz] - χᵇ * ∫chlᵇ)) / 2)
 
     @inbounds for k in grid.Nz-1:-1:1
         ∫chlʳ += (zᶜ[k + 1] - zᶠ[k + 1]) * (P[i, j, k+1] * Rᶜₚ / r) ^ eʳ + (zᶠ[k + 1] - zᶜ[k]) * (P[i, j, k] * Rᶜₚ / r) ^ eʳ
@@ -70,7 +75,9 @@ function TwoBandPhotosyntheticallyActiveRatiation(; grid,
                                                     chlorophyll_blue_exponent::FT = 0.674,
                                                     pigment_ratio::FT = 0.7,
                                                     phytoplankton_chlorophyll_ratio::FT = 1.31) where FT # mgChl/mol N
-    field = CenterField(grid)
+    
+    field = CenterField(grid; boundary_conditions = FieldBoundaryConditions(grid, (Center, Center, Center); 
+                                                                            top = BoundaryCondition(PAR_boundary, nothing_function)))
 
     return TwoBandPhotosyntheticallyActiveRatiation(water_red_attenuation,
                                                     water_blue_attenuation,
