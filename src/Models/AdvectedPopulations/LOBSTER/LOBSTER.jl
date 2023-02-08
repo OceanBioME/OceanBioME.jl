@@ -265,7 +265,7 @@ function LOBSTER(; grid,
                    disolved_organic_breakdown_rate::FT = 3.86e-7, # 1/s
                    zooplankton_calcite_dissolution::FT = 0.3,
 
-                   surface_phytosynthetically_active_radiation = (x, y, t) -> 100*max(0.0, cos(t*π/(12hours))),
+                   surface_phytosynthetically_active_radiation = (x, y, t) -> 100 * max(0.0, cos(t * π / (12hours))),
 
                    light_attenuation_model::LA = TwoBandPhotosyntheticallyActiveRatiation(; grid, 
                                                     surface_PAR = surface_phytosynthetically_active_radiation),
