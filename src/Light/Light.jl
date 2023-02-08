@@ -14,7 +14,11 @@ using Oceananigans.Utils: launch!
 using Oceananigans: Center, Face, fields
 using Oceananigans.Grids: xnode, ynode, znodes
 using Oceananigans.Fields: CenterField, TracerFields
-using Oceananigans.BoundaryConditions: fill_halo_regions!, ValueBoundaryCondition, FieldBoundaryConditions, regularize_boundary_condition, regularize_field_boundary_conditions, Value, RightBoundary, ContinuousBoundaryFunction
+using Oceananigans.BoundaryConditions: fill_halo_regions!, 
+                                       ValueBoundaryCondition, 
+                                       FieldBoundaryConditions, 
+                                       regularize_field_boundary_conditions, 
+                                       ContinuousBoundaryFunction
 
 import Adapt: adapt_structure
 import Base: show, summary
