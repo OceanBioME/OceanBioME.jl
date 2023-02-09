@@ -18,7 +18,7 @@ using StructArrays, JLD2
 
 import Oceananigans.Simulations: run!
 import Oceananigans: set!
-import Oceananigans.Fields: CenterField
+import Oceananigans.Fields: CenterField, regularize_field_boundary_conditions
 import Base: show, summary
 
 @inline no_func(args...) = 0.0
@@ -174,6 +174,7 @@ show(io::IO, model::BoxModel{B, V, FT, F, TS, C}) where {B, V, FT, F, TS, C} =
                 "  Time:", "\n",
                 "    └── $(prettytime(model.clock.time)) with Δt = $(prettytime(model.Δt))")
 
-CenterField(::BoxModelGrid) = nothing
+CenterField(::BoxModelGrid, args...; kwargs...) = nothing
+regularize_field_boundary_conditions(::Any, ::BoxModelGrid, ::Any) = nothing
 
 end # module

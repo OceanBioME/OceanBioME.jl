@@ -26,7 +26,7 @@ import Oceananigans.Biogeochemistry: required_biogeochemical_tracers,
 
 import OceanBioME: maximum_sinking_velocity
 
-struct NutrientPhytoplanktonZooplanktonDetritus{FT, LA, SPAR, W, A} <: AbstractContinuousFormBiogeochemistry
+struct NutrientPhytoplanktonZooplanktonDetritus{FT, LA, W, A} <: AbstractContinuousFormBiogeochemistry
     # phytoplankton
     initial_photosynthetic_slope :: FT # α, 1/(W/m²)/s
     base_maximum_growth :: FT # μ₀, 1/s
@@ -46,7 +46,6 @@ struct NutrientPhytoplanktonZooplanktonDetritus{FT, LA, SPAR, W, A} <: AbstractC
 
     # light attenuation
     light_attenuation_model :: LA
-    surface_phytosynthetically_active_radiation :: SPAR
 
     # sinking
     sinking_velocities :: W
@@ -65,30 +64,30 @@ struct NutrientPhytoplanktonZooplanktonDetritus{FT, LA, SPAR, W, A} <: AbstractC
                                                         zoo_base_mortality_rate::FT = 0.3395 / day, # 1/s/(mmol N / m³)²
                                                         remineralization_rate::FT = 0.1213 / day, # 1/s
 
-                                                        light_attenuation_model::LA = TwoBandPhotosyntheticallyActiveRatiation(; grid),
-                                                        surface_phytosynthetically_active_radiation::SPAR = (x, y, t) -> 100*max(0.0, cos(t*π/(12hours))),
+                                                        surface_phytosynthetically_active_radiation = (x, y, t) -> 100*max(0.0, cos(t*π/(12hours))),
+                                                        light_attenuation_model::LA = TwoBandPhotosyntheticallyActiveRatiation(; grid,
+                                                                                        surface_PAR = surface_phytosynthetically_active_radiation),
                 
                                                         sinking_speeds = (P = 0.2551/day, D = 2.7489/day),
                                                         open_bottom::Bool = true,
                                                         advection_schemes::A = NamedTuple{keys(sinking_speeds)}(repeat([CenteredSecondOrder()], 
-                                                                                               length(sinking_speeds)))) where {FT, LA, SPAR, A}
+                                                                                               length(sinking_speeds)))) where {FT, LA, A}
         sinking_velocities = setup_velocity_fields(sinking_speeds, grid, open_bottom)
         W = typeof(sinking_velocities)
-        return new{FT, LA, SPAR, W, A}(initial_photosynthetic_slope,
-                                       base_maximum_growth,
-                                       nutrient_half_saturation,
-                                       base_respiration_rate,
-                                       phyto_base_mortality_rate,
-                                       maximum_grazing_rate,
-                                       grazing_half_saturation,
-                                       assimulation_efficiency,
-                                       base_excretion_rate,
-                                       zoo_base_mortality_rate,
-                                       remineralization_rate,
-                                       light_attenuation_model,
-                                       surface_phytosynthetically_active_radiation,
-                                       sinking_velocities,
-                                       advection_schemes)
+        return new{FT, LA, W, A}(initial_photosynthetic_slope,
+                                 base_maximum_growth,
+                                 nutrient_half_saturation,
+                                 base_respiration_rate,
+                                 phyto_base_mortality_rate,
+                                 maximum_grazing_rate,
+                                 grazing_half_saturation,
+                                 assimulation_efficiency,
+                                 base_excretion_rate,
+                                 zoo_base_mortality_rate,
+                                 remineralization_rate,
+                                 light_attenuation_model,
+                                 sinking_velocities,
+                                 advection_schemes)
     end
 end
 
@@ -181,7 +180,7 @@ end
 end
 
 function update_biogeochemical_state!(bgc::NutrientPhytoplanktonZooplanktonDetritus, model)
-    update_PAR!(model, bgc.light_attenuation_model, bgc.surface_phytosynthetically_active_radiation)
+    update_PAR!(model, bgc.light_attenuation_model)
 end
 
 function update_boxmodel_state!(model::BoxModel{<:NutrientPhytoplanktonZooplanktonDetritus, <:Any, <:Any, <:Any, <:Any, <:Any})
@@ -189,8 +188,8 @@ function update_boxmodel_state!(model::BoxModel{<:NutrientPhytoplanktonZooplankt
     getproperty(model.values, :T) .= model.forcing.T(model.clock.time)
 end
 
-summary(::NutrientPhytoplanktonZooplanktonDetritus{FT, LA, SPAR, W, A}) where {FT, LA, SPAR, W, A} = string("Nutrient Phytoplankton Zooplankton Detritus model ($FT)")
-show(io::IO, model::NutrientPhytoplanktonZooplanktonDetritus{FT, LA, SPAR, W, A}) where {FT, LA, SPAR, W, A} =
+summary(::NutrientPhytoplanktonZooplanktonDetritus{FT, LA, W, A}) where {FT, LA, W, A} = string("Nutrient Phytoplankton Zooplankton Detritus model ($FT)")
+show(io::IO, model::NutrientPhytoplanktonZooplanktonDetritus{FT, LA, W, A}) where {FT, LA, W, A} =
        print(io, summary(model), " \n",
                 " Light Attenuation Model: ", "\n",
                 "    └── ", summary(model.light_attenuation_model), "\n",
