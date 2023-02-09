@@ -19,6 +19,7 @@ using Oceananigans.BoundaryConditions: fill_halo_regions!,
                                        FieldBoundaryConditions, 
                                        regularize_field_boundary_conditions, 
                                        ContinuousBoundaryFunction
+using Oceananigans.Units
 
 import Adapt: adapt_structure
 import Base: show, summary

@@ -77,14 +77,11 @@ function TwoBandPhotosyntheticallyActiveRatiation(; grid,
                                                     pigment_ratio::FT = 0.7,
                                                     phytoplankton_chlorophyll_ratio::FT = 1.31,
                                                     surface_PAR::SPAR = (x, y, t) -> 100 * max(0.0, cos(t * π / (12hours)))) where {FT, SPAR} # mgChl/mol N
-                                                    
-    # ugly but not succeeded any other way
 
     field = CenterField(grid; boundary_conditions = 
                             regularize_field_boundary_conditions(
                                 FieldBoundaryConditions(top = ValueBoundaryCondition(surface_PAR)),
-                                grid,
-                                :PAR))
+                                grid, :PAR))
 
     return TwoBandPhotosyntheticallyActiveRatiation(water_red_attenuation,
                                                     water_blue_attenuation,
