@@ -4,14 +4,14 @@ using Oceananigans.Grids: AbstractGrid
 
 import Adapt: adapt_structure
 
-function setup_velocity_fields(drift_speeds, grid::AbstractGrid, open_bottom)
+function setup_velocity_fields(drift_speeds, grid::AbstractGrid, open_bottom; smoothing_distance = 2)
     drift_velocities = []
     for w in values(drift_speeds)
         u, v = maybe_constant_field.((0, 0))
         if isa(values(w), Number)
             w_field = ZFaceField(grid)
             for k=1:grid.Nz 
-                @inbounds w_field[:, :, k] .= - w * ifelse(open_bottom, 1.0, (1 - exp((1-k)/2)))
+                @inbounds w_field[:, :, k] .= - w * ifelse(open_bottom, 1.0, (1 - exp((1-k) / smoothing_distance)))
             end
             w = w_field
         elseif !isa(values(w), Tuple{AbstractField, AbstractField, AbstractField})

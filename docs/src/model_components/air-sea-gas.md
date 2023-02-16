@@ -16,7 +16,7 @@ Where the symbol specifies the exchanged gas (currently `:CO₂` or `:O₂`). Th
 bgc = Setup.Oceananigans(:LOBSTER, grid, LOBSTER.defaults, topboundaries=(DIC=dic_bc, ))
 ```
 
-If the temperature and salinity are not being modelled they can be passed as functions:
+If the temperature and salinity are not included in the model they can be passed as functions:
 ```
 dic_exchange_boundary = Boundaries.airseasetup(:CO₂, forcings=(T=t_function, S=s_function))
 ```
