@@ -1,54 +1,67 @@
-# This script illustrates how to run OceanBioME as a box model
+# # Box model
+# In this example we will setup a [LOBSTER](@ref LOBSTER) biogeochemical model in a single box configuration. This demonstrates:
+# - How to setup OceanBioME's biogeochemical models as a stand-alone box model
 
-using OceanBioME, HDF5, Statistics, Interpolations, Plots  # load required modules
+# ## Install dependencies
+# First we will check we have the dependencies installed
+# ```julia
+# using Pkg
+# pkg"add OceanBioME, CairoMakie, DiffEqBase, OrdinaryDiffEq"
+# ```
 
-day=60*60*24  # define the length of a day in seconds
-year=day*365  # define the length of a year in days
+# ## Model setup
+# Load the packages and setup the initial and forcing conditions
+using OceanBioME
 
-# This demonstrates how to read in a timeseries of photosynthetic available radiation (PAR) data
-path="./OceanBioME_example_data/subpolar/"  # the folder where the data are stored
-par_mean_timeseries=zeros(365) # create an empty array
-for i in 1:365  # loop over day number  
-    string_i = lpad(string(i), 3, '0')  # create string with day number, padding with zeros to get a 3 digit number, e.g. 001
-    filename3=path*"V2020"*string_i*".L3b_DAY_SNPP_PAR.x.nc" 
-    fid = h5open(filename3, "r") 
-    par=read(fid["level-3_binned_data/par"])  # read PAR data from file
-    BinList=read(fid["level-3_binned_data/BinList"])  # read information on PAR bins.  The format of BinList is (:bin_num, :nobs, :nscenes, :weights, :time_rec) 
-    par_mean_timeseries[i] = mean([par[i][1]/BinList[i][4] for i in 1:length(par)])*3.99e-10*545e12/(1day)  # average PAR values in bins and convert from einstin/m^2/day to W/m^2
-end
+minute=minutes=60
+hour=hours=60*minutes
+day=days=hours*24  # define the length of a day in seconds
+year=years=day*365  # define the length of a year in days
 
-surface_PAR_itp = LinearInterpolation((0:364)*day, par_mean_timeseries) # create a function to interpolate
+# This is forced by a prescribed time-dependent photosynthetically available radiation (PAR)
+PAR⁰(t) = 60*(1-cos((t+15days)*2π/(365days)))*(1 /(1 +0.2*exp(-((mod(t, 365days)-200days)/50days)^2))) .+ 2
 
-
-# Set the initial conditions
-Pᵢ = 0.1
-Zᵢ = 0.01            
-Dᵢ = 0
-DDᵢ = 0
-NO₃ᵢ = 1
-NH₄ᵢ = 0.1
-DOMᵢ = 0 
-
-z=-10 # specify the depth for the light level
-PAR(x, y, z, t) = surface_PAR_itp(mod(t,364*day))*exp(z*0.2) # Set the PAR
-
-# Create a list of parameters.  Here, use the default parameters from the LOBSTER model with the PAR function
-params = merge(LOBSTER.defaults, (PAR=PAR, ))
+z=-10# specify the nominal depth of the box for the PAR profile
+PAR(t) = PAR⁰(t)*exp(z*0.2) # Modify the PAR based on the nominal depth and exponential decay 
 
 # Set up the model. Here, first specify the biogeochemical model, followed by initial conditions and the start and end times
-model = Setup.BoxModel(:LOBSTER, params, (NO₃=NO₃ᵢ, NH₄=NH₄ᵢ, P=Pᵢ, Z=Zᵢ, D=Dᵢ, DD=DDᵢ, DOM=DOMᵢ), 0.0, 1.0*year)
+model = BoxModel(biogeochemistry = LOBSTER(grid = BoxModelGrid()), forcing = (; PAR))
+model.Δt = 5minutes
+model.stop_time = 2years
 
-solution = BoxModel.run(model) # call BoxModel to timestep the biogeochemical model
+set!(model, NO₃ = 10.0, NH₄ = 0.1, P = 0.1, Z = 0.01)
 
-# Create an array containing all model varaibles
-# The dimensions of 'values' will be (time, variable number)
-values = vcat(transpose.(solution.u)...)
+# ## Run the model (should only take a few seconds)
+@info "Running the model..."
+run!(model, save_interval = 100, save = SaveBoxModel("box.jld2"))
 
-# build a series of plots for all tracers contained in model.tracers
-plts=[]
-for (i, tracer) in enumerate(model.tracers)
-    push!(plts, plot(solution.t[1:400:end]/day, values[1:400:end, i], ylabel=tracer, xlabel="Day", legend=false))
+@info "Plotting the results..."
+# ## Plot the results
+using JLD2, CairoMakie
+vars = (:NO₃, :NH₄, :P, :Z, :DOM, :sPOM, :bPOM, :PAR)
+file = jldopen("box.jld2")
+times = keys(file["values"])
+timeseries = NamedTuple{vars}(ntuple(t -> zeros(length(times)), length(vars)))
+
+for (idx, time) in enumerate(times)
+    values = file["values/$time"]
+    for tracer in vars
+        getproperty(timeseries, tracer)[idx] = values[tracer]
+    end
 end
 
-# Display the resulting figure
-plot(plts...)
+close(file)
+
+fig = Figure(resolution = (1600, 1000))
+
+plt_times = parse.(Float64, times)./day
+
+axs = []
+
+for (idx, tracer) in enumerate(vars)
+    push!(axs, Axis(fig[floor(Int, (idx - 1)/4) + 1, (idx - 1) % 4 + 1], ylabel="$tracer", xlabel="Day"))
+    lines!(axs[end], plt_times, timeseries[tracer])
+end
+save("box.png", fig)
+
+# ![Results](box.png)

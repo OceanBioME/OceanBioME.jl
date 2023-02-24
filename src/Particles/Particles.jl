@@ -1,157 +1,154 @@
 module Particles
+export ActiveLagrangianParticles
 using KernelAbstractions, Oceananigans, StructArrays
 using Oceananigans.Architectures: device, arch_array
 using Oceananigans.Operators: Vᶜᶜᶜ
+using Oceananigans.LagrangianParticleTracking: update_field_property!
 
-function getmask(i, j, k, fi, fj, fk, grid)
-    nodesi=arch_array(grid.architecture, zeros(Int, 2, 2, 2))
-    nodesj=arch_array(grid.architecture, zeros(Int, 2, 2, 2))
-    nodesk=arch_array(grid.architecture, zeros(Int, 2, 2, 2))
-    
-    d=arch_array(grid.architecture, zeros(2,2,2))
+include("tracer_tendencies.jl")
 
-    for (a, di) in enumerate([fi, 1-fi]), (b, dj) in enumerate([fj, 1-fj]), (c, dk) in enumerate([fk, 1-fk])
-        d[a,b,c] = sqrt(di^2+dj^2+dk^2)
-        nodesi[a, b, c] = min(max(i+a, 1), grid.Nx)
-        nodesj[a, b, c] = min(max(j+b, 1), grid.Ny)
-        nodesk[a, b, c] = min(max(k+c, 1), grid.Nz)
-    end
+# some how this is much faster for any length(args), but wrote because ntuple method is only fast for length(args)<11 as hard coded https://github.com/JuliaLang/julia/blob/master/base/ntuple.jl
+@inline getargs(args, p) = length(args) < 11 ? ntuple(n->args[n][p], length(args)) : map(n -> arguments[n][p], 1:length(args))
 
-    normfactor=1/sum(1 ./ d)
+@kernel function solve_growth!(particles, equation::Function, arguments, params, prognostic, diagnostic, Δt, t)
+    p = @index(Global)
+    @inbounds begin
+        arg_values = getargs(arguments, p)
+        results = equation(particles.properties.x[p], particles.properties.y[p], particles.properties.z[p], t, arg_values..., params, Δt)
 
-    d ./= normfactor
-    return nodesi, nodesj, nodesk, d
-end
+        for property in prognostic
+            getproperty(particles.properties, property)[p] += getproperty(results, property) *Δt
+        end
 
-function apply_sinks!(model, particles, p, i, j, k, d, Δt)
-    for sink in particles.parameters.sink_fields
-        value =particles.parameters.density * sink.scalefactor * Δt * getproperty(model.particles.properties, sink.property)[p] / (d * Vᶜᶜᶜ(i, j, k, model.grid))
-        if abs(value) > 0
-            res = value + getproperty(model.tracers, sink.tracer)[i, j, k]
-            if res < 0
-                @warn "Particle tried to take tracer below zero, conserving tracer (may cause adverse effects on particle dynamics)"
-                getproperty(model.tracers, sink.tracer)[i, j, k] = 0
-                getproperty(particles.properties, sink.fallback)[p] += fallback(particles, p, res, sink.fallback_scalefactor)*Vᶜᶜᶜ(i, j, k, model.grid)
-            else
-                getproperty(model.tracers, sink.tracer)[i, j, k] += value
-            end
+        for property in diagnostic
+            getproperty(particles.properties, property)[p] = getproperty(results, property)
         end
     end
 end
 
-fallback(particles, p, diff, fallback_scalefactor::Number) = diff*fallback_scalefactor
-
-fallback(particles, p, diff, fallback_scalefactor::NamedTuple{(:property, :constant), Tuple{Symbol, Float64}}) = diff*fallback_scalefactor.constant/(getproperty(particles.properties, fallback_scalefactor.property)[p])
-
-@kernel function source_sink!(model, loc, Δt)
-    p = @index(Global)
-    (fi, i::Int), (fj, j::Int), (fk, k::Int) = modf.(Oceananigans.Fields.fractional_indices(model.particles.properties.x[p], model.particles.properties.y[p], model.particles.properties.z[p], loc, model.grid))
-
-    if (fi, fj, fk) != (0, 0, 0)
-        nodesi, nodesj, nodesk, d = getmask(i, j, k, fi, fj, fk, model.grid)
-        for (ind, i) in enumerate(nodesi)
-            apply_sinks!(model, model.particles, p, i, nodesj[ind], nodesk[ind], d[ind], Δt)
-        end
-    else
-        apply_sinks!(model, model.particles, p, i+1, j+1, k+1, 1, Δt)
-    end
-end
-
-@kernel function property_update!(particles, equation::Function, arguments, params, update_properties, track_properties, Δt, t)
-    p = @index(Global)
-
-    @inbounds argument_values = [arg[p] for arg in arguments]
-
-    results = equation(particles.properties.x[p], particles.properties.y[p], particles.properties.z[p], t, argument_values..., params, Δt)
-
-    for property in update_properties
-        @inbounds getproperty(particles.properties, property)[p] += getproperty(results, property) *Δt
-    end
-
-    for property in track_properties
-        @inbounds getproperty(particles.properties, property)[p] = getproperty(results, property)
-    end
-end
-
-function dynamics!(particles, model, Δt)
+function particle_dynamics!(particles, model, Δt)
     num_particles = length(particles)
     workgroup = min(num_particles, 256)
     worksize = num_particles
     
-    #update tracked fields, won't need this when Oceananigans is fixed (https://github.com/CliMA/Oceananigans.jl/pull/2662)
-    for tracked_field in particles.parameters.tracked_fields
-        if tracked_field.tracer in keys(model.tracers)
-            tracer = getproperty(model.tracers, tracked_field.tracer)
-        elseif tracked_field.tracer in keys(model.auxiliary_fields)
-            tracer = getproperty(model.auxiliary_fields, tracked_field.tracer)
-        elseif tracked_field.tracer in (:u, :v, :w)
-            tracer = getproperty(model.velocities, tracked_field.tracer)
-        else
-            throw(ArgumentError("$(tracked_field.tracer) is not a model field that can be tracked"))
-        end
+    model_fields = fields(model)
+    for (tracer_name, property_name) in pairs(particles.parameters.tracked_fields)
+        tracer = model_fields[tracer_name]
         
-        particle_property = getproperty(particles.properties, tracked_field.property)
+        particle_property = getproperty(particles.properties, property_name)
 
         LX, LY, LZ = location(tracer)
 
-        update_field_property_kernel! = Oceananigans.LagrangianParticleTracking.update_field_property!(device(model.architecture), workgroup, worksize)
+        update_field_property_kernel! = update_field_property!(device(model.architecture), workgroup, worksize)
         source_event = update_field_property_kernel!(particle_property, particles.properties, model.grid, tracer, LX(), LY(), LZ())
         wait(source_event)
     end
+    
     #update particle properties
-    function_arguments = [getproperty.(model.particles.properties, arg) for arg in model.particles.parameters.equation_arguments]
+    function_arguments = [getproperty(model.particles.properties, arg) for arg in model.particles.parameters.equation_arguments]
     function_parameters = model.particles.parameters.equation_parameters
 
-    property_update_kernal! = property_update!(device(model.architecture), workgroup, worksize)
-    property_update_event = property_update_kernal!(model.particles, model.particles.parameters.equation, function_arguments, function_parameters, model.particles.parameters.integrals, model.particles.parameters.tracked, Δt, model.clock.time)
-    wait(property_update_event)
+    solve_growth_kernal! = solve_growth!(device(model.architecture), workgroup, worksize)
+    solve_growth_event = solve_growth_kernal!(model.particles, model.particles.parameters.equation, function_arguments, function_parameters, model.particles.parameters.prognostic, model.particles.parameters.diagnostic, Δt, model.clock.time)
+    wait(solve_growth_event)
 
-    #update source/sinks
-    if length(particles.parameters.sink_fields)>0#probably not the most julian way todo this and would also be fixed if the next line was more generic
-        LX, LY, LZ = location(getproperty(model.tracers, particles.parameters.sink_fields[1].tracer))#this will not be right if they are different between the differnet fields
-
-        sourcesink_kernal! = source_sink!(device(model.architecture), workgroup, worksize)
-        sourcesink_event = sourcesink_kernal!(model, (LX(),LY(),LZ()), Δt)
-
-        wait(sourcesink_event)
-    end
+    # execute user defined dynamics (e.g. floating)
     particles.parameters.custom_dynamics(particles, model, Δt)
+end
+
+"""
+    Particles.infinitesimal_particle_field_coupling!(model)
+
+Applies tendencies specified for ActiveLagrangianParticles to fields in `model`.
+Specifically with this coupling the tendencies are applied across the nearest nodes to the particle.
+
+This should be used as a callback and the `TendencyCallsite` like:
+```julia
+sim.callbacks[:couple_particles] = Callback(Particles.infinitesimal_particle_field_coupling!; callsite = TendencyCallsite())
+```
+"""
+
+function infinitesimal_particle_field_coupling!(model)
+    num_particles = length(model.particles)
+    workgroup = min(num_particles, 256)
+    worksize = num_particles
+
+    calculate_particle_tendency_kernel! = calculate_particle_tendency!(device(model.architecture), workgroup, worksize)
+
+    events = []
+    for (tracer, property) in pairs(model.particles.parameters.coupled_fields)
+        property_values = getproperty(model.particles.properties, property)
+        tendency_field = model.timestepper.Gⁿ[tracer]
+
+        calculate_particle_tendency_event = calculate_particle_tendency_kernel!(property_values, tendency_field, model.particles, model.grid)
+        push!(events, calculate_particle_tendency_event)
+    end
+    
+    wait(device(model.architecture), MultiEvent(Tuple(events)))
 end
 
 @inline no_dynamics(args...) = nothing
 
-#Perhaps this should just be an overloading of the function name LagrangianParticles with different arguments
-function setup(particles::StructArray, equation::Function, equation_arguments::NTuple{N, Symbol} where N, 
-    equation_parameters::NamedTuple, integrals::NTuple{N, Symbol} where N, 
-    tracked::NTuple{N, Symbol} where N, 
-    tracked_fields::NTuple{N, NamedTuple{(:tracer, :property, :scalefactor), Tuple{Symbol, Symbol, Float64}}} where N, 
-    sink_fields, #::NTuple{N, NamedTuple{(:tracer, :property, :scalefactor, :fallback, :fallback_scalefactor), Tuple{Symbol, Symbol, Float64, Symbol, NamedTuple}}} where N - got too complicated
-    density::AbstractFloat, custom_dynamics=no_dynamics)
+
+"""
+    Particles.ActiveLagrangianParticles(particles::StructArray;
+                                        equation::Function = no_dynamics, 
+                                        equation_arguments::NTuple{N, Symbol} where N = (), 
+                                        equation_parameters::NamedTuple = NamedTuple(), 
+                                        prognostic::NTuple{N, Symbol} where N = (), 
+                                        diagnostic::NTuple{N, Symbol} where N = NamedTuple(), 
+                                        tracked_fields::NamedTuple = NamedTuple(), 
+                                        coupled_fields::NamedTuple = NamedTuple(),
+                                        scalefactor::AbstractFloat = 1.0, 
+                                        custom_dynamics=no_dynamics)
+
+Returns Oceananigans `LagrangianParticles` which will evolve and interact with biogeochemistry
+Arguments
+========
+* `particles`: StructArray of the particles as per Oceananigans
+Keyword arguments
+=============
+* `equation`: equation specifying how the particles properties and coupling evolves, should be of the form `equation(x, y, z, t, args..., params, Δt)` where args are specified by:
+* `equation_arguments`: Tuple of Symbols specifying arguments for `equation`, arguments must be properties of `particles`
+* `equation_parameters`: NamedTuple of parameters to pass to `equation`
+* `prognostic`: properties for which `equation` returns dP/dt
+* `diagnostic`: properties for which `equation` returns the new value (and therefore does not need to be integrarted)
+* `tracked_fields`: NamedTuple specifying model fields to track where keys are the name of the field and values are names of the particle properties to store the fields in
+* `coupled_fields`: NamedTuple specifying model fields coupled to the particles where keys are the field name and values are the property name to modify the fields *tendency* (i.e. the property should be a rate)
+* `scalefactor`: multiplier to apply to field coupling, can be thought of as number of individuals that each particle represents
+* `custom_dynamics`: custom function to apply to particles after `equation`, should be of the form `dynamics!(particles, model, Δt)`
+```
+"""
+
+# Perhaps this should just be an overloading of the function name LagrangianParticles with different arguments
+function ActiveLagrangianParticles(particles::StructArray;
+                                   equation::Function = no_dynamics, 
+                                   equation_arguments::NTuple{N, Symbol} where N = (), 
+                                   equation_parameters::NamedTuple = NamedTuple(), 
+                                   prognostic::NTuple{N, Symbol} where N = (), 
+                                   diagnostic::NTuple{N, Symbol} where N = NamedTuple(), 
+                                   tracked_fields::NamedTuple = NamedTuple(), 
+                                   coupled_fields::NamedTuple = NamedTuple(),
+                                   scalefactor::AbstractFloat = 1.0, 
+                                   custom_dynamics=no_dynamics)
     
-    for property in (equation_arguments..., integrals..., tracked...)
+    required_fields = (equation_arguments..., prognostic..., diagnostic..., keys(tracked_fields)..., values(coupled_fields)...)
+    for property in required_fields
         if !(property in propertynames(particles))
-            throw(ArgumentError("$property is a required field but $(eltype(particles)) has no property $property."))
+            throw(ArgumentError("$property is a required particle property but $(eltype(particles)) has no property $property."))
         end
     end
 
-    for field in (tracked_fields..., sink_fields...)
-        if !(field.property in propertynames(particles))
-            throw(ArgumentError("$(field.property) is a required field for field tracking or source/sinking but $(eltype(particles)) has no property $property."))
-        end
-    end
-
-    #add checks (e.g. check that all tracked fields properties are properties of the particles)
     return LagrangianParticles(particles; 
-                                dynamics=dynamics!, parameters=(
-                                    equation=equation,
-                                    equation_arguments=equation_arguments,
-                                    equation_parameters=equation_parameters,
-                                    integrals=integrals,
-                                    tracked=tracked,
-                                    density=density, 
-                                    tracked_fields=tracked_fields,
-                                    sink_fields=sink_fields,
-                                    custom_dynamics=custom_dynamics
-                                    ))
+                               dynamics = particle_dynamics!, 
+                               parameters =(; equation,
+                                              equation_arguments,
+                                              equation_parameters,
+                                              prognostic,
+                                              diagnostic,
+                                              scalefactor,
+                                              tracked_fields,
+                                              coupled_fields,
+                                              custom_dynamics))
 end
 end#module

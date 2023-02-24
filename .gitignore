@@ -13,6 +13,7 @@ deps/deps.jl
 docs/build
 docs/site
 docs/src/generated
+build
 
 # Model output
 *.dat

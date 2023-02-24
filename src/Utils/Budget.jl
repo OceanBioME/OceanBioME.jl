@@ -14,7 +14,7 @@ function calculate_budget(model, sediment, tracers)
     return budget
 end
 
-function calculate_budget(results::OceanBioME.Plot.model_results, grid, bgc_model, sediment)
+function calculate_budget(results, grid, bgc_model, sediment)
     budget = zeros(length(results.t))
     for tracer in getproperty(budget_tracers, bgc_model)
         ind = findfirst(results.tracers.=="$tracer")
@@ -29,7 +29,7 @@ function calculate_budget(results::OceanBioME.Plot.model_results, grid, bgc_mode
     return budget
 end
 
-function calculate_C_budget(results::OceanBioME.Plot.model_results, grid, bgc_model, sediment)
+function calculate_C_budget(results, grid, bgc_model, sediment)
     budget = zeros(length(results.t))
     tracers = getproperty(c_budget_tracers, bgc_model)
     for tracer in keys(tracers)
