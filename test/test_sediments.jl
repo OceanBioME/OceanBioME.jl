@@ -22,6 +22,8 @@ function test_flat_sediment(architecture)
     set!(model, P = 0.03, Z = 0.03, NO₃ = 11.0, NH₄ = 0.05, DIC = 2200.0, Alk = 2400.0, O₂ = 240.0, 
          sPOC = model.biogeochemistry.organic_redfield, sPON = 1, bPOC = model.biogeochemistry.organic_redfield, bPON = 1,
          T = 20, S = 35)
+
+    time_step!(model, 1.0, euler = true)
     
     return model
 end

@@ -24,7 +24,10 @@ function update_tendencies!(bgc::ContinuousFormBiogeochemistry{<:Any, <:FlatSedi
     arch = model.grid.architecture
 
     events = []
-    for (i, tracer) in enumerate(sediment_tracers(model.biogeochemistry.sediment_model))    
+
+    sediment = bgc.sediment_model
+
+    for (i, tracer) in enumerate(sediment_tracers(sediment))    
         field_event = launch!(arch, grid, :xy, store_sediment_tendencies!, sediment.tendencies.Gⁿ[i], sediment.tendencies.G⁻[i], dependencies = device_event(arch))
 
         push!(events, field_event)
@@ -78,7 +81,7 @@ function Soetaert(grid;
                   denitrifcaiton_params::P2 = (A = - 3.0790, B = 1.7509, C = 0.0593, D = - 0.1923, E = 0.0604, F = 0.0662),
                   anoxic_params::P3 = (A = - 3.9476, B = 2.6269, C = - 0.2426, D = -1.3349, E = 0.1826, F = - 0.0143),
                   depth = 100,
-                  solid_dep_params::P4 = (A = 0.233, B = 0.336, C = 982, D = -1.548, depth = depth)) where {FT, P1, P2, P3, P4}
+                  solid_dep_params::P4 = (A = 0.233, B = 0.336, C = 982, D = - 1.548, depth = depth)) where {FT, P1, P2, P3, P4}
 
     tracer_names = (:C_slow, :C_fast, :N_slow, :N_fast, :C_ref, :N_ref)
 
