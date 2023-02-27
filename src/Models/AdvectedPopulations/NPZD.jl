@@ -7,7 +7,8 @@ module NPZDModel
 
 export NutrientPhytoplanktonZooplanktonDetritus
 
-using Oceananigans.Biogeochemistry: AbstractContinuousFormBiogeochemistry
+using OceanBioME: ContinuousFormBiogeochemistry
+
 using Oceananigans.Units
 using Oceananigans.Advection: CenteredSecondOrder
 
@@ -26,7 +27,7 @@ import Oceananigans.Biogeochemistry: required_biogeochemical_tracers,
 
 import OceanBioME: maximum_sinking_velocity
 
-struct NutrientPhytoplanktonZooplanktonDetritus{FT, LA, W, A} <: AbstractContinuousFormBiogeochemistry
+struct NutrientPhytoplanktonZooplanktonDetritus{FT, LA, S, W, A} <: ContinuousFormBiogeochemistry{LA, S}
     # phytoplankton
     initial_photosynthetic_slope :: FT # α, 1/(W/m²)/s
     base_maximum_growth :: FT # μ₀, 1/s
@@ -46,6 +47,9 @@ struct NutrientPhytoplanktonZooplanktonDetritus{FT, LA, W, A} <: AbstractContinu
 
     # light attenuation
     light_attenuation_model :: LA
+
+    # sediment
+    sediment_model :: S
 
     # sinking
     sinking_velocities :: W
@@ -67,27 +71,29 @@ struct NutrientPhytoplanktonZooplanktonDetritus{FT, LA, W, A} <: AbstractContinu
                                                         surface_phytosynthetically_active_radiation = (x, y, t) -> 100*max(0.0, cos(t*π/(12hours))),
                                                         light_attenuation_model::LA = TwoBandPhotosyntheticallyActiveRatiation(; grid,
                                                                                         surface_PAR = surface_phytosynthetically_active_radiation),
+                                                        sediment_model::S = nothing,
                 
                                                         sinking_speeds = (P = 0.2551/day, D = 2.7489/day),
                                                         open_bottom::Bool = true,
                                                         advection_schemes::A = NamedTuple{keys(sinking_speeds)}(repeat([CenteredSecondOrder()], 
-                                                                                               length(sinking_speeds)))) where {FT, LA, A}
+                                                                                               length(sinking_speeds)))) where {FT, LA, S, A}
         sinking_velocities = setup_velocity_fields(sinking_speeds, grid, open_bottom)
         W = typeof(sinking_velocities)
-        return new{FT, LA, W, A}(initial_photosynthetic_slope,
-                                 base_maximum_growth,
-                                 nutrient_half_saturation,
-                                 base_respiration_rate,
-                                 phyto_base_mortality_rate,
-                                 maximum_grazing_rate,
-                                 grazing_half_saturation,
-                                 assimulation_efficiency,
-                                 base_excretion_rate,
-                                 zoo_base_mortality_rate,
-                                 remineralization_rate,
-                                 light_attenuation_model,
-                                 sinking_velocities,
-                                 advection_schemes)
+        return new{FT, LA, S, W, A}(initial_photosynthetic_slope,
+                                    base_maximum_growth,
+                                    nutrient_half_saturation,
+                                    base_respiration_rate,
+                                    phyto_base_mortality_rate,
+                                    maximum_grazing_rate,
+                                    grazing_half_saturation,
+                                    assimulation_efficiency,
+                                    base_excretion_rate,
+                                    zoo_base_mortality_rate,
+                                    remineralization_rate,
+                                    light_attenuation_model,
+                                    sediment_model,
+                                    sinking_velocities,
+                                    advection_schemes)
     end
 end
 
