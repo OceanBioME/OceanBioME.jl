@@ -104,7 +104,7 @@ function Soetaert(grid;
 end
 
 sediment_tracers(::Soetaert) = (:C_slow, :C_fast, :C_ref, :N_slow, :N_fast, :N_ref)
-sediment_fields(model::Soetaert) = (C_slow = model.fields.C_slow, C_fast = model.fields.C_fast, N_slow = model.fields.N_slow, N_fast = model.fields.N_fase, C_ref = model.fields.C_ref, N_ref = model.fields.N_ref)
+sediment_fields(model::Soetaert) = (C_slow = model.fields.C_slow, C_fast = model.fields.C_fast, N_slow = model.fields.N_slow, N_fast = model.fields.N_fast, C_ref = model.fields.C_ref, N_ref = model.fields.N_ref)
 
 @kernel function calculate_tendencies!(sediment::Soetaert, bgc, model)
     i, j = @index(Global, NTuple)
@@ -117,19 +117,19 @@ sediment_fields(model::Soetaert) = (C_slow = model.fields.C_slow, C_fast = model
 
     @inbounds begin
         # rates
-        Cᵐⁱⁿ = sediment.tendencies.Gⁿ.C_slow[i, j, 1] * sediment.slow_decay_rate + sediment.tendencies.C_fast[i, j, 1] * sediment.fast_decay_rate
-        Nᵐⁱⁿ = sediment.tendencies.Gⁿ.N_slow[i, j, 1] * sediment.slow_decay_rate + sediment.tendencies.N_fast[i, j, 1] * sediment.fast_decay_rate
+        Cᵐⁱⁿ = sediment.tendencies.Gⁿ.C_slow[i, j, 1] * sediment.slow_decay_rate + sediment.tendencies.Gⁿ.C_fast[i, j, 1] * sediment.fast_decay_rate
+        Nᵐⁱⁿ = sediment.tendencies.Gⁿ.N_slow[i, j, 1] * sediment.slow_decay_rate + sediment.tendencies.Gⁿ.N_fast[i, j, 1] * sediment.fast_decay_rate
         
-        k = Cᵐⁱⁿ * day / (sediment.tendencies.C_slow[i, j, 1] + sediment.tendencies.C_fast[i, j, 1])
+        k = Cᵐⁱⁿ * day / (sediment.tendencies.Gⁿ.C_slow[i, j, 1] + sediment.tendencies.Gⁿ.C_fast[i, j, 1])
 
         # sediment evolution
-        sediment.tendencies.Gⁿ.C_slow[i, j, 1] = (1 - sediment.refactory_fraction) * sediment.slow_fraction * carbon_deposition - sediment.slow_decay_rate * sediment.tendencies.C_slow[i, j, 1]
-        sediment.tendencies.Gⁿ.C_fast[i, j, 1] = (1 - sediment.refactory_fraction) * sediment.fast_fraction * carbon_deposition - sediment.slow_decay_rate * sediment.tendencies.C_fast[i, j, 1]
+        sediment.tendencies.Gⁿ.C_slow[i, j, 1] = (1 - sediment.refactory_fraction) * sediment.slow_fraction * carbon_deposition - sediment.slow_decay_rate * sediment.tendencies.Gⁿ.C_slow[i, j, 1]
+        sediment.tendencies.Gⁿ.C_fast[i, j, 1] = (1 - sediment.refactory_fraction) * sediment.fast_fraction * carbon_deposition - sediment.slow_decay_rate * sediment.tendencies.Gⁿ.C_fast[i, j, 1]
         sediment.tendencies.Gⁿ.C_ref[i, j, 1] = sediment.refactory_fraction * carbon_deposition
 
-        sediment.tendencies.N_slow[i, j, 1] = (1 - sediment.refactory_fraction) * sediment.slow_fraction * nitrogen_deposition - sediment.slow_decay_rate * sediment.tendencies.N_slow[i, j, 1]
-        sediment.tendencies.N_fast[i, j, 1] = (1 - sediment.refactory_fraction) * sediment.fast_fraction * nitrogen_deposition - sediment.slow_decay_rate * sediment.tendencies.N_fast[i, j, 1]
-        sediment.tendencies.N_ref[i, j, 1] = sediment.refactory_fraction * nitrogen_deposition
+        sediment.tendencies.Gⁿ.N_slow[i, j, 1] = (1 - sediment.refactory_fraction) * sediment.slow_fraction * nitrogen_deposition - sediment.slow_decay_rate * sediment.tendencies.Gⁿ.N_slow[i, j, 1]
+        sediment.tendencies.Gⁿ.N_fast[i, j, 1] = (1 - sediment.refactory_fraction) * sediment.fast_fraction * nitrogen_deposition - sediment.slow_decay_rate * sediment.tendencies.Gⁿ.N_fast[i, j, 1]
+        sediment.tendencies.Gⁿ.N_ref[i, j, 1] = sediment.refactory_fraction * nitrogen_deposition
 
         # efflux/influx
         O₂ = model.tracers.O₂[i, j, 1]
