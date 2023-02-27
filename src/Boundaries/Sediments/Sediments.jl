@@ -28,7 +28,7 @@ function update_tendencies!(bgc::ContinuousFormBiogeochemistry{<:Any, <:FlatSedi
     sediment = bgc.sediment_model
 
     for (i, tracer) in enumerate(sediment_tracers(sediment))    
-        field_event = launch!(arch, grid, :xy, store_sediment_tendencies!, sediment.tendencies.Gⁿ[i], sediment.tendencies.G⁻[i], dependencies = device_event(arch))
+        field_event = launch!(arch, model.grid, :xy, store_sediment_tendencies!, sediment.tendencies.Gⁿ[i], sediment.tendencies.G⁻[i], dependencies = device_event(arch))
 
         push!(events, field_event)
     end

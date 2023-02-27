@@ -21,7 +21,7 @@ function ab2_step!(model::NonhydrostaticModel{<:Any, <:Any, <:Any, <:Any, <:Any,
         field_event = step_field_kernel!(field, Δt, χ,
                                          model.timestepper.Gⁿ[i],
                                          model.timestepper.G⁻[i],
-                                         dependencies = device_event(arch))
+                                         dependencies = barrier)
 
         push!(events, field_event)
 
@@ -41,7 +41,11 @@ function ab2_step!(model::NonhydrostaticModel{<:Any, <:Any, <:Any, <:Any, <:Any,
     sediment = model.biogeochemistry.sediment_model
 
     for (i, field) in enumerate(sediment_fields(sediment))
-        field_event = launch!(arch, grid, :xy, ab2_step_sediment_field!, field, Δt, χ, sediment.tendencies.Gⁿ[i], sediment.tendencies.G⁻[i], dependencies=device_event(arch))
+        field_event = launch!(arch, model.grid, :xy, ab2_step_sediment_field!, 
+                             field, Δt, χ, 
+                             sediment.tendencies.Gⁿ[i], 
+                             sediment.tendencies.G⁻[i], 
+                             dependencies=device_event(arch))
 
         push!(events, field_event)
     end
