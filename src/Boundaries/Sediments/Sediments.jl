@@ -83,6 +83,8 @@ function Soetaert(grid;
                   depth = 100,
                   solid_dep_params::P4 = (A = 0.233, B = 0.336, C = 982, D = - 1.548, depth = depth)) where {FT, P1, P2, P3, P4}
 
+    @warn "Sediment models are an experimental feature and have not yet been validated"
+
     tracer_names = (:C_slow, :C_fast, :N_slow, :N_fast, :C_ref, :N_ref)
 
     fields = NamedTuple{tracer_names}(Tuple(CenterField(grid; indices = (:, :, 1)) for tracer in tracer_names))
