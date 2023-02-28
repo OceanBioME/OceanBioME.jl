@@ -1,10 +1,11 @@
 using OceanBioME, Oceananigans, Test
-using OceanBioME.Sediments: Soetaert
+using OceanBioME.Sediments: SimpleMultiG
+using Oceananigans.Units
 
 function test_flat_sediment(architecture)
     grid = RectilinearGrid(architecture; size=(3, 3, 3), extent=(1, 1, 10))
 
-    sediment_model = Soetaert(grid)
+    sediment_model = SimpleMultiG(grid)
 
     biogeochemistry = LOBSTER(;grid, carbonates = true, oxygen = true, variable_redfield = true, open_bottom = true, sediment_model)
 
@@ -23,7 +24,22 @@ function test_flat_sediment(architecture)
          sPOC = model.biogeochemistry.organic_redfield, sPON = 1, bPOC = model.biogeochemistry.organic_redfield, bPON = 1,
          T = 20, S = 35)
 
-    time_step!(model, 1.0, euler = true)
+    simulation = Simulation(model, Δt = 10.0, stop_time = 50days)
+
+    simulation.output_writers[:tracers] = JLD2OutputWriter(model, model.tracers,
+                                                           filename = "sediment_test_tracers.jld2",
+                                                           schedule = IterationInterval(1),
+                                                           overwrite_existing = true)
+
+    simulation.output_writers[:sediment] = JLD2OutputWriter(model, model.biogeochemistry.sediment_model.fields,
+                                                            indices = (:, :, 1),
+                                                            filename = "sediment_test_sediment.jld2",
+                                                            schedule = IterationInterval(1),
+                                                            overwrite_existing = true)
+
+    @inline progress(simulation) = "Time: $(prettytime(simulation.model.clock.time)), Iteration: $(simulation.model.clock.iteration)"
     
-    return model
+    simulation.callbacks[:progress] = Callback(progress, IterationInterval(10))
+
+    return simulation, model
 end
