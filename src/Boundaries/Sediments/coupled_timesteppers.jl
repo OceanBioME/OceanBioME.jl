@@ -1,14 +1,16 @@
 using Oceananigans: NonhydrostaticModel, prognostic_fields
 using OceanBioME: ContinuousFormBiogeochemistry
 using OceanBioME.Boundaries.Sediments: AbstractSediment
-using Oceananigans.TimeSteppers: ab2_step_field!
+using Oceananigans.TimeSteppers: ab2_step_field!, rk3_substep!
 using Oceananigans.Utils: work_layout, launch!
 using Oceananigans.Architectures: device_event
 using Oceananigans.TurbulenceClosures: implicit_step!
 
 import Oceananigans.TimeSteppers: ab2_step!
 
-function ab2_step!(model::NonhydrostaticModel{<:Any, <:Any, <:Any, <:Any, <:Any, <:Any, <:Any, <:Any, <:Any, <:Any, <:Any, <:Any, <:Any, <:Any, <:Any, <:Any, <:Any, <:ContinuousFormBiogeochemistry{<:Any, <:FlatSediment}}, Δt, χ)
+rk3_substep!(::NonhydrostaticModel{<:Any, <:Any, <:Any, <:Any, <:Any, <:Any, <:Any, <:Any, <:Any, <:Any, <:Any, <:Any, <:Any, <:Any, <:Any, <:Any, <:Any, <:ContinuousFormBiogeochemistry{<:Any, <:FlatSediment}}, args...) = error("RK3 timestepping is not currently supported with sediment models")
+
+@inline function ab2_step!(model::NonhydrostaticModel{<:Any, <:Any, <:Any, <:Any, <:Any, <:Any, <:Any, <:Any, <:Any, <:Any, <:Any, <:Any, <:Any, <:Any, <:Any, <:Any, <:Any, <:ContinuousFormBiogeochemistry{<:Any, <:FlatSediment}}, Δt, χ)
     workgroup, worksize = work_layout(model.grid, :xyz)
     arch = model.architecture
     barrier = device_event(arch)
