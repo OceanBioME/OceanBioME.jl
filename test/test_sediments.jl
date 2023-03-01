@@ -5,7 +5,7 @@ using Oceananigans.Units
 using CairoMakie
 
 function test_flat_sediment(architecture)
-    grid = RectilinearGrid(architecture; size=(3, 3, 3), extent=(10, 10, 10))
+    grid = RectilinearGrid(architecture; size=(3, 3, 3), extent=(10, 10, 40))
 
     sediment_model = SimpleMultiG(grid)
 
@@ -17,15 +17,19 @@ function test_flat_sediment(architecture)
                                  tracers = (:T, :S),
                                  closure = ScalarDiffusivity(ν = 10 ^ -3, κ = 10 ^ -3))
 
-    set!(model.biogeochemistry.sediment_model.fields.N_fast, 30.0)
-    set!(model.biogeochemistry.sediment_model.fields.N_slow, 30.0)
+    set!(model.biogeochemistry.sediment_model.fields.N_fast, 0.0230)
+    set!(model.biogeochemistry.sediment_model.fields.N_slow, 0.0807)
 
-    set!(model.biogeochemistry.sediment_model.fields.C_fast, 30.0 * model.biogeochemistry.organic_redfield)
-    set!(model.biogeochemistry.sediment_model.fields.C_slow, 30.0 * model.biogeochemistry.organic_redfield)
+    set!(model.biogeochemistry.sediment_model.fields.C_fast, 0.5893)
+    set!(model.biogeochemistry.sediment_model.fields.C_slow, 0.1677)
 
-    set!(model, P = 0.03, Z = 0.03, NO₃ = 11.0, NH₄ = 0.05, DIC = 2200.0, Alk = 2400.0, O₂ = 240.0, 
-         sPOC = model.biogeochemistry.organic_redfield, sPON = 1, bPOC = model.biogeochemistry.organic_redfield, bPON = 1,
-         T = 20, S = 35)
+    set!(model, P = 0.4686, Z = 0.5363, 
+            NO₃ = 2.3103, NH₄ = 0.0010, 
+            DIC = 2106.9, Alk = 2408.9, 
+            O₂ = 258.92, 
+            DOC = 5.3390, DON = 0.8115,
+            sPON = 0.2299, sPOC = 1.5080,
+            bPON = 0.0103, bPOC = 0.0781)
 
     simulation = Simulation(model, Δt = 700.0, stop_time = 500days)
 
