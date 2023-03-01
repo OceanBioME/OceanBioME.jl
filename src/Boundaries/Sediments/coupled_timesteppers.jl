@@ -41,7 +41,7 @@ function ab2_step!(model::NonhydrostaticModel{<:Any, <:Any, <:Any, <:Any, <:Any,
     sediment = model.biogeochemistry.sediment_model
 
     for (i, field) in enumerate(sediment_fields(sediment))
-        field_event = launch!(arch, model.grid, :xy, ab2_step_sediment_field!, 
+        field_event = launch!(arch, model.grid, :xy, ab2_step_flat_field!, 
                              field, Δt, χ, 
                              sediment.tendencies.Gⁿ[i], 
                              sediment.tendencies.G⁻[i], 
@@ -55,7 +55,7 @@ function ab2_step!(model::NonhydrostaticModel{<:Any, <:Any, <:Any, <:Any, <:Any,
     return nothing
 end
 
-@kernel function ab2_step_sediment_field!(u, Δt, χ, Gⁿ, G⁻)
+@kernel function ab2_step_flat_field!(u, Δt, χ, Gⁿ, G⁻)
     i, j = @index(Global, NTuple)
 
     T = eltype(u)

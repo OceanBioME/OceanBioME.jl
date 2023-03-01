@@ -128,11 +128,11 @@ sediment_fields(model::SimpleMultiG) = (C_slow = model.fields.C_slow, C_fast = m
         # sediment evolution
         sediment.tendencies.Gⁿ.C_slow[i, j, 1] = (1 - sediment.refactory_fraction) * sediment.slow_fraction * carbon_deposition - sediment.slow_decay_rate * sediment.fields.C_slow[i, j, 1]
         sediment.tendencies.Gⁿ.C_fast[i, j, 1] = (1 - sediment.refactory_fraction) * sediment.fast_fraction * carbon_deposition - sediment.slow_decay_rate * sediment.fields.C_fast[i, j, 1]
-        sediment.tendencies.Gⁿ.C_ref[i, j, 1] = sediment.refactory_fraction * carbon_deposition
+        sediment.tendencies.Gⁿ.C_ref[i, j, 1] = max(0.0, sediment.refactory_fraction * carbon_deposition)
 
         sediment.tendencies.Gⁿ.N_slow[i, j, 1] = (1 - sediment.refactory_fraction) * sediment.slow_fraction * nitrogen_deposition - sediment.slow_decay_rate * sediment.fields.N_slow[i, j, 1]
         sediment.tendencies.Gⁿ.N_fast[i, j, 1] = (1 - sediment.refactory_fraction) * sediment.fast_fraction * nitrogen_deposition - sediment.slow_decay_rate * sediment.fields.N_fast[i, j, 1]
-        sediment.tendencies.Gⁿ.N_ref[i, j, 1] = sediment.refactory_fraction * nitrogen_deposition
+        sediment.tendencies.Gⁿ.N_ref[i, j, 1] = max(0.0, sediment.refactory_fraction * nitrogen_deposition)
 
         # efflux/influx
         O₂ = model.tracers.O₂[i, j, 1]
