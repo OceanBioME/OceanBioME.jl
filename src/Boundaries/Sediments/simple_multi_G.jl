@@ -162,9 +162,11 @@ sediment_fields(model::SimpleMultiG) = (C_slow = model.fields.C_slow, C_fast = m
 
         pₛₒₗᵢ = sediment.solid_dep_params.A * (sediment.solid_dep_params.C * sediment.solid_dep_params.depth ^ sediment.solid_dep_params.D) ^ sediment.solid_dep_params.B
 
-        model.timestepper.Gⁿ.NH₄[i, j, 1] += Nᵐⁱⁿ * (1 - pₙᵢₜ)
-        model.timestepper.Gⁿ.NO₃[i, j, 1] += Nᵐⁱⁿ * pₙᵢₜ - Cᵐⁱⁿ * pᵈᵉⁿⁱᵗ * 0.8
-        model.timestepper.Gⁿ.DIC[i, j, 1] += Cᵐⁱⁿ
-        model.timestepper.Gⁿ.O₂[i, j, 1] -= max(0.0, (1 - pᵈᵉⁿⁱᵗ - pₐₙₒₓ * pₛₒₗᵢ) * Cᵐⁱⁿ) # this seems dodge but this model doesn't cope with anoxia properly
+        Δz = model.grid.Δzᵃᵃᶜ[1]
+
+        model.timestepper.Gⁿ.NH₄[i, j, 1] += (Nᵐⁱⁿ * (1 - pₙᵢₜ)) / Δz
+        model.timestepper.Gⁿ.NO₃[i, j, 1] += (Nᵐⁱⁿ * pₙᵢₜ - Cᵐⁱⁿ * pᵈᵉⁿⁱᵗ * 0.8) / Δz
+        model.timestepper.Gⁿ.DIC[i, j, 1] += Cᵐⁱⁿ / Δz
+        model.timestepper.Gⁿ.O₂[i, j, 1] -= max(0.0, (1 - pᵈᵉⁿⁱᵗ - pₐₙₒₓ * pₛₒₗᵢ) * Cᵐⁱⁿ / Δz) # this seems dodge but this model doesn't cope with anoxia properly
     end
 end
