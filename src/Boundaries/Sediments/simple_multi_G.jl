@@ -1,23 +1,55 @@
+"""
+    SimpleMultiG
+
+Hold the parameters and fields for a simple "multi G" single layer sediment model.
+Based on the Level 3 model described in Soetaert et al. 2000 (https://doi.org/10.1016/S0012-8252(00)00004-0).
+"""
+
 struct SimpleMultiG{FT, P1, P2, P3, P4, F, TE} <: FlatSediment
-    fast_decay_rate :: FT
-    slow_decay_rate :: FT
+             fast_decay_rate :: FT
+             slow_decay_rate :: FT
 
-    fast_redfield :: FT
-    slow_redfield :: FT
+               fast_redfield :: FT
+               slow_redfield :: FT
 
-    fast_fraction :: FT
-    slow_fraction :: FT
-    refactory_fraction :: FT
+               fast_fraction :: FT
+               slow_fraction :: FT
+          refactory_fraction :: FT
 
     nitrate_oxidation_params :: P1
-    denitrifcaiton_params :: P2
-    anoxic_params :: P3
-    solid_dep_params :: P4
+       denitrifcaiton_params :: P2
+               anoxic_params :: P3
+            solid_dep_params :: P4
 
-    fields :: F
-    tendencies :: TE
+                      fields :: F
+                  tendencies :: TE
 end
 
+"""
+    SimpleMultiG(grid; 
+                 fast_decay_rate::FT = 2/day,
+                 slow_decay_rate::FT = 0.2/day,
+                 fast_redfield::FT = 0.1509,
+                 slow_redfield::FT = 0.13,
+                 fast_fraction::FT = 0.74,
+                 slow_fraction::FT = 0.26,
+                 refactory_fraction::FT = 0.1,
+                 nitrate_oxidation_params::P1 = (A = - 1.9785, B = 0.2261, C = -0.0615, D = -0.0289, E = - 0.36109, F = - 0.0232),
+                 denitrifcaiton_params::P2 = (A = - 3.0790, B = 1.7509, C = 0.0593, D = - 0.1923, E = 0.0604, F = 0.0662),
+                 anoxic_params::P3 = (A = - 3.9476, B = 2.6269, C = - 0.2426, D = -1.3349, E = 0.1826, F = - 0.0143),
+                 depth = abs(znode(Face(), 1, grid)),
+                 solid_dep_params::P4 = (A = 0.233, B = 0.336, C = 982, D = - 1.548, depth = depth))
+
+Returns a single layer "multi G" sediment model (`SimpleMultiG`) on `grid` where parameters can be optionally specified.
+
+The model is a single layer (i.e. does not include porous diffusion) model with three classes of sediment organic matter
+which decay at three different rates (fast, slow, refactory). The nitrifcation/denitrifcation/anoxic mineralisation
+fractions default to the parameterisation of Soetaert et al. 2000 (https://doi.org/10.1016/S0012-8252(00)00004-0).
+
+This model has not yet been validated or compared to observational data. The variety of degridation processes is likely 
+to be strongly dependent on oxygen availability (https://bg.copernicus.org/articles/6/1273/2009/bg-6-1273-2009.pdf)
+so it will therefore be important to also thoghroy validate the oxygen model (also currently limited).
+"""
 function SimpleMultiG(grid; 
                       fast_decay_rate::FT = 2/day,
                       slow_decay_rate::FT = 0.2/day,
@@ -26,11 +58,30 @@ function SimpleMultiG(grid;
                       fast_fraction::FT = 0.74,
                       slow_fraction::FT = 0.26,
                       refactory_fraction::FT = 0.1,
-                      nitrate_oxidation_params::P1 = (A = - 1.9785, B = 0.2261, C = -0.0615, D = -0.0289, E = - 0.36109, F = - 0.0232),
-                      denitrifcaiton_params::P2 = (A = - 3.0790, B = 1.7509, C = 0.0593, D = - 0.1923, E = 0.0604, F = 0.0662),
-                      anoxic_params::P3 = (A = - 3.9476, B = 2.6269, C = - 0.2426, D = -1.3349, E = 0.1826, F = - 0.0143),
-                      depth = 100,
-                      solid_dep_params::P4 = (A = 0.233, B = 0.336, C = 982, D = - 1.548, depth = depth)) where {FT, P1, P2, P3, P4}
+                      nitrate_oxidation_params::P1 = (A = - 1.9785, 
+                                                      B = 0.2261, 
+                                                      C = -0.0615, 
+                                                      D = -0.0289, 
+                                                      E = - 0.36109, 
+                                                      F = - 0.0232),
+                      denitrifcaiton_params::P2 = (A = - 3.0790, 
+                                                   B = 1.7509, 
+                                                   C = 0.0593, 
+                                                   D = - 0.1923, 
+                                                   E = 0.0604, 
+                                                   F = 0.0662),
+                      anoxic_params::P3 = (A = - 3.9476, 
+                                           B = 2.6269, 
+                                           C = - 0.2426, 
+                                           D = -1.3349, 
+                                           E = 0.1826, 
+                                           F = - 0.0143),
+                      depth = abs(znode(Face(), 1, grid)),
+                      solid_dep_params::P4 = (A = 0.233, 
+                                              B = 0.336, 
+                                              C = 982, 
+                                              D = - 1.548, 
+                                              depth = depth)) where {FT, P1, P2, P3, P4}
 
     @warn "Sediment models are an experimental feature and have not yet been validated"
 
@@ -55,10 +106,10 @@ function SimpleMultiG(grid;
                                                    tendencies)
 end
 
-sediment_tracers(::Soetaert) = (:C_slow, :C_fast, :C_ref, :N_slow, :N_fast, :N_ref)
-sediment_fields(model::Soetaert) = (C_slow = model.fields.C_slow, C_fast = model.fields.C_fast, N_slow = model.fields.N_slow, N_fast = model.fields.N_fast, C_ref = model.fields.C_ref, N_ref = model.fields.N_ref)
+sediment_tracers(::SimpleMultiG) = (:C_slow, :C_fast, :C_ref, :N_slow, :N_fast, :N_ref)
+sediment_fields(model::SimpleMultiG) = (C_slow = model.fields.C_slow, C_fast = model.fields.C_fast, N_slow = model.fields.N_slow, N_fast = model.fields.N_fast, C_ref = model.fields.C_ref, N_ref = model.fields.N_ref)
 
-@kernel function calculate_tendencies!(sediment::Soetaert, bgc, model)
+@kernel function calculate_tendencies!(sediment::SimpleMultiG, bgc, model)
     i, j = @index(Global, NTuple)
 
     carbon_deposition = div_Uc(i, j, 1, model.grid, biogeochemical_advection_scheme(bgc, Val(:sPOC)), biogeochemical_drift_velocity(bgc, Val(:sPOC)), model.tracers.sPOC) + 
@@ -114,6 +165,6 @@ sediment_fields(model::Soetaert) = (C_slow = model.fields.C_slow, C_fast = model
         model.timestepper.Gⁿ.NH₄[i, j, 1] += Nᵐⁱⁿ * (1 - pₙᵢₜ)
         model.timestepper.Gⁿ.NO₃[i, j, 1] += Nᵐⁱⁿ * pₙᵢₜ - Cᵐⁱⁿ * pᵈᵉⁿⁱᵗ * 0.8
         model.timestepper.Gⁿ.DIC[i, j, 1] += Cᵐⁱⁿ
-        model.timestepper.Gⁿ.O₂[i, j, 1] -= (1 - pᵈᵉⁿⁱᵗ - pₐₙₒₓ * pₛₒₗᵢ) * Cᵐⁱⁿ
+        model.timestepper.Gⁿ.O₂[i, j, 1] -= max(0.0, (1 - pᵈᵉⁿⁱᵗ - pₐₙₒₓ * pₛₒₗᵢ) * Cᵐⁱⁿ) # this seems dodge but this model doesn't cope with anoxia properly
     end
 end

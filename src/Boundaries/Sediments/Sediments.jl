@@ -8,8 +8,9 @@ using Oceananigans.Architectures: device_event, device
 using Oceananigans.Utils: launch!
 using Oceananigans.Advection: div_Uc
 using Oceananigans.Units: day
-using Oceananigans.Fields: CenterField
+using Oceananigans.Fields: CenterField, Face
 using Oceananigans.Biogeochemistry: biogeochemical_drift_velocity, biogeochemical_advection_scheme
+using Oceananigans.Grids: znode
 
 import Oceananigans.Biogeochemistry: update_tendencies!
 
