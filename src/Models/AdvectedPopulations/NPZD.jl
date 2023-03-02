@@ -7,7 +7,7 @@ module NPZDModel
 
 export NutrientPhytoplanktonZooplanktonDetritus
 
-using Oceananigans.Biogeochemistry: AbstractContinuousFormBiogeochemistry, 
+using Oceananigans.Biogeochemistry: AbstractContinuousFormBiogeochemistry
 using Oceananigans.Units
 using Oceananigans.Advection: CenteredSecondOrder
 
