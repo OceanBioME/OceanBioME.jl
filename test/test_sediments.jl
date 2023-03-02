@@ -1,15 +1,19 @@
-using OceanBioME, Oceananigans, Test
+using OceanBioME, Oceananigans, Test, JLD2
 using OceanBioME.Sediments: SimpleMultiG
 using Oceananigans.Units
 
 using CairoMakie
 
 function test_flat_sediment(architecture)
-    grid = RectilinearGrid(architecture; size=(3, 3, 3), extent=(10, 10, 40))
+    grid = RectilinearGrid(architecture; size=(3, 3, 3), extent=(10, 10, 200))
 
     sediment_model = SimpleMultiG(grid)
 
-    biogeochemistry = LOBSTER(;grid, carbonates = true, oxygen = true, variable_redfield = true, open_bottom = true, sediment_model)
+    biogeochemistry = LOBSTER(; grid, 
+                                carbonates = true, oxygen = true, variable_redfield = true, 
+                                open_bottom = true, 
+                                surface_phytosynthetically_active_radiation = (x, y, t) -> 80,
+                                sediment_model)
 
     model = NonhydrostaticModel(;grid, biogeochemistry, 
                                  boundary_conditions = (DIC = FieldBoundaryConditions(top = GasExchange(; gas = :CO₂)), 
@@ -31,20 +35,20 @@ function test_flat_sediment(architecture)
             sPON = 0.2299, sPOC = 1.5080,
             bPON = 0.0103, bPOC = 0.0781)
 
-    simulation = Simulation(model, Δt = 700.0, stop_time = 500days)
+    simulation = Simulation(model, Δt = 500.0, stop_time = 300days)
 
     simulation.output_writers[:tracers] = JLD2OutputWriter(model, model.tracers,
                                                            filename = "sediment_test_tracers.jld2",
-                                                           schedule = IterationInterval(1),
+                                                           schedule = TimeInterval(10minutes),
                                                            overwrite_existing = true)
 
     simulation.output_writers[:sediment] = JLD2OutputWriter(model, model.biogeochemistry.sediment_model.fields,
                                                             indices = (:, :, 1),
                                                             filename = "sediment_test_sediment.jld2",
-                                                            schedule = IterationInterval(1),
+                                                            schedule = TimeInterval(10minutes),
                                                             overwrite_existing = true)
 
-    @inline progress(simulation) = @info "Time: $(prettytime(simulation.model.clock.time)), Iteration: $(simulation.model.clock.iteration)"
+    @inline progress(simulation) = @info "Time: $(prettytime(simulation.model.clock.time)), Iteration: $(simulation.model.clock.iteration), Walltime: $(prettytime(simulation.run_wall_time))"
     
     simulation.callbacks[:progress] = Callback(progress, IterationInterval(10))
 
@@ -61,31 +65,66 @@ function test_flat_sediment(architecture)
     return simulation, model
 end
 
-function load_timeseries(simulation)
+function load_timeseries(; simulation, tracer_path = simulation.output_writers[:tracers].filepath, sediment_path = simulation.output_writers[:sediment].filepath, end_it = nothing)
     tracer_timeseries = NamedTuple()
-    for tracer in keys(model.tracers)
-        if !(tracer in [:T, :S])
+
+    file = jldopen(tracer_path)
+
+    iterations = keys(file["timeseries/t"])
+
+    if isnothing(end_it) end_it = length(iterations) end
+
+    end_idx = findmin(abs.(parse.(Int, iterations) .- end_it))[2]
+
+    for tracer in Symbol.(keys(file["timeseries"]))
+        if !(tracer in [:T, :S, :t])
             @info tracer
-            tracer_timeseries = merge(tracer_timeseries, NamedTuple{(tracer, )}((FieldTimeSeries(simulation.output_writers[:tracers].filepath, "$tracer")[2, 2, 1:3, 1:end], )))
+            data = zeros(end_idx, 3)
+            for (i, it) in enumerate(iterations[1:end_idx])
+                data[i, :] = file["timeseries/$tracer/$it"][2, 2, 1:3]
+            end
+            tracer_timeseries = merge(tracer_timeseries, NamedTuple{(tracer, )}((data, )))
         end
     end
 
+    zn = znodes(Center, file["serialized/grid"])[1:file["serialized/grid"].Nz]
+
+    close(file)
+
     sediment_timeseries = NamedTuple()
-    for tracer in keys(model.biogeochemistry.sediment_model.fields)
-        @info tracer
-        sediment_timeseries = merge(sediment_timeseries, NamedTuple{(tracer, )}((FieldTimeSeries(simulation.output_writers[:sediment].filepath, "$tracer")[2, 2, 1, 1:end], )))
+
+    file = jldopen(sediment_path)
+
+    iterations = keys(file["timeseries/t"])
+
+    for tracer in Symbol.(keys(file["timeseries"]))
+        if !(tracer in [:T, :S, :t])
+            @info tracer
+            data = zeros(end_idx)
+            for (i, it) in enumerate(iterations[1:end_idx])
+                data[i] = file["timeseries/$tracer/$it"][2, 2, 1]
+            end
+            sediment_timeseries = merge(sediment_timeseries, NamedTuple{(tracer, )}((data, )))
+        end
     end
 
-    return tracer_timeseries, sediment_timeseries
+    times = zeros(end_idx)
+    for (i, it) in enumerate(iterations[1:end_idx])
+        times[i] = file["timeseries/t/$it"]
+    end
+
+    close(file)
+
+    return tracer_timeseries, sediment_timeseries, times, zn
 end
 
-function plot_timeseries(simulation, tracer_timeseries, sediment_timeseries; times = FieldTimeSeries(simulation.output_writers[:tracers].filepath, "P").times)
+function plot_timeseries(simulation, tracer_timeseries, sediment_timeseries; times = FieldTimeSeries(simulation.output_writers[:tracers].filepath, "P").times, zn = znodes(Center, simulation.model.grid)[1:simulation.model.grid.Nz])
     fig = Figure(resolution = (1600, 1600))
 
     for (idx, (name, values)) in enumerate(pairs(tracer_timeseries))
         @info "$name"
         ax = Axis(fig[idx % 5, ceil(Int, idx / 5) * 2 - 1], title = "$name", xlabel = "Time (days)", ylabel = "Depth (m)")
-        hm = heatmap!(ax, times ./ days, znodes(Center, simulation.model.grid), values')
+        hm = heatmap!(ax, times ./ days, zn, values, colorrange = (minimum(values), maximum(values)))
         Colorbar(fig[idx % 5, ceil(Int, idx / 5) * 2], hm, label = "$name Concentration (mmol / m³)")
     end
 
@@ -97,3 +136,12 @@ function plot_timeseries(simulation, tracer_timeseries, sediment_timeseries; tim
 
     return fig
 end
+#=
+fig = Figure(resolution = (1600, 1000))
+volume(fig[1, 1], xnodes(Face, u.grid)[1:u.grid.Nx], ynodes(Center, u.grid)[1:u.grid.Ny], znodes(Center, u.grid)[1:u.grid.Nz], u_plt, colorrange = (-uₘ, uₘ))
+GLMakie.record(fig, "ovs_fig.mp4", 1:length(u.times)) do i
+    n[] = i
+    msg = string("Plotting frame ", i, " of ", length(u.times))
+    print(msg * " \r")
+    #ax.title = "t=$(prettytime(u.times[i]))"
+end=#
