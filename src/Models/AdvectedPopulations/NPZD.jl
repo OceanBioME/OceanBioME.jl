@@ -23,7 +23,8 @@ import Oceananigans.Biogeochemistry: required_biogeochemical_tracers,
                                      required_biogeochemical_auxiliary_fields,
                                      update_biogeochemical_state!,
                                      biogeochemical_drift_velocity,
-                                     biogeochemical_advection_scheme
+                                     biogeochemical_advection_scheme, 
+				     biogeochemical_auxiliary_fields
 
 import OceanBioME: maximum_sinking_velocity
 
@@ -202,6 +203,6 @@ show(io::IO, model::NutrientPhytoplanktonZooplanktonDetritus{FT, LA, W, A}) wher
                 " Sinking Velocities:", "\n", show_sinking_velocities(model.sinking_velocities))
 
 @inline maximum_sinking_velocity(bgc::NutrientPhytoplanktonZooplanktonDetritus) = maximum(abs, bgc.sinking_velocities.D.w)
-@inline biogeochemical_auxiliary_fieilds(bgc::NutrientPhytoplanktonZooplanktonDetritus) = biogeochemical_auxiliary_fieilds(bgc.light_attenuation_model)
+@inline biogeochemical_auxiliary_fields(bgc::NutrientPhytoplanktonZooplanktonDetritus) = biogeochemical_auxiliary_fields(bgc.light_attenuation_model)
 
 end # module

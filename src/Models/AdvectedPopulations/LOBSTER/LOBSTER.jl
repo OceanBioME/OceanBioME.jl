@@ -55,7 +55,7 @@ import Oceananigans.Biogeochemistry: required_biogeochemical_tracers,
                                      biogeochemical_drift_velocity,
                                      biogeochemical_advection_scheme,
                                      update_biogeochemical_state!,
-                                     biogeochemical_auxiliary_fieilds
+                                     biogeochemical_auxiliary_fields
 
 import OceanBioME: maximum_sinking_velocity
 
@@ -428,7 +428,7 @@ show(io::IO, model::LOBSTER{FT, LA, S, Val{B}, W, A}) where {FT, LA, S, B, W, A}
 
 @inline maximum_sinking_velocity(bgc::LOBSTER) = maximum(abs, bgc.sinking_velocities.bPOM.w)
 
-@inline biogeochemical_auxiliary_fieilds(bgc::LOBSTER) = biogeochemical_auxiliary_fieilds(bgc.light_attenuation_model)
+@inline biogeochemical_auxiliary_fields(bgc::LOBSTER) = biogeochemical_auxiliary_fields(bgc.light_attenuation_model)
 
 include("fallbacks.jl")
 
