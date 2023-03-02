@@ -119,7 +119,7 @@ function ScaleNegativeTracers(; tracers, scalefactors = NamedTuple{tracers}(ones
     return ScaleNegativeTracers(tracers, scalefactors, warn)
 end
 
-function (scale::ScaleNegativeTracers)(model)
+@inline function (scale::ScaleNegativeTracers)(model)
     workgroup, worksize = work_layout(model.grid, :xyz)
     scale_for_negs_kernel! = scale_for_negs!(device(model.grid.architecture), workgroup, worksize)
     model_fields = fields(model)
