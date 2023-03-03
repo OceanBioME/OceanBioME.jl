@@ -4,7 +4,7 @@ using Oceananigans.Units
 
 using CairoMakie
 
-function test_flat_sediment(architecture)
+function test_flat_sediment(architecture; timestepper = :QuasiAdamsBashforth2)
     grid = RectilinearGrid(architecture; size=(3, 3, 3), extent=(10, 10, 200))
 
     sediment_model = SimpleMultiG(grid)
@@ -19,7 +19,8 @@ function test_flat_sediment(architecture)
                                  boundary_conditions = (DIC = FieldBoundaryConditions(top = GasExchange(; gas = :CO₂)), 
                                                         O₂ = FieldBoundaryConditions(top = GasExchange(; gas = :O₂))),
                                  tracers = (:T, :S),
-                                 closure = ScalarDiffusivity(ν = 10 ^ -3, κ = 10 ^ -3))
+                                 closure = ScalarDiffusivity(ν = 10 ^ -3, κ = 10 ^ -3),
+                                 timestepper)
 
     set!(model.biogeochemistry.sediment_model.fields.N_fast, 0.0230)
     set!(model.biogeochemistry.sediment_model.fields.N_slow, 0.0807)
@@ -38,13 +39,13 @@ function test_flat_sediment(architecture)
     simulation = Simulation(model, Δt = 500.0, stop_time = 10years)
 
     simulation.output_writers[:tracers] = JLD2OutputWriter(model, model.tracers,
-                                                           filename = "sediment_test_tracers.jld2",
+                                                           filename = "sediment_test_tracers_rk3.jld2",
                                                            schedule = TimeInterval(10minutes),
                                                            overwrite_existing = true)
 
     simulation.output_writers[:sediment] = JLD2OutputWriter(model, model.biogeochemistry.sediment_model.fields,
                                                             indices = (:, :, 1),
-                                                            filename = "sediment_test_sediment.jld2",
+                                                            filename = "sediment_test_sediment_rk3.jld2",
                                                             schedule = TimeInterval(10minutes),
                                                             overwrite_existing = true)
 
