@@ -35,7 +35,7 @@ function test_flat_sediment(architecture)
             sPON = 0.2299, sPOC = 1.5080,
             bPON = 0.0103, bPOC = 0.0781)
 
-    simulation = Simulation(model, Δt = 500.0, stop_time = 300days)
+    simulation = Simulation(model, Δt = 500.0, stop_time = 10years)
 
     simulation.output_writers[:tracers] = JLD2OutputWriter(model, model.tracers,
                                                            filename = "sediment_test_tracers.jld2",
@@ -65,23 +65,26 @@ function test_flat_sediment(architecture)
     return simulation, model
 end
 
-function load_timeseries(; simulation, tracer_path = simulation.output_writers[:tracers].filepath, sediment_path = simulation.output_writers[:sediment].filepath, end_it = nothing)
+function load_timeseries(; simulation, tracer_path = simulation.output_writers[:tracers].filepath, sediment_path = simulation.output_writers[:sediment].filepath, end_idx = nothing)
     tracer_timeseries = NamedTuple()
 
     file = jldopen(tracer_path)
 
     iterations = keys(file["timeseries/t"])
 
-    if isnothing(end_it) end_it = length(iterations) end
-
-    end_idx = findmin(abs.(parse.(Int, iterations) .- end_it))[2]
+    if isnothing(end_idx) end_idx = length(iterations) end
 
     for tracer in Symbol.(keys(file["timeseries"]))
         if !(tracer in [:T, :S, :t])
             @info tracer
             data = zeros(end_idx, 3)
+            valid_its = keys(file["timeseries/$tracer"])
             for (i, it) in enumerate(iterations[1:end_idx])
-                data[i, :] = file["timeseries/$tracer/$it"][2, 2, 1:3]
+                if it in valid_its
+                    data[i, :] = file["timeseries/$tracer/$it"][2, 2, 1:3]
+                else
+                    data[i, :] .= NaN
+                end
             end
             tracer_timeseries = merge(tracer_timeseries, NamedTuple{(tracer, )}((data, )))
         end
@@ -118,20 +121,23 @@ function load_timeseries(; simulation, tracer_path = simulation.output_writers[:
     return tracer_timeseries, sediment_timeseries, times, zn
 end
 
-function plot_timeseries(simulation, tracer_timeseries, sediment_timeseries; times = FieldTimeSeries(simulation.output_writers[:tracers].filepath, "P").times, zn = znodes(Center, simulation.model.grid)[1:simulation.model.grid.Nz])
+function plot_timeseries(simulation, tracer_timeseries, sediment_timeseries; times = FieldTimeSeries(simulation.output_writers[:tracers].filepath, "P").times, zn = znodes(Center, simulation.model.grid)[1:simulation.model.grid.Nz], start_idx = 1)
     fig = Figure(resolution = (1600, 1600))
+
+    # since they seems to be wrong ...
+    times = [1:size(tracer_timeseries.P)[1];] * 10minutes/day
 
     for (idx, (name, values)) in enumerate(pairs(tracer_timeseries))
         @info "$name"
         ax = Axis(fig[idx % 5, ceil(Int, idx / 5) * 2 - 1], title = "$name", xlabel = "Time (days)", ylabel = "Depth (m)")
-        hm = heatmap!(ax, times ./ days, zn, values, colorrange = (minimum(values), maximum(values)))
+        hm = heatmap!(ax, times[start_idx:end], zn, values[start_idx:end, :], colorrange = (minimum(values[start_idx:end, :][isfinite.(values[start_idx:end, :])]), maximum(values[start_idx:end, :][isfinite.(values[start_idx:end, :])])))
         Colorbar(fig[idx % 5, ceil(Int, idx / 5) * 2], hm, label = "$name Concentration (mmol / m³)")
     end
 
     for (idx, (name, values)) in enumerate(pairs(sediment_timeseries))
         @info "$name"
         ax = Axis(fig[(idx + length(tracer_timeseries)) % 5, ceil(Int, (idx + length(tracer_timeseries)) / 5) * 2 - 1], title = "$name", xlabel = "Time (days)", ylabel = "Concentration (mmol / m²)")
-        hm = lines!(ax, times ./ days, values)
+        hm = lines!(ax, times[start_idx:end], values[start_idx:end])
     end
 
     return fig

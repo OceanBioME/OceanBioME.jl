@@ -112,11 +112,9 @@ sediment_fields(model::SimpleMultiG) = (C_slow = model.fields.C_slow, C_fast = m
 @kernel function calculate_tendencies!(sediment::SimpleMultiG, bgc, model)
     i, j = @index(Global, NTuple)
 
-    carbon_deposition = div_Uc(i, j, 1, model.grid, biogeochemical_advection_scheme(bgc, Val(:sPOC)), biogeochemical_drift_velocity(bgc, Val(:sPOC)), model.tracers.sPOC) + 
-                        div_Uc(i, j, 1, model.grid, biogeochemical_advection_scheme(bgc, Val(:bPOC)), biogeochemical_drift_velocity(bgc, Val(:bPOC)), model.tracers.bPOC)
+    carbon_deposition = -(biogeochemical_drift_velocity(bgc, Val(:sPOC)).w[i, j, 1] * model.tracers.sPOC[i, j, 1] + biogeochemical_drift_velocity(bgc, Val(:bPOC)).w[i, j, 1] * model.tracers.bPOC[i, j, 1])
                         
-    nitrogen_deposition = div_Uc(i, j, 1, model.grid, biogeochemical_advection_scheme(bgc, Val(:sPON)), biogeochemical_drift_velocity(bgc, Val(:sPON)), model.tracers.sPON) + 
-                          div_Uc(i, j, 1, model.grid, biogeochemical_advection_scheme(bgc, Val(:bPON)), biogeochemical_drift_velocity(bgc, Val(:bPON)), model.tracers.bPON)
+    nitrogen_deposition = -(biogeochemical_drift_velocity(bgc, Val(:sPON)).w[i, j, 1] * model.tracers.sPON[i, j, 1] + biogeochemical_drift_velocity(bgc, Val(:bPON)).w[i, j, 1] * model.tracers.bPON[i, j, 1])
 
     @inbounds begin
         # rates
@@ -124,7 +122,7 @@ sediment_fields(model::SimpleMultiG) = (C_slow = model.fields.C_slow, C_fast = m
         Nᵐⁱⁿ = sediment.fields.N_slow[i, j, 1] * sediment.slow_decay_rate + sediment.fields.N_fast[i, j, 1] * sediment.fast_decay_rate
         
         k = Cᵐⁱⁿ * day / (sediment.fields.C_slow[i, j, 1] + sediment.fields.C_fast[i, j, 1])
-
+        
         # sediment evolution
         sediment.tendencies.Gⁿ.C_slow[i, j, 1] = (1 - sediment.refactory_fraction) * sediment.slow_fraction * carbon_deposition - sediment.slow_decay_rate * sediment.fields.C_slow[i, j, 1]
         sediment.tendencies.Gⁿ.C_fast[i, j, 1] = (1 - sediment.refactory_fraction) * sediment.fast_fraction * carbon_deposition - sediment.slow_decay_rate * sediment.fields.C_fast[i, j, 1]
@@ -159,6 +157,11 @@ sediment_fields(model::SimpleMultiG) = (C_slow = model.fields.C_slow, C_fast = m
                     sediment.anoxic_params.D * log(k) + 
                     sediment.anoxic_params.E * log(O₂) * log(k) + 
                     sediment.anoxic_params.F * log(NO₃) ^ 2) / (Cᵐⁱⁿ * day)
+
+        if isnan(pₐₙₒₓ)
+            println("$(Cᵐⁱⁿ), $(k), $(O₂), $(NO₃)")
+            error("fucn")
+        end
 
         pₛₒₗᵢ = sediment.solid_dep_params.A * (sediment.solid_dep_params.C * sediment.solid_dep_params.depth ^ sediment.solid_dep_params.D) ^ sediment.solid_dep_params.B
 
