@@ -62,8 +62,8 @@ component_pages = [
 ]
 
 numerical_pages = [
-    "Individuals" => "numerical_implimentation/individuals.md",
-    "Positivity preservation" => "numerical_implimentation/positivity-preservation.md"
+    "Individuals" => "numerical_implementation/individuals.md",
+    "Positivity preservation" => "numerical_implementation/positivity-preservation.md"
 ]
 
 
@@ -83,7 +83,7 @@ pages = [
     "Quick start" => "quick_start.md",
     "Model components and setup" => component_pages,
     "Examples" => example_pages,
-    "Numerical implimentation" => numerical_pages,
+    "Numerical implementation" => numerical_pages,
     "Gallery" => "gallery.md",
     "References" => "references.md",
     "Appendix" => appendix_pages
