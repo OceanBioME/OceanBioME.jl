@@ -106,6 +106,22 @@ function SimpleMultiG(grid;
                                                    tendencies)
 end
 
+adapt_structure(to, sediment::SimpleMultiG) = 
+    SimpleMultiG(sediment.fast_decay_rate,
+                 sediment.slow_decay_rate,
+                 sediment.fast_redfield,
+                 sediment.slow_redfield,
+                 sediment.fast_fraction,
+                 sediment.slow_fraction,
+                 sediment.refactory_fraction,
+                 sediment.nitrate_oxidation_params,
+                 sediment.denitrifcaiton_params,
+                 sediment.anoxic_params,
+                 sediment.solid_dep_params,
+                 NamedTuple{keys(sediment.fields)}(ntuple(n -> adapt_structure(to, sediment.fields[n]), length(sediment.fields))),
+                 (Gⁿ = NamedTuple{keys(sediment.tendencies.Gⁿ)}(ntuple(n -> adapt_structure(to, sediment.tendencies.Gⁿ[n]), length(sediment.tendencies.Gⁿ))),
+                  G⁻ = NamedTuple{keys(sediment.tendencies.G⁻)}(ntuple(n -> adapt_structure(to, sediment.tendencies.G⁻[n]), length(sediment.tendencies.G⁻)))))
+                  
 sediment_tracers(::SimpleMultiG) = (:C_slow, :C_fast, :C_ref, :N_slow, :N_fast, :N_ref)
 sediment_fields(model::SimpleMultiG) = (C_slow = model.fields.C_slow, C_fast = model.fields.C_fast, N_slow = model.fields.N_slow, N_fast = model.fields.N_fast, C_ref = model.fields.C_ref, N_ref = model.fields.N_ref)
 

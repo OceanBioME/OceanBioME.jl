@@ -13,6 +13,7 @@ using Oceananigans.Biogeochemistry: biogeochemical_drift_velocity, biogeochemica
 using Oceananigans.Grids: znode
 
 import Oceananigans.Biogeochemistry: update_tendencies!
+import Adapt: adapt_structure
 
 abstract type AbstractSediment end
 abstract type FlatSediment <: AbstractSediment end
