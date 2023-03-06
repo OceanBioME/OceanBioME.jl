@@ -48,17 +48,16 @@ function ΣGᶜ(model, carbonates, variable_redfield)
 
     return OC + IC + LC
 end
+
 function test_LOBSTER(grid, carbonates, oxygen, variable_redfield, sinking, open_bottom, n_timesteps)
     PAR = CenterField(grid)
 
     if sinking
         model = NonhydrostaticModel(;grid,
-                                     biogeochemistry = LOBSTER(;grid, carbonates, oxygen, variable_redfield, open_bottom),
-                                     auxiliary_fields = (; PAR))
+                                     biogeochemistry = LOBSTER(;grid, carbonates, oxygen, variable_redfield, open_bottom))
     else
         model = NonhydrostaticModel(;grid,
-                                     biogeochemistry = LOBSTER(;grid, carbonates, oxygen, variable_redfield, sinking_speeds = NamedTuple()),
-                                     auxiliary_fields = (; PAR))
+                                     biogeochemistry = LOBSTER(;grid, carbonates, oxygen, variable_redfield, sinking_speeds = NamedTuple()))
     end
 
     # correct tracers and auxiliary fields have been setup, and order has not changed
@@ -75,7 +74,6 @@ function test_LOBSTER(grid, carbonates, oxygen, variable_redfield, sinking, open
 
     @test Oceananigans.Biogeochemistry.required_biogeochemical_tracers(model.biogeochemistry) == required_tracers
     @test all(tracer ∈ keys(model.tracers) for tracer in required_tracers)
-    @test :PAR ∈ keys(model.auxiliary_fields)
 
     # checks model works with zero values
     time_step!(model, 1.0)

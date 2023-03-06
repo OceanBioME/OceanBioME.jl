@@ -42,9 +42,7 @@ bgc_pages = [
 ]
 
 sed_pages = [
-    "Overview" => "model_components/sediment/index.md",
-    "Wang et al. 2020" => "model_components/sediment/wang.md",
-    "Soetaert et al. 2000" => "model_components/sediment/soetaert.md",
+    "Overview" => "model_components/sediment.md",
 ]
 
 individuals_pages = [
@@ -62,8 +60,8 @@ component_pages = [
 ]
 
 numerical_pages = [
-    "Individuals" => "numerical_implimentation/individuals.md",
-    "Positivity preservation" => "numerical_implimentation/positivity-preservation.md"
+    "Individuals" => "numerical_implementation/individuals.md",
+    "Positivity preservation" => "numerical_implementation/positivity-preservation.md"
 ]
 
 
@@ -83,7 +81,7 @@ pages = [
     "Quick start" => "quick_start.md",
     "Model components and setup" => component_pages,
     "Examples" => example_pages,
-    "Numerical implimentation" => numerical_pages,
+    "Numerical implementation" => numerical_pages,
     "Gallery" => "gallery.md",
     "References" => "references.md",
     "Appendix" => appendix_pages
@@ -95,7 +93,7 @@ pages = [
 
 format = Documenter.HTML(
     collapselevel = 1,
-    prettyurls = false,#get(ENV, "CI", nothing) == "true",
+    prettyurls = true,#get(ENV, "CI", nothing) == "true",
     canonical = "https://OceanBioME.github.io/OceanBioME/stable/",
     mathengine = MathJax3(),
 )

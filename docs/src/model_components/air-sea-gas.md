@@ -7,16 +7,19 @@ Currently, the parameters for CO₂ and oxygen are included, but it would be ver
 It is straightforward to set up a boundary as an air-sea gas exchange:
 
 ```
-dic_exchange_boundary = Boundaries.airseasetup(:CO₂)
+CO₂_flux = GasExchange(; gas = :CO₂)
 ```
 
-Where the symbol specifies the exchanged gas (currently `:CO₂` or `:O₂`). This can then be passed in the setup of a BGC model:
+Where the symbol specifies the exchanged gas (currently `:CO₂` or `:O₂`). This can then be passed in the setup of a BGC model, for example:
 
 ```
-bgc = Setup.Oceananigans(:LOBSTER, grid, LOBSTER.defaults, topboundaries=(DIC=dic_bc, ))
+model = NonhydrostaticModel(; grid,
+                              biogeochemistry = LOBSTER(; grid,
+                                                          carbonates = true),
+                              boundary_conditions = (DIC = FieldBoundaryConditions(top = CO₂_flux), ),)
 ```
 
 If the temperature and salinity are not included in the model they can be passed as functions:
 ```
-dic_exchange_boundary = Boundaries.airseasetup(:CO₂, forcings=(T=t_function, S=s_function))
+CO₂_flux = GasExchange(; gas = :CO₂, temperature = t_function, salinity = s_function)
 ```
