@@ -66,21 +66,25 @@ end
 ##### Infastructure to rescale negative values
 #####
 
-@kernel function scale_for_negs!(fields, scalefactors, warn)
+@kernel function scale_for_negs!(fields, tracers, scalefactors)
     i, j, k = @index(Global, NTuple)
     t, p = 0.0, 0.0
-    @unroll for (name, field) in pairs(fields)
-        t += @inbounds field[i, j, k] * scalefactors[name]
-        if field[i, j, k] > 0
-            p += @inbounds field[i, j, k] * scalefactors[name]
+    @unroll for (idx, tracer) in enumerate(tracers)
+        field = @inbounds fields[tracer][i, j, k]
+        scalefactor = @inbounds scalefactors[idx]
+
+        t += field * scalefactor
+        if field > 0
+            p += field * scalefactor
         end
     end 
-    @unroll for field in fields
-        if @inbounds field[i, j, k] > 0
-            @inbounds field[i, j, k] *= t / p
+    @unroll for tracer in tracers
+        field = @inbounds fields[tracer][i, j, k]
+        
+        if field > 0
+            field *= t / p
         else
-            if warn @warn "Scaling negative" end
-            @inbounds field[i, j, k] = 0
+            field = 0
         end
     end
 end
@@ -111,10 +115,13 @@ This is a better but imperfect way to prevent numerical errors causing negative 
 We plan to impliment positivity preserving timestepping in the future as the perfect alternative.
 """
 
-function ScaleNegativeTracers(; tracers, scalefactors = NamedTuple{tracers}(ones(length(tracers))), warn = false)
+function ScaleNegativeTracers(; model, tracers, scalefactors = NamedTuple{tracers}(ones(length(tracers))), warn = false)
     if length(scalefactors) != length(tracers)
         error("Incorrect number of scale factors provided")
     end
+
+    tracers = ntuple(n -> indexin([tracers[n]], [keys(model.tracers)...])[1], length(tracers))
+    scalefactors = values(scalefactors)
 
     return ScaleNegativeTracers(tracers, scalefactors, warn)
 end
@@ -122,8 +129,7 @@ end
 @inline function (scale::ScaleNegativeTracers)(model)
     workgroup, worksize = work_layout(model.grid, :xyz)
     scale_for_negs_kernel! = scale_for_negs!(device(model.grid.architecture), workgroup, worksize)
-    model_fields = fields(model)
-    event = scale_for_negs_kernel!(model_fields[scale.tracers], scale.scalefactors, scale.warn)
+    event = scale_for_negs_kernel!(values(model.tracers), scale.tracers, scale.scalefactors)
     wait(event)
 end
 @inline (scale::ScaleNegativeTracers)(sim::Simulation) = scale(sim.model) 

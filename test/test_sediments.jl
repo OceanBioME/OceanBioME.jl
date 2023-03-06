@@ -36,7 +36,7 @@ function test_flat_sediment(architecture; timestepper = :QuasiAdamsBashforth2)
             sPON = 0.2299, sPOC = 1.5080,
             bPON = 0.0103, bPOC = 0.0781)
 
-    simulation = Simulation(model, Δt = 500.0, stop_time = 10years)
+    simulation = Simulation(model, Δt = 800.0, stop_time = 10years)
 
     simulation.output_writers[:tracers] = JLD2OutputWriter(model, model.tracers,
                                                            filename = "sediment_test_tracers_rk3.jld2",
@@ -53,11 +53,11 @@ function test_flat_sediment(architecture; timestepper = :QuasiAdamsBashforth2)
     
     simulation.callbacks[:progress] = Callback(progress, IterationInterval(10))
 
-    scale_negative_tracers = ScaleNegativeTracers(tracers = (:NO₃, :NH₄, :P, :Z, :sPON, :bPON, :DON))
+    scale_negative_tracers = ScaleNegativeTracers(; model, tracers = (:NO₃, :NH₄, :P, :Z, :sPON, :bPON, :DON))
     simulation.callbacks[:neg] = Callback(scale_negative_tracers; callsite = UpdateStateCallsite())
     
     plankton_redfield = model.biogeochemistry.phytoplankton_redfield
-    scale_negative_carbon_tracers = ScaleNegativeTracers(tracers = (:P, :Z, :DOC, :sPOC, :bPOC, :DIC), 
+    scale_negative_carbon_tracers = ScaleNegativeTracers(; model, tracers = (:P, :Z, :DOC, :sPOC, :bPOC, :DIC), 
                                                          scalefactors = (P = plankton_redfield, 
                                                                          Z = plankton_redfield, 
                                                                          DOC = 1, sPOC = 1, bPOC = 1, DIC = 1))
@@ -152,3 +152,19 @@ GLMakie.record(fig, "ovs_fig.mp4", 1:length(u.times)) do i
     print(msg * " \r")
     #ax.title = "t=$(prettytime(u.times[i]))"
 end=#
+
+       fig = Figure(resolution = (1600, 1600))
+       l = Label(fig[1, 1:4], "t = 0.0")
+       v1 = volume(fig[2, 1], xnodes(Face, grid)[1:grid.Nx], ynodes(Center, grid)[1:grid.Ny], znodes(Center, grid)[1:grid.Nz], u_plt, colorrange = (-uₘ, uₘ), colormap=:vik); Colorbar(fig[2, 2], v1.plot, label = "u (m/s)")
+       v2 = volume(fig[3, 1], xnodes(Center, grid)[1:grid.Nx], ynodes(Center, grid)[1:grid.Ny], znodes(Center, grid)[1:grid.Nz], NO₃_plt, colorrange = (Nₘᵢ, Nₘₐ), colormap = Reverse(:bamako), algorithm = :mip)
+       Colorbar(fig[3, 2], v2.plot, label = "NO₃ (mmol N / m³)")
+       v3 = volume(fig[2, 3], xnodes(Center, grid)[1:grid.Nx], ynodes(Center, grid)[1:grid.Ny], znodes(Center, grid)[1:grid.Nz], P_plt, colorrange = (Pₘᵢ, Pₘₐ), colormap = Reverse(:bamako), algorithm = :mip)
+       Colorbar(fig[2, 4], v3.plot, label = "P (mmol N / m³)")
+       v4 = volume(fig[3, 3], xnodes(Center, grid)[1:grid.Nx], ynodes(Center, grid)[1:grid.Ny], znodes(Center, grid)[1:grid.Nz], POC_plt, colorrange = (POCₘᵢ, POCₘₐ), colormap = Reverse(:bamako), algorithm = :mip)
+       Colorbar(fig[3, 4], v4.plot, label = "POC (mmol C / m³)")
+       record(fig, "ovs_fig.mp4", 1:length(u.times); framerate = 10) do i
+           n[] = i
+           msg = string("Plotting frame ", i, " of ", length(u.times))
+           print(msg * " \r")
+           l.text = "t=$(prettytime(u.times[i]))"
+       end

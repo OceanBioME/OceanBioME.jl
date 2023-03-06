@@ -98,6 +98,8 @@ simulation.output_writers[:profiles] = JLD2OutputWriter(model,
                                                         schedule = TimeInterval(1day), 
                                                         overwrite_existing = true)
 
+# make tendency callback to force no NaNs in tendencies 
+
 scale_negative_tracers = ScaleNegativeTracers(tracers = (:NO₃, :NH₄, :P, :Z, :sPOM, :bPOM, :DOM))
 simulation.callbacks[:neg] = Callback(scale_negative_tracers; callsite = UpdateStateCallsite())
 
