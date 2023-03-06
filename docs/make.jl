@@ -42,9 +42,7 @@ bgc_pages = [
 ]
 
 sed_pages = [
-    "Overview" => "model_components/sediment/index.md",
-    "Wang et al. 2020" => "model_components/sediment/wang.md",
-    "Soetaert et al. 2000" => "model_components/sediment/soetaert.md",
+    "Overview" => "model_components/sediment.md",9i
 ]
 
 individuals_pages = [
@@ -95,7 +93,7 @@ pages = [
 
 format = Documenter.HTML(
     collapselevel = 1,
-    prettyurls = false,#get(ENV, "CI", nothing) == "true",
+    prettyurls = true,#get(ENV, "CI", nothing) == "true",
     canonical = "https://OceanBioME.github.io/OceanBioME/stable/",
     mathengine = MathJax3(),
 )
