@@ -24,7 +24,7 @@ import Oceananigans.Biogeochemistry: required_biogeochemical_tracers,
                                      update_biogeochemical_state!,
                                      biogeochemical_drift_velocity,
                                      biogeochemical_advection_scheme, 
-				     biogeochemical_auxiliary_fields
+				                     biogeochemical_auxiliary_fields
 
 import OceanBioME: maximum_sinking_velocity
 

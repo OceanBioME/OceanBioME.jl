@@ -31,6 +31,8 @@ using StructArrays, Roots
 using OceanBioME.Particles: ActiveLagrangianParticles
 using Oceananigans.Units: second,minute, minutes, hour, hours, day, days, year, years
 
+import Adapt: adapt_structure
+
 #####
 ##### Photosynthesis
 #####
