@@ -42,7 +42,7 @@ bgc_pages = [
 ]
 
 sed_pages = [
-    "Overview" => "model_components/sediment.md",9i
+    "Overview" => "model_components/sediment.md",
 ]
 
 individuals_pages = [
