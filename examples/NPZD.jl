@@ -76,11 +76,8 @@ progress(sim) = @printf("Iteration: %d, time: %s, Δt: %s\n",
  
 simulation.callbacks[:progress] = Callback(progress, IterationInterval(100))
 
-filename = "npdz_less_N"
+filename = "npdz"
 simulation.output_writers[:profiles] = JLD2OutputWriter(model, merge(model.velocities, model.tracers, model.auxiliary_fields), filename = "$filename.jld2", schedule = TimeInterval(1hour), overwrite_existing=true)
-#simulation.callbacks[:neg] = Callback(scale_negative_tracers!; parameters=(conserved_group=(:N, :P, :Z, :D), warn=false), callsite=TendencyCallsite())
-#simulation.callbacks[:neg2] = Callback(scale_negative_tracers!; parameters=(conserved_group=(:N, :P, :Z, :D), warn=false), callsite=UpdateStateCallsite())
-#simulation.callbacks[:timestep] = Callback(update_timestep!, IterationInterval(1), 0.05, TimeStepCallsite())
 
 # ## Run!
 # Finally we run the simulation
