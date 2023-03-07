@@ -31,6 +31,8 @@ using StructArrays, Roots
 using OceanBioME.Particles: ActiveLagrangianParticles
 using Oceananigans.Units: second,minute, minutes, hour, hours, day, days, year, years
 
+import Adapt: adapt_structure
+
 #####
 ##### Photosynthesis
 #####
@@ -385,6 +387,6 @@ function setup(; n, x₀, y₀, z₀, A₀, N₀, C₀, latitude,
                                      tracked_fields = tracers, 
                                      coupled_fields = coupled,
                                      scalefactor = scalefactor, 
-                                     custom_dynamics=custom_dynamics)
+                                     custom_dynamics = custom_dynamics)
 end
 end

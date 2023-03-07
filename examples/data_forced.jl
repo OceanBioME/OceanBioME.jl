@@ -127,31 +127,31 @@ air_sea_CO₂_flux = zeros(size(P)[4])
 carbon_export = zeros(size(P)[4])
 for (i, t) in enumerate(times)
     air_sea_CO₂_flux[i] = CO₂_flux.condition.parameters(0.0, 0.0, t, DIC[1, 1, end, i], Alk[1, 1, end, i], t_function(1, 1, 0, t), s_function(1, 1, 0, t)) 
-    carbon_export[i] = abs(z_faces(Nz - 20)) * model.biogeochemistry.organic_redfield * (sPOM[1, 1, end - 20, i] * model.biogeochemistry.sinking_velocities.sPOM.w[1, 1, end - 20] .+ bPOM[1, 1, end - 20, i] * model.biogeochemistry.sinking_velocities.bPOM.w[1, 1, end - 20])
+    carbon_export[i] = model.biogeochemistry.organic_redfield * (sPOM[1, 1, end - 20, i] * model.biogeochemistry.sinking_velocities.sPOM.w[1, 1, end - 20] .+ bPOM[1, 1, end - 20, i] * model.biogeochemistry.sinking_velocities.bPOM.w[1, 1, end - 20])
 end
 
 using CairoMakie
-f=Figure(backgroundcolor=RGBf(1, 1, 1), fontsize=30, resolution = (1920, 1050))
+f=Figure(backgroundcolor=RGBf(1, 1, 1), fontsize=30, resolution = (1920, 1600))
 
 axP = Axis(f[1, 1:2], ylabel="z (m)", xlabel="Time (days)", title="Phytoplankton concentration (mmol N/m³)")
-hmP = heatmap!(times./days, float.(z[end-23:end]), float.(P[1, 1, end-23:end, 1:101])', colormap=:batlow)
+hmP = heatmap!(times./days, float.(z[end-23:end]), float.(P[1, 1, end-23:end, 1:end])', colormap=:batlow)
 cbP = Colorbar(f[1, 3], hmP)
 
 axNO₃ = Axis(f[1, 4:5], ylabel="z (m)", xlabel="Time (days)", title="Nitrate concentration (mmol N/m³)")
-hmNO₃ = heatmap!(times./days, float.(z[end-23:end]), float.(NO₃[1, 1, end-23:end, 1:101])', colormap=:batlow)
+hmNO₃ = heatmap!(times./days, float.(z[end-23:end]), float.(NO₃[1, 1, end-23:end, 1:end])', colormap=:batlow)
 cbNO₃ = Colorbar(f[1, 6], hmNO₃)
 
 axZ = Axis(f[2, 1:2], ylabel="z (m)", xlabel="Time (days)", title="Zooplankton concentration (mmol N/m³)")
-hmZ = heatmap!(times./days, float.(z[end-23:end]), float.(Z[1, 1, end-23:end, 1:101])', colormap=:batlow)
+hmZ = heatmap!(times./days, float.(z[end-23:end]), float.(Z[1, 1, end-23:end, 1:end])', colormap=:batlow)
 cbZ = Colorbar(f[2, 3], hmZ)
 
 axD = Axis(f[2, 4:5], ylabel="z (m)", xlabel="Time (days)", title="Detritus concentration (mmol N/m³)")
-hmD = heatmap!(times./days, float.(z[end-23:end]), float.(sPOM[1, 1, end-23:end, 1:101])' .+ float.(bPOM[1, 1, end-23:end, 1:101])', colormap=:batlow)
+hmD = heatmap!(times./days, float.(z[end-23:end]), float.(sPOM[1, 1, end-23:end, 1:end])' .+ float.(bPOM[1, 1, end-23:end, 1:end])', colormap=:batlow)
 cbD = Colorbar(f[2, 6], hmD)
 
-axfDIC = Axis(f[3, 1:4], xlabel="Time (days)", title="Air-sea CO₂ flux and Sinking", ylabel="Flux (kgCO₂/m²/year)")
-hmfDIC = lines!(times ./ days, air_sea_CO₂_flux .* (12 + 16 * 2) .* year /(1000 * 1000), label="Air-sea flux")
-hmfExp = lines!(times ./ days, carbon_export .* (12 + 16 * 2) .* year / (1000 * 1000), label="Sinking export")
+axfDIC = Axis(f[3, 1:6], xlabel="Time (days)", title="Air-sea CO₂ flux and Sinking", ylabel="Flux (kgCO₂/m²/year)")
+hmfDIC = lines!(times ./ days, cumsum(air_sea_CO₂_flux) .* (12 + 16 * 2) .* year / (1000 * 1000), label="Air-sea flux")
+hmfExp = lines!(times ./ days, cumsum(carbon_export) .* (12 + 16 * 2) .* year / (1000 * 1000), label="Sinking export")
 
 f[3, 5] = Legend(f, axfDIC, "", framevisible = false)
 
