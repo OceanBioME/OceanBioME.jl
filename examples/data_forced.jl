@@ -131,7 +131,7 @@ for (i, t) in enumerate(times)
 end
 
 using CairoMakie
-f=Figure(backgroundcolor=RGBf(1, 1, 1), fontsize=30, resolution = (1920, 1050))
+f=Figure(backgroundcolor=RGBf(1, 1, 1), fontsize=30, resolution = (1920, 1600))
 
 axP = Axis(f[1, 1:2], ylabel="z (m)", xlabel="Time (days)", title="Phytoplankton concentration (mmol N/m³)")
 hmP = heatmap!(times./days, float.(z[end-23:end]), float.(P[1, 1, end-23:end, 1:end])', colormap=:batlow)
