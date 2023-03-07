@@ -149,7 +149,7 @@ axD = Axis(f[2, 4:5], ylabel="z (m)", xlabel="Time (days)", title="Detritus conc
 hmD = heatmap!(times./days, float.(z[end-23:end]), float.(sPOM[1, 1, end-23:end, 1:end])' .+ float.(bPOM[1, 1, end-23:end, 1:end])', colormap=:batlow)
 cbD = Colorbar(f[2, 6], hmD)
 
-axfDIC = Axis(f[3, 1:4], xlabel="Time (days)", title="Air-sea CO₂ flux and Sinking", ylabel="Flux (kgCO₂/m²/year)")
+axfDIC = Axis(f[3, 1:6], xlabel="Time (days)", title="Air-sea CO₂ flux and Sinking", ylabel="Flux (kgCO₂/m²/year)")
 hmfDIC = lines!(times ./ days, cumsum(air_sea_CO₂_flux) .* (12 + 16 * 2) .* year / (1000 * 1000), label="Air-sea flux")
 hmfExp = lines!(times ./ days, cumsum(carbon_export) .* (12 + 16 * 2) .* year / (1000 * 1000), label="Sinking export")
 

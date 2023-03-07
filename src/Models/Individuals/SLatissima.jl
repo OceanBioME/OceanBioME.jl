@@ -387,6 +387,6 @@ function setup(; n, x₀, y₀, z₀, A₀, N₀, C₀, latitude,
                                      tracked_fields = tracers, 
                                      coupled_fields = coupled,
                                      scalefactor = scalefactor, 
-                                     custom_dynamics=custom_dynamics)
+                                     custom_dynamics = custom_dynamics)
 end
 end

@@ -8,7 +8,7 @@ using Oceananigans.LagrangianParticleTracking: update_field_property!
 include("tracer_tendencies.jl")
 
 # some how this is much faster for any length(args), but wrote because ntuple method is only fast for length(args)<11 as hard coded https://github.com/JuliaLang/julia/blob/master/base/ntuple.jl
-@inline getargs(args, p) = length(args) < 11 ? ntuple(n->args[n][p], length(args)) : map(n -> arguments[n][p], 1:length(args))
+@inline getargs(args, p) = length(args) < 11 ? ntuple(n->args[n][p], length(args)) : map(n -> args[n][p], 1:length(args))
 
 @kernel function solve_growth!(particles, equation::Function, arguments, params, prognostic, diagnostic, Δt, t)
     p = @index(Global)
@@ -88,7 +88,6 @@ function infinitesimal_particle_field_coupling!(model)
 end
 
 @inline no_dynamics(args...) = nothing
-
 
 """
     Particles.ActiveLagrangianParticles(particles::StructArray;
