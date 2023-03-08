@@ -30,7 +30,8 @@ module SLatissima
 using StructArrays, Roots
 using OceanBioME.Particles: ActiveLagrangianParticles
 using Oceananigans.Units: second,minute, minutes, hour, hours, day, days, year, years
-
+using Oceananigans: CPU
+using Oceananigans.Architectures: arch_array
 import Adapt: adapt_structure
 
 #####
@@ -89,7 +90,7 @@ end
 
 function equations(x::AbstractFloat, y::AbstractFloat, z::AbstractFloat, t::AbstractFloat, A::AbstractFloat, N::AbstractFloat, C::AbstractFloat, NO₃::AbstractFloat, NH₄::AbstractFloat, T::AbstractFloat, S::AbstractFloat, irr::AbstractFloat, u::AbstractFloat, params, Δt::AbstractFloat)
     if !iszero(A)
-        irr /= 3.99e-10*545e12/(1day) #W/m²/s to einstein/m²/day
+        irr /= 3.99e-10 * 545e12/(1day) #W / m²/ s to einstein / m² / day
         p = _p(T, irr, params)
         e = _e(C, params)
         ν  = _ν(A, params)
@@ -273,7 +274,7 @@ default_coupling = (NO₃ = :j_NO₃, )
 optional_tracer_coupling = (NH₄ = :j_NH₄, DIC = :j_DIC, DON = :eⁿ, DOC = :eᶜ, bPON = :νⁿ, bPOC = :νᶜ, O₂ = :j_OXY)
 
 # Expands initial conditions to fill particles
-function defineparticles(initials, n)
+function defineparticles(initials, n, arch)
     x̄₀ = []
     for var in [:x₀, :y₀, :z₀, :A₀, :N₀, :C₀]
         vals=getproperty(initials, var)
@@ -285,7 +286,7 @@ function defineparticles(initials, n)
             throw(ArgumentError("Invalid initial values given for $var, must be a single number or vector of length n"))
         end
     end
-    return StructArray{Particle}((x̄₀[1], x̄₀[2], x̄₀[3], zeros(n), zeros(n), zeros(n), x̄₀[4], x̄₀[5], x̄₀[6], [zeros(n) for i in 1:13]...))
+    return StructArray{Particle}(tuple([arch_array(arch, x) for x in (x̄₀[1], x̄₀[2], x̄₀[3], zeros(n), zeros(n), zeros(n), x̄₀[4], x̄₀[5], x̄₀[6], [zeros(n) for i in 1:13]...)]...))
 end
 
 @inline no_dynamics(args...) = nothing
@@ -320,6 +321,7 @@ Keyword arguments
 """
 
 function setup(; n, x₀, y₀, z₀, A₀, N₀, C₀, latitude,
+                 arch = CPU(),
                  scalefactor = 1.0, 
                  T = nothing, 
                  S = nothing, 
@@ -337,15 +339,28 @@ function setup(; n, x₀, y₀, z₀, A₀, N₀, C₀, latitude,
     end
 
     # fills out particles in case we weren't given arrays
-    particles = defineparticles((x₀=x₀, y₀=y₀, z₀=z₀, A₀=A₀, N₀=N₀, C₀=C₀), n)
+    particles = defineparticles((x₀=x₀, y₀=y₀, z₀=z₀, A₀=A₀, N₀=N₀, C₀=C₀), n, arch)
 
     property_dependencies = (:A, :N, :C, :NO₃, :NH₄, :PAR)
-    λ_arr = generate_seasonality(latitude)
+    λ_arr = arch_array(arch, generate_seasonality(latitude))
     parameters = merge(paramset, (λ=λ_arr, ))
     diagnostic_properties = (:A, :N, :C, :j_NO₃, :j_NH₄, :j_DIC, :j_OXY, :eⁿ, :eᶜ, :νⁿ, :νᶜ) # all diagnostic for the sake of enforcing C limit
 
-    if isnothing(T) property_dependencies = (property_dependencies..., :T, :S) else parameters = merge(parameters, (T=T, S=S)) end
-    if isnothing(urel) property_dependencies = (property_dependencies..., :u, :v, :w) else parameters = merge(parameters, (urel = urel, )) end
+    additional_tracked_fields = NamedTuple()
+
+    if isnothing(T) 
+        property_dependencies = (property_dependencies..., :T, :S)
+        additional_tracked_fields = merge(additional_tracked_fields, (T = :T, S = :S))
+    else 
+        parameters = merge(parameters, (;T, S)) 
+    end
+
+    if isnothing(urel) 
+        property_dependencies = (property_dependencies..., :u, :v, :w)
+        additional_tracked_fields = merge(additional_tracked_fields, (u = :u, v = :v, w = :w)) 
+    else 
+        parameters = merge(parameters, (urel = urel, )) 
+    end
 
     prognostic_properties = (:u, :v, :w) #for when I impliment dynamics
 
@@ -384,7 +399,7 @@ function setup(; n, x₀, y₀, z₀, A₀, N₀, C₀, latitude,
                                      equation_parameters = parameters, 
                                      prognostic = prognostic_properties, 
                                      diagnostic = diagnostic_properties, 
-                                     tracked_fields = tracers, 
+                                     tracked_fields = merge(tracers, additional_tracked_fields), 
                                      coupled_fields = coupled,
                                      scalefactor = scalefactor, 
                                      custom_dynamics = custom_dynamics)
