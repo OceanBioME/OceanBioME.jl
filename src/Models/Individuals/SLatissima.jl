@@ -42,75 +42,6 @@ using Oceananigans.Fields: fractional_indices, _interpolate, datatuple
 
 import Oceananigans.Biogeochemistry: update_tendencies!
 import Oceananigans.LagrangianParticleTracking: update_particle_properties!, _advect_particles!
-
-@inline function photosynthesis(T, PAR, p)
-    Tk = T + 273.15
-
-    pₘₐₓ = p.photosynthesis_at_ref_temp_1 * 
-            exp(p.photosynthesis_arrhenius_temp / p.photosynthesis_ref_temp_1 -
-                p.photosynthesis_arrhenius_temp / Tk) / 
-            (1 + exp(p.photosynthesis_low_arrhenius_temp / Tk -
-                     p.photosynthesis_low_arrhenius_temp / p.photosynthesis_low_temp) 
-               + exp(p.photosynthesis_high_arrhenius_temp / p.photosynthesis_high_temp -
-                     p.photosynthesis_high_arrhenius_temp / Tk))
-
-    β = find_zero(β_func, (0, 0.1), Bisection(); p = (; pₘₐₓ, α = p.photosynthetic_efficiency, I_sat = p.saturation_irradiance))
-
-    pₛ = p.photosynthetic_efficiency * p.saturation_irradiance / log(1 + p.photosynthetic_efficiency / β)
-
-    return pₛ * (1 - exp(- p.photosynthetic_efficiency * PAR / pₛ)) * exp(-β * PAR / pₛ) 
-end
-
-@inline β_func(x, p) = p.pₘₐₓ - (p.α * p.I_sat / log(1 + p.α / x)) * 
-                                (p.α / (p.α + x)) * (x / (p.α + x))^(x / p.α)
-
-@inline exudation(C, p) = 1 - exp(p.exudation * (p.minimum_carbon_reserve - C))
-
-@inline erosion(A, p) = 1e-6 * exp(p.erosion * A) / (1 + 1e-6 * (exp(p.erosion * A) - 1))
-
-@inline respiration(T, μ, j, p) = (p.respiration_reference_A * (μ / p.maximum_specific_growth_rate + 
-                                                                j / p.maximum_nitrate_uptake) +
-                                   p.respiration_reference_B) * 
-                                  exp(p.respiration_arrhenius_temp / p.respiration_ref_temp_1 - 
-                                      p.respiration_ref_temp_2 / (T + 273.15))
-
-#####
-##### Growth limitation
-#####
-
-@inline f_curr(u, p) = p.current_1 * (1 - exp(-u / p.current_3)) + p.current_2
-
-@inline f_area(a, p) = p.growth_adjustement_1 * exp(-(a / p.growth_rate_adjustement)^2) + p.growth_adjustement_2
-
-@inline function f_temp(T, p)
-    # should probably parameterise these limits
-    if -1.8 <= T < 10 
-        return 0.08 * T + 0.2
-    elseif 10 <= T <= 15
-        return 1
-    elseif 15 < T <= 19
-        return 19 / 4 - T / 4
-    elseif T > 19
-        return 0
-    else
-        return 0
-    end
-end
-
-@inline f_photo(λ, p) = p.photoperiod_1 * (1 + sign(λ) * abs(λ) ^ 0.5) + p.photoperiod_2
-
-@inline function day_length(n, ϕ)
-    n -= 171
-    M = mod((356.5291 + 0.98560028 * n), 360)
-    C = 1.9148 * sin(M * π / 180) + 0.02 * sin(2 * M * π / 180) + 0.0003 * sin(3 * M * π / 180)
-    λ = mod(M + C + 180 + 102.9372, 360)
-    δ = asin(sin(λ * π / 180) * sin(23.44 * π / 180))
-    ω = (sin(-0.83 * π / 180) * sin(ϕ * π / 180) * sin(δ))/(cos(ϕ * π / 180) * cos(δ))
-    return ω / 180
-end
-
-@inline normed_day_length_change(n, ϕ) = (day_length(n, ϕ) - day_length(n - 1, ϕ)) / (day_length(76, ϕ) - day_length(75, ϕ))
-
 @inline no_dynamics(args...) = nothing
 
 Base.@kwdef struct SLatissima{FT, U, T, S, P, F} <: BiogeochemicalParticles
@@ -170,8 +101,8 @@ Base.@kwdef struct SLatissima{FT, U, T, S, P, F} <: BiogeochemicalParticles
 
     #properties
     A :: P = [30.0]
-    N :: P = [0.1]
-    C :: P = [0.01]
+    N :: P = [0.01]
+    C :: P = [0.1]
 
     #feedback
     nitrate_uptake :: P = [0.0]
@@ -361,6 +292,75 @@ end
         end
     end
 end
+
+
+@inline function photosynthesis(T, PAR, p)
+    Tk = T + 273.15
+
+    pₘₐₓ = p.photosynthesis_at_ref_temp_1 * 
+            exp(p.photosynthesis_arrhenius_temp / p.photosynthesis_ref_temp_1 -
+                p.photosynthesis_arrhenius_temp / Tk) / 
+            (1 + exp(p.photosynthesis_low_arrhenius_temp / Tk -
+                     p.photosynthesis_low_arrhenius_temp / p.photosynthesis_low_temp) 
+               + exp(p.photosynthesis_high_arrhenius_temp / p.photosynthesis_high_temp -
+                     p.photosynthesis_high_arrhenius_temp / Tk))
+
+    β = find_zero(β_func, (0, 0.1), Bisection(); p = (; pₘₐₓ, α = p.photosynthetic_efficiency, I_sat = p.saturation_irradiance))
+
+    pₛ = p.photosynthetic_efficiency * p.saturation_irradiance / log(1 + p.photosynthetic_efficiency / β)
+
+    return pₛ * (1 - exp(- p.photosynthetic_efficiency * PAR / pₛ)) * exp(-β * PAR / pₛ) 
+end
+
+@inline β_func(x, p) = p.pₘₐₓ - (p.α * p.I_sat / log(1 + p.α / x)) * 
+                                (p.α / (p.α + x)) * (x / (p.α + x))^(x / p.α)
+
+@inline exudation(C, p) = 1 - exp(p.exudation * (p.minimum_carbon_reserve - C))
+
+@inline erosion(A, p) = 1e-6 * exp(p.erosion * A) / (1 + 1e-6 * (exp(p.erosion * A) - 1))
+
+@inline respiration(T, μ, j, p) = (p.respiration_reference_A * (μ / p.maximum_specific_growth_rate + 
+                                                                j / (p.maximum_nitrate_uptake + p.maximum_ammonia_uptake)) +
+                                   p.respiration_reference_B) * 
+                                  exp(p.respiration_arrhenius_temp / p.respiration_ref_temp_1 - p.respiration_arrhenius_temp / (T + 273.15))
+
+#####
+##### Growth limitation
+#####
+
+@inline f_curr(u, p) = p.current_1 * (1 - exp(-u / p.current_3)) + p.current_2
+
+@inline f_area(a, p) = p.growth_adjustement_1 * exp(-(a / p.growth_rate_adjustement)^2) + p.growth_adjustement_2
+
+@inline function f_temp(T, p)
+    # should probably parameterise these limits
+    if -1.8 <= T < 10 
+        return 0.08 * T + 0.2
+    elseif 10 <= T <= 15
+        return 1
+    elseif 15 < T <= 19
+        return 19 / 4 - T / 4
+    elseif T > 19
+        return 0
+    else
+        return 0
+    end
+end
+
+@inline f_photo(λ, p) = p.photoperiod_1 * (1 + sign(λ) * abs(λ) ^ 0.5) + p.photoperiod_2
+
+@inline function day_length(n, ϕ)
+    n -= 171
+    M = mod((356.5291 + 0.98560028 * n), 360)
+    C = 1.9148 * sin(M * π / 180) + 0.02 * sin(2 * M * π / 180) + 0.0003 * sin(3 * M * π / 180)
+    λ = mod(M + C + 180 + 102.9372, 360)
+    δ = asin(sin(λ * π / 180) * sin(23.44 * π / 180))
+    ω = (sin(-0.83 * π / 180) * sin(ϕ * π / 180) * sin(δ))/(cos(ϕ * π / 180) * cos(δ))
+    return ω / 180
+end
+
+@inline normed_day_length_change(n, ϕ) = (day_length(n, ϕ) - day_length(n - 1, ϕ)) / (day_length(76, ϕ) - day_length(75, ϕ))
+
 
 @inline function get_arguments(x, y, z, t, particles, bgc, model)
     bgc_tracers = required_biogeochemical_tracers(bgc)
