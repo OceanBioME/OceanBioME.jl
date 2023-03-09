@@ -42,9 +42,9 @@ import Adapt: adapt_structure
 
 @inline function _p(temp, irr, params)
     p_max = params.P_1 * exp(params.T_AP / params.T_P1 - params.T_AP / (temp + 273.15)) / (1 + exp(params.T_APL / (temp + 273.15) - params.T_APL / params.T_PL) + exp(params.T_APH / params.T_PH - params.T_APH / (temp + 273.15)))
-    β = find_zero(β_func, (0, 0.1), Bisection(); p=merge(params, (; p_max)))
+    β = find_zero(β_func, (0, 0.1), Bisection(); p = merge(params, (; p_max)))
     p_s = params.α * params.I_sat / log(1 + params.α / β)
-    return p_s * (1 - exp(-params.α * irr / p_s)) * exp(-β * irr / p_s) 
+    return p_s * (1 - exp(- params.α * irr / p_s)) * exp(-β * irr / p_s) 
 end
 
 #####
@@ -88,7 +88,7 @@ end
 ##### Growth equations
 #####
 
-function equations(x::AbstractFloat, y::AbstractFloat, z::AbstractFloat, t::AbstractFloat, A::AbstractFloat, N::AbstractFloat, C::AbstractFloat, NO₃::AbstractFloat, NH₄::AbstractFloat, T::AbstractFloat, S::AbstractFloat, irr::AbstractFloat, u::AbstractFloat, params, Δt::AbstractFloat)
+function equations(x::AbstractFloat, y::AbstractFloat, z::AbstractFloat, t::AbstractFloat, A::AbstractFloat, N::AbstractFloat, C::AbstractFloat, NO₃::AbstractFloat, NH₄::AbstractFloat, irr::AbstractFloat, T::AbstractFloat, S::AbstractFloat, u::AbstractFloat, params, Δt::AbstractFloat)
     if !iszero(A)
         irr /= 3.99e-10 * 545e12/(1day) #W / m²/ s to einstein / m² / day
         p = _p(T, irr, params)
@@ -143,13 +143,13 @@ function equations(x::AbstractFloat, y::AbstractFloat, z::AbstractFloat, t::Abst
 end
 
 #fixed urel, T and S functions
-equations(x::AbstractFloat, y::AbstractFloat, z::AbstractFloat, t::AbstractFloat, A::AbstractFloat, N::AbstractFloat, C::AbstractFloat, NO₃::AbstractFloat, NH₄::AbstractFloat, irr::AbstractFloat, params, Δt::AbstractFloat) = equations(x, y, z, t, A, N, C, NO₃, NH₄, params.T(x, y, z, t), params.S(x, y, z, t), irr, params.urel, params, Δt)
+equations(x::AbstractFloat, y::AbstractFloat, z::AbstractFloat, t::AbstractFloat, A::AbstractFloat, N::AbstractFloat, C::AbstractFloat, NO₃::AbstractFloat, NH₄::AbstractFloat, irr::AbstractFloat, params, Δt::AbstractFloat) = equations(x, y, z, t, A, N, C, NO₃, NH₄, irr, params.T(x, y, z, t), params.S(x, y, z, t), params.urel, params, Δt)
 #fixed urel, T and S fields
-equations(x::AbstractFloat, y::AbstractFloat, z::AbstractFloat, t::AbstractFloat, A::AbstractFloat, N::AbstractFloat, C::AbstractFloat, NO₃::AbstractFloat, NH₄::AbstractFloat, T::AbstractFloat, S::AbstractFloat, irr::AbstractFloat, params, Δt::AbstractFloat) = equations(x, y, z, t, A, N, C, NO₃, NH₄, params.T(x, y, z, t), params.S(x, y, z, t), irr, params.urel, params, Δt)
+equations(x::AbstractFloat, y::AbstractFloat, z::AbstractFloat, t::AbstractFloat, A::AbstractFloat, N::AbstractFloat, C::AbstractFloat, NO₃::AbstractFloat, NH₄::AbstractFloat, irr::AbstractFloat, T::AbstractFloat, S::AbstractFloat, params, Δt::AbstractFloat) = equations(x, y, z, t, A, N, C, NO₃, NH₄, irr, T, S, params.urel, params, Δt)
 #tracked u, T and S functions can not be done (like this) bcs same number of variables as main function
  #equations(x::AbstractFloat, y::AbstractFloat, z::Abstractparams.T(x, y, z, t)Float, t::AbstractFloat, A::AbstractFloat, N::AbstractFloat, C::AbstractFloat, NO₃::AbstractFloat, NH₄::AbstractFloat, irr::AbstractFloat, u::AbstractFloat, v::AbstractFloat, w::AbstractFloat, params, Δt::AbstractFloat) = equations(x, y, z, t, A, N, C, NO₃, NH₄, params.T(x, y, z, t), params.S(x, y, z, t), irr, sqrt(u^2+v^2+w^2), params, Δt)
 #tracked u, T and S fields
-equations(x::AbstractFloat, y::AbstractFloat, z::AbstractFloat, t::AbstractFloat, A::AbstractFloat, N::AbstractFloat, C::AbstractFloat, NO₃::AbstractFloat, NH₄::AbstractFloat, T::AbstractFloat, S::AbstractFloat, irr::AbstractFloat, u::AbstractFloat, v::AbstractFloat, w::AbstractFloat, params, Δt::AbstractFloat) = equations(x, y, z, t, A, N, C, NO₃, NH₄, T, S, irr, sqrt(u^2+v^2+w^2), params, Δt)
+equations(x::AbstractFloat, y::AbstractFloat, z::AbstractFloat, t::AbstractFloat, A::AbstractFloat, N::AbstractFloat, C::AbstractFloat, NO₃::AbstractFloat, NH₄::AbstractFloat, irr::AbstractFloat, T::AbstractFloat, S::AbstractFloat, u::AbstractFloat, v::AbstractFloat, w::AbstractFloat, params, Δt::AbstractFloat) = equations(x, y, z, t, A, N, C, NO₃, NH₄, irr, T, S, sqrt(u^2+v^2+w^2), params, Δt)
 
 #####
 ##### Parameters (some diagnostic so have to define before)
@@ -346,8 +346,21 @@ function setup(; n, x₀, y₀, z₀, A₀, N₀, C₀, latitude,
     parameters = merge(paramset, (λ=λ_arr, ))
     diagnostic_properties = (:A, :N, :C, :j_NO₃, :j_NH₄, :j_DIC, :j_OXY, :eⁿ, :eᶜ, :νⁿ, :νᶜ) # all diagnostic for the sake of enforcing C limit
 
-    if isnothing(T) property_dependencies = (property_dependencies..., :T, :S) else parameters = merge(parameters, (T=T, S=S)) end
-    if isnothing(urel) property_dependencies = (property_dependencies..., :u, :v, :w) else parameters = merge(parameters, (urel = urel, )) end
+    additional_tracked_fields = NamedTuple()
+
+    if isnothing(T) 
+        property_dependencies = (property_dependencies..., :T, :S)
+        additional_tracked_fields = merge(additional_tracked_fields, (T = :T, S = :S))
+    else 
+        parameters = merge(parameters, (;T, S)) 
+    end
+
+    if isnothing(urel) 
+        property_dependencies = (property_dependencies..., :u, :v, :w)
+        additional_tracked_fields = merge(additional_tracked_fields, (u = :u, v = :v, w = :w)) 
+    else 
+        parameters = merge(parameters, (urel = urel, )) 
+    end
 
     prognostic_properties = (:u, :v, :w) #for when I impliment dynamics
 
@@ -386,7 +399,7 @@ function setup(; n, x₀, y₀, z₀, A₀, N₀, C₀, latitude,
                                      equation_parameters = parameters, 
                                      prognostic = prognostic_properties, 
                                      diagnostic = diagnostic_properties, 
-                                     tracked_fields = tracers, 
+                                     tracked_fields = merge(tracers, additional_tracked_fields), 
                                      coupled_fields = coupled,
                                      scalefactor = scalefactor, 
                                      custom_dynamics = custom_dynamics)

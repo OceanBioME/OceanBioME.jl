@@ -1,34 +1,42 @@
 using Oceananigans, OceanBioME, Printf
 using Oceananigans.Units
 
-grid = RectilinearGrid(; topology = (Flat, Flat, Bounded), size = (1, ), extent = (40, ))
+grid = RectilinearGrid(; topology = (Flat, Flat, Bounded), size = (16, ), extent = (100, ))
 
 # biogeochemistry
 biogeochemistry = LOBSTER(; grid, 
-                            carbonates = true, oxygen = true, variable_redfield = true, 
+                            carbonates = true,
                             open_bottom = true,
-                            surface_phytosynthetically_active_radiation = (x, y, t) -> 80)
+                            surface_phytosynthetically_active_radiation = (x, y, t) -> 100)
 
 DIC_bcs = FieldBoundaryConditions(top = GasExchange(; gas = :CO₂))
-O₂_bcs = FieldBoundaryConditions(top = GasExchange(; gas = :O₂))
 
 # nitrate - restoring to a (made up) climatology otherwise we depleat Nutrients
-NO₃_forcing = Relaxation(rate = 1/10days, target = 3.0)
+NO₃_forcing = Relaxation(rate = 1/10days, target = 4.0)
 
-# alkalinity - restoring to a (made up) climatology otherwise we depleat it
+# alkalinity - restoring to a north atlantic climatology otherwise we depleat it
 Alk_forcing = Relaxation(rate = 1/day, target = 2409.0)
 
 # define model
+κₜ(x, y, z, t) = 1e-4 + 1e-2 * (1 + tanh((z + 70) / 70)) / (1 + tanh(1))
+
 model = NonhydrostaticModel(; grid,
                               biogeochemistry,
                               forcing = (NO₃ = NO₃_forcing, Alk = Alk_forcing),
-                              boundary_conditions = (DIC = DIC_bcs, O₂ = O₂_bcs),
+                              boundary_conditions = (DIC = DIC_bcs, ),
                               timestepper = :RungeKutta3,
-                              tracers = (:T, :S))
+                              tracers = (:T, :S),
+                              advection = nothing,
+                              closure = ScalarDiffusivity(ν = κₜ, κ = κₜ))
 
-set!(model, P = 0.03, Z = 0.03, NO₃ = 11.0, NH₄ = 0.05, DIC = 2200.0, Alk = 2400.0, O₂ = 240.0, T=20, S=35)
+set!(model, P = 0.4686, Z = 0.5363, 
+            NO₃ = 2.3103, NH₄ = 0.0010, 
+            DIC = 2106.9, Alk = 2408.9, 
+            DOM = 0.8115,
+            sPOM = 0.2299,
+            bPOM = 0.0103)
 
-simulation = Simulation(model, Δt=1000.0, stop_time=10years)
+simulation = Simulation(model, Δt=500.0, stop_time=2years)
 
 # Print a progress message
 progress_message(sim) = @printf("Iteration: %04d, time: %s, Δt: %s, max(|w|) = %.1e ms⁻¹, wall time: %s\n",
