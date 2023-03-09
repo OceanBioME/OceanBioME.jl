@@ -26,13 +26,17 @@ Notes
 =====
 SW is the structural weight and is equal to K_A*A
 """
-module SLatissima
+module SLatissimaModel
 using StructArrays, Roots
-using OceanBioME.Particles: ActiveLagrangianParticles
+using OceanBioME.Particles: BiogeochemicalParticles
 using Oceananigans.Units: second,minute, minutes, hour, hours, day, days, year, years
 using Oceananigans: CPU
 using Oceananigans.Architectures: arch_array
-import Adapt: adapt_structure
+using Oceananigans: NonhydrostaticModel, HydrostaticFreeSurfaceModel
+using Oceananigans.Biogeochemistry: required_biogeochemical_tracers, biogeochemical_auxiliary_fields
+
+import Oceananigans.Biogeochemistry: update_tendencies!
+import Oceananigans.LagrangianParticleTracking: update_particle_properties!
 
 #####
 ##### Photosynthesis
@@ -142,6 +146,7 @@ function equations(x::AbstractFloat, y::AbstractFloat, z::AbstractFloat, t::Abst
     return (A = A_new, N = N_new, C = C_new, j_NO₃ = -j_NO₃, j_NH₄ = -j_NH₄, j_DIC = -pp, j_OXY=pp, eᶜ = e, eⁿ = e / params.exudation_redfield_ratio, νⁿ = νⁿ, νᶜ = νᶜ, u = du, v = dv, w = dw)
 end
 
+<<<<<<< Updated upstream
 #fixed urel, T and S functions
 equations(x::AbstractFloat, y::AbstractFloat, z::AbstractFloat, t::AbstractFloat, A::AbstractFloat, N::AbstractFloat, C::AbstractFloat, NO₃::AbstractFloat, NH₄::AbstractFloat, irr::AbstractFloat, params, Δt::AbstractFloat) = equations(x, y, z, t, A, N, C, NO₃, NH₄, irr, params.T(x, y, z, t), params.S(x, y, z, t), params.urel, params, Δt)
 #fixed urel, T and S fields
@@ -220,6 +225,8 @@ const defaults = (
     exudation_redfield_ratio = Inf,
 )
 
+=======
+>>>>>>> Stashed changes
 #####
 ##### Seasonality function
 #####
@@ -234,62 +241,169 @@ function generate_seasonality(lat)
     return λ ./ findmax(λ)[1]
 end
 
-#####
-##### Model definition for use in OceanBioME
-#####
+@inline no_dynamics(args...) = nothing
 
-struct Particle{FT}
+Base.@kwdef struct SLatissima{FT, U, T, S, P, F} <: BiogeochemicalParticle
+    growth_rate_adjustement :: FT = 4.5
+    photosynthetic_efficiency :: FT = 4.15e-5 * 24 * 10^6 / (24 * 60 * 60)
+    minimum_carbon_reserve :: FT = 0.01
+    structural_carbon :: FT = 0.2
+    exudation :: FT = 0.5
+    erosion :: FT = 0.22
+    saturation_irradiance :: FT = 90 * day/ (10 ^ 6)
+    maximum_nitrate_uptake :: FT = 1.4e-4 * 24
+    structural_dry_weight_per_area :: FT = 0.5
+    structural_dry_to_wet_weight :: FT = 0.0785
+    carbon_reserve_per_carbon :: FT = 2.1213
+    nitrogen_reserve_per_nitrogen :: FT = 2.72
+    minimum_nitrogen_reserve :: FT = 0.0126
+    maximum_nitrogen_reserve :: FT = 0.0216
+    growth_adjustement_2 :: FT = 0.039 / (2 * (1 - minimum_nitrogen_reserve / maximum_nitrogen_reserve))
+    growth_adjustement_1 :: FT = 0.18 / (2 * (1 - minimum_nitrogen_reserve / maximum_nitrogen_reserve)) - growth_adjustement_2
+    maximum_specific_growth_rate :: FT = 0.18
+    structural_nitrogen :: FT = 0.0146
+    photosynthesis_at_ref_temp_1 :: FT = 1.22e-3 * 24
+    photosynthesis_at_ref_temp_2 :: FT = 1.3e-3 * 24
+    photosynthesis_ref_temp_1 :: FT = 285.0
+    photosynthesis_ref_temp_2 :: FT = 288.0
+    photoperiod_1 :: FT = 0.85
+    photoperiod_2 :: FT = 0.3
+    respiration_at_ref_temp_1 :: FT = 2.785e-4 * 24
+    respiration_at_ref_temp_2 :: FT = 5.429e-4 * 24
+    respiration_ref_temp_1 :: FT = 285.0
+    respiration_ref_temp_2 :: FT = 290.0
+    photosynthesis_arrhenius_temp :: FT = (1 / photosynthesis_ref_temp_1 - 1 / photosynthesis_ref_temp_2) ^ -1 * log(photosynthesis_at_ref_temp_2 / photosynthesis_at_ref_temp_1)
+    photosynthesis_low_temp :: FT = 271
+    photosynthesis_high_temp :: FT = 296
+    photosynthesis_high_arrhenius_temp :: FT = 1414.87
+    photosynthesis_low_arrhenius_temp :: FT = 4547.89
+    respiration_arrhenius_temp :: FT = (1 / respiration_ref_temp_1 - 1 / respiration_ref_temp_2) ^ -1 * log(respiration_at_ref_temp_2 / respiration_at_ref_temp_1)
+    current_speed_for_0p65_uptake :: FT = 0.03
+    nitrate_half_saturation :: FT = 4.0
+    ammonia_half_saturation :: FT = 1.3
+    maximum_nitrate_uptake :: FT = 10 * structural_dry_weight_per_area * 24 * 14 / (10^6)
+    maximum_ammonia_uptake :: FT = 12 * structural_dry_weight_per_area * 24 * 14 / (10^6)
+    current_1 :: FT = 0.72
+    current_2 :: FT = 0.28
+    current_3 :: FT = 0.045
+    respiration_reference_A :: FT = 1.11e-4 * 24
+    respiration_reference_B :: FT = 5.57e-5 * 24
+    exudation_redfield_ratio :: FT = Inf
+
+    pescribed_velocity :: U = nothing
+    pescribed_temperature :: T = nothing
+    pescribed_salinity :: S = nothing
+
     #position
-    x :: FT
-    y :: FT
-    z :: FT
-    #velocity
-    u :: FT
-    v :: FT
-    w :: FT
+    x :: P = [0.0]
+    y :: P = [0.0]
+    z :: P = [0.0]
+
     #properties
-    A :: FT
-    N :: FT
-    C :: FT
+    A :: P = [30.0]
+    N :: P = [0.1]
+    C :: P = [0.01]
+
     #feedback
-    j_NO₃ :: FT
-    j_NH₄ :: FT
-    j_DIC :: FT
-    j_OXY :: FT
-    eⁿ :: FT
-    eᶜ :: FT
-    νⁿ :: FT
-    νᶜ :: FT
-    #tracked fields
-    NO₃  :: FT
-    NH₄  :: FT
-    PAR :: FT
-    T :: FT
-    S :: FT
+    j_NO₃ :: P = [0.0]
+    j_NH₄ :: P = [0.0]
+    j_DIC :: P = [0.0]
+    j_OXY :: P = [0.0]
+    eⁿ :: P = [0.0]
+    eᶜ :: P = [0.0]
+    νⁿ :: P = [0.0]
+    νᶜ :: P = [0.0]
+
+    custom_dynamics :: F = no_dynamics
 end
 
-default_tracers = (NO₃ = :NO₃, PAR=:PAR) # tracer = property
+@inline function update_tendencies!(bgc, particles::SLatissima, model)
+    num_particles = length(particles)
+    workgroup = min(num_particles, 256)
+    worksize = num_particles
+
+    update_tracer_tendencies_kernal! = update_tracer_tendencies!(device(model.architecture), workgroup, worksize)
+    update_tracer_tendencies_event = update_tracer_tendencies_kernal!(bgc, particles, model)
+    wait(update_tracer_tendencies_event)
+end
+
+@inline function update_particle_properties!(particles::SLatissima, model, bgc, Δt)
+    workgroup = min(length(particles), 256)
+    worksize = length(particles)
+
+    arch = architecture(model)
+
+    # Advect particles
+    advect_particles_kernel! = _advect_particles!(device(arch), workgroup, worksize)
+
+    advect_particles_event = advect_particles_kernel!((x = particles.x, y = particles.y, z = particles.z), 
+                                                      1.0, model.grid, Δt,
+                                                      datatuple(model.velocities),
+                                                      dependencies=Event(device(arch)))
+
+    wait(device(arch), advect_particles_event)
+
+    update_particle_properties_kernel! = _update_particle_properties!(device(arch), workgroup, worksize)
+
+    update_particle_properties_event = update_particle_properties_kernel!(particles, bgc, model, Δt,
+                                                                          dependencies=Event(device(arch)))
+
+    wait(device(arch), update_particle_properties_event)
+end
+
+@kernel function _update_particle_properties!(particles, bgc, model, Δt)
+    p = @index(Global)
+
+    x = particles.x[p]
+    y = particles.y[p]
+    z = particles.z[p]
+
+    t = model.clock.time
+
+    @inbounds if particles.A[p] > 0.0
+        NO₃, NH₄, PAR, u, T, S = get_arguments(x, y, z, t, particles, bgc, model)
+
+        
+    end
+end
+
+@inline function get_arguments(x, y, z, t, particles, bgc, model)
+    NO₃ = interpolate .......
+    PAR = interpolate ....... * day / (3.99e-10 * 545e12) # W / m² / s to einstein / m² / day
+
+    bgc_tracers = required_biogeochemical_tracers(bgc)
+
+    if :NH₄ in bgc_tracers
+        NH₄ = ...
+    else
+        NH₄ = 0.0
+    end
+
+    if !isnothing(particles.pescribed_velocity)
+        u = ..... #nterpolate for speed
+    else
+        u = particles.pescribed_velocity(x, y, z, t)
+    end
+
+    if !isnothing(particles.pescribed_temperature)
+        T = ..... #nterpolate for temp
+    else
+        T = particles.pescribed_temperature(x, y, z, t)
+    end
+
+    if !isnothing(particles.pescribed_salinity)
+        S = ..... #nterpolate for salinity
+    else
+        S = particles.pescribed_salinity(x, y, z, t)
+    end
+
+    return NO₃, NH₄, PAR, u, T, S
+end
+
+default_tracers = (NO₃ = :NO₃, PAR = :PAR) # tracer = property
 optional_tracer_dependencies = (NH₄ = :NH₄, )
 default_coupling = (NO₃ = :j_NO₃, )    
 optional_tracer_coupling = (NH₄ = :j_NH₄, DIC = :j_DIC, DON = :eⁿ, DOC = :eᶜ, bPON = :νⁿ, bPOC = :νᶜ, O₂ = :j_OXY)
-
-# Expands initial conditions to fill particles
-function defineparticles(initials, n, arch)
-    x̄₀ = []
-    for var in [:x₀, :y₀, :z₀, :A₀, :N₀, :C₀]
-        vals=getproperty(initials, var)
-        if isa(vals, AbstractFloat)
-            push!(x̄₀, repeat([vals], n))
-        elseif (isa(vals, Vector) && length(vals) == n)
-            push!(x̄₀, vals)
-        else
-            throw(ArgumentError("Invalid initial values given for $var, must be a single number or vector of length n"))
-        end
-    end
-    return StructArray{Particle}(tuple([arch_array(arch, x) for x in (x̄₀[1], x̄₀[2], x̄₀[3], zeros(n), zeros(n), zeros(n), x̄₀[4], x̄₀[5], x̄₀[6], [zeros(n) for i in 1:13]...)]...))
-end
-
-@inline no_dynamics(args...) = nothing
 
 """
     SLatissima.setup(n, x₀, y₀, z₀, A₀, N₀, C₀, latitude;
@@ -319,6 +433,7 @@ Keyword arguments
     - `optional_tracers`: Tuple of optional tracers to couple with
     - `tracer_names`: rename coupled tracers with NamedTuple with keys as new name and values as the property this feeds/depends on (e.g. `(N = :NO₃, )`)
 """
+<<<<<<< Updated upstream
 
 function setup(; n, x₀, y₀, z₀, A₀, N₀, C₀, latitude,
                  arch = CPU(),
@@ -404,4 +519,6 @@ function setup(; n, x₀, y₀, z₀, A₀, N₀, C₀, latitude,
                                      scalefactor = scalefactor, 
                                      custom_dynamics = custom_dynamics)
 end
+=======
+>>>>>>> Stashed changes
 end

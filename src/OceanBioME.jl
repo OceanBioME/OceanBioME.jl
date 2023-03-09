@@ -29,7 +29,7 @@ export ColumnField, isacolumn
 
 using Oceananigans.Biogeochemistry: AbstractContinuousFormBiogeochemistry
 
-abstract type ContinuousFormBiogeochemistry{LA, S} <: AbstractContinuousFormBiogeochemistry end
+abstract type ContinuousFormBiogeochemistry{LA, S, P} <: AbstractContinuousFormBiogeochemistry end
 
 @inline get_local_value(i, j, k, C) = size(C)[3] == 1 ? C[i, j, 1] : C[i, j, k] #for getting 2D field values
 

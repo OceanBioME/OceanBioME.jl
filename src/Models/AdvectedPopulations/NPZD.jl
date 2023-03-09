@@ -28,7 +28,7 @@ import Oceananigans.Biogeochemistry: required_biogeochemical_tracers,
 
 import OceanBioME: maximum_sinking_velocity
 
-struct NutrientPhytoplanktonZooplanktonDetritus{FT, LA, S, W, A} <: ContinuousFormBiogeochemistry{LA, S}
+struct NutrientPhytoplanktonZooplanktonDetritus{FT, LA, S, W, A, P} <: ContinuousFormBiogeochemistry{LA, S, P}
     # phytoplankton
     initial_photosynthetic_slope :: FT # α, 1/(W/m²)/s
     base_maximum_growth :: FT # μ₀, 1/s
@@ -56,6 +56,8 @@ struct NutrientPhytoplanktonZooplanktonDetritus{FT, LA, S, W, A} <: ContinuousFo
     sinking_velocities :: W
     advection_schemes :: A
 
+    particles :: P
+
     function NutrientPhytoplanktonZooplanktonDetritus(; grid,
                                                         initial_photosynthetic_slope::FT = 0.1953 / day, # 1/(W/m²)/s
                                                         base_maximum_growth::FT = 0.6989 / day, # 1/s
@@ -77,24 +79,27 @@ struct NutrientPhytoplanktonZooplanktonDetritus{FT, LA, S, W, A} <: ContinuousFo
                                                         sinking_speeds = (P = 0.2551/day, D = 2.7489/day),
                                                         open_bottom::Bool = true,
                                                         advection_schemes::A = NamedTuple{keys(sinking_speeds)}(repeat([CenteredSecondOrder()], 
-                                                                                               length(sinking_speeds)))) where {FT, LA, S, A}
+                                                                                               length(sinking_speeds))),
+                                                                                               
+                                                        particles::P = nothing) where {FT, LA, S, A, P}
         sinking_velocities = setup_velocity_fields(sinking_speeds, grid, open_bottom)
         W = typeof(sinking_velocities)
-        return new{FT, LA, S, W, A}(initial_photosynthetic_slope,
-                                    base_maximum_growth,
-                                    nutrient_half_saturation,
-                                    base_respiration_rate,
-                                    phyto_base_mortality_rate,
-                                    maximum_grazing_rate,
-                                    grazing_half_saturation,
-                                    assimulation_efficiency,
-                                    base_excretion_rate,
-                                    zoo_base_mortality_rate,
-                                    remineralization_rate,
-                                    light_attenuation_model,
-                                    sediment_model,
-                                    sinking_velocities,
-                                    advection_schemes)
+        return new{FT, LA, S, W, A, P}(initial_photosynthetic_slope,
+                                       base_maximum_growth,
+                                       nutrient_half_saturation,
+                                       base_respiration_rate,
+                                       phyto_base_mortality_rate,
+                                       maximum_grazing_rate,
+                                       grazing_half_saturation,
+                                       assimulation_efficiency,
+                                       base_excretion_rate,
+                                       zoo_base_mortality_rate,
+                                       remineralization_rate,
+                                       light_attenuation_model,
+                                       sediment_model,
+                                       sinking_velocities,
+                                       advection_schemes,
+                                       particles)
     end
 end
 
@@ -195,8 +200,8 @@ function update_boxmodel_state!(model::BoxModel{<:NutrientPhytoplanktonZooplankt
     getproperty(model.values, :T) .= model.forcing.T(model.clock.time)
 end
 
-summary(::NutrientPhytoplanktonZooplanktonDetritus{FT, LA, W, A}) where {FT, LA, W, A} = string("Nutrient Phytoplankton Zooplankton Detritus model ($FT)")
-show(io::IO, model::NutrientPhytoplanktonZooplanktonDetritus{FT, LA, W, A}) where {FT, LA, W, A} =
+summary(::NutrientPhytoplanktonZooplanktonDetritus{FT, LA, W, A, P}) where {FT, LA, W, A, P} = string("Nutrient Phytoplankton Zooplankton Detritus model ($FT)")
+show(io::IO, model::NutrientPhytoplanktonZooplanktonDetritus{FT, LA, W, A, P}) where {FT, LA, W, A, P} =
        print(io, summary(model), " \n",
                 " Light Attenuation Model: ", "\n",
                 "    └── ", summary(model.light_attenuation_model), "\n",
