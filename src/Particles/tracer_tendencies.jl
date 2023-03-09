@@ -1,6 +1,6 @@
-using KernelAbstractions.Extras.LoopInfo: @unroll
+using KernelAbstractions.Extras.LoopInfo: @unroll 
 using Oceananigans.Operators: volume
-using Oceananigans.Grids: AbstractGrid
+using Oceananigans.Grids: AbstractGrid, Bounded, Periodic
 using Oceananigans.Fields: fractional_indices
 
 @inline get_node(::Bounded, i, N) = min(max(i, 1), N)
@@ -39,22 +39,5 @@ using Oceananigans.Fields: fractional_indices
             _normfactor += 1 ./sqrt(di^2+dj^2+dk^2)
         end
         return nodes, 1/_normfactor
-    end
-end
-
-@kernel function calculate_particle_tendency!(property, tendency, particles, grid::AbstractGrid{FT, TX, TY, TZ}) where {FT, TX, TY, TZ}
-    p = @index(Global)
-    scalefactor = :scalefactor in keys(particles.parameters) ? particles.parameters.scalefactor : 1.0
-
-    LX, LY, LZ = location(tendency)
-    nodes, normfactor = @inbounds get_nearest_nodes(particles.properties.x[p], particles.properties.y[p], particles.properties.z[p], grid, (LX(), LY(), LZ()))
-
-    @unroll for (i, j, k, d) in nodes 
-        # Reflect back on Bounded boundaries or wrap around for Periodic boundaries
-        i, j, k = (get_node(TX(), i, grid.Nx), get_node(TY(), j, grid.Ny), get_node(TZ(), k, grid.Nz))
-
-        node_volume = volume(i, j, k, grid, LX(), LY(), LZ())
-        value = scalefactor * @inbounds property[p] * normfactor / (d * node_volume)
-        @inbounds tendency[i, j, k] += value	
     end
 end

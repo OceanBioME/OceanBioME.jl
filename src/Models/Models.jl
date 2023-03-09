@@ -1,5 +1,5 @@
 using OceanBioME.Particles: BiogeochemicalParticles
-using OceanBioME.Boundaries: AbstractSediment
+using OceanBioME.Boundaries.Sediments: AbstractSediment
 
 import Oceananigans.Biogeochemistry: update_tendencies!
 
