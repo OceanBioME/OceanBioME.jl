@@ -30,18 +30,18 @@ module SLatissimaModel
 using Roots, KernelAbstractions
 using OceanBioME.Particles: BiogeochemicalParticles, get_nearest_nodes, get_node
 using Oceananigans.Units
-using Oceananigans: CPU
-using Oceananigans.Architectures: arch_array
+using Oceananigans: CPU, Center
+using Oceananigans.Architectures: arch_array, device, architecture
 using Oceananigans: NonhydrostaticModel, HydrostaticFreeSurfaceModel
 using Oceananigans.Biogeochemistry: required_biogeochemical_tracers, biogeochemical_auxiliary_fields
 
 using KernelAbstractions.Extras.LoopInfo: @unroll 
 using Oceananigans.Operators: volume
 using Oceananigans.Grids: AbstractGrid
-using Oceananigans.Fields: fractional_indices, _interpolate
+using Oceananigans.Fields: fractional_indices, _interpolate, datatuple
 
 import Oceananigans.Biogeochemistry: update_tendencies!
-import Oceananigans.LagrangianParticleTracking: update_particle_properties!
+import Oceananigans.LagrangianParticleTracking: update_particle_properties!, _advect_particles!
 
 @inline function photosynthesis(T, PAR, p)
     Tk = T + 273.15
@@ -159,7 +159,7 @@ Base.@kwdef struct SLatissima{FT, U, T, S, P, F} <: BiogeochemicalParticles
     respiration_reference_B :: FT = 5.57e-5 * 24
     exudation_redfield_ratio :: FT = Inf
 
-    pescribed_velocity :: U = nothing
+    pescribed_velocity :: U = 0.1
     pescribed_temperature :: T = nothing
     pescribed_salinity :: S = nothing
 
@@ -176,12 +176,15 @@ Base.@kwdef struct SLatissima{FT, U, T, S, P, F} <: BiogeochemicalParticles
     #feedback
     nitrate_uptake :: P = [0.0]
     ammonia_uptake :: P = [0.0]
-    primary_produciton :: P = [0.0]
+    primary_production :: P = [0.0]
     frond_exudation :: P = [0.0]
     nitrogen_erosion :: P = [0.0]
     carbon_erosion :: P = [0.0]
 
     custom_dynamics :: F = no_dynamics
+
+    scalefactor :: FT = 1.0
+    latitude :: FT = 57.5
 end
 
 function update_tendencies!(bgc, particles::SLatissima, model)
@@ -209,37 +212,37 @@ end
         # Reflect back on Bounded boundaries or wrap around for Periodic boundaries
         i, j, k = (get_node(TX(), i, grid.Nx), get_node(TY(), j, grid.Ny), get_node(TZ(), k, grid.Nz))
 
-        node_volume = volume(i, j, k, grid, LX(), LY(), LZ())
+        node_volume = volume(i, j, k, grid, Center(), Center(), Center())
 
         node_scalefactor = p.scalefactor * normfactor / (d * node_volume)
 
         @inbounds begin
-            tendencies.NO₃[i, j, k] += node_scalefactor * p.nitrate_uptake
+            tendencies.NO₃[i, j, k] += node_scalefactor * p.nitrate_uptake[idx]
         
             if :NH₄ in bgc_tracers
-                tendencies.NH₄[i, j, k] += node_scalefactor * p.ammonia_uptake
+                tendencies.NH₄[i, j, k] += node_scalefactor * p.ammonia_uptake[idx]
             end
 
             if :DIC in bgc_tracers
-                tendencies.DIC[i, j, k] -= node_scalefactor * p.primary_produciton
+                tendencies.DIC[i, j, k] -= node_scalefactor * p.primary_production[idx]
             end
 
             if :O₂ in bgc_tracers
-                tendencies.O₂[i, j, k] += node_scalefactor * p.primary_produciton
+                tendencies.O₂[i, j, k] += node_scalefactor * p.primary_production[idx]
             end
 
             if :DOM in bgc_tracers
-                tendencies.DOM[i, j, k] += node_scalefactor * p.frond_exudation
+                tendencies.DOM[i, j, k] += node_scalefactor * p.frond_exudation[idx]
             elseif :DON in bgc_tracers
-                tendencies.DON[i, j, k] += node_scalefactor * p.frond_exudation
-                tendencies.DOC[i, j, k] += node_scalefactor * p.frond_exudation / p.exudation_redfield_ratio
+                tendencies.DON[i, j, k] += node_scalefactor * p.frond_exudation[idx]
+                tendencies.DOC[i, j, k] += node_scalefactor * p.frond_exudation[idx] / p.exudation_redfield_ratio
             end
 
             if :bPOM in bgc_tracers
-                tendencies.bPOM[i, j, k] += node_scalefactor * p.nitrogen_erosion
+                tendencies.bPOM[i, j, k] += node_scalefactor * p.nitrogen_erosion[idx]
             elseif :bPON in bgc_tracers
-                tendencies.bPON[i, j, k] += node_scalefactor * p.nitrogen_erosion
-                tendencies.bPOC[i, j, k] += node_scalefactor * p.carbon_erosion
+                tendencies.bPON[i, j, k] += node_scalefactor * p.nitrogen_erosion[idx]
+                tendencies.bPOC[i, j, k] += node_scalefactor * p.carbon_erosion[idx]
             end
         end
     end
@@ -287,7 +290,7 @@ end
     @inbounds if p.A[idx] > 0.0
         NO₃, NH₄, PAR, u, T, S = get_arguments(x, y, z, t, p, bgc, model)
 
-        p = photosynthesis(T, PAR, p)
+        photo = photosynthesis(T, PAR, p)
         e = exudation(C, p)
         ν = erosion(A, p)
 
@@ -317,10 +320,10 @@ end
 
         dA = (μ - ν) * A / day
 
-        dN = ((j_NO₃ + j_NH₄ - p * e * 14 / (12 * p.exudation_redfield_ratio)) / p.structural_dry_weight_per_area - 
+        dN = ((j_NO₃ + j_NH₄ - photo * e * 14 / (12 * p.exudation_redfield_ratio)) / p.structural_dry_weight_per_area - 
                μ * (N + p.structural_nitrogen)) / day
 
-        dC = ((p * (1 - e) - r) / p.structural_dry_weight_per_area - 
+        dC = ((photo * (1 - e) - r) / p.structural_dry_weight_per_area - 
               μ * (C + p.structural_carbon)) / day
 
         A_new = A + dA * Δt 
@@ -340,9 +343,9 @@ end
         end
 
         @inbounds begin
-            p.primary_production[idx] = (p - r) * A / (day * 12 * 0.001) #gC/dm^2/hr to mmol C/s
+            p.primary_production[idx] = (photo - r) * A / (day * 12 * 0.001) #gC/dm^2/hr to mmol C/s
 
-            p.frond_exudation[idx] = e * p * A / (day * 12 * 0.001)#mmol C/s
+            p.frond_exudation[idx] = e * photo * A / (day * 12 * 0.001)#mmol C/s
 
             p.nitrogen_erosion[idx] = ν * p.structural_dry_weight_per_area * A * (p.structural_nitrogen + N) / (day * 14 * 0.001)#1/hr to mmol N/s
 
@@ -350,7 +353,7 @@ end
 
             p.nitrate_uptake[idx] = j_NO₃ * A / (day * 14 * 0.001)#gN/dm^2/hr to mmol N/s
 
-            p.ammonia_uptake[idx] = j_N₄ * A / (day * 14 * 0.001)#gN/dm^2/hr to mmol N/s
+            p.ammonia_uptake[idx] = j_NH₄ * A / (day * 14 * 0.001)#gN/dm^2/hr to mmol N/s
 
             p.A[idx] = A_new
             p.N[idx] = N_new
@@ -380,25 +383,30 @@ end
         NH₄ = 0.0
     end
 
-    if !isnothing(particles.pescribed_velocity)
+    if isnothing(particles.pescribed_velocity)
         u =  sqrt(_interpolate(model.velocities.u, ξ, η, ζ, Int(i+1), Int(j+1), Int(k+1)) .^ 2 + 
                   _interpolate(model.velocities.v, ξ, η, ζ, Int(i+1), Int(j+1), Int(k+1)) .^ 2 + 
                   _interpolate(model.velocities.w, ξ, η, ζ, Int(i+1), Int(j+1), Int(k+1)) .^ 2)
+    elseif isa(particles.pescribed_velocity, Number)
+        u = particles.pescribed_velocity
     else
         u = particles.pescribed_velocity(x, y, z, t)
     end
 
-    if !isnothing(particles.pescribed_temperature)
+    if isnothing(particles.pescribed_temperature)
         T = _interpolate(model.tracers.T, ξ, η, ζ, Int(i+1), Int(j+1), Int(k+1))
+    elseif isa(particles.pescribed_temperature, Number)
+        T = particles.pescribed_temperature
     else
         T = particles.pescribed_temperature(x, y, z, t)
     end
 
-    if !isnothing(particles.pescribed_salinity)
+    #=if isnothing(particles.pescribed_salinity)
         S = _interpolate(model.tracers.S, ξ, η, ζ, Int(i+1), Int(j+1), Int(k+1))
     else
         S = particles.pescribed_salinity(x, y, z, t)
-    end
+    end=#
+    S = 35.0 # we currently don't use S for anything
 
     return NO₃, NH₄, PAR, u, T, S
 end
