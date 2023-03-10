@@ -125,7 +125,8 @@ end
 # but if you manually call `adapt_structure(CuArray, particles::SLatissima)` 
 # it returns a GPU friendly version. To automagically overcome this I'm `arch_array`ing 
 # above but that does necessitate passing the grid to the particles
-adapt_structure(to, kelp::SLatissima) = SLatissima(kelp.growth_rate_adjustement, 
+adapt_structure(to, kelp::SLatissima) = SLatissima(adapt_structure(to, kelp.grid),
+                                                   kelp.growth_rate_adjustement, 
                                                    kelp.photosynthetic_efficiency,
                                                    kelp.minimum_carbon_reserve,
                                                    kelp.structural_carbon,
