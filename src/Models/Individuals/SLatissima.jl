@@ -220,11 +220,11 @@ end
     η, j = modf(j)
     ζ, k = modf(k)
 
-    i, j, k = (get_node(TX(), ifelse(ξ < 0.5, i + 1, i + 2), grid.Nx), get_node(TY(), ifelse(η < 0.5, j + 1, j + 2), grid.Ny), get_node(TZ(), ifelse(ζ < 0.5, k + 1, k + 2), grid.Nz))
+    i, j, k = (get_node(TX(), Int(ifelse(ξ < 0.5, i + 1, i + 2)), grid.Nx), get_node(TY(), Int(ifelse(η < 0.5, j + 1, j + 2)), grid.Ny), get_node(TZ(), Int(ifelse(ζ < 0.5, k + 1, k + 2)), grid.Nz))
 
     node_volume = volume(i, j, k, grid, Center(), Center(), Center())
 
-    node_scalefactor = p.scalefactor * normfactor / (weight * node_volume)
+    node_scalefactor = p.scalefactor / node_volume #* normfactor / (weight * node_volume)
 
     #@inbounds begin
     tendencies.NO₃[i, j, k] -= node_scalefactor * p.nitrate_uptake[idx]
