@@ -40,8 +40,10 @@ using Oceananigans.Operators: volume
 using Oceananigans.Grids: AbstractGrid
 using Oceananigans.Fields: fractional_indices, _interpolate, datatuple
 
+import Adapt: adapt_structure
 import Oceananigans.Biogeochemistry: update_tendencies!
 import Oceananigans.LagrangianParticleTracking: update_particle_properties!, _advect_particles!
+
 @inline no_dynamics(args...) = nothing
 
 Base.@kwdef struct SLatissima{FT, U, T, S, P, F} <: BiogeochemicalParticles
@@ -96,27 +98,87 @@ Base.@kwdef struct SLatissima{FT, U, T, S, P, F} <: BiogeochemicalParticles
 
     #position
     x :: P = [0.0]
-    y :: P = zeros(length(x))
-    z :: P = zeros(length(x))
+    y :: P = zeros(Float64, length(x))
+    z :: P = zeros(Float64, length(x))
 
     #properties
-    A :: P = ones(length(x)) * 30
-    N :: P = ones(length(x)) * 0.01
-    C :: P = ones(length(x)) * 0.1
+    A :: P = ones(Float64, length(x)) * 30
+    N :: P = ones(Float64, length(x)) * 0.01
+    C :: P = ones(Float64, length(x)) * 0.1
 
     #feedback
-    nitrate_uptake :: P = zeros(length(x))
-    ammonia_uptake :: P = zeros(length(x))
-    primary_production :: P = zeros(length(x))
-    frond_exudation :: P = zeros(length(x))
-    nitrogen_erosion :: P = zeros(length(x))
-    carbon_erosion :: P = zeros(length(x))
+    nitrate_uptake :: P = zeros(Float64, length(x))
+    ammonia_uptake :: P = zeros(Float64, length(x))
+    primary_production :: P = zeros(Float64, length(x))
+    frond_exudation :: P = zeros(Float64, length(x))
+    nitrogen_erosion :: P = zeros(Float64, length(x))
+    carbon_erosion :: P = zeros(Float64, length(x))
 
     custom_dynamics :: F = no_dynamics
 
     scalefactor :: FT = 1.0
     latitude :: FT = 57.5
 end
+
+adapt_structure(to, kelp::SLatissima) = SLatissima(kelp.growth_rate_adjustement, 
+                                                   kelp.photosynthetic_efficiency,
+                                                   kelp.minimum_carbon_reserve,
+                                                   kelp.structural_carbon,
+                                                   kelp.exudation,
+                                                   kelp.erosion,
+                                                   kelp.saturation_irradiance,
+                                                   kelp.structural_dry_weight_per_area,
+                                                   kelp.structural_dry_to_wet_weight,
+                                                   kelp.carbon_reserve_per_carbon,
+                                                   kelp.nitrogen_reserve_per_nitrogen,
+                                                   kelp.minimum_nitrogen_reserve,
+                                                   kelp.maximum_nitrogen_reserve,
+                                                   kelp.growth_adjustement_2,
+                                                   kelp.growth_adjustement_1,
+                                                   kelp.maximum_specific_growth_rate,
+                                                   kelp.structural_nitrogen,
+                                                   kelp.photosynthesis_at_ref_temp_1,
+                                                   kelp.photosynthesis_at_ref_temp_2,
+                                                   kelp.photosynthesis_ref_temp_1,
+                                                   kelp.photosynthesis_ref_temp_2,
+                                                   kelp.photoperiod_1,
+                                                   kelp.photoperiod_2,
+                                                   kelp.respiration_at_ref_temp_1,
+                                                   kelp.respiration_at_ref_temp_2,
+                                                   kelp.respiration_ref_temp_1,
+                                                   kelp.respiration_ref_temp_2,
+                                                   kelp.photosynthesis_arrhenius_temp,
+                                                   kelp.photosynthesis_low_temp,
+                                                   kelp.photosynthesis_high_temp,
+                                                   kelp.photosynthesis_high_arrhenius_temp,
+                                                   kelp.photosynthesis_low_arrhenius_temp,
+                                                   kelp.respiration_arrhenius_temp,
+                                                   kelp.current_speed_for_0p65_uptake,
+                                                   kelp.nitrate_half_saturation,
+                                                   kelp.ammonia_half_saturation,
+                                                   kelp.maximum_nitrate_uptake,
+                                                   kelp.maximum_ammonia_uptake,
+                                                   kelp.current_1,
+                                                   kelp.current_2,
+                                                   kelp.current_3,
+                                                   kelp.respiration_reference_A,
+                                                   kelp.respiration_reference_B,
+                                                   kelp.exudation_redfield_ratio,
+                                                   adapt_structure(to, kelp.x),
+                                                   adapt_structure(to, kelp.y),
+                                                   adapt_structure(to, kelp.z),
+                                                   adapt_structure(to, kelp.A),
+                                                   adapt_structure(to, kelp.N),
+                                                   adapt_structure(to, kelp.C),
+                                                   adapt_structure(to, kelp.nitrate_uptake),
+                                                   adapt_structure(to, kelp.ammonia_uptake),
+                                                   adapt_structure(to, kelp.primary_production),
+                                                   adapt_structure(to, kelp.frond_exudation),
+                                                   adapt_structure(to, kelp.nitrogen_erosion),
+                                                   adapt_structure(to, kelp.carbon_erosion),
+                                                   kelp.custom_dynamics,
+                                                   kelp.scalefactor,
+                                                   kelp.latitude)
 
 function update_tendencies!(bgc, particles::SLatissima, model)
     num_particles = length(particles)
