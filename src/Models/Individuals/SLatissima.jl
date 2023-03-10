@@ -125,6 +125,7 @@ end
 # but if you manually call `adapt_structure(CuArray, particles::SLatissima)` 
 # it returns a GPU friendly version. To automagically overcome this I'm `arch_array`ing 
 # above but that does necessitate passing the grid to the particles
+# weird thing is this is definitly getting called a some point, but not with the correct `to`.
 adapt_structure(to, kelp::SLatissima) = SLatissima(adapt_structure(to, kelp.grid),
                                                    kelp.growth_rate_adjustement, 
                                                    kelp.photosynthetic_efficiency,
@@ -242,10 +243,10 @@ end
     end
 
     if :DOM in bgc_tracers
-        tendencies.DOM[i, j, k] += node_scalefactor * p.frond_exudation[idx]
+        tendencies.DOM[i, j, k] += node_scalefactor * p.frond_exudation[idx] / p.exudation_redfield_ratio
     elseif :DON in bgc_tracers
-        tendencies.DON[i, j, k] += node_scalefactor * p.frond_exudation[idx]
-        tendencies.DOC[i, j, k] += node_scalefactor * p.frond_exudation[idx] / p.exudation_redfield_ratio
+        tendencies.DON[i, j, k] += node_scalefactor * p.frond_exudation[idx] / p.exudation_redfield_ratio
+        tendencies.DOC[i, j, k] += node_scalefactor * p.frond_exudation[idx]
     end
 
     if :bPOM in bgc_tracers
@@ -357,7 +358,7 @@ end
 
             p.frond_exudation[idx] = e * photo * A / (day * 12 * 0.001)#mmol C/s
 
-            p.nitrogen_erosion[idx] = ν * p.structural_dry_weight_per_area * A * (p.structural_nitrogen + N) / (day * 14 * 0.001)#1/hr to mmol N/s
+            p.nitrogen_erosion[idx] = ν * p.structural_dry_weight_per_area * A * (p.structural_nitrogen + N) / (day * 14 * 0.001)#1/day to mmol N/s
 
             p.carbon_erosion[idx] = ν * p.structural_dry_weight_per_area * A * (p.structural_carbon + C) / (day * 12 * 0.001)#1/hr to mmol C/s
 

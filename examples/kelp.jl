@@ -24,15 +24,15 @@ using Oceananigans.Units
 # ## Surface PAR and turbulent vertical diffusivity based on idealised mixed layer depth 
 # Setting up idealised functions for PAR and diffusivity (details here can be ignored but these are typical of the North Atlantic)
 
-@inline PAR⁰(x, y, t) = 60*(1-cos((t+15days)*2π/(365days)))*(1 /(1 +0.2*exp(-((mod(t, 365days)-200days)/50days)^2))) .+ 2
+@inline PAR⁰(x, y, t) = 60 * (1 - cos((t + 15days) * 2π / 365days))*(1 / (1 + 0.2 * exp(-((mod(t, 365days) - 200days) / 50days) ^ 2))) + 2
 
 @inline H(t, t₀, t₁) = ifelse(t₀ < t < t₁, 1.0, 0.0)
 
 @inline fmld1(t) = H(t, 50days, 365days) * (1 / (1 +exp(-(t - 100days) / (5days)))) * (1 / (1 + exp((t - 330days) / (25days))))
 
-@inline MLD(t) = (-10 - 340 * (1 - fmld1(364.99999days) * exp(-t / 25days) - fmld1(mod(t, 365days))))
+@inline MLD(t) = - (10 + 340 * (1 - fmld1(365days-eps(365days)) * exp(-mod(t, 365days) / 25days) - fmld1(mod(t, 365days))))
 
-@inline κₜ(x, y, z, t) = 1e-2 * max(1 - (z + MLD(t) / 2) ^ 2 / (MLD(t) / 2) ^ 2, 0) + 1e-4
+@inline κₜ(x, y, z, t) = 1e-2 * (1 + tanh((z - MLD(t))/10)) / 2 + 1e-4
 
 @inline t_function(x, y, z, t) = 2.4 * cos(t * 2π / year + 50day) + 10
 
@@ -46,7 +46,8 @@ grid = RectilinearGrid(size=(1, 1, 50), extent=(Lx, Ly, 200))
 n = 5 # number of kelp fronds
 z₀ = [-21:5:-1;]*1.0 # depth of kelp fronds
 
-particles = SLatissima(; x = ones(n) * Lx / 2, y = ones(n) * Ly / 2, z = z₀, 
+particles = SLatissima(; grid, 
+                         x = ones(n) * Lx / 2, y = ones(n) * Ly / 2, z = z₀, 
                          A = ones(n) * 30.0, N = ones(n) * 0.01, C =  ones(n) *0.1, 
                          latitude = 57.5,
                          scalefactor = 500.0, 
@@ -57,12 +58,13 @@ CO₂_flux = GasExchange(; gas = :CO₂, temperature = t_function, salinity = (a
 O₂_flux = GasExchange(; gas = :O₂, temperature = t_function, salinity = (args...) -> 35)
 
 model = NonhydrostaticModel(; grid,
-                              closure = ScalarDiffusivity(ν=κₜ, κ=κₜ), 
+                              closure = ScalarDiffusivity(ν = κₜ, κ = κₜ), 
                               biogeochemistry = LOBSTER(; grid,
                                                           surface_phytosynthetically_active_radiation = PAR⁰,
                                                           carbonates = true,
                                                           variable_redfield = true,
-                                                          particles),
+                                                          particles,
+                                                          advection_schemes = (sPOM = WENO(grid), bPOM = WENO(grid))),
                               boundary_conditions = (DIC = FieldBoundaryConditions(top = CO₂_flux), ),
                               advection = nothing)
 
@@ -93,7 +95,7 @@ scale_negative_tracers = ScaleNegativeTracers(; model, tracers = (:NO₃, :NH₄
 simulation.callbacks[:neg] = Callback(scale_negative_tracers; callsite = UpdateStateCallsite())
 
 wizard = TimeStepWizard(cfl = 0.2, diffusive_cfl = 0.2, max_change = 2.0, min_change = 0.5, cell_diffusion_timescale = column_diffusion_timescale, cell_advection_timescale = column_advection_timescale)
-simulation.callbacks[:wizard] = Callback(wizard, IterationInterval(10))
+simulation.callbacks[:wizard] = Callback(wizard, IterationInterval(1))
 
 # ## Run!
 # Finally we run the simulation
