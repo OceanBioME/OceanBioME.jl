@@ -96,21 +96,21 @@ Base.@kwdef struct SLatissima{FT, U, T, S, P, F} <: BiogeochemicalParticles
 
     #position
     x :: P = [0.0]
-    y :: P = [0.0]
-    z :: P = [0.0]
+    y :: P = zeros(length(x))
+    z :: P = zeros(length(x))
 
     #properties
-    A :: P = [30.0]
-    N :: P = [0.01]
-    C :: P = [0.1]
+    A :: P = ones(length(x)) * 30
+    N :: P = ones(length(x)) * 0.01
+    C :: P = ones(length(x)) * 0.1
 
     #feedback
-    nitrate_uptake :: P = [0.0]
-    ammonia_uptake :: P = [0.0]
-    primary_production :: P = [0.0]
-    frond_exudation :: P = [0.0]
-    nitrogen_erosion :: P = [0.0]
-    carbon_erosion :: P = [0.0]
+    nitrate_uptake :: P = zeros(length(x))
+    ammonia_uptake :: P = zeros(length(x))
+    primary_production :: P = zeros(length(x))
+    frond_exudation :: P = zeros(length(x))
+    nitrogen_erosion :: P = zeros(length(x))
+    carbon_erosion :: P = zeros(length(x))
 
     custom_dynamics :: F = no_dynamics
 
