@@ -225,7 +225,7 @@ end
 
     node_scalefactor = p.scalefactor * normfactor / (weight * node_volume)
 
-    @inbounds begin
+    #@inbounds begin
     tendencies.NO₃[i, j, k] -= node_scalefactor * p.nitrate_uptake[idx]
     
     if :NH₄ in bgc_tracers
