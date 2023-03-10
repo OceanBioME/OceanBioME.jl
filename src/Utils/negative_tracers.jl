@@ -78,6 +78,7 @@ end
             p += field * scalefactor
         end
     end 
+    t < 0 && error("Cell total < 0, can not scale negative tracers.")
     @unroll for tracer in tracers
         field = @inbounds fields[tracer][i, j, k]
         

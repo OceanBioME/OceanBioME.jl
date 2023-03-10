@@ -28,7 +28,7 @@ SW is the structural weight and is equal to K_A*A
 """ 
 module SLatissimaModel
 using Roots, KernelAbstractions
-using OceanBioME.Particles: BiogeochemicalParticles, get_nearest_nodes, get_node
+using OceanBioME.Particles: BiogeochemicalParticles, get_node
 using Oceananigans.Units
 using Oceananigans: CPU, Center
 using Oceananigans.Architectures: arch_array, device, architecture
@@ -46,7 +46,8 @@ import Oceananigans.LagrangianParticleTracking: update_particle_properties!, _ad
 
 @inline no_dynamics(args...) = nothing
 
-Base.@kwdef struct SLatissima{FT, U, T, S, P, F} <: BiogeochemicalParticles
+Base.@kwdef struct SLatissima{G, FT, U, T, S, P, F} <: BiogeochemicalParticles
+    grid :: G
     growth_rate_adjustement :: FT = 4.5
     photosynthetic_efficiency :: FT = 4.15e-5 * 24 * 10^6 / (24 * 60 * 60)
     minimum_carbon_reserve :: FT = 0.01
@@ -97,22 +98,22 @@ Base.@kwdef struct SLatissima{FT, U, T, S, P, F} <: BiogeochemicalParticles
     pescribed_salinity :: S = nothing
 
     #position
-    x :: P = [0.0]
-    y :: P = zeros(Float64, length(x))
-    z :: P = zeros(Float64, length(x))
+    x :: P = arch_array(grid.architecture, [0.0])
+    y :: P = arch_array(grid.architecture, zeros(Float64, length(x)))
+    z :: P = arch_array(grid.architecture, zeros(Float64, length(x)))
 
     #properties
-    A :: P = ones(Float64, length(x)) * 30
-    N :: P = ones(Float64, length(x)) * 0.01
-    C :: P = ones(Float64, length(x)) * 0.1
+    A :: P = arch_array(grid.architecture, ones(Float64, length(x)) * 30)
+    N :: P = arch_array(grid.architecture, ones(Float64, length(x)) * 0.01)
+    C :: P = arch_array(grid.architecture, ones(Float64, length(x)) * 0.1)
 
     #feedback
-    nitrate_uptake :: P = zeros(Float64, length(x))
-    ammonia_uptake :: P = zeros(Float64, length(x))
-    primary_production :: P = zeros(Float64, length(x))
-    frond_exudation :: P = zeros(Float64, length(x))
-    nitrogen_erosion :: P = zeros(Float64, length(x))
-    carbon_erosion :: P = zeros(Float64, length(x))
+    nitrate_uptake :: P = arch_array(grid.architecture, zeros(Float64, length(x)))
+    ammonia_uptake :: P = arch_array(grid.architecture, zeros(Float64, length(x)))
+    primary_production :: P = arch_array(grid.architecture, zeros(Float64, length(x)))
+    frond_exudation :: P = arch_array(grid.architecture, zeros(Float64, length(x)))
+    nitrogen_erosion :: P = arch_array(grid.architecture, zeros(Float64, length(x)))
+    carbon_erosion :: P = arch_array(grid.architecture, zeros(Float64, length(x)))
 
     custom_dynamics :: F = no_dynamics
 
@@ -120,6 +121,10 @@ Base.@kwdef struct SLatissima{FT, U, T, S, P, F} <: BiogeochemicalParticles
     latitude :: FT = 57.5
 end
 
+# for some reason this doesn't get called, 
+# but if you manually call `adapt_structure(CuArray, particles::SLatissima)` 
+# it returns a GPU friendly version. To automagically overcome this I'm `arch_array`ing 
+# above but that does necessitate passing the grid to the particles
 adapt_structure(to, kelp::SLatissima) = SLatissima(kelp.growth_rate_adjustement, 
                                                    kelp.photosynthetic_efficiency,
                                                    kelp.minimum_carbon_reserve,
@@ -164,6 +169,9 @@ adapt_structure(to, kelp::SLatissima) = SLatissima(kelp.growth_rate_adjustement,
                                                    kelp.respiration_reference_A,
                                                    kelp.respiration_reference_B,
                                                    kelp.exudation_redfield_ratio,
+                                                   kelp.pescribed_velocity,
+                                                   kelp.pescribed_temperature,
+                                                   kelp.pescribed_salinity,
                                                    adapt_structure(to, kelp.x),
                                                    adapt_structure(to, kelp.y),
                                                    adapt_structure(to, kelp.z),
@@ -199,46 +207,54 @@ end
 
     bgc_tracers = required_biogeochemical_tracers(bgc)
 
-    nodes, normfactor = @inbounds get_nearest_nodes(x, y, z, grid, (Center(), Center(), Center()))
+    #nodes, weights, normfactor = @inbounds get_nearest_nodes(x, y, z, grid, (Center(), Center(), Center()))
 
-    @unroll for (i, j, k, d) in nodes 
+    #@unroll for (n, weight) in enumerate(weights)
         # Reflect back on Bounded boundaries or wrap around for Periodic boundaries
-        i, j, k = (get_node(TX(), i, grid.Nx), get_node(TY(), j, grid.Ny), get_node(TZ(), k, grid.Nz))
+    i, j, k = fractional_indices(x, y, z, (Center(), Center(), Center()), grid)
 
-        node_volume = volume(i, j, k, grid, Center(), Center(), Center())
+    # Convert fractional indices to unit cell coordinates 0 <= (ξ, η, ζ) <=1
+    # and integer indices (with 0-based indexing).
+    ξ, i = modf(i)
+    η, j = modf(j)
+    ζ, k = modf(k)
 
-        node_scalefactor = p.scalefactor * normfactor / (d * node_volume)
+    i, j, k = (get_node(TX(), ifelse(ξ < 0.5, i + 1, i + 2), grid.Nx), get_node(TY(), ifelse(η < 0.5, j + 1, j + 2), grid.Ny), get_node(TZ(), ifelse(ζ < 0.5, k + 1, k + 2), grid.Nz))
 
-        @inbounds begin
-            tendencies.NO₃[i, j, k] -= node_scalefactor * p.nitrate_uptake[idx]
-        
-            if :NH₄ in bgc_tracers
-                tendencies.NH₄[i, j, k] -= node_scalefactor * p.ammonia_uptake[idx]
-            end
+    node_volume = volume(i, j, k, grid, Center(), Center(), Center())
 
-            if :DIC in bgc_tracers
-                tendencies.DIC[i, j, k] -= node_scalefactor * p.primary_production[idx]
-            end
+    node_scalefactor = p.scalefactor * normfactor / (weight * node_volume)
 
-            if :O₂ in bgc_tracers
-                tendencies.O₂[i, j, k] += node_scalefactor * p.primary_production[idx]
-            end
-
-            if :DOM in bgc_tracers
-                tendencies.DOM[i, j, k] += node_scalefactor * p.frond_exudation[idx]
-            elseif :DON in bgc_tracers
-                tendencies.DON[i, j, k] += node_scalefactor * p.frond_exudation[idx]
-                tendencies.DOC[i, j, k] += node_scalefactor * p.frond_exudation[idx] / p.exudation_redfield_ratio
-            end
-
-            if :bPOM in bgc_tracers
-                tendencies.bPOM[i, j, k] += node_scalefactor * p.nitrogen_erosion[idx]
-            elseif :bPON in bgc_tracers
-                tendencies.bPON[i, j, k] += node_scalefactor * p.nitrogen_erosion[idx]
-                tendencies.bPOC[i, j, k] += node_scalefactor * p.carbon_erosion[idx]
-            end
-        end
+    @inbounds begin
+    tendencies.NO₃[i, j, k] -= node_scalefactor * p.nitrate_uptake[idx]
+    
+    if :NH₄ in bgc_tracers
+        tendencies.NH₄[i, j, k] -= node_scalefactor * p.ammonia_uptake[idx]
     end
+
+    if :DIC in bgc_tracers
+        tendencies.DIC[i, j, k] -= node_scalefactor * p.primary_production[idx]
+    end
+
+    if :O₂ in bgc_tracers
+        tendencies.O₂[i, j, k] += node_scalefactor * p.primary_production[idx]
+    end
+
+    if :DOM in bgc_tracers
+        tendencies.DOM[i, j, k] += node_scalefactor * p.frond_exudation[idx]
+    elseif :DON in bgc_tracers
+        tendencies.DON[i, j, k] += node_scalefactor * p.frond_exudation[idx]
+        tendencies.DOC[i, j, k] += node_scalefactor * p.frond_exudation[idx] / p.exudation_redfield_ratio
+    end
+
+    if :bPOM in bgc_tracers
+        tendencies.bPOM[i, j, k] += node_scalefactor * p.nitrogen_erosion[idx]
+    elseif :bPON in bgc_tracers
+        tendencies.bPON[i, j, k] += node_scalefactor * p.nitrogen_erosion[idx]
+        tendencies.bPOC[i, j, k] += node_scalefactor * p.carbon_erosion[idx]
+    end
+    #end
+    #end
 end
 
 function update_particle_properties!(particles::SLatissima, model, bgc, Δt)
