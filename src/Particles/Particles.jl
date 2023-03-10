@@ -5,9 +5,11 @@ using Oceananigans: NonhydrostaticModel, HydrostaticFreeSurfaceModel
 
 import Oceananigans.LagrangianParticleTracking: update_particle_properties!
 import Oceananigans.Biogeochemistry: update_tendencies!
-import Base: length
+import Base: length, size, show, summary
 
 abstract type BiogeochemicalParticles end
+
+# TODO: add model.particles passing
 
 @inline update_particle_properties!(model::NonhydrostaticModel{<:Any, <:Any, <:Any, <:Any, <:Any, <:Any, <:Any, <:Any, <:Any, <:Any, <:Any, <:Any, <:Any, <:Any, <:Any, <:Any, <:Any, <:ContinuousFormBiogeochemistry{<:Any, <:Any, <:BiogeochemicalParticles}}, 
                                     Δt) =
@@ -26,7 +28,22 @@ update_particle_properties!(::BiogeochemicalParticles, model, bgc, Δt) = nothin
 update_tendencies!(bgc::ContinuousFormBiogeochemistry{<:Any, <:Any, <:BiogeochemicalParticles}, model) = update_tendencies!(bgc, bgc.particles, model)
 update_tendencies!(bgc, ::BiogeochemicalParticles, model) = nothing
 
-@inline length(particles::BiogeochemicalParticles) = length(particles.x)
+size(particles::BiogeochemicalParticles) = size(particles.x)
+length(particles::BiogeochemicalParticles) = length(particles.x)
+
+Base.summary(particles::BiogeochemicalParticles) =
+    string(length(particles), " BiogeochemicalParticles with eltype ", nameof(eltype(particles)),
+           " and properties ", propertynames(particles))
+
+function Base.show(io::IO, particles::BiogeochemicalParticles)
+    Tparticle = nameof(eltype(particles))
+    properties = propertynames(particles)
+    Nparticles = length(particles)
+
+    print(io, Nparticles, " BiogeochemicalParticles with eltype ", Tparticle, ":", "\n",
+        "└── ", length(properties), " properties: ", properties, "\n")
+end
+
 
 include("tracer_tendencies.jl")
 end#module
