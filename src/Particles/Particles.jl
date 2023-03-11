@@ -5,6 +5,7 @@ using Oceananigans: NonhydrostaticModel, HydrostaticFreeSurfaceModel
 
 import Oceananigans.LagrangianParticleTracking: update_particle_properties!
 import Oceananigans.Biogeochemistry: update_tendencies!
+import Oceananigans.OutputWriters: fetch_output
 import Base: length, size, show, summary
 
 abstract type BiogeochemicalParticles end
@@ -44,6 +45,11 @@ function Base.show(io::IO, particles::BiogeochemicalParticles)
         "└── ", length(properties), " properties: ", properties, "\n")
 end
 
+# User may want to overload this to not output parameters over and over again
+function fetch_output(particles::BiogeochemicalParticles, model)
+    names = propertynames(particles)
+    return NamedTuple{names}([getproperty(particles, name) for name in names])
+end
 
 include("tracer_tendencies.jl")
 end#module
