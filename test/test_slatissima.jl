@@ -1,41 +1,57 @@
-using Test
-using OceanBioME: SLatissima
+using Test, OceanBioME, Oceananigans
+using OceanBioME.SLatissimaModel: SLatissima
 using CUDA
+using Oceananigans.Units
 
 @testset "Sugar Kelp Particle Setup" begin
+    arch = CPU()
+    grid = RectilinearGrid(arch; size=(1, 1, 1), extent=(1, 1, 1))
+
     # Initial properties
-    kelp_particles = SLatissima.setup(n = 1, x₀ = 1.0, y₀ = 1.0, z₀ = 1.0, A₀ = 1.0, N₀ = 1.0, C₀ = 1.0, latitude = 1.0)
 
-    @test length(kelp_particles) == 1
-    @test all(kelp_particles.properties.x .== 1.0)
+    particles = SLatissima(; x = ones(Float64, 2), 
+                             A = ones(Float64, 2) .* 5, 
+                             N = ones(Float64, 2), 
+                             C = ones(Float64, 2), 
+                             latitude = 1.0,
+                             pescribed_temperature = (args...) -> 10.0,
+                             pescribed_salinity = (args...) -> 35.0)
 
-    kelp_particles = SLatissima.setup(n = 2, x₀ = 1.0, y₀ = 1.0, z₀ = 1.0, A₀ = 1.0, N₀ = 1.0, C₀ = 1.0, latitude = 1.0)
+    @test length(particles) == 2
 
-    @test length(kelp_particles) == 2
-    @test all(kelp_particles.properties.x .== 1.0)
+    # nitrogen and carbon conservation
 
-    kelp_particles = SLatissima.setup(n = 2, x₀ = [1.0, 2.0], y₀ = 1.0, z₀ = 1.0, A₀ = 1.0, N₀ = 1.0, C₀ = 1.0, latitude = 1.0)
+    model = NonhydrostaticModel(; grid,
+                                  biogeochemistry = LOBSTER(; grid, carbonates = true, 
+                                                                    variable_redfield = true, 
+                                                                    sinking_speeds = NamedTuple(), 
+                                                                    particles),
+                                  advection = nothing)
 
-    @test length(kelp_particles) == 2
-    @test all(kelp_particles.properties.x == [1.0, 2.0])
-    @test all(kelp_particles.properties.y .== 1.0)
+    set!(model, NO₃ = 10.0, NH₄ = 1.0, DIC = 2000, Alk = 2000)
 
-    # Temperature and salinity function passing
+    initial_tracer_N = sum(model.tracers.NO₃) + sum(model.tracers.NH₄) + sum(model.tracers.P) + sum(model.tracers.Z) + sum(model.tracers.sPON) + sum(model.tracers.bPON) + sum(model.tracers.DON)
+    initial_kelp_N = sum(particles.A .* particles.structural_dry_weight_per_area .* (particles.N .+ particles.structural_nitrogen)) ./ (14 * 0.001)
 
-    @test !(:T in keys(kelp_particles.parameters.equation_parameters)) && !(:S in keys(kelp_particles.parameters.equation_parameters))
+    initial_tracer_C = sum(model.tracers.sPOC) + sum(model.tracers.bPOC) + sum(model.tracers.DOC) + sum(model.tracers.DIC) + 
+                       sum(model.tracers.P * (1 + model.biogeochemistry.organic_carbon_calcate_ratio) .+ model.tracers.Z) * model.biogeochemistry.phytoplankton_redfield 
+                       sum(model.tracers.sPOC) + sum(model.tracers.bPOC) + sum(model.tracers.DOC)
+    initial_kelp_C = sum(particles.A .* particles.structural_dry_weight_per_area .* (particles.C .+ particles.structural_carbon)) ./ (12 * 0.001)
 
-    kelp_particles = SLatissima.setup(n = 1, x₀ = 1.0, y₀ = 1.0, z₀ = 1.0, A₀ = 1.0, N₀ = 1.0, C₀ = 1.0, latitude = 1.0, T = (x, y, z, t) -> 1.0, S = (x, y, z, t) -> 35.0, urel = 0.2)
-    @test (:T in keys(kelp_particles.parameters.equation_parameters)) && (:S in keys(kelp_particles.parameters.equation_parameters))
+    model.clock.time = 60days # get to a high growth phase
 
-    # Optional tracers
+    for i in 1:10
+        time_step!(model, 1.0)
+    end
 
-    @test kelp_particles.parameters.coupled_fields == (NO₃ = :j_NO₃,)
-    @test kelp_particles.parameters.tracked_fields == (NO₃ = :NO₃, PAR = :PAR)
+    final_tracer_N = sum(model.tracers.NO₃) + sum(model.tracers.NH₄) + sum(model.tracers.P) + sum(model.tracers.Z) + sum(model.tracers.sPON) + sum(model.tracers.bPON) + sum(model.tracers.DON)
+    final_kelp_N = sum(particles.A .* particles.structural_dry_weight_per_area .* (particles.N .+ particles.structural_nitrogen)) ./ (14 * 0.001)
 
-    kelp_particles = SLatissima.setup(n = 1, x₀ = 1.0, y₀ = 1.0, z₀ = 1.0, A₀ = 1.0, N₀ = 1.0, C₀ = 1.0, latitude = 1.0; optional_tracers = (:NH₄, :DIC, :bPON, :bPOC, :O₂, :DON, :DOC))
+    final_tracer_C = sum(model.tracers.sPOC) + sum(model.tracers.bPOC) + sum(model.tracers.DOC) + sum(model.tracers.DIC) + 
+                     sum(model.tracers.P * (1 + model.biogeochemistry.organic_carbon_calcate_ratio) .+ model.tracers.Z) * model.biogeochemistry.phytoplankton_redfield 
+                     sum(model.tracers.sPOC) + sum(model.tracers.bPOC) + sum(model.tracers.DOC)
+    final_kelp_C = sum(particles.A .* particles.structural_dry_weight_per_area .* (particles.C .+ particles.structural_carbon)) ./ (12 * 0.001)
 
-    @test kelp_particles.parameters.tracked_fields == (NO₃ = :NO₃, PAR = :PAR, NH₄ = :NH₄)
-    @test kelp_particles.parameters.coupled_fields == (NO₃ = :j_NO₃, NH₄ = :j_NH₄, DIC = :j_DIC, bPON = :νⁿ, bPOC = :νᶜ, O₂ = :j_OXY, DON = :eⁿ, DOC = :eᶜ)
-
-    return nothing
+    @test initial_tracer_N + initial_kelp_N ≈ final_tracer_N + final_kelp_N
+    @test initial_tracer_C + initial_kelp_C ≈ final_tracer_C + final_kelp_C
 end

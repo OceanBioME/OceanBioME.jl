@@ -50,8 +50,6 @@ function ΣGᶜ(model, carbonates, variable_redfield)
 end
 
 function test_LOBSTER(grid, carbonates, oxygen, variable_redfield, sinking, open_bottom, n_timesteps)
-    PAR = CenterField(grid)
-
     if sinking
         model = NonhydrostaticModel(;grid,
                                      biogeochemistry = LOBSTER(;grid, carbonates, oxygen, variable_redfield, open_bottom))
@@ -103,7 +101,7 @@ function test_LOBSTER(grid, carbonates, oxygen, variable_redfield, sinking, open
 
         if carbonates
             model.tracers.DIC .= 2000 * rand()
-            model.tracers.Alk .= 200 * rand()
+            model.tracers.Alk .= 2000 * rand()
         end
     end
     
