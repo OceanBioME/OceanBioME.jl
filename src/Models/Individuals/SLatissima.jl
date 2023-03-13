@@ -46,8 +46,8 @@ import Oceananigans.LagrangianParticleTracking: update_particle_properties!, _ad
 
 @inline no_dynamics(args...) = nothing
 
-Base.@kwdef struct SLatissima{G, FT, U, T, S, P, F} <: BiogeochemicalParticles
-    grid :: G
+Base.@kwdef struct SLatissima{AR, FT, U, T, S, P, F} <: BiogeochemicalParticles
+    architecture :: AR = CPU()
     growth_rate_adjustement :: FT = 4.5
     photosynthetic_efficiency :: FT = 4.15e-5 * 24 * 10^6 / (24 * 60 * 60)
     minimum_carbon_reserve :: FT = 0.01
@@ -98,22 +98,22 @@ Base.@kwdef struct SLatissima{G, FT, U, T, S, P, F} <: BiogeochemicalParticles
     pescribed_salinity :: S = nothing
 
     #position
-    x :: P = arch_array(grid.architecture, [0.0])
-    y :: P = arch_array(grid.architecture, zeros(Float64, length(x)))
-    z :: P = arch_array(grid.architecture, zeros(Float64, length(x)))
+    x :: P = arch_array(architecture, [0.0])
+    y :: P = arch_array(architecture, zeros(Float64, length(x)))
+    z :: P = arch_array(architecture, zeros(Float64, length(x)))
 
     #properties
-    A :: P = arch_array(grid.architecture, ones(Float64, length(x)) * 30)
-    N :: P = arch_array(grid.architecture, ones(Float64, length(x)) * 0.01)
-    C :: P = arch_array(grid.architecture, ones(Float64, length(x)) * 0.1)
+    A :: P = arch_array(architecture, ones(Float64, length(x)) * 30)
+    N :: P = arch_array(architecture, ones(Float64, length(x)) * 0.01)
+    C :: P = arch_array(architecture, ones(Float64, length(x)) * 0.1)
 
     #feedback
-    nitrate_uptake :: P = arch_array(grid.architecture, zeros(Float64, length(x)))
-    ammonia_uptake :: P = arch_array(grid.architecture, zeros(Float64, length(x)))
-    primary_production :: P = arch_array(grid.architecture, zeros(Float64, length(x)))
-    frond_exudation :: P = arch_array(grid.architecture, zeros(Float64, length(x)))
-    nitrogen_erosion :: P = arch_array(grid.architecture, zeros(Float64, length(x)))
-    carbon_erosion :: P = arch_array(grid.architecture, zeros(Float64, length(x)))
+    nitrate_uptake :: P = arch_array(architecture, zeros(Float64, length(x)))
+    ammonia_uptake :: P = arch_array(architecture, zeros(Float64, length(x)))
+    primary_production :: P = arch_array(architecture, zeros(Float64, length(x)))
+    frond_exudation :: P = arch_array(architecture, zeros(Float64, length(x)))
+    nitrogen_erosion :: P = arch_array(architecture, zeros(Float64, length(x)))
+    carbon_erosion :: P = arch_array(architecture, zeros(Float64, length(x)))
 
     custom_dynamics :: F = no_dynamics
 
