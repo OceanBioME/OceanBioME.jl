@@ -86,8 +86,7 @@ simulation.callbacks[:progress] = Callback(progress_message, TimeInterval(10days
 filename = "kelp"
 simulation.output_writers[:profiles] = JLD2OutputWriter(model, merge(model.tracers, model.auxiliary_fields), filename = "$filename.jld2", schedule = TimeInterval(1day), overwrite_existing=true)
 
-
-#simulation.output_writers[:particles] = JLD2OutputWriter(model, (; particles), filename = "$(filename)_particles.jld2", schedule = TimeInterval(1day), overwrite_existing = true)
+simulation.output_writers[:particles] = JLD2OutputWriter(model, (; particles), filename = "$(filename)_particles.jld2", schedule = TimeInterval(1day), overwrite_existing = true)
 
 scale_negative_tracers = ScaleNegativeTracers(; model, tracers = (:NO₃, :NH₄, :P, :Z, :sPON, :bPON, :DON))
 simulation.callbacks[:neg] = Callback(scale_negative_tracers; callsite = UpdateStateCallsite())
@@ -147,91 +146,36 @@ f[3, 5] = Legend(f, axfDIC, "", framevisible = false)
 save("$(filename).png", f)
 
 # ![Results-bgc](kelp.png)
-#=
 
 # We can also have a look at how the kelp particles evolve
 using JLD2
 
-file_profiles = jldopen("$(filename)_particles.jld2")
+file = jldopen("$(filename)_particles.jld2")
 
-iterations = parse.(Int, keys(file_profiles["timeseries/t"]))
-tracers=keys(file_profiles["timeseries/particles/$(iterations[1])"])
+iterations = keys(file["timeseries/t"])
 
-times = [file_profiles["timeseries/t/$iter"] for iter in iterations]
+A, N, C = ntuple(n -> ones(5, length(iterations)) .* NaN, 3)
+times = ones(length(iterations)) .* NaN
 
-results = zeros(length(tracers), length(getproperty(file_profiles["timeseries/particles/$(iterations[1])"], tracers[1])), length(iterations))
-times = zeros(length(iterations))
 for (i, iter) in enumerate(iterations)
-    times[i] = file_profiles["timeseries/t/$iter"]
-    for (j, tracer) in enumerate(tracers)
-        results[j, :, i] .= getproperty(file_profiles["timeseries/particles/$iter"], tracer)
-    end
+    particles = file["timeseries/particles/$iter"]
+    A[:, i] = particles.A
+    N[:, i] = particles.N
+    C[:, i] = particles.C
+
+    times[i] = file["timeseries/t/$iter"]
 end
 
-xs, ys = times/(1day), results[3,:,1]
+fig = Figure(resolution = (1600, 500))
 
-f = Figure(backgroundcolor = RGBf(1, 1, 1), resolution = (1920, 1050))
-gInput = f[1, 1] = GridLayout()
-gProperties = f[1, 2] = GridLayout()
-gOutput = f[1, 3] = GridLayout()
+ax1 = Axis(fig[1, 1], ylabel = "Frond area (dm²)", xlabel = "Time (days)")
+[lines!(ax1, times./day, A[n, :]) for n in 1:5]
 
-ax1, hm1 = heatmap(gInput[1, 1], xs, ys, results[18,:,:]')
-ax1.title = "NO₃"
-ax1.xticklabelsvisible= false
-cb1 = Colorbar(gInput[1, 1:2], hm1, label = "mmol N/m³")
+ax2 = Axis(fig[1, 2], ylabel = "Total Carbon (gC)", xlabel = "Time (days)")
+[lines!(ax2, times./day, (A .* (N .+ particles.structural_nitrogen) .* particles.structural_dry_weight_per_area)[n, :]) for n in 1:5]
 
-ax2, hm2 = heatmap(gInput[2, 1], xs, ys, results[19,:,:]')
-ax2.title = "NH₄"
-ax2.ylabel = "depth (m)"
-ax2.xticklabelsvisible= false
-cb2 = Colorbar(gInput[2, 1:2], hm2, label = "mmol N/m³")
+ax3 = Axis(fig[1, 3], ylabel = "Total Nitrogen (gN)", xlabel = "Time (days)")
+[lines!(ax3, times./day, (A .* (C .+ particles.structural_carbon) .* particles.structural_dry_weight_per_area)[n, :]) for n in 1:5]
 
-ax3, hm3 = heatmap(gInput[3, 1], xs, ys, results[20,:,:]')
-ax3.title = "PAR"
-ax3.xlabel = "time (day)"
-cb3 = Colorbar(gInput[3, 1:2], hm3, label = "einstein/m²/day")
-
-ax1, hm1 = heatmap(gProperties[1, 1], xs, ys, results[7,:,:]')
-ax1.title = "Area"
-ax1.xticklabelsvisible= false
-cb1 = Colorbar(gProperties[1, 1:2], hm1, label = "dm²")
-
-ax2, hm2 = heatmap(gProperties[2, 1], xs, ys, ((results[8,:,:] .+ SLatissima.defaults.N_struct) .* SLatissima.defaults.K_A .* results[7, :, :])')
-ax2.title = "Total Nitrogen (structural + reserve)"
-ax2.ylabel = "depth (m)"
-ax2.xticklabelsvisible= false
-cb2 = Colorbar(gProperties[2, 1:2], hm2, label = "gN/frond")
-
-ax3, hm3 = heatmap(gProperties[3, 1], xs, ys, ((results[9,:,:] .+ SLatissima.defaults.C_struct) .* SLatissima.defaults.K_A .* results[7, :, :])')
-ax3.title = "Total Carbon (structural + reserve)"
-ax3.xlabel = "time (day)"
-cb3 = Colorbar(gProperties[3, 1:2], hm3, label = "gC/frond")
-
-ax1, hm1 = heatmap(gOutput[1, 1], xs, ys, -results[10,:,:]')
-ax1.title = "NO₃ uptake"
-cb1 = Colorbar(gOutput[1, 1:2], hm1, label = "mmol N/s")
-ax1.xticklabelsvisible= false
-
-ax2, hm2 = heatmap(gOutput[2, 1], xs, ys, -results[11,:,:]')
-ax2.title = "NH₄ uptake"
-ax2.xticklabelsvisible= false
-cb2 = Colorbar(gOutput[2, 1:2], hm2, label = "mmol N/s")
-
-ax3, hm3 = heatmap(gOutput[3, 1], xs, ys, -results[12,:,:]')
-ax3.title = "Primary production (photosynthesis - respiration)"
-ax3.xticklabelsvisible= false
-ax3.ylabel = "depth (m)"
-cb3 = Colorbar(gOutput[3, 1:2], hm3, label = "mmol C/s")
-
-ax4, hm4 = heatmap(gOutput[4, 1], xs, ys, results[15,:,:]')
-ax4.title = "Exudation (DOC output)"
-ax4.xticklabelsvisible= false
-cb4 = Colorbar(gOutput[4, 1:2], hm4, label = "mmol C/s")
-
-ax5, hm5 = heatmap(gOutput[5, 1], xs, ys, results[17,:,:]')
-ax5.title = "Frond errosion (POC output)"
-ax5.xlabel = "time (day)"
-cb5 = Colorbar(gOutput[5, 1:2], hm5, label = "mmol C/s")
-save("$(filename)_particles.png", f)
-
+save("kelp_particles.png", fig)
 # ![Results](kelp_particles.png)=#
