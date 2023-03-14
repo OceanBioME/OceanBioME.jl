@@ -1,7 +1,13 @@
 using Test, OceanBioME, Oceananigans
 using OceanBioME.SLatissimaModel: SLatissima
-using CUDA
 using Oceananigans.Units
+using Oceananigans.Fields: TracerFields
+
+function intercept_tendencies!(model, intercepted_tendencies)
+    for tracer in keys(model.tracers)
+        copyto!(intercepted_tendencies[tracer], model.timestepper.Gⁿ[tracer])
+    end
+end
 
 @testset "SLatissima particle setup and conservations" begin
     arch = CPU()
@@ -54,4 +60,15 @@ using Oceananigans.Units
 
     @test initial_tracer_N + initial_kelp_N ≈ final_tracer_N + final_kelp_N
     @test initial_tracer_C + initial_kelp_C ≈ final_tracer_C + final_kelp_C
+
+    simulation = Simulation(model, Δt = 1.0, stop_iteration = 1)
+
+    intercepted_tendencies = TracerFields(keys(model.tracers), grid)
+
+    simulation.callbacks[:intercept_tendencies] = Callback(intercept_tendencies!; callsite = TendencyCallsite(), parameters = intercepted_tendencies)
+
+    run!(simulation)
+
+    # the model is changing the tracer tendencies
+    @test any([any(intercepted_tendencies[tracer] .!= model.timestepper.Gⁿ[tracer]) for tracer in (:NO₃, :NH₄, :DIC, :DOC, :bPON, :bPOC)])
 end
