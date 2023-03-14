@@ -20,7 +20,7 @@ abstract type FlatSediment <: AbstractSediment end
 
 sediment_fields(::AbstractSediment) = ()
 
-@inline update_tendencies!(bgc::ContinuousFormBiogeochemistry{<:Any, <:FlatSediment}, model) = update_tendencies!(bgc, bgc.sediment_model, model)
+@inline update_tendencies!(bgc::ContinuousFormBiogeochemistry{<:Any, <:FlatSediment, <:Any}, model) = update_tendencies!(bgc, bgc.sediment_model, model)
 @inline update_tendencies!(bgc, sediment, model) = nothing
 
 function update_tendencies!(bgc, sediment::FlatSediment, model)
@@ -38,7 +38,7 @@ function update_tendencies!(bgc, sediment::FlatSediment, model)
 
     event = launch!(arch, model.grid, :xy,
                     calculate_tendencies!,
-                    bgc.sediment_model, model,
+                    bgc.sediment_model, bgc, model,
                     dependencies = device_event(arch))
 
     wait(device(arch), event)

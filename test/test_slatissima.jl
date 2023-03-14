@@ -3,7 +3,7 @@ using OceanBioME.SLatissimaModel: SLatissima
 using CUDA
 using Oceananigans.Units
 
-@testset "Sugar Kelp Particle Setup" begin
+@testset "SLatissima particle setup and conservations" begin
     arch = CPU()
     grid = RectilinearGrid(arch; size=(1, 1, 1), extent=(1, 1, 1))
 
