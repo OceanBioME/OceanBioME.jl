@@ -135,3 +135,24 @@ end
 end
 @inline (scale::ScaleNegativeTracers)(sim::Simulation) = scale(sim.model) 
 
+@kernel function _remove_NaN_tendencies!(fields)
+    i, j, k = @index(Global, NTuple)
+    for field in fields
+        if @inbounds isnan(field[i, j, k])
+            field[i, j, k] = 0.0
+        end
+    end
+end
+
+"""
+    remove_NaN_tendencies!(model)
+
+Zeros any `NaN` value tendencies as a final protection against negative tracer run away.
+"""
+@inline function remove_NaN_tendencies!(model)
+    workgroup, worksize = work_layout(model.grid, :xyz)
+    remove_NaN_tendencies_kernel! = _remove_NaN_tendencies!(device(model.grid.architecture), workgroup, worksize)
+    event = remove_NaN_tendencies_kernel!(values(model.timestepper.Gⁿ))
+    wait(event)
+end
+

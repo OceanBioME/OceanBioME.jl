@@ -22,7 +22,7 @@ export Boundaries, Sediments, GasExchange, FlatSediment
 export column_advection_timescale, column_diffusion_timescale, sinking_adveciton_timescale, Budget
 
 # Positivity preservaiton utilities
-export zero_negative_tracers!, error_on_neg!, warn_on_neg!, ScaleNegativeTracers
+export zero_negative_tracers!, error_on_neg!, warn_on_neg!, ScaleNegativeTracers, remove_NaN_tendencies!
 
 # Oceananigans extensions
 export ColumnField, isacolumn
