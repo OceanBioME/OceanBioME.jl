@@ -43,6 +43,7 @@ KernelAbstractions = "0.7, 0.8"
 OrdinaryDiffEq = "^6.26"
 Roots = "^2.0"
 StructArrays = "^0.6"
+Oceananigans = "^0.79.6"
 
 [extras]
 DataDeps = "124859b0-ceae-595e-8997-d05f6a7a8dfe"
