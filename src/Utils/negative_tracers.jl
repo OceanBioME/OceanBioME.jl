@@ -7,7 +7,7 @@ using Oceananigans.Architectures: device
 import Adapt: adapt_structure
 
 """
-    zero_negative_tracers!(sim; params = (exclude=(), warn=false))
+    zero_negative_tracers!(sim; params = (exclude=(), ))
 
 Sets any tracers in `sim.model` which are negative to zero. Use like:
 ```julia
@@ -15,16 +15,16 @@ simulation.callbacks[:neg] = Callback(zero_negative_tracers!)
 ```
 This is *NOT* a reccomended method to preserve positivity as it strongly does not conserve tracers.
 
-Tracers to exclude can be set in the parameters and if `params.warn` is set to true a warning will be displayed when negative values are modified.
+Tracers to exclude can be set in the parameters.
 """
-function zero_negative_tracers!(sim; params = (exclude=(), warn=false))
-    @unroll for (tracer_name, tracer) in pairs(sim.model.tracers)
+function zero_negative_tracers!(model; params = (exclude=(), ))
+    @unroll for (tracer_name, tracer) in pairs(model.tracers)
         if !(tracer_name in params.exclude)
-            if params.warn&&any(tracer .< 0.0) @warn "$tracer_name < 0" end
             parent(tracer) .= max.(0.0, parent(tracer))
         end
     end
 end
+@inline zero_negative_tracers!(sim::Simulation; params = (exclude=(), )) = zero_negative_tracers!(sim.model; params)
 
 """
     error_on_neg(sim; params = (exclude=(), ))
