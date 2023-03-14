@@ -31,7 +31,7 @@ model = NonhydrostaticModel(; grid,
 
 set!(model, P = 0.03, Z = 0.03, NO₃ = 4.0, NH₄ = 0.05, DIC = 2200.0, Alk = 2400.0)
 
-simulation = Simulation(model, Δt=10minutes, stop_time=5year) 
+simulation = Simulation(model, Δt=10minutes, stop_time=10year) 
 
 progress_message(sim) = @printf("Iteration: %04d, time: %s, Δt: %s, wall time: %s\n",
                                                         iteration(sim),

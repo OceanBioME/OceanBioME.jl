@@ -1,9 +1,7 @@
 # # Simple active particle example
 # In this example we will setup a simple 1D column with the [LOBSTER](@ref LOBSTER) biogeochemical model and active particles modelling the growth of sugar kelp. This demonstraits:
 # - How to setup OceanBioME's biogeochemical models
-# - How to setup light attenuation
 # - How to add biologically active particles which interact with the biodeochemical model
-# - How to include optional tracer sets (carbonate chemistry and oxygen)
 # - How to visulise results
 
 # This is forced by idealised mixing layer depth and surface photosynthetically available radiation (PAR) which are setup first
@@ -12,13 +10,12 @@
 # First we will check we have the dependencies installed
 # ```julia
 # using Pkg
-# pkg"add OceanBioME, Oceananigans, Printf, GLMakie"
+# pkg"add OceanBioME, Oceananigans, Printf, CairoMakie"
 # ```
 
 # ## Model setup
-# We load the packages and choose the default LOBSTER parameter set
+# First load the required packages
 using OceanBioME, Oceananigans, Printf
-using OceanBioME.SLatissimaModel: SLatissima
 using Oceananigans.Units
 
 # ## Surface PAR and turbulent vertical diffusivity based on idealised mixed layer depth 
@@ -34,41 +31,41 @@ using Oceananigans.Units
 
 @inline κₜ(x, y, z, t) = 1e-2 * (1 + tanh((z - MLD(t))/10)) / 2 + 1e-4
 
-@inline t_function(x, y, z, t) = 2.4 * cos(t * 2π / year + 50day) + 10
+@inline temp(x, y, z, t) = 2.4 * cos(t * 2π / year + 50day) + 10
 
 # ## Grid and PAR field
 # Define the grid and an extra Oceananigans field for the PAR to be stored in
 Lx, Ly = 20, 20
 grid = RectilinearGrid(size=(1, 1, 50), extent=(Lx, Ly, 200)) 
 
+# Specify the boundary conditions for DIC and O₂ based on the air-sea CO₂ and O₂ flux
+CO₂_flux = GasExchange(; gas = :CO₂, temperature = temp, salinity = (args...) -> 35)
+
 # ## Kelp Particle setup
 @info "Setting up kelp particles"
 n = 5 # number of kelp fronds
-z₀ = [-21:5:-1;]*1.0 # depth of kelp fronds
+z₀ = [-21:5:-1;] * 1.0 # depth of kelp fronds
 
-particles = SLatissima(; grid, 
-                         x = ones(n) * Lx / 2, y = ones(n) * Ly / 2, z = z₀, 
-                         A = ones(n) * 30.0, N = ones(n) * 0.01, C =  ones(n) *0.1, 
+particles = SLatissima(; x = ones(n) * Lx / 2, y = ones(n) * Ly / 2, z = z₀, 
+                         A = ones(n) * 10.0,
                          latitude = 57.5,
-                         scalefactor = 500.0, 
-                         pescribed_temperature = t_function)
+                         scalefactor = 500.0,
+                         pescribed_temperature = temp)
 
-# Specify the boundary conditions for DIC and O₂ based on the air-sea CO₂ and O₂ flux
-CO₂_flux = GasExchange(; gas = :CO₂, temperature = t_function, salinity = (args...) -> 35)
-O₂_flux = GasExchange(; gas = :O₂, temperature = t_function, salinity = (args...) -> 35)
+# ## Setup BGC model
+biogeochemistry = LOBSTER(; grid,
+                            surface_phytosynthetically_active_radiation = PAR⁰,
+                            carbonates = true,
+                            variable_redfield = true)
 
 model = NonhydrostaticModel(; grid,
                               closure = ScalarDiffusivity(ν = κₜ, κ = κₜ), 
-                              biogeochemistry = LOBSTER(; grid,
-                                                          surface_phytosynthetically_active_radiation = PAR⁰,
-                                                          carbonates = true,
-                                                          variable_redfield = true,
-                                                          particles,
-                                                          advection_schemes = (sPOM = WENO(grid), bPOM = WENO(grid))),
+                              biogeochemistry,
                               boundary_conditions = (DIC = FieldBoundaryConditions(top = CO₂_flux), ),
                               advection = nothing)
 
-set!(model, P = 0.03, Z = 0.03, NO₃ = 11.0, NH₄ = 0.05, DIC = 2200.0, Alk = 2400.0)
+
+set!(model, P = 0.03, Z = 0.03, NO₃ = 4.0, NH₄ = 0.05, DIC = 2239.8, Alk = 2409.0)
 
 # ## Simulation
 # Next we setup the simulation along with some callbacks that:
@@ -76,14 +73,15 @@ set!(model, P = 0.03, Z = 0.03, NO₃ = 11.0, NH₄ = 0.05, DIC = 2200.0, Alk = 
 # - Store the model and particles output
 # - Prevent the tracers from going negative from numerical error (see discussion of this in the [positivity preservation](@ref pos-preservation) implimentation page)
 
-simulation = Simulation(model, Δt=10minutes, stop_time=1year) 
+simulation = Simulation(model, Δt = 10minutes, stop_time=100days) 
 
 progress_message(sim) = @printf("Iteration: %04d, time: %s, Δt: %s, wall time: %s\n",
                                                         iteration(sim),
                                                         prettytime(sim),
                                                         prettytime(sim.Δt),
-                                                        prettytime(sim.run_wall_time))                
-simulation.callbacks[:progress] = Callback(progress_message, IterationInterval(100))
+                                                        prettytime(sim.run_wall_time))      
+                                                                  
+simulation.callbacks[:progress] = Callback(progress_message, TimeInterval(10days))
 
 filename = "kelp"
 simulation.output_writers[:profiles] = JLD2OutputWriter(model, merge(model.tracers, model.auxiliary_fields), filename = "$filename.jld2", schedule = TimeInterval(1day), overwrite_existing=true)
@@ -94,23 +92,21 @@ simulation.output_writers[:profiles] = JLD2OutputWriter(model, merge(model.trace
 scale_negative_tracers = ScaleNegativeTracers(; model, tracers = (:NO₃, :NH₄, :P, :Z, :sPON, :bPON, :DON))
 simulation.callbacks[:neg] = Callback(scale_negative_tracers; callsite = UpdateStateCallsite())
 
-wizard = TimeStepWizard(cfl = 0.2, diffusive_cfl = 0.2, max_change = 2.0, min_change = 0.5, cell_diffusion_timescale = column_diffusion_timescale, cell_advection_timescale = column_advection_timescale)
+wizard = TimeStepWizard(cfl = 0.1, diffusive_cfl = 0.1, max_change = 2.0, min_change = 0.5, cell_diffusion_timescale = column_diffusion_timescale, cell_advection_timescale = column_advection_timescale)
 simulation.callbacks[:wizard] = Callback(wizard, IterationInterval(1))
 
 # ## Run!
 # Finally we run the simulation
-#=run!(simulation)
+run!(simulation)
 
 # Now we can visulise the results with some post processing to diagnose the air-sea CO₂ flux - hopefully this looks different to the example without kelp!
 
 P = FieldTimeSeries("$filename.jld2", "P")
 NO₃ = FieldTimeSeries("$filename.jld2", "NO₃")
 Z = FieldTimeSeries("$filename.jld2", "Z")
-sPON = FieldTimeSeries("$filename.jld2", "sPON") 
-bPON = FieldTimeSeries("$filename.jld2", "bPON")
-DIC = FieldTimeSeries("$filename.jld2", "DIC")
-sPOC = FieldTimeSeries("$filename.jld2", "sPOC")
+sPOC = FieldTimeSeries("$filename.jld2", "sPOC") 
 bPOC = FieldTimeSeries("$filename.jld2", "bPOC")
+DIC = FieldTimeSeries("$filename.jld2", "DIC")
 Alk = FieldTimeSeries("$filename.jld2", "Alk")
 
 x, y, z = nodes(P)
@@ -119,12 +115,12 @@ times = P.times
 air_sea_CO₂_flux = zeros(size(P)[4])
 carbon_export = zeros(size(P)[4])
 for (i, t) in enumerate(times)
-    air_sea_CO₂_flux[i] = CO₂_flux.condition.parameters(0.0, 0.0, t, DIC[1, 1, 50, i], Alk[1, 1, 50, i], t_function(1, 1, 0, t), 35)
-    carbon_export[i] = (200 / 50) * (sPOC[1, 1, end-20, i] * model.biogeochemistry.sinking_velocities.sPOM.w[1, 1, end - 20] .+ bPOC[1, 1, end-20, i] * model.biogeochemistry.sinking_velocities.bPOM.w[1, 1, end - 20])
+    air_sea_CO₂_flux[i] = CO₂_flux.condition.parameters(0.0, 0.0, t, DIC[1, 1, 50, i], Alk[1, 1, 50, i], temp(1, 1, 0, t), 35)
+    carbon_export[i] = sPOC[1, 1, end - 20, i] * model.biogeochemistry.sinking_velocities.sPOM.w[1, 1, end - 20] + bPOC[1, 1, end - 20, i] * model.biogeochemistry.sinking_velocities.bPOM.w[1, 1, end - 20]
 end
 
 using CairoMakie
-f=Figure(backgroundcolor=RGBf(1, 1, 1), fontsize=30, resolution = (1920, 1050))
+f = Figure(resolution = (1920, 1050))
 
 axP = Axis(f[1, 1:2], ylabel="z (m)", xlabel="Time (days)", title="Phytoplankton concentration (mmol N/m³)")
 hmP = heatmap!(times./days, float.(z[end-23:end]), float.(P[1, 1, end-23:end, 1:end])', interpolate=true, colormap=:batlow)
@@ -151,6 +147,7 @@ f[3, 5] = Legend(f, axfDIC, "", framevisible = false)
 save("$(filename).png", f)
 
 # ![Results-bgc](kelp.png)
+#=
 
 # We can also have a look at how the kelp particles evolve
 using JLD2
