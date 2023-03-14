@@ -49,5 +49,6 @@ using .Light
 using .BoxModels
 using .LOBSTERModel
 using .NPZDModel
+using .SLatissimaModel
 
 end
