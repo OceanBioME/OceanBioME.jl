@@ -61,7 +61,6 @@ component_pages = [
 ]
 
 numerical_pages = [
-    "Individuals" => "numerical_implementation/individuals.md",
     "Positivity preservation" => "numerical_implementation/positivity-preservation.md"
 ]
 
