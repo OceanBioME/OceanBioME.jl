@@ -115,7 +115,7 @@ simulation.callbacks[:abort_zeros] = Callback(zero_negative_tracers!; callsite =
 run!(simulation)
 
 # Now plot the results
-using CairoMakie
+using CairoMakie, JLD2
 
 # Open the file with our data
 file = jldopen(simulation.output_writers[:fields].filepath)
