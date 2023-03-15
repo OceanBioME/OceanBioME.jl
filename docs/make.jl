@@ -15,7 +15,8 @@ examples = [
     "box.jl",
     "column.jl",
     "data_forced.jl",
-    "kelp.jl"
+    "kelp.jl",
+    "eady.jl"
 ]
 
 for example in examples
@@ -30,8 +31,8 @@ example_pages = [
     "Simple column model" => "generated/column.md",
     "Data forced column model" => "generated/data_forced.md",
     "Model with particles (kelp) interacting with the biogeochemistry" => "generated/kelp.md",
-    #"Simple column with a sediment boundary" => "generated/sediment.md",
-    "Box model" => "generated/box.md"
+    "Box model" => "generated/box.md",
+    "Baroclinical Instability" => "generated/eady.md"
 ]
 
 bgc_pages = [

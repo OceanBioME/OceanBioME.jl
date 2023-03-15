@@ -124,10 +124,10 @@ iterations = parse.(Int, keys(file["timeseries/t"]))
 
 times = zeros(length(iterations))
 
-u, P, N, DIC = ntuple(n -> zeros(grid.Nx, grid.Ny, grid.Nz, length(iterations)), 5);
+w, P, N, DIC = ntuple(n -> zeros(grid.Nx, grid.Ny, grid.Nz, length(iterations)), 5);
 
 for (idx, it) in enumerate(iterations)
-  u[:, :, :, idx] = file["timeseries/u/$it"][1:grid.Nx, 1:grid.Ny, 1:grid.Nz]
+  w[:, :, :, idx] = file["timeseries/w/$it"][1:grid.Nx, 1:grid.Ny, 1:grid.Nz]
   P[:, :, :, idx] = file["timeseries/P/$it"][1:grid.Nx, 1:grid.Ny, 1:grid.Nz]
   N[:, :, :, idx] = file["timeseries/NO₃/$it"][1:grid.Nx, 1:grid.Ny, 1:grid.Nz] .+ file["timeseries/NH₄/$it"][1:grid.Nx, 1:grid.Ny, 1:grid.Nz]
   DIC[:, :, :, idx] = file["timeseries/DIC/$it"][1:grid.Nx, 1:grid.Ny, 1:grid.Nz]
@@ -141,7 +141,7 @@ fig = Figure(resolution = (1600, 1600))
 
 n = Observable(1)
 
-u_plt = @lift u[:, :, grid.Nz, $n]
+w_plt = @lift w[:, :, grid.Nz, $n]
 N_plt = @lift N[:, :, grid.Nz, $n]
 P_plt = @lift P[:, :, grid.Nz, $n]
 DIC_plt = @lift DIC[:, :, grid.Nz, $n]
@@ -150,27 +150,27 @@ xs = xnodes(Center, grid)[1:grid.Nx]
 ys = ynodes(Center, grid)[1:grid.Ny]
 zs = znodes(Center, grid)[1:grid.Nz]
 
-lims = [(minimum(T), maximum(T)) for T in (u, N, P, DIC)]
+lims = [(minimum(T), maximum(T)) for T in (w, N, P, DIC)]
 
-ax1 = Axis(fig[1, 1], aspect = DataAspect(), title = "u (m / s)")
-hm1 = heatmap!(ax1, xs, ys, u_plt, levels = 33, colormap = :lajolla, colorrange = lims[1])
+ax1 = Axis(fig[1, 1], aspect = DataAspect(), title = "Vertical velocity (m / s)")
+hm1 = heatmap!(ax1, xs, ys, w_plt, levels = 33, colormap = :lajolla, colorrange = lims[1], interpolate = true)
 Colorbar(fig[1, 2], hm1)
 
 ax2 = Axis(fig[1, 3], aspect = DataAspect(), title = "Nutrient (NO₃ + NH₄) concentration (mmol N / m³)")
-hm2 = heatmap!(ax2, xs, ys, N_plt, levels = 33, colormap = Reverse(:bamako), colorrange = lims[2])
+hm2 = heatmap!(ax2, xs, ys, N_plt, levels = 33, colormap = Reverse(:bamako), colorrange = lims[2], interpolate = true)
 Colorbar(fig[1, 4], hm2)
 
 ax3 = Axis(fig[2, 1], aspect = DataAspect(), title = "Phytoplankton concentration (mmol N / m³)")
-hm3 = heatmap!(ax3, xs, ys, P_plt, levels = 33, colormap = Reverse(:batlow), colorrange = lims[3])
+hm3 = heatmap!(ax3, xs, ys, P_plt, levels = 33, colormap = Reverse(:batlow), colorrange = lims[3], interpolate = true)
 Colorbar(fig[2, 2], hm3)
 
 ax4 = Axis(fig[2, 3], aspect = DataAspect(), title = "Dissolved inorganic carbon (mmol C / m³)")
-hm4 = heatmap!(ax4, xs, ys, DIC_plt, levels = 33, colormap = Reverse(:devon), colorrange = lims[4])
+hm4 = heatmap!(ax4, xs, ys, DIC_plt, levels = 33, colormap = Reverse(:devon), colorrange = lims[4], interpolate = true)
 Colorbar(fig[2, 4], hm4)
 
 supertitle = Label(fig[0, :], "t = 0.0", fontsize = 30)
 
-record(fig, "eady.mp4", 1:length(times)) do i
+record(fig, "eady.gif", 1:length(times), framerate = 10) do i
     n[] = i
     msg = string("Plotting frame ", i, " of ", length(times))
     print(msg * " \r")
