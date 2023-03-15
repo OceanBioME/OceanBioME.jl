@@ -1,4 +1,4 @@
-module OceanBioME #
+module OceanBioME
 
 # Biogeochemistry models
 export LOBSTER, NutrientPhytoplanktonZooplanktonDetritus, PISCES
@@ -49,6 +49,6 @@ using .Light
 using .BoxModels
 using .LOBSTERModel
 using .NPZDModel
-using .SLatissimaModel
+import .SLatissimaModel.SLatissima
 
 end
