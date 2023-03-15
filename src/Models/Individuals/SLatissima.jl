@@ -126,7 +126,7 @@ end
 # it returns a GPU friendly version. To automagically overcome this I'm `arch_array`ing 
 # above but that does necessitate passing the grid to the particles
 # weird thing is this is definitly getting called a some point, but not with the correct `to`.
-adapt_structure(to, kelp::SLatissima) = SLatissima(adapt_structure(to, kelp.grid),
+adapt_structure(to, kelp::SLatissima) = SLatissima(kelp.architecture,
                                                    kelp.growth_rate_adjustement, 
                                                    kelp.photosynthetic_efficiency,
                                                    kelp.minimum_carbon_reserve,
