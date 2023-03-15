@@ -20,12 +20,13 @@ abstract type FlatSediment <: AbstractSediment end
 
 sediment_fields(::AbstractSediment) = ()
 
-function update_tendencies!(bgc::ContinuousFormBiogeochemistry{<:Any, <:FlatSediment}, model)
+@inline update_tendencies!(bgc::ContinuousFormBiogeochemistry{<:Any, <:FlatSediment, <:Any}, model) = update_tendencies!(bgc, bgc.sediment_model, model)
+@inline update_tendencies!(bgc, sediment, model) = nothing
+
+function update_tendencies!(bgc, sediment::FlatSediment, model)
     arch = model.grid.architecture
 
     events = []
-
-    sediment = bgc.sediment_model
 
     for (i, tracer) in enumerate(sediment_tracers(sediment))    
         field_event = launch!(arch, model.grid, :xy, store_flat_tendencies!, sediment.tendencies.Gⁿ[i], sediment.tendencies.G⁻[i], dependencies = device_event(arch))

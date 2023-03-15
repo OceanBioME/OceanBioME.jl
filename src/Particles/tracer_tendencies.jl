@@ -1,11 +1,13 @@
-using KernelAbstractions.Extras.LoopInfo: @unroll
+using KernelAbstractions.Extras.LoopInfo: @unroll 
 using Oceananigans.Operators: volume
-using Oceananigans.Grids: AbstractGrid
+using Oceananigans.Grids: AbstractGrid, Bounded, Periodic
 using Oceananigans.Fields: fractional_indices
+using Oceananigans.Architectures: arch_array
 
 @inline get_node(::Bounded, i, N) = min(max(i, 1), N)
 @inline get_node(::Periodic, i, N) = ifelse(i < 1, N , ifelse(i > N, 1, i))
 
+# This won't work on the GPU and I can't see anyway around it, I think I need to come up with some much cleaverer way of doing it
 @inline function get_nearest_nodes(x, y, z, grid, loc)
     i, j, k = fractional_indices(x, y, z, loc, grid)
 
@@ -20,17 +22,17 @@ using Oceananigans.Fields: fractional_indices
     else
         nodes = repeat([(1, 1, 1, NaN)], 8)
         _normfactor = 0.0
-        @unroll for n=1:8
+        @unroll for n = 1:8
             # Move around cube corners getting node indices (0 or 1) and distances to them
             # Distance is d when the index is 0, or 1-d when it is 1
-            a = 0^(1+(-1)^n)
-            di = 0^abs(1-a)+ξ*(-1)^a
+            a = 0 ^ (1 + (-1) ^ n)
+            di = 0 ^ abs(1 - a) + ξ * (-1) ^ a
 
-            b = 0^(1+(-1)^floor(n/2))
-            dj = 0^abs(1-b)+η*(-1)^b
+            b = 0 ^ (1 + (-1) ^ floor(n/2))
+            dj = 0 ^ abs(1 - b) + η * (-1) ^ b
 
-            c = 0^(1+(-1)^floor(n/4))
-            dk = 0^abs(1-c)+ζ*(-1)^c
+            c = 0 ^ (1 + (-1) ^ floor(n/4))
+            dk = 0 ^ abs(1 - c) + ζ * (-1) ^ c
 
             @inbounds nodes[n] = (Int(i+1)+a, 
                             Int(j+1)+b, 
@@ -39,22 +41,5 @@ using Oceananigans.Fields: fractional_indices
             _normfactor += 1 ./sqrt(di^2+dj^2+dk^2)
         end
         return nodes, 1/_normfactor
-    end
-end
-
-@kernel function calculate_particle_tendency!(property, tendency, particles, grid::AbstractGrid{FT, TX, TY, TZ}) where {FT, TX, TY, TZ}
-    p = @index(Global)
-    scalefactor = :scalefactor in keys(particles.parameters) ? particles.parameters.scalefactor : 1.0
-
-    LX, LY, LZ = location(tendency)
-    nodes, normfactor = @inbounds get_nearest_nodes(particles.properties.x[p], particles.properties.y[p], particles.properties.z[p], grid, (LX(), LY(), LZ()))
-
-    @unroll for (i, j, k, d) in nodes 
-        # Reflect back on Bounded boundaries or wrap around for Periodic boundaries
-        i, j, k = (get_node(TX(), i, grid.Nx), get_node(TY(), j, grid.Ny), get_node(TZ(), k, grid.Nz))
-
-        node_volume = volume(i, j, k, grid, LX(), LY(), LZ())
-        value = scalefactor * @inbounds property[p] * normfactor / (d * node_volume)
-        @inbounds tendency[i, j, k] += value	
     end
 end

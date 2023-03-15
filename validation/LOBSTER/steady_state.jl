@@ -1,48 +1,50 @@
-using Oceananigans, OceanBioME, Printf
+using OceanBioME, Oceananigans, Printf
 using Oceananigans.Units
 
-grid = RectilinearGrid(; topology = (Flat, Flat, Bounded), size = (1, ), extent = (40, ))
+@inline κₜ(x, y, z, t) = 1e-2 * (1 + tanh((z - 70)/10)) / 2 + 1e-4
 
-# biogeochemistry
-biogeochemistry = LOBSTER(; grid, 
-                            carbonates = true, oxygen = true, variable_redfield = true, 
-                            open_bottom = true,
-                            surface_phytosynthetically_active_radiation = (x, y, t) -> 80)
+Lx, Ly = 20, 20
+grid = RectilinearGrid(size=(1, 1, 50), extent=(Lx, Ly, 200)) 
 
-DIC_bcs = FieldBoundaryConditions(top = GasExchange(; gas = :CO₂))
-O₂_bcs = FieldBoundaryConditions(top = GasExchange(; gas = :O₂))
+# Specify the boundary conditions for DIC and O₂ based on the air-sea CO₂ and O₂ flux
+CO₂_flux = GasExchange(; gas = :CO₂, temperature = 12, salinity = (args...) -> 35)
 
-# nitrate - restoring to a (made up) climatology otherwise we depleat Nutrients
-NO₃_forcing = Relaxation(rate = 1/10days, target = 3.0)
+# this rate doesn't seem excessive compared to the nitrogen fixation rates from https://www.nature.com/articles/nature05392
+# riverine input is presumably more significant than this in coastal waters
+N_fixation(x, y, t) = - 10 / year
+N_upwelling = Relaxation(rate = 1/10days, mask = (x, y, z) -> ifelse(z < -150, 1.0, 0.0), target = 1.0)
 
-# alkalinity - restoring to a (made up) climatology otherwise we depleat it
+# alkalinity - restoring to a north atlantic climatology otherwise we depleat it
 Alk_forcing = Relaxation(rate = 1/day, target = 2409.0)
 
-# define model
 model = NonhydrostaticModel(; grid,
-                              biogeochemistry,
-                              forcing = (NO₃ = NO₃_forcing, Alk = Alk_forcing),
-                              boundary_conditions = (DIC = DIC_bcs, O₂ = O₂_bcs),
-                              timestepper = :RungeKutta3,
-                              tracers = (:T, :S))
+                              closure = ScalarDiffusivity(ν = κₜ, κ = κₜ), 
+                              biogeochemistry = LOBSTER(; grid,
+                                                          surface_phytosynthetically_active_radiation = (x, y, t) -> 100,
+                                                          carbonates = true,
+                                                          open_bottom = true,
+                                                          advection_schemes = (sPOM = WENO(grid), bPOM = WENO(grid))),
+                              boundary_conditions = (DIC = FieldBoundaryConditions(top = CO₂_flux),
+                                                     NO₃ = FieldBoundaryConditions(top = FluxBoundaryCondition(N_fixation))),
+                              forcing = (NO₃ = N_upwelling, Alk = Alk_forcing),
+                              advection = nothing)
 
-set!(model, P = 0.03, Z = 0.03, NO₃ = 11.0, NH₄ = 0.05, DIC = 2200.0, Alk = 2400.0, O₂ = 240.0, T=20, S=35)
+set!(model, P = 0.03, Z = 0.03, NO₃ = 4.0, NH₄ = 0.05, DIC = 2200.0, Alk = 2400.0)
 
-simulation = Simulation(model, Δt=1000.0, stop_time=10years)
+simulation = Simulation(model, Δt=10minutes, stop_time=10year) 
 
-# Print a progress message
-progress_message(sim) = @printf("Iteration: %04d, time: %s, Δt: %s, max(|w|) = %.1e ms⁻¹, wall time: %s\n",
-                                iteration(sim), prettytime(sim), prettytime(sim.Δt),
-                                maximum(abs, sim.model.velocities.w), prettytime(sim.run_wall_time))
-
-simulation.callbacks[:progress] = Callback(progress_message, IterationInterval(50))
+progress_message(sim) = @printf("Iteration: %04d, time: %s, Δt: %s, wall time: %s\n",
+                                                        iteration(sim),
+                                                        prettytime(sim),
+                                                        prettytime(sim.Δt),
+                                                        prettytime(sim.run_wall_time))      
+                                                                  
+simulation.callbacks[:progress] = Callback(progress_message, IterationInterval(100))
 
 filename = "steady_state"
+simulation.output_writers[:profiles] = JLD2OutputWriter(model, model.tracers, filename = "$filename.jld2", schedule = TimeInterval(1day), overwrite_existing=true)
 
-simulation.output_writers[:tracers] =
-    JLD2OutputWriter(model, model.tracers,
-                     filename = filename * ".jld2",
-                     schedule = TimeInterval(0.5days),
-                     overwrite_existing = true)
+scale_negative_tracers = ScaleNegativeTracers(; model, tracers = (:NO₃, :NH₄, :P, :Z, :sPOM, :bPOM, :DOM))
+simulation.callbacks[:neg] = Callback(scale_negative_tracers; callsite = UpdateStateCallsite())
 
 run!(simulation)

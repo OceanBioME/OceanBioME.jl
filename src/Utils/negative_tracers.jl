@@ -7,7 +7,7 @@ using Oceananigans.Architectures: device
 import Adapt: adapt_structure
 
 """
-    zero_negative_tracers!(sim; params = (exclude=(), warn=false))
+    zero_negative_tracers!(sim; params = (exclude=(), ))
 
 Sets any tracers in `sim.model` which are negative to zero. Use like:
 ```julia
@@ -15,16 +15,16 @@ simulation.callbacks[:neg] = Callback(zero_negative_tracers!)
 ```
 This is *NOT* a reccomended method to preserve positivity as it strongly does not conserve tracers.
 
-Tracers to exclude can be set in the parameters and if `params.warn` is set to true a warning will be displayed when negative values are modified.
+Tracers to exclude can be set in the parameters.
 """
-function zero_negative_tracers!(sim; params = (exclude=(), warn=false))
-    @unroll for (tracer_name, tracer) in pairs(sim.model.tracers)
+function zero_negative_tracers!(model; params = (exclude=(), ))
+    @unroll for (tracer_name, tracer) in pairs(model.tracers)
         if !(tracer_name in params.exclude)
-            if params.warn&&any(tracer .< 0.0) @warn "$tracer_name < 0" end
             parent(tracer) .= max.(0.0, parent(tracer))
         end
     end
 end
+@inline zero_negative_tracers!(sim::Simulation; params = (exclude=(), )) = zero_negative_tracers!(sim.model; params)
 
 """
     error_on_neg(sim; params = (exclude=(), ))
@@ -78,6 +78,7 @@ end
             p += field * scalefactor
         end
     end 
+    t < 0 && error("Cell total < 0, can not scale negative tracers.")
     @unroll for tracer in tracers
         field = @inbounds fields[tracer][i, j, k]
         
@@ -133,4 +134,25 @@ end
     wait(event)
 end
 @inline (scale::ScaleNegativeTracers)(sim::Simulation) = scale(sim.model) 
+
+@kernel function _remove_NaN_tendencies!(fields)
+    i, j, k = @index(Global, NTuple)
+    for field in fields
+        if @inbounds isnan(field[i, j, k])
+            field[i, j, k] = 0.0
+        end
+    end
+end
+
+"""
+    remove_NaN_tendencies!(model)
+
+Zeros any `NaN` value tendencies as a final protection against negative tracer run away.
+"""
+@inline function remove_NaN_tendencies!(model)
+    workgroup, worksize = work_layout(model.grid, :xyz)
+    remove_NaN_tendencies_kernel! = _remove_NaN_tendencies!(device(model.grid.architecture), workgroup, worksize)
+    event = remove_NaN_tendencies_kernel!(values(model.timestepper.Gⁿ))
+    wait(event)
+end
 
