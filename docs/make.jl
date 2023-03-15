@@ -15,7 +15,8 @@ examples = [
     "box.jl",
     "column.jl",
     "data_forced.jl",
-    "kelp.jl"
+    "kelp.jl",
+    "eady.jl"
 ]
 
 for example in examples
@@ -30,8 +31,8 @@ example_pages = [
     "Simple column model" => "generated/column.md",
     "Data forced column model" => "generated/data_forced.md",
     "Model with particles (kelp) interacting with the biogeochemistry" => "generated/kelp.md",
-    #"Simple column with a sediment boundary" => "generated/sediment.md",
-    "Box model" => "generated/box.md"
+    "Box model" => "generated/box.md",
+    "Baroclinical Instability" => "generated/eady.md"
 ]
 
 bgc_pages = [
@@ -42,9 +43,7 @@ bgc_pages = [
 ]
 
 sed_pages = [
-    "Overview" => "model_components/sediment/index.md",
-    "Wang et al. 2020" => "model_components/sediment/wang.md",
-    "Soetaert et al. 2000" => "model_components/sediment/soetaert.md",
+    "Overview" => "model_components/sediment.md",
 ]
 
 individuals_pages = [
@@ -62,8 +61,7 @@ component_pages = [
 ]
 
 numerical_pages = [
-    "Individuals" => "numerical_implimentation/individuals.md",
-    "Positivity preservation" => "numerical_implimentation/positivity-preservation.md"
+    "Positivity preservation" => "numerical_implementation/positivity-preservation.md"
 ]
 
 
@@ -83,7 +81,7 @@ pages = [
     "Quick start" => "quick_start.md",
     "Model components and setup" => component_pages,
     "Examples" => example_pages,
-    "Numerical implimentation" => numerical_pages,
+    "Numerical implementation" => numerical_pages,
     "Gallery" => "gallery.md",
     "References" => "references.md",
     "Appendix" => appendix_pages
@@ -95,7 +93,7 @@ pages = [
 
 format = Documenter.HTML(
     collapselevel = 1,
-    prettyurls = false,#get(ENV, "CI", nothing) == "true",
+    prettyurls = true,#get(ENV, "CI", nothing) == "true",
     canonical = "https://OceanBioME.github.io/OceanBioME/stable/",
     mathengine = MathJax3(),
 )

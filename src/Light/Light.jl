@@ -24,7 +24,7 @@ using Oceananigans.Units
 import Adapt: adapt_structure
 import Base: show, summary
 
-import Oceananigans.Biogeochemistry: biogeochemical_auxiliary_fieilds
+import Oceananigans.Biogeochemistry: biogeochemical_auxiliary_fields
 import Oceananigans.BoundaryConditions: _fill_top_halo!
 
 # Fallback

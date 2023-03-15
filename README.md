@@ -20,4 +20,4 @@ Pkg.add("https://github.com/OceanBioME/OceanBioME.jl")
 
 ## Documentation
 
-See the [documentation](https://comming-soon) for full description and examples.
+See the [documentation](https://oceanbiome.github.io/OceanBioME.jl) for full description and examples.

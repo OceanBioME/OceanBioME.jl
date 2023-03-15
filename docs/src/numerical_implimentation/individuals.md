@@ -1,2 +1,0 @@
-# [Individuals](@id individuals-numerics)
-As described in [Model Components/Individuals](@ref individuals), OceanBioME provides the infrastructure to include particles which interact with the biogeochemical models. The current straight forward implementation is that particles interact with the 8 cells closest to them. The `Particles.infinitesimal_particle_field_coupling!` finding the nearest nodes and sharing the uptake/release to the tracer between these nodes, weighted by the relative distance to the node.

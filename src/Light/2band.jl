@@ -109,7 +109,7 @@ required_PAR_fields(::TwoBandPhotosyntheticallyActiveRatiation) = (:PAR, )
 summary(::TwoBandPhotosyntheticallyActiveRatiation{FT}) where {FT} = string("Two-band light attenuation model ($FT)")
 show(io::IO, model::TwoBandPhotosyntheticallyActiveRatiation{FT}) where {FT} = print(io, summary(model))
 
-biogeochemical_auxiliary_fieilds(par::TwoBandPhotosyntheticallyActiveRatiation) = (PAR = par.field, )
+biogeochemical_auxiliary_fields(par::TwoBandPhotosyntheticallyActiveRatiation) = (PAR = par.field, )
 
 adapt_structure(to, par::TwoBandPhotosyntheticallyActiveRatiation) = 
     TwoBandPhotosyntheticallyActiveRatiation(par.water_red_attenuation,
