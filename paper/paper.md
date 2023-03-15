@@ -10,17 +10,17 @@ authors:
   - name: Jago Strong-Wright
     orcid: 0000-0002-7174-5283
     corresponding: true
-    affiliation: "1, 2" # (Multiple affiliations must be quoted)
+    affiliation: "1, 2"
   - name: John R Taylor
     affiliation: "1, 2"
   - name: Si Chen
-    affiliation: 1
+    affiliation: "1, 2"
 affiliations:
  - name: Department of Applied Mathematics and Theoretical Physics, University of Cambridge, Cambridge, United Kingdom
    index: 1
  - name: Centre for Climate Repair at Cambridge, Cambridge, United Kingdom
    index: 2
-date: 18 August 2020
+date: 15 March 2023
 bibliography: paper.bib
 ---
 
@@ -34,12 +34,19 @@ In order to simulate the effects of additional systems such as macroalgae we hav
 
 We have also formulated the models such that they are easy to use alongside data assimilation packages such as ``EnsembleKalmanProcesses.jl`` [@ekp] to calibrate their parameters. This provides vital utility for integrating observations and will allow improved validation of CDR strategies.
 
-![Fig. 1](example.png)
-Fig. 1: (Left) Replication of phytoplankton seasonal cycles in the subpolar regions showing the responses to changing in mixing layer depth, and light and nutrient availability, including deep spring blooms and later summer deep chlorophyll maxima. Additionally, the model is configured with a large amount of sugar kelp added in the third year showing a deepening of the phytoplankton response due to nutrient redistribution and changes to light attenuation. (Right) The air-sea flux of carbon dioxide provides useful insight into the effects of changes to the ecosystem on its CDR, here showing an increase in downward carbon flux after the kelp is added. Plots made with `GLMakie` [@glmakie].
+![Fig. 1](column_example.png)
+>Fig. 1: Here we show the results of a simplified column model, forced by idealised light and mixing, which converge on a seasonal cycle and replicate well the patters of phytoplankton growth in the North Atlantic. We then add kelp in December of the 2nd year which causes an increase in air-sea carbon dioxide exchange and sinking export, as well as a change in the phytoplankton growth cycle. Plots made with `Makie` [@makie].
+
+![Fig. 2](eady_example.png)
+> Fig. 2: Here we replicate the Eady problem where a background buoyancy gradient and corresponding thermal wind generate submesoscale eddies, roughly following the setup of Taylor (2016).
+>To this physical setup we added a medium complexity (9 tracers) biogeochemical model, some of which are shown above. On top of this we added particles modelling the growth of sugar kelp which are free floating and advected around by the flow, and carbon dioxide exchange from the air.
+>A key advantage of writing this package in Julia is the accessibility of languages such as Python with the speed of languages like C and Fortran and built in parrelalism. This means that models can be run significantly faster than the equivalent in other high level languages. Additionally we inherit the ability to easily run scripts on GPUs as inherited from Oceananigans allowing the above model (1km x 1km x 100m with 64 x 64 x 16 grid points) to be run for 10 days in ~4 hours on an M1 Mac or ~ ½ hour on an Nvidia P100.
 
 A key metric for the validity of biogeochemical systems is the conservation of nitrogen in the system. We therefore continuously test the implemented models in a variety of simple scenarios (i.e. isolated, with/without air-sea flux, with/without sediment) to ensure basic conservations are fulfilled, and will continue to add tests for any new models. Additionally, we ensure the validity of the utilities provided through unit tests such as comparison to analytical solutions for light attenuation, and conservation of tracers for active particle exudation and sinking.
 
 Flexible biogeochemical modelling frameworks similar to ``OceanBioME.jl`` are uncommon and tend to require more significant knowledge of each coupled system, a more cumbersome configuration process, provide a narrower breadth of utility, are not openly available, or are more computationally intensive. For example among the open source alternatives NEMO [@nemo] provides a comprehensive global biogeochemical modelling framework but requires complex configuration and is unsuited for local ecosystem modelling, while MACMODS [@macmods] provides more limited functionality on a slower platform.
+
+Finally, this software is currently facilitating multiple research projects into ocean CDR which would have been significantly harder with other solutions. For example, Chen (In prep.) is using the active particles coupling provided to investigate the effects of location and planting density of kelp in the open ocean on their carbon drawdown effect, as in the example above. Additionally, Strong-Wright (In prep.) is using the coupling of both the biogeochemistry and easy interface to couple the physics to study flow interactions with a fully resolved giant kelp forest including the effects on nutrient transport and distribution.
 
 [comment]: <> (Not convinved we need this section since Oceananigans doesn't have one, the above is already about the same length as their paper, and it doesn't really flow)
 # Statement of need
@@ -48,6 +55,6 @@ The UN declared 2021-2030 the *Decade of Ocean Science for Sustainable Developme
 
 # Acknowledgements
 
-We are very grateful for the support and funding of the [Centre for Climate Repair at Cambridge](https://www.climaterepair.cam.ac.uk/) and the [Gordon and Betty Moore Foundation](https://www.moore.org/). And would like to thank the ``Oceananigans.jl`` team for their fantastic project and continuous advice throughout.
+We would like to thank the ``Oceananigans`` contributors for their fantastic project, and particularly Greg Wanger for his advice and support, and we are very grateful for the support and funding of the [Centre for Climate Repair at Cambridge](https://www.climaterepair.cam.ac.uk/) and the [Gordon and Betty Moore Foundation](https://www.moore.org/).
 
 # References
