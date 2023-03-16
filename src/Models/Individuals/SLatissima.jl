@@ -304,36 +304,35 @@ end
 
     node_scalefactor = p.scalefactor / node_volume #* normfactor / (weight * node_volume)
 
-    #@inbounds begin
-    tendencies.NO₃[i, j, k] -= node_scalefactor * p.nitrate_uptake[idx]
-    
-    if :NH₄ in bgc_tracers
-        tendencies.NH₄[i, j, k] -= node_scalefactor * p.ammonia_uptake[idx]
-    end
+    @inbounds begin
+        tendencies.NO₃[i, j, k] -= node_scalefactor * p.nitrate_uptake[idx]
+        
+        if :NH₄ in bgc_tracers
+            tendencies.NH₄[i, j, k] -= node_scalefactor * p.ammonia_uptake[idx]
+        end
 
-    if :DIC in bgc_tracers
-        tendencies.DIC[i, j, k] -= node_scalefactor * p.primary_production[idx]
-    end
+        if :DIC in bgc_tracers
+            tendencies.DIC[i, j, k] -= node_scalefactor * p.primary_production[idx]
+        end
 
-    if :O₂ in bgc_tracers
-        tendencies.O₂[i, j, k] += node_scalefactor * p.primary_production[idx]
-    end
+        if :O₂ in bgc_tracers
+            tendencies.O₂[i, j, k] += node_scalefactor * p.primary_production[idx]
+        end
 
-    if :DOM in bgc_tracers
-        tendencies.DOM[i, j, k] += node_scalefactor * p.frond_exudation[idx] / p.exudation_redfield_ratio
-    elseif :DON in bgc_tracers
-        tendencies.DON[i, j, k] += node_scalefactor * p.frond_exudation[idx] / p.exudation_redfield_ratio
-        tendencies.DOC[i, j, k] += node_scalefactor * p.frond_exudation[idx]
-    end
+        if :DOM in bgc_tracers
+            tendencies.DOM[i, j, k] += node_scalefactor * p.frond_exudation[idx] / p.exudation_redfield_ratio
+        elseif :DON in bgc_tracers
+            tendencies.DON[i, j, k] += node_scalefactor * p.frond_exudation[idx] / p.exudation_redfield_ratio
+            tendencies.DOC[i, j, k] += node_scalefactor * p.frond_exudation[idx]
+        end
 
-    if :bPOM in bgc_tracers
-        tendencies.bPOM[i, j, k] += node_scalefactor * p.nitrogen_erosion[idx]
-    elseif :bPON in bgc_tracers
-        tendencies.bPON[i, j, k] += node_scalefactor * p.nitrogen_erosion[idx]
-        tendencies.bPOC[i, j, k] += node_scalefactor * p.carbon_erosion[idx]
+        if :bPOM in bgc_tracers
+            tendencies.bPOM[i, j, k] += node_scalefactor * p.nitrogen_erosion[idx]
+        elseif :bPON in bgc_tracers
+            tendencies.bPON[i, j, k] += node_scalefactor * p.nitrogen_erosion[idx]
+            tendencies.bPOC[i, j, k] += node_scalefactor * p.carbon_erosion[idx]
+        end
     end
-    #end
-    #end
 end
 
 function update_particle_properties!(particles::SLatissima, model, bgc, Δt)
@@ -359,7 +358,7 @@ function update_particle_properties!(particles::SLatissima, model, bgc, Δt)
 
     wait(device(arch), update_particle_properties_event)
 
-    particles.custom_dynamicsupdate_particle_properties!(particles, model, bgc, Δt)
+    particles.custom_dynamics(particles, model, bgc, Δt)
 end
 
 @kernel function _update_particle_properties!(p, bgc, model, Δt)
