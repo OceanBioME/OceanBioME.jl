@@ -1,7 +1,11 @@
 pushfirst!(LOAD_PATH, joinpath(@__DIR__, "..")) # add OceanBioME to environment stack
 
 using Documenter, DocumenterCitations, Literate, Glob
+
 using OceanBioME
+using OceanBioME.SLatissimaModel: SLatissima
+using OceanBioME.LOBSTERModel: LOBSTER
+using OceanBioME.Boundaries.Sediments: SimpleMultiG
 
 bib_filepath = joinpath(dirname(@__FILE__), "oceanbiome.bib")
 bib = CitationBibliography(bib_filepath)
@@ -18,7 +22,7 @@ examples = [
     "kelp.jl",
     "eady.jl"
 ]
-
+#=
 for example in examples
     example_filepath = joinpath(EXAMPLES_DIR, example)
 
@@ -26,18 +30,17 @@ for example in examples
         Literate.markdown(example_filepath, OUTPUT_DIR; flavor = Literate.DocumenterFlavor(), repo_root_url="coming.soon", execute=true)
     end
 end
-
-example_pages = [
+=#
+example_pages = #=[
     "Simple column model" => "generated/column.md",
     "Data forced column model" => "generated/data_forced.md",
     "Model with particles (kelp) interacting with the biogeochemistry" => "generated/kelp.md",
     "Box model" => "generated/box.md",
-    "Baroclinical Instability" => "generated/eady.md"
-]
+    "Baroclinical instability" => "generated/eady.md"
+]=# []
 
 bgc_pages = [
     "Overview" => "model_components/biogeochemical/index.md",
-    #"PISCES" => "model_components/biogeochemical/PISCES.md",
     "LOBSTER" => "model_components/biogeochemical/LOBSTER.md",
     "NPZD" => "model_components/biogeochemical/NPZ.md"
 ]
@@ -72,7 +75,8 @@ param_pages = [
 ]
 
 appendix_pages = [
-    "Function Library" => "appendix/function_index.md",
+    "Library" => "appendix/library.md",
+    "Function index" => "appendix/function_index.md",
     "Parameters" => param_pages
 ]
 
@@ -93,7 +97,7 @@ pages = [
 
 format = Documenter.HTML(
     collapselevel = 1,
-    prettyurls = true,#get(ENV, "CI", nothing) == "true",
+    prettyurls = get(ENV, "CI", nothing) == "true",
     canonical = "https://OceanBioME.github.io/OceanBioME/stable/",
     mathengine = MathJax3(),
 )
@@ -119,7 +123,7 @@ end
 deploydocs(
           repo = "github.com/OceanBioME/OceanBioME.jl",
           forcepush = true,
-          push_preview = false,
+          push_preview = true,
           devbranch = "main"
 )
 

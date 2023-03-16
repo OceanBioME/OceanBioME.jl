@@ -14,17 +14,6 @@ Tracer dependencies
 
 Optionally:
 * Ammonia: NH₄ (mmol N/m³)
-
-Tracer coupling
-===========
-* j_NO₃ and j_NH₄: uptake of nitrates and Ammonia
-* j_DIC and j_OXY: update of disolved inorganic carbon and release/uptake of oxygen
-* e: exudation of disolved organic matter
-* νⁿ and νᶜ: loss of mass as large particles (nitrogen and carbon content)
-
-Notes
-=====
-SW is the structural weight and is equal to K_A*A
 """ 
 module SLatissimaModel
 using Roots, KernelAbstractions
@@ -46,6 +35,94 @@ import Oceananigans.LagrangianParticleTracking: update_particle_properties!, _ad
 
 @inline no_dynamics(args...) = nothing
 
+
+"""
+    SLatissima(; architecture :: AR = CPU()
+                 growth_rate_adjustement :: FT = 4.5
+                 photosynthetic_efficiency :: FT = 4.15e-5 * 24 * 10^6 / (24 * 60 * 60)
+                 minimum_carbon_reserve :: FT = 0.01
+                 structural_carbon :: FT = 0.2
+                 exudation :: FT = 0.5
+                 erosion :: FT = 0.22
+                 saturation_irradiance :: FT = 90 * day/ (10 ^ 6)
+                 structural_dry_weight_per_area :: FT = 0.5
+                 structural_dry_to_wet_weight :: FT = 0.0785
+                 carbon_reserve_per_carbon :: FT = 2.1213
+                 nitrogen_reserve_per_nitrogen :: FT = 2.72
+                 minimum_nitrogen_reserve :: FT = 0.0126
+                 maximum_nitrogen_reserve :: FT = 0.0216
+                 growth_adjustement_2 :: FT = 0.039 / (2 * (1 - minimum_nitrogen_reserve / maximum_nitrogen_reserve))
+                 growth_adjustement_1 :: FT = 0.18 / (2 * (1 - minimum_nitrogen_reserve / maximum_nitrogen_reserve)) - growth_adjustement_2
+                 maximum_specific_growth_rate :: FT = 0.18
+                 structural_nitrogen :: FT = 0.0146
+                 photosynthesis_at_ref_temp_1 :: FT = 1.22e-3 * 24
+                 photosynthesis_at_ref_temp_2 :: FT = 1.3e-3 * 24
+                 photosynthesis_ref_temp_1 :: FT = 285.0
+                 photosynthesis_ref_temp_2 :: FT = 288.0
+                 photoperiod_1 :: FT = 0.85
+                 photoperiod_2 :: FT = 0.3
+                 respiration_at_ref_temp_1 :: FT = 2.785e-4 * 24
+                 respiration_at_ref_temp_2 :: FT = 5.429e-4 * 24
+                 respiration_ref_temp_1 :: FT = 285.0
+                 respiration_ref_temp_2 :: FT = 290.0
+                 photosynthesis_arrhenius_temp :: FT = (1 / photosynthesis_ref_temp_1 - 1 / photosynthesis_ref_temp_2) ^ -1 * log(photosynthesis_at_ref_temp_2 / photosynthesis_at_ref_temp_1)
+                 photosynthesis_low_temp :: FT = 271.0
+                 photosynthesis_high_temp :: FT = 296.0
+                 photosynthesis_high_arrhenius_temp :: FT = 1414.87
+                 photosynthesis_low_arrhenius_temp :: FT = 4547.89
+                 respiration_arrhenius_temp :: FT = (1 / respiration_ref_temp_1 - 1 / respiration_ref_temp_2) ^ -1 * log(respiration_at_ref_temp_2 / respiration_at_ref_temp_1)
+                 current_speed_for_0p65_uptake :: FT = 0.03
+                 nitrate_half_saturation :: FT = 4.0
+                 ammonia_half_saturation :: FT = 1.3
+                 maximum_nitrate_uptake :: FT = 10 * structural_dry_weight_per_area * 24 * 14 / (10^6)
+                 maximum_ammonia_uptake :: FT = 12 * structural_dry_weight_per_area * 24 * 14 / (10^6)
+                 current_1 :: FT = 0.72
+                 current_2 :: FT = 0.28
+                 current_3 :: FT = 0.045
+                 respiration_reference_A :: FT = 1.11e-4 * 24
+                 respiration_reference_B :: FT = 5.57e-5 * 24
+                 exudation_redfield_ratio :: FT = Inf
+
+                 pescribed_velocity :: U = 0.1
+                 pescribed_temperature :: T = nothing
+                 pescribed_salinity :: S = nothing
+
+                 #position
+                 x :: P = arch_array(architecture, [0.0])
+                 y :: P = arch_array(architecture, zeros(Float64, length(x)))
+                 z :: P = arch_array(architecture, zeros(Float64, length(x)))
+
+                 #properties
+                 A :: P = arch_array(architecture, ones(Float64, length(x)) * 30)
+                 N :: P = arch_array(architecture, ones(Float64, length(x)) * 0.01)
+                 C :: P = arch_array(architecture, ones(Float64, length(x)) * 0.1)
+
+                 #feedback
+                 nitrate_uptake :: P = arch_array(architecture, zeros(Float64, length(x)))
+                 ammonia_uptake :: P = arch_array(architecture, zeros(Float64, length(x)))
+                 primary_production :: P = arch_array(architecture, zeros(Float64, length(x)))
+                 frond_exudation :: P = arch_array(architecture, zeros(Float64, length(x)))
+                 nitrogen_erosion :: P = arch_array(architecture, zeros(Float64, length(x)))
+                 carbon_erosion :: P = arch_array(architecture, zeros(Float64, length(x)))
+
+                 custom_dynamics :: F = no_dynamics
+
+                 scalefactor :: FT = 1.0
+                 latitude :: FT = 57.5)
+
+Keywork Arguments
+===================
+
+    - `architecture`: the architecture to adapt arrays to
+    - `growth_rate_adjustement`, ..., `exudation_redfield_ratio`: parameter values
+    - `pescribed_velocity`, `pescribed_temperature` and `pescribed_salinity`: funcitons for the relative velocity, temperature and salinity in the form `f(x, y, z, t)`
+    - `x`,`y` and `z`: positions of the particles
+    - `A`, `N`, and `C`: area, nitrogen, and carbon reserves
+    - `nitrate_uptake` ... `carbon_erosion`: diagnostic values coupled to tracer fields
+    - `custom_dynamics`: place to add any function of form `f!(particles, model, bgc, Δt)`
+    - `scalefactor`: scalar scaling for tracer coupling
+    - `latitude`: model latitude for seasonal growth modulation
+"""
 Base.@kwdef struct SLatissima{AR, FT, U, T, S, P, F} <: BiogeochemicalParticles
     architecture :: AR = CPU()
     growth_rate_adjustement :: FT = 4.5
@@ -281,6 +358,8 @@ function update_particle_properties!(particles::SLatissima, model, bgc, Δt)
                                                                           dependencies=Event(device(arch)))
 
     wait(device(arch), update_particle_properties_event)
+
+    particles.custom_dynamicsupdate_particle_properties!(particles, model, bgc, Δt)
 end
 
 @kernel function _update_particle_properties!(p, bgc, model, Δt)
