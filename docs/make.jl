@@ -22,7 +22,7 @@ examples = [
     "kelp.jl",
     "eady.jl"
 ]
-#=
+
 for example in examples
     example_filepath = joinpath(EXAMPLES_DIR, example)
 
@@ -30,14 +30,13 @@ for example in examples
         Literate.markdown(example_filepath, OUTPUT_DIR; flavor = Literate.DocumenterFlavor(), repo_root_url="coming.soon", execute=true)
     end
 end
-=#
-example_pages = #=[
+
+example_pages = [
     "Simple column model" => "generated/column.md",
     "Data forced column model" => "generated/data_forced.md",
     "Model with particles (kelp) interacting with the biogeochemistry" => "generated/kelp.md",
     "Box model" => "generated/box.md",
-    "Baroclinical instability" => "generated/eady.md"
-]=# []
+    "Baroclinical instability" => "generated/eady.md"]
 
 bgc_pages = [
     "Overview" => "model_components/biogeochemical/index.md",
