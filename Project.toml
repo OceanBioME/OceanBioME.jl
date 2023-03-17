@@ -17,6 +17,7 @@ Adapt = "^3.4"
 DiffEqBase = "^6.100"
 Oceananigans = "^0.79.6"
 Roots = "^2.0.0"
+julia = "^1.8.0"
 
 [extras]
 CUDA = "052768ef-5323-5732-b1bb-66c8b64840ba"
