@@ -18,6 +18,9 @@ DiffEqBase = "^6.100"
 Oceananigans = "^0.79.6"
 Roots = "^2.0.0"
 julia = "^1.8.0"
+JLD2 = "^0.4.31"
+KernelAbstractions = "^0.8.6"
+StructArrays = "^0.6.15"
 
 [extras]
 CUDA = "052768ef-5323-5732-b1bb-66c8b64840ba"
