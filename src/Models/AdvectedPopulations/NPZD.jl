@@ -1,8 +1,18 @@
 """
 Nutrient-Phytoplankton-Zooplankton-Detritus model of [Kuhn2015](@cite)
-http://dx.doi.org/10.1016/j.pocean.2015.07.004
-"""
 
+Tracers
+========
+* Nutrients: N (mmol N/m³)
+* Phytoplankton: P (mmol N/m³)
+* Zooplankton: Z (mmol N/m³)
+* Detritus: D (mmol N/m³)
+
+Required submodels
+===========
+* Photosynthetically available radiation: PAR (W/m²)
+
+"""
 module NPZDModel
 
 export NutrientPhytoplanktonZooplanktonDetritus
@@ -27,6 +37,49 @@ import Oceananigans.Biogeochemistry: required_biogeochemical_tracers,
 				                     biogeochemical_auxiliary_fields
 
 import OceanBioME: maximum_sinking_velocity
+
+
+"""
+    NutrientPhytoplanktonZooplanktonDetritus(; grid,
+        initial_photosynthetic_slope::FT = 0.1953 / day, # 1/(W/m²)/s
+        base_maximum_growth::FT = 0.6989 / day, # 1/s
+        nutrient_half_saturation::FT = 2.3868, # mmol N/m³
+        base_respiration_rate::FT = 0.066 / day, # 1/s/(mmol N / m³)
+        phyto_base_mortality_rate::FT = 0.0101 / day, # 1/s/(mmol N / m³)
+        maximum_grazing_rate::FT = 2.1522 / day, # 1/s
+        grazing_half_saturation::FT = 0.5573, # mmol N/m³
+        assimulation_efficiency::FT = 0.9116, 
+        base_excretion_rate::FT = 0.0102 / day, # 1/s/(mmol N / m³)
+        zoo_base_mortality_rate::FT = 0.3395 / day, # 1/s/(mmol N / m³)²
+        remineralization_rate::FT = 0.1213 / day, # 1/s
+
+        surface_phytosynthetically_active_radiation = (x, y, t) -> 100*max(0.0, cos(t*π/(12hours))),
+        light_attenuation_model::LA = TwoBandPhotosyntheticallyActiveRatiation(; grid,
+                                    surface_PAR = surface_phytosynthetically_active_radiation),
+        sediment_model::S = nothing,
+
+        sinking_speeds = (P = 0.2551/day, D = 2.7489/day),
+        open_bottom::Bool = true,
+        advection_schemes::A = NamedTuple{keys(sinking_speeds)}(repeat([CenteredSecondOrder()], 
+                                           length(sinking_speeds))),
+                                           
+        particles::P = nothing)
+
+Construct an instance of the NPZD ([NPZD](@ref NPZD)) biogeochemical model.
+
+Keywork Arguments
+===================
+
+    - `grid`: (required) the geometry to build the model on, required to calculate sinking
+    - `initial_photosynthetic_slope`, ..., `remineralization_rate`: NPZD parameter values
+    - `surface_phytosynthetically_active_radiation`: funciton (or array in the future) for the photosynthetically available radiaiton at the surface, should be shape `f(x, y, t)`
+    - `light_attenuation_model`: light attenuation model which integrated the attenuation of available light
+    - `sediment_model`: slot for `AbstractSediment`
+    - `sinking_speed`: named tuple of constant sinking, of fields (i.e. `ZFaceField(...)`) for any tracers which sink (convention is that a sinking speed is positive, but a field will need to follow the usual down being negative)
+    - `open_bottom`: should the sinking velocity be smoothly brought to zero at the bottom to prevent the tracers leaving the domain
+    - `advection_schemes`: named tuple of advection scheme to use for sinking
+    - `particles`: slot for `BiogeochemicalParticles`
+"""
 
 struct NutrientPhytoplanktonZooplanktonDetritus{FT, LA, S, W, A, P} <: ContinuousFormBiogeochemistry{LA, S, P}
     # phytoplankton
