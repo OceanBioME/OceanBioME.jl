@@ -1,10 +1,15 @@
-# These functions are copied from the brilliant Oceananigans team: https://github.com/CliMA/Oceananigans.jl/blob/main/benchmark/src/Benchmarks.jl
+pushfirst!(LOAD_PATH, joinpath(@__DIR__, "..")) # add OceanBioME to environment stack
+#These functions are copied from the brilliant Oceananigans team: https://github.com/CliMA/Oceananigans.jl/blob/main/benchmark/src/Benchmarks.jl
 using BenchmarkTools, DataFrames, PrettyTables
 function run_benchmarks(benchmark_fun; kwargs...)
     keys = [p.first for p in kwargs]
     vals = [p.second for p in kwargs]
 
     cases = Iterators.product(vals...)
+    return run_benchmarks(benchmark_fun, cases, keys)
+end
+
+function run_benchmarks(benchmark_fun, cases, keys)
     n_cases = length(cases)
 
     tags = string.(keys)

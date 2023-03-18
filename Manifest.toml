@@ -556,9 +556,9 @@ uuid = "7b1f6079-737a-58dc-b8bc-7a2ca5c1b5ee"
 
 [[deps.FillArrays]]
 deps = ["LinearAlgebra", "Random", "SparseArrays", "Statistics"]
-git-tree-sha1 = "d3ba08ab64bdfd27234d3f61956c966266757fe6"
+git-tree-sha1 = "9dec0199898d4d5c1d1b257cbf2cc498afe03a2a"
 uuid = "1a297f60-69ca-5386-bcde-b61e274b549b"
-version = "0.13.7"
+version = "0.13.8"
 
 [[deps.FiniteDiff]]
 deps = ["ArrayInterface", "LinearAlgebra", "Requires", "Setfield", "SparseArrays", "StaticArrays"]
@@ -1230,10 +1230,10 @@ uuid = "3da0fdf6-3ccc-4f1b-acd9-58baa6c99267"
 version = "0.1.7"
 
 [[deps.MPItrampoline_jll]]
-deps = ["Artifacts", "CompilerSupportLibraries_jll", "JLLWrappers", "LazyArtifacts", "Libdl", "MPIPreferences", "Pkg", "TOML"]
-git-tree-sha1 = "b3f9e42685b4ad614eca0b44bd863cd41b1c86ea"
+deps = ["Artifacts", "CompilerSupportLibraries_jll", "JLLWrappers", "LazyArtifacts", "Libdl", "MPIPreferences", "TOML"]
+git-tree-sha1 = "e537a80351fe06f71299037781f3da7b648ecc47"
 uuid = "f1f71cc9-e9ae-5b93-9b94-4fe0e1ad3748"
-version = "5.0.2+1"
+version = "5.2.1+0"
 
 [[deps.MacroTools]]
 deps = ["Markdown", "Random"]
@@ -1878,10 +1878,10 @@ uuid = "3cc68bcd-71a2-5612-b932-767ffbe40ab0"
 version = "0.2.1"
 
 [[deps.Setfield]]
-deps = ["ConstructionBase", "Future", "MacroTools", "StaticArraysCore"]
-git-tree-sha1 = "e2cc6d8c88613c05e1defb55170bf5ff211fbeac"
+deps = ["ConstructionBase", "Future", "MacroTools", "Requires"]
+git-tree-sha1 = "38d88503f695eb0301479bc9b0d4320b378bafe5"
 uuid = "efcf1570-3423-57d1-acb7-fd33fddbac46"
-version = "1.1.1"
+version = "0.8.2"
 
 [[deps.ShaderAbstractions]]
 deps = ["ColorTypes", "FixedPointNumbers", "GeometryBasics", "LinearAlgebra", "Observables", "StaticArrays", "StructArrays", "Tables"]
@@ -1979,9 +1979,15 @@ version = "0.1.1"
 
 [[deps.Static]]
 deps = ["IfElse"]
+<<<<<<< Updated upstream
 git-tree-sha1 = "d0435ba43ab5ad1cbb5f0d286ca4ba67029ed3ee"
 uuid = "aedffcd0-7271-4cad-89d0-dc628f76c6d3"
 version = "0.8.4"
+=======
+git-tree-sha1 = "08be5ee09a7632c32695d954a602df96a877bf0d"
+uuid = "aedffcd0-7271-4cad-89d0-dc628f76c6d3"
+version = "0.8.6"
+>>>>>>> Stashed changes
 
 [[deps.StaticArrayInterface]]
 deps = ["ArrayInterface", "Compat", "IfElse", "LinearAlgebra", "Requires", "SnoopPrecompile", "SparseArrays", "Static", "SuiteSparse"]
