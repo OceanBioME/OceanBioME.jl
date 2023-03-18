@@ -51,6 +51,6 @@ The UN declared 2021-2030 the *Decade of Ocean Science for Sustainable Developme
 
 # Acknowledgements
 
-We would like to thank the ``Oceananigans`` contributors for their fantastic project, and particularly Greg Wanger for his advice and support, and we are very grateful for the support and funding of the [Centre for Climate Repair at Cambridge](https://www.climaterepair.cam.ac.uk/) and the [Gordon and Betty Moore Foundation](https://www.moore.org/).
+We would like to thank the ``Oceananigans`` contributors for their fantastic project, and particularly Greg Wanger for his advice and support, we are also very grateful for the support and funding of the [Centre for Climate Repair at Cambridge](https://www.climaterepair.cam.ac.uk/) and the [Gordon and Betty Moore Foundation](https://www.moore.org/).
 
 # References
