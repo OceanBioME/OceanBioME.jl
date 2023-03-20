@@ -16,12 +16,14 @@
 # ```
 
 # ## Model setup
-# We load the packages and choose the default LOBSTER parameter set
-
+# First load the required packages
+# (We are also redirecting warnings due to a bug in compiling the examples, you do not need todo this locally)
 using Oceananigans, Random, Printf, NetCDF, Interpolations, DataDeps
 using Oceananigans.Units: second, minute, minutes, hour, hours, day, days, year, years
 using Oceananigans.Operators: ∂zᶜᶜᶜ
 using OceanBioME 
+
+redirect_stdio(stderr = devnull)
 
 # ## Load external forcing data
 # Loading the forcing data from our online copy

@@ -15,8 +15,11 @@
 
 # ## Model setup
 # First load the required packages
+# (We are also redirecting warnings due to a bug in compiling the examples, you do not need todo this locally)
 using OceanBioME, Oceananigans, Printf
 using Oceananigans.Units
+
+redirect_stdio(stderr = devnull)
 
 # ## Surface PAR and turbulent vertical diffusivity based on idealised mixed layer depth 
 # Setting up idealised functions for PAR and diffusivity (details here can be ignored but these are typical of the North Atlantic)
@@ -42,7 +45,8 @@ grid = RectilinearGrid(size=(1, 1, 50), extent=(Lx, Ly, 200))
 CO₂_flux = GasExchange(; gas = :CO₂, temperature = temp, salinity = (args...) -> 35)
 
 # ## Kelp Particle setup
-@info "Setting up kelp particles"
+println("Setting up kelp particles")
+
 n = 5 # number of kelp fronds
 z₀ = [-21:5:-1;] * 1.0 # depth of kelp fronds
 
