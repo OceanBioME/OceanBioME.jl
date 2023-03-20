@@ -26,7 +26,7 @@ Variable redfield
 * Disolved organic matter carbon content: DOC (mmol C/m³)
 * When this option is enabled then the usual sPOM and bPOM change to sPON and bPON as they explicitly represent the nitrogen contained in the particulate matter
 
-Required forcing
+Required submodels
 ===========
 * Photosynthetically available radiation: PAR (W/m²)
 
@@ -94,8 +94,10 @@ import Base: show, summary
               disolved_organic_breakdown_rate::FT = 3.86e-7, # 1/s
               zooplankton_calcite_dissolution::FT = 0.3,
 
-              light_attenuation_model = TwoBandPhotosyntheticallyActiveRatiation(; grid),
               surface_phytosynthetically_active_radiation::SPAR = (x, y, t) -> 100*max(0.0, cos(t*π/(12hours))),
+
+              light_attenuation_model = TwoBandPhotosyntheticallyActiveRatiation(; grid),
+              sediment_model::S = nothing,
 
               carbonates::Bool = false,
               oxygen::Bool = false,
@@ -104,7 +106,8 @@ import Base: show, summary
               sinking_speed = (sPOM = 3.47e-5, bPOM = 200/day),
               open_bottom::Bool = true,
               advection_schemes::A = NamedTuple{keys(sinking_velocities)}(repeat([CenteredSecondOrder()], 
-                                                                          length(sinking_velocities))))
+                                                                          length(sinking_velocities))),
+              particles::P = nothing)
 
 Construct an instance of the LOBSTER ([LOBSTER](@ref LOBSTER)) biogeochemical model.
 
@@ -113,12 +116,14 @@ Keywork Arguments
 
     - `grid`: (required) the geometry to build the model on, required to calculate sinking
     - `phytoplankton_preference`, ..., `disolved_organic_breakdown_rate`: LOBSTER parameter values
-    - `light_attenuation_model`: light attenuation model which integrated the attenuation of available light
     - `surface_phytosynthetically_active_radiation`: funciton (or array in the future) for the photosynthetically available radiaiton at the surface, should be shape `f(x, y, t)`
+    - `light_attenuation_model`: light attenuation model which integrated the attenuation of available light
+    - `sediment_model`: slot for `AbstractSediment`
     - `carbonates`, `oxygen`, and `variable_redfield`: include models for carbonate chemistry and/or oxygen chemistry and/or variable redfield ratio disolved and particulate organic matter
     - `sinking_speed`: named tuple of constant sinking, of fields (i.e. `ZFaceField(...)`) for any tracers which sink (convention is that a sinking speed is positive, but a field will need to follow the usual down being negative)
     - `open_bottom`: should the sinking velocity be smoothly brought to zero at the bottom to prevent the tracers leaving the domain
     - `advection_schemes`: named tuple of advection scheme to use for sinking
+    - `particles`: slot for `BiogeochemicalParticles`
 """
 struct LOBSTER{FT, LA, S, B, W, A, P} <: ContinuousFormBiogeochemistry{LA, S, P}
     phytoplankton_preference :: FT

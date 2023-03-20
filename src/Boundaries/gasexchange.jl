@@ -80,7 +80,7 @@ end
     params = (; k¹, k², kᵇ, kʷ, DIC, Alk, boron)
 
     if titrate_alkalinity(10 ^ - p.upper_pH_bound, params) * titrate_alkalinity(10 ^ - p.lower_pH_bound, params) < 0
-        H = solve(ZeroProblem(titrate_alkalinity, (10 ^ - p.upper_pH_bound, 10 ^ - p.lower_pH_bound)), Bisection, atol = 1e-10, p = params)
+        H = find_zero(titrate_alkalinity, (10 ^ - p.upper_pH_bound, 10 ^ - p.lower_pH_bound), Bisection(); atol = 1e-10, p = params)
     else
         H = NaN
     end

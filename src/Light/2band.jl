@@ -67,6 +67,25 @@ struct TwoBandPhotosyntheticallyActiveRatiation{FT, F, SPAR}
     end
 end
 
+"""
+    TwoBandPhotosyntheticallyActiveRatiation(; grid, 
+                                               water_red_attenuation::FT = 0.225, # 1/m
+                                               water_blue_attenuation::FT = 0.0232, # 1/m
+                                               chlorophyll_red_attenuation::FT = 0.037, # 1/(m * (mgChl/m³) ^ eʳ)
+                                               chlorophyll_blue_attenuation::FT = 0.074, # 1/(m * (mgChl/m³) ^ eᵇ)
+                                               chlorophyll_red_exponent::FT = 0.629,
+                                               chlorophyll_blue_exponent::FT = 0.674,
+                                               pigment_ratio::FT = 0.7,
+                                               phytoplankton_chlorophyll_ratio::FT = 1.31,
+                                               surface_PAR::SPAR = (x, y, t) -> 100 * max(0.0, cos(t * π / (12hours))))
+
+Keywork Arguments
+===================
+
+    - `grid`: grid for building the model on
+    - `water_red_attenuation`, ..., `phytoplankton_chlorophyll_ratio`: parameter values
+    - `surface_PAR`: funciton (or array in the future) for the photosynthetically available radiaiton at the surface, should be shape `f(x, y, t)`
+"""
 function TwoBandPhotosyntheticallyActiveRatiation(; grid, 
                                                     water_red_attenuation::FT = 0.225, # 1/m
                                                     water_blue_attenuation::FT = 0.0232, # 1/m

@@ -1,14 +1,14 @@
 # # Biogeochemistry in submesoscale eddies in the Eady model
-# In this example we will setup a 3D model with a background buoyancy gradient with associated 
+# In this example we will setup a 3D model with a constant background buoyancy gradient with associated 
 # thermal wind (the [Eady model](https://en.wikipedia.org/wiki/Eady_model)) with the [LOBSTER](@ref LOBSTER) biogeochemical model. 
-# This demonstraits how to use biogeochemistry in a more complicated model.
-# The parameter setup is roughly that of [taylor2016](@cite)
+# This demonstrates how to use biogeochemistry in a more complicated physical model.
+# The parameters correspond roughly to those in [taylor2016](@cite) and will generate a single submesoscale eddy
 
 # ## Install dependencies
 # First we will check we have the dependencies installed
 # ```julia
 # using Pkg
-# pkg"add OceanBioME, Oceananigans, Printf, CairoMakie"
+# pkg "add OceanBioME, Oceananigans, Printf, CairoMakie"
 # ```
 
 # ## Model setup
