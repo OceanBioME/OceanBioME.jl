@@ -15,11 +15,8 @@
 
 # ## Model setup
 # First load the required packages
-# (We are also redirecting warnings due to a bug in compiling the examples, you do not need todo this locally)
 using OceanBioME, Oceananigans, Printf
 using Oceananigans.Units
-
-redirect_stdio(stderr = devnull)
 
 # ## Surface PAR and turbulent vertical diffusivity based on idealised mixed layer depth 
 # Setting up idealised functions for PAR and diffusivity (details here can be ignored but these are typical of the North Atlantic)
