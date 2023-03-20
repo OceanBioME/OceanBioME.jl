@@ -1,8 +1,8 @@
 # # Simple active particle example
-# In this example we will setup a simple 1D column with the [LOBSTER](@ref LOBSTER) biogeochemical model and active particles modelling the growth of sugar kelp. This demonstraits:
+# In this example we will setup a simple 1D column with the [LOBSTER](@ref LOBSTER) biogeochemical model and active particles modelling the growth of sugar kelp. This demonstrates:
 # - How to setup OceanBioME's biogeochemical models
 # - How to add biologically active particles which interact with the biodeochemical model
-# - How to visulise results
+# - How to visualise results
 
 # This is forced by idealised mixing layer depth and surface photosynthetically available radiation (PAR) which are setup first
 
@@ -10,7 +10,7 @@
 # First we will check we have the dependencies installed
 # ```julia
 # using Pkg
-# pkg"add OceanBioME, Oceananigans, Printf, CairoMakie"
+# pkg "add OceanBioME, Oceananigans, Printf, CairoMakie"
 # ```
 
 # ## Model setup
@@ -76,7 +76,7 @@ set!(model, P = 0.03, Z = 0.03, NO₃ = 4.0, NH₄ = 0.05, DIC = 2239.8, Alk = 2
 # Next we setup the simulation along with some callbacks that:
 # - Show the progress of the simulation
 # - Store the model and particles output
-# - Prevent the tracers from going negative from numerical error (see discussion of this in the [positivity preservation](@ref pos-preservation) implimentation page)
+# - Prevent the tracers from going negative from numerical error (see discussion of this in the [positivity preservation](@ref pos-preservation) implementation page)
 
 simulation = Simulation(model, Δt = 10minutes, stop_time=100days) 
 
@@ -103,7 +103,7 @@ simulation.callbacks[:wizard] = Callback(wizard, IterationInterval(1))
 # Finally we run the simulation
 run!(simulation)
 
-# Now we can visulise the results with some post processing to diagnose the air-sea CO₂ flux - hopefully this looks different to the example without kelp!
+# Now we can visualise the results with some post processing to diagnose the air-sea CO₂ flux - hopefully this looks different to the example without kelp!
 
 P = FieldTimeSeries("$filename.jld2", "P")
 NO₃ = FieldTimeSeries("$filename.jld2", "NO₃")

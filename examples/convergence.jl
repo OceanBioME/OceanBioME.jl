@@ -1,5 +1,5 @@
 # # One dimensional column example
-# In this example we will setup a simple 1D column with the [LOBSTER](@ref LOBSTER) biogeochemical model and observe its evolution. This demonstraits:
+# In this example we will setup a simple 1D column with the [LOBSTER](@ref LOBSTER) biogeochemical model and observe its evolution. This demonstrates:
 # - How to setup OceanBioME's biogeochemical models
 # - How to setup light attenuation
 # - How to visulise results
@@ -70,7 +70,7 @@ set!(model, P=0.03, Z=0.03, D=0.0, DD=0.0, Dᶜ=0.0, DDᶜ=0.0, NO₃=11, NH₄=
 # - Update the PAR field from the surface PAR and phytoplankton concentration
 # - Show the progress of the simulation
 # - Store the output
-# - Prevent the tracers from going negative from numerical error (see discussion of this in the [positivity preservation](@ref pos-preservation) implimentation page)
+# - Prevent the tracers from going negative from numerical error (see discussion of this in the [positivity preservation](@ref pos-preservation) implementation page)
 
 simulation = Simulation(model, Δt=10minutes, stop_time=20years) 
 
@@ -92,4 +92,4 @@ simulation.callbacks[:timestep] = Callback(update_timestep!, IterationInterval(1
 # Finally we run the simulation
 run!(simulation)
 
-# Now we can visulise the results
+# Now we can visualise the results
