@@ -1,5 +1,5 @@
 # # Box model
-# In this example we will setup a [LOBSTER](@ref LOBSTER) biogeochemical model in a single box configuration. This demonstrates:
+# In this example we will setup a simple NPZD biogeochemical model in a single box configuration. This demonstrates:
 # - How to setup OceanBioME's biogeochemical models as a stand-alone box model
 
 # ## Install dependencies
