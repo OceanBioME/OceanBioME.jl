@@ -1,8 +1,8 @@
 # # One dimensional column example
-# In this example we will setup a simple 1D column with the [LOBSTER](@ref LOBSTER) biogeochemical model and observe its evolution. This demonstraits:
+# In this example we will setup a simple 1D column with the [LOBSTER](@ref LOBSTER) biogeochemical model and observe its evolution. This demonstrates:
 # - How to setup OceanBioME's biogeochemical models
 # - How to setup light attenuation
-# - How to visulise results
+# - How to visualise results
 
 # This is forced by idealised mixing layer depth and surface photosynthetically available radiation (PAR) which are setup first
 
@@ -58,7 +58,7 @@ set!(model, u=uᵢ, w=uᵢ, T=Tᵢ, S=35.0)#, N = 2.0, P = 0.1, Z = 0.01)
 # - Update the PAR field from the surface PAR and phytoplankton concentration
 # - Show the progress of the simulation
 # - Store the output
-# - Prevent the tracers from going negative from numerical error (see discussion of this in the [positivity preservation](@ref pos-preservation) implimentation page)
+# - Prevent the tracers from going negative from numerical error (see discussion of this in the [positivity preservation](@ref pos-preservation) implementation page)
 
 simulation = Simulation(model, Δt=0.5minute, stop_time=2years)
 
@@ -83,7 +83,7 @@ simulation.output_writers[:profiles] = JLD2OutputWriter(model, merge(model.veloc
 # Finally we run the simulation
 run!(simulation)
 
-# Now we can visulise the results
+# Now we can visualise the results
 
 N = FieldTimeSeries("$filename.jld2", "N")
 P = FieldTimeSeries("$filename.jld2", "P")
