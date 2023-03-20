@@ -100,6 +100,8 @@ simulation.callbacks[:wizard] = Callback(wizard, IterationInterval(1))
 # Finally we run the simulation
 run!(simulation)
 
+return nothing #sssh
+
 # Now we can visualise the results with some post processing to diagnose the air-sea CO₂ flux - hopefully this looks different to the example without kelp!
 
 P = FieldTimeSeries("$filename.jld2", "P")
