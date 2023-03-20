@@ -108,13 +108,8 @@ bPOC = FieldTimeSeries("$filename.jld2", "bPOC")
 DIC = FieldTimeSeries("$filename.jld2", "DIC")
 Alk = FieldTimeSeries("$filename.jld2", "Alk")
 
-<<<<<<< HEAD
-simulation.stop_time = duration
-simulation.callbacks[:timestep] = Callback(update_timestep!, TimeInterval(1day),(w=params.V_dd, Δt_max=2minutes, c_diff = 0.75, c_adv = 0.8, relaxation=0.8, c_boundary=0.005))  #seems to be some kind of instability occuring just after kelp is added with the longer timesteps
-=======
 x, y, z = nodes(P)
 times = P.times
->>>>>>> origin/main
 
 air_sea_CO₂_flux = zeros(size(P)[4])
 carbon_export = zeros(size(P)[4])
