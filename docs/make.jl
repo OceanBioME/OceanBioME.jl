@@ -31,7 +31,7 @@ silly_warnings = ["┌ Warning: type parameters for NamedTuple{(:architecture, :
 └ @ JLD2 ~/.julia/packages/JLD2/ryhNR/src/data/reconstructing_datatypes.jl:403"]
 
 function replace_silly_warning(content)
-    for str in silly_warinings
+    for str in silly_warnings
         content = replace(content, str => "")
     end
     return content
