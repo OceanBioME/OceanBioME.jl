@@ -57,7 +57,7 @@ set!(model, P = 0.03, Z = 0.03, NO₃ = 4.0, NH₄ = 0.05, DIC = 2239.8, Alk = 2
 # - Store the model and particles output
 # - Prevent the tracers from going negative from numerical error (see discussion of this in the [positivity preservation](@ref pos-preservation) implimentation page)
 
-simulation = Simulation(model, Δt=10minutes, stop_time=100days) 
+simulation = Simulation(model, Δt=3minutes, stop_time=100days) 
 
 progress_message(sim) = @printf("Iteration: %04d, time: %s, Δt: %s, wall time: %s\n",
                                                         iteration(sim),
@@ -75,9 +75,6 @@ simulation.output_writers[:profiles] = JLD2OutputWriter(model, merge(model.trace
 
 scale_negative_tracers = ScaleNegativeTracers(; model, tracers = (:NO₃, :NH₄, :P, :Z, :sPOM, :bPOM, :DOM))
 simulation.callbacks[:neg] = Callback(scale_negative_tracers; callsite = UpdateStateCallsite())
-
-wizard = TimeStepWizard(cfl = 0.1, diffusive_cfl = 0.1, max_change = 2.0, min_change = 0.5, cell_diffusion_timescale = column_diffusion_timescale, cell_advection_timescale = column_advection_timescale)
-simulation.callbacks[:wizard] = Callback(wizard, IterationInterval(1))
 
 # ## Run!
 # Finally we run the simulation

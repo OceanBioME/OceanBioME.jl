@@ -16,8 +16,7 @@
 # ```
 
 # ## Model setup
-# We load the packages and choose the default LOBSTER parameter set
-
+# First load the required packages
 using Oceananigans, Random, Printf, NetCDF, Interpolations, DataDeps
 using Oceananigans.Units: second, minute, minutes, hour, hours, day, days, year, years
 using Oceananigans.Operators: ∂zᶜᶜᶜ

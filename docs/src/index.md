@@ -1,4 +1,4 @@
-# `Ocean` `Bio`geochemical `M`odelling `E`nvironment - OceanBioME
+# *Ocean* *Bio*geochemical *M*odelling *E*nvironment - OceanBioME
 
 ```@meta
 CurrentModule = OceanBioME
@@ -15,10 +15,6 @@ OceanBioME.jl currently provides a core of several biogeochemical models (NPZD a
 
 OceanBioME includes a framework for integrating the growth of biological/active Lagrangian particles which move around and can interact with the (Eulerian) tracer fields - for example, consuming nutrients and carbon dioxide while releasing dissolved organic material. A growth model for sugar kelp is currently implemented using active particles, and this model can be used in a variety of dynamical scenarios including free-floating or bottom-attached particles.
 
-An overview of the current and planned future design of OceanBioME is shown in the diagram below:
-![Diagram of high level structure of OceanBioME.jl showing interlink between different components ... (improve this alt text)](overview.png)
-
-
 ## Quick install
 
 OceanBioME is a [registered Julia package](https://julialang.org/packages/). So to install it,
@@ -29,15 +25,77 @@ OceanBioME is a [registered Julia package](https://julialang.org/packages/). So 
 
 ```julia
 julia> using Pkg
-
-julia> Pkg.add("https://github.com/OceanBioME/OceanBioME.jl")
+julia> Pkg.add("OceanBioME")
 ```
 
-!!! compat "Julia 1.8 or newer"
-    The latest version of OceanBioME strongly suggests _at least_ Julia 1.8 or later to run.
-    While most scripts will run on Julia 1.6 or 1.7, OceanBioME is _only_ tested on Julia 1.8.
+## Running your first model
+As a simple example lets run a Nutrient-Phytoplankton-Zooplankton-Detritus (NPZD) model in a two-dimensional simulation of a buoyancy front:
+```julia
+using OceanBioME, Oceananigans
+using Oceananigans.Units
 
-If you're [new to Julia](https://docs.julialang.org/en/v1/manual/getting-started/) and its [wonderful `Pkg` manager](https://docs.julialang.org/en/v1/stdlib/Pkg/), Oceananigans provide a very useful [wiki](https://github.com/CliMA/Oceananigans.jl/wiki) with [more detailed installation instructions](https://github.com/CliMA/Oceananigans.jl/wiki/Installation-and-getting-started-with-Oceananigans).
+grid = RectilinearGrid(CPU(), size=(256, 32), extent=(500, 100), topology=(Bounded, Flat, Bounded))
+
+biogeochemistry = NutrientPhytoplanktonZooplanktonDetritus(; grid, open_bottom=true)
+
+model = NonhydrostaticModel(; grid, biogeochemistry, buoyancy=BuoyancyTracer(), tracers=:b, advection=WENO(; grid), closure = AnisotropicMinimumDissipation())
+
+bᵢ(x, y, z) = ifelse(x < 250, 1e-4, 1e-3)
+
+set!(model, b = bᵢ, N = 5.0, P = 0.1, Z = 0.1, T = 18.0)
+
+simulation = Simulation(model; Δt=1.0, stop_time=3hours)
+
+wizard = TimeStepWizard(cfl=0.3, max_change=1.5)
+
+simulation.callbacks[:wizard] = Callback(wizard, IterationInterval(1))
+
+simulation.output_writers[:tracers] = JLD2OutputWriter(model, model.tracers, filename = "buoyancy_front.jld2", schedule = TimeInterval(1minute), overwrite_existing=true)
+
+run!(simulation)
+```
+
+<details>
+<summary>We can then visualise this:</summary>
+
+```julia
+using CairoMakie
+b = FieldTimeSeries("buoyancy_front.jld2", "b")
+P = FieldTimeSeries("buoyancy_front.jld2", "P")
+
+n = Observable(1)
+
+b_lims = (minimum(b), maximum(b))
+P_lims = (minimum(P), maximum(P))
+
+b_plt = @lift b[1:grid.Nx, 1, 1:grid.Nz, $n]
+P_plt = @lift P[1:grid.Nx, 1, 1:grid.Nz, $n]
+
+fig = Figure(resolution = (1600, 160 * 4))
+
+supertitle = Label(fig[0, :], "t = 0.0")
+
+ax1 = Axis(fig[1, 1], xlabel = "x (m)", ylabel = "z (m)", title = "Buouyancy pertubation (m / s)", width = 1400)
+ax2 = Axis(fig[2, 1], xlabel = "x (m)", ylabel = "z (m)", title = "Phytoplankton concentration (mmol N / m³)", width = 1400)
+
+hm1 = heatmap!(ax1, xnodes(Center, grid)[1:grid.Nx], znodes(Center, grid)[1:grid.Nz], b_plt, colorrange = b_lims, colormap = :batlow, interpolate=true)
+hm2 = heatmap!(ax2, xnodes(Center, grid)[1:grid.Nx], znodes(Center, grid)[1:grid.Nz], P_plt, colorrange = P_lims, colormap = Reverse(:bamako), interpolate=true)
+
+Colorbar(fig[1, 2], hm1)
+Colorbar(fig[2, 2], hm2)
+
+record(fig, "buoyancy_front.gif", 1:length(b.times)) do i
+    n[] = i
+    msg = string("Plotting frame ", i, " of ", length(b.times))
+    print(msg * " \r")
+    supertitle.text = "t=$(prettytime(b.times[i]))"
+end
+```
+</details>
+
+![buoyancy_front](https://user-images.githubusercontent.com/26657828/226373754-42c5c9ed-d7fc-450a-8346-a497a40fe0e2.gif)
+
+In this example `OceanBioME` is providing the `biogeochemistry` and the remainder is taken care of by `Oceanaigans`. For comprehensive documentation of the physics modelling see [Oceanaigans' Documentation](https://clima.github.io/OceananigansDocumentation/stable/), and for biogeochemistry and other features we provide read below.
 
 ## Places to find OceanBioME information
 

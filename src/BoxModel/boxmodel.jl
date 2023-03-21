@@ -108,7 +108,7 @@ Keyword Arguments
 
 TODO: should abstract out to simulation like Oceananians to add e.g. callbacks
 """
-function run!(model::BoxModel; feedback_interval = 1000, save_interval = Inf, save = nothing)
+function run!(model::BoxModel; feedback_interval = 10000, save_interval = Inf, save = nothing)
     itter = 0
     while model.clock.time < model.stop_time
         itter % feedback_interval == 0 && @info "Reached $(prettytime(model.clock.time))"
