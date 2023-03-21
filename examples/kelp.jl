@@ -56,7 +56,8 @@ particles = SLatissima(; x = ones(n) * Lx / 2, y = ones(n) * Ly / 2, z = z₀,
 biogeochemistry = LOBSTER(; grid,
                             surface_phytosynthetically_active_radiation = PAR⁰,
                             carbonates = true,
-                            variable_redfield = true)
+                            variable_redfield = true,
+                            particles)
 
 model = NonhydrostaticModel(; grid,
                               closure = ScalarDiffusivity(ν = κₜ, κ = κₜ), 
