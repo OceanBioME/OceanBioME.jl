@@ -7,19 +7,22 @@ DocTestSetup = quote
 end
 ```
 
-OceanBioME.jl aims to be a flexible and friendly ocean biogeochemical modelling environment for simulating coupled physics-biogeochemical models across a range of ocean scenarios. It is built within [Oceananigans.jl](https://github.com/CliMA/Oceananigans.jl) which resolves the transport of the biogeochemical tracers and individuals and provides an excellent framework for implementing advanced features such as complex boundary conditions (e.g. sediment models).
+OceanBioME.jl is a flexible and friendly ocean biogeochemical modelling environment. It is highly modular and is designed to make it easy to implement and use a varitey of biogeochemical and physical models. OceanBioME is built to be coupled with physics models from [Oceananigans.jl](https://github.com/CliMA/Oceananigans.jl) allowing simulations across a wide range of spatial scales ranging from a global hydrostatic free surface model to nonhydrostatic large-eddy simulations. OceanBioME was designed specifically for ocean CDR appplications. Notably, it includes active particles which allow individual-based models to be seamlessly coupled with the flow physics, ecosystem models, and carbonate chemistry.
 
-OceanBioME.jl is currently developed primarily through the generous and greatly appreciated support of the [Center for Climate Repair at Cambridge](https://www.climaterepair.cam.ac.uk/) and the [Gordon and Betty Moore Foundation](https://www.moore.org/). 
+OceanBioME.jl is supported through grants from the [Center for Climate Repair at Cambridge](https://www.climaterepair.cam.ac.uk/) and the [Gordon and Betty Moore Foundation](https://www.moore.org/). 
 
-OceanBioME.jl currently provides a core of several biogeochemical models (NPZD and [LOBSTER](https://doi.org/10.1029/2004JC002588), a medium complexity model, and [PISCES](https://doi.org/10.5194/gmd-8-2465-2015) in an early stage of testing), air-sea gas exchange models to provide appropriate top boundary conditions, and example sediment models for the benthic boundary.
+OceanBioME.jl currently provides a core of several biogeochemical models (NPZD and [LOBSTER](https://doi.org/10.1029/2004JC002588), a medium complexity model, and [PISCES](https://doi.org/10.5194/gmd-8-2465-2015) in an early stage of testing), air-sea gas exchange models to provide appropriate top boundary conditions, and sediment models for the benthic boundary (under development).
 
-As it was originally conceived for the study of submesoscale systems such as kelp forests we have also implemented a framework for integrating the growth of biological/active Lagrangian particles which move around and can interact with the (Eulerian) tracer fields - consuming nutrients and carbon dioxide, and depositing waste. Currently, included is a simple sugar kelp growth model which can be used in a variety of dynamical scenarios such as free floating or fixed to the ground, with more macroalgae models expected to be ready soon.
+OceanBioME includes a framework for integrating the growth of biological/active Lagrangian particles which move around and can interact with the (Eulerian) tracer fields - for example, consuming nutrients and carbon dioxide while releasing dissolved organic material. A growth model for sugar kelp is currently implemented using active particles, and this model can be used in a variety of dynamical scenarios including free-floating or bottom-attached particles.
 
-## Installation:
+## Quick install
 
-First, [download and install Julia](https://julialang.org/downloads/)
+OceanBioME is a [registered Julia package](https://julialang.org/packages/). So to install it,
 
-From the Julia prompt (REPL), type:
+1. [Download Julia](https://julialang.org/downloads/).
+
+2. Launch Julia and type
+
 ```julia
 julia> using Pkg
 julia> Pkg.add("OceanBioME")
