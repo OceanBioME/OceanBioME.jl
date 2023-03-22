@@ -34,7 +34,10 @@ silly_warnings = ["
 └ @ JLD2 ~/.julia/packages/JLD2/ryhNR/src/data/reconstructing_datatypes.jl:403",
 "
 ┌ Warning: type Oceananigans.TurbulenceClosures.ScalarDiffusivity{Oceananigans.TurbulenceClosures.ExplicitTimeDiscretization,Oceananigans.TurbulenceClosures.ThreeDimensionalFormulation,Main.##522.#κₜ,NamedTuple{(:NO₃, :NH₄, :P, :Z, :sPON, :bPON, :DON, :DIC, :Alk, :sPOC, :bPOC, :DOC),JLD2.ReconstructedTypes.var&quot;##Array{Main.##522.#κₜ,1}#564&quot;}} does not exist in workspace; reconstructing
-└ @ JLD2 ~/.julia/packages/JLD2/ryhNR/src/data/reconstructing_datatypes.jl:403"]
+└ @ JLD2 ~/.julia/packages/JLD2/ryhNR/src/data/reconstructing_datatypes.jl:403",
+"
+┌ Warning: custom serialization of Tuple{Vararg{T, N}} where {N, T}{12,Main.##522.#κₜ} encountered, but the type does not exist in the workspace; the data will be read unconverted
+└ @ JLD2 ~/.julia/packages/JLD2/ryhNR/src/data/reconstructing_datatypes.jl:62"]
 
 function replace_silly_warning(content)
     for str in silly_warnings
