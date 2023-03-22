@@ -7,7 +7,7 @@ DocTestSetup = quote
 end
 ```
 
-OceanBioME.jl is a flexible and friendly ocean biogeochemical modelling environment. It is highly modular and is designed to make it easy to implement and use a varitey of biogeochemical and physical models. OceanBioME is built to be coupled with physics models from [Oceananigans.jl](https://github.com/CliMA/Oceananigans.jl) allowing simulations across a wide range of spatial scales ranging from a global hydrostatic free surface model to nonhydrostatic large-eddy simulations. OceanBioME was designed specifically for ocean CDR appplications. Notably, it includes active particles which allow individual-based models to be seamlessly coupled with the flow physics, ecosystem models, and carbonate chemistry.
+OceanBioME.jl is a fast and flexible ocean biogeochemical modelling environment. It is highly modular and is designed to make it easy to implement and use a varitey of biogeochemical and physical models. OceanBioME is built to be coupled with physics models from [Oceananigans.jl](https://github.com/CliMA/Oceananigans.jl) allowing simulations across a wide range of spatial scales ranging from a global hydrostatic free surface model to nonhydrostatic large-eddy simulations. OceanBioME was designed specifically for ocean CDR appplications. Notably, it includes active particles which allow individual-based models to be seamlessly coupled with the flow physics, ecosystem models, and carbonate chemistry.
 
 OceanBioME.jl is supported through grants from the [Center for Climate Repair at Cambridge](https://www.climaterepair.cam.ac.uk/) and the [Gordon and Betty Moore Foundation](https://www.moore.org/). 
 
@@ -55,8 +55,7 @@ simulation.output_writers[:tracers] = JLD2OutputWriter(model, model.tracers, fil
 run!(simulation)
 ```
 
-<details>
-<summary>We can then visualise this:</summary>
+We can then visualise this:
 
 ```julia
 using CairoMakie
@@ -91,11 +90,10 @@ record(fig, "buoyancy_front.gif", 1:length(b.times)) do i
     supertitle.text = "t=$(prettytime(b.times[i]))"
 end
 ```
-</details>
 
 ![buoyancy_front](https://user-images.githubusercontent.com/26657828/226373754-42c5c9ed-d7fc-450a-8346-a497a40fe0e2.gif)
 
-In this example `OceanBioME` is providing the `biogeochemistry` and the remainder is taken care of by `Oceanaigans`. For comprehensive documentation of the physics modelling see [Oceanaigans' Documentation](https://clima.github.io/OceananigansDocumentation/stable/), and for biogeochemistry and other features we provide read below.
+In this example `OceanBioME` is providing the `biogeochemistry` and the remainder is taken care of by `Oceanaigans`. For comprehensive documentation of the physics modelling see [Oceananigans' Documentation](https://clima.github.io/OceananigansDocumentation/stable/), and for biogeochemistry and other features we provide read below.
 
 ## Places to find OceanBioME information
 
