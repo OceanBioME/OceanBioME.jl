@@ -23,11 +23,20 @@ examples = [
     "eady.jl"
 ]
 
+function replace_silly_warning(content)
+    content = replace(content, r"┌ Warning:.*\s+└ @ JLD2 ~/\.julia/packages/JLD2/.*/reconstructing_datatypes\.jl.*\n" => "")
+    return content
+end
+
 for example in examples
     example_filepath = joinpath(EXAMPLES_DIR, example)
 
     withenv("JULIA_DEBUG" => "Literate") do
-        Literate.markdown(example_filepath, OUTPUT_DIR; flavor = Literate.DocumenterFlavor(), repo_root_url="coming.soon", execute=true)
+        Literate.markdown(example_filepath, OUTPUT_DIR; 
+                          flavor = Literate.DocumenterFlavor(), 
+                          repo_root_url="https://oceanbiome.github.io/OceanBioME.jl", 
+                          execute=true,
+                          postprocess=replace_silly_warning)
     end
 end
 
