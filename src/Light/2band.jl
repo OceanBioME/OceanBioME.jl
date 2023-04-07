@@ -1,6 +1,6 @@
 @kernel function update_TwoBandPhotosyntheticallyActiveRatiation!(PAR, grid, P, surface_PAR, t, PAR_model) 
     i, j = @index(Global, NTuple)
-    x, y = xnode(Center(), i, grid), ynode(Center(), j, grid)
+    x, y = xnode(i, grid, Center()), ynode(j, grid, Center())
     
     PAR⁰ = surface_PAR(x, y, t)
 
