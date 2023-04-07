@@ -6,7 +6,7 @@ using Oceananigans.Grids: ZRegRectilinearGrid, znodes
 @inline Δz(::Center, k, grid) = @inbounds grid.Δzᵃᵃᶜ[k]
 
 @inline function column_diffusion_timescale(model)
-    z = znodes(Center, model.grid)
+    z = znodes(model.grid, Center(), Center(), Center())
     t = model.clock.time
     
     Δz2_ν = zeros(model.grid.Nz)
