@@ -77,8 +77,8 @@ supertitle = Label(fig[0, :], "t = 0.0")
 ax1 = Axis(fig[1, 1], xlabel = "x (m)", ylabel = "z (m)", title = "Buouyancy pertubation (m / s)", width = 1400)
 ax2 = Axis(fig[2, 1], xlabel = "x (m)", ylabel = "z (m)", title = "Phytoplankton concentration (mmol N / m³)", width = 1400)
 
-hm1 = heatmap!(ax1, xnodes(Center, grid)[1:grid.Nx], znodes(Center, grid)[1:grid.Nz], b_plt, colorrange = b_lims, colormap = :batlow, interpolate=true)
-hm2 = heatmap!(ax2, xnodes(Center, grid)[1:grid.Nx], znodes(Center, grid)[1:grid.Nz], P_plt, colorrange = P_lims, colormap = Reverse(:bamako), interpolate=true)
+hm1 = heatmap!(ax1, xnodes(grid, Center(), Center(), Center())[1:grid.Nx], znodes(grid, Center(), Center(), Center())[1:grid.Nz], b_plt, colorrange = b_lims, colormap = :batlow, interpolate=true)
+hm2 = heatmap!(ax2, xnodes(grid, Center(), Center(), Center())[1:grid.Nx], znodes(grid, Center(), Center(), Center())[1:grid.Nz], P_plt, colorrange = P_lims, colormap = Reverse(:bamako), interpolate=true)
 
 Colorbar(fig[1, 2], hm1)
 Colorbar(fig[2, 2], hm2)

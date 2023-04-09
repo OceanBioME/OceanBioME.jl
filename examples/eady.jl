@@ -55,7 +55,7 @@ DIC_bcs = FieldBoundaryConditions(top = GasExchange(; gas = :CO₂, temperature 
 model = NonhydrostaticModel(; grid,
                               biogeochemistry,
                               boundary_conditions = (DIC = DIC_bcs, ),
-                              advection = CenteredSecondOrder(),
+                              advection = WENO(grid),
                               timestepper = :RungeKutta3,
                               coriolis,
                               tracers = :b,
@@ -146,9 +146,9 @@ N_plt = @lift N[:, :, grid.Nz, $n]
 P_plt = @lift P[:, :, grid.Nz, $n]
 DIC_plt = @lift DIC[:, :, grid.Nz, $n]
 
-xs = xnodes(Center, grid)[1:grid.Nx]
-ys = ynodes(Center, grid)[1:grid.Ny]
-zs = znodes(Center, grid)[1:grid.Nz]
+xs = xnodes(grid, Center(), Center(), Center())[1:grid.Nx]
+ys = ynodes(grid, Center(), Center(), Center())[1:grid.Ny]
+zs = znodes(grid, Center(), Center(), Center())[1:grid.Nz]
 
 lims = [(minimum(T), maximum(T)) for T in (w, N, P, DIC)]
 

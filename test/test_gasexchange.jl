@@ -1,7 +1,6 @@
 using Test
 using OceanBioME: Boundaries, GasExchange, LOBSTER
 using Oceananigans, DataDeps, JLD2, Statistics
-using Oceananigans.Grids: xnode, ynode
 using Oceananigans.Units
 
 dd = DataDep(

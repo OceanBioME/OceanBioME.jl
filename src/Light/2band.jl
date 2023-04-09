@@ -1,6 +1,6 @@
 @kernel function update_TwoBandPhotosyntheticallyActiveRatiation!(PAR, grid, P, surface_PAR, t, PAR_model) 
     i, j = @index(Global, NTuple)
-    x, y = xnode(Center(), i, grid), ynode(Center(), j, grid)
+    x, y = xnode(i, grid, Center()), ynode(j, grid, Center())
     
     PAR⁰ = surface_PAR(x, y, t)
 
@@ -13,8 +13,8 @@
     r = PAR_model.pigment_ratio
     Rᶜₚ = PAR_model.phytoplankton_chlorophyll_ratio
 
-    zᶜ = znodes(Center, grid)
-    zᶠ = znodes(Face, grid)
+    zᶜ = znodes(grid, Center(), Center(), Center())
+    zᶠ = znodes(grid, Center(), Center(), Face())
     
     ∫chlʳ = @inbounds (zᶠ[grid.Nz + 1] - zᶜ[grid.Nz]) * (P[i, j, grid.Nz] * Rᶜₚ / r) ^ eʳ
     ∫chlᵇ = @inbounds (zᶠ[grid.Nz + 1] - zᶜ[grid.Nz]) * (P[i, j, grid.Nz] * Rᶜₚ / r) ^ eᵇ

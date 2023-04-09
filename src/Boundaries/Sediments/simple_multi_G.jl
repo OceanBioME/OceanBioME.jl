@@ -37,7 +37,7 @@ end
                  nitrate_oxidation_params::P1 = (A = - 1.9785, B = 0.2261, C = -0.0615, D = -0.0289, E = - 0.36109, F = - 0.0232),
                  denitrifcaiton_params::P2 = (A = - 3.0790, B = 1.7509, C = 0.0593, D = - 0.1923, E = 0.0604, F = 0.0662),
                  anoxic_params::P3 = (A = - 3.9476, B = 2.6269, C = - 0.2426, D = -1.3349, E = 0.1826, F = - 0.0143),
-                 depth = abs(znode(Face(), 1, grid)),
+                 depth = abs(znode(1, grid, Face())),
                  solid_dep_params::P4 = (A = 0.233, B = 0.336, C = 982, D = - 1.548, depth = depth))
 
 Returns a single layer "multi G" sediment model (`SimpleMultiG`) on `grid` where parameters can be optionally specified.
@@ -76,7 +76,7 @@ function SimpleMultiG(grid;
                                            D = -1.3349, 
                                            E = 0.1826, 
                                            F = - 0.0143),
-                      depth = abs(znode(Face(), 1, grid)),
+                      depth = abs(znode(1, grid, Face())),
                       solid_dep_params::P4 = (A = 0.233, 
                                               B = 0.336, 
                                               C = 982, 
