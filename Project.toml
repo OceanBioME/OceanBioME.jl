@@ -4,7 +4,9 @@ authors = ["Jago Strong-Wright <js2430@damtp.cam.ac.uk>", "John R Taylor <j.r.ta
 version = "0.1.1"
 
 [deps]
+AIBECS = "ace601d6-714c-11e9-04e5-89b7fad23838"
 Adapt = "79e6a3ab-5dfb-504d-930d-738a2a938a0e"
+CairoMakie = "13f3f980-e62b-5c42-98c6-ff1f3baf88f0"
 DiffEqBase = "2b5f629d-d688-5b77-993f-72d75c75574e"
 JLD2 = "033835bb-8acc-5ee8-8aae-3f567f8a3819"
 KernelAbstractions = "63c18a36-062a-441e-b654-da1e3ab1ce7c"
@@ -15,12 +17,12 @@ StructArrays = "09ab397b-f2b6-538f-b94a-2f83cf4a842a"
 [compat]
 Adapt = "^3.4"
 DiffEqBase = "^6.100"
-Oceananigans = "^0.80.0"
-Roots = "^2.0.0"
-julia = "^1.8.0"
 JLD2 = "^0.4.31"
 KernelAbstractions = "^0.8.6"
+Oceananigans = "^0.80.0"
+Roots = "^2.0.0"
 StructArrays = "^0.6.15"
+julia = "^1.8.0"
 
 [extras]
 CUDA = "052768ef-5323-5732-b1bb-66c8b64840ba"
