@@ -46,11 +46,6 @@ Flexible biogeochemical modelling frameworks similar to ``OceanBioME.jl`` are un
 
 Finally, this software is currently facilitating multiple research projects into ocean CDR which would have been significantly harder with other solutions. For example, Chen (In prep.) is using the active particles coupling provided to investigate the effects of location and planting density of kelp in the open ocean on their carbon drawdown effect, as in the example above. Additionally, Strong-Wright (In prep.) is using the coupling of both the biogeochemistry and easy interface to couple the physics to study flow interactions with a fully resolved giant kelp forest including the effects on nutrient transport and distribution.
 
-[comment]: <> (Not convinved we need this section since Oceananigans doesn't have one, the above is already about the same length as their paper, and it doesn't really flow)
-# Statement of need
-
-The UN declared 2021-2030 the *Decade of Ocean Science for Sustainable Development*, among the goals identified by this declaration are "the protection and restoration of ecosystems and biodiversity" and "unlocking ocean-based solutions to climate change" while being "transparent and accessible" to empower all stakeholders in their decision-making [@un:2018]. Improving our quantitative understanding of ocean ecosystems must be a priority in achieving these goals to allow their informed management and adaptation [@ryabinin:2019], and ``OceanBioME.jl`` contributes to these goals by facilitating easier and more comprehensive access to ecosystem modelling. 
-
 # Acknowledgements
 
 We would like to thank the ``Oceananigans`` contributors for their fantastic project, and particularly Gregory Wanger for his advice and support, we are also very grateful for the support and funding of the [Centre for Climate Repair at Cambridge](https://www.climaterepair.cam.ac.uk/) and the [Gordon and Betty Moore Foundation](https://www.moore.org/).
