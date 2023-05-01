@@ -176,7 +176,7 @@ sediment_fields(model::SimpleMultiG) = (C_slow = model.fields.C_slow, C_fast = m
 
         if isnan(pₐₙₒₓ)
             println("$(Cᵐⁱⁿ), $(k), $(O₂), $(NO₃)")
-            error("fucn")
+            error("Anoxic error")
         end
 
         pₛₒₗᵢ = sediment.solid_dep_params.A * (sediment.solid_dep_params.C * sediment.solid_dep_params.depth ^ sediment.solid_dep_params.D) ^ sediment.solid_dep_params.B
