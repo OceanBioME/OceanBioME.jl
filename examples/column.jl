@@ -127,4 +127,4 @@ f[3, 5] = Legend(f, axfDIC, "", framevisible = false)
 
 save("$(filename).png", f)
 
-# ![Results-bgc](kelp.png)
+# ![Results-bgc](column.png)
