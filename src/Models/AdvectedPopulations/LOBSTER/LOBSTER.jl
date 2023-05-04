@@ -394,7 +394,7 @@ function update_boxmodel_state!(model::BoxModel{<:LOBSTER, <:Any, <:Any, <:Any, 
     getproperty(model.values, :PAR) .= model.forcing.PAR(model.clock.time)
 end
 
-adapt_structure(to, lobster::LOBSTER{FT, LA, S, B, W, A, P}) where {FT, LA, S, B, W, A, P} = 
+adapt_structure(to, lobster::LOBSTER) = 
     LOBSTER(lobster.phytoplankton_preference,
             lobster.maximum_grazing_rate,
             lobster.grazing_half_saturation,
