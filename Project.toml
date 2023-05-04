@@ -1,7 +1,7 @@
 name = "OceanBioME"
 uuid = "a49af516-9db8-4be4-be45-1dad61c5a376"
 authors = ["Jago Strong-Wright <js2430@damtp.cam.ac.uk>", "John R Taylor <j.r.taylor@damtp.cam.ac.uk>", "Si Chen <sc2350@damtp.cam.ac.uk>"]
-version = "0.1.1"
+version = "0.1.2"
 
 [deps]
 Adapt = "79e6a3ab-5dfb-504d-930d-738a2a938a0e"
