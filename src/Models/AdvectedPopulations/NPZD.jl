@@ -336,5 +336,5 @@ adapt_structure(to, npzd::NPZD) =
                                              NamedTuple{keys(npzd.sinking_velocities)}(ntuple(n -> adapt_structure(to, npzd.sinking_velocities[n]), length(npzd.sinking_velocities))), # not sure this is the most efficient way todo this
                                              NamedTuple{keys(npzd.advection_schemes)}(ntuple(n -> adapt_structure(to, npzd.advection_schemes[n]), length(npzd.advection_schemes))),
 
-                                             adapt_structure(to, lobster.particles))
+                                             adapt_structure(to, npzd.particles))
 end # module
