@@ -31,12 +31,12 @@ adapt_structure(to, velocities::NamedTuple{(:u, :v, :w), Tuple{AbstractField, Ab
 function show_sinking_velocities(sinking_velocities::NamedTuple{T, V}) where {T, V} 
     str = ""
     if length(T) == 1
-        str = "    └── $(T[1]): $(-maximum(sinking_velocities[1].w)) to $(-minimum(sinking_velocities[1].w)) m/s"
+        str = "    └── $(T[1]): $(maximum(sinking_velocities[1].w)) to $(minimum(sinking_velocities[1].w)) m/s"
     else
         for idx in 1:length(T) - 1
-            str *= "    ├── $(T[idx]): $(-maximum(sinking_velocities[idx].w)) to $(-minimum(sinking_velocities[idx].w)) m/s \n"
+            str *= "    ├── $(T[idx]): $(maximum(sinking_velocities[idx].w)) to $(minimum(sinking_velocities[idx].w)) m/s \n"
         end
-        str *= "    └── $(T[end]): $(-maximum(sinking_velocities[end].w)) to $(-minimum(sinking_velocities[end].w)) m/s"
+        str *= "    └── $(T[end]): $(maximum(sinking_velocities[end].w)) to $(minimum(sinking_velocities[end].w)) m/s"
     end
     return str
 end
