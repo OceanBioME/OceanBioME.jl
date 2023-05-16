@@ -17,16 +17,18 @@ using OceanBioME, Oceananigans, Printf
 using OceanBioME.SLatissimaModel: SLatissima
 using Oceananigans.Units
 
+year = years = 365days
+
 # ## Surface PAR and turbulent vertical diffusivity based on idealised mixed layer depth 
 # Setting up idealised functions for PAR and diffusivity (details here can be ignored but these are typical of the North Atlantic)
 
-@inline PAR⁰(x, y, t) = 60 * (1 - cos((t + 15days) * 2π / 365days))*(1 / (1 + 0.2 * exp(-((mod(t, 365days) - 200days) / 50days) ^ 2))) + 2
+@inline PAR⁰(x, y, t) = 60 * (1 - cos((t + 15days) * 2π / year))*(1 / (1 + 0.2 * exp(-((mod(t, year) - 200days) / 50days) ^ 2))) + 2
 
 @inline H(t, t₀, t₁) = ifelse(t₀ < t < t₁, 1.0, 0.0)
 
-@inline fmld1(t) = H(t, 50days, 365days) * (1 / (1 +exp(-(t - 100days) / (5days)))) * (1 / (1 + exp((t - 330days) / (25days))))
+@inline fmld1(t) = H(t, 50days, year) * (1 / (1 +exp(-(t - 100days) / (5days)))) * (1 / (1 + exp((t - 330days) / (25days))))
 
-@inline MLD(t) = - (10 + 340 * (1 - fmld1(365days-eps(365days)) * exp(-mod(t, 365days) / 25days) - fmld1(mod(t, 365days))))
+@inline MLD(t) = - (10 + 340 * (1 - fmld1(year-eps(year)) * exp(-mod(t, year) / 25days) - fmld1(mod(t, year))))
 
 @inline κₜ(x, y, z, t) = 1e-2 * (1 + tanh((z - MLD(t))/10)) / 2 + 1e-4
 

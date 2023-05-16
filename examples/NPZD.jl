@@ -17,15 +17,17 @@
 # We load the packages and choose the default LOBSTER parameter set
 using OceanBioME, Oceananigans, Oceananigans.Units, Printf
 
+year = years = 365days # just for these idealised cases
+
 # ## Surface PAR
-PAR⁰(x, y, t) = 50 * (1 - cos((t + 15days) * 2π / (365days))) * (1 / (1 + 0.2 * exp(-((mod(t, 365days)-200days)/50days)^2))) / 2
+PAR⁰(x, y, t) = 50 * (1 - cos((t + 15days) * 2π / year)) * (1 / (1 + 0.2 * exp(-((mod(t, year)-200days)/50days)^2))) / 2
 
 # ## Grid and PAR field
 # Define the grid and an extra Oceananigans field for the PAR to be stored in
 grid = RectilinearGrid(size=(20, 30), extent=(200, 300), topology=(Periodic, Flat, Bounded)) 
 
 # ## Model instantiation
-Tᵃ(t) = 18 + 2 * sin((t + 15days) * 2π / (365days))
+Tᵃ(t) = 18 + 2 * sin((t + 15days) * 2π / year)
 dTdz_0(x, y, t, T) = (Tᵃ(t) - T) * 10 ^ -3 / 1.1 
 
 dTdz = 0.01 # K m⁻¹
@@ -60,7 +62,7 @@ set!(model, u=uᵢ, w=uᵢ, T=Tᵢ, S=35.0)#, N = 2.0, P = 0.1, Z = 0.01)
 # - Store the output
 # - Prevent the tracers from going negative from numerical error (see discussion of this in the [positivity preservation](@ref pos-preservation) implementation page)
 
-simulation = Simulation(model, Δt=0.5minute, stop_time=2years)
+simulation = Simulation(model, Δt=0.5minute, stop_time = 2years)
 
 # The `TimeStepWizard` helps ensure stable time-stepping
 # with a Courant-Freidrichs-Lewy (CFL) number of 1.0.

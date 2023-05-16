@@ -2,6 +2,8 @@ using OceanBioME, Oceananigans, Test, JLD2
 using OceanBioME.Sediments: SimpleMultiG
 using Oceananigans.Units
 
+year = years = 365days # just for these idealised cases
+
 using CairoMakie
 
 function test_flat_sediment(architecture; timestepper = :QuasiAdamsBashforth2)
