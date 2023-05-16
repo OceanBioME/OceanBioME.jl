@@ -11,16 +11,17 @@ KernelAbstractions = "63c18a36-062a-441e-b654-da1e3ab1ce7c"
 Oceananigans = "9e8cae18-63c1-5223-a75c-80ca9d6e9a09"
 Roots = "f2b01f46-fcfa-551c-844a-d8ac1e96c665"
 StructArrays = "09ab397b-f2b6-538f-b94a-2f83cf4a842a"
+UpdateJulia = "770da0de-323d-4d28-9202-0e205c1e0aff"
 
 [compat]
 Adapt = "^3.4"
 DiffEqBase = "^6.100"
-Oceananigans = "^0.80.0"
-Roots = "^2.0.0"
-julia = "^1.8.0"
 JLD2 = "^0.4.31"
 KernelAbstractions = "^0.8.6"
+Oceananigans = "^0.81.0"
+Roots = "^2.0.0"
 StructArrays = "^0.6.15"
+julia = "^1.8.0"
 
 [extras]
 CUDA = "052768ef-5323-5732-b1bb-66c8b64840ba"
