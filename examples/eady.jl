@@ -8,7 +8,7 @@
 # First we will check we have the dependencies installed
 # ```julia
 # using Pkg
-# pkg "add OceanBioME, Oceananigans, Printf, CairoMakie"
+# pkg "add OceanBioME, Oceananigans, CairoMakie"
 # ```
 
 # ## Model setup
@@ -17,18 +17,18 @@ using OceanBioME, Oceananigans, Printf
 using Oceananigans.Units
 
 # Construct a grid with uniform grid spacing
-Lz = 100
+Lz = 100meters
 grid = RectilinearGrid(size=(32, 32, 8), extent = (1kilometer, 1kilometer, Lz))
 
 # Set the Coriolis parameter
 coriolis = FPlane(f=1e-4) # [s⁻¹]
 
 # Specify parameters that are used to construct the background state
-background_state_parameters = ( M2 = 1e-8, # s⁻¹, geostrophic shear
-                                f = coriolis.f,      # s⁻¹, Coriolis parameter
-                                N = 1e-4)            # s⁻¹, buoyancy frequency
+background_state_parameters = ( M2 = 1e-8,      # s⁻¹, geostrophic shear
+                                f = coriolis.f, # s⁻¹, Coriolis parameter
+                                N = 1e-4)       # s⁻¹, buoyancy frequency
 
-# Here, B is the background buoyancy field and V is the corresponding thermal wind
+# Here, ``B`` is the background buoyancy field and ``V`` is the corresponding thermal wind
 V(x, y, z, t, p) = + p.M2/p.f * (z - Lz/2)
 B(x, y, z, t, p) = p.M2 * x + p.N^2 * (z - Lz/2)
 
@@ -96,7 +96,7 @@ u, v, w = model.velocities # unpack velocity `Field`s
 # calculate the vertical vorticity [s⁻¹]
 ζ = Field(∂x(v) - ∂y(u))
 
-# horizontal divergence [s⁻¹]
+# and horizontal divergence [s⁻¹]
 δ = Field(∂x(u) + ∂y(v))
 
 # Periodically write the velocity, vorticity, and divergence out to a file
