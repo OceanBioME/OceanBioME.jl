@@ -3,6 +3,8 @@ using OceanBioME: Boundaries, GasExchange, LOBSTER
 using Oceananigans, DataDeps, JLD2, Statistics
 using Oceananigans.Units
 
+year = years = 365days # just for the idealised case below
+
 dd = DataDep(
     "test_data",
     "CODAP-NA (https://essd.copernicus.org/articles/13/2777/2021/) data for testing pCO₂ calculations", 

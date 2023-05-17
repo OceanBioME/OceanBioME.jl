@@ -18,9 +18,11 @@
 # ## Model setup
 # First load the required packages
 using Oceananigans, Random, Printf, NetCDF, Interpolations, DataDeps
-using Oceananigans.Units: second, minute, minutes, hour, hours, day, days, year, years
+using Oceananigans.Units
 using Oceananigans.Operators: ∂zᶜᶜᶜ
 using OceanBioME 
+
+year = years = 365days # just for these idealised cases
 
 # ## Load external forcing data
 # Loading the forcing data from our online copy
@@ -45,7 +47,7 @@ PAR_itp = LinearInterpolation(times, par)
 t_function(x, y, z, t) = temperature_itp(mod(t, 364days))
 s_function(x, y, z, t) = salinity_itp(mod(t, 364days))
 surface_PAR(x, y, t) = PAR_itp(mod(t, 364days))
-κₜ(x, y, z, t) = 2e-2*max(1-(z+mld_itp(mod(t,364days))/2)^2/(mld_itp(mod(t,364days))/2)^2,0)+1e-4
+κₜ(x, y, z, t) = 2e-2 * max(1 - (z + mld_itp(mod(t, 364days)) / 2) ^ 2 / (mld_itp(mod(t, 364days)) / 2) ^ 2, 0) + 1e-4
 
 # ## Grid and PAR field
 # Define the grid (in this case a non uniform grid for better resolution near the surface) and an extra Oceananigans field for the PAR to be stored in

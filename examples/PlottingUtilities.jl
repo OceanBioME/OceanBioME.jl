@@ -1,5 +1,5 @@
 using Plots, Oceananigans, JLD2, Statistics, NetCDF, CairoMakie
-using Oceananigans.Units: second, minute, minutes, hour, hours, day, days, year, years
+using Oceananigans.Units
 using OceanBioME
 load_tracers(sim::Simulation, save_name=:profiles) = load_tracers(sim.output_writers[save_name].filepath)
 
