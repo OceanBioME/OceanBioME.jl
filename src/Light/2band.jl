@@ -82,9 +82,9 @@ end
 Keywork Arguments
 ===================
 
-    - `grid`: grid for building the model on
-    - `water_red_attenuation`, ..., `phytoplankton_chlorophyll_ratio`: parameter values
-    - `surface_PAR`: funciton (or array in the future) for the photosynthetically available radiaiton at the surface, should be shape `f(x, y, t)`
+- `grid`: grid for building the model on
+- `water_red_attenuation`, ..., `phytoplankton_chlorophyll_ratio`: parameter values
+- `surface_PAR`: funciton (or array in the future) for the photosynthetically available radiaiton at the surface, should be shape `f(x, y, t)`
 """
 function TwoBandPhotosyntheticallyActiveRatiation(; grid, 
                                                     water_red_attenuation::FT = 0.225, # 1/m
