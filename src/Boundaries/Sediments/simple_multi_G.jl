@@ -44,7 +44,7 @@ Returns a single layer "multi G" sediment model (`SimpleMultiG`) on `grid` where
 
 The model is a single layer (i.e. does not include porous diffusion) model with three classes of sediment organic matter
 which decay at three different rates (fast, slow, refactory). The nitrifcation/denitrifcation/anoxic mineralisation
-fractions default to the parameterisation of Soetaert et al. 2000 (https://doi.org/10.1016/S0012-8252(00)00004-0).
+fractions default to the parameterisation of Soetaert et al. 2000; doi:[10.1016/S0012-8252(00)00004-0](https://doi.org/10.1016/S0012-8252(00)00004-0).
 
 This model has not yet been validated or compared to observational data. The variety of degridation processes is likely 
 to be strongly dependent on oxygen availability (https://bg.copernicus.org/articles/6/1273/2009/bg-6-1273-2009.pdf)
