@@ -22,7 +22,7 @@ using Oceananigans.Units
 using Oceananigans.Operators: ∂zᶜᶜᶜ
 using OceanBioME 
 
-year = years = 365days # just for these idealised cases
+const year = years = 365days # just for these idealised cases
 
 # ## Load external forcing data
 # Loading the forcing data from our online copy
@@ -47,7 +47,7 @@ PAR_itp = LinearInterpolation(times, par)
 t_function(x, y, z, t) = temperature_itp(mod(t, 364days))
 s_function(x, y, z, t) = salinity_itp(mod(t, 364days))
 surface_PAR(x, y, t) = PAR_itp(mod(t, 364days))
-κₜ(x, y, z, t) = 2e-2 * max(1 - (z + mld_itp(mod(t, 364days)) / 2) ^ 2 / (mld_itp(mod(t, 364days)) / 2) ^ 2, 0) + 1e-4
+κₜ(x, y, z, t) = 2e-2 * max(1 - (z + mld_itp(mod(t, 364days)) / 2)^2 / (mld_itp(mod(t, 364days)) / 2)^2, 0) + 1e-4
 
 # ## Grid and PAR field
 # Define the grid (in this case a non uniform grid for better resolution near the surface) and an extra Oceananigans field for the PAR to be stored in
@@ -60,7 +60,7 @@ h(k) = (k - 1) / Nz
 Σ(k) = (1 - exp(-stretching * h(k))) / (1 - exp(-stretching))
 z_faces(k) = Lz * (ζ₀(k) * Σ(k) - 1)
 
-grid = RectilinearGrid(size = (1, 1, Nz), x = (0, 20), y = (0, 20), z = z_faces)        
+grid = RectilinearGrid(size = (1, 1, Nz), x = (0, 20), y = (0, 20), z = z_faces)
 
 # ## Biogeochemical and Oceananigans model
 # Here we instantiate the LOBSTER model with carbonate chemistry and a surface flux of DIC (CO₂)
@@ -70,7 +70,7 @@ model = NonhydrostaticModel(; grid,
                               biogeochemistry = LOBSTER(; grid,
                                                           surface_phytosynthetically_active_radiation = surface_PAR,
                                                           carbonates = true),
-                              boundary_conditions = (DIC = FieldBoundaryConditions(top = CO₂_flux), ),
+                              boundary_conditions = (DIC = FieldBoundaryConditions(top = CO₂_flux),),
                               advection = nothing,)
 
 set!(model, P = 0.03, Z = 0.03, NO₃ = 11.0, NH₄ = 0.05, DIC = 2200.0, Alk = 2400.0)
