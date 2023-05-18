@@ -113,15 +113,15 @@ import Oceananigans.LagrangianParticleTracking: update_particle_properties!, _ad
 Keywork Arguments
 ===================
 
-    - `architecture`: the architecture to adapt arrays to
-    - `growth_rate_adjustement`, ..., `exudation_redfield_ratio`: parameter values
-    - `pescribed_velocity`, `pescribed_temperature` and `pescribed_salinity`: funcitons for the relative velocity, temperature and salinity in the form `f(x, y, z, t)`
-    - `x`,`y` and `z`: positions of the particles
-    - `A`, `N`, and `C`: area, nitrogen, and carbon reserves
-    - `nitrate_uptake` ... `carbon_erosion`: diagnostic values coupled to tracer fields
-    - `custom_dynamics`: place to add any function of form `f!(particles, model, bgc, Δt)`
-    - `scalefactor`: scalar scaling for tracer coupling
-    - `latitude`: model latitude for seasonal growth modulation
+- `architecture`: the architecture to adapt arrays to
+- `growth_rate_adjustement`, ..., `exudation_redfield_ratio`: parameter values
+- `pescribed_velocity`, `pescribed_temperature` and `pescribed_salinity`: functions for the relative velocity, temperature and salinity in the form `f(x, y, z, t)`
+- `x`,`y` and `z`: positions of the particles
+- `A`, `N`, and `C`: area, nitrogen, and carbon reserves
+- `nitrate_uptake` ... `carbon_erosion`: diagnostic values coupled to tracer fields
+- `custom_dynamics`: place to add any function of form `f!(particles, model, bgc, Δt)`
+- `scalefactor`: scalar scaling for tracer coupling
+- `latitude`: model latitude for seasonal growth modulation
 """
 Base.@kwdef struct SLatissima{AR, FT, U, T, S, P, F} <: BiogeochemicalParticles
     architecture :: AR = CPU()

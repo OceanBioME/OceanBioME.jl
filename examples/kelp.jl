@@ -18,7 +18,7 @@
 using OceanBioME, Oceananigans, Printf
 using Oceananigans.Units
 
-year = years = 365days # just for these idealised cases
+const year = years = 365days # just for these idealised cases
 
 # ## Surface PAR and turbulent vertical diffusivity based on idealised mixed layer depth 
 # Setting up idealised functions for PAR and diffusivity (details here can be ignored but these are typical of the North Atlantic)

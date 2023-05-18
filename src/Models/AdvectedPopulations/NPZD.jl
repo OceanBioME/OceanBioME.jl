@@ -71,15 +71,15 @@ Construct an instance of the NPZD ([NPZD](@ref NPZD)) biogeochemical model.
 Keywork Arguments
 ===================
 
-    - `grid`: (required) the geometry to build the model on, required to calculate sinking
-    - `initial_photosynthetic_slope`, ..., `remineralization_rate`: NPZD parameter values
-    - `surface_phytosynthetically_active_radiation`: funciton (or array in the future) for the photosynthetically available radiaiton at the surface, should be shape `f(x, y, t)`
-    - `light_attenuation_model`: light attenuation model which integrated the attenuation of available light
-    - `sediment_model`: slot for `AbstractSediment`
-    - `sinking_speed`: named tuple of constant sinking, of fields (i.e. `ZFaceField(...)`) for any tracers which sink (convention is that a sinking speed is positive, but a field will need to follow the usual down being negative)
-    - `open_bottom`: should the sinking velocity be smoothly brought to zero at the bottom to prevent the tracers leaving the domain
-    - `advection_schemes`: named tuple of advection scheme to use for sinking
-    - `particles`: slot for `BiogeochemicalParticles`
+- `grid`: (required) the geometry to build the model on, required to calculate sinking
+- `initial_photosynthetic_slope`, ..., `remineralization_rate`: NPZD parameter values
+- `surface_phytosynthetically_active_radiation`: funciton (or array in the future) for the photosynthetically available radiaiton at the surface, should be shape `f(x, y, t)`
+- `light_attenuation_model`: light attenuation model which integrated the attenuation of available light
+- `sediment_model`: slot for `AbstractSediment`
+- `sinking_speed`: named tuple of constant sinking, of fields (i.e. `ZFaceField(...)`) for any tracers which sink (convention is that a sinking speed is positive, but a field will need to follow the usual down being negative)
+- `open_bottom`: should the sinking velocity be smoothly brought to zero at the bottom to prevent the tracers leaving the domain
+- `advection_schemes`: named tuple of advection scheme to use for sinking
+- `particles`: slot for `BiogeochemicalParticles`
 """
 
 struct NutrientPhytoplanktonZooplanktonDetritus{FT, LA, S, W, A, P} <: ContinuousFormBiogeochemistry{LA, S, P}
