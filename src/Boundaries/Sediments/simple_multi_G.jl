@@ -1,10 +1,10 @@
 """
-    SimpleMultiG
+    struct SimpleMultiG
 
 Hold the parameters and fields for a simple "multi G" single layer sediment model.
-Based on the Level 3 model described in Soetaert et al. 2000 (https://doi.org/10.1016/S0012-8252(00)00004-0).
+Based on the Level 3 model described in Soetaert et al. 2000;
+doi:[10.1016/S0012-8252(00)00004-0](https://doi.org/10.1016/S0012-8252(00)00004-0).
 """
-
 struct SimpleMultiG{FT, P1, P2, P3, P4, F, TE} <: FlatSediment
              fast_decay_rate :: FT
              slow_decay_rate :: FT
@@ -47,7 +47,7 @@ which decay at three different rates (fast, slow, refactory). The nitrifcation/d
 fractions default to the parameterisation of Soetaert et al. 2000; doi:[10.1016/S0012-8252(00)00004-0](https://doi.org/10.1016/S0012-8252(00)00004-0).
 
 This model has not yet been validated or compared to observational data. The variety of degridation processes is likely 
-to be strongly dependent on oxygen availability (https://bg.copernicus.org/articles/6/1273/2009/bg-6-1273-2009.pdf)
+to be strongly dependent on oxygen availability (see [https://bg.copernicus.org/articles/6/1273/2009/bg-6-1273-2009.pdf](https://bg.copernicus.org/articles/6/1273/2009/bg-6-1273-2009.pdf))
 so it will therefore be important to also thoghroy validate the oxygen model (also currently limited).
 """
 function SimpleMultiG(grid; 
