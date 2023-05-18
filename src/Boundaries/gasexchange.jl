@@ -180,17 +180,17 @@ Please see note for other gases.
 Keyword arguments
 =================
 
-    - `gas`: (required) the gas to be exchanged, if `:CO₂` or `:O₂` are specified then all other settings may be infered
-    - `schmidt_params` : named tuple of parameters for calculating the Schmidt number using the parameterisation of [Wanninkhof1992](@cite)
-    - `solubility_params` : named tuple of parameters for calculating the solubility (for O₂ the Bunsen solubility and CO₂ K₀, see note)
-    - `ocean_density` : density of the ocean in kg/m³
-    - `air_concentratio` : concentration of the gas in air in relivant units (i.e. ppmv for CO₂ and mmol O₂/m³ for O₂), can also be a function of x, y, t, or a field
-    - `air_pressure` : air pressure in atm (only used for CO₂), can also be a function of x, y, t, or a field
-    - `average_wind_speed` : average wind speed at 10m used to calculate the gas transfer velocity by the [Wanninkhof1992](@cite) parameterisation
-    - `field_dependencies` : tracer fields that gas exchange depends on, if the defaults have different names in your model you can specify as long as they are in the same order
-    - `temperature` : either `nothing` to track a temperature tracer field, or a function or shape `f(x, y, z, t)` for the temperature in °C
-    - `salinity` : either `nothing` to track a salinity tracer field, or a function or shape `f(x, y, z, t)` for the salinity in ‰
-    - `pCO₂` : pCO₂ calculator
+- `gas`: (required) the gas to be exchanged, if `:CO₂` or `:O₂` are specified then all other settings may be infered
+- `schmidt_params` : named tuple of parameters for calculating the Schmidt number using the parameterisation of [Wanninkhof1992](@cite)
+- `solubility_params` : named tuple of parameters for calculating the solubility (for O₂ the Bunsen solubility and CO₂ K₀, see note)
+- `ocean_density` : density of the ocean in kg/m³
+- `air_concentratio` : concentration of the gas in air in relivant units (i.e. ppmv for CO₂ and mmol O₂/m³ for O₂), can also be a function of x, y, t, or a field
+- `air_pressure` : air pressure in atm (only used for CO₂), can also be a function of x, y, t, or a field
+- `average_wind_speed` : average wind speed at 10m used to calculate the gas transfer velocity by the [Wanninkhof1992](@cite) parameterisation
+- `field_dependencies` : tracer fields that gas exchange depends on, if the defaults have different names in your model you can specify as long as they are in the same order
+- `temperature` : either `nothing` to track a temperature tracer field, or a function or shape `f(x, y, z, t)` for the temperature in °C
+- `salinity` : either `nothing` to track a salinity tracer field, or a function or shape `f(x, y, z, t)` for the salinity in ‰
+- `pCO₂` : pCO₂ calculator
 
 Note
 =====

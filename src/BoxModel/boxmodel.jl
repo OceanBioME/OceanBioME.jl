@@ -46,12 +46,12 @@ Constructs a box model of a `biogeochemistry` model. Once this has been construc
 Keyword Arguments 
 ====================
 
-    - `biogeochemistry`: (required) an OceanBioME biogeochemical model, most models must be passed a `grid` which can be set to `BoxModelGrid()` for box models
-    - `stop_time`: end time of simulation
-    - `forcing`: NamedTuple of additional forcing functions for the biogeochemical tracers to be integrated
-    - `timestepper`: Timestepper to integrate model, only available is currently `RungeKutta3TimeStepper`
-    - `Δt`: time step length
-    - `clock`: Oceananigans clock to keep track of time
+- `biogeochemistry`: (required) an OceanBioME biogeochemical model, most models must be passed a `grid` which can be set to `BoxModelGrid()` for box models
+- `stop_time`: end time of simulation
+- `forcing`: NamedTuple of additional forcing functions for the biogeochemical tracers to be integrated
+- `timestepper`: Timestepper to integrate model, only available is currently `RungeKutta3TimeStepper`
+- `Δt`: time step length
+- `clock`: Oceananigans clock to keep track of time
 """
 
 function BoxModel(;biogeochemistry::B,
