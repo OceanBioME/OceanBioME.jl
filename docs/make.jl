@@ -45,7 +45,7 @@ example_pages = [
     "Data forced column model" => "generated/data_forced.md",
     "Model with particles (kelp) interacting with the biogeochemistry" => "generated/kelp.md",
     "Box model" => "generated/box.md",
-    "Baroclinical instability" => "generated/eady.md"]
+    "Baroclinic instability" => "generated/eady.md"]
 
 bgc_pages = [
     "Overview" => "model_components/biogeochemical/index.md",

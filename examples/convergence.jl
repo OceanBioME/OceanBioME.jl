@@ -18,7 +18,7 @@
 using OceanBioME, Oceananigans,Printf
 using Oceananigans.Units
 
-year = years = 365days # just for these idealised cases
+const year = years = 365days # just for these idealised cases
 
 params = LOBSTER.defaults  
 
@@ -27,10 +27,10 @@ params = LOBSTER.defaults
 
 PAR⁰(t) = 60 * (1 - cos((t + 15days) * 2π / year)) * (1 / (1 + 0.2 * exp(-((t - 200days) / 50days) ^ 2))) .+ 2
 
-H(t, t₀, t₁) = ifelse(t₀<t<t₁, 1.0, 0.0)
-fmld1(t) = H(t, 50days, year) * (1 / (1 + exp(-(t - 100days) / 5days))) * (1 / (1 + exp((t -330days) / 25days)))
+H(t, t₀, t₁) = ifelse(t₀ < t < t₁, 1.0, 0.0)
+fmld1(t) = H(t, 50days, year) * (1 / (1 + exp(-(t - 100days) / 5days))) * (1 / (1 + exp((t - 330days) / 25days)))
 MLD(t) = (-10 - 340 * (1 - fmld1(364.99999days) * exp(-t / 25days) - fmld1(mod(t, year))))
-κₜ(x, y, z, t) = 1e-2 * max(1 - (z + MLD(t) / 2) ^ 2 / (MLD(t) / 2) ^ 2,0) + 1e-4; 
+κₜ(x, y, z, t) = 1e-2 * max(1 - (z + MLD(t) / 2)^2 / (MLD(t) / 2)^2, 0) + 1e-4; 
 
 t_function(x, y, z, t) = 2.4 * cos(t * 2π / year + 50day) + 10
 s_function(x, y, z, t) = 35.0
@@ -38,8 +38,8 @@ s_function(x, y, z, t) = 35.0
 # ## Grid and PAR field
 # Define the grid (in this case a non uniform grid for better resolution near the surface) and an extra Oceananigans field for the PAR to be stored in
 Nz = 33
-Lz = 600
-refinement = 10 
+Lz = 600meters
+refinement = 10
 stretching = 5.754
 h(k) = (k - 1) / Nz
 ζ₀(k) = 1 + (h(k) - 1) / refinement
@@ -49,7 +49,8 @@ z_faces(k) = Lz * (ζ₀(k) * Σ(k) - 1)
 grid = RectilinearGrid(size = (1, 1, Nz), x = (0, 20), y = (0, 20), z = z_faces)        
 
 dic_bc = Boundaries.airseasetup(:CO₂, forcings=(T=t_function, S=s_function))
-oxy_bc = Boundaries.airseasetup(:O₂, forcings=(T=t_function, S=s_function))
+oxy_bc = Boundaries.airseasetup(:O₂,  forcings=(T=t_function, S=s_function))
+
 # ## Biogeochemical and Oceananigans model
 # Here we instantiate the simplest possible version of the LOBSTER model which will return all of the information we then need to pass onto Oceananigans and set the initial conditions.
 # > We are being a bit picky about the Oceananigans model setup (e.g. specifying the advection scheme) as this gives the best simple results but you may find differently.

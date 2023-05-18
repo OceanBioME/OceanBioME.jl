@@ -17,12 +17,12 @@ using OceanBioME, Oceananigans, Printf
 using OceanBioME.SLatissimaModel: SLatissima
 using Oceananigans.Units
 
-year = years = 365days
+const year = years = 365days
 
 # ## Surface PAR and turbulent vertical diffusivity based on idealised mixed layer depth 
 # Setting up idealised functions for PAR and diffusivity (details here can be ignored but these are typical of the North Atlantic)
 
-@inline PAR⁰(x, y, t) = 60 * (1 - cos((t + 15days) * 2π / year))*(1 / (1 + 0.2 * exp(-((mod(t, year) - 200days) / 50days) ^ 2))) + 2
+@inline PAR⁰(x, y, t) = 60 * (1 - cos((t + 15days) * 2π / year)) * (1 / (1 + 0.2 * exp(-((mod(t, year) - 200days) / 50days)^2))) + 2
 
 @inline H(t, t₀, t₁) = ifelse(t₀ < t < t₁, 1.0, 0.0)
 
@@ -36,8 +36,8 @@ year = years = 365days
 
 # ## Grid and PAR field
 # Define the grid and an extra Oceananigans field for the PAR to be stored in
-Lx, Ly = 20, 20
-grid = RectilinearGrid(size=(1, 1, 50), extent=(Lx, Ly, 200)) 
+Lx, Ly = 20meters, 20meters
+grid = RectilinearGrid(size=(1, 1, 50), extent=(Lx, Ly, 200meters)) 
 
 # Specify the boundary conditions for DIC and O₂ based on the air-sea CO₂ and O₂ flux
 CO₂_flux = GasExchange(; gas = :CO₂, temperature = temp, salinity = (args...) -> 35)
