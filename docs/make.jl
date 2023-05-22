@@ -124,7 +124,23 @@ makedocs(bib,
 
 @info "Cleaning up temporary .jld2 and .nc files created by doctests..."
 
-for file in vcat(glob("docs/src/generated/*.jld2"), glob("docs/src/generated/*.nc"))
+"""
+    recursive_find(directory, pattern)
+
+Return list of filepaths within `directory` that fall under the `pattern::Regex`, e.g., `pattern = r"\.jl"`.
+"""
+recursive_find(directory, pattern) =
+    mapreduce(vcat, walkdir(directory)) do (root, dirs, files)
+        joinpath.(root, filter(contains(pattern), files))
+    end
+
+files = []
+
+for pattern in [r"\.jld2", r"\.nc"]
+    files = vcat(files, recursive_find(@__DIR__, pattern))
+end
+
+for file in files
     rm(file)
 end
 
