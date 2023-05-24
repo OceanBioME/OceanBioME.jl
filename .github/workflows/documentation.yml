@@ -26,4 +26,4 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }} # If authenticating with GitHub Actions token
           DOCUMENTER_KEY: ${{ secrets.DOCUMENTER_KEY }} # If authenticating with SSH deploy key
-        run: JULIA_DEBUG=Documenter julia --project=docs/ docs/make.jl
+        run: JULIA_DEBUG=Documenter julia --color=yes --project=docs/ docs/make.jl
