@@ -1,6 +1,4 @@
-pushfirst!(LOAD_PATH, joinpath(@__DIR__, "..")) # add OceanBioME to environment stack
-
-using Documenter, DocumenterCitations, Literate
+using Documenter, DocumenterCitations, Literate, Glob
 
 using OceanBioME
 using OceanBioME.SLatissimaModel: SLatissima
