@@ -3,19 +3,9 @@ on:
   push:
     branches:
       - main
-    paths:
-      - 'src/*'
-      - 'test/*'
-      - '.github/workflows/*'
-      - 'Project.toml'
   pull_request:
     branches: 
       - main
-    paths:
-      - 'src/*'
-      - 'test/*'
-      - '.github/workflows/*'
-      - 'Project.toml'
 
 env:
   DATADEPS_ALWAYS_ACCEPT: true
