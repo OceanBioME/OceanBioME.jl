@@ -126,7 +126,6 @@ makedocs(bib,
 
 """
     recursive_find(directory, pattern)
-
 Return list of filepaths within `directory` that fall under the `pattern::Regex`, e.g., `pattern = r"\.jl"`.
 """
 recursive_find(directory, pattern) =
@@ -139,6 +138,8 @@ files = []
 for pattern in [r"\.jld2", r"\.nc"]
     files = vcat(files, recursive_find(@__DIR__, pattern))
 end
+
+@show files
 
 for file in files
     rm(file)
