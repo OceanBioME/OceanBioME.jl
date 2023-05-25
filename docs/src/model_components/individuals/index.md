@@ -9,7 +9,8 @@ DocTestSetup = quote
     using Oceananigans.Fields: interpolate
 end
 ```
-``` jldoctest particles
+
+```@example particles
 struct GrowingParticles{FT, VT} <: BiogeochemicalParticles 
     nutrients_half_saturation :: FT
 
@@ -24,15 +25,14 @@ end
 
 You then need to overload particular functions to integrate the growth, so they need to first be `import`ed:
 
-``` jldoctest particles
+```@example particles
 import Oceananigans.Biogeochemistry: update_tendencies!
 import Oceananigans.LagrangianParticleTracking: update_particle_properties!, _advect_particles!
 ```
 
 First, to integrate the particles properties we overload `update_particle_properties`, in this fictitious case we will have a Mondo-quota nutrient uptake and growth:
 
-``` jldoctest particles
-
+```@example particles
 function update_particle_properties!(particles::GrowingParticles, model, bgc, Δt)
     @inbounds for p in 1:length(particles)
         nutrients = @inbounds interpolate(model.tracers.NO₃, particle.x[p], particle.y[p], particle.z[p])
@@ -42,12 +42,13 @@ function update_particle_properties!(particles::GrowingParticles, model, bgc, Δ
         particles.size[p] += uptake * Δt
         particles.nitrate_uptake[p] = uptake
     end
+    return nothing
 end
 ```
 
 In this example the particles will not move around, and are only integrated on a single thread. For a more comprehensive example see the [Sugar Kelp](@ref SLatissima) implementation. We then need to update the tracer tendencies to match the nutrients' uptake:
 
-``` jldoctest particles
+```@example particles
 
 function update_tendencies!(bgc, particles::GrowingParticles, model)
     @inbounds for p in 1:length(particles)
@@ -62,11 +63,13 @@ function update_tendencies!(bgc, particles::GrowingParticles, model)
             @inbounds model.timestepper.Gⁿ.NO₃[i, j, k] += particles.nitrate_uptake[p] / (d * node_volume)
         end
     end
+    return nothing
 end
 ```
 
 Now we can just plug this into any biogeochemical model setup to have particles (currently [NPZD](@ref NPZD) and [LOBSTER](@ref LOBSTER)):
-``` jldoctest particles
+
+```@example particles
 # Start the particles randomly distributed, floating on the surface
 Lx, Ly, Lz = 1000, 1000, 100
 
