@@ -1,4 +1,4 @@
-using Documenter, DocumenterCitations, Literate, Glob
+using Documenter, DocumenterCitations, Literate
 
 using OceanBioME
 using OceanBioME.SLatissimaModel: SLatissima
@@ -114,15 +114,33 @@ makedocs(bib,
     format = format,
     pages = pages,
     modules = Module[OceanBioME],
-    doctest = false,#true,
-    strict = false,#true,
+    doctest = false, #true,
+    strict = false, #true,
     clean = true,
     checkdocs = :exports
 )
 
 @info "Cleaning up temporary .jld2 and .nc files created by doctests..."
 
-for file in vcat(glob("docs/*.jld2"), glob("docs/*.nc"))
+"""
+    recursive_find(directory, pattern)
+
+Return list of filepaths within `directory` that contains the `pattern::Regex`.
+"""
+recursive_find(directory, pattern) =
+    mapreduce(vcat, walkdir(directory)) do (root, dirs, files)
+        joinpath.(root, filter(contains(pattern), files))
+    end
+
+files = []
+
+for pattern in [r"\.jld2", r"\.nc"]
+    global files = vcat(files, recursive_find(@__DIR__, pattern))
+end
+
+@show files
+
+for file in files
     rm(file)
 end
 
@@ -132,4 +150,3 @@ deploydocs(
           push_preview = true,
           devbranch = "main"
 )
-
