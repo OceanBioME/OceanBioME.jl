@@ -99,7 +99,7 @@ end
 
 ![buoyancy_front](https://user-images.githubusercontent.com/26657828/226373754-42c5c9ed-d7fc-450a-8346-a497a40fe0e2.gif)
 
-In this example `OceanBioME` is providing the `biogeochemistry` and the remainder is taken care of by `Oceanaigans`. For comprehensive documentation of the physics modelling see [Oceananigans' Documentation](https://clima.github.io/OceananigansDocumentation/stable/), and for biogeochemistry and other features we provide read below.
+In this example `OceanBioME` is providing the `biogeochemistry` and the remainder is taken care of by `Oceananigans`. For comprehensive documentation of the physics modelling see [Oceananigans' Documentation](https://clima.github.io/OceananigansDocumentation/stable/); for biogeochemistry and other features we provide read below.
 
 ## Places to find OceanBioME information
 
