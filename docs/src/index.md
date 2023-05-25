@@ -1,12 +1,5 @@
 # *Ocean* *Bio*geochemical *M*odelling *E*nvironment - OceanBioME
 
-```@meta
-CurrentModule = OceanBioME
-DocTestSetup = quote
-    using OceanBioME
-end
-```
-
 OceanBioME.jl is a fast and flexible ocean biogeochemical modelling environment. It is highly modular and is designed to make it easy to implement and use a varitey of biogeochemical and physical models. OceanBioME is built to be coupled with physics models from [Oceananigans.jl](https://github.com/CliMA/Oceananigans.jl) allowing simulations across a wide range of spatial scales ranging from a global hydrostatic free surface model to nonhydrostatic large-eddy simulations. OceanBioME was designed specifically for ocean CDR appplications. Notably, it includes active particles which allow individual-based models to be seamlessly coupled with the flow physics, ecosystem models, and carbonate chemistry.
 
 OceanBioME.jl is supported through grants from the [Center for Climate Repair at Cambridge](https://www.climaterepair.cam.ac.uk/) and the [Gordon and Betty Moore Foundation](https://www.moore.org/). 
@@ -30,7 +23,8 @@ julia> Pkg.add("OceanBioME")
 
 ## Running your first model
 As a simple example lets run a Nutrient-Phytoplankton-Zooplankton-Detritus (NPZD) model in a two-dimensional simulation of a buoyancy front:
-```julia
+
+```@example
 using OceanBioME, Oceananigans
 using Oceananigans.Units
 
@@ -57,7 +51,7 @@ run!(simulation)
 
 We can then visualise this:
 
-```julia
+```@example
 using CairoMakie
 
 b = FieldTimeSeries("buoyancy_front.jld2", "b")
@@ -95,9 +89,11 @@ record(fig, "buoyancy_front.gif", 1:length(times)) do i
     @info string("Plotting frame ", i, " of ", length(times))
     n[] = i
 end
+
+nothing #hide
 ```
 
-![buoyancy_front](https://user-images.githubusercontent.com/26657828/226373754-42c5c9ed-d7fc-450a-8346-a497a40fe0e2.gif)
+![buoyancy_front](buoyancy_front.gif)
 
 In this example `OceanBioME` is providing the `biogeochemistry` and the remainder is taken care of by `Oceananigans`. For comprehensive documentation of the physics modelling see [Oceananigans' Documentation](https://clima.github.io/OceananigansDocumentation/stable/); for biogeochemistry and other features we provide read below.
 
