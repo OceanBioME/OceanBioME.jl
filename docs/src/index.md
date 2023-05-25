@@ -119,7 +119,7 @@ In this example `OceanBioME` is providing the `biogeochemistry` and the remainde
 Whether you need help getting started with OceanBioME, found a bug, want OceanBioME to be more expanded, or just want to chat about our project, you can:
 
 * [Start a discussion](https://github.com/OceanBioME/OceanBioME.jl/discussions). 
-* [Open an issue](https://github.com/OceanBioME/OceanBioME.jl/issues). Issues are best if you think the OceanBioME source code needs attention: a bug, a sign error, an important missing feature, or a typo in this documentation.
+* [Open an issue](https://github.com/OceanBioME/OceanBioME.jl/issues). Issues are best if you think the OceanBioME source code needs attention: a bug, a sign error, an important missing feature, or a typo in the documentation.
 
 ## Citing
 
