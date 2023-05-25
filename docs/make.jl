@@ -14,11 +14,11 @@ const EXAMPLES_DIR = joinpath(@__DIR__, "..", "examples")
 const OUTPUT_DIR   = joinpath(@__DIR__, "src/generated")
 
 examples = [
-    # "box.jl",
-    # "column.jl",
-    # "data_forced.jl",
-    # "kelp.jl",
-    # "eady.jl"
+    "box.jl",
+    "column.jl",
+    "data_forced.jl",
+    "kelp.jl",
+    "eady.jl"
 ]
 
 function replace_silly_warning(content)
@@ -39,11 +39,11 @@ for example in examples
 end
 
 example_pages = [
-    # "Simple column model" => "generated/column.md",
-    # "Data forced column model" => "generated/data_forced.md",
-    # "Model with particles (kelp) interacting with the biogeochemistry" => "generated/kelp.md",
-    # "Box model" => "generated/box.md",
-    # "Baroclinic instability" => "generated/eady.md"
+    "Simple column model" => "generated/column.md",
+    "Data forced column model" => "generated/data_forced.md",
+    "Model with particles (kelp) interacting with the biogeochemistry" => "generated/kelp.md",
+    "Box model" => "generated/box.md",
+    "Baroclinic instability" => "generated/eady.md"
 ]
 
 bgc_pages = [
