@@ -143,8 +143,8 @@ for file in files
 end
 
 deploydocs(
-          repo = "github.com/OceanBioME/OceanBioME.jl",
-          forcepush = true,
-          push_preview = true,
-          devbranch = "main"
+    repo = "github.com/OceanBioME/OceanBioME.jl",
+    forcepush = true,
+    push_preview = true,
+    devbranch = "main"
 )
