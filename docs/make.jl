@@ -1,4 +1,4 @@
-using Documenter, DocumenterCitations, Literate, Glob
+using Documenter, DocumenterCitations, Literate
 
 using OceanBioME
 using OceanBioME.SLatissimaModel: SLatissima
