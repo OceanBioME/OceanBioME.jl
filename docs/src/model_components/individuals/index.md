@@ -42,6 +42,8 @@ function update_particle_properties!(particles::GrowingParticles, model, bgc, Δ
     end
     return nothing
 end
+
+nothing # hide
 ```
 
 In this example the particles will not move around, and are only integrated on a single thread. For a more comprehensive example see the [Sugar Kelp](@ref SLatissima) implementation. We then need to update the tracer tendencies to match the nutrients' uptake:
@@ -64,6 +66,8 @@ function update_tendencies!(bgc, particles::GrowingParticles, model)
     end
     return nothing
 end
+
+nothing # hide
 ```
 
 Now we can just plug this into any biogeochemical model setup to have particles (currently [NPZD](@ref NPZD) and [LOBSTER](@ref LOBSTER)):
