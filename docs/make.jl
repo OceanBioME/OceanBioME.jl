@@ -43,7 +43,8 @@ example_pages = [
     "Data forced column model" => "generated/data_forced.md",
     "Model with particles (kelp) interacting with the biogeochemistry" => "generated/kelp.md",
     "Box model" => "generated/box.md",
-    "Baroclinic instability" => "generated/eady.md"]
+    "Baroclinic instability" => "generated/eady.md"
+]
 
 bgc_pages = [
     "Overview" => "model_components/biogeochemical/index.md",
@@ -114,7 +115,7 @@ makedocs(bib,
     format = format,
     pages = pages,
     modules = Module[OceanBioME],
-    doctest = false, #true,
+    doctest = true,
     strict = false, #true,
     clean = true,
     checkdocs = :exports
@@ -133,12 +134,9 @@ recursive_find(directory, pattern) =
     end
 
 files = []
-
 for pattern in [r"\.jld2", r"\.nc"]
     global files = vcat(files, recursive_find(@__DIR__, pattern))
 end
-
-@show files
 
 for file in files
     rm(file)
