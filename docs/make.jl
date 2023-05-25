@@ -114,8 +114,8 @@ makedocs(bib,
     format = format,
     pages = pages,
     modules = Module[OceanBioME],
-    doctest = false,#true,
-    strict = false,#true,
+    doctest = false, #true,
+    strict = false, #true,
     clean = true,
     checkdocs = :exports
 )
@@ -124,7 +124,8 @@ makedocs(bib,
 
 """
     recursive_find(directory, pattern)
-Return list of filepaths within `directory` that fall under the `pattern::Regex`, e.g., `pattern = r"\.jl"`.
+
+Return list of filepaths within `directory` that contains the `pattern::Regex`.
 """
 recursive_find(directory, pattern) =
     mapreduce(vcat, walkdir(directory)) do (root, dirs, files)
@@ -134,7 +135,7 @@ recursive_find(directory, pattern) =
 files = []
 
 for pattern in [r"\.jld2", r"\.nc"]
-    files = vcat(files, recursive_find(@__DIR__, pattern))
+    global files = vcat(files, recursive_find(@__DIR__, pattern))
 end
 
 @show files
