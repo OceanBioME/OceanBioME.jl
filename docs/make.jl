@@ -5,6 +5,9 @@ using OceanBioME.SLatissimaModel: SLatissima
 using OceanBioME.LOBSTERModel: LOBSTER
 using OceanBioME.Boundaries.Sediments: SimpleMultiG
 
+using CairoMakie
+CairoMakie.activate!(type = "svg")
+
 bib_filepath = joinpath(dirname(@__FILE__), "oceanbiome.bib")
 bib = CitationBibliography(bib_filepath)
 
@@ -14,11 +17,11 @@ const EXAMPLES_DIR = joinpath(@__DIR__, "..", "examples")
 const OUTPUT_DIR   = joinpath(@__DIR__, "src/generated")
 
 examples = [
-    "box.jl",
-    "column.jl",
-    "data_forced.jl",
-    "kelp.jl",
-    "eady.jl"
+    # "box.jl",
+    # "column.jl",
+    # "data_forced.jl",
+    # "kelp.jl",
+    # "eady.jl"
 ]
 
 function replace_silly_warning(content)
@@ -39,11 +42,11 @@ for example in examples
 end
 
 example_pages = [
-    "Simple column model" => "generated/column.md",
-    "Data forced column model" => "generated/data_forced.md",
-    "Model with particles (kelp) interacting with the biogeochemistry" => "generated/kelp.md",
-    "Box model" => "generated/box.md",
-    "Baroclinic instability" => "generated/eady.md"
+    # "Simple column model" => "generated/column.md",
+    # "Data forced column model" => "generated/data_forced.md",
+    # "Model with particles (kelp) interacting with the biogeochemistry" => "generated/kelp.md",
+    # "Box model" => "generated/box.md",
+    # "Baroclinic instability" => "generated/eady.md"
 ]
 
 bgc_pages = [
@@ -114,14 +117,14 @@ makedocs(bib,
     authors = "Jago Strong-Wrigt, John R. Taylor, and Si Chen",
     format = format,
     pages = pages,
-    modules = Module[OceanBioME],
+    modules = [OceanBioME],
     doctest = true,
     strict = false, #true,
     clean = true,
     checkdocs = :exports
 )
 
-@info "Cleaning up temporary .jld2 and .nc files created by doctests..."
+@info "Clean up temporary .jld2/.nc files created by doctests..."
 
 """
     recursive_find(directory, pattern)
@@ -144,6 +147,7 @@ end
 
 deploydocs(
     repo = "github.com/OceanBioME/OceanBioME.jl",
+    versions = ["stable" => "v^", "v#.#.#", "dev" => "dev"],
     forcepush = true,
     push_preview = true,
     devbranch = "main"
