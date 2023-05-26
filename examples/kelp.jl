@@ -130,7 +130,7 @@ using CairoMakie
 
 fig = Figure(resolution = (1920, 1050))
 
-axis_kwargs = (xlabel = "Time (days)", ylabel = "z (m)", limits = ((0, times[end] / days), (-150, 0)))
+axis_kwargs = (xlabel = "Time (days)", ylabel = "z (m)", limits = ((0, times[end] / days), (-85, 0)))
 heatmap_kwargs = (interpolate = true, colormap = :batlow)
 
 axP = Axis(fig[1, 1:2]; title="Phytoplankton concentration (mmol N/m³)", axis_kwargs...)
