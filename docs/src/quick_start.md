@@ -1,12 +1,6 @@
 # Quick start
-OceanBioME provides biogeochemical models to plug into [Oceananigans](https://github.com/CliMA/Oceananigans.jl), for example this code will run one month of a single column, 7 variable (P, Z, sPOM, bPOM, DOM, NO₃, NH₄) biogeochemical situation with constant forcing.
 
-```@meta
-DocTestSetup = quote
-    using OceanBioME, Oceananigans, CairoMakie
-    using Oceananigans.Units
-end
-```
+OceanBioME provides biogeochemical models to plug into [Oceananigans](https://github.com/CliMA/Oceananigans.jl), for example this code will run one month of a single column, 7 variable (P, Z, sPOM, bPOM, DOM, NO₃, NH₄) biogeochemical situation with constant forcing.
 
 ```@example quickstart
 using OceanBioME, Oceananigans
@@ -30,6 +24,7 @@ simulation.output_writers[:profiles] = JLD2OutputWriter(model, model.tracers, fi
 
 run!(simulation)
 ```
+
 This isn't quite as simple as it could be as it records the output so that we can visualize it:
 
 ```@example quickstart
