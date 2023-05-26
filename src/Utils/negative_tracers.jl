@@ -13,7 +13,7 @@ Sets any tracers in `sim.model` which are negative to zero. Use like:
 ```julia
 simulation.callbacks[:neg] = Callback(zero_negative_tracers!)
 ```
-This is *NOT* a reccomended method to preserve positivity as it strongly does not conserve tracers.
+This is *NOT* a recommended method to preserve positivity as it strongly does not conserve tracers.
 
 Tracers to exclude can be set in the parameters.
 """
@@ -155,4 +155,3 @@ Zeros any `NaN` value tendencies as a final protection against negative tracer r
     event = remove_NaN_tendencies_kernel!(values(model.timestepper.Gⁿ))
     wait(event)
 end
-
