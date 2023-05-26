@@ -17,20 +17,18 @@ const EXAMPLES_DIR = joinpath(@__DIR__, "..", "examples")
 const OUTPUT_DIR   = joinpath(@__DIR__, "src/generated")
 
 examples = [
-    "box.jl",
-    "column.jl",
-    "data_forced.jl",
-    "kelp.jl",
-    "eady.jl"
+    "Simple column model" => "column",
+    "Data forced column model" => "data_forced",
+    "Model with particles (kelp) interacting with the biogeochemistry" => "kelp",
+    "Box model" => "box",
+    "Baroclinic instability" => "eady"
 ]
 
-function replace_silly_warning(content)
-    content = replace(content, r"┌ Warning:.*\s+└ @ JLD2 ~/\.julia/packages/JLD2/.*/reconstructing_datatypes\.jl.*\n" => "")
-    return content
-end
+example_scripts = [ filename * ".jl" for (title, filename) in examples ]
 
-#=
-for example in examples
+replace_silly_warning(content) = replace(content, r"┌ Warning:.*\s+└ @ JLD2 ~/\.julia/packages/JLD2/.*/reconstructing_datatypes\.jl.*\n" => "")
+
+for example in example_scripts
     example_filepath = joinpath(EXAMPLES_DIR, example)
 
     withenv("JULIA_DEBUG" => "Literate") do
@@ -72,12 +70,12 @@ end
 
 parameter_pages = ["$name" => "generated/$(name)_parameters.md" for name in model_names]
 
-example_pages = []#=[
+example_pages = [
     "Simple column model" => "generated/column.md",
     "Data forced column model" => "generated/data_forced.md",
     "Model with particles (kelp) interacting with the biogeochemistry" => "generated/kelp.md",
     "Box model" => "generated/box.md",
-    "Baroclinic instability" => "generated/eady.md"]=#
+    "Baroclinic instability" => "generated/eady.md"]
 
 bgc_pages = [
     "Overview" => "model_components/biogeochemical/index.md",
@@ -137,17 +135,17 @@ format = Documenter.HTML(
 
 makedocs(bib,
     sitename = "OceanBioME.jl",
-    authors = "Jago Strong-Wrigt, John R. Taylor, and Si Chen",
+    authors = "Jago Strong-Wright, John R. Taylor, and Si Chen",
     format = format,
     pages = pages,
-    modules = Module[OceanBioME],
-    doctest = false, #true,
-    strict = false, #true,
+    modules = [OceanBioME],
+    doctest = true,
+    strict = true,
     clean = true,
     checkdocs = :exports
 )
 
-@info "Cleaning up temporary .jld2 and .nc files created by doctests..."
+@info "Clean up temporary .jld2/.nc files created by doctests..."
 
 """
     recursive_find(directory, pattern)
@@ -160,20 +158,18 @@ recursive_find(directory, pattern) =
     end
 
 files = []
-
 for pattern in [r"\.jld2", r"\.nc"]
     global files = vcat(files, recursive_find(@__DIR__, pattern))
 end
-
-@show files
 
 for file in files
     rm(file)
 end
 
 deploydocs(
-          repo = "github.com/OceanBioME/OceanBioME.jl",
-          forcepush = true,
-          push_preview = true,
-          devbranch = "main"
+    repo = "github.com/OceanBioME/OceanBioME.jl",
+    versions = ["stable" => "v^", "v#.#.#", "dev" => "dev"],
+    forcepush = true,
+    push_preview = true,
+    devbranch = "main"
 )

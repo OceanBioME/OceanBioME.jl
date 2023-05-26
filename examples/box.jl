@@ -6,7 +6,7 @@
 # First we will check we have the dependencies installed
 # ```julia
 # using Pkg
-# pkg"add OceanBioME, CairoMakie, DiffEqBase, OrdinaryDiffEq"
+# pkg"add OceanBioME, CairoMakie, JLD2"
 # ```
 
 # ## Model setup
@@ -62,6 +62,5 @@ for (idx, tracer) in enumerate(vars)
     push!(axs, Axis(fig[floor(Int, (idx - 1)/4) + 1, (idx - 1) % 4 + 1], ylabel="$tracer", xlabel="Day"))
     lines!(axs[end], plt_times, timeseries[tracer])
 end
-save("box.png", fig)
 
-# ![Results](box.png)
+fig
