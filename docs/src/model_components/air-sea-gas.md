@@ -6,13 +6,13 @@ Currently, the parameters for CO₂ and oxygen are included, but it would be ver
 
 It is straightforward to set up a boundary as an air-sea gas exchange:
 
-```
+```julia
 CO₂_flux = GasExchange(; gas = :CO₂)
 ```
 
 Where the symbol specifies the exchanged gas (currently `:CO₂` or `:O₂`). This can then be passed in the setup of a BGC model, for example:
 
-```
+```julia
 model = NonhydrostaticModel(; grid,
                               biogeochemistry = LOBSTER(; grid,
                                                           carbonates = true),
@@ -20,6 +20,6 @@ model = NonhydrostaticModel(; grid,
 ```
 
 If the temperature and salinity are not included in the model they can be passed as functions:
-```
+```julia
 CO₂_flux = GasExchange(; gas = :CO₂, temperature = t_function, salinity = s_function)
 ```
