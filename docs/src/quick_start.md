@@ -40,12 +40,12 @@ _, _, z = nodes(nitrates)
 
 fig = Figure()
 
-axis_kwargs = (xlabel="Day", ylabel="Depth (m)")
-ax1 = Axis(fig[1, 1]; title="Phytoplankton (mmol N/m³)", axis_kwargs...)
-ax2 = Axis(fig[1, 2]; title="Nitrate (mmol N/m³)", axis_kwargs...)
+axis_kwargs = (xlabel = "Day", ylabel = "Depth (m)")
+ax1 = Axis(fig[1, 1]; title = "Phytoplankton (mmol N/m³)", axis_kwargs...)
+ax2 = Axis(fig[1, 2]; title = "Nitrate (mmol N/m³)", axis_kwargs...)
 
-hm1 = heatmap!(ax1, phytoplankton.times/day, z, interior(phytoplankton, 1, 1, :, :))
-hm2 = heatmap!(ax2, nitrates.times/day, z, interior(nitrates, 1, 1, :, :))
+hm1 = heatmap!(ax1, phytoplankton.times / day, z, interior(phytoplankton, 1, 1, :, :))
+hm2 = heatmap!(ax2, nitrates.times / day,      z, interior(nitrates, 1, 1, :, :))
 
 fig
 ```
