@@ -42,7 +42,6 @@ B_field = BackgroundField(B, parameters = background_state_parameters)
 
 vertical_diffusivity = VerticalScalarDiffusivity(ν=κ₂z, κ=κ₂z)
 horizontal_diffusivity = HorizontalScalarDiffusivity(ν=κ₂h, κ=κ₂h)
-nothing #src
 
 # Setup the biogeochemical model with optional carbonate chemistry turned on
 
@@ -80,7 +79,6 @@ simulation = Simulation(model, Δt = 15minutes, stop_time = 10days)
 # Adapt the time step while keeping the CFL number fixed
 wizard = TimeStepWizard(cfl=0.85, max_change = 1.5, max_Δt = 30minutes)
 simulation.callbacks[:wizard] = Callback(wizard, IterationInterval(10))
-nothing #src
 
 # Create a progress message 
 progress(sim) = @printf("i: % 6d, sim time: % 10s, wall time: % 10s, Δt: % 10s, CFL: %.2e\n",
@@ -91,7 +89,6 @@ progress(sim) = @printf("i: % 6d, sim time: % 10s, wall time: % 10s, Δt: % 10s,
                         AdvectiveCFL(sim.Δt)(sim.model))
 
 simulation.callbacks[:progress] = Callback(progress, IterationInterval(10))
-nothing #src
 
 # Here, add some diagnostics to calculate and output
 
@@ -111,7 +108,6 @@ scale_negative_tracers = ScaleNegativeTracers(; model, tracers = (:NO₃, :NH₄
 simulation.callbacks[:neg] = Callback(scale_negative_tracers; callsite = UpdateStateCallsite())
 simulation.callbacks[:nan_tendencies] = Callback(remove_NaN_tendencies!; callsite = TendencyCallsite())
 simulation.callbacks[:abort_zeros] = Callback(zero_negative_tracers!; callsite = UpdateStateCallsite())
-nothing #src
 
 # Run the simulation
 run!(simulation)
@@ -171,6 +167,5 @@ record(fig, "eady.mp4", 1:length(times), framerate = 10) do i
     @info string("Plotting frame ", i, " of ", length(times))
     n[] = i
 end
-nothing #src
 
 # ![](eady.mp4)

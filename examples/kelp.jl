@@ -19,7 +19,6 @@ using OceanBioME, Oceananigans, Printf
 using Oceananigans.Units
 
 const year = years = 365days # just for these idealised cases
-nothing #src
 
 # ## Surface PAR and turbulent vertical diffusivity based on idealised mixed layer depth 
 # Setting up idealised functions for PAR and diffusivity (details here can be ignored but these are typical of the North Atlantic)
@@ -35,7 +34,6 @@ nothing #src
 @inline κₜ(x, y, z, t) = 1e-2 * (1 + tanh((z - MLD(t))/10)) / 2 + 1e-4
 
 @inline temp(x, y, z, t) = 2.4 * cos(t * 2π / year + 50day) + 10
-nothing #src
 
 # ## Grid and PAR field
 # Define the grid and an extra Oceananigans field for the PAR to be stored in
@@ -101,7 +99,6 @@ simulation.output_writers[:particles] = JLD2OutputWriter(model, (; particles),
 
 scale_negative_tracers = ScaleNegativeTracers(; model, tracers = (:NO₃, :NH₄, :P, :Z, :sPON, :bPON, :DON))
 simulation.callbacks[:neg] = Callback(scale_negative_tracers; callsite = UpdateStateCallsite())
-nothing #src
 
 # ## Run!
 # Finally we run the simulation

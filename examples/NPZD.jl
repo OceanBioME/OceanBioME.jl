@@ -18,11 +18,9 @@
 using OceanBioME, Oceananigans, Oceananigans.Units, Printf
 
 const year = years = 365days # just for these idealised cases
-nothing #src
 
 # ## Surface PAR
 PAR⁰(x, y, t) = 50 * (1 - cos((t + 15days) * 2π / year)) * (1 / (1 + 0.2 * exp(-((mod(t, year) - 200days) / 50days)^2))) / 2
-nothing #src
 
 # ## Grid and PAR field
 # Define the grid and an extra Oceananigans field for the PAR to be stored in
@@ -144,6 +142,5 @@ record(fig, "$filename.mp4", frame_iterator; framerate = framerate) do i
     @info string("Plotting frame ", i, " of ", nframes)
     n[] = i
 end
-nothing #src
 
 # ![](npdz.mp4)
