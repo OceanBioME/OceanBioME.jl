@@ -84,53 +84,52 @@ run!(simulation)
 
 # Now we can visulise the results with some post processing to diagnose the air-sea CO₂ flux - hopefully this looks different to the example without kelp!
 
-P = FieldTimeSeries("$filename.jld2", "P")
-NO₃ = FieldTimeSeries("$filename.jld2", "NO₃")
-Z = FieldTimeSeries("$filename.jld2", "Z")
+   P = FieldTimeSeries("$filename.jld2", "P")
+ NO₃ = FieldTimeSeries("$filename.jld2", "NO₃")
+   Z = FieldTimeSeries("$filename.jld2", "Z")
 sPOM = FieldTimeSeries("$filename.jld2", "sPOM") 
 bPOM = FieldTimeSeries("$filename.jld2", "bPOM")
-DIC = FieldTimeSeries("$filename.jld2", "DIC")
-Alk = FieldTimeSeries("$filename.jld2", "Alk")
+ DIC = FieldTimeSeries("$filename.jld2", "DIC")
+ Alk = FieldTimeSeries("$filename.jld2", "Alk")
 
 x, y, z = nodes(P)
 times = P.times
 
-air_sea_CO₂_flux = zeros(size(P)[4])
-carbon_export = zeros(size(P)[4])
+air_sea_CO₂_flux = zeros(length(times))
+carbon_export = zeros(length(times))
 for (i, t) in enumerate(times)
     air_sea_CO₂_flux[i] = CO₂_flux.condition.parameters(0.0, 0.0, t, DIC[1, 1, 50, i], Alk[1, 1, 50, i], temp(1, 1, 0, t), 35)
-    carbon_export[i] = (sPOM[1, 1, end - 20, i] * model.biogeochemistry.sinking_velocities.sPOM.w[1, 1, end - 20] + bPOM[1, 1, end - 20, i] * model.biogeochemistry.sinking_velocities.bPOM.w[1, 1, end - 20]) * model.biogeochemistry.organic_redfield
+    carbon_export[i] = (sPOM[1, 1, end-20, i] * model.biogeochemistry.sinking_velocities.sPOM.w[1, 1, end-20] + bPOM[1, 1, end-20, i] * model.biogeochemistry.sinking_velocities.bPOM.w[1, 1, end-20]) * model.biogeochemistry.organic_redfield
 end
 
 using CairoMakie
 
-fig = Figure(resolution = (1920, 1050))
+fig = Figure(resolution = (1920, 1050), fontsize=24)
 
-axP = Axis(fig[1, 1:2], ylabel="z (m)", xlabel="Time (days)", title="Phytoplankton concentration (mmol N / m³)")
-hmP = heatmap!(times / days, float.(z[end-23:end]), float.(P[1, 1, end-23:end, 1:end])', interpolate=true, colormap=:batlow)
+axis_kwargs = (xlabel = "Time (days)", ylabel = "z (m)", limits = ((0, times[end] / days), (-150, 0)))
+heatmap_kwargs = (interpolate = true, colormap = :batlow)
+
+axP = Axis(fig[1, 1:2]; title="Phytoplankton concentration (mmol N / m³)", axis_kwargs...)
+hmP = heatmap!(times / days, z, interior(P, 1, 1, :, :)'; heatmap_kwargs...)
 cbP = Colorbar(fig[1, 3], hmP)
 
-axNO₃ = Axis(fig[1, 4:5], ylabel="z (m)", xlabel="Time (days)", title="Nitrate concentration (mmol N / m³)")
-hmNO₃ = heatmap!(times / days, float.(z[end-23:end]), float.(NO₃[1, 1, end-23:end, 1:end])', interpolate=true, colormap=:batlow)
+axNO₃ = Axis(fig[1, 4:5]; title="Nitrate concentration (mmol N / m³)", axis_kwargs...)
+hmNO₃ = heatmap!(times / days, z, interior(NO₃, 1, 1, :, :)'; heatmap_kwargs...)
 cbNO₃ = Colorbar(fig[1, 6], hmNO₃)
 
-axZ = Axis(fig[2, 1:2], ylabel="z (m)", xlabel="Time (days)", title="Zooplankton concentration (mmol N / m³)")
-hmZ = heatmap!(times./days, float.(z[end-23:end]), float.(Z[1, 1, end-23:end, 1:end])', interpolate=true, colormap=:batlow)
+axZ = Axis(fig[2, 1:2]; title="Zooplankton concentration (mmol N / m³)", axis_kwargs...)
+hmZ = heatmap!(times / days, z, interior(Z, 1, 1, :, :)'; heatmap_kwargs...)
 cbZ = Colorbar(fig[2, 3], hmZ)
 
-axD = Axis(fig[2, 4:5], ylabel="z (m)", xlabel="Time (days)", title="Detritus concentration (mmol N / m³)")
-hmD = heatmap!(times / days, float.(z[end-23:end]), float.(sPOM[1, 1, end-23:end, 1:end])' .+ float.(bPOM[1, 1, end-23:end, 1:end])', interpolate=true, colormap=:batlow)
+axD = Axis(fig[2, 4:5]; title="Detritus concentration (mmol N / m³)", axis_kwargs...)
+hmD = heatmap!(times / days, z, interior(sPOM, 1, 1, :, :)' .+ interior(bPOM, 1, 1, :, :)'; heatmap_kwargs...)
 cbD = Colorbar(fig[2, 6], hmD)
 
-axfDIC = Axis(fig[3, 1:4], xlabel="Time (days)", title="Air-sea CO₂ flux and Sinking", ylabel="Flux (kgCO₂ / m² / year)")
-hmfDIC = lines!(times / days, air_sea_CO₂_flux .* (12 + 16 * 2) .* year /(1000 * 1000), label="Air-sea flux")
-hmfExp = lines!(times / days, carbon_export .* (12 + 16 * 2) .* year / (1000 * 1000), label="Sinking export")
+axfDIC = Axis(fig[3, 1:4], xlabel = "Time (days)", ylabel = "Flux (kgCO₂ / m² / year)", title = "Air-sea CO₂ flux and Sinking")
+hmfDIC = lines!(times / days, air_sea_CO₂_flux * (12 + 16 * 2) * year / 1e6, linewidth=3, label = "Air-sea flux")
+hmfExp = lines!(times / days, carbon_export * (12 + 16 * 2) * year / 1e6, linewidth=3, label = "Sinking export")
 
-fig[3, 5] = Legend(fig, axfDIC, "", framevisible = false)
+fig[3, 5:6] = Legend(fig, axfDIC, "", framevisible = false)
 
 current_figure() # hide
 fig
-
-save("$(filename).png", f)
-
-# ![Results-bgc](kelp.png)
