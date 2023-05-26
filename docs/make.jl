@@ -5,9 +5,6 @@ using OceanBioME.SLatissimaModel: SLatissima
 using OceanBioME.LOBSTERModel: LOBSTER
 using OceanBioME.Boundaries.Sediments: SimpleMultiG
 
-using CairoMakie
-CairoMakie.activate!(type = "svg")
-
 bib_filepath = joinpath(dirname(@__FILE__), "oceanbiome.bib")
 bib = CitationBibliography(bib_filepath)
 
