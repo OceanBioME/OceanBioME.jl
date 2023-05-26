@@ -3,19 +3,13 @@ on:
   push:
     branches:
       - main
-    paths:
-      - 'src/*'
-      - 'test/*'
-      - '.github/workflows/*'
-      - 'Project.toml'
   pull_request:
     branches: 
       - main
-    paths:
-      - 'src/*'
-      - 'test/*'
-      - '.github/workflows/*'
-      - 'Project.toml'
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: ${{ github.ref != 'refs/heads/main' }}
 
 env:
   DATADEPS_ALWAYS_ACCEPT: true
@@ -34,7 +28,7 @@ jobs:
         arch:
           - x64          
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v3
       - uses: julia-actions/setup-julia@v1
         with:
           version: ${{ matrix.version }}

@@ -1,7 +1,7 @@
 module OceanBioME
 
 # Biogeochemistry models
-export LOBSTER, NutrientPhytoplanktonZooplanktonDetritus, PISCES
+export LOBSTER, NutrientPhytoplanktonZooplanktonDetritus, PISCES, NPZD
 
 # Macroalgae models
 export SLatissima

@@ -1,6 +1,6 @@
 @kernel function update_TwoBandPhotosyntheticallyActiveRatiation!(PAR, grid, P, surface_PAR, t, PAR_model) 
     i, j = @index(Global, NTuple)
-    x, y = xnode(Center(), i, grid), ynode(Center(), j, grid)
+    x, y = xnode(i, grid, Center()), ynode(j, grid, Center())
     
     PAR⁰ = surface_PAR(x, y, t)
 
@@ -13,8 +13,8 @@
     r = PAR_model.pigment_ratio
     Rᶜₚ = PAR_model.phytoplankton_chlorophyll_ratio
 
-    zᶜ = znodes(Center, grid)
-    zᶠ = znodes(Face, grid)
+    zᶜ = znodes(grid, Center(), Center(), Center())
+    zᶠ = znodes(grid, Center(), Center(), Face())
     
     ∫chlʳ = @inbounds (zᶠ[grid.Nz + 1] - zᶜ[grid.Nz]) * (P[i, j, grid.Nz] * Rᶜₚ / r) ^ eʳ
     ∫chlᵇ = @inbounds (zᶠ[grid.Nz + 1] - zᶜ[grid.Nz]) * (P[i, j, grid.Nz] * Rᶜₚ / r) ^ eᵇ
@@ -82,9 +82,9 @@ end
 Keywork Arguments
 ===================
 
-    - `grid`: grid for building the model on
-    - `water_red_attenuation`, ..., `phytoplankton_chlorophyll_ratio`: parameter values
-    - `surface_PAR`: funciton (or array in the future) for the photosynthetically available radiaiton at the surface, should be shape `f(x, y, t)`
+- `grid`: grid for building the model on
+- `water_red_attenuation`, ..., `phytoplankton_chlorophyll_ratio`: parameter values
+- `surface_PAR`: funciton (or array in the future) for the photosynthetically available radiaiton at the surface, should be shape `f(x, y, t)`
 """
 function TwoBandPhotosyntheticallyActiveRatiation(; grid, 
                                                     water_red_attenuation::FT = 0.225, # 1/m

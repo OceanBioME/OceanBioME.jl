@@ -2,6 +2,8 @@ using OceanBioME, Oceananigans, Test, JLD2
 using OceanBioME.Sediments: SimpleMultiG
 using Oceananigans.Units
 
+year = years = 365days # just for these idealised cases
+
 using CairoMakie
 
 function test_flat_sediment(architecture; timestepper = :QuasiAdamsBashforth2)
@@ -155,12 +157,12 @@ end=#
 
        fig = Figure(resolution = (1600, 1600))
        l = Label(fig[1, 1:4], "t = 0.0")
-       v1 = volume(fig[2, 1], xnodes(Face, grid)[1:grid.Nx], ynodes(Center, grid)[1:grid.Ny], znodes(Center, grid)[1:grid.Nz], u_plt, colorrange = (-uₘ, uₘ), colormap=:vik); Colorbar(fig[2, 2], v1.plot, label = "u (m/s)")
-       v2 = volume(fig[3, 1], xnodes(Center, grid)[1:grid.Nx], ynodes(Center, grid)[1:grid.Ny], znodes(Center, grid)[1:grid.Nz], NO₃_plt, colorrange = (Nₘᵢ, Nₘₐ), colormap = Reverse(:bamako), algorithm = :mip)
+       v1 = volume(fig[2, 1], xnodes(grid, Face(), Center(), Center())[1:grid.Nx], ynodes(grid, Center(), Center(), Center())[1:grid.Ny], znodes(grid, Center(), Center(), Center())[1:grid.Nz], u_plt, colorrange = (-uₘ, uₘ), colormap=:vik); Colorbar(fig[2, 2], v1.plot, label = "u (m/s)")
+       v2 = volume(fig[3, 1], xnodes(grid, Center(), Center(), Center())[1:grid.Nx], ynodes(grid, Center(), Center(), Center())[1:grid.Ny], znodes(grid, Center(), Center(), Center())[1:grid.Nz], NO₃_plt, colorrange = (Nₘᵢ, Nₘₐ), colormap = Reverse(:bamako), algorithm = :mip)
        Colorbar(fig[3, 2], v2.plot, label = "NO₃ (mmol N / m³)")
-       v3 = volume(fig[2, 3], xnodes(Center, grid)[1:grid.Nx], ynodes(Center, grid)[1:grid.Ny], znodes(Center, grid)[1:grid.Nz], P_plt, colorrange = (Pₘᵢ, Pₘₐ), colormap = Reverse(:bamako), algorithm = :mip)
+       v3 = volume(fig[2, 3], xnodes(grid, Center(), Center(), Center())[1:grid.Nx], ynodes(grid, Center(), Center(), Center())[1:grid.Ny], znodes(grid, Center(), Center(), Center())[1:grid.Nz], P_plt, colorrange = (Pₘᵢ, Pₘₐ), colormap = Reverse(:bamako), algorithm = :mip)
        Colorbar(fig[2, 4], v3.plot, label = "P (mmol N / m³)")
-       v4 = volume(fig[3, 3], xnodes(Center, grid)[1:grid.Nx], ynodes(Center, grid)[1:grid.Ny], znodes(Center, grid)[1:grid.Nz], POC_plt, colorrange = (POCₘᵢ, POCₘₐ), colormap = Reverse(:bamako), algorithm = :mip)
+       v4 = volume(fig[3, 3], xnodes(grid, Center(), Center(), Center())[1:grid.Nx], ynodes(grid, Center(), Center(), Center())[1:grid.Ny], znodes(grid, Center(), Center(), Center())[1:grid.Nz], POC_plt, colorrange = (POCₘᵢ, POCₘₐ), colormap = Reverse(:bamako), algorithm = :mip)
        Colorbar(fig[3, 4], v4.plot, label = "POC (mmol C / m³)")
        record(fig, "ovs_fig.mp4", 1:length(u.times); framerate = 10) do i
            n[] = i

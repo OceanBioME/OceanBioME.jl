@@ -18,7 +18,7 @@ module Boundaries
 export Sediments, GasExchange
 
 using Roots, Oceananigans, KernelAbstractions
-using Oceananigans.Units: second, minute, minutes, hour, hours, day, days, year, years
+using Oceananigans.Units
 using Oceananigans.Architectures: device
 using Oceananigans.Operators: volume, Az
 using Oceananigans.BoundaryConditions: FluxBoundaryCondition

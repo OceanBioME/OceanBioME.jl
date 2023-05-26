@@ -8,7 +8,7 @@
 # First we will check we have the dependencies installed
 # ```julia
 # using Pkg
-# pkg"add OceanBioME, Oceananigans, Printf, CairoMakie"
+# pkg"add OceanBioME, Oceananigans, CairoMakie"
 # ```
 
 # ## Model setup
@@ -17,25 +17,27 @@ using OceanBioME, Oceananigans, Printf
 using OceanBioME.SLatissimaModel: SLatissima
 using Oceananigans.Units
 
+const year = years = 365days
+
 # ## Surface PAR and turbulent vertical diffusivity based on idealised mixed layer depth 
 # Setting up idealised functions for PAR and diffusivity (details here can be ignored but these are typical of the North Atlantic)
 
-@inline PAR⁰(x, y, t) = 60 * (1 - cos((t + 15days) * 2π / 365days))*(1 / (1 + 0.2 * exp(-((mod(t, 365days) - 200days) / 50days) ^ 2))) + 2
+@inline PAR⁰(x, y, t) = 60 * (1 - cos((t + 15days) * 2π / year)) * (1 / (1 + 0.2 * exp(-((mod(t, year) - 200days) / 50days)^2))) + 2
 
 @inline H(t, t₀, t₁) = ifelse(t₀ < t < t₁, 1.0, 0.0)
 
-@inline fmld1(t) = H(t, 50days, 365days) * (1 / (1 +exp(-(t - 100days) / (5days)))) * (1 / (1 + exp((t - 330days) / (25days))))
+@inline fmld1(t) = H(t, 50days, year) * (1 / (1 +exp(-(t - 100days) / (5days)))) * (1 / (1 + exp((t - 330days) / (25days))))
 
-@inline MLD(t) = - (10 + 340 * (1 - fmld1(365days-eps(365days)) * exp(-mod(t, 365days) / 25days) - fmld1(mod(t, 365days))))
+@inline MLD(t) = - (10 + 340 * (1 - fmld1(year - eps(year)) * exp(-mod(t, year) / 25days) - fmld1(mod(t, year))))
 
-@inline κₜ(x, y, z, t) = 1e-2 * (1 + tanh((z - MLD(t))/10)) / 2 + 1e-4
+@inline κₜ(x, y, z, t) = 1e-2 * (1 + tanh((z - MLD(t)) / 10)) / 2 + 1e-4
 
 @inline temp(x, y, z, t) = 2.4 * cos(t * 2π / year + 50day) + 10
 
 # ## Grid and PAR field
 # Define the grid and an extra Oceananigans field for the PAR to be stored in
-Lx, Ly = 20, 20
-grid = RectilinearGrid(size=(1, 1, 50), extent=(Lx, Ly, 200)) 
+Lx, Ly = 20meters, 20meters
+grid = RectilinearGrid(size=(1, 1, 50), extent=(Lx, Ly, 200meters)) 
 
 # Specify the boundary conditions for DIC and O₂ based on the air-sea CO₂ and O₂ flux
 CO₂_flux = GasExchange(; gas = :CO₂, temperature = temp, salinity = (args...) -> 35)
@@ -57,7 +59,7 @@ set!(model, P = 0.03, Z = 0.03, NO₃ = 4.0, NH₄ = 0.05, DIC = 2239.8, Alk = 2
 # - Store the model and particles output
 # - Prevent the tracers from going negative from numerical error (see discussion of this in the [positivity preservation](@ref pos-preservation) implimentation page)
 
-simulation = Simulation(model, Δt=10minutes, stop_time=100days) 
+simulation = Simulation(model, Δt=3minutes, stop_time=100days) 
 
 progress_message(sim) = @printf("Iteration: %04d, time: %s, Δt: %s, wall time: %s\n",
                                                         iteration(sim),
@@ -76,58 +78,58 @@ simulation.output_writers[:profiles] = JLD2OutputWriter(model, merge(model.trace
 scale_negative_tracers = ScaleNegativeTracers(; model, tracers = (:NO₃, :NH₄, :P, :Z, :sPOM, :bPOM, :DOM))
 simulation.callbacks[:neg] = Callback(scale_negative_tracers; callsite = UpdateStateCallsite())
 
-wizard = TimeStepWizard(cfl = 0.1, diffusive_cfl = 0.1, max_change = 2.0, min_change = 0.5, cell_diffusion_timescale = column_diffusion_timescale, cell_advection_timescale = column_advection_timescale)
-simulation.callbacks[:wizard] = Callback(wizard, IterationInterval(1))
-
 # ## Run!
 # Finally we run the simulation
 run!(simulation)
 
 # Now we can visulise the results with some post processing to diagnose the air-sea CO₂ flux - hopefully this looks different to the example without kelp!
 
-P = FieldTimeSeries("$filename.jld2", "P")
-NO₃ = FieldTimeSeries("$filename.jld2", "NO₃")
-Z = FieldTimeSeries("$filename.jld2", "Z")
+   P = FieldTimeSeries("$filename.jld2", "P")
+ NO₃ = FieldTimeSeries("$filename.jld2", "NO₃")
+   Z = FieldTimeSeries("$filename.jld2", "Z")
 sPOM = FieldTimeSeries("$filename.jld2", "sPOM") 
 bPOM = FieldTimeSeries("$filename.jld2", "bPOM")
-DIC = FieldTimeSeries("$filename.jld2", "DIC")
-Alk = FieldTimeSeries("$filename.jld2", "Alk")
+ DIC = FieldTimeSeries("$filename.jld2", "DIC")
+ Alk = FieldTimeSeries("$filename.jld2", "Alk")
 
 x, y, z = nodes(P)
 times = P.times
 
-air_sea_CO₂_flux = zeros(size(P)[4])
-carbon_export = zeros(size(P)[4])
+air_sea_CO₂_flux = carbon_export = zeros(length(times))
+
 for (i, t) in enumerate(times)
     air_sea_CO₂_flux[i] = CO₂_flux.condition.parameters(0.0, 0.0, t, DIC[1, 1, 50, i], Alk[1, 1, 50, i], temp(1, 1, 0, t), 35)
-    carbon_export[i] = (sPOM[1, 1, end - 20, i] * model.biogeochemistry.sinking_velocities.sPOM.w[1, 1, end - 20] + bPOM[1, 1, end - 20, i] * model.biogeochemistry.sinking_velocities.bPOM.w[1, 1, end - 20]) * model.biogeochemistry.organic_redfield
+    carbon_export[i] = (sPOM[1, 1, end-20, i] * model.biogeochemistry.sinking_velocities.sPOM.w[1, 1, end-20] +
+                        bPOM[1, 1, end-20, i] * model.biogeochemistry.sinking_velocities.bPOM.w[1, 1, end-20]) * model.biogeochemistry.organic_redfield
 end
 
 using CairoMakie
-f = Figure(resolution = (1920, 1050))
 
-axP = Axis(f[1, 1:2], ylabel="z (m)", xlabel="Time (days)", title="Phytoplankton concentration (mmol N / m³)")
-hmP = heatmap!(times./days, float.(z[end-23:end]), float.(P[1, 1, end-23:end, 1:end])', interpolate=true, colormap=:batlow)
-cbP = Colorbar(f[1, 3], hmP)
+fig = Figure(resolution = (1920, 1050), fontsize=24)
 
-axNO₃ = Axis(f[1, 4:5], ylabel="z (m)", xlabel="Time (days)", title="Nitrate concentration (mmol N / m³)")
-hmNO₃ = heatmap!(times./days, float.(z[end-23:end]), float.(NO₃[1, 1, end-23:end, 1:end])', interpolate=true, colormap=:batlow)
-cbNO₃ = Colorbar(f[1, 6], hmNO₃)
+axis_kwargs = (xlabel = "Time (days)", ylabel = "z (m)", limits = ((0, times[end] / days), (-150, 0)))
+heatmap_kwargs = (interpolate = true, colormap = :batlow)
 
-axZ = Axis(f[2, 1:2], ylabel="z (m)", xlabel="Time (days)", title="Zooplankton concentration (mmol N / m³)")
-hmZ = heatmap!(times./days, float.(z[end-23:end]), float.(Z[1, 1, end-23:end, 1:end])', interpolate=true, colormap=:batlow)
-cbZ = Colorbar(f[2, 3], hmZ)
+axP = Axis(fig[1, 1:2]; title = "Phytoplankton concentration (mmol N / m³)", axis_kwargs...)
+hmP = heatmap!(times / days, z, interior(P, 1, 1, :, :)'; heatmap_kwargs...)
+cbP = Colorbar(fig[1, 3], hmP)
 
-axD = Axis(f[2, 4:5], ylabel="z (m)", xlabel="Time (days)", title="Detritus concentration (mmol N / m³)")
-hmD = heatmap!(times./days, float.(z[end-23:end]), float.(sPOM[1, 1, end-23:end, 1:end])' .+ float.(bPOM[1, 1, end-23:end, 1:end])', interpolate=true, colormap=:batlow)
-cbD = Colorbar(f[2, 6], hmD)
+axNO₃ = Axis(fig[1, 4:5]; title = "Nitrate concentration (mmol N / m³)", axis_kwargs...)
+hmNO₃ = heatmap!(times / days, z, interior(NO₃, 1, 1, :, :)'; heatmap_kwargs...)
+cbNO₃ = Colorbar(fig[1, 6], hmNO₃)
 
-axfDIC = Axis(f[3, 1:4], xlabel="Time (days)", title="Air-sea CO₂ flux and Sinking", ylabel="Flux (kgCO₂ / m² / year)")
-hmfDIC = lines!(times ./ days, air_sea_CO₂_flux .* (12 + 16 * 2) .* year /(1000 * 1000), label="Air-sea flux")
-hmfExp = lines!(times ./ days, carbon_export .* (12 + 16 * 2) .* year / (1000 * 1000), label="Sinking export")
+axZ = Axis(fig[2, 1:2]; title = "Zooplankton concentration (mmol N / m³)", axis_kwargs...)
+hmZ = heatmap!(times / days, z, interior(Z, 1, 1, :, :)'; heatmap_kwargs...)
+cbZ = Colorbar(fig[2, 3], hmZ)
 
-f[3, 5] = Legend(f, axfDIC, "", framevisible = false)
+axD = Axis(fig[2, 4:5]; title = "Detritus concentration (mmol N / m³)", axis_kwargs...)
+hmD = heatmap!(times / days, z, interior(sPOM, 1, 1, :, :)' .+ interior(bPOM, 1, 1, :, :)'; heatmap_kwargs...)
+cbD = Colorbar(fig[2, 6], hmD)
 
-save("$(filename).png", f)
+axfDIC = Axis(fig[3, 1:4], xlabel = "Time (days)", ylabel = "Flux (kgCO₂ / m² / year)", title = "Air-sea CO₂ flux and Sinking")
+hmfDIC = lines!(times / days, air_sea_CO₂_flux * (12 + 16 * 2) * year / 1e6, linewidth=3, label = "Air-sea flux")
+hmfExp = lines!(times / days, carbon_export    * (12 + 16 * 2) * year / 1e6, linewidth=3, label = "Sinking export")
 
-# ![Results-bgc](kelp.png)
+fig[3, 5:6] = Legend(fig, axfDIC, "", framevisible = false)
+
+fig

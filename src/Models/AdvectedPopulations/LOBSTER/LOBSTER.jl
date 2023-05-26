@@ -112,18 +112,18 @@ import Base: show, summary
 Construct an instance of the LOBSTER ([LOBSTER](@ref LOBSTER)) biogeochemical model.
 
 Keywork Arguments
-===================
+=================
 
-    - `grid`: (required) the geometry to build the model on, required to calculate sinking
-    - `phytoplankton_preference`, ..., `disolved_organic_breakdown_rate`: LOBSTER parameter values
-    - `surface_phytosynthetically_active_radiation`: funciton (or array in the future) for the photosynthetically available radiaiton at the surface, should be shape `f(x, y, t)`
-    - `light_attenuation_model`: light attenuation model which integrated the attenuation of available light
-    - `sediment_model`: slot for `AbstractSediment`
-    - `carbonates`, `oxygen`, and `variable_redfield`: include models for carbonate chemistry and/or oxygen chemistry and/or variable redfield ratio disolved and particulate organic matter
-    - `sinking_speed`: named tuple of constant sinking, of fields (i.e. `ZFaceField(...)`) for any tracers which sink (convention is that a sinking speed is positive, but a field will need to follow the usual down being negative)
-    - `open_bottom`: should the sinking velocity be smoothly brought to zero at the bottom to prevent the tracers leaving the domain
-    - `advection_schemes`: named tuple of advection scheme to use for sinking
-    - `particles`: slot for `BiogeochemicalParticles`
+- `grid`: (required) the geometry to build the model on, required to calculate sinking
+- `phytoplankton_preference`, ..., `disolved_organic_breakdown_rate`: LOBSTER parameter values
+- `surface_phytosynthetically_active_radiation`: funciton (or array in the future) for the photosynthetically available radiaiton at the surface, should be shape `f(x, y, t)`
+- `light_attenuation_model`: light attenuation model which integrated the attenuation of available light
+- `sediment_model`: slot for `AbstractSediment`
+- `carbonates`, `oxygen`, and `variable_redfield`: include models for carbonate chemistry and/or oxygen chemistry and/or variable redfield ratio disolved and particulate organic matter
+- `sinking_speed`: named tuple of constant sinking, of fields (i.e. `ZFaceField(...)`) for any tracers which sink (convention is that a sinking speed is positive, but a field will need to follow the usual down being negative)
+- `open_bottom`: should the sinking velocity be smoothly brought to zero at the bottom to prevent the tracers leaving the domain
+- `advection_schemes`: named tuple of advection scheme to use for sinking
+- `particles`: slot for `BiogeochemicalParticles`
 """
 struct LOBSTER{FT, LA, S, B, W, A, P} <: ContinuousFormBiogeochemistry{LA, S, P}
     phytoplankton_preference :: FT
@@ -394,7 +394,7 @@ function update_boxmodel_state!(model::BoxModel{<:LOBSTER, <:Any, <:Any, <:Any, 
     getproperty(model.values, :PAR) .= model.forcing.PAR(model.clock.time)
 end
 
-adapt_structure(to, lobster::LOBSTER{FT, LA, S, B, W, A, P}) where {FT, LA, S, B, W, A, P} = 
+adapt_structure(to, lobster::LOBSTER) = 
     LOBSTER(lobster.phytoplankton_preference,
             lobster.maximum_grazing_rate,
             lobster.grazing_half_saturation,

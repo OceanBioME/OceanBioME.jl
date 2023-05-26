@@ -1,6 +1,3 @@
-# SLatissima
+# [SLatissima Parameters](@id SLatissima_params)
 
-```@example
-using OceanBioME.SLatissima
-println(SLatissima.defaults)
-```
+Coming soon

@@ -1,8 +1,9 @@
 using Test
 using OceanBioME: Boundaries, GasExchange, LOBSTER
 using Oceananigans, DataDeps, JLD2, Statistics
-using Oceananigans.Grids: xnode, ynode
 using Oceananigans.Units
+
+year = years = 365days # just for the idealised case below
 
 dd = DataDep(
     "test_data",

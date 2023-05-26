@@ -15,7 +15,7 @@ Required submodels
 """
 module NPZDModel
 
-export NutrientPhytoplanktonZooplanktonDetritus
+export NutrientPhytoplanktonZooplanktonDetritus, NPZD
 
 using OceanBioME: ContinuousFormBiogeochemistry
 
@@ -38,6 +38,7 @@ import Oceananigans.Biogeochemistry: required_biogeochemical_tracers,
 
 import OceanBioME: maximum_sinking_velocity
 
+import Adapt: adapt_structure
 
 """
     NutrientPhytoplanktonZooplanktonDetritus(; grid,
@@ -70,15 +71,15 @@ Construct an instance of the NPZD ([NPZD](@ref NPZD)) biogeochemical model.
 Keywork Arguments
 ===================
 
-    - `grid`: (required) the geometry to build the model on, required to calculate sinking
-    - `initial_photosynthetic_slope`, ..., `remineralization_rate`: NPZD parameter values
-    - `surface_phytosynthetically_active_radiation`: funciton (or array in the future) for the photosynthetically available radiaiton at the surface, should be shape `f(x, y, t)`
-    - `light_attenuation_model`: light attenuation model which integrated the attenuation of available light
-    - `sediment_model`: slot for `AbstractSediment`
-    - `sinking_speed`: named tuple of constant sinking, of fields (i.e. `ZFaceField(...)`) for any tracers which sink (convention is that a sinking speed is positive, but a field will need to follow the usual down being negative)
-    - `open_bottom`: should the sinking velocity be smoothly brought to zero at the bottom to prevent the tracers leaving the domain
-    - `advection_schemes`: named tuple of advection scheme to use for sinking
-    - `particles`: slot for `BiogeochemicalParticles`
+- `grid`: (required) the geometry to build the model on, required to calculate sinking
+- `initial_photosynthetic_slope`, ..., `remineralization_rate`: NPZD parameter values
+- `surface_phytosynthetically_active_radiation`: funciton (or array in the future) for the photosynthetically available radiaiton at the surface, should be shape `f(x, y, t)`
+- `light_attenuation_model`: light attenuation model which integrated the attenuation of available light
+- `sediment_model`: slot for `AbstractSediment`
+- `sinking_speed`: named tuple of constant sinking, of fields (i.e. `ZFaceField(...)`) for any tracers which sink (convention is that a sinking speed is positive, but a field will need to follow the usual down being negative)
+- `open_bottom`: should the sinking velocity be smoothly brought to zero at the bottom to prevent the tracers leaving the domain
+- `advection_schemes`: named tuple of advection scheme to use for sinking
+- `particles`: slot for `BiogeochemicalParticles`
 """
 
 struct NutrientPhytoplanktonZooplanktonDetritus{FT, LA, S, W, A, P} <: ContinuousFormBiogeochemistry{LA, S, P}
@@ -111,53 +112,104 @@ struct NutrientPhytoplanktonZooplanktonDetritus{FT, LA, S, W, A, P} <: Continuou
 
     particles :: P
 
-    function NutrientPhytoplanktonZooplanktonDetritus(; grid,
-                                                        initial_photosynthetic_slope::FT = 0.1953 / day, # 1/(W/m²)/s
-                                                        base_maximum_growth::FT = 0.6989 / day, # 1/s
-                                                        nutrient_half_saturation::FT = 2.3868, # mmol N/m³
-                                                        base_respiration_rate::FT = 0.066 / day, # 1/s/(mmol N / m³)
-                                                        phyto_base_mortality_rate::FT = 0.0101 / day, # 1/s/(mmol N / m³)
-                                                        maximum_grazing_rate::FT = 2.1522 / day, # 1/s
-                                                        grazing_half_saturation::FT = 0.5573, # mmol N/m³
-                                                        assimulation_efficiency::FT = 0.9116, 
-                                                        base_excretion_rate::FT = 0.0102 / day, # 1/s/(mmol N / m³)
-                                                        zoo_base_mortality_rate::FT = 0.3395 / day, # 1/s/(mmol N / m³)²
-                                                        remineralization_rate::FT = 0.1213 / day, # 1/s
-
-                                                        surface_phytosynthetically_active_radiation = (x, y, t) -> 100*max(0.0, cos(t*π/(12hours))),
-                                                        light_attenuation_model::LA = TwoBandPhotosyntheticallyActiveRatiation(; grid,
-                                                                                        surface_PAR = surface_phytosynthetically_active_radiation),
-                                                        sediment_model::S = nothing,
-                
-                                                        sinking_speeds = (P = 0.2551/day, D = 2.7489/day),
-                                                        open_bottom::Bool = true,
-                                                        advection_schemes::A = NamedTuple{keys(sinking_speeds)}(repeat([CenteredSecondOrder()], 
-                                                                                               length(sinking_speeds))),
-                                                                                               
-                                                        particles::P = nothing) where {FT, LA, S, A, P}
-        sinking_velocities = setup_velocity_fields(sinking_speeds, grid, open_bottom)
-        W = typeof(sinking_velocities)
+    function NutrientPhytoplanktonZooplanktonDetritus(initial_photosynthetic_slope::FT,
+                                                      base_maximum_growth::FT,
+                                                      nutrient_half_saturation::FT,
+                                                      base_respiration_rate::FT,
+                                                      phyto_base_mortality_rate::FT,
+    
+                                                      maximum_grazing_rate::FT,
+                                                      grazing_half_saturation::FT,
+                                                      assimulation_efficiency::FT,
+                                                      base_excretion_rate::FT,
+                                                      zoo_base_mortality_rate::FT,
+    
+                                                      remineralization_rate::FT,
+    
+                                                      light_attenuation_model::LA,
+    
+                                                      sediment_model::S,
+    
+                                                      sinking_velocities::W,
+                                                      advection_schemes::A,
+    
+                                                      particles::P) where {FT, LA, S, W, A, P}
         return new{FT, LA, S, W, A, P}(initial_photosynthetic_slope,
                                        base_maximum_growth,
                                        nutrient_half_saturation,
                                        base_respiration_rate,
                                        phyto_base_mortality_rate,
+
                                        maximum_grazing_rate,
                                        grazing_half_saturation,
                                        assimulation_efficiency,
                                        base_excretion_rate,
                                        zoo_base_mortality_rate,
+
                                        remineralization_rate,
+
                                        light_attenuation_model,
+
                                        sediment_model,
+
                                        sinking_velocities,
                                        advection_schemes,
+
                                        particles)
     end
 end
 
-required_biogeochemical_tracers(::NutrientPhytoplanktonZooplanktonDetritus) = (:N, :P, :Z, :D, :T)
-required_biogeochemical_auxiliary_fields(::NutrientPhytoplanktonZooplanktonDetritus) = (:PAR, )
+function NutrientPhytoplanktonZooplanktonDetritus(; grid,
+                                                    initial_photosynthetic_slope::FT = 0.1953 / day, # 1/(W/m²)/s
+                                                    base_maximum_growth::FT = 0.6989 / day, # 1/s
+                                                    nutrient_half_saturation::FT = 2.3868, # mmol N/m³
+                                                    base_respiration_rate::FT = 0.066 / day, # 1/s/(mmol N / m³)
+                                                    phyto_base_mortality_rate::FT = 0.0101 / day, # 1/s/(mmol N / m³)
+                                                    maximum_grazing_rate::FT = 2.1522 / day, # 1/s
+                                                    grazing_half_saturation::FT = 0.5573, # mmol N/m³
+                                                    assimulation_efficiency::FT = 0.9116, 
+                                                    base_excretion_rate::FT = 0.0102 / day, # 1/s/(mmol N / m³)
+                                                    zoo_base_mortality_rate::FT = 0.3395 / day, # 1/s/(mmol N / m³)²
+                                                    remineralization_rate::FT = 0.1213 / day, # 1/s
+
+                                                    surface_phytosynthetically_active_radiation = (x, y, t) -> 100*max(0.0, cos(t*π/(12hours))),
+                                                    light_attenuation_model::LA = TwoBandPhotosyntheticallyActiveRatiation(; grid,
+                                                                                    surface_PAR = surface_phytosynthetically_active_radiation),
+                                                    sediment_model::S = nothing,
+                
+                                                    sinking_speeds = (P = 0.2551/day, D = 2.7489/day),
+                                                    open_bottom::Bool = true,
+                                                    advection_schemes::A = NamedTuple{keys(sinking_speeds)}(repeat([CenteredSecondOrder()], 
+                                                                                           length(sinking_speeds))),
+                                                                                           
+                                                    particles::P = nothing) where {FT, LA, S, A, P}
+
+    sinking_velocities = setup_velocity_fields(sinking_speeds, grid, open_bottom)
+
+    W = typeof(sinking_velocities)
+
+    return NutrientPhytoplanktonZooplanktonDetritus(initial_photosynthetic_slope,
+                                                    base_maximum_growth,
+                                                    nutrient_half_saturation,
+                                                    base_respiration_rate,
+                                                    phyto_base_mortality_rate,
+                                                    maximum_grazing_rate,
+                                                    grazing_half_saturation,
+                                                    assimulation_efficiency,
+                                                    base_excretion_rate,
+                                                    zoo_base_mortality_rate,
+                                                    remineralization_rate,
+                                                    light_attenuation_model,
+                                                    sediment_model,
+                                                    sinking_velocities,
+                                                    advection_schemes,
+                                                    particles)
+end
+
+const NPZD = NutrientPhytoplanktonZooplanktonDetritus
+
+required_biogeochemical_tracers(::NPZD) = (:N, :P, :Z, :D, :T)
+required_biogeochemical_auxiliary_fields(::NPZD) = (:PAR, )
 
 @inline nutrient_limitation(N, kₙ) = N / (kₙ + N)
 
@@ -165,7 +217,7 @@ required_biogeochemical_auxiliary_fields(::NutrientPhytoplanktonZooplanktonDetri
 
 @inline light_limitation(PAR, T, α, μ₀) = α * PAR / sqrt((μ₀ * Q₁₀(T)) ^ 2 + α ^ 2 * PAR ^ 2)
 
-@inline function (bgc::NutrientPhytoplanktonZooplanktonDetritus)(::Val{:N}, x, y, z, t, N, P, Z, D, T, PAR)
+@inline function (bgc::NPZD)(::Val{:N}, x, y, z, t, N, P, Z, D, T, PAR)
     μ₀ = bgc.base_maximum_growth
     kₙ = bgc.nutrient_half_saturation
     α = bgc.initial_photosynthetic_slope
@@ -181,7 +233,7 @@ required_biogeochemical_auxiliary_fields(::NutrientPhytoplanktonZooplanktonDetri
     return phytoplankton_metabolic_loss + zooplankton_metabolic_loss + remineralization - phytoplankton_consumption
 end
 
-@inline function (bgc::NutrientPhytoplanktonZooplanktonDetritus)(::Val{:P}, x, y, z, t, N, P, Z, D, T, PAR)
+@inline function (bgc::NPZD)(::Val{:P}, x, y, z, t, N, P, Z, D, T, PAR)
     μ₀ = bgc.base_maximum_growth
     kₙ = bgc.nutrient_half_saturation
     α = bgc.initial_photosynthetic_slope
@@ -198,7 +250,7 @@ end
     return growth - grazing - metabolic_loss - mortality_loss
 end
 
-@inline function (bgc::NutrientPhytoplanktonZooplanktonDetritus)(::Val{:Z}, x, y, z, t, N, P, Z, D, T, PAR)
+@inline function (bgc::NPZD)(::Val{:Z}, x, y, z, t, N, P, Z, D, T, PAR)
     gₘₐₓ = bgc.maximum_grazing_rate
     kₚ = bgc.grazing_half_saturation
     lᶻⁿ = bgc.base_excretion_rate
@@ -212,7 +264,7 @@ end
     return grazing - metabolic_loss - mortality_loss 
 end
 
-@inline function (bgc::NutrientPhytoplanktonZooplanktonDetritus)(::Val{:D}, x, y, z, t, N, P, Z, D, T, PAR)
+@inline function (bgc::NPZD)(::Val{:D}, x, y, z, t, N, P, Z, D, T, PAR)
     lᵖᵈ = bgc.phyto_base_mortality_rate
     gₘₐₓ = bgc.maximum_grazing_rate
     kₚ = bgc.grazing_half_saturation
@@ -228,7 +280,7 @@ end
     return phytoplankton_mortality_loss + zooplankton_assimilation_loss + zooplankton_mortality_loss - remineralization
 end
 
-@inline function biogeochemical_drift_velocity(bgc::NutrientPhytoplanktonZooplanktonDetritus, ::Val{tracer_name}) where tracer_name
+@inline function biogeochemical_drift_velocity(bgc::NPZD, ::Val{tracer_name}) where tracer_name
     if tracer_name in keys(bgc.sinking_velocities)
         return bgc.sinking_velocities[tracer_name]
     else
@@ -236,7 +288,7 @@ end
     end
 end
 
-@inline function biogeochemical_advection_scheme(bgc::NutrientPhytoplanktonZooplanktonDetritus, ::Val{tracer_name}) where tracer_name
+@inline function biogeochemical_advection_scheme(bgc::NPZD, ::Val{tracer_name}) where tracer_name
     if tracer_name in keys(bgc.sinking_velocities)
         return bgc.advection_schemes[tracer_name]
     else
@@ -244,23 +296,45 @@ end
     end
 end
 
-function update_biogeochemical_state!(bgc::NutrientPhytoplanktonZooplanktonDetritus, model)
+function update_biogeochemical_state!(bgc::NPZD, model)
     update_PAR!(model, bgc.light_attenuation_model)
 end
 
-function update_boxmodel_state!(model::BoxModel{<:NutrientPhytoplanktonZooplanktonDetritus, <:Any, <:Any, <:Any, <:Any, <:Any})
+function update_boxmodel_state!(model::BoxModel{<:NPZD, <:Any, <:Any, <:Any, <:Any, <:Any})
     getproperty(model.values, :PAR) .= model.forcing.PAR(model.clock.time)
     getproperty(model.values, :T) .= model.forcing.T(model.clock.time)
 end
 
-summary(::NutrientPhytoplanktonZooplanktonDetritus{FT, LA, W, A, P}) where {FT, LA, W, A, P} = string("Nutrient Phytoplankton Zooplankton Detritus model ($FT)")
-show(io::IO, model::NutrientPhytoplanktonZooplanktonDetritus{FT, LA, W, A, P}) where {FT, LA, W, A, P} =
+summary(::NPZD{FT, LA, W, A, P}) where {FT, LA, W, A, P} = string("Nutrient Phytoplankton Zooplankton Detritus model ($FT)")
+show(io::IO, model::NPZD{FT, LA, W, A, P}) where {FT, LA, W, A, P} =
        print(io, summary(model), " \n",
                 " Light Attenuation Model: ", "\n",
                 "    └── ", summary(model.light_attenuation_model), "\n",
                 " Sinking Velocities:", "\n", show_sinking_velocities(model.sinking_velocities))
 
-@inline maximum_sinking_velocity(bgc::NutrientPhytoplanktonZooplanktonDetritus) = maximum(abs, bgc.sinking_velocities.D.w)
-@inline biogeochemical_auxiliary_fields(bgc::NutrientPhytoplanktonZooplanktonDetritus) = biogeochemical_auxiliary_fields(bgc.light_attenuation_model)
+@inline maximum_sinking_velocity(bgc::NPZD) = maximum(abs, bgc.sinking_velocities.D.w)
+@inline biogeochemical_auxiliary_fields(bgc::NPZD) = biogeochemical_auxiliary_fields(bgc.light_attenuation_model)
 
+adapt_structure(to, npzd::NPZD) = 
+    NutrientPhytoplanktonZooplanktonDetritus(npzd.initial_photosynthetic_slope,
+                                             npzd.base_maximum_growth,
+                                             npzd.nutrient_half_saturation,
+                                             npzd.base_respiration_rate,
+                                             npzd.phyto_base_mortality_rate,
+
+                                             npzd.maximum_grazing_rate,
+                                             npzd.grazing_half_saturation,
+                                             npzd.assimulation_efficiency,
+                                             npzd.base_excretion_rate,
+                                             npzd.zoo_base_mortality_rate,
+
+                                             npzd.remineralization_rate,
+
+                                             adapt_structure(to, npzd.light_attenuation_model),
+                                             adapt_structure(to, npzd.sediment_model),
+
+                                             NamedTuple{keys(npzd.sinking_velocities)}(ntuple(n -> adapt_structure(to, npzd.sinking_velocities[n]), length(npzd.sinking_velocities))), # not sure this is the most efficient way todo this
+                                             NamedTuple{keys(npzd.advection_schemes)}(ntuple(n -> adapt_structure(to, npzd.advection_schemes[n]), length(npzd.advection_schemes))),
+
+                                             adapt_structure(to, npzd.particles))
 end # module

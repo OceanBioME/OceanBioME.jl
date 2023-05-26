@@ -8,7 +8,7 @@
 # First we will check we have the dependencies installed
 # ```julia
 # using Pkg
-# pkg "add OceanBioME, Oceananigans, Printf, CairoMakie"
+# pkg "add OceanBioME, Oceananigans, CairoMakie"
 # ```
 
 # ## Model setup
@@ -17,20 +17,21 @@ using OceanBioME, Oceananigans, Printf
 using Oceananigans.Units
 
 # Construct a grid with uniform grid spacing
-Lz = 100
+Lz = 100meters
 grid = RectilinearGrid(size=(32, 32, 8), extent = (1kilometer, 1kilometer, Lz))
 
 # Set the Coriolis parameter
-coriolis = FPlane(f=1e-4) # [s⁻¹]
+coriolis = FPlane(f = 1e-4) # [s⁻¹]
 
 # Specify parameters that are used to construct the background state
-background_state_parameters = ( M2 = 1e-8, # s⁻¹, geostrophic shear
-                                f = coriolis.f,      # s⁻¹, Coriolis parameter
-                                N = 1e-4)            # s⁻¹, buoyancy frequency
+background_state_parameters = ( M2 = 1e-8,       # s⁻¹, geostrophic shear
+                                 f = coriolis.f, # s⁻¹, Coriolis parameter
+                                 N = 1e-4,       # s⁻¹, buoyancy frequency
+                                Lz = Lz )
 
-# Here, B is the background buoyancy field and V is the corresponding thermal wind
-V(x, y, z, t, p) = + p.M2/p.f * (z - Lz/2)
-B(x, y, z, t, p) = p.M2 * x + p.N^2 * (z - Lz/2)
+# Here, ``B`` is the background buoyancy field and ``V`` is the corresponding thermal wind
+V(x, y, z, t, p) = p.M2 / p.f * (z - p.Lz/2)
+B(x, y, z, t, p) = p.M2 * x + p.N^2 * (z - p.Lz/2)
 
 V_field = BackgroundField(V, parameters = background_state_parameters)
 B_field = BackgroundField(B, parameters = background_state_parameters)
@@ -55,7 +56,7 @@ DIC_bcs = FieldBoundaryConditions(top = GasExchange(; gas = :CO₂, temperature 
 model = NonhydrostaticModel(; grid,
                               biogeochemistry,
                               boundary_conditions = (DIC = DIC_bcs, ),
-                              advection = CenteredSecondOrder(),
+                              advection = WENO(grid),
                               timestepper = :RungeKutta3,
                               coriolis,
                               tracers = :b,
@@ -65,7 +66,7 @@ model = NonhydrostaticModel(; grid,
 
 # ## Initial conditions
 # Start with a bit of random noise added to the background thermal wind and an arbitary biogeochemical state
-Ξ(z) = randn() * z/grid.Lz * (z/grid.Lz + 1)
+Ξ(z) = randn() * z / grid.Lz * (z / grid.Lz + 1)
 
 Ũ = 1e-3
 uᵢ(x, y, z) = Ũ * Ξ(z)
@@ -76,7 +77,7 @@ set!(model, u=uᵢ, v=vᵢ, P = 0.03, Z = 0.03, NO₃ = 4.0, NH₄ = 0.05, DIC =
 simulation = Simulation(model, Δt = 15minutes, stop_time = 10days)
 
 # Adapt the time step while keeping the CFL number fixed
-wizard = TimeStepWizard(cfl=0.85, max_change = 1.5, max_Δt = 15minutes)
+wizard = TimeStepWizard(cfl=0.85, max_change = 1.5, max_Δt = 30minutes)
 simulation.callbacks[:wizard] = Callback(wizard, IterationInterval(10))
 
 # Create a progress message 
@@ -93,17 +94,14 @@ simulation.callbacks[:progress] = Callback(progress, IterationInterval(10))
 
 u, v, w = model.velocities # unpack velocity `Field`s
 
-# calculate the vertical vorticity [s⁻¹]
+# and also calculate the vertical vorticity [s⁻¹].
 ζ = Field(∂x(v) - ∂y(u))
 
-# horizontal divergence [s⁻¹]
-δ = Field(∂x(u) + ∂y(v))
-
 # Periodically write the velocity, vorticity, and divergence out to a file
-simulation.output_writers[:fields] = JLD2OutputWriter(model, merge(model.tracers, (; u, v, w, ζ, δ));
+simulation.output_writers[:fields] = JLD2OutputWriter(model, merge(model.tracers, (; u, v, w, ζ));
                                                       schedule = TimeInterval(4hours),
                                                       filename = "eady_turbulence_bgc",
-                                                      overwrite_existing = true);
+                                                      overwrite_existing = true)
 
 # Prevent the tracer values going negative - this is especially important in this model while no positivity preserving diffusion is implimented
 scale_negative_tracers = ScaleNegativeTracers(; model, tracers = (:NO₃, :NH₄, :P, :Z, :sPOM, :bPOM, :DOM))
@@ -114,67 +112,60 @@ simulation.callbacks[:abort_zeros] = Callback(zero_negative_tracers!; callsite =
 # Run the simulation
 run!(simulation)
 
-# Now plot the results
-using CairoMakie, JLD2
+# Now load the saved output
+  ζ = FieldTimeSeries("eady_turbulence_bgc.jld2", "ζ")
+  P = FieldTimeSeries("eady_turbulence_bgc.jld2", "P")
+NO₃ = FieldTimeSeries("eady_turbulence_bgc.jld2", "NO₃")
+NH₄ = FieldTimeSeries("eady_turbulence_bgc.jld2", "NH₄")
+DIC = FieldTimeSeries("eady_turbulence_bgc.jld2", "DIC")
 
-# Open the file with our data
-file = jldopen(simulation.output_writers[:fields].filepath)
+times = ζ.times
 
-iterations = parse.(Int, keys(file["timeseries/t"]))
+xζ, yζ, zζ = nodes(ζ)
+xc, yc, zc = nodes(P)
 
-times = zeros(length(iterations))
+# and plot
 
-w, P, N, DIC = ntuple(n -> zeros(grid.Nx, grid.Ny, grid.Nz, length(iterations)), 5);
-
-for (idx, it) in enumerate(iterations)
-  w[:, :, :, idx] = file["timeseries/w/$it"][1:grid.Nx, 1:grid.Ny, 1:grid.Nz]
-  P[:, :, :, idx] = file["timeseries/P/$it"][1:grid.Nx, 1:grid.Ny, 1:grid.Nz]
-  N[:, :, :, idx] = file["timeseries/NO₃/$it"][1:grid.Nx, 1:grid.Ny, 1:grid.Nz] .+ file["timeseries/NH₄/$it"][1:grid.Nx, 1:grid.Ny, 1:grid.Nz]
-  DIC[:, :, :, idx] = file["timeseries/DIC/$it"][1:grid.Nx, 1:grid.Ny, 1:grid.Nz]
-
-  times[idx] = file["timeseries/t/$it"]
-end
-
-# Plot
-
-fig = Figure(resolution = (1600, 1600))
+using CairoMakie
 
 n = Observable(1)
 
-w_plt = @lift w[:, :, grid.Nz, $n]
-N_plt = @lift N[:, :, grid.Nz, $n]
-P_plt = @lift P[:, :, grid.Nz, $n]
-DIC_plt = @lift DIC[:, :, grid.Nz, $n]
+  ζₙ = @lift interior(  ζ[$n], :, :, grid.Nz)'
+  Nₙ = @lift interior(NO₃[$n], :, :, grid.Nz)' .+ interior(NH₄[$n], :, :, grid.Nz)'
+  Pₙ = @lift interior(  P[$n], :, :, grid.Nz)'
+DICₙ = @lift interior(DIC[$n], :, :, grid.Nz)'
 
-xs = xnodes(Center, grid)[1:grid.Nx]
-ys = ynodes(Center, grid)[1:grid.Ny]
-zs = znodes(Center, grid)[1:grid.Nz]
+fig = Figure(resolution = (1600, 1600))
 
-lims = [(minimum(T), maximum(T)) for T in (w, N, P, DIC)]
+lims = [(minimum(T), maximum(T)) for T in (  ζ[:, :, grid.Nz, :],
+                                           NO₃[:, :, grid.Nz, :] .+ NH₄[:, :, grid.Nz, :],
+                                             P[:, :, grid.Nz, :],
+                                           DIC[:, :, grid.Nz, :])]
 
-ax1 = Axis(fig[1, 1], aspect = DataAspect(), title = "Vertical velocity (m / s)")
-hm1 = heatmap!(ax1, xs, ys, w_plt, levels = 33, colormap = :lajolla, colorrange = lims[1], interpolate = true)
+axis_kwargs = (xlabel = "x (m)", ylabel = "y (m)", aspect = DataAspect())
+
+ax1 = Axis(fig[1, 1]; title = "Vertical vorticity (1 / s)", axis_kwargs...)
+hm1 = heatmap!(ax1, xζ, yζ, ζₙ, levels = 33, colormap = :balance, colorrange = lims[1], interpolate = true)
 Colorbar(fig[1, 2], hm1)
 
-ax2 = Axis(fig[1, 3], aspect = DataAspect(), title = "Nutrient (NO₃ + NH₄) concentration (mmol N / m³)")
-hm2 = heatmap!(ax2, xs, ys, N_plt, levels = 33, colormap = Reverse(:bamako), colorrange = lims[2], interpolate = true)
+ax2 = Axis(fig[1, 3]; title = "Nutrient (NO₃ + NH₄) concentration (mmol N / m³)", axis_kwargs...)
+hm2 = heatmap!(ax2, xc, yc, Nₙ, levels = 33, colormap = Reverse(:bamako), colorrange = lims[2], interpolate = true)
 Colorbar(fig[1, 4], hm2)
 
-ax3 = Axis(fig[2, 1], aspect = DataAspect(), title = "Phytoplankton concentration (mmol N / m³)")
-hm3 = heatmap!(ax3, xs, ys, P_plt, levels = 33, colormap = Reverse(:batlow), colorrange = lims[3], interpolate = true)
+ax3 = Axis(fig[2, 1]; title = "Phytoplankton concentration (mmol N / m³)", axis_kwargs...)
+hm3 = heatmap!(ax3, xc, yc, Pₙ, levels = 33, colormap = Reverse(:batlow), colorrange = lims[3], interpolate = true)
 Colorbar(fig[2, 2], hm3)
 
-ax4 = Axis(fig[2, 3], aspect = DataAspect(), title = "Dissolved inorganic carbon (mmol C / m³)")
-hm4 = heatmap!(ax4, xs, ys, DIC_plt, levels = 33, colormap = Reverse(:devon), colorrange = lims[4], interpolate = true)
+ax4 = Axis(fig[2, 3]; title = "Dissolved inorganic carbon (mmol C / m³)", axis_kwargs...)
+hm4 = heatmap!(ax4, xc, yc, DICₙ, levels = 33, colormap = Reverse(:devon), colorrange = lims[4], interpolate = true)
 Colorbar(fig[2, 4], hm4)
 
-supertitle = Label(fig[0, :], "t = 0.0", fontsize = 30)
+title = @lift "t = $(prettytime(times[$n]))"
+Label(fig[0, :], title, fontsize = 30)
 
-record(fig, "eady.gif", 1:length(times), framerate = 10) do i
+record(fig, "eady.mp4", 1:length(times), framerate = 10) do i
+    @info string("Plotting frame ", i, " of ", length(times))
     n[] = i
-    msg = string("Plotting frame ", i, " of ", length(times))
-    print(msg * " \r")
-    supertitle.text = "t=$(prettytime(times[i]))"
 end
 
-# ![Results](eady.gif)
+# ![](eady.mp4)

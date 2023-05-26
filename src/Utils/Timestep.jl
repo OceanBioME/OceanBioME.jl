@@ -1,11 +1,12 @@
-using Oceananigans: Center, cell_advection_timescale
+using Oceananigans: Center
+using Oceananigans.Advection: cell_advection_timescaleᶜᶜᶜ
 using Oceananigans.Grids: ZRegRectilinearGrid, znodes
 
 @inline Δz(::Center, k, grid::ZRegRectilinearGrid) = grid.Δzᵃᵃᶜ
 @inline Δz(::Center, k, grid) = @inbounds grid.Δzᵃᵃᶜ[k]
 
 @inline function column_diffusion_timescale(model)
-    z = znodes(Center, model.grid)
+    z = znodes(model.grid, Center(), Center(), Center())
     t = model.clock.time
     
     Δz2_ν = zeros(model.grid.Nz)
@@ -19,4 +20,4 @@ end
 
 @inline column_advection_timescale(model) = minimum(model.grid.Δzᵃᵃᶜ) / maximum_sinking_velocity(model.biogeochemistry)
 
-@inline sinking_adveciton_timescale(model) = min(minimum(model.grid.Δzᵃᵃᶜ) / maximum_sinking_velocity(model.biogeochemistry), cell_advection_timescale(model))
+@inline sinking_adveciton_timescale(model) = min(minimum(model.grid.Δzᵃᵃᶜ) / maximum_sinking_velocity(model.biogeochemistry), cell_advection_timescaleᶜᶜᶜ(model))

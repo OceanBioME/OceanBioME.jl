@@ -1,6 +1,8 @@
 using OceanBioME, Oceananigans, Printf
 using Oceananigans.Units
 
+year = years = 365days # just for these idealised cases
+
 @inline κₜ(x, y, z, t) = 1e-2 * (1 + tanh((z - 70)/10)) / 2 + 1e-4
 
 Lx, Ly = 20, 20

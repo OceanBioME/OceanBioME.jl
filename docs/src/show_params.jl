@@ -4,4 +4,3 @@ function show_params(path)
     f = open(path)
     println(read(f, String))
 end
-

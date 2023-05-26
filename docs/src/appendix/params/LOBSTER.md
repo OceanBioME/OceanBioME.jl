@@ -1,3 +1,3 @@
-# LOBSTER
+# [LOBSTER Parameters](@id LOBSTER_params)
 
-Comming soon
+Coming soon
