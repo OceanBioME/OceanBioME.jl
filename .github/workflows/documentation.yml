@@ -10,14 +10,18 @@ on:
 env:
   DATADEPS_ALWAYS_ACCEPT: true
 
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: ${{ github.ref != 'refs/heads/main' }}
+
 jobs:
   build:
     permissions:
       contents: write
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v2
-      - uses: julia-actions/setup-julia@v1
+      - uses: actions/checkout@v3
+      - uses: julia-actions/setup-julia@latest
         with:
           version: '1.8'
       - name: Install dependencies
