@@ -32,7 +32,6 @@ for example in example_scripts
         Literate.markdown(example_filepath, OUTPUT_DIR; 
                           flavor = Literate.DocumenterFlavor(), 
                           repo_root_url = "https://oceanbiome.github.io/OceanBioME.jl", 
-                          execute = true,
                           postprocess = replace_silly_warning)
     end
 end
