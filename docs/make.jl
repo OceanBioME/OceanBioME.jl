@@ -103,7 +103,7 @@ format = Documenter.HTML(
 
 makedocs(bib,
     sitename = "OceanBioME.jl",
-    authors = "Jago Strong-Wrigt, John R. Taylor, and Si Chen",
+    authors = "Jago Strong-Wright, John R. Taylor, and Si Chen",
     format = format,
     pages = pages,
     modules = [OceanBioME],
