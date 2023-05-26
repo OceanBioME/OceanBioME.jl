@@ -80,12 +80,12 @@ P_lims = (minimum(P), maximum(P))
 bₙ = @lift interior(b[$n], :, 1, :)
 Pₙ = @lift interior(P[$n], :, 1, :)
 
-fig = Figure(resolution = (1600, 160 * 4))
+fig = Figure(resolution = (1200, 480), fontsize = 20)
 
 title = @lift "t = $(prettytime(times[$n]))"
 Label(fig[0, :], title)
 
-axis_kwargs = (xlabel = "x (m)", ylabel = "z (m)", width = 1400)
+axis_kwargs = (xlabel = "x (m)", ylabel = "z (m)", width = 970)
 ax1 = Axis(fig[1, 1]; title = "Buoyancy perturbation (m / s)", axis_kwargs...)
 ax2 = Axis(fig[2, 1]; title = "Phytoplankton concentration (mmol N / m³)", axis_kwargs...)
 
@@ -102,7 +102,7 @@ end
 ```
 </details>
 
-![buoyancy_front](https://user-images.githubusercontent.com/26657828/226373754-42c5c9ed-d7fc-450a-8346-a497a40fe0e2.gif)
+![buoyancy_front](https://github.com/OceanBioME/OceanBioME.jl/assets/7112768/84f7f712-5648-4293-be18-608a4a3413ba)
 
 In this example `OceanBioME` is providing the `biogeochemistry` and the remainder is taken care of by `Oceananigans`. For comprehensive documentation of the physics modelling see [Oceananigans' Documentation](https://clima.github.io/OceananigansDocumentation/stable/), and for biogeochemistry and other features we provide read below.
 
