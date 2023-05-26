@@ -16,8 +16,12 @@ jobs:
       contents: write
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v2
-      - uses: julia-actions/setup-julia@v1
+      - name: Cancel Previous Runs
+        uses: styfle/cancel-workflow-action@0.8.0
+        with:
+          access_token: ${{ github.token }}
+      - uses: actions/checkout@v3
+      - uses: julia-actions/setup-julia@latest
         with:
           version: '1.8'
       - name: Install dependencies
