@@ -10,16 +10,16 @@ on:
 env:
   DATADEPS_ALWAYS_ACCEPT: true
 
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: ${{ github.ref != 'refs/heads/main' }}
+
 jobs:
   build:
     permissions:
       contents: write
     runs-on: ubuntu-latest
     steps:
-      - name: Cancel Previous Runs
-        uses: styfle/cancel-workflow-action@0.8.0
-        with:
-          access_token: ${{ github.token }}
       - uses: actions/checkout@v3
       - uses: julia-actions/setup-julia@latest
         with:
