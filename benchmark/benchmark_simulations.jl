@@ -1,73 +1,31 @@
 using OceanBioME, Oceananigans, BenchmarkTools
+using OceanBioME.Particles: infinitesimal_particle_field_coupling!
 using Oceananigans.Units
 include("Benchmark.jl")
 
-# Here I am attempting to replicate the setup of https://gmd.copernicus.org/articles/15/1567/2022/
-# Although this is obviously very different (as the paper is about MPI) if our results are same
-# order of mag it would be a good comparison to an established fast model
-# I will compair to their Land Only Sub Domains Removed (LSR) cases but they do have bathymetry still
-# at ~30 points there at about 1/2 hour per year of simulation - we're at about 10 mins on a single (vs ~4000) core so suspicious that this is not a valid comparison
-
-function benchmark_config(n, biogeochemistry = nothing, callbacks = NamedTuple(), runtime = 5years)
-    extent = n * 100kilometers
-    grid = RectilinearGrid(size = (n, n, 16), extent = (extent, extent, 1kilometers)) 
-
-    dTdz = 0.005 # K m⁻¹
-
-    T_bcs = FieldBoundaryConditions(bottom = GradientBoundaryCondition(dTdz))
-
-    u₁₀ = 0.1    # m s⁻¹, average wind velocity 10 meters above the ocean
-    cᴰ = 2.5e-3 # dimensionless drag coefficient
-    ρₐ = 1.225  # kg m⁻³, average density of air at sea-level
-    ρₒ = 1026.0 # kg m⁻³, average density at the surface of the world ocean
-
-    Qᵘ(x, y, t) = - ρₐ / ρₒ * cᴰ * u₁₀ * abs(u₁₀) * sin(π * x / 400kilometers)# m² s⁻²
-
-    u_bcs = FieldBoundaryConditions(top = FluxBoundaryCondition(Qᵘ))
-
-    model = HydrostaticFreeSurfaceModel(; grid, biogeochemistry = biogeochemistry(; grid),
-                                          coriolis = FPlane(f = 1e-4),
-                                          boundary_conditions = (u = u_bcs, T = T_bcs),
-                                          closure = ScalarDiffusivity(ν = 1e-5, κ = 1e-5))
-
-    Ξ(z) = randn() * z/grid.Lz * (z/grid.Lz + 1)
-
-    Tᵢ(x, y, z) = 20 + dTdz * z + dTdz * model.grid.Lz * 1e-6 * Ξ(z)
-
-    uᵢ(x, y, z) = 1e-3 * Ξ(z)
-
-    set!(model, u = uᵢ, v = uᵢ, S = 35, T = Tᵢ)
-
-    Pᵢ(x, y, z) = rand()
-
-    for (name, tracer) in pairs(model.tracers)
-        if !(name in (:T, :S))
-            set!(tracer, Pᵢ)
-        end
-    end
-
-    # warm up
-    time_step!(model, 1hour)
-
-    benchmark = @benchmark begin
-        time_step!($model, 1)
-    end samples=10
-
-    return benchmark
-end
-
 function benchmark_LOBSTER(n)
     grid = RectilinearGrid(size=(n, n, n), extent=(200, 200, 200)) 
+    PAR = Oceananigans.Fields.Field{Center, Center, Center}(grid)  
 
-    biogeochemistry = LOBSTER(; grid) 
+    @inline PAR⁰(t) = 10.0
 
-    model = NonhydrostaticModel(; grid, biogeochemistry,
-                                  advection = CenteredSecondOrder(),
-                                  timestepper = :RungeKutta3,
-                                  closure = ScalarDiffusivity(ν=1e-4, κ=1e-4))
-                                  
-    set!(model, P = 0.03, Z = 0.03, NO₃ = 11, NH₄ = 0.05)
+    bgc = Setup.Oceananigans(:LOBSTER, grid, LOBSTER.defaults) 
+
+    model = NonhydrostaticModel(
+        advection = WENO(;grid),
+        timestepper = :RungeKutta3,
+        grid = grid,
+        tracers = bgc.tracers,
+        closure = ScalarDiffusivity(ν=1e-4, κ=1e-4), 
+        forcing = bgc.forcing,
+        boundary_conditions = bgc.boundary_conditions,
+        auxiliary_fields = (; PAR)
+    )
+    set!(model, P=0.03, Z=0.03, NO₃=11, NH₄=0.05)
     simulation = Simulation(model, Δt=10minutes, stop_iteration=1) 
+
+    simulation.callbacks[:update_par] = Callback(Light.twoBands.update!, IterationInterval(1), merge(merge(LOBSTER.defaults, Light.twoBands.defaults), (surface_PAR=PAR⁰,)), TimeStepCallsite());
+    simulation.callbacks[:neg] = Callback(scale_negative_tracers!; parameters=(conserved_group=(:NO₃, :NH₄, :P, :Z, :D, :DD, :DOM), warn=false))
 
     # warmup
     run!(simulation)
@@ -77,22 +35,41 @@ function benchmark_LOBSTER(n)
     return trials
 end
 
-
-function benchmark_neg_protection(n)
+function benchmark_sediment(n)
     grid = RectilinearGrid(size=(n, n, n), extent=(200, 200, 200)) 
+    PAR = Oceananigans.Fields.Field{Center, Center, Center}(grid)  
 
-    biogeochemistry = LOBSTER(; grid) 
+    @inline PAR⁰(t) = 10.0
+    @inline t_function(x, y, z, t) = 13.0
+    @inline s_function(x, y, z, t) = 35.0
 
-    model = NonhydrostaticModel(; grid, biogeochemistry,
-                                  advection = CenteredSecondOrder(),
-                                  timestepper = :RungeKutta3,
-                                  closure = ScalarDiffusivity(ν=1e-4, κ=1e-4))
-                                  
-    set!(model, P = 0.03, Z = 0.03, NO₃ = 11, NH₄ = 0.05)
+    # Specify the boundary conditions for DIC and OXY based on the air-sea CO₂ and O₂ flux
+    dic_bc = Boundaries.airseasetup(:CO₂, forcings=(T=t_function, S=s_function))
+    oxy_bc = Boundaries.airseasetup(:O₂, forcings=(T=t_function, S=s_function))
+
+    # Have to prespecify fields for sediment model
+    NO₃, NH₄, P, Z, D, DD, Dᶜ, DDᶜ, DOM, DIC, ALK, OXY = CenterField(grid), CenterField(grid), CenterField(grid), CenterField(grid), CenterField(grid), CenterField(grid), CenterField(grid), CenterField(grid), CenterField(grid), CenterField(grid), CenterField(grid), CenterField(grid)
+    
+    #sediment bcs
+    sediment=Boundaries.Sediments.Soetaert.setupsediment(grid, (;D, DD); POM_w=(D=LOBSTER.D_sinking, DD=LOBSTER.DD_sinking))
+
+    bgc = Setup.Oceananigans(:LOBSTER, grid, LOBSTER.defaults, optional_sets=(:carbonates, :oxygen), topboundaries=(DIC=dic_bc, OXY=oxy_bc), sinking=true, open_bottom=true, bottomboundaries=sediment.boundary_conditions)
+
+    model = NonhydrostaticModel(
+        advection = WENO(;grid),
+        timestepper = :RungeKutta3,
+        grid = grid,
+        tracers = bgc.tracers,
+        closure = ScalarDiffusivity(ν=1e-4, κ=1e-4), 
+        forcing =  merge(bgc.forcing, sediment.forcing),
+        boundary_conditions = bgc.boundary_conditions,
+        auxiliary_fields = merge((; PAR), sediment.auxiliary_fields)
+    )
+    set!(model, P=0.03, Z=0.03, NO₃=11, NH₄=0.05)
     simulation = Simulation(model, Δt=10minutes, stop_iteration=1) 
 
-    scale_negative_tracers = ScaleNegativeTracers(; model, tracers = (:NO₃, :NH₄, :P, :Z, :sPOM, :bPOM, :DOM))
-    simulation.callbacks[:neg] = Callback(scale_negative_tracers; callsite = UpdateStateCallsite())
+    simulation.callbacks[:update_par] = Callback(Light.twoBands.update!, IterationInterval(1), merge(merge(LOBSTER.defaults, Light.twoBands.defaults), (surface_PAR=PAR⁰,)), TimeStepCallsite());
+    simulation.callbacks[:neg] = Callback(scale_negative_tracers!; parameters=(conserved_group=(:NO₃, :NH₄, :P, :Z, :D, :DD, :DOM), warn=false))
 
     # warmup
     run!(simulation)
@@ -102,14 +79,63 @@ function benchmark_neg_protection(n)
     return trials
 end
 
-Ns = [2 ^ n for n in 2:6]
+function benchmark_SLatissima(n)
+    grid = RectilinearGrid(size=(n, n, n), extent=(200, 200, 200)) 
+    PAR = Oceananigans.Fields.Field{Center, Center, Center}(grid)  
 
-no_bgc(args...; kwargs...) = nothing
+    @inline PAR⁰(t) = 10.0
+    @inline t_function(x, y, z, t) = 13.0
+    @inline s_function(x, y, z, t) = 35.0
 
-biogeochemistry = [no_bgc, LOBSTER]#, NutrientPhytoplanktonZooplanktonDetritus] # can't straightforwardly do this here because both NPZD model and buoyancy require T fields
+    n_kelp = floor(Int, n/4) # number of kelp fronds
+    z₀ = [-101+100/n_kelp:100/n_kelp:-1;]*1.0 # depth of kelp fronds
 
-suite = run_benchmarks(benchmark_config; Ns, biogeochemistry)
+    kelp_particles = SLatissima.setup(n_kelp, 200*rand(n_kelp), 200*rand(n_kelp), z₀, 
+                                                        30.0, 0.01, 0.1, 57.5;
+                                                        scalefactor = 5.0, 
+                                                        T = t_function, S = s_function, urel = 0.2, 
+                                                        optional_tracers = (:NH₄, :DIC, :DD, :DDᶜ, :OXY, :DOM))
 
-df = benchmarks_dataframe(suite)
+    dic_bc = Boundaries.airseasetup(:CO₂, forcings=(T=t_function, S=s_function))
+    oxy_bc = Boundaries.airseasetup(:O₂, forcings=(T=t_function, S=s_function))
+    bgc = Setup.Oceananigans(:LOBSTER, grid, LOBSTER.defaults, optional_sets=(:carbonates, :oxygen), topboundaries=(DIC=dic_bc, OXY=oxy_bc)) 
 
-benchmarks_pretty_table(df, title = "OceanBioME_benchmarks_8")
+    model = NonhydrostaticModel(
+        advection = WENO(;grid),
+        timestepper = :RungeKutta3,
+        grid = grid,
+        tracers = bgc.tracers,
+        closure = ScalarDiffusivity(ν=1e-4, κ=1e-4), 
+        forcing = bgc.forcing,
+        boundary_conditions = bgc.boundary_conditions,
+        auxiliary_fields = (; PAR),
+        particles = kelp_particles
+    )
+    set!(model, P=0.03, Z=0.03, NO₃=11, NH₄=0.05, DIC=2200.0, ALK=2400.0, OXY=240.0)
+    simulation = Simulation(model, Δt=10minutes, stop_iteration=1) 
+
+    simulation.callbacks[:update_par] = Callback(Light.twoBands.update!, IterationInterval(1), merge(merge(LOBSTER.defaults, Light.twoBands.defaults), (surface_PAR=PAR⁰,)), TimeStepCallsite());
+    simulation.callbacks[:neg] = Callback(scale_negative_tracers!; parameters=(conserved_group=(:NO₃, :NH₄, :P, :Z, :D, :DD, :DOM), warn=false))
+    simulation.callbacks[:couple_particles] = Callback(infinitesimal_particle_field_coupling!; callsite = TendencyCallsite())
+    # warmup
+    run!(simulation)
+
+    trials = @benchmark run!($simulation) samples=5
+
+    return trials
+end
+
+Ns = [16, 32]#, 64]
+
+# Run and summarize benchmarks
+
+for (model, name) in zip((:LOBSTER, :SLatissima), ("LOBSTER", "SLatissima"))#zip((:LOBSTER, :sediment, :particles), ("LOBSTER", "sediment", "SLatissima"))
+    @info "Benchmarking $name"
+    benchmark_func = Symbol(:benchmark_, model)
+    @eval begin
+        suite = run_benchmarks($benchmark_func; Ns)
+    end
+
+    df = benchmarks_dataframe(suite)
+    benchmarks_pretty_table(df, title=name * " benchmarks")
+end
