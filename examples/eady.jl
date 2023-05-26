@@ -146,19 +146,21 @@ lims = [(minimum(T), maximum(T)) for T in (  ζ[:, :, grid.Nz, :],
                                              P[:, :, grid.Nz, :],
                                            DIC[:, :, grid.Nz, :])]
 
-ax1 = Axis(fig[1, 1], aspect = DataAspect(), title = "Vertical vorticity (1 / s)")
-hm1 = heatmap!(ax1, xζ, yζ, ζₙ, levels = 33, colormap = :lajolla, colorrange = lims[1], interpolate = true)
+axis_kwargs = (xlabel = "x (m)", ylabel = "y (m)", aspect = DataAspect())\
+
+ax1 = Axis(fig[1, 1]; title = "Vertical vorticity (1 / s)", axis_kwargs...)
+hm1 = heatmap!(ax1, xζ, yζ, ζₙ, levels = 33, colormap = :balance, colorrange = lims[1], interpolate = true)
 Colorbar(fig[1, 2], hm1)
 
-ax2 = Axis(fig[1, 3], aspect = DataAspect(), title = "Nutrient (NO₃ + NH₄) concentration (mmol N / m³)")
+ax2 = Axis(fig[1, 3]; title = "Nutrient (NO₃ + NH₄) concentration (mmol N / m³)", axis_kwargs...)
 hm2 = heatmap!(ax2, xc, yc, Nₙ, levels = 33, colormap = Reverse(:bamako), colorrange = lims[2], interpolate = true)
 Colorbar(fig[1, 4], hm2)
 
-ax3 = Axis(fig[2, 1], aspect = DataAspect(), title = "Phytoplankton concentration (mmol N / m³)")
+ax3 = Axis(fig[2, 1]; title = "Phytoplankton concentration (mmol N / m³)", axis_kwargs...)
 hm3 = heatmap!(ax3, xc, yc, Pₙ, levels = 33, colormap = Reverse(:batlow), colorrange = lims[3], interpolate = true)
 Colorbar(fig[2, 2], hm3)
 
-ax4 = Axis(fig[2, 3], aspect = DataAspect(), title = "Dissolved inorganic carbon (mmol C / m³)")
+ax4 = Axis(fig[2, 3]; title = "Dissolved inorganic carbon (mmol C / m³)", axis_kwargs...)
 hm4 = heatmap!(ax4, xc, yc, DICₙ, levels = 33, colormap = Reverse(:devon), colorrange = lims[4], interpolate = true)
 Colorbar(fig[2, 4], hm4)
 
