@@ -43,7 +43,7 @@ function show_parameters(model; exclude = (:advection_schemes, :optionals, :ligh
 end
 
 function create_parameter_file!(model, name, path)
-    output = "# $name\n\n" * show_parameters(model)
+    output = "# $name default parameters\n\n" * show_parameters(model)
     
     open(path,"w+") do io
         println(io, output)
