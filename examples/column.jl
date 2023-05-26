@@ -8,7 +8,7 @@
 # First we will check we have the dependencies installed
 # ```julia
 # using Pkg
-# pkg"add OceanBioME, Oceananigans, Printf, CairoMakie"
+# pkg"add OceanBioME, Oceananigans, CairoMakie"
 # ```
 
 # ## Model setup
@@ -18,6 +18,7 @@ using OceanBioME.SLatissimaModel: SLatissima
 using Oceananigans.Units
 
 const year = years = 365days
+nothing # hide
 
 # ## Surface PAR and turbulent vertical diffusivity based on idealised mixed layer depth 
 # Setting up idealised functions for PAR and diffusivity (details here can be ignored but these are typical of the North Atlantic)
@@ -28,11 +29,12 @@ const year = years = 365days
 
 @inline fmld1(t) = H(t, 50days, year) * (1 / (1 +exp(-(t - 100days) / (5days)))) * (1 / (1 + exp((t - 330days) / (25days))))
 
-@inline MLD(t) = - (10 + 340 * (1 - fmld1(year-eps(year)) * exp(-mod(t, year) / 25days) - fmld1(mod(t, year))))
+@inline MLD(t) = - (10 + 340 * (1 - fmld1(year - eps(year)) * exp(-mod(t, year) / 25days) - fmld1(mod(t, year))))
 
-@inline κₜ(x, y, z, t) = 1e-2 * (1 + tanh((z - MLD(t))/10)) / 2 + 1e-4
+@inline κₜ(x, y, z, t) = 1e-2 * (1 + tanh((z - MLD(t)) / 10)) / 2 + 1e-4
 
 @inline temp(x, y, z, t) = 2.4 * cos(t * 2π / year + 50day) + 10
+nothing # hide
 
 # ## Grid and PAR field
 # Define the grid and an extra Oceananigans field for the PAR to be stored in
@@ -77,6 +79,7 @@ simulation.output_writers[:profiles] = JLD2OutputWriter(model, merge(model.trace
 
 scale_negative_tracers = ScaleNegativeTracers(; model, tracers = (:NO₃, :NH₄, :P, :Z, :sPOM, :bPOM, :DOM))
 simulation.callbacks[:neg] = Callback(scale_negative_tracers; callsite = UpdateStateCallsite())
+nothing # hide
 
 # ## Run!
 # Finally we run the simulation

@@ -42,6 +42,7 @@ B_field = BackgroundField(B, parameters = background_state_parameters)
 
 vertical_diffusivity = VerticalScalarDiffusivity(ν=κ₂z, κ=κ₂z)
 horizontal_diffusivity = HorizontalScalarDiffusivity(ν=κ₂h, κ=κ₂h)
+nothing # hide
 
 # Setup the biogeochemical model with optional carbonate chemistry turned on
 
@@ -79,6 +80,7 @@ simulation = Simulation(model, Δt = 15minutes, stop_time = 10days)
 # Adapt the time step while keeping the CFL number fixed
 wizard = TimeStepWizard(cfl=0.85, max_change = 1.5, max_Δt = 30minutes)
 simulation.callbacks[:wizard] = Callback(wizard, IterationInterval(10))
+nothing # hide
 
 # Create a progress message 
 progress(sim) = @printf("i: % 6d, sim time: % 10s, wall time: % 10s, Δt: % 10s, CFL: %.2e\n",
@@ -89,6 +91,7 @@ progress(sim) = @printf("i: % 6d, sim time: % 10s, wall time: % 10s, Δt: % 10s,
                         AdvectiveCFL(sim.Δt)(sim.model))
 
 simulation.callbacks[:progress] = Callback(progress, IterationInterval(10))
+nothing # hide
 
 # Here, add some diagnostics to calculate and output
 
@@ -108,6 +111,7 @@ scale_negative_tracers = ScaleNegativeTracers(; model, tracers = (:NO₃, :NH₄
 simulation.callbacks[:neg] = Callback(scale_negative_tracers; callsite = UpdateStateCallsite())
 simulation.callbacks[:nan_tendencies] = Callback(remove_NaN_tendencies!; callsite = TendencyCallsite())
 simulation.callbacks[:abort_zeros] = Callback(zero_negative_tracers!; callsite = UpdateStateCallsite())
+nothing # hide
 
 # Run the simulation
 run!(simulation)
@@ -130,10 +134,10 @@ using CairoMakie
 
 n = Observable(1)
 
-  ζₙ = @lift interior(  ζ[$n], :, :, grid.Nz)
-  Nₙ = @lift interior(NO₃[$n], :, :, grid.Nz) .+ interior(NH₄[$n], :, :, grid.Nz)
-  Pₙ = @lift interior(  P[$n], :, :, grid.Nz)
-DICₙ = @lift interior(DIC[$n], :, :, grid.Nz)
+  ζₙ = @lift interior(  ζ[$n], :, :, grid.Nz)'
+  Nₙ = @lift interior(NO₃[$n], :, :, grid.Nz)' .+ interior(NH₄[$n], :, :, grid.Nz)'
+  Pₙ = @lift interior(  P[$n], :, :, grid.Nz)'
+DICₙ = @lift interior(DIC[$n], :, :, grid.Nz)'
 
 fig = Figure(resolution = (1600, 1600))
 

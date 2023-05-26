@@ -10,7 +10,7 @@
 # First we will check we have the dependencies installed
 # ```julia
 # using Pkg
-# pkg "add OceanBioME, Oceananigans, Printf, CairoMakie"
+# pkg "add OceanBioME, Oceananigans, CairoMakie, JLD2"
 # ```
 
 # ## Model setup
@@ -19,6 +19,7 @@ using OceanBioME, Oceananigans, Printf
 using Oceananigans.Units
 
 const year = years = 365days # just for these idealised cases
+nothing # hide
 
 # ## Surface PAR and turbulent vertical diffusivity based on idealised mixed layer depth 
 # Setting up idealised functions for PAR and diffusivity (details here can be ignored but these are typical of the North Atlantic)
@@ -34,6 +35,7 @@ const year = years = 365days # just for these idealised cases
 @inline κₜ(x, y, z, t) = 1e-2 * (1 + tanh((z - MLD(t))/10)) / 2 + 1e-4
 
 @inline temp(x, y, z, t) = 2.4 * cos(t * 2π / year + 50day) + 10
+nothing # hide
 
 # ## Grid and PAR field
 # Define the grid and an extra Oceananigans field for the PAR to be stored in
@@ -99,6 +101,7 @@ simulation.output_writers[:particles] = JLD2OutputWriter(model, (; particles),
 
 scale_negative_tracers = ScaleNegativeTracers(; model, tracers = (:NO₃, :NH₄, :P, :Z, :sPON, :bPON, :DON))
 simulation.callbacks[:neg] = Callback(scale_negative_tracers; callsite = UpdateStateCallsite())
+nothing # hide
 
 # ## Run!
 # Finally we run the simulation
@@ -188,4 +191,5 @@ ax3 = Axis(fig[1, 3], ylabel = "Total Nitrogen (gN)", xlabel = "Time (days)")
 [lines!(ax3, times / day, (A .* (C .+ particles.structural_carbon) .* particles.structural_dry_weight_per_area)[n, :]) for n in 1:5]
 
 current_figure() # hide
+
 fig

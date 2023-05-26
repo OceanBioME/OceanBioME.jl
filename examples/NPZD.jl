@@ -10,7 +10,7 @@
 # First we will check we have the dependencies installed
 # ```julia
 # using Pkg
-# pkg"add OceanBioME, Oceananigans, Printf, Plots, GLMakie, NetCDF, JLD2"
+# pkg"add OceanBioME, Oceananigans, CairoMakie"
 # ```
 
 # ## Model setup
@@ -18,9 +18,11 @@
 using OceanBioME, Oceananigans, Oceananigans.Units, Printf
 
 const year = years = 365days # just for these idealised cases
+nothing # hide
 
 # ## Surface PAR
 PAR⁰(x, y, t) = 50 * (1 - cos((t + 15days) * 2π / year)) * (1 / (1 + 0.2 * exp(-((mod(t, year) - 200days) / 50days)^2))) / 2
+nothing # hide
 
 # ## Grid and PAR field
 # Define the grid and an extra Oceananigans field for the PAR to be stored in
