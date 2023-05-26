@@ -14,11 +14,11 @@ const EXAMPLES_DIR = joinpath(@__DIR__, "..", "examples")
 const OUTPUT_DIR   = joinpath(@__DIR__, "src/generated")
 
 examples = [
-    # "Simple column model" => "column",
-    # "Data forced column model" => "data_forced",
-    # "Model with particles (kelp) interacting with the biogeochemistry" => "kelp",
-    # "Box model" => "box",
-    # "Baroclinic instability" => "eady"
+    "Simple column model" => "column",
+    "Data forced column model" => "data_forced",
+    "Model with particles (kelp) interacting with the biogeochemistry" => "kelp",
+    "Box model" => "box",
+    "Baroclinic instability" => "eady"
 ]
 
 example_scripts = [ filename * ".jl" for (title, filename) in examples ]
