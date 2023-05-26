@@ -28,12 +28,10 @@ replace_silly_warning(content) = replace(content, r"┌ Warning:.*\s+└ @ JLD2 
 for example in example_scripts
     example_filepath = joinpath(EXAMPLES_DIR, example)
 
-    withenv("JULIA_DEBUG" => "Literate") do
-        Literate.markdown(example_filepath, OUTPUT_DIR; 
-                          flavor = Literate.DocumenterFlavor(), 
-                          repo_root_url = "https://oceanbiome.github.io/OceanBioME.jl", 
-                          postprocess = replace_silly_warning)
-    end
+    Literate.markdown(example_filepath, OUTPUT_DIR; 
+                      flavor = Literate.DocumenterFlavor(), 
+                      repo_root_url = "https://oceanbiome.github.io/OceanBioME.jl", 
+                      postprocess = replace_silly_warning)
 end
 
 example_pages = [ title => "generated/$(filename).md" for (title, filename) in examples ]
