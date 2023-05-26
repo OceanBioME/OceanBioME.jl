@@ -24,13 +24,14 @@ grid = RectilinearGrid(size=(32, 32, 8), extent = (1kilometer, 1kilometer, Lz))
 coriolis = FPlane(f = 1e-4) # [s⁻¹]
 
 # Specify parameters that are used to construct the background state
-background_state_parameters = ( M2 = 1e-8,      # s⁻¹, geostrophic shear
-                                f = coriolis.f, # s⁻¹, Coriolis parameter
-                                N = 1e-4)       # s⁻¹, buoyancy frequency
+background_state_parameters = ( M2 = 1e-8,       # s⁻¹, geostrophic shear
+                                 f = coriolis.f, # s⁻¹, Coriolis parameter
+                                 N = 1e-4,       # s⁻¹, buoyancy frequency
+                                Lz = Lz )
 
 # Here, ``B`` is the background buoyancy field and ``V`` is the corresponding thermal wind
-V(x, y, z, t, p) = p.M2 / p.f * (z - Lz/2)
-B(x, y, z, t, p) = p.M2 * x + p.N^2 * (z - Lz/2)
+V(x, y, z, t, p) = p.M2 / p.f * (z - p.Lz/2)
+B(x, y, z, t, p) = p.M2 * x + p.N^2 * (z - p.Lz/2)
 
 V_field = BackgroundField(V, parameters = background_state_parameters)
 B_field = BackgroundField(B, parameters = background_state_parameters)
@@ -93,14 +94,11 @@ simulation.callbacks[:progress] = Callback(progress, IterationInterval(10))
 
 u, v, w = model.velocities # unpack velocity `Field`s
 
-# calculate the vertical vorticity [s⁻¹]
+# and also calculate the vertical vorticity [s⁻¹].
 ζ = Field(∂x(v) - ∂y(u))
 
-# and horizontal divergence [s⁻¹]
-δ = Field(∂x(u) + ∂y(v))
-
 # Periodically write the velocity, vorticity, and divergence out to a file
-simulation.output_writers[:fields] = JLD2OutputWriter(model, merge(model.tracers, (; u, v, w, ζ, δ));
+simulation.output_writers[:fields] = JLD2OutputWriter(model, merge(model.tracers, (; u, v, w, ζ));
                                                       schedule = TimeInterval(4hours),
                                                       filename = "eady_turbulence_bgc",
                                                       overwrite_existing = true)
