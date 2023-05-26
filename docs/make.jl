@@ -38,7 +38,9 @@ for example in example_scripts
                           execute=true,
                           postprocess=replace_silly_warning)
     end
-end=#
+end
+
+example_pages = [ title => "generated/$(filename).md" for (title, filename) in examples ]
 
 # create parameter pages
 
@@ -60,8 +62,6 @@ model_name(model) = if Base.typename(typeof(model)).wrapper == GasExchange
                         Base.typename(typeof(model)).wrapper
                     end
 
-GasExchange
-
 model_names = [model_name(model) for model in model_parameters]
 
 for (idx, model) in enumerate(model_parameters)
@@ -69,13 +69,6 @@ for (idx, model) in enumerate(model_parameters)
 end
 
 parameter_pages = ["$name" => "generated/$(name)_parameters.md" for name in model_names]
-
-example_pages = [
-    "Simple column model" => "generated/column.md",
-    "Data forced column model" => "generated/data_forced.md",
-    "Model with particles (kelp) interacting with the biogeochemistry" => "generated/kelp.md",
-    "Box model" => "generated/box.md",
-    "Baroclinic instability" => "generated/eady.md"]
 
 bgc_pages = [
     "Overview" => "model_components/biogeochemical/index.md",
