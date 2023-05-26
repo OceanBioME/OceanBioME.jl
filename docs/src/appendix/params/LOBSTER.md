@@ -1,3 +1,0 @@
-# LOBSTER
-
-Comming soon

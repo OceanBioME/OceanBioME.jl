@@ -4,6 +4,9 @@ using OceanBioME
 using OceanBioME.SLatissimaModel: SLatissima
 using OceanBioME.LOBSTERModel: LOBSTER
 using OceanBioME.Boundaries.Sediments: SimpleMultiG
+using OceanBioME.Boundaries: OCMIP_default, GasExchange
+
+include("display_parameters.jl")
 
 bib_filepath = joinpath(dirname(@__FILE__), "oceanbiome.bib")
 bib = CitationBibliography(bib_filepath)
@@ -26,6 +29,7 @@ function replace_silly_warning(content)
     return content
 end
 
+#=
 for example in examples
     example_filepath = joinpath(EXAMPLES_DIR, example)
 
@@ -36,14 +40,44 @@ for example in examples
                           execute=true,
                           postprocess=replace_silly_warning)
     end
+end=#
+
+# create parameter pages
+
+if !isdir(OUTPUT_DIR) mkdir(OUTPUT_DIR) end
+
+model_parameters = (LOBSTER(; grid = BoxModelGrid()),
+                    NutrientPhytoplanktonZooplanktonDetritus(; grid = BoxModelGrid()),
+                    SLatissima(),
+                    TwoBandPhotosyntheticallyActiveRatiation(; grid = BoxModelGrid()),
+                    SimpleMultiG(BoxModelGrid(); depth = 1000),
+                    OCMIP_default,
+                    GasExchange(; gas = :CO₂).condition.parameters,
+                    GasExchange(; gas = :O₂).condition.parameters)
+
+gas_exchange_gas(::Val{G}) where G = G
+model_name(model) = if Base.typename(typeof(model)).wrapper == GasExchange
+                        "$(gas_exchange_gas(model.gas)) air-sea exchange"
+                    else
+                        Base.typename(typeof(model)).wrapper
+                    end
+
+GasExchange
+
+model_names = [model_name(model) for model in model_parameters]
+
+for (idx, model) in enumerate(model_parameters)
+    create_parameter_file!(model, model_names[idx], "$OUTPUT_DIR/$(model_names[idx])_parameters.md")
 end
 
-example_pages = [
+parameter_pages = ["$name" => "generated/$(name)_parameters.md" for name in model_names]
+
+example_pages = []#=[
     "Simple column model" => "generated/column.md",
     "Data forced column model" => "generated/data_forced.md",
     "Model with particles (kelp) interacting with the biogeochemistry" => "generated/kelp.md",
     "Box model" => "generated/box.md",
-    "Baroclinic instability" => "generated/eady.md"]
+    "Baroclinic instability" => "generated/eady.md"]=#
 
 bgc_pages = [
     "Overview" => "model_components/biogeochemical/index.md",
@@ -73,17 +107,10 @@ numerical_pages = [
     "Positivity preservation" => "numerical_implementation/positivity-preservation.md"
 ]
 
-
-param_pages = [
-    "Overview" => "appendix/params/index.md",
-    "LOBSTER" => "appendix/params/LOBSTER.md",
-    "SLatissima" => "appendix/params/SLatissima.md"
-]
-
 appendix_pages = [
     "Library" => "appendix/library.md",
     "Function index" => "appendix/function_index.md",
-    "Parameters" => param_pages
+    "Parameters" => parameter_pages
 ]
 
 pages = [
