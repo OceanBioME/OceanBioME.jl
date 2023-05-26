@@ -118,8 +118,9 @@ bPOC = FieldTimeSeries("$filename.jld2", "bPOC")
 x, y, z = nodes(P)
 times = P.times
 
-air_sea_CO₂_flux = zeros(size(P)[4])
-carbon_export = zeros(size(P)[4])
+air_sea_CO₂_flux = zeros(length(times))
+carbon_export = zeros(length(times))
+
 for (i, t) in enumerate(times)
     air_sea_CO₂_flux[i] = CO₂_flux.condition.parameters(0.0, 0.0, t, DIC[1, 1, 50, i], Alk[1, 1, 50, i], temp(1, 1, 0, t), 35)
     carbon_export[i] = sPOC[1, 1, end-20, i] * model.biogeochemistry.sinking_velocities.sPOM.w[1, 1, end-20] + bPOC[1, 1, end-20, i] * model.biogeochemistry.sinking_velocities.bPOM.w[1, 1, end-20]
