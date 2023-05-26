@@ -22,7 +22,7 @@ using Oceananigans, Random, Printf, NetCDF, Interpolations, DataDeps
 using Oceananigans.Units
 
 const year = years = 365days # just for these idealised cases
-nothing # hide
+nothing #src
 
 # ## Load external forcing data
 # Loading the forcing data from our online copy
@@ -48,7 +48,7 @@ t_function(x, y, z, t) = temperature_itp(mod(t, 364days))
 s_function(x, y, z, t) = salinity_itp(mod(t, 364days))
 surface_PAR(x, y, t) = PAR_itp(mod(t, 364days))
 κₜ(x, y, z, t) = 2e-2 * max(1 - (z + mld_itp(mod(t, 364days)) / 2)^2 / (mld_itp(mod(t, 364days)) / 2)^2, 0) + 1e-4
-nothing # hide
+nothing #src
 
 # ## Grid and PAR field
 # Define the grid (in this case a non uniform grid for better resolution near the surface) and an extra Oceananigans field for the PAR to be stored in
@@ -107,7 +107,7 @@ simulation.callbacks[:neg] = Callback(scale_negative_tracers; callsite = UpdateS
 
 wizard = TimeStepWizard(cfl = 0.2, diffusive_cfl = 0.2, max_change = 2.0, min_change = 0.5, cell_diffusion_timescale = column_diffusion_timescale, cell_advection_timescale = column_advection_timescale)
 simulation.callbacks[:wizard] = Callback(wizard, IterationInterval(10))
-nothing # hide
+nothing #src
 
 # ## Run!
 # Finally we run the simulation
