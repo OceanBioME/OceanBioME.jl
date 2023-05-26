@@ -20,7 +20,10 @@ set!(model, P = 0.001, Z = 0.001, NO₃ = 1, NH₄ = 0.01)
 
 simulation = Simulation(model; Δt = 1minute, stop_time = 30days)
 
-simulation.output_writers[:profiles] = JLD2OutputWriter(model, model.tracers, filename = "quickstart.jld2", schedule = TimeInterval(0.5days), overwrite_existing = true)
+simulation.output_writers[:profiles] = JLD2OutputWriter(model, model.tracers,
+                                                        filename = "quickstart.jld2",
+                                                        schedule = TimeInterval(0.5days),
+                                                        overwrite_existing = true)
 
 run!(simulation)
 ```

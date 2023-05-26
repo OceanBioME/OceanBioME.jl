@@ -35,7 +35,10 @@ grid = RectilinearGrid(CPU(), size=(256, 32), extent=(500meters, 100meters), top
 
 biogeochemistry = NutrientPhytoplanktonZooplanktonDetritus(; grid, open_bottom=true)
 
-model = NonhydrostaticModel(; grid, biogeochemistry, buoyancy=BuoyancyTracer(), tracers=:b, advection=WENO(; grid), closure = AnisotropicMinimumDissipation())
+model = NonhydrostaticModel(; grid, biogeochemistry,
+                              buoyancy=BuoyancyTracer(), tracers=:b,
+                              advection=WENO(; grid),
+                              closure = AnisotropicMinimumDissipation())
 
 bᵢ(x, y, z) = ifelse(x < 250, 1e-4, 1e-3)
 
@@ -47,7 +50,10 @@ wizard = TimeStepWizard(cfl = 0.3, max_change = 1.5)
 
 simulation.callbacks[:wizard] = Callback(wizard, IterationInterval(5))
 
-simulation.output_writers[:tracers] = JLD2OutputWriter(model, model.tracers, filename = "buoyancy_front.jld2", schedule = TimeInterval(1minute), overwrite_existing = true)
+simulation.output_writers[:tracers] = JLD2OutputWriter(model, model.tracers,
+                                                       filename = "buoyancy_front.jld2",
+                                                       schedule = TimeInterval(1minute),
+                                                       overwrite_existing = true)
 
 run!(simulation)
 ```
