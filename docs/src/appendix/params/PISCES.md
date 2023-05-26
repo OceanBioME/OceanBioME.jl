@@ -1,6 +1,3 @@
-# PISCES
+# [PISCES Parameters](@id PISCES_params)
 
-```@example
-f = open("../../../../src/Models/Biogeochemistry/PISCES/parameters.jl")
-println(read(f, String))
-```
+Coming soon

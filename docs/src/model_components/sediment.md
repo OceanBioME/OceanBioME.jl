@@ -4,13 +4,13 @@ We currently have one single layer sediment model implemented. The model, propos
 
 It is straightforward to set up:
 
-```
+```julia
 sediment_model = SimpleMultiG(grid)
 ```
 
 You may optionally specify the model parameters. This can then be passed in the setup of a BGC model:
 
-```
+```julia
 biogeochemistry = LOBSTER(; grid, 
                             carbonates = true, oxygen = true, variable_redfield = true, 
                             open_bottom = true, 
