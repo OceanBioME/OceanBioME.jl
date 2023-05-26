@@ -146,7 +146,7 @@ lims = [(minimum(T), maximum(T)) for T in (  ζ[:, :, grid.Nz, :],
                                              P[:, :, grid.Nz, :],
                                            DIC[:, :, grid.Nz, :])]
 
-axis_kwargs = (xlabel = "x (m)", ylabel = "y (m)", aspect = DataAspect())\
+axis_kwargs = (xlabel = "x (m)", ylabel = "y (m)", aspect = DataAspect())
 
 ax1 = Axis(fig[1, 1]; title = "Vertical vorticity (1 / s)", axis_kwargs...)
 hm1 = heatmap!(ax1, xζ, yζ, ζₙ, levels = 33, colormap = :balance, colorrange = lims[1], interpolate = true)

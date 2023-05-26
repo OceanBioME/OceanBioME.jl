@@ -26,7 +26,7 @@ nothing # hide
 
 # ## Grid and PAR field
 # Define the grid and an extra Oceananigans field for the PAR to be stored in
-grid = RectilinearGrid(size=(20, 30), extent=(200meters, 300meters), topology=(Periodic, Flat, Bounded)) 
+grid = RectilinearGrid(size = (20, 30), extent = (200meters, 300meters), topology = (Periodic, Flat, Bounded))
 
 # ## Model instantiation
 Tᵃ(t) = 18 + 2 * sin((t + 15days) * 2π / year)
@@ -64,7 +64,7 @@ set!(model, u=uᵢ, w=uᵢ, T=Tᵢ, S=35.0)#, N = 2.0, P = 0.1, Z = 0.01)
 # - Store the output
 # - Prevent the tracers from going negative from numerical error (see discussion of this in the [positivity preservation](@ref pos-preservation) implementation page)
 
-simulation = Simulation(model, Δt=0.5minute, stop_time = 2years)
+simulation = Simulation(model, Δt = 0.5minute, stop_time = 2years)
 
 # The `TimeStepWizard` helps ensure stable time-stepping
 # with a Courant-Freidrichs-Lewy (CFL) number of 1.0.
@@ -120,19 +120,19 @@ fig[1, 1:5] = Label(fig, title, textsize=24, tellwidth=false)
 axis_kwargs = (xlabel = "x (m)", ylabel = "z (m)")
 heatmap_kwargs = (interpolate = true, colormap = :batlow)
 
-axP = Axis(fig[2, 1:2]; title="Phytoplankton concentration (mmol N/m³)", axis_kwargs...)
+axP = Axis(fig[2, 1:2]; title = "Phytoplankton concentration (mmol N/m³)", axis_kwargs...)
 hmP = heatmap!(axP, x, z, Pₙ; colorrange = P_range, heatmap_kwargs...)
 cbP = Colorbar(fig[2, 3], hmP)
 
-axN = Axis(fig[2, 4:5]; title="Nitrate concentration (mmol N/m³)", axis_kwargs...)
+axN = Axis(fig[2, 4:5]; title = "Nitrate concentration (mmol N/m³)", axis_kwargs...)
 hmN = heatmap!(axN, x, z, Nₙ; colorrange = N_range, heatmap_kwargs...)
 cbN = Colorbar(fig[2, 6], hmN)
 
-axZ = Axis(fig[3, 1:2]; title="Zooplankton concentration (mmol N/m³)", axis_kwargs...)
+axZ = Axis(fig[3, 1:2]; title = "Zooplankton concentration (mmol N/m³)", axis_kwargs...)
 hmZ = heatmap!(axZ, x, z, Zₙ; colorrange = Z_range, heatmap_kwargs...)
 cbZ = Colorbar(fig[3, 3], hmZ)
 
-axD = Axis(fig[3, 4:5]; title="Detritus concentration (mmol N/m³)", axis_kwargs...)
+axD = Axis(fig[3, 4:5]; title = "Detritus concentration (mmol N/m³)", axis_kwargs...)
 hmD = heatmap!(axD, x, z, Dₙ; colorrange = D_range, heatmap_kwargs...)
 cbD = Colorbar(fig[3, 6], hmD)
 

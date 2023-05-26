@@ -67,5 +67,4 @@ for (idx, tracer) in enumerate(vars)
     lines!(axs[end], plt_times, timeseries[tracer])
 end
 
-current_figure() # hide
 fig

@@ -98,11 +98,12 @@ bPOM = FieldTimeSeries("$filename.jld2", "bPOM")
 x, y, z = nodes(P)
 times = P.times
 
-air_sea_CO₂_flux = zeros(length(times))
-carbon_export = zeros(length(times))
+air_sea_CO₂_flux = carbon_export = zeros(length(times))
+
 for (i, t) in enumerate(times)
     air_sea_CO₂_flux[i] = CO₂_flux.condition.parameters(0.0, 0.0, t, DIC[1, 1, 50, i], Alk[1, 1, 50, i], temp(1, 1, 0, t), 35)
-    carbon_export[i] = (sPOM[1, 1, end-20, i] * model.biogeochemistry.sinking_velocities.sPOM.w[1, 1, end-20] + bPOM[1, 1, end-20, i] * model.biogeochemistry.sinking_velocities.bPOM.w[1, 1, end-20]) * model.biogeochemistry.organic_redfield
+    carbon_export[i] = (sPOM[1, 1, end-20, i] * model.biogeochemistry.sinking_velocities.sPOM.w[1, 1, end-20] +
+                        bPOM[1, 1, end-20, i] * model.biogeochemistry.sinking_velocities.bPOM.w[1, 1, end-20]) * model.biogeochemistry.organic_redfield
 end
 
 using CairoMakie
@@ -134,5 +135,4 @@ hmfExp = lines!(times / days, carbon_export    * (12 + 16 * 2) * year / 1e6, lin
 
 fig[3, 5:6] = Legend(fig, axfDIC, "", framevisible = false)
 
-current_figure() # hide
 fig

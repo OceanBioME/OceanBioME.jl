@@ -120,12 +120,12 @@ bPOC = FieldTimeSeries("$filename.jld2", "bPOC")
 x, y, z = nodes(P)
 times = P.times
 
-air_sea_CO₂_flux = zeros(length(times))
-carbon_export = zeros(length(times))
+air_sea_CO₂_flux = carbon_export = zeros(length(times))
 
 for (i, t) in enumerate(times)
     air_sea_CO₂_flux[i] = CO₂_flux.condition.parameters(0.0, 0.0, t, DIC[1, 1, 50, i], Alk[1, 1, 50, i], temp(1, 1, 0, t), 35)
-    carbon_export[i] = sPOC[1, 1, end-20, i] * model.biogeochemistry.sinking_velocities.sPOM.w[1, 1, end-20] + bPOC[1, 1, end-20, i] * model.biogeochemistry.sinking_velocities.bPOM.w[1, 1, end-20]
+    carbon_export[i] = sPOC[1, 1, end-20, i] * model.biogeochemistry.sinking_velocities.sPOM.w[1, 1, end-20] +
+                       bPOC[1, 1, end-20, i] * model.biogeochemistry.sinking_velocities.bPOM.w[1, 1, end-20]
 end
 
 using CairoMakie
@@ -157,7 +157,6 @@ hmfExp = lines!(times / days, carbon_export    * (12 + 16 * 2) * year / 1e6, lin
 
 fig[3, 5:6] = Legend(fig, axfDIC, "", framevisible = false)
 
-current_figure() # hide
 fig
 
 # We can also have a look at how the kelp particles evolve
@@ -189,7 +188,5 @@ ax2 = Axis(fig[1, 2], ylabel = "Total Carbon (gC)", xlabel = "Time (days)")
 
 ax3 = Axis(fig[1, 3], ylabel = "Total Nitrogen (gN)", xlabel = "Time (days)")
 [lines!(ax3, times / day, (A .* (C .+ particles.structural_carbon) .* particles.structural_dry_weight_per_area)[n, :]) for n in 1:5]
-
-current_figure() # hide
 
 fig

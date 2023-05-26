@@ -130,7 +130,8 @@ air_sea_CO₂_flux = carbon_export = zeros(length(times))
 
 for (i, t) in enumerate(times)
     air_sea_CO₂_flux[i] = CO₂_flux.condition.parameters(0.0, 0.0, t, DIC[1, 1, end, i], Alk[1, 1, end, i], t_function(1, 1, 0, t), s_function(1, 1, 0, t)) 
-    carbon_export[i] = model.biogeochemistry.organic_redfield * (sPOM[1, 1, end-20, i] * model.biogeochemistry.sinking_velocities.sPOM.w[1, 1, end-20] .+ bPOM[1, 1, end-20, i] * model.biogeochemistry.sinking_velocities.bPOM.w[1, 1, end-20])
+    carbon_export[i] = (sPOM[1, 1, end-20, i] * model.biogeochemistry.sinking_velocities.sPOM.w[1, 1, end-20] +
+                        bPOM[1, 1, end-20, i] * model.biogeochemistry.sinking_velocities.bPOM.w[1, 1, end-20]) * model.biogeochemistry.organic_redfield
 end
 
 using CairoMakie
@@ -161,5 +162,4 @@ hmfExp = lines!(times / days, cumsum(carbon_export)    * (12 + 16 * 2) * year / 
 
 fig[3, 5] = Legend(fig, axfDIC, "", framevisible = false)
 
-current_figure() # hide
 fig
