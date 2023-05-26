@@ -68,7 +68,6 @@ model = NonhydrostaticModel(; grid,
                               boundary_conditions = (DIC = FieldBoundaryConditions(top = CO₂_flux), ),
                               advection = nothing)
 
-
 set!(model, P = 0.03, Z = 0.03, NO₃ = 4.0, NH₄ = 0.05, DIC = 2239.8, Alk = 2409.0)
 
 # ## Simulation
