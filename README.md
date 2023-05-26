@@ -26,6 +26,7 @@ julia> Pkg.add("OceanBioME")
 
 ## Running your first model
 As a simple example lets run a Nutrient-Phytoplankton-Zooplankton-Detritus (NPZD) model in a two-dimensional simulation of a buoyancy front:
+
 ```julia
 using OceanBioME, Oceananigans
 using Oceananigans.Units
@@ -40,13 +41,13 @@ bᵢ(x, y, z) = ifelse(x < 250, 1e-4, 1e-3)
 
 set!(model, b = bᵢ, N = 5.0, P = 0.1, Z = 0.1, T = 18.0)
 
-simulation = Simulation(model; Δt=1.0, stop_time=3hours)
+simulation = Simulation(model; Δt = 1.0, stop_time = 3hours)
 
-wizard = TimeStepWizard(cfl=0.3, max_change=1.5)
+wizard = TimeStepWizard(cfl = 0.3, max_change = 1.5)
 
-simulation.callbacks[:wizard] = Callback(wizard, IterationInterval(1))
+simulation.callbacks[:wizard] = Callback(wizard, IterationInterval(5))
 
-simulation.output_writers[:tracers] = JLD2OutputWriter(model, model.tracers, filename = "buoyancy_front.jld2", schedule = TimeInterval(1minute), overwrite_existing=true)
+simulation.output_writers[:tracers] = JLD2OutputWriter(model, model.tracers, filename = "buoyancy_front.jld2", schedule = TimeInterval(1minute), overwrite_existing = true)
 
 run!(simulation)
 ```
@@ -79,8 +80,8 @@ title = @lift "t = $(prettytime(times[$n]))"
 Label(fig[0, :], title)
 
 axis_kwargs = (xlabel = "x (m)", ylabel = "z (m)", width = 1400)
-ax1 = Axis(fig[1, 1], title = "Buoyancy perturbation (m / s)", axis_kwargs...)
-ax2 = Axis(fig[2, 1], title = "Phytoplankton concentration (mmol N / m³)", axis_kwargs...)
+ax1 = Axis(fig[1, 1]; title = "Buoyancy perturbation (m / s)", axis_kwargs...)
+ax2 = Axis(fig[2, 1]; title = "Phytoplankton concentration (mmol N / m³)", axis_kwargs...)
 
 hm1 = heatmap!(ax1, xb, zb, bₙ, colorrange = b_lims, colormap = :batlow, interpolate=true)
 hm2 = heatmap!(ax2, xP, zP, Pₙ, colorrange = P_lims, colormap = Reverse(:bamako), interpolate=true)
