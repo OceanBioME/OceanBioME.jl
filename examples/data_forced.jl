@@ -153,8 +153,8 @@ hmD = heatmap!(times./days, z, interior(sPOM, 1, 1, :, :)' .+ interior(bPOM, 1, 
 cbD = Colorbar(fig[2, 6], hmD)
 
 axfDIC = Axis(fig[3, 1:6], xlabel="Time (days)", ylabel="Flux (kgCO₂/m²/year)", title="Air-sea CO₂ flux and Sinking")
-hmfDIC = lines!(times / days, cumsum(air_sea_CO₂_flux) * (12 + 16 * 2) * year / (1000 * 1000), label="Air-sea flux")
-hmfExp = lines!(times / days, cumsum(carbon_export) * (12 + 16 * 2) * year / (1000 * 1000), label="Sinking export")
+hmfDIC = lines!(times / days, cumsum(air_sea_CO₂_flux) * (12 + 16 * 2) * year / 1e6, linewidth=3, label="Air-sea flux")
+hmfExp = lines!(times / days, cumsum(carbon_export)    * (12 + 16 * 2) * year / 1e6, linewidth=3, label="Sinking export")
 
 fig[3, 5] = Legend(fig, axfDIC, "", framevisible = false)
 

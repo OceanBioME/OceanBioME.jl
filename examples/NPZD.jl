@@ -91,6 +91,7 @@ N = FieldTimeSeries("$filename.jld2", "N")
 P = FieldTimeSeries("$filename.jld2", "P")
 Z = FieldTimeSeries("$filename.jld2", "Z")
 D = FieldTimeSeries("$filename.jld2", "D")
+
 x, y, z = nodes(P)
 times = P.times
 
@@ -110,31 +111,34 @@ P_range = (minimum(P), maximum(P))
 Z_range = (minimum(Z), maximum(Z))
 D_range = (minimum(D), maximum(D))
 
-f = Figure(backgroundcolor=RGBf(1, 1, 1), fontsize=30, resolution=(2400, 2000))
+fig = Figure(backgroundcolor=RGBf(1, 1, 1), fontsize=30, resolution=(2400, 2000))
 
-f[1, 1:5] = Label(f, title, textsize=24, tellwidth=false)
+fig[1, 1:5] = Label(fig, title, textsize=24, tellwidth=false)
 
-axP = Axis(f[2, 1:2], ylabel="z (m)", xlabel="x (m)", title="Phytoplankton concentration (mmol N/m³)")
-hmP = heatmap!(axP, x, z, Pₙ, interpolate=true, colormap=:batlow, colorrange=P_range)
-cbP = Colorbar(f[2, 3], hmP)
+axis_kwargs = (xlabel="x (m)", ylabel="z (m)")
+heatmap_kwargs = (interpolate=true, colormap=:batlow)
 
-axN = Axis(f[2, 4:5], ylabel="z (m)", xlabel="x (m)", title="Nitrate concentration (mmol N/m³)")
-hmN = heatmap!(axN, x, z, Nₙ, interpolate=true, colormap=:batlow, colorrange=N_range)
-cbN = Colorbar(f[2, 6], hmN)
+axP = Axis(fig[2, 1:2]; title="Phytoplankton concentration (mmol N/m³)", axis_kwargs...)
+hmP = heatmap!(axP, x, z, Pₙ; colorrange=P_range, heatmap_kwargs...)
+cbP = Colorbar(fig[2, 3], hmP)
 
-axZ = Axis(f[3, 1:2], ylabel="z (m)", xlabel="x (m)", title="Zooplankton concentration (mmol N/m³)")
-hmZ = heatmap!(axZ, x, z, Zₙ, interpolate=true, colormap=:batlow, colorrange=Z_range)
-cbZ = Colorbar(f[3, 3], hmZ)
+axN = Axis(fig[2, 4:5]; title="Nitrate concentration (mmol N/m³)", axis_kwargs...)
+hmN = heatmap!(axN, x, z, Nₙ; colorrange=N_range, heatmap_kwargs...)
+cbN = Colorbar(fig[2, 6], hmN)
 
-axD = Axis(f[3, 4:5], ylabel="z (m)", xlabel="x (m)", title="Detritus concentration (mmol N/m³)")
-hmD = heatmap!(axD, x, z, Dₙ, interpolate=true, colormap=:batlow, colorrange=D_range)
-cbD = Colorbar(f[3, 6], hmD)
+axZ = Axis(fig[3, 1:2]; title="Zooplankton concentration (mmol N/m³)", axis_kwargs...)
+hmZ = heatmap!(axZ, x, z, Zₙ; colorrange=Z_range, heatmap_kwargs...)
+cbZ = Colorbar(fig[3, 3], hmZ)
+
+axD = Axis(fig[3, 4:5]; title="Detritus concentration (mmol N/m³)", axis_kwargs...)
+hmD = heatmap!(axD, x, z, Dₙ; colorrange=D_range, heatmap_kwargs...)
+cbD = Colorbar(fig[3, 6], hmD)
 
 nframes = length(times)
 frame_iterator = 1:nframes
 framerate = floor(Int, nframes / 30)
 
-record(f, "$filename.mp4", frame_iterator; framerate = framerate) do i
+record(fig, "$filename.mp4", frame_iterator; framerate = framerate) do i
     @info string("Plotting frame ", i, " of ", nframes)
     n[] = i
 end

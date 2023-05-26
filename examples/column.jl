@@ -127,7 +127,7 @@ cbD = Colorbar(fig[2, 6], hmD)
 
 axfDIC = Axis(fig[3, 1:4], xlabel = "Time (days)", ylabel = "Flux (kgCO₂ / m² / year)", title = "Air-sea CO₂ flux and Sinking")
 hmfDIC = lines!(times / days, air_sea_CO₂_flux * (12 + 16 * 2) * year / 1e6, linewidth=3, label = "Air-sea flux")
-hmfExp = lines!(times / days, carbon_export * (12 + 16 * 2) * year / 1e6, linewidth=3, label = "Sinking export")
+hmfExp = lines!(times / days, carbon_export    * (12 + 16 * 2) * year / 1e6, linewidth=3, label = "Sinking export")
 
 fig[3, 5:6] = Legend(fig, axfDIC, "", framevisible = false)
 
