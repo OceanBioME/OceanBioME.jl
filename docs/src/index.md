@@ -24,7 +24,7 @@ julia> Pkg.add("OceanBioME")
 ## Running your first model
 As a simple example lets run a Nutrient-Phytoplankton-Zooplankton-Detritus (NPZD) model in a two-dimensional simulation of a buoyancy front:
 
-```@example
+```@example quickstart
 using OceanBioME, Oceananigans
 using Oceananigans.Units
 
@@ -38,20 +38,20 @@ bᵢ(x, y, z) = ifelse(x < 250, 1e-4, 1e-3)
 
 set!(model, b = bᵢ, N = 5.0, P = 0.1, Z = 0.1, T = 18.0)
 
-simulation = Simulation(model; Δt=1.0, stop_time=3hours)
+simulation = Simulation(model; Δt = 1.0, stop_time = 3hours)
 
-wizard = TimeStepWizard(cfl=0.3, max_change=1.5)
+wizard = TimeStepWizard(cfl = 0.3, max_change = 1.5)
 
-simulation.callbacks[:wizard] = Callback(wizard, IterationInterval(1))
+simulation.callbacks[:wizard] = Callback(wizard, IterationInterval(5))
 
-simulation.output_writers[:tracers] = JLD2OutputWriter(model, model.tracers, filename = "buoyancy_front.jld2", schedule = TimeInterval(1minute), overwrite_existing=true)
+simulation.output_writers[:tracers] = JLD2OutputWriter(model, model.tracers, filename = "buoyancy_front.jld2", schedule = TimeInterval(1minute), overwrite_existing = true)
 
 run!(simulation)
 ```
 
 We can then visualise this:
 
-```@example
+```@example quickstart
 using CairoMakie
 
 b = FieldTimeSeries("buoyancy_front.jld2", "b")
