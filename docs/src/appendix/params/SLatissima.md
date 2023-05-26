@@ -1,3 +1,3 @@
-# [SLatissima Parameters](@is SLatissima_params)
+# [SLatissima Parameters](@id SLatissima_params)
 
 Coming soon
