@@ -119,7 +119,7 @@ makedocs(bib,
     pages = pages,
     modules = [OceanBioME],
     doctest = true,
-    strict = false, #true,
+    strict = true,
     clean = true,
     checkdocs = :exports
 )
