@@ -14,37 +14,30 @@ const EXAMPLES_DIR = joinpath(@__DIR__, "..", "examples")
 const OUTPUT_DIR   = joinpath(@__DIR__, "src/generated")
 
 examples = [
-    # "box.jl",
-    # "column.jl",
-    # "data_forced.jl",
-    # "kelp.jl",
-    # "eady.jl"
+    "Simple column model" => "column",
+    "Data forced column model" => "data_forced",
+    "Model with particles (kelp) interacting with the biogeochemistry" => "kelp",
+    "Box model" => "box",
+    "Baroclinic instability" => "eady"
 ]
 
-function replace_silly_warning(content)
-    content = replace(content, r"┌ Warning:.*\s+└ @ JLD2 ~/\.julia/packages/JLD2/.*/reconstructing_datatypes\.jl.*\n" => "")
-    return content
-end
+example_scripts = [ filename * ".jl" for (title, filename) in examples ]
 
-for example in examples
+replace_silly_warning(content) = replace(content, r"┌ Warning:.*\s+└ @ JLD2 ~/\.julia/packages/JLD2/.*/reconstructing_datatypes\.jl.*\n" => "")
+
+for example in example_scripts
     example_filepath = joinpath(EXAMPLES_DIR, example)
 
     withenv("JULIA_DEBUG" => "Literate") do
         Literate.markdown(example_filepath, OUTPUT_DIR; 
                           flavor = Literate.DocumenterFlavor(), 
-                          repo_root_url="https://oceanbiome.github.io/OceanBioME.jl", 
-                          execute=true,
-                          postprocess=replace_silly_warning)
+                          repo_root_url = "https://oceanbiome.github.io/OceanBioME.jl", 
+                          execute = true,
+                          postprocess = replace_silly_warning)
     end
 end
 
-example_pages = [
-    # "Simple column model" => "generated/column.md",
-    # "Data forced column model" => "generated/data_forced.md",
-    # "Model with particles (kelp) interacting with the biogeochemistry" => "generated/kelp.md",
-    # "Box model" => "generated/box.md",
-    # "Baroclinic instability" => "generated/eady.md"
-]
+example_pages = [ title => "generated/$(filename).md" for (title, filename) in examples ]
 
 bgc_pages = [
     "Overview" => "model_components/biogeochemical/index.md",
@@ -73,7 +66,6 @@ component_pages = [
 numerical_pages = [
     "Positivity preservation" => "numerical_implementation/positivity-preservation.md"
 ]
-
 
 param_pages = [
     "Overview" => "appendix/params/index.md",
