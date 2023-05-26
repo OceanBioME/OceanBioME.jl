@@ -132,31 +132,31 @@ end
 
 using CairoMakie
 
-f = Figure(backgroundcolor = RGBf(1, 1, 1), fontsize = 30, resolution = (1920, 1600))
+fig = Figure(backgroundcolor = RGBf(1, 1, 1), fontsize = 30, resolution = (1920, 1600))
 
 axis_kwargs = (xlabel="Time (days)", ylabel="z (m)", limits=((0, times[end] / days), (-150, 0)))
 
-axP = Axis(f[1, 1:2]; title="Phytoplankton concentration (mmol N/m³)", axis_kwargs...)
+axP = Axis(fig[1, 1:2]; title="Phytoplankton concentration (mmol N/m³)", axis_kwargs...)
 hmP = heatmap!(times / days, z, interior(P, 1, 1, :, :)', colormap=:batlow)
-cbP = Colorbar(f[1, 3], hmP)
+cbP = Colorbar(fig[1, 3], hmP)
 
-axNO₃ = Axis(f[1, 4:5]; title="Nitrate concentration (mmol N/m³)", axis_kwargs...)
+axNO₃ = Axis(fig[1, 4:5]; title="Nitrate concentration (mmol N/m³)", axis_kwargs...)
 hmNO₃ = heatmap!(times / days, z, interior(NO₃, 1, 1, :, :)', colormap=:batlow)
-cbNO₃ = Colorbar(f[1, 6], hmNO₃)
+cbNO₃ = Colorbar(fig[1, 6], hmNO₃)
 
-axZ = Axis(f[2, 1:2]; title="Zooplankton concentration (mmol N/m³)", axis_kwargs...)
+axZ = Axis(fig[2, 1:2]; title="Zooplankton concentration (mmol N/m³)", axis_kwargs...)
 hmZ = heatmap!(times / days, z, interior(Z, 1, 1, :, :)', colormap=:batlow)
-cbZ = Colorbar(f[2, 3], hmZ)
+cbZ = Colorbar(fig[2, 3], hmZ)
 
-axD = Axis(f[2, 4:5]; title="Detritus concentration (mmol N/m³)", axis_kwargs...)
+axD = Axis(fig[2, 4:5]; title="Detritus concentration (mmol N/m³)", axis_kwargs...)
 hmD = heatmap!(times./days, z, interior(sPOM, 1, 1, :, :)' .+ interior(bPOM, 1, 1, :, :)', colormap=:batlow)
-cbD = Colorbar(f[2, 6], hmD)
+cbD = Colorbar(fig[2, 6], hmD)
 
-axfDIC = Axis(f[3, 1:6], xlabel="Time (days)", ylabel="Flux (kgCO₂/m²/year)", title="Air-sea CO₂ flux and Sinking")
+axfDIC = Axis(fig[3, 1:6], xlabel="Time (days)", ylabel="Flux (kgCO₂/m²/year)", title="Air-sea CO₂ flux and Sinking")
 hmfDIC = lines!(times / days, cumsum(air_sea_CO₂_flux) * (12 + 16 * 2) * year / (1000 * 1000), label="Air-sea flux")
 hmfExp = lines!(times / days, cumsum(carbon_export) * (12 + 16 * 2) * year / (1000 * 1000), label="Sinking export")
 
-f[3, 5] = Legend(f, axfDIC, "", framevisible = false)
+fig[3, 5] = Legend(fig, axfDIC, "", framevisible = false)
 
 current_figure() # hide
 fig

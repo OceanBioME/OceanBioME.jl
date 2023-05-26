@@ -64,6 +64,6 @@ for (idx, tracer) in enumerate(vars)
     push!(axs, Axis(fig[floor(Int, (idx - 1)/3) + 1, (idx - 1) % 3 + 1], ylabel="$tracer", xlabel="Day"))
     lines!(axs[end], plt_times, timeseries[tracer])
 end
-save("box_npzd.png", fig)
 
-# ![Results](box.png)
+current_figure() # hide
+fig

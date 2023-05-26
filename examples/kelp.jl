@@ -184,5 +184,5 @@ ax2 = Axis(fig[1, 2], ylabel = "Total Carbon (gC)", xlabel = "Time (days)")
 ax3 = Axis(fig[1, 3], ylabel = "Total Nitrogen (gN)", xlabel = "Time (days)")
 [lines!(ax3, times / day, (A .* (C .+ particles.structural_carbon) .* particles.structural_dry_weight_per_area)[n, :]) for n in 1:5]
 
-save("kelp_particles.png", fig)
-# ![Results](kelp_particles.png)=#
+current_figure() # hide
+fig

@@ -104,29 +104,32 @@ end
 
 using CairoMakie
 
-f = Figure(resolution = (1920, 1050))
+fig = Figure(resolution = (1920, 1050))
 
-axP = Axis(f[1, 1:2], ylabel="z (m)", xlabel="Time (days)", title="Phytoplankton concentration (mmol N / m³)")
+axP = Axis(fig[1, 1:2], ylabel="z (m)", xlabel="Time (days)", title="Phytoplankton concentration (mmol N / m³)")
 hmP = heatmap!(times / days, float.(z[end-23:end]), float.(P[1, 1, end-23:end, 1:end])', interpolate=true, colormap=:batlow)
-cbP = Colorbar(f[1, 3], hmP)
+cbP = Colorbar(fig[1, 3], hmP)
 
-axNO₃ = Axis(f[1, 4:5], ylabel="z (m)", xlabel="Time (days)", title="Nitrate concentration (mmol N / m³)")
+axNO₃ = Axis(fig[1, 4:5], ylabel="z (m)", xlabel="Time (days)", title="Nitrate concentration (mmol N / m³)")
 hmNO₃ = heatmap!(times / days, float.(z[end-23:end]), float.(NO₃[1, 1, end-23:end, 1:end])', interpolate=true, colormap=:batlow)
-cbNO₃ = Colorbar(f[1, 6], hmNO₃)
+cbNO₃ = Colorbar(fig[1, 6], hmNO₃)
 
-axZ = Axis(f[2, 1:2], ylabel="z (m)", xlabel="Time (days)", title="Zooplankton concentration (mmol N / m³)")
+axZ = Axis(fig[2, 1:2], ylabel="z (m)", xlabel="Time (days)", title="Zooplankton concentration (mmol N / m³)")
 hmZ = heatmap!(times./days, float.(z[end-23:end]), float.(Z[1, 1, end-23:end, 1:end])', interpolate=true, colormap=:batlow)
-cbZ = Colorbar(f[2, 3], hmZ)
+cbZ = Colorbar(fig[2, 3], hmZ)
 
-axD = Axis(f[2, 4:5], ylabel="z (m)", xlabel="Time (days)", title="Detritus concentration (mmol N / m³)")
+axD = Axis(fig[2, 4:5], ylabel="z (m)", xlabel="Time (days)", title="Detritus concentration (mmol N / m³)")
 hmD = heatmap!(times / days, float.(z[end-23:end]), float.(sPOM[1, 1, end-23:end, 1:end])' .+ float.(bPOM[1, 1, end-23:end, 1:end])', interpolate=true, colormap=:batlow)
-cbD = Colorbar(f[2, 6], hmD)
+cbD = Colorbar(fig[2, 6], hmD)
 
-axfDIC = Axis(f[3, 1:4], xlabel="Time (days)", title="Air-sea CO₂ flux and Sinking", ylabel="Flux (kgCO₂ / m² / year)")
+axfDIC = Axis(fig[3, 1:4], xlabel="Time (days)", title="Air-sea CO₂ flux and Sinking", ylabel="Flux (kgCO₂ / m² / year)")
 hmfDIC = lines!(times / days, air_sea_CO₂_flux .* (12 + 16 * 2) .* year /(1000 * 1000), label="Air-sea flux")
 hmfExp = lines!(times / days, carbon_export .* (12 + 16 * 2) .* year / (1000 * 1000), label="Sinking export")
 
-f[3, 5] = Legend(f, axfDIC, "", framevisible = false)
+fig[3, 5] = Legend(fig, axfDIC, "", framevisible = false)
+
+current_figure() # hide
+fig
 
 save("$(filename).png", f)
 

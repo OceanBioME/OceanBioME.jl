@@ -170,9 +170,10 @@ Colorbar(fig[2, 4], hm4)
 title = @lift "t = $(prettytime(times[$n]))"
 Label(fig[0, :], title, fontsize = 30)
 
-record(fig, "eady.gif", 1:length(times), framerate = 10) do i
+record(fig, "eady.mp4", 1:length(times), framerate = 10) do i
     @info string("Plotting frame ", i, " of ", length(times))
     n[] = i
 end
+nothing #hide
 
-# ![Results](eady.gif)
+# ![](eady.mp4)

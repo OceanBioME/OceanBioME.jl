@@ -138,3 +138,6 @@ record(f, "$filename.mp4", frame_iterator; framerate = framerate) do i
     @info string("Plotting frame ", i, " of ", nframes)
     n[] = i
 end
+nothing #hide
+
+# ![](npdz.mp4)
