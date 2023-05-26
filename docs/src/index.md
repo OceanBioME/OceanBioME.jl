@@ -22,7 +22,7 @@ julia> Pkg.add("OceanBioME")
 ```
 
 ## Running your first model
-As a simple example lets run a Nutrient-Phytoplankton-Zooplankton-Detritus (NPZD) model in a two-dimensional simulation of a buoyancy front:
+As a simple example let's run a Nutrient-Phytoplankton-Zooplankton-Detritus (NPZD) model in a two-dimensional simulation of a buoyancy front:
 
 ```@example quickstart
 using OceanBioME, Oceananigans
@@ -55,7 +55,7 @@ simulation.output_writers[:tracers] = JLD2OutputWriter(model, model.tracers,
 run!(simulation)
 ```
 
-We can then visualise this:
+We can then load the saved output and visualize it:
 
 ```@example quickstart
 using CairoMakie
@@ -76,12 +76,12 @@ P_lims = (minimum(P), maximum(P))
 bₙ = @lift interior(b[$n], :, 1, :)
 Pₙ = @lift interior(P[$n], :, 1, :)
 
-fig = Figure(resolution = (1600, 160 * 4))
+fig = Figure(resolution = (1600, 160 * 4), fontsize = 24)
 
 title = @lift "t = $(prettytime(times[$n]))"
 Label(fig[0, :], title)
 
-axis_kwargs = (xlabel = "x (m)", ylabel = "z (m)", width = 1400)
+axis_kwargs = (xlabel = "x (m)", ylabel = "z (m)", width = 1350)
 ax1 = Axis(fig[1, 1]; title = "Buoyancy perturbation (m / s)", axis_kwargs...)
 ax2 = Axis(fig[2, 1]; title = "Phytoplankton concentration (mmol N / m³)", axis_kwargs...)
 
@@ -91,7 +91,7 @@ hm2 = heatmap!(ax2, xP, zP, Pₙ, colorrange = P_lims, colormap = Reverse(:bamak
 Colorbar(fig[1, 2], hm1)
 Colorbar(fig[2, 2], hm2)
 
-record(fig, "buoyancy_front.gif", 1:length(times)) do i
+record(fig, "buoyancy_front.mp4", 1:length(times)) do i
     @info string("Plotting frame ", i, " of ", length(times))
     n[] = i
 end
@@ -99,7 +99,7 @@ end
 nothing #hide
 ```
 
-![buoyancy_front](buoyancy_front.gif)
+![buoyancy_front](buoyancy_front.mp4)
 
 In this example `OceanBioME` is providing the `biogeochemistry` and the remainder is taken care of by `Oceananigans`. For comprehensive documentation of the physics modelling see [Oceananigans' Documentation](https://clima.github.io/OceananigansDocumentation/stable/); for biogeochemistry and other features we provide read below.
 
