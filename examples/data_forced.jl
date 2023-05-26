@@ -17,10 +17,9 @@
 
 # ## Model setup
 # First load the required packages
+using OceanBioME 
 using Oceananigans, Random, Printf, NetCDF, Interpolations, DataDeps
 using Oceananigans.Units
-using Oceananigans.Operators: ∂zᶜᶜᶜ
-using OceanBioME 
 
 const year = years = 365days # just for these idealised cases
 
@@ -52,7 +51,7 @@ surface_PAR(x, y, t) = PAR_itp(mod(t, 364days))
 # ## Grid and PAR field
 # Define the grid (in this case a non uniform grid for better resolution near the surface) and an extra Oceananigans field for the PAR to be stored in
 Nz = 33
-Lz = 600
+Lz = 600meters
 refinement = 10 
 stretching = 5.754
 h(k) = (k - 1) / Nz
@@ -60,7 +59,7 @@ h(k) = (k - 1) / Nz
 Σ(k) = (1 - exp(-stretching * h(k))) / (1 - exp(-stretching))
 z_faces(k) = Lz * (ζ₀(k) * Σ(k) - 1)
 
-grid = RectilinearGrid(size = (1, 1, Nz), x = (0, 20), y = (0, 20), z = z_faces)
+grid = RectilinearGrid(size = (1, 1, Nz), x = (0, 20)meters, y = (0, 20meters), z = z_faces)
 
 # ## Biogeochemical and Oceananigans model
 # Here we instantiate the LOBSTER model with carbonate chemistry and a surface flux of DIC (CO₂)
@@ -132,18 +131,19 @@ for (i, t) in enumerate(times)
 end
 
 using CairoMakie
-f=Figure(backgroundcolor=RGBf(1, 1, 1), fontsize=30, resolution = (1920, 1600))
+
+f = Figure(backgroundcolor=RGBf(1, 1, 1), fontsize=30, resolution = (1920, 1600))
 
 axP = Axis(f[1, 1:2], ylabel="z (m)", xlabel="Time (days)", title="Phytoplankton concentration (mmol N/m³)")
-hmP = heatmap!(times./days, float.(z[end-23:end]), float.(P[1, 1, end-23:end, 1:end])', colormap=:batlow)
+hmP = heatmap!(times / days, float.(z[end-23:end]), float.(P[1, 1, end-23:end, 1:end])', colormap=:batlow)
 cbP = Colorbar(f[1, 3], hmP)
 
 axNO₃ = Axis(f[1, 4:5], ylabel="z (m)", xlabel="Time (days)", title="Nitrate concentration (mmol N/m³)")
-hmNO₃ = heatmap!(times./days, float.(z[end-23:end]), float.(NO₃[1, 1, end-23:end, 1:end])', colormap=:batlow)
+hmNO₃ = heatmap!(times / days, float.(z[end-23:end]), float.(NO₃[1, 1, end-23:end, 1:end])', colormap=:batlow)
 cbNO₃ = Colorbar(f[1, 6], hmNO₃)
 
 axZ = Axis(f[2, 1:2], ylabel="z (m)", xlabel="Time (days)", title="Zooplankton concentration (mmol N/m³)")
-hmZ = heatmap!(times./days, float.(z[end-23:end]), float.(Z[1, 1, end-23:end, 1:end])', colormap=:batlow)
+hmZ = heatmap!(times / days, float.(z[end-23:end]), float.(Z[1, 1, end-23:end, 1:end])', colormap=:batlow)
 cbZ = Colorbar(f[2, 3], hmZ)
 
 axD = Axis(f[2, 4:5], ylabel="z (m)", xlabel="Time (days)", title="Detritus concentration (mmol N/m³)")
@@ -151,8 +151,8 @@ hmD = heatmap!(times./days, float.(z[end-23:end]), float.(sPOM[1, 1, end-23:end,
 cbD = Colorbar(f[2, 6], hmD)
 
 axfDIC = Axis(f[3, 1:6], xlabel="Time (days)", title="Air-sea CO₂ flux and Sinking", ylabel="Flux (kgCO₂/m²/year)")
-hmfDIC = lines!(times ./ days, cumsum(air_sea_CO₂_flux) .* (12 + 16 * 2) .* year / (1000 * 1000), label="Air-sea flux")
-hmfExp = lines!(times ./ days, cumsum(carbon_export) .* (12 + 16 * 2) .* year / (1000 * 1000), label="Sinking export")
+hmfDIC = lines!(times / days, cumsum(air_sea_CO₂_flux) .* (12 + 16 * 2) .* year / (1000 * 1000), label="Air-sea flux")
+hmfExp = lines!(times / days, cumsum(carbon_export) .* (12 + 16 * 2) .* year / (1000 * 1000), label="Sinking export")
 
 f[3, 5] = Legend(f, axfDIC, "", framevisible = false)
 

@@ -56,7 +56,7 @@ close(file)
 
 fig = Figure(resolution = (1600, 1000))
 
-plt_times = parse.(Float64, times)./day
+plt_times = parse.(Float64, times) ./ day
 
 axs = []
 

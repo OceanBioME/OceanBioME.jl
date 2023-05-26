@@ -37,7 +37,7 @@ const year = years = 365days # just for these idealised cases
 
 # ## Grid and PAR field
 # Define the grid and an extra Oceananigans field for the PAR to be stored in
-Lx, Ly = 20, 20
+Lx, Ly = 20meters, 20meters
 grid = RectilinearGrid(size=(1, 1, 50), extent=(Lx, Ly, 200)) 
 
 # Specify the boundary conditions for DIC and O₂ based on the air-sea CO₂ and O₂ flux
@@ -77,7 +77,7 @@ set!(model, P = 0.03, Z = 0.03, NO₃ = 4.0, NH₄ = 0.05, DIC = 2239.8, Alk = 2
 # - Store the model and particles output
 # - Prevent the tracers from going negative from numerical error (see discussion of this in the [positivity preservation](@ref pos-preservation) implementation page)
 
-simulation = Simulation(model, Δt = 3minutes, stop_time=100days) 
+simulation = Simulation(model, Δt = 3minutes, stop_time = 100days) 
 
 progress_message(sim) = @printf("Iteration: %04d, time: %s, Δt: %s, wall time: %s\n",
                                                         iteration(sim),
@@ -88,9 +88,15 @@ progress_message(sim) = @printf("Iteration: %04d, time: %s, Δt: %s, wall time: 
 simulation.callbacks[:progress] = Callback(progress_message, TimeInterval(10days))
 
 filename = "kelp"
-simulation.output_writers[:profiles] = JLD2OutputWriter(model, merge(model.tracers, model.auxiliary_fields), filename = "$filename.jld2", schedule = TimeInterval(1day), overwrite_existing=true)
+simulation.output_writers[:profiles] = JLD2OutputWriter(model, merge(model.tracers, model.auxiliary_fields),
+                                                        filename = "$filename.jld2",
+                                                        schedule = TimeInterval(1day),
+                                                        overwrite_existing = true)
 
-simulation.output_writers[:particles] = JLD2OutputWriter(model, (; particles), filename = "$(filename)_particles.jld2", schedule = TimeInterval(1day), overwrite_existing = true)
+simulation.output_writers[:particles] = JLD2OutputWriter(model, (; particles),
+                                                         filename = "$(filename)_particles.jld2",
+                                                         schedule = TimeInterval(1day),
+                                                         overwrite_existing = true)
 
 scale_negative_tracers = ScaleNegativeTracers(; model, tracers = (:NO₃, :NH₄, :P, :Z, :sPON, :bPON, :DON))
 simulation.callbacks[:neg] = Callback(scale_negative_tracers; callsite = UpdateStateCallsite())
@@ -116,31 +122,31 @@ air_sea_CO₂_flux = zeros(size(P)[4])
 carbon_export = zeros(size(P)[4])
 for (i, t) in enumerate(times)
     air_sea_CO₂_flux[i] = CO₂_flux.condition.parameters(0.0, 0.0, t, DIC[1, 1, 50, i], Alk[1, 1, 50, i], temp(1, 1, 0, t), 35)
-    carbon_export[i] = sPOC[1, 1, end - 20, i] * model.biogeochemistry.sinking_velocities.sPOM.w[1, 1, end - 20] + bPOC[1, 1, end - 20, i] * model.biogeochemistry.sinking_velocities.bPOM.w[1, 1, end - 20]
+    carbon_export[i] = sPOC[1, 1, end-20, i] * model.biogeochemistry.sinking_velocities.sPOM.w[1, 1, end-20] + bPOC[1, 1, end-20, i] * model.biogeochemistry.sinking_velocities.bPOM.w[1, 1, end-20]
 end
 
 using CairoMakie
 f = Figure(resolution = (1920, 1050))
 
 axP = Axis(f[1, 1:2], ylabel="z (m)", xlabel="Time (days)", title="Phytoplankton concentration (mmol N/m³)")
-hmP = heatmap!(times./days, float.(z[end-23:end]), float.(P[1, 1, end-23:end, 1:end])', interpolate=true, colormap=:batlow)
+hmP = heatmap!(times / days, float.(z[end-23:end]), float.(P[1, 1, end-23:end, 1:end])', interpolate=true, colormap=:batlow)
 cbP = Colorbar(f[1, 3], hmP)
 
 axNO₃ = Axis(f[1, 4:5], ylabel="z (m)", xlabel="Time (days)", title="Nitrate concentration (mmol N/m³)")
-hmNO₃ = heatmap!(times./days, float.(z[end-23:end]), float.(NO₃[1, 1, end-23:end, 1:end])', interpolate=true, colormap=:batlow)
+hmNO₃ = heatmap!(times / days, float.(z[end-23:end]), float.(NO₃[1, 1, end-23:end, 1:end])', interpolate=true, colormap=:batlow)
 cbNO₃ = Colorbar(f[1, 6], hmNO₃)
 
 axZ = Axis(f[2, 1:2], ylabel="z (m)", xlabel="Time (days)", title="Zooplankton concentration (mmol N/m³)")
-hmZ = heatmap!(times./days, float.(z[end-23:end]), float.(Z[1, 1, end-23:end, 1:end])', interpolate=true, colormap=:batlow)
+hmZ = heatmap!(times / days, float.(z[end-23:end]), float.(Z[1, 1, end-23:end, 1:end])', interpolate=true, colormap=:batlow)
 cbZ = Colorbar(f[2, 3], hmZ)
 
 axD = Axis(f[2, 4:5], ylabel="z (m)", xlabel="Time (days)", title="Detritus concentration (mmol C/m³)")
-hmD = heatmap!(times./days, float.(z[end-23:end]), float.(sPOC[1, 1, end-23:end, 1:end])' .+ float.(bPOC[1, 1, end-23:end, 1:end])', interpolate=true, colormap=:batlow)
+hmD = heatmap!(times / days, float.(z[end-23:end]), float.(sPOC[1, 1, end-23:end, 1:end])' .+ float.(bPOC[1, 1, end-23:end, 1:end])', interpolate=true, colormap=:batlow)
 cbD = Colorbar(f[2, 6], hmD)
 
 axfDIC = Axis(f[3, 1:4], xlabel="Time (days)", title="Air-sea CO₂ flux and Sinking", ylabel="Flux (kgCO₂/m²/year)")
-hmfDIC = lines!(times ./ days, air_sea_CO₂_flux .* (12 + 16 * 2) .* year /(1000 * 1000), label="Air-sea flux")
-hmfExp = lines!(times ./ days, carbon_export .* (12 + 16 * 2) .* year / (1000 * 1000), label="Sinking export")
+hmfDIC = lines!(times / days, air_sea_CO₂_flux .* (12 + 16 * 2) .* year /(1000 * 1000), label="Air-sea flux")
+hmfExp = lines!(times / days, carbon_export .* (12 + 16 * 2) .* year / (1000 * 1000), label="Sinking export")
 
 f[3, 5] = Legend(f, axfDIC, "", framevisible = false)
 
@@ -170,13 +176,13 @@ end
 fig = Figure(resolution = (1600, 500))
 
 ax1 = Axis(fig[1, 1], ylabel = "Frond area (dm²)", xlabel = "Time (days)")
-[lines!(ax1, times./day, A[n, :]) for n in 1:5]
+[lines!(ax1, times / day, A[n, :]) for n in 1:5]
 
 ax2 = Axis(fig[1, 2], ylabel = "Total Carbon (gC)", xlabel = "Time (days)")
-[lines!(ax2, times./day, (A .* (N .+ particles.structural_nitrogen) .* particles.structural_dry_weight_per_area)[n, :]) for n in 1:5]
+[lines!(ax2, times / day, (A .* (N .+ particles.structural_nitrogen) .* particles.structural_dry_weight_per_area)[n, :]) for n in 1:5]
 
 ax3 = Axis(fig[1, 3], ylabel = "Total Nitrogen (gN)", xlabel = "Time (days)")
-[lines!(ax3, times./day, (A .* (C .+ particles.structural_carbon) .* particles.structural_dry_weight_per_area)[n, :]) for n in 1:5]
+[lines!(ax3, times / day, (A .* (C .+ particles.structural_carbon) .* particles.structural_dry_weight_per_area)[n, :]) for n in 1:5]
 
 save("kelp_particles.png", fig)
 # ![Results](kelp_particles.png)=#

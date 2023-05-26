@@ -94,14 +94,14 @@ D = FieldTimeSeries("$filename.jld2", "D")
 x, y, z = nodes(P)
 times = P.times
 
-using GLMakie
+using CairoMakie
 
 n = Observable(1)
 
-N_plt = @lift N[1:20, 1, 1:20, $n]
-P_plt = @lift P[1:20, 1, 1:20, $n]
-Z_plt = @lift Z[1:20, 1, 1:20, $n]
-D_plt = @lift D[1:20, 1, 1:20, $n]
+Nₙ = @lift N[:, 1, :, $n]
+Pₙ = @lift P[:, 1, :, $n]
+Zₙ = @lift Z[:, 1, :, $n]
+Dₙ = @lift D[:, 1, :, $n]
 
 title = @lift @sprintf("t = %s", prettytime(times[$n]))
 
@@ -110,32 +110,31 @@ P_range = (minimum(P), maximum(P))
 Z_range = (minimum(Z), maximum(Z))
 D_range = (minimum(D), maximum(D))
 
-f=Figure(backgroundcolor=RGBf(1, 1, 1), fontsize=30, resolution=(2400, 2000))
+f = Figure(backgroundcolor=RGBf(1, 1, 1), fontsize=30, resolution=(2400, 2000))
 
 f[1, 1:5] = Label(f, title, textsize=24, tellwidth=false)
 
 axP = Axis(f[2, 1:2], ylabel="z (m)", xlabel="x (m)", title="Phytoplankton concentration (mmol N/m³)")
-hmP = heatmap!(axP, x, z, P_plt, interpolate=true, colormap=:batlow, colorrange=P_range)
+hmP = heatmap!(axP, x, z, Pₙ, interpolate=true, colormap=:batlow, colorrange=P_range)
 cbP = Colorbar(f[2, 3], hmP)
 
 axN = Axis(f[2, 4:5], ylabel="z (m)", xlabel="x (m)", title="Nitrate concentration (mmol N/m³)")
-hmN = heatmap!(axN, x, z, N_plt, interpolate=true, colormap=:batlow, colorrange=N_range)
+hmN = heatmap!(axN, x, z, Nₙ, interpolate=true, colormap=:batlow, colorrange=N_range)
 cbN = Colorbar(f[2, 6], hmN)
 
 axZ = Axis(f[3, 1:2], ylabel="z (m)", xlabel="x (m)", title="Zooplankton concentration (mmol N/m³)")
-hmZ = heatmap!(axZ, x, z, Z_plt, interpolate=true, colormap=:batlow, colorrange=Z_range)
+hmZ = heatmap!(axZ, x, z, Zₙ, interpolate=true, colormap=:batlow, colorrange=Z_range)
 cbZ = Colorbar(f[3, 3], hmZ)
 
 axD = Axis(f[3, 4:5], ylabel="z (m)", xlabel="x (m)", title="Detritus concentration (mmol N/m³)")
-hmD = heatmap!(axD, x, z, D_plt, interpolate=true, colormap=:batlow, colorrange=D_range)
+hmD = heatmap!(axD, x, z, Dₙ, interpolate=true, colormap=:batlow, colorrange=D_range)
 cbD = Colorbar(f[3, 6], hmD)
 
 nframes = length(times)
 frame_iterator = 1:nframes
-framerate = floor(Int, nframes/30)
+framerate = floor(Int, nframes / 30)
 
 record(f, "$filename.mp4", frame_iterator; framerate = framerate) do i
+    @info string("Plotting frame ", i, " of ", nframes)
     n[] = i
-    msg = string("Plotting frame ", i, " of ", nframes)
-    print(msg * " \r")
 end
