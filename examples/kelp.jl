@@ -107,13 +107,13 @@ run!(simulation)
 
 # Now we can visualise the results with some post processing to diagnose the air-sea CO₂ flux - hopefully this looks different to the example without kelp!
 
-P = FieldTimeSeries("$filename.jld2", "P")
-NO₃ = FieldTimeSeries("$filename.jld2", "NO₃")
-Z = FieldTimeSeries("$filename.jld2", "Z")
+   P = FieldTimeSeries("$filename.jld2", "P")
+ NO₃ = FieldTimeSeries("$filename.jld2", "NO₃")
+   Z = FieldTimeSeries("$filename.jld2", "Z")
 sPOC = FieldTimeSeries("$filename.jld2", "sPOC") 
 bPOC = FieldTimeSeries("$filename.jld2", "bPOC")
-DIC = FieldTimeSeries("$filename.jld2", "DIC")
-Alk = FieldTimeSeries("$filename.jld2", "Alk")
+ DIC = FieldTimeSeries("$filename.jld2", "DIC")
+ Alk = FieldTimeSeries("$filename.jld2", "Alk")
 
 x, y, z = nodes(P)
 times = P.times
@@ -126,33 +126,36 @@ for (i, t) in enumerate(times)
 end
 
 using CairoMakie
-f = Figure(resolution = (1920, 1050))
 
-axP = Axis(f[1, 1:2], ylabel="z (m)", xlabel="Time (days)", title="Phytoplankton concentration (mmol N/m³)")
-hmP = heatmap!(times / days, float.(z[end-23:end]), float.(P[1, 1, end-23:end, 1:end])', interpolate=true, colormap=:batlow)
-cbP = Colorbar(f[1, 3], hmP)
+fig = Figure(resolution = (1920, 1050))
 
-axNO₃ = Axis(f[1, 4:5], ylabel="z (m)", xlabel="Time (days)", title="Nitrate concentration (mmol N/m³)")
-hmNO₃ = heatmap!(times / days, float.(z[end-23:end]), float.(NO₃[1, 1, end-23:end, 1:end])', interpolate=true, colormap=:batlow)
-cbNO₃ = Colorbar(f[1, 6], hmNO₃)
+axis_kwargs = (xlabel = "Time (days)", ylabel = "z (m)", limits = ((0, times[end] / days), (-150, 0)))
+heatmap_kwargs = (interpolate = true, colormap = :batlow)
 
-axZ = Axis(f[2, 1:2], ylabel="z (m)", xlabel="Time (days)", title="Zooplankton concentration (mmol N/m³)")
-hmZ = heatmap!(times / days, float.(z[end-23:end]), float.(Z[1, 1, end-23:end, 1:end])', interpolate=true, colormap=:batlow)
-cbZ = Colorbar(f[2, 3], hmZ)
+axP = Axis(fig[1, 1:2]; title="Phytoplankton concentration (mmol N/m³)", axis_kwargs...)
+hmP = heatmap!(times / days, z, interior(P, 1, 1, :, :)'; heatmap_kwargs...)
+cbP = Colorbar(fig[1, 3], hmP)
 
-axD = Axis(f[2, 4:5], ylabel="z (m)", xlabel="Time (days)", title="Detritus concentration (mmol C/m³)")
-hmD = heatmap!(times / days, float.(z[end-23:end]), float.(sPOC[1, 1, end-23:end, 1:end])' .+ float.(bPOC[1, 1, end-23:end, 1:end])', interpolate=true, colormap=:batlow)
-cbD = Colorbar(f[2, 6], hmD)
+axNO₃ = Axis(fig[1, 4:5]; title="Nitrate concentration (mmol N/m³)", axis_kwargs...)
+hmNO₃ = heatmap!(times / days, z, interior(NO₃, 1, 1, :, :)'; heatmap_kwargs...)
+cbNO₃ = Colorbar(fig[1, 6], hmNO₃)
 
-axfDIC = Axis(f[3, 1:4], xlabel="Time (days)", title="Air-sea CO₂ flux and Sinking", ylabel="Flux (kgCO₂/m²/year)")
-hmfDIC = lines!(times / days, air_sea_CO₂_flux .* (12 + 16 * 2) .* year /(1000 * 1000), label="Air-sea flux")
-hmfExp = lines!(times / days, carbon_export .* (12 + 16 * 2) .* year / (1000 * 1000), label="Sinking export")
+axZ = Axis(fig[2, 1:2]; title="Zooplankton concentration (mmol N/m³)", axis_kwargs...)
+hmZ = heatmap!(times / days, z, interior(Z, 1, 1, :, :)'; heatmap_kwargs...)
+cbZ = Colorbar(fig[2, 3], hmZ)
 
-f[3, 5] = Legend(f, axfDIC, "", framevisible = false)
+axD = Axis(fig[2, 4:5]; title="Detritus concentration (mmol C/m³)", axis_kwargs...)
+hmD = heatmap!(times / days, z, interior(sPOC, 1, 1, :, :)' .+ interior(bPOC, 1, 1, :, :)'; heatmap_kwargs...)
+cbD = Colorbar(fig[2, 6], hmD)
 
-save("$(filename).png", f)
+axfDIC = Axis(fig[3, 1:4], xlabel="Time (days)", title="Air-sea CO₂ flux and Sinking", ylabel="Flux (kgCO₂/m²/year)")
+hmfDIC = lines!(times / days, air_sea_CO₂_flux * (12 + 16 * 2) * year / 1e6, linewidth=3, label="Air-sea flux")
+hmfExp = lines!(times / days, carbon_export    * (12 + 16 * 2) * year / 1e6, linewidth=3, label="Sinking export")
 
-# ![Results-bgc](kelp.png)
+fig[3, 5:6] = Legend(fig, axfDIC, "", framevisible = false)
+
+current_figure() # hide
+fig
 
 # We can also have a look at how the kelp particles evolve
 using JLD2
