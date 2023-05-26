@@ -111,9 +111,9 @@ P_range = (minimum(P), maximum(P))
 Z_range = (minimum(Z), maximum(Z))
 D_range = (minimum(D), maximum(D))
 
-fig = Figure(backgroundcolor=RGBf(1, 1, 1), fontsize=30, resolution=(2400, 2000))
+fig = Figure(backgroundcolor=RGBf(1, 1, 1), fontsize = 30, resolution = (2400, 2000))
 
-fig[1, 1:5] = Label(fig, title, textsize=24, tellwidth=false)
+fig[1, 1:5] = Label(fig, title, textsize = 24, tellwidth = false)
 
 axis_kwargs = (xlabel = "x (m)", ylabel = "z (m)")
 heatmap_kwargs = (interpolate = true, colormap = :batlow)

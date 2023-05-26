@@ -38,14 +38,15 @@ set!(model, N = 7.0, P = 0.01, Z = 0.05)
 run!(model, save_interval = 1, save = SaveBoxModel("box_npzd.jld2"))
 
 
-# ## Plot the results
-@info "Plotting the results..."
+# ## Load the output
+@info "Loading output..."
 
-using JLD2, CairoMakie
+using JLD2
 
 file = jldopen("box_npzd.jld2")
 vars = (:N, :P, :Z, :D, :T, :PAR)
-times = keys(file["values"])
+times = parse.(Float64, keys(file["values"]))
+
 timeseries = NamedTuple{vars}(ntuple(t -> zeros(length(times)), length(vars)))
 
 for (idx, time) in enumerate(times)
@@ -57,14 +58,16 @@ end
 
 close(file)
 
-fig = Figure(resolution = (1600, 1000))
+# ## And plot
+@info "Plotting the results..."
+using CairoMakie
 
-plt_times = parse.(Float64, times) ./ day
+fig = Figure(resolution = (800, 1200), fontsize=24)
 
 axs = []
 for (idx, tracer) in enumerate(vars)
-    push!(axs, Axis(fig[floor(Int, (idx - 1)/3) + 1, (idx - 1) % 3 + 1], ylabel="$tracer", xlabel="Day"))
-    lines!(axs[end], plt_times, timeseries[tracer])
+    push!(axs, Axis(fig[idx, 1], ylabel = "$tracer", xlabel = "Year", xticks=(0:10)))
+    lines!(axs[end], times / year, timeseries[tracer], linewidth = 3)
 end
 
 fig
