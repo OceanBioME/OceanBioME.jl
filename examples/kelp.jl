@@ -133,23 +133,23 @@ fig = Figure(resolution = (1920, 1050))
 axis_kwargs = (xlabel = "Time (days)", ylabel = "z (m)", limits = ((0, times[end] / days), (-85, 0)))
 heatmap_kwargs = (interpolate = true, colormap = :batlow)
 
-axP = Axis(fig[1, 1:2]; title="Phytoplankton concentration (mmol N/m³)", axis_kwargs...)
+axP = Axis(fig[1, 1:2]; title = "Phytoplankton concentration (mmol N/m³)", axis_kwargs...)
 hmP = heatmap!(times / days, z, interior(P, 1, 1, :, :)'; heatmap_kwargs...)
 cbP = Colorbar(fig[1, 3], hmP)
 
-axNO₃ = Axis(fig[1, 4:5]; title="Nitrate concentration (mmol N/m³)", axis_kwargs...)
+axNO₃ = Axis(fig[1, 4:5]; title = "Nitrate concentration (mmol N/m³)", axis_kwargs...)
 hmNO₃ = heatmap!(times / days, z, interior(NO₃, 1, 1, :, :)'; heatmap_kwargs...)
 cbNO₃ = Colorbar(fig[1, 6], hmNO₃)
 
-axZ = Axis(fig[2, 1:2]; title="Zooplankton concentration (mmol N/m³)", axis_kwargs...)
+axZ = Axis(fig[2, 1:2]; title = "Zooplankton concentration (mmol N/m³)", axis_kwargs...)
 hmZ = heatmap!(times / days, z, interior(Z, 1, 1, :, :)'; heatmap_kwargs...)
 cbZ = Colorbar(fig[2, 3], hmZ)
 
-axD = Axis(fig[2, 4:5]; title="Detritus concentration (mmol C/m³)", axis_kwargs...)
+axD = Axis(fig[2, 4:5]; title = "Detritus concentration (mmol C/m³)", axis_kwargs...)
 hmD = heatmap!(times / days, z, interior(sPOC, 1, 1, :, :)' .+ interior(bPOC, 1, 1, :, :)'; heatmap_kwargs...)
 cbD = Colorbar(fig[2, 6], hmD)
 
-axfDIC = Axis(fig[3, 1:4], xlabel="Time (days)", title="Air-sea CO₂ flux and Sinking", ylabel="Flux (kgCO₂/m²/year)")
+axfDIC = Axis(fig[3, 1:4], xlabel = "Time (days)", ylabel = "Flux (kgCO₂/m²/year)", title = "Air-sea CO₂ flux and Sinking")
 hmfDIC = lines!(times / days, air_sea_CO₂_flux * (12 + 16 * 2) * year / 1e6, linewidth=3, label="Air-sea flux")
 hmfExp = lines!(times / days, carbon_export    * (12 + 16 * 2) * year / 1e6, linewidth=3, label="Sinking export")
 
