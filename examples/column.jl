@@ -59,7 +59,7 @@ set!(model, P = 0.03, Z = 0.03, NO₃ = 4.0, NH₄ = 0.05, DIC = 2239.8, Alk = 2
 # - Store the model and particles output
 # - Prevent the tracers from going negative from numerical error (see discussion of this in the [positivity preservation](@ref pos-preservation) implimentation page)
 
-simulation = Simulation(model, Δt=3minutes, stop_time=100days) 
+simulation = Simulation(model, Δt = 3minutes, stop_time = 100days)
 
 progress_message(sim) = @printf("Iteration: %04d, time: %s, Δt: %s, wall time: %s\n",
                                                         iteration(sim),
@@ -130,6 +130,6 @@ axfDIC = Axis(fig[5, 1], xlabel = "Time (days)", ylabel = "Flux (kgCO₂/m²/yea
                          title = "Air-sea CO₂ flux and Sinking", limits = ((0, times[end] / days), nothing))
 lines!(axfDIC, times / days, air_sea_CO₂_flux * (12 + 16 * 2) * year / 1e6, linewidth = 3, label = "Air-sea flux")
 lines!(axfDIC, times / days, carbon_export    * (12 + 16 * 2) * year / 1e6, linewidth = 3, linestyle = :dash, label = "Sinking export")
-Legend(fig[5, 5], axfDIC, "", framevisible = false)
+Legend(fig[5, 2], axfDIC, "", framevisible = false)
 
 fig
