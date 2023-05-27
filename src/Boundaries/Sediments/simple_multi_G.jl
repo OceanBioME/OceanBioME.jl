@@ -128,11 +128,13 @@ sediment_fields(model::SimpleMultiG) = (C_slow = model.fields.C_slow, C_fast = m
 @kernel function calculate_tendencies!(sediment::SimpleMultiG, bgc, model)
     i, j = @index(Global, NTuple)
 
-    carbon_deposition = -(biogeochemical_drift_velocity(bgc, Val(:sPOC)).w[i, j, 1] * model.tracers.sPOC[i, j, 1] + biogeochemical_drift_velocity(bgc, Val(:bPOC)).w[i, j, 1] * model.tracers.bPOC[i, j, 1])
-                        
-    nitrogen_deposition = -(biogeochemical_drift_velocity(bgc, Val(:sPON)).w[i, j, 1] * model.tracers.sPON[i, j, 1] + biogeochemical_drift_velocity(bgc, Val(:bPON)).w[i, j, 1] * model.tracers.bPON[i, j, 1])
-
     @inbounds begin
+        carbon_deposition = -(biogeochemical_drift_velocity(bgc, Val(:sPOC)).w[i, j, 1] * model.tracers.sPOC[i, j, 1] +
+                              biogeochemical_drift_velocity(bgc, Val(:bPOC)).w[i, j, 1] * model.tracers.bPOC[i, j, 1])
+                        
+        nitrogen_deposition = -(biogeochemical_drift_velocity(bgc, Val(:sPON)).w[i, j, 1] * model.tracers.sPON[i, j, 1] +
+                                biogeochemical_drift_velocity(bgc, Val(:bPON)).w[i, j, 1] * model.tracers.bPON[i, j, 1])
+
         # rates
         Cᵐⁱⁿ = sediment.fields.C_slow[i, j, 1] * sediment.slow_decay_rate + sediment.fields.C_fast[i, j, 1] * sediment.fast_decay_rate
         Nᵐⁱⁿ = sediment.fields.N_slow[i, j, 1] * sediment.slow_decay_rate + sediment.fields.N_fast[i, j, 1] * sediment.fast_decay_rate
@@ -184,8 +186,8 @@ sediment_fields(model::SimpleMultiG) = (C_slow = model.fields.C_slow, C_fast = m
         Δz = model.grid.Δzᵃᵃᶜ[1]
 
         model.timestepper.Gⁿ.NH₄[i, j, 1] += (Nᵐⁱⁿ * (1 - pₙᵢₜ)) / Δz
-        model.timestepper.Gⁿ.NO₃[i, j, 1] += (Nᵐⁱⁿ * pₙᵢₜ - Cᵐⁱⁿ * pᵈᵉⁿⁱᵗ * 0.8) / Δz
+        model.timestepper.Gⁿ.NO₃[i, j, 1] += (Nᵐⁱⁿ * pₙᵢₜ - Cᵐⁱⁿ * pᵈᵉⁿⁱᵗ * 4//5) / Δz
         model.timestepper.Gⁿ.DIC[i, j, 1] += Cᵐⁱⁿ / Δz
-        model.timestepper.Gⁿ.O₂[i, j, 1] -= max(0.0, (1 - pᵈᵉⁿⁱᵗ - pₐₙₒₓ * pₛₒₗᵢ) * Cᵐⁱⁿ / Δz) # this seems dodge but this model doesn't cope with anoxia properly
+        model.timestepper.Gⁿ.O₂[i, j, 1]  -= max(0, (1 - pᵈᵉⁿⁱᵗ - pₐₙₒₓ * pₛₒₗᵢ) * Cᵐⁱⁿ / Δz) # this seems dodge but this model doesn't cope with anoxia properly
     end
 end
