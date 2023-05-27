@@ -135,6 +135,8 @@ for (i, t) in enumerate(times)
                         bPOM[1, 1, end-20, i] * model.biogeochemistry.sinking_velocities.bPOM.w[1, 1, end-20]) * model.biogeochemistry.organic_redfield
 end
 
+using CairoMakie
+
 fig = Figure(resolution = (1000, 1500), fontsize=20)
 
 axis_kwargs = (xlabel = "Time (days)", ylabel = "z (m)", limits = ((0, times[end] / days), (-150, 0)))
