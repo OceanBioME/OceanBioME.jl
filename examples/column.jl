@@ -26,13 +26,13 @@ const year = years = 365days
 
 @inline H(t, t₀, t₁) = ifelse(t₀ < t < t₁, 1.0, 0.0)
 
-@inline fmld1(t) = H(t, 50days, year) * (1 / (1 +exp(-(t - 100days) / (5days)))) * (1 / (1 + exp((t - 330days) / (25days))))
+@inline fmld1(t) = H(t, 50days, year) * (1 / (1 + exp(-(t - 100days) / 5days))) * (1 / (1 + exp((t - 330days) / 25days)))
 
 @inline MLD(t) = - (10 + 340 * (1 - fmld1(year - eps(year)) * exp(-mod(t, year) / 25days) - fmld1(mod(t, year))))
 
 @inline κₜ(x, y, z, t) = 1e-2 * (1 + tanh((z - MLD(t)) / 10)) / 2 + 1e-4
 
-@inline temp(x, y, z, t) = 2.4 * cos(t * 2π / year + 50day) + 10
+@inline temp(x, y, z, t) = 2.4 * cos(t * 2π / year + 50days) + 10
 
 # ## Grid and PAR field
 # Define the grid and an extra Oceananigans field for the PAR to be stored in

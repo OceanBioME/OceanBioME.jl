@@ -19,7 +19,7 @@ const day = days = hours * 24  # define the length of a day in seconds
 const year = years = day * 365 # define the length of a year in days
 
 # This is forced by a prescribed time-dependent photosynthetically available radiation (PAR)
-PAR⁰(t) = 60*(1-cos((t + 15days) * 2π/(365days))) * (1 /(1 + 0.2*exp(-((mod(t, 365days) - 200days) / 50days)^2))) + 2
+PAR⁰(t) = 60 * (1 - cos((t + 15days) * 2π / year)) * (1 / (1 + 0.2 * exp(-((mod(t, year) - 200days) / 50days)^2))) + 2
 
 z = -10 # specify the nominal depth of the box for the PAR profile
 PAR(t) = PAR⁰(t) * exp(0.2z) # Modify the PAR based on the nominal depth and exponential decay 
