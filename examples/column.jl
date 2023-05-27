@@ -128,8 +128,8 @@ Colorbar(fig[4, 2], hmD)
 
 axfDIC = Axis(fig[5, 1], xlabel = "Time (days)", ylabel = "Flux (kgCO₂/m²/year)",
                          title = "Air-sea CO₂ flux and Sinking", limits = ((0, times[end] / days), nothing))
-lines!(axfDIC, times / days, air_sea_CO₂_flux * (12 + 16 * 2) * year / 1e6, linewidth=3, label = "Air-sea flux")
-lines!(axfDIC, times / days, carbon_export    * (12 + 16 * 2) * year / 1e6, linewidth=3, linestyle = :dash, label = "Sinking export")
+lines!(axfDIC, times / days, air_sea_CO₂_flux * (12 + 16 * 2) * year / 1e6, linewidth = 3, label = "Air-sea flux")
+lines!(axfDIC, times / days, carbon_export    * (12 + 16 * 2) * year / 1e6, linewidth = 3, linestyle = :dash, label = "Sinking export")
 Legend(fig[5, 5], axfDIC, "", framevisible = false)
 
 fig
