@@ -26,13 +26,13 @@ const year = years = 365days
 
 @inline H(t, t₀, t₁) = ifelse(t₀ < t < t₁, 1.0, 0.0)
 
-@inline fmld1(t) = H(t, 50days, year) * (1 / (1 +exp(-(t - 100days) / (5days)))) * (1 / (1 + exp((t - 330days) / (25days))))
+@inline fmld1(t) = H(t, 50days, year) * (1 / (1 + exp(-(t - 100days) / 5days))) * (1 / (1 + exp((t - 330days) / 25days)))
 
 @inline MLD(t) = - (10 + 340 * (1 - fmld1(year - eps(year)) * exp(-mod(t, year) / 25days) - fmld1(mod(t, year))))
 
 @inline κₜ(x, y, z, t) = 1e-2 * (1 + tanh((z - MLD(t)) / 10)) / 2 + 1e-4
 
-@inline temp(x, y, z, t) = 2.4 * cos(t * 2π / year + 50day) + 10
+@inline temp(x, y, z, t) = 2.4 * cos(t * 2π / year + 50days) + 10
 
 # ## Grid and PAR field
 # Define the grid and an extra Oceananigans field for the PAR to be stored in
@@ -59,7 +59,7 @@ set!(model, P = 0.03, Z = 0.03, NO₃ = 4.0, NH₄ = 0.05, DIC = 2239.8, Alk = 2
 # - Store the model and particles output
 # - Prevent the tracers from going negative from numerical error (see discussion of this in the [positivity preservation](@ref pos-preservation) implimentation page)
 
-simulation = Simulation(model, Δt=3minutes, stop_time=100days) 
+simulation = Simulation(model, Δt = 3minutes, stop_time = 100days)
 
 progress_message(sim) = @printf("Iteration: %04d, time: %s, Δt: %s, wall time: %s\n",
                                                         iteration(sim),
@@ -105,31 +105,31 @@ end
 
 using CairoMakie
 
-fig = Figure(resolution = (1920, 1050), fontsize=24)
+fig = Figure(resolution = (1000, 1500), fontsize=20)
 
 axis_kwargs = (xlabel = "Time (days)", ylabel = "z (m)", limits = ((0, times[end] / days), (-150, 0)))
 heatmap_kwargs = (interpolate = true, colormap = :batlow)
 
-axP = Axis(fig[1, 1:2]; title = "Phytoplankton concentration (mmol N / m³)", axis_kwargs...)
+axP = Axis(fig[1, 1]; title = "Phytoplankton concentration (mmol N / m³)", axis_kwargs...)
 hmP = heatmap!(times / days, z, interior(P, 1, 1, :, :)'; heatmap_kwargs...)
-cbP = Colorbar(fig[1, 3], hmP)
+Colorbar(fig[1, 2], hmP)
 
-axNO₃ = Axis(fig[1, 4:5]; title = "Nitrate concentration (mmol N / m³)", axis_kwargs...)
+axNO₃ = Axis(fig[2, 1]; title = "Nitrate concentration (mmol N / m³)", axis_kwargs...)
 hmNO₃ = heatmap!(times / days, z, interior(NO₃, 1, 1, :, :)'; heatmap_kwargs...)
-cbNO₃ = Colorbar(fig[1, 6], hmNO₃)
+Colorbar(fig[2, 2], hmNO₃)
 
-axZ = Axis(fig[2, 1:2]; title = "Zooplankton concentration (mmol N / m³)", axis_kwargs...)
+axZ = Axis(fig[3, 1]; title = "Zooplankton concentration (mmol N / m³)", axis_kwargs...)
 hmZ = heatmap!(times / days, z, interior(Z, 1, 1, :, :)'; heatmap_kwargs...)
-cbZ = Colorbar(fig[2, 3], hmZ)
+Colorbar(fig[3, 2], hmZ)
 
-axD = Axis(fig[2, 4:5]; title = "Detritus concentration (mmol N / m³)", axis_kwargs...)
+axD = Axis(fig[4, 1]; title = "Detritus concentration (mmol N / m³)", axis_kwargs...)
 hmD = heatmap!(times / days, z, interior(sPOM, 1, 1, :, :)' .+ interior(bPOM, 1, 1, :, :)'; heatmap_kwargs...)
-cbD = Colorbar(fig[2, 6], hmD)
+Colorbar(fig[4, 2], hmD)
 
-axfDIC = Axis(fig[3, 1:4], xlabel = "Time (days)", ylabel = "Flux (kgCO₂ / m² / year)", title = "Air-sea CO₂ flux and Sinking")
-hmfDIC = lines!(times / days, air_sea_CO₂_flux * (12 + 16 * 2) * year / 1e6, linewidth=3, label = "Air-sea flux")
-hmfExp = lines!(times / days, carbon_export    * (12 + 16 * 2) * year / 1e6, linewidth=3, label = "Sinking export")
-
-fig[3, 5:6] = Legend(fig, axfDIC, "", framevisible = false)
+axfDIC = Axis(fig[5, 1], xlabel = "Time (days)", ylabel = "Flux (kgCO₂/m²/year)",
+                         title = "Air-sea CO₂ flux and Sinking", limits = ((0, times[end] / days), nothing))
+lines!(axfDIC, times / days, air_sea_CO₂_flux * (12 + 16 * 2) * year / 1e6, linewidth = 3, label = "Air-sea flux")
+lines!(axfDIC, times / days, carbon_export    * (12 + 16 * 2) * year / 1e6, linewidth = 3, linestyle = :dash, label = "Sinking export")
+Legend(fig[5, 2], axfDIC, "", framevisible = false)
 
 fig

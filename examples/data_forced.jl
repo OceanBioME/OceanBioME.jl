@@ -12,7 +12,7 @@
 # First we will check we have the dependencies installed
 # ```julia
 # using Pkg
-# pkg"add OceanBioME, Oceananigans, CairoMakie, NetCDF, JLD2, DataDeps, Interpolations"
+# pkg"add OceanBioME, Oceananigans, NetCDF, Interpolations, DataDeps, CairoMakie"
 # ```
 
 # ## Model setup
@@ -103,13 +103,17 @@ simulation.output_writers[:profiles] = JLD2OutputWriter(model,
 scale_negative_tracers = ScaleNegativeTracers(; model, tracers = (:NO₃, :NH₄, :P, :Z, :sPOM, :bPOM, :DOM))
 simulation.callbacks[:neg] = Callback(scale_negative_tracers; callsite = UpdateStateCallsite())
 
-wizard = TimeStepWizard(cfl = 0.2, diffusive_cfl = 0.2, max_change = 2.0, min_change = 0.5, cell_diffusion_timescale = column_diffusion_timescale, cell_advection_timescale = column_advection_timescale)
+wizard = TimeStepWizard(cfl = 0.2, diffusive_cfl = 0.2,
+                        max_change = 2.0, min_change = 0.5,
+                        cell_diffusion_timescale = column_diffusion_timescale,
+                        cell_advection_timescale = column_advection_timescale)
 simulation.callbacks[:wizard] = Callback(wizard, IterationInterval(10))
 
 # ## Run!
 # Finally we run the simulation
 run!(simulation)
 
+# ## Load output and plot
 # Now we can visualise the results with some post processing to diagnose the air-sea CO₂ flux
 
    P = FieldTimeSeries("$filename.jld2", "P")
@@ -133,30 +137,30 @@ end
 
 using CairoMakie
 
-fig = Figure(backgroundcolor = RGBf(1, 1, 1), fontsize = 30, resolution = (1920, 1600))
+fig = Figure(resolution = (1000, 1500), fontsize=20)
 
 axis_kwargs = (xlabel = "Time (days)", ylabel = "z (m)", limits = ((0, times[end] / days), (-150, 0)))
 
-axP = Axis(fig[1, 1:2]; title = "Phytoplankton concentration (mmol N/m³)", axis_kwargs...)
+axP = Axis(fig[1, 1]; title = "Phytoplankton concentration (mmol N/m³)", axis_kwargs...)
 hmP = heatmap!(times / days, z, interior(P, 1, 1, :, :)', colormap=:batlow)
-cbP = Colorbar(fig[1, 3], hmP)
+Colorbar(fig[1, 2], hmP)
 
-axNO₃ = Axis(fig[1, 4:5]; title = "Nitrate concentration (mmol N/m³)", axis_kwargs...)
+axNO₃ = Axis(fig[2, 1]; title = "Nitrate concentration (mmol N/m³)", axis_kwargs...)
 hmNO₃ = heatmap!(times / days, z, interior(NO₃, 1, 1, :, :)', colormap=:batlow)
-cbNO₃ = Colorbar(fig[1, 6], hmNO₃)
+Colorbar(fig[2, 2], hmNO₃)
 
-axZ = Axis(fig[2, 1:2]; title = "Zooplankton concentration (mmol N/m³)", axis_kwargs...)
+axZ = Axis(fig[3, 1]; title = "Zooplankton concentration (mmol N/m³)", axis_kwargs...)
 hmZ = heatmap!(times / days, z, interior(Z, 1, 1, :, :)', colormap=:batlow)
-cbZ = Colorbar(fig[2, 3], hmZ)
+Colorbar(fig[3, 2], hmZ)
 
-axD = Axis(fig[2, 4:5]; title = "Detritus concentration (mmol N/m³)", axis_kwargs...)
-hmD = heatmap!(times./days, z, interior(sPOM, 1, 1, :, :)' .+ interior(bPOM, 1, 1, :, :)', colormap=:batlow)
-cbD = Colorbar(fig[2, 6], hmD)
+axD = Axis(fig[4, 1]; title = "Detritus concentration (mmol N/m³)", axis_kwargs...)
+hmD = heatmap!(times / days, z, interior(sPOM, 1, 1, :, :)' .+ interior(bPOM, 1, 1, :, :)', colormap=:batlow)
+Colorbar(fig[4, 2], hmD)
 
-axfDIC = Axis(fig[3, 1:6], xlabel = "Time (days)", ylabel = "Flux (kgCO₂/m²/year)", title = "Air-sea CO₂ flux and Sinking")
-hmfDIC = lines!(times / days, cumsum(air_sea_CO₂_flux) * (12 + 16 * 2) * year / 1e6, linewidth=3, label="Air-sea flux")
-hmfExp = lines!(times / days, cumsum(carbon_export)    * (12 + 16 * 2) * year / 1e6, linewidth=3, label="Sinking export")
-
-fig[3, 5] = Legend(fig, axfDIC, "", framevisible = false)
+axfDIC = Axis(fig[5, 1], xlabel = "Time (days)", ylabel = "Flux (kgCO₂/m²/year)",
+                         title = "Air-sea CO₂ flux and Sinking", limits = ((0, times[end] / days), nothing))
+lines!(axfDIC, times / days, cumsum(air_sea_CO₂_flux) * (12 + 16 * 2) * year / 1e6, linewidth = 3, label = "Air-sea flux")
+lines!(axfDIC, times / days, cumsum(carbon_export)    * (12 + 16 * 2) * year / 1e6, linewidth = 3, linestyle = :dash, label = "Sinking export")
+Legend(fig[5, 2], axfDIC, "", framevisible = false)
 
 fig

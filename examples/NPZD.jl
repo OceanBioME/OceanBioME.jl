@@ -111,28 +111,28 @@ P_range = (minimum(P), maximum(P))
 Z_range = (minimum(Z), maximum(Z))
 D_range = (minimum(D), maximum(D))
 
-fig = Figure(backgroundcolor=RGBf(1, 1, 1), fontsize=30, resolution=(2400, 2000))
+fig = Figure(backgroundcolor=RGBf(1, 1, 1), fontsize = 30, resolution = (2400, 2000))
 
-fig[1, 1:5] = Label(fig, title, textsize=24, tellwidth=false)
+Label(fig[1, 1:5], title, textsize = 24, tellwidth = false)
 
 axis_kwargs = (xlabel = "x (m)", ylabel = "z (m)")
 heatmap_kwargs = (interpolate = true, colormap = :batlow)
 
 axP = Axis(fig[2, 1:2]; title = "Phytoplankton concentration (mmol N/m³)", axis_kwargs...)
 hmP = heatmap!(axP, x, z, Pₙ; colorrange = P_range, heatmap_kwargs...)
-cbP = Colorbar(fig[2, 3], hmP)
+Colorbar(fig[2, 3], hmP)
 
 axN = Axis(fig[2, 4:5]; title = "Nitrate concentration (mmol N/m³)", axis_kwargs...)
 hmN = heatmap!(axN, x, z, Nₙ; colorrange = N_range, heatmap_kwargs...)
-cbN = Colorbar(fig[2, 6], hmN)
+Colorbar(fig[2, 6], hmN)
 
 axZ = Axis(fig[3, 1:2]; title = "Zooplankton concentration (mmol N/m³)", axis_kwargs...)
 hmZ = heatmap!(axZ, x, z, Zₙ; colorrange = Z_range, heatmap_kwargs...)
-cbZ = Colorbar(fig[3, 3], hmZ)
+Colorbar(fig[3, 3], hmZ)
 
 axD = Axis(fig[3, 4:5]; title = "Detritus concentration (mmol N/m³)", axis_kwargs...)
 hmD = heatmap!(axD, x, z, Dₙ; colorrange = D_range, heatmap_kwargs...)
-cbD = Colorbar(fig[3, 6], hmD)
+Colorbar(fig[3, 6], hmD)
 
 nframes = length(times)
 frame_iterator = 1:nframes

@@ -36,12 +36,10 @@ B(x, y, z, t, p) = p.M2 * x + p.N^2 * (z - p.Lz/2)
 V_field = BackgroundField(V, parameters = background_state_parameters)
 B_field = BackgroundField(B, parameters = background_state_parameters)
 
-# Specify the horizontal and vertical viscosity/diffusivity
-κ₂z = 1e-4 # [m² s⁻¹] Vertical vertical viscosity and diffusivity
-κ₂h = 1e-2 # [m² s⁻¹] Horizontal viscosity and diffusivity
+# Specify some vertical viscosity/diffusivity
+ν = κ = 1e-4 # [m² s⁻¹] Vertical vertical viscosity and diffusivity
 
-vertical_diffusivity = VerticalScalarDiffusivity(ν=κ₂z, κ=κ₂z)
-horizontal_diffusivity = HorizontalScalarDiffusivity(ν=κ₂h, κ=κ₂h)
+vertical_diffusivity = VerticalScalarDiffusivity(; ν, κ)
 
 # Setup the biogeochemical model with optional carbonate chemistry turned on
 
@@ -62,7 +60,7 @@ model = NonhydrostaticModel(; grid,
                               tracers = :b,
                               buoyancy = BuoyancyTracer(),
                               background_fields = (b = B_field, v = V_field),
-                              closure = (vertical_diffusivity, horizontal_diffusivity))
+                              closure = vertical_diffusivity)
 
 # ## Initial conditions
 # Start with a bit of random noise added to the background thermal wind and an arbitary biogeochemical state
@@ -97,9 +95,9 @@ u, v, w = model.velocities # unpack velocity `Field`s
 # and also calculate the vertical vorticity [s⁻¹].
 ζ = Field(∂x(v) - ∂y(u))
 
-# Periodically write the velocity, vorticity, and divergence out to a file
+# Periodically write the velocity and vorticity out to a file
 simulation.output_writers[:fields] = JLD2OutputWriter(model, merge(model.tracers, (; u, v, w, ζ));
-                                                      schedule = TimeInterval(4hours),
+                                                      schedule = TimeInterval(2hours),
                                                       filename = "eady_turbulence_bgc",
                                                       overwrite_existing = true)
 
@@ -130,10 +128,10 @@ using CairoMakie
 
 n = Observable(1)
 
-  ζₙ = @lift interior(  ζ[$n], :, :, grid.Nz)'
-  Nₙ = @lift interior(NO₃[$n], :, :, grid.Nz)' .+ interior(NH₄[$n], :, :, grid.Nz)'
-  Pₙ = @lift interior(  P[$n], :, :, grid.Nz)'
-DICₙ = @lift interior(DIC[$n], :, :, grid.Nz)'
+  ζₙ = @lift interior(  ζ[$n], :, :, grid.Nz)
+  Nₙ = @lift interior(NO₃[$n], :, :, grid.Nz) .+ interior(NH₄[$n], :, :, grid.Nz)
+  Pₙ = @lift interior(  P[$n], :, :, grid.Nz)
+DICₙ = @lift interior(DIC[$n], :, :, grid.Nz)
 
 fig = Figure(resolution = (1600, 1600))
 
@@ -163,7 +161,7 @@ Colorbar(fig[2, 4], hm4)
 title = @lift "t = $(prettytime(times[$n]))"
 Label(fig[0, :], title, fontsize = 30)
 
-record(fig, "eady.mp4", 1:length(times), framerate = 10) do i
+record(fig, "eady.mp4", 1:length(times), framerate = 16) do i
     @info string("Plotting frame ", i, " of ", length(times))
     n[] = i
 end
