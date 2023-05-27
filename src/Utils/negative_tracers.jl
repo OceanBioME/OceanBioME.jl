@@ -139,7 +139,7 @@ end
     i, j, k = @index(Global, NTuple)
     for field in fields
         if @inbounds isnan(field[i, j, k])
-            field[i, j, k] = 0.0
+            @inbounds field[i, j, k] = 0.0
         end
     end
 end
