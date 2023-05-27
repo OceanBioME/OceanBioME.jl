@@ -16,25 +16,24 @@ struct pCO₂{P0, P1, P2, PB, PW, FT}
           haline_contraction :: FT
 
 
-    function pCO₂(solubility::P0,
-                  bicarbonate_dissociation::P1,
-                  carbonate_dissociation::P2,
-                  boric_acid_dissociation::PB,
-                  water_dissociaiton::PW,
-                  lower_pH_bound::FT,
-                  upper_pH_bound::FT,
-                  boron_ratio::FT,
-                  thermal_expansion::FT,
-                  haline_contraction::FT) where {P0, P1, P2, PB, PW, FT}
-        return new{P0, P1, P2, PB, PW, FT}(solubility, 
-                                           bicarbonate_dissociation, 
-                                           carbonate_dissociation, 
-                                           boric_acid_dissociation, 
-                                           water_dissociaiton, 
-                                           lower_pH_bound, upper_pH_bound, 
-                                           boron_ratio, 
-                                           thermal_expansion, haline_contraction)
-    end
+    pCO₂(solubility::P0,
+         bicarbonate_dissociation::P1,
+         carbonate_dissociation::P2,
+         boric_acid_dissociation::PB,
+         water_dissociaiton::PW,
+         lower_pH_bound::FT,
+         upper_pH_bound::FT,
+         boron_ratio::FT,
+         thermal_expansion::FT,
+         haline_contraction::FT) where {P0, P1, P2, PB, PW, FT} =
+        new{P0, P1, P2, PB, PW, FT}(solubility, 
+                                    bicarbonate_dissociation, 
+                                    carbonate_dissociation, 
+                                    boric_acid_dissociation, 
+                                    water_dissociaiton, 
+                                    lower_pH_bound, upper_pH_bound, 
+                                    boron_ratio, 
+                                    thermal_expansion, haline_contraction)
 end
 
 adapt_structure(to, pCO₂_model::pCO₂) = pCO₂(adapt_structure(to, pCO₂_model.solubility),
@@ -55,8 +54,8 @@ end
 
     T += 273.15
 
-    Alk *= 1.e-3 / ρₒ
-    DIC *= 1.e-3 / ρₒ
+    Alk *= 1e-3 / ρₒ
+    DIC *= 1e-3 / ρₒ
 
     pk⁰ = p.solubility
     pk¹ = p.bicarbonate_dissociation

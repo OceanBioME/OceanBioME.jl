@@ -19,7 +19,7 @@ using Oceananigans.Utils: launch!
     PAR²[i, j, Nz] = PAR⁰*params.PAR_frac.G*exp(k₂*z)
     PAR³[i, j, Nz] = PAR⁰*params.PAR_frac.R*exp(k₃*z)
 
-    for k=grid.Nz-1:-1:1
+    @inbounds for k=grid.Nz-1:-1:1
         z = grid.zᵃᵃᶜ[k]
         dz = grid.zᵃᵃᶜ[k+1] - z 
 

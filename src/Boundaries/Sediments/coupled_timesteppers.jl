@@ -107,7 +107,6 @@ function rk3_substep!(model::NonhydrostaticModel{<:Any, <:Any, <:Any, <:Any, <:A
         push!(events, field_event)
     end
 
-
     wait(device(arch), MultiEvent(Tuple(events)))
 
     return nothing
@@ -116,15 +115,11 @@ end
 @kernel function rk3_step_flat_field!(U, Δt, γⁿ, ζⁿ, Gⁿ, G⁻)
     i, j = @index(Global, NTuple)
 
-    @inbounds begin
-        U[i, j, 1] += Δt * (γⁿ * Gⁿ[i, j, 1] + ζⁿ * G⁻[i, j, 1])
-    end
+    @inbounds U[i, j, 1] += Δt * (γⁿ * Gⁿ[i, j, 1] + ζⁿ * G⁻[i, j, 1])
 end
 
 @kernel function rk3_step_flat_field!(U, Δt, γ¹, ::Nothing, G¹, G⁰)
     i, j = @index(Global, NTuple)
 
-    @inbounds begin
-        U[i, j, 1] += Δt * γ¹ * G¹[i, j, 1]
-    end
+    @inbounds U[i, j, 1] += Δt * γ¹ * G¹[i, j, 1]
 end

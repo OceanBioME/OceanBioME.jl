@@ -44,27 +44,26 @@ struct TwoBandPhotosyntheticallyActiveRatiation{FT, F, SPAR}
 
     surface_PAR :: SPAR
 
-    function TwoBandPhotosyntheticallyActiveRatiation(water_red_attenuation::FT,
-                                                      water_blue_attenuation::FT,
-                                                      chlorophyll_red_attenuation::FT,
-                                                      chlorophyll_blue_attenuation::FT,
-                                                      chlorophyll_red_exponent::FT,
-                                                      chlorophyll_blue_exponent::FT,
-                                                      pigment_ratio::FT,
-                                                      phytoplankton_chlorophyll_ratio::FT,
-                                                      field::F,
-                                                      surface_PAR::SPAR) where {FT, F, SPAR}
-        return new{FT, F, SPAR}(water_red_attenuation,
-                                water_blue_attenuation,
-                                chlorophyll_red_attenuation,
-                                chlorophyll_blue_attenuation,
-                                chlorophyll_red_exponent,
-                                chlorophyll_blue_exponent,
-                                pigment_ratio,
-                                phytoplankton_chlorophyll_ratio,
-                                field,
-                                surface_PAR)
-    end
+    TwoBandPhotosyntheticallyActiveRatiation(water_red_attenuation::FT,
+                                             water_blue_attenuation::FT,
+                                             chlorophyll_red_attenuation::FT,
+                                             chlorophyll_blue_attenuation::FT,
+                                             chlorophyll_red_exponent::FT,
+                                             chlorophyll_blue_exponent::FT,
+                                             pigment_ratio::FT,
+                                             phytoplankton_chlorophyll_ratio::FT,
+                                             field::F,
+                                             surface_PAR::SPAR) where {FT, F, SPAR} =
+        new{FT, F, SPAR}(water_red_attenuation,
+                         water_blue_attenuation,
+                         chlorophyll_red_attenuation,
+                         chlorophyll_blue_attenuation,
+                         chlorophyll_red_exponent,
+                         chlorophyll_blue_exponent,
+                         pigment_ratio,
+                         phytoplankton_chlorophyll_ratio,
+                         field,
+                         surface_PAR)
 end
 
 """
