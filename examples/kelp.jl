@@ -117,7 +117,8 @@ bPOC = FieldTimeSeries("$filename.jld2", "bPOC")
 x, y, z = nodes(P)
 times = P.times
 
-air_sea_CO₂_flux = carbon_export = zeros(length(times))
+air_sea_CO₂_flux = zeros(length(times))
+carbon_export = zeros(length(times))
 
 for (i, t) in enumerate(times)
     air_sea_CO₂_flux[i] = CO₂_flux.condition.parameters(0.0, 0.0, t, DIC[1, 1, 50, i], Alk[1, 1, 50, i], temp(1, 1, 0, t), 35)
@@ -129,7 +130,7 @@ using CairoMakie
 
 fig = Figure(resolution = (1000, 1500), fontsize = 20)
 
-axis_kwargs = (xlabel = "Time (days)", ylabel = "z (m)", limits = ((0, times[end] / days), (-85, 0)))
+axis_kwargs = (xlabel = "Time (days)", ylabel = "z (m)", limits = ((0, times[end] / days), (-85meters, 0)))
 
 axP = Axis(fig[1, 1]; title = "Phytoplankton concentration (mmol N/m³)", axis_kwargs...)
 hmP = heatmap!(times / days, z, interior(P, 1, 1, :, :)', colormap = :batlow)
@@ -150,7 +151,7 @@ Colorbar(fig[4, 2], hmD)
 axfDIC = Axis(fig[5, 1], xlabel = "Time (days)", ylabel = "Flux (kgCO₂/m²/year)",
                          title = "Air-sea CO₂ flux and Sinking", limits = ((0, times[end] / days), nothing))
 lines!(axfDIC, times / days, air_sea_CO₂_flux * (12 + 16 * 2) * year / 1e6, linewidth = 3, label = "Air-sea flux")
-lines!(axfDIC, times / days, carbon_export    * (12 + 16 * 2) * year / 1e6, linewidth = 3, linestyle = :dash, label = "Sinking export")
+lines!(axfDIC, times / days, carbon_export    * (12 + 16 * 2) * year / 1e6, linewidth = 3, label = "Sinking export")
 Legend(fig[5, 2], axfDIC, "", framevisible = false)
 
 fig

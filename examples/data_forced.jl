@@ -127,7 +127,8 @@ bPOM = FieldTimeSeries("$filename.jld2", "bPOM")
 x, y, z = nodes(P)
 times = P.times
 
-air_sea_CO₂_flux = carbon_export = zeros(length(times))
+air_sea_CO₂_flux = zeros(length(times))
+carbon_export = zeros(length(times))
 
 for (i, t) in enumerate(times)
     air_sea_CO₂_flux[i] = CO₂_flux.condition.parameters(0.0, 0.0, t, DIC[1, 1, end, i], Alk[1, 1, end, i], t_function(1, 1, 0, t), s_function(1, 1, 0, t))
@@ -160,7 +161,7 @@ Colorbar(fig[4, 2], hmD)
 axfDIC = Axis(fig[5, 1], xlabel = "Time (days)", ylabel = "Flux (kgCO₂/m²/year)",
                          title = "Air-sea CO₂ flux and Sinking", limits = ((0, times[end] / days), nothing))
 lines!(axfDIC, times / days, cumsum(air_sea_CO₂_flux) * (12 + 16 * 2) * year / 1e6, linewidth = 3, label = "Air-sea flux")
-lines!(axfDIC, times / days, cumsum(carbon_export)    * (12 + 16 * 2) * year / 1e6, linewidth = 3, linestyle = :dash, label = "Sinking export")
+lines!(axfDIC, times / days, cumsum(carbon_export)    * (12 + 16 * 2) * year / 1e6, linewidth = 3, label = "Sinking export")
 Legend(fig[5, 2], axfDIC, "", framevisible = false)
 
 fig
