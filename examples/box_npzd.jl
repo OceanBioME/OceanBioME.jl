@@ -60,9 +60,10 @@ close(file)
 
 # ## And plot
 @info "Plotting the results..."
+
 using CairoMakie
 
-fig = Figure(resolution = (800, 1200), fontsize=24)
+fig = Figure(resolution = (800, 1200), fontsize = 24)
 
 axs = []
 for (idx, tracer) in enumerate(vars)

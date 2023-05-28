@@ -127,25 +127,24 @@ end
 
 using CairoMakie
 
-fig = Figure(resolution = (1000, 1500), fontsize=20)
+fig = Figure(resolution = (1000, 1500), fontsize = 20)
 
 axis_kwargs = (xlabel = "Time (days)", ylabel = "z (m)", limits = ((0, times[end] / days), (-85, 0)))
-heatmap_kwargs = (interpolate = true, colormap = :batlow)
 
 axP = Axis(fig[1, 1]; title = "Phytoplankton concentration (mmol N/m³)", axis_kwargs...)
-hmP = heatmap!(times / days, z, interior(P, 1, 1, :, :)'; heatmap_kwargs...)
+hmP = heatmap!(times / days, z, interior(P, 1, 1, :, :)', colormap = :batlow)
 Colorbar(fig[1, 2], hmP)
 
 axNO₃ = Axis(fig[2, 1]; title = "Nitrate concentration (mmol N/m³)", axis_kwargs...)
-hmNO₃ = heatmap!(times / days, z, interior(NO₃, 1, 1, :, :)'; heatmap_kwargs...)
+hmNO₃ = heatmap!(times / days, z, interior(NO₃, 1, 1, :, :)', colormap = :batlow)
 Colorbar(fig[2, 2], hmNO₃)
 
 axZ = Axis(fig[3, 1]; title = "Zooplankton concentration (mmol N/m³)", axis_kwargs...)
-hmZ = heatmap!(times / days, z, interior(Z, 1, 1, :, :)'; heatmap_kwargs...)
+hmZ = heatmap!(times / days, z, interior(Z, 1, 1, :, :)', colormap = :batlow)
 Colorbar(fig[3, 2], hmZ)
 
 axD = Axis(fig[4, 1]; title = "Detritus concentration (mmol C/m³)", axis_kwargs...)
-hmD = heatmap!(times / days, z, interior(sPOC, 1, 1, :, :)' .+ interior(bPOC, 1, 1, :, :)'; heatmap_kwargs...)
+hmD = heatmap!(times / days, z, interior(sPOC, 1, 1, :, :)' .+ interior(bPOC, 1, 1, :, :)', colormap = :batlow)
 Colorbar(fig[4, 2], hmD)
 
 axfDIC = Axis(fig[5, 1], xlabel = "Time (days)", ylabel = "Flux (kgCO₂/m²/year)",
@@ -175,15 +174,17 @@ for (i, iter) in enumerate(iterations)
     times[i] = file["timeseries/t/$iter"]
 end
 
-fig = Figure(resolution = (1600, 500), fontsize=20)
+fig = Figure(resolution = (1000, 800), fontsize = 20)
 
-ax1 = Axis(fig[1, 1], ylabel = "Frond area (dm²)", xlabel = "Time (days)")
-[lines!(ax1, times / day, A[n, :]) for n in 1:5]
+axis_kwargs = (xlabel = "Time (days)", limits = ((0, times[end] / days), (-85meters, 0)))
 
-ax2 = Axis(fig[1, 2], ylabel = "Total Carbon (gC)", xlabel = "Time (days)")
-[lines!(ax2, times / day, (A .* (N .+ particles.structural_nitrogen) .* particles.structural_dry_weight_per_area)[n, :]) for n in 1:5]
+ax1 = Axis(fig[1, 1]; ylabel = "Frond area (dm²)", axis_kwargs...)
+[lines!(ax1, times / day, A[n, :], linewidth = 3) for n in 1:5]
 
-ax3 = Axis(fig[1, 3], ylabel = "Total Nitrogen (gN)", xlabel = "Time (days)")
-[lines!(ax3, times / day, (A .* (C .+ particles.structural_carbon) .* particles.structural_dry_weight_per_area)[n, :]) for n in 1:5]
+ax2 = Axis(fig[2, 1]; ylabel = "Total Carbon (gC)", axis_kwargs...)
+[lines!(ax2, times / day, (A .* (N .+ particles.structural_nitrogen) .* particles.structural_dry_weight_per_area)[n, :], linewidth = 3) for n in 1:5]
+
+ax3 = Axis(fig[3, 1]; ylabel = "Total Nitrogen (gN)", axis_kwargs...)
+[lines!(ax3, times / day, (A .* (C .+ particles.structural_carbon) .* particles.structural_dry_weight_per_area)[n, :], linewidth = 3) for n in 1:5]
 
 fig

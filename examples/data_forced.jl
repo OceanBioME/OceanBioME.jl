@@ -65,12 +65,12 @@ grid = RectilinearGrid(size = (1, 1, Nz), x = (0, 20meters), y = (0, 20meters), 
 # Here we instantiate the LOBSTER model with carbonate chemistry and a surface flux of DIC (CO₂)
 CO₂_flux = GasExchange(; gas = :CO₂, temperature = t_function, salinity = s_function)
 model = NonhydrostaticModel(; grid,
-                              closure = ScalarDiffusivity(ν=κₜ, κ=κₜ), 
+                              closure = ScalarDiffusivity(ν = κₜ, κ = κₜ), 
                               biogeochemistry = LOBSTER(; grid,
                                                           surface_phytosynthetically_active_radiation = surface_PAR,
                                                           carbonates = true),
                               boundary_conditions = (DIC = FieldBoundaryConditions(top = CO₂_flux),),
-                              advection = nothing,)
+                              advection = nothing)
 
 set!(model, P = 0.03, Z = 0.03, NO₃ = 11.0, NH₄ = 0.05, DIC = 2200.0, Alk = 2400.0)
 
@@ -93,9 +93,9 @@ simulation.callbacks[:progress] = Callback(progress_message, IterationInterval(5
 
 filename = "data_forced"
 simulation.output_writers[:profiles] = JLD2OutputWriter(model, 
-                                                        merge(model.tracers, model.auxiliary_fields), 
-                                                        filename = "$filename.jld2", 
-                                                        schedule = TimeInterval(1day), 
+                                                        merge(model.tracers, model.auxiliary_fields),
+                                                        filename = "$filename.jld2",
+                                                        schedule = TimeInterval(1day),
                                                         overwrite_existing = true)
 
 # TODO: make tendency callback to force no NaNs in tendencies
@@ -110,7 +110,7 @@ wizard = TimeStepWizard(cfl = 0.2, diffusive_cfl = 0.2,
 simulation.callbacks[:wizard] = Callback(wizard, IterationInterval(10))
 
 # ## Run!
-# Finally we run the simulation
+# We are ready to run the simulation
 run!(simulation)
 
 # ## Load output and plot
@@ -119,7 +119,7 @@ run!(simulation)
    P = FieldTimeSeries("$filename.jld2", "P")
  NO₃ = FieldTimeSeries("$filename.jld2", "NO₃")
    Z = FieldTimeSeries("$filename.jld2", "Z")
-sPOM = FieldTimeSeries("$filename.jld2", "sPOM") 
+sPOM = FieldTimeSeries("$filename.jld2", "sPOM")
 bPOM = FieldTimeSeries("$filename.jld2", "bPOM")
  DIC = FieldTimeSeries("$filename.jld2", "DIC")
  Alk = FieldTimeSeries("$filename.jld2", "Alk")
@@ -130,16 +130,16 @@ times = P.times
 air_sea_CO₂_flux = carbon_export = zeros(length(times))
 
 for (i, t) in enumerate(times)
-    air_sea_CO₂_flux[i] = CO₂_flux.condition.parameters(0.0, 0.0, t, DIC[1, 1, end, i], Alk[1, 1, end, i], t_function(1, 1, 0, t), s_function(1, 1, 0, t)) 
+    air_sea_CO₂_flux[i] = CO₂_flux.condition.parameters(0.0, 0.0, t, DIC[1, 1, end, i], Alk[1, 1, end, i], t_function(1, 1, 0, t), s_function(1, 1, 0, t))
     carbon_export[i] = (sPOM[1, 1, end-20, i] * model.biogeochemistry.sinking_velocities.sPOM.w[1, 1, end-20] +
                         bPOM[1, 1, end-20, i] * model.biogeochemistry.sinking_velocities.bPOM.w[1, 1, end-20]) * model.biogeochemistry.organic_redfield
 end
 
 using CairoMakie
 
-fig = Figure(resolution = (1000, 1500), fontsize=20)
+fig = Figure(resolution = (1000, 1500), fontsize = 20)
 
-axis_kwargs = (xlabel = "Time (days)", ylabel = "z (m)", limits = ((0, times[end] / days), (-150, 0)))
+axis_kwargs = (xlabel = "Time (days)", ylabel = "z (m)", limits = ((0, times[end] / days), (-150meters, 0)))
 
 axP = Axis(fig[1, 1]; title = "Phytoplankton concentration (mmol N/m³)", axis_kwargs...)
 hmP = heatmap!(times / days, z, interior(P, 1, 1, :, :)', colormap=:batlow)

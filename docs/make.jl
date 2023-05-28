@@ -6,6 +6,9 @@ using OceanBioME.LOBSTERModel: LOBSTER
 using OceanBioME.Boundaries.Sediments: SimpleMultiG
 using OceanBioME.Boundaries: OCMIP_default, GasExchange
 
+using CairoMakie
+CairoMakie.activate!(type = "svg")
+
 include("display_parameters.jl")
 
 bib_filepath = joinpath(dirname(@__FILE__), "oceanbiome.bib")
@@ -108,6 +111,7 @@ pages = [
     "Home" => "index.md",
     "Quick start" => "quick_start.md",
     "Model components and setup" => component_pages,
+    "Visuailzation" => "visualization.md",
     "Examples" => example_pages,
     "Numerical implementation" => numerical_pages,
     "Gallery" => "gallery.md",

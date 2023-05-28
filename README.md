@@ -63,8 +63,6 @@ run!(simulation)
 <summary>We can then visualise this:</summary>
 
 ```julia
-using CairoMakie
-
 b = FieldTimeSeries("buoyancy_front.jld2", "b")
 P = FieldTimeSeries("buoyancy_front.jld2", "P")
 
@@ -72,6 +70,8 @@ xb, yb, zb = nodes(b)
 xP, yP, zP = nodes(P)
 
 times = b.times
+
+using CairoMakie
 
 n = Observable(1)
 
@@ -90,8 +90,8 @@ axis_kwargs = (xlabel = "x (m)", ylabel = "z (m)", width = 970)
 ax1 = Axis(fig[1, 1]; title = "Buoyancy perturbation (m / s)", axis_kwargs...)
 ax2 = Axis(fig[2, 1]; title = "Phytoplankton concentration (mmol N / m³)", axis_kwargs...)
 
-hm1 = heatmap!(ax1, xb, zb, bₙ, colorrange = b_lims, colormap = :batlow, interpolate=true)
-hm2 = heatmap!(ax2, xP, zP, Pₙ, colorrange = P_lims, colormap = Reverse(:bamako), interpolate=true)
+hm1 = heatmap!(ax1, xb, zb, bₙ, colorrange = b_lims, colormap = :batlow)
+hm2 = heatmap!(ax2, xP, zP, Pₙ, colorrange = P_lims, colormap = Reverse(:bamako))
 
 Colorbar(fig[1, 2], hm1)
 Colorbar(fig[2, 2], hm2)

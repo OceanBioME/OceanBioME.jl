@@ -60,7 +60,7 @@ close(file)
 
 using CairoMakie
 
-fig = Figure(resolution = (800, 1600), fontsize=24)
+fig = Figure(resolution = (800, 1600), fontsize = 24)
 
 axs = []
 for (idx, tracer) in enumerate(vars)
