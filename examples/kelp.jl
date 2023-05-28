@@ -162,8 +162,9 @@ file = jldopen("$(filename)_particles.jld2")
 
 iterations = keys(file["timeseries/t"])
 
-A, N, C = ntuple(n -> ones(5, length(iterations)) .* NaN, 3)
-times = ones(length(iterations)) .* NaN
+A, N, C = ntuple(n -> zeros(5, length(iterations)), 3)
+
+times = zeros(length(iterations))
 
 for (i, iter) in enumerate(iterations)
     particles = file["timeseries/particles/$iter"]
@@ -176,15 +177,15 @@ end
 
 fig = Figure(resolution = (1000, 800), fontsize = 20)
 
-axis_kwargs = (xlabel = "Time (days)", limits = ((0, times[end] / days), (-85meters, 0)))
+axis_kwargs = (xlabel = "Time (days)", limits = ((0, times[end] / days), nothing))
 
 ax1 = Axis(fig[1, 1]; ylabel = "Frond area (dm²)", axis_kwargs...)
 [lines!(ax1, times / day, A[n, :], linewidth = 3) for n in 1:5]
 
 ax2 = Axis(fig[2, 1]; ylabel = "Total Carbon (gC)", axis_kwargs...)
-[lines!(ax2, times / day, (A .* (N .+ particles.structural_nitrogen) .* particles.structural_dry_weight_per_area)[n, :], linewidth = 3) for n in 1:5]
+[lines!(ax2, times / day, (@. A * (N + particles.structural_nitrogen) * particles.structural_dry_weight_per_area)[n, :], linewidth = 3) for n in 1:5]
 
 ax3 = Axis(fig[3, 1]; ylabel = "Total Nitrogen (gN)", axis_kwargs...)
-[lines!(ax3, times / day, (A .* (C .+ particles.structural_carbon) .* particles.structural_dry_weight_per_area)[n, :], linewidth = 3) for n in 1:5]
+[lines!(ax3, times / day, (@. A * (C + particles.structural_carbon) * particles.structural_dry_weight_per_area)[n, :], linewidth = 3) for n in 1:5]
 
 fig
