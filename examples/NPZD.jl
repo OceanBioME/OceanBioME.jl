@@ -18,9 +18,11 @@
 using OceanBioME, Oceananigans, Oceananigans.Units, Printf
 
 const year = years = 365days # just for these idealised cases
+nothing #hide
 
 # ## Surface PAR
 PAR⁰(x, y, t) = 50 * (1 - cos((t + 15days) * 2π / year)) * (1 / (1 + 0.2 * exp(-((mod(t, year) - 200days) / 50days)^2))) / 2
+nothing #hide
 
 # ## Grid and PAR field
 # Define the grid and an extra Oceananigans field for the PAR to be stored in
@@ -48,9 +50,11 @@ model = NonhydrostaticModel(; grid,
 
 ## Temperature initial condition: a stable density gradient with random noise superposed.
 Tᵢ(x, y, z) = 16 + dTdz * z + dTdz * model.grid.Lz * 1e-6 * Ξ(z)
+nothing #hide
 
 ## Velocity initial condition: random noise scaled by the friction velocity.
 uᵢ(x, y, z) = 1e-3 * Ξ(z)
+nothing #hide
 
 ## `set!` the `model` fields using functions or constants:
 set!(model, u=uᵢ, w=uᵢ, T=Tᵢ, S=35.0)#, N = 2.0, P = 0.1, Z = 0.01)
@@ -71,6 +75,7 @@ simulation = Simulation(model, Δt = 0.5minute, stop_time = 2years)
 
 wizard = TimeStepWizard(cfl = 0.6, diffusive_cfl = 0.5, max_change = 1.5, min_change = 0.5, cell_advection_timescale = sinking_adveciton_timescale)
 simulation.callbacks[:wizard] = Callback(wizard, IterationInterval(1))
+nothing #hide
 
 ## Print a progress message
 progress(sim) = @printf("Iteration: %d, time: %s, Δt: %s\n",
@@ -85,7 +90,7 @@ simulation.output_writers[:profiles] = JLD2OutputWriter(model, merge(model.veloc
                                                         overwrite_existing=true)
 
 # ## Run!
-# Finally we run the simulation
+# We now run the simulation
 run!(simulation)
 
 # Now we can visualise the results
@@ -144,5 +149,6 @@ record(fig, "$filename.mp4", frame_iterator; framerate = framerate) do i
     @info string("Plotting frame ", i, " of ", nframes)
     n[] = i
 end
+nothing #hide
 
 # ![](npdz.mp4)

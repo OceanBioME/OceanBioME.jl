@@ -77,6 +77,7 @@ simulation = Simulation(model, Δt = 15minutes, stop_time = 10days)
 # Adapt the time step while keeping the CFL number fixed
 wizard = TimeStepWizard(cfl=0.80, max_change = 1.5, max_Δt = 30minutes)
 simulation.callbacks[:wizard] = Callback(wizard, IterationInterval(10))
+nothing #hide
 
 # Create a progress message 
 progress(sim) = @printf("i: % 6d, sim time: % 10s, wall time: % 10s, Δt: % 10s, CFL: %.2e\n",
@@ -106,6 +107,7 @@ scale_negative_tracers = ScaleNegativeTracers(; model, tracers = (:NO₃, :NH₄
 simulation.callbacks[:neg] = Callback(scale_negative_tracers; callsite = UpdateStateCallsite())
 simulation.callbacks[:nan_tendencies] = Callback(remove_NaN_tendencies!; callsite = TendencyCallsite())
 simulation.callbacks[:abort_zeros] = Callback(zero_negative_tracers!; callsite = UpdateStateCallsite())
+nothing #hide
 
 # Run the simulation
 run!(simulation)
@@ -165,5 +167,6 @@ record(fig, "eady.mp4", 1:length(times), framerate = 16) do i
     @info string("Plotting frame ", i, " of ", length(times))
     n[] = i
 end
+nothing #hide
 
 # ![](eady.mp4)
