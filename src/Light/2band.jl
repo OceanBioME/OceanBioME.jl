@@ -1,5 +1,6 @@
 @kernel function update_TwoBandPhotosyntheticallyActiveRatiation!(PAR, grid, P, surface_PAR, t, PAR_model) 
     i, j = @index(Global, NTuple)
+
     x, y = xnode(i, grid, Center()), ynode(j, grid, Center())
     
     PAR⁰ = surface_PAR(x, y, t)
@@ -13,19 +14,25 @@
     r = PAR_model.pigment_ratio
     Rᶜₚ = PAR_model.phytoplankton_chlorophyll_ratio
 
-    zᶜ = znodes(grid, Center(), Center(), Center())
-    zᶠ = znodes(grid, Center(), Center(), Face())
-    
-    ∫chlʳ = @inbounds (zᶠ[grid.Nz + 1] - zᶜ[grid.Nz]) * (P[i, j, grid.Nz] * Rᶜₚ / r) ^ eʳ
-    ∫chlᵇ = @inbounds (zᶠ[grid.Nz + 1] - zᶜ[grid.Nz]) * (P[i, j, grid.Nz] * Rᶜₚ / r) ^ eᵇ
+
+    zᶠₙ₊₁ = znode(grid.Nz+1, grid, Face())
+    zᶜₙ   = znode(grid.Nz,   grid, Center())
+
+    ∫chlʳ = @inbounds (zᶠₙ₊₁ - zᶜₙ) * (P[i, j, grid.Nz] * Rᶜₚ / r)^eʳ
+    ∫chlᵇ = @inbounds (zᶠₙ₊₁ - zᶜₙ) * (P[i, j, grid.Nz] * Rᶜₚ / r)^eᵇ
 
     # first point below surface
-    @inbounds PAR[i, j, grid.Nz] =  PAR⁰ * (exp(kʳ * zᶜ[grid.Nz] - χʳ * ∫chlʳ) + exp(kᵇ * zᶜ[grid.Nz] - χᵇ * ∫chlᵇ)) / 2
+    @inbounds PAR[i, j, grid.Nz] =  PAR⁰ * (exp(kʳ * zᶜₙ - χʳ * ∫chlʳ) + exp(kᵇ * zᶜₙ - χᵇ * ∫chlᵇ)) / 2
 
     @inbounds for k in grid.Nz-1:-1:1
-        ∫chlʳ += (zᶜ[k + 1] - zᶠ[k + 1]) * (P[i, j, k+1] * Rᶜₚ / r) ^ eʳ + (zᶠ[k + 1] - zᶜ[k]) * (P[i, j, k] * Rᶜₚ / r) ^ eʳ
-        ∫chlᵇ += (zᶜ[k + 1] - zᶠ[k + 1]) * (P[i, j, k+1] * Rᶜₚ / r) ^ eᵇ + (zᶠ[k + 1] - zᶜ[k]) * (P[i, j, k] * Rᶜₚ / r) ^ eᵇ
-        PAR[i, j, k] =  PAR⁰ * (exp(kʳ * zᶜ[k] - χʳ * ∫chlʳ) + exp(kᵇ * zᶜ[k] - χᵇ * ∫chlᵇ)) / 2
+        zᶠₖ₊₁ = znode(k+1, grid, Face())
+        zᶜₖ₊₁ = znode(k+1, grid, Center())
+        zᶜₖ   = znode( k , grid, Center())
+
+        ∫chlʳ += (zᶜₖ₊₁ - zᶠₖ₊₁) * (P[i, j, k+1] * Rᶜₚ / r)^eʳ + (zᶠₖ₊₁ - zᶜₖ) * (P[i, j, k] * Rᶜₚ / r)^eʳ
+        ∫chlᵇ += (zᶜₖ₊₁ - zᶠₖ₊₁) * (P[i, j, k+1] * Rᶜₚ / r)^eᵇ + (zᶠₖ₊₁ - zᶜₖ) * (P[i, j, k] * Rᶜₚ / r)^eᵇ
+
+        PAR[i, j, k] =  PAR⁰ * (exp(kʳ * zᶜₖ - χʳ * ∫chlʳ) + exp(kᵇ * zᶜₖ - χᵇ * ∫chlᵇ)) / 2
     end
 end 
 
