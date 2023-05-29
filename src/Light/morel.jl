@@ -12,25 +12,30 @@ using Oceananigans.Utils: launch!
     point_sixtytwo = FT(0.62)
 
     PAR⁰ = params.PAR⁰(t)
-    z = grid.zᵃᵃᶜ[Nz]
 
-    k₁ = params.a.B + params.A.B*Chl[Nz] + params.b.B + params.B.B * Chl[Nz]^point_sixtytwo
-    k₂ = params.a.G + params.A.G*Chl[Nz] + params.b.G + params.B.G * Chl[Nz]^point_sixtytwo
-    k₃ = params.a.R + params.A.R*Chl[Nz] + params.b.R + params.B.R * Chl[Nz]^point_sixtytwo
+    # first point below surface
+    @inbounds begin
+        z = grid.zᵃᵃᶜ[Nz]
 
-    PAR¹[i, j, Nz] = PAR⁰ * params.PAR_frac.B * exp(k₁ * z)
-    PAR²[i, j, Nz] = PAR⁰ * params.PAR_frac.G * exp(k₂ * z)
-    PAR³[i, j, Nz] = PAR⁰ * params.PAR_frac.R * exp(k₃ * z)
+        k₁ = params.a.B + params.A.B*Chl[Nz] + params.b.B + params.B.B * Chl[Nz]^point_sixtytwo
+        k₂ = params.a.G + params.A.G*Chl[Nz] + params.b.G + params.B.G * Chl[Nz]^point_sixtytwo
+        k₃ = params.a.R + params.A.R*Chl[Nz] + params.b.R + params.B.R * Chl[Nz]^point_sixtytwo
 
-    for k=grid.Nz-1:-1:1
+        PAR¹[i, j, Nz] = PAR⁰ * params.PAR_frac.B * exp(k₁ * z)
+        PAR²[i, j, Nz] = PAR⁰ * params.PAR_frac.G * exp(k₂ * z)
+        PAR³[i, j, Nz] = PAR⁰ * params.PAR_frac.R * exp(k₃ * z)
+    end
+
+    # the rest of the points
+    for k in grid.Nz-1:-1:1
         @inbounds begin
             z = grid.zᵃᵃᶜ[k]
-            dz = grid.zᵃᵃᶜ[k+1] - z 
+            dz = grid.zᵃᵃᶜ[k+1] - z
 
             k₁ = params.a.B + params.A.B * Chl[k] + params.b.B + params.B.B*Chl[k]^point_sixtytwo
             k₂ = params.a.G + params.A.G * Chl[k] + params.b.G + params.B.G*Chl[k]^point_sixtytwo
             k₃ = params.a.R + params.A.R * Chl[k] + params.b.R + params.B.R*Chl[k]^point_sixtytwo
-        
+
             PAR¹[i, j, k] = PAR¹[i, j, k+1] * exp(-k₁ * dz)
             PAR²[i, j, k] = PAR²[i, j, k+1] * exp(-k₂ * dz)
             PAR³[i, j, k] = PAR³[i, j, k+1] * exp(-k₃ * dz)
@@ -40,7 +45,7 @@ using Oceananigans.Utils: launch!
             end
         end
     end
-end 
+end
 
 """
     Light.Morel.update!(sim, params)
