@@ -135,7 +135,7 @@ n = Observable(1)
   Pₙ = @lift interior(  P[$n], :, :, grid.Nz)
 DICₙ = @lift interior(DIC[$n], :, :, grid.Nz)
 
-fig = Figure(resolution = (1600, 1600))
+fig = Figure(resolution = (1600, 1600), fontsize = 20)
 
 lims = [(minimum(T), maximum(T)) for T in (  ζ[:, :, grid.Nz, :],
                                            NO₃[:, :, grid.Nz, :] .+ NH₄[:, :, grid.Nz, :],
@@ -163,7 +163,7 @@ Colorbar(fig[2, 4], hm4)
 title = @lift "t = $(prettytime(times[$n]))"
 Label(fig[0, :], title, fontsize = 30)
 
-record(fig, "eady.mp4", 1:length(times), framerate = 16) do i
+record(fig, "eady.mp4", 1:length(times), framerate = 12) do i
     @info string("Plotting frame ", i, " of ", length(times))
     n[] = i
 end
