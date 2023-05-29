@@ -20,4 +20,4 @@ end
 
 @inline column_advection_timescale(model) = minimum(model.grid.Δzᵃᵃᶜ) / maximum_sinking_velocity(model.biogeochemistry)
 
-@inline sinking_adveciton_timescale(model) = min(minimum(model.grid.Δzᵃᵃᶜ) / maximum_sinking_velocity(model.biogeochemistry), cell_advection_timescaleᶜᶜᶜ(model))
+@inline sinking_advection_timescale(model) = min(minimum(model.grid.Δzᵃᵃᶜ) / maximum_sinking_velocity(model.biogeochemistry), cell_advection_timescaleᶜᶜᶜ(model))
