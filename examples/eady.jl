@@ -36,10 +36,12 @@ B(x, y, z, t, p) = p.M2 * x + p.N^2 * (z - p.Lz/2)
 V_field = BackgroundField(V, parameters = background_state_parameters)
 B_field = BackgroundField(B, parameters = background_state_parameters)
 
-# Specify some vertical viscosity/diffusivity
-ν = κ = 1e-4 # [m² s⁻¹] Vertical vertical viscosity and diffusivity
-
-vertical_diffusivity = VerticalScalarDiffusivity(; ν, κ)
+# Specify some horizontal and vertical viscosity/diffusivity
+νₕ = κₕ = 1e2  # [m² s⁻¹]
+horizontal_diffusivity = HorizontalScalarDiffusivity(ν = νₕ, κ = κₕ)
+#-
+νᵥ = κᵥ = 1e-4 # [m² s⁻¹]
+vertical_diffusivity = VerticalScalarDiffusivity(ν = νᵥ, κ = κᵥ)
 
 # Setup the biogeochemical model with optional carbonate chemistry turned on
 
@@ -60,7 +62,7 @@ model = NonhydrostaticModel(; grid,
                               tracers = :b,
                               buoyancy = BuoyancyTracer(),
                               background_fields = (b = B_field, v = V_field),
-                              closure = vertical_diffusivity)
+                              closure = (horizontal_diffusivity, vertical_diffusivity))
 
 # ## Initial conditions
 # Start with a bit of random noise added to the background thermal wind and an arbitary biogeochemical state
