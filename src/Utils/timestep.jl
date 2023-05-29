@@ -1,5 +1,5 @@
 using Oceananigans.Advection: cell_advection_timescaleᶜᶜᶜ
-using Oceananigans.Grids: znode, minimum_zspacing
+using Oceananigans.Grids: Center, znode, minimum_zspacing
 
 @inline function column_diffusion_timescale(model)
     grid = model.grid
