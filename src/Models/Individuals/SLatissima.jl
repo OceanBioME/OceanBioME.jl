@@ -376,7 +376,7 @@ end
 
     t = model.clock.time
 
-    @inbounds if p.A[idx] > 0.0
+    @inbounds if p.A[idx] > 0
         NO₃, NH₄, PAR, u, T, S = get_arguments(x, y, z, t, p, bgc, model)
 
         photo = photosynthesis(T, PAR, p)
@@ -385,15 +385,15 @@ end
 
         fᶜ = f_curr(u, p)
 
-        j_NO₃ = max(0.0, p.maximum_ammonia_uptake * fᶜ * ((p.maximum_nitrogen_reserve - N) /
-                         (p.maximum_nitrogen_reserve - p.minimum_nitrogen_reserve)) * NO₃ / 
-                         (p.nitrate_half_saturation + NO₃))
+        j_NO₃ = max(0, p.maximum_ammonia_uptake * fᶜ * ((p.maximum_nitrogen_reserve - N) /
+                       (p.maximum_nitrogen_reserve - p.minimum_nitrogen_reserve)) * NO₃ /
+                       (p.nitrate_half_saturation + NO₃))
 
-        j̃_NH₄ = max(0.0, p.maximum_ammonia_uptake * fᶜ * NH₄ / (p.ammonia_half_saturation + NH₄))
+        j̃_NH₄ = max(0, p.maximum_ammonia_uptake * fᶜ * NH₄ / (p.ammonia_half_saturation + NH₄))
 
         μ_NH₄ = j̃_NH₄ / (p.structural_dry_weight_per_area * (N + p.structural_nitrogen))
         μ_NO₃ = 1 - p.minimum_nitrogen_reserve / N
-        μ_C = 1 - p.minimum_carbon_reserve / C
+        μ_C   = 1 - p.minimum_carbon_reserve / C
 
         n = floor(Int, mod(t, 364days) / day)
         λ = normed_day_length_change(n, p.latitude)
