@@ -32,7 +32,7 @@
             PAR[i, j, k] =  PAR⁰ * (exp(kʳ * zᶜ[k] - χʳ * ∫chlʳ) + exp(kᵇ * zᶜ[k] - χᵇ * ∫chlᵇ)) / 2
         end
     end
-end 
+end
 
 struct TwoBandPhotosyntheticallyActiveRatiation{FT, F, SPAR}
     water_red_attenuation :: FT
