@@ -105,7 +105,7 @@ times = P.times
 air_sea_CO₂_flux = zeros(length(times))
 carbon_export = zeros(length(times))
 
-for (iteration, t) in enumerate(times)
+for (i, t) in enumerate(times)
     air_sea_CO₂_flux[i] = CO₂_flux.condition.parameters(0.0, 0.0, t, DIC[1, 1, grid.Nz, i], Alk[1, 1, grid.Nz, i], temp(1, 1, 0, t), 35)
     carbon_export[i] = (sPOM[1, 1, grid.Nz-20, i] * model.biogeochemistry.sinking_velocities.sPOM.w[1, 1, grid.Nz-20] +
                         bPOM[1, 1, grid.Nz-20, i] * model.biogeochemistry.sinking_velocities.bPOM.w[1, 1, grid.Nz-20]) * model.biogeochemistry.organic_redfield
