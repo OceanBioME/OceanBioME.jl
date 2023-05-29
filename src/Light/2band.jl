@@ -16,11 +16,11 @@
 
     zᶜ = znodes(grid, Center(), Center(), Center())
     zᶠ = znodes(grid, Center(), Center(), Face())
-    
+
     # first point below surface
     @inbounds begin
-        ∫chlʳ = @inbounds (zᶠₙ₊₁ - zᶜₙ) * (P[i, j, grid.Nz] * Rᶜₚ / r)^eʳ
-        ∫chlᵇ = @inbounds (zᶠₙ₊₁ - zᶜₙ) * (P[i, j, grid.Nz] * Rᶜₚ / r)^eᵇ
+        ∫chlʳ = (zᶠ[grid.Nz+1] - zᶜ[grid.Nz]) * (P[i, j, grid.Nz] * Rᶜₚ / r)^eʳ
+        ∫chlᵇ = (zᶠ[grid.Nz+1] - zᶜ[grid.Nz]) * (P[i, j, grid.Nz] * Rᶜₚ / r)^eᵇ
         PAR[i, j, grid.Nz] =  PAR⁰ * (exp(kʳ * zᶜ[grid.Nz] - χʳ * ∫chlʳ) + exp(kᵇ * zᶜ[grid.Nz] - χᵇ * ∫chlᵇ)) / 2
     end
 
@@ -32,6 +32,7 @@
             PAR[i, j, k] =  PAR⁰ * (exp(kʳ * zᶜ[k] - χʳ * ∫chlʳ) + exp(kᵇ * zᶜ[k] - χᵇ * ∫chlᵇ)) / 2
         end
     end
+    return nothing
 end 
 
 struct TwoBandPhotosyntheticallyActiveRatiation{FT, F, SPAR}
