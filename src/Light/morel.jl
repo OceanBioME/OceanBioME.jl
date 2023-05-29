@@ -5,37 +5,47 @@ using Oceananigans.Architectures: device
 using Oceananigans.Utils: launch!
 
 @kernel function _update_PAR(PAR¹, PAR², PAR³, Chl, zₑᵤ, grid, t, params) 
-    i, j = @index(Global, NTuple) 
+    i, j = @index(Global, NTuple)
+
     Nz = grid.Nz
-            
+    FT = eltype(grid)
+    point_sixtytwo = FT(0.62)
+
     PAR⁰ = params.PAR⁰(t)
-    z = grid.zᵃᵃᶜ[Nz]
 
-    k₁ = params.a.B + params.A.B*Chl[Nz] + params.b.B + params.B.B*Chl[Nz]^0.62
-    k₂ = params.a.G + params.A.G*Chl[Nz] + params.b.G + params.B.G*Chl[Nz]^0.62
-    k₃ = params.a.R + params.A.R*Chl[Nz] + params.b.R + params.B.R*Chl[Nz]^0.62
+    # first point below surface
+    @inbounds begin
+        z = grid.zᵃᵃᶜ[Nz]
 
-    PAR¹[i, j, Nz] = PAR⁰*params.PAR_frac.B*exp(k₁*z)
-    PAR²[i, j, Nz] = PAR⁰*params.PAR_frac.G*exp(k₂*z)
-    PAR³[i, j, Nz] = PAR⁰*params.PAR_frac.R*exp(k₃*z)
+        k₁ = params.a.B + params.A.B*Chl[Nz] + params.b.B + params.B.B * Chl[Nz]^point_sixtytwo
+        k₂ = params.a.G + params.A.G*Chl[Nz] + params.b.G + params.B.G * Chl[Nz]^point_sixtytwo
+        k₃ = params.a.R + params.A.R*Chl[Nz] + params.b.R + params.B.R * Chl[Nz]^point_sixtytwo
 
-    @inbounds for k=grid.Nz-1:-1:1
-        z = grid.zᵃᵃᶜ[k]
-        dz = grid.zᵃᵃᶜ[k+1] - z 
+        PAR¹[i, j, Nz] = PAR⁰ * params.PAR_frac.B * exp(k₁ * z)
+        PAR²[i, j, Nz] = PAR⁰ * params.PAR_frac.G * exp(k₂ * z)
+        PAR³[i, j, Nz] = PAR⁰ * params.PAR_frac.R * exp(k₃ * z)
+    end
 
-        k₁ = params.a.B + params.A.B*Chl[k] + params.b.B + params.B.B*Chl[k]^0.62
-        k₂ = params.a.G + params.A.G*Chl[k] + params.b.G + params.B.G*Chl[k]^0.62
-        k₃ = params.a.R + params.A.R*Chl[k] + params.b.R + params.B.R*Chl[k]^0.62
-    
-        PAR¹[i, j, k] = PAR¹[i, j, k+1]*exp(-k₁*dz)
-        PAR²[i, j, k] = PAR²[i, j, k+1]*exp(-k₂*dz)
-        PAR³[i, j, k] = PAR³[i, j, k+1]*exp(-k₃*dz)
+    # the rest of the points
+    for k in grid.Nz-1:-1:1
+        @inbounds begin
+            z = grid.zᵃᵃᶜ[k]
+            dz = grid.zᵃᵃᶜ[k+1] - z
 
-        if sum(PAR¹[i, j, k] + PAR²[i, j, k] + PAR³[i, j, k])/PAR⁰ > 0.001
-            zₑᵤ[i, j] = - z #this and mixed layer depth are positive in PISCES
+            k₁ = params.a.B + params.A.B * Chl[k] + params.b.B + params.B.B*Chl[k]^point_sixtytwo
+            k₂ = params.a.G + params.A.G * Chl[k] + params.b.G + params.B.G*Chl[k]^point_sixtytwo
+            k₃ = params.a.R + params.A.R * Chl[k] + params.b.R + params.B.R*Chl[k]^point_sixtytwo
+
+            PAR¹[i, j, k] = PAR¹[i, j, k+1] * exp(-k₁ * dz)
+            PAR²[i, j, k] = PAR²[i, j, k+1] * exp(-k₂ * dz)
+            PAR³[i, j, k] = PAR³[i, j, k+1] * exp(-k₃ * dz)
+
+            if sum(PAR¹[i, j, k] + PAR²[i, j, k] + PAR³[i, j, k]) / PAR⁰ > FT(0.001)
+                zₑᵤ[i, j] = - z #this and mixed layer depth are positive in PISCES
+            end
         end
     end
-end 
+end
 
 """
     Light.Morel.update!(sim, params)
@@ -52,8 +62,8 @@ function  update(sim, params)
     zₑᵤ = sim.model.auxiliary_fields.zₑᵤ
 
     par_calculation = launch!(sim.model.architecture, sim.model.grid, :xy, _update_PAR,
-                                   PAR¹, PAR², PAR³, Chl, zₑᵤ, sim.model.grid, sim.model.clock.time, params,
-                                   dependencies = Event(device(sim.model.architecture)))
+                              PAR¹, PAR², PAR³, Chl, zₑᵤ, sim.model.grid, sim.model.clock.time, params,
+                              dependencies = Event(device(sim.model.architecture)))
 
     wait(device(sim.model.architecture), par_calculation)
 end

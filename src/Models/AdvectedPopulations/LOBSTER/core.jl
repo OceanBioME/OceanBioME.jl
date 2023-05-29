@@ -1,13 +1,12 @@
-
 # grazing
 @inline p(P, sPOM, p̃) = p̃ * P / (p̃ * P + (1 - p̃) * sPOM + eps(0.0))
 @inline Gᵈ(P, Z, sPOM, gᶻ, p̃, kᶻ) = gᶻ * (1 - p(P, sPOM, p̃)) * sPOM * Z / (kᶻ + P * p(P, sPOM, p̃) + (1 - p(P, sPOM, p̃)) * sPOM)
 @inline Gᵖ(P, Z, sPOM, gᶻ, p̃, kᶻ) = gᶻ * p(P, sPOM, p̃) * P * Z / (kᶻ + P * p(P, sPOM, p̃) + (1 - p(P, sPOM, p̃)) * sPOM)
 
 # Limiting equations
-@inline Lₚₐᵣ(PAR, kₚₐᵣ) = 1 - exp(-PAR/kₚₐᵣ)
-@inline Lₙₒ₃(NO₃, NH₄, ψ, kₙₒ₃) = NO₃*exp(-ψ*NH₄)/(NO₃+kₙₒ₃)
-@inline Lₙₕ₄(NH₄, kₙₕ₄) = max(0.0, NH₄/(NH₄+kₙₕ₄)) 
+@inline Lₚₐᵣ(PAR, kₚₐᵣ) = 1 - exp(-PAR / kₚₐᵣ)
+@inline Lₙₒ₃(NO₃, NH₄, ψ, kₙₒ₃) = NO₃ * exp(-ψ * NH₄) / (NO₃ + kₙₒ₃)
+@inline Lₙₕ₄(NH₄, kₙₕ₄) = max(0, NH₄ / (NH₄ + kₙₕ₄))
 
 # Nutrients
 @inline function (bgc::LOBSTER)(::Val{:NO₃}, x, y, z, t, NO₃, NH₄, P, Z, sPOM, bPOM, DOM, PAR)

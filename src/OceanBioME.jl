@@ -19,7 +19,7 @@ export TwoBandPhotosyntheticallyActiveRatiation, update_PAR!
 export Boundaries, Sediments, GasExchange, FlatSediment
 
 # Utilities
-export column_advection_timescale, column_diffusion_timescale, sinking_adveciton_timescale, Budget
+export column_advection_timescale, column_diffusion_timescale, sinking_advection_timescale, Budget
 
 # Positivity preservaiton utilities
 export zero_negative_tracers!, error_on_neg!, warn_on_neg!, ScaleNegativeTracers, remove_NaN_tendencies!
