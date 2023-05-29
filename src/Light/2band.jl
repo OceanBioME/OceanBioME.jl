@@ -14,21 +14,21 @@
     r  = PAR_model.pigment_ratio
     Rᶜₚ = PAR_model.phytoplankton_chlorophyll_ratio
 
-    zᶜ = znodes(grid, Center(), Center(), Center())
-    zᶠ = znodes(grid, Center(), Center(), Face())
+    zᶜ = znodes(grid, Center())
+    zᶠ = znodes(grid, Face())
 
     # first point below surface
     @inbounds begin
-        ∫chlʳ = (zᶠ[grid.Nz+1] - zᶜ[grid.Nz]) * (P[i, j, grid.Nz] * Rᶜₚ / r)^eʳ
-        ∫chlᵇ = (zᶠ[grid.Nz+1] - zᶜ[grid.Nz]) * (P[i, j, grid.Nz] * Rᶜₚ / r)^eᵇ
+        ∫chlʳ = (zᶠ[grid.Nz + 1] - zᶜ[grid.Nz]) * (P[i, j, grid.Nz] * Rᶜₚ / r)^eʳ
+        ∫chlᵇ = (zᶠ[grid.Nz + 1] - zᶜ[grid.Nz]) * (P[i, j, grid.Nz] * Rᶜₚ / r)^eᵇ
         PAR[i, j, grid.Nz] =  PAR⁰ * (exp(kʳ * zᶜ[grid.Nz] - χʳ * ∫chlʳ) + exp(kᵇ * zᶜ[grid.Nz] - χᵇ * ∫chlᵇ)) / 2
     end
 
     # the rest of the points
     @unroll for k in grid.Nz-1:-1:1
         @inbounds begin
-            ∫chlʳ += (zᶜ[k+1] - zᶠ[k+1]) * (P[i, j, k+1] * Rᶜₚ / r) ^ eʳ + (zᶠ[k+1] - zᶜ[k]) * (P[i, j, k] * Rᶜₚ / r) ^ eʳ
-            ∫chlᵇ += (zᶜ[k+1] - zᶠ[k+1]) * (P[i, j, k+1] * Rᶜₚ / r) ^ eᵇ + (zᶠ[k+1] - zᶜ[k]) * (P[i, j, k] * Rᶜₚ / r) ^ eᵇ
+            ∫chlʳ += (zᶜ[k + 1] - zᶠ[k + 1]) * (P[i, j, k + 1] * Rᶜₚ / r)^eʳ + (zᶠ[k + 1] - zᶜ[k]) * (P[i, j, k] * Rᶜₚ / r)^eʳ
+            ∫chlᵇ += (zᶜ[k + 1] - zᶠ[k + 1]) * (P[i, j, k + 1] * Rᶜₚ / r)^eᵇ + (zᶠ[k + 1] - zᶜ[k]) * (P[i, j, k] * Rᶜₚ / r)^eᵇ
             PAR[i, j, k] =  PAR⁰ * (exp(kʳ * zᶜ[k] - χʳ * ∫chlʳ) + exp(kᵇ * zᶜ[k] - χᵇ * ∫chlᵇ)) / 2
         end
     end
