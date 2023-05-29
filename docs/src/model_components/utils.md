@@ -15,7 +15,7 @@ simulation.callbacks[:wizard] = Callback(wizard, IterationInterval(10))
 ```
 Finally, sinking may be more limiting than the normal advective CFL conditions so, we have an additional cell advection timescale defined for 3D models:
 ```julia
-wizard = TimeStepWizard(cfl = 0.6, diffusive_cfl = 0.5, max_change = 1.5, min_change = 0., cell_advection_timescale = sinking_adveciton_timescale)
+wizard = TimeStepWizard(cfl = 0.6, diffusive_cfl = 0.5, max_change = 1.5, min_change = 0., cell_advection_timescale = sinking_advection_timescale)
 simulation.callbacks[:wizard] = Callback(wizard, IterationInterval(10))
 ```
 

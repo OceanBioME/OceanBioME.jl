@@ -1,5 +1,6 @@
 @kernel function update_TwoBandPhotosyntheticallyActiveRatiation!(PAR, grid, P, surface_PAR, t, PAR_model) 
     i, j = @index(Global, NTuple)
+
     x, y = xnode(i, grid, Center()), ynode(j, grid, Center())
     
     PAR⁰ = surface_PAR(x, y, t)
@@ -10,24 +11,28 @@
     χᵇ = PAR_model.chlorophyll_blue_attenuation
     eʳ = PAR_model.chlorophyll_red_exponent
     eᵇ = PAR_model.chlorophyll_blue_exponent
-    r = PAR_model.pigment_ratio
+    r  = PAR_model.pigment_ratio
     Rᶜₚ = PAR_model.phytoplankton_chlorophyll_ratio
 
-    zᶜ = znodes(grid, Center(), Center(), Center())
-    zᶠ = znodes(grid, Center(), Center(), Face())
-    
-    ∫chlʳ = @inbounds (zᶠ[grid.Nz + 1] - zᶜ[grid.Nz]) * (P[i, j, grid.Nz] * Rᶜₚ / r) ^ eʳ
-    ∫chlᵇ = @inbounds (zᶠ[grid.Nz + 1] - zᶜ[grid.Nz]) * (P[i, j, grid.Nz] * Rᶜₚ / r) ^ eᵇ
+    zᶜ = znodes(grid, Center())
+    zᶠ = znodes(grid, Face())
 
     # first point below surface
-    @inbounds PAR[i, j, grid.Nz] =  PAR⁰ * (exp(kʳ * zᶜ[grid.Nz] - χʳ * ∫chlʳ) + exp(kᵇ * zᶜ[grid.Nz] - χᵇ * ∫chlᵇ)) / 2
-
-    @inbounds for k in grid.Nz-1:-1:1
-        ∫chlʳ += (zᶜ[k + 1] - zᶠ[k + 1]) * (P[i, j, k+1] * Rᶜₚ / r) ^ eʳ + (zᶠ[k + 1] - zᶜ[k]) * (P[i, j, k] * Rᶜₚ / r) ^ eʳ
-        ∫chlᵇ += (zᶜ[k + 1] - zᶠ[k + 1]) * (P[i, j, k+1] * Rᶜₚ / r) ^ eᵇ + (zᶠ[k + 1] - zᶜ[k]) * (P[i, j, k] * Rᶜₚ / r) ^ eᵇ
-        PAR[i, j, k] =  PAR⁰ * (exp(kʳ * zᶜ[k] - χʳ * ∫chlʳ) + exp(kᵇ * zᶜ[k] - χᵇ * ∫chlᵇ)) / 2
+    @inbounds begin
+        ∫chlʳ = (zᶠ[grid.Nz + 1] - zᶜ[grid.Nz]) * (P[i, j, grid.Nz] * Rᶜₚ / r)^eʳ
+        ∫chlᵇ = (zᶠ[grid.Nz + 1] - zᶜ[grid.Nz]) * (P[i, j, grid.Nz] * Rᶜₚ / r)^eᵇ
+        PAR[i, j, grid.Nz] =  PAR⁰ * (exp(kʳ * zᶜ[grid.Nz] - χʳ * ∫chlʳ) + exp(kᵇ * zᶜ[grid.Nz] - χᵇ * ∫chlᵇ)) / 2
     end
-end 
+
+    # the rest of the points
+    @unroll for k in grid.Nz-1:-1:1
+        @inbounds begin
+            ∫chlʳ += (zᶜ[k + 1] - zᶠ[k + 1]) * (P[i, j, k + 1] * Rᶜₚ / r)^eʳ + (zᶠ[k + 1] - zᶜ[k]) * (P[i, j, k] * Rᶜₚ / r)^eʳ
+            ∫chlᵇ += (zᶜ[k + 1] - zᶠ[k + 1]) * (P[i, j, k + 1] * Rᶜₚ / r)^eᵇ + (zᶠ[k + 1] - zᶜ[k]) * (P[i, j, k] * Rᶜₚ / r)^eᵇ
+            PAR[i, j, k] =  PAR⁰ * (exp(kʳ * zᶜ[k] - χʳ * ∫chlʳ) + exp(kᵇ * zᶜ[k] - χᵇ * ∫chlᵇ)) / 2
+        end
+    end
+end
 
 struct TwoBandPhotosyntheticallyActiveRatiation{FT, F, SPAR}
     water_red_attenuation :: FT
@@ -83,7 +88,7 @@ Keywork Arguments
 
 - `grid`: grid for building the model on
 - `water_red_attenuation`, ..., `phytoplankton_chlorophyll_ratio`: parameter values
-- `surface_PAR`: funciton (or array in the future) for the photosynthetically available radiaiton at the surface, should be shape `f(x, y, t)`
+- `surface_PAR`: function (or array in the future) for the photosynthetically available radiaiton at the surface, should be shape `f(x, y, t)`
 """
 function TwoBandPhotosyntheticallyActiveRatiation(; grid, 
                                                     water_red_attenuation::FT = 0.225, # 1/m
@@ -112,7 +117,6 @@ function TwoBandPhotosyntheticallyActiveRatiation(; grid,
                                                     field,
                                                     surface_PAR)
 end
-
 
 function update_PAR!(model, PAR::TwoBandPhotosyntheticallyActiveRatiation)
     arch = architecture(model.grid)

@@ -73,7 +73,7 @@ simulation = Simulation(model, Δt = 0.5minute, stop_time = 2years)
 
 #simulation.callbacks[:timestep] = Callback(update_timestep!, TimeInterval(1minute), parameters = (w=200/day, c_adv = 0.45, relaxation=0.75, c_forcing=0.1)) 
 
-wizard = TimeStepWizard(cfl = 0.6, diffusive_cfl = 0.5, max_change = 1.5, min_change = 0.5, cell_advection_timescale = sinking_adveciton_timescale)
+wizard = TimeStepWizard(cfl = 0.6, diffusive_cfl = 0.5, max_change = 1.5, min_change = 0.5, cell_advection_timescale = sinking_advection_timescale)
 simulation.callbacks[:wizard] = Callback(wizard, IterationInterval(1))
 nothing #hide
 
