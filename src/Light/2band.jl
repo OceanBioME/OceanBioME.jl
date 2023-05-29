@@ -11,28 +11,26 @@
     χᵇ = PAR_model.chlorophyll_blue_attenuation
     eʳ = PAR_model.chlorophyll_red_exponent
     eᵇ = PAR_model.chlorophyll_blue_exponent
-    r = PAR_model.pigment_ratio
+    r  = PAR_model.pigment_ratio
     Rᶜₚ = PAR_model.phytoplankton_chlorophyll_ratio
 
-
-    zᶠₙ₊₁ = znode(grid.Nz+1, grid, Face())
-    zᶜₙ   = znode(grid.Nz,   grid, Center())
-
-    ∫chlʳ = @inbounds (zᶠₙ₊₁ - zᶜₙ) * (P[i, j, grid.Nz] * Rᶜₚ / r)^eʳ
-    ∫chlᵇ = @inbounds (zᶠₙ₊₁ - zᶜₙ) * (P[i, j, grid.Nz] * Rᶜₚ / r)^eᵇ
-
+    zᶜ = znodes(grid, Center(), Center(), Center())
+    zᶠ = znodes(grid, Center(), Center(), Face())
+    
     # first point below surface
-    @inbounds PAR[i, j, grid.Nz] =  PAR⁰ * (exp(kʳ * zᶜₙ - χʳ * ∫chlʳ) + exp(kᵇ * zᶜₙ - χᵇ * ∫chlᵇ)) / 2
+    @inbounds begin
+        ∫chlʳ = @inbounds (zᶠₙ₊₁ - zᶜₙ) * (P[i, j, grid.Nz] * Rᶜₚ / r)^eʳ
+        ∫chlᵇ = @inbounds (zᶠₙ₊₁ - zᶜₙ) * (P[i, j, grid.Nz] * Rᶜₚ / r)^eᵇ
+        PAR[i, j, grid.Nz] =  PAR⁰ * (exp(kʳ * zᶜ[grid.Nz] - χʳ * ∫chlʳ) + exp(kᵇ * zᶜ[grid.Nz] - χᵇ * ∫chlᵇ)) / 2
+    end
 
-    @inbounds for k in grid.Nz-1:-1:1
-        zᶠₖ₊₁ = znode(k+1, grid, Face())
-        zᶜₖ₊₁ = znode(k+1, grid, Center())
-        zᶜₖ   = znode( k , grid, Center())
-
-        ∫chlʳ += (zᶜₖ₊₁ - zᶠₖ₊₁) * (P[i, j, k+1] * Rᶜₚ / r)^eʳ + (zᶠₖ₊₁ - zᶜₖ) * (P[i, j, k] * Rᶜₚ / r)^eʳ
-        ∫chlᵇ += (zᶜₖ₊₁ - zᶠₖ₊₁) * (P[i, j, k+1] * Rᶜₚ / r)^eᵇ + (zᶠₖ₊₁ - zᶜₖ) * (P[i, j, k] * Rᶜₚ / r)^eᵇ
-
-        PAR[i, j, k] =  PAR⁰ * (exp(kʳ * zᶜₖ - χʳ * ∫chlʳ) + exp(kᵇ * zᶜₖ - χᵇ * ∫chlᵇ)) / 2
+    # the rest of the points
+    @unroll for k in grid.Nz-1:-1:1
+        @inbounds begin
+            ∫chlʳ += (zᶜ[k+1] - zᶠ[k+1]) * (P[i, j, k+1] * Rᶜₚ / r) ^ eʳ + (zᶠ[k+1] - zᶜ[k]) * (P[i, j, k] * Rᶜₚ / r) ^ eʳ
+            ∫chlᵇ += (zᶜ[k+1] - zᶠ[k+1]) * (P[i, j, k+1] * Rᶜₚ / r) ^ eᵇ + (zᶠ[k+1] - zᶜ[k]) * (P[i, j, k] * Rᶜₚ / r) ^ eᵇ
+            PAR[i, j, k] =  PAR⁰ * (exp(kʳ * zᶜ[k] - χʳ * ∫chlʳ) + exp(kᵇ * zᶜ[k] - χᵇ * ∫chlᵇ)) / 2
+        end
     end
 end 
 
