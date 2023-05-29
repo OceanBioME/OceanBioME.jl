@@ -32,7 +32,6 @@
             PAR[i, j, k] =  PAR⁰ * (exp(kʳ * zᶜ[k] - χʳ * ∫chlʳ) + exp(kᵇ * zᶜ[k] - χᵇ * ∫chlᵇ)) / 2
         end
     end
-    return nothing
 end 
 
 struct TwoBandPhotosyntheticallyActiveRatiation{FT, F, SPAR}
@@ -89,7 +88,7 @@ Keywork Arguments
 
 - `grid`: grid for building the model on
 - `water_red_attenuation`, ..., `phytoplankton_chlorophyll_ratio`: parameter values
-- `surface_PAR`: funciton (or array in the future) for the photosynthetically available radiaiton at the surface, should be shape `f(x, y, t)`
+- `surface_PAR`: function (or array in the future) for the photosynthetically available radiaiton at the surface, should be shape `f(x, y, t)`
 """
 function TwoBandPhotosyntheticallyActiveRatiation(; grid, 
                                                     water_red_attenuation::FT = 0.225, # 1/m
@@ -118,7 +117,6 @@ function TwoBandPhotosyntheticallyActiveRatiation(; grid,
                                                     field,
                                                     surface_PAR)
 end
-
 
 function update_PAR!(model, PAR::TwoBandPhotosyntheticallyActiveRatiation)
     arch = architecture(model.grid)
