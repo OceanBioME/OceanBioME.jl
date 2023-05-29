@@ -1,9 +1,6 @@
 using Test, OceanBioME, Oceananigans
 
 function test_column_diffusion_timescale(arch)
-
-    @inline PAR⁰(x, y, t) = 100
-
     κ = 1e-3
     @inline κₜ(x, y, z, t) = κ
 
