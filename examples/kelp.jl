@@ -120,14 +120,19 @@ bPOC = FieldTimeSeries("$filename.jld2", "bPOC")
 x, y, z = nodes(P)
 times = P.times
 
+# We compute the  air-sea CO₂ flux at the surface (corresponding to vertical index `k = grid.Nz`) and
+# the carbon export by computing how much carbon sinks below some arbirtrary depth; here we use depth 
+# that corresponds to `k = grid.Nz - 20`.
 air_sea_CO₂_flux = zeros(length(times))
 carbon_export = zeros(length(times))
 
 for (i, t) in enumerate(times)
-    air_sea_CO₂_flux[i] = CO₂_flux.condition.parameters(0.0, 0.0, t, DIC[1, 1, 50, i], Alk[1, 1, 50, i], temp(1, 1, 0, t), 35)
-    carbon_export[i] = sPOC[1, 1, end-20, i] * model.biogeochemistry.sinking_velocities.sPOM.w[1, 1, end-20] +
-                       bPOC[1, 1, end-20, i] * model.biogeochemistry.sinking_velocities.bPOM.w[1, 1, end-20]
+    air_sea_CO₂_flux[i] = CO₂_flux.condition.parameters(0.0, 0.0, t, DIC[1, 1, grid.Nz, i], Alk[1, 1, grid.Nz, i], temp(1, 1, 0, t), 35)
+    carbon_export[i] = sPOC[1, 1, grid.Nz-20, i] * model.biogeochemistry.sinking_velocities.sPOM.w[1, 1, grid.Nz-20] +
+                       bPOC[1, 1, grid.Nz-20, i] * model.biogeochemistry.sinking_velocities.bPOM.w[1, 1, grid.Nz-20]
 end
+
+# Both `air_sea_CO₂_flux` and `carbon_export` are in units `mmol CO₂ / (m² s)`.
 
 using CairoMakie
 
@@ -151,11 +156,13 @@ axD = Axis(fig[4, 1]; title = "Detritus concentration (mmol C/m³)", axis_kwargs
 hmD = heatmap!(times / days, z, interior(sPOC, 1, 1, :, :)' .+ interior(bPOC, 1, 1, :, :)', colormap = :batlow)
 Colorbar(fig[4, 2], hmD)
 
+CO₂_molar_mass = (12 + 2 * 16) * 1e-3 # kg / mol
+
 axfDIC = Axis(fig[5, 1], xlabel = "Time (days)", ylabel = "Flux (kgCO₂/m²/year)",
                          title = "Air-sea CO₂ flux and Sinking", limits = ((0, times[end] / days), nothing))
-lines!(axfDIC, times / days, air_sea_CO₂_flux * (12 + 16 * 2) * year / 1e6, linewidth = 3, label = "Air-sea flux")
-lines!(axfDIC, times / days, carbon_export    * (12 + 16 * 2) * year / 1e6, linewidth = 3, label = "Sinking export")
-Legend(fig[5, 2], axfDIC, "", framevisible = false)
+lines!(axfDIC, times / days, air_sea_CO₂_flux / 1e3 * CO₂_molar_mass * year, linewidth = 3, label = "Air-sea flux")
+lines!(axfDIC, times / days, carbon_export / 1e3    * CO₂_molar_mass * year, linewidth = 3, label = "Sinking export")
+Legend(fig[5, 2], axfDIC, framevisible = false)
 
 fig
 
