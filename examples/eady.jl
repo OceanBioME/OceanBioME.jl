@@ -77,7 +77,7 @@ set!(model, u=uᵢ, v=vᵢ, P = 0.03, Z = 0.03, NO₃ = 4.0, NH₄ = 0.05, DIC =
 simulation = Simulation(model, Δt = 15minutes, stop_time = 10days)
 
 # Adapt the time step while keeping the CFL number fixed
-wizard = TimeStepWizard(cfl=0.70, max_change = 1.5, max_Δt = 30minutes)
+wizard = TimeStepWizard(cfl=0.6, max_change = 1.5, max_Δt = 30minutes)
 simulation.callbacks[:wizard] = Callback(wizard, IterationInterval(1))
 nothing #hide
 
