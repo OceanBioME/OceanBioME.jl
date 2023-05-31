@@ -37,9 +37,6 @@ V_field = BackgroundField(V, parameters = background_state_parameters)
 B_field = BackgroundField(B, parameters = background_state_parameters)
 
 # Specify some horizontal and vertical viscosity/diffusivity
-νₕ = κₕ = 1e2  # [m² s⁻¹]
-horizontal_diffusivity = HorizontalScalarDiffusivity(ν = νₕ, κ = κₕ)
-#-
 νᵥ = κᵥ = 1e-4 # [m² s⁻¹]
 vertical_diffusivity = VerticalScalarDiffusivity(ν = νᵥ, κ = κᵥ)
 
@@ -62,7 +59,7 @@ model = NonhydrostaticModel(; grid,
                               tracers = :b,
                               buoyancy = BuoyancyTracer(),
                               background_fields = (b = B_field, v = V_field),
-                              closure = (horizontal_diffusivity, vertical_diffusivity))
+                              closure = vertical_diffusivity)
 
 # ## Initial conditions
 # Start with a bit of random noise added to the background thermal wind and an arbitary biogeochemical state
@@ -77,7 +74,7 @@ set!(model, u=uᵢ, v=vᵢ, P = 0.03, Z = 0.03, NO₃ = 4.0, NH₄ = 0.05, DIC =
 simulation = Simulation(model, Δt = 15minutes, stop_time = 10days)
 
 # Adapt the time step while keeping the CFL number fixed
-wizard = TimeStepWizard(cfl=0.6, max_change = 1.5, max_Δt = 30minutes)
+wizard = TimeStepWizard(cfl = 0.5, diffusive_cfl = 0.5, max_Δt = 30minutes)
 simulation.callbacks[:wizard] = Callback(wizard, IterationInterval(1))
 nothing #hide
 
