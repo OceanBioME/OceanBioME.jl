@@ -18,6 +18,7 @@ using OceanBioME.SLatissimaModel: SLatissima
 using Oceananigans.Units
 
 const year = years = 365days
+nothing #hide
 
 # ## Surface PAR and turbulent vertical diffusivity based on idealised mixed layer depth 
 # Setting up idealised functions for PAR and diffusivity (details here can be ignored but these are typical of the North Atlantic)
@@ -33,6 +34,7 @@ const year = years = 365days
 @inline κₜ(x, y, z, t) = 1e-2 * (1 + tanh((z - MLD(t)) / 10)) / 2 + 1e-4
 
 @inline temp(x, y, z, t) = 2.4 * cos(t * 2π / year + 50days) + 10
+nothing #hide
 
 # ## Grid and PAR field
 # Define the grid and an extra Oceananigans field for the PAR to be stored in
@@ -70,24 +72,26 @@ progress_message(sim) = @printf("Iteration: %04d, time: %s, Δt: %s, wall time: 
 simulation.callbacks[:progress] = Callback(progress_message, TimeInterval(10days))
 
 filename = "column"
-simulation.output_writers[:profiles] = JLD2OutputWriter(model, merge(model.tracers, model.auxiliary_fields), filename = "$filename.jld2", schedule = TimeInterval(1day), overwrite_existing=true)
-
-
-#simulation.output_writers[:particles] = JLD2OutputWriter(model, (; particles), filename = "$(filename)_particles.jld2", schedule = TimeInterval(1day), overwrite_existing = true)
+simulation.output_writers[:profiles] = JLD2OutputWriter(model, merge(model.tracers, model.auxiliary_fields),
+                                                        filename = "$filename.jld2",
+                                                        schedule = TimeInterval(1day),
+                                                        overwrite_existing = true)
 
 scale_negative_tracers = ScaleNegativeTracers(; model, tracers = (:NO₃, :NH₄, :P, :Z, :sPOM, :bPOM, :DOM))
 simulation.callbacks[:neg] = Callback(scale_negative_tracers; callsite = UpdateStateCallsite())
+nothing #hide
 
 # ## Run!
-# Finally we run the simulation
+# We are ready to run the simulation
 run!(simulation)
 
-# Now we can visulise the results with some post processing to diagnose the air-sea CO₂ flux - hopefully this looks different to the example without kelp!
+# ## Load saved output
+# Now we can load the results and do some post processing to diagnose the air-sea CO₂ flux. Hopefully, this looks different to the example without kelp!
 
    P = FieldTimeSeries("$filename.jld2", "P")
  NO₃ = FieldTimeSeries("$filename.jld2", "NO₃")
    Z = FieldTimeSeries("$filename.jld2", "Z")
-sPOM = FieldTimeSeries("$filename.jld2", "sPOM") 
+sPOM = FieldTimeSeries("$filename.jld2", "sPOM")
 bPOM = FieldTimeSeries("$filename.jld2", "bPOM")
  DIC = FieldTimeSeries("$filename.jld2", "DIC")
  Alk = FieldTimeSeries("$filename.jld2", "Alk")
@@ -95,41 +99,51 @@ bPOM = FieldTimeSeries("$filename.jld2", "bPOM")
 x, y, z = nodes(P)
 times = P.times
 
-air_sea_CO₂_flux = carbon_export = zeros(length(times))
+# We compute the  air-sea CO₂ flux at the surface (corresponding to vertical index `k = grid.Nz`) and
+# the carbon export by computing how much carbon sinks below some arbirtrary depth; here we use depth 
+# that corresponds to `k = grid.Nz - 20`.
+air_sea_CO₂_flux = zeros(length(times))
+carbon_export = zeros(length(times))
 
 for (i, t) in enumerate(times)
-    air_sea_CO₂_flux[i] = CO₂_flux.condition.parameters(0.0, 0.0, t, DIC[1, 1, 50, i], Alk[1, 1, 50, i], temp(1, 1, 0, t), 35)
-    carbon_export[i] = (sPOM[1, 1, end-20, i] * model.biogeochemistry.sinking_velocities.sPOM.w[1, 1, end-20] +
-                        bPOM[1, 1, end-20, i] * model.biogeochemistry.sinking_velocities.bPOM.w[1, 1, end-20]) * model.biogeochemistry.organic_redfield
+    air_sea_CO₂_flux[i] = CO₂_flux.condition.parameters(0.0, 0.0, t, DIC[1, 1, grid.Nz, i], Alk[1, 1, grid.Nz, i], temp(1, 1, 0, t), 35)
+    carbon_export[i] = (sPOM[1, 1, grid.Nz-20, i] * model.biogeochemistry.sinking_velocities.sPOM.w[1, 1, grid.Nz-20] +
+                        bPOM[1, 1, grid.Nz-20, i] * model.biogeochemistry.sinking_velocities.bPOM.w[1, 1, grid.Nz-20]) * model.biogeochemistry.organic_redfield
 end
+
+# Both `air_sea_CO₂_flux` and `carbon_export` are in units `mmol CO₂ / (m² s)`.
+
+# ## Plot
+# Finally, we plot!
 
 using CairoMakie
 
-fig = Figure(resolution = (1000, 1500), fontsize=20)
+fig = Figure(resolution = (1000, 1500), fontsize = 20)
 
-axis_kwargs = (xlabel = "Time (days)", ylabel = "z (m)", limits = ((0, times[end] / days), (-150, 0)))
-heatmap_kwargs = (interpolate = true, colormap = :batlow)
+axis_kwargs = (xlabel = "Time (days)", ylabel = "z (m)", limits = ((0, times[end] / days), (-150meters, 0)))
 
 axP = Axis(fig[1, 1]; title = "Phytoplankton concentration (mmol N / m³)", axis_kwargs...)
-hmP = heatmap!(times / days, z, interior(P, 1, 1, :, :)'; heatmap_kwargs...)
+hmP = heatmap!(times / days, z, interior(P, 1, 1, :, :)', colormap = :batlow)
 Colorbar(fig[1, 2], hmP)
 
 axNO₃ = Axis(fig[2, 1]; title = "Nitrate concentration (mmol N / m³)", axis_kwargs...)
-hmNO₃ = heatmap!(times / days, z, interior(NO₃, 1, 1, :, :)'; heatmap_kwargs...)
+hmNO₃ = heatmap!(times / days, z, interior(NO₃, 1, 1, :, :)', colormap = :batlow)
 Colorbar(fig[2, 2], hmNO₃)
 
 axZ = Axis(fig[3, 1]; title = "Zooplankton concentration (mmol N / m³)", axis_kwargs...)
-hmZ = heatmap!(times / days, z, interior(Z, 1, 1, :, :)'; heatmap_kwargs...)
+hmZ = heatmap!(times / days, z, interior(Z, 1, 1, :, :)', colormap = :batlow)
 Colorbar(fig[3, 2], hmZ)
 
 axD = Axis(fig[4, 1]; title = "Detritus concentration (mmol N / m³)", axis_kwargs...)
-hmD = heatmap!(times / days, z, interior(sPOM, 1, 1, :, :)' .+ interior(bPOM, 1, 1, :, :)'; heatmap_kwargs...)
+hmD = heatmap!(times / days, z, interior(sPOM, 1, 1, :, :)' .+ interior(bPOM, 1, 1, :, :)', colormap = :batlow)
 Colorbar(fig[4, 2], hmD)
+
+CO₂_molar_mass = (12 + 2 * 16) * 1e-3 # kg / mol
 
 axfDIC = Axis(fig[5, 1], xlabel = "Time (days)", ylabel = "Flux (kgCO₂/m²/year)",
                          title = "Air-sea CO₂ flux and Sinking", limits = ((0, times[end] / days), nothing))
-lines!(axfDIC, times / days, air_sea_CO₂_flux * (12 + 16 * 2) * year / 1e6, linewidth = 3, label = "Air-sea flux")
-lines!(axfDIC, times / days, carbon_export    * (12 + 16 * 2) * year / 1e6, linewidth = 3, linestyle = :dash, label = "Sinking export")
-Legend(fig[5, 2], axfDIC, "", framevisible = false)
+lines!(axfDIC, times / days, air_sea_CO₂_flux / 1e3 * CO₂_molar_mass * year, linewidth = 3, label = "Air-sea flux")
+lines!(axfDIC, times / days, carbon_export / 1e3    * CO₂_molar_mass * year, linewidth = 3, label = "Sinking export")
+Legend(fig[5, 2], axfDIC, framevisible = false)
 
 fig

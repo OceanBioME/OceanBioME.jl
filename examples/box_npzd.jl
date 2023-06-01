@@ -17,6 +17,7 @@ minute = minutes = 60
 hour = hour = 60 * minutes
 day = days = hours * 24  # define the length of a day in seconds
 year = years = day * 365  # define the length of a year in days
+nothing #hide
 
 # This is forced by a prescribed time-dependent photosynthetically available radiation (PAR)
 PAR⁰(t) = 50 * (1 - cos((t + 15days) * 2π / (365days))) * (1 / (1 + 0.2 * exp(-((mod(t, 365days) - 200days) / 50days)^2))) + 10
@@ -25,6 +26,7 @@ z = 10  # specify the nominal depth of the box for the PAR profile
 PAR(t) = PAR⁰(t) * exp(-0.1z) # Modify the PAR based on the nominal depth and exponential decay
 
 T(t) = 5 * (1 - cos((t + 30days) * 2π / (365days))) / 2 + 15
+nothing #hide
 
 # Set up the model. Here, first specify the biogeochemical model, followed by initial conditions and the start and end times
 model = BoxModel(biogeochemistry = NutrientPhytoplanktonZooplanktonDetritus(grid = BoxModelGrid()), forcing = (; PAR, T))
@@ -39,8 +41,6 @@ run!(model, save_interval = 1, save = SaveBoxModel("box_npzd.jld2"))
 
 
 # ## Load the output
-@info "Loading output..."
-
 using JLD2
 
 file = jldopen("box_npzd.jld2")
@@ -59,10 +59,9 @@ end
 close(file)
 
 # ## And plot
-@info "Plotting the results..."
 using CairoMakie
 
-fig = Figure(resolution = (800, 1200), fontsize=24)
+fig = Figure(resolution = (800, 1200), fontsize = 24)
 
 axs = []
 for (idx, tracer) in enumerate(vars)

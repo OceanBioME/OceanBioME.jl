@@ -10,15 +10,11 @@ grid = RectilinearGrid(size = 10, extent = 200meters, topology = (Flat, Flat, Bo
 
 PAR = CenterField(grid)
 
-model = NonhydrostaticModel(
-    grid = grid,
-    biogeochemistry = LOBSTER(; grid),
-    auxiliary_fields = (; PAR)
-)
+model = NonhydrostaticModel(; grid, biogeochemistry = LOBSTER(; grid), auxiliary_fields = (; PAR))
 
 set!(model, P = 0.001, Z = 0.001, NO₃ = 1, NH₄ = 0.01)
 
-simulation = Simulation(model; Δt = 1minute, stop_time = 30days)
+simulation = Simulation(model, Δt = 1minute, stop_time = 30days)
 
 simulation.output_writers[:profiles] = JLD2OutputWriter(model, model.tracers,
                                                         filename = "quickstart.jld2",
@@ -44,8 +40,8 @@ axis_kwargs = (xlabel = "Day", ylabel = "Depth (m)")
 ax1 = Axis(fig[1, 1]; title = "Phytoplankton (mmol N/m³)", axis_kwargs...)
 ax2 = Axis(fig[1, 2]; title = "Nitrate (mmol N/m³)", axis_kwargs...)
 
-hm1 = heatmap!(ax1, phytoplankton.times / day, z, interior(phytoplankton, 1, 1, :, :))
-hm2 = heatmap!(ax2, nitrates.times / day,      z, interior(nitrates, 1, 1, :, :))
+hm1 = heatmap!(ax1, phytoplankton.times / day, z, interior(phytoplankton , 1, 1, :, :)')
+hm2 = heatmap!(ax2,      nitrates.times / day, z, interior(nitrates, 1, 1, :, :)')
 
 fig
 ```

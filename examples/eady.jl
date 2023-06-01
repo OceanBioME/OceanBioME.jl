@@ -36,10 +36,9 @@ B(x, y, z, t, p) = p.M2 * x + p.N^2 * (z - p.Lz/2)
 V_field = BackgroundField(V, parameters = background_state_parameters)
 B_field = BackgroundField(B, parameters = background_state_parameters)
 
-# Specify some vertical viscosity/diffusivity
-ν = κ = 1e-4 # [m² s⁻¹] Vertical vertical viscosity and diffusivity
-
-vertical_diffusivity = VerticalScalarDiffusivity(; ν, κ)
+# Specify some horizontal and vertical viscosity/diffusivity
+νᵥ = κᵥ = 1e-4 # [m² s⁻¹]
+vertical_diffusivity = VerticalScalarDiffusivity(ν = νᵥ, κ = κᵥ)
 
 # Setup the biogeochemical model with optional carbonate chemistry turned on
 
@@ -75,8 +74,9 @@ set!(model, u=uᵢ, v=vᵢ, P = 0.03, Z = 0.03, NO₃ = 4.0, NH₄ = 0.05, DIC =
 simulation = Simulation(model, Δt = 15minutes, stop_time = 10days)
 
 # Adapt the time step while keeping the CFL number fixed
-wizard = TimeStepWizard(cfl=0.85, max_change = 1.5, max_Δt = 30minutes)
-simulation.callbacks[:wizard] = Callback(wizard, IterationInterval(10))
+wizard = TimeStepWizard(cfl = 0.5, diffusive_cfl = 0.5, max_Δt = 30minutes)
+simulation.callbacks[:wizard] = Callback(wizard, IterationInterval(1))
+nothing #hide
 
 # Create a progress message 
 progress(sim) = @printf("i: % 6d, sim time: % 10s, wall time: % 10s, Δt: % 10s, CFL: %.2e\n",
@@ -106,6 +106,7 @@ scale_negative_tracers = ScaleNegativeTracers(; model, tracers = (:NO₃, :NH₄
 simulation.callbacks[:neg] = Callback(scale_negative_tracers; callsite = UpdateStateCallsite())
 simulation.callbacks[:nan_tendencies] = Callback(remove_NaN_tendencies!; callsite = TendencyCallsite())
 simulation.callbacks[:abort_zeros] = Callback(zero_negative_tracers!; callsite = UpdateStateCallsite())
+nothing #hide
 
 # Run the simulation
 run!(simulation)
@@ -133,7 +134,7 @@ n = Observable(1)
   Pₙ = @lift interior(  P[$n], :, :, grid.Nz)
 DICₙ = @lift interior(DIC[$n], :, :, grid.Nz)
 
-fig = Figure(resolution = (1600, 1600))
+fig = Figure(resolution = (1600, 1600), fontsize = 20)
 
 lims = [(minimum(T), maximum(T)) for T in (  ζ[:, :, grid.Nz, :],
                                            NO₃[:, :, grid.Nz, :] .+ NH₄[:, :, grid.Nz, :],
@@ -143,27 +144,28 @@ lims = [(minimum(T), maximum(T)) for T in (  ζ[:, :, grid.Nz, :],
 axis_kwargs = (xlabel = "x (m)", ylabel = "y (m)", aspect = DataAspect())
 
 ax1 = Axis(fig[1, 1]; title = "Vertical vorticity (1 / s)", axis_kwargs...)
-hm1 = heatmap!(ax1, xζ, yζ, ζₙ, levels = 33, colormap = :balance, colorrange = lims[1], interpolate = true)
+hm1 = heatmap!(ax1, xζ, yζ, ζₙ, levels = 33, colormap = :balance, colorrange = lims[1])
 Colorbar(fig[1, 2], hm1)
 
 ax2 = Axis(fig[1, 3]; title = "Nutrient (NO₃ + NH₄) concentration (mmol N / m³)", axis_kwargs...)
-hm2 = heatmap!(ax2, xc, yc, Nₙ, levels = 33, colormap = Reverse(:bamako), colorrange = lims[2], interpolate = true)
+hm2 = heatmap!(ax2, xc, yc, Nₙ, levels = 33, colormap = Reverse(:bamako), colorrange = lims[2])
 Colorbar(fig[1, 4], hm2)
 
 ax3 = Axis(fig[2, 1]; title = "Phytoplankton concentration (mmol N / m³)", axis_kwargs...)
-hm3 = heatmap!(ax3, xc, yc, Pₙ, levels = 33, colormap = Reverse(:batlow), colorrange = lims[3], interpolate = true)
+hm3 = heatmap!(ax3, xc, yc, Pₙ, levels = 33, colormap = Reverse(:batlow), colorrange = lims[3])
 Colorbar(fig[2, 2], hm3)
 
 ax4 = Axis(fig[2, 3]; title = "Dissolved inorganic carbon (mmol C / m³)", axis_kwargs...)
-hm4 = heatmap!(ax4, xc, yc, DICₙ, levels = 33, colormap = Reverse(:devon), colorrange = lims[4], interpolate = true)
+hm4 = heatmap!(ax4, xc, yc, DICₙ, levels = 33, colormap = Reverse(:devon), colorrange = lims[4])
 Colorbar(fig[2, 4], hm4)
 
 title = @lift "t = $(prettytime(times[$n]))"
 Label(fig[0, :], title, fontsize = 30)
 
-record(fig, "eady.mp4", 1:length(times), framerate = 16) do i
+record(fig, "eady.mp4", 1:length(times), framerate = 12) do i
     @info string("Plotting frame ", i, " of ", length(times))
     n[] = i
 end
+nothing #hide
 
 # ![](eady.mp4)

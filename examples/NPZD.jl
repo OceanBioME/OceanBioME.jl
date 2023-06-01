@@ -18,9 +18,11 @@
 using OceanBioME, Oceananigans, Oceananigans.Units, Printf
 
 const year = years = 365days # just for these idealised cases
+nothing #hide
 
 # ## Surface PAR
 PAR⁰(x, y, t) = 50 * (1 - cos((t + 15days) * 2π / year)) * (1 / (1 + 0.2 * exp(-((mod(t, year) - 200days) / 50days)^2))) / 2
+nothing #hide
 
 # ## Grid and PAR field
 # Define the grid and an extra Oceananigans field for the PAR to be stored in
@@ -48,9 +50,11 @@ model = NonhydrostaticModel(; grid,
 
 ## Temperature initial condition: a stable density gradient with random noise superposed.
 Tᵢ(x, y, z) = 16 + dTdz * z + dTdz * model.grid.Lz * 1e-6 * Ξ(z)
+nothing #hide
 
 ## Velocity initial condition: random noise scaled by the friction velocity.
 uᵢ(x, y, z) = 1e-3 * Ξ(z)
+nothing #hide
 
 ## `set!` the `model` fields using functions or constants:
 set!(model, u=uᵢ, w=uᵢ, T=Tᵢ, S=35.0)#, N = 2.0, P = 0.1, Z = 0.01)
@@ -71,6 +75,7 @@ simulation = Simulation(model, Δt = 0.5minute, stop_time = 2years)
 
 wizard = TimeStepWizard(cfl = 0.6, diffusive_cfl = 0.5, max_change = 1.5, min_change = 0.5, cell_advection_timescale = sinking_advection_timescale)
 simulation.callbacks[:wizard] = Callback(wizard, IterationInterval(1))
+nothing #hide
 
 ## Print a progress message
 progress(sim) = @printf("Iteration: %d, time: %s, Δt: %s\n",
@@ -79,10 +84,13 @@ progress(sim) = @printf("Iteration: %d, time: %s, Δt: %s\n",
 simulation.callbacks[:progress] = Callback(progress, IterationInterval(100))
 
 filename = "npdz"
-simulation.output_writers[:profiles] = JLD2OutputWriter(model, merge(model.velocities, model.tracers, model.auxiliary_fields), filename = "$filename.jld2", schedule = TimeInterval(1hour), overwrite_existing=true)
+simulation.output_writers[:profiles] = JLD2OutputWriter(model, merge(model.velocities, model.tracers, model.auxiliary_fields),
+                                                        filename = "$filename.jld2",
+                                                        schedule = TimeInterval(1hour),
+                                                        overwrite_existing=true)
 
 # ## Run!
-# Finally we run the simulation
+# We now run the simulation
 run!(simulation)
 
 # Now we can visualise the results
@@ -116,22 +124,21 @@ fig = Figure(backgroundcolor=RGBf(1, 1, 1), fontsize = 30, resolution = (2400, 2
 Label(fig[1, 1:5], title, textsize = 24, tellwidth = false)
 
 axis_kwargs = (xlabel = "x (m)", ylabel = "z (m)")
-heatmap_kwargs = (interpolate = true, colormap = :batlow)
 
 axP = Axis(fig[2, 1:2]; title = "Phytoplankton concentration (mmol N/m³)", axis_kwargs...)
-hmP = heatmap!(axP, x, z, Pₙ; colorrange = P_range, heatmap_kwargs...)
+hmP = heatmap!(axP, x, z, Pₙ, colorrange = P_range, colormap = :batlow)
 Colorbar(fig[2, 3], hmP)
 
 axN = Axis(fig[2, 4:5]; title = "Nitrate concentration (mmol N/m³)", axis_kwargs...)
-hmN = heatmap!(axN, x, z, Nₙ; colorrange = N_range, heatmap_kwargs...)
+hmN = heatmap!(axN, x, z, Nₙ, colorrange = N_range, colormap = :batlow)
 Colorbar(fig[2, 6], hmN)
 
 axZ = Axis(fig[3, 1:2]; title = "Zooplankton concentration (mmol N/m³)", axis_kwargs...)
-hmZ = heatmap!(axZ, x, z, Zₙ; colorrange = Z_range, heatmap_kwargs...)
+hmZ = heatmap!(axZ, x, z, Zₙ, colorrange = Z_range, colormap = :batlow)
 Colorbar(fig[3, 3], hmZ)
 
 axD = Axis(fig[3, 4:5]; title = "Detritus concentration (mmol N/m³)", axis_kwargs...)
-hmD = heatmap!(axD, x, z, Dₙ; colorrange = D_range, heatmap_kwargs...)
+hmD = heatmap!(axD, x, z, Dₙ, colorrange = D_range, colormap = :batlow)
 Colorbar(fig[3, 6], hmD)
 
 nframes = length(times)
@@ -142,5 +149,6 @@ record(fig, "$filename.mp4", frame_iterator; framerate = framerate) do i
     @info string("Plotting frame ", i, " of ", nframes)
     n[] = i
 end
+nothing #hide
 
 # ![](npdz.mp4)

@@ -58,8 +58,6 @@ run!(simulation)
 We can then load the saved output and visualize it:
 
 ```@example quickstart
-using CairoMakie
-
 b = FieldTimeSeries("buoyancy_front.jld2", "b")
 P = FieldTimeSeries("buoyancy_front.jld2", "P")
 
@@ -67,6 +65,8 @@ xb, yb, zb = nodes(b)
 xP, yP, zP = nodes(P)
 
 times = b.times
+
+using CairoMakie
 
 n = Observable(1)
 
@@ -76,23 +76,22 @@ P_lims = (minimum(P), maximum(P))
 bₙ = @lift interior(b[$n], :, 1, :)
 Pₙ = @lift interior(P[$n], :, 1, :)
 
-fig = Figure(resolution = (1600, 160 * 4), fontsize = 24)
+fig = Figure(resolution = (1200, 480), fontsize = 20)
 
 title = @lift "t = $(prettytime(times[$n]))"
 Label(fig[0, :], title)
 
-axis_kwargs = (xlabel = "x (m)", ylabel = "z (m)", width = 1350)
+axis_kwargs = (xlabel = "x (m)", ylabel = "z (m)", width = 970)
 ax1 = Axis(fig[1, 1]; title = "Buoyancy perturbation (m / s)", axis_kwargs...)
 ax2 = Axis(fig[2, 1]; title = "Phytoplankton concentration (mmol N / m³)", axis_kwargs...)
 
-hm1 = heatmap!(ax1, xb, zb, bₙ, colorrange = b_lims, colormap = :batlow, interpolate=true)
-hm2 = heatmap!(ax2, xP, zP, Pₙ, colorrange = P_lims, colormap = Reverse(:bamako), interpolate=true)
+hm1 = heatmap!(ax1, xb, zb, bₙ, colorrange = b_lims, colormap = :batlow)
+hm2 = heatmap!(ax2, xP, zP, Pₙ, colorrange = P_lims, colormap = Reverse(:bamako))
 
 Colorbar(fig[1, 2], hm1)
 Colorbar(fig[2, 2], hm2)
 
 record(fig, "buoyancy_front.mp4", 1:length(times)) do i
-    @info string("Plotting frame ", i, " of ", length(times))
     n[] = i
 end
 
@@ -108,8 +107,9 @@ In this example `OceanBioME` is providing the `biogeochemistry` and the remainde
 * This documentation, which provides
     * example scripts,
     * explanations of model implementation methods,
-    * details of currently implimented models, and
+    * details of currently implemented models, and
     * a library documenting all user-facing objects and functions.
+
 * [Discussions on the OceanBioME github](https://github.com/OceanBioME/OceanBioME.jl/discussions)
   
     If you've got a question or something to talk about, don't hesitate to [start a new discussion](https://github.com/OceanBioME/OceanBioME.jl/discussions/new?)!
