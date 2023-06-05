@@ -1,6 +1,6 @@
 using JLD2, CairoMakie, Statistics
 using Oceananigans.Units
-
+#=
 @inline t_function(x, y, z, t) = 2.4 * cos(t * 2π / year + 50day) + 10
 
 # could change this to FieldTimeSeries but would be harder to stick the arrays together (probably could also write to the same file but too late)
@@ -56,7 +56,7 @@ for (idx, it) in enumerate(iterations)
     kelp_times[idx] = file["timeseries/t/$it"]
 end
 
-kelp_times .-= 2years
+kelp_times .-= 3years
 
 close(file)
 
@@ -68,42 +68,48 @@ for (i, t) in enumerate(times)
 end
 
 zs = [-198:4:-2;]
-
+=#
 fig = Figure(resolution = (1200, 1000))
 
-axP = Axis(fig[1:3, 1:2], xlabel = "Time (years)", ylabel = "Depth (m)", title = "Phytoplankton concentration (mmol N / m³)")
+axP = Axis(fig[1:3, 1:2], xlabel = "Time (years)", ylabel = "Depth (m)", title = "Phytoplankton concentration (mmol N / m³)", limits = (0, 3, -160, 0))
 
 hmP = heatmap!(axP, times ./ year, zs[10:50], P[10:50, :]', colormap = Reverse(:batlow))
 Colorbar(fig[1:3, 3], hmP)
 
-lines!(axP, [3 - 30/365, 3 - 30/365], [zs[9], 0], color=:black)
+lines!(axP, [2 - 30/365, 2 - 30/365], [zs[9], 0], color=:black)
 
-axN = Axis(fig[4:6, 1:2], xlabel = "Time (years)", ylabel = "Depth (m)", title = "Nutrient concentration (mmol N / m³)")
+axN = Axis(fig[4:6, 1:2], xlabel = "Time (years)", ylabel = "Depth (m)", title = "Nutrient concentration (mmol N / m³)", limits = (0, 3, -160, 0))
 
 hmN = heatmap!(axN, times ./ year, zs[10:50], NO₃[10:50, :]', colormap = Reverse(:batlow))
 Colorbar(fig[4:6, 3], hmN)
 
-lines!(axN, [3 - 30/365, 3 - 30/365], [zs[9], 0], color=:black)
+lines!(axN, [2 - 30/365, 2 - 30/365], [zs[9], 0], color=:black)
 
-axS = Axis(fig[7:8, 1:4], xlabel = "Time (years)", ylabel = "Carbon Flux (kg CO₂ / m² / year)", limits = (0, times[end] /years, 1.1 * (12 + 16 * 2) * year /(1000 * 1000) * min(minimum(air_sea_CO₂_flux), minimum(-carbon_export)), 1.2 * (12 + 16 * 2) * year /(1000 * 1000) * max(maximum(air_sea_CO₂_flux), maximum(-carbon_export))))
+axS = Axis(fig[7:8, 1:4], xlabel = "Time (years)", ylabel = "Carbon Flux (kg CO₂ / m² / year)", limits = (0, times[end] /years - 1, 1.1 * (12 + 16 * 2) * year /(1000 * 1000) * min(minimum(air_sea_CO₂_flux), minimum(-carbon_export)), 1.2 * (12 + 16 * 2) * year /(1000 * 1000) * max(maximum(air_sea_CO₂_flux), maximum(-carbon_export))))
 
 lnAS = lines!(axS, times ./ year, air_sea_CO₂_flux .* (12 + 16 * 2) .* year /(1000 * 1000), label = "Air-sea exchange")
 lnSI = lines!(axS, times ./ year, - carbon_export .* (12 + 16 * 2) .* year /(1000 * 1000), label = "Sinking export")
 
 Legend(fig[7:8, 1:4], [lnAS, lnSI], ["Air-sea CO₂ exchange", "Sinking export"], halign = :left, valign = :bottom)
 
-lines!(axS, [3 - 30/365, 3 - 30/365], [1, -2], color=:black)
+lines!(axS, [2 - 30/365, 2 - 30/365], [1, -2], color=:black)
 
-axA = Axis(fig[1:2, 4], xlabel = "Time (years)", ylabel = "Frond area (dm² / frond)", title = "Kelp growth")
+Ā = mean(A, dims=1)[1, :]
 
-lines!(axA, kelp_times ./ year, mean(A, dims=1)[1, :])
+axA = Axis(fig[1:2, 4], xlabel = "Time (years)", ylabel = "Frond area (dm² / frond)", title = "Kelp growth", xticks = [2:0.2:3;], limits = (2 - 30/365, 3, minimum(Ā)*0.95, maximum(Ā)*1.05))
 
-axC = Axis(fig[3:4, 4], xlabel = "Time (years)", ylabel = "Carbon stored (kg CO₂ / m²)")
+lines!(axA, kelp_times ./ year, Ā)
 
-lines!(axC, kelp_times ./ year, sum((C .+ 0.2) .* A .* 0.5 .* 100 * (12 + 16 * 2) / (12 * 1000), dims = 1)[1, :])
+ΣC = sum((C .+ 0.2) .* A .* 0.5 .* 100 * (12 + 16 * 2) / (12 * 1000), dims = 1)[1, :]
 
-axN = Axis(fig[5:6, 4], xlabel = "Time (years)", ylabel = "Nitrogen stored (mmol N / m²)")
+axC = Axis(fig[3:4, 4], xlabel = "Time (years)", ylabel = "Carbon stored (kg CO₂ / m²)", xticks = [2:0.2:3;], limits = (2 - 30/365, 3, minimum(ΣC)*0.95, maximum(ΣC)*1.05))
 
-lines!(axN, kelp_times ./ year, sum((N .+ 0.0146) .* A .* 0.5 .* 100 / 14, dims = 1)[1, :])
+lines!(axC, kelp_times ./ year, ΣC)
+
+ΣN = sum((N .+ 0.0146) .* A .* 0.5 .* 100 / 14, dims = 1)[1, :]
+
+axN = Axis(fig[5:6, 4], xlabel = "Time (years)", ylabel = "Nitrogen stored (mmol N / m²)", xticks = [2:0.2:3;], limits = (2 - 30/365, 3, minimum(ΣN)*0.95, maximum(ΣN)*1.05))
+
+lines!(axN, kelp_times ./ year, ΣN)
 
 save("paper/column_example.png", fig, px_per_unit = 4)

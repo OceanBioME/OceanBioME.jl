@@ -84,7 +84,7 @@ z₀ = [-21:5:-1;] * 1.0 # depth of kelp fronds
 particles = SLatissima(; x = ones(n) * Lx / 2, y = ones(n) * Ly / 2, z = z₀, 
                          A = ones(n) * 10.0, N = ones(n) * 0.014, C =  ones(n) * 0.4, 
                          latitude = 57.5,
-                         scalefactor = 50.0, 
+                         scalefactor = 500.0, 
                          pescribed_temperature = t_function)
 
 CO₂_flux = GasExchange(; gas = :CO₂, temperature = t_function, salinity = (args...) -> 35)
@@ -125,7 +125,7 @@ filename = "kelp"
 simulation.output_writers[:profiles] = JLD2OutputWriter(model, merge(model.tracers, model.auxiliary_fields), filename = "$filename.jld2", schedule = TimeInterval(1day), overwrite_existing=true)
 simulation.output_writers[:particles] = JLD2OutputWriter(model, (; particles), filename = "$(filename)_particles.jld2", schedule = TimeInterval(1day), overwrite_existing=true)
 
-scale_negative_tracers = ScaleNegativeTracers(; model, tracers = (:NO₃, :NH₄, :P, :Z, :sPON, :bPON, :DON))
+
 simulation.callbacks[:neg] = Callback(scale_negative_tracers; callsite = UpdateStateCallsite())
 
 simulation.callbacks[:wizard] = Callback(wizard, IterationInterval(1))
