@@ -1,12 +1,12 @@
 using JLD2, CairoMakie, Statistics
 using Oceananigans.Units
-#=
+
 @inline t_function(x, y, z, t) = 2.4 * cos(t * 2π / year + 50day) + 10
 
 # could change this to FieldTimeSeries but would be harder to stick the arrays together (probably could also write to the same file but too late)
 P, NO₃, DIC, Alk, sPOC, bPOC = ntuple(n -> zeros(50, 4 * 365), 6)
 
-times = zeros(4 * 365)
+times = ones(4 * 365) .* NaN
 
 file = jldopen("column.jld2")
 iterations = keys(file["timeseries/t"])
@@ -45,7 +45,7 @@ close(file)
 file = jldopen("kelp_particles.jld2")
 iterations = keys(file["timeseries/t"])[2:end-183]
 
-A, N, C = ntuple(n -> zeros(5, length(iterations)), 3)
+A, N, C = ntuple(n -> ones(5, length(iterations)) .* NaN, 3)
 kelp_times = zeros(length(iterations))
 
 for (idx, it) in enumerate(iterations)
@@ -68,7 +68,7 @@ for (i, t) in enumerate(times)
 end
 
 zs = [-198:4:-2;]
-=#
+
 fig = Figure(resolution = (1200, 1000))
 
 axP = Axis(fig[1:3, 1:2], xlabel = "Time (years)", ylabel = "Depth (m)", title = "Phytoplankton concentration (mmol N / m³)", limits = (0, 3, -160, 0))
@@ -85,7 +85,7 @@ Colorbar(fig[4:6, 3], hmN)
 
 lines!(axN, [2 - 30/365, 2 - 30/365], [zs[9], 0], color=:black)
 
-axS = Axis(fig[7:8, 1:4], xlabel = "Time (years)", ylabel = "Carbon Flux (kg CO₂ / m² / year)", limits = (0, times[end] /years - 1, 1.1 * (12 + 16 * 2) * year /(1000 * 1000) * min(minimum(air_sea_CO₂_flux), minimum(-carbon_export)), 1.2 * (12 + 16 * 2) * year /(1000 * 1000) * max(maximum(air_sea_CO₂_flux), maximum(-carbon_export))))
+axS = Axis(fig[7:8, 1:4], xlabel = "Time (years)", ylabel = "Carbon Flux (kg CO₂ / m² / year)", limits = (0, times[end - 2] /years - 1, 1.1 * (12 + 16 * 2) * year /(1000 * 1000) * min(minimum(air_sea_CO₂_flux[isfinite.(air_sea_CO₂_flux)]), minimum(-carbon_export[isfinite.(carbon_export)])), 1.2 * (12 + 16 * 2) * year /(1000 * 1000) * max(maximum(air_sea_CO₂_flux[isfinite.(air_sea_CO₂_flux)]), maximum(-carbon_export[isfinite.(carbon_export)]))))
 
 lnAS = lines!(axS, times ./ year, air_sea_CO₂_flux .* (12 + 16 * 2) .* year /(1000 * 1000), label = "Air-sea exchange")
 lnSI = lines!(axS, times ./ year, - carbon_export .* (12 + 16 * 2) .* year /(1000 * 1000), label = "Sinking export")
