@@ -15,7 +15,7 @@ authors:
     affiliation: "1, 2"
   - name: Si Chen
     affiliation: "1, 2"
-  - name: and Collaborators
+  - name: Collaborators
 affiliations:
  - name: Department of Applied Mathematics and Theoretical Physics, University of Cambridge, Cambridge, United Kingdom
    index: 1
