@@ -15,10 +15,11 @@ authors:
     affiliation: "1, 2"
   - name: Si Chen
     affiliation: "1, 2"
+  - name: and Collaborators
 affiliations:
  - name: Department of Applied Mathematics and Theoretical Physics, University of Cambridge, Cambridge, United Kingdom
    index: 1
- - name: Centre for Climate Repair at Cambridge, Cambridge, United Kingdom
+ - name: Centre for Climate Repair, Cambridge, United Kingdom
    index: 2
 date: 15 March 2023
 bibliography: paper.bib
