@@ -33,9 +33,9 @@ bibliography: paper.bib
 # Summary
 
 ``OceanBioME.jl`` is a flexible modelling environment written in Julia for modelling the coupled interactions between ocean biogeochemistry, carbonate chemistry, and physics.
-OceanBioME can be used as a stand-alone box model, or integrated into ``Oceananigans.jl`` [@Oceananigans] simulations of ocean-flavored fluid dynamics in one-, two-, or three-dimensions.
+OceanBioME can be used as a stand-alone box model, or integrated into ``Oceananigans.jl`` [@Oceananigans] simulations of ocean-flavoured fluid dynamics in one-, two-, or three-dimensions.
 As a result, OceanBioME and Oceananigans can be used to simulate the biogeochemical response across an enormous range, ranging from surface boundary layer turbulence at the meter scale to eddying global ocean simulations at the planetary scale, and on computational systems ranging from laptops to supercomputers.
-OceanBioME leverages Julia's multiple dispatch and effective inline capabilities to fuse it's computations directly into existing Oceananigans kernels, thus maintaining Oceananigans' bespoke performance, memory- and cost-efficiency on GPUs in OceanBioME-augmented simulations.
+OceanBioME leverages Julia's multiple dispatch and effective inline capabilities to fuse its computations directly into existing Oceananigans kernels, thus maintaining Oceananigans' bespoke performance, memory- and cost-efficiency on GPUs in OceanBioME-augmented simulations.
 
 OceanBioME is built with a highly modular design that allows user control and customization.
 There are three distinct module types implemented in OceanBioME.jl.
@@ -44,7 +44,7 @@ These equations can be solved by OceanBioME as box models, which is particularly
 The same modules can be integrated by Oceananigans to provide tracer-based ecosystem models.
 Second, boundary modules contain sets of equations which provide information at the top and bottom of the ocean.
 For example, air-sea gas exchange modules calculate the flux of carbon dioxide and oxygen at the sea surface, while sediment modules calculate fluxes of carbon and oxygen at the seafloor.
-The third module type are "biologically active" particles.
+The third module type is "biologically active" particles.
 These consist of individual-based models which are solved along particle paths and can be coupled with the tracer-based modules and physics from Oceananigans.
 The biologically active particles can be advected by the currents, and/or they can move according to prescribed dynamics.
 For example, migrating zooplankton or fish can be modelled with biologically active particles and OceanBioME allows these to interact with tracer-based components such as phytoplankton or detritus.
@@ -60,7 +60,7 @@ OceanBioME was designed specifically to study ocean carbon dioxide removal (OCDR
 Assessing the effectiveness and impacts of OCDR is challenging due to the complexities of the interactions between the biological, chemical, and physical processes involved in the carbon cycle.
 Moreover, field trials of OCDR interventions are generally small-scale and targeted, while the intervention required to have a climate-scale impact is regional or global.
 We have built OceanBioME to meet these challenges by creating tools that provide a modular interface to the different components within the ocean modelling framework provided by Oceananigans.
-This allows easy access to a suite of biogeochemical models ranging from simple idealized models to full-complexity models.
+This allows easy access to a suite of biogeochemical models ranging from simple idealized to full-complexity models.
 
 The biologically active particles built into OceanBioME are particularly useful for OCDR applications.
 Accurate carbon accounting is essential for assessing the effectiveness of OCDR strategies.
@@ -68,7 +68,7 @@ Biologically active particles can be used to track carbon from a particular sour
 Biologically active particles can also be used to model OCDR deployment strategies including seaweed cultivation, alkalinity enhancement, and marine biomass regeneration.
 OceanBioME currently includes an extended version of the sugar kelp model presented in @broch:2012 as an example of the utility and implementation of these features.
 
-We have formulated the models such that they are easy to use alongside data assimilation packages such as ``EnsembleKalmanProcesses.jl`` [@ekp] to calibrate their parameter.
+We have formulated the models such that they are easy to use alongside data assimilation packages such as ``EnsembleKalmanProcesses.jl`` [@ekp] to calibrate their parameters.
 This provides a powerful tool utility for integrating observations and models, with the potential to improve model skill and identify key sources of uncertainty.
 
 ![Here we show the results of a 1D model, forced by idealised light and mixing, which qualitatively reproduces the biogeochemical cycles in the North Atlantic.
