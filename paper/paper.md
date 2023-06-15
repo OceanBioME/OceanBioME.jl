@@ -68,9 +68,6 @@ Biologically active particles can be used to track carbon from a particular sour
 Biologically active particles can also be used to model OCDR deployment strategies including seaweed cultivation, alkalinity enhancement, and marine biomass regeneration.
 OceanBioME currently includes an extended version of the sugar kelp model presented in @broch:2012 as an example of the utility and implementation of these features.
 
-Oceananigans was written from scratch to optimize memory-efficiency and GPU performance making it extremely cost- and energy-efficient.
-OceanBioME leverages Julia's multiple dispatch and effective inline capabilities to fuse much of the additional biogeochemical dynamics directly into existing Oceananigans GPU kernels, thus maintaining GPU performance and memory efficiency for OceanBioME-augmented Oceananigans simulations.
-
 We have formulated the models such that they are easy to use alongside data assimilation packages such as ``EnsembleKalmanProcesses.jl`` [@ekp] to calibrate their parameter.
 This provides a powerful tool utility for integrating observations and models, with the potential to improve model skill and identify key sources of uncertainty.
 
