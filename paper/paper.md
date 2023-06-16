@@ -32,9 +32,9 @@ bibliography: paper.bib
 
 # Summary
 
-``OceanBioME.jl`` is a flexible modelling environment written in Julia for modelling the coupled interactions between ocean biogeochemistry, carbonate chemistry, and physics.
+``OceanBioME.jl`` is a flexible modelling environment written in Julia [@julia] for modelling the coupled interactions between ocean biogeochemistry, carbonate chemistry, and physics.
 OceanBioME can be used as a stand-alone box model, or integrated into ``Oceananigans.jl`` [@Oceananigans] simulations of ocean-flavoured fluid dynamics in one-, two-, or three-dimensions.
-As a result, OceanBioME and Oceananigans can be used to simulate the biogeochemical response across an enormous range, ranging from surface boundary layer turbulence at the meter scale to eddying global ocean simulations at the planetary scale, and on computational systems ranging from laptops to supercomputers.
+As a result, OceanBioME and Oceananigans can be used to simulate the biogeochemical response across an enormous range of scales: from surface boundary layer turbulence at the meter scale to eddying global ocean simulations at the planetary scale, and on computational systems ranging from laptops to supercomputers.
 OceanBioME leverages Julia's multiple dispatch and effective inline capabilities to fuse its computations directly into existing Oceananigans kernels, thus maintaining Oceananigans' bespoke performance, memory- and cost-efficiency on GPUs in OceanBioME-augmented simulations.
 
 OceanBioME is built with a highly modular design that allows user control and customization.
@@ -50,7 +50,8 @@ The biologically active particles can be advected by the currents, and/or they c
 For example, migrating zooplankton or fish can be modelled with biologically active particles and OceanBioME allows these to interact with tracer-based components such as phytoplankton or detritus.
 
 We provide a simple framework and utilities (such as light attenuation integration) to build the necessary components of biogeochemical models.
-With the provided models, currently a simple NPZD [@npzd] model, an intermediate complexity model LOBSTER [@lobster], and PISCES [@pisces], we have set up a straightforward "plug and play" framework to add additional tracers such as carbonate and oxygen chemistry systems, and additional forcing.
+With the provided models, currently a simple Nutrient-Phytoplankton-Zooplankton-Detritus [@npzd] model, an intermediate complexity model, LOBSTER [@lobster], and a higher complexity model, PISCES [@pisces]. 
+We have set up a straightforward "plug and play" framework to add additional tracers such as carbonate and oxygen chemistry systems, and additional forcing.
 Additionally, we have implemented comprehensive air-sea flux models [e.g. @wanninkhof:1992] and sediment models [e.g. @soetaert:2000] which can easily be applied to tracers in the models.
 We focus on the simulation of idealized sub-mesoscale systems, but this flexible framework allows users to model problems of any scale.
 This framework is made possible by our contributions to Oceananigans, adding a streamlined user interface to swap biogeochemical models with no modification to other model configurations.
@@ -66,7 +67,7 @@ The biologically active particles built into OceanBioME are particularly useful 
 Accurate carbon accounting is essential for assessing the effectiveness of OCDR strategies.
 Biologically active particles can be used to track carbon from a particular source while accounting for interactions with its surroundings.
 Biologically active particles can also be used to model OCDR deployment strategies including seaweed cultivation, alkalinity enhancement, and marine biomass regeneration.
-OceanBioME currently includes an extended version of the sugar kelp model presented in @broch:2012 as an example of the utility and implementation of these features.
+OceanBioME currently includes an extended version of the sugar kelp model presented by @broch:2012 as an example of the utility and implementation of these features.
 
 We have formulated the models such that they are easy to use alongside data assimilation packages such as ``EnsembleKalmanProcesses.jl`` [@ekp] to calibrate their parameters.
 This provides a powerful tool utility for integrating observations and models, with the potential to improve model skill and identify key sources of uncertainty.
@@ -80,7 +81,7 @@ To this physical setup, we added a medium complexity (9 tracers) biogeochemical 
 On top of this, we added particles modelling the growth of sugar kelp which are free-floating and advected by the flow, and carbon dioxide exchange from the air.
 A key advantage of writing ``OceanBioME.jl`` in Julia is that it offers accessibility similar to high-level languages such as Python, with the speed of languages like C and Fortran and built-in parallelism.
 This means that models can be run significantly faster than the equivalent in other high-level languages.
-``OceanBioME.jl`` can run on GPUs, allowing the above model (1 km × 1 km × 100 m with 64 × 64 × 16 grid points) to simulate 10 days of evolution in about 30 minutes of computing time.](eady_example.png)
+``OceanBioME.jl`` can run on GPUs, allowing the above model (1 km × 1 km × 100 m with 64 × 64 × 16 grid points) to simulate 10 days of evolution in about 30 minutes of computing time on an Nvidia P100 GPU.](eady_example.png)
 
 A key metric for the validity of biogeochemical systems is the conservation of elements such as carbon and nitrogen in the system.
 We therefore continuously test the implemented models in a variety of simple scenarios (i.e. isolated, with/without air-sea flux, with/without sediment) to ensure basic conservations are fulfilled, and will continue to add tests for any new models.
