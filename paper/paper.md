@@ -35,7 +35,15 @@ bibliography: paper.bib
 ``OceanBioME.jl`` is a flexible modelling environment written in Julia [@julia] for modelling the coupled interactions between ocean biogeochemistry, carbonate chemistry, and physics.
 OceanBioME can be used as a stand-alone box model, or integrated into ``Oceananigans.jl`` [@Oceananigans] simulations of ocean-flavoured fluid dynamics in one-, two-, or three-dimensions.
 As a result, OceanBioME and Oceananigans can be used to simulate the biogeochemical response across an enormous range of scales: from surface boundary layer turbulence at the meter scale to eddying global ocean simulations at the planetary scale, and on computational systems ranging from laptops to supercomputers.
+An example small-scale problem is shown in Figure 1.
 OceanBioME leverages Julia's multiple dispatch and effective inline capabilities to fuse its computations directly into existing Oceananigans kernels, thus maintaining Oceananigans' bespoke performance, memory- and cost-efficiency on GPUs in OceanBioME-augmented simulations.
+
+![Here we replicate the Eady problem where a background buoyancy gradient and corresponding thermal wind generate a sub-mesoscale eddy, roughly following the setup of Taylor (2016).
+To this physical setup, we added a medium complexity (9 tracers) biogeochemical model, some of which are shown above.
+On top of this, we added particles modelling the growth of sugar kelp which are free-floating and advected by the flow, and carbon dioxide exchange from the air.
+A key advantage of writing ``OceanBioME.jl`` in Julia is that it offers accessibility similar to high-level languages such as Python, with the speed of languages like C and Fortran and built-in parallelism.
+This means that models can be run significantly faster than the equivalent in other high-level languages.
+``OceanBioME.jl`` can run on GPUs, allowing the above model (1 km × 1 km × 100 m with 64 × 64 × 16 grid points) to simulate 10 days of evolution in about 30 minutes of computing time on an Nvidia P100 GPU.](eady_example.png)
 
 OceanBioME is built with a highly modular design that allows user control and customization.
 There are three distinct module types implemented in OceanBioME.jl.
@@ -62,6 +70,11 @@ Assessing the effectiveness and impacts of OCDR is challenging due to the comple
 Moreover, field trials of OCDR interventions are generally small-scale and targeted, while the intervention required to have a climate-scale impact is regional or global.
 We have built OceanBioME to meet these challenges by creating tools that provide a modular interface to the different components within the ocean modelling framework provided by Oceananigans.
 This allows easy access to a suite of biogeochemical models ranging from simple idealized to full-complexity models.
+Figure 2 shows a simple column model with an OCDR intervention (macroalgae growth) added after a warm-up period, which increases the carbon export of the system.
+
+![Here we show the results of a 1D model, forced by idealised light and mixing, which qualitatively reproduces the biogeochemical cycles in the North Atlantic.
+We then add kelp (500 frond / m² in the top 50 m of water) in December of the 3ʳᵈ year (black vertical line) which causes an increase in air-sea carbon dioxide exchange and sinking export, as well as a change in the phytoplankton growth cycle.
+Plot made with `Makie` [@makie].](column_example.png)
 
 The biologically active particles built into OceanBioME are particularly useful for OCDR applications.
 Accurate carbon accounting is essential for assessing the effectiveness of OCDR strategies.
@@ -71,17 +84,6 @@ OceanBioME currently includes an extended version of the sugar kelp model presen
 
 We have formulated the models such that they are easy to use alongside data assimilation packages such as ``EnsembleKalmanProcesses.jl`` [@ekp] to calibrate their parameters.
 This provides a powerful tool utility for integrating observations and models, with the potential to improve model skill and identify key sources of uncertainty.
-
-![Here we show the results of a 1D model, forced by idealised light and mixing, which qualitatively reproduces the biogeochemical cycles in the North Atlantic.
-We then add kelp (500 frond / m² in the top 50 m of water) in December of the 3ʳᵈ year (black vertical line) which causes an increase in air-sea carbon dioxide exchange and sinking export, as well as a change in the phytoplankton growth cycle.
-Plot made with `Makie` [@makie].](column_example.png)
-
-![Here we replicate the Eady problem where a background buoyancy gradient and corresponding thermal wind generate a sub-mesoscale eddy, roughly following the setup of Taylor (2016).
-To this physical setup, we added a medium complexity (9 tracers) biogeochemical model, some of which are shown above.
-On top of this, we added particles modelling the growth of sugar kelp which are free-floating and advected by the flow, and carbon dioxide exchange from the air.
-A key advantage of writing ``OceanBioME.jl`` in Julia is that it offers accessibility similar to high-level languages such as Python, with the speed of languages like C and Fortran and built-in parallelism.
-This means that models can be run significantly faster than the equivalent in other high-level languages.
-``OceanBioME.jl`` can run on GPUs, allowing the above model (1 km × 1 km × 100 m with 64 × 64 × 16 grid points) to simulate 10 days of evolution in about 30 minutes of computing time on an Nvidia P100 GPU.](eady_example.png)
 
 A key metric for the validity of biogeochemical systems is the conservation of elements such as carbon and nitrogen in the system.
 We therefore continuously test the implemented models in a variety of simple scenarios (i.e. isolated, with/without air-sea flux, with/without sediment) to ensure basic conservations are fulfilled, and will continue to add tests for any new models.
