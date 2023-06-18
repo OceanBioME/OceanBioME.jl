@@ -35,7 +35,7 @@ bibliography: paper.bib
 ``OceanBioME.jl`` is a flexible modelling environment written in Julia [@julia] for modelling the coupled interactions between ocean biogeochemistry, carbonate chemistry, and physics.
 OceanBioME can be used as a stand-alone box model, or integrated into ``Oceananigans.jl`` [@Oceananigans] simulations of ocean-flavoured fluid dynamics in one-, two-, or three-dimensions.
 As a result, OceanBioME and Oceananigans can be used to simulate the biogeochemical response across an enormous range of scales: from surface boundary layer turbulence at the meter scale to eddying global ocean simulations at the planetary scale, and on computational systems ranging from laptops to supercomputers.
-An example small-scale problem is shown in \autoref{fig1}.
+An example of a problem involving small-scale flow features is shown in \autoref{fig1}.
 OceanBioME leverages Julia's multiple dispatch and effective inline capabilities to fuse its computations directly into existing Oceananigans kernels, thus maintaining Oceananigans' bespoke performance, memory- and cost-efficiency on GPUs in OceanBioME-augmented simulations.
 
 ![Here we replicate the Eady problem where a background buoyancy gradient and corresponding thermal wind generate a sub-mesoscale eddy, roughly following the setup of Taylor (2016).
