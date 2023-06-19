@@ -46,9 +46,7 @@ An example of a problem involving small-scale flow features is shown in \autoref
 ![Here we replicate the Eady problem where a background buoyancy gradient and corresponding thermal wind generate a sub-mesoscale eddy, roughly following the setup of Taylor (2016).
 To this physical setup, we added a medium complexity (9 tracers) biogeochemical model, some of which are shown above.
 On top of this, we added particles modelling the growth of sugar kelp which are free-floating and advected by the flow, and carbon dioxide exchange from the air.
-A key advantage of writing ``OceanBioME.jl`` in Julia is that it offers accessibility similar to high-level languages such as Python, with the speed of languages like C and Fortran and built-in parallelism.
-This means that models can be run significantly faster than the equivalent in other high-level languages.
-``OceanBioME.jl`` can run on GPUs, allowing the above model (1 km × 1 km × 100 m with 64 × 64 × 16 grid points) to simulate 10 days of evolution in about 30 minutes of computing time on an Nvidia P100 GPU. Figure made with `Makie` [@makie]. \label{fig1}](eady_example.png)
+Thanks to Julia's speed and efficiency the above model (1 km × 1 km × 100 m with 64 × 64 × 16 grid points) took about 30 minutes of computing time to simulate 10 days of evolution in about on an Nvidia P100 GPU. Figure made with `Makie` [@makie]. \label{fig1}](eady_example.png)
 
 ``OceanBioME.jl`` is built with a highly modular design that allows user control and customization.
 There are three distinct module types implemented in ``OceanBioME.jl``.
