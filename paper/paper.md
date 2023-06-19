@@ -19,7 +19,7 @@ authors:
     orcid: 0000-0001-5317-2445
     affiliation: 3
   - name: Navid C Constantinou
-    affiliation: 4
+    affiliation: 4, 5
 affiliations:
  - name: Department of Applied Mathematics and Theoretical Physics, University of Cambridge, Cambridge, United Kingdom
    index: 1
@@ -29,6 +29,8 @@ affiliations:
    index: 3
  - name: Australian National University
    index: 4
+ - name: Australian Research Council Centre for Climate Extremes
+   index: 5
 date: 15 March 2023
 bibliography: paper.bib
 ---
