@@ -49,13 +49,16 @@ On top of this, we added particles modelling the growth of sugar kelp which are 
 Thanks to Julia's speed and efficiency the above model (1 km × 1 km × 100 m with 64 × 64 × 16 grid points) took about 30 minutes of computing time to simulate 10 days of evolution in about on an Nvidia P100 GPU. Figure made with `Makie` [@makie]. \label{fig1}](eady_example.png)
 
 ``OceanBioME.jl`` is built with a highly modular design that allows user control and customization.
-There are three distinct module types implemented in ``OceanBioME.jl``.
-First, tracer-based ecosystem modules are formulated as a set of coupled ordinary differential equations.
+There are three distinct module types implemented in ``OceanBioME.jl``:
+
+- First, tracer-based ecosystem modules are formulated as a set of coupled ordinary differential equations.
 These equations can be solved by ``OceanBioME.jl`` as box models, which is particularly useful for testing.
 The same modules can be integrated by ``Oceananigans.jl`` to provide tracer-based ecosystem models.
-Second, boundary modules contain sets of equations which provide information at the top and bottom of the ocean.
+
+- Second, boundary modules contain sets of equations which provide information at the top and bottom of the ocean.
 For example, air-sea gas exchange modules calculate the flux of carbon dioxide and oxygen at the sea surface, while sediment modules calculate fluxes of carbon and oxygen at the seafloor.
-The third module type is "biologically active" particles.
+
+- The third module type is "biologically active" particles.
 These consist of individual-based models which are solved along particle paths and can be coupled with the tracer-based modules and physics from ``Oceananigans.jl``.
 The biologically active particles can be advected by the currents, and/or they can move according to prescribed dynamics.
 For example, migrating zooplankton or fish can be modelled with biologically active particles and ``OceanBioME.jl`` allows these to interact with tracer-based components such as phytoplankton or detritus.
