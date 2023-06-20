@@ -46,7 +46,7 @@ An example of a problem involving small-scale flow features is shown in \autoref
 ![Here we replicate the Eady problem where a background buoyancy gradient and corresponding thermal wind generate a sub-mesoscale eddy, roughly following the setup of Taylor (2016).
 To this physical setup, we added a medium complexity (9 tracers) biogeochemical model, some of which are shown above.
 On top of this, we added particles modelling the growth of sugar kelp which are free-floating and advected by the flow, and carbon dioxide exchange from the air.
-Thanks to Julia's speed and efficiency the above model (1 km × 1 km × 100 m with 64 × 64 × 16 grid points) took about 30 minutes of computing time to simulate 10 days of evolution in about on an Nvidia P100 GPU. Figure made with `Makie` [@makie]. \label{fig1}](eady_example.png)
+Thanks to Julia's speed and efficiency the above model (1 km × 1 km × 100 m with 64 × 64 × 16 grid points) took about 30 minutes of computing time to simulate 10 days of evolution on an Nvidia P100 GPU. Figure made with `Makie.jl` [@makie]. \label{fig1}](eady_example.png)
 
 ``OceanBioME.jl`` is built with a highly modular design that allows user control and customization.
 There are three distinct module types implemented in ``OceanBioME.jl``:
@@ -79,8 +79,8 @@ This allows easy access to a suite of biogeochemical models ranging from simple 
 \autoref{fig2} shows a simple column model with an OCDR intervention (macroalgae growth) added after a warm-up period, which increases the carbon export of the system.
 
 ![Here we show the results of a 1D model, forced by idealised light and mixing, which qualitatively reproduces the biogeochemical cycles in the North Atlantic.
-We then add kelp (500 frond / m² in the top 50 m of water) in December of the 3ʳᵈ year (black vertical line) which causes an increase in air-sea carbon dioxide exchange and sinking export, as well as a change in the phytoplankton growth cycle.
-Figure made with `Makie` [@makie]. \label{fig2}](column_example.png)
+We then add kelp (500 frond / m² in the top 50 m of water) in December of the 2ⁿᵈ year (black vertical line) which causes an increase in air-sea carbon dioxide exchange and sinking export, as well as a change in the phytoplankton growth cycle.
+Figure made with `Makie.jl` [@makie]. \label{fig2}](column_example.png)
 
 The biologically active particles built into ``OceanBioME.jl`` are particularly useful for OCDR applications.
 Accurate carbon accounting is essential for assessing the effectiveness of OCDR strategies.
