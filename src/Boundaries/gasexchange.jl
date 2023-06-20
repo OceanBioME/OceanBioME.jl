@@ -26,21 +26,21 @@ struct pCO₂{P0, P1, P2, PB, PW, FT}
          boron_ratio::FT,
          thermal_expansion::FT,
          haline_contraction::FT) where {P0, P1, P2, PB, PW, FT} =
-        new{P0, P1, P2, PB, PW, FT}(solubility, 
-                                    bicarbonate_dissociation, 
-                                    carbonate_dissociation, 
-                                    boric_acid_dissociation, 
-                                    water_dissociaiton, 
-                                    lower_pH_bound, upper_pH_bound, 
-                                    boron_ratio, 
-                                    thermal_expansion, haline_contraction)
+         new{P0, P1, P2, PB, PW, FT}(solubility, 
+                                     bicarbonate_dissociation, 
+                                     carbonate_dissociation, 
+                                     boric_acid_dissociation, 
+                                     water_dissociaiton, 
+                                     lower_pH_bound, upper_pH_bound, 
+                                     boron_ratio, 
+                                     thermal_expansion, haline_contraction)
 end
 
-adapt_structure(to, pCO₂_model::pCO₂) = pCO₂(adapt_structure(to, pCO₂_model.solubility),
-                                             adapt_structure(to, pCO₂_model.bicarbonate_dissociation),
-                                             adapt_structure(to, pCO₂_model.carbonate_dissociation),
-                                             adapt_structure(to, pCO₂_model.boric_acid_dissociation),
-                                             adapt_structure(to, pCO₂_model.water_dissociaiton),
+adapt_structure(to, pCO₂_model::pCO₂) = pCO₂(adapt(to, pCO₂_model.solubility),
+                                             adapt(to, pCO₂_model.bicarbonate_dissociation),
+                                             adapt(to, pCO₂_model.carbonate_dissociation),
+                                             adapt(to, pCO₂_model.boric_acid_dissociation),
+                                             adapt(to, pCO₂_model.water_dissociaiton),
                                              pCO₂_model.lower_pH_bound, pCO₂_model.upper_pH_bound,
                                              pCO₂_model.boron_ratio, pCO₂_model.thermal_expansion, pCO₂_model.haline_contraction)
 
@@ -148,16 +148,16 @@ struct GasExchange{G, ScP, βP, FT, AC, AP, T, S, PCO}
     pCO₂ :: PCO
 end
 
-adapt_structure(to, gasexchange::GasExchange) = GasExchange(adapt_structure(to, gasexchange.gas),
-                                                            adapt_structure(to, gasexchange.schmidt_params),
-                                                            adapt_structure(to, gasexchange.solubility_params),
+adapt_structure(to, gasexchange::GasExchange) = GasExchange(adapt(to, gasexchange.gas),
+                                                            adapt(to, gasexchange.schmidt_params),
+                                                            adapt(to, gasexchange.solubility_params),
                                                             gasexchange.ocean_density,
-                                                            adapt_structure(to, gasexchange.air_concentration),
-                                                            adapt_structure(to, gasexchange.air_pressure),
+                                                            adapt(to, gasexchange.air_concentration),
+                                                            adapt(to, gasexchange.air_pressure),
                                                             gasexchange.average_wind_speed,
-                                                            adapt_structure(to, gasexchange.temperature),
-                                                            adapt_structure(to, gasexchange.salinity),
-                                                            adapt_structure(to, gasexchange.pCO₂))
+                                                            adapt(to, gasexchange.temperature),
+                                                            adapt(to, gasexchange.salinity),
+                                                            adapt(to, gasexchange.pCO₂))
 
 """
     GasExchange(;gas,

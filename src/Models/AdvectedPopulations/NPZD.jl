@@ -38,7 +38,7 @@ import Oceananigans.Biogeochemistry: required_biogeochemical_tracers,
 
 import OceanBioME: maximum_sinking_velocity
 
-import Adapt: adapt_structure
+import Adapt: adapt_structure, adapt
 
 """
     NutrientPhytoplanktonZooplanktonDetritus(; grid,
@@ -330,11 +330,11 @@ adapt_structure(to, npzd::NPZD) =
 
                                              npzd.remineralization_rate,
 
-                                             adapt_structure(to, npzd.light_attenuation_model),
-                                             adapt_structure(to, npzd.sediment_model),
+                                             adapt(to, npzd.light_attenuation_model),
+                                             adapt(to, npzd.sediment_model),
 
-                                             NamedTuple{keys(npzd.sinking_velocities)}(ntuple(n -> adapt_structure(to, npzd.sinking_velocities[n]), length(npzd.sinking_velocities))), # not sure this is the most efficient way todo this
-                                             NamedTuple{keys(npzd.advection_schemes)}(ntuple(n -> adapt_structure(to, npzd.advection_schemes[n]), length(npzd.advection_schemes))),
+                                             adapt(to, npzd.sinking_velocities),
+                                             adapt(to, npzd.advection_schemes), 
 
-                                             adapt_structure(to, npzd.particles))
+                                             adapt(to, npzd.particles))
 end # module

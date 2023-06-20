@@ -13,7 +13,7 @@ using Oceananigans.Biogeochemistry: biogeochemical_drift_velocity, biogeochemica
 using Oceananigans.Grids: znode
 
 import Oceananigans.Biogeochemistry: update_tendencies!
-import Adapt: adapt_structure
+import Adapt: adapt_structure, adapt
 
 abstract type AbstractSediment end
 abstract type FlatSediment <: AbstractSediment end
@@ -38,7 +38,7 @@ function update_tendencies!(bgc, sediment::FlatSediment, model)
 
     event = launch!(arch, model.grid, :xy,
                     calculate_tendencies!,
-                    bgc.sediment_model, bgc, model,
+                    bgc.sediment_model, bgc, model.tracers, model.timestepper,
                     dependencies = device_event(arch))
 
     wait(device(arch), event)

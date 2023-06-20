@@ -59,7 +59,7 @@ import Oceananigans.Biogeochemistry: required_biogeochemical_tracers,
 
 import OceanBioME: maximum_sinking_velocity
 
-import Adapt: adapt_structure
+import Adapt: adapt_structure, adapt
 import Base: show, summary
 
 """
@@ -424,12 +424,12 @@ adapt_structure(to, lobster::LOBSTER) =
             lobster.fast_sinking_mortality_fraction,
             lobster.disolved_organic_breakdown_rate,
             lobster.zooplankton_calcite_dissolution,
-            adapt_structure(to, lobster.light_attenuation_model),
-            adapt_structure(to, lobster.sediment_model),
+            adapt(to, lobster.light_attenuation_model),
+            adapt(to, lobster.sediment_model),
             lobster.optionals,
-            NamedTuple{keys(lobster.sinking_velocities)}(ntuple(n -> adapt_structure(to, lobster.sinking_velocities[n]), length(lobster.sinking_velocities))), # not sure this is the most efficient way todo this
-            NamedTuple{keys(lobster.advection_schemes)}(ntuple(n -> adapt_structure(to, lobster.advection_schemes[n]), length(lobster.advection_schemes))),
-            adapt_structure(to, lobster.particles))
+            adapt(to, lobster.sinking_velocities), 
+            adapt(to, lobster.advection_schemes), 
+            adapt(to, lobster.particles))
 
 summary(::LOBSTER{FT, LA, S, B, W, A, P}) where {FT, LA, S, B, W, A, P} = string("Lodyc-DAMTP Ocean Biogeochemical Simulation Tools for Ecosystem and Resources (LOBSTER) model ($FT)")
 show(io::IO, model::LOBSTER{FT, LA, S, Val{B}, W, A, P}) where {FT, LA, S, B, W, A, P} =

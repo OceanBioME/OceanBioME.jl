@@ -142,5 +142,5 @@ adapt_structure(to, par::TwoBandPhotosyntheticallyActiveRatiation) =
                                              par.chlorophyll_blue_exponent,
                                              par.pigment_ratio,
                                              par.phytoplankton_chlorophyll_ratio,
-                                             adapt_structure(to, par.field),
-                                             adapt_structure(to, par.surface_PAR))
+                                             adapt(to, par.field),
+                                             adapt(to, par.surface_PAR))
