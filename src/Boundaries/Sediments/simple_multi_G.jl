@@ -124,7 +124,7 @@ adapt_structure(to, sediment::SimpleMultiG) =
 sediment_tracers(::SimpleMultiG) = (:C_slow, :C_fast, :C_ref, :N_slow, :N_fast, :N_ref)
 sediment_fields(model::SimpleMultiG) = (C_slow = model.fields.C_slow, C_fast = model.fields.C_fast, N_slow = model.fields.N_slow, N_fast = model.fields.N_fast, C_ref = model.fields.C_ref, N_ref = model.fields.N_ref)
 
-@kernel function calculate_tendencies!(sediment::SimpleMultiG, bgc, tracers, timestepper)
+@kernel function _calculate_tendencies!(sediment::SimpleMultiG, bgc, grid, tracers, timestepper)
     i, j = @index(Global, NTuple)
 
     @inbounds begin
@@ -182,7 +182,7 @@ sediment_fields(model::SimpleMultiG) = (C_slow = model.fields.C_slow, C_fast = m
 
         pₛₒₗᵢ = sediment.solid_dep_params.A * (sediment.solid_dep_params.C * sediment.solid_dep_params.depth ^ sediment.solid_dep_params.D) ^ sediment.solid_dep_params.B
 
-        Δz = model.grid.Δzᵃᵃᶜ[1]
+        Δz = grid.Δzᵃᵃᶜ[1]
 
         timestepper.Gⁿ.NH₄[i, j, 1] += (Nᵐⁱⁿ * (1 - pₙᵢₜ)) / Δz
         timestepper.Gⁿ.NO₃[i, j, 1] += (Nᵐⁱⁿ * pₙᵢₜ - Cᵐⁱⁿ * pᵈᵉⁿⁱᵗ * 4//5) / Δz

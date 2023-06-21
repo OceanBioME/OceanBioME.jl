@@ -37,8 +37,8 @@ function update_tendencies!(bgc, sediment::FlatSediment, model)
     wait(device(model.architecture), MultiEvent(Tuple(events)))
 
     event = launch!(arch, model.grid, :xy,
-                    calculate_tendencies!,
-                    bgc.sediment_model, bgc, model.tracers, model.timestepper,
+                    _calculate_tendencies!,
+                    bgc.sediment_model, bgc, model.grid, model.tracers, model.timestepper,
                     dependencies = device_event(arch))
 
     wait(device(arch), event)
