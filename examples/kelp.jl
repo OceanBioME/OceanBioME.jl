@@ -38,7 +38,7 @@ nothing #hide
 @inline temp(x, y, z, t) = 2.4 * cos(t * 2π / year + 50day) + 10
 nothing #hide
 
-architecture = GPU()
+architecture = CPU()
 
 # ## Grid and PAR field
 # Define the grid and an extra Oceananigans field for the PAR to be stored in
