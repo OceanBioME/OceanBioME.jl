@@ -62,7 +62,7 @@ These consist of individual-based models which are solved along particle paths a
 The biologically active particles can be advected by the currents, and/or they can move according to prescribed dynamics.
 For example, migrating zooplankton or fish can be modelled with biologically active particles and ``OceanBioME.jl`` allows these to interact with tracer-based components such as phytoplankton or detritus.
 
-`AdvectedPopulations` are supported by `Boundaries` modules which provide information at the top and bottom of the ocean. For example, the GasExchange submodule calculate the flux of carbon dioxide and oxygen at the sea surface, while sediment modules calculate fluxes of carbon and oxygen at the seafloor.
+`AdvectedPopulations` are supported by `Boundaries` modules which provide information at the top and bottom of the ocean. For example, the GasExchange submodule calculate the flux of carbon dioxide and oxygen at the sea surface, while `Sediments` modules calculate fluxes of carbon and oxygen at the seafloor.
 
 We provide a simple framework and utilities (such as light attenuation integration) to build the necessary components of biogeochemical models.
 With the provided models, currently a simple Nutrient-Phytoplankton-Zooplankton-Detritus [@npzd] model, and an intermediate complexity model, LOBSTER [@lobster], we have set up a straightforward "plug and play" framework to add additional tracers such as carbonate and oxygen chemistry systems, and additional forcing.
@@ -101,6 +101,6 @@ Additionally, Strong-Wright (In prep.) is using the coupling of both the biogeoc
 
 # Acknowledgements
 
-We would like to thank the [Climate Modeling Alliance](https://clima.caltech.edu) team and ``Oceananigans.jl`` contributors for their fantastic project. We are also very grateful for the support and funding of the [Centre for Climate Repair at Cambridge](https://www.climaterepair.cam.ac.uk/) and the [Gordon and Betty Moore Foundation](https://www.moore.org/).
+We would like to thank the [Climate Modeling Alliance](https://clima.caltech.edu) team and ``Oceananigans.jl`` contributors for their fantastic project. We are also very grateful for the support and funding of the [Centre for Climate Repair, Cambridge](https://www.climaterepair.cam.ac.uk/) and the [Gordon and Betty Moore Foundation](https://www.moore.org/).
 
 # References
