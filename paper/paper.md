@@ -20,6 +20,8 @@ authors:
     affiliation: 3
   - name: Navid C Constantinou
     affiliation: 4, 5
+  - name: Simone Silvestri
+    affiliation: 3
 affiliations:
  - name: Department of Applied Mathematics and Theoretical Physics, University of Cambridge, Cambridge, United Kingdom
    index: 1
