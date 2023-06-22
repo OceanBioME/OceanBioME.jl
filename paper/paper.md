@@ -49,27 +49,27 @@ On top of this, we added particles modelling the growth of sugar kelp which are 
 Thanks to Julia's speed and efficiency the above model (1 km × 1 km × 100 m with 64 × 64 × 16 grid points) took about 30 minutes of computing time to simulate 10 days of evolution on an Nvidia P100 GPU. Figure made with `Makie.jl` [@makie]. \label{fig1}](eady_example.png)
 
 ``OceanBioME.jl`` is built with a highly modular design that allows user control and customization.
-There are three distinct module types implemented in ``OceanBioME.jl``:
+There are two distinct module types implemented in ``OceanBioME.jl``:
 
-- First, tracer-based ecosystem modules are formulated as a set of coupled ordinary differential equations.
+- First, tracer-based ecosystem modules are formulated in `AdvectedPopulations` as a set of coupled ordinary differential equations.
 These equations can be solved by ``OceanBioME.jl`` as box models, which is particularly useful for testing.
 The same modules can be integrated by ``Oceananigans.jl`` to provide tracer-based ecosystem models.
 
-- Second, boundary modules contain sets of equations which provide information at the top and bottom of the ocean.
-For example, air-sea gas exchange modules calculate the flux of carbon dioxide and oxygen at the sea surface, while sediment modules calculate fluxes of carbon and oxygen at the seafloor.
-
-- The third module type is "biologically active" particles.
+- The second module type is `Individual` "biologically active" particles.
 These consist of individual-based models which are solved along particle paths and can be coupled with the tracer-based modules and physics from ``Oceananigans.jl``.
 The biologically active particles can be advected by the currents, and/or they can move according to prescribed dynamics.
 For example, migrating zooplankton or fish can be modelled with biologically active particles and ``OceanBioME.jl`` allows these to interact with tracer-based components such as phytoplankton or detritus.
 
+`AdvectedPopulations` are supported by `Boundaries` modules which provide information at the top and bottom of the ocean. For example, the GasExchange submodule calculate the flux of carbon dioxide and oxygen at the sea surface, while sediment modules calculate fluxes of carbon and oxygen at the seafloor.
+
 We provide a simple framework and utilities (such as light attenuation integration) to build the necessary components of biogeochemical models.
-With the provided models, currently a simple Nutrient-Phytoplankton-Zooplankton-Detritus [@npzd] model, an intermediate complexity model, LOBSTER [@lobster], and a higher complexity model, PISCES [@pisces]. 
+With the provided models, currently a simple Nutrient-Phytoplankton-Zooplankton-Detritus [@npzd] model, and an intermediate complexity model, LOBSTER [@lobster]. 
 We have set up a straightforward "plug and play" framework to add additional tracers such as carbonate and oxygen chemistry systems, and additional forcing.
 Additionally, we have implemented comprehensive air-sea flux models [e.g. @wanninkhof:1992] and sediment models [e.g. @soetaert:2000] which can easily be applied to tracers in the models.
 We focus on the simulation of idealized sub-mesoscale systems, but this flexible framework allows users to model problems of any scale.
 This framework is made possible by our contributions to ``Oceananigans.jl``, adding a streamlined user interface to swap biogeochemical models with no modification to other model configurations.
-This interface also facilitates rapid prototyping, as models can be coded to be in a much more accessible way, which is not possible with existing biogeochemical models.
+This interface also facilitates rapid prototyping, as models can be implemented and swapped easily by just extending a few key functions.
+This flexibility and ease-of-use is unmatched in existing biogeochemical models.
 
 ``OceanBioME.jl`` was designed specifically to study ocean carbon dioxide removal (OCDR) strategies.
 Assessing the effectiveness and impacts of OCDR is challenging due to the complexities of the interactions between the biological, chemical, and physical processes involved in the carbon cycle.
@@ -88,15 +88,11 @@ Biologically active particles can be used to track carbon from a particular sour
 Biologically active particles can also be used to model OCDR deployment strategies including seaweed cultivation, alkalinity enhancement, and marine biomass regeneration.
 ``OceanBioME.jl`` currently includes an extended version of the sugar kelp model presented by @broch:2012 as an example of the utility and implementation of these features.
 
-We have formulated the models such that they are easy to use alongside data assimilation packages such as ``EnsembleKalmanProcesses.jl`` [@ekp] to calibrate their parameters.
-This provides a powerful tool utility for integrating observations and models, with the potential to improve model skill and identify key sources of uncertainty.
+The implementation of OceanBioME.jl models allows for seamless integration with data assimilation packages, such as ``EnsembleKalmanProcesses.jl`` [@ekp]. This feature facilitates rapid calibration of model parameters, providing a powerful utility for integrating observations and models, with the potential to improve model skill and identify key sources of uncertainty.
 
 A key metric for the validity of biogeochemical systems is the conservation of elements such as carbon and nitrogen in the system.
 We therefore continuously test the implemented models in a variety of simple scenarios (i.e. isolated, with/without air-sea flux, with/without sediment) to ensure basic conservations are fulfilled, and will continue to add tests for any new models.
 Additionally, we check ``OceanBioME.jl`` utilities through standard tests such as comparison to analytical solutions for light attenuation, and conservation of tracers for active particle exudation and sinking.
-
-<!-- Flexible biogeochemical modelling frameworks similar to ``OceanBioME.jl`` are uncommon and tend to require more significant knowledge of each coupled system, a more cumbersome configuration process, provide a narrower breadth of utility, are not openly available, or are more computationally intensive.
-For example among the open-source alternatives NEMO [@nemo] provides a comprehensive global biogeochemical modelling framework but requires complex configuration and is unsuited for local ecosystem modelling, while MACMODS [@macmods] provides more limited functionality on a slower platform. -->
 
 Finally, this software is currently facilitating multiple research projects into ocean CDR which would have been significantly harder with other solutions.
 For example, Chen (In prep.) is using the active particle coupling provided to investigate the effects of location and planting density of kelp in the open ocean on their carbon drawdown effect, as in the example above.
