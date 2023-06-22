@@ -40,9 +40,9 @@ bibliography: paper.bib
 # Summary
 
 ``OceanBioME.jl`` is a flexible modelling environment written in Julia [@julia] for modelling the coupled interactions between ocean biogeochemistry, carbonate chemistry, and physics.
-``OceanBioME.jl`` can be used as a stand-alone box model, or integrated into ``Oceananigans.jl`` [@Oceananigans] simulations of ocean-flavoured fluid dynamics in one-, two-, or three-dimensions.
+``OceanBioME.jl`` can be used as a stand-alone box model, or integrated into ``Oceananigans.jl`` [@Oceananigans] simulations of ocean dynamics in one-, two-, or three-dimensions.
 As a result, ``OceanBioME.jl`` and ``Oceananigans.jl`` can be used to simulate the biogeochemical response across an enormous range of scales: from surface boundary layer turbulence at the meter scale to eddying global ocean simulations at the planetary scale, and on computational systems ranging from laptops to supercomputers.
-An example of a problem involving small-scale flow features is shown in \autoref{fig1}.
+An example of a problem involving small-scale flow features is shown in \autoref{fig1}, which shows a simulation of a sub-mesoscale eddy in a 1km x 1km horizontal domain with an intermediate complexity biogeochemical model and a kelp growth model solved along the trajectories of drifting buoys.
 ``OceanBioME.jl`` leverages Julia's multiple dispatch and effective inline capabilities to fuse its computations directly into existing ``Oceananigans.jl`` kernels, thus maintaining ``Oceananigans.jl``'s bespoke performance, memory- and cost-efficiency on GPUs in ``OceanBioME.jl``-augmented simulations.
 
 ![Here we replicate the Eady problem where a background buoyancy gradient and corresponding thermal wind generate a sub-mesoscale eddy, roughly following the setup of Taylor (2016).
@@ -55,14 +55,14 @@ There are two distinct module types implemented in ``OceanBioME.jl``:
 
 - First, tracer-based ecosystem modules are formulated in `AdvectedPopulations` as a set of coupled ordinary differential equations.
 These equations can be solved by ``OceanBioME.jl`` as box models, which is particularly useful for testing.
-The same modules can be integrated by ``Oceananigans.jl`` to provide tracer-based ecosystem models.
+The same equations can be integrated by ``Oceananigans.jl`` to provide tracer-based ecosystem models.
 
 - The second module type is `Individual` "biologically active" particles.
 These consist of individual-based models which are solved along particle paths and can be coupled with the tracer-based modules and physics from ``Oceananigans.jl``.
 The biologically active particles can be advected by the currents, and/or they can move according to prescribed dynamics.
-For example, migrating zooplankton or fish can be modelled with biologically active particles and ``OceanBioME.jl`` allows these to interact with tracer-based components such as phytoplankton or detritus.
+For example, migrating zooplankton or fish can be modelled with biologically active particles and ``OceanBioME.jl`` allows these to interact with tracer-based components such as phytoplankton or oxygen.
 
-`AdvectedPopulations` are supported by `Boundaries` modules which provide information at the top and bottom of the ocean. For example, the GasExchange submodule calculate the flux of carbon dioxide and oxygen at the sea surface, while `Sediments` modules calculate fluxes of carbon and oxygen at the seafloor.
+`AdvectedPopulations` are supported by `Boundaries` modules which provide information at the top and bottom of the ocean. For example, the GasExchange submodule calculates the flux of carbon dioxide and oxygen at the sea surface, while the `Sediments` modules calculates fluxes of carbon and oxygen at the seafloor.
 
 We provide a simple framework and utilities (such as light attenuation integration) to build the necessary components of biogeochemical models.
 With the provided models, currently a simple Nutrient-Phytoplankton-Zooplankton-Detritus [@npzd] model, and an intermediate complexity model, LOBSTER [@lobster], we have set up a straightforward "plug and play" framework to add additional tracers such as carbonate and oxygen chemistry systems, and additional forcing.
@@ -92,7 +92,7 @@ Biologically active particles can also be used to model OCDR deployment strategi
 The implementation of OceanBioME.jl models allows for seamless integration with data assimilation packages, such as ``EnsembleKalmanProcesses.jl`` [@ekp]. This feature facilitates rapid calibration of model parameters, providing a powerful utility for integrating observations and models, with the potential to improve model skill and identify key sources of uncertainty.
 
 A key metric for the validity of biogeochemical systems is the conservation of elements such as carbon and nitrogen in the system.
-We therefore continuously test the implemented models in a variety of simple scenarios (i.e. isolated, with/without air-sea flux, with/without sediment) to ensure basic conservations are fulfilled, and will continue to add tests for any new models.
+We therefore continuously test the implemented models in a variety of simple scenarios (i.e. isolated, with/without air-sea flux, with/without sediment) to ensure that conservation conditions are met, and we will continue to add tests for any new models.
 Additionally, we check ``OceanBioME.jl`` utilities through standard tests such as comparison to analytical solutions for light attenuation, and conservation of tracers for active particle exudation and sinking.
 
 Finally, this software is currently facilitating multiple research projects into ocean CDR which would have been significantly harder with other solutions.
