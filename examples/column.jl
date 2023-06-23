@@ -48,8 +48,7 @@ model = NonhydrostaticModel(; grid,
                               closure = ScalarDiffusivity(ν = κₜ, κ = κₜ), 
                               biogeochemistry = LOBSTER(; grid,
                                                           surface_phytosynthetically_active_radiation = PAR⁰,
-                                                          carbonates = true,
-                                                          advection_schemes = (sPOM = WENO(grid), bPOM = WENO(grid))),
+                                                          carbonates = true),
                               boundary_conditions = (DIC = FieldBoundaryConditions(top = CO₂_flux), ),
                               advection = nothing)
 
