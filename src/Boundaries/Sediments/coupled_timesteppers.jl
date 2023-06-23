@@ -17,8 +17,7 @@ import Oceananigans.TimeSteppers: ab2_step!, rk3_substep!
 
         step_field_kernel!(field, Δt, χ,
                            model.timestepper.Gⁿ[i],
-                           model.timestepper.G⁻[i],
-                           dependencies = barrier)
+                           model.timestepper.G⁻[i])
 
         # TODO: function tracer_index(model, field_index) = field_index - 3, etc...
         tracer_index = Val(i - 3) # assumption
