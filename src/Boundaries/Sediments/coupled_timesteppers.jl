@@ -28,8 +28,7 @@ import Oceananigans.TimeSteppers: ab2_step!, rk3_substep!
                        model.diffusivity_fields,
                        tracer_index,
                        model.clock,
-                       Δt,
-                       dependencies = field_event)
+                       Δt)
     end
 
     sediment = model.biogeochemistry.sediment_model
