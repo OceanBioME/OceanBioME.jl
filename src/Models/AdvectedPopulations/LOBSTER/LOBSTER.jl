@@ -408,8 +408,8 @@ adapt_structure(to, lobster::LOBSTER) =
             adapt(to, lobster.sinking_velocities), 
             adapt(to, lobster.particles))
 
-summary(::LOBSTER{FT, LA, S, B, W, A, P}) where {FT, LA, S, B, W, A, P} = string("Lodyc-DAMTP Ocean Biogeochemical Simulation Tools for Ecosystem and Resources (LOBSTER) model ($FT)")
-show(io::IO, model::LOBSTER{FT, LA, S, Val{B}, W, A, P}) where {FT, LA, S, B, W, A, P} =
+summary(::LOBSTER{FT, LA, S, B, W, P}) where {FT, LA, S, B, W, P} = string("Lodyc-DAMTP Ocean Biogeochemical Simulation Tools for Ecosystem and Resources (LOBSTER) model ($FT)")
+show(io::IO, model::LOBSTER{FT, LA, S, Val{B}, W, P}) where {FT, LA, S, B, W, P} =
        print(io, summary(model), " \n",
                 " Light Attenuation Model: ", "\n",
                 "    └── ", summary(model.light_attenuation_model), "\n",

@@ -172,7 +172,7 @@ function NutrientPhytoplanktonZooplanktonDetritus(; grid,
                                                     sinking_speeds = (P = 0.2551/day, D = 2.7489/day),
                                                     open_bottom::Bool = true,
                                                                                            
-                                                    particles::P = nothing) where {FT, LA, S, A, P}
+                                                    particles::P = nothing) where {FT, LA, S, P}
 
     sinking_velocities = setup_velocity_fields(sinking_speeds, grid, open_bottom)
 
@@ -286,8 +286,8 @@ function update_boxmodel_state!(model::BoxModel{<:NPZD, <:Any, <:Any, <:Any, <:A
     getproperty(model.values, :T) .= model.forcing.T(model.clock.time)
 end
 
-summary(::NPZD{FT, LA, W, A, P}) where {FT, LA, W, A, P} = string("Nutrient Phytoplankton Zooplankton Detritus model ($FT)")
-show(io::IO, model::NPZD{FT, LA, W, A, P}) where {FT, LA, W, A, P} =
+summary(::NPZD{FT, LA, W, P}) where {FT, LA, W, P} = string("Nutrient Phytoplankton Zooplankton Detritus model ($FT)")
+show(io::IO, model::NPZD{FT, LA, W, P}) where {FT, LA, W, P} =
        print(io, summary(model), " \n",
                 " Light Attenuation Model: ", "\n",
                 "    └── ", summary(model.light_attenuation_model), "\n",
