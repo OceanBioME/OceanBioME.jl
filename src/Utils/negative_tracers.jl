@@ -87,6 +87,8 @@ end
         else
             field = 0
         end
+
+        @inbounds fields[tracer][i, j, k] = field
     end
 end
 
@@ -109,7 +111,7 @@ adapt_structure(to, snt::ScaleNegativeTracers) = ScaleNegativeTracers(adapt(to, 
 
 Returns a callback that scales `tracers` so that none are negative. Use like:
 ```julia
-negativity_protection! = ScaleNegativeTracers(tracers = (:P, :Z, :N))
+negativity_protection! = ScaleNegativeTracers(; model, tracers = (:P, :Z, :N))
 simulation.callbacks[:neg] = Callback(negativity_protection!; callsite = UpdateStateCallsite())
 ```
 This is a better but imperfect way to prevent numerical errors causing negative tracers. Please see discussion [here](https://github.com/OceanBioME/OceanBioME.jl/discussions/48). 
@@ -129,7 +131,8 @@ end
 
 @inline function (scale::ScaleNegativeTracers)(model)
     workgroup, worksize = work_layout(model.grid, :xyz)
-    scale_for_negs_kernel! = scale_for_negs!(device(model.grid.architecture), workgroup, worksize)
+    dev = device(model.grid.architecture)
+    scale_for_negs_kernel! = scale_for_negs!(dev, workgroup, worksize)
     scale_for_negs_kernel!(values(model.tracers), scale.tracers, scale.scalefactors)
 end
 @inline (scale::ScaleNegativeTracers)(sim::Simulation) = scale(sim.model) 
