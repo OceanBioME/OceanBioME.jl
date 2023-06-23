@@ -120,8 +120,7 @@ end
 
 function update_PAR!(model, PAR::TwoBandPhotosyntheticallyActiveRatiation)
     arch = architecture(model.grid)
-    event = launch!(arch, model.grid, :xy, update_TwoBandPhotosyntheticallyActiveRatiation!, PAR.field, model.grid, model.tracers.P, PAR.surface_PAR, model.clock.time, PAR)
-    wait(event)
+    launch!(arch, model.grid, :xy, update_TwoBandPhotosyntheticallyActiveRatiation!, PAR.field, model.grid, model.tracers.P, PAR.surface_PAR, model.clock.time, PAR)
 
     fill_halo_regions!(PAR.field, model.clock, fields(model))
 end
