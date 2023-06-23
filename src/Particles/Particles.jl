@@ -18,9 +18,9 @@ abstract type BiogeochemicalParticles end
     Δt) = update_lagrangian_particle_properties!(model, model.biogeochemistry, Δt)
 
 @inline step_lagrangian_particles!(::Nothing,
-    model::HydrostaticFreeSurfaceModel{<:TS, <:E, <:A, <:S, <:G, <:T, <:V, <:B, <:R, <:F, <:P, 
+    model::HydrostaticFreeSurfaceModel{<:Any, <:Any, <:Any, <:Any, <:Any, <:Any, <:Any, <:Any, <:Any, <:Any, <:Any, 
                                        <:ContinuousFormBiogeochemistry{<:Any, <:Any, <:BiogeochemicalParticles}, 
-                                       <:U, <:C, <:Φ, <:K, <:AF}, 
+                                       <:Any, <:Any, <:Any, <:Any, <:Any,}, 
     Δt) = update_lagrangian_particle_properties!(model, model.biogeochemistry, Δt)
 
 @inline update_lagrangian_particle_properties!(model, bgc::ContinuousFormBiogeochemistry{<:Any, <:Any, <:BiogeochemicalParticles}, Δt) = 
