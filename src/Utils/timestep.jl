@@ -1,4 +1,4 @@
-using Oceananigans.Advection: cell_advection_timescaleᶜᶜᶜ
+using Oceananigans.Advection: cell_advection_timescale
 using Oceananigans.Grids: Center, znodes, zspacing, minimum_zspacing
 
 @inline function column_diffusion_timescale(model)
