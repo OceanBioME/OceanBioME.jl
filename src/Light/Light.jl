@@ -18,7 +18,7 @@ using Oceananigans.BoundaryConditions: fill_halo_regions!,
                                        ContinuousBoundaryFunction
 using Oceananigans.Units
 
-import Adapt: adapt_structure
+import Adapt: adapt_structure, adapt
 import Base: show, summary
 
 import Oceananigans.Biogeochemistry: biogeochemical_auxiliary_fields

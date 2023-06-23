@@ -4,7 +4,7 @@ using KernelAbstractions.Extras.LoopInfo: @unroll
 using Oceananigans.Utils: work_layout
 using Oceananigans.Architectures: device
 
-import Adapt: adapt_structure
+import Adapt: adapt_structure, adapt
 
 """
     zero_negative_tracers!(sim; params = (exclude=(), ))
@@ -100,9 +100,9 @@ struct ScaleNegativeTracers{FA, SA, W}
     end
 end
 
-adapt_structure(to, snt::ScaleNegativeTracers) = ScaleNegativeTracers(adapt_structure(to, snt.tracers),
-                                                                      adapt_structure(to, snt.scalefactors),
-                                                                      adapt_structure(to, snt.warn))
+adapt_structure(to, snt::ScaleNegativeTracers) = ScaleNegativeTracers(adapt(to, snt.tracers),
+                                                                      adapt(to, snt.scalefactors),
+                                                                      adapt(to, snt.warn))
 
 """
     ScaleNegativeTracers(; tracers, scalefactors = ones(length(tracers)), warn = false)

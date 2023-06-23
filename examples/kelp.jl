@@ -17,6 +17,7 @@
 # First load the required packages
 using OceanBioME, Oceananigans, Printf
 using Oceananigans.Units
+using Oceananigans.Architectures: arch_array
 
 const year = years = 365days # just for these idealised cases
 nothing #hide
@@ -37,10 +38,12 @@ nothing #hide
 @inline temp(x, y, z, t) = 2.4 * cos(t * 2π / year + 50day) + 10
 nothing #hide
 
+architecture = CPU()
+
 # ## Grid and PAR field
 # Define the grid and an extra Oceananigans field for the PAR to be stored in
 Lx, Ly = 20meters, 20meters
-grid = RectilinearGrid(size=(1, 1, 50), extent=(Lx, Ly, 200)) 
+grid = RectilinearGrid(architecture, size=(1, 1, 50), extent=(Lx, Ly, 200)) 
 
 # Specify the boundary conditions for DIC and O₂ based on the air-sea CO₂ and O₂ flux
 CO₂_flux = GasExchange(; gas = :CO₂, temperature = temp, salinity = (args...) -> 35)
@@ -51,8 +54,11 @@ CO₂_flux = GasExchange(; gas = :CO₂, temperature = temp, salinity = (args...
 n = 5 # number of kelp fronds
 z₀ = [-21:5:-1;] * 1.0 # depth of kelp fronds
 
-particles = SLatissima(; x = ones(n) * Lx / 2, y = ones(n) * Ly / 2, z = z₀, 
-                         A = ones(n) * 10.0,
+particles = SLatissima(; architecture, 
+                         x = arch_array(architecture, ones(n) * Lx / 2), 
+                         y = arch_array(architecture, ones(n) * Ly / 2), 
+                         z = arch_array(architecture, z₀), 
+                         A = arch_array(architecture, ones(n) * 10.0),
                          latitude = 57.5,
                          scalefactor = 500.0,
                          pescribed_temperature = temp)
@@ -67,7 +73,6 @@ biogeochemistry = LOBSTER(; grid,
 model = NonhydrostaticModel(; grid,
                               closure = ScalarDiffusivity(ν = κₜ, κ = κₜ), 
                               biogeochemistry,
-                              boundary_conditions = (DIC = FieldBoundaryConditions(top = CO₂_flux), ),
                               advection = nothing)
 
 set!(model, P = 0.03, Z = 0.03, NO₃ = 4.0, NH₄ = 0.05, DIC = 2239.8, Alk = 2409.0)

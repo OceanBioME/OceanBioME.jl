@@ -25,7 +25,7 @@ using Oceananigans.BoundaryConditions: FluxBoundaryCondition
 using Oceananigans.Fields: Field, fractional_indices
 using Oceananigans.Grids: znodes
 
-import Adapt: adapt_structure
+import Adapt: adapt_structure, adapt
 import Base: show, summary
 
 include("gasexchange.jl")

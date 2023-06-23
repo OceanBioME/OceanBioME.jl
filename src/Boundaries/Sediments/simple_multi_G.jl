@@ -118,22 +118,21 @@ adapt_structure(to, sediment::SimpleMultiG) =
                  sediment.denitrifcaiton_params,
                  sediment.anoxic_params,
                  sediment.solid_dep_params,
-                 NamedTuple{keys(sediment.fields)}(ntuple(n -> adapt_structure(to, sediment.fields[n]), length(sediment.fields))),
-                 (Gⁿ = NamedTuple{keys(sediment.tendencies.Gⁿ)}(ntuple(n -> adapt_structure(to, sediment.tendencies.Gⁿ[n]), length(sediment.tendencies.Gⁿ))),
-                  G⁻ = NamedTuple{keys(sediment.tendencies.G⁻)}(ntuple(n -> adapt_structure(to, sediment.tendencies.G⁻[n]), length(sediment.tendencies.G⁻)))))
+                 adapt(to, sediment.fields),
+                 adapt(to, sediment.tendencies))
                   
 sediment_tracers(::SimpleMultiG) = (:C_slow, :C_fast, :C_ref, :N_slow, :N_fast, :N_ref)
 sediment_fields(model::SimpleMultiG) = (C_slow = model.fields.C_slow, C_fast = model.fields.C_fast, N_slow = model.fields.N_slow, N_fast = model.fields.N_fast, C_ref = model.fields.C_ref, N_ref = model.fields.N_ref)
 
-@kernel function calculate_tendencies!(sediment::SimpleMultiG, bgc, model)
+@kernel function _calculate_tendencies!(sediment::SimpleMultiG, bgc, grid, tracers, timestepper)
     i, j = @index(Global, NTuple)
 
     @inbounds begin
-        carbon_deposition = -(biogeochemical_drift_velocity(bgc, Val(:sPOC)).w[i, j, 1] * model.tracers.sPOC[i, j, 1] +
-                              biogeochemical_drift_velocity(bgc, Val(:bPOC)).w[i, j, 1] * model.tracers.bPOC[i, j, 1])
+        carbon_deposition = -(biogeochemical_drift_velocity(bgc, Val(:sPOC)).w[i, j, 1] * tracers.sPOC[i, j, 1] +
+                              biogeochemical_drift_velocity(bgc, Val(:bPOC)).w[i, j, 1] * tracers.bPOC[i, j, 1])
                         
-        nitrogen_deposition = -(biogeochemical_drift_velocity(bgc, Val(:sPON)).w[i, j, 1] * model.tracers.sPON[i, j, 1] +
-                                biogeochemical_drift_velocity(bgc, Val(:bPON)).w[i, j, 1] * model.tracers.bPON[i, j, 1])
+        nitrogen_deposition = -(biogeochemical_drift_velocity(bgc, Val(:sPON)).w[i, j, 1] * tracers.sPON[i, j, 1] +
+                                biogeochemical_drift_velocity(bgc, Val(:bPON)).w[i, j, 1] * tracers.bPON[i, j, 1])
 
         # rates
         Cᵐⁱⁿ = sediment.fields.C_slow[i, j, 1] * sediment.slow_decay_rate + sediment.fields.C_fast[i, j, 1] * sediment.fast_decay_rate
@@ -151,9 +150,9 @@ sediment_fields(model::SimpleMultiG) = (C_slow = model.fields.C_slow, C_fast = m
         sediment.tendencies.Gⁿ.N_ref[i, j, 1] = max(0.0, sediment.refactory_fraction * nitrogen_deposition)
 
         # efflux/influx
-        O₂ = model.tracers.O₂[i, j, 1]
-        NO₃ = model.tracers.NO₃[i, j, 1]
-        NH₄ = model.tracers.NH₄[i, j, 1]
+        O₂  = tracers.O₂[i, j, 1]
+        NO₃ = tracers.NO₃[i, j, 1]
+        NH₄ = tracers.NH₄[i, j, 1]
 
         pₙᵢₜ = exp(sediment.nitrate_oxidation_params.A + 
                    sediment.nitrate_oxidation_params.B * log(Cᵐⁱⁿ * day) * log(O₂) + 
@@ -183,11 +182,11 @@ sediment_fields(model::SimpleMultiG) = (C_slow = model.fields.C_slow, C_fast = m
 
         pₛₒₗᵢ = sediment.solid_dep_params.A * (sediment.solid_dep_params.C * sediment.solid_dep_params.depth ^ sediment.solid_dep_params.D) ^ sediment.solid_dep_params.B
 
-        Δz = model.grid.Δzᵃᵃᶜ[1]
+        Δz = grid.Δzᵃᵃᶜ[1]
 
-        model.timestepper.Gⁿ.NH₄[i, j, 1] += (Nᵐⁱⁿ * (1 - pₙᵢₜ)) / Δz
-        model.timestepper.Gⁿ.NO₃[i, j, 1] += (Nᵐⁱⁿ * pₙᵢₜ - Cᵐⁱⁿ * pᵈᵉⁿⁱᵗ * 4//5) / Δz
-        model.timestepper.Gⁿ.DIC[i, j, 1] += Cᵐⁱⁿ / Δz
-        model.timestepper.Gⁿ.O₂[i, j, 1]  -= max(0, (1 - pᵈᵉⁿⁱᵗ - pₐₙₒₓ * pₛₒₗᵢ) * Cᵐⁱⁿ / Δz) # this seems dodge but this model doesn't cope with anoxia properly
+        timestepper.Gⁿ.NH₄[i, j, 1] += (Nᵐⁱⁿ * (1 - pₙᵢₜ)) / Δz
+        timestepper.Gⁿ.NO₃[i, j, 1] += (Nᵐⁱⁿ * pₙᵢₜ - Cᵐⁱⁿ * pᵈᵉⁿⁱᵗ * 4//5) / Δz
+        timestepper.Gⁿ.DIC[i, j, 1] += Cᵐⁱⁿ / Δz
+        timestepper.Gⁿ.O₂[i, j, 1]  -= max(0, (1 - pᵈᵉⁿⁱᵗ - pₐₙₒₓ * pₛₒₗᵢ) * Cᵐⁱⁿ / Δz) # this seems dodge but this model doesn't cope with anoxia properly
     end
 end

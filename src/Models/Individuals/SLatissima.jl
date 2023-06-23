@@ -29,7 +29,7 @@ using Oceananigans.Operators: volume
 using Oceananigans.Grids: AbstractGrid
 using Oceananigans.Fields: fractional_indices, _interpolate, datatuple
 
-import Adapt: adapt_structure
+import Adapt: adapt_structure, adapt
 import Oceananigans.Biogeochemistry: update_tendencies!
 import Oceananigans.LagrangianParticleTracking: update_particle_properties!, _advect_particles!
 
@@ -251,18 +251,18 @@ adapt_structure(to, kelp::SLatissima) = SLatissima(kelp.architecture,
                                                    kelp.pescribed_velocity,
                                                    kelp.pescribed_temperature,
                                                    kelp.pescribed_salinity,
-                                                   adapt_structure(to, kelp.x),
-                                                   adapt_structure(to, kelp.y),
-                                                   adapt_structure(to, kelp.z),
-                                                   adapt_structure(to, kelp.A),
-                                                   adapt_structure(to, kelp.N),
-                                                   adapt_structure(to, kelp.C),
-                                                   adapt_structure(to, kelp.nitrate_uptake),
-                                                   adapt_structure(to, kelp.ammonia_uptake),
-                                                   adapt_structure(to, kelp.primary_production),
-                                                   adapt_structure(to, kelp.frond_exudation),
-                                                   adapt_structure(to, kelp.nitrogen_erosion),
-                                                   adapt_structure(to, kelp.carbon_erosion),
+                                                   adapt(to, kelp.x),
+                                                   adapt(to, kelp.y),
+                                                   adapt(to, kelp.z),
+                                                   adapt(to, kelp.A),
+                                                   adapt(to, kelp.N),
+                                                   adapt(to, kelp.C),
+                                                   adapt(to, kelp.nitrate_uptake),
+                                                   adapt(to, kelp.ammonia_uptake),
+                                                   adapt(to, kelp.primary_production),
+                                                   adapt(to, kelp.frond_exudation),
+                                                   adapt(to, kelp.nitrogen_erosion),
+                                                   adapt(to, kelp.carbon_erosion),
                                                    kelp.custom_dynamics,
                                                    kelp.scalefactor,
                                                    kelp.latitude)
@@ -353,7 +353,8 @@ function update_particle_properties!(particles::SLatissima, model, bgc, Δt)
 
     update_particle_properties_kernel! = _update_particle_properties!(device(arch), workgroup, worksize)
 
-    update_particle_properties_event = update_particle_properties_kernel!(particles, bgc, model, Δt,
+    update_particle_properties_event = update_particle_properties_kernel!(particles, bgc, model.grid, 
+                                                                          model.velocities, model.tracers, model.clock, Δt,
                                                                           dependencies=Event(device(arch)))
 
     wait(device(arch), update_particle_properties_event)
@@ -361,7 +362,7 @@ function update_particle_properties!(particles::SLatissima, model, bgc, Δt)
     particles.custom_dynamics(particles, model, bgc, Δt)
 end
 
-@kernel function _update_particle_properties!(p, bgc, model, Δt)
+@kernel function _update_particle_properties!(p, bgc, grid, velocities, tracers, clock, Δt)
     idx = @index(Global)
 
     @inbounds begin
@@ -374,10 +375,10 @@ end
         C = p.C[idx]
     end
 
-    t = model.clock.time
+    t = clock.time
 
     @inbounds if p.A[idx] > 0
-        NO₃, NH₄, PAR, u, T, S = get_arguments(x, y, z, t, p, bgc, model)
+        NO₃, NH₄, PAR, u, T, S = get_arguments(x, y, z, t, p, bgc, grid, velocities, tracers)
 
         photo = photosynthesis(T, PAR, p)
         e = exudation(C, p)
@@ -451,7 +452,6 @@ end
     end
 end
 
-
 @inline function photosynthesis(T, PAR, p)
     Tk = T + 273.15
 
@@ -519,12 +519,12 @@ end
 
 @inline normed_day_length_change(n, ϕ) = (day_length(n, ϕ) - day_length(n - 1, ϕ)) / (day_length(76, ϕ) - day_length(75, ϕ))
 
+@inline function get_arguments(x, y, z, t, particles, bgc, grid, velocities, tracers)
 
-@inline function get_arguments(x, y, z, t, particles, bgc, model)
     bgc_tracers = required_biogeochemical_tracers(bgc)
     auxiliary_fields = biogeochemical_auxiliary_fields(bgc)
 
-    i, j, k = fractional_indices(x, y, z, (Center(), Center(), Center()), model.grid)
+    i, j, k = fractional_indices(x, y, z, (Center(), Center(), Center()), grid)
 
     ξ, i = modf(i)
     η, j = modf(j)
@@ -532,19 +532,19 @@ end
 
     # TODO: ADD ALIASING/RENAMING OF TRACERS SO WE CAN USE E.G. N IN STEAD OF NO3
 
-    NO₃ = _interpolate(model.tracers.NO₃, ξ, η, ζ, Int(i+1), Int(j+1), Int(k+1))
+    NO₃ = _interpolate(tracers.NO₃, ξ, η, ζ, Int(i+1), Int(j+1), Int(k+1))
     PAR = _interpolate(auxiliary_fields.PAR, ξ, η, ζ, Int(i+1), Int(j+1), Int(k+1)) * day / (3.99e-10 * 545e12) # W / m² / s to einstein / m² / day
 
     if :NH₄ in bgc_tracers
-        NH₄ = _interpolate(model.tracers.NH₄, ξ, η, ζ, Int(i+1), Int(j+1), Int(k+1))
+        NH₄ = _interpolate(tracers.NH₄, ξ, η, ζ, Int(i+1), Int(j+1), Int(k+1))
     else
         NH₄ = 0.0
     end
 
     if isnothing(particles.pescribed_velocity)
-        u =  sqrt(_interpolate(model.velocities.u, ξ, η, ζ, Int(i+1), Int(j+1), Int(k+1)) .^ 2 + 
-                  _interpolate(model.velocities.v, ξ, η, ζ, Int(i+1), Int(j+1), Int(k+1)) .^ 2 + 
-                  _interpolate(model.velocities.w, ξ, η, ζ, Int(i+1), Int(j+1), Int(k+1)) .^ 2)
+        u =  sqrt(_interpolate(velocities.u, ξ, η, ζ, Int(i+1), Int(j+1), Int(k+1)) .^ 2 + 
+                  _interpolate(velocities.v, ξ, η, ζ, Int(i+1), Int(j+1), Int(k+1)) .^ 2 + 
+                  _interpolate(velocities.w, ξ, η, ζ, Int(i+1), Int(j+1), Int(k+1)) .^ 2)
     elseif isa(particles.pescribed_velocity, Number)
         u = particles.pescribed_velocity
     else
@@ -552,7 +552,7 @@ end
     end
 
     if isnothing(particles.pescribed_temperature)
-        T = _interpolate(model.tracers.T, ξ, η, ζ, Int(i+1), Int(j+1), Int(k+1))
+        T = _interpolate(tracers.T, ξ, η, ζ, Int(i+1), Int(j+1), Int(k+1))
     elseif isa(particles.pescribed_temperature, Number)
         T = particles.pescribed_temperature
     else
