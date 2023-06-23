@@ -12,7 +12,7 @@ function parameter_table(labels, values)
     return output 
 end
 
-function show_parameters(model; exclude = (:advection_schemes, :optionals, :light_attenuation_model, :particles, :sediment_model, # usually bgc models
+function show_parameters(model; exclude = (:optionals, :light_attenuation_model, :particles, :sediment_model, # usually bgc models
                                            :architecture, :x, :y, :z, :A, :N, :C, :nitrate_uptake, :ammonia_uptake, 
                                            :primary_production, :frond_exudation, :nitrogen_erosion, :carbon_erosion, :scalefactor, :custom_dynamics,
                                            :pescribed_temperature, :pescribed_salinity, # usually particles

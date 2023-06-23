@@ -11,8 +11,7 @@ function test_column_diffusion_timescale(arch)
                                 closure = ScalarDiffusivity(ν = κₜ, κ = κₜ), 
                                 biogeochemistry = LOBSTER(; grid,
                                                             surface_phytosynthetically_active_radiation = (x, y, t) -> 100,
-                                                            carbonates = true,
-                                                            advection_schemes = (sPOM = WENO(grid), bPOM = WENO(grid))),
+                                                            carbonates = true),
                                 advection = nothing)
 
     return column_diffusion_timescale(model) ≈ min_Δz^2 / κ
