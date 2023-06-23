@@ -11,17 +11,17 @@ authors:
     orcid: 0000-0002-7174-5283
     corresponding: true
     affiliation: "1, 2"
-  - name: John R Taylor
-    affiliation: "1, 2"
   - name: Si Chen
     affiliation: "1, 2"
-  - name: Gregory LeClaire Wagner
-    orcid: 0000-0001-5317-2445
-    affiliation: 3
   - name: Navid C Constantinou
     affiliation: 4, 5
   - name: Simone Silvestri
     affiliation: 3
+  - name: Gregory LeClaire Wagner
+    orcid: 0000-0001-5317-2445
+    affiliation: 3
+  - name: John R Taylor
+    affiliation: "1, 2"
 affiliations:
  - name: Department of Applied Mathematics and Theoretical Physics, University of Cambridge, Cambridge, United Kingdom
    index: 1
