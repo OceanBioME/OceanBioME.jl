@@ -5,6 +5,7 @@
 [![ColPrac: Contributor's Guide on Collaborative Practices for Community Packages](https://img.shields.io/badge/ColPrac-Contributor's%20Guide-blueviolet)](https://github.com/SciML/ColPrac)
 [![Ask us anything: discussion](https://img.shields.io/badge/Ask%20us-anything-1abc9c.svg?style=flat-square)](https://github.com/OceanBioME/OceanBioME.jl/discussions)
 [![GitHub tag (latest SemVer pre-release)](https://img.shields.io/github/v/tag/OceanBioME/OceanBioME.jl?include_prereleases&label=latest%20version&logo=github&sort=semver&style=flat-square)](https://github.com/OceanBioME/OceanBioME.jl/releases)
+[![FOSSA Status](https://app.fossa.com/api/projects/git%2Bgithub.com%2FOceanBioME%2FOceanBioME.jl.svg?type=shield)](https://app.fossa.com/projects/git%2Bgithub.com%2FOceanBioME%2FOceanBioME.jl?ref=badge_shield)
 
 [![Testing](https://github.com/OceanBioME/OceanBioME.jl/actions/workflows/tests.yml/badge.svg)](https://github.com/OceanBioME/OceanBioME.jl/actions/workflows/tests.yml)
 [![Documentation](https://github.com/OceanBioME/OceanBioME.jl/actions/workflows/documentation.yml/badge.svg)](https://github.com/OceanBioME/OceanBioME.jl/actions/workflows/documentation.yml)
@@ -110,3 +111,7 @@ In this example `OceanBioME` is providing the `biogeochemistry` and the remainde
 ## Documentation
 
 See the [documentation](https://oceanbiome.github.io/OceanBioME.jl) for full description and examples.
+
+
+## License
+[![FOSSA Status](https://app.fossa.com/api/projects/git%2Bgithub.com%2FOceanBioME%2FOceanBioME.jl.svg?type=large)](https://app.fossa.com/projects/git%2Bgithub.com%2FOceanBioME%2FOceanBioME.jl?ref=badge_large)
