@@ -41,7 +41,7 @@ export LOBSTER
 using OceanBioME: ContinuousFormBiogeochemistry
 
 using Oceananigans.Units
-using Oceananigans.Fields: Field, TracerFields, CenterField
+using Oceananigans.Fields: Field, TracerFields, CenterField, ZeroField
 
 using OceanBioME.Light: TwoBandPhotosyntheticallyActiveRatiation, update_PAR!, required_PAR_fields
 using OceanBioME: setup_velocity_fields, show_sinking_velocities
@@ -360,7 +360,7 @@ const DOM = Union{Val{:DOM}, Val{:DON}}
     if tracer_name in keys(bgc.sinking_velocities)
         return bgc.sinking_velocities[tracer_name]
     else
-        return nothing
+        return (u = ZeroField(), v = ZeroField(), w = ZeroField())
     end
 end
 
