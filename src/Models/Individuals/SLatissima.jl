@@ -31,7 +31,7 @@ using Oceananigans.Fields: fractional_indices, _interpolate, datatuple
 
 import Adapt: adapt_structure, adapt
 import Oceananigans.Biogeochemistry: update_tendencies!
-import Oceananigans.LagrangianParticleTracking: update_particle_properties!, _advect_particles!
+import Oceananigans.Models.LagrangianParticleTracking: update_lagrangian_particle_properties!, _advect_particles!
 
 @inline no_dynamics(args...) = nothing
 
@@ -335,7 +335,7 @@ end
     end
 end
 
-function update_particle_properties!(particles::SLatissima, model, bgc, Δt)
+function update_lagrangian_particle_properties!(particles::SLatissima, model, bgc, Δt)
     workgroup = min(length(particles), 256)
     worksize = length(particles)
 
@@ -351,7 +351,7 @@ function update_particle_properties!(particles::SLatissima, model, bgc, Δt)
 
     wait(device(arch), advect_particles_event)
 
-    update_particle_properties_kernel! = _update_particle_properties!(device(arch), workgroup, worksize)
+    update_particle_properties_kernel! = _update_lagrangian_particle_properties!(device(arch), workgroup, worksize)
 
     update_particle_properties_event = update_particle_properties_kernel!(particles, bgc, model.grid, 
                                                                           model.velocities, model.tracers, model.clock, Δt,
@@ -362,7 +362,7 @@ function update_particle_properties!(particles::SLatissima, model, bgc, Δt)
     particles.custom_dynamics(particles, model, bgc, Δt)
 end
 
-@kernel function _update_particle_properties!(p, bgc, grid, velocities, tracers, clock, Δt)
+@kernel function _update_lagrangian_particle_properties!(p, bgc, grid, velocities, tracers, clock, Δt)
     idx = @index(Global)
 
     @inbounds begin
