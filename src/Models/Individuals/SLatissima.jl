@@ -278,7 +278,7 @@ end
 
 @kernel function update_tracer_tendencies!(bgc, p, tendencies, grid::AbstractGrid{FT, TX, TY, TZ}) where {FT, TX, TY, TZ}
     idx = @index(Global)
-
+    
     x = p.x[idx]
     y = p.y[idx]
     z = p.z[idx]
@@ -350,8 +350,8 @@ function update_lagrangian_particle_properties!(particles::SLatissima, model, bg
 
     update_particle_properties_kernel! = _update_lagrangian_particle_properties!(device(arch), workgroup, worksize)
 
-     update_particle_properties_kernel!(particles, bgc, model.grid, 
-                                        model.velocities, model.tracers, model.clock, Δt)
+    update_particle_properties_kernel!(particles, bgc, model.grid, 
+                                       model.velocities, model.tracers, model.clock, Δt)
 
     particles.custom_dynamics(particles, model, bgc, Δt)
 end

@@ -3,7 +3,7 @@ module Particles
 using OceanBioME: ContinuousFormBiogeochemistry
 using Oceananigans: NonhydrostaticModel, HydrostaticFreeSurfaceModel
 
-import Oceananigans.Models.LagrangianParticleTracking: update_lagrangian_particle_properties!
+import Oceananigans.Models.LagrangianParticleTracking: update_lagrangian_particle_properties!, step_lagrangian_particles!
 import Oceananigans.Biogeochemistry: update_tendencies!
 import Oceananigans.OutputWriters: fetch_output
 import Base: length, size, show, summary
@@ -12,15 +12,16 @@ abstract type BiogeochemicalParticles end
 
 # TODO: add model.particles passing
 
-@inline update_lagrangian_particle_properties!(model::NonhydrostaticModel{<:Any, <:Any, <:Any, <:Any, <:Any, <:Any, <:Any, <:Any, <:Any, <:Any, <:Any, <:Any, <:Any, <:Any, <:Any, <:Any, <:Any, <:ContinuousFormBiogeochemistry{<:Any, <:Any, <:BiogeochemicalParticles}}, 
-                                    Δt) =
-        update_lagrangian_particle_properties!(model, model.biogeochemistry, Δt)
+@inline step_lagrangian_particles!(::Nothing, 
+    model::NonhydrostaticModel{<:Any, <:Any, <:Any, <:Any, <:Any, <:Any, <:Any, <:Any, <:Any, <:Any, <:Any, <:Any, <:Any, <:Any, <:Any, <:Any, <:Any, 
+                               <:ContinuousFormBiogeochemistry{<:Any, <:Any, <:BiogeochemicalParticles}}, 
+    Δt) = update_lagrangian_particle_properties!(model, model.biogeochemistry, Δt)
 
-@inline update_lagrangian_particle_properties!(model::HydrostaticFreeSurfaceModel{TS, E, A, S, G, T, V, B, R, F, P, 
-                                                                       ContinuousFormBiogeochemistry{<:Any, <:Any, <:BiogeochemicalParticles}, 
-                                                                       U, C, Φ, K, AF}, 
-                                    Δt) where {TS, E, A, S, G, T, V, B, R, F, P, U, C, Φ, K, AF} =
-        update_lagrangian_particle_properties!(model, model.biogeochemistry, Δt)
+@inline step_lagrangian_particles!(::Nothing,
+    model::HydrostaticFreeSurfaceModel{<:TS, <:E, <:A, <:S, <:G, <:T, <:V, <:B, <:R, <:F, <:P, 
+                                       <:ContinuousFormBiogeochemistry{<:Any, <:Any, <:BiogeochemicalParticles}, 
+                                       <:U, <:C, <:Φ, <:K, <:AF}, 
+    Δt) = update_lagrangian_particle_properties!(model, model.biogeochemistry, Δt)
 
 @inline update_lagrangian_particle_properties!(model, bgc::ContinuousFormBiogeochemistry{<:Any, <:Any, <:BiogeochemicalParticles}, Δt) = 
     update_lagrangian_particle_properties!(bgc.particles, model, bgc, Δt)
