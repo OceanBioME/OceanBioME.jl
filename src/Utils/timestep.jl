@@ -18,4 +18,4 @@ end
 
 @inline column_advection_timescale(model) = minimum_zspacing(model.grid) / maximum_sinking_velocity(model.biogeochemistry)
 
-@inline sinking_advection_timescale(model) = min(minimum_zspacing(model.grid) / maximum_sinking_velocity(model.biogeochemistry), cell_advection_timescaleᶜᶜᶜ(model))
+@inline sinking_advection_timescale(model) = min(minimum_zspacing(model.grid) / maximum_sinking_velocity(model.biogeochemistry), cell_advection_timescale(model))

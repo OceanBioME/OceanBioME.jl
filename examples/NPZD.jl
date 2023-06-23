@@ -39,7 +39,7 @@ T_bcs = FieldBoundaryConditions(top = GradientBoundaryCondition(dTdz_0, field_de
 
 model = NonhydrostaticModel(; grid,
                               biogeochemistry = NutrientPhytoplanktonZooplanktonDetritus(; grid, surface_phytosynthetically_active_radiation = PAR⁰),
-                              tracers = (:T, :S, ), # T will be defined by the biogeochemistry
+                              tracers = (:T, :S, :N, :P, :Z, :D), # T will be defined by the biogeochemistry
                               buoyancy=SeawaterBuoyancy(),
                               boundary_conditions = (T = T_bcs, ),
                               advection = WENO(grid),
