@@ -273,8 +273,7 @@ function update_tendencies!(bgc, particles::SLatissima, model)
     worksize = num_particles
 
     update_tracer_tendencies_kernal! = update_tracer_tendencies!(device(model.architecture), workgroup, worksize)
-    update_tracer_tendencies_event = update_tracer_tendencies_kernal!(bgc, particles, model.timestepper.Gⁿ, model.grid)
-    wait(update_tracer_tendencies_event)
+    update_tracer_tendencies_kernal!(bgc, particles, model.timestepper.Gⁿ, model.grid)
 end
 
 @kernel function update_tracer_tendencies!(bgc, p, tendencies, grid::AbstractGrid{FT, TX, TY, TZ}) where {FT, TX, TY, TZ}
@@ -344,20 +343,15 @@ function update_lagrangian_particle_properties!(particles::SLatissima, model, bg
     # Advect particles
     advect_particles_kernel! = _advect_particles!(device(arch), workgroup, worksize)
 
-    advect_particles_event = advect_particles_kernel!((x = particles.x, y = particles.y, z = particles.z), 
-                                                      1.0, model.grid, Δt,
-                                                      datatuple(model.velocities),
-                                                      dependencies=Event(device(arch)))
+    advect_particles_kernel!((x = particles.x, y = particles.y, z = particles.z), 
+                             1.0, model.grid, Δt,
+                             datatuple(model.velocities))
 
-    wait(device(arch), advect_particles_event)
 
     update_particle_properties_kernel! = _update_lagrangian_particle_properties!(device(arch), workgroup, worksize)
 
-    update_particle_properties_event = update_particle_properties_kernel!(particles, bgc, model.grid, 
-                                                                          model.velocities, model.tracers, model.clock, Δt,
-                                                                          dependencies=Event(device(arch)))
-
-    wait(device(arch), update_particle_properties_event)
+     update_particle_properties_kernel!(particles, bgc, model.grid, 
+                                        model.velocities, model.tracers, model.clock, Δt)
 
     particles.custom_dynamics(particles, model, bgc, Δt)
 end

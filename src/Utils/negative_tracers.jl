@@ -130,8 +130,7 @@ end
 @inline function (scale::ScaleNegativeTracers)(model)
     workgroup, worksize = work_layout(model.grid, :xyz)
     scale_for_negs_kernel! = scale_for_negs!(device(model.grid.architecture), workgroup, worksize)
-    event = scale_for_negs_kernel!(values(model.tracers), scale.tracers, scale.scalefactors)
-    wait(event)
+    scale_for_negs_kernel!(values(model.tracers), scale.tracers, scale.scalefactors)
 end
 @inline (scale::ScaleNegativeTracers)(sim::Simulation) = scale(sim.model) 
 
@@ -152,6 +151,5 @@ Zeros any `NaN` value tendencies as a final protection against negative tracer r
 @inline function remove_NaN_tendencies!(model)
     workgroup, worksize = work_layout(model.grid, :xyz)
     remove_NaN_tendencies_kernel! = _remove_NaN_tendencies!(device(model.grid.architecture), workgroup, worksize)
-    event = remove_NaN_tendencies_kernel!(values(model.timestepper.Gⁿ))
-    wait(event)
+    remove_NaN_tendencies_kernel!(values(model.timestepper.Gⁿ))
 end
