@@ -14,12 +14,12 @@ authors:
   - name: Si Chen
     affiliation: "1, 2"
   - name: Navid C Constantinou
-    affiliation: 4, 5
+    affiliation: 3, 4
   - name: Simone Silvestri
-    affiliation: 3
+    affiliation: 5
   - name: Gregory LeClaire Wagner
     orcid: 0000-0001-5317-2445
-    affiliation: 3
+    affiliation: 5
   - name: John R Taylor
     affiliation: "1, 2"
 affiliations:
@@ -27,20 +27,20 @@ affiliations:
    index: 1
  - name: Centre for Climate Repair, Cambridge, United Kingdom
    index: 2
- - name: Massachusetts Institute of Technology
+ - name: Australian National University, Australia
    index: 3
- - name: Australian National University
-   index: 4
  - name: Australian Research Council Centre for Climate Extremes
+   index: 4
+ - name: Massachusetts Institute of Technology, USA
    index: 5
-date: 15 March 2023
+date: 24 June 2023
 bibliography: paper.bib
 ---
 
 # Summary
 
 ``OceanBioME.jl`` is a flexible modelling environment written in Julia [@julia] for modelling the coupled interactions between ocean biogeochemistry, carbonate chemistry, and physics.
-``OceanBioME.jl`` can be used as a stand-alone box model, or integrated into ``Oceananigans.jl`` [@Oceananigans] simulations of ocean dynamics in one-, two-, or three-dimensions.
+``OceanBioME.jl`` can be used as a stand-alone box model, or integrated into ``Oceananigans.jl`` [@Oceananigans] simulations of ocean dynamics in one, two, or three dimensions.
 As a result, ``OceanBioME.jl`` and ``Oceananigans.jl`` can be used to simulate the biogeochemical response across an enormous range of scales: from surface boundary layer turbulence at the meter scale to eddying global ocean simulations at the planetary scale, and on computational systems ranging from laptops to supercomputers.
 An example of a problem involving small-scale flow features is shown in \autoref{fig1}, which shows a simulation of a sub-mesoscale eddy in a 1km x 1km horizontal domain with an intermediate complexity biogeochemical model and a kelp growth model solved along the trajectories of drifting buoys.
 ``OceanBioME.jl`` leverages Julia's multiple dispatch and effective inline capabilities to fuse its computations directly into existing ``Oceananigans.jl`` kernels, thus maintaining ``Oceananigans.jl``'s bespoke performance, memory- and cost-efficiency on GPUs in ``OceanBioME.jl``-augmented simulations.
