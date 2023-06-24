@@ -61,11 +61,8 @@ function  update(sim, params)
 
     zₑᵤ = sim.model.auxiliary_fields.zₑᵤ
 
-    par_calculation = launch!(sim.model.architecture, sim.model.grid, :xy, _update_PAR,
-                              PAR¹, PAR², PAR³, Chl, zₑᵤ, sim.model.grid, sim.model.clock.time, params,
-                              dependencies = Event(device(sim.model.architecture)))
-
-    wait(device(sim.model.architecture), par_calculation)
+    launch!(sim.model.architecture, sim.model.grid, :xy, _update_PAR,
+            PAR¹, PAR², PAR³, Chl, zₑᵤ, sim.model.grid, sim.model.clock.time, params)
 end
 
 const defaults = (

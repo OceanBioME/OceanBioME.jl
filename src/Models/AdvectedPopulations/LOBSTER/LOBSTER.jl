@@ -41,8 +41,7 @@ export LOBSTER
 using OceanBioME: ContinuousFormBiogeochemistry
 
 using Oceananigans.Units
-using Oceananigans.Advection: CenteredSecondOrder
-using Oceananigans.Fields: Field, TracerFields, CenterField
+using Oceananigans.Fields: Field, TracerFields, CenterField, ZeroField
 
 using OceanBioME.Light: TwoBandPhotosyntheticallyActiveRatiation, update_PAR!, required_PAR_fields
 using OceanBioME: setup_velocity_fields, show_sinking_velocities
@@ -53,7 +52,6 @@ import OceanBioME.BoxModels: update_boxmodel_state!
 import Oceananigans.Biogeochemistry: required_biogeochemical_tracers,
                                      required_biogeochemical_auxiliary_fields,
                                      biogeochemical_drift_velocity,
-                                     biogeochemical_advection_scheme,
                                      update_biogeochemical_state!,
                                      biogeochemical_auxiliary_fields
 
@@ -105,8 +103,7 @@ import Base: show, summary
 
               sinking_speed = (sPOM = 3.47e-5, bPOM = 200/day),
               open_bottom::Bool = true,
-              advection_schemes::A = NamedTuple{keys(sinking_velocities)}(repeat([CenteredSecondOrder()], 
-                                                                          length(sinking_velocities))),
+
               particles::P = nothing)
 
 Construct an instance of the LOBSTER ([LOBSTER](@ref LOBSTER)) biogeochemical model.
@@ -122,10 +119,9 @@ Keywork Arguments
 - `carbonates`, `oxygen`, and `variable_redfield`: include models for carbonate chemistry and/or oxygen chemistry and/or variable redfield ratio disolved and particulate organic matter
 - `sinking_speed`: named tuple of constant sinking, of fields (i.e. `ZFaceField(...)`) for any tracers which sink (convention is that a sinking speed is positive, but a field will need to follow the usual down being negative)
 - `open_bottom`: should the sinking velocity be smoothly brought to zero at the bottom to prevent the tracers leaving the domain
-- `advection_schemes`: named tuple of advection scheme to use for sinking
 - `particles`: slot for `BiogeochemicalParticles`
 """
-struct LOBSTER{FT, LA, S, B, W, A, P} <: ContinuousFormBiogeochemistry{LA, S, P}
+struct LOBSTER{FT, LA, S, B, W, P} <: ContinuousFormBiogeochemistry{LA, S, P}
     phytoplankton_preference :: FT
     maximum_grazing_rate :: FT
     grazing_half_saturation :: FT
@@ -162,7 +158,6 @@ struct LOBSTER{FT, LA, S, B, W, A, P} <: ContinuousFormBiogeochemistry{LA, S, P}
     optionals :: B
 
     sinking_velocities :: W
-    advection_schemes :: A
 
     particles :: P
 
@@ -202,49 +197,47 @@ struct LOBSTER{FT, LA, S, B, W, A, P} <: ContinuousFormBiogeochemistry{LA, S, P}
                      optionals::B,
                 
                      sinking_velocities::W,
-                     advection_schemes::A,
                      
-                     particles::P) where {FT, LA, S, B, W, A, P}
+                     particles::P) where {FT, LA, S, B, W, P}
 
-        return new{FT, LA, S, B, W, A, P}(phytoplankton_preference,
-                                          maximum_grazing_rate,
-                                          grazing_half_saturation,
-                                          light_half_saturation,
-                                          nitrate_ammonia_inhibition,
-                                          nitrate_half_saturation,
-                                          ammonia_half_saturation,
-                                          maximum_phytoplankton_growthrate,
-                                          zooplankton_assimilation_fraction,
-                                          zooplankton_mortality,
-                                          zooplankton_excretion_rate,
-                                          phytoplankton_mortality,
-                                          small_detritus_remineralisation_rate,
-                                          large_detritus_remineralisation_rate,
-                                          phytoplankton_exudation_fraction,
-                                          nitrifcaiton_rate,
-                                          ammonia_fraction_of_exudate,
-                                          ammonia_fraction_of_excriment,
-                                          ammonia_fraction_of_detritus,
-                                          phytoplankton_redfield,
-                                          organic_redfield,
-                                          phytoplankton_chlorophyll_ratio,
-                                          organic_carbon_calcate_ratio,
-                                          respiraiton_oxygen_nitrogen_ratio,
-                                          nitrifcation_oxygen_nitrogen_ratio,
-                                          slow_sinking_mortality_fraction,
-                                          fast_sinking_mortality_fraction,
-                                          disolved_organic_breakdown_rate,
-                                          zooplankton_calcite_dissolution,
+        return new{FT, LA, S, B, W, P}(phytoplankton_preference,
+                                       maximum_grazing_rate,
+                                       grazing_half_saturation,
+                                       light_half_saturation,
+                                       nitrate_ammonia_inhibition,
+                                       nitrate_half_saturation,
+                                       ammonia_half_saturation,
+                                       maximum_phytoplankton_growthrate,
+                                       zooplankton_assimilation_fraction,
+                                       zooplankton_mortality,
+                                       zooplankton_excretion_rate,
+                                       phytoplankton_mortality,
+                                       small_detritus_remineralisation_rate,
+                                       large_detritus_remineralisation_rate,
+                                       phytoplankton_exudation_fraction,
+                                       nitrifcaiton_rate,
+                                       ammonia_fraction_of_exudate,
+                                       ammonia_fraction_of_excriment,
+                                       ammonia_fraction_of_detritus,
+                                       phytoplankton_redfield,
+                                       organic_redfield,
+                                       phytoplankton_chlorophyll_ratio,
+                                       organic_carbon_calcate_ratio,
+                                       respiraiton_oxygen_nitrogen_ratio,
+                                       nitrifcation_oxygen_nitrogen_ratio,
+                                       slow_sinking_mortality_fraction,
+                                       fast_sinking_mortality_fraction,
+                                       disolved_organic_breakdown_rate,
+                                       zooplankton_calcite_dissolution,
 
-                                          light_attenuation_model,
-                                          sediment_model,
+                                       light_attenuation_model,
+                                       sediment_model,
 
-                                          optionals,
-                                                            
-                                          sinking_velocities,
-                                          advection_schemes,
-                                          
-                                          particles)
+                                       optionals,
+                                                         
+                                       sinking_velocities,
+                                       
+                                       particles)
     end
 end
 
@@ -292,10 +285,8 @@ function LOBSTER(; grid,
 
                    sinking_speeds = (sPOM = 3.47e-5, bPOM = 200/day),
                    open_bottom::Bool = true,
-                   advection_schemes::A = NamedTuple{keys(sinking_speeds)}(repeat([CenteredSecondOrder(grid)], 
-                                                                                   length(sinking_speeds))),
 
-                   particles::P = nothing) where {FT, LA, S, A, P}
+                   particles::P = nothing) where {FT, LA, S, P}
 
     sinking_velocities = setup_velocity_fields(sinking_speeds, grid, open_bottom)
 
@@ -337,7 +328,6 @@ function LOBSTER(; grid,
                    optionals,
                                      
                    sinking_velocities,
-                   advection_schemes,
                    
                    particles)
 end
@@ -370,19 +360,7 @@ const DOM = Union{Val{:DOM}, Val{:DON}}
     if tracer_name in keys(bgc.sinking_velocities)
         return bgc.sinking_velocities[tracer_name]
     else
-        return nothing
-    end
-end
-
-@inline biogeochemical_advection_scheme(bgc::LOBSTER, ::small_detritus) = biogeochemical_advection_scheme(bgc, Val(:sPOM))
-@inline biogeochemical_advection_scheme(bgc::LOBSTER, ::large_detritus) = biogeochemical_advection_scheme(bgc, Val(:bPOM))
-@inline biogeochemical_advection_scheme(bgc::LOBSTER, ::disolved_organic_matter) = biogeochemical_advection_scheme(bgc, Val(:DOM))
-
-@inline function biogeochemical_advection_scheme(bgc::LOBSTER, ::Val{tracer_name}) where tracer_name
-    if tracer_name in keys(bgc.sinking_velocities)
-        return bgc.advection_schemes[tracer_name]
-    else
-        return nothing
+        return (u = ZeroField(), v = ZeroField(), w = ZeroField())
     end
 end
 
@@ -428,11 +406,10 @@ adapt_structure(to, lobster::LOBSTER) =
             adapt(to, lobster.sediment_model),
             lobster.optionals,
             adapt(to, lobster.sinking_velocities), 
-            adapt(to, lobster.advection_schemes), 
             adapt(to, lobster.particles))
 
-summary(::LOBSTER{FT, LA, S, B, W, A, P}) where {FT, LA, S, B, W, A, P} = string("Lodyc-DAMTP Ocean Biogeochemical Simulation Tools for Ecosystem and Resources (LOBSTER) model ($FT)")
-show(io::IO, model::LOBSTER{FT, LA, S, Val{B}, W, A, P}) where {FT, LA, S, B, W, A, P} =
+summary(::LOBSTER{FT, LA, S, B, W, P}) where {FT, LA, S, B, W, P} = string("Lodyc-DAMTP Ocean Biogeochemical Simulation Tools for Ecosystem and Resources (LOBSTER) model ($FT)")
+show(io::IO, model::LOBSTER{FT, LA, S, Val{B}, W, P}) where {FT, LA, S, B, W, P} =
        print(io, summary(model), " \n",
                 " Light Attenuation Model: ", "\n",
                 "    └── ", summary(model.light_attenuation_model), "\n",

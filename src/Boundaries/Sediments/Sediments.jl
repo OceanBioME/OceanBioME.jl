@@ -4,12 +4,12 @@ export SimpleMultiG
 
 using KernelAbstractions
 using OceanBioME: ContinuousFormBiogeochemistry
-using Oceananigans.Architectures: device_event, device
+using Oceananigans.Architectures: device
 using Oceananigans.Utils: launch!
 using Oceananigans.Advection: div_Uc
 using Oceananigans.Units: day
 using Oceananigans.Fields: CenterField, Face
-using Oceananigans.Biogeochemistry: biogeochemical_drift_velocity, biogeochemical_advection_scheme
+using Oceananigans.Biogeochemistry: biogeochemical_drift_velocity
 using Oceananigans.Grids: znode
 
 import Oceananigans.Biogeochemistry: update_tendencies!
@@ -26,22 +26,13 @@ sediment_fields(::AbstractSediment) = ()
 function update_tendencies!(bgc, sediment::FlatSediment, model)
     arch = model.grid.architecture
 
-    events = []
-
     for (i, tracer) in enumerate(sediment_tracers(sediment))    
-        field_event = launch!(arch, model.grid, :xy, store_flat_tendencies!, sediment.tendencies.Gⁿ[i], sediment.tendencies.G⁻[i], dependencies = device_event(arch))
-
-        push!(events, field_event)
+        launch!(arch, model.grid, :xy, store_flat_tendencies!, sediment.tendencies.Gⁿ[i], sediment.tendencies.G⁻[i])
     end
 
-    wait(device(model.architecture), MultiEvent(Tuple(events)))
-
-    event = launch!(arch, model.grid, :xy,
-                    _calculate_tendencies!,
-                    bgc.sediment_model, bgc, model.grid, model.tracers, model.timestepper,
-                    dependencies = device_event(arch))
-
-    wait(device(arch), event)
+    launch!(arch, model.grid, :xy,
+            _calculate_tendencies!,
+            bgc.sediment_model, bgc, model.grid, model.tracers, model.timestepper)
     return nothing
 end
 

@@ -3,7 +3,6 @@ using OceanBioME: ContinuousFormBiogeochemistry
 using OceanBioME.Boundaries.Sediments: AbstractSediment
 using Oceananigans.TimeSteppers: ab2_step_field!, rk3_substep_field!, stage_Δt
 using Oceananigans.Utils: work_layout, launch!
-using Oceananigans.Architectures: device_event
 using Oceananigans.TurbulenceClosures: implicit_step!
 
 import Oceananigans.TimeSteppers: ab2_step!, rk3_substep!
@@ -11,19 +10,14 @@ import Oceananigans.TimeSteppers: ab2_step!, rk3_substep!
 @inline function ab2_step!(model::NonhydrostaticModel{<:Any, <:Any, <:Any, <:Any, <:Any, <:Any, <:Any, <:Any, <:Any, <:Any, <:Any, <:Any, <:Any, <:Any, <:Any, <:Any, <:Any, <:ContinuousFormBiogeochemistry{<:Any, <:FlatSediment}}, Δt, χ)
     workgroup, worksize = work_layout(model.grid, :xyz)
     arch = model.architecture
-    barrier = device_event(arch)
     step_field_kernel! = ab2_step_field!(device(arch), workgroup, worksize)
     model_fields = prognostic_fields(model)
-    events = []
 
     for (i, field) in enumerate(model_fields)
 
-        field_event = step_field_kernel!(field, Δt, χ,
-                                         model.timestepper.Gⁿ[i],
-                                         model.timestepper.G⁻[i],
-                                         dependencies = barrier)
-
-        push!(events, field_event)
+        step_field_kernel!(field, Δt, χ,
+                           model.timestepper.Gⁿ[i],
+                           model.timestepper.G⁻[i])
 
         # TODO: function tracer_index(model, field_index) = field_index - 3, etc...
         tracer_index = Val(i - 3) # assumption
@@ -34,23 +28,18 @@ import Oceananigans.TimeSteppers: ab2_step!, rk3_substep!
                        model.diffusivity_fields,
                        tracer_index,
                        model.clock,
-                       Δt,
-                       dependencies = field_event)
+                       Δt)
     end
 
     sediment = model.biogeochemistry.sediment_model
 
     for (i, field) in enumerate(sediment_fields(sediment))
-        field_event = launch!(arch, model.grid, :xy, ab2_step_flat_field!, 
-                             field, Δt, χ, 
-                             sediment.tendencies.Gⁿ[i], 
-                             sediment.tendencies.G⁻[i], 
-                             dependencies=device_event(arch))
+        launch!(arch, model.grid, :xy, ab2_step_flat_field!, 
+                field, Δt, χ, 
+                sediment.tendencies.Gⁿ[i], 
+                sediment.tendencies.G⁻[i])
 
-        push!(events, field_event)
     end
-
-    wait(device(model.architecture), MultiEvent(Tuple(events)))
 
     return nothing
 end
@@ -69,16 +58,13 @@ end
 function rk3_substep!(model::NonhydrostaticModel{<:Any, <:Any, <:Any, <:Any, <:Any, <:Any, <:Any, <:Any, <:Any, <:Any, <:Any, <:Any, <:Any, <:Any, <:Any, <:Any, <:Any, <:ContinuousFormBiogeochemistry{<:Any, <:FlatSediment}}, Δt, γⁿ, ζⁿ)
     workgroup, worksize = work_layout(model.grid, :xyz)
     arch = model.architecture
-    barrier = device_event(arch)
     substep_field_kernel! = rk3_substep_field!(device(arch), workgroup, worksize)
     model_fields = prognostic_fields(model)
-    events = []
 
     for (i, field) in enumerate(model_fields)
-        field_event = substep_field_kernel!(field, Δt, γⁿ, ζⁿ,
-                                            model.timestepper.Gⁿ[i],
-                                            model.timestepper.G⁻[i],
-                                            dependencies=barrier)
+        substep_field_kernel!(field, Δt, γⁿ, ζⁿ,
+                              model.timestepper.Gⁿ[i],
+                              model.timestepper.G⁻[i])
 
         # TODO: function tracer_index(model, field_index) = field_index - 3, etc...
         tracer_index = Val(i - 3) # assumption
@@ -89,25 +75,18 @@ function rk3_substep!(model::NonhydrostaticModel{<:Any, <:Any, <:Any, <:Any, <:A
                        model.diffusivity_fields,
                        tracer_index,
                        model.clock,
-                       stage_Δt(Δt, γⁿ, ζⁿ),
-                       dependencies = field_event)
-
-        push!(events, field_event)
+                       stage_Δt(Δt, γⁿ, ζⁿ))
     end
 
     sediment = model.biogeochemistry.sediment_model
 
     for (i, field) in enumerate(sediment_fields(sediment))
-        field_event = launch!(arch, model.grid, :xy, rk3_step_flat_field!, 
-                              field, Δt, γⁿ, ζⁿ,
-                              sediment.tendencies.Gⁿ[i], 
-                              sediment.tendencies.G⁻[i], 
-                              dependencies=device_event(arch))
-
-        push!(events, field_event)
+        launch!(arch, model.grid, :xy, rk3_step_flat_field!, 
+                field, Δt, γⁿ, ζⁿ,
+                sediment.tendencies.Gⁿ[i], 
+                sediment.tendencies.G⁻[i])
     end
 
-    wait(device(arch), MultiEvent(Tuple(events)))
 
     return nothing
 end
