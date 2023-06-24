@@ -107,6 +107,16 @@ end
 
 In this example `OceanBioME` is providing the `biogeochemistry` and the remainder is taken care of by `Oceananigans`. For comprehensive documentation of the physics modelling see [Oceananigans' Documentation](https://clima.github.io/OceananigansDocumentation/stable/), and for biogeochemistry and other features we provide read below.
 
+## Using GPU
+
+To run the same example on the GPU we just need to construct the `grid` on the GPU; the rest is taken care of!
+
+Just replace `CPU()` with `GPU()` in the grid construction with everything else left unchanged:
+
+```julia
+grid = RectilinearGrid(GPU(), size=(256, 32), extent=(500meters, 100meters), topology=(Bounded, Flat, Bounded))
+```
+
 ## Documentation
 
 See the [documentation](https://oceanbiome.github.io/OceanBioME.jl) for full description and examples.
