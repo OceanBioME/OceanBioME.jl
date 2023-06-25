@@ -1,4 +1,5 @@
 module Morel
+
 using KernelAbstractions
 using KernelAbstractions.Extras.LoopInfo: @unroll
 using Oceananigans.Architectures: device
@@ -74,4 +75,4 @@ const defaults = (
     PAR_frac = (B = 1/3, G = 1/3, R = 1/3)
 )
 
-end
+end #module

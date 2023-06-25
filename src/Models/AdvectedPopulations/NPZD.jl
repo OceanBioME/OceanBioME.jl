@@ -70,7 +70,7 @@ Keywork Arguments
 
 - `grid`: (required) the geometry to build the model on, required to calculate sinking
 - `initial_photosynthetic_slope`, ..., `remineralization_rate`: NPZD parameter values
-- `surface_phytosynthetically_active_radiation`: funciton (or array in the future) for the photosynthetically available radiaiton at the surface, should be shape `f(x, y, t)`
+- `surface_phytosynthetically_active_radiation`: funciton (or array in the future) for the photosynthetically available radiation at the surface, should be shape `f(x, y, t)`
 - `light_attenuation_model`: light attenuation model which integrated the attenuation of available light
 - `sediment_model`: slot for `AbstractSediment`
 - `sinking_speed`: named tuple of constant sinking, of fields (i.e. `ZFaceField(...)`) for any tracers which sink (convention is that a sinking speed is positive, but a field will need to follow the usual down being negative)
@@ -176,8 +176,6 @@ function NutrientPhytoplanktonZooplanktonDetritus(; grid,
                                                     particles::P = nothing) where {FT, LA, S, P}
 
     sinking_velocities = setup_velocity_fields(sinking_speeds, grid, open_bottom)
-
-    W = typeof(sinking_velocities)
 
     return NutrientPhytoplanktonZooplanktonDetritus(initial_photosynthetic_slope,
                                                     base_maximum_growth,
@@ -318,4 +316,5 @@ adapt_structure(to, npzd::NPZD) =
                                              adapt(to, npzd.sinking_velocities),
 
                                              adapt(to, npzd.particles))
+
 end # module

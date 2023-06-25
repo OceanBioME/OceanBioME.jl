@@ -118,7 +118,7 @@ Keywork Arguments
 
 - `grid`: (required) the geometry to build the model on, required to calculate sinking
 - `phytoplankton_preference`, ..., `disolved_organic_breakdown_rate`: LOBSTER parameter values
-- `surface_phytosynthetically_active_radiation`: funciton (or array in the future) for the photosynthetically available radiaiton at the surface, should be shape `f(x, y, t)`
+- `surface_phytosynthetically_active_radiation`: funciton (or array in the future) for the photosynthetically available radiation at the surface, should be shape `f(x, y, t)`
 - `light_attenuation_model`: light attenuation model which integrated the attenuation of available light
 - `sediment_model`: slot for `AbstractSediment`
 - `carbonates`, `oxygen`, and `variable_redfield`: include models for carbonate chemistry and/or oxygen chemistry and/or variable redfield ratio disolved and particulate organic matter
@@ -245,7 +245,6 @@ struct LOBSTER{FT, LA, S, B, W, P} <: ContinuousFormBiogeochemistry{LA, S, P}
                                        particles)
     end
 end
-
 
 function LOBSTER(; grid,
                    phytoplankton_preference::FT = 0.5,

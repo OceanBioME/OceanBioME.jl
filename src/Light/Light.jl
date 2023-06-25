@@ -2,6 +2,7 @@
 Light attenuation by chlorophyll as described by [Karleskind2011](@cite) (implemented as twoBand) and [Morel1988](@cite).
 """
 module Light
+
 export TwoBandPhotosyntheticallyActiveRatiation, update_PAR!
 
 using KernelAbstractions
