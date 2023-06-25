@@ -1,5 +1,5 @@
-# # One dimensional column example
-# In this example we will setup a simple 1D column with the [LOBSTER](@ref LOBSTER) biogeochemical model and observe its evolution. This demonstrates:
+# # [One-dimensional column example](@id OneD_column)
+# In this example we setup a simple 1D column with the [LOBSTER](@ref LOBSTER) biogeochemical model and observe its evolution. This demonstrates:
 # - How to setup OceanBioME's biogeochemical models
 # - How to visualise results
 # This is forced by idealised mixing layer depth and surface photosynthetically available radiation (PAR) which are setup first
