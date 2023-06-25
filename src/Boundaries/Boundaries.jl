@@ -4,7 +4,7 @@ Boundary conditions for air/sea and sediment flux.
 Currently implemented:
 
 - gasexchange ([Wanninkhof1992](@cite))
-  - Generic air sea flux  model describted by Wanninkhof, 1992 but only setup for CO₂ and O₂.
+  - Generic air-sea flux model described by Wanninkhof, 1992 but only setup for CO₂ and O₂.
   - Forces the DIC and ocygen fields, and requires temp (in centigrade) and salinity, plus
     current DIC and ALK concentration.
 - Sediments
