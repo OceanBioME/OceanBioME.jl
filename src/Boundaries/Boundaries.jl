@@ -5,7 +5,7 @@ Currently implemented:
 
 - gasexchange ([Wanninkhof1992](@cite))
   - Generic air-sea flux model described by Wanninkhof, 1992 but only setup for CO₂ and O₂.
-  - Forces the DIC and ocygen fields, and requires temp (in centigrade) and salinity, plus
+  - Forces the DIC and oxygen fields, and requires temp (in centigrade) and salinity, plus
     current DIC and ALK concentration.
 - Sediments
   - Soetaert ([Soetaert2000](@cite))
