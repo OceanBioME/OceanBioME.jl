@@ -117,7 +117,7 @@ OCMIP_default = pCO₂(OCMIP_solubility,
 #####
 ##### Gas exchange model of [Wanninkhof1992](@cite)
 #####
-# TODO: Impliment Ho et al. 2006 wind speed dependence
+# TODO: Implement Ho et al. 2006 wind speed dependence
 
 k(T, uₐᵥ, Sc_params) = 0.39 * (0.01 / 3600) * uₐᵥ ^ 2 * (Sc(T, Sc_params) / 660) ^ (-0.5)# m/s, may want to add variable wind speed instead of average wind here at some point
 Sc(T, params) = params.A - params.B * T + params.C * T ^ 2 - params.D * T ^ 3
