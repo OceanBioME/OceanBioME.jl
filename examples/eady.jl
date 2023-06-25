@@ -15,6 +15,8 @@
 # First load the required packages
 using OceanBioME, Oceananigans, Printf
 using Oceananigans.Units
+using Random: seed!
+seed!(42);
 
 # Construct a grid with uniform grid spacing
 Lz = 100meters
