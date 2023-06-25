@@ -183,7 +183,7 @@ function NutrientPhytoplanktonZooplanktonDetritus(; grid,
                                                     zoo_base_mortality_rate::FT = 0.3395 / day, # 1/s/(mmol N / m³)²
                                                     remineralization_rate::FT = 0.1213 / day, # 1/s
 
-                                                    surface_phytosynthetically_active_radiation = (x, y, t) -> 100 * max(0.0, cos(t * π/ 12hours)),
+                                                    surface_phytosynthetically_active_radiation = (x, y, t) -> 100 * max(0.0, cos(t * π / 12hours)),
                                                     light_attenuation_model::LA = TwoBandPhotosyntheticallyActiveRatiation(; grid,
                                                                                     surface_PAR = surface_phytosynthetically_active_radiation),
                                                     sediment_model::S = nothing,
