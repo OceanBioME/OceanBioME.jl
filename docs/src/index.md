@@ -100,7 +100,7 @@ In the example above, `OceanBioME.jl` provides the `biogeochemistry` and everyth
 ## Places to find OceanBioME information
 
 * This documentation, which provides
-    * documented examples (e.g., start from the [single-column model](@ref OneD_column)),
+    * documented examples (browse them starting, e.g., from the [single-column model](@ref OneD_column)),
     * explanations of model implementation methods,
     * details of currently implemented models, and
     * a [library](@ref library_api) documenting all user-facing objects and functions.
