@@ -54,7 +54,6 @@ end
     @inbounds u[i, j, 1] += Δt * ((one_point_five + χ) * Gⁿ[i, j, 1] - (oh_point_five + χ) * G⁻[i, j, 1])
 end
 
-
 function rk3_substep!(model::NonhydrostaticModel{<:Any, <:Any, <:Any, <:Any, <:Any, <:Any, <:Any, <:Any, <:Any, <:Any, <:Any, <:Any, <:Any, <:Any, <:Any, <:Any, <:Any, <:ContinuousFormBiogeochemistry{<:Any, <:FlatSediment}}, Δt, γⁿ, ζⁿ)
     workgroup, worksize = work_layout(model.grid, :xyz)
     arch = model.architecture
@@ -86,7 +85,6 @@ function rk3_substep!(model::NonhydrostaticModel{<:Any, <:Any, <:Any, <:Any, <:A
                 sediment.tendencies.Gⁿ[i], 
                 sediment.tendencies.G⁻[i])
     end
-
 
     return nothing
 end

@@ -29,7 +29,6 @@
             + Gᵖ(P, Z, sPOM, gᶻ, p̃, kᶻ) * η * Rdᵖ * ρᶜᵃᶜᵒ³)
 end
 
-
 @inline function (bgc::LOBSTER)(::Val{:Alk}, x, y, z, t, NO₃, NH₄, P, Z, sPOM, bPOM, DOM, DIC, Alk, PAR)
     μₚ = bgc.maximum_phytoplankton_growthrate
     kₚₐᵣ = bgc.light_half_saturation

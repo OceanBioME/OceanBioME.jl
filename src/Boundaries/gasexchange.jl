@@ -192,7 +192,7 @@ Keyword arguments
 - `pCO₂` : pCO₂ calculator
 
 Note
-=====
+====
 
 This model is fully capable of exchanging any gas but the parameters have only been configured for CO₂ and O₂, and the specific formulaiton
 is only ensured for these gasses. For any gas where the [Wanninkhof1992](@cite) parameterisation returns the Bunsen Solubility Coefficient

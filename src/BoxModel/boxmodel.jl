@@ -1,6 +1,6 @@
-"
+"""
 Integrate biogeochemical models on a single point
-"
+"""
 module BoxModels
 
 export BoxModel, run!, set!, SaveBoxModel

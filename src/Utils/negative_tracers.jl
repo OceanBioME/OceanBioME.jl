@@ -13,9 +13,12 @@ Sets any tracers in `sim.model` which are negative to zero. Use like:
 ```julia
 simulation.callbacks[:neg] = Callback(zero_negative_tracers!)
 ```
-This is *NOT* a recommended method to preserve positivity as it strongly does not conserve tracers.
 
 Tracers to exclude can be set in the parameters.
+
+!!! danger "Tracer conservation"
+    This method is _not_ recommended as a way to preserve positivity of tracers since
+    it does not conserve the total tracer.
 """
 function zero_negative_tracers!(model; params = (exclude=(), ))
     @unroll for (tracer_name, tracer) in pairs(model.tracers)
@@ -97,9 +100,8 @@ struct ScaleNegativeTracers{FA, SA, W}
     scalefactors :: SA
     warn :: W
 
-    function ScaleNegativeTracers(tracers::FA, scalefactors::SA, warn::W) where {FA, SA, W}
-        return new{FA, SA, W}(tracers, scalefactors, warn)
-    end
+    ScaleNegativeTracers(tracers::FA, scalefactors::SA, warn::W) where {FA, SA, W} =
+        new{FA, SA, W}(tracers, scalefactors, warn)
 end
 
 adapt_structure(to, snt::ScaleNegativeTracers) = ScaleNegativeTracers(adapt(to, snt.tracers),
@@ -117,7 +119,6 @@ simulation.callbacks[:neg] = Callback(negativity_protection!; callsite = UpdateS
 This is a better but imperfect way to prevent numerical errors causing negative tracers. Please see discussion [here](https://github.com/OceanBioME/OceanBioME.jl/discussions/48). 
 We plan to impliment positivity preserving timestepping in the future as the perfect alternative.
 """
-
 function ScaleNegativeTracers(; model, tracers, scalefactors = NamedTuple{tracers}(ones(length(tracers))), warn = false)
     if length(scalefactors) != length(tracers)
         error("Incorrect number of scale factors provided")
