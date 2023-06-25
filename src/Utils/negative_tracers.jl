@@ -116,8 +116,11 @@ Returns a callback that scales `tracers` so that none are negative. Use like:
 negativity_protection! = ScaleNegativeTracers(; model, tracers = (:P, :Z, :N))
 simulation.callbacks[:neg] = Callback(negativity_protection!; callsite = UpdateStateCallsite())
 ```
-This is a better but imperfect way to prevent numerical errors causing negative tracers. Please see discussion [here](https://github.com/OceanBioME/OceanBioME.jl/discussions/48). 
-We plan to impliment positivity preserving timestepping in the future as the perfect alternative.
+This method is better, though still imperfect, method to prevent numerical errors that lead to
+negative tracer values compared to [`zero_negative_tracers!`](@ref). Please see [discussion in
+github](https://github.com/OceanBioME/OceanBioME.jl/discussions/48).
+
+Future plansj include implement a positivity=preserving timestepping scheme as the ideal alternative.
 """
 function ScaleNegativeTracers(; model, tracers, scalefactors = NamedTuple{tracers}(ones(length(tracers))), warn = false)
     if length(scalefactors) != length(tracers)
@@ -156,4 +159,6 @@ Zeros any `NaN` value tendencies as a final protection against negative tracer r
     workgroup, worksize = work_layout(model.grid, :xyz)
     remove_NaN_tendencies_kernel! = _remove_NaN_tendencies!(device(model.grid.architecture), workgroup, worksize)
     remove_NaN_tendencies_kernel!(values(model.timestepper.Gⁿ))
+
+    return nothing
 end
