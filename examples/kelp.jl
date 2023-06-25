@@ -72,8 +72,7 @@ biogeochemistry = LOBSTER(; grid,
 
 model = NonhydrostaticModel(; grid,
                               closure = ScalarDiffusivity(ν = κₜ, κ = κₜ), 
-                              biogeochemistry,
-                              advection = nothing)
+                              biogeochemistry)
 
 set!(model, P = 0.03, Z = 0.03, NO₃ = 4.0, NH₄ = 0.05, DIC = 2239.8, Alk = 2409.0)
 

@@ -71,8 +71,7 @@ model = NonhydrostaticModel(; grid,
                               biogeochemistry = LOBSTER(; grid,
                                                           surface_phytosynthetically_active_radiation = surface_PAR,
                                                           carbonates = true),
-                              boundary_conditions = (DIC = FieldBoundaryConditions(top = CO₂_flux),),
-                              advection = nothing)
+                              boundary_conditions = (DIC = FieldBoundaryConditions(top = CO₂_flux),))
 
 set!(model, P = 0.03, Z = 0.03, NO₃ = 11.0, NH₄ = 0.05, DIC = 2200.0, Alk = 2400.0)
 
