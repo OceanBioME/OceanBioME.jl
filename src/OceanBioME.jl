@@ -1,3 +1,7 @@
+"""
+A fast and flexible modelling environment for modelling the coupled interactions
+between ocean biogeochemistry, carbonate chemistry, and physics.
+"""
 module OceanBioME
 
 # Biogeochemistry models
@@ -51,4 +55,4 @@ using .LOBSTERModel
 using .NPZDModel
 import .SLatissimaModel.SLatissima
 
-end
+end #module

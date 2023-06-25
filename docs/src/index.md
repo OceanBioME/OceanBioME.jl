@@ -1,12 +1,10 @@
 # *Ocean* *Bio*geochemical *M*odelling *E*nvironment - OceanBioME
 
-OceanBioME.jl is a fast and flexible ocean biogeochemical modelling environment. It is highly modular and is designed to make it easy to implement and use a varitey of biogeochemical and physical models. OceanBioME is built to be coupled with physics models from [Oceananigans.jl](https://github.com/CliMA/Oceananigans.jl) allowing simulations across a wide range of spatial scales ranging from a global hydrostatic free surface model to nonhydrostatic large-eddy simulations. OceanBioME was designed specifically for ocean CDR applications. Notably, it includes active particles which allow individual-based models to be seamlessly coupled with the flow physics, ecosystem models, and carbonate chemistry.
+OceanBioME.jl is a fast and flexible ocean biogeochemical modelling environment. It is highly modular and is designed to make it easy to implement and use a variety of biogeochemical and physical models. OceanBioME is built to be coupled with physics models from [Oceananigans.jl](https://github.com/CliMA/Oceananigans.jl) allowing simulations across a wide range of spatial scales ranging from a global hydrostatic free surface model to non-hydrostatic large-eddy simulations. OceanBioME was designed specifically for ocean carbon dioxide removal applications. Notably, it includes active particles which allow individual-based models to be seamlessly coupled with the flow physics, ecosystem models, and carbonate chemistry.
 
-OceanBioME.jl is supported through grants from the [Center for Climate Repair at Cambridge](https://www.climaterepair.cam.ac.uk/) and the [Gordon and Betty Moore Foundation](https://www.moore.org/). 
+OceanBioME.jl currently provides a core of several biogeochemical models (Nutrient--Phytoplankton--Zooplankton--Detritus (NPZD) and [LOBSTER](https://doi.org/10.1029/2004JC002588), a medium complexity model, air-sea gas exchange models to provide appropriate top boundary conditions, and sediment models to for the benthic boundary. [PISCES](https://doi.org/10.5194/gmd-8-2465-2015) and other higher complexity models are in our future development plans.
 
-OceanBioME.jl currently provides a core of several biogeochemical models (NPZD and [LOBSTER](https://doi.org/10.1029/2004JC002588), a medium complexity model, and [PISCES](https://doi.org/10.5194/gmd-8-2465-2015) in an early stage of testing), air-sea gas exchange models to provide appropriate top boundary conditions, and sediment models for the benthic boundary (under development).
-
-OceanBioME includes a framework for integrating the growth of biological/active Lagrangian particles which move around and can interact with the (Eulerian) tracer fields - for example, consuming nutrients and carbon dioxide while releasing dissolved organic material. A growth model for sugar kelp is currently implemented using active particles, and this model can be used in a variety of dynamical scenarios including free-floating or bottom-attached particles.
+OceanBioME.jl includes a framework for integrating the growth of biological/active Lagrangian particles which move around and can interact with the (Eulerian) tracer fields - for example, consuming nutrients and carbon dioxide while releasing dissolved organic material. A growth model for sugar kelp is currently implemented using active particles, and this model can be used in a variety of dynamical scenarios including free-floating or bottom-attached particles.
 
 ## Quick install
 
@@ -22,11 +20,12 @@ julia> Pkg.add("OceanBioME")
 ```
 
 ## Running your first model
+
 As a simple example let's run a Nutrient-Phytoplankton-Zooplankton-Detritus (NPZD) model in a two-dimensional simulation of a buoyancy front:
 
 ```@example quickstart
-using OceanBioME, Oceananigans
-using Oceananigans.Units
+using OceanBioME
+using Oceananigans, Oceananigans.Units
 
 grid = RectilinearGrid(CPU(), size=(256, 32), extent=(500meters, 100meters), topology=(Bounded, Flat, Bounded))
 
@@ -41,11 +40,7 @@ bᵢ(x, y, z) = ifelse(x < 250, 1e-4, 1e-3)
 
 set!(model, b = bᵢ, N = 5.0, P = 0.1, Z = 0.1, T = 18.0)
 
-simulation = Simulation(model; Δt = 1.0, stop_time = 3hours)
-
-wizard = TimeStepWizard(cfl = 0.3, max_change = 1.5)
-
-simulation.callbacks[:wizard] = Callback(wizard, IterationInterval(5))
+simulation = Simulation(model; Δt = 2.0, stop_time = 3hours)
 
 simulation.output_writers[:tracers] = JLD2OutputWriter(model, model.tracers,
                                                        filename = "buoyancy_front.jld2",
@@ -100,15 +95,15 @@ nothing #hide
 
 ![buoyancy_front](buoyancy_front.mp4)
 
-In this example `OceanBioME` is providing the `biogeochemistry` and the remainder is taken care of by `Oceananigans`. For comprehensive documentation of the physics modelling see [Oceananigans' Documentation](https://clima.github.io/OceananigansDocumentation/stable/); for biogeochemistry and other features we provide read below.
+In the example above, `OceanBioME.jl` provides the `biogeochemistry` and everything else is taken care of by `Oceananigans.jl`. For comprehensive documentation of the physics modelling see [Oceananigans' Documentation](https://clima.github.io/OceananigansDocumentation/stable/); for biogeochemistry and other features we provide read below.
 
 ## Places to find OceanBioME information
 
 * This documentation, which provides
-    * example scripts,
+    * documented examples (browse them starting, e.g., from the [single-column model](@ref OneD_column)),
     * explanations of model implementation methods,
     * details of currently implemented models, and
-    * a library documenting all user-facing objects and functions.
+    * a [library](@ref library_api) documenting all user-facing objects and functions.
 
 * [Discussions on the OceanBioME github](https://github.com/OceanBioME/OceanBioME.jl/discussions)
   
@@ -128,3 +123,8 @@ Whether you need help getting started with OceanBioME, found a bug, want OceanBi
 If you use OceanBioME as part of your research, teaching, or other activities, we would be grateful if you could cite our work and mention OceanBioME by name, as well as citing and [acknowledging Oceananigans](https://clima.github.io/OceananigansDocumentation/stable/#Citing) as without them this package would not be possible.
 
 We do not currently have a citation for OceanBioME so please reach out if you wish to cite it, and we will expedite the process of [making it citable](https://joss.theoj.org/about).
+
+
+## Funding
+
+OceanBioME.jl is supported through grants from the [Center for Climate Repair at Cambridge](https://www.climaterepair.cam.ac.uk/) and the [Gordon and Betty Moore Foundation](https://www.moore.org/).

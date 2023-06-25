@@ -79,7 +79,7 @@ set!(model, P = 0.03, Z = 0.03, NO₃ = 11.0, NH₄ = 0.05, DIC = 2200.0, Alk = 
 # Next we setup the simulation along with some callbacks that:
 # - Show the progress of the simulation
 # - Store the output
-# - Prevent the tracers from going negative from numerical error (see discussion of this in the [positivity preservation](@ref pos-preservation) implimentation page)
+# - Prevent the tracers from going negative from numerical error (see discussion of this in the [positivity preservation](@ref pos-preservation) implementation page)
 # - Adapt the timestep length to reduce the run time
 
 simulation = Simulation(model, Δt = 1minutes, stop_time = 100days)

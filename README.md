@@ -45,11 +45,7 @@ bᵢ(x, y, z) = ifelse(x < 250, 1e-4, 1e-3)
 
 set!(model, b = bᵢ, N = 5.0, P = 0.1, Z = 0.1, T = 18.0)
 
-simulation = Simulation(model; Δt = 1.0, stop_time = 3hours)
-
-wizard = TimeStepWizard(cfl = 0.3, max_change = 1.5)
-
-simulation.callbacks[:wizard] = Callback(wizard, IterationInterval(5))
+simulation = Simulation(model; Δt = 2.0, stop_time = 3hours)
 
 simulation.output_writers[:tracers] = JLD2OutputWriter(model, model.tracers,
                                                        filename = "buoyancy_front.jld2",

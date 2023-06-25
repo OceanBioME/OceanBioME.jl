@@ -1,8 +1,10 @@
 """
-The Lodyc-DAMTP Ocean Biogeochemical Simulation Tools for Ecosystem and Resources (LOBSTER) model
+The Lodyc-DAMTP Ocean Biogeochemical Simulation Tools for Ecosystem and
+Resources (LOBSTER) model.
 
 Tracers
-========
+=======
+
 * Nitrates: NO₃ (mmol N/m³)
 * Ammonia: NH₄ (mmol N/m³)
 * Phytoplankton: P (mmol N/m³)
@@ -12,7 +14,8 @@ Tracers
 * Disolved organic matter: DOM (mmol N/m³)
 
 Optional tracers
-===========
+================
+
 Carbonate chemistry
 * Disolved inorganic carbon: DIC (mmol C/m³)
 * Alkalinity: Alk (meq/m³)
@@ -21,13 +24,15 @@ Oxygen chemistry
 * Oxygen: O₂ (mmol O₂/m³)
 
 Variable redfield
+
 * Small (slow sinking) particulate organic matter carbon content: sPOC (mmol C/m³)
 * Large (fast sinking) particulate organic matter carbon content: bPOC (mmol C/m³)
 * Disolved organic matter carbon content: DOC (mmol C/m³)
 * When this option is enabled then the usual sPOM and bPOM change to sPON and bPON as they explicitly represent the nitrogen contained in the particulate matter
 
 Required submodels
-===========
+==================
+
 * Photosynthetically available radiation: PAR (W/m²)
 
 For optional tracers:
@@ -113,7 +118,7 @@ Keywork Arguments
 
 - `grid`: (required) the geometry to build the model on, required to calculate sinking
 - `phytoplankton_preference`, ..., `disolved_organic_breakdown_rate`: LOBSTER parameter values
-- `surface_phytosynthetically_active_radiation`: funciton (or array in the future) for the photosynthetically available radiaiton at the surface, should be shape `f(x, y, t)`
+- `surface_phytosynthetically_active_radiation`: funciton (or array in the future) for the photosynthetically available radiation at the surface, should be shape `f(x, y, t)`
 - `light_attenuation_model`: light attenuation model which integrated the attenuation of available light
 - `sediment_model`: slot for `AbstractSediment`
 - `carbonates`, `oxygen`, and `variable_redfield`: include models for carbonate chemistry and/or oxygen chemistry and/or variable redfield ratio disolved and particulate organic matter
@@ -240,7 +245,6 @@ struct LOBSTER{FT, LA, S, B, W, P} <: ContinuousFormBiogeochemistry{LA, S, P}
                                        particles)
     end
 end
-
 
 function LOBSTER(; grid,
                    phytoplankton_preference::FT = 0.5,

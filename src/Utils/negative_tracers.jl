@@ -13,9 +13,12 @@ Sets any tracers in `sim.model` which are negative to zero. Use like:
 ```julia
 simulation.callbacks[:neg] = Callback(zero_negative_tracers!)
 ```
-This is *NOT* a recommended method to preserve positivity as it strongly does not conserve tracers.
 
 Tracers to exclude can be set in the parameters.
+
+!!! danger "Tracer conservation"
+    This method is _not_ recommended as a way to preserve positivity of tracers since
+    it does not conserve the total tracer.
 """
 function zero_negative_tracers!(model; params = (exclude=(), ))
     @unroll for (tracer_name, tracer) in pairs(model.tracers)
@@ -97,9 +100,8 @@ struct ScaleNegativeTracers{FA, SA, W}
     scalefactors :: SA
     warn :: W
 
-    function ScaleNegativeTracers(tracers::FA, scalefactors::SA, warn::W) where {FA, SA, W}
-        return new{FA, SA, W}(tracers, scalefactors, warn)
-    end
+    ScaleNegativeTracers(tracers::FA, scalefactors::SA, warn::W) where {FA, SA, W} =
+        new{FA, SA, W}(tracers, scalefactors, warn)
 end
 
 adapt_structure(to, snt::ScaleNegativeTracers) = ScaleNegativeTracers(adapt(to, snt.tracers),
@@ -114,10 +116,12 @@ Returns a callback that scales `tracers` so that none are negative. Use like:
 negativity_protection! = ScaleNegativeTracers(; model, tracers = (:P, :Z, :N))
 simulation.callbacks[:neg] = Callback(negativity_protection!; callsite = UpdateStateCallsite())
 ```
-This is a better but imperfect way to prevent numerical errors causing negative tracers. Please see discussion [here](https://github.com/OceanBioME/OceanBioME.jl/discussions/48). 
-We plan to impliment positivity preserving timestepping in the future as the perfect alternative.
-"""
+This method is better, though still imperfect, method to prevent numerical errors that lead to
+negative tracer values compared to [`zero_negative_tracers!`](@ref). Please see [discussion in
+github](https://github.com/OceanBioME/OceanBioME.jl/discussions/48).
 
+Future plansj include implement a positivity=preserving timestepping scheme as the ideal alternative.
+"""
 function ScaleNegativeTracers(; model, tracers, scalefactors = NamedTuple{tracers}(ones(length(tracers))), warn = false)
     if length(scalefactors) != length(tracers)
         error("Incorrect number of scale factors provided")
@@ -155,4 +159,6 @@ Zeros any `NaN` value tendencies as a final protection against negative tracer r
     workgroup, worksize = work_layout(model.grid, :xyz)
     remove_NaN_tendencies_kernel! = _remove_NaN_tendencies!(device(model.grid.architecture), workgroup, worksize)
     remove_NaN_tendencies_kernel!(values(model.timestepper.Gⁿ))
+
+    return nothing
 end

@@ -1,8 +1,8 @@
 """
     struct SimpleMultiG
 
-Hold the parameters and fields for a simple "multi G" single layer sediment model.
-Based on the Level 3 model described in Soetaert et al. 2000;
+Hold the parameters and fields for a simple "multi G" single-layer sediment model.
+Based on the Level 3 model described by Soetaert et al. 2000;
 doi:[10.1016/S0012-8252(00)00004-0](https://doi.org/10.1016/S0012-8252(00)00004-0).
 """
 struct SimpleMultiG{FT, P1, P2, P3, P4, F, TE} <: FlatSediment
@@ -40,15 +40,29 @@ end
                  depth = abs(znode(1, grid, Face())),
                  solid_dep_params::P4 = (A = 0.233, B = 0.336, C = 982, D = - 1.548, depth = depth))
 
-Returns a single layer "multi G" sediment model (`SimpleMultiG`) on `grid` where parameters can be optionally specified.
+Returns a single-layer "multi G" sediment model (`SimpleMultiG`) on `grid` where parameters
+can be optionally specified.
 
-The model is a single layer (i.e. does not include porous diffusion) model with three classes of sediment organic matter
-which decay at three different rates (fast, slow, refactory). The nitrifcation/denitrifcation/anoxic mineralisation
-fractions default to the parameterisation of Soetaert et al. 2000; doi:[10.1016/S0012-8252(00)00004-0](https://doi.org/10.1016/S0012-8252(00)00004-0).
+The model is a single layer (i.e. does not include porous diffusion) model with three classes
+of sediment organic matter which decay at three different rates (fast, slow, refactory).
+The nitrifcation/denitrifcation/anoxic mineralisation fractions default to the parameterisation
+of Soetaert et al. 2000; doi:[10.1016/S0012-8252(00)00004-0](https://doi.org/10.1016/S0012-8252(00)00004-0).
 
-This model has not yet been validated or compared to observational data. The variety of degridation processes is likely 
-to be strongly dependent on oxygen availability (see [https://bg.copernicus.org/articles/6/1273/2009/bg-6-1273-2009.pdf](https://bg.copernicus.org/articles/6/1273/2009/bg-6-1273-2009.pdf))
-so it will therefore be important to also thoghroy validate the oxygen model (also currently limited).
+This model has not yet been validated or compared to observational data. The variety of degridation
+processes is likely  to be strongly dependent on oxygen availability (see
+[https://bg.copernicus.org/articles/6/1273/2009/bg-6-1273-2009.pdf](https://bg.copernicus.org/articles/6/1273/2009/bg-6-1273-2009.pdf))
+so it will therefore be important to also thoroughly validate the oxygen model (also currently limited).
+
+Example
+=======
+
+```@example
+using OceanBioME, Oceananigans, OceanBioME.Sediments
+
+grid = RectilinearGrid(size=(3, 3, 30), extent=(10, 10, 200))
+
+sediment_model = SimpleMultiG(grid)
+```
 """
 function SimpleMultiG(grid; 
                       fast_decay_rate::FT = 2/day,
@@ -139,7 +153,7 @@ sediment_fields(model::SimpleMultiG) = (C_slow = model.fields.C_slow, C_fast = m
         Nᵐⁱⁿ = sediment.fields.N_slow[i, j, 1] * sediment.slow_decay_rate + sediment.fields.N_fast[i, j, 1] * sediment.fast_decay_rate
         
         k = Cᵐⁱⁿ * day / (sediment.fields.C_slow[i, j, 1] + sediment.fields.C_fast[i, j, 1])
-        
+
         # sediment evolution
         sediment.tendencies.Gⁿ.C_slow[i, j, 1] = (1 - sediment.refactory_fraction) * sediment.slow_fraction * carbon_deposition - sediment.slow_decay_rate * sediment.fields.C_slow[i, j, 1]
         sediment.tendencies.Gⁿ.C_fast[i, j, 1] = (1 - sediment.refactory_fraction) * sediment.fast_fraction * carbon_deposition - sediment.slow_decay_rate * sediment.fields.C_fast[i, j, 1]

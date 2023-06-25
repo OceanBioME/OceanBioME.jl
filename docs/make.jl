@@ -114,7 +114,6 @@ pages = [
     "Visualization" => "visualization.md",
     "Examples" => example_pages,
     "Numerical implementation" => numerical_pages,
-    "Gallery" => "gallery.md",
     "References" => "references.md",
     "Appendix" => appendix_pages
 ]

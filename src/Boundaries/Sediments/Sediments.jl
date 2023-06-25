@@ -4,6 +4,7 @@ export SimpleMultiG
 
 using KernelAbstractions
 using OceanBioME: ContinuousFormBiogeochemistry
+using Oceananigans
 using Oceananigans.Architectures: device
 using Oceananigans.Utils: launch!
 using Oceananigans.Advection: div_Uc

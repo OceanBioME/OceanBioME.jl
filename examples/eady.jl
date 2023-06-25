@@ -15,6 +15,8 @@
 # First load the required packages
 using OceanBioME, Oceananigans, Printf
 using Oceananigans.Units
+using Random: seed!
+seed!(42);
 
 # Construct a grid with uniform grid spacing
 Lz = 100meters
@@ -101,7 +103,7 @@ simulation.output_writers[:fields] = JLD2OutputWriter(model, merge(model.tracers
                                                       filename = "eady_turbulence_bgc",
                                                       overwrite_existing = true)
 
-# Prevent the tracer values going negative - this is especially important in this model while no positivity preserving diffusion is implimented
+# Prevent the tracer values going negative - this is especially important in this model while no positivity preserving diffusion is implemented
 scale_negative_tracers = ScaleNegativeTracers(; model, tracers = (:NO₃, :NH₄, :P, :Z, :sPOM, :bPOM, :DOM))
 simulation.callbacks[:neg] = Callback(scale_negative_tracers; callsite = UpdateStateCallsite())
 simulation.callbacks[:nan_tendencies] = Callback(remove_NaN_tendencies!; callsite = TendencyCallsite())

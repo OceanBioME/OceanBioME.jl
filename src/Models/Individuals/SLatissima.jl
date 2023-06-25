@@ -16,6 +16,7 @@ Optionally:
 * Ammonia: NH₄ (mmol N/m³)
 """ 
 module SLatissimaModel
+
 using Roots, KernelAbstractions
 using OceanBioME.Particles: BiogeochemicalParticles, get_node
 using Oceananigans.Units
@@ -278,7 +279,7 @@ end
 
 @kernel function update_tracer_tendencies!(bgc, p, tendencies, grid::AbstractGrid{FT, TX, TY, TZ}) where {FT, TX, TY, TZ}
     idx = @index(Global)
-    
+
     x = p.x[idx]
     y = p.y[idx]
     z = p.z[idx]
@@ -562,4 +563,5 @@ end
 
     return NO₃, NH₄, PAR, u, T, S
 end
-end
+
+end #module

@@ -1,5 +1,5 @@
-# # One dimensional column example
-# In this example we will setup a simple 1D column with the [LOBSTER](@ref LOBSTER) biogeochemical model and observe its evolution. This demonstrates:
+# # [One-dimensional column example](@id OneD_column)
+# In this example we setup a simple 1D column with the [LOBSTER](@ref LOBSTER) biogeochemical model and observe its evolution. This demonstrates:
 # - How to setup OceanBioME's biogeochemical models
 # - How to visualise results
 # This is forced by idealised mixing layer depth and surface photosynthetically available radiation (PAR) which are setup first
@@ -57,7 +57,7 @@ set!(model, P = 0.03, Z = 0.03, NO₃ = 4.0, NH₄ = 0.05, DIC = 2239.8, Alk = 2
 # Next we setup the simulation along with some callbacks that:
 # - Show the progress of the simulation
 # - Store the model and particles output
-# - Prevent the tracers from going negative from numerical error (see discussion of this in the [positivity preservation](@ref pos-preservation) implimentation page)
+# - Prevent the tracers from going negative from numerical error (see discussion of this in the [positivity preservation](@ref pos-preservation) implementation page)
 
 simulation = Simulation(model, Δt = 3minutes, stop_time = 100days)
 

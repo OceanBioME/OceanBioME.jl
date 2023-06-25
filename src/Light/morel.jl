@@ -1,4 +1,5 @@
 module Morel
+
 using KernelAbstractions
 using KernelAbstractions.Extras.LoopInfo: @unroll
 using Oceananigans.Architectures: device
@@ -48,14 +49,15 @@ using Oceananigans.Utils: launch!
 end
 
 """
-    Light.Morel.update!(sim, params)
+    update!(sim, params)
 
-Function to integrate light attenuation using [Morel1988](@cite) model which should be called in a callback as often as possible.
+Function to integrate light attenuation using [Morel1988](@cite) model which should be called
+in a callback as often as possible.
 
-Requires a three PAR bands to be supplied as auxiliary fields: `PAR¹`, `PAR²`, and `PAR³` as well as `Chlᴾ` and `Chlᴰ` chlorophyll tracer fields.
+Requires three PAR bands to be supplied as auxiliary fields: `PAR¹`, `PAR²`, and `PAR³`
+as well as `Chlᴾ` and `Chlᴰ` chlorophyll tracer fields.
 """
-
-function  update(sim, params)
+function update(sim, params)
     PAR¹, PAR², PAR³ = sim.model.auxiliary_fields.PAR¹, sim.model.auxiliary_fields.PAR², sim.model.auxiliary_fields.PAR³
     Chl = (sim.model.tracers.Chlᴾ .+ sim.model.tracers.Chlᴰ).*10^6
 
@@ -73,4 +75,4 @@ const defaults = (
     PAR_frac = (B = 1/3, G = 1/3, R = 1/3)
 )
 
-end
+end #module
