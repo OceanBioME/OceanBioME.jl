@@ -34,17 +34,17 @@ mutable struct BoxModel{B, V, FT, F, TS, C}
 end
 
 """
-    BoxModel(;biogeochemistry::B,
-              stop_time::FT = 0.0,
-              forcing = NamedTuple(),
-              timestepper::TS = RungeKutta3TimeStepper((required_biogeochemical_tracers(biogeochemistry)..., required_biogeochemical_auxiliary_fields(biogeochemistry)...)),
-              Δt::FT = 1.0,
-              clock::C = Clock(0.0, 0, 1))
+    BoxModel(; biogeochemistry::B,
+               stop_time::FT = 0.0,
+               forcing = NamedTuple(),
+               timestepper::TS = RungeKutta3TimeStepper((required_biogeochemical_tracers(biogeochemistry)..., required_biogeochemical_auxiliary_fields(biogeochemistry)...)),
+               Δt::FT = 1.0,
+               clock::C = Clock(0.0, 0, 1))
 
 Constructs a box model of a `biogeochemistry` model. Once this has been constructed you can set initial condiitons by `set!(model, X=1.0...)` and then `run!(model)`.
 
 Keyword Arguments 
-====================
+=================
 
 - `biogeochemistry`: (required) an OceanBioME biogeochemical model, most models must be passed a `grid` which can be set to `BoxModelGrid()` for box models
 - `stop_time`: end time of simulation
@@ -53,7 +53,6 @@ Keyword Arguments
 - `Δt`: time step length
 - `clock`: Oceananigans clock to keep track of time
 """
-
 function BoxModel(;biogeochemistry::B,
                    stop_time::FT = 0.0,
                    forcing = NamedTuple(),
