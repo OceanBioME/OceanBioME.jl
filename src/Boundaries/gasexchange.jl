@@ -236,7 +236,7 @@ function GasExchange(; gas,
     return FluxBoundaryCondition(gasexchange_function, field_dependencies = field_dependencies, parameters = gasexchange)
 end
 
-# Hack this nicer format into Oceananians boundary conditions because `typeof(gasexhcange) = DataType` and `BoundaryCondition` has a special use for `DataType` in the first argument so doesn't work
+# Hack this nicer format into Oceananigans boundary conditions because `typeof(gasexhcange) = DataType` and `BoundaryCondition` has a special use for `DataType` in the first argument so doesn't work
 @inline gasexchange_function(x, y, t, args...) = @inbounds args[end](x, y, t, args[1:end-1]...)
 
 @inline (gasexchange::GasExchange)(x, y, t, conc) = gasexchange(x, y, t, conc, gasexchange.temperature(x, y, 0.0, t), gasexchange.salinity(x, y, 0.0, t))

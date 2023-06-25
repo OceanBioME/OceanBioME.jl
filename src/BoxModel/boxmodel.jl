@@ -94,18 +94,18 @@ end
 """
     run!(model::BoxModel; feedback_interval = 1000, save_interval = Inf, save = nothing)
 
-Run a box model
+Run a box model.
 
 Arguments: `model` - the `BoxModel` to solve
 
 Keyword Arguments
-==================
+=================
 
 - `feedback_interval`: how often (number of iterations) to display progress
 - `save_interval`: how often (number of iterations) to save output
 - `save`: `SaveBoxModel` object to specify how to save output
 
-TODO: should abstract out to simulation like Oceananians to add e.g. callbacks
+TODO: should abstract out to simulation like Oceananigans to add e.g. callbacks
 """
 function run!(model::BoxModel; feedback_interval = 10000, save_interval = Inf, save = nothing)
     itter = 0
