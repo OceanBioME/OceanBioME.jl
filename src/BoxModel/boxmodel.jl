@@ -53,12 +53,12 @@ Keyword Arguments
 - `Δt`: time step length
 - `clock`: Oceananigans clock to keep track of time
 """
-function BoxModel(;biogeochemistry::B,
-                   stop_time::FT = 0.0,
-                   forcing = NamedTuple(),
-                   timestepper::TS = RungeKutta3TimeStepper((required_biogeochemical_tracers(biogeochemistry)..., required_biogeochemical_auxiliary_fields(biogeochemistry)...)),
-                   Δt::FT = 1.0,
-                   clock::C = Clock(0.0, 0, 1)) where {B, FT, TS, C}
+function BoxModel(; biogeochemistry::B,
+                    stop_time::FT = 0.0,
+                    forcing = NamedTuple(),
+                    timestepper::TS = RungeKutta3TimeStepper((required_biogeochemical_tracers(biogeochemistry)..., required_biogeochemical_auxiliary_fields(biogeochemistry)...)),
+                    Δt::FT = 1.0,
+                    clock::C = Clock(0.0, 0, 1)) where {B, FT, TS, C}
 
     variables = (required_biogeochemical_tracers(biogeochemistry)..., required_biogeochemical_auxiliary_fields(biogeochemistry)...)
     values = StructArray([NamedTuple{variables}(zeros(FT, length(variables)))])
