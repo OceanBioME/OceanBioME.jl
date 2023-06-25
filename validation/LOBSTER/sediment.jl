@@ -11,17 +11,17 @@ function test_flat_sediment(architecture; timestepper = :QuasiAdamsBashforth2)
 
     sediment_model = SimpleMultiG(grid)
 
-    biogeochemistry = LOBSTER(; grid, 
-                                carbonates = true, oxygen = true, variable_redfield = true, 
-                                open_bottom = true, 
+    biogeochemistry = LOBSTER(; grid,
+                                carbonates = true, oxygen = true, variable_redfield = true,
+                                open_bottom = true,
                                 surface_phytosynthetically_active_radiation = (x, y, t) -> 80,
                                 sediment_model)
 
-    model = NonhydrostaticModel(;grid, biogeochemistry, 
-                                 boundary_conditions = (DIC = FieldBoundaryConditions(top = GasExchange(; gas = :CO₂)), 
-                                                        O₂ = FieldBoundaryConditions(top = GasExchange(; gas = :O₂))),
+    model = NonhydrostaticModel(;grid, biogeochemistry,
+                                 boundary_conditions = (DIC = FieldBoundaryConditions(top = GasExchange(; gas = :CO₂)),
+                                                         O₂ = FieldBoundaryConditions(top = GasExchange(; gas = :O₂))),
                                  tracers = (:T, :S),
-                                 closure = ScalarDiffusivity(ν = 10 ^ -3, κ = 10 ^ -3),
+                                 closure = ScalarDiffusivity(ν = 1e-3, κ = 1e-3),
                                  timestepper)
 
     set!(model.biogeochemistry.sediment_model.fields.N_fast, 0.0230)
@@ -30,9 +30,9 @@ function test_flat_sediment(architecture; timestepper = :QuasiAdamsBashforth2)
     set!(model.biogeochemistry.sediment_model.fields.C_fast, 0.5893)
     set!(model.biogeochemistry.sediment_model.fields.C_slow, 0.1677)
 
-    set!(model, P = 0.4686, Z = 0.5363, 
-            NO₃ = 2.3103, NH₄ = 0.0010, 
-            DIC = 2106.9, Alk = 2408.9, 
+    set!(model, P = 0.4686, Z = 0.5363,
+            NO₃ = 2.3103, NH₄ = 0.0010,
+            DIC = 2106.9, Alk = 2408.9,
             O₂ = 258.92, 
             DOC = 5.3390, DON = 0.8115,
             sPON = 0.2299, sPOC = 1.5080,
@@ -59,9 +59,9 @@ function test_flat_sediment(architecture; timestepper = :QuasiAdamsBashforth2)
     simulation.callbacks[:neg] = Callback(scale_negative_tracers; callsite = UpdateStateCallsite())
     
     plankton_redfield = model.biogeochemistry.phytoplankton_redfield
-    scale_negative_carbon_tracers = ScaleNegativeTracers(; model, tracers = (:P, :Z, :DOC, :sPOC, :bPOC, :DIC), 
-                                                         scalefactors = (P = plankton_redfield, 
-                                                                         Z = plankton_redfield, 
+    scale_negative_carbon_tracers = ScaleNegativeTracers(; model, tracers = (:P, :Z, :DOC, :sPOC, :bPOC, :DIC),
+                                                         scalefactors = (P = plankton_redfield,
+                                                                         Z = plankton_redfield,
                                                                          DOC = 1, sPOC = 1, bPOC = 1, DIC = 1))
     simulation.callbacks[:neg_carbon] = Callback(scale_negative_carbon_tracers; callsite = UpdateStateCallsite())
 
