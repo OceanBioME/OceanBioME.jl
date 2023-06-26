@@ -160,20 +160,20 @@ adapt_structure(to, gasexchange::GasExchange) = GasExchange(adapt(to, gasexchang
                                                             adapt(to, gasexchange.pCO₂))
 
 """
-    GasExchange(;gas,
-                schmidt_params::ScP = (CO₂ = (A=2073.1, B=125.62, C=3.6276, D=0.043219),
-                                O₂ = (A=1953.4, B=128.0, C=3.9918, D=0.050091))[gas],
-                solubility_params::βP = (CO₂ = (A₁=-60.2409, A₂=93.4517, A₃=23.3585, B₁=0.023517, B₂=-0.023656, B₃=0.0047036),
-                                    O₂ = (A₁=-58.3877, A₂=85.8079, A₃=23.8439, B₁=-0.034892, B₂=0.015568, B₃=-0.0019387))[gas],
-                ocean_density::FT = 1026, # kg/m³
-                air_concentration::AC = (CO₂ = 413.4, O₂ = 9352.7)[gas], # ppmv, mmolO₂/m³ (20.95 mol O₂/mol air, 0.0224m^3/mol air)
-                air_pressure::FT = 1.0, # atm
-                average_wind_speed::FT = 10, # m/s
-                field_dependencies = (CO₂ = (:DIC, :ALK), O₂ = (:OXY, ))[gas],
-                temperature::T = nothing,
-                salinity::S = nothing)
+    GasExchange(; gas,
+                  schmidt_params::ScP = (CO₂ = (A=2073.1, B=125.62, C=3.6276, D=0.043219),
+                                   O₂ = (A=1953.4, B=128.0, C=3.9918, D=0.050091))[gas],
+                  solubility_params::βP = (CO₂ = (A₁=-60.2409, A₂=93.4517, A₃=23.3585, B₁=0.023517, B₂=-0.023656, B₃=0.0047036),
+                                     O₂ = (A₁=-58.3877, A₂=85.8079, A₃=23.8439, B₁=-0.034892, B₂=0.015568, B₃=-0.0019387))[gas],
+                  ocean_density::FT = 1026, # kg/m³
+                  air_concentration::AC = (CO₂ = 413.4, O₂ = 9352.7)[gas], # ppmv, mmolO₂/m³ (20.95 mol O₂/mol air, 0.0224m^3/mol air)
+                  air_pressure::FT = 1.0, # atm
+                  average_wind_speed::FT = 10, # m/s
+                  field_dependencies = (CO₂ = (:DIC, :ALK), O₂ = (:OXY, ))[gas],
+                  temperature::T = nothing,
+                  salinity::S = nothing)
 
-Constructs an Oceananigans `FluxBoundaryCondition` for the exchange of `gas` with the relivant tracer (i.e. DIC for CO₂ and oxygen for O₂).
+Constructs an Oceananigans `FluxBoundaryCondition` for the exchange of `gas` with the relevant tracer (i.e., DIC for CO₂ and oxygen for O₂).
 Please see note for other gases.
 
 Keyword arguments
@@ -191,20 +191,17 @@ Keyword arguments
 - `salinity` : either `nothing` to track a salinity tracer field, or a function or shape `f(x, y, z, t)` for the salinity in ‰
 - `pCO₂` : pCO₂ calculator
 
-Note
-====
-
-This model is fully capable of exchanging any gas but the parameters have only been configured for CO₂ and O₂, and the specific formulaiton
-is only ensured for these gasses. For any gas where the [Wanninkhof1992](@cite) parameterisation returns the Bunsen Solubility Coefficient
-this model will work out of the box and can just be passed new parameters. For the other solubility types (i.e. K₀, K' and f) you will need
-to overload the `(gasexchange::GasExchange)` function to ensure the correct formulaiton.
+!!! note "Gases _other_ than CO₂ and O₂"
+    This model is fully capable of exchanging any gas but the parameters have only been configured for CO₂ and O₂, and the specific formulation
+    is only ensured for these gasses. For any gas where the [Wanninkhof1992](@cite) parameterisation returns the Bunsen Solubility Coefficient
+    this model will work out of the box and can just be passed new parameters. For the other solubility types (i.e. K₀, K' and f) you will need
+    to overload the `(gasexchange::GasExchange)` function to ensure the correct formulaiton.
 """
-
 function GasExchange(; gas,
                        schmidt_params::ScP = (CO₂ = (A = 2073.1, B = 125.62, C = 3.6276, D = 0.043219),
-                                              O₂ = (A = 1953.4, B = 128.0, C = 3.9918, D = 0.050091))[gas],
+                                               O₂ = (A = 1953.4, B = 128.0, C = 3.9918, D = 0.050091))[gas],
                        solubility_params::βP = (CO₂ = (A₁ = -60.2409, A₂ = 93.4517, A₃ = 23.3585, B₁ = 0.023517, B₂ = -0.023656, B₃ = 0.0047036),
-                                                O₂ = (A₁ = -58.3877, A₂ = 85.8079, A₃ = 23.8439, B₁ = -0.034892, B₂ = 0.015568, B₃ = -0.0019387))[gas],
+                                                 O₂ = (A₁ = -58.3877, A₂ = 85.8079, A₃ = 23.8439, B₁ = -0.034892, B₂ = 0.015568, B₃ = -0.0019387))[gas],
                        ocean_density::FT = 1024.5, # kg/m³
                        air_concentration::AC = (CO₂ = 413.4, O₂ = 9352.7)[gas], # ppmv, mmolO₂/m³ (20.95 mol O₂/mol air, 0.0224m^3/mol air)
                        air_pressure::AP = 1.0, # atm
@@ -239,7 +236,7 @@ function GasExchange(; gas,
     return FluxBoundaryCondition(gasexchange_function, field_dependencies = field_dependencies, parameters = gasexchange)
 end
 
-# Hack this nicer format into Oceananians boundary conditions because `typeof(gasexhcange) = DataType` and `BoundaryCondition` has a special use for `DataType` in the first argument so doesn't work
+# Hack this nicer format into Oceananigans boundary conditions because `typeof(gasexhcange) = DataType` and `BoundaryCondition` has a special use for `DataType` in the first argument so doesn't work
 @inline gasexchange_function(x, y, t, args...) = @inbounds args[end](x, y, t, args[1:end-1]...)
 
 @inline (gasexchange::GasExchange)(x, y, t, conc) = gasexchange(x, y, t, conc, gasexchange.temperature(x, y, 0.0, t), gasexchange.salinity(x, y, 0.0, t))
