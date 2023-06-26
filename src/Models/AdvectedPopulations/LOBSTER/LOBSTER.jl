@@ -246,6 +246,9 @@ Keyword Arguments
 - `open_bottom`: should the sinking velocity be smoothly brought to zero at the bottom to prevent the tracers leaving the domain
 - `particles`: slot for `BiogeochemicalParticles`
 
+Example
+=======
+
 ```jldoctest
 julia> using OceanBioME
 
