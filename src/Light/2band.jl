@@ -83,12 +83,12 @@ end
                                                phytoplankton_chlorophyll_ratio::FT = 1.31,
                                                surface_PAR::SPAR = (x, y, t) -> 100 * max(0.0, cos(t * π / 12hours)))
 
-Keywork Arguments
+Keyword Arguments
 ==================
 
 - `grid`: grid for building the model on
 - `water_red_attenuation`, ..., `phytoplankton_chlorophyll_ratio`: parameter values
-- `surface_PAR`: function (or array in the future) for the photosynthetically available radiaiton at the surface, should be shape `f(x, y, t)`
+- `surface_PAR`: function (or array in the future) for the photosynthetically available radiation at the surface, should be shape `f(x, y, t)`
 """
 function TwoBandPhotosyntheticallyActiveRatiation(; grid, 
                                                     water_red_attenuation::FT = 0.225, # 1/m

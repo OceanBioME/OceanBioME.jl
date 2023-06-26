@@ -120,7 +120,7 @@ This method is better, though still imperfect, method to prevent numerical error
 negative tracer values compared to [`zero_negative_tracers!`](@ref). Please see [discussion in
 github](https://github.com/OceanBioME/OceanBioME.jl/discussions/48).
 
-Future plansj include implement a positivity=preserving timestepping scheme as the ideal alternative.
+Future plans include implement a positivity-preserving timestepping scheme as the ideal alternative.
 """
 function ScaleNegativeTracers(; model, tracers, scalefactors = NamedTuple{tracers}(ones(length(tracers))), warn = false)
     if length(scalefactors) != length(tracers)
