@@ -96,7 +96,10 @@ end
 
 Run a box model.
 
-Arguments: `model` - the `BoxModel` to solve
+Arguments
+=========
+
+- `model` - the `BoxModel` to solve
 
 Keyword Arguments
 =================
@@ -127,8 +130,15 @@ end
 
 Set the `values` for a `BoxModel`
 
-Arguments: `model` - the model to set the arguments for
-Keyword Arguments: variable and value pairs to set
+Arguments
+=========
+
+- `model` - the model to set the arguments for
+
+Keyword Arguments
+==================
+
+- variables and value pairs to set
 """
 function set!(model::BoxModel; kwargs...)
     for (fldname, value) in kwargs
@@ -146,7 +156,10 @@ end
 
 Construct object to save box model outputs at `filepath`.
 
-Arguments: `filepath` - path to save results to
+Arguments
+=========
+
+- `filepath` - path to save results to
 """
 struct SaveBoxModel{FP, F}
     filepath :: FP
