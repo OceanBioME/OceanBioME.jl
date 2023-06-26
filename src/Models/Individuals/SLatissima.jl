@@ -111,7 +111,7 @@ import Oceananigans.Models.LagrangianParticleTracking: update_lagrangian_particl
                  scalefactor :: FT = 1.0
                  latitude :: FT = 57.5)
 
-Keywork Arguments
+Keyword Arguments
 ===================
 
 - `architecture`: the architecture to adapt arrays to

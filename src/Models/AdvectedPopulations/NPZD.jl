@@ -139,7 +139,7 @@ end
 
 Construct a Nutrient-Phytoplankton-Zooplankton-Detritus ([NPZD](@ref NPZD)) biogeochemical model.
 
-Keywork Arguments
+Keyword Arguments
 =================
 
 - `grid`: (required) the geometry to build the model on, required to calculate sinking

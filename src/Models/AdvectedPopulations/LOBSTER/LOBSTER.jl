@@ -233,7 +233,7 @@ end
 
 Construct an instance of the LOBSTER ([LOBSTER](@ref LOBSTER)) biogeochemical model.
 
-Keywork Arguments
+Keyword Arguments
 =================
 
 - `grid`: (required) the geometry to build the model on, required to calculate sinking

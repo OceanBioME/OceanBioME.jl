@@ -83,7 +83,7 @@ end
                                                phytoplankton_chlorophyll_ratio::FT = 1.31,
                                                surface_PAR::SPAR = (x, y, t) -> 100 * max(0.0, cos(t * π / 12hours)))
 
-Keywork Arguments
+Keyword Arguments
 ==================
 
 - `grid`: grid for building the model on
