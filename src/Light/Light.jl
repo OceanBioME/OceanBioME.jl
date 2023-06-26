@@ -3,7 +3,7 @@ Light attenuation by chlorophyll as described by [Karleskind2011](@cite) (implem
 """
 module Light
 
-export TwoBandPhotosyntheticallyActiveRatiation, update_PAR!
+export TwoBandPhotosyntheticallyActiveRadiation, update_PAR!
 
 using KernelAbstractions
 using KernelAbstractions.Extras.LoopInfo: @unroll

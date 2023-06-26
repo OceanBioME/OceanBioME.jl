@@ -48,7 +48,7 @@ using OceanBioME: ContinuousFormBiogeochemistry
 using Oceananigans.Units
 using Oceananigans.Fields: Field, TracerFields, CenterField, ZeroField
 
-using OceanBioME.Light: TwoBandPhotosyntheticallyActiveRatiation, update_PAR!, required_PAR_fields
+using OceanBioME.Light: TwoBandPhotosyntheticallyActiveRadiation, update_PAR!, required_PAR_fields
 using OceanBioME: setup_velocity_fields, show_sinking_velocities
 using OceanBioME.BoxModels: BoxModel
 
@@ -99,7 +99,7 @@ import Base: show, summary
 
               surface_phytosynthetically_active_radiation::SPAR = (x, y, t) -> 100*max(0.0, cos(t*π/(12hours))),
 
-              light_attenuation_model = TwoBandPhotosyntheticallyActiveRatiation(; grid),
+              light_attenuation_model = TwoBandPhotosyntheticallyActiveRadiation(; grid),
               sediment_model::S = nothing,
 
               carbonates::Bool = false,
@@ -279,7 +279,7 @@ function LOBSTER(; grid,
 
                    surface_phytosynthetically_active_radiation = (x, y, t) -> 100 * max(0.0, cos(t * π / (12hours))),
 
-                   light_attenuation_model::LA = TwoBandPhotosyntheticallyActiveRatiation(; grid, 
+                   light_attenuation_model::LA = TwoBandPhotosyntheticallyActiveRadiation(; grid, 
                                                     surface_PAR = surface_phytosynthetically_active_radiation),
                    sediment_model::S = nothing,
 

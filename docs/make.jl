@@ -52,7 +52,7 @@ if !isdir(OUTPUT_DIR) mkdir(OUTPUT_DIR) end
 model_parameters = (LOBSTER(; grid = BoxModelGrid()),
                     NutrientPhytoplanktonZooplanktonDetritus(; grid = BoxModelGrid()),
                     SLatissima(),
-                    TwoBandPhotosyntheticallyActiveRatiation(; grid = BoxModelGrid()),
+                    TwoBandPhotosyntheticallyActiveRadiation(; grid = BoxModelGrid()),
                     SimpleMultiG(BoxModelGrid(); depth = 1000),
                     OCMIP_default,
                     GasExchange(; gas = :CO₂).condition.parameters,
