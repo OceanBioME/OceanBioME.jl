@@ -17,7 +17,7 @@ export BoxModel, BoxModelGrid, SaveBoxModel, run!, set!
 export Particles
 
 # Light models
-export TwoBandPhotosyntheticallyActiveRatiation, update_PAR!
+export TwoBandPhotosyntheticallyActiveRadiation, update_PAR!
 
 # Boundaries
 export Boundaries, Sediments, GasExchange, FlatSediment

@@ -1,4 +1,4 @@
-@kernel function update_TwoBandPhotosyntheticallyActiveRatiation!(PAR, grid, P, surface_PAR, t, PAR_model) 
+@kernel function update_TwoBandPhotosyntheticallyActiveRadiation!(PAR, grid, P, surface_PAR, t, PAR_model) 
     i, j = @index(Global, NTuple)
 
     x, y = xnode(i, grid, Center()), ynode(j, grid, Center())
@@ -34,7 +34,7 @@
     end
 end
 
-struct TwoBandPhotosyntheticallyActiveRatiation{FT, F, SPAR}
+struct TwoBandPhotosyntheticallyActiveRadiation{FT, F, SPAR}
     water_red_attenuation :: FT
     water_blue_attenuation :: FT
     chlorophyll_red_attenuation :: FT
@@ -49,7 +49,7 @@ struct TwoBandPhotosyntheticallyActiveRatiation{FT, F, SPAR}
 
     surface_PAR :: SPAR
 
-    TwoBandPhotosyntheticallyActiveRatiation(water_red_attenuation::FT,
+    TwoBandPhotosyntheticallyActiveRadiation(water_red_attenuation::FT,
                                              water_blue_attenuation::FT,
                                              chlorophyll_red_attenuation::FT,
                                              chlorophyll_blue_attenuation::FT,
@@ -72,7 +72,7 @@ struct TwoBandPhotosyntheticallyActiveRatiation{FT, F, SPAR}
 end
 
 """
-    TwoBandPhotosyntheticallyActiveRatiation(; grid, 
+    TwoBandPhotosyntheticallyActiveRadiation(; grid, 
                                                water_red_attenuation::FT = 0.225, # 1/m
                                                water_blue_attenuation::FT = 0.0232, # 1/m
                                                chlorophyll_red_attenuation::FT = 0.037, # 1/(m * (mgChl/m³) ^ eʳ)
@@ -90,7 +90,7 @@ Keyword Arguments
 - `water_red_attenuation`, ..., `phytoplankton_chlorophyll_ratio`: parameter values
 - `surface_PAR`: function (or array in the future) for the photosynthetically available radiation at the surface, should be shape `f(x, y, t)`
 """
-function TwoBandPhotosyntheticallyActiveRatiation(; grid, 
+function TwoBandPhotosyntheticallyActiveRadiation(; grid, 
                                                     water_red_attenuation::FT = 0.225, # 1/m
                                                     water_blue_attenuation::FT = 0.0232, # 1/m
                                                     chlorophyll_red_attenuation::FT = 0.037, # 1/(m * (mgChl/m³) ^ eʳ)
@@ -106,7 +106,7 @@ function TwoBandPhotosyntheticallyActiveRatiation(; grid,
                                 FieldBoundaryConditions(top = ValueBoundaryCondition(surface_PAR)),
                                 grid, :PAR))
 
-    return TwoBandPhotosyntheticallyActiveRatiation(water_red_attenuation,
+    return TwoBandPhotosyntheticallyActiveRadiation(water_red_attenuation,
                                                     water_blue_attenuation,
                                                     chlorophyll_red_attenuation,
                                                     chlorophyll_blue_attenuation,
@@ -118,22 +118,22 @@ function TwoBandPhotosyntheticallyActiveRatiation(; grid,
                                                     surface_PAR)
 end
 
-function update_PAR!(model, PAR::TwoBandPhotosyntheticallyActiveRatiation)
+function update_PAR!(model, PAR::TwoBandPhotosyntheticallyActiveRadiation)
     arch = architecture(model.grid)
-    launch!(arch, model.grid, :xy, update_TwoBandPhotosyntheticallyActiveRatiation!, PAR.field, model.grid, model.tracers.P, PAR.surface_PAR, model.clock.time, PAR)
+    launch!(arch, model.grid, :xy, update_TwoBandPhotosyntheticallyActiveRadiation!, PAR.field, model.grid, model.tracers.P, PAR.surface_PAR, model.clock.time, PAR)
 
     fill_halo_regions!(PAR.field, model.clock, fields(model))
 end
 
-required_PAR_fields(::TwoBandPhotosyntheticallyActiveRatiation) = (:PAR, )
+required_PAR_fields(::TwoBandPhotosyntheticallyActiveRadiation) = (:PAR, )
 
-summary(::TwoBandPhotosyntheticallyActiveRatiation{FT}) where {FT} = string("Two-band light attenuation model ($FT)")
-show(io::IO, model::TwoBandPhotosyntheticallyActiveRatiation{FT}) where {FT} = print(io, summary(model))
+summary(::TwoBandPhotosyntheticallyActiveRadiation{FT}) where {FT} = string("Two-band light attenuation model ($FT)")
+show(io::IO, model::TwoBandPhotosyntheticallyActiveRadiation{FT}) where {FT} = print(io, summary(model))
 
-biogeochemical_auxiliary_fields(par::TwoBandPhotosyntheticallyActiveRatiation) = (PAR = par.field, )
+biogeochemical_auxiliary_fields(par::TwoBandPhotosyntheticallyActiveRadiation) = (PAR = par.field, )
 
-adapt_structure(to, par::TwoBandPhotosyntheticallyActiveRatiation) = 
-    TwoBandPhotosyntheticallyActiveRatiation(par.water_red_attenuation,
+adapt_structure(to, par::TwoBandPhotosyntheticallyActiveRadiation) = 
+    TwoBandPhotosyntheticallyActiveRadiation(par.water_red_attenuation,
                                              par.water_blue_attenuation,
                                              par.chlorophyll_red_attenuation,
                                              par.chlorophyll_blue_attenuation,

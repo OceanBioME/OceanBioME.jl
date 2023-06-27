@@ -1,5 +1,5 @@
 using Oceananigans, Test
-using OceanBioME: TwoBandPhotosyntheticallyActiveRatiation, LOBSTER
+using OceanBioME: TwoBandPhotosyntheticallyActiveRadiation, LOBSTER
 using Oceananigans.Biogeochemistry: update_biogeochemical_state!
 
 grid = RectilinearGrid(size=(1,1,2), extent=(1,1,2))
@@ -8,7 +8,7 @@ grid = RectilinearGrid(size=(1,1,2), extent=(1,1,2))
 
     model = NonhydrostaticModel(; grid, 
                                   biogeochemistry = LOBSTER(; grid,
-                                                              light_attenuation_model = TwoBandPhotosyntheticallyActiveRatiation(; grid),
+                                                              light_attenuation_model = TwoBandPhotosyntheticallyActiveRadiation(; grid),
                                                               surface_phytosynthetically_active_radiation = (x, y, t) -> 100.0))
     Pᵢ(x,y,z) = 2.5 + z
 

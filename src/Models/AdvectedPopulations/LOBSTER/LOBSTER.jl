@@ -48,7 +48,7 @@ using OceanBioME: ContinuousFormBiogeochemistry
 using Oceananigans.Units
 using Oceananigans.Fields: Field, TracerFields, CenterField, ZeroField
 
-using OceanBioME.Light: TwoBandPhotosyntheticallyActiveRatiation, update_PAR!, required_PAR_fields
+using OceanBioME.Light: TwoBandPhotosyntheticallyActiveRadiation, update_PAR!, required_PAR_fields
 using OceanBioME: setup_velocity_fields, show_sinking_velocities
 using OceanBioME.BoxModels: BoxModel
 
@@ -219,7 +219,9 @@ end
 
               surface_phytosynthetically_active_radiation::SPAR = (x, y, t) -> 100*max(0.0, cos(t*π/(12hours))),
 
-              light_attenuation_model = TwoBandPhotosyntheticallyActiveRatiation(; grid),
+              light_attenuation_model::LA =
+                  TwoBandPhotosyntheticallyActiveRadiation(; grid,
+                                                             surface_PAR = surface_phytosynthetically_active_radiation),
               sediment_model::S = nothing,
 
               carbonates::Bool = false,
@@ -302,8 +304,9 @@ function LOBSTER(; grid,
 
                    surface_phytosynthetically_active_radiation = (x, y, t) -> 100 * max(0.0, cos(t * π / (12hours))),
 
-                   light_attenuation_model::LA = TwoBandPhotosyntheticallyActiveRatiation(; grid, 
-                                                    surface_PAR = surface_phytosynthetically_active_radiation),
+                   light_attenuation_model::LA =
+                       TwoBandPhotosyntheticallyActiveRadiation(; grid, 
+                                                                  surface_PAR = surface_phytosynthetically_active_radiation),
                    sediment_model::S = nothing,
 
                    carbonates::Bool = false,
@@ -353,9 +356,9 @@ function LOBSTER(; grid,
                    sediment_model,
 
                    optionals,
-                                     
+
                    sinking_velocities,
-                   
+
                    particles)
 end
 
@@ -399,7 +402,7 @@ function update_boxmodel_state!(model::BoxModel{<:LOBSTER, <:Any, <:Any, <:Any, 
     getproperty(model.values, :PAR) .= model.forcing.PAR(model.clock.time)
 end
 
-adapt_structure(to, lobster::LOBSTER) = 
+adapt_structure(to, lobster::LOBSTER) =
     LOBSTER(lobster.phytoplankton_preference,
             lobster.maximum_grazing_rate,
             lobster.grazing_half_saturation,
