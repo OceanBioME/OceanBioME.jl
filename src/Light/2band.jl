@@ -1,7 +1,7 @@
 @kernel function update_TwoBandPhotosyntheticallyActiveRadiation!(PAR, grid, P, surface_PAR, t, PAR_model) 
     i, j = @index(Global, NTuple)
 
-    x, y = xnode(i, grid, Center()), ynode(j, grid, Center())
+    x, y = @inbounds xnodes(grid, Center(), Center(), Center())[i], ynodes(j, grid, Center(), Center(), Center())[j]
     
     PAR⁰ = surface_PAR(x, y, t)
 
@@ -14,8 +14,8 @@
     r  = PAR_model.pigment_ratio
     Rᶜₚ = PAR_model.phytoplankton_chlorophyll_ratio
 
-    zᶜ = znodes(grid, Center())
-    zᶠ = znodes(grid, Face())
+    zᶜ = znodes(grid, Center(), Center(), Center())
+    zᶠ = znodes(grid, Center(), Center(), Face())
 
     # first point below surface
     @inbounds begin
