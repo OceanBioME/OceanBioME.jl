@@ -10,7 +10,7 @@ using KernelAbstractions.Extras.LoopInfo: @unroll
 using Oceananigans.Architectures: device, architecture
 using Oceananigans.Utils: launch!
 using Oceananigans: Center, Face, fields
-using Oceananigans.Grids: xnodes, ynodes, znodes
+using Oceananigans.Grids: xnode, ynode, znodes
 using Oceananigans.Fields: CenterField, TracerFields
 using Oceananigans.BoundaryConditions: fill_halo_regions!, 
                                        ValueBoundaryCondition, 
