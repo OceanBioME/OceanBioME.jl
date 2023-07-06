@@ -199,11 +199,6 @@ Base.@kwdef struct SLatissima{AR, FT, U, T, S, P, F} <: BiogeochemicalParticles
     latitude :: FT = 57.5
 end
 
-# for some reason this doesn't get called, 
-# but if you manually call `adapt_structure(CuArray, particles::SLatissima)` 
-# it returns a GPU friendly version. To automagically overcome this I'm `arch_array`ing 
-# above but that does necessitate passing the grid to the particles
-# weird thing is this is definitly getting called a some point, but not with the correct `to`.
 adapt_structure(to, kelp::SLatissima) = SLatissima(kelp.architecture,
                                                    kelp.growth_rate_adjustement, 
                                                    kelp.photosynthetic_efficiency,
@@ -286,10 +281,6 @@ end
 
     bgc_tracers = required_biogeochemical_tracers(bgc)
 
-    #nodes, weights, normfactor = @inbounds get_nearest_nodes(x, y, z, grid, (Center(), Center(), Center()))
-
-    #@unroll for (n, weight) in enumerate(weights)
-        # Reflect back on Bounded boundaries or wrap around for Periodic boundaries
     i, j, k = fractional_indices(x, y, z, (Center(), Center(), Center()), grid)
 
     # Convert fractional indices to unit cell coordinates 0 ≤ (ξ, η, ζ) ≤ 1
