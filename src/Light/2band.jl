@@ -1,8 +1,8 @@
 @kernel function update_TwoBandPhotosyntheticallyActiveRadiation!(PAR, grid, P, surface_PAR, t, PAR_model) 
     i, j = @index(Global, NTuple)
 
-    x = xnode(i, j, 1, grid, Center(), Center(), Center())
-    y = ynode(i, j, 1, grid, Center(), Center(), Center())
+    x = node(i, j, 1, grid, Center(), Center(), Center())
+    y = node(i, j, 1, grid, Center(), Center(), Center())
     
     PAR⁰ = surface_PAR(x, y, t)
 
@@ -89,7 +89,9 @@ Keyword Arguments
 
 - `grid`: grid for building the model on
 - `water_red_attenuation`, ..., `phytoplankton_chlorophyll_ratio`: parameter values
-- `surface_PAR`: function (or array in the future) for the photosynthetically available radiation at the surface, should be shape `f(x, y, t)`
+- `surface_PAR`: function (or array in the future) for the photosynthetically available radiation at the surface, 
+   which should be `f(x, y, t)` where `x` and `y` are the native coordinates (i.e. meters for rectilinear grids
+   and latitude/longitude as appropriate)
 """
 function TwoBandPhotosyntheticallyActiveRadiation(; grid, 
                                                     water_red_attenuation::FT = 0.225, # 1/m
