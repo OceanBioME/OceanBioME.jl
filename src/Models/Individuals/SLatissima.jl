@@ -292,13 +292,15 @@ end
         # Reflect back on Bounded boundaries or wrap around for Periodic boundaries
     i, j, k = fractional_indices(x, y, z, (Center(), Center(), Center()), grid)
 
-    # Convert fractional indices to unit cell coordinates 0 <= (ξ, η, ζ) <=1
+    # Convert fractional indices to unit cell coordinates 0 ≤ (ξ, η, ζ) ≤ 1
     # and integer indices (with 0-based indexing).
     ξ, i = modf(i)
     η, j = modf(j)
     ζ, k = modf(k)
 
-    i, j, k = (get_node(TX(), Int(ifelse(ξ < 0.5, i + 1, i + 2)), grid.Nx), get_node(TY(), Int(ifelse(η < 0.5, j + 1, j + 2)), grid.Ny), get_node(TZ(), Int(ifelse(ζ < 0.5, k + 1, k + 2)), grid.Nz))
+    i, j, k = (get_node(TX(), Int(ifelse(ξ < 0.5, i + 1, i + 2)), grid.Nx),
+               get_node(TY(), Int(ifelse(η < 0.5, j + 1, j + 2)), grid.Ny),
+               get_node(TZ(), Int(ifelse(ζ < 0.5, k + 1, k + 2)), grid.Nz))
 
     node_volume = volume(i, j, k, grid, Center(), Center(), Center())
 
