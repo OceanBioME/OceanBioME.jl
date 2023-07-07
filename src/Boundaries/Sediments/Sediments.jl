@@ -11,7 +11,6 @@ using Oceananigans.Advection: div_Uc
 using Oceananigans.Units: day
 using Oceananigans.Fields: CenterField, Face
 using Oceananigans.Biogeochemistry: biogeochemical_drift_velocity
-using Oceananigans.Grids: znode
 
 import Oceananigans.Biogeochemistry: update_tendencies!
 import Adapt: adapt_structure, adapt

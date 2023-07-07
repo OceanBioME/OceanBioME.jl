@@ -90,7 +90,7 @@ function SimpleMultiG(grid;
                                            D = -1.3349, 
                                            E = 0.1826, 
                                            F = - 0.0143),
-                      depth = abs(znode(1, grid, Face())),
+                      depth = abs(znodes(grid, Face())[1]),
                       solid_dep_params::P4 = (A = 0.233, 
                                               B = 0.336, 
                                               C = 982, 
