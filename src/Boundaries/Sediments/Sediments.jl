@@ -1,6 +1,6 @@
 module Sediments
 
-export SimpleMultiG
+export SimpleMultiG, InstantRemineralisation
 
 using KernelAbstractions
 using OceanBioME: ContinuousFormBiogeochemistry
@@ -44,5 +44,6 @@ end
 
 include("coupled_timesteppers.jl")
 include("simple_multi_G.jl")
+include("instant_remineralization.jl")
 
 end # module
