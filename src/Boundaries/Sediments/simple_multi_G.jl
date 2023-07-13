@@ -26,19 +26,19 @@ struct SimpleMultiG{FT, P1, P2, P3, P4, F, TE} <: FlatSediment
 end
 
 """
-    SimpleMultiG(grid; 
-                 fast_decay_rate::FT = 2/day,
-                 slow_decay_rate::FT = 0.2/day,
-                 fast_redfield::FT = 0.1509,
-                 slow_redfield::FT = 0.13,
-                 fast_fraction::FT = 0.74,
-                 slow_fraction::FT = 0.26,
-                 refactory_fraction::FT = 0.1,
-                 nitrate_oxidation_params::P1 = (A = - 1.9785, B = 0.2261, C = -0.0615, D = -0.0289, E = - 0.36109, F = - 0.0232),
-                 denitrifcaiton_params::P2 = (A = - 3.0790, B = 1.7509, C = 0.0593, D = - 0.1923, E = 0.0604, F = 0.0662),
-                 anoxic_params::P3 = (A = - 3.9476, B = 2.6269, C = - 0.2426, D = -1.3349, E = 0.1826, F = - 0.0143),
-                 depth = abs(znode(1, grid, Face())),
-                 solid_dep_params::P4 = (A = 0.233, B = 0.336, C = 982, D = - 1.548, depth = depth))
+    SimpleMultiG(; grid
+                   fast_decay_rate::FT = 2/day,
+                   slow_decay_rate::FT = 0.2/day,
+                   fast_redfield::FT = 0.1509,
+                   slow_redfield::FT = 0.13,
+                   fast_fraction::FT = 0.74,
+                   slow_fraction::FT = 0.26,
+                   refactory_fraction::FT = 0.1,
+                   nitrate_oxidation_params::P1 = (A = - 1.9785, B = 0.2261, C = -0.0615, D = -0.0289, E = - 0.36109, F = - 0.0232),
+                   denitrifcaiton_params::P2 = (A = - 3.0790, B = 1.7509, C = 0.0593, D = - 0.1923, E = 0.0604, F = 0.0662),
+                   anoxic_params::P3 = (A = - 3.9476, B = 2.6269, C = - 0.2426, D = -1.3349, E = 0.1826, F = - 0.0143),
+                   depth = abs(znode(1, grid, Face())),
+                   solid_dep_params::P4 = (A = 0.233, B = 0.336, C = 982, D = - 1.548, depth = depth))
 
 Returns a single-layer "multi G" sediment model (`SimpleMultiG`) on `grid` where parameters
 can be optionally specified.
@@ -61,7 +61,7 @@ using OceanBioME, Oceananigans, OceanBioME.Sediments
 
 grid = RectilinearGrid(size=(3, 3, 30), extent=(10, 10, 200))
 
-sediment_model = SimpleMultiG(grid)
+sediment_model = SimpleMultiG(; grid)
 ```
 """
 function SimpleMultiG(; grid,

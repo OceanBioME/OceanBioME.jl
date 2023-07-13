@@ -93,7 +93,7 @@ display_name(::InstantRemineralisation) = "Instant remineralisation"
     for architecture in (CPU(), )
         grid = RectilinearGrid(architecture; size=(3, 3, 50), extent=(10, 10, 500))
 
-        for timestepper in (:QuasiAdamsBashforth2, ),#:RungeKutta3),
+        for timestepper in (:QuasiAdamsBashforth2, :RungeKutta3),
             sediment_model in (InstantRemineralisation(; grid), SimpleMultiG(; grid))
             for biogeochemistry in (NutrientPhytoplanktonZooplanktonDetritus(; grid, open_bottom = true,
                                                                                sediment_model),

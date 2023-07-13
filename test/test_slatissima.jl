@@ -55,7 +55,6 @@ end
 
     final_tracer_C = sum(model.tracers.sPOC) + sum(model.tracers.bPOC) + sum(model.tracers.DOC) + sum(model.tracers.DIC) + 
                      sum(model.tracers.P * (1 + model.biogeochemistry.organic_carbon_calcate_ratio) .+ model.tracers.Z) * model.biogeochemistry.phytoplankton_redfield 
-                     sum(model.tracers.sPOC) + sum(model.tracers.bPOC) + sum(model.tracers.DOC)
     final_kelp_C = sum(particles.A .* particles.structural_dry_weight_per_area .* (particles.C .+ particles.structural_carbon)) ./ (12 * 0.001)
 
     # kelp is being integrated
@@ -74,6 +73,6 @@ end
 
     run!(simulation)
 
-    # the model is changing the tracer tendencies
+    # the model is changing the tracer tendencies - not sure this test actually works as it didn't fail when it should have
     @test any([any(intercepted_tendencies[tracer] .!= model.timestepper.Gⁿ[tracer]) for tracer in (:NO₃, :NH₄, :DIC, :DOC, :bPON, :bPOC)])
 end
