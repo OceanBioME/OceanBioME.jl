@@ -53,10 +53,6 @@ function test_flat_sediment(architecture; timestepper = :QuasiAdamsBashforth2)
 
     initial_kelp_N = sum(particles.A .* particles.structural_dry_weight_per_area .* (particles.N .+ particles.structural_nitrogen)) ./ (14 * 0.001)
 
-    for i in 1:10
-        time_step!(model, 1.0)
-    end
-
     simulation = Simulation(model, Δt = 1, stop_iteration = 1)
 
     intercepted_tendencies = TracerFields(keys(model.tracers), grid)
@@ -67,11 +63,15 @@ function test_flat_sediment(architecture; timestepper = :QuasiAdamsBashforth2)
 
     final_kelp_N = sum(particles.A .* particles.structural_dry_weight_per_area .* (particles.N .+ particles.structural_nitrogen)) ./ (14 * 0.001)
 
+    # kelp is getting integrated
+    @test initial_kelp_N != final_kelp_N
+
     # the model is changing the tracer tendencies
     @test any([any(intercepted_tendencies[tracer] .!= model.timestepper.Gⁿ[tracer]) for tracer in keys(model.tracers)])
 
     # the sediment tendencies are being updated
     @test all([any(tend .!= 0.0) for tend in model.biogeochemistry.sediment_model.tendencies.Gⁿ])
+    @test all([any(tend .!= 0.0) for tend in model.biogeochemistry.sediment_model.tendencies.G⁻])
 
     # the sediment values are being integrated
     initial_values = (N_fast = 0.0230, N_slow = 0.0807, C_fast = 0.5893, C_slow = 0.1677, N_ref = 0.0, C_ref = 0.0)
