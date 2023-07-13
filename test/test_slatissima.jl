@@ -58,6 +58,11 @@ end
                      sum(model.tracers.sPOC) + sum(model.tracers.bPOC) + sum(model.tracers.DOC)
     final_kelp_C = sum(particles.A .* particles.structural_dry_weight_per_area .* (particles.C .+ particles.structural_carbon)) ./ (12 * 0.001)
 
+    # kelp is being integrated
+    @test initial_kelp_N != final_kelp_N
+    @test initial_kelp_C != final_kelp_C
+
+    # conservaitons
     @test initial_tracer_N + initial_kelp_N ≈ final_tracer_N + final_kelp_N
     @test initial_tracer_C + initial_kelp_C ≈ final_tracer_C + final_kelp_C
 
