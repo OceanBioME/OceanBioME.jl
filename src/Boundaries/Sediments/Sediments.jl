@@ -11,8 +11,8 @@ using Oceananigans.Advection: div_Uc
 using Oceananigans.Units: day
 using Oceananigans.Fields: CenterField, Face
 using Oceananigans.Biogeochemistry: biogeochemical_drift_velocity
+using Oceananigans.Grids: zspacing
 
-import Oceananigans.Biogeochemistry: update_tendencies!
 import Adapt: adapt_structure, adapt
 
 abstract type AbstractSediment end
@@ -20,10 +20,9 @@ abstract type FlatSediment <: AbstractSediment end
 
 sediment_fields(::AbstractSediment) = ()
 
-@inline update_tendencies!(bgc::ContinuousFormBiogeochemistry{<:Any, <:FlatSediment, <:Any}, model) = update_tendencies!(bgc, bgc.sediment_model, model)
-@inline update_tendencies!(bgc, sediment, model) = nothing
+@inline update_sediment_tendencies!(bgc, sediment, model) = nothing
 
-function update_tendencies!(bgc, sediment::FlatSediment, model)
+function update_sediment_tendencies!(bgc, sediment::FlatSediment, model)
     arch = model.grid.architecture
 
     for (i, tracer) in enumerate(sediment_tracers(sediment))

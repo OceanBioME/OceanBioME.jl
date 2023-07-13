@@ -31,7 +31,7 @@ using Oceananigans.Grids: AbstractGrid
 using Oceananigans.Fields: fractional_indices, _interpolate, datatuple
 
 import Adapt: adapt_structure, adapt
-import Oceananigans.Biogeochemistry: update_tendencies!
+import OceanBioME.Particles: update_particles_tendencies!
 import Oceananigans.Models.LagrangianParticleTracking: update_lagrangian_particle_properties!, _advect_particles!
 
 @inline no_dynamics(args...) = nothing

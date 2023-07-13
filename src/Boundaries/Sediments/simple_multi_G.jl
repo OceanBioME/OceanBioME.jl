@@ -98,7 +98,7 @@ function SimpleMultiG(; grid,
                                                depth = depth)) where {FT, P1, P2, P3, P4}
  
     @warn "Sediment models are an experimental feature and have not yet been validated"
-    @info "This sediment model is only compatible with models providing NH₄, NO₃, O₂ and DIC"
+    @info "This sediment model is currently only compatible with models providing NH₄, NO₃, O₂ and DIC"
 
     tracer_names = (:C_slow, :C_fast, :N_slow, :N_fast, :C_ref, :N_ref)
 
