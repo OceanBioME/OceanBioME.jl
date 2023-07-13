@@ -30,7 +30,7 @@ struct InstantRemineralisation{FT, F, TE} <: FlatSediment
 end
 
 """
-    InstantRemineralisation(grid; 
+    InstantRemineralisation(; grid,
         burial_efficiency_constant1::FT = 0.013,
         burial_efficiency_constant2::FT = 0.53,
         burial_efficiency_half_saturaiton::FT = 7) where FT
@@ -45,7 +45,7 @@ using OceanBioME, Oceananigans, OceanBioME.Sediments
 
 grid = RectilinearGrid(size=(3, 3, 30), extent=(10, 10, 200))
 
-sediment_model = InstantRemineralisation(grid)
+sediment_model = InstantRemineralisation(; grid)
 ```
 """
 function InstantRemineralisation(; grid,
