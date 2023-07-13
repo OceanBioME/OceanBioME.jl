@@ -79,19 +79,19 @@ adapt_structure(to, sediment::InstantRemineralisation) =
 sediment_tracers(::InstantRemineralisation) = (:N_storage, )
 sediment_fields(model::InstantRemineralisation) = (N_storage = model.fields.N_storage, )
 
-@kernel function _calculate_tendencies!(sediment::InstantRemineralisation, bgc, grid, tracers, timestepper)
+@kernel function _calculate_tendencies!(sediment::InstantRemineralisation, bgc, grid, advection, tracers, timestepper)
     i, j = @index(Global, NTuple)
 
     @inbounds begin                        
-        flux = - biogeochemical_drift_velocity(bgc, Val(:D)).w[i, j, 1] * tracers.D[i, j, 1]
+        Δz = zspacing(i, j, 1, grid, Center(), Center(), Center())
 
-        burial_efficiency = sediment.burial_efficiency_constant1 + sediment.burial_efficiency_constant2 * ((flux / 6.56) / (7 + flux / 6.56))^2
+        flux = nitrogen_flux(grid, advection, bgc, tracers, i, j) * Δz
+
+        burial_efficiency = sediment.burial_efficiency_constant1 + sediment.burial_efficiency_constant2 * ((flux / 6.56) / (7 + flux / 6.56)) ^ 2
 
         # sediment evolution
         sediment.tendencies.Gⁿ.N_storage[i, j, 1] = burial_efficiency * flux
 
-        Δz = grid.Δzᵃᵃᶜ[1]
-
-        timestepper.Gⁿ.N[i, j, 1] += flux * (1 - burial_efficiency) / Δz
+        remineralizaiton_reciever(bgc, timestepper.Gⁿ)[i, j, 1] += flux * (1 - burial_efficiency) / Δz
     end
 end

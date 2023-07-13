@@ -26,13 +26,14 @@ sediment_fields(::AbstractSediment) = ()
 function update_tendencies!(bgc, sediment::FlatSediment, model)
     arch = model.grid.architecture
 
-    for (i, tracer) in enumerate(sediment_tracers(sediment))    
-        launch!(arch, model.grid, :xy, store_flat_tendencies!, sediment.tendencies.Gⁿ[i], sediment.tendencies.G⁻[i])
+    for (i, tracer) in enumerate(sediment_tracers(sediment))
+        launch!(arch, model.grid, :xy, store_flat_tendencies!, sediment.tendencies.G⁻[i], sediment.tendencies.Gⁿ[i])
     end
 
     launch!(arch, model.grid, :xy,
             _calculate_tendencies!,
-            bgc.sediment_model, bgc, model.grid, model.tracers, model.timestepper)
+            bgc.sediment_model, bgc, model.grid, model.advection, model.tracers, model.timestepper)
+            
     return nothing
 end
 
@@ -40,6 +41,11 @@ end
     i, j = @index(Global, NTuple)
     @inbounds G⁻[i, j, 1] = G⁰[i, j, 1]
 end
+
+
+@inline nitrogen_flux(grid, adveciton, bgc, tracers, i, j) = 0
+@inline carbon_flux(grid, adveciton, bgc, tracers, i, j) = 0
+@inline remineralizaiton_reciever(bgc, tendencies) = nothing
 
 include("coupled_timesteppers.jl")
 include("simple_multi_G.jl")

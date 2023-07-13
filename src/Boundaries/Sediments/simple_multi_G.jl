@@ -64,40 +64,41 @@ grid = RectilinearGrid(size=(3, 3, 30), extent=(10, 10, 200))
 sediment_model = SimpleMultiG(grid)
 ```
 """
-function SimpleMultiG(grid; 
-                      fast_decay_rate::FT = 2/day,
-                      slow_decay_rate::FT = 0.2/day,
-                      fast_redfield::FT = 0.1509,
-                      slow_redfield::FT = 0.13,
-                      fast_fraction::FT = 0.74,
-                      slow_fraction::FT = 0.26,
-                      refactory_fraction::FT = 0.1,
-                      nitrate_oxidation_params::P1 = (A = - 1.9785, 
-                                                      B = 0.2261, 
-                                                      C = -0.0615, 
-                                                      D = -0.0289, 
-                                                      E = - 0.36109, 
-                                                      F = - 0.0232),
-                      denitrifcaiton_params::P2 = (A = - 3.0790, 
-                                                   B = 1.7509, 
-                                                   C = 0.0593, 
-                                                   D = - 0.1923, 
-                                                   E = 0.0604, 
-                                                   F = 0.0662),
-                      anoxic_params::P3 = (A = - 3.9476, 
-                                           B = 2.6269, 
-                                           C = - 0.2426, 
-                                           D = -1.3349, 
-                                           E = 0.1826, 
-                                           F = - 0.0143),
-                      depth = abs(znodes(grid, Face())[1]),
-                      solid_dep_params::P4 = (A = 0.233, 
-                                              B = 0.336, 
-                                              C = 982, 
-                                              D = - 1.548, 
-                                              depth = depth)) where {FT, P1, P2, P3, P4}
-
+function SimpleMultiG(; grid,
+                       fast_decay_rate::FT = 2/day,
+                       slow_decay_rate::FT = 0.2/day,
+                       fast_redfield::FT = 0.1509,
+                       slow_redfield::FT = 0.13,
+                       fast_fraction::FT = 0.74,
+                       slow_fraction::FT = 0.26,
+                       refactory_fraction::FT = 0.1,
+                       nitrate_oxidation_params::P1 = (A = - 1.9785, 
+                                                       B = 0.2261, 
+                                                       C = -0.0615, 
+                                                       D = -0.0289, 
+                                                       E = - 0.36109, 
+                                                       F = - 0.0232),
+                       denitrifcaiton_params::P2 = (A = - 3.0790, 
+                                                    B = 1.7509, 
+                                                    C = 0.0593, 
+                                                    D = - 0.1923, 
+                                                    E = 0.0604, 
+                                                    F = 0.0662),
+                       anoxic_params::P3 = (A  = - 3.9476, 
+                                            B = 2.6269, 
+                                            C = - 0.2426, 
+                                            D = -1.3349, 
+                                            E = 0.1826, 
+                                            F = - 0.0143),
+                       depth = abs(znodes(grid, Face())[1]),
+                       solid_dep_params::P4 = (A = 0.233, 
+                                               B = 0.336, 
+                                               C = 982, 
+                                               D = - 1.548, 
+                                               depth = depth)) where {FT, P1, P2, P3, P4}
+ 
     @warn "Sediment models are an experimental feature and have not yet been validated"
+    @info "This sediment model is only compatible with models providing NH₄, NO₃, O₂ and DIC"
 
     tracer_names = (:C_slow, :C_fast, :N_slow, :N_fast, :C_ref, :N_ref)
 
@@ -138,30 +139,37 @@ adapt_structure(to, sediment::SimpleMultiG) =
 sediment_tracers(::SimpleMultiG) = (:C_slow, :C_fast, :C_ref, :N_slow, :N_fast, :N_ref)
 sediment_fields(model::SimpleMultiG) = (C_slow = model.fields.C_slow, C_fast = model.fields.C_fast, N_slow = model.fields.N_slow, N_fast = model.fields.N_fast, C_ref = model.fields.C_ref, N_ref = model.fields.N_ref)
 
-@kernel function _calculate_tendencies!(sediment::SimpleMultiG, bgc, grid, tracers, timestepper)
+@kernel function _calculate_tendencies!(sediment::SimpleMultiG, bgc, grid, advection, tracers, timestepper)
     i, j = @index(Global, NTuple)
 
+    Δz = zspacing(i, j, 1, grid, Center(), Center(), Center())
+
     @inbounds begin
-        carbon_deposition = -(biogeochemical_drift_velocity(bgc, Val(:sPOC)).w[i, j, 1] * tracers.sPOC[i, j, 1] +
-                              biogeochemical_drift_velocity(bgc, Val(:bPOC)).w[i, j, 1] * tracers.bPOC[i, j, 1])
+
+        carbon_deposition = carbon_flux(grid, advection, bgc, tracers, i, j) * Δz
                         
-        nitrogen_deposition = -(biogeochemical_drift_velocity(bgc, Val(:sPON)).w[i, j, 1] * tracers.sPON[i, j, 1] +
-                                biogeochemical_drift_velocity(bgc, Val(:bPON)).w[i, j, 1] * tracers.bPON[i, j, 1])
+        nitrogen_deposition = nitrogen_flux(grid, advection, bgc, tracers, i, j) * Δz
 
         # rates
-        Cᵐⁱⁿ = sediment.fields.C_slow[i, j, 1] * sediment.slow_decay_rate + sediment.fields.C_fast[i, j, 1] * sediment.fast_decay_rate
-        Nᵐⁱⁿ = sediment.fields.N_slow[i, j, 1] * sediment.slow_decay_rate + sediment.fields.N_fast[i, j, 1] * sediment.fast_decay_rate
+        C_min_slow = sediment.fields.C_slow[i, j, 1] * sediment.slow_decay_rate
+        C_min_fast = sediment.fields.C_fast[i, j, 1] * sediment.fast_decay_rate
+
+        N_min_slow = sediment.fields.N_slow[i, j, 1] * sediment.slow_decay_rate
+        N_min_fast = sediment.fields.N_fast[i, j, 1] * sediment.fast_decay_rate
+
+        Cᵐⁱⁿ = C_min_slow + C_min_fast
+        Nᵐⁱⁿ = N_min_slow + N_min_fast
         
         k = Cᵐⁱⁿ * day / (sediment.fields.C_slow[i, j, 1] + sediment.fields.C_fast[i, j, 1])
 
         # sediment evolution
-        sediment.tendencies.Gⁿ.C_slow[i, j, 1] = (1 - sediment.refactory_fraction) * sediment.slow_fraction * carbon_deposition - sediment.slow_decay_rate * sediment.fields.C_slow[i, j, 1]
-        sediment.tendencies.Gⁿ.C_fast[i, j, 1] = (1 - sediment.refactory_fraction) * sediment.fast_fraction * carbon_deposition - sediment.slow_decay_rate * sediment.fields.C_fast[i, j, 1]
-        sediment.tendencies.Gⁿ.C_ref[i, j, 1] = max(0.0, sediment.refactory_fraction * carbon_deposition)
+        sediment.tendencies.Gⁿ.C_slow[i, j, 1] = (1 - sediment.refactory_fraction) * sediment.slow_fraction * carbon_deposition - C_min_slow
+        sediment.tendencies.Gⁿ.C_fast[i, j, 1] = (1 - sediment.refactory_fraction) * sediment.fast_fraction * carbon_deposition - C_min_fast
+        sediment.tendencies.Gⁿ.C_ref[i, j, 1] = sediment.refactory_fraction * carbon_deposition
 
-        sediment.tendencies.Gⁿ.N_slow[i, j, 1] = (1 - sediment.refactory_fraction) * sediment.slow_fraction * nitrogen_deposition - sediment.slow_decay_rate * sediment.fields.N_slow[i, j, 1]
-        sediment.tendencies.Gⁿ.N_fast[i, j, 1] = (1 - sediment.refactory_fraction) * sediment.fast_fraction * nitrogen_deposition - sediment.slow_decay_rate * sediment.fields.N_fast[i, j, 1]
-        sediment.tendencies.Gⁿ.N_ref[i, j, 1] = max(0.0, sediment.refactory_fraction * nitrogen_deposition)
+        sediment.tendencies.Gⁿ.N_slow[i, j, 1] = (1 - sediment.refactory_fraction) * sediment.slow_fraction * nitrogen_deposition - N_min_slow
+        sediment.tendencies.Gⁿ.N_fast[i, j, 1] = (1 - sediment.refactory_fraction) * sediment.fast_fraction * nitrogen_deposition - N_min_fast
+        sediment.tendencies.Gⁿ.N_ref[i, j, 1] = sediment.refactory_fraction * nitrogen_deposition
 
         # efflux/influx
         O₂  = tracers.O₂[i, j, 1]
@@ -191,15 +199,15 @@ sediment_fields(model::SimpleMultiG) = (C_slow = model.fields.C_slow, C_fast = m
 
         if isnan(pₐₙₒₓ)
             println("$(Cᵐⁱⁿ), $(k), $(O₂), $(NO₃)")
-            error("fucn")
+            error("Sediment anoxia has caused model failure")
         end
 
         pₛₒₗᵢ = sediment.solid_dep_params.A * (sediment.solid_dep_params.C * sediment.solid_dep_params.depth ^ sediment.solid_dep_params.D) ^ sediment.solid_dep_params.B
 
         Δz = grid.Δzᵃᵃᶜ[1]
 
-        timestepper.Gⁿ.NH₄[i, j, 1] += (Nᵐⁱⁿ * (1 - pₙᵢₜ)) / Δz
-        timestepper.Gⁿ.NO₃[i, j, 1] += (Nᵐⁱⁿ * pₙᵢₜ - Cᵐⁱⁿ * pᵈᵉⁿⁱᵗ * 4//5) / Δz
+        timestepper.Gⁿ.NH₄[i, j, 1] += Nᵐⁱⁿ * (1 - pₙᵢₜ) / Δz
+        timestepper.Gⁿ.NO₃[i, j, 1] += Nᵐⁱⁿ * pₙᵢₜ / Δz
         timestepper.Gⁿ.DIC[i, j, 1] += Cᵐⁱⁿ / Δz
         timestepper.Gⁿ.O₂[i, j, 1]  -= max(0, (1 - pᵈᵉⁿⁱᵗ - pₐₙₒₓ * pₛₒₗᵢ) * Cᵐⁱⁿ / Δz) # this seems dodge but this model doesn't cope with anoxia properly
     end

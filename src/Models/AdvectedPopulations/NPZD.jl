@@ -25,6 +25,7 @@ using Oceananigans.Fields: ZeroField
 using OceanBioME.Light: TwoBandPhotosyntheticallyActiveRadiation, update_PAR!, required_PAR_fields
 using OceanBioME: setup_velocity_fields, show_sinking_velocities
 using OceanBioME.BoxModels: BoxModel
+using Oceananigans.Advection: div_Uc
 
 import OceanBioME.BoxModels: update_boxmodel_state!
 import Base: show, summary
@@ -36,6 +37,8 @@ import Oceananigans.Biogeochemistry: required_biogeochemical_tracers,
 				                     biogeochemical_auxiliary_fields
 
 import OceanBioME: maximum_sinking_velocity
+
+import OceanBioME.Boundaries.Sediments: nitrogen_flux, carbon_flux, remineralizaiton_reciever
 
 import Adapt: adapt_structure, adapt
 
@@ -337,4 +340,9 @@ adapt_structure(to, npzd::NPZD) =
 
                                              adapt(to, npzd.particles))
 
+@inline nitrogen_flux(grid, advection, bgc::NPZD, tracers, i, j) = - (div_Uc(i, j, 0, grid, advection, biogeochemical_drift_velocity(bgc, Val(:D)), tracers.D) +
+                                                                      div_Uc(i, j, 0, grid, advection, biogeochemical_drift_velocity(bgc, Val(:P)), tracers.P))
+
+@inline carbon_flux(bgc::NPZD, tracers, i, j) = nitrogen_flux(bgc, tracers, i, j) * 6.56
+@inline remineralizaiton_reciever(::NPZD, tendenceies) = tendenceies.N
 end # module

@@ -104,7 +104,7 @@ function rk3_substep!(model::NonhydrostaticModel{<:Any, <:Any, <:Any, <:Any, <:A
         launch!(arch, model.grid, :xy, rk3_step_flat_field!, 
                 field, Δt, γⁿ, ζⁿ,
                 sediment.tendencies.Gⁿ[i], 
-                sediment.tendencies.G⁻[i])
+                sediment.tendencies.G⁻[i]) 
     end
 
     return nothing
@@ -112,7 +112,6 @@ end
 
 @kernel function rk3_step_flat_field!(U, Δt, γⁿ, ζⁿ, Gⁿ, G⁻)
     i, j = @index(Global, NTuple)
-
     @inbounds U[i, j, 1] += Δt * (γⁿ * Gⁿ[i, j, 1] + ζⁿ * G⁻[i, j, 1])
 end
 
