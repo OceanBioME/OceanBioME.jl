@@ -263,7 +263,7 @@ adapt_structure(to, kelp::SLatissima) = SLatissima(kelp.architecture,
                                                    kelp.scalefactor,
                                                    kelp.latitude)
 
-function update_tendencies!(bgc, particles::SLatissima, model)
+function update_particles_tendencies!(bgc, particles::SLatissima, model)
     num_particles = length(particles)
     workgroup = min(num_particles, 256)
     worksize = num_particles
