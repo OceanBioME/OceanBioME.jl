@@ -38,7 +38,7 @@ import Oceananigans.Biogeochemistry: required_biogeochemical_tracers,
 
 import OceanBioME: maximum_sinking_velocity
 
-import OceanBioME.Boundaries.Sediments: nitrogen_flux, carbon_flux, remineralizaiton_reciever
+import OceanBioME.Boundaries.Sediments: nitrogen_flux, carbon_flux, remineralisation_reciever
 
 import Adapt: adapt_structure, adapt
 
@@ -344,5 +344,5 @@ adapt_structure(to, npzd::NPZD) =
                                                                       div_Uc(i, j, 0, grid, advection, biogeochemical_drift_velocity(bgc, Val(:P)), tracers.P))
 
 @inline carbon_flux(bgc::NPZD, tracers, i, j) = nitrogen_flux(bgc, tracers, i, j) * 6.56
-@inline remineralizaiton_reciever(::NPZD, tendenceies) = tendenceies.N
+@inline remineralisation_reciever(::NPZD, tendenceies) = tendenceies.N
 end # module

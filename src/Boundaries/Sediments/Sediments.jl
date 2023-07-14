@@ -44,7 +44,7 @@ end
 
 @inline nitrogen_flux(grid, adveciton, bgc, tracers, i, j) = 0
 @inline carbon_flux(grid, adveciton, bgc, tracers, i, j) = 0
-@inline remineralizaiton_reciever(bgc, tendencies) = nothing
+@inline remineralisation_reciever(bgc, tendencies) = nothing
 
 include("coupled_timesteppers.jl")
 include("simple_multi_G.jl")

@@ -92,6 +92,6 @@ sediment_fields(model::InstantRemineralisation) = (N_storage = model.fields.N_st
         # sediment evolution
         sediment.tendencies.Gⁿ.N_storage[i, j, 1] = burial_efficiency * flux
 
-        remineralizaiton_reciever(bgc, timestepper.Gⁿ)[i, j, 1] += flux * (1 - burial_efficiency) / Δz
+        remineralisation_reciever(bgc, timestepper.Gⁿ)[i, j, 1] += flux * (1 - burial_efficiency) / Δz
     end
 end
