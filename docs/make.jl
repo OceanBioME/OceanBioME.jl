@@ -54,7 +54,7 @@ model_parameters = (LOBSTER(; grid = BoxModelGrid()),
                     SLatissima(),
                     TwoBandPhotosyntheticallyActiveRadiation(; grid = BoxModelGrid()),
                     SimpleMultiG(; grid = BoxModelGrid(), depth = 1000),
-                    InstantRemineralisation(; BoxModelGrid())
+                    InstantRemineralisation(; BoxModelGrid()),
                     OCMIP_default,
                     GasExchange(; gas = :CO₂).condition.parameters,
                     GasExchange(; gas = :O₂).condition.parameters)
