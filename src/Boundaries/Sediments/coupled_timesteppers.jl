@@ -9,7 +9,7 @@ using Oceananigans.Architectures: AbstractArchitecture
 
 import Oceananigans.TimeSteppers: ab2_step!, rk3_substep!
 
-@inline function ab2_step!(model::NonhydrostaticModel{<:Any, <:Any, <:Any, <:Any, <:Any, <:Any, <:Any, <:Any, <:Any, <:Any, <:Any, <:Any, <:Any, <:Any, <:Any, <:Any, <:Any, <:ContinuousFormBiogeochemistry{<:Any, <:FlatSediment}}, Δt, χ) 
+@inline function ab2_step!(model::NonhydrostaticModel{<:Any, <:Any, <:Any, <:Any, <:Any, <:Any, <:Any, <:Any, <:Any, <:Any, <:Any, <:Any, <:Any, <:Any, <:Any, <:Any, <:Any, <:ContinuousFormBiogeochemistry{<:Any, <:FlatSediment}}, Δt, χ)
     workgroup, worksize = work_layout(model.grid, :xyz)
     arch = model.architecture
     step_field_kernel! = ab2_step_field!(device(arch), workgroup, worksize)
@@ -104,7 +104,7 @@ function rk3_substep!(model::NonhydrostaticModel{<:Any, <:Any, <:Any, <:Any, <:A
         launch!(arch, model.grid, :xy, rk3_step_flat_field!, 
                 field, Δt, γⁿ, ζⁿ,
                 sediment.tendencies.Gⁿ[i], 
-                sediment.tendencies.G⁻[i]) 
+                sediment.tendencies.G⁻[i])
     end
 
     return nothing
