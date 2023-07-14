@@ -3,7 +3,7 @@ using Documenter, DocumenterCitations, Literate
 using OceanBioME
 using OceanBioME.SLatissimaModel: SLatissima
 using OceanBioME.LOBSTERModel: LOBSTER
-using OceanBioME.Boundaries.Sediments: SimpleMultiG
+using OceanBioME.Boundaries.Sediments: SimpleMultiG, InstantRemineralisation
 using OceanBioME.Boundaries: OCMIP_default, GasExchange
 
 using CairoMakie
