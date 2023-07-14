@@ -10,7 +10,7 @@ using Oceananigans
 
 grid = RectilinearGrid(size=(3, 3, 30), extent=(10, 10, 200))
 
-sediment_model = SimpleMultiG(grid)
+sediment_model = SimpleMultiG(; grid)
 ```
 
 You may optionally specify the model parameters. This can then be passed in the setup of a BGC model:
