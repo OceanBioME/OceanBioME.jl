@@ -26,7 +26,7 @@ grid = RectilinearGrid(size=(32, 32, 8), extent = (1kilometer, 1kilometer, 100me
 coriolis = FPlane(f = 1e-4) # [s⁻¹]
 
 # Specify parameters that are used to construct the background state
-background_state_parameters = ( M² = 1e-8,       # s⁻², geostrophic shear
+background_state_parameters = ( M² = 1e-8,       # s⁻², geostrophic shear squared
                                  f = coriolis.f, # s⁻¹, Coriolis parameter
                                  N = 1e-4,       # s⁻¹, buoyancy frequency
                                 Lz = grid.Lz )
