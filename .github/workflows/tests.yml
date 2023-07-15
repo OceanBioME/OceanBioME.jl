@@ -13,7 +13,7 @@ concurrency:
 
 env:
   DATADEPS_ALWAYS_ACCEPT: true
-  
+
 jobs:
   test:
     name: Julia ${{ matrix.version }} - ${{ matrix.os }} - ${{ matrix.arch }} - ${{ github.event_name }}
@@ -23,7 +23,6 @@ jobs:
       matrix:
         version:
           - '1.9'
-          - '1.8'
         os:
           - ubuntu-latest
         arch:
