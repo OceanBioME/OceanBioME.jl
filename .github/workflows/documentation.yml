@@ -20,6 +20,10 @@ jobs:
       contents: write
     runs-on: ubuntu-latest
     steps:
+      - name: Cancel Previous Runs
+        uses: styfle/cancel-workflow-action
+        with:
+          access_token: ${{ github.token }}
       - uses: actions/checkout@v3
       - uses: julia-actions/setup-julia@latest
         with:

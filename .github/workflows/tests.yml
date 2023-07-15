@@ -29,6 +29,8 @@ jobs:
         arch:
           - x64
     steps:
+      - name: Cancel Previous Runs
+        uses: styfle/cancel-workflow-action
       - uses: actions/checkout@v3
       - uses: julia-actions/setup-julia@v1
         with:
