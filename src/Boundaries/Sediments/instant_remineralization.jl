@@ -10,20 +10,20 @@ Burial efficiency by 10.1029/2006GB002907, 2007
 struct InstantRemineralisation{FT, F, TE} <: FlatSediment
           burial_efficiency_constant1 :: FT
           burial_efficiency_constant2 :: FT
-    burial_efficiency_half_saturaiton :: FT
+    burial_efficiency_half_saturation :: FT
 
                                fields :: F
                            tendencies :: TE
 
     function InstantRemineralisation(burial_efficiency_constant1::FT,
                                      burial_efficiency_constant2::FT,
-                                     burial_efficiency_half_saturaiton::FT,
+                                     burial_efficiency_half_saturation::FT,
                                      fields::F,
                                      tendencies::TE) where {FT, F, TE}
 
         return new{FT, F, TE}(burial_efficiency_constant1,
                               burial_efficiency_constant2,
-                              burial_efficiency_half_saturaiton,
+                              burial_efficiency_half_saturation,
                               fields,
                               tendencies)
     end
@@ -33,7 +33,7 @@ end
     InstantRemineralisation(; grid,
         burial_efficiency_constant1::FT = 0.013,
         burial_efficiency_constant2::FT = 0.53,
-        burial_efficiency_half_saturaiton::FT = 7) where FT
+        burial_efficiency_half_saturation::FT = 7) where FT
 
 Returns a single-layer instant remineralisaiton model for NPZD bgc models.
 
@@ -51,7 +51,7 @@ sediment_model = InstantRemineralisation(; grid)
 function InstantRemineralisation(; grid,
             burial_efficiency_constant1 = 0.013,
             burial_efficiency_constant2 = 0.53,
-            burial_efficiency_half_saturaiton = 7.0)
+            burial_efficiency_half_saturation = 7.0)
 
     @warn "Sediment models are an experimental feature and have not yet been validated"
 
@@ -64,7 +64,7 @@ function InstantRemineralisation(; grid,
 
     return InstantRemineralisation(burial_efficiency_constant1,
                                    burial_efficiency_constant2,
-                                   burial_efficiency_half_saturaiton,
+                                   burial_efficiency_half_saturation,
                                    fields,
                                    tendencies)
 end
@@ -72,7 +72,7 @@ end
 adapt_structure(to, sediment::InstantRemineralisation) = 
     SimpleMultiG(sediment.burial_efficiency_constant1,
                  sediment.burial_efficiency_constant2,
-                 sediment.burial_efficiency_half_saturaiton,
+                 sediment.burial_efficiency_half_saturation,
                  adapt(to, sediment.fields),
                  adapt(to, sediment.tendencies))
                   
