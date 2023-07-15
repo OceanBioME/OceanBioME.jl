@@ -483,5 +483,5 @@ const lobster_variable_redfield = Union{LOBSTER{<:Any, <:Any, <:Any, <:Val{(fals
     sinking_flux(i, j, grid, advection, Val(:sPOC), bgc, tracers) +
     sinking_flux(i, j, grid, advection, Val(:bPOC), bgc, tracers)
 
-@inline remineralisation_reciever(::LOBSTER) = :NH₄
+@inline remineralisation_receiver(::LOBSTER) = :NH₄
 end # module

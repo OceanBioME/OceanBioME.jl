@@ -344,5 +344,5 @@ adapt_structure(to, npzd::NPZD) =
                                                                    sinking_flux(i, j, grid, advection, Val(:P), bgc, tracers)
                  
 @inline carbon_flux(bgc::NPZD, tracers, i, j) = nitrogen_flux(bgc, tracers, i, j) * 6.56
-@inline remineralisation_reciever(::NPZD) = :N
+@inline remineralisation_receiver(::NPZD) = :N
 end # module
