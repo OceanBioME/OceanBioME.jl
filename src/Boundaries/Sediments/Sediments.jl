@@ -7,11 +7,13 @@ using OceanBioME: ContinuousFormBiogeochemistry
 using Oceananigans
 using Oceananigans.Architectures: device
 using Oceananigans.Utils: launch!
-using Oceananigans.Advection: div_Uc
+using Oceananigans.Advection: advective_tracer_flux_z
 using Oceananigans.Units: day
 using Oceananigans.Fields: CenterField, Face
 using Oceananigans.Biogeochemistry: biogeochemical_drift_velocity
 using Oceananigans.Grids: zspacing
+using Oceananigans.Operators: volume
+using Oceananigans.Fields: Center
 
 import Adapt: adapt_structure, adapt
 
@@ -45,6 +47,10 @@ end
 @inline nitrogen_flux(grid, adveciton, bgc, tracers, i, j) = 0
 @inline carbon_flux(grid, adveciton, bgc, tracers, i, j) = 0
 @inline remineralisation_reciever(bgc, tendencies) = nothing
+
+@inline sinking_flux(i, j, grid, advection, val_tracer::Val{T}, bgc, tracers) where T = 
+    - advective_tracer_flux_z(i, j, 1, grid, advection, biogeochemical_drift_velocity(bgc, val_tracer).w, tracers[T]) /
+      volume(i, j, 1, grid, Center(), Center(), Center())
 
 include("coupled_timesteppers.jl")
 include("simple_multi_G.jl")

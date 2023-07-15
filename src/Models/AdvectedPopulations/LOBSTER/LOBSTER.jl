@@ -47,11 +47,11 @@ using OceanBioME: ContinuousFormBiogeochemistry
 
 using Oceananigans.Units
 using Oceananigans.Fields: Field, TracerFields, CenterField, ZeroField
-using Oceananigans.Advection: div_Uc
 
 using OceanBioME.Light: TwoBandPhotosyntheticallyActiveRadiation, update_PAR!, required_PAR_fields
 using OceanBioME: setup_velocity_fields, show_sinking_velocities
 using OceanBioME.BoxModels: BoxModel
+using OceanBioME.Sediments: sinking_flux
 
 import OceanBioME.BoxModels: update_boxmodel_state!
 
@@ -469,17 +469,19 @@ const lobster_variable_redfield = Union{LOBSTER{<:Any, <:Any, <:Any, <:Val{(fals
                                         LOBSTER{<:Any, <:Any, <:Any, <:Val{(true, true, true)}, <:Any, <:Any}}
 
 
-@inline nitrogen_flux(grid, advection, bgc::LOBSTER, tracers, i, j) = - (div_Uc(i, j, 0, grid, advection, biogeochemical_drift_velocity(bgc, Val(:sPOM)), tracers.sPOM) +
-                                                                         div_Uc(i, j, 0, grid, advection, biogeochemical_drift_velocity(bgc, Val(:bPOM)), tracers.bPOM))
+@inline nitrogen_flux(grid, advection, bgc::LOBSTER, tracers, i, j) = 
+    sinking_flux(i, j, grid, advection, Val(:sPOM), bgc, tracers) +
+    sinking_flux(i, j, grid, advection, Val(:bPOM), bgc, tracers)
 
-@inline carbon_flux(grid, advection, bgc::LOBSTER, tracers, i, j) = - (div_Uc(i, j, 0, grid, advection, biogeochemical_drift_velocity(bgc, Val(:sPOM)), tracers.sPOM) +
-                                                                       div_Uc(i, j, 0, grid, advection, biogeochemical_drift_velocity(bgc, Val(:bPOM)), tracers.bPOM)) * bgc.organic_redfield
+@inline carbon_flux(grid, advection, bgc::LOBSTER, tracers, i, j) = nitrogen_flux(grid, advection, bgc, tracers, i, j) * bgc.organic_redfield
 
-@inline nitrogen_flux(grid, advection, bgc::lobster_variable_redfield, tracers, i, j) = - (div_Uc(i, j, 0, grid, advection, biogeochemical_drift_velocity(bgc, Val(:sPON)), tracers.sPON) +
-                                                                                           div_Uc(i, j, 0, grid, advection, biogeochemical_drift_velocity(bgc, Val(:bPON)), tracers.bPON))
+@inline nitrogen_flux(grid, advection, bgc::lobster_variable_redfield, tracers, i, j) = 
+    sinking_flux(i, j, grid, advection, Val(:sPON), bgc, tracers) +
+    sinking_flux(i, j, grid, advection, Val(:bPON), bgc, tracers)
 
-@inline carbon_flux(grid, advection, bgc::lobster_variable_redfield, tracers, i, j) = - (div_Uc(i, j, 0, grid, advection, biogeochemical_drift_velocity(bgc, Val(:sPOC)), tracers.sPOC) +
-                                                                                         div_Uc(i, j, 0, grid, advection, biogeochemical_drift_velocity(bgc, Val(:bPOC)), tracers.bPOC))
+@inline carbon_flux(grid, advection, bgc::lobster_variable_redfield, tracers, i, j) =  
+    sinking_flux(i, j, grid, advection, Val(:sPOC), bgc, tracers) +
+    sinking_flux(i, j, grid, advection, Val(:bPOC), bgc, tracers)
 
 @inline remineralisation_reciever(::LOBSTER, tendencies) = tendencies.NH₄
 end # module
