@@ -41,7 +41,7 @@ function test_NPZD(grid, sinking, open_bottom)
     end
 
     ΣN₁ = sum(model.tracers.N) + sum(model.tracers.P) + sum(model.tracers.Z) + sum(model.tracers.D)
-    
+
     @test ΣN₀ ≈ ΣN₁ # guess this should actually fail with a high enough accuracy when sinking is on with an open bottom
 
     return nothing

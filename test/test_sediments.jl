@@ -97,7 +97,7 @@ display_name(::InstantRemineralisation) = "Instant remineralisation"
             sediment_model in (InstantRemineralisation(; grid), SimpleMultiG(; grid))
             for biogeochemistry in (NutrientPhytoplanktonZooplanktonDetritus(; grid, open_bottom = true,
                                                                                sediment_model),
-                                    LOBSTER(; grid, 
+                                    LOBSTER(; grid,
                                               carbonates = true, oxygen = true, variable_redfield = true, 
                                               open_bottom = true,
                                               sediment_model))

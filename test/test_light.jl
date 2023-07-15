@@ -2,15 +2,14 @@ using Oceananigans, Test
 using OceanBioME: TwoBandPhotosyntheticallyActiveRadiation, LOBSTER
 using Oceananigans.Biogeochemistry: update_biogeochemical_state!
 
-grid = RectilinearGrid(size=(1,1,2), extent=(1,1,2))
-
 @testset "Two band attenuation" begin
+    grid = RectilinearGrid(size=(1, 1, 2), extent=(1, 1, 2))
 
     model = NonhydrostaticModel(; grid, 
                                   biogeochemistry = LOBSTER(; grid,
                                                               light_attenuation_model = TwoBandPhotosyntheticallyActiveRadiation(; grid),
                                                               surface_phytosynthetically_active_radiation = (x, y, t) -> 100.0))
-    Pᵢ(x,y,z) = 2.5 + z
+    Pᵢ(x, y, z) = 2.5 + z
 
     set!(model, P = Pᵢ)
 
@@ -25,7 +24,6 @@ grid = RectilinearGrid(size=(1,1,2), extent=(1,1,2))
     eᵇ = PAR_model.chlorophyll_blue_exponent
     r = PAR_model.pigment_ratio
     Rᶜₚ = PAR_model.phytoplankton_chlorophyll_ratio
-
 
     ∫Chlʳ = [(2.0 * Rᶜₚ / r) ^ eʳ * 0.5]
     ∫Chlᵇ = [(2.0 * Rᶜₚ / r) ^ eᵇ * 0.5]
