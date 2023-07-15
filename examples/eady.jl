@@ -102,7 +102,7 @@ u, v, w = model.velocities # unpack velocity `Field`s
 # and also calculate the vertical vorticity.
 ζ = Field(∂x(v) - ∂y(u))
 
-# Periodically write the velocities and vorticity to a file.
+# Periodically save the velocities and vorticity to a file.
 simulation.output_writers[:fields] = JLD2OutputWriter(model, merge(model.tracers, (; u, v, w, ζ));
                                                       schedule = TimeInterval(2hours),
                                                       filename = "eady_turbulence_bgc",
@@ -133,7 +133,7 @@ xc, yc, zc = nodes(P)
 
 # and plot.
 
-using GLMakie
+using CairoMakie
 
 n = Observable(1)
 
