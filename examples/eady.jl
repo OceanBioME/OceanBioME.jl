@@ -12,15 +12,15 @@
 # ```
 
 # ## Model setup
-# First load the required packages
+# First load the required packages. We also set the random seed to ensure reproducibility of the results. (not required)
 using OceanBioME, Oceananigans, Printf
 using Oceananigans.Units
-using Random: seed!
-seed!(42);
+using Random
+
+Random.seed!(42);
 
 # Construct a grid with uniform grid spacing
-Lz = 100meters
-grid = RectilinearGrid(size=(32, 32, 8), extent = (1kilometer, 1kilometer, Lz))
+grid = RectilinearGrid(size=(32, 32, 8), extent = (1kilometer, 1kilometer, 100meters))
 
 # Set the Coriolis parameter
 coriolis = FPlane(f = 1e-4) # [s⁻¹]
@@ -29,7 +29,7 @@ coriolis = FPlane(f = 1e-4) # [s⁻¹]
 background_state_parameters = ( M2 = 1e-8,       # s⁻¹, geostrophic shear
                                  f = coriolis.f, # s⁻¹, Coriolis parameter
                                  N = 1e-4,       # s⁻¹, buoyancy frequency
-                                Lz = Lz )
+                                Lz = grid.Lz )
 
 # Here, ``B`` is the background buoyancy field and ``V`` is the corresponding thermal wind
 V(x, y, z, t, p) = p.M2 / p.f * (z - p.Lz/2)
