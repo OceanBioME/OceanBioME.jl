@@ -1,7 +1,7 @@
 using Test, OceanBioME, Oceananigans
 
 function test_column_diffusion_timescale(arch)
-    const κ = 1e-3
+    κ = 1e-3
     @inline κₜ(x, y, z, t) = κ
 
     grid = RectilinearGrid(arch, size=(1, 1, 5), x=(0, 10), y=(0, 3), z=[-1, -0.6, -0.5, -0.2, -0.19, 0])
