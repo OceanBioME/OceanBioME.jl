@@ -82,16 +82,15 @@ sediment_fields(model::InstantRemineralisation) = (N_storage = model.fields.N_st
 @kernel function _calculate_tendencies!(sediment::InstantRemineralisation, bgc, grid, advection, tracers, timestepper)
     i, j = @index(Global, NTuple)
 
-    @inbounds begin                        
-        Δz = zspacing(i, j, 1, grid, Center(), Center(), Center())
+    Δz = zspacing(i, j, 1, grid, Center(), Center(), Center())
 
-        flux = nitrogen_flux(grid, advection, bgc, tracers, i, j) * Δz
+    flux = nitrogen_flux(grid, advection, bgc, tracers, i, j) * Δz
 
-        burial_efficiency = sediment.burial_efficiency_constant1 + sediment.burial_efficiency_constant2 * ((flux / 6.56) / (7 + flux / 6.56)) ^ 2
+    burial_efficiency = sediment.burial_efficiency_constant1 + sediment.burial_efficiency_constant2 * ((flux / 6.56) / (7 + flux / 6.56)) ^ 2
 
-        # sediment evolution
-        sediment.tendencies.Gⁿ.N_storage[i, j, 1] = burial_efficiency * flux
+    # sediment evolution
+    @inbounds sediment.tendencies.Gⁿ.N_storage[i, j, 1] = burial_efficiency * flux
 
-        timestepper.Gⁿ[remineralisation_reciever(bgc)][i, j, 1] += flux * (1 - burial_efficiency) / Δz
+    @inbounds timestepper.Gⁿ[remineralisation_reciever(bgc)][i, j, 1] += flux * (1 - burial_efficiency) / Δz
     end
 end
