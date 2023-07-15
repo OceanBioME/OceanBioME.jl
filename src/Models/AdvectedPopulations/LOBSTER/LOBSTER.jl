@@ -66,7 +66,7 @@ import OceanBioME: maximum_sinking_velocity
 import Adapt: adapt_structure, adapt
 import Base: show, summary
 
-import OceanBioME.Boundaries.Sediments: nitrogen_flux, carbon_flux, remineralisation_reciever
+import OceanBioME.Boundaries.Sediments: nitrogen_flux, carbon_flux, remineralisation_receiver
 
 struct LOBSTER{FT, LA, S, B, W, P} <: ContinuousFormBiogeochemistry{LA, S, P}
     phytoplankton_preference :: FT
@@ -483,5 +483,5 @@ const lobster_variable_redfield = Union{LOBSTER{<:Any, <:Any, <:Any, <:Val{(fals
     sinking_flux(i, j, grid, advection, Val(:sPOC), bgc, tracers) +
     sinking_flux(i, j, grid, advection, Val(:bPOC), bgc, tracers)
 
-@inline remineralisation_reciever(::LOBSTER, tendencies) = tendencies.NH₄
+@inline remineralisation_receiver(::LOBSTER, tendencies) = tendencies.NH₄
 end # module

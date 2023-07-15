@@ -46,7 +46,7 @@ end
 
 @inline nitrogen_flux(grid, adveciton, bgc, tracers, i, j) = 0
 @inline carbon_flux(grid, adveciton, bgc, tracers, i, j) = 0
-@inline remineralisation_reciever(bgc, tendencies) = nothing
+@inline remineralisation_receiver(bgc, tendencies) = nothing
 
 @inline sinking_flux(i, j, grid, advection, val_tracer::Val{T}, bgc, tracers) where T = 
     - advective_tracer_flux_z(i, j, 1, grid, advection, biogeochemical_drift_velocity(bgc, val_tracer).w, tracers[T]) /
