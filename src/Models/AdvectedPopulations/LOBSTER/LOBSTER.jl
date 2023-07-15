@@ -51,7 +51,7 @@ using Oceananigans.Fields: Field, TracerFields, CenterField, ZeroField
 using OceanBioME.Light: TwoBandPhotosyntheticallyActiveRadiation, update_PAR!, required_PAR_fields
 using OceanBioME: setup_velocity_fields, show_sinking_velocities
 using OceanBioME.BoxModels: BoxModel
-using OceanBioME.Sediments: sinking_flux
+using OceanBioME.Boundaries.Sediments: sinking_flux
 
 import OceanBioME.BoxModels: update_boxmodel_state!
 
