@@ -4,7 +4,6 @@ using OceanBioME: ContinuousFormBiogeochemistry
 using Oceananigans: NonhydrostaticModel, HydrostaticFreeSurfaceModel
 
 import Oceananigans.Models.LagrangianParticleTracking: update_lagrangian_particle_properties!, step_lagrangian_particles!
-import Oceananigans.Biogeochemistry: update_tendencies!
 import Oceananigans.OutputWriters: fetch_output
 import Base: length, size, show, summary
 
@@ -27,8 +26,7 @@ abstract type BiogeochemicalParticles end
     update_lagrangian_particle_properties!(bgc.particles, model, bgc, Δt)
 
 update_lagrangian_particle_properties!(::BiogeochemicalParticles, model, bgc, Δt) = nothing
-update_tendencies!(bgc::ContinuousFormBiogeochemistry{<:Any, <:Any, <:BiogeochemicalParticles}, model) = update_tendencies!(bgc, bgc.particles, model)
-update_tendencies!(bgc, ::BiogeochemicalParticles, model) = nothing
+update_particles_tendencies!(bgc, particles, model) = nothing
 
 size(particles::BiogeochemicalParticles) = size(particles.x)
 length(particles::BiogeochemicalParticles) = length(particles.x)

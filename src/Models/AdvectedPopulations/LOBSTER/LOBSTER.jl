@@ -51,6 +51,7 @@ using Oceananigans.Fields: Field, TracerFields, CenterField, ZeroField
 using OceanBioME.Light: TwoBandPhotosyntheticallyActiveRadiation, update_PAR!, required_PAR_fields
 using OceanBioME: setup_velocity_fields, show_sinking_velocities
 using OceanBioME.BoxModels: BoxModel
+using OceanBioME.Boundaries.Sediments: sinking_flux
 
 import OceanBioME.BoxModels: update_boxmodel_state!
 
@@ -64,6 +65,8 @@ import OceanBioME: maximum_sinking_velocity
 
 import Adapt: adapt_structure, adapt
 import Base: show, summary
+
+import OceanBioME.Boundaries.Sediments: nitrogen_flux, carbon_flux, remineralisation_receiver
 
 struct LOBSTER{FT, LA, S, B, W, P} <: ContinuousFormBiogeochemistry{LA, S, P}
     phytoplankton_preference :: FT
@@ -460,4 +463,25 @@ include("carbonate_chemistry.jl")
 include("oxygen_chemistry.jl")
 include("variable_redfield.jl")
 
+const lobster_variable_redfield = Union{LOBSTER{<:Any, <:Any, <:Any, <:Val{(false, false, true)}, <:Any, <:Any},
+                                        LOBSTER{<:Any, <:Any, <:Any, <:Val{(true, false, true)}, <:Any, <:Any},
+                                        LOBSTER{<:Any, <:Any, <:Any, <:Val{(false, true, true)}, <:Any, <:Any},
+                                        LOBSTER{<:Any, <:Any, <:Any, <:Val{(true, true, true)}, <:Any, <:Any}}
+
+
+@inline nitrogen_flux(grid, advection, bgc::LOBSTER, tracers, i, j) = 
+    sinking_flux(i, j, grid, advection, Val(:sPOM), bgc, tracers) +
+    sinking_flux(i, j, grid, advection, Val(:bPOM), bgc, tracers)
+
+@inline carbon_flux(grid, advection, bgc::LOBSTER, tracers, i, j) = nitrogen_flux(grid, advection, bgc, tracers, i, j) * bgc.organic_redfield
+
+@inline nitrogen_flux(grid, advection, bgc::lobster_variable_redfield, tracers, i, j) = 
+    sinking_flux(i, j, grid, advection, Val(:sPON), bgc, tracers) +
+    sinking_flux(i, j, grid, advection, Val(:bPON), bgc, tracers)
+
+@inline carbon_flux(grid, advection, bgc::lobster_variable_redfield, tracers, i, j) =  
+    sinking_flux(i, j, grid, advection, Val(:sPOC), bgc, tracers) +
+    sinking_flux(i, j, grid, advection, Val(:bPOC), bgc, tracers)
+
+@inline remineralisation_receiver(::LOBSTER) = :NH₄
 end # module

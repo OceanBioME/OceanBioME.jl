@@ -3,7 +3,7 @@ using Documenter, DocumenterCitations, Literate
 using OceanBioME
 using OceanBioME.SLatissimaModel: SLatissima
 using OceanBioME.LOBSTERModel: LOBSTER
-using OceanBioME.Boundaries.Sediments: SimpleMultiG
+using OceanBioME.Boundaries.Sediments: SimpleMultiG, InstantRemineralisation
 using OceanBioME.Boundaries: OCMIP_default, GasExchange
 
 using CairoMakie
@@ -53,7 +53,8 @@ model_parameters = (LOBSTER(; grid = BoxModelGrid()),
                     NutrientPhytoplanktonZooplanktonDetritus(; grid = BoxModelGrid()),
                     SLatissima(),
                     TwoBandPhotosyntheticallyActiveRadiation(; grid = BoxModelGrid()),
-                    SimpleMultiG(BoxModelGrid(); depth = 1000),
+                    SimpleMultiG(; grid = BoxModelGrid(), depth = 1000),
+                    InstantRemineralisation(; grid = BoxModelGrid()),
                     OCMIP_default,
                     GasExchange(; gas = :CO₂).condition.parameters,
                     GasExchange(; gas = :O₂).condition.parameters)

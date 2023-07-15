@@ -13,7 +13,7 @@ function ΣC(model, carbonates, variable_redfield)
     else
         OC = sum(model.tracers.sPOM .+ model.tracers.bPOM .+ model.tracers.DOM) * model.biogeochemistry. organic_redfield
     end
-    
+
     if carbonates
         IC = sum(model.tracers.DIC)
     else
@@ -37,7 +37,7 @@ function ΣGᶜ(model, carbonates, variable_redfield)
     else
         OC = sum(model.timestepper.Gⁿ.sPOM .+ model.timestepper.Gⁿ.bPOM .+ model.timestepper.Gⁿ.DOM) * model.biogeochemistry. organic_redfield
     end
-    
+
     if carbonates
         IC = sum(model.timestepper.Gⁿ.DIC)
     else
@@ -109,7 +109,7 @@ function test_LOBSTER(grid, carbonates, oxygen, variable_redfield, sinking, open
 
     ΣC₀ = CUDA.@allowscalar ΣC(model, carbonates, variable_redfield)
     
-    for i in 1:n_timesteps
+    for _ in 1:n_timesteps
         time_step!(model, 1.0)
     end
 

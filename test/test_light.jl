@@ -28,7 +28,6 @@ function test_two_band(grid, bgc, model_type)
     r = PAR_model.pigment_ratio
     Rᶜₚ = PAR_model.phytoplankton_chlorophyll_ratio
 
-
     ∫Chlʳ = [(2.0 * Rᶜₚ / r) ^ eʳ * 0.5]
     ∫Chlᵇ = [(2.0 * Rᶜₚ / r) ^ eᵇ * 0.5]
 

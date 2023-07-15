@@ -1,9 +1,11 @@
-using Oceananigans: NonhydrostaticModel, prognostic_fields
+using Oceananigans: NonhydrostaticModel, prognostic_fields, HydrostaticFreeSurfaceModel
 using OceanBioME: ContinuousFormBiogeochemistry
 using OceanBioME.Boundaries.Sediments: AbstractSediment
 using Oceananigans.TimeSteppers: ab2_step_field!, rk3_substep_field!, stage_Δt
 using Oceananigans.Utils: work_layout, launch!
 using Oceananigans.TurbulenceClosures: implicit_step!
+using Oceananigans.Models.HydrostaticFreeSurfaceModels: local_ab2_step!, ab2_step_free_surface!
+using Oceananigans.Architectures: AbstractArchitecture
 
 import Oceananigans.TimeSteppers: ab2_step!, rk3_substep!
 
@@ -42,6 +44,25 @@ import Oceananigans.TimeSteppers: ab2_step!, rk3_substep!
     end
 
     return nothing
+end
+
+@inline function ab2_step!(model::HydrostaticFreeSurfaceModel{<:Any, <:Any, <:AbstractArchitecture, <:Any, <:Any, <:Any, <:Any, <:Any, <:Any, <:Any, <:Any, <:ContinuousFormBiogeochemistry{<:Any, <:FlatSediment}}, Δt, χ)
+    # Step locally velocity and tracers
+    @apply_regionally local_ab2_step!(model, Δt, χ)
+
+    # blocking step for implicit free surface, non blocking for explicit
+    ab2_step_free_surface!(model.free_surface, model, Δt, χ)
+
+    sediment = model.biogeochemistry.sediment_model
+    arch = model.architecture
+
+    for (i, field) in enumerate(sediment_fields(sediment))
+        launch!(arch, model.grid, :xy, ab2_step_flat_field!, 
+                field, Δt, χ, 
+                sediment.tendencies.Gⁿ[i], 
+                sediment.tendencies.G⁻[i])
+
+    end
 end
 
 @kernel function ab2_step_flat_field!(u, Δt, χ, Gⁿ, G⁻)
@@ -91,7 +112,6 @@ end
 
 @kernel function rk3_step_flat_field!(U, Δt, γⁿ, ζⁿ, Gⁿ, G⁻)
     i, j = @index(Global, NTuple)
-
     @inbounds U[i, j, 1] += Δt * (γⁿ * Gⁿ[i, j, 1] + ζⁿ * G⁻[i, j, 1])
 end
 
