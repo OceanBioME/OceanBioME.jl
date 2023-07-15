@@ -26,14 +26,14 @@ grid = RectilinearGrid(size=(32, 32, 8), extent = (1kilometer, 1kilometer, 100me
 coriolis = FPlane(f = 1e-4) # [s⁻¹]
 
 # Specify parameters that are used to construct the background state
-background_state_parameters = ( M2 = 1e-8,       # s⁻¹, geostrophic shear
+background_state_parameters = ( M² = 1e-8,       # s⁻², geostrophic shear
                                  f = coriolis.f, # s⁻¹, Coriolis parameter
                                  N = 1e-4,       # s⁻¹, buoyancy frequency
                                 Lz = grid.Lz )
 
 # Here, ``B`` is the background buoyancy field and ``V`` is the corresponding thermal wind
-V(x, y, z, t, p) = p.M2 / p.f * (z - p.Lz/2)
-B(x, y, z, t, p) = p.M2 * x + p.N^2 * (z - p.Lz/2)
+V(x, y, z, t, p) = p.M² / p.f * (z - p.Lz/2)
+B(x, y, z, t, p) = p.M² * x + p.N^2 * (z - p.Lz/2)
 
 V_field = BackgroundField(V, parameters = background_state_parameters)
 B_field = BackgroundField(B, parameters = background_state_parameters)
