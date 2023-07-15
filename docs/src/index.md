@@ -19,6 +19,10 @@ julia> using Pkg
 julia> Pkg.add("OceanBioME")
 ```
 
+!!! compat "Julia 1.9"
+
+    OceanBioME.jl requires Julia version 1.9 or later.
+
 ## Running your first model
 
 As a simple example let's run a Nutrient-Phytoplankton-Zooplankton-Detritus (NPZD) model in a two-dimensional simulation of a buoyancy front:
