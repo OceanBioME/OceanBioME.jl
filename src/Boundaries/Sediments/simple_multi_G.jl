@@ -1,3 +1,5 @@
+import Base: show, summary
+
 """
     struct SimpleMultiG
 
@@ -37,10 +39,10 @@ end
                    nitrate_oxidation_params::P1 = (A = - 1.9785, B = 0.2261, C = -0.0615, D = -0.0289, E = - 0.36109, F = - 0.0232),
                    denitrifcaiton_params::P2 = (A = - 3.0790, B = 1.7509, C = 0.0593, D = - 0.1923, E = 0.0604, F = 0.0662),
                    anoxic_params::P3 = (A = - 3.9476, B = 2.6269, C = - 0.2426, D = -1.3349, E = 0.1826, F = - 0.0143),
-                   depth = abs(znode(1, grid, Face())),
+                   depth = abs(znodes(grid, Face())[1]),
                    solid_dep_params::P4 = (A = 0.233, B = 0.336, C = 982, D = - 1.548, depth = depth))
 
-Returns a single-layer "multi G" sediment model (`SimpleMultiG`) on `grid` where parameters
+Return a single-layer "multi G" sediment model (`SimpleMultiG`) on `grid`, where parameters
 can be optionally specified.
 
 The model is a single layer (i.e. does not include porous diffusion) model with three classes
@@ -49,19 +51,23 @@ The nitrifcation/denitrifcation/anoxic mineralisation fractions default to the p
 of Soetaert et al. 2000; doi:[10.1016/S0012-8252(00)00004-0](https://doi.org/10.1016/S0012-8252(00)00004-0).
 
 This model has not yet been validated or compared to observational data. The variety of degridation
-processes is likely  to be strongly dependent on oxygen availability (see
+processes is likely to be strongly dependent on oxygen availability (see
 [https://bg.copernicus.org/articles/6/1273/2009/bg-6-1273-2009.pdf](https://bg.copernicus.org/articles/6/1273/2009/bg-6-1273-2009.pdf))
 so it will therefore be important to also thoroughly validate the oxygen model (also currently limited).
 
 Example
 =======
 
-```@example
-using OceanBioME, Oceananigans, OceanBioME.Sediments
+```jldoctest simplemultig; filter = r".*@ OceanBioME.Boundaries.Sediments.*"
+julia> using OceanBioME, Oceananigans, OceanBioME.Sediments
 
-grid = RectilinearGrid(size=(3, 3, 30), extent=(10, 10, 200))
+julia> grid = RectilinearGrid(size=(3, 3, 30), extent=(10, 10, 200));
 
-sediment_model = SimpleMultiG(; grid)
+julia> sediment_model = SimpleMultiG(; grid)
+┌ Warning: Sediment models are an experimental feature and have not yet been validated.
+└ @ OceanBioME.Boundaries.Sediments ~/OceanBioME.jl/src/Boundaries/Sediments/simple_multi_G.jl:102
+[ Info: This sediment model is currently only compatible with models providing NH₄, NO₃, O₂, and DIC.
+Single-layer multi-G sediment model (Float64)
 ```
 """
 function SimpleMultiG(; grid,
@@ -96,9 +102,9 @@ function SimpleMultiG(; grid,
                                                C = 982, 
                                                D = - 1.548, 
                                                depth = depth)) where {FT, P1, P2, P3, P4}
- 
-    @warn "Sediment models are an experimental feature and have not yet been validated"
-    @info "This sediment model is currently only compatible with models providing NH₄, NO₃, O₂ and DIC"
+
+    @warn "Sediment models are an experimental feature and have not yet been validated."
+    @info "This sediment model is currently only compatible with models providing NH₄, NO₃, O₂, and DIC."
 
     tracer_names = (:C_slow, :C_fast, :N_slow, :N_fast, :C_ref, :N_ref)
 
@@ -137,7 +143,12 @@ adapt_structure(to, sediment::SimpleMultiG) =
                  adapt(to, sediment.tendencies))
                   
 sediment_tracers(::SimpleMultiG) = (:C_slow, :C_fast, :C_ref, :N_slow, :N_fast, :N_ref)
-sediment_fields(model::SimpleMultiG) = (C_slow = model.fields.C_slow, C_fast = model.fields.C_fast, N_slow = model.fields.N_slow, N_fast = model.fields.N_fast, C_ref = model.fields.C_ref, N_ref = model.fields.N_ref)
+sediment_fields(model::SimpleMultiG) = (C_slow = model.fields.C_slow,
+                                        C_fast = model.fields.C_fast,
+                                        N_slow = model.fields.N_slow,
+                                        N_fast = model.fields.N_fast,
+                                         C_ref = model.fields.C_ref,
+                                         N_ref = model.fields.N_ref)
 
 @kernel function _calculate_tendencies!(sediment::SimpleMultiG, bgc, grid, advection, tracers, timestepper)
     i, j = @index(Global, NTuple)
@@ -212,3 +223,6 @@ sediment_fields(model::SimpleMultiG) = (C_slow = model.fields.C_slow, C_fast = m
         timestepper.Gⁿ.O₂[i, j, 1]  -= max(0, (1 - pᵈᵉⁿⁱᵗ - pₐₙₒₓ * pₛₒₗᵢ) * Cᵐⁱⁿ / Δz) # this seems dodge but this model doesn't cope with anoxia properly
     end
 end
+
+summary(::SimpleMultiG{FT, P1, P2, P3, P4, F, TE}) where {FT, P1, P2, P3, P4, F, TE} = string("Single-layer multi-G sediment model ($FT)")
+show(io::IO, model::SimpleMultiG) = print(io, summary(model))
