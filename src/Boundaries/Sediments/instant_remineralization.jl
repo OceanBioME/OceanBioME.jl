@@ -5,7 +5,7 @@ Hold the parameters and fields the simplest benthic boundary layer where
 organic carbon is assumed to remineralise instantly with some portion 
 becoming N, and a fraction being perminantly burried.
 
-Burial efficiency by 10.1029/2006GB002907, 2007
+Burial efficiency from [RemineralisationFraction](@cite)
 """
 struct InstantRemineralisation{FT, F, TE} <: FlatSediment
           burial_efficiency_constant1 :: FT
@@ -92,6 +92,6 @@ sediment_fields(model::InstantRemineralisation) = (N_storage = model.fields.N_st
         # sediment evolution
         sediment.tendencies.Gⁿ.N_storage[i, j, 1] = burial_efficiency * flux
 
-        remineralisation_receiver(bgc, timestepper.Gⁿ)[i, j, 1] += flux * (1 - burial_efficiency) / Δz
+        timestepper.Gⁿ[remineralisation_reciever(bgc)][i, j, 1] += flux * (1 - burial_efficiency) / Δz
     end
 end
