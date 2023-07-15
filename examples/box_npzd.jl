@@ -6,7 +6,7 @@
 # First we will check we have the dependencies installed
 # ```julia
 # using Pkg
-# pkg"add OceanBioME, CairoMakie"
+# pkg"add OceanBioME, JLD2, CairoMakie"
 # ```
 
 # ## Model setup
@@ -14,9 +14,9 @@
 using OceanBioME
 
 minute = minutes = 60
-hour = hour = 60 * minutes
-day = days = hours * 24  # define the length of a day in seconds
-year = years = day * 365  # define the length of a year in days
+hour = hours = 60minutes
+day = days = 24hours
+year = years = 365day
 nothing #hide
 
 # This is forced by a prescribed time-dependent photosynthetically available radiation (PAR)
