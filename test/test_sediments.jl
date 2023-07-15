@@ -103,7 +103,7 @@ display_name(::InstantRemineralisation) = "Instant remineralisation"
                                               sediment_model))
 
                 if !(isa(sediment_model, SimpleMultiG) && isa(biogeochemistry, NutrientPhytoplanktonZooplanktonDetritus))
-                    @info "Testing sediment on $architecture with $timestepper and $(display_name(sediment_model)) on $(display_name(biogeochemistry))"
+                    @info "Testing sediment on $(typeof(architecture)) with $timestepper and $(display_name(sediment_model)) on $(display_name(biogeochemistry))"
                     @testset "$architecture, $timestepper, $(display_name(sediment_model)), $(display_name(biogeochemistry))" test_flat_sediment(grid, biogeochemistry; timestepper)
                 end
             end

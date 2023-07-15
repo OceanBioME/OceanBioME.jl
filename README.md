@@ -8,6 +8,7 @@
 [![GitHub tag (latest SemVer pre-release)](https://img.shields.io/github/v/tag/OceanBioME/OceanBioME.jl?include_prereleases&label=latest%20version&logo=github&sort=semver&style=flat-square)](https://github.com/OceanBioME/OceanBioME.jl/releases)
 
 [![Testing](https://github.com/OceanBioME/OceanBioME.jl/actions/workflows/tests.yml/badge.svg)](https://github.com/OceanBioME/OceanBioME.jl/actions/workflows/tests.yml)
+[![codecov](https://codecov.io/gh/OceanBioME/OceanBioME.jl/branch/main/graph/badge.svg?token=3DIW4R7N3R)](https://codecov.io/gh/OceanBioME/OceanBioME.jl)
 [![Documentation](https://github.com/OceanBioME/OceanBioME.jl/actions/workflows/documentation.yml/badge.svg)](https://github.com/OceanBioME/OceanBioME.jl/actions/workflows/documentation.yml)
 # *Ocean* *Bio*geochemical *M*odelling *E*nvironment
 
