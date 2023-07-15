@@ -71,9 +71,11 @@ model = NonhydrostaticModel(; grid,
 # Start with a bit of random noise added to the background thermal wind and an arbitary
 # biogeochemical state.
 
+Ξ(z) = randn() * z / grid.Lz * (z / grid.Lz + 1)
+
 Ũ = 1e-3
-uᵢ(x, y, z) = Ũ * randn()
-vᵢ(x, y, z) = Ũ * randn()
+uᵢ(x, y, z) = Ũ * Ξ(z)
+vᵢ(x, y, z) = Ũ * Ξ(z)
 
 set!(model, u=uᵢ, v=vᵢ, P = 0.03, Z = 0.03, NO₃ = 4.0, NH₄ = 0.05, DIC = 2200.0, Alk = 2409.0)
 
