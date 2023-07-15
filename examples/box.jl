@@ -14,9 +14,9 @@
 using OceanBioME
 
 const minute = minutes = 60
-const hour = hours = 60 * minutes
-const day = days = hours * 24  # define the length of a day in seconds
-const year = years = day * 365 # define the length of a year in days
+const hour = hours = 60minutes
+const day = days = 24hours
+const year = years = 365day
 nothing #hide
 
 # This is forced by a prescribed time-dependent photosynthetically available radiation (PAR)
