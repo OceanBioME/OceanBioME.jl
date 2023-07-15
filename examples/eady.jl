@@ -34,8 +34,10 @@ background_state_parameters = ( M = 1e-4,       # s⁻¹, geostrophic shear
                                 N = 1e-4,       # s⁻¹, buoyancy frequency
                                 H = grid.Lz )
 
-# Here, ``B`` is the background buoyancy field and ``V`` is the meridional velocity consistent with
-# the thermal wind relationship, that is, ``f \partial_z \boldsymbol{u} = \hat{\boldsymbol{z}} \times \boldsymbol{\nabla} b``.
+# We assume a background buoyancy ``B`` with a constant stratification and also a constant lateral
+# gradient (in the zonal direction). The background velocity components ``U`` and ``V`` are prescribed
+# so that the thermal wind relationship is satisfied, that is, ``f \partial_z U = - \partial_y B`` and
+# ``f \partial_z V = \partial_x B``.
 B(x, y, z, t, p) = p.M^2 * x + p.N^2 * (z + p.H)
 V(x, y, z, t, p) = p.M^2 / p.f * (z + p.H)
 
