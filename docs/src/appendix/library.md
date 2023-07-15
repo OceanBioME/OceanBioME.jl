@@ -1,10 +1,6 @@
-
-
-# Library
+# [Library](@id library_api)
 
 Documenting the user interface.
-
-> This page is currently broken and won't show most of the functions for some reason, any suggestions would be appreciated!
 
 ## OceanBioME.jl
 ```@autodocs

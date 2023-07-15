@@ -1,6 +1,6 @@
-"
+"""
 Integrate biogeochemical models on a single point
-"
+"""
 module BoxModels
 
 export BoxModel, run!, set!, SaveBoxModel
@@ -34,17 +34,17 @@ mutable struct BoxModel{B, V, FT, F, TS, C}
 end
 
 """
-    BoxModel(;biogeochemistry::B,
-              stop_time::FT = 0.0,
-              forcing = NamedTuple(),
-              timestepper::TS = RungeKutta3TimeStepper((required_biogeochemical_tracers(biogeochemistry)..., required_biogeochemical_auxiliary_fields(biogeochemistry)...)),
-              Δt::FT = 1.0,
-              clock::C = Clock(0.0, 0, 1))
+    BoxModel(; biogeochemistry::B,
+               stop_time::FT = 0.0,
+               forcing = NamedTuple(),
+               timestepper::TS = RungeKutta3TimeStepper((required_biogeochemical_tracers(biogeochemistry)..., required_biogeochemical_auxiliary_fields(biogeochemistry)...)),
+               Δt::FT = 1.0,
+               clock::C = Clock(0.0, 0, 1))
 
 Constructs a box model of a `biogeochemistry` model. Once this has been constructed you can set initial condiitons by `set!(model, X=1.0...)` and then `run!(model)`.
 
 Keyword Arguments 
-====================
+=================
 
 - `biogeochemistry`: (required) an OceanBioME biogeochemical model, most models must be passed a `grid` which can be set to `BoxModelGrid()` for box models
 - `stop_time`: end time of simulation
@@ -53,13 +53,12 @@ Keyword Arguments
 - `Δt`: time step length
 - `clock`: Oceananigans clock to keep track of time
 """
-
-function BoxModel(;biogeochemistry::B,
-                   stop_time::FT = 0.0,
-                   forcing = NamedTuple(),
-                   timestepper::TS = RungeKutta3TimeStepper((required_biogeochemical_tracers(biogeochemistry)..., required_biogeochemical_auxiliary_fields(biogeochemistry)...)),
-                   Δt::FT = 1.0,
-                   clock::C = Clock(0.0, 0, 1)) where {B, FT, TS, C}
+function BoxModel(; biogeochemistry::B,
+                    stop_time::FT = 0.0,
+                    forcing = NamedTuple(),
+                    timestepper::TS = RungeKutta3TimeStepper((required_biogeochemical_tracers(biogeochemistry)..., required_biogeochemical_auxiliary_fields(biogeochemistry)...)),
+                    Δt::FT = 1.0,
+                    clock::C = Clock(0.0, 0, 1)) where {B, FT, TS, C}
 
     variables = (required_biogeochemical_tracers(biogeochemistry)..., required_biogeochemical_auxiliary_fields(biogeochemistry)...)
     values = StructArray([NamedTuple{variables}(zeros(FT, length(variables)))])
@@ -95,18 +94,21 @@ end
 """
     run!(model::BoxModel; feedback_interval = 1000, save_interval = Inf, save = nothing)
 
-Run a box model
+Run a box model.
 
-Arguments: `model` - the `BoxModel` to solve
+Arguments
+=========
+
+- `model` - the `BoxModel` to solve
 
 Keyword Arguments
-==================
+=================
 
 - `feedback_interval`: how often (number of iterations) to display progress
 - `save_interval`: how often (number of iterations) to save output
 - `save`: `SaveBoxModel` object to specify how to save output
 
-TODO: should abstract out to simulation like Oceananians to add e.g. callbacks
+TODO: should abstract out to simulation like Oceananigans to add e.g. callbacks
 """
 function run!(model::BoxModel; feedback_interval = 10000, save_interval = Inf, save = nothing)
     itter = 0
@@ -128,8 +130,15 @@ end
 
 Set the `values` for a `BoxModel`
 
-Arguments: `model` - the model to set the arguments for
-Keyword Arguments: variable and value pairs to set
+Arguments
+=========
+
+- `model` - the model to set the arguments for
+
+Keyword Arguments
+==================
+
+- variables and value pairs to set
 """
 function set!(model::BoxModel; kwargs...)
     for (fldname, value) in kwargs
@@ -147,7 +156,10 @@ end
 
 Construct object to save box model outputs at `filepath`.
 
-Arguments: `filepath` - path to save results to
+Arguments
+=========
+
+- `filepath` - path to save results to
 """
 struct SaveBoxModel{FP, F}
     filepath :: FP

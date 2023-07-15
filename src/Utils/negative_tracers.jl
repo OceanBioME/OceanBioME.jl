@@ -4,7 +4,7 @@ using KernelAbstractions.Extras.LoopInfo: @unroll
 using Oceananigans.Utils: work_layout
 using Oceananigans.Architectures: device
 
-import Adapt: adapt_structure
+import Adapt: adapt_structure, adapt
 
 """
     zero_negative_tracers!(sim; params = (exclude=(), ))
@@ -13,9 +13,12 @@ Sets any tracers in `sim.model` which are negative to zero. Use like:
 ```julia
 simulation.callbacks[:neg] = Callback(zero_negative_tracers!)
 ```
-This is *NOT* a recommended method to preserve positivity as it strongly does not conserve tracers.
 
 Tracers to exclude can be set in the parameters.
+
+!!! danger "Tracer conservation"
+    This method is _not_ recommended as a way to preserve positivity of tracers since
+    it does not conserve the total tracer.
 """
 function zero_negative_tracers!(model; params = (exclude=(), ))
     @unroll for (tracer_name, tracer) in pairs(model.tracers)
@@ -87,6 +90,8 @@ end
         else
             field = 0
         end
+
+        @inbounds fields[tracer][i, j, k] = field
     end
 end
 
@@ -95,27 +100,28 @@ struct ScaleNegativeTracers{FA, SA, W}
     scalefactors :: SA
     warn :: W
 
-    function ScaleNegativeTracers(tracers::FA, scalefactors::SA, warn::W) where {FA, SA, W}
-        return new{FA, SA, W}(tracers, scalefactors, warn)
-    end
+    ScaleNegativeTracers(tracers::FA, scalefactors::SA, warn::W) where {FA, SA, W} =
+        new{FA, SA, W}(tracers, scalefactors, warn)
 end
 
-adapt_structure(to, snt::ScaleNegativeTracers) = ScaleNegativeTracers(adapt_structure(to, snt.tracers),
-                                                                      adapt_structure(to, snt.scalefactors),
-                                                                      adapt_structure(to, snt.warn))
+adapt_structure(to, snt::ScaleNegativeTracers) = ScaleNegativeTracers(adapt(to, snt.tracers),
+                                                                      adapt(to, snt.scalefactors),
+                                                                      adapt(to, snt.warn))
 
 """
     ScaleNegativeTracers(; tracers, scalefactors = ones(length(tracers)), warn = false)
 
 Returns a callback that scales `tracers` so that none are negative. Use like:
 ```julia
-negativity_protection! = ScaleNegativeTracers(tracers = (:P, :Z, :N))
+negativity_protection! = ScaleNegativeTracers(; model, tracers = (:P, :Z, :N))
 simulation.callbacks[:neg] = Callback(negativity_protection!; callsite = UpdateStateCallsite())
 ```
-This is a better but imperfect way to prevent numerical errors causing negative tracers. Please see discussion [here](https://github.com/OceanBioME/OceanBioME.jl/discussions/48). 
-We plan to impliment positivity preserving timestepping in the future as the perfect alternative.
-"""
+This method is better, though still imperfect, method to prevent numerical errors that lead to
+negative tracer values compared to [`zero_negative_tracers!`](@ref). Please see [discussion in
+github](https://github.com/OceanBioME/OceanBioME.jl/discussions/48).
 
+Future plans include implement a positivity-preserving timestepping scheme as the ideal alternative.
+"""
 function ScaleNegativeTracers(; model, tracers, scalefactors = NamedTuple{tracers}(ones(length(tracers))), warn = false)
     if length(scalefactors) != length(tracers)
         error("Incorrect number of scale factors provided")
@@ -129,9 +135,9 @@ end
 
 @inline function (scale::ScaleNegativeTracers)(model)
     workgroup, worksize = work_layout(model.grid, :xyz)
-    scale_for_negs_kernel! = scale_for_negs!(device(model.grid.architecture), workgroup, worksize)
-    event = scale_for_negs_kernel!(values(model.tracers), scale.tracers, scale.scalefactors)
-    wait(event)
+    dev = device(model.grid.architecture)
+    scale_for_negs_kernel! = scale_for_negs!(dev, workgroup, worksize)
+    scale_for_negs_kernel!(values(model.tracers), scale.tracers, scale.scalefactors)
 end
 @inline (scale::ScaleNegativeTracers)(sim::Simulation) = scale(sim.model) 
 
@@ -139,7 +145,7 @@ end
     i, j, k = @index(Global, NTuple)
     for field in fields
         if @inbounds isnan(field[i, j, k])
-            field[i, j, k] = 0.0
+            @inbounds field[i, j, k] = 0.0
         end
     end
 end
@@ -152,6 +158,7 @@ Zeros any `NaN` value tendencies as a final protection against negative tracer r
 @inline function remove_NaN_tendencies!(model)
     workgroup, worksize = work_layout(model.grid, :xyz)
     remove_NaN_tendencies_kernel! = _remove_NaN_tendencies!(device(model.grid.architecture), workgroup, worksize)
-    event = remove_NaN_tendencies_kernel!(values(model.timestepper.Gⁿ))
-    wait(event)
+    remove_NaN_tendencies_kernel!(values(model.timestepper.Gⁿ))
+
+    return nothing
 end

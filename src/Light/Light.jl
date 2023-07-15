@@ -1,15 +1,16 @@
-"
-Light attenuation by chlorophyll as described by [Karleskind2011](@cite) (implimented as twoBand) and [Morel1988](@cite).
-"
+"""
+Light attenuation by chlorophyll as described by [Karleskind2011](@cite) (implemented as twoBand) and [Morel1988](@cite).
+"""
 module Light
-export TwoBandPhotosyntheticallyActiveRatiation, update_PAR!
+
+export TwoBandPhotosyntheticallyActiveRadiation, update_PAR!
 
 using KernelAbstractions
 using KernelAbstractions.Extras.LoopInfo: @unroll
 using Oceananigans.Architectures: device, architecture
 using Oceananigans.Utils: launch!
 using Oceananigans: Center, Face, fields
-using Oceananigans.Grids: xnode, ynode, znodes
+using Oceananigans.Grids: node, znodes
 using Oceananigans.Fields: CenterField, TracerFields
 using Oceananigans.BoundaryConditions: fill_halo_regions!, 
                                        ValueBoundaryCondition, 
@@ -18,7 +19,7 @@ using Oceananigans.BoundaryConditions: fill_halo_regions!,
                                        ContinuousBoundaryFunction
 using Oceananigans.Units
 
-import Adapt: adapt_structure
+import Adapt: adapt_structure, adapt
 import Base: show, summary
 
 import Oceananigans.Biogeochemistry: biogeochemical_auxiliary_fields

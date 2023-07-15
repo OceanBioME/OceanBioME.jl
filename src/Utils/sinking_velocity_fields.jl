@@ -2,7 +2,7 @@ using Oceananigans.Fields: ZFaceField, AbstractField
 using Oceananigans.Forcings: maybe_constant_field
 using Oceananigans.Grids: AbstractGrid
 
-import Adapt: adapt_structure
+import Adapt: adapt_structure, adapt
 
 function setup_velocity_fields(drift_speeds, grid::AbstractGrid, open_bottom; smoothing_distance = 2)
     drift_velocities = []
@@ -26,17 +26,23 @@ end
 
 setup_velocity_fields(drift_speeds, grid::BoxModelGrid, open_bottom) = drift_speeds
 
-adapt_structure(to, velocities::NamedTuple{(:u, :v, :w), Tuple{AbstractField, AbstractField, AbstractField}}) = NamedTuple{(:u, :v, :w)}(adapt_structure.(to, values(velocities)))
+adapt_structure(to, velocities::NamedTuple{(:u, :v, :w), Tuple{AbstractField, AbstractField, AbstractField}}) = NamedTuple{(:u, :v, :w)}(adapt.(to, values(velocities)))
 
 function show_sinking_velocities(sinking_velocities::NamedTuple{T, V}) where {T, V} 
     str = ""
     if length(T) == 1
-        str = "    └── $(T[1]): $(maximum(sinking_velocities[1].w)) to $(minimum(sinking_velocities[1].w)) m/s"
+        str = "    └── $(T[1]): $(maximum_sinking(sinking_velocities[1])) to $(minimum_sinking(sinking_velocities[1])) m/s"
     else
         for idx in 1:length(T) - 1
-            str *= "    ├── $(T[idx]): $(maximum(sinking_velocities[idx].w)) to $(minimum(sinking_velocities[idx].w)) m/s \n"
+            str *= "    ├── $(T[idx]): $(maximum_sinking(sinking_velocities[idx])) to $(minimum_sinking(sinking_velocities[idx])) m/s \n"
         end
-        str *= "    └── $(T[end]): $(maximum(sinking_velocities[end].w)) to $(minimum(sinking_velocities[end].w)) m/s"
+        str *= "    └── $(T[end]): $(maximum_sinking(sinking_velocities[end])) to $(minimum_sinking(sinking_velocities[end])) m/s"
     end
     return str
 end
+
+maximum_sinking(velocity) = maximum(velocity)
+minimum_sinking(velocity) = minimum(velocity)
+
+maximum_sinking(velocity::NamedTuple) = maximum(velocity.w)
+minimum_sinking(velocity::NamedTuple) = minimum(velocity.w)

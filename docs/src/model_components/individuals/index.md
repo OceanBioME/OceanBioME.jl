@@ -23,7 +23,7 @@ You then need to overload particular functions to integrate the growth, so they 
 
 ```@example particles
 import Oceananigans.Biogeochemistry: update_tendencies!
-import Oceananigans.LagrangianParticleTracking: update_particle_properties!, _advect_particles!
+import Oceananigans.Models.LagrangianParticleTracking: update_lagrangian_particle_properties!, _advect_particles!
 ```
 
 First, to integrate the particles properties we overload `update_particle_properties`, in this fictitious case we will have a Mondo-quota nutrient uptake and growth:
@@ -31,7 +31,7 @@ First, to integrate the particles properties we overload `update_particle_proper
 ```@example particles
 using Oceananigans.Fields: interpolate
 
-function update_particle_properties!(particles::GrowingParticles, model, bgc, Δt)
+function update_lagrangian_particle_properties!(particles::GrowingParticles, model, bgc, Δt)
     @inbounds for p in 1:length(particles)
         nutrients = @inbounds interpolate(model.tracers.NO₃, particle.x[p], particle.y[p], particle.z[p])
 

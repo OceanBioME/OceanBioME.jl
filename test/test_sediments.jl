@@ -1,4 +1,5 @@
 using OceanBioME, Oceananigans, Test, JLD2
+
 using OceanBioME.Sediments: SimpleMultiG
 using Oceananigans.Units
 
@@ -73,7 +74,7 @@ end
 @testset "Sediment" begin
     for arch in (CPU(), )
         for timestepper in (:QuasiAdamsBashforth2, :RungeKutta3)
-            @info "Testing sediment on $arch with $timestepper"
+            @info "Testing sediment on $(typeof(arch)) with $timestepper"
             @testset "$arch, $timestepper" test_flat_sediment(arch; timestepper)
         end
     end

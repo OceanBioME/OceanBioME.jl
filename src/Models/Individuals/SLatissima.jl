@@ -16,6 +16,7 @@ Optionally:
 * Ammonia: NH₄ (mmol N/m³)
 """ 
 module SLatissimaModel
+
 using Roots, KernelAbstractions
 using OceanBioME.Particles: BiogeochemicalParticles, get_node
 using Oceananigans.Units
@@ -29,9 +30,9 @@ using Oceananigans.Operators: volume
 using Oceananigans.Grids: AbstractGrid
 using Oceananigans.Fields: fractional_indices, _interpolate, datatuple
 
-import Adapt: adapt_structure
+import Adapt: adapt_structure, adapt
 import Oceananigans.Biogeochemistry: update_tendencies!
-import Oceananigans.LagrangianParticleTracking: update_particle_properties!, _advect_particles!
+import Oceananigans.Models.LagrangianParticleTracking: update_lagrangian_particle_properties!, _advect_particles!
 
 @inline no_dynamics(args...) = nothing
 
@@ -110,7 +111,7 @@ import Oceananigans.LagrangianParticleTracking: update_particle_properties!, _ad
                  scalefactor :: FT = 1.0
                  latitude :: FT = 57.5)
 
-Keywork Arguments
+Keyword Arguments
 ===================
 
 - `architecture`: the architecture to adapt arrays to
@@ -198,11 +199,6 @@ Base.@kwdef struct SLatissima{AR, FT, U, T, S, P, F} <: BiogeochemicalParticles
     latitude :: FT = 57.5
 end
 
-# for some reason this doesn't get called, 
-# but if you manually call `adapt_structure(CuArray, particles::SLatissima)` 
-# it returns a GPU friendly version. To automagically overcome this I'm `arch_array`ing 
-# above but that does necessitate passing the grid to the particles
-# weird thing is this is definitly getting called a some point, but not with the correct `to`.
 adapt_structure(to, kelp::SLatissima) = SLatissima(kelp.architecture,
                                                    kelp.growth_rate_adjustement, 
                                                    kelp.photosynthetic_efficiency,
@@ -251,18 +247,18 @@ adapt_structure(to, kelp::SLatissima) = SLatissima(kelp.architecture,
                                                    kelp.pescribed_velocity,
                                                    kelp.pescribed_temperature,
                                                    kelp.pescribed_salinity,
-                                                   adapt_structure(to, kelp.x),
-                                                   adapt_structure(to, kelp.y),
-                                                   adapt_structure(to, kelp.z),
-                                                   adapt_structure(to, kelp.A),
-                                                   adapt_structure(to, kelp.N),
-                                                   adapt_structure(to, kelp.C),
-                                                   adapt_structure(to, kelp.nitrate_uptake),
-                                                   adapt_structure(to, kelp.ammonia_uptake),
-                                                   adapt_structure(to, kelp.primary_production),
-                                                   adapt_structure(to, kelp.frond_exudation),
-                                                   adapt_structure(to, kelp.nitrogen_erosion),
-                                                   adapt_structure(to, kelp.carbon_erosion),
+                                                   adapt(to, kelp.x),
+                                                   adapt(to, kelp.y),
+                                                   adapt(to, kelp.z),
+                                                   adapt(to, kelp.A),
+                                                   adapt(to, kelp.N),
+                                                   adapt(to, kelp.C),
+                                                   adapt(to, kelp.nitrate_uptake),
+                                                   adapt(to, kelp.ammonia_uptake),
+                                                   adapt(to, kelp.primary_production),
+                                                   adapt(to, kelp.frond_exudation),
+                                                   adapt(to, kelp.nitrogen_erosion),
+                                                   adapt(to, kelp.carbon_erosion),
                                                    kelp.custom_dynamics,
                                                    kelp.scalefactor,
                                                    kelp.latitude)
@@ -273,8 +269,7 @@ function update_tendencies!(bgc, particles::SLatissima, model)
     worksize = num_particles
 
     update_tracer_tendencies_kernal! = update_tracer_tendencies!(device(model.architecture), workgroup, worksize)
-    update_tracer_tendencies_event = update_tracer_tendencies_kernal!(bgc, particles, model.timestepper.Gⁿ, model.grid)
-    wait(update_tracer_tendencies_event)
+    update_tracer_tendencies_kernal!(bgc, particles, model.timestepper.Gⁿ, model.grid)
 end
 
 @kernel function update_tracer_tendencies!(bgc, p, tendencies, grid::AbstractGrid{FT, TX, TY, TZ}) where {FT, TX, TY, TZ}
@@ -286,19 +281,17 @@ end
 
     bgc_tracers = required_biogeochemical_tracers(bgc)
 
-    #nodes, weights, normfactor = @inbounds get_nearest_nodes(x, y, z, grid, (Center(), Center(), Center()))
-
-    #@unroll for (n, weight) in enumerate(weights)
-        # Reflect back on Bounded boundaries or wrap around for Periodic boundaries
     i, j, k = fractional_indices(x, y, z, (Center(), Center(), Center()), grid)
 
-    # Convert fractional indices to unit cell coordinates 0 <= (ξ, η, ζ) <=1
+    # Convert fractional indices to unit cell coordinates 0 ≤ (ξ, η, ζ) ≤ 1
     # and integer indices (with 0-based indexing).
     ξ, i = modf(i)
     η, j = modf(j)
     ζ, k = modf(k)
 
-    i, j, k = (get_node(TX(), Int(ifelse(ξ < 0.5, i + 1, i + 2)), grid.Nx), get_node(TY(), Int(ifelse(η < 0.5, j + 1, j + 2)), grid.Ny), get_node(TZ(), Int(ifelse(ζ < 0.5, k + 1, k + 2)), grid.Nz))
+    i, j, k = (get_node(TX(), Int(ifelse(ξ < 0.5, i + 1, i + 2)), grid.Nx),
+               get_node(TY(), Int(ifelse(η < 0.5, j + 1, j + 2)), grid.Ny),
+               get_node(TZ(), Int(ifelse(ζ < 0.5, k + 1, k + 2)), grid.Nz))
 
     node_volume = volume(i, j, k, grid, Center(), Center(), Center())
 
@@ -335,7 +328,7 @@ end
     end
 end
 
-function update_particle_properties!(particles::SLatissima, model, bgc, Δt)
+function update_lagrangian_particle_properties!(particles::SLatissima, model, bgc, Δt)
     workgroup = min(length(particles), 256)
     worksize = length(particles)
 
@@ -344,24 +337,20 @@ function update_particle_properties!(particles::SLatissima, model, bgc, Δt)
     # Advect particles
     advect_particles_kernel! = _advect_particles!(device(arch), workgroup, worksize)
 
-    advect_particles_event = advect_particles_kernel!((x = particles.x, y = particles.y, z = particles.z), 
-                                                      1.0, model.grid, Δt,
-                                                      datatuple(model.velocities),
-                                                      dependencies=Event(device(arch)))
+    advect_particles_kernel!((x = particles.x, y = particles.y, z = particles.z), 
+                             1.0, model.grid, Δt,
+                             datatuple(model.velocities))
 
-    wait(device(arch), advect_particles_event)
 
-    update_particle_properties_kernel! = _update_particle_properties!(device(arch), workgroup, worksize)
+    update_particle_properties_kernel! = _update_lagrangian_particle_properties!(device(arch), workgroup, worksize)
 
-    update_particle_properties_event = update_particle_properties_kernel!(particles, bgc, model, Δt,
-                                                                          dependencies=Event(device(arch)))
-
-    wait(device(arch), update_particle_properties_event)
+    update_particle_properties_kernel!(particles, bgc, model.grid, 
+                                       model.velocities, model.tracers, model.clock, Δt)
 
     particles.custom_dynamics(particles, model, bgc, Δt)
 end
 
-@kernel function _update_particle_properties!(p, bgc, model, Δt)
+@kernel function _update_lagrangian_particle_properties!(p, bgc, grid, velocities, tracers, clock, Δt)
     idx = @index(Global)
 
     @inbounds begin
@@ -374,10 +363,10 @@ end
         C = p.C[idx]
     end
 
-    t = model.clock.time
+    t = clock.time
 
-    @inbounds if p.A[idx] > 0.0
-        NO₃, NH₄, PAR, u, T, S = get_arguments(x, y, z, t, p, bgc, model)
+    @inbounds if p.A[idx] > 0
+        NO₃, NH₄, PAR, u, T, S = get_arguments(x, y, z, t, p, bgc, grid, velocities, tracers)
 
         photo = photosynthesis(T, PAR, p)
         e = exudation(C, p)
@@ -385,15 +374,15 @@ end
 
         fᶜ = f_curr(u, p)
 
-        j_NO₃ = max(0.0, p.maximum_ammonia_uptake * fᶜ * ((p.maximum_nitrogen_reserve - N) /
-                         (p.maximum_nitrogen_reserve - p.minimum_nitrogen_reserve)) * NO₃ / 
-                         (p.nitrate_half_saturation + NO₃))
+        j_NO₃ = max(0, p.maximum_ammonia_uptake * fᶜ * ((p.maximum_nitrogen_reserve - N) /
+                       (p.maximum_nitrogen_reserve - p.minimum_nitrogen_reserve)) * NO₃ /
+                       (p.nitrate_half_saturation + NO₃))
 
-        j̃_NH₄ = max(0.0, p.maximum_ammonia_uptake * fᶜ * NH₄ / (p.ammonia_half_saturation + NH₄))
+        j̃_NH₄ = max(0, p.maximum_ammonia_uptake * fᶜ * NH₄ / (p.ammonia_half_saturation + NH₄))
 
         μ_NH₄ = j̃_NH₄ / (p.structural_dry_weight_per_area * (N + p.structural_nitrogen))
         μ_NO₃ = 1 - p.minimum_nitrogen_reserve / N
-        μ_C = 1 - p.minimum_carbon_reserve / C
+        μ_C   = 1 - p.minimum_carbon_reserve / C
 
         n = floor(Int, mod(t, 364days) / day)
         λ = normed_day_length_change(n, p.latitude)
@@ -450,7 +439,6 @@ end
         end
     end
 end
-
 
 @inline function photosynthesis(T, PAR, p)
     Tk = T + 273.15
@@ -519,12 +507,12 @@ end
 
 @inline normed_day_length_change(n, ϕ) = (day_length(n, ϕ) - day_length(n - 1, ϕ)) / (day_length(76, ϕ) - day_length(75, ϕ))
 
+@inline function get_arguments(x, y, z, t, particles, bgc, grid, velocities, tracers)
 
-@inline function get_arguments(x, y, z, t, particles, bgc, model)
     bgc_tracers = required_biogeochemical_tracers(bgc)
     auxiliary_fields = biogeochemical_auxiliary_fields(bgc)
 
-    i, j, k = fractional_indices(x, y, z, (Center(), Center(), Center()), model.grid)
+    i, j, k = fractional_indices(x, y, z, (Center(), Center(), Center()), grid)
 
     ξ, i = modf(i)
     η, j = modf(j)
@@ -532,19 +520,19 @@ end
 
     # TODO: ADD ALIASING/RENAMING OF TRACERS SO WE CAN USE E.G. N IN STEAD OF NO3
 
-    NO₃ = _interpolate(model.tracers.NO₃, ξ, η, ζ, Int(i+1), Int(j+1), Int(k+1))
+    NO₃ = _interpolate(tracers.NO₃, ξ, η, ζ, Int(i+1), Int(j+1), Int(k+1))
     PAR = _interpolate(auxiliary_fields.PAR, ξ, η, ζ, Int(i+1), Int(j+1), Int(k+1)) * day / (3.99e-10 * 545e12) # W / m² / s to einstein / m² / day
 
     if :NH₄ in bgc_tracers
-        NH₄ = _interpolate(model.tracers.NH₄, ξ, η, ζ, Int(i+1), Int(j+1), Int(k+1))
+        NH₄ = _interpolate(tracers.NH₄, ξ, η, ζ, Int(i+1), Int(j+1), Int(k+1))
     else
         NH₄ = 0.0
     end
 
     if isnothing(particles.pescribed_velocity)
-        u =  sqrt(_interpolate(model.velocities.u, ξ, η, ζ, Int(i+1), Int(j+1), Int(k+1)) .^ 2 + 
-                  _interpolate(model.velocities.v, ξ, η, ζ, Int(i+1), Int(j+1), Int(k+1)) .^ 2 + 
-                  _interpolate(model.velocities.w, ξ, η, ζ, Int(i+1), Int(j+1), Int(k+1)) .^ 2)
+        u =  sqrt(_interpolate(velocities.u, ξ, η, ζ, Int(i+1), Int(j+1), Int(k+1)) .^ 2 + 
+                  _interpolate(velocities.v, ξ, η, ζ, Int(i+1), Int(j+1), Int(k+1)) .^ 2 + 
+                  _interpolate(velocities.w, ξ, η, ζ, Int(i+1), Int(j+1), Int(k+1)) .^ 2)
     elseif isa(particles.pescribed_velocity, Number)
         u = particles.pescribed_velocity
     else
@@ -552,7 +540,7 @@ end
     end
 
     if isnothing(particles.pescribed_temperature)
-        T = _interpolate(model.tracers.T, ξ, η, ζ, Int(i+1), Int(j+1), Int(k+1))
+        T = _interpolate(tracers.T, ξ, η, ζ, Int(i+1), Int(j+1), Int(k+1))
     elseif isa(particles.pescribed_temperature, Number)
         T = particles.pescribed_temperature
     else
@@ -568,4 +556,5 @@ end
 
     return NO₃, NH₄, PAR, u, T, S
 end
-end
+
+end #module

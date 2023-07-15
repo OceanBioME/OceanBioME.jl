@@ -1,6 +1,8 @@
 module Budget
+
 using OceanBioME
 using Oceananigans.Operators: Vᶜᶜᶜ
+
 function calculate_budget(model, sediment, tracers)
     budget = 0.0
     for tracer in tracers
@@ -56,4 +58,5 @@ function calculate_C_budget(results, grid, bgc_model, sediment)
     end
     return budget
 end
-end#module
+
+end #module

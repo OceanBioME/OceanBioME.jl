@@ -1,11 +1,14 @@
 ![](OceanBioME_headerbar.jpg?raw=true)
-[![Documentaiton](https://img.shields.io/badge/documentation-stable%20release-blue?style=flat-square)](https://oceanbiome.github.io/OceanBioME.jl/dev/)
+[![Documentation](https://img.shields.io/badge/documentation-stable%20release-blue?style=flat-square)](https://oceanbiome.github.io/OceanBioME.jl/stable/)
+[![Documentation](https://img.shields.io/badge/documentation-dev%20release-orange?style=flat-square)](https://oceanbiome.github.io/OceanBioME.jl/dev/)
 [![MIT license](https://img.shields.io/badge/License-MIT-blue.svg?style=flat-square)](https://mit-license.org)
+[![status](https://joss.theoj.org/papers/f991f4a8f0fc5ab1aba3dd1ac51f20bd/status.svg)](https://joss.theoj.org/papers/f991f4a8f0fc5ab1aba3dd1ac51f20bd)
 [![ColPrac: Contributor's Guide on Collaborative Practices for Community Packages](https://img.shields.io/badge/ColPrac-Contributor's%20Guide-blueviolet)](https://github.com/SciML/ColPrac)
 [![Ask us anything: discussion](https://img.shields.io/badge/Ask%20us-anything-1abc9c.svg?style=flat-square)](https://github.com/OceanBioME/OceanBioME.jl/discussions)
 [![GitHub tag (latest SemVer pre-release)](https://img.shields.io/github/v/tag/OceanBioME/OceanBioME.jl?include_prereleases&label=latest%20version&logo=github&sort=semver&style=flat-square)](https://github.com/OceanBioME/OceanBioME.jl/releases)
 
 [![Testing](https://github.com/OceanBioME/OceanBioME.jl/actions/workflows/tests.yml/badge.svg)](https://github.com/OceanBioME/OceanBioME.jl/actions/workflows/tests.yml)
+[![codecov](https://codecov.io/gh/OceanBioME/OceanBioME.jl/branch/main/graph/badge.svg?token=3DIW4R7N3R)](https://codecov.io/gh/OceanBioME/OceanBioME.jl)
 [![Documentation](https://github.com/OceanBioME/OceanBioME.jl/actions/workflows/documentation.yml/badge.svg)](https://github.com/OceanBioME/OceanBioME.jl/actions/workflows/documentation.yml)
 # *Ocean* *Bio*geochemical *M*odelling *E*nvironment
 
@@ -44,11 +47,7 @@ bᵢ(x, y, z) = ifelse(x < 250, 1e-4, 1e-3)
 
 set!(model, b = bᵢ, N = 5.0, P = 0.1, Z = 0.1, T = 18.0)
 
-simulation = Simulation(model; Δt = 1.0, stop_time = 3hours)
-
-wizard = TimeStepWizard(cfl = 0.3, max_change = 1.5)
-
-simulation.callbacks[:wizard] = Callback(wizard, IterationInterval(5))
+simulation = Simulation(model; Δt = 2.0, stop_time = 3hours)
 
 simulation.output_writers[:tracers] = JLD2OutputWriter(model, model.tracers,
                                                        filename = "buoyancy_front.jld2",
@@ -62,8 +61,6 @@ run!(simulation)
 <summary>We can then visualise this:</summary>
 
 ```julia
-using CairoMakie
-
 b = FieldTimeSeries("buoyancy_front.jld2", "b")
 P = FieldTimeSeries("buoyancy_front.jld2", "P")
 
@@ -71,6 +68,8 @@ xb, yb, zb = nodes(b)
 xP, yP, zP = nodes(P)
 
 times = b.times
+
+using CairoMakie
 
 n = Observable(1)
 
@@ -89,8 +88,8 @@ axis_kwargs = (xlabel = "x (m)", ylabel = "z (m)", width = 970)
 ax1 = Axis(fig[1, 1]; title = "Buoyancy perturbation (m / s)", axis_kwargs...)
 ax2 = Axis(fig[2, 1]; title = "Phytoplankton concentration (mmol N / m³)", axis_kwargs...)
 
-hm1 = heatmap!(ax1, xb, zb, bₙ, colorrange = b_lims, colormap = :batlow, interpolate=true)
-hm2 = heatmap!(ax2, xP, zP, Pₙ, colorrange = P_lims, colormap = Reverse(:bamako), interpolate=true)
+hm1 = heatmap!(ax1, xb, zb, bₙ, colorrange = b_lims, colormap = :batlow)
+hm2 = heatmap!(ax2, xP, zP, Pₙ, colorrange = P_lims, colormap = Reverse(:bamako))
 
 Colorbar(fig[1, 2], hm1)
 Colorbar(fig[2, 2], hm2)
@@ -105,6 +104,16 @@ end
 ![buoyancy_front](https://github.com/OceanBioME/OceanBioME.jl/assets/7112768/84f7f712-5648-4293-be18-608a4a3413ba)
 
 In this example `OceanBioME` is providing the `biogeochemistry` and the remainder is taken care of by `Oceananigans`. For comprehensive documentation of the physics modelling see [Oceananigans' Documentation](https://clima.github.io/OceananigansDocumentation/stable/), and for biogeochemistry and other features we provide read below.
+
+## Using GPU
+
+To run the same example on the GPU we just need to construct the `grid` on the GPU; the rest is taken care of!
+
+Just replace `CPU()` with `GPU()` in the grid construction with everything else left unchanged:
+
+```julia
+grid = RectilinearGrid(GPU(), size=(256, 32), extent=(500meters, 100meters), topology=(Bounded, Flat, Bounded))
+```
 
 ## Documentation
 

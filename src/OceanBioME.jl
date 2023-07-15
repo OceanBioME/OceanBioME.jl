@@ -1,3 +1,7 @@
+"""
+A fast and flexible modelling environment for modelling the coupled interactions
+between ocean biogeochemistry, carbonate chemistry, and physics.
+"""
 module OceanBioME
 
 # Biogeochemistry models
@@ -13,13 +17,13 @@ export BoxModel, BoxModelGrid, SaveBoxModel, run!, set!
 export Particles
 
 # Light models
-export TwoBandPhotosyntheticallyActiveRatiation, update_PAR!
+export TwoBandPhotosyntheticallyActiveRadiation, update_PAR!
 
 # Boundaries
 export Boundaries, Sediments, GasExchange, FlatSediment
 
 # Utilities
-export column_advection_timescale, column_diffusion_timescale, sinking_adveciton_timescale, Budget
+export column_advection_timescale, column_diffusion_timescale, sinking_advection_timescale, Budget
 
 # Positivity preservaiton utilities
 export zero_negative_tracers!, error_on_neg!, warn_on_neg!, ScaleNegativeTracers, remove_NaN_tendencies!
@@ -30,8 +34,6 @@ export ColumnField, isacolumn
 using Oceananigans.Biogeochemistry: AbstractContinuousFormBiogeochemistry
 
 abstract type ContinuousFormBiogeochemistry{LA, S, P} <: AbstractContinuousFormBiogeochemistry end
-
-@inline get_local_value(i, j, k, C) = size(C)[3] == 1 ? C[i, j, 1] : C[i, j, k] #for getting 2D field values
 
 struct BoxModelGrid end
 
@@ -51,4 +53,4 @@ using .LOBSTERModel
 using .NPZDModel
 import .SLatissimaModel.SLatissima
 
-end
+end #module
