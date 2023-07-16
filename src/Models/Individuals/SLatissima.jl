@@ -1,18 +1,19 @@
 """
-Sugar kelp model of [Broch2012](@cite) and updated by [Broch2013](@cite), [Fossberg2018](@cite), and [Broch2019](@cite).
+Sugar kelp model of [Broch2012](@citet) and updated by [Broch2013](@citet), [Fossberg2018](@citet), and [Broch2019](@citet).
 
 Prognostic properties
-===============
+=====================
 * Area: A (dm²)
 * Nitrogen reserve: N (gN/gSW)
 * Carbon reserve: C (gC/gSW)
 
 Tracer dependencies
-==============
+===================
 * Nitrates: NO₃ (mmol N/m³)
 * Photosynthetically available radiation: PAR (einstein/m²/day)
 
-Optionally:
+Optional
+========
 * Ammonia: NH₄ (mmol N/m³)
 """ 
 module SLatissimaModel
@@ -268,8 +269,10 @@ function update_particles_tendencies!(bgc, particles::SLatissima, model)
     workgroup = min(num_particles, 256)
     worksize = num_particles
 
-    update_tracer_tendencies_kernal! = update_tracer_tendencies!(device(model.architecture), workgroup, worksize)
-    update_tracer_tendencies_kernal!(bgc, particles, model.timestepper.Gⁿ, model.grid)
+    update_tracer_tendencies_kernel! = update_tracer_tendencies!(device(model.architecture), workgroup, worksize)
+    update_tracer_tendencies_kernel!(bgc, particles, model.timestepper.Gⁿ, model.grid)
+
+    return nothing
 end
 
 @kernel function update_tracer_tendencies!(bgc, p, tendencies, grid::AbstractGrid{FT, TX, TY, TZ}) where {FT, TX, TY, TZ}
@@ -413,7 +416,7 @@ end
             C_new = p.minimum_carbon_reserve
             N_new += p.structural_nitrogen * (p.minimum_carbon_reserve - C) / p.structural_carbon
         end
-        
+
         if N_new < p.minimum_nitrogen_reserve
             A_new *= (1 - (p.minimum_nitrogen_reserve - N) / p.structural_nitrogen)
             N_new = p.minimum_nitrogen_reserve

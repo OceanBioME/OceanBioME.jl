@@ -1,6 +1,6 @@
 # [Air-sea gas exchange](@id air-sea-gas)
 
-We currently have one air-sea gas exchange model implemented. The model, proposed by [Wanninkhof1992](@cite), calculates the solubility of the gas in the water dependent on the temperature and salinity, and calculates the flux depending on the solubility and mixing from the wind.
+We currently have one air-sea gas exchange model implemented. The model, proposed by [Wanninkhof1992](@citet), calculates the solubility of the gas in the water dependent on the temperature and salinity, and calculates the flux depending on the solubility and mixing from the wind.
 
 Currently, the parameters for CO₂ and oxygen are included, but it would be very straightforward to add the parameters given in the original publication for other gases (e.g. inert tracers of other nutrients such as N₂). We also currently have a very simple formulation of the gas transfer velocity which depends on an average wind speed, but it would straightforwardly be expanded to permit variable wind speed (e.g. to simulate enhanced exchange from storms).
 

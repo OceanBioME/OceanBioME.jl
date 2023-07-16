@@ -3,7 +3,7 @@
 # In this example we setup a 3D model with a constant background buoyancy gradient with associated 
 # thermal wind (the [Eady model](https://en.wikipedia.org/wiki/Eady_model)) with the [LOBSTER](@ref LOBSTER)
 # biogeochemical model. This demonstrates how to use biogeochemistry in a more complicated physical model.
-# The parameters in this example correspond roughly to those used by [taylor2016](@cite) and lead to the
+# The parameters in this example correspond roughly to those used by [taylor2016](@citet) and lead to the
 # generation of a single submesoscale eddy.
 
 # ## Install dependencies
