@@ -18,7 +18,9 @@ Where the symbol specifies the exchanged gas (currently `:CO₂` or `:O₂`). Th
 ```jldoctest gasexchange
 julia> using Oceananigans
 
-julia> model = NonhydrostaticModel(; grid = RectilinearGrid(size=(3, 3, 30), extent=(10, 10, 200)),
+julia> grid = RectilinearGrid(size=(3, 3, 30), extent=(10, 10, 200));
+
+julia> model = NonhydrostaticModel(; grid,
                                      biogeochemistry = LOBSTER(; grid, carbonates = true),
                                      boundary_conditions = (DIC = FieldBoundaryConditions(top = CO₂_flux), ))
 NonhydrostaticModel{CPU, RectilinearGrid}(time = 0 seconds, iteration = 0)
