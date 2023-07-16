@@ -167,7 +167,7 @@ end
 
 deploydocs(
     repo = "github.com/OceanBioME/OceanBioME.jl",
-    versions = ["stable" => "v^", "v#.#.#", "dev" => "dev"],
+    versions = ["stable" => "v^", "dev" => "dev", "v#.#.#"],
     forcepush = true,
     push_preview = true,
     devbranch = "main"
