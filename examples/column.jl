@@ -36,10 +36,9 @@ nothing #hide
 @inline temp(x, y, z, t) = 2.4 * cos(t * 2π / year + 50days) + 10
 nothing #hide
 
-# ## Grid and PAR field
-# Define the grid and an extra Oceananigans field for the PAR to be stored in
-Lx, Ly = 20meters, 20meters
-grid = RectilinearGrid(size=(1, 1, 50), extent=(Lx, Ly, 200meters)) 
+# ## Grid
+# Define the grid.
+grid = RectilinearGrid(size=(1, 1, 50), extent=(20meters, 20meters, 200meters))
 
 # Specify the boundary conditions for DIC and O₂ based on the air-sea CO₂ and O₂ flux
 CO₂_flux = GasExchange(; gas = :CO₂, temperature = temp, salinity = (args...) -> 35)
@@ -54,10 +53,10 @@ model = NonhydrostaticModel(; grid,
 set!(model, P = 0.03, Z = 0.03, NO₃ = 4.0, NH₄ = 0.05, DIC = 2239.8, Alk = 2409.0)
 
 # ## Simulation
-# Next we setup the simulation along with some callbacks that:
+# Next we setup a simulation and add some callbacks that:
 # - Show the progress of the simulation
 # - Store the model and particles output
-# - Prevent the tracers from going negative from numerical error (see discussion of this in the [positivity preservation](@ref pos-preservation) implementation page)
+# - Prevent the tracers from going negative from numerical error (see discussion in the [positivity preservation](@ref pos-preservation) implementation section)
 
 simulation = Simulation(model, Δt = 3minutes, stop_time = 100days)
 
