@@ -236,7 +236,7 @@ end
 
               particles::P = nothing)
 
-Construct an instance of the LOBSTER ([LOBSTER](@ref LOBSTER)) biogeochemical model.
+Construct an instance of the [LOBSTER](@ref LOBSTER) biogeochemical model.
 
 Keyword Arguments
 =================
