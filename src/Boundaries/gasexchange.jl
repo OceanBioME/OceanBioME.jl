@@ -173,7 +173,7 @@ adapt_structure(to, gasexchange::GasExchange) = GasExchange(adapt(to, gasexchang
                   temperature::T = nothing,
                   salinity::S = nothing)
 
-Constructs an Oceananigans `FluxBoundaryCondition` for the exchange of `gas` with the relevant tracer (i.e., DIC for CO₂ and oxygen for O₂).
+Construct an Oceananigans `FluxBoundaryCondition` for the exchange of `gas` with the relevant tracer (i.e., DIC for CO₂ and oxygen for O₂).
 Please see note for other gases.
 
 Keyword arguments
@@ -191,7 +191,7 @@ Keyword arguments
 - `salinity` : either `nothing` to track a salinity tracer field, or a function or shape `f(x, y, z, t)` for the salinity in ‰
 - `pCO₂` : pCO₂ calculator
 
-!!! note "Gases _other_ than CO₂ and O₂"
+!!! note "Gases other than CO₂ and O₂"
     This model is fully capable of exchanging any gas but the parameters have only been configured for CO₂ and O₂, and the specific formulation
     is only ensured for these gasses. For any gas where the [Wanninkhof1992](@citet) parameterisation returns the Bunsen Solubility Coefficient
     this model will work out of the box and can just be passed new parameters. For the other solubility types (i.e. K₀, K' and f) you will need
