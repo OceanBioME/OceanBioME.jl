@@ -38,7 +38,7 @@ for example in example_scripts
         Literate.markdown(example_filepath, OUTPUT_DIR; 
                           flavor = Literate.DocumenterFlavor(),
                           repo_root_url = "https://oceanbiome.github.io/OceanBioME.jl",
-                          execute = false,
+                          execute = true,
                           postprocess = replace_silly_warning)
     end
 end
@@ -138,8 +138,7 @@ makedocs(bib,
     format = format,
     pages = pages,
     modules = [OceanBioME],
-    doctest = false,
-    draft = true,
+    doctest = true,
     strict = true,
     clean = true,
     checkdocs = :exports
