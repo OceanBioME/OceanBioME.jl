@@ -7,27 +7,20 @@ Currently, the parameters for CO₂ and oxygen are included, but it would be ver
 It is straightforward to set up a boundary as an air-sea gas exchange:
 
 ```jldoctest gasexchange
-using OceanBioME
+julia> using OceanBioME
 
-CO₂_flux = GasExchange(; gas = :CO₂)
-
-# output
+julia> CO₂_flux = GasExchange(; gas = :CO₂)
 FluxBoundaryCondition: ContinuousBoundaryFunction gasexchange_function at (Nothing, Nothing, Nothing)
 ```
 
 Where the symbol specifies the exchanged gas (currently `:CO₂` or `:O₂`). This can then be passed in the setup of a BGC model, for example:
 
 ```jldoctest gasexchange
-using Oceananigans
+julia> using Oceananigans
 
-grid = RectilinearGrid(size=(3, 3, 30), extent=(10, 10, 200))
-
-model = NonhydrostaticModel(; grid,
-                              biogeochemistry = LOBSTER(; grid, carbonates = true),
-                              boundary_conditions = (DIC = FieldBoundaryConditions(top = CO₂_flux), ))
-
-# output
-
+julia> model = NonhydrostaticModel(; grid = RectilinearGrid(size=(3, 3, 30), extent=(10, 10, 200)),
+                                     biogeochemistry = LOBSTER(; grid, carbonates = true),
+                                     boundary_conditions = (DIC = FieldBoundaryConditions(top = CO₂_flux), ))
 NonhydrostaticModel{CPU, RectilinearGrid}(time = 0 seconds, iteration = 0)
 ├── grid: 3×3×30 RectilinearGrid{Float64, Periodic, Periodic, Bounded} on CPU with 3×3×3 halo
 ├── timestepper: QuasiAdamsBashforth2TimeStepper
@@ -37,7 +30,13 @@ NonhydrostaticModel{CPU, RectilinearGrid}(time = 0 seconds, iteration = 0)
 └── coriolis: Nothing
 ```
 
-If the temperature and salinity are not included in the model they can be passed as functions:
-```julia
-CO₂_flux = GasExchange(; gas = :CO₂, temperature = t_function, salinity = s_function)
+If the temperature and salinity are not included in the model they can be passed as functions
+(or even anonymous functions):
+
+```jldoctest
+julia> T_function(x, y, z, t) = 12.0
+T_function (generic function with 1 method)
+
+julia> CO₂_flux = GasExchange(; gas = :CO₂, temperature = T_function, salinity = (args...) -> 35)
+FluxBoundaryCondition: ContinuousBoundaryFunction gasexchange_function at (Nothing, Nothing, Nothing)
 ```
