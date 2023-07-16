@@ -6,17 +6,35 @@ Currently, the parameters for CO₂ and oxygen are included, but it would be ver
 
 It is straightforward to set up a boundary as an air-sea gas exchange:
 
-```julia
+```jldoctest gasexchange
+using OceanBioME
+
 CO₂_flux = GasExchange(; gas = :CO₂)
+
+# output
+FluxBoundaryCondition: ContinuousBoundaryFunction gasexchange_function at (Nothing, Nothing, Nothing)
 ```
 
 Where the symbol specifies the exchanged gas (currently `:CO₂` or `:O₂`). This can then be passed in the setup of a BGC model, for example:
 
-```julia
+```jldoctest gasexchange
+using Oceananigans
+
+grid = RectilinearGrid(size=(3, 3, 30), extent=(10, 10, 200))
+
 model = NonhydrostaticModel(; grid,
-                              biogeochemistry = LOBSTER(; grid,
-                                                          carbonates = true),
-                              boundary_conditions = (DIC = FieldBoundaryConditions(top = CO₂_flux), ),)
+                              biogeochemistry = LOBSTER(; grid, carbonates = true),
+                              boundary_conditions = (DIC = FieldBoundaryConditions(top = CO₂_flux), ))
+
+# output
+
+NonhydrostaticModel{CPU, RectilinearGrid}(time = 0 seconds, iteration = 0)
+├── grid: 3×3×30 RectilinearGrid{Float64, Periodic, Periodic, Bounded} on CPU with 3×3×3 halo
+├── timestepper: QuasiAdamsBashforth2TimeStepper
+├── tracers: (NO₃, NH₄, P, Z, sPOM, bPOM, DOM, DIC, Alk)
+├── closure: Nothing
+├── buoyancy: Nothing
+└── coriolis: Nothing
 ```
 
 If the temperature and salinity are not included in the model they can be passed as functions:
