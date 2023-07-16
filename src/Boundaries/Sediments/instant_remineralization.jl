@@ -31,9 +31,9 @@ end
     InstantRemineralisation(; grid,
         burial_efficiency_constant1::FT = 0.013,
         burial_efficiency_constant2::FT = 0.53,
-        burial_efficiency_half_saturaiton::FT = 7) where FT
+        burial_efficiency_half_saturaiton::FT = 7)
 
-Returns a single-layer instant remineralisaiton model for NPZD bgc models.
+Return a single-layer instant remineralisaiton model for NPZD bgc models.
 
 Example
 =======
