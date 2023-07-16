@@ -33,7 +33,7 @@ NonhydrostaticModel{CPU, RectilinearGrid}(time = 0 seconds, iteration = 0)
 If the temperature and salinity are not included in the model they can be passed as functions
 (or even anonymous functions):
 
-```jldoctest
+```jldoctest gasexchange
 julia> T_function(x, y, z, t) = 12.0
 T_function (generic function with 1 method)
 
