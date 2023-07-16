@@ -1,17 +1,16 @@
 """
-Nutrient-Phytoplankton-Zooplankton-Detritus model of [Kuhn2015](@cite)
+Nutrient-Phytoplankton-Zooplankton-Detritus model of [Kuhn2015](@citet).
 
 Tracers
-========
+=======
 * Nutrients: N (mmol N/m³)
 * Phytoplankton: P (mmol N/m³)
 * Zooplankton: Z (mmol N/m³)
 * Detritus: D (mmol N/m³)
 
 Required submodels
-===========
+==================
 * Photosynthetically available radiation: PAR (W/m²)
-
 """
 module NPZDModel
 

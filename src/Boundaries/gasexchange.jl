@@ -115,7 +115,7 @@ OCMIP_default = pCO₂(OCMIP_solubility,
                      1.67e-4, 7.80e-4)
 
 #####
-##### Gas exchange model of [Wanninkhof1992](@cite)
+##### Gas exchange model of [Wanninkhof1992](@citet)
 #####
 # TODO: Implement Ho et al. 2006 wind speed dependence
 
@@ -173,27 +173,27 @@ adapt_structure(to, gasexchange::GasExchange) = GasExchange(adapt(to, gasexchang
                   temperature::T = nothing,
                   salinity::S = nothing)
 
-Constructs an Oceananigans `FluxBoundaryCondition` for the exchange of `gas` with the relevant tracer (i.e., DIC for CO₂ and oxygen for O₂).
+Construct an Oceananigans `FluxBoundaryCondition` for the exchange of `gas` with the relevant tracer (i.e., DIC for CO₂ and oxygen for O₂).
 Please see note for other gases.
 
 Keyword arguments
 =================
 
 - `gas`: (required) the gas to be exchanged, if `:CO₂` or `:O₂` are specified then all other settings may be infered
-- `schmidt_params` : named tuple of parameters for calculating the Schmidt number using the parameterisation of [Wanninkhof1992](@cite)
+- `schmidt_params` : named tuple of parameters for calculating the Schmidt number using the parameterisation of [Wanninkhof1992](@citet)
 - `solubility_params` : named tuple of parameters for calculating the solubility (for O₂ the Bunsen solubility and CO₂ K₀, see note)
 - `ocean_density` : density of the ocean in kg/m³
 - `air_concentratio` : concentration of the gas in air in relivant units (i.e. ppmv for CO₂ and mmol O₂/m³ for O₂), can also be a function of x, y, t, or a field
 - `air_pressure` : air pressure in atm (only used for CO₂), can also be a function of x, y, t, or a field
-- `average_wind_speed` : average wind speed at 10m used to calculate the gas transfer velocity by the [Wanninkhof1992](@cite) parameterisation
+- `average_wind_speed` : average wind speed at 10m used to calculate the gas transfer velocity by the [Wanninkhof1992](@citet) parameterisation
 - `field_dependencies` : tracer fields that gas exchange depends on, if the defaults have different names in your model you can specify as long as they are in the same order
 - `temperature` : either `nothing` to track a temperature tracer field, or a function or shape `f(x, y, z, t)` for the temperature in °C
 - `salinity` : either `nothing` to track a salinity tracer field, or a function or shape `f(x, y, z, t)` for the salinity in ‰
 - `pCO₂` : pCO₂ calculator
 
-!!! note "Gases _other_ than CO₂ and O₂"
+!!! note "Gases other than CO₂ and O₂"
     This model is fully capable of exchanging any gas but the parameters have only been configured for CO₂ and O₂, and the specific formulation
-    is only ensured for these gasses. For any gas where the [Wanninkhof1992](@cite) parameterisation returns the Bunsen Solubility Coefficient
+    is only ensured for these gasses. For any gas where the [Wanninkhof1992](@citet) parameterisation returns the Bunsen Solubility Coefficient
     this model will work out of the box and can just be passed new parameters. For the other solubility types (i.e. K₀, K' and f) you will need
     to overload the `(gasexchange::GasExchange)` function to ensure the correct formulaiton.
 """

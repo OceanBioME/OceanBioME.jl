@@ -4,8 +4,7 @@ import Base: show, summary
     struct SimpleMultiG
 
 Hold the parameters and fields for a simple "multi G" single-layer sediment model.
-Based on the Level 3 model described by Soetaert et al. 2000;
-doi:[10.1016/S0012-8252(00)00004-0](https://doi.org/10.1016/S0012-8252(00)00004-0).
+Based on the Level 3 model described by [Soetaert2000](@citet).
 """
 struct SimpleMultiG{FT, P1, P2, P3, P4, F, TE} <: FlatSediment
              fast_decay_rate :: FT

@@ -5,7 +5,7 @@ Hold the parameters and fields the simplest benthic boundary layer where
 organic carbon is assumed to remineralise instantly with some portion 
 becoming N, and a fraction being perminantly burried.
 
-Burial efficiency from [RemineralisationFraction](@cite)
+Burial efficiency from [RemineralisationFraction](@citet).
 """
 struct InstantRemineralisation{FT, F, TE} <: FlatSediment
           burial_efficiency_constant1 :: FT
@@ -15,27 +15,25 @@ struct InstantRemineralisation{FT, F, TE} <: FlatSediment
                                fields :: F
                            tendencies :: TE
 
-    function InstantRemineralisation(burial_efficiency_constant1::FT,
-                                     burial_efficiency_constant2::FT,
-                                     burial_efficiency_half_saturaiton::FT,
-                                     fields::F,
-                                     tendencies::TE) where {FT, F, TE}
-
-        return new{FT, F, TE}(burial_efficiency_constant1,
-                              burial_efficiency_constant2,
-                              burial_efficiency_half_saturaiton,
-                              fields,
-                              tendencies)
-    end
+    InstantRemineralisation(burial_efficiency_constant1::FT,
+                            burial_efficiency_constant2::FT,
+                            burial_efficiency_half_saturaiton::FT,
+                            fields::F,
+                            tendencies::TE) where {FT, F, TE} =
+        new{FT, F, TE}(burial_efficiency_constant1,
+                        burial_efficiency_constant2,
+                        burial_efficiency_half_saturaiton,
+                        fields,
+                        tendencies)
 end
 
 """
     InstantRemineralisation(; grid,
         burial_efficiency_constant1::FT = 0.013,
         burial_efficiency_constant2::FT = 0.53,
-        burial_efficiency_half_saturaiton::FT = 7) where FT
+        burial_efficiency_half_saturaiton::FT = 7)
 
-Returns a single-layer instant remineralisaiton model for NPZD bgc models.
+Return a single-layer instant remineralisaiton model for NPZD bgc models.
 
 Example
 =======

@@ -34,16 +34,16 @@ As a simple example lets run a Nutrient-Phytoplankton-Zooplankton-Detritus (NPZD
 using OceanBioME, Oceananigans
 using Oceananigans.Units
 
-grid = RectilinearGrid(CPU(), size=(256, 32), extent=(500meters, 100meters), topology=(Bounded, Flat, Bounded))
+grid = RectilinearGrid(CPU(), size = (256, 32), extent = (500meters, 100meters), topology = (Bounded, Flat, Bounded))
 
-biogeochemistry = NutrientPhytoplanktonZooplanktonDetritus(; grid, open_bottom=true)
+biogeochemistry = NutrientPhytoplanktonZooplanktonDetritus(; grid, open_bottom = true)
 
 model = NonhydrostaticModel(; grid, biogeochemistry,
-                              buoyancy=BuoyancyTracer(), tracers=:b,
-                              advection=WENO(; grid),
+                              buoyancy = BuoyancyTracer(), tracers = :b,
+                              advection = WENO(; grid),
                               closure = AnisotropicMinimumDissipation())
 
-bᵢ(x, y, z) = ifelse(x < 250, 1e-4, 1e-3)
+bᵢ(x, y, z) = ifelse(x < grid.Lx/2, 1e-4, 1e-3)
 
 set!(model, b = bᵢ, N = 5.0, P = 0.1, Z = 0.1, T = 18.0)
 
@@ -95,7 +95,6 @@ Colorbar(fig[1, 2], hm1)
 Colorbar(fig[2, 2], hm2)
 
 record(fig, "buoyancy_front.gif", 1:length(times)) do i
-    @info string("Plotting frame ", i, " of ", length(times))
     n[] = i
 end
 ```
@@ -103,18 +102,22 @@ end
 
 ![buoyancy_front](https://github.com/OceanBioME/OceanBioME.jl/assets/7112768/84f7f712-5648-4293-be18-608a4a3413ba)
 
-In this example `OceanBioME` is providing the `biogeochemistry` and the remainder is taken care of by `Oceananigans`. For comprehensive documentation of the physics modelling see [Oceananigans' Documentation](https://clima.github.io/OceananigansDocumentation/stable/), and for biogeochemistry and other features we provide read below.
+In this example `OceanBioME` is providing the `biogeochemistry` and the remainder is taken care of by `Oceananigans`.
+For comprehensive documentation of the physics modelling see
+[Oceananigans' Documentation](https://clima.github.io/OceananigansDocumentation/stable/), and for
+biogeochemistry and other features we provide read below.
 
 ## Using GPU
 
-To run the same example on the GPU we just need to construct the `grid` on the GPU; the rest is taken care of!
+To run the same example on a GPU we just need to construct the `grid` on the GPU; the rest is taken care of!
 
 Just replace `CPU()` with `GPU()` in the grid construction with everything else left unchanged:
 
 ```julia
-grid = RectilinearGrid(GPU(), size=(256, 32), extent=(500meters, 100meters), topology=(Bounded, Flat, Bounded))
+grid = RectilinearGrid(GPU(), size = (256, 32), extent = (500meters, 100meters), topology = (Bounded, Flat, Bounded))
 ```
 
 ## Documentation
 
-See the [documentation](https://oceanbiome.github.io/OceanBioME.jl) for full description and examples.
+See the [documentation](https://oceanbiome.github.io/OceanBioME.jl) for full description of the software
+package and more examples.
