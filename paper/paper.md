@@ -38,6 +38,20 @@ date: 24 June 2023
 bibliography: paper.bib
 ---
 
+# Statement of Need
+
+To date, around 25% of anthropogenic carbon emissions have been taken up by the ocean [@Friedlingstein2022]. 
+This occurs through complex interactions between physics, chemistry, and biology, much of which is poorly understood. Due to the vast size and sparsity of data modelling and data assimilation play a vital role in improving our understanding. 
+Traditionally ocean biogeochemical (BGC) modelling involves large and inflexible code bases written in high performance but low level languages which require huge computational resources to execute.
+This causes a barrier to experimentation and innovation as users must develop expertise in both the science and the complex code. 
+
+An area where novel ideas must be explored with BGC codes is study ocean carbon dioxide removal (OCDR) strategies.
+Assessing the effectiveness and impacts of OCDR is challenging due to the complexities of the interactions between the biological, chemical, and physical processes involved in the carbon cycle.
+Moreover, field trials of OCDR interventions are generally small-scale and targeted, while the intervention required to have a climate-scale impact is regional or global.
+This necessitates adaptable and easy to use BGC modelling tools which can be used to asses these strategies at the fast pace with which they are being developed.
+We have built ``OceanBioME.jl`` to meet these challenges by creating tools that provide a modular interface to the different components within the ocean modelling framework provided by ``Oceananigans.jl``.
+This allows easy access to a suite of biogeochemical models ranging from simple idealized to full-complexity global models.
+
 # Summary
 
 ``OceanBioME.jl`` is a flexible modelling environment written in Julia [@julia] for modelling the coupled interactions between ocean biogeochemistry, carbonate chemistry, and physics.
@@ -73,22 +87,16 @@ This framework is made possible by our contributions to ``Oceananigans.jl``, add
 This interface also facilitates rapid prototyping, as models can be implemented and swapped easily by just extending a few key functions.
 This flexibility and ease-of-use is unmatched in existing biogeochemical models.
 
-``OceanBioME.jl`` was designed specifically to study ocean carbon dioxide removal (OCDR) strategies.
-Assessing the effectiveness and impacts of OCDR is challenging due to the complexities of the interactions between the biological, chemical, and physical processes involved in the carbon cycle.
-Moreover, field trials of OCDR interventions are generally small-scale and targeted, while the intervention required to have a climate-scale impact is regional or global.
-We have built ``OceanBioME.jl`` to meet these challenges by creating tools that provide a modular interface to the different components within the ocean modelling framework provided by ``Oceananigans.jl``.
-This allows easy access to a suite of biogeochemical models ranging from simple idealized to full-complexity models.
-\autoref{fig2} shows a simple column model with an OCDR intervention (macroalgae growth) added after a warm-up period, which increases the carbon export of the system.
-
-![Here we show the results of a 1D model, forced by idealised light and mixing, which qualitatively reproduces the biogeochemical cycles in the North Atlantic.
-We then add kelp (500 frond / m² in the top 50 m of water) in December of the 2ⁿᵈ year (black vertical line) which causes an increase in air-sea carbon dioxide exchange and sinking export, as well as a change in the phytoplankton growth cycle.
-Figure made with `Makie.jl` [@makie]. \label{fig2}](column_example.png)
-
 The biologically active particles built into ``OceanBioME.jl`` are particularly useful for OCDR applications.
 Accurate carbon accounting is essential for assessing the effectiveness of OCDR strategies.
 Biologically active particles can be used to track carbon from a particular source while accounting for interactions with its surroundings.
 Biologically active particles can also be used to model OCDR deployment strategies including seaweed cultivation, alkalinity enhancement, and marine biomass regeneration.
 ``OceanBioME.jl`` currently includes an extended version of the sugar kelp model presented by @broch:2012 as an example of the utility and implementation of these features.
+\autoref{fig2} shows a simple column model with an OCDR intervention (macroalgae growth) added after a warm-up period, which increases the carbon export of the system.
+
+![Here we show the results of a 1D model, forced by idealised light and mixing, which qualitatively reproduces the biogeochemical cycles in the North Atlantic.
+We then add kelp (500 frond / m² in the top 50 m of water) in December of the 2ⁿᵈ year (black vertical line) which causes an increase in air-sea carbon dioxide exchange and sinking export. Changes to the phytoplankton growth cycle are also apparent.
+Figure made with `Makie.jl` [@makie]. \label{fig2}](column_example.png)
 
 The implementation of OceanBioME.jl models allows for seamless integration with data assimilation packages, such as ``EnsembleKalmanProcesses.jl`` [@ekp]. This feature facilitates rapid calibration of model parameters, providing a powerful utility for integrating observations and models, with the potential to improve model skill and identify key sources of uncertainty.
 
