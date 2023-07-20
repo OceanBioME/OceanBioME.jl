@@ -48,7 +48,7 @@ This causes a barrier to experimentation and innovation as users must develop ex
 An area where novel ideas must be explored with BGC codes is studying ocean carbon dioxide removal (OCDR) strategies.
 Assessing the effectiveness and impacts of OCDR is challenging due to the complexities of the interactions between the biological, chemical, and physical processes involved in the carbon cycle.
 Moreover, field trials of OCDR interventions are generally small-scale and targeted, while the intervention required to have a climate-scale impact is regional or global.
-This necessitates adaptable and easy-to-use BGC modelling tools which can be used to assess these strategies at the fast pace with which they are being developed.
+This necessitates adaptable, easy to use, and verifiable BGC modelling tools which can be used to assess these strategies at the fast pace with which they are being developed [@NationalAcademies2022].
 We have built ``OceanBioME.jl`` to meet these challenges by creating tools that provide a modular interface to the different components within the ocean modelling framework provided by ``Oceananigans.jl``.
 This allows easy access to a suite of biogeochemical models ranging from simple idealized to full-complexity global models.
 
