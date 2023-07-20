@@ -42,13 +42,13 @@ bibliography: paper.bib
 
 To date, around 25% of anthropogenic carbon emissions have been taken up by the ocean [@Friedlingstein2022]. 
 This occurs through complex interactions between physics, chemistry, and biology, much of which is poorly understood. Due to the vast size and sparsity of data modelling and data assimilation play a vital role in improving our understanding. 
-Traditionally ocean biogeochemical (BGC) modelling involves large and inflexible code bases written in high performance but low level languages which require huge computational resources to execute.
-This causes a barrier to experimentation and innovation as users must develop expertise in both the science and the complex code. 
+Traditionally ocean biogeochemical (BGC) modelling involves large and inflexible code bases written in high-performance but low-level languages which require huge computational resources to execute.
+This causes a barrier to experimentation and innovation as users must develop expertise in both the science and complex code. 
 
-An area where novel ideas must be explored with BGC codes is study ocean carbon dioxide removal (OCDR) strategies.
+An area where novel ideas must be explored with BGC codes is studying ocean carbon dioxide removal (OCDR) strategies.
 Assessing the effectiveness and impacts of OCDR is challenging due to the complexities of the interactions between the biological, chemical, and physical processes involved in the carbon cycle.
 Moreover, field trials of OCDR interventions are generally small-scale and targeted, while the intervention required to have a climate-scale impact is regional or global.
-This necessitates adaptable and easy to use BGC modelling tools which can be used to asses these strategies at the fast pace with which they are being developed.
+This necessitates adaptable and easy-to-use BGC modelling tools which can be used to assess these strategies at the fast pace with which they are being developed.
 We have built ``OceanBioME.jl`` to meet these challenges by creating tools that provide a modular interface to the different components within the ocean modelling framework provided by ``Oceananigans.jl``.
 This allows easy access to a suite of biogeochemical models ranging from simple idealized to full-complexity global models.
 
@@ -73,11 +73,11 @@ These equations can be solved by ``OceanBioME.jl`` as box models, which is parti
 The same equations can be integrated by ``Oceananigans.jl`` to provide tracer-based ecosystem models.
 
 - The second module type is `Individual` "biologically active" particles.
-These consist of individual-based models which are solved along particle paths and can be coupled with the tracer-based modules and physics from ``Oceananigans.jl``.
+These consist of individual-based models solved along particle paths and can be coupled with the tracer-based modules and physics from ``Oceananigans.jl``.
 The biologically active particles can be advected by the currents, and/or they can move according to prescribed dynamics.
 For example, migrating zooplankton or fish can be modelled with biologically active particles and ``OceanBioME.jl`` allows these to interact with tracer-based components such as phytoplankton or oxygen.
 
-`AdvectedPopulations` are supported by `Boundaries` modules which provide information at the top and bottom of the ocean. For example, the GasExchange submodule calculates the flux of carbon dioxide and oxygen at the sea surface, while the `Sediments` modules calculates fluxes of carbon and oxygen at the seafloor.
+`AdvectedPopulations` are supported by `Boundaries` modules which provide information at the top and bottom of the ocean. For example, the GasExchange submodule calculates the carbon dioxide and oxygen flux at the sea surface, while the `Sediments` modules calculate fluxes of carbon and oxygen at the seafloor.
 
 We provide a simple framework and utilities (such as light attenuation integration) to build the necessary components of biogeochemical models.
 With the provided models, currently a simple Nutrient-Phytoplankton-Zooplankton-Detritus [@npzd] model, and an intermediate complexity model, LOBSTER [@lobster], we have set up a straightforward "plug and play" framework to add additional tracers such as carbonate and oxygen chemistry systems, and additional forcing.
