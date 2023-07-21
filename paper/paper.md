@@ -40,17 +40,18 @@ bibliography: paper.bib
 
 # Statement of Need
 
-To date, around 25% of anthropogenic carbon emissions have been taken up by the ocean [@Friedlingstein2022]. 
-This occurs through complex interactions between physics, chemistry, and biology, much of which is poorly understood. Due to the vast size and sparsity of data relating to these processes, modelling and data assimilation play a vital role in improving our understanding. 
-Traditionally ocean biogeochemical (BGC) modelling involves large and inflexible code bases written in high-performance but low-level languages which require huge computational resources to execute.
-This causes a barrier to experimentation and innovation as users must develop expertise in both the science and complex code. 
+To date, about 25% of anthropogenic carbon emissions have been taken up by the ocean [@Friedlingstein2022]. 
+This occurs through complex interactions between physics, chemistry, and biology, much of which is poorly understood. 
+Due to the vast size of the ocean and the sparsity of data, modelling and data assimilation play a vital role in quantifying the ocean carbon cycle. 
+Traditionally ocean biogeochemical (BGC) modelling involves large and inflexible code bases written in high-performance but low-level languages which require huge computational resources to execute. 
+This causes a barrier to experimentation and innovation as users must develop expertise in both the science and complex code.
 
-An area where novel ideas must be explored with BGC codes is studying ocean carbon dioxide removal (OCDR) strategies.
-Assessing the effectiveness and impacts of OCDR is challenging due to the aforementioned complexity of the ocean BGC system.
+One area where novel ideas must be explored with BGC codes is assessing ocean carbon dioxide removal (OCDR) strategies. Quantifying the effectiveness and identifying the impacts of OCDR is challenging due to the aforementioned complexity of the ocean BGC system.
 Moreover, field trials of OCDR interventions are generally small-scale and targeted, while the intervention required to have a climate-scale impact is regional or global.
-This necessitates adaptable, easy-to-use, and verifiable BGC modelling tools which can be used to assess these strategies at the fast pace with which they are being developed [@NationalAcademies2022].
+This necessitates adaptable, easy-to-use, and verifiable BGC modelling tools which can be used to assess OCDR strategies at the fast pace with which they are being developed [@NationalAcademies2022].
 We have built ``OceanBioME.jl`` to meet these challenges by creating a tool that provides a modular interface to the different components, within the ocean modelling framework provided by ``Oceananigans.jl``.
-This allows easy access to a suite of biogeochemical models ranging from simple idealized to full-complexity global models.
+This allows easy access to a suite of biogeochemical models ranging from simple idealized to full-complexity models.
+The flexibility of the ``Oceananigans.jl`` framework allows ``OceanBioME.jl`` to be applied across a wide range of scales and use cases, including small-scale large-eddy simulations and regional and global models.
 
 # Summary
 
