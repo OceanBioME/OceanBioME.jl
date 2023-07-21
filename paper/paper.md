@@ -80,10 +80,10 @@ For example, migrating zooplankton or fish can be modelled with biologically act
 `AdvectedPopulations` are supported by `Boundaries` modules which provide information at the top and bottom of the ocean. For example, the GasExchange submodule calculates the carbon dioxide and oxygen flux at the sea surface, while the `Sediments` modules calculate fluxes of carbon and oxygen at the seafloor.
 
 We provide a simple framework and utilities (such as light attenuation integration) to build the necessary components of biogeochemical models.
-With the provided models, currently a simple Nutrient-Phytoplankton-Zooplankton-Detritus (NPZD) model [@npzd], and an intermediate complexity model, LOBSTER [@lobster], we have set up a straightforward "plug and play" framework to add additional tracers such as carbonate and oxygen chemistry systems, and additional forcing.
+With the provided models, currently a simple Nutrient-Phytoplankton-Zooplankton-Detritus (NPZD) model [@npzd], and an intermediate complexity model, LOBSTER [@lobster], we have set up a straightforward "plug and play" framework to add additional tracers such as carbonate and oxygen chemistry systems and additional forcing.
 Additionally, we have implemented comprehensive air-sea flux models [e.g. @wanninkhof:1992] and sediment models [e.g. @soetaert:2000] which can easily be applied to tracers in the models.
 We focus on the simulation of idealized sub-mesoscale systems, but this flexible framework allows users to model problems of any scale.
-For example, \autoref{global} shows the annual average chlorophyll concentration from a near global model NPZD model run.
+For example, \autoref{global} shows the annual average chlorophyll concentration from a near-global model NPZD model run.
 This framework is made possible by our contributions to ``Oceananigans.jl``, adding a streamlined user interface to swap biogeochemical models with no modification to other model configurations.
 This interface also facilitates rapid prototyping, as models can be implemented and swapped easily by just extending a few key functions.
 This flexibility and ease-of-use is unmatched in existing biogeochemical models.
