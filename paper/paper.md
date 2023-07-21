@@ -41,15 +41,15 @@ bibliography: paper.bib
 # Statement of Need
 
 To date, around 25% of anthropogenic carbon emissions have been taken up by the ocean [@Friedlingstein2022]. 
-This occurs through complex interactions between physics, chemistry, and biology, much of which is poorly understood. Due to the vast size and sparsity of data modelling and data assimilation play a vital role in improving our understanding. 
+This occurs through complex interactions between physics, chemistry, and biology, much of which is poorly understood. Due to the vast size and sparsity of data relating to these processes, modelling and data assimilation play a vital role in improving our understanding. 
 Traditionally ocean biogeochemical (BGC) modelling involves large and inflexible code bases written in high-performance but low-level languages which require huge computational resources to execute.
 This causes a barrier to experimentation and innovation as users must develop expertise in both the science and complex code. 
 
 An area where novel ideas must be explored with BGC codes is studying ocean carbon dioxide removal (OCDR) strategies.
-Assessing the effectiveness and impacts of OCDR is challenging due to the complexities of the interactions between the biological, chemical, and physical processes involved in the carbon cycle.
+Assessing the effectiveness and impacts of OCDR is challenging due to the aforementioned complexity of the ocean BGC system.
 Moreover, field trials of OCDR interventions are generally small-scale and targeted, while the intervention required to have a climate-scale impact is regional or global.
-This necessitates adaptable, easy to use, and verifiable BGC modelling tools which can be used to assess these strategies at the fast pace with which they are being developed [@NationalAcademies2022].
-We have built ``OceanBioME.jl`` to meet these challenges by creating tools that provide a modular interface to the different components within the ocean modelling framework provided by ``Oceananigans.jl``.
+This necessitates adaptable, easy-to-use, and verifiable BGC modelling tools which can be used to assess these strategies at the fast pace with which they are being developed [@NationalAcademies2022].
+We have built ``OceanBioME.jl`` to meet these challenges by creating a tool that provides a modular interface to the different components, within the ocean modelling framework provided by ``Oceananigans.jl``.
 This allows easy access to a suite of biogeochemical models ranging from simple idealized to full-complexity global models.
 
 # Summary
@@ -77,13 +77,13 @@ These consist of individual-based models solved along particle paths and can be 
 The biologically active particles can be advected by the currents, and/or they can move according to prescribed dynamics.
 For example, migrating zooplankton or fish can be modelled with biologically active particles and ``OceanBioME.jl`` allows these to interact with tracer-based components such as phytoplankton or oxygen.
 
-`AdvectedPopulations` are supported by `Boundaries` modules which provide information at the top and bottom of the ocean. For example, the GasExchange submodule calculates the carbon dioxide and oxygen flux at the sea surface, while the `Sediments` modules calculate fluxes of carbon and oxygen at the seafloor.
+ For example, the GasExchange submodule calculates the carbon dioxide and oxygen flux at the sea surface, while the `Sediments` modules calculate fluxes of carbon and oxygen at the seafloor.
 
-We provide a simple framework and utilities (such as light attenuation integration) to build the necessary components of biogeochemical models.
-With the provided models, currently a simple Nutrient-Phytoplankton-Zooplankton-Detritus (NPZD) model [@npzd], and an intermediate complexity model, LOBSTER [@lobster], we have set up a straightforward "plug and play" framework to add additional tracers such as carbonate and oxygen chemistry systems and additional forcing.
-Additionally, we have implemented comprehensive air-sea flux models [e.g. @wanninkhof:1992] and sediment models [e.g. @soetaert:2000] which can easily be applied to tracers in the models.
+We currently provide a simple Nutrient-Phytoplankton-Zooplankton-Detritus (NPZD) model [@npzd], and an intermediate complexity model, LOBSTER [@lobster], we have set up a straightforward "plug and play" framework to add additional tracers such as carbonate and oxygen chemistry systems and additional forcing. 
+These `AdvectedPopulations` are supported by `Boundaries` modules which are easy to apply and provide information at the top and bottom of the ocean.
+We have implemented comprehensive air-sea flux models [e.g. @wanninkhof:1992] within the `GasExchange` submodule to calculate carbon dioxide and oxygen flux at the sea surface, and sediment models [e.g. @soetaert:2000] which calculate fluxes of carbon and oxygen at the seafloor.
 We focus on the simulation of idealized sub-mesoscale systems, but this flexible framework allows users to model problems of any scale.
-For example, \autoref{global} shows the annual average chlorophyll concentration from a near-global model NPZD model run.
+For example, \autoref{global} shows the annual average surface phytoplankton concentration from a near-global model NPZD model run.
 This framework is made possible by our contributions to ``Oceananigans.jl``, adding a streamlined user interface to swap biogeochemical models with no modification to other model configurations.
 This interface also facilitates rapid prototyping, as models can be implemented and swapped easily by just extending a few key functions.
 This flexibility and ease-of-use is unmatched in existing biogeochemical models.
