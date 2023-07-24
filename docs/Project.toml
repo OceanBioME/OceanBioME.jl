@@ -15,5 +15,6 @@ Statistics = "10745b16-79ce-11e8-11f9-7d13ad32a3b2"
 
 [compat]
 CairoMakie = "0.10"
+DocumenterCitations = "1"
 Literate = "≥2.9.0"
 Oceananigans = "0.84.1, 0.85"

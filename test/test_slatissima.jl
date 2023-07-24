@@ -15,10 +15,10 @@ end
 
     # Initial properties
 
-    particles = SLatissima(; x = ones(Float64, 2), 
-                             A = ones(Float64, 2) .* 5, 
-                             N = ones(Float64, 2), 
-                             C = ones(Float64, 2), 
+    particles = SLatissima(; x = ones(Float64, 2),
+                             A = ones(Float64, 2) .* 5,
+                             N = ones(Float64, 2),
+                             C = ones(Float64, 2),
                              latitude = 1.0,
                              pescribed_temperature = (args...) -> 10.0,
                              pescribed_salinity = (args...) -> 35.0)
@@ -41,12 +41,12 @@ end
 
     initial_tracer_C = sum(model.tracers.sPOC) + sum(model.tracers.bPOC) + sum(model.tracers.DOC) + sum(model.tracers.DIC) + 
                        sum(model.tracers.P * (1 + model.biogeochemistry.organic_carbon_calcate_ratio) .+ model.tracers.Z) * model.biogeochemistry.phytoplankton_redfield 
-                       sum(model.tracers.sPOC) + sum(model.tracers.bPOC) + sum(model.tracers.DOC)
+
     initial_kelp_C = sum(particles.A .* particles.structural_dry_weight_per_area .* (particles.C .+ particles.structural_carbon)) ./ (12 * 0.001)
 
     model.clock.time = 60days # get to a high growth phase
 
-    for i in 1:10
+    for _ in 1:10
         time_step!(model, 1.0)
     end
 
@@ -55,9 +55,13 @@ end
 
     final_tracer_C = sum(model.tracers.sPOC) + sum(model.tracers.bPOC) + sum(model.tracers.DOC) + sum(model.tracers.DIC) + 
                      sum(model.tracers.P * (1 + model.biogeochemistry.organic_carbon_calcate_ratio) .+ model.tracers.Z) * model.biogeochemistry.phytoplankton_redfield 
-                     sum(model.tracers.sPOC) + sum(model.tracers.bPOC) + sum(model.tracers.DOC)
     final_kelp_C = sum(particles.A .* particles.structural_dry_weight_per_area .* (particles.C .+ particles.structural_carbon)) ./ (12 * 0.001)
 
+    # kelp is being integrated
+    @test initial_kelp_N != final_kelp_N
+    @test initial_kelp_C != final_kelp_C
+
+    # conservaitons
     @test initial_tracer_N + initial_kelp_N ≈ final_tracer_N + final_kelp_N
     @test initial_tracer_C + initial_kelp_C ≈ final_tracer_C + final_kelp_C
 
@@ -69,6 +73,6 @@ end
 
     run!(simulation)
 
-    # the model is changing the tracer tendencies
+    # the model is changing the tracer tendencies - not sure this test actually works as it didn't fail when it should have
     @test any([any(intercepted_tendencies[tracer] .!= model.timestepper.Gⁿ[tracer]) for tracer in (:NO₃, :NH₄, :DIC, :DOC, :bPON, :bPOC)])
 end

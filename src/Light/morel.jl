@@ -49,9 +49,9 @@ using Oceananigans.Utils: launch!
 end
 
 """
-    update!(sim, params)
+    update(sim, params)
 
-Function to integrate light attenuation using [Morel1988](@cite) model which should be called
+Function to integrate light attenuation using the [Morel1988](@citet) model which should be called
 in a callback as often as possible.
 
 Requires three PAR bands to be supplied as auxiliary fields: `PAR¹`, `PAR²`, and `PAR³`

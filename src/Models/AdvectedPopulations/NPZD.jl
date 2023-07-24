@@ -1,17 +1,16 @@
 """
-Nutrient-Phytoplankton-Zooplankton-Detritus model of [Kuhn2015](@cite)
+Nutrient-Phytoplankton-Zooplankton-Detritus model of [Kuhn2015](@citet).
 
 Tracers
-========
+=======
 * Nutrients: N (mmol N/m³)
 * Phytoplankton: P (mmol N/m³)
 * Zooplankton: Z (mmol N/m³)
 * Detritus: D (mmol N/m³)
 
 Required submodels
-===========
+==================
 * Photosynthetically available radiation: PAR (W/m²)
-
 """
 module NPZDModel
 
@@ -25,6 +24,7 @@ using Oceananigans.Fields: ZeroField
 using OceanBioME.Light: TwoBandPhotosyntheticallyActiveRadiation, update_PAR!, required_PAR_fields
 using OceanBioME: setup_velocity_fields, show_sinking_velocities
 using OceanBioME.BoxModels: BoxModel
+using OceanBioME.Boundaries.Sediments: sinking_flux
 
 import OceanBioME.BoxModels: update_boxmodel_state!
 import Base: show, summary
@@ -36,6 +36,8 @@ import Oceananigans.Biogeochemistry: required_biogeochemical_tracers,
 				                     biogeochemical_auxiliary_fields
 
 import OceanBioME: maximum_sinking_velocity
+
+import OceanBioME.Boundaries.Sediments: nitrogen_flux, carbon_flux, remineralisation_receiver
 
 import Adapt: adapt_structure, adapt
 
@@ -337,4 +339,9 @@ adapt_structure(to, npzd::NPZD) =
 
                                              adapt(to, npzd.particles))
 
+@inline nitrogen_flux(grid, advection, bgc::NPZD, tracers, i, j) = sinking_flux(i, j, grid, advection, Val(:D), bgc, tracers) +
+                                                                   sinking_flux(i, j, grid, advection, Val(:P), bgc, tracers)
+                 
+@inline carbon_flux(bgc::NPZD, tracers, i, j) = nitrogen_flux(bgc, tracers, i, j) * 6.56
+@inline remineralisation_receiver(::NPZD) = :N
 end # module

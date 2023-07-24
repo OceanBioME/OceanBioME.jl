@@ -31,16 +31,16 @@ As a simple example let's run a Nutrient-Phytoplankton-Zooplankton-Detritus (NPZ
 using OceanBioME
 using Oceananigans, Oceananigans.Units
 
-grid = RectilinearGrid(CPU(), size=(256, 32), extent=(500meters, 100meters), topology=(Bounded, Flat, Bounded))
+grid = RectilinearGrid(CPU(), size = (256, 32), extent = (500meters, 100meters), topology = (Bounded, Flat, Bounded))
 
-biogeochemistry = NutrientPhytoplanktonZooplanktonDetritus(; grid, open_bottom=true)
+biogeochemistry = NutrientPhytoplanktonZooplanktonDetritus(; grid, open_bottom = true)
 
 model = NonhydrostaticModel(; grid, biogeochemistry,
-                              buoyancy=BuoyancyTracer(), tracers=:b,
-                              advection=WENO(; grid),
+                              buoyancy = BuoyancyTracer(), tracers = :b,
+                              advection = WENO(; grid),
                               closure = AnisotropicMinimumDissipation())
 
-bᵢ(x, y, z) = ifelse(x < 250, 1e-4, 1e-3)
+bᵢ(x, y, z) = ifelse(x < grid.Lx/2, 1e-4, 1e-3)
 
 set!(model, b = bᵢ, N = 5.0, P = 0.1, Z = 0.1, T = 18.0)
 

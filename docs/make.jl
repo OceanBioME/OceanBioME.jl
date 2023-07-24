@@ -3,7 +3,7 @@ using Documenter, DocumenterCitations, Literate
 using OceanBioME
 using OceanBioME.SLatissimaModel: SLatissima
 using OceanBioME.LOBSTERModel: LOBSTER
-using OceanBioME.Boundaries.Sediments: SimpleMultiG
+using OceanBioME.Boundaries.Sediments: SimpleMultiG, InstantRemineralisation
 using OceanBioME.Boundaries: OCMIP_default, GasExchange
 
 using CairoMakie
@@ -12,7 +12,7 @@ CairoMakie.activate!(type = "svg")
 include("display_parameters.jl")
 
 bib_filepath = joinpath(dirname(@__FILE__), "oceanbiome.bib")
-bib = CitationBibliography(bib_filepath)
+bib = CitationBibliography(bib_filepath, style=:authoryear)
 
 # Examples
 
@@ -36,10 +36,10 @@ for example in example_scripts
 
     withenv("JULIA_DEBUG" => "Literate") do
         Literate.markdown(example_filepath, OUTPUT_DIR; 
-                          flavor = Literate.DocumenterFlavor(), 
-                          repo_root_url="https://oceanbiome.github.io/OceanBioME.jl", 
-                          execute=true,
-                          postprocess=replace_silly_warning)
+                          flavor = Literate.DocumenterFlavor(),
+                          repo_root_url = "https://oceanbiome.github.io/OceanBioME.jl",
+                          execute = true,
+                          postprocess = replace_silly_warning)
     end
 end
 
@@ -53,12 +53,14 @@ model_parameters = (LOBSTER(; grid = BoxModelGrid()),
                     NutrientPhytoplanktonZooplanktonDetritus(; grid = BoxModelGrid()),
                     SLatissima(),
                     TwoBandPhotosyntheticallyActiveRadiation(; grid = BoxModelGrid()),
-                    SimpleMultiG(BoxModelGrid(); depth = 1000),
+                    SimpleMultiG(; grid = BoxModelGrid(), depth = 1000),
+                    InstantRemineralisation(; grid = BoxModelGrid()),
                     OCMIP_default,
                     GasExchange(; gas = :CO₂).condition.parameters,
                     GasExchange(; gas = :O₂).condition.parameters)
 
 gas_exchange_gas(::Val{G}) where G = G
+
 model_name(model) = if Base.typename(typeof(model)).wrapper == GasExchange
                         "$(gas_exchange_gas(model.gas)) air-sea exchange"
                     else
@@ -127,6 +129,7 @@ format = Documenter.HTML(
     prettyurls = get(ENV, "CI", nothing) == "true",
     canonical = "https://OceanBioME.github.io/OceanBioME/stable/",
     mathengine = MathJax3(),
+    assets = String["assets/citations.css"]
 )
 
 makedocs(bib,
@@ -164,7 +167,7 @@ end
 
 deploydocs(
     repo = "github.com/OceanBioME/OceanBioME.jl",
-    versions = ["stable" => "v^", "v#.#.#", "dev" => "dev"],
+    versions = ["stable" => "v^", "dev" => "dev", "v#.#.#"],
     forcepush = true,
     push_preview = true,
     devbranch = "main"

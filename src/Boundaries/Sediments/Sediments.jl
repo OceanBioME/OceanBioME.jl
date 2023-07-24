@@ -1,18 +1,20 @@
 module Sediments
 
-export SimpleMultiG
+export SimpleMultiG, InstantRemineralisation
 
 using KernelAbstractions
 using OceanBioME: ContinuousFormBiogeochemistry
 using Oceananigans
 using Oceananigans.Architectures: device
 using Oceananigans.Utils: launch!
-using Oceananigans.Advection: div_Uc
+using Oceananigans.Advection: advective_tracer_flux_z
 using Oceananigans.Units: day
 using Oceananigans.Fields: CenterField, Face
 using Oceananigans.Biogeochemistry: biogeochemical_drift_velocity
+using Oceananigans.Grids: zspacing
+using Oceananigans.Operators: volume
+using Oceananigans.Fields: Center
 
-import Oceananigans.Biogeochemistry: update_tendencies!
 import Adapt: adapt_structure, adapt
 
 abstract type AbstractSediment end
@@ -20,19 +22,19 @@ abstract type FlatSediment <: AbstractSediment end
 
 sediment_fields(::AbstractSediment) = ()
 
-@inline update_tendencies!(bgc::ContinuousFormBiogeochemistry{<:Any, <:FlatSediment, <:Any}, model) = update_tendencies!(bgc, bgc.sediment_model, model)
-@inline update_tendencies!(bgc, sediment, model) = nothing
+@inline update_sediment_tendencies!(bgc, sediment, model) = nothing
 
-function update_tendencies!(bgc, sediment::FlatSediment, model)
+function update_sediment_tendencies!(bgc, sediment::FlatSediment, model)
     arch = model.grid.architecture
 
-    for (i, tracer) in enumerate(sediment_tracers(sediment))    
-        launch!(arch, model.grid, :xy, store_flat_tendencies!, sediment.tendencies.Gⁿ[i], sediment.tendencies.G⁻[i])
+    for (i, tracer) in enumerate(sediment_tracers(sediment))
+        launch!(arch, model.grid, :xy, store_flat_tendencies!, sediment.tendencies.G⁻[i], sediment.tendencies.Gⁿ[i])
     end
 
     launch!(arch, model.grid, :xy,
             _calculate_tendencies!,
-            bgc.sediment_model, bgc, model.grid, model.tracers, model.timestepper)
+            bgc.sediment_model, bgc, model.grid, model.advection, model.tracers, model.timestepper)
+            
     return nothing
 end
 
@@ -41,7 +43,17 @@ end
     @inbounds G⁻[i, j, 1] = G⁰[i, j, 1]
 end
 
+
+@inline nitrogen_flux(grid, adveciton, bgc, tracers, i, j) = 0
+@inline carbon_flux(grid, adveciton, bgc, tracers, i, j) = 0
+@inline remineralisation_receiver(bgc) = nothing
+
+@inline sinking_flux(i, j, grid, advection, val_tracer::Val{T}, bgc, tracers) where T = 
+    - advective_tracer_flux_z(i, j, 1, grid, advection, biogeochemical_drift_velocity(bgc, val_tracer).w, tracers[T]) /
+      volume(i, j, 1, grid, Center(), Center(), Center())
+
 include("coupled_timesteppers.jl")
 include("simple_multi_G.jl")
+include("instant_remineralization.jl")
 
 end # module

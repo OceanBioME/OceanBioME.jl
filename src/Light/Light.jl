@@ -1,5 +1,5 @@
 """
-Light attenuation by chlorophyll as described by [Karleskind2011](@cite) (implemented as twoBand) and [Morel1988](@cite).
+Light attenuation by chlorophyll as described by [Karleskind2011](@citet) (implemented as twoBand) and [Morel1988](@citet).
 """
 module Light
 
