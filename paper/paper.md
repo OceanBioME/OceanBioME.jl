@@ -82,7 +82,7 @@ These consist of individual-based models solved along particle paths and can be 
 The biologically active particles can be advected by the currents, and/or they can move according to prescribed dynamics.
 For example, migrating zooplankton or fish can be modelled with biologically active particles and ``OceanBioME.jl`` allows these to interact with tracer-based components such as phytoplankton or oxygen.
 
- For example, the GasExchange submodule calculates the carbon dioxide and oxygen flux at the sea surface, while the `Sediments` modules calculate fluxes of carbon and oxygen at the seafloor.
+For example, the GasExchange submodule calculates the carbon dioxide and oxygen flux at the sea surface, while the `Sediments` modules calculate fluxes of carbon and oxygen at the seafloor.
 
 We currently provide a simple Nutrient-Phytoplankton-Zooplankton-Detritus (NPZD) model [@npzd], and an intermediate complexity model, LOBSTER [@lobster], we have set up a straightforward "plug and play" framework to add additional tracers such as carbonate and oxygen chemistry systems and additional forcing. 
 These `AdvectedPopulations` are supported by `Boundaries` modules which are easy to apply and provide information at the top and bottom of the ocean.
@@ -95,7 +95,8 @@ This flexibility and ease-of-use is unmatched in existing biogeochemical models.
 
 ![Here we show the annual average surface phytoplankton concentration from a near-global NPZD model run. 
 It shows reasonably good reproduction of large-scale patterns for such a simple and uncalibrated model but demonstrates further work such as nutrient input from rivers and tuning physics parametrisations that are required in the future.
-We ran this model with a 1° horizontal resolution and 48 (irregularly spaced) vertical points, and it took around 45 minutes per year to run on an Nvidia A100 GPU.
+We ran this model with a 1° horizontal resolution and 48 (irregularly spaced) vertical points.
+It took around 45 minutes per year to run on an Nvidia A100 GPU when integrating the physics, or around 5 minutes per year when using pre-calculated velocity fields.
 Figure made with `Makie.jl` [@makie]. \label{global}](phytoplankton.png)
 
 The biologically active particles built into ``OceanBioME.jl`` are particularly useful for OCDR applications.
