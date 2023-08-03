@@ -68,7 +68,12 @@ An example of a problem involving small-scale flow features is shown in \autoref
 ![Here we replicate the Eady problem where a background buoyancy gradient and corresponding thermal wind generate a sub-mesoscale eddy, roughly following the setup of Taylor (2016).
 To this physical setup, we added a medium complexity (9 tracers) biogeochemical model, some of which are shown above.
 On top of this, we added particles modelling the growth of sugar kelp which are free-floating and advected by the flow, and carbon dioxide exchange from the air.
-Thanks to Julia's speed and efficiency the above model (1 km × 1 km × 100 m with 64 × 64 × 16 grid points) took about 30 minutes of computing time to simulate 10 days of evolution on an Nvidia P100 GPU. Figure made with `Makie.jl` [@makie]. \label{eady}](eady_example.png)
+Thanks to Julia's speed and efficiency the above model (1 km × 1 km × 100 m with 64 × 64 × 16 grid points) took about 30 minutes of computing time to simulate 10 days of evolution on an Nvidia P100 GPU. 
+Panel (a) shows the domain with the colour representing the concentration of various biogeochemical tracer fields: inorganic carbon, organic carbon (dissolved and particulate), phytoplankton, and nutrients. 
+The increase in concentration in the centre of the eddy can be seen, as well as carbon being subducted (most visible in the xz face in the organic carbon).
+Additionally, points on the surface represent the kelp particle positions, with the colour representing the range of frond size.
+Panel (b) shows the carbon stored in each kelp frond, highlighting the variability depending on the nutrition availability in each particle's location history.
+Figure made with `Makie.jl` [@makie]. \label{eady}](eady_example.png)
 
 ``OceanBioME.jl`` is built with a highly modular design that allows user control and customization.
 There are two distinct module types implemented in ``OceanBioME.jl``:
@@ -124,9 +129,9 @@ Additionally, Strong-Wright (In prep.) is using the coupling of both the biogeoc
 
 | Example      | OceanBioME features utilised     | Code location |
 |--------------|--------------|---------------|
-| Sub-mesoscale eddy | LOBSTER biogeochemical model (`LOBSTER`) with carbonate model active, CO₂ exchange with the air (`GasExchange`), Light attenuation (`TwoBandPhotosyntheticallyActiveRadiation`), mass conserving negativity protection (`ScaleNegativeTracers`)| `examples/eady.jl` with resolution increased to 64x64x16, plotting script at `paper/figures/eady-fig.jl`|
+| Sub-mesoscale eddy | LOBSTER biogeochemical model (`LOBSTER`) with carbonate model active, CO₂ exchange with the air (`GasExchange`), Light attenuation (`TwoBandPhotosyntheticallyActiveRadiation`), mass conserving negativity protection (`ScaleNegativeTracers`)| `examples/eady.jl` with resolution increased to 64x64x16|
 | Near-global | NPZD model (`NutrientPhytoplanktonZooplanktonDetritus`), Light attenuation (`TwoBandPhotosyntheticallyActiveRadiation`)| Work in progress, available upon request/for collaboration |
-| Idealised 1D model with kelp individuals |  LOBSTER biogeochemical model (`LOBSTER`) with carbonate model and variable Redfield ratio for organic components active, CO₂ exchange with the air (`GasExchange`), Light attenuation (`TwoBandPhotosyntheticallyActiveRadiation`), Saccharina Latissima (sugar kelp) model (`SLatissima`), mass conserving negativity protection (`ScaleNegativeTracers`) | `paper/figures/column.jl`, plotting script at `paper/figures/column-fig.jl` |
+| Idealised 1D model with kelp individuals |  LOBSTER biogeochemical model (`LOBSTER`) with carbonate model and variable Redfield ratio for organic components active, CO₂ exchange with the air (`GasExchange`), Light attenuation (`TwoBandPhotosyntheticallyActiveRadiation`), Saccharina Latissima (sugar kelp) model (`SLatissima`), mass conserving negativity protection (`ScaleNegativeTracers`) | `paper/figures/column.jl`, similar to `examples/column.jl` and `examples/kelp.jl` |
 <!---
 TODO: add eady plotting script
 --->
