@@ -62,7 +62,7 @@ The flexibility of the ``Oceananigans.jl`` framework allows ``OceanBioME.jl`` to
 ``OceanBioME.jl`` is a flexible modelling environment written in Julia [@julia] for modelling the coupled interactions between ocean biogeochemistry, carbonate chemistry, and physics.
 ``OceanBioME.jl`` can be used as a stand-alone box model, or integrated into ``Oceananigans.jl`` [@Oceananigans] simulations of ocean dynamics in one, two, or three dimensions.
 As a result, ``OceanBioME.jl`` and ``Oceananigans.jl`` can be used to simulate the biogeochemical response across an enormous range of scales: from surface boundary layer turbulence at the meter scale to eddying global ocean simulations at the planetary scale, and on computational systems ranging from laptops to supercomputers.
-An example of a problem involving small-scale flow features is shown in \autoref{eady}, which shows a simulation of a sub-mesoscale eddy in a 1km x 1km horizontal domain with an intermediate complexity biogeochemical model and a kelp growth model solved along the trajectories of drifting buoys.
+An example of a problem involving small-scale flow features is shown in \autoref{eady}, which shows a simulation of a sub-mesoscale eddy in a 1km x 1km horizontal domain with an intermediate complexity biogeochemical model and a kelp growth model solved along the trajectories of drifting buoys (details of examples mentioned in this paper are listed at the end).
 ``OceanBioME.jl`` leverages Julia's multiple dispatch and effective inline capabilities to fuse its computations directly into existing ``Oceananigans.jl`` kernels, thus maintaining ``Oceananigans.jl``'s bespoke performance, memory- and cost-efficiency on GPUs in ``OceanBioME.jl``-augmented simulations.
 
 ![Here we replicate the Eady problem where a background buoyancy gradient and corresponding thermal wind generate a sub-mesoscale eddy, roughly following the setup of Taylor (2016).
@@ -120,6 +120,16 @@ Finally, this software is currently facilitating multiple research projects into
 For example, Chen (In prep.) is using the active particle coupling provided to investigate the effects of location and planting density of kelp in the open ocean on their carbon drawdown effect, as in the example above.
 Additionally, Strong-Wright (In prep.) is using the coupling of both the biogeochemistry and easy interface to couple the physics to study flow interactions with a fully resolved giant kelp forest model including the effects on nutrient transport and distribution.
 
+# Examples
+
+| Example      | OceanBioME features utilised     | Code location |
+|--------------|--------------|---------------|
+| Sub-mesoscale eddy | LOBSTER biogeochemical model (`LOBSTER`) with carbonate model active, CO₂ exchange with the air (`GasExchange`), Light attenuation (`TwoBandPhotosyntheticallyActiveRadiation`), mass conserving negativity protection (`ScaleNegativeTracers`)| `examples/eady.jl` with resolution increased to 64x64x16, plotting script at `paper/figures/eady-fig.jl`|
+| Near-global | NPZD model (`NutrientPhytoplanktonZooplanktonDetritus`), Light attenuation (`TwoBandPhotosyntheticallyActiveRadiation`)| Work in progress, available upon request/for collaboration |
+| Idealised 1D model with kelp individuals |  LOBSTER biogeochemical model (`LOBSTER`) with carbonate model and variable Redfield ratio for organic components active, CO₂ exchange with the air (`GasExchange`), Light attenuation (`TwoBandPhotosyntheticallyActiveRadiation`), Saccharina Latissima (sugar kelp) model (`SLatissima`), mass conserving negativity protection (`ScaleNegativeTracers`) | `paper/figures/column.jl`, plotting script at `paper/figures/column-fig.jl` |
+<!---
+TODO: add eady plotting script
+--->
 # Acknowledgements
 
 We would like to thank the [Climate Modeling Alliance](https://clima.caltech.edu) team and ``Oceananigans.jl`` contributors for their fantastic project. We are also very grateful for the support and funding of the [Centre for Climate Repair, Cambridge](https://www.climaterepair.cam.ac.uk/) and the [Gordon and Betty Moore Foundation](https://www.moore.org/).
