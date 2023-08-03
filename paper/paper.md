@@ -129,9 +129,9 @@ Additionally, Strong-Wright (In prep.) is using the coupling of both the biogeoc
 
 | Example| OceanBioME features utilised        | Code location |
 |--------------|--------------|---------------|
-| Sub-mesoscale eddy | LOBSTER biogeochemical model$^1$ with carbonate model active, CO₂ exchange with the air$^2$, Light attenuation$^3$, mass conserving negativity protection$^4$ | `examples/eady.jl` with resolution increased to 64x64x16|
+| Sub-mesoscale eddy | LOBSTER biogeochemical model$^1$ with carbonate model active, CO$_2$ exchange with the air$^2$, Light attenuation$^3$, mass conserving negativity protection$^4$ | `examples/eady.jl` with resolution increased to 64x64x16|
 | Near-global | NPZD model$^5$, Light attenuation$^3$| Work in progress, available upon request/for collaboration |
-| Idealised 1D model with kelp individuals |  LOBSTER biogeochemical model$^1$ with carbonate model and variable Redfield ratio for organic components active, CO₂ exchange with the air$^2$, Light attenuation$^3$, Saccharina Latissima (sugar kelp) model$^6$, mass conserving negativity protection$^4$ | `paper/figures/column.jl`, similar to `examples/column.jl` and `examples/kelp.jl` |
+| Idealised 1D model with kelp individuals |  LOBSTER biogeochemical model$^1$ with carbonate model and variable Redfield ratio for organic components active, CO$_2$ exchange with the air$^2$, Light attenuation$^3$, Saccharina Latissima (sugar kelp) model$^6$, mass conserving negativity protection$^4$ | `paper/figures/column.jl`, similar to `examples/column.jl` and `examples/kelp.jl` |
 
 $^1$ `LOBSTER`\
 $^2$ `GasExchange`\
