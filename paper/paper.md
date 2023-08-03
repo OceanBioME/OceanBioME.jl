@@ -129,9 +129,22 @@ Additionally, Strong-Wright (In prep.) is using the coupling of both the biogeoc
 
 | Example| OceanBioME features utilised        | Code location |
 |--------------|--------------|---------------|
-| Sub-mesoscale eddy | LOBSTER biogeochemical model (`LOBSTER`) with carbonate model active, CO₂ exchange with the air (`GasExchange`), Light attenuation (`TwoBandPhotosyntheticallyActiveRadiation`), mass conserving negativity protection (`ScaleNegativeTracers`)| `examples/eady.jl` with resolution increased to 64x64x16|
-| Near-global | NPZD model (`NutrientPhytoplanktonZooplanktonDetritus`), Light attenuation (`TwoBandPhotosyntheticallyActiveRadiation`)| Work in progress, available upon request/for collaboration |
-| Idealised 1D model with kelp individuals |  LOBSTER biogeochemical model (`LOBSTER`) with carbonate model and variable Redfield ratio for organic components active, CO₂ exchange with the air (`GasExchange`), Light attenuation (`TwoBandPhotosyntheticallyActiveRadiation`), Saccharina Latissima (sugar kelp) model (`SLatissima`), mass conserving negativity protection (`ScaleNegativeTracers`) | `paper/figures/column.jl`, similar to `examples/column.jl` and `examples/kelp.jl` |
+| Sub-mesoscale eddy | LOBSTER biogeochemical model¹ with carbonate model active, CO₂ exchange with the air², Light attenuation³, mass conserving negativity protection⁴ | `examples/eady.jl` with resolution increased to 64x64x16|
+| Near-global | NPZD model⁵, Light attenuation³| Work in progress, available upon request/for collaboration |
+| Idealised 1D model with kelp individuals |  LOBSTER biogeochemical model¹ with carbonate model and variable Redfield ratio for organic components active, CO₂ exchange with the air², Light attenuation³, Saccharina Latissima (sugar kelp) model⁶, mass conserving negativity protection⁴ | `paper/figures/column.jl`, similar to `examples/column.jl` and `examples/kelp.jl` |
+
+¹ `LOBSTER`
+
+² `GasExchange`
+
+³ `TwoBandPhotosyntheticallyActiveRadiation`
+
+⁴ `ScaleNegativeTracers`
+
+⁵ `NutrientPhytoplanktonZooplanktonDetritus`
+
+⁶ `SLatissima`
+
 <!---
 TODO: add eady plotting script
 --->
