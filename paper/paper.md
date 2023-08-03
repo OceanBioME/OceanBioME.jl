@@ -127,7 +127,7 @@ Additionally, Strong-Wright (In prep.) is using the coupling of both the biogeoc
 
 # Examples
 
-| Example      | OceanBioME features utilised     | Code location |
+| Example| OceanBioME features utilised        | Code location |
 |--------------|--------------|---------------|
 | Sub-mesoscale eddy | LOBSTER biogeochemical model (`LOBSTER`) with carbonate model active, CO₂ exchange with the air (`GasExchange`), Light attenuation (`TwoBandPhotosyntheticallyActiveRadiation`), mass conserving negativity protection (`ScaleNegativeTracers`)| `examples/eady.jl` with resolution increased to 64x64x16|
 | Near-global | NPZD model (`NutrientPhytoplanktonZooplanktonDetritus`), Light attenuation (`TwoBandPhotosyntheticallyActiveRadiation`)| Work in progress, available upon request/for collaboration |
