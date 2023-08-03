@@ -73,9 +73,9 @@ Thanks to Julia's speed and efficiency the above model (1 km × 1 km × 100 m wi
 ``OceanBioME.jl`` is built with a highly modular design that allows user control and customization.
 There are two distinct module types implemented in ``OceanBioME.jl``:
 
-- First, tracer-based ecosystem modules are formulated in `AdvectedPopulations` as a set of coupled ordinary differential equations.
+- First, we provide tracer-based ecosystem modules in `AdvectedPopulations` as a set of coupled ordinary differential equations which evolve the concentration of the tracer.
 These equations can be solved by ``OceanBioME.jl`` as box models, which is particularly useful for testing.
-The same equations can be integrated by ``Oceananigans.jl`` to provide tracer-based ecosystem models.
+The same equations can be integrated by ``Oceananigans.jl`` to provide where the tracers are also advected and diffused.
 
 - The second module type is `Individual` "biologically active" particles.
 These consist of individual-based models solved along particle paths and can be coupled with the tracer-based modules and physics from ``Oceananigans.jl``.
