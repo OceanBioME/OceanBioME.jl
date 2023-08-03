@@ -129,21 +129,16 @@ Additionally, Strong-Wright (In prep.) is using the coupling of both the biogeoc
 
 | Example| OceanBioME features utilised        | Code location |
 |--------------|--------------|---------------|
-| Sub-mesoscale eddy | LOBSTER biogeochemical model¹ with carbonate model active, CO₂ exchange with the air², Light attenuation³, mass conserving negativity protection⁴ | `examples/eady.jl` with resolution increased to 64x64x16|
-| Near-global | NPZD model⁵, Light attenuation³| Work in progress, available upon request/for collaboration |
-| Idealised 1D model with kelp individuals |  LOBSTER biogeochemical model¹ with carbonate model and variable Redfield ratio for organic components active, CO₂ exchange with the air², Light attenuation³, Saccharina Latissima (sugar kelp) model⁶, mass conserving negativity protection⁴ | `paper/figures/column.jl`, similar to `examples/column.jl` and `examples/kelp.jl` |
+| Sub-mesoscale eddy | LOBSTER biogeochemical model<sup>1</sup> with carbonate model active, CO₂ exchange with the air<sup>2</sup>, Light attenuation<sup>3</sup>, mass conserving negativity protection<sup>4</sup> | `examples/eady.jl` with resolution increased to 64x64x16|
+| Near-global | NPZD model<sup>5</sup>, Light attenuation<sup>3</sup>| Work in progress, available upon request/for collaboration |
+| Idealised 1D model with kelp individuals |  LOBSTER biogeochemical model<sup>1</sup> with carbonate model and variable Redfield ratio for organic components active, CO₂ exchange with the air<sup>2</sup>, Light attenuation<sup>3</sup>, Saccharina Latissima (sugar kelp) model<sup>6</sup>, mass conserving negativity protection<sup>4</sup> | `paper/figures/column.jl`, similar to `examples/column.jl` and `examples/kelp.jl` |
 
-¹ `LOBSTER`
-
-² `GasExchange`
-
-³ `TwoBandPhotosyntheticallyActiveRadiation`
-
-⁴ `ScaleNegativeTracers`
-
-⁵ `NutrientPhytoplanktonZooplanktonDetritus`
-
-⁶ `SLatissima`
+<sup>1</sup> `LOBSTER`\
+<sup>2</sup> `GasExchange`\
+<sup>3</sup> `TwoBandPhotosyntheticallyActiveRadiation`\
+<sup>4</sup> `ScaleNegativeTracers`\
+<sup>5</sup> `NutrientPhytoplanktonZooplanktonDetritus`\
+<sup>6</sup> `SLatissima`
 
 <!---
 TODO: add eady plotting script
