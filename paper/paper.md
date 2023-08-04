@@ -99,7 +99,7 @@ For example, if a user wanted to modify the light limitation to phytoplankton gr
 ```julia
 import OceanBioME.NPZDModel: light_limitation
 
-@inline light_limitation(PAR, α, μ₀) = 1 - exp(- PAR / α)
+@inline light_limitation(PAR, α, μ) = 1 - exp(- PAR / α)
 ````
 
 These `AdvectedPopulations` are supported by `Boundaries` modules which are easy to apply and provide information at the top and bottom of the ocean.
