@@ -43,7 +43,7 @@ $k = \frac{\lambda_\text{fast} C_\text{fast} + \lambda_\text{slow} C_\text{slow}
 
 and, based on [Soetaert2000](@citet), the fraction nitrified (i.e becoming nitrate rather than ammonia) is given by:
 
-$\ln\left(C_\text{min}p_{nit}) = A + B\ln C_\text{min}\ln O_2 + C * \ln C_\text{min} ^ 2 + D * \ln k \ln NH_4 + E \ln C_\text{min} + F \ln C_\text{min} \ln NH_4.$
+$\ln\left(C_\text{min}p_{nit}\right) = A + B\ln C_\text{min}\ln O_2 + C * \ln C_\text{min} ^ 2 + D * \ln k \ln NH_4 + E \ln C_\text{min} + F \ln C_\text{min} \ln NH_4.$
 
 Therefore, the efflux of nitrate and ammonia are given by:
 
@@ -60,7 +60,7 @@ $p_\text{solid deposition} = 0.233 w ^{0.336},$
 
 with, $w = 982D^{-1.548}$ where $D$ is the water depth.
 
-$\ln\left(C_\text{min}p_\text{anox}) = A + B\lnC_\text{min} + C \ln C_\text{min} ^ 2 + D \ln k + E \ln O_2 \ln k + F \ln NO_3 ^2.$
+$\ln\left(C_\text{min}p_\text{anox}) = A + B\ln C_\text{min} + C \ln C_\text{min} ^ 2 + D \ln k + E \ln O_2 \ln k + F \ln NO_3 ^2.$
 
 All parameters are given in [Parameters](@id parametes). The original model of [Soetaert2000](@citet) also includes denitrification terms whereby nitrogen is returned to the water column as dissolved $N_2$, but we currently do not account for this in order to conserve the nitrogen budget.
 
