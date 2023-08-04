@@ -225,7 +225,7 @@ required_biogeochemical_auxiliary_fields(::NPZD) = (:PAR, )
 
 @inline Q₁₀(T) = 1.88 ^ (T / 10) # T in °C
 
-@inline light_limitation(PAR, T, α, μ₀) = α * PAR / sqrt((μ₀ * Q₁₀(T)) ^ 2 + α ^ 2 * PAR ^ 2)
+@inline light_limitation(PAR, α, μ₀) = α * PAR / sqrt(μ₀ ^ 2 + α ^ 2 * PAR ^ 2)
 
 @inline function (bgc::NPZD)(::Val{:N}, x, y, z, t, N, P, Z, D, T, PAR)
     μ₀ = bgc.base_maximum_growth
@@ -235,7 +235,7 @@ required_biogeochemical_auxiliary_fields(::NPZD) = (:PAR, )
     lᶻⁿ = bgc.base_excretion_rate
     rᵈⁿ = bgc.remineralization_rate
 
-    phytoplankton_consumption = μ₀ * Q₁₀(T) * nutrient_limitation(N, kₙ) * light_limitation(PAR, T, α, μ₀ * Q₁₀(T)) * P
+    phytoplankton_consumption = μ₀ * Q₁₀(T) * nutrient_limitation(N, kₙ) * light_limitation(PAR, α, μ₀ * Q₁₀(T)) * P
     phytoplankton_metabolic_loss = lᵖⁿ * Q₁₀(T) * P
     zooplankton_metabolic_loss = lᶻⁿ * Q₁₀(T) * Z
     remineralization = rᵈⁿ * D
@@ -252,7 +252,7 @@ end
     lᵖⁿ = bgc.base_respiration_rate
     lᵖᵈ = bgc.phyto_base_mortality_rate
 
-    growth = μ₀ * Q₁₀(T) * nutrient_limitation(N, kₙ) * light_limitation(PAR, T, α, μ₀ * Q₁₀(T)) * P
+    growth = μ₀ * Q₁₀(T) * nutrient_limitation(N, kₙ) * light_limitation(PAR, α, μ₀ * Q₁₀(T)) * P
     grazing = gₘₐₓ * nutrient_limitation(P ^ 2, kₚ ^ 2) * Z
     metabolic_loss = lᵖⁿ * Q₁₀(T) * P
     mortality_loss = lᵖᵈ * Q₁₀(T) * P
