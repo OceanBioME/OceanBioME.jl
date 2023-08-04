@@ -92,9 +92,6 @@ Keyword Arguments
    which should be `f(x, y, t)` where `x` and `y` are the native coordinates (i.e. meters for rectilinear grids
    and latitude/longitude as appropriate)
 """
-
-TwoBandPhotosyntheticallyActiveRadiation(; grid::ImmersedBoundaryGrid, kwargs...) = TwoBandPhotosyntheticallyActiveRadiation(; grid, kwargs...)
-
 function TwoBandPhotosyntheticallyActiveRadiation(; grid, 
                                                     water_red_attenuation::FT = 0.225, # 1/m
                                                     water_blue_attenuation::FT = 0.0232, # 1/m

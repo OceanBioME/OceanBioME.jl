@@ -199,8 +199,9 @@ function NutrientPhytoplanktonZooplanktonDetritus(; grid,
 
     sinking_velocities = setup_velocity_fields(sinking_speeds, grid, open_bottom)
 
-    (!isnothing(sediment_model) && open_bottom) ||
+    if !isnothing(sediment_model) && !open_bottom
         @warn "You have specified a sediment model but not `open_bottom` which will not work as the tracer will settle in the bottom cell"
+    end
 
     return NutrientPhytoplanktonZooplanktonDetritus(initial_photosynthetic_slope,
                                                     base_maximum_growth,
