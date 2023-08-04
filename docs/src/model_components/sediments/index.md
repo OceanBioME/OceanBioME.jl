@@ -1,28 +1,14 @@
 # [Sediment](@id sediment)
 
-We currently have one single-layer sediment model implemented. The model, proposed by [Soetaert2000](@citet), is a "G class" model that evolves carbon and nitrogen in three classes (fast, slow and refectory). The model is also only compatible with the LOBSTER biogeochemical model with carbonate chemistry, oxygen, and variable redfield options on. You also must ensure that the `open_bottom` option is on for particles to leave the bottom of the domain to the sediment model.
+Sediment models can be added to biogeochemical models. For details of the BGC models currently implemented please see the following pages. 
 
-It is straightforward to set up:
+Sediment models are usually added by setting up the model and then passing it to the biogeochemical model, for example:
+```
+sediment = SEDIMENT_MODEL_NAME(; grid)
 
-```jldoctest simplemultig; filter = r".*@ OceanBioME.Boundaries.Sediments.*"
-using OceanBioME, Oceananigans, OceanBioME.Sediments
-
-grid = RectilinearGrid(size=(3, 3, 30), extent=(10, 10, 200))
-
-sediment_model = SimpleMultiG(; grid)
-
-# output
-┌ Warning: Sediment models are an experimental feature and have not yet been validated.
-└ @ OceanBioME.Boundaries.Sediments ~/OceanBioME.jl/src/Boundaries/Sediments/simple_multi_G.jl:102
-[ Info: This sediment model is currently only compatible with models providing NH₄, NO₃, O₂, and DIC.
-Single-layer multi-G sediment model (Float64)
+biogeochemistry = BIOGEOCHEMICAL_MODEL_NAME(; name, sediment, ...)
 ```
 
-You may optionally specify the model parameters. This can then be passed in the setup of a BGC model:
+where `SEDIMENT_MODEL_NAME` is the chosen sediment model, and `BIOGEOCHEMICAL_MODEL_NAME` is the chosen biogeochemical model and `...` replaces the other parameters you may wish to pass to the model.
 
-```julia
-biogeochemistry = LOBSTER(; grid, 
-                            carbonates = true, oxygen = true, variable_redfield = true, 
-                            open_bottom = true, 
-                            sediment_model)
-```
+Please note that not all sediment models are compatible with all biogeochemical models. This will be noted on the documentation page for each model.
