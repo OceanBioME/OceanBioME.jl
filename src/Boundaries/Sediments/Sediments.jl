@@ -3,7 +3,7 @@ module Sediments
 export SimpleMultiG, InstantRemineralisation
 
 using KernelAbstractions
-using OceanBioME: ContinuousFormBiogeochemistry
+using OceanBioME: ContinuousFormBiogeochemistry, BoxModelGrid
 using Oceananigans
 using Oceananigans.Architectures: device
 using Oceananigans.Utils: launch!
@@ -58,6 +58,7 @@ end
       volume(i, j, k, grid, Center(), Center(), Center())
 end
 
+calculate_bottom_indices(::BoxModelGrid) = 1
 calculate_bottom_indices(grid) = ones(Int, size(grid)[1:2]...)
 
 @kernel function find_bottom_cell(grid, bottom_indices)
