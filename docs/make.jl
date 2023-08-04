@@ -82,7 +82,9 @@ bgc_pages = [
 ]
 
 sed_pages = [
-    "Overview" => "model_components/sediment.md",
+    "Overview" => "model_components/sediments/index.md",
+    "Simple Multi-G" => "model_components/sediments/simple_multi_g.md",
+    "Instant remineralisation" => "model_components/sediments/instant_remineralisation.md"
 ]
 
 individuals_pages = [
