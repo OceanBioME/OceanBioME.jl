@@ -34,7 +34,7 @@ As a simple example lets run a Nutrient-Phytoplankton-Zooplankton-Detritus (NPZD
 using OceanBioME, Oceananigans
 using Oceananigans.Units
 
-grid = RectilinearGrid(CPU(), size = (256, 32), extent = (500meters, 100meters), topology = (Bounded, Flat, Bounded))
+grid = RectilinearGrid(CPU(), size = (128, 16), extent = (500meters, 100meters), topology = (Bounded, Flat, Bounded))
 
 biogeochemistry = NutrientPhytoplanktonZooplanktonDetritus(; grid, open_bottom = true)
 
@@ -47,7 +47,7 @@ bᵢ(x, y, z) = ifelse(x < grid.Lx/2, 1e-4, 1e-3)
 
 set!(model, b = bᵢ, N = 5.0, P = 0.1, Z = 0.1, T = 18.0)
 
-simulation = Simulation(model; Δt = 2.0, stop_time = 3hours)
+simulation = Simulation(model; Δt = 4.0, stop_time = 3hours)
 
 simulation.output_writers[:tracers] = JLD2OutputWriter(model, model.tracers,
                                                        filename = "buoyancy_front.jld2",
