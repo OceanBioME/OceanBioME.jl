@@ -84,7 +84,7 @@ sediment_fields(model::InstantRemineralisation) = (N_storage = model.fields.N_st
 
     flux = nitrogen_flux(grid, advection, bgc, tracers, i, j) * Δz
 
-    burial_efficiency = sediment.burial_efficiency_constant1 + sediment.burial_efficiency_constant2 * ((flux / 6.56) / (7 + flux / 6.56)) ^ 2
+    burial_efficiency = sediment.burial_efficiency_constant1 + sediment.burial_efficiency_constant2 * ((flux * 6.56) / (7 + flux * 6.56)) ^ 2
 
     # sediment evolution
     @inbounds sediment.tendencies.Gⁿ.N_storage[i, j, 1] = burial_efficiency * flux
