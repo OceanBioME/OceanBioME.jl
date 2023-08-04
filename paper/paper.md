@@ -79,7 +79,7 @@ Figure made with ``Makie.jl`` [@makie]. \label{eady}](eady_example.png)
 ``OceanBioME.jl`` is built with a highly modular design that allows user control and customization.
 There are two distinct module types implemented in ``OceanBioME.jl``:
 
-- First, we provide tracer-based ecosystem modules in `AdvectedPopulations` as a set of coupled ordinary differential equations which evolve the concentration of the tracer.
+- First, we provide tracer-based ecosystem modules in `AdvectedPopulations` as a set of coupled ordinary differential equations (ODEs) which evolve the concentration of the tracer.
 These equations can be solved by ``OceanBioME.jl`` as box models, which is particularly useful for testing.
 The same equations can be integrated by ``Oceananigans.jl`` to provide where the tracers are also advected and diffused.
 
@@ -91,6 +91,17 @@ For example, migrating zooplankton or fish can be modelled with biologically act
 For example, the `GasExchange` submodule calculates the carbon dioxide and oxygen flux at the sea surface, while the `Sediments` modules calculate fluxes of carbon and oxygen at the seafloor.
 
 We currently provide a simple Nutrient-Phytoplankton-Zooplankton-Detritus (NPZD) model [@npzd], and an intermediate complexity model, LOBSTER [@lobster], we have set up a straightforward "plug and play" framework to add additional tracers such as carbonate and oxygen chemistry systems and additional forcing. 
+A key feature of this package is the easy ability to modify models or add different formulations. 
+If a user wanted to implement a different model they could use the existing ones as a template and modify only a few lines of code where the ODEs are defined as functions.
+Alternatively, by harnessing another Julia feature, users could `import` specific functions from the models and overload only them.
+For example, if a user wanted to modify the light limitation to phytoplankton growth in the NPZD model to copy that of the LOBSTER model they could pass different parameter values to the model and write:
+
+```julia
+import OceanBioME.NPZDModel: light_limitation
+
+@inline light_limitation(PAR, α, μ₀) = 1 - exp(- PAR / α)
+````
+
 These `AdvectedPopulations` are supported by `Boundaries` modules which are easy to apply and provide information at the top and bottom of the ocean.
 We have implemented comprehensive air-sea flux models [e.g. @wanninkhof:1992] within the `GasExchange` submodule to calculate carbon dioxide and oxygen flux at the sea surface, and sediment models [e.g. @soetaert:2000] which calculate fluxes of carbon and oxygen at the seafloor.
 We focus on the simulation of idealized sub-mesoscale systems, but this flexible framework allows users to model problems of any scale.
