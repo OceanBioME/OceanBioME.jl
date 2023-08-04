@@ -26,6 +26,7 @@ authors:
     affiliation: 5
     equal-contrib: true
   - name: John R Taylor
+    orcid : 0000-0002-1292-3756
     affiliation: "1, 2"
 affiliations:
  - name: Department of Applied Mathematics and Theoretical Physics, University of Cambridge, Cambridge, United Kingdom
@@ -115,7 +116,8 @@ Biologically active particles can also be used to model OCDR deployment strategi
 We then add kelp (500 frond / m² in the top 50 m of water) in December of the 2ⁿᵈ year (black vertical line) which causes an increase in air-sea carbon dioxide exchange and sinking export. Changes to the phytoplankton growth cycle are also apparent.
 Figure made with `Makie.jl` [@makie]. \label{column}](column_example.png)
 
-The implementation of OceanBioME.jl models allows for seamless integration with data assimilation packages, such as ``EnsembleKalmanProcesses.jl`` [@ekp]. This feature facilitates rapid calibration of model parameters, providing a powerful utility for integrating observations and models, with the potential to improve model skill and identify key sources of uncertainty.
+The implementation of OceanBioME.jl models allows for seamless integration with data assimilation packages, such as ``EnsembleKalmanProcesses.jl`` [@ekp]. 
+This feature facilitates rapid calibration of model parameters, providing a powerful utility for integrating observations and models, with the potential to improve model skill and identify key sources of uncertainty.
 
 A key metric for the validity of biogeochemical systems is the conservation of elements such as carbon and nitrogen in the system.
 We therefore continuously test the implemented models in a variety of simple scenarios (i.e. isolated, with/without air-sea flux, with/without sediment) to ensure that conservation conditions are met, and we will continue to add tests for any new models.
