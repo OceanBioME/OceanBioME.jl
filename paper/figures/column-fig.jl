@@ -71,14 +71,14 @@ zs = [-198:4:-2;]
 
 fig = Figure(resolution = (1200, 1000))
 
-axP = Axis(fig[1:3, 1:2], xlabel = "Time (years)", ylabel = "Depth (m)", title = "Phytoplankton concentration (mmol N / m³)", limits = (0, 3, -160, 0))
+axP = Axis(fig[1:3, 1:2], xlabel = "Time (years)", ylabel = "Depth (m)", title = "(a) Phytoplankton concentration (mmol N / m³)", limits = (0, 3, -160, 0))
 
 hmP = heatmap!(axP, times ./ year, zs[10:50], P[10:50, :]', colormap = Reverse(:batlow))
 Colorbar(fig[1:3, 3], hmP)
 
 lines!(axP, [2 - 30/365, 2 - 30/365], [zs[9], 0], color=:black)
 
-axN = Axis(fig[4:6, 1:2], xlabel = "Time (years)", ylabel = "Depth (m)", title = "Nutrient concentration (mmol N / m³)", limits = (0, 3, -160, 0))
+axN = Axis(fig[4:6, 1:2], xlabel = "Time (years)", ylabel = "Depth (m)", title = "(b) Nutrient concentration (mmol N / m³)", limits = (0, 3, -160, 0))
 
 hmN = heatmap!(axN, times ./ year, zs[10:50], NO₃[10:50, :]', colormap = Reverse(:batlow))
 Colorbar(fig[4:6, 3], hmN)
@@ -96,7 +96,7 @@ lines!(axS, [2 - 30/365, 2 - 30/365], [1, -2], color=:black)
 
 Ā = mean(A, dims=1)[1, :]
 
-axA = Axis(fig[1:2, 4], xlabel = "Time (years)", ylabel = "Frond area (dm² / frond)", title = "Kelp growth", xticks = [2:0.2:3;], limits = (2 - 30/365, 3, minimum(Ā)*0.95, maximum(Ā)*1.05))
+axA = Axis(fig[1:2, 4], xlabel = "Time (years)", ylabel = "Frond area (dm² / frond)", title = "(c) Kelp growth", xticks = [2:0.2:3;], limits = (2 - 30/365, 3, minimum(Ā)*0.95, maximum(Ā)*1.05))
 
 lines!(axA, kelp_times ./ year, Ā)
 
