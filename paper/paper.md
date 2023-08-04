@@ -74,7 +74,7 @@ Panel (a) shows the domain with the colour representing the concentration of var
 The increase in concentration in the centre of the eddy can be seen, as well as carbon being subducted (most visible in the xz face in the organic carbon).
 Additionally, points on the surface represent the kelp particle positions, with the colour representing the range of frond size.
 Panel (b) shows the carbon stored in each kelp frond, highlighting the variability depending on the nutrition availability in each particle's location history.
-Figure made with `Makie.jl` [@makie]. \label{eady}](eady_example.png)
+Figure made with ``Makie.jl`` [@makie]. \label{eady}](eady_example.png)
 
 ``OceanBioME.jl`` is built with a highly modular design that allows user control and customization.
 There are two distinct module types implemented in ``OceanBioME.jl``:
@@ -88,7 +88,7 @@ These consist of individual-based models solved along particle paths and can be 
 The biologically active particles can be advected by the currents, and/or they can move according to prescribed dynamics.
 For example, migrating zooplankton or fish can be modelled with biologically active particles and ``OceanBioME.jl`` allows these to interact with tracer-based components such as phytoplankton or oxygen.
 
-For example, the GasExchange submodule calculates the carbon dioxide and oxygen flux at the sea surface, while the `Sediments` modules calculate fluxes of carbon and oxygen at the seafloor.
+For example, the `GasExchange` submodule calculates the carbon dioxide and oxygen flux at the sea surface, while the `Sediments` modules calculate fluxes of carbon and oxygen at the seafloor.
 
 We currently provide a simple Nutrient-Phytoplankton-Zooplankton-Detritus (NPZD) model [@npzd], and an intermediate complexity model, LOBSTER [@lobster], we have set up a straightforward "plug and play" framework to add additional tracers such as carbonate and oxygen chemistry systems and additional forcing. 
 These `AdvectedPopulations` are supported by `Boundaries` modules which are easy to apply and provide information at the top and bottom of the ocean.
@@ -103,7 +103,7 @@ This flexibility and ease-of-use is unmatched in existing biogeochemical models.
 It shows reasonably good reproduction of large-scale patterns for such a simple and uncalibrated model but demonstrates further work such as nutrient input from rivers and tuning physics parametrisations that are required in the future.
 We ran this model with a 1° horizontal resolution and 48 (irregularly spaced) vertical points.
 It took around 45 minutes per year to run on an Nvidia A100 GPU when integrating the physics, or around 5 minutes per year when using pre-calculated velocity fields.
-Figure made with `Makie.jl` [@makie]. \label{global}](phytoplankton.png)
+Figure made with ``Makie.jl`` [@makie]. \label{global}](phytoplankton.png)
 
 The biologically active particles built into ``OceanBioME.jl`` are particularly useful for OCDR applications.
 Accurate carbon accounting is essential for assessing the effectiveness of OCDR strategies.
@@ -114,7 +114,7 @@ Biologically active particles can also be used to model OCDR deployment strategi
 
 ![Here we show the results of a 1D model, forced by idealised light and mixing, which qualitatively reproduces the biogeochemical cycles in the North Atlantic.
 We then add kelp (500 frond / m² in the top 50 m of water) in December of the 2ⁿᵈ year (black vertical line) which causes an increase in air-sea carbon dioxide exchange and sinking export. Changes to the phytoplankton growth cycle are also apparent.
-Figure made with `Makie.jl` [@makie]. \label{column}](column_example.png)
+Figure made with ``Makie.jl`` [@makie]. \label{column}](column_example.png)
 
 The implementation of OceanBioME.jl models allows for seamless integration with data assimilation packages, such as ``EnsembleKalmanProcesses.jl`` [@ekp]. 
 This feature facilitates rapid calibration of model parameters, providing a powerful utility for integrating observations and models, with the potential to improve model skill and identify key sources of uncertainty.
