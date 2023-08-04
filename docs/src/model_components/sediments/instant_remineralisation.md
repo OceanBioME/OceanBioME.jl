@@ -6,9 +6,11 @@ This model is similar to that described in [Aumont2015](@citet) where the majori
 
 The burial fraction from [RemineralisationFraction](@citet) is given by:
 
-$E = 0.013 + 0.53\left(\frac{F_{OC}}{7 + F_{OC}}\right)^2,$
+```math
+E = 0.013 + 0.53\left(\frac{F_{OC}}{7 + F_{OC}}\right)^2,
+```
 
-where $F_{OC}$ is the carbon flux (in this implementation the nitrogen flux multiplied by the Redfield ratio).
+where ``F_{OC}`` is the carbon flux (in this implementation the nitrogen flux multiplied by the Redfield ratio).
 
 ## Model conservations
 
