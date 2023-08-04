@@ -62,7 +62,7 @@ with, $w = 982D^{-1.548}$ where $D$ is the water depth.
 
 $\ln\left(C_\text{min}p_\text{anox}) = A + B\ln C_\text{min} + C \ln C_\text{min} ^ 2 + D \ln k + E \ln O_2 \ln k + F \ln NO_3 ^2.$
 
-All parameters are given in [Parameters](@id parametes). The original model of [Soetaert2000](@citet) also includes denitrification terms whereby nitrogen is returned to the water column as dissolved $N_2$, but we currently do not account for this in order to conserve the nitrogen budget.
+All parameters are given in [Parameters](@ref parameters). The original model of [Soetaert2000](@citet) also includes denitrification terms whereby nitrogen is returned to the water column as dissolved $N_2$, but we currently do not account for this in order to conserve the nitrogen budget.
 
 ### Model conservations
 

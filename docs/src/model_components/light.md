@@ -16,4 +16,4 @@ where $PAR_0$ is the surface value, $k_r$ and $k_b$ are the red and blue attenua
 
 $Chl = P(Chl:P),$
 
-where the ratio is constant and found in [Parameters](@ref). The red and blue pigment concentrations are then found as $Chl_r = \left(\frac{Chl}{r_\text{pig}}\right)^{e_r}$ and $Chl_b = \left(\frac{Chl}{r_\text{pig}}\right)^{e_b}$. 
+where the ratio is constant and found in [Parameters](@ref parameters). The red and blue pigment concentrations are then found as $Chl_r = \left(\frac{Chl}{r_\text{pig}}\right)^{e_r}$ and $Chl_b = \left(\frac{Chl}{r_\text{pig}}\right)^{e_b}$. 

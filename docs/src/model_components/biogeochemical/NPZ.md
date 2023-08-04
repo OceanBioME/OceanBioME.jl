@@ -16,7 +16,7 @@ Here $\mu_\text{max} = \mu_0Q_{10}(T)$ and $l_{XY} = l_{XY0} Q_{10}(T)$ where $Q
 
 Additionally, the phytoplankton and detritus sink at a constant rate.
 
-All parameter values are given in [Parameters](@ref parameters).
+All default parameter values are given in [Parameters](@ref parameters).
 
 ## Model conservation
 
