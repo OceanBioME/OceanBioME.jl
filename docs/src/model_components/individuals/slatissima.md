@@ -31,12 +31,12 @@ $f_\text{area} = m_1\exp(-(A/A_0)^2) + m_2,$
 
 $f_\text{seasonal} = a_1(1 + \text{sgn}(\lambda(n))|\lambda(n)|^{1/2}) + a_2,$
 
-$f_\text{temp} = \left{ \begin{array}{ll}
+$f_\text{temp} = \left[ \begin{array}{ll}
                     0.08T + 0.2 & -1.8\leq T < 10 \\
                     1           & 10 \leq T \leq 15 \\
                     19/4 - T/4  & 15 < T \leq 19 \\
-                    0           & T > 19>
-                 \end{array} \right$
+                    0           & T > 19
+                 \end{array} \right]$
 
 where $n$ is the day of the year, $\lambda$ is the normalised day length change, and $T$ is the temperature in degrees centigrade. The limiting rates ($\mu_c$, $\mu_{NO_3}$, $\mu_{NH_4}$) depend on the availability of carbon giving:
 
