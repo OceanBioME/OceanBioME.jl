@@ -7,24 +7,27 @@ becoming N, and a fraction being perminantly burried.
 
 Burial efficiency from [RemineralisationFraction](@citet).
 """
-struct InstantRemineralisation{FT, F, TE} <: FlatSediment
+struct InstantRemineralisation{FT, F, TE, B} <: FlatSediment
           burial_efficiency_constant1 :: FT
           burial_efficiency_constant2 :: FT
     burial_efficiency_half_saturaiton :: FT
 
                                fields :: F
                            tendencies :: TE
+                       bottom_indices :: B
 
     InstantRemineralisation(burial_efficiency_constant1::FT,
                             burial_efficiency_constant2::FT,
                             burial_efficiency_half_saturaiton::FT,
                             fields::F,
-                            tendencies::TE) where {FT, F, TE} =
-        new{FT, F, TE}(burial_efficiency_constant1,
-                        burial_efficiency_constant2,
-                        burial_efficiency_half_saturaiton,
-                        fields,
-                        tendencies)
+                            tendencies::TE,
+                            bottom_indices::B) where {FT, F, TE, B} =
+        new{FT, F, TE, B}(burial_efficiency_constant1,
+                          burial_efficiency_constant2,
+                          burial_efficiency_half_saturaiton,
+                          fields,
+                          tendencies,
+                          bottom_indices)
 end
 
 """
@@ -56,15 +59,18 @@ function InstantRemineralisation(; grid,
     tracer_names = (:N_storage, )
 
     # add field slicing back ( indices = (:, :, 1)) when output writer can cope
-    fields = NamedTuple{tracer_names}(Tuple(CenterField(grid;) for tracer in tracer_names))
-    tendencies = (Gⁿ = NamedTuple{tracer_names}(Tuple(CenterField(grid;) for tracer in tracer_names)),
-                  G⁻ = NamedTuple{tracer_names}(Tuple(CenterField(grid;) for tracer in tracer_names)))
+    fields = NamedTuple{tracer_names}(Tuple(CenterField(grid, indices = (:, :, 1)) for tracer in tracer_names))
+    tendencies = (Gⁿ = NamedTuple{tracer_names}(Tuple(CenterField(grid, indices = (:, :, 1)) for tracer in tracer_names)),
+                  G⁻ = NamedTuple{tracer_names}(Tuple(CenterField(grid, indices = (:, :, 1)) for tracer in tracer_names)))
+
+    bottom_indices = calculate_bottom_indices(grid)
 
     return InstantRemineralisation(burial_efficiency_constant1,
                                    burial_efficiency_constant2,
                                    burial_efficiency_half_saturaiton,
                                    fields,
-                                   tendencies)
+                                   tendencies,
+                                   bottom_indices)
 end
 
 adapt_structure(to, sediment::InstantRemineralisation) = 
@@ -77,12 +83,16 @@ adapt_structure(to, sediment::InstantRemineralisation) =
 sediment_tracers(::InstantRemineralisation) = (:N_storage, )
 sediment_fields(model::InstantRemineralisation) = (N_storage = model.fields.N_storage, )
 
+@inline bottom_index_array(sediment::InstantRemineralisation) = sediment.bottom_indices
+
 @kernel function _calculate_tendencies!(sediment::InstantRemineralisation, bgc, grid, advection, tracers, timestepper)
     i, j = @index(Global, NTuple)
 
-    Δz = zspacing(i, j, 1, grid, Center(), Center(), Center())
+    k = bottom_index(i, j, sediment)
 
-    flux = nitrogen_flux(grid, advection, bgc, tracers, i, j) * Δz
+    Δz = zspacing(i, j, k, grid, Center(), Center(), Center())
+
+    flux = nitrogen_flux(i, j, k, grid, advection, bgc, tracers) * Δz
 
     burial_efficiency = sediment.burial_efficiency_constant1 + sediment.burial_efficiency_constant2 * ((flux / 6.56) / (7 + flux / 6.56)) ^ 2
 

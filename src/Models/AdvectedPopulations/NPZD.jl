@@ -199,6 +199,9 @@ function NutrientPhytoplanktonZooplanktonDetritus(; grid,
 
     sinking_velocities = setup_velocity_fields(sinking_speeds, grid, open_bottom)
 
+    (!isnothing(sediment_model) && open_bottom) ||
+        @warn "You have specified a sediment model but not `open_bottom` which will not work as the tracer will settle in the bottom cell"
+
     return NutrientPhytoplanktonZooplanktonDetritus(initial_photosynthetic_slope,
                                                     base_maximum_growth,
                                                     nutrient_half_saturation,
@@ -339,9 +342,10 @@ adapt_structure(to, npzd::NPZD) =
 
                                              adapt(to, npzd.particles))
 
-@inline nitrogen_flux(grid, advection, bgc::NPZD, tracers, i, j) = sinking_flux(i, j, grid, advection, Val(:D), bgc, tracers) +
-                                                                   sinking_flux(i, j, grid, advection, Val(:P), bgc, tracers)
-                 
-@inline carbon_flux(bgc::NPZD, tracers, i, j) = nitrogen_flux(bgc, tracers, i, j) * 6.56
+@inline nitrogen_flux(i, j, k, grid, advection, bgc::NPZD, tracers) = sinking_flux(i, j, k, grid, advection, Val(:D), bgc, tracers) +
+                                                                      sinking_flux(i, j, k, grid, advection, Val(:P), bgc, tracers)
+
+@inline carbon_flux(i, j, k, grid, advection, bgc::NPZD, tracers) = nitrogen_flux(i, j, k, grid, advection, bgc, tracers) * 6.56
+
 @inline remineralisation_receiver(::NPZD) = :N
 end # module

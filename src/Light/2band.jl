@@ -92,6 +92,9 @@ Keyword Arguments
    which should be `f(x, y, t)` where `x` and `y` are the native coordinates (i.e. meters for rectilinear grids
    and latitude/longitude as appropriate)
 """
+
+TwoBandPhotosyntheticallyActiveRadiation(; grid::ImmersedBoundaryGrid, kwargs...) = TwoBandPhotosyntheticallyActiveRadiation(; grid, kwargs...)
+
 function TwoBandPhotosyntheticallyActiveRadiation(; grid, 
                                                     water_red_attenuation::FT = 0.225, # 1/m
                                                     water_blue_attenuation::FT = 0.0232, # 1/m
@@ -105,8 +108,8 @@ function TwoBandPhotosyntheticallyActiveRadiation(; grid,
 
     field = CenterField(grid; boundary_conditions = 
                             regularize_field_boundary_conditions(
-                                FieldBoundaryConditions(top = ValueBoundaryCondition(surface_PAR)),
-                                grid, :PAR))
+                            FieldBoundaryConditions(top = ValueBoundaryCondition(surface_PAR)),
+                            grid, :PAR))
 
     return TwoBandPhotosyntheticallyActiveRadiation(water_red_attenuation,
                                                     water_blue_attenuation,

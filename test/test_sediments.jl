@@ -9,6 +9,8 @@ using Oceananigans.Fields: TracerFields
 
 using Oceananigans.Operators: volume, Azᶠᶜᶜ
 
+import Oceananigans.Biogeochemistry: biogeochemical_drift_velocity
+
 function intercept_tendencies!(model, intercepted_tendencies)
     for tracer in keys(model.tracers)
         copyto!(intercepted_tendencies[tracer], model.timestepper.Gⁿ[tracer])
@@ -46,10 +48,17 @@ total_nitrogen(sed::InstantRemineralisation) = sum(sed.fields.N_storage)
 total_nitrogen(::LOBSTER, model) = sum(model.tracers.NO₃) + sum(model.tracers.NH₄) + sum(model.tracers.P) + sum(model.tracers.Z) + sum(model.tracers.DON) + sum(model.tracers.sPON) + sum(model.tracers.bPON)
 total_nitrogen(::NutrientPhytoplanktonZooplanktonDetritus, model) = sum(model.tracers.N) + sum(model.tracers.P) + sum(model.tracers.Z) + sum(model.tracers.D)
 
-function test_flat_sediment(grid, biogeochemistry; timestepper = :QuasiAdamsBashforth2)
-    model = NonhydrostaticModel(; grid, biogeochemistry, 
-                                  closure = nothing,
-                                  timestepper)
+function test_flat_sediment(grid, biogeochemistry, model; timestepper = :QuasiAdamsBashforth2)
+    model = isa(model, NonhydrostaticModel) ? model(; grid, 
+                                                      biogeochemistry, 
+                                                      closure = nothing,
+                                                      timestepper,
+                                                      buoyancy = nothing) :
+                                              model(; grid, 
+                                                      biogeochemistry, 
+                                                      closure = nothing,
+                                                      buoyancy = nothing,
+                                                      tracers = nothing)
 
     set_defaults!(model.biogeochemistry.sediment_model)
 
@@ -88,25 +97,65 @@ display_name(::LOBSTER) = "LOBSTER"
 display_name(::NutrientPhytoplanktonZooplanktonDetritus) = "NPZD"
 display_name(::SimpleMultiG) = "Multi-G"
 display_name(::InstantRemineralisation) = "Instant remineralisation"
+display_name(::RectilinearGrid) = "Rectilinear grid"
+display_name(::LatitudeLongitudeGrid) = "Latitude longitude grid"
+display_name(::ImmersedBoundaryGrid) = "Immersed boundary grid"
+display_name(::Type{NonhydrostaticModel}) = "Nonhydrostatic model"
+display_name(::Type{HydrostaticFreeSurfaceModel}) = "Hydrostatic free surface model"
 
-@testset "Sediment" begin
+
+bottom_height(x, y) = -1000 + 500 * exp(- (x^2 + y^2) / 250) # a hill
+
+@testset "Sediment integration" begin
     for architecture in (CPU(), )
-        grid = RectilinearGrid(architecture; size=(3, 3, 50), extent=(10, 10, 500))
-
-        for timestepper in (:QuasiAdamsBashforth2, :RungeKutta3),
-            sediment_model in (InstantRemineralisation(; grid), SimpleMultiG(; grid))
-            for biogeochemistry in (NutrientPhytoplanktonZooplanktonDetritus(; grid, open_bottom = true,
-                                                                               sediment_model),
-                                    LOBSTER(; grid,
-                                              carbonates = true, oxygen = true, variable_redfield = true, 
-                                              open_bottom = true,
-                                              sediment_model))
-
-                if !(isa(sediment_model, SimpleMultiG) && isa(biogeochemistry, NutrientPhytoplanktonZooplanktonDetritus))
-                    @info "Testing sediment on $(typeof(architecture)) with $timestepper and $(display_name(sediment_model)) on $(display_name(biogeochemistry))"
-                    @testset "$architecture, $timestepper, $(display_name(sediment_model)), $(display_name(biogeochemistry))" test_flat_sediment(grid, biogeochemistry; timestepper)
+        grids = [RectilinearGrid(architecture; size=(3, 3, 50), extent=(10, 10, 500)),
+                 LatitudeLongitudeGrid(architecture; size = (3, 3, 16), latitude = (0, 10), longitude = (0, 10), z = (-500, 0)),
+                 ImmersedBoundaryGrid(
+                    LatitudeLongitudeGrid(architecture; size = (3, 3, 16), latitude = (0, 10), longitude = (0, 10), z = (-500, 0)), 
+                    GridFittedBottom(bottom_height))]
+        for grid in grids
+            for timestepper in (:QuasiAdamsBashforth2, :RungeKutta3),
+                sediment_model in (InstantRemineralisation(; grid), SimpleMultiG(; grid)),
+                model in (NonhydrostaticModel, HydrostaticFreeSurfaceModel)
+                for biogeochemistry in (NutrientPhytoplanktonZooplanktonDetritus(; grid, sediment_model),
+                                        LOBSTER(; grid,
+                                                  carbonates = true, oxygen = true, variable_redfield = true, 
+                                                  sediment_model))
+                    # get rid of incompatible combinations
+                    run = ifelse((model == NonhydrostaticModel && (isa(grid, ImmersedBoundaryGrid) || isa(grid, LatitudeLongitudeGrid))) ||
+                                 (model == HydrostaticFreeSurfaceModel && timestepper == :RungeKutta3) ||
+                                 (isa(sediment_model, SimpleMultiG) && isa(biogeochemistry, NutrientPhytoplanktonZooplanktonDetritus)), false, true)
+                    if run
+                        #@info "Testing sediment on $(typeof(architecture)) with $timestepper and $(display_name(sediment_model)) on $(display_name(biogeochemistry)) on $(display_name(grid))"
+                        @testset "$architecture, $timestepper, $(display_name(sediment_model)), $(display_name(biogeochemistry)), $(display_name(grid)), $(display_name(model))" test_flat_sediment(grid, biogeochemistry, model; timestepper)
+                    end
                 end
             end
         end
     end
 end
+#=
+function test_sediment_on_immersed_boundary(underlying_grid)
+    grid = ImmersedBoundaryGrid(underlying_grid, GridFittedBottom(bottom_height))
+
+    sediment_model = InstantRemineralisation(; grid)
+
+    biogeochemistry = NutrientPhytoplanktonZooplanktonDetritus(; grid, sediment_model)
+
+    model = HydrostaticFreeSurfaceModel(; grid, tracers = :A, buoyancy = nothing, biogeochemistry)
+
+    set!(model, D = 1)
+
+    time_step!(model, 1)
+
+    return all(interior(biogeochemistry.sediment_model.tendencies.Gⁿ.N_storage))
+end
+
+@testset "Sediments with immersed boundaries" begin
+
+    for underlying_grid in (RectilinearGrid(size = (16, 16, 16), extent = (1000, 1000, 1000)),
+                            LatitudeLongitudeGrid(size = (16, 16, 16), latitude = (0, 10), longitude = (0, 10), z = (-100, 0)))
+        @test test_sediment_on_immersed_boundary(underlying_grid)
+    end
+end
+=#
