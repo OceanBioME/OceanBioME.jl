@@ -34,7 +34,7 @@ As a simple example lets run a Nutrient-Phytoplankton-Zooplankton-Detritus (NPZD
 using OceanBioME, Oceananigans
 using Oceananigans.Units
 
-grid = RectilinearGrid(CPU(), size = (128, 16), extent = (500meters, 100meters), topology = (Bounded, Flat, Bounded))
+grid = RectilinearGrid(CPU(), size = (160, 32), extent = (500meters, 100meters), topology = (Bounded, Flat, Bounded))
 
 biogeochemistry = NutrientPhytoplanktonZooplanktonDetritus(; grid, open_bottom = true)
 
