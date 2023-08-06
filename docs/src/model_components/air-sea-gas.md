@@ -171,4 +171,5 @@ where the default parameters are given in [Parameters](@ref parameters).
 We solve these equations iteratively from an initial guess of ``pH=8`` to find ``H``, from which the partial pressure of ``CO_2`` is calculated as:
 
 ```math
-pCO_2 = 10^6\frac{Alk_CH^2}{K_0(K_1H + 2 K_1K_2)}``
+pCO_2 = 10^6\frac{Alk_CH^2}{K_0(K_1H + 2 K_1K_2)}
+```
