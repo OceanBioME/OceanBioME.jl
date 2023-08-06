@@ -138,9 +138,9 @@ The system can be rearranged to give:
 \ce{DIC} = \left(1 + \frac{K_1}{[H^+]} + \frac{K_1K_2}{[H^+]^2}\right)[CO_2(aq)],
 ```
     
-    ```math
-    \ce{Alk_C} = \left(\frac{K_1}{[H^+]} + \frac{2K_1K_2}{[H^+]^2}\right)[CO_2(aq)].
-    ```
+```math
+\ce{Alk_C} = \left(\frac{K_1}{[H^+]} + \frac{2K_1K_2}{[H^+]^2}\right)[CO_2(aq)].
+```
 
 This results in a quadratic equation for ``H``:
 
