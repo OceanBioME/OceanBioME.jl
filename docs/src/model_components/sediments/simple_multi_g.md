@@ -50,7 +50,7 @@ k = \frac{\lambda_\text{fast} C_\text{fast} + \lambda_\text{slow} C_\text{slow}}
 and, based on [Soetaert2000](@citet), the fraction nitrified (i.e becoming nitrate rather than ammonia) is given by:
 
 ```math
-\ln\left(C_\text{min}p_{nit}\right) = A + B\ln C_\text{min}\ln O_2 + C * \ln C_\text{min} ^ 2 + D * \ln k \ln NH_4 + E \ln C_\text{min} + F \ln C_\text{min} \ln NH_4.
+\ln\left(C_\text{min}p_{nit}\right) = n_A + n_B\ln C_\text{min}\ln O_2 + n_C * \ln C_\text{min} ^ 2 + n_D * \ln k \ln NH_4 + n_E \ln C_\text{min} + n_F \ln C_\text{min} \ln NH_4.
 ```
 
 Therefore, the efflux of nitrate and ammonia are given by:
@@ -71,21 +71,36 @@ where ``\Delta z`` is the depth of the bottom cell (since ``X_i`` is a surface c
 where the constants are given by:
 
 ```math
-p_\text{solid deposition} = 0.233 w ^{0.336},
+p_\text{solid deposition} = s_A w ^{s_B},
 ```
 
-with, ``w = 982D^{-1.548}`` where ``D`` is the water depth.
+with, ``w = s_CD^{s_D}`` where ``D`` is the water depth.
 
 ```math
-\ln\left(C_\text{min}p_\text{anox}\right) = A + B\ln C_\text{min} + C \ln C_\text{min} ^ 2 + D \ln k + E \ln O_2 \ln k + F \ln NO_3 ^2.
+\ln\left(C_\text{min}p_\text{anox}\right) = a_A + a_B\ln C_\text{min} + a_C \ln C_\text{min} ^ 2 + a_D \ln k + a_E \ln O_2 \ln k + a_F \ln NO_3 ^2.
 ```
 
-All parameters are given in [Parameters](@ref parameters). The original model of [Soetaert2000](@citet) also includes denitrification terms whereby nitrogen is returned to the water column as dissolved ``N_2``, but we currently do not account for this in order to conserve the nitrogen budget.
+The original model of [Soetaert2000](@citet) also includes denitrification terms whereby nitrogen is returned to the water column as dissolved ``N_2``, but we currently do not account for this in order to conserve the nitrogen budget.
 
-### Model conservations
+### Parameter variable names
+
+| Symbol                  | Variable name              | Units |
+|-------------------------|----------------------------|-------|
+| ``\lambda_\text{fast}`` | `fast_decay_rate`          | 1 / s |
+| ``\lambda_\text{slow}`` | `slow_decay_rate`          | 1 / s | 
+| ``f_\text{fast}``       | `fast_fraction`            | -     |
+| ``f_\text{slow}``       | `slow_fraction`            | -     |
+| ``f_\text{ref}``        | `refactory_fraction`       | -     |
+| ``n_i``                 | `nitrate_oxidation_params` | -     |
+| ``a_i``                 | `anoxic_param`             | -     |
+| ``s_i``                 | `solid_dep_params`         | -     |
+
+All parameters are given in [Parameters](@ref parameters). 
+
+## Model conservations
 
 Nitrogen and carbon is conserved between the model domain and sediment, any nitrogen or carbon not returned to the bottom cell is stored in a sediment field.
 
-### Model compatibility
+## Model compatibility
 
 This model is currently only compatible with the [LOBSTER](@id LOBSTER) biogeochemical model.

@@ -14,6 +14,19 @@ $PAR = \frac{PAR_0}{2} \left[\exp\left(k_rz + \chi_r\int_{z=0}^z Chl_r dz\right)
 
 where $PAR_0$ is the surface value, $k_r$ and $k_b$ are the red and blue attenuation coefficients of water, $\chi_r$ and $\chi_b$ are the red and blue chlorophyll attenuation coefficients, and $Chl_r$ and $Chl_b$ are the red and blue chlorophyll pigment concentrations. The chlorophyll pigment concentration is derived from the phytoplankton concentration where it is assumed that the pigment concentration is given by:
 
-$Chl = P(Chl:P),$
+$Chl = PR_{Chl:P},$
 
 where the ratio is constant and found in [Parameters](@ref parameters). The red and blue pigment concentrations are then found as $Chl_r = \left(\frac{Chl}{r_\text{pig}}\right)^{e_r}$ and $Chl_b = \left(\frac{Chl}{r_\text{pig}}\right)^{e_b}$. 
+
+### Parameter variable names
+
+| Symbol           | Variable name                     | Units                         |
+|------------------|-----------------------------------|-------------------------------|
+| ``k_r``          | `water_red_attenuation`           | 1 / m                         |
+| ``k_b``          | `water_blue_attenuation`          | 1 / m                         |
+| ``\chi_r``       | `chlorophyll_red_attenuation`     | 1 / m / (mg Chl / m³) ^ {e_r} |
+| ``\chi_b``       | `chlorophyll_blue_attenuation`    | 1 / m / (mg Chl / m³) ^ {e_b} |
+| ``e_r``          | `chlorophyll_red_exponent`        | -                             |
+| ``e_b``          | `chlorophyll_blue_exponent`       | -                             |
+| ``r_\text{pig}`` | `pigment_ratio`                   | -                             |
+| ``R_{Chl:P}``    | `phytoplankton_chlorophyll_ratio` | mg Chl / mmol N               |
