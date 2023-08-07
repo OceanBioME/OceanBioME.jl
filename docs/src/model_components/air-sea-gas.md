@@ -133,7 +133,7 @@ K_2=\frac{\ce{[CO^{2-}_3][H^+]}}{\ce{HCO^-_3}},
 ```
 
 ```math
-K_w = \ce{[OH\^-][H\^+]}.
+K_w = \ce{[OH^-][H^+]}.
 ```
 
 In this system DIC and Alk are defined to be:

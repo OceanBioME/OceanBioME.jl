@@ -20,13 +20,13 @@ where the ratio is constant and found in [Parameters](@ref parameters). The red 
 
 ### Parameter variable names
 
-| Symbol           | Variable name                     | Units                         |
-|------------------|-----------------------------------|-------------------------------|
-| ``k_r``          | `water_red_attenuation`           | 1 / m                         |
-| ``k_b``          | `water_blue_attenuation`          | 1 / m                         |
-| ``\chi_r``       | `chlorophyll_red_attenuation`     | 1 / m / (mg Chl / m³) ^ {e_r} |
-| ``\chi_b``       | `chlorophyll_blue_attenuation`    | 1 / m / (mg Chl / m³) ^ {e_b} |
-| ``e_r``          | `chlorophyll_red_exponent`        | -                             |
-| ``e_b``          | `chlorophyll_blue_exponent`       | -                             |
-| ``r_\text{pig}`` | `pigment_ratio`                   | -                             |
-| ``R_{Chl:P}``    | `phytoplankton_chlorophyll_ratio` | mg Chl / mmol N               |
+| Symbol           | Variable name                     | Units                             |
+|------------------|-----------------------------------|-----------------------------------|
+| ``k_r``          | `water_red_attenuation`           | 1 / m                             |
+| ``k_b``          | `water_blue_attenuation`          | 1 / m                             |
+| ``\chi_r``       | `chlorophyll_red_attenuation`     | 1 / m / (mg Chl / m³) ``^ {e_r}`` |
+| ``\chi_b``       | `chlorophyll_blue_attenuation`    | 1 / m / (mg Chl / m³) ``^ {e_b}`` |
+| ``e_r``          | `chlorophyll_red_exponent`        | -                                 |
+| ``e_b``          | `chlorophyll_blue_exponent`       | -                                 |
+| ``r_\text{pig}`` | `pigment_ratio`                   | -                                 |
+| ``R_{Chl:P}``    | `phytoplankton_chlorophyll_ratio` | mg Chl / mmol N                   |
