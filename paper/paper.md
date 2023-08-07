@@ -108,7 +108,7 @@ We have implemented comprehensive air-sea flux models [e.g. @wanninkhof:1992] wi
 We focus on the simulation of idealized sub-mesoscale systems, but this flexible framework allows users to model problems of any scale.
 For example, \autoref{global} shows the annual average surface phytoplankton concentration from a near-global model NPZD model run.
 This framework is made possible by our contributions to ``Oceananigans.jl``, adding a streamlined user interface to swap biogeochemical models with no modification to other model configurations.
-This interface also facilitates rapid prototyping, as models can be implemented and swapped easily by just extending a few key functions.
+Our interface also facilitates rapid prototyping, as models can be implemented and swapped easily by just extending a few key functions.
 This flexibility and ease-of-use is unmatched in existing biogeochemical models.
 
 ![Here we show the annual average surface phytoplankton concentration from a near-global NPZD model run. 
@@ -125,7 +125,7 @@ Biologically active particles can also be used to model OCDR deployment strategi
 \autoref{column} shows a simple column model with an OCDR intervention (macroalgae growth) added after a warm-up period, which increases the carbon export of the system.
 
 ![Results of a 1D model, forced by idealised light and mixing, which qualitatively reproduces the biogeochemical cycles in the North Atlantic.
-We then add kelp (500 frond / m² in the top 50 m of water) in December of the 2ⁿᵈ year (black vertical line) which causes an increase in air-sea carbon dioxide exchange and sinking export, as shown in panel (d). Changes to the phytoplankton growth cycle are also apparent.
+We then add kelp (500 frond / m² in the top 50 m of water) in December of the 2ⁿᵈ year (black vertical line) which causes an increase in air-sea carbon dioxide exchange and sinking export, as shown in panel (d). Panel (a) shows the phytoplankton growth cycle which also changes in response to the altered nutrient dynamics visible in panel (b). Panel (c) shows the kelp growth with the front size in (i), the carbon storage in (ii), and the nitrogen storage in (iii). 
 Figure made with ``Makie.jl`` [@makie]. \label{column}](column_example.png)
 
 The implementation of OceanBioME.jl models allows for seamless integration with data assimilation packages, such as ``EnsembleKalmanProcesses.jl`` [@ekp]. 
