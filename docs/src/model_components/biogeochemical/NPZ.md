@@ -36,6 +36,7 @@ Additionally, the phytoplankton and detritus sink at a constant rate.
 | ``g_\text{max}``   | `maximum_grazing_rate`         | 1 / s            |
 | ``k_P``            | `grazing_half_saturation`      | mmol N / m³      |
 | ``\beta``          | `assimulation_efficiency`      | -                |
+| ``l_{ZN}``         | `base_excretion_rate`          | 1 / s            |
 | ``l_{ZD}``         | `zoo_base_mortality_rate`      | 1 / s            |
 | ``r_{DN}``         | `remineralization_rate`        | 1 / s            |
 
