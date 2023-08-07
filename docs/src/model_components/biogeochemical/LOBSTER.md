@@ -2,6 +2,8 @@
 
 LOBSTER is a medium complexity BGC model with seven core prognostic variables: phytoplankton, zooplankton, small and large detritus, nitrates, ammonia, and dissolved organic matter. LOBSTER was originally proposed by [Levy2005](@citet) and subsequently added to by [Levy2001](@citet), [Resplandy2009](@citet), [Karleskind2011](@citet), and [Resplandy2012](@citet).
 
+![Diagram of LOBSTER formulation](assets/lobster.svg)
+
 Additionally, this implementation of LOBSTER optionally models simple carbonate chemistry (`DIC` and `Alk`alinity), `Oxy`gen, and variable redfield ratios for the now dissolved and particulate organic groups (which then allows carbon to be conserved). For details see [StrongWrightInPrep](@citet). These are activated in the model setup, for example:
 
 ```jldoctest
