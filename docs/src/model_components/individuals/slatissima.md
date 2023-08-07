@@ -101,19 +101,19 @@ P = P_S\left[1 - \exp\left(\frac{\alpha PAR}{P_S}\right)\right]\exp\left(\frac{\
 where ``PAR`` is the photosynthetically available radiation and
 
 ```math
-P_S = \frac{\alpha PAR}{\ln(1 + \alpha/\beta)}.
+P_S = \frac{\alpha I_\text{sat}}{\ln(1 + \alpha/\beta)}.
 ```
 
 ``\alpha`` is a constant but $\beta$ depends on the maximum photosynthetic rate which is defined by both:
 
 ```math
-P_\text{max} = \frac{\alpha PAR}{\ln(1 + \alpha/\beta)}\left(\frac{\alpha}{\alpha + \beta}\right)\left(\frac{\beta}{\alpha + \beta}\right) ^ {\beta/\alpha},
+P_\text{max} = \frac{\alpha I_\text{sat}}{\ln(1 + \alpha/\beta)}\left(\frac{\alpha}{\alpha + \beta}\right)\left(\frac{\beta}{\alpha + \beta}\right) ^ {\beta/\alpha},
 ```
 
 and
 
 ```math
-P_\text{max} = \frac{P_1\exp\left(\frac{T_{AP}}{T_{P1}} - \frac{T_{AP}}{T}\right)}{1 + \exp\left(\frac{T_{APL}}{T} - \frac{T_{APL}}{PL}\right) + \exp\left(\frac{T_{APH}}{T} - \frac{T_{APH}}{PH}\right)},
+P_\text{max} = \frac{P_1\exp\left(\frac{T_{AP}}{T_{P1}} - \frac{T_{AP}}{T}\right)}{1 + \exp\left(\frac{T_{APL}}{T} - \frac{T_{APL}}{T_{PL}}\right) + \exp\left(\frac{T_{APH}}{T} - \frac{T_{APH}}{T_{PH}}\right)},
 ```
 
 where ``T`` is the temperature in kelvin and the ``T_X`` are Arrhenius temperature constants. We solve these iteratively to find ``\beta``.
@@ -130,6 +130,67 @@ As per [Broch2013](@citet) ``R``, the respiration rate, is given by:
 R = \left[R_A\left(\frac{\mu}{\mu_\text{max}} + \frac{J}{J_\text{max}}\right) + R_B\right]\exp\left(\frac{T_{ARR}}{T_1} - \frac{T_ARR}{T}\right).
 ```
 
-All other undefined symbols are constants which can be found in [Parameters](@ref parameters)
+### Parameter variable names
+
+| Symbol                   | Variable name                        | Units                   |
+|--------------------------|--------------------------------------|-------------------------|
+| ``A_0``                  | `growth_rate_adjustement`            | 1 / dm²                 |
+| ``\alpha``               | `photosynthetic_efficiency`          | gC / dm² / s / einstein |
+| ``C_\text{min}``         | `minimum_carbon_reserve`             | gC / gSW                |
+| ``C_\text{struct}``      | `structural_carbon`                  | gC / gSW                |
+| ``\gamma``               | `exudation`                          | gC / g                  |
+| ``\varepsilon``          | `erosion`                            | 1 / dm²                 |
+| ``I_\text{sat}``         | `saturation_irradiance`              | einstein                |
+| ``k_A``                  | `structural_dry_weight_per_area`     | g / dm²                 |
+| ``k_dw``                 | `structural_dry_to_wet_weight`       | -                       |
+| ``k_C``                  | `carbon_reserve_per_carbon`          | g / gC                  |
+| ``k_N``                  | `nitrogen_reserve_per_nitrogen`      | g / gN                  |
+| ``N_\text{min}``         | `minimum_nitrogen_reserve`           | gN / gSW                |
+| ``N_\text{max}``         | `maximum_nitrogen_reserve`           | gN / gSW                |
+| ``m_2``                  | `growth_adjustement_2`               | -                       |
+| ``m_1``                  | `growth_adjustement_1`               | -                       |
+| ``\mu_\text{max}``       | `maximum_specific_growth_rate`       | 1 / s                   |
+| ``N_\text{struct}``      | `structural_nitrogen`                | gN / gSW                |
+| ``P_1``                  | `photosynthesis_at_ref_temp_1`       | gC / dm² / s            |
+| ``P_2``                  | `photosynthesis_at_ref_temp_2`       | gC / dm² / s            |
+| ``T_{P1}``               | `photosynthesis_ref_temp_1`          | °K                      |
+| ``T_{P2}``               | `photosynthesis_ref_temp_2`          | °K                      |
+| ``a_1``                  | `photoperiod_1`                      | -                       |
+| ``a_2``                  | `photoperiod_2`                      | -                       |
+| ``R_1``                  | `respiration_at_ref_temp_1`          | gC / dm² / s            |
+| ``R_2``                  | `respiration_at_ref_temp_2`          | gC / dm² / s            |
+| ``T_{R1}``               | `respiration_ref_temp_1`             | °K                      |
+| ``T_{R2}``               | `respiration_ref_temp_2`             | °K                      |
+| ``T_{AP}``               | `photosynthesis_arrhenius_temp`      | °K                      |
+| ``T_{PL}``               | `photosynthesis_low_temp`            | °K                      |
+| ``T_{PH}``               | `photosynthesis_high_temp`           | °K                      |
+| ``T_{APL}``              | `photosynthesis_high_arrhenius_temp` | °K                      |
+| ``T_{APH}``              | `photosynthesis_low_arrhenius_temp`  | °K                      |
+| ``T_{ARR}``              | `respiration_arrhenius_temp`         | °K                      |
+| ``u_{0p65}``             | `current_speed_for_0p65_uptake`      | m / s                   |
+| ``k_{NO_3}``             | `nitrate_half_saturation`            | mmol N / m³             |
+| ``k_{NH_4}``             | `ammonia_half_saturation`            | mmol N / m³             |
+| ``J_{NO_3\text{, max}}`` | `maximum_nitrate_uptake`             | gN / dm² / s            |
+| ``J_{NH_4\text{, max}}`` | `maximum_ammonia_uptake`             | gN / dm² / s            |
+| ``c_1``                  | `current_1`                          | -                       |
+| ``c_2``                  | `current_2`                          | 1 / m / s               |
+| ``c_3``                  | `current_3`                          | -                       |
+| ``R_A``                  | `respiration_reference_A`            | gC / dm² / s            |
+| ``R_B``                  | `respiration_reference_B`            | gC / dm² / s            |
+| -                        | `exudation_redfield_ratio`           | mmol C / mmol N         |
+
+All default parameter values are given in [Parameters](@ref parameters).
 
 ## Model conservations
+
+Total nitrogen (and carbon where appropriate) are conserved between the individuals and biogeochemistry. The total nitrogen in each individual is:
+
+```math
+N_\text{total} = Ak_A(N + N_\text{struct}),
+```
+
+and carbon:
+
+```math
+C_\text{total} = Ak_A(C + C_\text{struct}).
+```
