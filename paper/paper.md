@@ -80,7 +80,8 @@ Figure made with ``Makie.jl`` [@makie]. \label{eady}](eady_example.png)
 There are two distinct module types implemented in ``OceanBioME.jl``:
 
 - First, we provide tracer-based ecosystem modules in `AdvectedPopulations` as a set of coupled ordinary differential equations (ODEs) which evolve the concentration of the tracer.
-These equations can be solved by ``OceanBioME.jl`` as box models, which is particularly useful for testing.
+These equations can be solved by ``OceanBioME.jl`` as box models.
+This is useful for both testing and running simple educational models, additionally, it is useful for understanding the behaviour of biogeochemical models without the effects of the dynamics.
 The same equations can be integrated by ``Oceananigans.jl`` to provide where the tracers are also advected and diffused.
 
 - The second module type is `Individual` "biologically active" particles.
@@ -123,8 +124,8 @@ Biologically active particles can also be used to model OCDR deployment strategi
 ``OceanBioME.jl`` currently includes an extended version of the sugar kelp model presented by @broch:2012 as an example of the utility and implementation of these features.
 \autoref{column} shows a simple column model with an OCDR intervention (macroalgae growth) added after a warm-up period, which increases the carbon export of the system.
 
-![Here we show the results of a 1D model, forced by idealised light and mixing, which qualitatively reproduces the biogeochemical cycles in the North Atlantic.
-We then add kelp (500 frond / m² in the top 50 m of water) in December of the 2ⁿᵈ year (black vertical line) which causes an increase in air-sea carbon dioxide exchange and sinking export. Changes to the phytoplankton growth cycle are also apparent.
+![Results of a 1D model, forced by idealised light and mixing, which qualitatively reproduces the biogeochemical cycles in the North Atlantic.
+We then add kelp (500 frond / m² in the top 50 m of water) in December of the 2ⁿᵈ year (black vertical line) which causes an increase in air-sea carbon dioxide exchange and sinking export, as shown in panel (d). Changes to the phytoplankton growth cycle are also apparent.
 Figure made with ``Makie.jl`` [@makie]. \label{column}](column_example.png)
 
 The implementation of OceanBioME.jl models allows for seamless integration with data assimilation packages, such as ``EnsembleKalmanProcesses.jl`` [@ekp]. 
