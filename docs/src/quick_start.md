@@ -2,6 +2,12 @@
 
 OceanBioME provides biogeochemical models to plug into [Oceananigans](https://github.com/CliMA/Oceananigans.jl), for example this code will run one month of a single column, 7 variable (P, Z, sPOM, bPOM, DOM, NO₃, NH₄) biogeochemical situation with constant forcing.
 
+First we need to check we have the required dependencies:
+```@example quickstart
+using Pkg
+Pkg.add(["OceanBioME", "Oceananigans"])
+```
+
 ```@example quickstart
 using OceanBioME, Oceananigans
 using Oceananigans.Units
@@ -27,6 +33,8 @@ run!(simulation)
 This isn't quite as simple as it could be as it records the output so that we can visualize it:
 
 ```@example quickstart
+Pkg.add("CairoMakie")
+
 using CairoMakie
 
 phytoplankton = FieldTimeSeries("quickstart.jld2", "P")
