@@ -94,9 +94,8 @@ axis_kwargs...)
 ax2 = Axis(fig[2, 1]; title = "Phytoplankton concentration (mmol N / m³)", 
 axis_kwargs...)
 
-hm1 = heatmap!(ax1, xT, zT, Tₙ, colorrange = T_lims, colormap = :vik)
-hm2 = heatmap!(ax2, xP, zP, Pₙ, colorrange = P_lims, colormap = 
-Reverse(:bamako))
+hm1 = heatmap!(ax1, xT, zT, Tₙ, colorrange = T_lims, colormap = Reverse(:lajolla))
+hm2 = heatmap!(ax2, xP, zP, Pₙ, colorrange = P_lims, colormap = Reverse(:bamako))
 
 Colorbar(fig[1, 2], hm1)
 Colorbar(fig[2, 2], hm2)
