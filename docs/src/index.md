@@ -44,11 +44,11 @@ model = NonhydrostaticModel(; grid, biogeochemistry,
 			                  buoyancy = SeawaterBuoyancy(constant_salinity = true),
                               closure = AnisotropicMinimumDissipation())
 
-Tᵢ(x, y, z) = ifelse(x < grid.Lx/2, 1, 10)
+Tᵢ(x, y, z) = ifelse(x < grid.Lx/2, 8, 10)
 
 set!(model, N = 5.0, P = 0.1, Z = 0.1, T = Tᵢ)
 
-simulation = Simulation(model; Δt = 1.0, stop_time = 3hours)
+simulation = Simulation(model; Δt = 4.0, stop_time = 3hours)
 
 simulation.output_writers[:tracers] = JLD2OutputWriter(model, 
 model.tracers,
