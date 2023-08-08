@@ -90,14 +90,14 @@ hm2 = heatmap!(ax2, xP, zP, Pₙ, colorrange = P_lims, colormap = Reverse(:bamak
 Colorbar(fig[1, 2], hm1)
 Colorbar(fig[2, 2], hm2)
 
-record(fig, "buoyancy_front.gif", 1:length(times)) do i
+record(fig, "buoyancy_front.mp4", 1:length(times)) do i
     n[] = i
 end
 
 nothing #hide
 ```
 
-![buoyancy_front](buoyancy_front.gif)
+![buoyancy_front](buoyancy_front.mp4)
 
 In the example above, `OceanBioME.jl` provides the `biogeochemistry` and everything else is taken care of by `Oceananigans.jl`. For comprehensive documentation of the physics modelling see [Oceananigans' Documentation](https://clima.github.io/OceananigansDocumentation/stable/); for biogeochemistry and other features we provide read below.
 
