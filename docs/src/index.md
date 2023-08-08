@@ -27,7 +27,7 @@ julia> Pkg.add("OceanBioME")
 
 As a simple example lets run a Nutrient-Phytoplankton-Zooplankton-Detritus (NPZD) model in a two-dimensional simulation of a buoyancy front. This example requires Oceananigans, so we install that first:
 
-```julia
+```@example quickstart
 using Pkg; Pkg.add("Oceananigans")
 
 using OceanBioME, Oceananigans
