@@ -36,25 +36,31 @@ using Pkg; Pkg.add("Oceananigans")
 using OceanBioME, Oceananigans
 using Oceananigans.Units
 
-grid = RectilinearGrid(CPU(), size = (160, 32), extent = (500meters, 100meters), topology = (Bounded, Flat, Bounded))
+grid = RectilinearGrid(CPU(), size = (160, 32), extent = (500meters, 
+100meters), topology = (Bounded, Flat, Bounded))
 
-biogeochemistry = NutrientPhytoplanktonZooplanktonDetritus(; grid, open_bottom = true)
+biogeochemistry = NutrientPhytoplanktonZooplanktonDetritus(; grid, 
+open_bottom = true)
 
 model = NonhydrostaticModel(; grid, biogeochemistry,
-                              buoyancy = BuoyancyTracer(), tracers = :b,
                               advection = WENO(; grid),
+			      buoyancy = SeawaterBuoyancy(constant_salinity = true),
                               closure = AnisotropicMinimumDissipation())
 
-bᵢ(x, y, z) = ifelse(x < grid.Lx/2, 1e-4, 1e-3)
+Tᵢ(x, y, z) = ifelse(x < grid.Lx/2, 1, 10)
 
-set!(model, b = bᵢ, N = 5.0, P = 0.1, Z = 0.1, T = 18.0)
+set!(model, N = 5.0, P = 0.1, Z = 0.1, T = Tᵢ)
 
-simulation = Simulation(model; Δt = 4.0, stop_time = 3hours)
+simulation = Simulation(model; Δt = 1.0, stop_time = 3hours)
 
-simulation.output_writers[:tracers] = JLD2OutputWriter(model, model.tracers,
-                                                       filename = "buoyancy_front.jld2",
-                                                       schedule = TimeInterval(1minute),
-                                                       overwrite_existing = true)
+simulation.output_writers[:tracers] = JLD2OutputWriter(model, 
+model.tracers,
+                                                       filename = 
+"buoyancy_front.jld2",
+                                                       schedule = 
+TimeInterval(1minute),
+                                                       overwrite_existing 
+= true)
 
 run!(simulation)
 ```
@@ -63,22 +69,22 @@ run!(simulation)
 <summary>We can then visualise this:</summary>
 
 ```julia
-b = FieldTimeSeries("buoyancy_front.jld2", "b")
+T = FieldTimeSeries("buoyancy_front.jld2", "T")
 P = FieldTimeSeries("buoyancy_front.jld2", "P")
 
-xb, yb, zb = nodes(b)
+xT, yT, zT = nodes(T)
 xP, yP, zP = nodes(P)
 
-times = b.times
+times = T.times
 
 using CairoMakie
 
 n = Observable(1)
 
-b_lims = (minimum(b), maximum(b))
+T_lims = (minimum(T), maximum(T))
 P_lims = (minimum(P), maximum(P))
 
-bₙ = @lift interior(b[$n], :, 1, :)
+Tₙ = @lift interior(T[$n], :, 1, :)
 Pₙ = @lift interior(P[$n], :, 1, :)
 
 fig = Figure(resolution = (1200, 480), fontsize = 20)
@@ -87,11 +93,14 @@ title = @lift "t = $(prettytime(times[$n]))"
 Label(fig[0, :], title)
 
 axis_kwargs = (xlabel = "x (m)", ylabel = "z (m)", width = 970)
-ax1 = Axis(fig[1, 1]; title = "Buoyancy perturbation (m / s)", axis_kwargs...)
-ax2 = Axis(fig[2, 1]; title = "Phytoplankton concentration (mmol N / m³)", axis_kwargs...)
+ax1 = Axis(fig[1, 1]; title = "Temperature (°C)", 
+axis_kwargs...)
+ax2 = Axis(fig[2, 1]; title = "Phytoplankton concentration (mmol N / m³)", 
+axis_kwargs...)
 
-hm1 = heatmap!(ax1, xb, zb, bₙ, colorrange = b_lims, colormap = :batlow)
-hm2 = heatmap!(ax2, xP, zP, Pₙ, colorrange = P_lims, colormap = Reverse(:bamako))
+hm1 = heatmap!(ax1, xT, zT, Tₙ, colorrange = T_lims, colormap = :vik)
+hm2 = heatmap!(ax2, xP, zP, Pₙ, colorrange = P_lims, colormap = 
+Reverse(:bamako))
 
 Colorbar(fig[1, 2], hm1)
 Colorbar(fig[2, 2], hm2)
