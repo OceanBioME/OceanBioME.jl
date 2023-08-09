@@ -103,7 +103,7 @@ Colorbar(fig[3, 2], hm3, ticks = [0.01, 0.02, 0.03])
 
 rowgap!(fig.layout, 0)
 
-record(fig, "buoyancy_front.gif", 1:length(times)) do i
+record(fig, "buoyancy_front.mp4", 1:length(times)) do i
     n[] = i
 end
 
