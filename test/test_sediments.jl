@@ -104,7 +104,7 @@ display_name(::Type{NonhydrostaticModel}) = "Nonhydrostatic model"
 display_name(::Type{HydrostaticFreeSurfaceModel}) = "Hydrostatic free surface model"
 
 
-bottom_height(x, y) = -1000 + 500 * exp(- (x^2 + y^2) / 250) # a hill
+bottom_height(x, y) = -1000 + 500 * exp(- (x^2 + y^2) / 250) # a perfect hill
 
 @testset "Sediment integration" begin
     for architecture in (CPU(), )
@@ -126,7 +126,7 @@ bottom_height(x, y) = -1000 + 500 * exp(- (x^2 + y^2) / 250) # a hill
                                  (model == HydrostaticFreeSurfaceModel && timestepper == :RungeKutta3) ||
                                  (isa(sediment_model, SimpleMultiG) && isa(biogeochemistry, NutrientPhytoplanktonZooplanktonDetritus)), false, true)
                     if run
-                        #@info "Testing sediment on $(typeof(architecture)) with $timestepper and $(display_name(sediment_model)) on $(display_name(biogeochemistry)) on $(display_name(grid))"
+                        @info "Testing sediment on $(typeof(architecture)) with $timestepper and $(display_name(sediment_model)) in $(display_name(biogeochemistry)) on $(display_name(grid)) with $(display_name(model))"
                         @testset "$architecture, $timestepper, $(display_name(sediment_model)), $(display_name(biogeochemistry)), $(display_name(grid)), $(display_name(model))" test_flat_sediment(grid, biogeochemistry, model; timestepper)
                     end
                 end
@@ -134,28 +134,3 @@ bottom_height(x, y) = -1000 + 500 * exp(- (x^2 + y^2) / 250) # a hill
         end
     end
 end
-#=
-function test_sediment_on_immersed_boundary(underlying_grid)
-    grid = ImmersedBoundaryGrid(underlying_grid, GridFittedBottom(bottom_height))
-
-    sediment_model = InstantRemineralisation(; grid)
-
-    biogeochemistry = NutrientPhytoplanktonZooplanktonDetritus(; grid, sediment_model)
-
-    model = HydrostaticFreeSurfaceModel(; grid, tracers = :A, buoyancy = nothing, biogeochemistry)
-
-    set!(model, D = 1)
-
-    time_step!(model, 1)
-
-    return all(interior(biogeochemistry.sediment_model.tendencies.Gⁿ.N_storage))
-end
-
-@testset "Sediments with immersed boundaries" begin
-
-    for underlying_grid in (RectilinearGrid(size = (16, 16, 16), extent = (1000, 1000, 1000)),
-                            LatitudeLongitudeGrid(size = (16, 16, 16), latitude = (0, 10), longitude = (0, 10), z = (-100, 0)))
-        @test test_sediment_on_immersed_boundary(underlying_grid)
-    end
-end
-=#
