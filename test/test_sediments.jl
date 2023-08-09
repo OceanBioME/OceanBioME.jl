@@ -100,8 +100,6 @@ display_name(::InstantRemineralisation) = "Instant remineralisation"
 display_name(::RectilinearGrid) = "Rectilinear grid"
 display_name(::LatitudeLongitudeGrid) = "Latitude longitude grid"
 display_name(::ImmersedBoundaryGrid) = "Immersed boundary grid"
-display_name(::Type{NonhydrostaticModel}) = "Nonhydrostatic model"
-display_name(::Type{HydrostaticFreeSurfaceModel}) = "Hydrostatic free surface model"
 
 
 bottom_height(x, y) = -1000 + 500 * exp(- (x^2 + y^2) / 250) # a perfect hill
@@ -119,15 +117,17 @@ bottom_height(x, y) = -1000 + 500 * exp(- (x^2 + y^2) / 250) # a perfect hill
                 model in (NonhydrostaticModel, HydrostaticFreeSurfaceModel)
                 for biogeochemistry in (NutrientPhytoplanktonZooplanktonDetritus(; grid, sediment_model),
                                         LOBSTER(; grid,
-                                                  carbonates = true, oxygen = true, variable_redfield = true, 
+                                                  carbonates = ifelse(isa(sediment_model, SimpleMultiG), true, false), 
+                                                  oxygen = ifelse(isa(sediment_model, SimpleMultiG), true, false), 
+                                                  variable_redfield = ifelse(isa(sediment_model, SimpleMultiG), true, false), 
                                                   sediment_model))
                     # get rid of incompatible combinations
                     run = ifelse((model == NonhydrostaticModel && (isa(grid, ImmersedBoundaryGrid) || isa(grid, LatitudeLongitudeGrid))) ||
                                  (model == HydrostaticFreeSurfaceModel && timestepper == :RungeKutta3) ||
                                  (isa(sediment_model, SimpleMultiG) && isa(biogeochemistry, NutrientPhytoplanktonZooplanktonDetritus)), false, true)
                     if run
-                        @info "Testing sediment on $(typeof(architecture)) with $timestepper and $(display_name(sediment_model)) in $(display_name(biogeochemistry)) on $(display_name(grid)) with $(display_name(model))"
-                        @testset "$architecture, $timestepper, $(display_name(sediment_model)), $(display_name(biogeochemistry)), $(display_name(grid)), $(display_name(model))" test_flat_sediment(grid, biogeochemistry, model; timestepper)
+                        @info "Testing sediment on $(typeof(architecture)) with $timestepper and $(display_name(sediment_model)) in $(display_name(biogeochemistry)) on $(display_name(grid)) with $(model)"
+                        @testset "$architecture, $timestepper, $(display_name(sediment_model)), $(display_name(biogeochemistry)), $(display_name(grid)), $(model)" test_flat_sediment(grid, biogeochemistry, model; timestepper)
                     end
                 end
             end
