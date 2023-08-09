@@ -31,10 +31,10 @@ Additionally, the phytoplankton and detritus sink at a constant rate.
 | Symbol             | Variable name                  | Units            |
 |--------------------|--------------------------------|------------------|
 | ``\alpha``         | `initial_photosynthetic_slope` | 1 / (W / m² / s) |
-| ``\mu_\text{max}`` | `base_maximum_growth`          | 1 / s            |
+| ``\mu_0`` | `base_maximum_growth`          | 1 / s            |
 | ``k_N``            | `nutrient_half_saturation`     | mmol N / m³      |
-| ``l_{PN}``         | `base_respiration_rate`        | 1 / s            |
-| ``l_{PD}``         | `phyto_base_mortality_rate`    | 1 / s            |
+| ``l_{PN0}``         | `base_respiration_rate`        | 1 / s            |
+| ``l_{PD0}``         | `phyto_base_mortality_rate`    | 1 / s            |
 | ``g_\text{max}``   | `maximum_grazing_rate`         | 1 / s            |
 | ``k_P``            | `grazing_half_saturation`      | mmol N / m³      |
 | ``\beta``          | `assimulation_efficiency`      | -                |
