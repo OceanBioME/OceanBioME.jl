@@ -9,6 +9,8 @@ using Oceananigans.Fields: TracerFields
 
 using Oceananigans.Operators: volume, Azᶠᶜᶜ
 
+using OceanBioME.LOBSTERModel: lobster_variable_redfield
+
 import Oceananigans.Biogeochemistry: biogeochemical_drift_velocity
 
 function intercept_tendencies!(model, intercepted_tendencies)
@@ -30,6 +32,13 @@ set_defaults!(::InstantRemineralisation) = nothing
 function set_defaults!(::LOBSTER, model)
     set!(model, P = 0.4686, Z = 0.5363, 
                 NO₃ = 2.3103, NH₄ = 0.0010, 
+                DOM = 0.8115,
+                sPOM = 0.2299, bPOM = 0.0103)
+end
+
+function set_defaults!(::lobster_variable_redfield, model)
+    set!(model, P = 0.4686, Z = 0.5363, 
+                NO₃ = 2.3103, NH₄ = 0.0010, 
                 DIC = 2106.9, Alk = 2408.9, 
                 O₂ = 258.92, 
                 DOC = 5.3390, DON = 0.8115,
@@ -45,7 +54,8 @@ total_nitrogen(sed::SimpleMultiG) = sum(sed.fields.N_fast) +
 
 total_nitrogen(sed::InstantRemineralisation) = sum(sed.fields.N_storage)
 
-total_nitrogen(::LOBSTER, model) = sum(model.tracers.NO₃) + sum(model.tracers.NH₄) + sum(model.tracers.P) + sum(model.tracers.Z) + sum(model.tracers.DON) + sum(model.tracers.sPON) + sum(model.tracers.bPON)
+total_nitrogen(::LOBSTER, model) = sum(model.tracers.NO₃) + sum(model.tracers.NH₄) + sum(model.tracers.P) + sum(model.tracers.Z) + sum(model.tracers.DOM) + sum(model.tracers.sPOM) + sum(model.tracers.bPOM)
+total_nitrogen(::lobster_variable_redfield, model) = sum(model.tracers.NO₃) + sum(model.tracers.NH₄) + sum(model.tracers.P) + sum(model.tracers.Z) + sum(model.tracers.DON) + sum(model.tracers.sPON) + sum(model.tracers.bPON)
 total_nitrogen(::NutrientPhytoplanktonZooplanktonDetritus, model) = sum(model.tracers.N) + sum(model.tracers.P) + sum(model.tracers.Z) + sum(model.tracers.D)
 
 function test_flat_sediment(grid, biogeochemistry, model; timestepper = :QuasiAdamsBashforth2)
