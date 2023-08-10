@@ -29,14 +29,14 @@ end
 
 set_defaults!(::InstantRemineralisation) = nothing
 
-function set_defaults!(::LOBSTER, model)
+set_defaults!(::LOBSTER, model) =
     set!(model, P = 0.4686, Z = 0.5363, 
                 NO₃ = 2.3103, NH₄ = 0.0010, 
                 DOM = 0.8115,
                 sPOM = 0.2299, bPOM = 0.0103)
-end
 
-function set_defaults!(::lobster_variable_redfield, model)
+
+set_defaults!(::lobster_variable_redfield, model) =
     set!(model, P = 0.4686, Z = 0.5363, 
                 NO₃ = 2.3103, NH₄ = 0.0010, 
                 DIC = 2106.9, Alk = 2408.9, 
@@ -44,7 +44,7 @@ function set_defaults!(::lobster_variable_redfield, model)
                 DOC = 5.3390, DON = 0.8115,
                 sPON = 0.2299, sPOC = 1.5080,
                 bPON = 0.0103, bPOC = 0.0781)
-end
+
 
 set_defaults!(::NutrientPhytoplanktonZooplanktonDetritus, model) =  set!(model, N = 2.3, P = 0.4, Z = 0.5, D = 0.2)
 
