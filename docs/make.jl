@@ -114,10 +114,11 @@ appendix_pages = [
 pages = [
     "Home" => "index.md",
     "Quick start" => "quick_start.md",
-    "Model components and setup" => component_pages,
-    "Visualization" => "visualization.md",
     "Examples" => example_pages,
+    "Model components and setup" => component_pages,
     "Numerical implementation" => numerical_pages,
+    "Visualization" => "visualization.md",
+    "Contibutors guide" => "contributing.md",
     "References" => "references.md",
     "Appendix" => appendix_pages
 ]
