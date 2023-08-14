@@ -28,30 +28,36 @@ julia> Pkg.add("OceanBioME")
 ```
 
 ## Running your first model
-As a simple example lets run a Nutrient-Phytoplankton-Zooplankton-Detritus (NPZD) model in a two-dimensional simulation of a buoyancy front:
+As a simple example lets run a Nutrient-Phytoplankton-Zooplankton-Detritus (NPZD) model in a two-dimensional simulation of a buoyancy front. This example requires Oceananigans, so we install that first:
 
 ```julia
+using Pkg; Pkg.add("Oceananigans")
+
 using OceanBioME, Oceananigans
 using Oceananigans.Units
 
-grid = RectilinearGrid(CPU(), size = (256, 32), extent = (500meters, 100meters), topology = (Bounded, Flat, Bounded))
+grid = RectilinearGrid(CPU(), size = (160, 32), extent = (10000meters, 500meters), topology = (Bounded, Flat, Bounded))
 
-biogeochemistry = NutrientPhytoplanktonZooplanktonDetritus(; grid, open_bottom = true)
+biogeochemistry = NutrientPhytoplanktonZooplanktonDetritus(; grid) 
 
 model = NonhydrostaticModel(; grid, biogeochemistry,
-                              buoyancy = BuoyancyTracer(), tracers = :b,
                               advection = WENO(; grid),
-                              closure = AnisotropicMinimumDissipation())
+			                  closure = AnisotropicMinimumDissipation(),
+			                  buoyancy = SeawaterBuoyancy(constant_salinity = true))
 
-bᵢ(x, y, z) = ifelse(x < grid.Lx/2, 1e-4, 1e-3)
+@inline front(x, z, μ, δ) = μ + δ * tanh((x - 7000 + 4 * z) / 500)
 
-set!(model, b = bᵢ, N = 5.0, P = 0.1, Z = 0.1, T = 18.0)
+Pᵢ(x, y, z) = ifelse(z > -50, 0.03, 0.01) 
+Nᵢ(x, y, z) = front(x, z, 2.5, -2)
+Tᵢ(x, y, z) = front(x, z, 9, 0.05)
 
-simulation = Simulation(model; Δt = 2.0, stop_time = 3hours)
+set!(model, N = Nᵢ, P = Pᵢ, Z = Pᵢ, T = Tᵢ)
+
+simulation = Simulation(model; Δt = 50, stop_time = 4days)
 
 simulation.output_writers[:tracers] = JLD2OutputWriter(model, model.tracers,
                                                        filename = "buoyancy_front.jld2",
-                                                       schedule = TimeInterval(1minute),
+                                                       schedule = TimeInterval(24minute),
                                                        overwrite_existing = true)
 
 run!(simulation)
@@ -61,38 +67,45 @@ run!(simulation)
 <summary>We can then visualise this:</summary>
 
 ```julia
-b = FieldTimeSeries("buoyancy_front.jld2", "b")
+T = FieldTimeSeries("buoyancy_front.jld2", "T")
+N = FieldTimeSeries("buoyancy_front.jld2", "N")
 P = FieldTimeSeries("buoyancy_front.jld2", "P")
 
-xb, yb, zb = nodes(b)
-xP, yP, zP = nodes(P)
+xc, yc, zc = nodes(T)
 
-times = b.times
+times = T.times
 
 using CairoMakie
 
 n = Observable(1)
 
-b_lims = (minimum(b), maximum(b))
-P_lims = (minimum(P), maximum(P))
+T_lims = (8.94, 9.06)
+N_lims = (0, 4.5)
+P_lims = (0.007, 0.02)
 
-bₙ = @lift interior(b[$n], :, 1, :)
+Tₙ = @lift interior(T[$n], :, 1, :)
+Nₙ = @lift interior(N[$n], :, 1, :)
 Pₙ = @lift interior(P[$n], :, 1, :)
 
-fig = Figure(resolution = (1200, 480), fontsize = 20)
+fig = Figure(resolution = (1000, 520), fontsize = 20)
 
 title = @lift "t = $(prettytime(times[$n]))"
 Label(fig[0, :], title)
 
-axis_kwargs = (xlabel = "x (m)", ylabel = "z (m)", width = 970)
-ax1 = Axis(fig[1, 1]; title = "Buoyancy perturbation (m / s)", axis_kwargs...)
-ax2 = Axis(fig[2, 1]; title = "Phytoplankton concentration (mmol N / m³)", axis_kwargs...)
+axis_kwargs = (xlabel = "x (m)", ylabel = "z (m)", width = 770, yticks = [-400, -200, 0])
+ax1 = Axis(fig[1, 1]; title = "Temperature (°C)", axis_kwargs...)
+ax2 = Axis(fig[2, 1]; title = "Nutrients concentration (mmol N / m³)",axis_kwargs...)
+ax3 = Axis(fig[3, 1]; title = "Phytoplankton concentration (mmol N / m³)", axis_kwargs...)
 
-hm1 = heatmap!(ax1, xb, zb, bₙ, colorrange = b_lims, colormap = :batlow)
-hm2 = heatmap!(ax2, xP, zP, Pₙ, colorrange = P_lims, colormap = Reverse(:bamako))
+hm1 = heatmap!(ax1, xc, zc, Tₙ, colorrange = T_lims, colormap = Reverse(:lajolla), interpolate = true)
+hm2 = heatmap!(ax2, xc, zc, Nₙ, colorrange = N_lims, colormap = Reverse(:bamako), interpolate = true)
+hm3 = heatmap!(ax3, xc, zc, Pₙ, colorrange = P_lims, colormap = Reverse(:bamako), interpolate = true)
 
-Colorbar(fig[1, 2], hm1)
-Colorbar(fig[2, 2], hm2)
+Colorbar(fig[1, 2], hm1, ticks = [8.95, 9.0, 9.05])
+Colorbar(fig[2, 2], hm2, ticks = [0, 2, 4])
+Colorbar(fig[3, 2], hm3, ticks = [0.01, 0.02, 0.03])
+
+rowgap!(fig.layout, 0)
 
 record(fig, "buoyancy_front.gif", 1:length(times)) do i
     n[] = i
@@ -100,7 +113,7 @@ end
 ```
 </details>
 
-![buoyancy_front](https://github.com/OceanBioME/OceanBioME.jl/assets/7112768/84f7f712-5648-4293-be18-608a4a3413ba)
+![buoyancy_front](https://github.com/OceanBioME/OceanBioME.jl/assets/26657828/b5cb0bba-b3a5-4600-a7bb-bccb825024a2)
 
 In this example `OceanBioME` is providing the `biogeochemistry` and the remainder is taken care of by `Oceananigans`.
 For comprehensive documentation of the physics modelling see
@@ -121,3 +134,10 @@ grid = RectilinearGrid(GPU(), size = (256, 32), extent = (500meters, 100meters),
 
 See the [documentation](https://oceanbiome.github.io/OceanBioME.jl) for full description of the software
 package and more examples.
+
+## Contributing
+If you're interested in contributing to the development of OceanBioME we want would appreciate your help whatever contribution you make!
+
+If you'd like to work on a new feature, or if you're new to open source and want to crowd-source projects that fit your interests, you please start a discussion.
+
+For more information check out our [contributor's guide](https://oceanbiome.github.io/OceanBioME.jl/stable/contributing/).

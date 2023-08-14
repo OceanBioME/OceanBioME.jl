@@ -193,13 +193,14 @@ sediment_fields(model::SimpleMultiG) = (C_slow = model.fields.C_slow,
                    sediment.nitrate_oxidation_params.E * log(Cᵐⁱⁿ * day) +
                    sediment.nitrate_oxidation_params.F * log(Cᵐⁱⁿ * day) * log(NH₄)) / (Nᵐⁱⁿ * day)
 
+        #=
         pᵈᵉⁿⁱᵗ = exp(sediment.denitrification_params.A +
                      sediment.denitrification_params.B * log(Cᵐⁱⁿ * day) +
                      sediment.denitrification_params.C * log(NO₃) ^ 2 +
                      sediment.denitrification_params.D * log(Cᵐⁱⁿ * day) ^ 2 +
                      sediment.denitrification_params.E * log(k) ^ 2 +
                      sediment.denitrification_params.F * log(O₂) * log(k)) / (Cᵐⁱⁿ * day)
-
+        =#
         pₐₙₒₓ = exp(sediment.anoxic_params.A +
                     sediment.anoxic_params.B * log(Cᵐⁱⁿ * day) +
                     sediment.anoxic_params.C * log(Cᵐⁱⁿ * day) ^ 2 +
@@ -219,7 +220,7 @@ sediment_fields(model::SimpleMultiG) = (C_slow = model.fields.C_slow,
         timestepper.Gⁿ.NH₄[i, j, 1] += Nᵐⁱⁿ * (1 - pₙᵢₜ) / Δz
         timestepper.Gⁿ.NO₃[i, j, 1] += Nᵐⁱⁿ * pₙᵢₜ / Δz
         timestepper.Gⁿ.DIC[i, j, 1] += Cᵐⁱⁿ / Δz
-        timestepper.Gⁿ.O₂[i, j, 1]  -= max(0, (1 - pᵈᵉⁿⁱᵗ - pₐₙₒₓ * pₛₒₗᵢ) * Cᵐⁱⁿ / Δz) # this seems dodge but this model doesn't cope with anoxia properly
+        timestepper.Gⁿ.O₂[i, j, 1]  -= max(0, ((1 - pₐₙₒₓ * pₛₒₗᵢ) * Cᵐⁱⁿ + 2 * Nᵐⁱⁿ * pₙᵢₜ)/ Δz) # this seems dodge but this model doesn't cope with anoxia properly
     end
 end
 
