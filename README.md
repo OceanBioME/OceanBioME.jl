@@ -113,7 +113,7 @@ end
 ```
 </details>
 
-![buoyancy_front](https://github.com/OceanBioME/OceanBioME.jl/assets/26657828/b5cb0bba-b3a5-4600-a7bb-bccb825024a2)
+https://github.com/OceanBioME/OceanBioME.jl/assets/26657828/7e45ebc0-f1f4-4ea6-9be2-32d9472c97f3
 
 In this example `OceanBioME` is providing the `biogeochemistry` and the remainder is taken care of by `Oceananigans`.
 For comprehensive documentation of the physics modelling see
