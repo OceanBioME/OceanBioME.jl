@@ -78,7 +78,8 @@ parameter_pages = ["$name" => "generated/$(name)_parameters.md" for name in mode
 bgc_pages = [
     "Overview" => "model_components/biogeochemical/index.md",
     "LOBSTER" => "model_components/biogeochemical/LOBSTER.md",
-    "NPZD" => "model_components/biogeochemical/NPZ.md"
+    "NPZD" => "model_components/biogeochemical/NPZ.md",
+    "Implementing new models" => "model_components/biogeochemical/model_implementation.md"
 ]
 
 sed_pages = [
