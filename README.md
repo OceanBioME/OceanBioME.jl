@@ -113,7 +113,7 @@ end
 ```
 </details>
 
-![buoyancy_front](https://github.com/OceanBioME/OceanBioME.jl/assets/26657828/b5cb0bba-b3a5-4600-a7bb-bccb825024a2)
+https://github.com/OceanBioME/OceanBioME.jl/assets/26657828/7e45ebc0-f1f4-4ea6-9be2-32d9472c97f3
 
 In this example `OceanBioME` is providing the `biogeochemistry` and the remainder is taken care of by `Oceananigans`.
 For comprehensive documentation of the physics modelling see
@@ -136,8 +136,8 @@ See the [documentation](https://oceanbiome.github.io/OceanBioME.jl) for full des
 package and more examples.
 
 ## Contributing
-If you're interested in contributing to the development of OceanBioME we want would appreciate your help whatever contribution you make!
+If you're interested in contributing to the development of OceanBioME we would appreciate your help!
 
-If you'd like to work on a new feature, or if you're new to open source and want to crowd-source projects that fit your interests, you please start a discussion.
+If you'd like to work on a new feature, or if you're new to open source and want to crowd-source projects that fit your interests, please start a discussion.
 
 For more information check out our [contributor's guide](https://oceanbiome.github.io/OceanBioME.jl/stable/contributing/).
