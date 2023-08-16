@@ -159,8 +159,7 @@ set!(model, N = 15, P = 15)
 run!(model, save_interval = 100, save = SaveBoxModel("box_np.jld2"))
 ```
 
-<details>
-<summary>We can then visualise this:</summary>
+We can then visualise this:
 
 ```@example implementing
 using JLD2
@@ -197,11 +196,8 @@ lines!(axPAR, times / year, timeseries.PAR, linewidth = 3)
 axT = Axis(fig[2, 2], ylabel = "Temperature (°C)", xlabel = "Time (years)")
 lines!(axT, times / year, timeseries.T, linewidth = 3)
 
-save("box_np.png", fig)
+fig
 ```
-</details>
-
-![buoyancy_front_NP](buoyancy_front_NP.mp4)
 
 So now we know it works.
 
@@ -296,8 +292,7 @@ simulation.callbacks[:nan_tendencies] = Callback(remove_NaN_tendencies!; callsit
 run!(simulation)
 ```
 
-<details>
-<summary>We can then visualise this:</summary>
+We can then visualise this:
 
 ```@example implementing
 N = FieldTimeSeries("column_np.jld2", "N")
@@ -325,7 +320,6 @@ Colorbar(fig[2, 2], hmP, label = "Phytoplankton (mmol N / m³)")
 
 fig
 ```
-</details>
 
 We can see in this that some phytoplankton sink to the bottom, and are both remineralized back into nutrients and stored in the sediment.
 
