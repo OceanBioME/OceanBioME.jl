@@ -6,7 +6,7 @@
 # First we will check we have the dependencies installed
 # ```julia
 # using Pkg
-# pkg"add OceanBioME, CairoMakie, JLD2"
+# pkg"add OceanBioME"
 # ```
 
 # ## Model setup
@@ -35,6 +35,13 @@ set!(model, NO₃ = 10.0, NH₄ = 0.1, P = 0.1, Z = 0.01)
 run!(model, save_interval = 100, save = SaveBoxModel("box.jld2"))
 
 # ## Load the output
+
+# Check the dependencies for loading and plotting the data are installed
+# ```julia
+# using Pkg
+# pkg"add JLD2, CairoMakie"
+# ```
+
 using JLD2
 
 vars = (:NO₃, :NH₄, :P, :Z, :DOM, :sPOM, :bPOM, :PAR)
