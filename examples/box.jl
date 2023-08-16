@@ -1,4 +1,4 @@
-# # Box model
+# # [Box model](@id box_example)
 # In this example we will setup a [LOBSTER](@ref LOBSTER) biogeochemical model in a single box configuration. This demonstrates:
 # - How to setup OceanBioME's biogeochemical models as a stand-alone box model
 
@@ -11,11 +11,8 @@
 
 # ## Model setup
 # Load the packages and setup the initial and forcing conditions
-using OceanBioME
+using OceanBioME, Oceananigans.Units
 
-const minute = minutes = 60
-const hour = hours = 60minutes
-const day = days = 24hours
 const year = years = 365day
 nothing #hide
 
