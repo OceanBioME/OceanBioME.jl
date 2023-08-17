@@ -240,7 +240,7 @@ using OceanBioME.Sediments: InstantRemineralisation
 
 @inline surface_PAR(x, y, t) = 200 * (1 - cos((t + 15days) * 2π / year)) * (1 / (1 + 0.2 * exp(-((mod(t, year) - 200days) / 50days)^2))) + 2
 
-@inline temp(x, y, z, t) = 2.4 * cos(t * 2π / year + 50days) + 28
+@inline temp(x, y, z, t) = cos(t * 2π / year + 50days) + 28
 
 @inline κₜ(x, y, z, t) = 1e-2 * (1 + tanh((z - 50) / 10)) / 2 + 1e-4
 
