@@ -156,7 +156,7 @@ set!(model, N = 15, P = 15)
 
 # ## Run the model (should only take a few seconds)
 @info "Running the model..."
-run!(model, save_interval = 100, save = SaveBoxModel("box_np.jld2"))
+run!(model, save_interval = 100, feedback_interval = Inf, save = SaveBoxModel("box_np.jld2"))
 ```
 
 We can then visualise this:
