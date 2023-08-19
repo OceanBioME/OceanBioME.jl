@@ -64,7 +64,7 @@ Next, we need to define the methods that specify how the nutrient, ``N``, and ph
 \frac{\partial P}{\partial t} = \mu g(T) f(N) h(PAR) P - mP - bP^2,
 ```
 
-where ``\mu`` is `base_growth_rate`, ``m`` is `mortality_rate`, ``b`` is `crowding`, and ``g``, ``f``, and ``h`` are given by:
+where ``\mu`` is `base_growth_rate`, ``m`` is `mortality_rate`, and ``b`` is `crowding`. The functions ``g``, ``f``, and ``h`` are given by:
 ```math
 \begin{align}
 g(T) &= c_1\exp\left(-c_2|T - T_{opt}|\right),\\
@@ -72,7 +72,7 @@ f(N) &= \frac{N}{k_N + N},\\
 h(PAR) &= \frac{PAR}{k_P + PAR},
 \end{align}
 ```
-where ``c_1`` and ``c_2`` are `temperature_coefficient` and `temperature_exponent`, ``T_{opt}`` is `optimal_temperature`, ``k_N`` is `nutrient_half_saturation`, and ``k_P`` is `light_half_saturation`. Since this is a simple two variable model where the total concentration is conserved, ``\frac{\partial N}{\partial t} = - \frac{\partial P}{\partial t}``.
+where ``c_1`` is `temperature_coefficient`,  ``c_2`` is `temperature_exponent`, ``T_{opt}`` is `optimal_temperature`, ``k_N`` is `nutrient_half_saturation`, and ``k_P`` is `light_half_saturation`. Since this is a simple two variable model and the total concentration is conserved, ``\frac{\partial N}{\partial t} = - \frac{\partial P}{\partial t}``.
 
 We turn this into a method of our new type by writing:
 
@@ -110,7 +110,7 @@ end
 end
 ```
 
-The first parameter `::Val{:P}` is a special [value type](http://www.jlhub.com/julia/manual/en/function/Val) that allows this function to be dispatched when it is given the value `Val(:P)`. This is how Oceananigans tells the model which forcing function it wants. At the start of this function we unpack some parameters from the model, then calculate each term, and return the total change. For the nutrient we will define the evolution by:
+The first parameter `::Val{:P}` is a special [value type](http://www.jlhub.com/julia/manual/en/function/Val) that allows this function to be dispatched when it is given the value `Val(:P)`. This is how Oceananigans tells the model which forcing function it wants. At the start of this function we unpack some parameters from the model, then calculate each term, and return the total change. For the nutrient, we will define the evolution by:
 
 ```@example implementing
 @inline (bgc::NutrientPhytoplankton)(::Val{:N}, args...) = -bgc(Val(:P), args...)
@@ -265,8 +265,8 @@ biogeochemistry = NutrientPhytoplankton(; light_attenuation_model, sinking_veloc
 # put the model together
 
 model = NonhydrostaticModel(; grid,
-                              closure = ScalarDiffusivity(ν = κₜ, κ = κₜ), 
                               biogeochemistry,
+                              closure = ScalarDiffusivity(ν = κₜ, κ = κₜ), 
                               forcing = (T = Relaxation(rate = 1/day, target=temp), ))
 
 set!(model, P = 0.01, N = 15, T = 28)
