@@ -5,7 +5,7 @@ Here we will describe how OceanBioME defines biogeochemical (BGC) models, how th
 ## Model structure
 OceanBioME BGC models are `struct`s of type `ContinuousFormBiogeochemistry`, which is of abstract type `AbstractContinuousFormBiogeochemistry` from Oceananigans. In Oceananigans this describes BGC models which are continuous (depend continuously on ``x``, ``y``, and ``z``) rather than discrete (depending on ``i``, ``j``, ``k``). This simplifies the implementation of BGC models as forcing and sinking are very simple to define and add to tracers, and then Oceananigans handles the rest.
 
-OceanBioME's `ContinuousFormBiogeochemistry` adds a layer on top of this which makes adding [light attenuation models](@ref light), [sediment](@ref sediment), and [biologically active particles](@ref individuals). This is because `ContinuousFormBiogeochemistry` has parameters in which the types of these components are stored. This means that the model components will automatically be integrated with the BGC model without having to add new methods various Oceananigans functions as you otherwise will have. 
+OceanBioME's `ContinuousFormBiogeochemistry` adds a layer on top of this which makes adding [light attenuation models](@ref light), [sediment](@ref sediment), and [biologically active particles](@ref individuals). This is because `ContinuousFormBiogeochemistry` has parameters in which the types of these components are stored. This means that the model components will automatically be integrated with the BGC model without having to add new methods to various Oceananigans functions as you otherwise will have. 
 
 ## Implementing a model
 
