@@ -1,6 +1,6 @@
 # [Implementing a new models](@id model_implementation)
 
-Here we will describe how OceanBioME defines biogeochemical (BGC) models, how this varies from Oceananigans, and how to impliemnt your own model.
+Here we will describe how OceanBioME defines biogeochemical (BGC) models, how this varies from Oceananigans, and how to implement your own model.
 
 ## Model structure
 OceanBioME BGC models are `struct`s of type `ContinuousFormBiogeochemistry`, which is of abstract type `AbstractContinuousFormBiogeochemistry` from Oceananigans. In Oceananigans this describes BGC models which are continuous (depend continuously on ``x``, ``y``, and ``z``) rather than discrete (depending on ``i``, ``j``, ``k``). This simplifies the implementation of BGC models as forcing and sinking are very simple to define and add to tracers, and then Oceananigans handles the rest.
@@ -25,7 +25,7 @@ import Oceananigans.Biogeochemistry: required_biogeochemical_tracers,
                                      required_biogeochemical_auxiliary_fields,
                                      update_biogeochemical_state!,
                                      biogeochemical_drift_velocity,
-				                     biogeochemical_auxiliary_fields
+                                     biogeochemical_auxiliary_fields
 ```
 
 We then define our `struct` with the model parameters, as well as slots for the particles, light attenuation, and sediment models:
@@ -58,7 +58,7 @@ required_biogeochemical_auxiliary_fields(::NutrientPhytoplankton) = (:PAR, )
 biogeochemical_auxiliary_fields(bgc::NutrientPhytoplankton) = biogeochemical_auxiliary_fields(bgc.light_attenuation_model)
 ```
 
-Next we need to define the methods that specify how the nutrient, ``N``, and phytoplankton ``P`` evolve. We want the phytoplankton to evolve at the rate given by:
+Next, we need to define the methods that specify how the nutrient, ``N``, and phytoplankton ``P`` evolve. We want the phytoplankton to evolve at the rate given by:
 
 ```math
 \frac{\partial P}{\partial t} = \mu g(T) f(N) h(PAR) P - mP - bP^2,
