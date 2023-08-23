@@ -94,14 +94,8 @@ For example, the `GasExchange` submodule calculates the carbon dioxide and oxyge
 We currently provide a simple Nutrient-Phytoplankton-Zooplankton-Detritus (NPZD) model [@npzd], and an intermediate complexity model, LOBSTER [@lobster], we have set up a straightforward "plug and play" framework to add additional tracers such as carbonate and oxygen chemistry systems and additional forcing. 
 A key feature of this package is the easy ability to modify models or add different formulations. 
 If a user wanted to implement a different model they could use the existing ones as a template and modify only a few lines of code where the ODEs are defined as functions.
-Alternatively, by harnessing another Julia feature, users could `import` specific functions from the models and redefine only them.
-For example, if a user wanted to modify the light limitation to phytoplankton growth in the NPZD model to copy that of the LOBSTER model they could pass different parameter values to the model and write:
-
-```julia
-import OceanBioME.NPZDModel: light_limitation
-
-@inline light_limitation(PAR, α, μ) = 1 - exp(- PAR / α)
-````
+They can build their model within our framework to easily couple with the other model components such as light attenuation and sediment.
+We provide a detailed tutorial describing how to-do this, which also serves as a good description of how our models are setup.
 
 These `AdvectedPopulations` are supported by `Boundaries` modules which are easy to apply and provide information at the top and bottom of the ocean.
 We have implemented comprehensive air-sea flux models [e.g. @wanninkhof:1992] within the `GasExchange` submodule to calculate carbon dioxide and oxygen flux at the sea surface, and sediment models [e.g. @soetaert:2000] which calculate fluxes of carbon and oxygen at the seafloor.
