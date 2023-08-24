@@ -143,4 +143,13 @@ bottom_height(x, y) = -1000 + 500 * exp(- (x^2 + y^2) / 250) # a perfect hill
             end
         end
     end
+
+    @info "Testing RK3 timestepper"
+    grid = RectilinearGrid(architecture; size=(3, 3, 50), extent=(10, 10, 500))
+
+    @testset "RK3" test_flat_sediment(grid = , 
+                                      biogeochemistry = NutrientPhytoplanktonZooplanktonDetritus(; grid, 
+                                                                                                   sediment_model = InstantRemineralisation(; grid)),
+                                      model = NonhydrostaticModel; 
+                                      timestepper = :RungeKutta3)
 end
