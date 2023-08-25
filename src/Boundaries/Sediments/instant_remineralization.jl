@@ -59,9 +59,9 @@ function InstantRemineralisation(; grid,
     tracer_names = (:N_storage, )
 
     # add field slicing back ( indices = (:, :, 1)) when output writer can cope
-    fields = NamedTuple{tracer_names}(Tuple(CenterField(grid, indices = (:, :, 1)) for tracer in tracer_names))
-    tendencies = (Gⁿ = NamedTuple{tracer_names}(Tuple(CenterField(grid, indices = (:, :, 1)) for tracer in tracer_names)),
-                  G⁻ = NamedTuple{tracer_names}(Tuple(CenterField(grid, indices = (:, :, 1)) for tracer in tracer_names)))
+    fields = NamedTuple{tracer_names}(Tuple(CenterField(grid) for tracer in tracer_names))
+    tendencies = (Gⁿ = NamedTuple{tracer_names}(Tuple(CenterField(grid) for tracer in tracer_names)),
+                  G⁻ = NamedTuple{tracer_names}(Tuple(CenterField(grid) for tracer in tracer_names)))
 
     bottom_indices = calculate_bottom_indices(grid)
 

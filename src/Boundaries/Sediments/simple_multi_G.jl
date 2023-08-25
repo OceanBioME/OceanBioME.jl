@@ -109,9 +109,9 @@ function SimpleMultiG(; grid,
     tracer_names = (:C_slow, :C_fast, :N_slow, :N_fast, :C_ref, :N_ref)
 
     # add field slicing back ( indices = (:, :, 1)) when output writer can cope
-    fields = NamedTuple{tracer_names}(Tuple(CenterField(grid, indices = (:, :, 1)) for tracer in tracer_names))
-    tendencies = (Gⁿ = NamedTuple{tracer_names}(Tuple(CenterField(grid, indices = (:, :, 1)) for tracer in tracer_names)),
-                  G⁻ = NamedTuple{tracer_names}(Tuple(CenterField(grid, indices = (:, :, 1)) for tracer in tracer_names)))
+    fields = NamedTuple{tracer_names}(Tuple(CenterField(grid) for tracer in tracer_names))
+    tendencies = (Gⁿ = NamedTuple{tracer_names}(Tuple(CenterField(grid) for tracer in tracer_names)),
+                  G⁻ = NamedTuple{tracer_names}(Tuple(CenterField(grid) for tracer in tracer_names)))
 
     bottom_indices = calculate_bottom_indices(grid)
 
