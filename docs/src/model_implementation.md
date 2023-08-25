@@ -3,9 +3,9 @@
 Here we will describe how OceanBioME defines biogeochemical (BGC) models, how this varies from Oceananigans, and how to implement your own model.
 
 ## Model structure
-OceanBioME BGC models are `struct`s of type `ContinuousFormBiogeochemistry`, which is of abstract type `AbstractContinuousFormBiogeochemistry` from Oceananigans. In Oceananigans this describes BGC models which are continuous (depend continuously on ``x``, ``y``, and ``z``) rather than discrete (depending on ``i``, ``j``, ``k``). This simplifies the implementation of BGC models as forcing and sinking are very simple to define and add to tracers, and then Oceananigans handles the rest.
+OceanBioME BGC models are `struct`s of type `ContinuousFormBiogeochemistry`, which is of abstract type `AbstractContinuousFormBiogeochemistry` from Oceananigans. In Oceananigans this describes BGC models which are defined using continuous functions (depending continuously on ``x``, ``y``, and ``z``) rather than discrete functions (depending on ``i``, ``j``, ``k``). This allows the user to implement the BGC model equations without worrying about details of the grid or discretization, and then Oceananigans handles the rest.
 
-OceanBioME's `ContinuousFormBiogeochemistry` adds a layer on top of this which makes adding [light attenuation models](@ref light), [sediment](@ref sediment), and [biologically active particles](@ref individuals). This is because `ContinuousFormBiogeochemistry` has parameters in which the types of these components are stored. This means that the model components will automatically be integrated with the BGC model without having to add new methods to various Oceananigans functions as you otherwise will have. 
+OceanBioME's `ContinuousFormBiogeochemistry` adds a layer on top of this which makes it easy to add [light attenuation models](@ref light), [sediment](@ref sediment), and [biologically active particles](@ref individuals) (or indivdiual-based models). OceanBioME's `ContinuousFormBiogeochemistry` includes parameters in which the types of these components are stored. This means that these model components will automatically be integrated into the BGC model without having to add new methods to call Oceananigans functions. 
 
 ## Implementing a model
 
@@ -15,7 +15,7 @@ The nature of multiple dispatch in Julia means that we define new BGC models as 
 
 For this example we are going to implement the simple Nutrient-Phytoplankton model similar to that used in [Chen2015](@citep), although we neglect the nutrient in/outflow terms since they may be added as [boundary conditions](https://clima.github.io/OceananigansDocumentation/stable/model_setup/boundary_conditions/), and modified to conserve nitrogen.
 
-The first step we need is to import the abstract type from OceanBioME, some units from Oceananigans (for ease of parameter definition), and [`import`](https://stackoverflow.com/questions/27086159/what-is-the-difference-between-using-and-import-in-julia-when-building-a-mod) some functions from Oceananigans which we will add methods to:
+The first step is to import the abstract type from OceanBioME, some units from Oceananigans (for ease of parameter definition), and [`import`](https://stackoverflow.com/questions/27086159/what-is-the-difference-between-using-and-import-in-julia-when-building-a-mod) some functions from Oceananigans which we will add methods to:
 
 ```@example implementing
 using OceanBioME: ContinuousFormBiogeochemistry
@@ -48,7 +48,7 @@ We then define our `struct` with the model parameters, as well as slots for the 
 end
 ```
 
-In the above we used `@kwdef` to set default values for the models so that we don't have to set these up each time we use the model. We have also included a `sinking_velocity` field to later demonstrate how we can get tracers to sink. We also need to define some functions so that OceanBioME and Oceananigans know what tracers and auxiliary fields (e.g. light intensity) we need setting up:
+Here, we use descriptive names for the parameters. Below, each of these will correspond to a symbol (or letter) which is more convenient mathematically and when defining the BGC model functions. In the above code we used `@kwdef` to set default values for the models so that we don't have to set all of these parameters each time we use the model. The default parameter values can optionally be over-ridden by the user when they run the mmodel. We have also included a `sinking_velocity` field in the parameter set to demonstrate how we can get tracers (e.g. detritus) to sink. We also need to define some functions so that OceanBioME and Oceananigans know what tracers and auxiliary fields (e.g. light intensity) we will use:
 
 ```@example implementing
 required_biogeochemical_tracers(::NutrientPhytoplankton) = (:N, :P, :T)
@@ -58,13 +58,12 @@ required_biogeochemical_auxiliary_fields(::NutrientPhytoplankton) = (:PAR, )
 biogeochemical_auxiliary_fields(bgc::NutrientPhytoplankton) = biogeochemical_auxiliary_fields(bgc.light_attenuation_model)
 ```
 
-Next, we need to define the methods that specify how the nutrient, ``N``, and phytoplankton ``P`` evolve. We want the phytoplankton to evolve at the rate given by:
-
+Next, we define the functions that specify how the phytoplankton ``P`` evolve. In the absence of advection and diffusion (which will be handled by Oceananigans), we want the phytoplankton to evolve at the rate given by:
 ```math
 \frac{\partial P}{\partial t} = \mu g(T) f(N) h(PAR) P - mP - bP^2,
 ```
 
-where ``\mu`` is `base_growth_rate`, ``m`` is `mortality_rate`, and ``b`` is `crowding`. The functions ``g``, ``f``, and ``h`` are given by:
+where $\mu$ corresponds to the parameter `base_growth_rate`, ``m`` corresponds to the parameter `mortality_rate`, and ``b`` corresponds to the parameter `crowding_mortality_rate`. Here, the functions ``g``, ``f``, and ``h`` are defined by:
 ```math
 \begin{align}
 g(T) &= c_1\exp\left(-c_2|T - T_{opt}|\right),\\
@@ -72,9 +71,9 @@ f(N) &= \frac{N}{k_N + N},\\
 h(PAR) &= \frac{PAR}{k_P + PAR},
 \end{align}
 ```
-where ``c_1`` is `temperature_coefficient`,  ``c_2`` is `temperature_exponent`, ``T_{opt}`` is `optimal_temperature`, ``k_N`` is `nutrient_half_saturation`, and ``k_P`` is `light_half_saturation`. Since this is a simple two variable model and the total concentration is conserved, ``\frac{\partial N}{\partial t} = - \frac{\partial P}{\partial t}``.
+where $c\_1$ corresponds to `temperature_coefficient`,  $c\_2$ corresponds to `temperature_exponent`, ``T_{opt}`` corresponds to `optimal_temperature`, ``k_N`` corresponds to `nutrient_half_saturation`, and ``k_P`` corresponds to `light_half_saturation`. 
 
-We turn this into a method of our new type by writing:
+We turn this into a function for our model by writing:
 
 ```@example implementing
 @inline function (bgc::NutrientPhytoplankton)(::Val{:P}, x, y, z, t, N, P, T, PAR)
@@ -110,13 +109,18 @@ end
 end
 ```
 
-The first parameter `::Val{:P}` is a special [value type](http://www.jlhub.com/julia/manual/en/function/Val) that allows this function to be dispatched when it is given the value `Val(:P)`. This is how Oceananigans tells the model which forcing function it wants. At the start of this function we unpack some parameters from the model, then calculate each term, and return the total change. For the nutrient, we will define the evolution by:
+The first parameter `::Val{:P}` is a special [value type](http://www.jlhub.com/julia/manual/en/function/Val) that allows this function to be dispatched when it is given the value `Val(:P)`. This is how Oceananigans tells the model which forcing function to use. At the start of the `NutrientPhytoplankton` function we unpack some parameters from the model, then calculate each term, and return the total change (the gain minus the loss). 
 
+For this model, the nutrient evolution can be inferred from the rate of change of phytoplankton. Since this is a simple two variable model and the total concentration is conserved, 
+```math
+\frac{\partial N}{\partial t} = - \frac{\partial P}{\partial t}
+```
+Hence, we will define the nutrient forcing using as the negative of the phytoplankton forcing
 ```@example implementing
 @inline (bgc::NutrientPhytoplankton)(::Val{:N}, args...) = -bgc(Val(:P), args...)
 ```
 
-Finally, we need to define some functions to make sure that the sub-models (light attenuation) get updated in the right place
+Finally, we need to define some functions to allow us to update the time-dependent parameters (in this case the PAR and temperature, T):
 
 ```@example implementing
 using OceanBioME: BoxModel
@@ -203,7 +207,7 @@ So now we know it works.
 
 ### Phytoplankton sinking
 
-Now that we have a fully working BGC model we might want to add some more features. Another aspect that is easy to add is negative buoyancy. To-do this all we do is add a method to the Oceananigans function `biogeochemical_drift_velocity`. In this case we are going to only consider the phytoplankton to sink, so when we define the velocity we just need to set `sinking_velocity` to the speed like `NutrientPhytoplankton(; light_attenuation_model, sinking_velocity = 2/day)`. Then we add some more Oceananigans functions, and add the method:
+Now that we have a fully working BGC model we might want to add some more features. Another aspect that is easy to add is negative buoyancy (sinking). To-do this all we do is add a method to the Oceananigans function `biogeochemical_drift_velocity`, and we use `::Val{:P}` to specify that only phytoplankton will sink. Above, we set the default value of the parameter `bgc.sinking_velocity`. We can override this when we call the BGC model like `NutrientPhytoplankton(; light_attenuation_model, sinking_velocity = 1/day)`. Note that before using `biogeochemical_drift_velocity`, we need to import several `Fields` from Oceananigans:
 
 ```@example implementing
 using Oceananigans.Fields: ZeroField, ConstantField
@@ -214,7 +218,7 @@ biogeochemical_drift_velocity(bgc::NutrientPhytoplankton, ::Val{:P}) =
 
 ### Sediment model coupling
 
-Another aspect that OceanBioME allows easy coupling with is sediment models. Doing this varies between sediment models, but for the most generic and simplest all we need to do is add methods to two functions:
+Another aspect that OceanBioME includes is sediment models. Doing this varies between sediment models, but for the most generic and simplest, all we need to do is add methods to two functions:
 
 ```@example implementing
 using OceanBioME.Boundaries.Sediments: sinking_flux
