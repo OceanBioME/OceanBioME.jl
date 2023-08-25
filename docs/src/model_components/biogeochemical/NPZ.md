@@ -2,7 +2,9 @@
 
 The provided NPZD model is the low complexity model of [Kuhn2015](@citet).
 
-![Diagram of NPZD formulation](npzd.svg)
+```@raw html
+<img src="../npzd.svg"  alt="Diagram of NPZD formulation" style="max-width: calc(100% - 20px);">
+```
 
 ## Model equations
 
