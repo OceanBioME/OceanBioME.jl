@@ -15,7 +15,7 @@ The nature of multiple dispatch in Julia means that we define new BGC models as 
 
 For this example we are going to implement the simple Nutrient-Phytoplankton model similar to that used in [Chen2015](@citep), although we neglect the nutrient in/outflow terms since they may be added as [boundary conditions](https://clima.github.io/OceananigansDocumentation/stable/model_setup/boundary_conditions/), and modified to conserve nitrogen.
 
-The first step is to import the abstract type from OceanBioME, some units from Oceananigans (for ease of parameter definition), and [`import`](https://stackoverflow.com/questions/27086159/what-is-the-difference-between-using-and-import-in-julia-when-building-a-mod) some functions from Oceananigans which we will add methods to:
+The first step is to import the abstract type from OceanBioME, some units from Oceananigans (for ease of parameter definition), and [`import`](https://stackoverflow.com/questions/27086159/what-is-the-difference-between-using-and-import-in-julia-when-building-a-mod) some functions from Oceananigans in order to add methods to:
 
 ```@example implementing
 using OceanBioME: ContinuousFormBiogeochemistry
@@ -48,7 +48,7 @@ We then define our `struct` with the model parameters, as well as slots for the 
 end
 ```
 
-Here, we use descriptive names for the parameters. Below, each of these will correspond to a symbol (or letter) which is more convenient mathematically and when defining the BGC model functions. In the above code we used `@kwdef` to set default values for the models so that we don't have to set all of these parameters each time we use the model. The default parameter values can optionally be over-ridden by the user when they run the mmodel. We have also included a `sinking_velocity` field in the parameter set to demonstrate how we can get tracers (e.g. detritus) to sink. We also need to define some functions so that OceanBioME and Oceananigans know what tracers and auxiliary fields (e.g. light intensity) we will use:
+Here, we use descriptive names for the parameters. Below, each of these parameters correspond to a symbol (or letter) which is more convenient mathematically and when defining the BGC model functions. In the above code we used `@kwdef` to set default values for the models so that we don't have to set all of these parameters each time we use the model. The default parameter values can optionally be over-ridden by the user when running the model. We have also included a `sinking_velocity` field in the parameter set to demonstrate how we can get tracers (e.g. detritus) to sink. We also need to define some functions so that OceanBioME and Oceananigans know what tracers and auxiliary fields (e.g. light intensity) we will use:
 
 ```@example implementing
 required_biogeochemical_tracers(::NutrientPhytoplankton) = (:N, :P, :T)
@@ -58,12 +58,12 @@ required_biogeochemical_auxiliary_fields(::NutrientPhytoplankton) = (:PAR, )
 biogeochemical_auxiliary_fields(bgc::NutrientPhytoplankton) = biogeochemical_auxiliary_fields(bgc.light_attenuation_model)
 ```
 
-Next, we define the functions that specify how the phytoplankton ``P`` evolve. In the absence of advection and diffusion (which will be handled by Oceananigans), we want the phytoplankton to evolve at the rate given by:
+Next, we define the functions that specify how the phytoplankton ``P`` evolve. In the absence of advection and diffusion (both of which are handled by Oceananigans), we want the phytoplankton to evolve at the rate given by:
 ```math
 \frac{\partial P}{\partial t} = \mu g(T) f(N) h(PAR) P - mP - bP^2,
 ```
 
-where $\mu$ corresponds to the parameter `base_growth_rate`, ``m`` corresponds to the parameter `mortality_rate`, and ``b`` corresponds to the parameter `crowding_mortality_rate`. Here, the functions ``g``, ``f``, and ``h`` are defined by:
+where ``\mu`` corresponds to the parameter `base_growth_rate`, ``m`` corresponds to the parameter `mortality_rate`, and ``b`` corresponds to the parameter `crowding_mortality_rate`. Here, the functions ``g``, ``f``, and ``h`` are defined by:
 ```math
 \begin{align}
 g(T) &= c_1\exp\left(-c_2|T - T_{opt}|\right),\\
@@ -71,7 +71,7 @@ f(N) &= \frac{N}{k_N + N},\\
 h(PAR) &= \frac{PAR}{k_P + PAR},
 \end{align}
 ```
-where $c\_1$ corresponds to `temperature_coefficient`,  $c\_2$ corresponds to `temperature_exponent`, ``T_{opt}`` corresponds to `optimal_temperature`, ``k_N`` corresponds to `nutrient_half_saturation`, and ``k_P`` corresponds to `light_half_saturation`. 
+where ``c_1`` corresponds to `temperature_coefficient`,  ``c_2`` corresponds to `temperature_exponent`, ``T_{opt}`` corresponds to `optimal_temperature`, ``k_N`` corresponds to `nutrient_half_saturation`, and ``k_P`` corresponds to `light_half_saturation`. 
 
 We turn this into a function for our model by writing:
 
@@ -120,7 +120,7 @@ Hence, we will define the nutrient forcing using as the negative of the phytopla
 @inline (bgc::NutrientPhytoplankton)(::Val{:N}, args...) = -bgc(Val(:P), args...)
 ```
 
-Finally, we need to define some functions to allow us to update the time-dependent parameters (in this case the PAR and temperature, T):
+Finally, we need to define some functions to allow us to update the time-dependent parameters (in this case the PAR and temperature, ``T``):
 
 ```@example implementing
 using OceanBioME: BoxModel
