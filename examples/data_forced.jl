@@ -105,7 +105,7 @@ scale_negative_tracers = ScaleNegativeTracers(; model, tracers = (:NO₃, :NH₄
 simulation.callbacks[:neg] = Callback(scale_negative_tracers; callsite = UpdateStateCallsite())
 
 wizard = TimeStepWizard(cfl = 0.2, diffusive_cfl = 0.2,
-                        max_change = 2.0, min_change = 0.5,
+                        max_change = 1.5, min_change = 0.75,
                         cell_diffusion_timescale = column_diffusion_timescale,
                         cell_advection_timescale = column_advection_timescale)
 simulation.callbacks[:wizard] = Callback(wizard, IterationInterval(10))
