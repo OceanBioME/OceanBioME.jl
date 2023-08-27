@@ -16,7 +16,7 @@ module NPZDModel
 
 export NutrientPhytoplanktonZooplanktonDetritus, NPZD
 
-using OceanBioME: Biogeochemistry
+using OceanBioME: Biogeochemistry, UnderlyingBiogeochemicalModel
 
 using Oceananigans.Units
 using Oceananigans.Fields: ZeroField
@@ -40,7 +40,7 @@ import OceanBioME.Boundaries.Sediments: nitrogen_flux, carbon_flux, remineralisa
 
 import Adapt: adapt_structure, adapt
 
-struct NutrientPhytoplanktonZooplanktonDetritus{FT, W}
+struct NutrientPhytoplanktonZooplanktonDetritus{FT, W} <: UnderlyingBiogeochemicalModel
     # phytoplankton
     initial_photosynthetic_slope :: FT # α, 1/(W/m²)/s
     base_maximum_growth :: FT # μ₀, 1/s

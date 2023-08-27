@@ -103,6 +103,10 @@ end
 
 update_tendencies!(bgc, ::Nothing, model) = nothing
 
+abstract type UnderlyingBiogeochemicalModel end
+
+@inline (::UnderlyingBiogeochemicalModel)(val_tracer_name, x, y, z, t, fields...) = zero(x)
+
 struct BoxModelGrid end
 
 @inline maximum_sinking_velocity(bgc) = 0.0
