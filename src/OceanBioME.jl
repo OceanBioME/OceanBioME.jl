@@ -62,11 +62,29 @@ struct Biogeochemistry{B, L, S, P, I} <: AbstractContinuousFormBiogeochemistry
                            inputs)
 end
 
-Biogeochemistry(; underlying_biogeochemistry,
-                  light_attenuation = nothing,
-                  sediment = nothing,
-                  particles = nothing,
-                  inputs = nothing) = 
+"""
+    Biogeochemistry(underlying_biogeochemistry;
+                    light_attenuation = nothing,
+                    sediment = nothing,
+                    particles = nothing,
+                    inputs = nothing)
+
+Construct a biogeochemical model based on `underlying_biogeochemistry` which may have
+a `light_attenuation` model, `sediment`, `particles`, and `inputs`.
+
+Keyword Arguments
+=================
+
+- `light_attenuation_model`: light attenuation model which integrated the attenuation of available light
+- `sediment_model`: slot for `AbstractSediment`
+- `particles`: slot for `BiogeochemicalParticles`
+- `inputs`: slot for nutrient inputs such as rivers (work in progress)
+"""
+Biogeochemistry(underlying_biogeochemistry,
+                light_attenuation = nothing,
+                sediment = nothing,
+                particles = nothing,
+                inputs = nothing) = 
     Biogeochemistry(underlying_biogeochemistry,
                     light_attenuation,
                     sediment,
@@ -88,11 +106,10 @@ adapt_structure(to, bgc::Biogeochemistry) = Biogeochemistry(adapt(to, bgc.underl
                                                             adapt(to, bgc.particles),
                                                             adapt(to, bgc.inputs))
 
-@inline function update_tendencies!(bgc::Biogeochemistry, model)
+function update_tendencies!(bgc::Biogeochemistry, model)
     update_tendencies!(bgc, bgc.sediment, model)
     update_tendencies!(bgc, bgc.particles, model)
-    #update_input_tendencies!(bgc, bgc.inputs, model)
-    return nothing
+    update_tendencies!(bgc, bgc.inputs, model)
 end
 
 @inline (bgc::Biogeochemistry)(args...) = bgc.underlying_biogeochemistry(args...)

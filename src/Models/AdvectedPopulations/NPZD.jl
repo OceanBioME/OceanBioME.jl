@@ -193,10 +193,10 @@ function NutrientPhytoplanktonZooplanktonDetritus(; grid,
                                                  remineralization_rate,
                                                  sinking_velocities)
 
-    return Biogeochemistry(; underlying_biogeochemistry, 
-                             light_attenuation = light_attenuation_model, 
-                             sediment = sediment_model, 
-                             particles)
+    return Biogeochemistry(underlying_biogeochemistry;
+                           light_attenuation = light_attenuation_model, 
+                           sediment = sediment_model, 
+                           particles)
 end
 
 const NPZD = NutrientPhytoplanktonZooplanktonDetritus

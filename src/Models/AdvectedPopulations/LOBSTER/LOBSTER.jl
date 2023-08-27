@@ -341,10 +341,10 @@ function LOBSTER(; grid,
 
                                          sinking_velocities)
 
-    return Biogeochemistry(; underlying_biogeochemistry, 
-                             light_attenuation = light_attenuation_model, 
-                             sediment = sediment_model, 
-                             particles)
+    return Biogeochemistry(underlying_biogeochemistry;
+                           light_attenuation = light_attenuation_model, 
+                           sediment = sediment_model, 
+                           particles)
 end
 
 # wrote this functionally and it took 2.5x longer so even though this is long going to use this way instead
