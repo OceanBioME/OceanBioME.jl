@@ -245,15 +245,16 @@ julia> grid = RectilinearGrid(size=(3, 3, 30), extent=(10, 10, 200));
 
 julia> model = LOBSTER(; grid)
 Lodyc-DAMTP Ocean Biogeochemical Simulation Tools for Ecosystem and Resources (LOBSTER) model (Float64) 
- Light Attenuation Model: 
-    └── Two-band light attenuation model (Float64)
  Optional components:
     ├── Carbonates ❌ 
     ├── Oxygen ❌ 
     └── Variable Redfield Ratio ❌
  Sinking Velocities:
     ├── sPOM: 0.0 to -3.47e-5 m/s 
-    └── bPOM: 0.0 to -0.0023148148148148147 m/s
+    └── bPOM: 0.0 to -0.0023148148148148147 m/s 
+ Light attenuation: Two-band light attenuation model (Float64)
+ Sediment: Nothing
+ Particles: Nothing
 ```
 """
 function LOBSTER(; grid,
@@ -417,13 +418,16 @@ adapt_structure(to, lobster::LOBSTER) =
             adapt(to, lobster.sinking_velocities))
 
 summary(::LOBSTER{FT, B, W}) where {FT, B, W} = string("Lodyc-DAMTP Ocean Biogeochemical Simulation Tools for Ecosystem and Resources (LOBSTER) model ($FT)")
-show(io::IO, model::LOBSTER{FT, Val{B}, W}) where {FT, B, W} =
-       print(io, summary(model), " \n",
+
+show(model::LOBSTER{FT, Val{B}, W}) where {FT, B, W} =
+       string(summary(model), " \n",
                 " Optional components:", "\n",
                 "    ├── Carbonates $(B[1] ? :✅ : :❌) \n",
                 "    ├── Oxygen $(B[2] ? :✅ : :❌) \n",
                 "    └── Variable Redfield Ratio $(B[3] ? :✅ : :❌)", "\n",
                 " Sinking Velocities:", "\n", show_sinking_velocities(model.sinking_velocities))
+
+show(io::IO, model::LOBSTER) = print(io, show(model))
 
 @inline maximum_sinking_velocity(bgc::LOBSTER) = maximum(abs, bgc.sinking_velocities.bPOM.w)
 
