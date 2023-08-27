@@ -356,6 +356,8 @@ end
 @inline required_biogeochemical_tracers(::LOBSTER{<:Any, <:Val{(false, true, true)}, <:Any}) = (:NO₃, :NH₄, :P, :Z, :sPON, :bPON, :DON, :O₂, :sPOC, :bPOC, :DOC)
 @inline required_biogeochemical_tracers(::LOBSTER{<:Any, <:Val{(true, true, true)}, <:Any}) = (:NO₃, :NH₄, :P, :Z, :sPON, :bPON, :DON, :DIC, :Alk, :O₂, :sPOC, :bPOC, :DOC)
 
+required_biogeochemical_auxiliary_fields(::LOBSTER) = (:PAR, )
+
 const small_detritus = Union{Val{:sPON}, Val{:sPOC}}
 const large_detritus = Union{Val{:bPON}, Val{:bPOC}}
 const disolved_organic_matter = Union{Val{:DON}, Val{:DOC}}
