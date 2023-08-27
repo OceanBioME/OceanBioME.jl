@@ -3,7 +3,6 @@ module Sediments
 export SimpleMultiG, InstantRemineralisation
 
 using KernelAbstractions
-using OceanBioME: ContinuousFormBiogeochemistry
 using Oceananigans
 using Oceananigans.Architectures: device
 using Oceananigans.Utils: launch!
@@ -14,17 +13,17 @@ using Oceananigans.Biogeochemistry: biogeochemical_drift_velocity
 using Oceananigans.Grids: zspacing
 using Oceananigans.Operators: volume
 using Oceananigans.Fields: Center
+using OceanBioME: Biogeochemistry
 
 import Adapt: adapt_structure, adapt
+import Oceananigans.Biogeochemistry: update_tendencies!
 
 abstract type AbstractSediment end
 abstract type FlatSediment <: AbstractSediment end
 
 sediment_fields(::AbstractSediment) = ()
 
-@inline update_sediment_tendencies!(bgc, sediment, model) = nothing
-
-function update_sediment_tendencies!(bgc, sediment::FlatSediment, model)
+function update_tendencies!(bgc, sediment::FlatSediment, model)
     arch = model.grid.architecture
 
     for (i, tracer) in enumerate(sediment_tracers(sediment))

@@ -1,5 +1,4 @@
 using Oceananigans: NonhydrostaticModel, prognostic_fields, HydrostaticFreeSurfaceModel
-using OceanBioME: ContinuousFormBiogeochemistry
 using OceanBioME.Boundaries.Sediments: AbstractSediment
 using Oceananigans.TimeSteppers: ab2_step_field!, rk3_substep_field!, stage_Δt
 using Oceananigans.Utils: work_layout, launch!
@@ -9,7 +8,7 @@ using Oceananigans.Architectures: AbstractArchitecture
 
 import Oceananigans.TimeSteppers: ab2_step!, rk3_substep!
 
-@inline function ab2_step!(model::NonhydrostaticModel{<:Any, <:Any, <:Any, <:Any, <:Any, <:Any, <:Any, <:Any, <:Any, <:Any, <:Any, <:Any, <:Any, <:Any, <:Any, <:Any, <:Any, <:ContinuousFormBiogeochemistry{<:Any, <:FlatSediment}}, Δt, χ)
+@inline function ab2_step!(model::NonhydrostaticModel{<:Any, <:Any, <:Any, <:Any, <:Any, <:Any, <:Any, <:Any, <:Any, <:Any, <:Any, <:Any, <:Any, <:Any, <:Any, <:Any, <:Any, <:Biogeochemistry{<:Any, <:Any, <:FlatSediment}}, Δt, χ)
     workgroup, worksize = work_layout(model.grid, :xyz)
     arch = model.architecture
     step_field_kernel! = ab2_step_field!(device(arch), workgroup, worksize)
@@ -46,7 +45,7 @@ import Oceananigans.TimeSteppers: ab2_step!, rk3_substep!
     return nothing
 end
 
-@inline function ab2_step!(model::HydrostaticFreeSurfaceModel{<:Any, <:Any, <:AbstractArchitecture, <:Any, <:Any, <:Any, <:Any, <:Any, <:Any, <:Any, <:Any, <:ContinuousFormBiogeochemistry{<:Any, <:FlatSediment}}, Δt, χ)
+@inline function ab2_step!(model::HydrostaticFreeSurfaceModel{<:Any, <:Any, <:AbstractArchitecture, <:Any, <:Any, <:Any, <:Any, <:Any, <:Any, <:Any, <:Any, <:Biogeochemistry{<:Any, <:Any, <:FlatSediment}}, Δt, χ)
     # Step locally velocity and tracers
     @apply_regionally local_ab2_step!(model, Δt, χ)
 
@@ -75,7 +74,7 @@ end
     @inbounds u[i, j, 1] += Δt * ((one_point_five + χ) * Gⁿ[i, j, 1] - (oh_point_five + χ) * G⁻[i, j, 1])
 end
 
-function rk3_substep!(model::NonhydrostaticModel{<:Any, <:Any, <:Any, <:Any, <:Any, <:Any, <:Any, <:Any, <:Any, <:Any, <:Any, <:Any, <:Any, <:Any, <:Any, <:Any, <:Any, <:ContinuousFormBiogeochemistry{<:Any, <:FlatSediment}}, Δt, γⁿ, ζⁿ)
+function rk3_substep!(model::NonhydrostaticModel{<:Any, <:Any, <:Any, <:Any, <:Any, <:Any, <:Any, <:Any, <:Any, <:Any, <:Any, <:Any, <:Any, <:Any, <:Any, <:Any, <:Any, <:Biogeochemistry{<:Any, <:Any, <:FlatSediment}}, Δt, γⁿ, ζⁿ)
     workgroup, worksize = work_layout(model.grid, :xyz)
     arch = model.architecture
     substep_field_kernel! = rk3_substep_field!(device(arch), workgroup, worksize)

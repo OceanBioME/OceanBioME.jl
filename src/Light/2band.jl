@@ -120,14 +120,12 @@ function TwoBandPhotosyntheticallyActiveRadiation(; grid,
                                                     surface_PAR)
 end
 
-function update_PAR!(model, PAR::TwoBandPhotosyntheticallyActiveRadiation)
+function update_biogeochemical_state!(model, PAR::TwoBandPhotosyntheticallyActiveRadiation)
     arch = architecture(model.grid)
     launch!(arch, model.grid, :xy, update_TwoBandPhotosyntheticallyActiveRadiation!, PAR.field, model.grid, model.tracers.P, PAR.surface_PAR, model.clock.time, PAR)
 
     fill_halo_regions!(PAR.field, model.clock, fields(model))
 end
-
-required_PAR_fields(::TwoBandPhotosyntheticallyActiveRadiation) = (:PAR, )
 
 summary(::TwoBandPhotosyntheticallyActiveRadiation{FT}) where {FT} = string("Two-band light attenuation model ($FT)")
 show(io::IO, model::TwoBandPhotosyntheticallyActiveRadiation{FT}) where {FT} = print(io, summary(model))

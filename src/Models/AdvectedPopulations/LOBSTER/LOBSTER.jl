@@ -43,13 +43,11 @@ module LOBSTERModel
 
 export LOBSTER
 
-using OceanBioME: ContinuousFormBiogeochemistry
-
 using Oceananigans.Units
 using Oceananigans.Fields: Field, TracerFields, CenterField, ZeroField
 
-using OceanBioME.Light: TwoBandPhotosyntheticallyActiveRadiation, update_PAR!, required_PAR_fields
-using OceanBioME: setup_velocity_fields, show_sinking_velocities
+using OceanBioME.Light: TwoBandPhotosyntheticallyActiveRadiation
+using OceanBioME: setup_velocity_fields, show_sinking_velocities, Biogeochemistry
 using OceanBioME.BoxModels: BoxModel
 using OceanBioME.Boundaries.Sediments: sinking_flux
 
@@ -57,9 +55,7 @@ import OceanBioME.BoxModels: update_boxmodel_state!
 
 import Oceananigans.Biogeochemistry: required_biogeochemical_tracers,
                                      required_biogeochemical_auxiliary_fields,
-                                     biogeochemical_drift_velocity,
-                                     update_biogeochemical_state!,
-                                     biogeochemical_auxiliary_fields
+                                     biogeochemical_drift_velocity
 
 import OceanBioME: maximum_sinking_velocity
 
@@ -68,7 +64,7 @@ import Base: show, summary
 
 import OceanBioME.Boundaries.Sediments: nitrogen_flux, carbon_flux, remineralisation_receiver
 
-struct LOBSTER{FT, LA, S, B, W, P} <: ContinuousFormBiogeochemistry{LA, S, P}
+struct LOBSTER{FT, B, W}
     phytoplankton_preference :: FT
     maximum_grazing_rate :: FT
     grazing_half_saturation :: FT
@@ -99,14 +95,9 @@ struct LOBSTER{FT, LA, S, B, W, P} <: ContinuousFormBiogeochemistry{LA, S, P}
     disolved_organic_breakdown_rate :: FT
     zooplankton_calcite_dissolution :: FT
 
-    light_attenuation_model :: LA
-    sediment_model :: S
-
     optionals :: B
 
     sinking_velocities :: W
-
-    particles :: P
 
     function LOBSTER(phytoplankton_preference::FT,
                      maximum_grazing_rate::FT,
@@ -138,53 +129,43 @@ struct LOBSTER{FT, LA, S, B, W, P} <: ContinuousFormBiogeochemistry{LA, S, P}
                      disolved_organic_breakdown_rate::FT,
                      zooplankton_calcite_dissolution::FT,
 
-                     light_attenuation_model::LA,
-                     sediment_model::S,
-
                      optionals::B,
                 
-                     sinking_velocities::W,
-                     
-                     particles::P) where {FT, LA, S, B, W, P}
+                     sinking_velocities::W) where {FT, B, W}
 
-        return new{FT, LA, S, B, W, P}(phytoplankton_preference,
-                                       maximum_grazing_rate,
-                                       grazing_half_saturation,
-                                       light_half_saturation,
-                                       nitrate_ammonia_inhibition,
-                                       nitrate_half_saturation,
-                                       ammonia_half_saturation,
-                                       maximum_phytoplankton_growthrate,
-                                       zooplankton_assimilation_fraction,
-                                       zooplankton_mortality,
-                                       zooplankton_excretion_rate,
-                                       phytoplankton_mortality,
-                                       small_detritus_remineralisation_rate,
-                                       large_detritus_remineralisation_rate,
-                                       phytoplankton_exudation_fraction,
-                                       nitrifcaiton_rate,
-                                       ammonia_fraction_of_exudate,
-                                       ammonia_fraction_of_excriment,
-                                       ammonia_fraction_of_detritus,
-                                       phytoplankton_redfield,
-                                       organic_redfield,
-                                       phytoplankton_chlorophyll_ratio,
-                                       organic_carbon_calcate_ratio,
-                                       respiraiton_oxygen_nitrogen_ratio,
-                                       nitrifcation_oxygen_nitrogen_ratio,
-                                       slow_sinking_mortality_fraction,
-                                       fast_sinking_mortality_fraction,
-                                       disolved_organic_breakdown_rate,
-                                       zooplankton_calcite_dissolution,
+        return new{FT, B, W}(phytoplankton_preference,
+                             maximum_grazing_rate,
+                             grazing_half_saturation,
+                             light_half_saturation,
+                             nitrate_ammonia_inhibition,
+                             nitrate_half_saturation,
+                             ammonia_half_saturation,
+                             maximum_phytoplankton_growthrate,
+                             zooplankton_assimilation_fraction,
+                             zooplankton_mortality,
+                             zooplankton_excretion_rate,
+                             phytoplankton_mortality,
+                             small_detritus_remineralisation_rate,
+                             large_detritus_remineralisation_rate,
+                             phytoplankton_exudation_fraction,
+                             nitrifcaiton_rate,
+                             ammonia_fraction_of_exudate,
+                             ammonia_fraction_of_excriment,
+                             ammonia_fraction_of_detritus,
+                             phytoplankton_redfield,
+                             organic_redfield,
+                             phytoplankton_chlorophyll_ratio,
+                             organic_carbon_calcate_ratio,
+                             respiraiton_oxygen_nitrogen_ratio,
+                             nitrifcation_oxygen_nitrogen_ratio,
+                             slow_sinking_mortality_fraction,
+                             fast_sinking_mortality_fraction,
+                             disolved_organic_breakdown_rate,
+                             zooplankton_calcite_dissolution,
 
-                                       light_attenuation_model,
-                                       sediment_model,
-
-                                       optionals,
-                                                         
-                                       sinking_velocities,
-                                       
-                                       particles)
+                             optionals,
+                                               
+                             sinking_velocities)
     end
 end
 
@@ -325,57 +306,55 @@ function LOBSTER(; grid,
 
     optionals = Val((carbonates, oxygen, variable_redfield))
 
-    return LOBSTER(phytoplankton_preference,
-                   maximum_grazing_rate,
-                   grazing_half_saturation,
-                   light_half_saturation,
-                   nitrate_ammonia_inhibition,
-                   nitrate_half_saturation,
-                   ammonia_half_saturation,
-                   maximum_phytoplankton_growthrate,
-                   zooplankton_assimilation_fraction,
-                   zooplankton_mortality,
-                   zooplankton_excretion_rate,
-                   phytoplankton_mortality,
-                   small_detritus_remineralisation_rate,
-                   large_detritus_remineralisation_rate,
-                   phytoplankton_exudation_fraction,
-                   nitrifcaiton_rate,
-                   ammonia_fraction_of_exudate,
-                   ammonia_fraction_of_excriment,
-                   ammonia_fraction_of_detritus,
-                   phytoplankton_redfield,
-                   organic_redfield,
-                   phytoplankton_chlorophyll_ratio,
-                   organic_carbon_calcate_ratio,
-                   respiraiton_oxygen_nitrogen_ratio,
-                   nitrifcation_oxygen_nitrogen_ratio,
-                   slow_sinking_mortality_fraction,
-                   fast_sinking_mortality_fraction,
-                   disolved_organic_breakdown_rate,
-                   zooplankton_calcite_dissolution,
+    underlying_biogeochemistry = LOBSTER(phytoplankton_preference,
+                                         maximum_grazing_rate,
+                                         grazing_half_saturation,
+                                         light_half_saturation,
+                                         nitrate_ammonia_inhibition,
+                                         nitrate_half_saturation,
+                                         ammonia_half_saturation,
+                                         maximum_phytoplankton_growthrate,
+                                         zooplankton_assimilation_fraction,
+                                         zooplankton_mortality,
+                                         zooplankton_excretion_rate,
+                                         phytoplankton_mortality,
+                                         small_detritus_remineralisation_rate,
+                                         large_detritus_remineralisation_rate,
+                                         phytoplankton_exudation_fraction,
+                                         nitrifcaiton_rate,
+                                         ammonia_fraction_of_exudate,
+                                         ammonia_fraction_of_excriment,
+                                         ammonia_fraction_of_detritus,
+                                         phytoplankton_redfield,
+                                         organic_redfield,
+                                         phytoplankton_chlorophyll_ratio,
+                                         organic_carbon_calcate_ratio,
+                                         respiraiton_oxygen_nitrogen_ratio,
+                                         nitrifcation_oxygen_nitrogen_ratio,
+                                         slow_sinking_mortality_fraction,
+                                         fast_sinking_mortality_fraction,
+                                         disolved_organic_breakdown_rate,
+                                         zooplankton_calcite_dissolution,
 
-                   light_attenuation_model,
-                   sediment_model,
+                                         optionals,
 
-                   optionals,
+                                         sinking_velocities)
 
-                   sinking_velocities,
-
-                   particles)
+    return Biogeochemistry(; underlying_biogeochemistry, 
+                             light_attenuation = light_attenuation_model, 
+                             sediment = sediment_model, 
+                             particles)
 end
 
 # wrote this functionally and it took 2.5x longer so even though this is long going to use this way instead
-@inline required_biogeochemical_tracers(::LOBSTER{<:Any, <:Any, <:Any, <:Val{(false, false, false)}, <:Any, <:Any}) = (:NO₃, :NH₄, :P, :Z, :sPOM, :bPOM, :DOM)
-@inline required_biogeochemical_tracers(::LOBSTER{<:Any, <:Any, <:Any, <:Val{(true, false, false)}, <:Any, <:Any}) = (:NO₃, :NH₄, :P, :Z, :sPOM, :bPOM, :DOM, :DIC, :Alk)
-@inline required_biogeochemical_tracers(::LOBSTER{<:Any, <:Any, <:Any, <:Val{(false, true, false)}, <:Any, <:Any}) = (:NO₃, :NH₄, :P, :Z, :sPOM, :bPOM, :DOM, :O₂)
-@inline required_biogeochemical_tracers(::LOBSTER{<:Any, <:Any, <:Any, <:Val{(false, false, true)}, <:Any, <:Any}) = (:NO₃, :NH₄, :P, :Z, :sPON, :bPON, :DON, :sPOC, :bPOC, :DOC)
-@inline required_biogeochemical_tracers(::LOBSTER{<:Any, <:Any, <:Any, <:Val{(true, true, false)}, <:Any, <:Any}) = (:NO₃, :NH₄, :P, :Z, :sPOM, :bPOM, :DOM, :DIC, :Alk, :O₂)
-@inline required_biogeochemical_tracers(::LOBSTER{<:Any, <:Any, <:Any, <:Val{(true, false, true)}, <:Any, <:Any}) = (:NO₃, :NH₄, :P, :Z, :sPON, :bPON, :DON, :DIC, :Alk, :sPOC, :bPOC, :DOC)
-@inline required_biogeochemical_tracers(::LOBSTER{<:Any, <:Any, <:Any, <:Val{(false, true, true)}, <:Any, <:Any}) = (:NO₃, :NH₄, :P, :Z, :sPON, :bPON, :DON, :O₂, :sPOC, :bPOC, :DOC)
-@inline required_biogeochemical_tracers(::LOBSTER{<:Any, <:Any, <:Any, <:Val{(true, true, true)}, <:Any, <:Any}) = (:NO₃, :NH₄, :P, :Z, :sPON, :bPON, :DON, :DIC, :Alk, :O₂, :sPOC, :bPOC, :DOC)
-
-@inline required_biogeochemical_auxiliary_fields(model::LOBSTER) = required_PAR_fields(model.light_attenuation_model)
+@inline required_biogeochemical_tracers(::LOBSTER{<:Any, <:Val{(false, false, false)}, <:Any}) = (:NO₃, :NH₄, :P, :Z, :sPOM, :bPOM, :DOM)
+@inline required_biogeochemical_tracers(::LOBSTER{<:Any, <:Val{(true, false, false)}, <:Any}) = (:NO₃, :NH₄, :P, :Z, :sPOM, :bPOM, :DOM, :DIC, :Alk)
+@inline required_biogeochemical_tracers(::LOBSTER{<:Any, <:Val{(false, true, false)}, <:Any}) = (:NO₃, :NH₄, :P, :Z, :sPOM, :bPOM, :DOM, :O₂)
+@inline required_biogeochemical_tracers(::LOBSTER{<:Any, <:Val{(false, false, true)}, <:Any}) = (:NO₃, :NH₄, :P, :Z, :sPON, :bPON, :DON, :sPOC, :bPOC, :DOC)
+@inline required_biogeochemical_tracers(::LOBSTER{<:Any, <:Val{(true, true, false)}, <:Any}) = (:NO₃, :NH₄, :P, :Z, :sPOM, :bPOM, :DOM, :DIC, :Alk, :O₂)
+@inline required_biogeochemical_tracers(::LOBSTER{<:Any, <:Val{(true, false, true)}, <:Any}) = (:NO₃, :NH₄, :P, :Z, :sPON, :bPON, :DON, :DIC, :Alk, :sPOC, :bPOC, :DOC)
+@inline required_biogeochemical_tracers(::LOBSTER{<:Any, <:Val{(false, true, true)}, <:Any}) = (:NO₃, :NH₄, :P, :Z, :sPON, :bPON, :DON, :O₂, :sPOC, :bPOC, :DOC)
+@inline required_biogeochemical_tracers(::LOBSTER{<:Any, <:Val{(true, true, true)}, <:Any}) = (:NO₃, :NH₄, :P, :Z, :sPON, :bPON, :DON, :DIC, :Alk, :O₂, :sPOC, :bPOC, :DOC)
 
 const small_detritus = Union{Val{:sPON}, Val{:sPOC}}
 const large_detritus = Union{Val{:bPON}, Val{:bPOC}}
@@ -395,10 +374,6 @@ const DOM = Union{Val{:DOM}, Val{:DON}}
     else
         return (u = ZeroField(), v = ZeroField(), w = ZeroField())
     end
-end
-
-function update_biogeochemical_state!(bgc::LOBSTER, model)
-    update_PAR!(model, bgc.light_attenuation_model)
 end
 
 function update_boxmodel_state!(model::BoxModel{<:LOBSTER, <:Any, <:Any, <:Any, <:Any, <:Any})
@@ -441,11 +416,9 @@ adapt_structure(to, lobster::LOBSTER) =
             adapt(to, lobster.sinking_velocities), 
             adapt(to, lobster.particles))
 
-summary(::LOBSTER{FT, LA, S, B, W, P}) where {FT, LA, S, B, W, P} = string("Lodyc-DAMTP Ocean Biogeochemical Simulation Tools for Ecosystem and Resources (LOBSTER) model ($FT)")
-show(io::IO, model::LOBSTER{FT, LA, S, Val{B}, W, P}) where {FT, LA, S, B, W, P} =
+summary(::LOBSTER{FT, B, W}) where {FT, B, W} = string("Lodyc-DAMTP Ocean Biogeochemical Simulation Tools for Ecosystem and Resources (LOBSTER) model ($FT)")
+show(io::IO, model::LOBSTER{FT, Val{B}, W}) where {FT, B, W} =
        print(io, summary(model), " \n",
-                " Light Attenuation Model: ", "\n",
-                "    └── ", summary(model.light_attenuation_model), "\n",
                 " Optional components:", "\n",
                 "    ├── Carbonates $(B[1] ? :✅ : :❌) \n",
                 "    ├── Oxygen $(B[2] ? :✅ : :❌) \n",
@@ -454,8 +427,6 @@ show(io::IO, model::LOBSTER{FT, LA, S, Val{B}, W, P}) where {FT, LA, S, B, W, P}
 
 @inline maximum_sinking_velocity(bgc::LOBSTER) = maximum(abs, bgc.sinking_velocities.bPOM.w)
 
-@inline biogeochemical_auxiliary_fields(bgc::LOBSTER) = biogeochemical_auxiliary_fields(bgc.light_attenuation_model)
-
 include("fallbacks.jl")
 
 include("core.jl")
@@ -463,10 +434,10 @@ include("carbonate_chemistry.jl")
 include("oxygen_chemistry.jl")
 include("variable_redfield.jl")
 
-const lobster_variable_redfield = Union{LOBSTER{<:Any, <:Any, <:Any, <:Val{(false, false, true)}, <:Any, <:Any},
-                                        LOBSTER{<:Any, <:Any, <:Any, <:Val{(true, false, true)}, <:Any, <:Any},
-                                        LOBSTER{<:Any, <:Any, <:Any, <:Val{(false, true, true)}, <:Any, <:Any},
-                                        LOBSTER{<:Any, <:Any, <:Any, <:Val{(true, true, true)}, <:Any, <:Any}}
+const lobster_variable_redfield = Union{LOBSTER{<:Any, <:Val{(false, false, true)}, <:Any},
+                                        LOBSTER{<:Any, <:Val{(true, false, true)}, <:Any},
+                                        LOBSTER{<:Any, <:Val{(false, true, true)}, <:Any},
+                                        LOBSTER{<:Any, <:Val{(true, true, true)}, <:Any}}
 
 
 @inline nitrogen_flux(grid, advection, bgc::LOBSTER, tracers, i, j) = 
