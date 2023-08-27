@@ -49,7 +49,7 @@ archs = (CPU(), )
         arch in archs,
         grid in (RectilinearGrid(arch; size = (2, 2, 2), extent = (2, 2, 2)), 
                  LatitudeLongitudeGrid(arch; size = (5, 5, 2), longitude = (-180, 180), latitude = (-85, 85), z = (-2, 0))),
-        bgc in (LOBSTER, NutrientPhytoplanktonZooplanktonDetritus)
+        bgc in (LOBSTER, NutrientPhytoplanktonZooplanktonDetritus) # this is now redundant since each model doesn't deal with the light separatly
 
         if !((model == NonhydrostaticModel) && ((grid isa LatitudeLongitudeGrid) | (grid isa OrthogonalSphericalShellGrid)))
             @info "Testing $bgc in $model on $grid..."

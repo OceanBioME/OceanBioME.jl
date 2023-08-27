@@ -35,7 +35,7 @@ function ΣGᶜ(model, carbonates, variable_redfield)
     if variable_redfield
         OC = sum(model.timestepper.Gⁿ.sPOC .+ model.timestepper.Gⁿ.bPOC .+ model.timestepper.Gⁿ.DOC)
     else
-        OC = sum(model.timestepper.Gⁿ.sPOM .+ model.timestepper.Gⁿ.bPOM .+ model.timestepper.Gⁿ.DOM) * model.biogeochemistry. organic_redfield
+        OC = sum(model.timestepper.Gⁿ.sPOM .+ model.timestepper.Gⁿ.bPOM .+ model.timestepper.Gⁿ.DOM) * model.biogeochemistry.underlying_biogeochemistry.organic_redfield
     end
 
     if carbonates
@@ -44,7 +44,7 @@ function ΣGᶜ(model, carbonates, variable_redfield)
         IC = 0.0
     end
 
-    LC = sum(model.timestepper.Gⁿ.P * (1 + model.biogeochemistry.organic_carbon_calcate_ratio) .+ model.timestepper.Gⁿ.Z) * model.biogeochemistry.phytoplankton_redfield 
+    LC = sum(model.timestepper.Gⁿ.P * (1 + model.biogeochemistry.underlying_biogeochemistry.organic_carbon_calcate_ratio) .+ model.timestepper.Gⁿ.Z) * model.biogeochemistry.underlying_biogeochemistry.phytoplankton_redfield 
 
     return OC + IC + LC
 end
