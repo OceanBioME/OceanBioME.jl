@@ -17,7 +17,7 @@ function test_two_band(grid, bgc, model_type)
 
     update_biogeochemical_state!(model.biogeochemistry, model)
 
-    PAR_model = model.biogeochemistry.light_attenuation_model
+    PAR_model = model.biogeochemistry.light_attenuation
 
     kʳ = PAR_model.water_red_attenuation
     kᵇ = PAR_model.water_blue_attenuation
