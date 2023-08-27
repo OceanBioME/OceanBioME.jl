@@ -42,6 +42,7 @@ import Oceananigans.Biogeochemistry: required_biogeochemical_tracers,
                                      update_tendencies!
 
 import Adapt: adapt_structure
+import Base: show, summary
 
 struct Biogeochemistry{B, L, S, P, I} <: AbstractContinuousFormBiogeochemistry
     underlying_biogeochemistry :: B
@@ -80,7 +81,7 @@ Keyword Arguments
 - `particles`: slot for `BiogeochemicalParticles`
 - `inputs`: slot for nutrient inputs such as rivers (work in progress)
 """
-Biogeochemistry(underlying_biogeochemistry,
+Biogeochemistry(underlying_biogeochemistry;
                 light_attenuation = nothing,
                 sediment = nothing,
                 particles = nothing,
@@ -144,6 +145,13 @@ Returns the redfield ratio of `tracer_name` from `bgc` when it is constant acros
 
 @inline redfield(i, j, k, val_tracer_name, bgc::Biogeochemistry, tracers) = redfield(i, j, k, val_tracer_name, bgc.underlying_biogeochemistry, tracers)
 @inline redfield(val_tracer_name, bgc::Biogeochemistry) = redfield(val_tracer_name, bgc.underlying_biogeochemistry)
+
+summary(bgc::Biogeochemistry) = string("Biogeochemical model based on $(summary(bgc.underlying_biogeochemistry))")
+show(io::IO, model::Biogeochemistry) =
+       print(io, show(model.underlying_biogeochemistry), " \n",
+                " Light attenuation: $(summary(model.light_attenuation))", "\n",
+                " Sediment: $(summary(model.sediment))", "\n",
+                " Particles: $(summary(model.particles))")
 
 include("Utils/Utils.jl")
 include("Boundaries/Boundaries.jl")
