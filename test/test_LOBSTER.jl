@@ -11,7 +11,7 @@ function ΣC(model, carbonates, variable_redfield)
     if variable_redfield
         OC = sum(model.tracers.sPOC .+ model.tracers.bPOC .+ model.tracers.DOC)
     else
-        OC = sum(model.tracers.sPOM .+ model.tracers.bPOM .+ model.tracers.DOM) * model.biogeochemistry.underlying_model.organic_redfield
+        OC = sum(model.tracers.sPOM .+ model.tracers.bPOM .+ model.tracers.DOM) * model.biogeochemistry.underlying_biogeochemistry.organic_redfield
     end
 
     if carbonates
@@ -20,7 +20,7 @@ function ΣC(model, carbonates, variable_redfield)
         IC = 0.0
     end
 
-    LC = sum(model.tracers.P * (1 + model.biogeochemistry.underlying_model.organic_carbon_calcate_ratio) .+ model.tracers.Z) * model.biogeochemistry.underlying_model.phytoplankton_redfield 
+    LC = sum(model.tracers.P * (1 + model.biogeochemistry.underlying_biogeochemistry.organic_carbon_calcate_ratio) .+ model.tracers.Z) * model.biogeochemistry.underlying_biogeochemistry.phytoplankton_redfield 
 
     return OC + IC + LC
 end
@@ -90,9 +90,9 @@ function test_LOBSTER(grid, carbonates, oxygen, variable_redfield, sinking, open
             model.tracers.bPON .= rand()
             model.tracers.DON .= rand()
 
-            model.tracers.sPOC .= model.tracers.sPON * model.biogeochemistry.underlying_model.phytoplankton_redfield
-            model.tracers.bPOC .= model.tracers.bPON * model.biogeochemistry.underlying_model.phytoplankton_redfield
-            model.tracers.DOC .= model.tracers.DON * model.biogeochemistry.underlying_model.phytoplankton_redfield
+            model.tracers.sPOC .= model.tracers.sPON * model.biogeochemistry.underlying_biogeochemistry.phytoplankton_redfield
+            model.tracers.bPOC .= model.tracers.bPON * model.biogeochemistry.underlying_biogeochemistry.phytoplankton_redfield
+            model.tracers.DOC .= model.tracers.DON * model.biogeochemistry.underlying_biogeochemistry.phytoplankton_redfield
         else
             model.tracers.sPOM .= rand()
             model.tracers.bPOM .= rand()
