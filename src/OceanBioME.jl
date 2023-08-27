@@ -5,7 +5,7 @@ between ocean biogeochemistry, carbonate chemistry, and physics.
 module OceanBioME
 
 # Biogeochemistry models
-export LOBSTER, NutrientPhytoplanktonZooplanktonDetritus, PISCES, NPZD
+export LOBSTER, NutrientPhytoplanktonZooplanktonDetritus, PISCES, NPZD, redfield
 
 # Macroalgae models
 export SLatissima
@@ -110,6 +110,23 @@ abstract type UnderlyingBiogeochemicalModel end
 struct BoxModelGrid end
 
 @inline maximum_sinking_velocity(bgc) = 0.0
+
+"""
+    redfield(i, j, k, val_tracer_name, bgc, tracers)
+
+Returns the redfield ratio of `tracer_name` from `bgc` at `i`, `j`, `k`.
+"""
+@inline redfield(i, j, k, val_tracer_name, bgc, tracers) = NaN
+
+"""
+    redfield(val_tracer_name, bgc, tracers)
+
+Returns the redfield ratio of `tracer_name` from `bgc` when it is constant across the domain.
+"""
+@inline redfield(val_tracer_name, bgc) = NaN
+
+@inline redfield(i, j, k, val_tracer_name, bgc::Biogeochemistry, tracers) = redfield(i, j, k, val_tracer_name, bgc.underlying_biogeochemistry, tracers)
+@inline redfield(val_tracer_name, bgc::Biogeochemistry) = redfield(val_tracer_name, bgc.underlying_biogeochemistry)
 
 include("Utils/Utils.jl")
 include("Boundaries/Boundaries.jl")

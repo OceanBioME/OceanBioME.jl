@@ -26,6 +26,7 @@ using OceanBioME: setup_velocity_fields, show_sinking_velocities
 using OceanBioME.BoxModels: BoxModel
 using OceanBioME.Boundaries.Sediments: sinking_flux
 
+import OceanBioME: redfield
 import OceanBioME.BoxModels: update_boxmodel_state!
 import Base: show, summary
 
@@ -309,9 +310,13 @@ adapt_structure(to, npzd::NPZD) =
 
                                              adapt(to, npzd.sinking_velocities))
 
+@inline redfield(i, j, k, val_tracer_name, bgc::NPZD, tracers) = redfield(val_tracer_name, bgc)
+@inline redfield(::Union{Val{:N}}, bgc::NPZD) = 0
+@inline redfield(::Union{Val{:P}, Val{:Z}, Val{:D}}, bgc::NPZD) = 6.56
+
 @inline nitrogen_flux(grid, advection, bgc::NPZD, tracers, i, j) = sinking_flux(i, j, grid, advection, Val(:D), bgc, tracers) +
                                                                    sinking_flux(i, j, grid, advection, Val(:P), bgc, tracers)
-                 
-@inline carbon_flux(bgc::NPZD, tracers, i, j) = nitrogen_flux(bgc, tracers, i, j) * 6.56
+     
+@inline carbon_flux(bgc::NPZD, tracers, i, j) = nitrogen_flux(bgc, tracers, i, j) * redfield(Val(:P), bgc, tracers)
 @inline remineralisation_receiver(::NPZD) = :N
 end # module

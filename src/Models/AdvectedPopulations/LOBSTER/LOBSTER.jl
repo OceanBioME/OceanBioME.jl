@@ -51,6 +51,7 @@ using OceanBioME: setup_velocity_fields, show_sinking_velocities, Biogeochemistr
 using OceanBioME.BoxModels: BoxModel
 using OceanBioME.Boundaries.Sediments: sinking_flux
 
+import OceanBioME: redfield
 import OceanBioME.BoxModels: update_boxmodel_state!
 
 import Oceananigans.Biogeochemistry: required_biogeochemical_tracers,
@@ -438,12 +439,23 @@ const lobster_variable_redfield = Union{LOBSTER{<:Any, <:Val{(false, false, true
                                         LOBSTER{<:Any, <:Val{(false, true, true)}, <:Any},
                                         LOBSTER{<:Any, <:Val{(true, true, true)}, <:Any}}
 
+@inline redfield(i, j, k, val_tracer_name, bgc::LOBSTER, tracers) = redfield(val_tracer_name, bgc)
+
+@inline redfield(::Val{:P}, bgc::LOBSTER) = (1 + bgc.organic_carbon_calcate_ratio) * bgc.phytoplankton_redfield
+@inline redfield(::Val{:Z}, bgc::LOBSTER) = bgc.phytoplankton_redfield
+@inline redfield(::Union{Val{:NO₃}, Val{:NH₄}, Val{:Alk}, Val{:O₂}}, bgc::LOBSTER) = 0
+@inline redfield(::Union{Val{:sPOM}, Val{:bPOM}, Val{:DOM}}, bgc::LOBSTER) = bgc.organic_redfield
+@inline redfield(::Union{Val{:sPOC}, Val{:bPOC}, Val{:DOC}, Val{:DIC}}, bgc::LOBSTER) = 1
+
+@inline redfield(i, j, k, ::Val{:sPON}, bgc::lobster_variable_redfield, tracers) = @inbounds tracers.sPOC[i, j, k] / tracers.sPON[i, j, k]
+@inline redfield(i, j, k, ::Val{:bPON}, bgc::lobster_variable_redfield, tracers) = @inbounds tracers.bPOC[i, j, k] / tracers.bPON[i, j, k]
+@inline redfield(i, j, k, ::Val{:DON}, bgc::lobster_variable_redfield, tracers) = @inbounds tracers.DOC[i, j, k] / tracers.DON[i, j, k]
 
 @inline nitrogen_flux(grid, advection, bgc::LOBSTER, tracers, i, j) = 
     sinking_flux(i, j, grid, advection, Val(:sPOM), bgc, tracers) +
     sinking_flux(i, j, grid, advection, Val(:bPOM), bgc, tracers)
 
-@inline carbon_flux(grid, advection, bgc::LOBSTER, tracers, i, j) = nitrogen_flux(grid, advection, bgc, tracers, i, j) * bgc.organic_redfield
+@inline carbon_flux(grid, advection, bgc::LOBSTER, tracers, i, j) = nitrogen_flux(grid, advection, bgc, tracers, i, j) * redfield(Val(:sPOM), bgc)
 
 @inline nitrogen_flux(grid, advection, bgc::lobster_variable_redfield, tracers, i, j) = 
     sinking_flux(i, j, grid, advection, Val(:sPON), bgc, tracers) +
