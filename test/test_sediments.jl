@@ -53,7 +53,7 @@ function test_flat_sediment(grid, biogeochemistry; timestepper = :QuasiAdamsBash
 
     set_defaults!(model.biogeochemistry.sediment)
 
-    set_defaults!(biogeochemistry, model)
+    set_defaults!(biogeochemistry.underlying_biogeochemistry, model)
 
     simulation = Simulation(model, Δt = 50, stop_time = 1day)
 
