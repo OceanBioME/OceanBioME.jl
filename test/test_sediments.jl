@@ -51,7 +51,7 @@ function test_flat_sediment(grid, biogeochemistry; timestepper = :QuasiAdamsBash
                                   closure = nothing,
                                   timestepper)
 
-    set_defaults!(model.biogeochemistry.sediment_model)
+    set_defaults!(model.biogeochemistry.sediment)
 
     set_defaults!(biogeochemistry, model)
 
@@ -61,7 +61,7 @@ function test_flat_sediment(grid, biogeochemistry; timestepper = :QuasiAdamsBash
 
     simulation.callbacks[:intercept_tendencies] = Callback(intercept_tendencies!; callsite = TendencyCallsite(), parameters = intercepted_tendencies)
 
-    N₀ = total_nitrogen(biogeochemistry, model) * volume(1, 1, 1, grid, Center(), Center(), Center()) + total_nitrogen(model.biogeochemistry.sediment_model) * Azᶠᶜᶜ(1, 1, 1, grid)
+    N₀ = total_nitrogen(biogeochemistry, model) * volume(1, 1, 1, grid, Center(), Center(), Center()) + total_nitrogen(model.biogeochemistry.sediment) * Azᶠᶜᶜ(1, 1, 1, grid)
 
     run!(simulation)
 
@@ -69,14 +69,14 @@ function test_flat_sediment(grid, biogeochemistry; timestepper = :QuasiAdamsBash
     @test any([any(intercepted_tendencies[tracer] .!= model.timestepper.Gⁿ[tracer]) for tracer in keys(model.tracers)])
 
     # the sediment tendencies are being updated
-    @test all([any(tend .!= 0.0) for tend in model.biogeochemistry.sediment_model.tendencies.Gⁿ])
-    @test all([any(tend .!= 0.0) for tend in model.biogeochemistry.sediment_model.tendencies.G⁻])
+    @test all([any(tend .!= 0.0) for tend in model.biogeochemistry.sediment.tendencies.Gⁿ])
+    @test all([any(tend .!= 0.0) for tend in model.biogeochemistry.sediment.tendencies.G⁻])
 
     # the sediment values are being integrated
     initial_values = (N_fast = 0.0230, N_slow = 0.0807, C_fast = 0.5893, C_slow = 0.1677, N_ref = 0.0, C_ref = 0.0, N_storage = 0.0)
-    @test all([any(field .!= initial_values[name]) for (name, field) in pairs(model.biogeochemistry.sediment_model.fields)])
+    @test all([any(field .!= initial_values[name]) for (name, field) in pairs(model.biogeochemistry.sediment.fields)])
 
-    N₁ = total_nitrogen(biogeochemistry, model) * volume(1, 1, 1, grid, Center(), Center(), Center()) + total_nitrogen(model.biogeochemistry.sediment_model) * Azᶠᶜᶜ(1, 1, 1, grid)
+    N₁ = total_nitrogen(biogeochemistry, model) * volume(1, 1, 1, grid, Center(), Center(), Center()) + total_nitrogen(model.biogeochemistry.sediment) * Azᶠᶜᶜ(1, 1, 1, grid)
 
     # conservations
     @test N₁ ≈ N₀
