@@ -81,7 +81,7 @@ vᵢ(x, y, z) = Ũ * Ξ(z)
 
 set!(model, u=uᵢ, v=vᵢ, P = 0.03, Z = 0.03, NO₃ = 4.0, NH₄ = 0.05, DIC = 2200.0, Alk = 2409.0)
 
-simulation = Simulation(model, Δt = 15minutes, stop_time = 10days)
+simulation = Simulation(model, Δt = 1minutes, stop_time = 10days)
 
 # Adapt the time step while keeping the CFL number fixed.
 wizard = TimeStepWizard(cfl = 0.75, diffusive_cfl = 0.75, max_Δt = 30minutes)
