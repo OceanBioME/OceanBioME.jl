@@ -52,7 +52,7 @@ end
     # blocking step for implicit free surface, non blocking for explicit
     ab2_step_free_surface!(model.free_surface, model, Δt, χ)
 
-    sediment = model.biogeochemistry.sediment_model
+    sediment = model.biogeochemistry.sediment
     arch = model.architecture
 
     for (i, field) in enumerate(sediment_fields(sediment))
@@ -97,7 +97,7 @@ function rk3_substep!(model::NonhydrostaticModel{<:Any, <:Any, <:Any, <:Any, <:A
                        stage_Δt(Δt, γⁿ, ζⁿ))
     end
 
-    sediment = model.biogeochemistry.sediment_model
+    sediment = model.biogeochemistry.sediment
 
     for (i, field) in enumerate(sediment_fields(sediment))
         launch!(arch, model.grid, :xy, rk3_step_flat_field!, 
