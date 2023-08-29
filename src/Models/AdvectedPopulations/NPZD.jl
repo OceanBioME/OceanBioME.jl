@@ -319,6 +319,6 @@ adapt_structure(to, npzd::NPZD) =
 @inline nitrogen_flux(grid, advection, bgc::NPZD, tracers, i, j) = sinking_flux(i, j, grid, advection, Val(:D), bgc, tracers) +
                                                                    sinking_flux(i, j, grid, advection, Val(:P), bgc, tracers)
      
-@inline carbon_flux(bgc::NPZD, tracers, i, j) = nitrogen_flux(bgc, tracers, i, j) * redfield(Val(:P), bgc, tracers)
+@inline carbon_flux(grid, advection, bgc::NPZD, tracers, i, j) = nitrogen_flux(grid, advection, bgc::NPZD, tracers, i, j) * redfield(Val(:P), bgc, tracers)
 @inline remineralisation_receiver(::NPZD) = :N
 end # module
