@@ -92,5 +92,5 @@ sediment_fields(model::InstantRemineralisation) = (N_storage = model.fields.N_st
     @inbounds timestepper.Gⁿ[remineralisation_receiver(bgc)][i, j, 1] += flux * (1 - burial_efficiency) / Δz
 end
 
-summary(::InstantRemineralisation) = string("Single-layer instant remineralisaiton ($FT)")
+summary(::InstantRemineralisation{FT}) where {FT} = string("Single-layer instant remineralisaiton ($FT)")
 show(io::IO, model::InstantRemineralisation) = print(io, summary(model))

@@ -289,8 +289,8 @@ function update_boxmodel_state!(model::BoxModel{<:NPZD, <:Any, <:Any, <:Any, <:A
 end
 
 summary(::NPZD{FT, W}) where {FT, W} = string("Nutrient Phytoplankton Zooplankton Detritus model ($FT)")
-show(io::IO, model::NPZD) = print(io, string(summary(model), " \n",
-                                             " Sinking Velocities:", "\n", show_sinking_velocities(model.sinking_velocities)))
+show(io::IO, model::NPZD) = string(summary(model), " \n",
+                                   " Sinking Velocities:", "\n", show_sinking_velocities(model.sinking_velocities))
 
 @inline maximum_sinking_velocity(bgc::NPZD) = maximum(abs, bgc.sinking_velocities.D.w)
 

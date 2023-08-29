@@ -419,12 +419,12 @@ adapt_structure(to, lobster::LOBSTER) =
 
 summary(::LOBSTER{FT, B, W}) where {FT, B, W} = string("Lodyc-DAMTP Ocean Biogeochemical Simulation Tools for Ecosystem and Resources (LOBSTER) model ($FT)")
 
-show(io::IO, model::LOBSTER{FT, Val{B}, W}) where {FT, B, W}  = print(io, string(summary(model), " \n",
-                                                                                 " Optional components:", "\n",
-                                                                                 "    ├── Carbonates $(B[1] ? :✅ : :❌) \n",
-                                                                                 "    ├── Oxygen $(B[2] ? :✅ : :❌) \n",
-                                                                                 "    └── Variable Redfield Ratio $(B[3] ? :✅ : :❌)", "\n",
-                                                                                 " Sinking Velocities:", "\n", show_sinking_velocities(model.sinking_velocities)))
+show(io::IO, model::LOBSTER{FT, Val{B}, W}) where {FT, B, W}  = string(summary(model), " \n",
+                                                                       " Optional components:", "\n",
+                                                                       "    ├── Carbonates $(B[1] ? :✅ : :❌) \n",
+                                                                       "    ├── Oxygen $(B[2] ? :✅ : :❌) \n",
+                                                                       "    └── Variable Redfield Ratio $(B[3] ? :✅ : :❌)", "\n",
+                                                                       " Sinking Velocities:", "\n", show_sinking_velocities(model.sinking_velocities))
 
 @inline maximum_sinking_velocity(bgc::LOBSTER) = maximum(abs, bgc.sinking_velocities.bPOM.w)
 
