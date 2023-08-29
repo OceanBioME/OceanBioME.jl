@@ -64,7 +64,6 @@ function test_flat_sediment(grid, biogeochemistry, model; timestepper = :QuasiAd
                                                       buoyancy = nothing) :
                                               model(; grid, 
                                                       biogeochemistry, 
-                                                      timestepper,
                                                       closure = nothing,
                                                       buoyancy = nothing,
                                                       tracers = nothing)
