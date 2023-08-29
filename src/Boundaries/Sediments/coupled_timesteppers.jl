@@ -32,7 +32,7 @@ import Oceananigans.TimeSteppers: ab2_step!, rk3_substep!
                        Δt)
     end
 
-    sediment = model.biogeochemistry.sediment_model
+    sediment = model.biogeochemistry.sediment
 
     for (i, field) in enumerate(sediment_fields(sediment))
         launch!(arch, model.grid, :xy, ab2_step_flat_field!, 

@@ -32,7 +32,7 @@ function update_tendencies!(bgc, sediment::FlatSediment, model)
 
     launch!(arch, model.grid, :xy,
             _calculate_tendencies!,
-            bgc.sediment_model, bgc, model.grid, model.advection, model.tracers, model.timestepper)
+            sediment, bgc, model.grid, model.advection, model.tracers, model.timestepper)
             
     return nothing
 end
@@ -43,9 +43,9 @@ end
 end
 
 
-@inline nitrogen_flux(grid, adveciton, bgc, tracers, i, j) = 0
-@inline carbon_flux(grid, adveciton, bgc, tracers, i, j) = 0
-@inline remineralisation_receiver(bgc) = nothing
+@inline nitrogen_flux(grid, adveciton, bgc::Biogeochemistry, tracers, i, j) = nitrogen_flux(grid, adveciton, bgc.underlying_biogeochemistry, tracers, i, j)
+@inline carbon_flux(grid, adveciton, bgc::Biogeochemistry, tracers, i, j) = carbon_flux(grid, adveciton, bgc.underlying_biogeochemistry, tracers, i, j)
+@inline remineralisation_receiver(bgc::Biogeochemistry) = remineralisation_receiver(bgc.underlying_biogeochemistry)
 
 @inline sinking_flux(i, j, grid, advection, val_tracer::Val{T}, bgc, tracers) where T = 
     - advective_tracer_flux_z(i, j, 1, grid, advection, biogeochemical_drift_velocity(bgc, val_tracer).w, tracers[T]) /
