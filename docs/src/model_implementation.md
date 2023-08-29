@@ -225,10 +225,10 @@ using OceanBioME.Boundaries.Sediments: sinking_flux
 
 import OceanBioME.Boundaries.Sediments: nitrogen_flux, carbon_flux, remineralisation_receiver
 
-@inline nitrogen_flux(grid, advection, bgc::NutrientPhytoplankton, tracers, i, j) =
-    sinking_flux(i, j, grid, advection, Val(:P), bgc, tracers)
+@inline nitrogen_flux(i, j, k, grid, advection, bgc::NutrientPhytoplankton, tracers) =
+     sinking_flux(i, j, k, grid, advection, Val(:P), bgc, tracers)
                  
-@inline carbon_flux(bgc::NutrientPhytoplankton, tracers, i, j) = nitrogen_flux(bgc, tracers, i, j) * 6.56
+@inline carbon_flux(bgc::NutrientPhytoplankton, tracers, i, j) = nitrogen_flux(i, j, k, grid, advection, bgc, tracers) * 6.56
 
 @inline remineralisation_receiver(::NutrientPhytoplankton) = :N
 ```

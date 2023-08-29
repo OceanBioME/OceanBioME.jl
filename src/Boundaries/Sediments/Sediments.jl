@@ -3,7 +3,7 @@ module Sediments
 export SimpleMultiG, InstantRemineralisation
 
 using KernelAbstractions
-using OceanBioME: ContinuousFormBiogeochemistry
+using OceanBioME: ContinuousFormBiogeochemistry, BoxModelGrid
 using Oceananigans
 using Oceananigans.Architectures: device
 using Oceananigans.Utils: launch!
@@ -13,12 +13,15 @@ using Oceananigans.Fields: CenterField, Face
 using Oceananigans.Biogeochemistry: biogeochemical_drift_velocity
 using Oceananigans.Grids: zspacing
 using Oceananigans.Operators: volume
-using Oceananigans.Fields: Center
+using Oceananigans.Fields: Center, ConstantField
+using Oceananigans.ImmersedBoundaries: ImmersedBoundaryGrid, immersed_cell
 
 import Adapt: adapt_structure, adapt
 
 abstract type AbstractSediment end
 abstract type FlatSediment <: AbstractSediment end
+
+@inline bottom_index(i, j, sediment) = @inbounds bottom_index_array(sediment)[i, j]
 
 sediment_fields(::AbstractSediment) = ()
 
@@ -43,14 +46,42 @@ end
     @inbounds G⁻[i, j, 1] = G⁰[i, j, 1]
 end
 
+@inline nitrogen_flux() = 0
+@inline carbon_flux() = 0
+@inline remineralisation_receiver() = nothing
 
-@inline nitrogen_flux(grid, adveciton, bgc, tracers, i, j) = 0
-@inline carbon_flux(grid, adveciton, bgc, tracers, i, j) = 0
-@inline remineralisation_receiver(bgc) = nothing
+@inline advection_scheme(advection, val_tracer) = advection
+@inline advection_scheme(advection::NamedTuple, val_tracer::Val{T}) where T = advection[T]
 
-@inline sinking_flux(i, j, grid, advection, val_tracer::Val{T}, bgc, tracers) where T = 
-    - advective_tracer_flux_z(i, j, 1, grid, advection, biogeochemical_drift_velocity(bgc, val_tracer).w, tracers[T]) /
-      volume(i, j, 1, grid, Center(), Center(), Center())
+@inline function sinking_flux(i, j, k, grid, advection, val_tracer::Val{T}, bgc, tracers) where T 
+    return - advective_tracer_flux_z(i, j, k, grid, advection_scheme(advection, val_tracer), biogeochemical_drift_velocity(bgc, val_tracer).w, tracers[T]) /
+      volume(i, j, k, grid, Center(), Center(), Center())
+end
+
+calculate_bottom_indices(::BoxModelGrid) = 1
+calculate_bottom_indices(grid) = ones(Int, size(grid)[1:2]...)
+
+@kernel function find_bottom_cell(grid, bottom_indices)
+    i, j = @index(Global, NTuple)
+
+    Nz = size(grid, 3)
+
+    k_bottom = 1
+
+    while immersed_cell(i, j, k_bottom, grid.underlying_grid, grid.immersed_boundary) && k_bottom < Nz
+        k_bottom += 1
+    end
+
+    @inbounds bottom_indices[i, j] = k_bottom
+end
+
+function calculate_bottom_indices(grid::ImmersedBoundaryGrid)
+    indices = zeros(Int, size(grid)[1:2]...)
+
+    launch!(grid.architecture, grid, :xy, find_bottom_cell, grid, indices)
+
+    return indices
+end
 
 include("coupled_timesteppers.jl")
 include("simple_multi_G.jl")

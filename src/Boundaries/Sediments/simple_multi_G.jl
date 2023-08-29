@@ -6,7 +6,7 @@ import Base: show, summary
 Hold the parameters and fields for a simple "multi G" single-layer sediment model.
 Based on the Level 3 model described by [Soetaert2000](@citet).
 """
-struct SimpleMultiG{FT, P1, P2, P3, P4, F, TE} <: FlatSediment
+struct SimpleMultiG{FT, P1, P2, P3, P4, F, TE, B} <: FlatSediment
              fast_decay_rate :: FT
              slow_decay_rate :: FT
 
@@ -24,6 +24,7 @@ struct SimpleMultiG{FT, P1, P2, P3, P4, F, TE} <: FlatSediment
 
                       fields :: F
                   tendencies :: TE
+              bottom_indices :: B
 end
 
 """
@@ -108,22 +109,26 @@ function SimpleMultiG(; grid,
     tracer_names = (:C_slow, :C_fast, :N_slow, :N_fast, :C_ref, :N_ref)
 
     # add field slicing back ( indices = (:, :, 1)) when output writer can cope
-    fields = NamedTuple{tracer_names}(Tuple(CenterField(grid;) for tracer in tracer_names))
-    tendencies = (Gⁿ = NamedTuple{tracer_names}(Tuple(CenterField(grid;) for tracer in tracer_names)),
-                  G⁻ = NamedTuple{tracer_names}(Tuple(CenterField(grid;) for tracer in tracer_names)))
+    fields = NamedTuple{tracer_names}(Tuple(CenterField(grid) for tracer in tracer_names))
+    tendencies = (Gⁿ = NamedTuple{tracer_names}(Tuple(CenterField(grid) for tracer in tracer_names)),
+                  G⁻ = NamedTuple{tracer_names}(Tuple(CenterField(grid) for tracer in tracer_names)))
+
+    bottom_indices = calculate_bottom_indices(grid)
 
     F = typeof(fields)
     TE = typeof(tendencies)
+    B = typeof(bottom_indices)
 
-    return SimpleMultiG{FT, P1, P2, P3, P4, F, TE}(fast_decay_rate, slow_decay_rate,
-                                                   fast_redfield, slow_redfield,
-                                                   fast_fraction, slow_fraction, refactory_fraction,
-                                                   nitrate_oxidation_params,
-                                                   denitrification_params,
-                                                   anoxic_params,
-                                                   solid_dep_params,
-                                                   fields,
-                                                   tendencies)
+    return SimpleMultiG{FT, P1, P2, P3, P4, F, TE, B}(fast_decay_rate, slow_decay_rate,
+                                                      fast_redfield, slow_redfield,
+                                                      fast_fraction, slow_fraction, refactory_fraction,
+                                                      nitrate_oxidation_params,
+                                                      denitrification_params,
+                                                      anoxic_params,
+                                                      solid_dep_params,
+                                                      fields,
+                                                      tendencies,
+                                                      bottom_indices)
 end
 
 adapt_structure(to, sediment::SimpleMultiG) = 
@@ -149,16 +154,20 @@ sediment_fields(model::SimpleMultiG) = (C_slow = model.fields.C_slow,
                                          C_ref = model.fields.C_ref,
                                          N_ref = model.fields.N_ref)
 
+@inline bottom_index_array(sediment::SimpleMultiG) = sediment.bottom_indices
+
 @kernel function _calculate_tendencies!(sediment::SimpleMultiG, bgc, grid, advection, tracers, timestepper)
     i, j = @index(Global, NTuple)
 
-    Δz = zspacing(i, j, 1, grid, Center(), Center(), Center())
+    k = bottom_index(i, j, sediment)
+
+    Δz = zspacing(i, j, k, grid, Center(), Center(), Center())
 
     @inbounds begin
 
-        carbon_deposition = carbon_flux(grid, advection, bgc, tracers, i, j) * Δz
+        carbon_deposition = carbon_flux(i, j, k, grid, advection, bgc, tracers) * Δz
                         
-        nitrogen_deposition = nitrogen_flux(grid, advection, bgc, tracers, i, j) * Δz
+        nitrogen_deposition = nitrogen_flux(i, j, k, grid, advection, bgc, tracers) * Δz
 
         # rates
         C_min_slow = sediment.fields.C_slow[i, j, 1] * sediment.slow_decay_rate
