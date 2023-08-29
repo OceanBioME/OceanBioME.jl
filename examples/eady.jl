@@ -88,7 +88,7 @@ set!(model, u=uᵢ, v=vᵢ, P = 0.03, Z = 0.03, NO₃ = 4.0, NH₄ = 0.05, DIC =
 Δy = minimum_yspacing(grid, Center(), Center(), Center())
 Δz = minimum_zspacing(grid, Center(), Center(), Center())
 
-Δt₀ = 0.75 * min(Δx, Δy, Δz) / maximum(V_field)
+Δt₀ = 0.75 * min(Δx, Δy, Δz) / V(0, 0, 0, 0, background_state_parameters)
 
 simulation = Simulation(model, Δt = Δt₀, stop_time = 10days)
 
