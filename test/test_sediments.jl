@@ -11,8 +11,6 @@ using Oceananigans.Operators: volume, Azᶠᶜᶜ
 
 using OceanBioME.LOBSTERModel: lobster_variable_redfield
 
-import Oceananigans.Biogeochemistry: biogeochemical_drift_velocity
-
 function intercept_tendencies!(model, intercepted_tendencies)
     for tracer in keys(model.tracers)
         copyto!(intercepted_tendencies[tracer], model.timestepper.Gⁿ[tracer])
@@ -66,6 +64,7 @@ function test_flat_sediment(grid, biogeochemistry, model; timestepper = :QuasiAd
                                                       buoyancy = nothing) :
                                               model(; grid, 
                                                       biogeochemistry, 
+                                                      timestepper,
                                                       closure = nothing,
                                                       buoyancy = nothing,
                                                       tracers = nothing)
