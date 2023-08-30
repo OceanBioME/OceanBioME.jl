@@ -47,11 +47,11 @@ using Oceananigans.Units
 using Oceananigans.Fields: Field, TracerFields, CenterField, ZeroField
 
 using OceanBioME.Light: TwoBandPhotosyntheticallyActiveRadiation
-using OceanBioME: setup_velocity_fields, show_sinking_velocities, Biogeochemistry, UnderlyingBiogeochemicalModel
+using OceanBioME: setup_velocity_fields, show_sinking_velocities, Biogeochemistry, UnderlyingBiogeochemicalModel, ScaleNegativeTracers
 using OceanBioME.BoxModels: BoxModel
 using OceanBioME.Boundaries.Sediments: sinking_flux
 
-import OceanBioME: redfield
+import OceanBioME: redfield, conserved_tracers
 import OceanBioME.BoxModels: update_boxmodel_state!
 
 import Oceananigans.Biogeochemistry: required_biogeochemical_tracers,
@@ -302,6 +302,8 @@ function LOBSTER(; grid,
                    sinking_speeds = (sPOM = 3.47e-5, bPOM = 200/day),
                    open_bottom::Bool = true,
 
+                   scale_negatives = false,
+
                    particles::P = nothing,
                    modifiers::M = nothing) where {FT, LA, S, P, M}
 
@@ -346,6 +348,11 @@ function LOBSTER(; grid,
                                          optionals,
 
                                          sinking_velocities)
+
+    if scale_negatives
+        scaler = ScaleNegativeTracers(underlying_biogeochemistry)
+        modifiers = isnothing(modifiers) ? scaler : (modifiers..., scaler)
+    end
 
     return Biogeochemistry(underlying_biogeochemistry;
                            light_attenuation = light_attenuation_model, 
@@ -473,4 +480,7 @@ const lobster_variable_redfield = Union{LOBSTER{<:Any, <:Val{(false, false, true
     sinking_flux(i, j, k, grid, advection, Val(:bPOC), bgc, tracers)
 
 @inline remineralisation_receiver(::LOBSTER) = :NH₄
+
+@inline conserved_tracers(::LOBSTER) = (:NO₃, :NH₄, :P, :Z, :sPOM, :bPOM, :DOM)
+@inline conserved_tracers(::lobster_variable_redfield) = (:NO₃, :NH₄, :P, :Z, :sPON, :bPON, :DON)
 end # module

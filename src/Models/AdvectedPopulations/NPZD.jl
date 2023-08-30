@@ -16,7 +16,7 @@ module NPZDModel
 
 export NutrientPhytoplanktonZooplanktonDetritus, NPZD
 
-using OceanBioME: Biogeochemistry, UnderlyingBiogeochemicalModel
+using OceanBioME: Biogeochemistry, UnderlyingBiogeochemicalModel, ScaleNegativeTracers
 
 using Oceananigans.Units
 using Oceananigans.Fields: ZeroField
@@ -26,7 +26,7 @@ using OceanBioME: setup_velocity_fields, show_sinking_velocities
 using OceanBioME.BoxModels: BoxModel
 using OceanBioME.Boundaries.Sediments: sinking_flux
 
-import OceanBioME: redfield
+import OceanBioME: redfield, conserved_tracers
 import OceanBioME.BoxModels: update_boxmodel_state!
 import Base: show, summary
 
@@ -175,6 +175,8 @@ function NutrientPhytoplanktonZooplanktonDetritus(; grid,
                 
                                                     sinking_speeds = (P = 0.2551/day, D = 2.7489/day),
                                                     open_bottom::Bool = true,
+
+                                                    scale_negatives = false,
                                                                                            
                                                     particles::P = nothing,
                                                     modifiers::M = nothing) where {FT, LA, S, P, M}
@@ -194,6 +196,11 @@ function NutrientPhytoplanktonZooplanktonDetritus(; grid,
                                                  zoo_base_mortality_rate,
                                                  remineralization_rate,
                                                  sinking_velocities)
+
+    if scale_negatives
+        scaler = ScaleNegativeTracers(underlying_biogeochemistry)
+        modifiers = isnothing(modifiers) ? scaler : (modifiers..., scaler)
+    end
 
     return Biogeochemistry(underlying_biogeochemistry;
                            light_attenuation = light_attenuation_model, 
@@ -322,4 +329,6 @@ adapt_structure(to, npzd::NPZD) =
 @inline carbon_flux(i, j, k, grid, advection, bgc::NPZD, tracers) = nitrogen_flux(i, j, k, grid, advection, bgc, tracers) * redfield(Val(:P), bgc)
 
 @inline remineralisation_receiver(::NPZD) = :N
+
+@inline conserved_tracers(::NPZD) = (:N, :P, :Z, :D)
 end # module

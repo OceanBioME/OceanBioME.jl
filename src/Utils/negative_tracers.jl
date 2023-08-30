@@ -47,21 +47,37 @@ adapt_structure(to, snt::ScaleNegativeTracers) = ScaleNegativeTracers(adapt(to, 
 """
     ScaleNegativeTracers(; tracers, scalefactors = ones(length(tracers)), warn = false)
 
-Returns a callback that scales `tracers` so that none are negative. Use like:
+Constructs a modifier to scale `tracers` so that none are negative. Use like:
 ```julia
-negativity_protection! = ScaleNegativeTracers(; model, tracers = (:P, :Z, :N))
-simulation.callbacks[:neg] = Callback(negativity_protection!; callsite = UpdateStateCallsite())
+modifier = ScaleNegativeTracers((:P, :Z, :N))
+biogeochemistry = Biogeochemistry(...; modifier)
 ```
 This method is better, though still imperfect, method to prevent numerical errors that lead to
 negative tracer values compared to [`zero_negative_tracers!`](@ref). Please see [discussion in
 github](https://github.com/OceanBioME/OceanBioME.jl/discussions/48).
 
 Future plans include implement a positivity-preserving timestepping scheme as the ideal alternative.
+
+If `warn` is true then scaling will raise a warning.
 """
 function ScaleNegativeTracers(tracers; scalefactors = NamedTuple{tracers}(ones(length(tracers))), warn = false)
     if length(scalefactors) != length(tracers)
         error("Incorrect number of scale factors provided")
     end
+
+    return ScaleNegativeTracers(tracers, scalefactors, warn)
+end
+
+"""
+    ScaleNegativeTracers(model::UnderlyingBiogeochemicalModel; warn = false)
+
+Constructs a modifier to scale the conserved tracers in `model`.
+
+If `warn` is true then scaling will raise a warning.
+"""
+function ScaleNegativeTracers(model::UnderlyingBiogeochemicalModel; warn = false)
+    tracers = conserved_tracers(model)
+    scalefactors = NamedTuple{tracers}(ones(length(tracers)))
 
     return ScaleNegativeTracers(tracers, scalefactors, warn)
 end
