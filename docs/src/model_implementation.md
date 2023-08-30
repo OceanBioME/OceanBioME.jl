@@ -243,9 +243,9 @@ grid = RectilinearGrid(topology = (Flat, Flat, Bounded), size = (32, ), extent =
 
 # setup the biogeochemical model
 
-light_attenuation_model = TwoBandPhotosyntheticallyActiveRadiation(; grid, surface_PAR)
+light_attenuation = TwoBandPhotosyntheticallyActiveRadiation(; grid, surface_PAR)
 
-sediment_model = InstantRemineralisation(; grid)
+sediment = InstantRemineralisation(; grid)
 
 sinking_velocity = ZFaceField(grid)
 
@@ -253,7 +253,9 @@ w_sink(x, y, z) = 2 / day * tanh(z / 5)
 
 set!(sinking_velocity, w_sink)
 
-biogeochemistry = NutrientPhytoplankton(; light_attenuation_model, sinking_velocity, sediment_model) 
+biogeochemistry = Biogeochemistry(NutrientPhytoplankton(; light_attenuation_model, sinking_velocity);
+                                  light_attenuation,
+                                  sediment) 
 
 # put the model together
 
