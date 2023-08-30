@@ -5,62 +5,24 @@ using Oceananigans.Utils: work_layout
 using Oceananigans.Architectures: device
 
 import Adapt: adapt_structure, adapt
+import Oceananigans.Biogeochemistry: update_tendencies!, update_biogeochemical_state!
 
 """
-    zero_negative_tracers!(sim; params = (exclude=(), ))
-
-Sets any tracers in `sim.model` which are negative to zero. Use like:
-```julia
-simulation.callbacks[:neg] = Callback(zero_negative_tracers!)
-```
-
-Tracers to exclude can be set in the parameters.
+    ZeroNegativeTracers(; exclude = ())
+Construct a modifier that zeros any negative tracers excluding those listed in `exclude`.
 
 !!! danger "Tracer conservation"
     This method is _not_ recommended as a way to preserve positivity of tracers since
     it does not conserve the total tracer.
 """
-function zero_negative_tracers!(model; params = (exclude=(), ))
+@kwdef struct ZeroNegativeTracers{E}
+    exclude :: E = ()
+end
+
+function update_biogeochemical_state!(model, zero::ZeroNegativeTracers)
     @unroll for (tracer_name, tracer) in pairs(model.tracers)
-        if !(tracer_name in params.exclude)
+        if !(tracer_name in zero.exclude)
             parent(tracer) .= max.(0.0, parent(tracer))
-        end
-    end
-end
-@inline zero_negative_tracers!(sim::Simulation; params = (exclude=(), )) = zero_negative_tracers!(sim.model; params)
-
-"""
-    error_on_neg(sim; params = (exclude=(), ))
-
-Throws an error if any tracers in `sim.model` are negative. Use like:
-```julia
-simulation.callbacks[:neg] = Callback(error_on_neg!)
-```
-
-Tracers to exclude can be set in the parameters.
-"""
-function error_on_neg!(sim; params = (exclude=(), ))
-    @unroll for (tracer_name, tracer) in pairs(sim.model.tracers)
-        if !(tracer_name in params.exclude)
-            if any(tracer .< 0.0) error("$tracer_name < 0") end
-        end
-    end
-end
-
-"""
-    warn_on_neg(sim; params = (exclude=(), ))
-
-Raises a warning if any tracers in `sim.model` are negative. Use like:
-```julia
-simulation.callbacks[:neg] = Callback(warn_on_neg!)
-```
-
-Tracers to exclude can be set in the parameters.
-"""
-function warn_on_neg!(sim; params = (exclude=(), ))
-    @unroll for (tracer_name, tracer) in pairs(sim.model.tracers)
-        if !(tracer_name in params.exclude)
-            if any(tracer .< 0.0) @warn "$tracer_name < 0" end
         end
     end
 end
@@ -68,32 +30,6 @@ end
 #####
 ##### Infastructure to rescale negative values
 #####
-
-@kernel function scale_for_negs!(fields, tracers, scalefactors)
-    i, j, k = @index(Global, NTuple)
-    t, p = 0.0, 0.0
-    @unroll for (idx, tracer) in enumerate(tracers)
-        field = @inbounds fields[tracer][i, j, k]
-        scalefactor = @inbounds scalefactors[idx]
-
-        t += field * scalefactor
-        if field > 0
-            p += field * scalefactor
-        end
-    end 
-    t < 0 && error("Cell total < 0, can not scale negative tracers.")
-    @unroll for tracer in tracers
-        field = @inbounds fields[tracer][i, j, k]
-        
-        if field > 0
-            field *= t / p
-        else
-            field = 0
-        end
-
-        @inbounds fields[tracer][i, j, k] = field
-    end
-end
 
 struct ScaleNegativeTracers{FA, SA, W}
     tracers :: FA
@@ -122,43 +58,43 @@ github](https://github.com/OceanBioME/OceanBioME.jl/discussions/48).
 
 Future plans include implement a positivity-preserving timestepping scheme as the ideal alternative.
 """
-function ScaleNegativeTracers(; model, tracers, scalefactors = NamedTuple{tracers}(ones(length(tracers))), warn = false)
+function ScaleNegativeTracers(tracers; scalefactors = NamedTuple{tracers}(ones(length(tracers))), warn = false)
     if length(scalefactors) != length(tracers)
         error("Incorrect number of scale factors provided")
     end
 
-    tracers = ntuple(n -> indexin([tracers[n]], [keys(model.tracers)...])[1], length(tracers))
-    scalefactors = values(scalefactors)
-
     return ScaleNegativeTracers(tracers, scalefactors, warn)
 end
 
-@inline function (scale::ScaleNegativeTracers)(model)
+function update_biogeochemical_state!(model, scale::ScaleNegativeTracers)
     workgroup, worksize = work_layout(model.grid, :xyz)
     dev = device(model.grid.architecture)
     scale_for_negs_kernel! = scale_for_negs!(dev, workgroup, worksize)
-    scale_for_negs_kernel!(values(model.tracers), scale.tracers, scale.scalefactors)
+    scale_for_negs_kernel!(model.tracers, scale.tracers, scale.scalefactors)
 end
-@inline (scale::ScaleNegativeTracers)(sim::Simulation) = scale(sim.model) 
 
-@kernel function _remove_NaN_tendencies!(fields)
+@kernel function scale_for_negs!(fields, tracers, scalefactors)
     i, j, k = @index(Global, NTuple)
-    for field in fields
-        if @inbounds isnan(field[i, j, k])
-            @inbounds field[i, j, k] = 0.0
+    t, p = 0.0, 0.0
+    @unroll for (idx, tracer) in enumerate(tracers)
+        field = @inbounds fields[tracer][i, j, k]
+        scalefactor = @inbounds scalefactors[tracer]
+
+        t += field * scalefactor
+        if field > 0
+            p += field * scalefactor
         end
+    end 
+    t < 0 && error("Cell total < 0, can not scale negative tracers.")
+    @unroll for tracer in tracers
+        field = @inbounds fields[tracer][i, j, k]
+        
+        if field > 0
+            field *= t / p
+        else
+            field = 0
+        end
+
+        @inbounds fields[tracer][i, j, k] = field
     end
-end
-
-"""
-    remove_NaN_tendencies!(model)
-
-Zeros any `NaN` value tendencies as a final protection against negative tracer run away.
-"""
-@inline function remove_NaN_tendencies!(model)
-    workgroup, worksize = work_layout(model.grid, :xyz)
-    remove_NaN_tendencies_kernel! = _remove_NaN_tendencies!(device(model.grid.architecture), workgroup, worksize)
-    remove_NaN_tendencies_kernel!(values(model.timestepper.Gⁿ))
-
-    return nothing
 end

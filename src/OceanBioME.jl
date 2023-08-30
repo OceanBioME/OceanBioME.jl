@@ -5,7 +5,7 @@ between ocean biogeochemistry, carbonate chemistry, and physics.
 module OceanBioME
 
 # Biogeochemistry models
-export Biogeochemistry, LOBSTER, NutrientPhytoplanktonZooplanktonDetritus, PISCES, NPZD, redfield
+export Biogeochemistry, LOBSTER, NutrientPhytoplanktonZooplanktonDetritus, NPZD, redfield
 
 # Macroalgae models
 export SLatissima
@@ -26,7 +26,7 @@ export Boundaries, Sediments, GasExchange, FlatSediment
 export column_advection_timescale, column_diffusion_timescale, sinking_advection_timescale, Budget
 
 # Positivity preservaiton utilities
-export zero_negative_tracers!, error_on_neg!, warn_on_neg!, ScaleNegativeTracers, remove_NaN_tendencies!
+export ScaleNegativeTracers, ZeroNegativeTracers
 
 # Oceananigans extensions
 export ColumnField, isacolumn
@@ -79,7 +79,7 @@ Keyword Arguments
 - `light_attenuation_model`: light attenuation model which integrated the attenuation of available light
 - `sediment_model`: slot for `AbstractSediment`
 - `particles`: slot for `BiogeochemicalParticles`
-- `modifiers`: slot for components which modfiy the biogeochemistry when the tendencies have been calculated
+- `modifiers`: slot for components which modfiy the biogeochemistry when the tendencies have been calculated or when the state is updated
 """
 Biogeochemistry(underlying_biogeochemistry;
                 light_attenuation = nothing,
@@ -113,15 +113,17 @@ function update_tendencies!(bgc::Biogeochemistry, model)
     update_tendencies!(bgc, bgc.modifiers, model)
 end
 
+update_tendencies!(bgc, modifier, model) = nothing
 update_tendencies!(bgc, modifiers::Tuple, model) = [update_tendencies!(bgc, modifier, model) for modifier in modifiers]
 
 @inline (bgc::Biogeochemistry)(args...) = bgc.underlying_biogeochemistry(args...)
 
 function update_biogeochemical_state!(bgc::Biogeochemistry, model)
+    update_biogeochemical_state!(model, bgc.modifiers)
     update_biogeochemical_state!(model, bgc.light_attenuation)
 end
 
-update_tendencies!(bgc, ::Nothing, model) = nothing
+update_biogeochemical_state!(model, modifiers::Tuple) = [update_biogeochemical_state!(model, modifier) for modifier in modifiers]
 
 abstract type UnderlyingBiogeochemicalModel end
 
