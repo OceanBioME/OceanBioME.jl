@@ -5,7 +5,7 @@ between ocean biogeochemistry, carbonate chemistry, and physics.
 module OceanBioME
 
 # Biogeochemistry models
-export LOBSTER, NutrientPhytoplanktonZooplanktonDetritus, PISCES, NPZD, redfield
+export Biogeochemistry, LOBSTER, NutrientPhytoplanktonZooplanktonDetritus, PISCES, NPZD, redfield
 
 # Macroalgae models
 export SLatissima
@@ -44,23 +44,23 @@ import Oceananigans.Biogeochemistry: required_biogeochemical_tracers,
 import Adapt: adapt_structure
 import Base: show, summary
 
-struct Biogeochemistry{B, L, S, P, I} <: AbstractContinuousFormBiogeochemistry
+struct Biogeochemistry{B, L, S, P, M} <: AbstractContinuousFormBiogeochemistry
     underlying_biogeochemistry :: B
              light_attenuation :: L
                       sediment :: S
                      particles :: P
-                        inputs :: I
+                     modifiers :: M
     
     Biogeochemistry(underlying_biogeochemistry::B,
                     light_attenuation::L,
                     sediment::S,
                     particles::P,
-                    inputs::I) where {B, L, S, P, I} = 
-        new{B, L, S, P, I}(underlying_biogeochemistry,
+                    modifiers::M) where {B, L, S, P, M} = 
+        new{B, L, S, P, M}(underlying_biogeochemistry,
                            light_attenuation,
                            sediment,
                            particles,
-                           inputs)
+                           modifiers)
 end
 
 """
@@ -68,10 +68,10 @@ end
                     light_attenuation = nothing,
                     sediment = nothing,
                     particles = nothing,
-                    inputs = nothing)
+                    modifiers = nothing)
 
 Construct a biogeochemical model based on `underlying_biogeochemistry` which may have
-a `light_attenuation` model, `sediment`, `particles`, and `inputs`.
+a `light_attenuation` model, `sediment`, `particles`, and `modifiers`.
 
 Keyword Arguments
 =================
@@ -79,18 +79,18 @@ Keyword Arguments
 - `light_attenuation_model`: light attenuation model which integrated the attenuation of available light
 - `sediment_model`: slot for `AbstractSediment`
 - `particles`: slot for `BiogeochemicalParticles`
-- `inputs`: slot for nutrient inputs such as rivers (work in progress)
+- `modifiers`: slot for components which modfiy the biogeochemistry when the tendencies have been calculated
 """
 Biogeochemistry(underlying_biogeochemistry;
                 light_attenuation = nothing,
                 sediment = nothing,
                 particles = nothing,
-                inputs = nothing) = 
+                modifiers = nothing) = 
     Biogeochemistry(underlying_biogeochemistry,
                     light_attenuation,
                     sediment,
                     particles,
-                    inputs)
+                    modifiers)
 
 required_biogeochemical_tracers(bgc::Biogeochemistry) = required_biogeochemical_tracers(bgc.underlying_biogeochemistry)
 
@@ -105,13 +105,15 @@ adapt_structure(to, bgc::Biogeochemistry) = Biogeochemistry(adapt(to, bgc.underl
                                                             adapt(to, bgc.light_attenuation),
                                                             adapt(to, bgc.sediment),
                                                             adapt(to, bgc.particles),
-                                                            adapt(to, bgc.inputs))
+                                                            adapt(to, bgc.modifiers))
 
 function update_tendencies!(bgc::Biogeochemistry, model)
     update_tendencies!(bgc, bgc.sediment, model)
     update_tendencies!(bgc, bgc.particles, model)
-    update_tendencies!(bgc, bgc.inputs, model)
+    update_tendencies!(bgc, bgc.modifiers, model)
 end
+
+update_tendencies!(bgc, modifiers::Tuple, model) = [update_tendencies!(bgc, modifier, model) for modifier in modifiers]
 
 @inline (bgc::Biogeochemistry)(args...) = bgc.underlying_biogeochemistry(args...)
 

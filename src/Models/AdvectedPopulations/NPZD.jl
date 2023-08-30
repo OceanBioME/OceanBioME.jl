@@ -176,7 +176,8 @@ function NutrientPhytoplanktonZooplanktonDetritus(; grid,
                                                     sinking_speeds = (P = 0.2551/day, D = 2.7489/day),
                                                     open_bottom::Bool = true,
                                                                                            
-                                                    particles::P = nothing) where {FT, LA, S, P}
+                                                    particles::P = nothing,
+                                                    modifiers::M = nothing) where {FT, LA, S, P, M}
 
     sinking_velocities = setup_velocity_fields(sinking_speeds, grid, open_bottom)
 
@@ -197,7 +198,8 @@ function NutrientPhytoplanktonZooplanktonDetritus(; grid,
     return Biogeochemistry(underlying_biogeochemistry;
                            light_attenuation = light_attenuation_model, 
                            sediment = sediment_model, 
-                           particles)
+                           particles,
+                           modifiers)
 end
 
 const NPZD = NutrientPhytoplanktonZooplanktonDetritus

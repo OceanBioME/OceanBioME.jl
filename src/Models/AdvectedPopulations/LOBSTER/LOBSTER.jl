@@ -302,7 +302,8 @@ function LOBSTER(; grid,
                    sinking_speeds = (sPOM = 3.47e-5, bPOM = 200/day),
                    open_bottom::Bool = true,
 
-                   particles::P = nothing) where {FT, LA, S, P}
+                   particles::P = nothing,
+                   modifiers::M = nothing) where {FT, LA, S, P, M}
 
     if !isnothing(sediment_model) && !open_bottom
         @warn "You have specified a sediment model but not `open_bottom` which will not work as the tracer will settle in the bottom cell"
@@ -349,7 +350,8 @@ function LOBSTER(; grid,
     return Biogeochemistry(underlying_biogeochemistry;
                            light_attenuation = light_attenuation_model, 
                            sediment = sediment_model, 
-                           particles)
+                           particles,
+                           modifiers)
 end
 
 # wrote this functionally and it took 2.5x longer so even though this is long going to use this way instead
