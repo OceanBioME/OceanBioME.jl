@@ -253,9 +253,12 @@ w_sink(x, y, z) = 2 / day * tanh(z / 5)
 
 set!(sinking_velocity, w_sink)
 
+negative_tracer_scaling = ScaleNegativeTracers((:N, :P))
+
 biogeochemistry = Biogeochemistry(NutrientPhytoplankton(; sinking_velocity);
                                   light_attenuation,
-                                  sediment) 
+                                  sediment,
+                                  modifiers = negative_tracer_scaling) 
 
 # put the model together
 
@@ -280,9 +283,6 @@ simulation.output_writers[:sediment] = JLD2OutputWriter(model, model.biogeochemi
                                                         filename = "column_np_sediment.jld2",
                                                         schedule = TimeInterval(1day),
                                                         overwrite_existing = true)
-
-scale_negative_tracers = ScaleNegativeTracers(; model, tracers = (:N, :P))
-simulation.callbacks[:nan_tendencies] = Callback(remove_NaN_tendencies!; callsite = TendencyCallsite())
 
 run!(simulation)
 ```
