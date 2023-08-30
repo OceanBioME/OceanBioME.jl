@@ -68,6 +68,7 @@ biogeochemistry = LOBSTER(; grid,
                             surface_phytosynthetically_active_radiation = PAR⁰,
                             carbonates = true,
                             variable_redfield = true,
+                            scale_negatives = true,
                             particles)
 
 model = NonhydrostaticModel(; grid,
@@ -103,8 +104,6 @@ simulation.output_writers[:particles] = JLD2OutputWriter(model, (; particles),
                                                          schedule = TimeInterval(1day),
                                                          overwrite_existing = true)
 
-scale_negative_tracers = ScaleNegativeTracers(; model, tracers = (:NO₃, :NH₄, :P, :Z, :sPON, :bPON, :DON))
-simulation.callbacks[:neg] = Callback(scale_negative_tracers; callsite = UpdateStateCallsite())
 nothing #hide
 
 # ## Run!

@@ -65,12 +65,17 @@ grid = RectilinearGrid(size = (1, 1, Nz), x = (0, 20meters), y = (0, 20meters), 
 
 # ## Biogeochemical and Oceananigans model
 # Here we instantiate the LOBSTER model with carbonate chemistry and a surface flux of DIC (CO₂)
+
+biogeochemistry = LOBSTER(; grid,
+                            surface_phytosynthetically_active_radiation = surface_PAR,
+                            carbonates = true,
+                            scale_negatives = true)
+
 CO₂_flux = GasExchange(; gas = :CO₂, temperature = t_function, salinity = s_function)
+
 model = NonhydrostaticModel(; grid,
                               closure = ScalarDiffusivity(ν = κₜ, κ = κₜ), 
-                              biogeochemistry = LOBSTER(; grid,
-                                                          surface_phytosynthetically_active_radiation = surface_PAR,
-                                                          carbonates = true),
+                              biogeochemistry,
                               boundary_conditions = (DIC = FieldBoundaryConditions(top = CO₂_flux),))
 
 set!(model, P = 0.03, Z = 0.03, NO₃ = 11.0, NH₄ = 0.05, DIC = 2200.0, Alk = 2400.0)

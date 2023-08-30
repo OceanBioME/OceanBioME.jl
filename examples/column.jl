@@ -40,14 +40,22 @@ nothing #hide
 # Define the grid.
 grid = RectilinearGrid(size=(1, 1, 50), extent=(20meters, 20meters, 200meters))
 
-# Specify the boundary conditions for DIC and O₂ based on the air-sea CO₂ and O₂ flux
+
+# ## Model
+# First we will define the biogeochemical model including carbonate chemistry 
+# and scaling of negative tracers(see discussion in the [positivity preservation](@ref pos-preservation))
+# and then setup the Oceananigans model with the boundary condition for the DIC based on the air-sea CO₂ flux
+
+biogeochemistry = LOBSTER(; grid,
+                            surface_phytosynthetically_active_radiation = PAR⁰,
+                            carbonates = true,
+                            scale_negatives = true)
+
 CO₂_flux = GasExchange(; gas = :CO₂, temperature = temp, salinity = (args...) -> 35)
 
 model = NonhydrostaticModel(; grid,
                               closure = ScalarDiffusivity(ν = κₜ, κ = κₜ), 
-                              biogeochemistry = LOBSTER(; grid,
-                                                          surface_phytosynthetically_active_radiation = PAR⁰,
-                                                          carbonates = true),
+                              biogeochemistry,
                               boundary_conditions = (DIC = FieldBoundaryConditions(top = CO₂_flux), ))
 
 set!(model, P = 0.03, Z = 0.03, NO₃ = 4.0, NH₄ = 0.05, DIC = 2239.8, Alk = 2409.0)
@@ -56,7 +64,6 @@ set!(model, P = 0.03, Z = 0.03, NO₃ = 4.0, NH₄ = 0.05, DIC = 2239.8, Alk = 2
 # Next we setup a simulation and add some callbacks that:
 # - Show the progress of the simulation
 # - Store the model and particles output
-# - Prevent the tracers from going negative from numerical error (see discussion in the [positivity preservation](@ref pos-preservation) implementation section)
 
 simulation = Simulation(model, Δt = 3minutes, stop_time = 100days)
 
@@ -73,9 +80,6 @@ simulation.output_writers[:profiles] = JLD2OutputWriter(model, merge(model.trace
                                                         filename = "$filename.jld2",
                                                         schedule = TimeInterval(1day),
                                                         overwrite_existing = true)
-
-scale_negative_tracers = ScaleNegativeTracers(; model, tracers = (:NO₃, :NH₄, :P, :Z, :sPOM, :bPOM, :DOM))
-simulation.callbacks[:neg] = Callback(scale_negative_tracers; callsite = UpdateStateCallsite())
 nothing #hide
 
 # ## Run!
