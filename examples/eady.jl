@@ -81,7 +81,16 @@ vᵢ(x, y, z) = Ũ * Ξ(z)
 
 set!(model, u=uᵢ, v=vᵢ, P = 0.03, Z = 0.03, NO₃ = 4.0, NH₄ = 0.05, DIC = 2200.0, Alk = 2409.0)
 
-simulation = Simulation(model, Δt = 15minutes, stop_time = 10days)
+# ## Setup the simulation
+# Choose an appropriate initial timestep for this resolution and set up the simulation
+
+Δx = minimum_xspacing(grid, Center(), Center(), Center())
+Δy = minimum_yspacing(grid, Center(), Center(), Center())
+Δz = minimum_zspacing(grid, Center(), Center(), Center())
+
+Δt₀ = 0.75 * min(Δx, Δy, Δz) / V(0, 0, 0, 0, background_state_parameters)
+
+simulation = Simulation(model, Δt = Δt₀, stop_time = 10days)
 
 # Adapt the time step while keeping the CFL number fixed.
 wizard = TimeStepWizard(cfl = 0.75, diffusive_cfl = 0.75, max_Δt = 30minutes)

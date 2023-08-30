@@ -18,6 +18,7 @@ using Oceananigans.BoundaryConditions: fill_halo_regions!,
                                        regularize_field_boundary_conditions, 
                                        ContinuousBoundaryFunction
 using Oceananigans.Units
+using Oceananigans.ImmersedBoundaries: ImmersedBoundaryGrid
 
 import Adapt: adapt_structure, adapt
 import Base: show, summary

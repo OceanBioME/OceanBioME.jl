@@ -304,6 +304,10 @@ function LOBSTER(; grid,
 
                    particles::P = nothing) where {FT, LA, S, P}
 
+    if !isnothing(sediment_model) && !open_bottom
+        @warn "You have specified a sediment model but not `open_bottom` which will not work as the tracer will settle in the bottom cell"
+    end
+
     sinking_velocities = setup_velocity_fields(sinking_speeds, grid, open_bottom)
 
     optionals = Val((carbonates, oxygen, variable_redfield))
@@ -452,19 +456,19 @@ const lobster_variable_redfield = Union{LOBSTER{<:Any, <:Val{(false, false, true
 @inline redfield(i, j, k, ::Val{:bPON}, bgc::lobster_variable_redfield, tracers) = @inbounds tracers.bPOC[i, j, k] / tracers.bPON[i, j, k]
 @inline redfield(i, j, k, ::Val{:DON}, bgc::lobster_variable_redfield, tracers) = @inbounds tracers.DOC[i, j, k] / tracers.DON[i, j, k]
 
-@inline nitrogen_flux(grid, advection, bgc::LOBSTER, tracers, i, j) = 
-    sinking_flux(i, j, grid, advection, Val(:sPOM), bgc, tracers) +
-    sinking_flux(i, j, grid, advection, Val(:bPOM), bgc, tracers)
+@inline nitrogen_flux(i, j, k, grid, advection, bgc::LOBSTER, tracers) = 
+    sinking_flux(i, j, k, grid, advection, Val(:sPOM), bgc, tracers) +
+    sinking_flux(i, j, k, grid, advection, Val(:bPOM), bgc, tracers)
 
-@inline carbon_flux(grid, advection, bgc::LOBSTER, tracers, i, j) = nitrogen_flux(grid, advection, bgc, tracers, i, j) * redfield(Val(:sPOM), bgc)
+@inline carbon_flux(i, j, k, grid, advection, bgc::LOBSTER, tracers) = nitrogen_flux(i, j, k, grid, advection, bgc, tracers) * redfield(Val(:sPOM), bgc)
 
-@inline nitrogen_flux(grid, advection, bgc::lobster_variable_redfield, tracers, i, j) = 
-    sinking_flux(i, j, grid, advection, Val(:sPON), bgc, tracers) +
-    sinking_flux(i, j, grid, advection, Val(:bPON), bgc, tracers)
+@inline nitrogen_flux(i, j, k, grid, advection, bgc::lobster_variable_redfield, tracers) = 
+    sinking_flux(i, j, k, grid, advection, Val(:sPON), bgc, tracers) +
+    sinking_flux(i, j, k, grid, advection, Val(:bPON), bgc, tracers)
 
-@inline carbon_flux(grid, advection, bgc::lobster_variable_redfield, tracers, i, j) =  
-    sinking_flux(i, j, grid, advection, Val(:sPOC), bgc, tracers) +
-    sinking_flux(i, j, grid, advection, Val(:bPOC), bgc, tracers)
+@inline carbon_flux(i, j, k, grid, advection, bgc::lobster_variable_redfield, tracers) =  
+    sinking_flux(i, j, k, grid, advection, Val(:sPOC), bgc, tracers) +
+    sinking_flux(i, j, k, grid, advection, Val(:bPOC), bgc, tracers)
 
 @inline remineralisation_receiver(::LOBSTER) = :NH₄
 end # module
