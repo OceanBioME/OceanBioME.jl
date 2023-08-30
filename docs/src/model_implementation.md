@@ -18,20 +18,18 @@ For this example we are going to implement the simple Nutrient-Phytoplankton mod
 The first step is to import the abstract type from OceanBioME, some units from Oceananigans (for ease of parameter definition), and [`import`](https://stackoverflow.com/questions/27086159/what-is-the-difference-between-using-and-import-in-julia-when-building-a-mod) some functions from Oceananigans in order to add methods to:
 
 ```@example implementing
-using OceanBioME: ContinuousFormBiogeochemistry
+using OceanBioME: Biogeochemistry
 using Oceananigans.Units
 
 import Oceananigans.Biogeochemistry: required_biogeochemical_tracers,
                                      required_biogeochemical_auxiliary_fields,
-                                     update_biogeochemical_state!,
-                                     biogeochemical_drift_velocity,
-                                     biogeochemical_auxiliary_fields
+                                     biogeochemical_drift_velocity
 ```
 
 We then define our `struct` with the model parameters, as well as slots for the particles, light attenuation, and sediment models:
 
 ```@example implementing
-@kwdef struct NutrientPhytoplankton{FT, LA, S, W, P} <:ContinuousFormBiogeochemistry{LA, S, P}
+@kwdef struct NutrientPhytoplankton{FT, W}
             base_growth_rate :: FT = 1.27 / day              # 1 / seconds
     nutrient_half_saturation :: FT = 0.025 * 1000 / 14       # mmol N / m³
        light_half_saturation :: FT = 300.0                   # micro einstein / m² / s
@@ -41,10 +39,7 @@ We then define our `struct` with the model parameters, as well as slots for the 
               mortality_rate :: FT = 0.15 / day              # 1 / seconds
      crowding_mortality_rate :: FT = 0.004 / day / 1000 * 14 # 1 / seconds / mmol N / m³
 
-     light_attenuation_model :: LA = nothing
-              sediment_model :: S  = nothing
             sinking_velocity :: W  = 2 / day
-                   particles :: P  = nothing
 end
 ```
 
@@ -54,8 +49,6 @@ Here, we use descriptive names for the parameters. Below, each of these paramete
 required_biogeochemical_tracers(::NutrientPhytoplankton) = (:N, :P, :T)
 
 required_biogeochemical_auxiliary_fields(::NutrientPhytoplankton) = (:PAR, )
-
-biogeochemical_auxiliary_fields(bgc::NutrientPhytoplankton) = biogeochemical_auxiliary_fields(bgc.light_attenuation_model)
 ```
 
 Next, we define the functions that specify how the phytoplankton ``P`` evolve. In the absence of advection and diffusion (both of which are handled by Oceananigans), we want the phytoplankton to evolve at the rate given by:
@@ -125,10 +118,6 @@ Finally, we need to define some functions to allow us to update the time-depende
 ```@example implementing
 using OceanBioME: BoxModel
 import OceanBioME.BoxModels: update_boxmodel_state!
-
-function update_biogeochemical_state!(bgc::NutrientPhytoplankton, model)
-    update_PAR!(model, bgc.light_attenuation_model)
-end
 
 function update_boxmodel_state!(model::BoxModel{<:NutrientPhytoplankton, <:Any, <:Any, <:Any, <:Any, <:Any})
     getproperty(model.values, :PAR) .= model.forcing.PAR(model.clock.time)
@@ -228,7 +217,7 @@ import OceanBioME.Boundaries.Sediments: nitrogen_flux, carbon_flux, remineralisa
 @inline nitrogen_flux(i, j, k, grid, advection, bgc::NutrientPhytoplankton, tracers) =
      sinking_flux(i, j, k, grid, advection, Val(:P), bgc, tracers)
                  
-@inline carbon_flux(bgc::NutrientPhytoplankton, tracers, i, j) = nitrogen_flux(i, j, k, grid, advection, bgc, tracers) * 6.56
+@inline carbon_flux(i, j, k, grid, advection, bgc::NutrientPhytoplankton, tracers) = nitrogen_flux(i, j, k, grid, advection, bgc, tracers) * 6.56
 
 @inline remineralisation_receiver(::NutrientPhytoplankton) = :N
 ```
