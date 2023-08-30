@@ -53,7 +53,7 @@ modifier = ScaleNegativeTracers((:P, :Z, :N))
 biogeochemistry = Biogeochemistry(...; modifier)
 ```
 This method is better, though still imperfect, method to prevent numerical errors that lead to
-negative tracer values compared to [`zero_negative_tracers!`](@ref). Please see [discussion in
+negative tracer values compared to [`ZeroNegativeTracers`](@ref). Please see [discussion in
 github](https://github.com/OceanBioME/OceanBioME.jl/discussions/48).
 
 Future plans include implement a positivity-preserving timestepping scheme as the ideal alternative.
