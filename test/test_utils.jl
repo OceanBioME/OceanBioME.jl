@@ -20,47 +20,34 @@ end
 function test_negative_scaling(arch)
     grid = RectilinearGrid(arch, size = (1, 1, 1), extent = (1, 1, 1))
 
-    model = NonhydrostaticModel(; grid, tracers = (:A, :B))
+    model = NonhydrostaticModel(; grid, biogeochemistry = NutrientPhytoplanktonZooplanktonDetritus(; grid, scale_negatives = true))
 
-    set!(model, A = 1, B = -0.5)
+    set!(model, N = 2, P = -1)
 
-    simulation = Simulation(model, Δt = 1)
+    simulation = Simulation(model, Δt = 1e-10, stop_iteration = 1)
 
-    negativity_protection! = ScaleNegativeTracers(; model, tracers = (:A, :B))
+    run!(simulation)
 
-    negativity_protection!(simulation)
-
-    return (model.tracers.A[1, 1, 1] == 0.5) && (model.tracers.B[1, 1, 1] == 0.0)
-end
-
-function test_negative_scaling(arch)
-    grid = RectilinearGrid(arch, size = (1, 1, 1), extent = (1, 1, 1))
-
-    model = NonhydrostaticModel(; grid, tracers = :A)
-
-    model.timestepper.Gⁿ.A .= NaN
-
-    remove_NaN_tendencies!(model)
-
-    return model.timestepper.Gⁿ.A[1, 1, 1] == 0.0
+    return (model.tracers.N[1, 1, 1] ≈ 1) && (model.tracers.P[1, 1, 1] ≈ 0.0)
 end
 
 function test_negative_zeroing(arch)
     grid = RectilinearGrid(arch, size = (1, 1, 1), extent = (1, 1, 1))
 
-    model = NonhydrostaticModel(; grid, tracers = (:A, :B))
+    model = NonhydrostaticModel(; grid, biogeochemistry = NutrientPhytoplanktonZooplanktonDetritus(; grid, modifiers = ZeroNegativeTracers(; exclude = (:Z, ))))
 
-    set!(model, A = -1, B = -0.5)
+    set!(model, N = 2, P = -1, Z = -1)
 
-    zero_negative_tracers!(model, params = (exclude = (:B, ), ))
+    simulation = Simulation(model, Δt = 1e-10, stop_iteration = 1)
 
-    return (model.tracers.A[1, 1, 1] == 0.0) && (model.tracers.B[1, 1, 1] == -0.5)
+    run!(simulation)
+
+    return (model.tracers.N[1, 1, 1] ≈ 2) && (model.tracers.P[1, 1, 1] ≈ 0.0) && (model.tracers.Z[1, 1, 1] ≈ -1)
 end
 
 @testset "Test Utils" begin
     for arch in (CPU(), )
         @test test_column_diffusion_timescale(arch)
-        @test test_negative_scaling(arch)
         @test test_negative_scaling(arch)
         @test test_negative_zeroing(arch)
     end
