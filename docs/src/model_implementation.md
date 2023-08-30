@@ -18,7 +18,7 @@ For this example we are going to implement the simple Nutrient-Phytoplankton mod
 The first step is to import the abstract type from OceanBioME, some units from Oceananigans (for ease of parameter definition), and [`import`](https://stackoverflow.com/questions/27086159/what-is-the-difference-between-using-and-import-in-julia-when-building-a-mod) some functions from Oceananigans in order to add methods to:
 
 ```@example implementing
-using OceanBioME: Biogeochemistry
+using OceanBioME: Biogeochemistry, UnderlyingBiogeochemicalModel
 using Oceananigans.Units
 
 import Oceananigans.Biogeochemistry: required_biogeochemical_tracers,
@@ -29,7 +29,7 @@ import Oceananigans.Biogeochemistry: required_biogeochemical_tracers,
 We then define our `struct` with the model parameters, as well as slots for the particles, light attenuation, and sediment models:
 
 ```@example implementing
-@kwdef struct NutrientPhytoplankton{FT, W}
+@kwdef struct NutrientPhytoplankton{FT, W} <: UnderlyingBiogeochemicalModel
             base_growth_rate :: FT = 1.27 / day              # 1 / seconds
     nutrient_half_saturation :: FT = 0.025 * 1000 / 14       # mmol N / m³
        light_half_saturation :: FT = 300.0                   # micro einstein / m² / s
@@ -253,7 +253,7 @@ w_sink(x, y, z) = 2 / day * tanh(z / 5)
 
 set!(sinking_velocity, w_sink)
 
-biogeochemistry = Biogeochemistry(NutrientPhytoplankton(; light_attenuation_model, sinking_velocity);
+biogeochemistry = Biogeochemistry(NutrientPhytoplankton(; sinking_velocity);
                                   light_attenuation,
                                   sediment) 
 
@@ -275,7 +275,7 @@ simulation.output_writers[:tracers] = JLD2OutputWriter(model, model.tracers,
                                                        schedule = TimeInterval(1day),
                                                        overwrite_existing = true)
 
-simulation.output_writers[:sediment] = JLD2OutputWriter(model, model.biogeochemistry.sediment_model.fields,
+simulation.output_writers[:sediment] = JLD2OutputWriter(model, model.biogeochemistry.sediment.fields,
                                                         indices = (:, :, 1),
                                                         filename = "column_np_sediment.jld2",
                                                         schedule = TimeInterval(1day),

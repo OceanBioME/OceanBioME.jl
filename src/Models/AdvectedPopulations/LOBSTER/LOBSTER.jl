@@ -384,7 +384,7 @@ const DOM = Union{Val{:DOM}, Val{:DON}}
     end
 end
 
-function update_boxmodel_state!(model::BoxModel{<:LOBSTER, <:Any, <:Any, <:Any, <:Any, <:Any})
+function update_boxmodel_state!(model::BoxModel{<:Biogeochemistry{<:LOBSTER}, <:Any, <:Any, <:Any, <:Any, <:Any})
     getproperty(model.values, :PAR) .= model.forcing.PAR(model.clock.time)
 end
 

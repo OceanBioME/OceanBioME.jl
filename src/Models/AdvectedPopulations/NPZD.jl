@@ -282,7 +282,7 @@ end
     end
 end
 
-function update_boxmodel_state!(model::BoxModel{<:NPZD, <:Any, <:Any, <:Any, <:Any, <:Any})
+function update_boxmodel_state!(model::BoxModel{<:Biogeochemistry{<:NPZD}, <:Any, <:Any, <:Any, <:Any, <:Any})
     getproperty(model.values, :PAR) .= model.forcing.PAR(model.clock.time)
     getproperty(model.values, :T) .= model.forcing.T(model.clock.time)
 end
