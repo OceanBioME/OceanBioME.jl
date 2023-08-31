@@ -5,7 +5,7 @@ Biogeochemical (BGC) models can be used within the [Oceananigans biogeochemistry
 For details of the BGC models currently implemented please see the following pages.
 
 ## Oceananigans setup
-At the simplest level all that is required to setup an existint OceanBioME BGC model is to pass it to the Oceananigans model setup:
+At the simplest level all that is required to setup an existing OceanBioME BGC model is to pass it to the Oceananigans model setup:
 ```julia
 model = NonhydrostaticModel(; grid,
                               ...,
