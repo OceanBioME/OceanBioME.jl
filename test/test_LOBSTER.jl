@@ -40,7 +40,7 @@ function test_LOBSTER(grid, carbonates, oxygen, variable_redfield, sinking, open
     end
 
     # correct tracers and auxiliary fields have been setup, and order has not changed
-    required_tracers = conserved_tracers(biogeochemistry)
+    required_tracers = conserved_tracers(model.biogeochemistry)
     if carbonates
         required_tracers = (required_tracers..., :DIC, :Alk)
     end
