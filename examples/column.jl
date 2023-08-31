@@ -98,7 +98,7 @@ bPOM = FieldTimeSeries("$filename.jld2", "bPOM")
  Alk = FieldTimeSeries("$filename.jld2", "Alk")
 
 x, y, z = nodes(P)
-times = P.times
+times = P.times;
 
 # We compute the  air-sea CO₂ flux at the surface (corresponding to vertical index `k = grid.Nz`) and
 # the carbon export by computing how much carbon sinks below some arbirtrary depth; here we use depth 

@@ -110,7 +110,7 @@ wizard = TimeStepWizard(cfl = 0.2, diffusive_cfl = 0.2,
                         max_change = 1.5, min_change = 0.75,
                         cell_diffusion_timescale = column_diffusion_timescale,
                         cell_advection_timescale = column_advection_timescale)
-                        
+
 simulation.callbacks[:wizard] = Callback(wizard, IterationInterval(10))
 nothing #hide
 
@@ -130,7 +130,7 @@ bPOM = FieldTimeSeries("$filename.jld2", "bPOM")
  Alk = FieldTimeSeries("$filename.jld2", "Alk")
 
 x, y, z = nodes(P)
-times = P.times
+times = P.times;
 
 # We compute the  air-sea CO₂ flux at the surface (corresponding to vertical index `k = grid.Nz`) and
 # the carbon export by computing how much carbon sinks below some arbirtrary depth; here we use depth 
