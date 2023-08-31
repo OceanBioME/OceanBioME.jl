@@ -465,6 +465,10 @@ const lobster_variable_redfield = Union{LOBSTER{<:Any, <:Val{(false, false, true
 @inline redfield(i, j, k, ::Val{:bPON}, bgc::lobster_variable_redfield, tracers) = @inbounds tracers.bPOC[i, j, k] / tracers.bPON[i, j, k]
 @inline redfield(i, j, k, ::Val{:DON}, bgc::lobster_variable_redfield, tracers) = @inbounds tracers.DOC[i, j, k] / tracers.DON[i, j, k]
 
+@inline redfield(::Val{:sPON}, bgc::lobster_variable_redfield, tracers) = tracers.sPOC / tracers.sPON
+@inline redfield(::Val{:bPON}, bgc::lobster_variable_redfield, tracers) = tracers.bPOC / tracers.bPON
+@inline redfield(::Val{:DON}, bgc::lobster_variable_redfield, tracers) = tracers.DOC / tracers.DON
+
 @inline nitrogen_flux(i, j, k, grid, advection, bgc::LOBSTER, tracers) = 
     sinking_flux(i, j, k, grid, advection, Val(:sPOM), bgc, tracers) +
     sinking_flux(i, j, k, grid, advection, Val(:bPOM), bgc, tracers)

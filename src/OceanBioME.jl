@@ -147,9 +147,12 @@ Returns the redfield ratio of `tracer_name` from `bgc` when it is constant acros
 """
 @inline redfield(val_tracer_name, bgc) = NaN
 
+# fallbacks
 @inline redfield(i, j, k, val_tracer_name, bgc::Biogeochemistry, tracers) = redfield(i, j, k, val_tracer_name, bgc.underlying_biogeochemistry, tracers)
+@inline redfield(i, j, k, val_tracer_name, bgc, tracers) = redfield(val_tracer_name, bgc, tracers)
 @inline redfield(val_tracer_name, bgc::Biogeochemistry) = redfield(val_tracer_name, bgc.underlying_biogeochemistry)
-@inline redfield(val_tracer_name, bgc, tracers) = redfield(val_tracer_name, bgc)
+@inline redfield(val_tracer_name, bgc::Biogeochemistry, tracers) = redfield(val_tracer_name, bgc.underlying_biogeochemistry, tracers)
+@inline redfield(val_tracer_name, bgc, tracers) = redfield(val_tracer_name, bgc) 
 
 """
     conserved_tracers(model::UnderlyingBiogeochemicalModel)
