@@ -149,13 +149,14 @@ Returns the redfield ratio of `tracer_name` from `bgc` when it is constant acros
 
 @inline redfield(i, j, k, val_tracer_name, bgc::Biogeochemistry, tracers) = redfield(i, j, k, val_tracer_name, bgc.underlying_biogeochemistry, tracers)
 @inline redfield(val_tracer_name, bgc::Biogeochemistry) = redfield(val_tracer_name, bgc.underlying_biogeochemistry)
+@inline redfield(val_tracer_name, bgc, tracers) = redfield(val_tracer_name, bgc)
 
 """
     conserved_tracers(model::UnderlyingBiogeochemicalModel)
 
 Returns the names of tracers which together are conserved in `model`
 """
-conserved_tracers() = nothing
+conserved_tracers(model::Biogeochemistry) = conserved_tracers(model.underlying_biogeochemistry)
 
 summary(bgc::Biogeochemistry) = string("Biogeochemical model based on $(summary(bgc.underlying_biogeochemistry))")
 show(io::IO, model::Biogeochemistry) =
