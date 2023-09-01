@@ -138,7 +138,7 @@ struct BoxModelGrid end
 
 Returns the redfield ratio of `tracer_name` from `bgc` at `i`, `j`, `k`.
 """
-@inline redfield(i, j, k, val_tracer_name, bgc, tracers) = NaN
+@inline redfield(i, j, k, val_tracer_name, bgc, tracers) = redfield(val_tracer_name, bgc, tracers)
 
 """
     redfield(val_tracer_name, bgc, tracers)
@@ -149,7 +149,6 @@ Returns the redfield ratio of `tracer_name` from `bgc` when it is constant acros
 
 # fallbacks
 @inline redfield(i, j, k, val_tracer_name, bgc::Biogeochemistry, tracers) = redfield(i, j, k, val_tracer_name, bgc.underlying_biogeochemistry, tracers)
-@inline redfield(i, j, k, val_tracer_name, bgc, tracers) = redfield(val_tracer_name, bgc, tracers)
 @inline redfield(val_tracer_name, bgc::Biogeochemistry) = redfield(val_tracer_name, bgc.underlying_biogeochemistry)
 @inline redfield(val_tracer_name, bgc::Biogeochemistry, tracers) = redfield(val_tracer_name, bgc.underlying_biogeochemistry, tracers)
 @inline redfield(val_tracer_name, bgc, tracers) = redfield(val_tracer_name, bgc) 
