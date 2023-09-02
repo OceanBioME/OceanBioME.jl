@@ -47,9 +47,11 @@ using Oceananigans.Units
 using Oceananigans.Fields: Field, TracerFields, CenterField, ZeroField
 
 using OceanBioME.Light: TwoBandPhotosyntheticallyActiveRadiation
-using OceanBioME: setup_velocity_fields, show_sinking_velocities, Biogeochemistry, UnderlyingBiogeochemicalModel, ScaleNegativeTracers
+using OceanBioME: setup_velocity_fields, show_sinking_velocities, Biogeochemistry, ScaleNegativeTracers
 using OceanBioME.BoxModels: BoxModel
 using OceanBioME.Boundaries.Sediments: sinking_flux
+
+using Oceananigans.Biogeochemistry: AbstractContinuousFormBiogeochemistry
 
 import OceanBioME: redfield, conserved_tracers
 import OceanBioME.BoxModels: update_boxmodel_state!
@@ -65,7 +67,7 @@ import Base: show, summary
 
 import OceanBioME.Boundaries.Sediments: nitrogen_flux, carbon_flux, remineralisation_receiver
 
-struct LOBSTER{FT, B, W} <: UnderlyingBiogeochemicalModel
+struct LOBSTER{FT, B, W} <: AbstractContinuousFormBiogeochemistry
     phytoplankton_preference :: FT
     maximum_grazing_rate :: FT
     grazing_half_saturation :: FT

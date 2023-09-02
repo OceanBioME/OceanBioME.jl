@@ -3,6 +3,7 @@ using KernelAbstractions
 using KernelAbstractions.Extras.LoopInfo: @unroll
 using Oceananigans.Utils: work_layout
 using Oceananigans.Architectures: device
+using Oceananigans.Biogeochemistry: AbstractBiogeochemistry
 
 import Adapt: adapt_structure, adapt
 import Oceananigans.Biogeochemistry: update_tendencies!, update_biogeochemical_state!
@@ -75,7 +76,7 @@ Constructs a modifier to scale the conserved tracers in `model`.
 
 If `warn` is true then scaling will raise a warning.
 """
-function ScaleNegativeTracers(model::UnderlyingBiogeochemicalModel; warn = false)
+function ScaleNegativeTracers(model::AbstractBiogeochemistry; warn = false)
     tracers = conserved_tracers(model)
     scalefactors = NamedTuple{tracers}(ones(length(tracers)))
 

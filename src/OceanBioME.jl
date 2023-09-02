@@ -39,7 +39,8 @@ import Oceananigans.Biogeochemistry: required_biogeochemical_tracers,
                                      update_biogeochemical_state!,
                                      biogeochemical_drift_velocity,
 				                     biogeochemical_auxiliary_fields,
-                                     update_tendencies!
+                                     update_tendencies!,
+                                     biogeochemical_transition
 
 import Adapt: adapt_structure
 import Base: show, summary
@@ -116,7 +117,8 @@ end
 update_tendencies!(bgc, modifier, model) = nothing
 update_tendencies!(bgc, modifiers::Tuple, model) = [update_tendencies!(bgc, modifier, model) for modifier in modifiers]
 
-@inline (bgc::Biogeochemistry)(args...) = bgc.underlying_biogeochemistry(args...)
+@inline biogeochemical_transition(i, j, k, grid, bgc::Biogeochemistry, val_tracer_name, clock, fields) =
+    biogeochemical_transition(i, j, k, grid, bgc.underlying_biogeochemistry, val_tracer_name, clock, fields) 
 
 function update_biogeochemical_state!(bgc::Biogeochemistry, model)
     update_biogeochemical_state!(model, bgc.modifiers)
@@ -124,10 +126,6 @@ function update_biogeochemical_state!(bgc::Biogeochemistry, model)
 end
 
 update_biogeochemical_state!(model, modifiers::Tuple) = [update_biogeochemical_state!(model, modifier) for modifier in modifiers]
-
-abstract type UnderlyingBiogeochemicalModel end
-
-@inline (::UnderlyingBiogeochemicalModel)(val_tracer_name, x, y, z, t, fields...) = zero(x)
 
 struct BoxModelGrid end
 
