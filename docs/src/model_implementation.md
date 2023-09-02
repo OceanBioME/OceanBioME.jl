@@ -18,7 +18,8 @@ For this example we are going to implement the simple Nutrient-Phytoplankton mod
 The first step is to import the abstract type from OceanBioME, some units from Oceananigans (for ease of parameter definition), and [`import`](https://stackoverflow.com/questions/27086159/what-is-the-difference-between-using-and-import-in-julia-when-building-a-mod) some functions from Oceananigans in order to add methods to:
 
 ```@example implementing
-using OceanBioME: Biogeochemistry, UnderlyingBiogeochemicalModel
+using OceanBioME: Biogeochemistry
+using Oceananigans.Biogeochemistry: AbstractContinuousFormBiogeochemistry
 using Oceananigans.Units
 
 import Oceananigans.Biogeochemistry: required_biogeochemical_tracers,
@@ -29,7 +30,7 @@ import Oceananigans.Biogeochemistry: required_biogeochemical_tracers,
 We then define our `struct` with the model parameters, as well as slots for the particles, light attenuation, and sediment models:
 
 ```@example implementing
-@kwdef struct NutrientPhytoplankton{FT, W} <: UnderlyingBiogeochemicalModel
+@kwdef struct NutrientPhytoplankton{FT, W} <: AbstractContinuousFormBiogeochemistry
             base_growth_rate :: FT = 1.27 / day              # 1 / seconds
     nutrient_half_saturation :: FT = 0.025 * 1000 / 14       # mmol N / m³
        light_half_saturation :: FT = 300.0                   # micro einstein / m² / s
