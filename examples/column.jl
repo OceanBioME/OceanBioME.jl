@@ -54,7 +54,7 @@ biogeochemistry = LOBSTER(; grid,
 CO₂_flux = GasExchange(; gas = :CO₂, temperature = temp, salinity = (args...) -> 35)
 
 model = NonhydrostaticModel(; grid,
-                              closure = ScalarDiffusivity(ν = κₜ, κ = κₜ), 
+                              closure = ScalarDiffusivity(ν = κₜ, κ = κₜ),
                               biogeochemistry,
                               boundary_conditions = (DIC = FieldBoundaryConditions(top = CO₂_flux), ))
 
@@ -68,10 +68,10 @@ set!(model, P = 0.03, Z = 0.03, NO₃ = 4.0, NH₄ = 0.05, DIC = 2239.8, Alk = 2
 simulation = Simulation(model, Δt = 3minutes, stop_time = 100days)
 
 progress_message(sim) = @printf("Iteration: %04d, time: %s, Δt: %s, wall time: %s\n",
-                                                        iteration(sim),
-                                                        prettytime(sim),
-                                                        prettytime(sim.Δt),
-                                                        prettytime(sim.run_wall_time))      
+                                iteration(sim),
+                                prettytime(sim),
+                                prettytime(sim.Δt),
+                                prettytime(sim.run_wall_time))
                                                                   
 simulation.callbacks[:progress] = Callback(progress_message, TimeInterval(10days))
 

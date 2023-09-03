@@ -28,7 +28,7 @@ nothing #hide
 # Loading the forcing data from our online copy
 dd = DataDep(
     "example_data",
-    "example data from subpolar re analysis and observational products", 
+    "example data from subpolar re analysis and observational products",
     "https://github.com/OceanBioME/OceanBioME_example_data/raw/main/subpolar.nc"
 )
 register(dd)
@@ -39,9 +39,9 @@ salinity = ncread(filename, "so")
 mld = ncread(filename, "mld")
 par = ncread(filename, "par")
 
-temperature_itp = LinearInterpolation(times, temp) 
-salinity_itp = LinearInterpolation(times, salinity) 
-mld_itp = LinearInterpolation(times, mld) 
+temperature_itp = LinearInterpolation(times, temp)
+salinity_itp = LinearInterpolation(times, salinity)
+mld_itp = LinearInterpolation(times, mld)
 PAR_itp = LinearInterpolation(times, par)
 
 t_function(x, y, z, t) = temperature_itp(mod(t, 364days))
@@ -74,7 +74,7 @@ biogeochemistry = LOBSTER(; grid,
 CO₂_flux = GasExchange(; gas = :CO₂, temperature = t_function, salinity = s_function)
 
 model = NonhydrostaticModel(; grid,
-                              closure = ScalarDiffusivity(ν = κₜ, κ = κₜ), 
+                              closure = ScalarDiffusivity(ν = κₜ, κ = κₜ),
                               biogeochemistry,
                               boundary_conditions = (DIC = FieldBoundaryConditions(top = CO₂_flux),))
 
@@ -133,7 +133,7 @@ x, y, z = nodes(P)
 times = P.times;
 
 # We compute the  air-sea CO₂ flux at the surface (corresponding to vertical index `k = grid.Nz`) and
-# the carbon export by computing how much carbon sinks below some arbirtrary depth; here we use depth 
+# the carbon export by computing how much carbon sinks below some arbirtrary depth; here we use depth
 # that corresponds to `k = grid.Nz - 20`.
 air_sea_CO₂_flux = zeros(length(times))
 carbon_export = zeros(length(times))
