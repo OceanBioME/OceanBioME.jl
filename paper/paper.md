@@ -66,7 +66,7 @@ As a result, ``OceanBioME.jl`` and ``Oceananigans.jl`` can be used to simulate t
 An example of a problem involving small-scale flow features is shown in \autoref{eady}, which shows a simulation of a sub-mesoscale eddy in a 1km x 1km horizontal domain with an intermediate complexity biogeochemical model and a kelp growth model solved along the trajectories of drifting buoys (details of examples mentioned in this paper are listed at the end).
 ``OceanBioME.jl`` leverages Julia's multiple dispatch and effective inline capabilities to fuse its computations directly into existing ``Oceananigans.jl`` kernels, thus maintaining ``Oceananigans.jl``'s bespoke performance, memory- and cost-efficiency on GPUs in ``OceanBioME.jl``-augmented simulations.
 
-![Here we replicate the Eady problem where a background buoyancy gradient and corresponding thermal wind generate a sub-mesoscale eddy, roughly following the setup of Taylor (2016).
+![Here we replicate the Eady problem where a background buoyancy gradient and corresponding thermal wind generate a sub-mesoscale eddy, roughly following the setup of @taylor:2016.
 To this physical setup, we added a medium complexity (9 tracers) biogeochemical model, some of which are shown above.
 On top of this, we added particles modelling the growth of sugar kelp which are free-floating and advected by the flow, and carbon dioxide exchange from the air.
 Thanks to Julia's speed and efficiency the above model (1 km × 1 km × 100 m with 64 × 64 × 16 grid points) took about 30 minutes of computing time to simulate 10 days of evolution on an Nvidia P100 GPU. 
