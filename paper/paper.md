@@ -47,7 +47,7 @@ bibliography: paper.bib
 
 To date, about 25% of anthropogenic carbon emissions have been taken up by the ocean [@Friedlingstein2022]. 
 This occurs through complex interactions between physics, chemistry, and biology, much of which is poorly understood. 
-Due to the vast size of the ocean and the sparsity of data, modelling and data assimilation play a vital role in quantifying the ocean carbon cycle. 
+Due to the vast size of the ocean and the sparsity of data; modelling and data assimilation play a vital role in quantifying the ocean carbon cycle. 
 Traditionally ocean biogeochemical (BGC) modelling involves large and inflexible code bases written in high-performance but low-level languages which require huge computational resources to execute. 
 This causes a barrier to experimentation and innovation as users must develop expertise in both the science and complex code.
 
@@ -62,7 +62,7 @@ The flexibility of the ``Oceananigans.jl`` framework allows ``OceanBioME.jl`` to
 
 ``OceanBioME.jl`` is a flexible modelling environment written in Julia [@julia] for modelling the coupled interactions between ocean biogeochemistry, carbonate chemistry, and physics.
 ``OceanBioME.jl`` can be used as a stand-alone box model, or integrated into ``Oceananigans.jl`` [@Oceananigans] simulations of ocean dynamics in one, two, or three dimensions.
-As a result, ``OceanBioME.jl`` and ``Oceananigans.jl`` can be used to simulate the biogeochemical response across an enormous range of scales: from surface boundary layer turbulence at the meter scale to eddying global ocean simulations at the planetary scale, and on computational systems ranging from laptops to supercomputers.
+As a result, ``OceanBioME.jl`` and ``Oceananigans.jl`` can be used to simulate the biogeochemical response across an enormous range of scales: from surface boundary layer turbulence at the sub-meter scale to eddying global ocean simulations at the planetary scale, and on computational systems ranging from laptops to supercomputers.
 An example of a problem involving small-scale flow features is shown in \autoref{eady}, which shows a simulation of a sub-mesoscale eddy in a 1km x 1km horizontal domain with an intermediate complexity biogeochemical model and a kelp growth model solved along the trajectories of drifting buoys (details of examples mentioned in this paper are listed at the end).
 ``OceanBioME.jl`` leverages Julia's multiple dispatch and effective inline capabilities to fuse its computations directly into existing ``Oceananigans.jl`` kernels, thus maintaining ``Oceananigans.jl``'s bespoke performance, memory- and cost-efficiency on GPUs in ``OceanBioME.jl``-augmented simulations.
 
@@ -94,7 +94,7 @@ For example, the `GasExchange` submodule calculates the carbon dioxide and oxyge
 We currently provide a simple Nutrient-Phytoplankton-Zooplankton-Detritus (NPZD) model [@npzd], and an intermediate complexity model, LOBSTER [@lobster], we have set up a straightforward "plug and play" framework to add additional tracers such as carbonate and oxygen chemistry systems and additional forcing. 
 A key feature of this package is the easy ability to modify models or add different formulations. 
 If a user wanted to implement a different model they could use the existing ones as a template and modify only a few lines of code where the ODEs are defined as functions.
-They can build their model within our framework to easily couple with the other model components such as light attenuation and sediment.
+They can then insert their model into our abstracted framework to easily couple with the other components such as light attenuation and sediment.
 We provide a detailed tutorial describing how to-do this, which also serves as a good description of how our models are setup.
 
 These `AdvectedPopulations` are supported by `Boundaries` modules which are easy to apply and provide information at the top and bottom of the ocean.
@@ -108,7 +108,7 @@ This flexibility and ease-of-use is unmatched in existing biogeochemical models.
 ![Here we show the annual average surface phytoplankton concentration from a near-global NPZD model run. 
 It shows reasonably good reproduction of large-scale patterns for such a simple and uncalibrated model but demonstrates further work such as nutrient input from rivers and tuning physics parametrisations that are required in the future.
 We ran this model with a 1° horizontal resolution and 48 (irregularly spaced) vertical points.
-It took around 45 minutes per year to run on an Nvidia A100 GPU when integrating the physics, or around 5 minutes per year when using pre-calculated velocity fields.
+It took around 45 minutes per year to run on an Nvidia A100 GPU when integrating the physics, or less than 5 minutes per year when using pre-calculated velocity fields.
 Figure made with ``Makie.jl`` [@makie]. \label{global}](phytoplankton.png)
 
 The biologically active particles built into ``OceanBioME.jl`` are particularly useful for OCDR applications.
