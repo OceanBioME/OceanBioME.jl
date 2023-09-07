@@ -104,8 +104,6 @@ simulation.output_writers[:profiles] = JLD2OutputWriter(model,
                                                         schedule = TimeInterval(1day),
                                                         overwrite_existing = true)
 
-# TODO: make tendency callback to force no NaNs in tendencies
-
 wizard = TimeStepWizard(cfl = 0.2, diffusive_cfl = 0.2,
                         max_change = 1.5, min_change = 0.75,
                         cell_diffusion_timescale = column_diffusion_timescale,
