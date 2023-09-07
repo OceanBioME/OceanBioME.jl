@@ -156,7 +156,7 @@ sediment_fields(model::SimpleMultiG) = (C_slow = model.fields.C_slow,
 
 @inline bottom_index_array(sediment::SimpleMultiG) = sediment.bottom_indices
 
-@kernel function _calculate_tendencies!(sediment::SimpleMultiG, bgc, grid, advection, tracers, timestepper)
+@kernel function _calculate_tendencies!(sediment::SimpleMultiG, bgc, grid, advection, tracers, tendencies)
     i, j = @index(Global, NTuple)
 
     k = bottom_index(i, j, sediment)
@@ -226,10 +226,10 @@ sediment_fields(model::SimpleMultiG) = (C_slow = model.fields.C_slow,
 
         Δz = grid.Δzᵃᵃᶜ[1]
 
-        timestepper.Gⁿ.NH₄[i, j, 1] += Nᵐⁱⁿ * (1 - pₙᵢₜ) / Δz
-        timestepper.Gⁿ.NO₃[i, j, 1] += Nᵐⁱⁿ * pₙᵢₜ / Δz
-        timestepper.Gⁿ.DIC[i, j, 1] += Cᵐⁱⁿ / Δz
-        timestepper.Gⁿ.O₂[i, j, 1]  -= max(0, ((1 - pₐₙₒₓ * pₛₒₗᵢ) * Cᵐⁱⁿ + 2 * Nᵐⁱⁿ * pₙᵢₜ)/ Δz) # this seems dodge but this model doesn't cope with anoxia properly
+        tendencies.Gⁿ.NH₄[i, j, 1] += Nᵐⁱⁿ * (1 - pₙᵢₜ) / Δz
+        tendencies.Gⁿ.NO₃[i, j, 1] += Nᵐⁱⁿ * pₙᵢₜ / Δz
+        tendencies.Gⁿ.DIC[i, j, 1] += Cᵐⁱⁿ / Δz
+        tendencies.Gⁿ.O₂[i, j, 1]  -= max(0, ((1 - pₐₙₒₓ * pₛₒₗᵢ) * Cᵐⁱⁿ + 2 * Nᵐⁱⁿ * pₙᵢₜ)/ Δz) # this seems dodge but this model doesn't cope with anoxia properly
     end
 end
 

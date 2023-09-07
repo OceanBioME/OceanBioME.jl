@@ -86,7 +86,7 @@ sediment_fields(model::InstantRemineralisation) = (N_storage = model.fields.N_st
 
 @inline bottom_index_array(sediment::InstantRemineralisation) = sediment.bottom_indices
 
-@kernel function _calculate_tendencies!(sediment::InstantRemineralisation, bgc, grid, advection, tracers, timestepper)
+@kernel function _calculate_tendencies!(sediment::InstantRemineralisation, bgc, grid, advection, tracers, tendencies)
     i, j = @index(Global, NTuple)
 
     k = bottom_index(i, j, sediment)

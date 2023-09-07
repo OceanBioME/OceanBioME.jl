@@ -36,7 +36,7 @@ function update_sediment_tendencies!(bgc, sediment::FlatSediment, model)
 
     launch!(arch, model.grid, :xy,
             _calculate_tendencies!,
-            bgc.sediment_model, bgc, model.grid, model.advection, model.tracers, model.timestepper)
+            bgc.sediment_model, bgc, model.grid, model.advection, model.tracers, model.timestepper.Gⁿ)
             
     return nothing
 end
