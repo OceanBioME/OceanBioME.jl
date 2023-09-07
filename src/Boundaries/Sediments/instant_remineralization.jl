@@ -74,11 +74,11 @@ function InstantRemineralisation(; grid,
 end
 
 adapt_structure(to, sediment::InstantRemineralisation) = 
-    SimpleMultiG(sediment.burial_efficiency_constant1,
-                 sediment.burial_efficiency_constant2,
-                 sediment.burial_efficiency_half_saturaiton,
-                 adapt(to, sediment.fields),
-                 adapt(to, sediment.tendencies))
+    InstantRemineralisation(sediment.burial_efficiency_constant1,
+                            sediment.burial_efficiency_constant2,
+                            sediment.burial_efficiency_half_saturaiton,
+                            adapt(to, sediment.fields),
+                            adapt(to, sediment.tendencies))
                   
 sediment_tracers(::InstantRemineralisation) = (:N_storage, )
 sediment_fields(model::InstantRemineralisation) = (N_storage = model.fields.N_storage, )
