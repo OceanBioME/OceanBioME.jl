@@ -34,8 +34,6 @@ We can then visualize it, first check the required packages are installed:
 
 ```julia
 Pkg.add("CairoMakie")
-
-using CairoMakie
 ```
 
 and then load the data and plot:
