@@ -30,7 +30,7 @@ simulation.output_writers[:profiles] = JLD2OutputWriter(model, model.tracers,
 run!(simulation)
 ```
 
-This isn't quite as simple as it could be as it records the output so that we can visualize it, first check the required packages are installed:
+We can then visualize it, first check the required packages are installed:
 
 ```julia
 Pkg.add("CairoMakie")
