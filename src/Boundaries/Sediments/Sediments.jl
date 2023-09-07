@@ -5,7 +5,7 @@ export SimpleMultiG, InstantRemineralisation
 using KernelAbstractions
 using OceanBioME: ContinuousFormBiogeochemistry, BoxModelGrid
 using Oceananigans
-using Oceananigans.Architectures: device
+using Oceananigans.Architectures: device, architecture, arch_array
 using Oceananigans.Utils: launch!
 using Oceananigans.Advection: advective_tracer_flux_z
 using Oceananigans.Units: day
@@ -76,7 +76,8 @@ calculate_bottom_indices(grid) = ones(Int, size(grid)[1:2]...)
 end
 
 function calculate_bottom_indices(grid::ImmersedBoundaryGrid)
-    indices = zeros(Int, size(grid)[1:2]...)
+    arch = architecture(grid)
+    indices = arch_array(arch, zeros(Int, size(grid)[1:2]...))
 
     launch!(grid.architecture, grid, :xy, find_bottom_cell, grid, indices)
 
