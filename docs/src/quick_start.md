@@ -39,12 +39,12 @@ Pkg.add("CairoMakie")
 and then load the data and plot:
 
 ```@example quickstart
+using CairoMakie
+
 phytoplankton = FieldTimeSeries("quickstart.jld2", "P")
 nitrates = FieldTimeSeries("quickstart.jld2", "NO₃")
 
 _, _, z = nodes(nitrates)
-
-using CairoMakie
 
 fig = Figure()
 
