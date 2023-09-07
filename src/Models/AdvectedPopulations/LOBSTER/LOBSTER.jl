@@ -167,7 +167,7 @@ struct LOBSTER{FT, B, W} <: AbstractContinuousFormBiogeochemistry
                              zooplankton_calcite_dissolution,
 
                              optionals,
-                                               
+
                              sinking_velocities)
     end
 end

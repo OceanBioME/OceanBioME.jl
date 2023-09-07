@@ -11,7 +11,7 @@ using Oceananigans.Architectures: device
 using Oceananigans.Utils: launch!
 using Oceananigans.Advection: advective_tracer_flux_z
 using Oceananigans.Units: day
-using Oceananigans.Fields: CenterField, Face, Center, ConstantField
+using Oceananigans.Fields: ConstantField
 using Oceananigans.Biogeochemistry: biogeochemical_drift_velocity
 using Oceananigans.Grids: zspacing
 using Oceananigans.Operators: volume

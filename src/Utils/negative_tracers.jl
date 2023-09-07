@@ -10,7 +10,8 @@ import Oceananigans.Biogeochemistry: update_tendencies!, update_biogeochemical_s
 
 """
     ZeroNegativeTracers(; exclude = ())
-Construct a modifier that zeros any negative tracers excluding those listed in `exclude`.
+
+Construct a modifier that zeroes any negative tracers excluding those listed in `exclude`.
 
 !!! danger "Tracer conservation"
     This method is _not_ recommended as a way to preserve positivity of tracers since
@@ -72,7 +73,7 @@ end
 """
     ScaleNegativeTracers(model::UnderlyingBiogeochemicalModel; warn = false)
 
-Constructs a modifier to scale the conserved tracers in `model`.
+Construct a modifier to scale the conserved tracers in `model`.
 
 If `warn` is true then scaling will raise a warning.
 """

@@ -35,4 +35,4 @@ Here you should carefully consider which tracers form a conserved group (if at a
 negativity_protection = ZeroNegativeTracers()
 biogeochemistry = Biogeochemistry(...; modifiers = negativity_protection)
 ```
-The latter optionally takes a named tuple of parameters which may include `exclude` which can be a tuple of tracer names (Symbols) which are allowed to be negative.
+The latter optionally takes a named tuple of parameters that may include `exclude`, which can be a tuple of tracer names (Symbols) which are allowed to be negative.

@@ -21,5 +21,5 @@ This will set up the required tracers and auxiliary fields, and you may also set
 Models usually have a default [light attenuation model](@ref light) specified, these may be substituted easily by passing different models as parameters as above.
 
 Our models are implemented in an abstract framework `Biogeochemistry` which contains `underlying_biogeochemistry`, `light_attenuation`, `sediment`, and `modifiers`.
-This is automatically setup for existing BGC models, but may also be used to couple any BGC model with light attenuation and sediments.
+This is automatically set up for existing BGC models, but may also be used to couple any BGC model with light attenuation and sediments.
 See the [implementation page](@ref model_implementation) for some more information on how to couple other models.

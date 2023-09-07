@@ -134,7 +134,8 @@ DIC = FieldTimeSeries("eady_turbulence_bgc.jld2", "DIC")
 times = ζ.times
 
 xζ, yζ, zζ = nodes(ζ)
-xc, yc, zc = nodes(P);
+xc, yc, zc = nodes(P)
+nothing #hide
 
 # and plot.
 

@@ -28,7 +28,7 @@ nothing #hide
 # Loading the forcing data from our online copy
 dd = DataDep(
     "example_data",
-    "example data from subpolar re analysis and observational products",
+    "example data from subpolar re-analysis and observational products",
     "https://github.com/OceanBioME/OceanBioME_example_data/raw/main/subpolar.nc"
 )
 register(dd)
@@ -134,7 +134,7 @@ times = P.times
 nothing #hide
 
 # We compute the  air-sea CO₂ flux at the surface (corresponding to vertical index `k = grid.Nz`) and
-# the carbon export by computing how much carbon sinks below some arbirtrary depth; here we use depth
+# the carbon export by computing how much carbon sinks below some arbitrary depth; here we use depth
 # that corresponds to `k = grid.Nz - 20`.
 air_sea_CO₂_flux = zeros(length(times))
 carbon_export = zeros(length(times))
