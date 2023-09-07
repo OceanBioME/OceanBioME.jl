@@ -78,7 +78,8 @@ adapt_structure(to, sediment::InstantRemineralisation) =
                             sediment.burial_efficiency_constant2,
                             sediment.burial_efficiency_half_saturaiton,
                             adapt(to, sediment.fields),
-                            adapt(to, sediment.tendencies))
+                            adapt(to, sediment.tendencies),
+                            adapt(to, sediment.bottom_indices))
                   
 sediment_tracers(::InstantRemineralisation) = (:N_storage, )
 sediment_fields(model::InstantRemineralisation) = (N_storage = model.fields.N_storage, )
