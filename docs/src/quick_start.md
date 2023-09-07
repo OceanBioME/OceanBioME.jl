@@ -46,6 +46,8 @@ nitrates = FieldTimeSeries("quickstart.jld2", "NO₃")
 
 _, _, z = nodes(nitrates)
 
+using CairoMakie
+
 fig = Figure()
 
 axis_kwargs = (xlabel = "Day", ylabel = "Depth (m)")
