@@ -30,13 +30,17 @@ simulation.output_writers[:profiles] = JLD2OutputWriter(model, model.tracers,
 run!(simulation)
 ```
 
-This isn't quite as simple as it could be as it records the output so that we can visualize it:
+This isn't quite as simple as it could be as it records the output so that we can visualize it, first check the required packages are installed:
 
-```@example quickstart
+```julia
 Pkg.add("CairoMakie")
 
 using CairoMakie
+```
 
+and then load the data and plot:
+
+```@example quickstart
 phytoplankton = FieldTimeSeries("quickstart.jld2", "P")
 nitrates = FieldTimeSeries("quickstart.jld2", "NO₃")
 
