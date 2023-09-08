@@ -9,4 +9,10 @@ result = open("results.test") do file
     read(file, String)
 end
 
+output = open("output.test") do file
+    read(file, String)
+end
+
+println(output)
+
 result == 0 ? error("Tests failed") : nothing

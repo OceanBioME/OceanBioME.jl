@@ -1,7 +1,7 @@
 #!/bin/bash
-
-if ["$(/home/js2430/rds/hpc-work/OceanBioME-runner/_work/_temp/julia-1.9.3/bin/julia -O0 --color=yes --project test/gpu_runtests.jl)" == ""]; then 
-    echo "true" > "results.test"; 
+/home/js2430/rds/hpc-work/OceanBioME-runner/_work/_temp/julia-1.9.3/bin/julia -O0 --color=yes --project test/gpu_runtests.jl > "output.test"; ec=$?
+if [ $ec -eq 0 ]; then
+    echo "1" > "results.test"; 
 else 
-    echo "false" > "results.test"; 
+    echo "0" > "results.test"; 
 fi
