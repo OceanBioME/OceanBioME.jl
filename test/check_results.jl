@@ -6,7 +6,7 @@ while !(file_exists)
 end
 
 result = open("results.test") do file
-    pasrse(Int, read(file, String))
+    parse(Int, read(file, String))
 end
 
 output = open("output.test") do file
