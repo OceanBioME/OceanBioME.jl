@@ -226,10 +226,10 @@ sediment_fields(model::SimpleMultiG) = (C_slow = model.fields.C_slow,
 
         Δz = grid.Δzᵃᵃᶜ[1]
 
-        tendencies.Gⁿ.NH₄[i, j, 1] += Nᵐⁱⁿ * (1 - pₙᵢₜ) / Δz
-        tendencies.Gⁿ.NO₃[i, j, 1] += Nᵐⁱⁿ * pₙᵢₜ / Δz
-        tendencies.Gⁿ.DIC[i, j, 1] += Cᵐⁱⁿ / Δz
-        tendencies.Gⁿ.O₂[i, j, 1]  -= max(0, ((1 - pₐₙₒₓ * pₛₒₗᵢ) * Cᵐⁱⁿ + 2 * Nᵐⁱⁿ * pₙᵢₜ)/ Δz) # this seems dodge but this model doesn't cope with anoxia properly
+        tendencies.NH₄[i, j, 1] += Nᵐⁱⁿ * (1 - pₙᵢₜ) / Δz
+        tendencies.NO₃[i, j, 1] += Nᵐⁱⁿ * pₙᵢₜ / Δz
+        tendencies.DIC[i, j, 1] += Cᵐⁱⁿ / Δz
+        tendencies.O₂[i, j, 1]  -= max(0, ((1 - pₐₙₒₓ * pₛₒₗᵢ) * Cᵐⁱⁿ + 2 * Nᵐⁱⁿ * pₙᵢₜ)/ Δz) # this seems dodge but this model doesn't cope with anoxia properly
     end
 end
 
