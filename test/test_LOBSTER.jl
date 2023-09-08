@@ -1,18 +1,11 @@
 using Test
-using OceanBioME: LOBSTER
+using OceanBioME: LOBSTER, conserved_tracers, redfield
 using Oceananigans, CUDA
 
-ΣN(model, variable_redfield) = variable_redfield ? (
-    sum(model.tracers.NO₃) + sum(model.tracers.NH₄) + sum(model.tracers.P) + sum(model.tracers.Z) + sum(model.tracers.sPON) + sum(model.tracers.bPON) + sum(model.tracers.DON)) : (
-    sum(model.tracers.NO₃) + sum(model.tracers.NH₄) + sum(model.tracers.P) + sum(model.tracers.Z) + sum(model.tracers.sPOM) + sum(model.tracers.bPOM) + sum(model.tracers.DOM))
+ΣN(model, biogeochemistry) = sum([sum(model.tracers[tracer_name]) for tracer_name in conserved_tracers(biogeochemistry)])
 
-function ΣC(model, carbonates, variable_redfield)
-    # *will only be conserved if carbonates on*
-    if variable_redfield
-        OC = sum(model.tracers.sPOC .+ model.tracers.bPOC .+ model.tracers.DOC)
-    else
-        OC = sum(model.tracers.sPOM .+ model.tracers.bPOM .+ model.tracers.DOM) * model.biogeochemistry. organic_redfield
-    end
+function ΣC(model, carbonates, biogeochemistry)
+    OC = sum([sum(model.tracers[tracer_name] * redfield(Val(tracer_name), biogeochemistry, model.tracers)) for tracer_name in conserved_tracers(biogeochemistry)])
 
     if carbonates
         IC = sum(model.tracers.DIC)
@@ -20,31 +13,21 @@ function ΣC(model, carbonates, variable_redfield)
         IC = 0.0
     end
 
-    LC = sum(model.tracers.P * (1 + model.biogeochemistry.organic_carbon_calcate_ratio) .+ model.tracers.Z) * model.biogeochemistry.phytoplankton_redfield 
-
-    return OC + IC + LC
+    return OC + IC
 end
 
-ΣGⁿ(model, variable_redfield) = variable_redfield ? (
-    sum(model.timestepper.Gⁿ.NO₃) + sum(model.timestepper.Gⁿ.NH₄) + sum(model.timestepper.Gⁿ.P) + sum(model.timestepper.Gⁿ.Z) + sum(model.timestepper.Gⁿ.sPON) + sum(model.timestepper.Gⁿ.bPON) + sum(model.timestepper.Gⁿ.DON)) : (
-    sum(model.timestepper.Gⁿ.NO₃) + sum(model.timestepper.Gⁿ.NH₄) + sum(model.timestepper.Gⁿ.P) + sum(model.timestepper.Gⁿ.Z) + sum(model.timestepper.Gⁿ.sPOM) + sum(model.timestepper.Gⁿ.bPOM) + sum(model.timestepper.Gⁿ.DOM))
+ΣGⁿ(model, biogeochemistry) = sum([sum(model.timestepper.Gⁿ[tracer_name]) for tracer_name in conserved_tracers(biogeochemistry)])
 
 
-function ΣGᶜ(model, carbonates, variable_redfield)
+function ΣGᶜ(model, biogeochemistry)
     # *will only be conserved if carbonates on*
-    if variable_redfield
-        OC = sum(model.timestepper.Gⁿ.sPOC .+ model.timestepper.Gⁿ.bPOC .+ model.timestepper.Gⁿ.DOC)
-    else
-        OC = sum(model.timestepper.Gⁿ.sPOM .+ model.timestepper.Gⁿ.bPOM .+ model.timestepper.Gⁿ.DOM) * model.biogeochemistry. organic_redfield
-    end
+    # Leaving this as is for now since as the `redfield` is based on value not tendency then it returns the wrong results if
+    # the redfield is rapidly changing
+    OC = sum(model.timestepper.Gⁿ.sPOC .+ model.timestepper.Gⁿ.bPOC .+ model.timestepper.Gⁿ.DOC)
 
-    if carbonates
-        IC = sum(model.timestepper.Gⁿ.DIC)
-    else
-        IC = 0.0
-    end
+    IC = sum(model.timestepper.Gⁿ.DIC)
 
-    LC = sum(model.timestepper.Gⁿ.P * (1 + model.biogeochemistry.organic_carbon_calcate_ratio) .+ model.timestepper.Gⁿ.Z) * model.biogeochemistry.phytoplankton_redfield 
+    LC = sum(model.timestepper.Gⁿ.P * (1 + biogeochemistry.organic_carbon_calcate_ratio) .+ model.timestepper.Gⁿ.Z) * biogeochemistry.phytoplankton_redfield 
 
     return OC + IC + LC
 end
@@ -59,7 +42,7 @@ function test_LOBSTER(grid, carbonates, oxygen, variable_redfield, sinking, open
     end
 
     # correct tracers and auxiliary fields have been setup, and order has not changed
-    required_tracers = variable_redfield ? (:NO₃, :NH₄, :P, :Z, :sPON, :bPON, :DON) : (:NO₃, :NH₄, :P, :Z, :sPOM, :bPOM, :DOM)
+    required_tracers = conserved_tracers(model.biogeochemistry)
     if carbonates
         required_tracers = (required_tracers..., :DIC, :Alk)
     end
@@ -90,9 +73,9 @@ function test_LOBSTER(grid, carbonates, oxygen, variable_redfield, sinking, open
             model.tracers.bPON .= rand()
             model.tracers.DON .= rand()
 
-            model.tracers.sPOC .= model.tracers.sPON * model.biogeochemistry.phytoplankton_redfield
-            model.tracers.bPOC .= model.tracers.bPON * model.biogeochemistry.phytoplankton_redfield
-            model.tracers.DOC .= model.tracers.DON * model.biogeochemistry.phytoplankton_redfield
+            model.tracers.sPOC .= model.tracers.sPON * redfield(Val(:sPOM), model.biogeochemistry)
+            model.tracers.bPOC .= model.tracers.bPON * redfield(Val(:bPOM), model.biogeochemistry)
+            model.tracers.DOC .= model.tracers.DON * redfield(Val(:DOM), model.biogeochemistry)
         else
             model.tracers.sPOM .= rand()
             model.tracers.bPOM .= rand()
@@ -105,25 +88,25 @@ function test_LOBSTER(grid, carbonates, oxygen, variable_redfield, sinking, open
         end
     end
     
-    ΣN₀ = CUDA.@allowscalar ΣN(model, variable_redfield)
+    ΣN₀ = CUDA.@allowscalar ΣN(model, model.biogeochemistry)
 
-    ΣC₀ = CUDA.@allowscalar ΣC(model, carbonates, variable_redfield)
+    ΣC₀ = CUDA.@allowscalar ΣC(model, carbonates, model.biogeochemistry)
     
     for _ in 1:n_timesteps
         time_step!(model, 1.0)
     end
 
-    ΣN₁ = CUDA.@allowscalar ΣN(model, variable_redfield)
+    ΣN₁ = CUDA.@allowscalar ΣN(model, model.biogeochemistry)
     
     CUDA.@allowscalar if !(sinking && open_bottom) #when we have open bottom sinking we won't conserve anything
         @test ΣN₀ ≈ ΣN₁
-        @test ΣGⁿ(model, variable_redfield) ≈ 0.0 atol = 1e-15 # rtol=sqrt(eps) so is usually much larger than even this
+        @test ΣGⁿ(model, model.biogeochemistry) ≈ 0.0 atol = 1e-15 # rtol=sqrt(eps) so is usually much larger than even this
 
         if (carbonates && variable_redfield)
-            ΣC₁ = ΣC(model, carbonates, variable_redfield)
-            @test ΣC₀ ≈ ΣC₁# atol = 0.0001 # when we convert to and from 
+            ΣC₁ = ΣC(model, carbonates, model.biogeochemistry)
+            @test ΣC₀ ≈ ΣC₁
 
-            @test ΣGᶜ(model, carbonates, variable_redfield) ≈ 0.0 atol = 1e-15
+            @test ΣGᶜ(model, model.biogeochemistry.underlying_biogeochemistry) ≈ 0.0 atol = 1e-15
         end
     end
     return model

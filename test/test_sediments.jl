@@ -68,9 +68,9 @@ function test_flat_sediment(grid, biogeochemistry, model; timestepper = :QuasiAd
                                                       buoyancy = nothing,
                                                       tracers = nothing)
 
-    set_defaults!(model.biogeochemistry.sediment_model)
+    set_defaults!(model.biogeochemistry.sediment)
 
-    set_defaults!(biogeochemistry, model)
+    set_defaults!(biogeochemistry.underlying_biogeochemistry, model)
 
     simulation = Simulation(model, Δt = 50, stop_time = 1day)
 
@@ -78,7 +78,7 @@ function test_flat_sediment(grid, biogeochemistry, model; timestepper = :QuasiAd
 
     simulation.callbacks[:intercept_tendencies] = Callback(intercept_tendencies!; callsite = TendencyCallsite(), parameters = intercepted_tendencies)
 
-    N₀ = total_nitrogen(biogeochemistry, model) * volume(1, 1, 1, grid, Center(), Center(), Center()) + total_nitrogen(model.biogeochemistry.sediment_model) * Azᶠᶜᶜ(1, 1, 1, grid)
+    N₀ = total_nitrogen(biogeochemistry.underlying_biogeochemistry, model) * volume(1, 1, 1, grid, Center(), Center(), Center()) + total_nitrogen(biogeochemistry.sediment) * Azᶠᶜᶜ(1, 1, 1, grid)
 
     run!(simulation)
 
@@ -86,14 +86,14 @@ function test_flat_sediment(grid, biogeochemistry, model; timestepper = :QuasiAd
     @test any([any(intercepted_tendencies[tracer] .!= model.timestepper.Gⁿ[tracer]) for tracer in keys(model.tracers)])
 
     # the sediment tendencies are being updated
-    @test all([any(tend .!= 0.0) for tend in model.biogeochemistry.sediment_model.tendencies.Gⁿ])
-    @test all([any(tend .!= 0.0) for tend in model.biogeochemistry.sediment_model.tendencies.G⁻])
+    @test all([any(tend .!= 0.0) for tend in model.biogeochemistry.sediment.tendencies.Gⁿ])
+    @test all([any(tend .!= 0.0) for tend in model.biogeochemistry.sediment.tendencies.G⁻])
 
     # the sediment values are being integrated
     initial_values = (N_fast = 0.0230, N_slow = 0.0807, C_fast = 0.5893, C_slow = 0.1677, N_ref = 0.0, C_ref = 0.0, N_storage = 0.0)
-    @test all([any(field .!= initial_values[name]) for (name, field) in pairs(model.biogeochemistry.sediment_model.fields)])
+    @test all([any(field .!= initial_values[name]) for (name, field) in pairs(model.biogeochemistry.sediment.fields)])
 
-    N₁ = total_nitrogen(biogeochemistry, model) * volume(1, 1, 1, grid, Center(), Center(), Center()) + total_nitrogen(model.biogeochemistry.sediment_model) * Azᶠᶜᶜ(1, 1, 1, grid)
+    N₁ = total_nitrogen(biogeochemistry.underlying_biogeochemistry, model) * volume(1, 1, 1, grid, Center(), Center(), Center()) + total_nitrogen(biogeochemistry.sediment) * Azᶠᶜᶜ(1, 1, 1, grid)
 
     # conservations
     @test N₁ ≈ N₀
@@ -132,10 +132,10 @@ bottom_height(x, y) = -1000 + 500 * exp(- (x^2 + y^2) / 250) # a perfect hill
                     # get rid of incompatible combinations
                     run = ifelse((model == NonhydrostaticModel && (isa(grid, ImmersedBoundaryGrid) || isa(grid, LatitudeLongitudeGrid))) ||
                                  (model == HydrostaticFreeSurfaceModel && timestepper == :RungeKutta3) ||
-                                 (isa(sediment_model, SimpleMultiG) && isa(biogeochemistry, NutrientPhytoplanktonZooplanktonDetritus)), false, true)
+                                 (isa(sediment_model, SimpleMultiG) && isa(biogeochemistry.underlying_biogeochemistry, NutrientPhytoplanktonZooplanktonDetritus)), false, true)
                     if run
-                        @info "Testing sediment on $(typeof(architecture)) with $timestepper and $(display_name(sediment_model)) in $(display_name(biogeochemistry)) on $(display_name(grid)) with $(model)"
-                        @testset "$architecture, $timestepper, $(display_name(sediment_model)), $(display_name(biogeochemistry)), $(display_name(grid)), $(model)" test_flat_sediment(grid, biogeochemistry, model; timestepper)
+                        @info "Testing sediment on $(typeof(architecture)) with $timestepper and $(display_name(sediment_model)) on $(display_name(biogeochemistry.underlying_biogeochemistry))"
+                        @testset "$architecture, $timestepper, $(display_name(sediment_model)), $(display_name(biogeochemistry.underlying_biogeochemistry))" test_flat_sediment(grid, biogeochemistry, model; timestepper)
                     end
                 end
             end
