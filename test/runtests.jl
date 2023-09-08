@@ -1,4 +1,4 @@
-using OceanBioME, Documenter, Test
+using OceanBioME, Documenter, Test, Oceananigans
 
 if !(@isdefined arch)
     arch = CPU()
