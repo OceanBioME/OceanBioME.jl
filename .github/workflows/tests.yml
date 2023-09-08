@@ -1,4 +1,7 @@
 name: Tests
+
+runs-on: self-hosted
+
 on:
   push:
     branches:
