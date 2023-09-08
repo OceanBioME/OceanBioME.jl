@@ -10,7 +10,7 @@
 
 #! sbatch directives begin here ###############################
 #! Name of the job:
-#SBATCH -J gpujob
+#SBATCH -J OceanBioME-testing
 #! Which project should be charged (NB Wilkes2 projects end in '-GPU'):
 #SBATCH -A taylor-sl3-gpu
 #! How many whole nodes should be allocated?
@@ -55,7 +55,7 @@ module load rhel8/default-amp              # REQUIRED - loads the basic environm
 
 #! Full path to application executable: 
 #! TODO - workout how to make version get passed to this script
-application="/home/js2430/rds/hpc-work/OceanBioME-runner/_work/_temp/julia-1.9.3/bin/julia -O0 --color=yes --project test/gpu_runtests.jl"
+application="./check_tests.sh"
 
 #! Run options for the application:
 options=""
