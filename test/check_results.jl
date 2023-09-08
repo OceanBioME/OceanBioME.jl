@@ -1,16 +1,12 @@
 file_exists = isfile("results.test")
 
 while !(file_exists)
-    sleep(60)
-    file_exists = isfile("results.test")
+    sleep(10)
+    global file_exists = isfile("results.test")
 end
 
 result = open("results.test") do file
     read(file, String)
 end
 
-if result == "true"
-    exit()
-else
-    error("Tests failed")
-end
+result == 0 ? error("Tests failed") : nothing
