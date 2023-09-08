@@ -1,7 +1,5 @@
 name: Tests
 
-runs-on: self-hosted
-
 on:
   push:
     branches:
@@ -19,6 +17,7 @@ env:
 
 jobs:
   test:
+    runs-on: self-hosted
     name: Julia ${{ matrix.version }} - ${{ matrix.os }} - ${{ matrix.arch }} - ${{ github.event_name }}
     runs-on: ${{ matrix.os }}
     strategy:
