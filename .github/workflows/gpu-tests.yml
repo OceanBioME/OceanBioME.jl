@@ -27,7 +27,7 @@ jobs:
         run: "wget -N -P $RDS_HOME/_temp https://julialang-s3.julialang.org/bin/linux/x64/$JULIA_MINOR_VERSION/julia-$JULIA_VERSION-linux-x86_64.tar.gz;
               tar xf $RDS_HOME/_temp/julia-$JULIA_VERSION-linux-x86_64.tar.gz -C $RDS_HOME/_temp"
       - name: Clean repo
-        run: "git checkout main; git pull --force; git checkout $GITHUB_HEAD_REF"
+        run: "git checkout main; git pull --force; git checkout $GITHUB_HEAD_REF; git pull --force"
       - name: Run tests
         run: "sbatch .github/workflows/gpu-test.sbatch;
               /home/js2430/rds/hpc-work/OceanBioME-runner/_work/_temp/julia-1.9.3/bin/julia -O0 --color=yes --project test/check_results.jl"
