@@ -1,0 +1,35 @@
+name: CSD3 tests
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+    branches: 
+      - main
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: ${{ github.ref != 'refs/heads/main' }}
+
+env:
+  DATADEPS_ALWAYS_ACCEPT: true
+  JULIA_VERSION: "1.9.3"
+  JULIA_MINOR_VERSION: "1.9"
+  RDS_HOME: "/home/js2430/rds/hpc-work/OceanBioME-runner/_work"
+
+jobs:
+  test:
+    name: Deploy CSD3 tests
+    runs-on: self-hosted
+    steps:
+      - label: "initialize gpu enviroment"
+      commands:
+        - "wget -N -P $CSD3_HOME/_temp https://julialang-s3.julialang.org/bin/linux/x64/$JULIA_MINOR_VERSION/julia-$JULIA_VERSION-linux-x86_64.tar.gz"
+        - "tar xf $CSD3_HOME/_temp/julia-$JULIA_VERSION-linux-x86_64.tar.gz -C $CSD3_HOME/_temp"
+
+        # Run the tests on slurm
+        - "sbatch .github/workflows/gpu-test.sbatch"
+
+        # Clean up
+        - "rm -rf $CSD3_HOME/_temp/julia-$JULIA_VERSION" # presumably this happens anyway

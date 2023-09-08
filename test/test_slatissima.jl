@@ -10,7 +10,6 @@ function intercept_tendencies!(model, intercepted_tendencies)
 end
 
 @testset "SLatissima particle setup and conservations" begin
-    arch = CPU()
     grid = RectilinearGrid(arch; size=(1, 1, 1), extent=(1, 1, 1))
 
     # Initial properties
