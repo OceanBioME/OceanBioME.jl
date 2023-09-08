@@ -24,8 +24,8 @@ jobs:
     runs-on: self-hosted
     steps:
       - name: Download julia"
-        run: "wget -N -P $CSD3_HOME/_temp https://julialang-s3.julialang.org/bin/linux/x64/$JULIA_MINOR_VERSION/julia-$JULIA_VERSION-linux-x86_64.tar.gz"
-        run: "tar xf $CSD3_HOME/_temp/julia-$JULIA_VERSION-linux-x86_64.tar.gz -C $CSD3_HOME/_temp"
+        run: "wget -N -P $CSD3_HOME/_temp https://julialang-s3.julialang.org/bin/linux/x64/$JULIA_MINOR_VERSION/julia-$JULIA_VERSION-linux-x86_64.tar.gz;
+              tar xf $CSD3_HOME/_temp/julia-$JULIA_VERSION-linux-x86_64.tar.gz -C $CSD3_HOME/_temp"
       - name: Run tests
         run: "sbatch .github/workflows/gpu-test.sbatch"
       - name: Clean up
