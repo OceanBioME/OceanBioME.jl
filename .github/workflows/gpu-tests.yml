@@ -28,6 +28,6 @@ jobs:
               tar xf $RDS_HOME/_temp/julia-$JULIA_VERSION-linux-x86_64.tar.gz -C $RDS_HOME/_temp"
       - name: Run tests
         run: "sbatch .github/workflows/gpu-test.sbatch;
-              /home/js2430/rds/hpc-work/OceanBioME-runner/_work/_temp/julia-1.9.3/bin/julia -O0 --color=yes --project .github/workflows/check_results.jl"
+              /home/js2430/rds/hpc-work/OceanBioME-runner/_work/_temp/julia-1.9.3/bin/julia -O0 --color=yes --project test/check_results.jl"
       - name: Clean up
         run: "rm -rf $RDS_HOME/_temp/julia-$JULIA_VERSION; rm results.test" # presumably this happens anyway
