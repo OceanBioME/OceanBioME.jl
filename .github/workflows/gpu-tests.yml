@@ -33,4 +33,4 @@ jobs:
               /home/js2430/rds/hpc-work/OceanBioME-runner/_work/_temp/julia-1.9.3/bin/julia -O0 --color=yes --project test/check_results.jl"
       - name: Clean up
         if: always()
-        run: "rm -rf $RDS_HOME/_temp/julia-$JULIA_VERSION; rm results.test" # presumably this happens anyway
+        run: "rm -rf $RDS_HOME/_temp/julia-$JULIA_VERSION; rm results.test; rm output.test" # presumably this happens anyway
