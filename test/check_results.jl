@@ -1,9 +1,7 @@
-using Oceananigans.Units
-
 file_exists = isfile("results.test")
 
 while !(file_exists)
-    sleep(1minute)
+    sleep(60)
     file_exists = isfile("results.test")
 end
 
