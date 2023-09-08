@@ -3,20 +3,23 @@ module Sediments
 export SimpleMultiG, InstantRemineralisation
 
 using KernelAbstractions
-using OceanBioME: ContinuousFormBiogeochemistry, BoxModelGrid
+
+using OceanBioME: Biogeochemistry, BoxModelGrid
+
 using Oceananigans
 using Oceananigans.Architectures: device, architecture, arch_array
 using Oceananigans.Utils: launch!
 using Oceananigans.Advection: advective_tracer_flux_z
 using Oceananigans.Units: day
-using Oceananigans.Fields: CenterField, Face
+using Oceananigans.Fields: ConstantField
 using Oceananigans.Biogeochemistry: biogeochemical_drift_velocity
 using Oceananigans.Grids: zspacing
 using Oceananigans.Operators: volume
-using Oceananigans.Fields: Center, ConstantField
 using Oceananigans.ImmersedBoundaries: ImmersedBoundaryGrid, immersed_cell
 
+
 import Adapt: adapt_structure, adapt
+import Oceananigans.Biogeochemistry: update_tendencies!
 
 abstract type AbstractSediment end
 abstract type FlatSediment <: AbstractSediment end
@@ -25,9 +28,7 @@ abstract type FlatSediment <: AbstractSediment end
 
 sediment_fields(::AbstractSediment) = ()
 
-@inline update_sediment_tendencies!(bgc, sediment, model) = nothing
-
-function update_sediment_tendencies!(bgc, sediment::FlatSediment, model)
+function update_tendencies!(bgc, sediment::FlatSediment, model)
     arch = model.grid.architecture
 
     for (i, tracer) in enumerate(sediment_tracers(sediment))
@@ -49,6 +50,10 @@ end
 @inline nitrogen_flux() = 0
 @inline carbon_flux() = 0
 @inline remineralisation_receiver() = nothing
+
+@inline nitrogen_flux(i, j, k, grid, advection, bgc::Biogeochemistry, tracers) = nitrogen_flux(i, j, k, grid, advection, bgc.underlying_biogeochemistry, tracers)
+@inline carbon_flux(i, j, k, grid, advection, bgc::Biogeochemistry, tracers) = carbon_flux(i, j, k, grid, advection, bgc.underlying_biogeochemistry, tracers)
+@inline remineralisation_receiver(bgc::Biogeochemistry) = remineralisation_receiver(bgc.underlying_biogeochemistry)
 
 @inline advection_scheme(advection, val_tracer) = advection
 @inline advection_scheme(advection::NamedTuple, val_tracer::Val{T}) where T = advection[T]

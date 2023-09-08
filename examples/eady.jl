@@ -119,12 +119,6 @@ simulation.output_writers[:fields] = JLD2OutputWriter(model, merge(model.tracers
                                                       filename = "eady_turbulence_bgc",
                                                       overwrite_existing = true)
 
-# Prevent the tracer values going negative - this is especially important in this model while no positivity
-# preserving diffusion is implemented.
-scale_negative_tracers = ScaleNegativeTracers(; model, tracers = (:NO₃, :NH₄, :P, :Z, :sPOM, :bPOM, :DOM))
-simulation.callbacks[:neg] = Callback(scale_negative_tracers; callsite = UpdateStateCallsite())
-simulation.callbacks[:nan_tendencies] = Callback(remove_NaN_tendencies!; callsite = TendencyCallsite())
-simulation.callbacks[:abort_zeros] = Callback(zero_negative_tracers!; callsite = UpdateStateCallsite())
 nothing #hide
 
 # Run the simulation
@@ -141,6 +135,7 @@ times = ζ.times
 
 xζ, yζ, zζ = nodes(ζ)
 xc, yc, zc = nodes(P)
+nothing #hide
 
 # and plot.
 

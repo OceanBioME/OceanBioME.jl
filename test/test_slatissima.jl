@@ -40,7 +40,7 @@ end
     initial_kelp_N = sum(particles.A .* particles.structural_dry_weight_per_area .* (particles.N .+ particles.structural_nitrogen)) ./ (14 * 0.001)
 
     initial_tracer_C = sum(model.tracers.sPOC) + sum(model.tracers.bPOC) + sum(model.tracers.DOC) + sum(model.tracers.DIC) + 
-                       sum(model.tracers.P * (1 + model.biogeochemistry.organic_carbon_calcate_ratio) .+ model.tracers.Z) * model.biogeochemistry.phytoplankton_redfield 
+                       sum(model.tracers.P * (1 + model.biogeochemistry.underlying_biogeochemistry.organic_carbon_calcate_ratio) .+ model.tracers.Z) * model.biogeochemistry.underlying_biogeochemistry.phytoplankton_redfield 
 
     initial_kelp_C = sum(particles.A .* particles.structural_dry_weight_per_area .* (particles.C .+ particles.structural_carbon)) ./ (12 * 0.001)
 
@@ -54,7 +54,7 @@ end
     final_kelp_N = sum(particles.A .* particles.structural_dry_weight_per_area .* (particles.N .+ particles.structural_nitrogen)) ./ (14 * 0.001)
 
     final_tracer_C = sum(model.tracers.sPOC) + sum(model.tracers.bPOC) + sum(model.tracers.DOC) + sum(model.tracers.DIC) + 
-                     sum(model.tracers.P * (1 + model.biogeochemistry.organic_carbon_calcate_ratio) .+ model.tracers.Z) * model.biogeochemistry.phytoplankton_redfield 
+                     sum(model.tracers.P * (1 + model.biogeochemistry.underlying_biogeochemistry.organic_carbon_calcate_ratio) .+ model.tracers.Z) * model.biogeochemistry.underlying_biogeochemistry.phytoplankton_redfield 
     final_kelp_C = sum(particles.A .* particles.structural_dry_weight_per_area .* (particles.C .+ particles.structural_carbon)) ./ (12 * 0.001)
 
     # kelp is being integrated

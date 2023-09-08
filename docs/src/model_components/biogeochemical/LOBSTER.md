@@ -13,15 +13,16 @@ julia> grid = RectilinearGrid(size=(3, 3, 30), extent=(10, 10, 200));
 
 julia> bgc_model = LOBSTER(; grid, carbonates = true)
 Lodyc-DAMTP Ocean Biogeochemical Simulation Tools for Ecosystem and Resources (LOBSTER) model (Float64) 
- Light Attenuation Model: 
-    └── Two-band light attenuation model (Float64)
  Optional components:
     ├── Carbonates ✅ 
     ├── Oxygen ❌ 
     └── Variable Redfield Ratio ❌
  Sinking Velocities:
     ├── sPOM: 0.0 to -3.47e-5 m/s 
-    └── bPOM: 0.0 to -0.0023148148148148147 m/s
+    └── bPOM: 0.0 to -0.0023148148148148147 m/s 
+ Light attenuation: Two-band light attenuation model (Float64)
+ Sediment: Nothing
+ Particles: Nothing
 ```
 
 ## Model equations
