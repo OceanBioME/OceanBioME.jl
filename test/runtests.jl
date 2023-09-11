@@ -1,4 +1,4 @@
-using OceanBioME, Documenter, Test, CUDA
+using OceanBioME, Documenter, Test, CUDA, Oceananigans
 
 architecture = CUDA.has_cuda() ? GPU() : CPU()
 
