@@ -47,14 +47,13 @@ function test_NPZD(grid, sinking, open_bottom)
     return nothing
 end
 
-for arch in (CPU(), )
-    grid = RectilinearGrid(arch; size=(3, 3, 6), extent=(1, 1, 2))
-    for sinking = (false, true), open_bottom = (false, true)
-        if !(sinking && open_bottom) # no sinking is the same with and without open bottom
-            @info "Testing on $(typeof(arch)) with sinking $(sinking ? :✅ : :❌), open bottom $(open_bottom ? :✅ : :❌))"
-            @testset "$arch, $sinking, $open_bottom" begin
-                test_NPZD(grid, sinking, open_bottom)
-            end
+grid = RectilinearGrid(architecture; size=(3, 3, 6), extent=(1, 1, 2))
+
+for sinking = (false, true), open_bottom = (false, true)
+    if !(sinking && open_bottom) # no sinking is the same with and without open bottom
+        @info "Testing on $(typeof(arch)) with sinking $(sinking ? :✅ : :❌), open bottom $(open_bottom ? :✅ : :❌))"
+        @testset "$arch, $sinking, $open_bottom" begin
+            test_NPZD(grid, sinking, open_bottom)
         end
     end
 end

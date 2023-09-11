@@ -1,4 +1,6 @@
-using OceanBioME, Documenter, Test
+using OceanBioME, Documenter, Test, CUDA
+
+architecture = CUDA.has_cuda() ? GPU() : CPU()
 
 include("test_utils.jl")
 include("test_light.jl")

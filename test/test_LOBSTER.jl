@@ -114,14 +114,13 @@ end
 
 n_timesteps = 100
 
-for arch in (CPU(), )
-    grid = RectilinearGrid(arch; size=(1, 1, 1), extent=(1, 1, 2))
-    for open_bottom = (false, true), sinking = (false, true), variable_redfield = (false, true), oxygen = (false, true), carbonates = (false, true)
-        if !(sinking && open_bottom) # no sinking is the same with and without open bottom
-            @info "Testing on $(typeof(arch)) with carbonates $(carbonates ? :✅ : :❌), oxygen $(oxygen ? :✅ : :❌), variable redfield $(variable_redfield ? :✅ : :❌), sinking $(sinking ? :✅ : :❌), open bottom $(open_bottom ? :✅ : :❌))"
-            @testset "$arch, $carbonates, $oxygen, $variable_redfield, $sinking, $open_bottom" begin
-                test_LOBSTER(grid, carbonates, oxygen, variable_redfield, sinking, open_bottom, n_timesteps)
-            end
+grid = RectilinearGrid(architecture; size=(1, 1, 1), extent=(1, 1, 2))
+
+for open_bottom = (false, true), sinking = (false, true), variable_redfield = (false, true), oxygen = (false, true), carbonates = (false, true)
+    if !(sinking && open_bottom) # no sinking is the same with and without open bottom
+        @info "Testing on $(typeof(arch)) with carbonates $(carbonates ? :✅ : :❌), oxygen $(oxygen ? :✅ : :❌), variable redfield $(variable_redfield ? :✅ : :❌), sinking $(sinking ? :✅ : :❌), open bottom $(open_bottom ? :✅ : :❌))"
+        @testset "$arch, $carbonates, $oxygen, $variable_redfield, $sinking, $open_bottom" begin
+            test_LOBSTER(grid, carbonates, oxygen, variable_redfield, sinking, open_bottom, n_timesteps)
         end
     end
 end

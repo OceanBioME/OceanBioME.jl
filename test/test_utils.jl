@@ -46,9 +46,7 @@ function test_negative_zeroing(arch)
 end
 
 @testset "Test Utils" begin
-    for arch in (CPU(), )
-        @test test_column_diffusion_timescale(arch)
-        @test test_negative_scaling(arch)
-        @test test_negative_zeroing(arch)
-    end
+    @test test_column_diffusion_timescale(architecture)
+    @test test_negative_scaling(architecture)
+    @test test_negative_zeroing(architecture)
 end

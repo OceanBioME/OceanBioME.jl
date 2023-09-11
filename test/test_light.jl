@@ -42,13 +42,11 @@ function test_two_band(grid, bgc, model_type)
     return all(results_PAR .≈ reverse(expected_PAR))
 end
 
-archs = (CPU(), )
 
 @testset "Light attenuaiton model" begin 
     for model in (NonhydrostaticModel, HydrostaticFreeSurfaceModel),
-        arch in archs,
-        grid in (RectilinearGrid(arch; size = (2, 2, 2), extent = (2, 2, 2)), 
-                 LatitudeLongitudeGrid(arch; size = (5, 5, 2), longitude = (-180, 180), latitude = (-85, 85), z = (-2, 0))),
+        grid in (RectilinearGrid(architecture; size = (2, 2, 2), extent = (2, 2, 2)), 
+                 LatitudeLongitudeGrid(architecture; size = (5, 5, 2), longitude = (-180, 180), latitude = (-85, 85), z = (-2, 0))),
         bgc in (LOBSTER, NutrientPhytoplanktonZooplanktonDetritus) # this is now redundant since each model doesn't deal with the light separatly
 
         if !((model == NonhydrostaticModel) && ((grid isa LatitudeLongitudeGrid) | (grid isa OrthogonalSphericalShellGrid)))
