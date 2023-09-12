@@ -49,6 +49,7 @@ To date, about 25% of anthropogenic carbon emissions have been taken up by the o
 This occurs through complex interactions between physics, chemistry, and biology, much of which is poorly understood. 
 Due to the vast size of the ocean and the sparsity of data; modelling and data assimilation play a vital role in quantifying the ocean carbon cycle. 
 Traditionally ocean biogeochemical (BGC) modelling involves large and inflexible code bases written in high-performance but low-level languages which require huge computational resources to execute. 
+Modern ocean dynamics models (e.g. Oceananigans.jl) ease the difficulty as they allow easy coupling with the physics components, but still require the user to implement all of the necessary BGC tools from the ground up.
 This causes a barrier to experimentation and innovation as users must develop expertise in both the science and complex code.
 
 One area where novel ideas must be explored with BGC codes is assessing ocean carbon dioxide removal (OCDR) strategies. Quantifying the effectiveness and identifying the impacts of OCDR is challenging due to the aforementioned complexity of the ocean BGC system.
@@ -128,10 +129,11 @@ This feature facilitates rapid calibration of model parameters, providing a powe
 A key metric for the validity of biogeochemical systems is the conservation of elements such as carbon and nitrogen in the system.
 We therefore continuously test the implemented models in a variety of simple scenarios (i.e. isolated, with/without air-sea flux, with/without sediment) to ensure that conservation conditions are met, and we will continue to add tests for any new models.
 Additionally, we check ``OceanBioME.jl`` utilities through standard tests such as comparison to analytical solutions for light attenuation, and conservation of tracers for active particle exudation and sinking.
+We plan to expand the features of ``OceanBioME.jl`` in the future and very much welcome user contributions.
 
 Finally, this software is currently facilitating multiple research projects into ocean CDR which would have been significantly harder with other solutions.
-For example, Chen (In prep.) is using the active particle coupling provided to investigate the effects of location and planting density of kelp in the open ocean on their carbon drawdown effect, as in the example above.
-Additionally, Strong-Wright (In prep.) is using the coupling of both the biogeochemistry and easy interface to couple the physics to study flow interactions with a fully resolved giant kelp forest model including the effects on nutrient transport and distribution.
+For example, Chen (In prep.) uses the active particle coupling provided to investigate the effects of location and planting density of kelp in the open ocean on their carbon drawdown effect, as in the example above.
+Additionally, Strong-Wright (In prep.) uses the coupling of both the biogeochemistry and easy interface to couple the physics to study flow interactions with a fully resolved giant kelp forest model including the effects on nutrient transport and distribution.
 
 # Examples
 
@@ -148,9 +150,6 @@ $^4$ `ScaleNegativeTracers`\
 $^5$ `NutrientPhytoplanktonZooplanktonDetritus`\
 $^6$ `SLatissima`
 
-<!---
-TODO: add eady plotting script
---->
 # Acknowledgements
 
 We would like to thank the [Climate Modeling Alliance](https://clima.caltech.edu) team and ``Oceananigans.jl`` contributors for their fantastic project. We are also very grateful for the support and funding of the [Centre for Climate Repair, Cambridge](https://www.climaterepair.cam.ac.uk/) and the [Gordon and Betty Moore Foundation](https://www.moore.org/).
