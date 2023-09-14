@@ -37,7 +37,7 @@ function test_two_band(grid, bgc, model_type)
     expected_PAR = 100.0 .* [exp(- 0.5 * kʳ - ∫Chlʳ[1] * χʳ) + exp(- 0.5 * kᵇ - ∫Chlᵇ[1] * χᵇ),
                              exp(- 1.5 * kʳ - ∫Chlʳ[2] * χʳ) + exp(- 1.5 * kᵇ - ∫Chlᵇ[2] * χᵇ)] ./ 2
 
-    results_PAR = convert(Array, biogeochemical_auxiliary_fields(biogeochemistry).PAR)[1, 1, 1:2]
+    results_PAR = Array(interior(biogeochemical_auxiliary_fields(biogeochemistry).PAR))[1, 1, 1:2]
 
     return all(results_PAR .≈ reverse(expected_PAR))
 end
