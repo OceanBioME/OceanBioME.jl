@@ -48,67 +48,67 @@ bibliography: paper.bib
 To date, about 25% of anthropogenic carbon emissions have been taken up by the ocean [@Friedlingstein2022]. 
 This occurs through complex interactions between physics, chemistry, and biology, much of which is poorly understood. 
 Due to the vast size of the ocean and the sparsity of data; modelling and data assimilation play a vital role in quantifying the ocean carbon cycle. 
-Traditionally ocean biogeochemical (BGC) modelling involves large and inflexible code bases written in high-performance but low-level languages which require huge computational resources to execute. 
-Modern ocean dynamics models (e.g. Oceananigans.jl) ease the difficulty as they allow easy coupling with the physics components, but still require the user to implement all of the necessary BGC tools from the ground up.
-This causes a barrier to experimentation and innovation as users must develop expertise in both the science and complex code.
+Traditionally ocean biogeochemical (BGC) modelling involves large and inflexible code bases written in high-performance but low-level languages. 
+Using and modifying these models usually requires knowledge of the details of the numerical implementation (e.g. the grid layout and time-stepping schemes). 
+Most traditional BGC models also require CPU-based supercomputers to run quickly, which presents a barrier to experimentation and innovation.
 
 One area where novel ideas must be explored with BGC codes is assessing ocean carbon dioxide removal (OCDR) strategies. Quantifying the effectiveness and identifying the impacts of OCDR is challenging due to the aforementioned complexity of the ocean BGC system.
 Moreover, field trials of OCDR interventions are generally small-scale and targeted, while the intervention required to have a climate-scale impact is regional or global.
 This necessitates adaptable, easy-to-use, and verifiable BGC modelling tools which can be used to assess OCDR strategies at the fast pace with which they are being developed [@NationalAcademies2022].
 We have built ``OceanBioME.jl`` to meet these challenges by creating a tool that provides a modular interface to the different components, within the ocean modelling framework provided by ``Oceananigans.jl``.
 This allows easy access to a suite of biogeochemical models ranging from simple idealized to full-complexity models.
+``Oceananignas.jl`` and ``OceanBioME.jl`` are built from the ground-up to exploit the power of graphical processor units (GPUs), while also retaining the ability to run on CPUs.
 The flexibility of the ``Oceananigans.jl`` framework allows ``OceanBioME.jl`` to be applied across a wide range of scales and use cases, including small-scale large-eddy simulations and regional and global models.
 
 # Summary
 
-``OceanBioME.jl`` is a flexible modelling environment written in Julia [@julia] for modelling the coupled interactions between ocean biogeochemistry, carbonate chemistry, and physics.
-``OceanBioME.jl`` can be used as a stand-alone box model, or integrated into ``Oceananigans.jl`` [@Oceananigans] simulations of ocean dynamics in one, two, or three dimensions.
+``OceanBioME.jl`` is a flexible modelling environment written in Julia [@julia] for simulating the coupled interactions between ocean biogeochemistry, carbonate chemistry, and physics.
+``OceanBioME.jl`` can be used as a stand-alone box model, or integrated into ``Oceananigans.jl`` [@Oceananigans] for coupled physical/biogeochemical simulations in one, two, or three dimensions.
 As a result, ``OceanBioME.jl`` and ``Oceananigans.jl`` can be used to simulate the biogeochemical response across an enormous range of scales: from surface boundary layer turbulence at the sub-meter scale to eddying global ocean simulations at the planetary scale, and on computational systems ranging from laptops to supercomputers.
-An example of a problem involving small-scale flow features is shown in \autoref{eady}, which shows a simulation of a sub-mesoscale eddy in a 1km x 1km horizontal domain with an intermediate complexity biogeochemical model and a kelp growth model solved along the trajectories of drifting buoys (details of examples mentioned in this paper are listed at the end).
+An example of a problem involving small-scale flow features is shown in \autoref{eady}, which shows a simulation of a sub-mesoscale eddy in a 1km x 1km horizontal domain with an intermediate complexity biogeochemical model and a kelp growth model solved along the trajectories of drifting buoys (a list of of examples shown in this paper and links to source code are given at the end of the paper).
 ``OceanBioME.jl`` leverages Julia's multiple dispatch and effective inline capabilities to fuse its computations directly into existing ``Oceananigans.jl`` kernels, thus maintaining ``Oceananigans.jl``'s bespoke performance, memory- and cost-efficiency on GPUs in ``OceanBioME.jl``-augmented simulations.
 
-![Here we replicate the Eady problem where a background buoyancy gradient and corresponding thermal wind generate a sub-mesoscale eddy, roughly following the setup of @taylor:2016.
-To this physical setup, we added a medium complexity (9 tracers) biogeochemical model, some of which are shown above.
-On top of this, we added particles modelling the growth of sugar kelp which are free-floating and advected by the flow, and carbon dioxide exchange from the air.
+![In this simulation of baroclinic instability in the Eady problem, a background buoyancy gradient and corresponding thermal wind generates a sub-mesoscale eddy, roughly following the setup of @taylor:2016.
+To this physical setup, we added a medium complexity (9 tracers) biogeochemical model, some components of which are shown above.
+On top of this, we added particles modelling the growth of sugar kelp, which are free-floating and advected by the flow, and carbon dioxide exchange from the air.
 Thanks to Julia's speed and efficiency the above model (1 km × 1 km × 100 m with 64 × 64 × 16 grid points) took about 30 minutes of computing time to simulate 10 days of evolution on an Nvidia P100 GPU. 
 Panel (a) shows the domain with the colour representing the concentration of various biogeochemical tracer fields: inorganic carbon, organic carbon (dissolved and particulate), phytoplankton, and nutrients. 
-The increase in concentration in the centre of the eddy can be seen, as well as carbon being subducted (most visible in the xz face in the organic carbon).
-Additionally, points on the surface represent the kelp particle positions, with the colour representing the range of frond size.
+The increase in organic carbon concentration in the centre of the eddy can be seen, as well as carbon being subducted (most visible in the xz face in the organic carbon).
+Points on the surface represent the kelp particle positions, with the colour representing the range of frond size.
 Panel (b) shows the carbon stored in each kelp frond, highlighting the variability depending on the nutrition availability in each particle's location history.
 Figure made with ``Makie.jl`` [@makie]. \label{eady}](eady_example.png)
 
 ``OceanBioME.jl`` is built with a highly modular design that allows user control and customization.
-There are two distinct module types implemented in ``OceanBioME.jl``:
+There are three distinct module types implemented in ``OceanBioME.jl``:
 
 - First, we provide tracer-based ecosystem modules in `AdvectedPopulations` as a set of coupled ordinary differential equations (ODEs) which evolve the concentration of the tracer.
 These equations can be solved by ``OceanBioME.jl`` as box models.
-This is useful for both testing and running simple educational models, additionally, it is useful for understanding the behaviour of biogeochemical models without the effects of the dynamics.
-The same equations can be integrated by ``Oceananigans.jl`` to provide where the tracers are also advected and diffused.
+This is useful for both testing and running simple educational models and for understanding the behaviour of biogeochemical models without the effects of the physical dynamics.
+The same tracer equations can then be seamlessly integrated into ``Oceananigans.jl`` to add the effects of advection and diffusion.
 
 - The second module type is `Individual` "biologically active" particles.
-These consist of individual-based models solved along particle paths and can be coupled with the tracer-based modules and physics from ``Oceananigans.jl``.
+These consist of individual-based models solved along particle paths, which can be coupled with the tracer-based modules and physics from ``Oceananigans.jl``.
 The biologically active particles can be advected by the currents, and/or they can move according to prescribed dynamics.
 For example, migrating zooplankton or fish can be modelled with biologically active particles and ``OceanBioME.jl`` allows these to interact with tracer-based components such as phytoplankton or oxygen.
 
-For example, the `GasExchange` submodule calculates the carbon dioxide and oxygen flux at the sea surface, while the `Sediments` modules calculate fluxes of carbon and oxygen at the seafloor.
-
-We currently provide a simple Nutrient-Phytoplankton-Zooplankton-Detritus (NPZD) model [@npzd], and an intermediate complexity model, LOBSTER [@lobster], we have set up a straightforward "plug and play" framework to add additional tracers such as carbonate and oxygen chemistry systems and additional forcing. 
-A key feature of this package is the easy ability to modify models or add different formulations. 
-If a user wanted to implement a different model they could use the existing ones as a template and modify only a few lines of code where the ODEs are defined as functions.
-They can then insert their model into our abstracted framework to easily couple with the other components such as light attenuation and sediment.
-We provide a detailed tutorial describing how to-do this, which also serves as a good description of how our models are setup.
-
-These `AdvectedPopulations` are supported by `Boundaries` modules which are easy to apply and provide information at the top and bottom of the ocean.
+- The `AdvectedPopulations` are supported by `Boundaries` modules which are easy to apply and provide information at the top and bottom of the ocean.
 We have implemented comprehensive air-sea flux models [e.g. @wanninkhof:1992] within the `GasExchange` submodule to calculate carbon dioxide and oxygen flux at the sea surface, and sediment models [e.g. @soetaert:2000] which calculate fluxes of carbon and oxygen at the seafloor.
-We focus on the simulation of idealized sub-mesoscale systems, but this flexible framework allows users to model problems of any scale.
-For example, \autoref{global} shows the annual average surface phytoplankton concentration from a near-global model NPZD model run.
+
+We currently provide a simple Nutrient-Phytoplankton-Zooplankton-Detritus (NPZD) model [@npzd], and an intermediate complexity model, LOBSTER [@lobster] and we have created a straightforward "plug and play" framework to add additional tracers such as carbonate and oxygen chemistry systems and additional forcing. 
+A key feature of this package is the ability to easily modify the model equations or add different formulations, allowing exploration and experimentation. 
+If a user wanted to implement a different model they could use the existing ones as a template and modify only a few lines of code where the ODEs are defined as functions.
+The user can then insert their model into our abstracted framework to couple the model with the other components such as light attenuation and sediments.
+We provide a detailed tutorial describing how to do this, which also serves as a description of how our models are created.
 This framework is made possible by our contributions to ``Oceananigans.jl``, adding a streamlined user interface to swap biogeochemical models with no modification to other model configurations.
 Our interface also facilitates rapid prototyping, as models can be implemented and swapped easily by just extending a few key functions.
 This flexibility and ease-of-use is unmatched in existing biogeochemical models.
 
-![Here we show the annual average surface phytoplankton concentration from a near-global NPZD model run. 
-It shows reasonably good reproduction of large-scale patterns for such a simple and uncalibrated model but demonstrates further work such as nutrient input from rivers and tuning physics parametrisations that are required in the future.
-We ran this model with a 1° horizontal resolution and 48 (irregularly spaced) vertical points.
+``Oceananigans.jl`` includes several dynamical cores which include a fully non-hydrostatic model capable of large-eddy simulations (LES) and a free-surface hydrostatic model. This allows ``OceanBioME.jl`` to be used to simulate biogeochemistry across a vast range of scales using the same BGC model formulation.
+As an example, \autoref{global} shows the annual average surface phytoplankton concentration from a near-global model NPZD model.
+
+![The annual average surface phytoplankton concentration from a near-global NPZD model run. 
+Although the model is uncalibrated and is missing some important processes (e.g. river input), it reproduces the large-scale patterns reasonably well. 
+This simulation used 1° horizontal resolution and 48 (irregularly spaced) vertical points.
 It took around 45 minutes per year to run on an Nvidia A100 GPU when integrating the physics, or less than 5 minutes per year when using pre-calculated velocity fields.
 Figure made with ``Makie.jl`` [@makie]. \label{global}](phytoplankton.png)
 
@@ -120,20 +120,20 @@ Biologically active particles can also be used to model OCDR deployment strategi
 \autoref{column} shows a simple column model with an OCDR intervention (macroalgae growth) added after a warm-up period, which increases the carbon export of the system.
 
 ![Results of a 1D model, forced by idealised light and mixing, which qualitatively reproduces the biogeochemical cycles in the North Atlantic.
-We then add kelp (500 frond / m² in the top 50 m of water) in December of the 2ⁿᵈ year (black vertical line) which causes an increase in air-sea carbon dioxide exchange and sinking export, as shown in panel (d). Panel (a) shows the phytoplankton growth cycle which also changes in response to the altered nutrient dynamics visible in panel (b). Panel (c) shows the kelp growth with the front size in (i), the carbon storage in (ii), and the nitrogen storage in (iii). 
+Kelp (500 frond / m² in the top 50 m of water) is added in December of the 2ⁿᵈ year (black vertical line) which causes an increase in air-sea carbon dioxide exchange and sinking export, as shown in panel (d). Panel (a) shows the phytoplankton growth cycle which also changes in response to the altered nutrient dynamics visible in panel (b). Panel (c) shows the kelp growth with the front size in (i), the carbon storage in (ii), and the nitrogen storage in (iii). 
 Figure made with ``Makie.jl`` [@makie]. \label{column}](column_example.png)
 
 The implementation of OceanBioME.jl models allows for seamless integration with data assimilation packages, such as ``EnsembleKalmanProcesses.jl`` [@ekp]. 
-This feature facilitates rapid calibration of model parameters, providing a powerful utility for integrating observations and models, with the potential to improve model skill and identify key sources of uncertainty.
+This enables rapid calibration of model parameters and provides a powerful utility for integrating observations and models, with the potential to improve model skill and identify key sources of uncertainty.
 
 A key metric for the validity of biogeochemical systems is the conservation of elements such as carbon and nitrogen in the system.
-We therefore continuously test the implemented models in a variety of simple scenarios (i.e. isolated, with/without air-sea flux, with/without sediment) to ensure that conservation conditions are met, and we will continue to add tests for any new models.
+We therefore continuously test the implemented models in a variety of simple scenarios (i.e. isolated, with/without air-sea flux, with/without sediment) to ensure that conservation conditions are met, and we will continue to add tests for any models.
 Additionally, we check ``OceanBioME.jl`` utilities through standard tests such as comparison to analytical solutions for light attenuation, and conservation of tracers for active particle exudation and sinking.
 We plan to expand the features of ``OceanBioME.jl`` in the future and very much welcome user contributions.
 
-Finally, this software is currently facilitating multiple research projects into ocean CDR which would have been significantly harder with other solutions.
-For example, Chen (In prep.) uses the active particle coupling provided to investigate the effects of location and planting density of kelp in the open ocean on their carbon drawdown effect, as in the example above.
-Additionally, Strong-Wright (In prep.) uses the coupling of both the biogeochemistry and easy interface to couple the physics to study flow interactions with a fully resolved giant kelp forest model including the effects on nutrient transport and distribution.
+Finally, this software is currently facilitating multiple research projects into ocean CDR which would have been significantly harder with other models.
+For example, Chen et al. (in prep.) uses the active particle coupling provided to investigate the effects of location and planting density of kelp in the open ocean on their carbon drawdown effect, as in the example above.
+Strong-Wright et al. (n prep.) uses the coupling of both the biogeochemistry and easy interface to couple the physics to study flow interactions with a fully resolved giant kelp forest model including the effects on nutrient transport and distribution.
 
 # Examples
 
