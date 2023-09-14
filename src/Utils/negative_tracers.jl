@@ -39,7 +39,7 @@ struct ScaleNegativeTracers{FA, SA, W}
     warn :: W
 
     ScaleNegativeTracers(tracers::FA, scalefactors::SA, warn::W) where {FA, SA, W} =
-        new{FA, SA, W}(tracers, scalefactors, warn)
+        warn ? error("Warning not currently implemented") : new{FA, SA, W}(tracers, scalefactors, warn)
 end
 
 adapt_structure(to, snt::ScaleNegativeTracers) = ScaleNegativeTracers(adapt(to, snt.tracers),
@@ -62,7 +62,7 @@ Future plans include implement a positivity-preserving timestepping scheme as th
 
 If `warn` is true then scaling will raise a warning.
 """
-function ScaleNegativeTracers(tracers; scalefactors = NamedTuple{tracers}(ones(length(tracers))), warn = false)
+function ScaleNegativeTracers(tracers; scalefactors = ones(length(tracers)), warn = false)
     if length(scalefactors) != length(tracers)
         error("Incorrect number of scale factors provided")
     end
@@ -79,40 +79,49 @@ If `warn` is true then scaling will raise a warning.
 """
 function ScaleNegativeTracers(model::AbstractBiogeochemistry; warn = false)
     tracers = conserved_tracers(model)
-    scalefactors = NamedTuple{tracers}(ones(length(tracers)))
+    scalefactors = ones(length(tracers))
 
     return ScaleNegativeTracers(tracers, scalefactors, warn)
 end
 
 function update_biogeochemical_state!(model, scale::ScaleNegativeTracers)
     workgroup, worksize = work_layout(model.grid, :xyz)
+
     dev = device(model.grid.architecture)
+
     scale_for_negs_kernel! = scale_for_negs!(dev, workgroup, worksize)
-    scale_for_negs_kernel!(model.tracers, scale.tracers, scale.scalefactors)
+
+    tracers_to_scale = Tuple(model.tracers[tracer_name] for tracer_name in keys(scale.tracers))
+
+    scale_for_negs_kernel!(tracers_to_scale, scale.scalefactors)
 end
 
-@kernel function scale_for_negs!(fields, tracers, scalefactors)
+@kernel function scale_for_negs!(tracers, scalefactors)
     i, j, k = @index(Global, NTuple)
-    t, p = 0.0, 0.0
-    @unroll for (idx, tracer) in enumerate(tracers)
-        field = @inbounds fields[tracer][i, j, k]
-        scalefactor = @inbounds scalefactors[tracer]
 
-        t += field * scalefactor
-        if field > 0
-            p += field * scalefactor
+    t, p = 0.0, 0.0
+
+    @unroll for (idx, tracer) in enumerate(tracers)
+        value = @inbounds tracer[i, j, k]
+        scalefactor = @inbounds scalefactors[idx]
+
+        t += value * scalefactor
+        if value > 0
+            p += value * scalefactor
         end
     end 
+
     t < 0 && error("Cell total < 0, can not scale negative tracers.")
+
     @unroll for tracer in tracers
-        field = @inbounds fields[tracer][i, j, k]
+        value = @inbounds tracer[i, j, k]
         
-        if field > 0
-            field *= t / p
+        if value > 0
+            value *= t / p
         else
-            field = 0
+            value = 0
         end
 
-        @inbounds fields[tracer][i, j, k] = field
+        @inbounds tracer[i, j, k] = value
     end
 end
