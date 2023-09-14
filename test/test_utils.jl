@@ -55,5 +55,5 @@ end
 @testset "Test Utils" begin
     @test test_column_diffusion_timescale(architecture) broken = architecture == GPU()
     @test test_negative_scaling(architecture)
-    @test test_negative_zeroing(architecture) broken = architecture == GPU()
+    @test test_negative_zeroing(architecture)
 end
