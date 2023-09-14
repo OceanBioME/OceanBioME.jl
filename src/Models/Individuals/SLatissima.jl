@@ -347,13 +347,13 @@ function update_lagrangian_particle_properties!(particles::SLatissima, model, bg
 
     update_particle_properties_kernel! = _update_lagrangian_particle_properties!(device(arch), workgroup, worksize)
 
-    update_particle_properties_kernel!(particles, bgc, model.grid, 
+    update_particle_properties_kernel!(particles, light_attenuation, bgc.underlying, model.grid, 
                                        model.velocities, model.tracers, model.clock, Δt)
 
     particles.custom_dynamics(particles, model, bgc, Δt)
 end
 
-@kernel function _update_lagrangian_particle_properties!(p, bgc, grid, velocities, tracers, clock, Δt)
+@kernel function _update_lagrangian_particle_properties!(p, light_attenuation, bgc, grid, velocities, tracers, clock, Δt)
     idx = @index(Global)
 
     @inbounds begin
@@ -369,7 +369,7 @@ end
     t = clock.time
 
     @inbounds if p.A[idx] > 0
-        NO₃, NH₄, PAR, u, T, S = get_arguments(x, y, z, t, p, bgc, grid, velocities, tracers, biogeochemical_auxiliary_fields(bgc).PAR)
+        NO₃, NH₄, PAR, u, T, S = get_arguments(x, y, z, t, p, bgc, grid, velocities, tracers, biogeochemical_auxiliary_fields(light_attenuation).PAR)
 
         photo = photosynthesis(T, PAR, p)
         e = exudation(C, p)
