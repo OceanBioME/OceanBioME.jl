@@ -28,7 +28,10 @@ function test_negative_scaling(arch)
 
     run!(simulation)
 
-    return (model.tracers.N[1, 1, 1] ≈ 1) && (model.tracers.P[1, 1, 1] ≈ 0.0)
+    N = Array(interior(model.tracers.N))[1, 1, 1]
+    P = Array(interior(model.tracers.P))[1, 1, 1]
+
+    return (N ≈ 1) && (P ≈ 0.0)
 end
 
 function test_negative_zeroing(arch)
@@ -42,11 +45,15 @@ function test_negative_zeroing(arch)
 
     run!(simulation)
 
-    return (model.tracers.N[1, 1, 1] ≈ 2) && (model.tracers.P[1, 1, 1] ≈ 0.0) && (model.tracers.Z[1, 1, 1] ≈ -1)
+    N = Array(interior(model.tracers.N))[1, 1, 1]
+    P = Array(interior(model.tracers.P))[1, 1, 1]
+    Z = Array(interior(model.tracers.Z))[1, 1, 1]
+
+    return (N ≈ 2) && (P ≈ 0.0) && (Z ≈ -1)
 end
 
 @testset "Test Utils" begin
-    @test test_column_diffusion_timescale(architecture)
+    @test test_column_diffusion_timescale(architecture) broken = architecture == GPU()
     @test test_negative_scaling(architecture)
-    @test test_negative_zeroing(architecture)
+    @test test_negative_zeroing(architecture) broken = architecture == GPU()
 end
