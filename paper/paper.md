@@ -85,7 +85,7 @@ There are three distinct module types implemented in ``OceanBioME.jl``:
 - First, we provide tracer-based ecosystem modules in `AdvectedPopulations` as a set of coupled ordinary differential equations (ODEs) which evolve the concentration of the tracer.
 These equations can be solved by ``OceanBioME.jl`` as box models.
 This is useful for both testing and running simple educational models and for understanding the behaviour of biogeochemical models without the effects of the physical dynamics.
-The same tracer equations can then be seamlessly integrated into ``Oceananigans.jl`` to add the effects of advection and diffusion.
+The same tracer equations can then be seamlessly integrated into ``Oceananigans.jl`` to further include the effects of advection and diffusion.
 
 - The second module type is `Individual` "biologically active" particles.
 These consist of individual-based models solved along particle paths, which can be coupled with the tracer-based modules and physics from ``Oceananigans.jl``.
