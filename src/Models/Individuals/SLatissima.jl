@@ -369,7 +369,7 @@ end
     t = clock.time
 
     @inbounds if p.A[idx] > 0
-        NO₃, NH₄, PAR, u, T, S = get_arguments(x, y, z, t, p, bgc, grid, velocities, tracers)
+        NO₃, NH₄, PAR, u, T, S = get_arguments(x, y, z, t, p, bgc, grid, velocities, tracers, biogeochemical_auxiliary_fields(bgc))
 
         photo = photosynthesis(T, PAR, p)
         e = exudation(C, p)
@@ -510,10 +510,8 @@ end
 
 @inline normed_day_length_change(n, ϕ) = (day_length(n, ϕ) - day_length(n - 1, ϕ)) / (day_length(76, ϕ) - day_length(75, ϕ))
 
-@inline function get_arguments(x, y, z, t, particles, bgc, grid, velocities, tracers)
-
+@inline function get_arguments(x, y, z, t, particles, bgc, grid, velocities, tracers, auxiliary_fields)
     bgc_tracers = required_biogeochemical_tracers(bgc)
-    auxiliary_fields = biogeochemical_auxiliary_fields(bgc)
 
     i, j, k = fractional_indices(x, y, z, (Center(), Center(), Center()), grid)
 
