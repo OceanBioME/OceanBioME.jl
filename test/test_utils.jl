@@ -14,7 +14,7 @@ function test_column_diffusion_timescale(arch)
                                                             carbonates = true),
                                 advection = nothing)
 
-    return column_diffusion_timescale(model) ≈ min_Δz^2 / κ
+    return column_diffusion_timescale(model) ≈ min_Δz ^ 2 / κ
 end
 
 function test_negative_scaling(arch)
