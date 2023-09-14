@@ -369,7 +369,7 @@ end
     t = clock.time
 
     @inbounds if p.A[idx] > 0
-        NO₃, NH₄, PAR, u, T, S = get_arguments(x, y, z, t, p, bgc, grid, velocities, tracers, biogeochemical_auxiliary_fields(bgc))
+        NO₃, NH₄, PAR, u, T, S = get_arguments(x, y, z, t, p, bgc, grid, velocities, tracers, biogeochemical_auxiliary_fields(bgc).PAR)
 
         photo = photosynthesis(T, PAR, p)
         e = exudation(C, p)
@@ -510,7 +510,7 @@ end
 
 @inline normed_day_length_change(n, ϕ) = (day_length(n, ϕ) - day_length(n - 1, ϕ)) / (day_length(76, ϕ) - day_length(75, ϕ))
 
-@inline function get_arguments(x, y, z, t, particles, bgc, grid, velocities, tracers, auxiliary_fields)
+@inline function get_arguments(x, y, z, t, particles, bgc, grid, velocities, tracers, PAR_field)
     bgc_tracers = required_biogeochemical_tracers(bgc)
 
     i, j, k = fractional_indices(x, y, z, (Center(), Center(), Center()), grid)
@@ -522,7 +522,7 @@ end
     # TODO: ADD ALIASING/RENAMING OF TRACERS SO WE CAN USE E.G. N IN STEAD OF NO3
 
     NO₃ = _interpolate(tracers.NO₃, ξ, η, ζ, Int(i+1), Int(j+1), Int(k+1))
-    PAR = _interpolate(auxiliary_fields.PAR, ξ, η, ζ, Int(i+1), Int(j+1), Int(k+1)) * day / (3.99e-10 * 545e12) # W / m² / s to einstein / m² / day
+    PAR = _interpolate(PAR_field, ξ, η, ζ, Int(i+1), Int(j+1), Int(k+1)) * day / (3.99e-10 * 545e12) # W / m² / s to einstein / m² / day
 
     if :NH₄ in bgc_tracers
         NH₄ = _interpolate(tracers.NH₄, ξ, η, ζ, Int(i+1), Int(j+1), Int(k+1))
