@@ -347,7 +347,7 @@ function update_lagrangian_particle_properties!(particles::SLatissima, model, bg
 
     update_particle_properties_kernel! = _update_lagrangian_particle_properties!(device(arch), workgroup, worksize)
 
-    update_particle_properties_kernel!(particles, light_attenuation, bgc.underlying, model.grid, 
+    update_particle_properties_kernel!(particles, bgc.light_attenuation, bgc.underlying, model.grid, 
                                        model.velocities, model.tracers, model.clock, Δt)
 
     particles.custom_dynamics(particles, model, bgc, Δt)
