@@ -77,9 +77,9 @@ Construct a modifier to scale the conserved tracers in `model`.
 
 If `warn` is true then scaling will raise a warning.
 """
-function ScaleNegativeTracers(model::AbstractBiogeochemistry; warn = false)
-    tracers = conserved_tracers(model)
-    scalefactors = arch_array(architecture(model), ones(length(tracers)))
+function ScaleNegativeTracers(bgc::AbstractBiogeochemistry, grid; warn = false)
+    tracers = conserved_tracers(bgc)
+    scalefactors = arch_array(architecture(grid), ones(length(tracers)))
 
     return ScaleNegativeTracers(tracers, scalefactors, warn)
 end

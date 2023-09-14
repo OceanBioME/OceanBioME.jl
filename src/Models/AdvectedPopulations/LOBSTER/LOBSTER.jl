@@ -352,7 +352,7 @@ function LOBSTER(; grid,
                                          sinking_velocities)
 
     if scale_negatives
-        scaler = ScaleNegativeTracers(underlying_biogeochemistry)
+        scaler = ScaleNegativeTracers(underlying_biogeochemistry, grid)
         modifiers = isnothing(modifiers) ? scaler : (modifiers..., scaler)
     end
 
