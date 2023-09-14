@@ -24,7 +24,7 @@ abstract type BiogeochemicalParticles end
     Δt) = update_lagrangian_particle_properties!(model, model.biogeochemistry, Δt)
 
 @inline update_lagrangian_particle_properties!(model, bgc::Biogeochemistry{<:Any, <:Any, <:Any, <:BiogeochemicalParticles}, Δt) = 
-    update_lagrangian_particle_properties!(bgc.particles, model, bgc, Δt)
+    update_lagrangian_particle_properties!(bgc.particles, model, bgc.underlying_biogeochemistry, Δt)
 
 update_lagrangian_particle_properties!(::BiogeochemicalParticles, model, bgc, Δt) = nothing
 
