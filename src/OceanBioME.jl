@@ -102,11 +102,7 @@ biogeochemical_drift_velocity(bgc::Biogeochemistry, val_name) = biogeochemical_d
 biogeochemical_auxiliary_fields(bgc::Biogeochemistry) = merge(biogeochemical_auxiliary_fields(bgc.underlying_biogeochemistry),
                                                               biogeochemical_auxiliary_fields(bgc.light_attenuation))
 
-adapt_structure(to, bgc::Biogeochemistry) = Biogeochemistry(adapt(to, bgc.underlying_biogeochemistry),
-                                                            adapt(to, bgc.light_attenuation),
-                                                            adapt(to, bgc.sediment),
-                                                            adapt(to, bgc.particles),
-                                                            adapt(to, bgc.modifiers))
+@inline adapt_structure(to, bgc::Biogeochemistry) = adapt(to, bgc.underlying_biogeochemistry)
 
 function update_tendencies!(bgc::Biogeochemistry, model)
     update_tendencies!(bgc, bgc.sediment, model)
@@ -117,8 +113,9 @@ end
 update_tendencies!(bgc, modifier, model) = nothing
 update_tendencies!(bgc, modifiers::Tuple, model) = [update_tendencies!(bgc, modifier, model) for modifier in modifiers]
 
+# do we still need this for CPU kernels???
 @inline biogeochemical_transition(i, j, k, grid, bgc::Biogeochemistry, val_tracer_name, clock, fields) =
-    biogeochemical_transition(i, j, k, grid, bgc.underlying_biogeochemistry, val_tracer_name, clock, fields) 
+    @show biogeochemical_transition(i, j, k, grid, bgc.underlying_biogeochemistry, val_tracer_name, clock, fields) 
 
 function update_biogeochemical_state!(bgc::Biogeochemistry, model)
     update_biogeochemical_state!(model, bgc.modifiers)
