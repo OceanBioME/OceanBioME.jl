@@ -5,10 +5,24 @@ using Oceananigans.Fields: TracerFields
 
 function intercept_tendencies!(model, intercepted_tendencies)
     for tracer in keys(model.tracers)
-        copyto!(intercepted_tendencies[tracer], model.timestepper.Gⁿ[tracer])
+        intercepted_tendencies[tracer] = Array(interior(model.timestepper.Gⁿ[tracer]))
     end
 end
 
+sum_tracer_nitrogen(tracers) = sum(Array(interior(tracers.NO₃))) + 
+                               sum(Array(interior(tracers.NH₄))) +
+                               sum(Array(interior(tracers.P))) +
+                               sum(Array(interior(tracers.Z))) +
+                               sum(Array(interior(tracers.sPON))) +
+                               sum(Array(interior(tracers.bPON))) +
+                               sum(Array(interior(tracers.DON)))
+
+sum_tracer_carbon(tracers, redfield) = sum(Array(interior(tracers.sPOC))) +
+                                       sum(Array(interior(tracers.bPOC))) +
+                                       sum(Array(interior(tracers.DOC))) +
+                                       sum(Array(interior(tracers.DIC))) + 
+                                       sum(Array(interior(tracers.P * (1 + model.biogeochemistry.underlying_biogeochemistry.organic_carbon_calcate_ratio) 
+                                                          + model.tracers.Z))) * redfield
 @testset "SLatissima particle setup and conservations" begin
     grid = RectilinearGrid(architecture; size=(1, 1, 1), extent=(1, 1, 1))
 
@@ -35,13 +49,11 @@ end
 
     set!(model, NO₃ = 10.0, NH₄ = 1.0, DIC = 2000, Alk = 2000)
 
-    initial_tracer_N = sum(model.tracers.NO₃) + sum(model.tracers.NH₄) + sum(model.tracers.P) + sum(model.tracers.Z) + sum(model.tracers.sPON) + sum(model.tracers.bPON) + sum(model.tracers.DON)
-    initial_kelp_N = sum(particles.A .* particles.structural_dry_weight_per_area .* (particles.N .+ particles.structural_nitrogen)) ./ (14 * 0.001)
+    initial_tracer_N = sum_tracer_nitrogen(model.tracers)
+    initial_kelp_N = sum(Array(particles.A) .* particles.structural_dry_weight_per_area .* (Array(particles.N) .+ particles.structural_nitrogen)) ./ (14 * 0.001)
 
-    initial_tracer_C = sum(model.tracers.sPOC) + sum(model.tracers.bPOC) + sum(model.tracers.DOC) + sum(model.tracers.DIC) + 
-                       sum(model.tracers.P * (1 + model.biogeochemistry.underlying_biogeochemistry.organic_carbon_calcate_ratio) .+ model.tracers.Z) * model.biogeochemistry.underlying_biogeochemistry.phytoplankton_redfield 
-
-    initial_kelp_C = sum(particles.A .* particles.structural_dry_weight_per_area .* (particles.C .+ particles.structural_carbon)) ./ (12 * 0.001)
+    initial_tracer_C = sum_tracer_carbon(model.tracers, model.biogeochemistry.underlying_biogeochemistry.phytoplankton_redfield)
+    initial_kelp_C = sum(Array(particles.A) .* particles.structural_dry_weight_per_area .* (Array(particles.C) .+ particles.structural_carbon)) ./ (12 * 0.001)
 
     model.clock.time = 60days # get to a high growth phase
 
@@ -49,12 +61,11 @@ end
         time_step!(model, 1.0)
     end
 
-    final_tracer_N = sum(model.tracers.NO₃) + sum(model.tracers.NH₄) + sum(model.tracers.P) + sum(model.tracers.Z) + sum(model.tracers.sPON) + sum(model.tracers.bPON) + sum(model.tracers.DON)
-    final_kelp_N = sum(particles.A .* particles.structural_dry_weight_per_area .* (particles.N .+ particles.structural_nitrogen)) ./ (14 * 0.001)
+    final_tracer_N = sum_tracer_nitrogen(model.tracers)
+    final_kelp_N = sum(Array(particles.A) .* particles.structural_dry_weight_per_area .* (Array(particles.N) .+ particles.structural_nitrogen)) ./ (14 * 0.001)
 
-    final_tracer_C = sum(model.tracers.sPOC) + sum(model.tracers.bPOC) + sum(model.tracers.DOC) + sum(model.tracers.DIC) + 
-                     sum(model.tracers.P * (1 + model.biogeochemistry.underlying_biogeochemistry.organic_carbon_calcate_ratio) .+ model.tracers.Z) * model.biogeochemistry.underlying_biogeochemistry.phytoplankton_redfield 
-    final_kelp_C = sum(particles.A .* particles.structural_dry_weight_per_area .* (particles.C .+ particles.structural_carbon)) ./ (12 * 0.001)
+    final_tracer_C = sum_tracer_carbon(model.tracers, model.biogeochemistry.underlying_biogeochemistry.phytoplankton_redfield)
+    final_kelp_C = sum(Array(particles.A) .* particles.structural_dry_weight_per_area .* (Array(particles.C) .+ particles.structural_carbon)) ./ (12 * 0.001)
 
     # kelp is being integrated
     @test initial_kelp_N != final_kelp_N
@@ -66,12 +77,13 @@ end
 
     simulation = Simulation(model, Δt = 1.0, stop_iteration = 1)
 
-    intercepted_tendencies = TracerFields(keys(model.tracers), grid)
+    # slow but easiest to have this just done on CPU
+    intercepted_tendencies = (Array(interior(field)) for field in values(TracerFields(keys(model.tracers), grid)))
 
     simulation.callbacks[:intercept_tendencies] = Callback(intercept_tendencies!; callsite = TendencyCallsite(), parameters = intercepted_tendencies)
 
     run!(simulation)
 
     # the model is changing the tracer tendencies - not sure this test actually works as it didn't fail when it should have
-    @test any([any(intercepted_tendencies[tracer] .!= model.timestepper.Gⁿ[tracer]) for tracer in (:NO₃, :NH₄, :DIC, :DOC, :bPON, :bPOC)])
+    @test any([any(intercepted_tendencies[tracer] .!= Array(interior(model.timestepper.Gⁿ[tracer]))) for tracer in (:NO₃, :NH₄, :DIC, :DOC, :bPON, :bPOC)])
 end
