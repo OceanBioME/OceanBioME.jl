@@ -3,7 +3,7 @@ using OceanBioME: Boundaries, GasExchange, LOBSTER
 using Oceananigans, DataDeps, JLD2, Statistics
 using Oceananigans.Units
 
-year = years = 365days # just for the idealised case below
+const year = years = 365days # just for the idealised case below
 
 dd = DataDep(
     "test_data",
@@ -53,7 +53,7 @@ end
     @test (mean(pCO₂_err) < 10 && std(pCO₂_err) < 15)
 end
 
-@inline conc_function(x, y, t) = 413.0 + 10.0 * sin(t * π / (1year))
+@inline conc_function(x, y, t) = 413.0 + 10.0 * sin(t * π / year)
 
 @testset "Gas exchange coupling" begin
     grid = RectilinearGrid(architecture; size=(1, 1, 2), extent=(1, 1, 1))
