@@ -26,7 +26,7 @@ function test_NPZD(grid, sinking, open_bottom)
     time_step!(model, 1.0)
 
     # and that they all return zero
-    @test all([all(values .== 0) for values in values(model.tracers)]) 
+    @test all([all(Array(interior(values)) .== 0) for values in values(model.tracers)]) 
 
     # mass conservation
     model.tracers.N .= rand()
@@ -34,13 +34,19 @@ function test_NPZD(grid, sinking, open_bottom)
     model.tracers.Z .= rand()
     model.tracers.D .= rand()
 
-    ΣN₀ = sum(model.tracers.N) + sum(model.tracers.P) + sum(model.tracers.Z) + sum(model.tracers.D)
+    ΣN₀ = sum(Array(interior(model.tracers.N))) + 
+          sum(Array(interior(model.tracers.P))) + 
+          sum(Array(interior(model.tracers.Z))) + 
+          sum(Array(interior(model.tracers.D)))
 
     for n in 1:1000
         time_step!(model, 1.0)
     end
 
-    ΣN₁ = sum(model.tracers.N) + sum(model.tracers.P) + sum(model.tracers.Z) + sum(model.tracers.D)
+    ΣN₁ = sum(Array(interior(model.tracers.N))) + 
+          sum(Array(interior(model.tracers.P))) + 
+          sum(Array(interior(model.tracers.Z))) + 
+          sum(Array(interior(model.tracers.D)))
 
     @test ΣN₀ ≈ ΣN₁ # guess this should actually fail with a high enough accuracy when sinking is on with an open bottom
 
@@ -52,7 +58,7 @@ grid = RectilinearGrid(architecture; size=(3, 3, 6), extent=(1, 1, 2))
 for sinking = (false, true), open_bottom = (false, true)
     if !(sinking && open_bottom) # no sinking is the same with and without open bottom
         @info "Testing on $(typeof(architecture)) with sinking $(sinking ? :✅ : :❌), open bottom $(open_bottom ? :✅ : :❌))"
-        @testset "$architecture, $sinking, $open_bottom" begin
+        @testset "NPZD $architecture, $sinking, $open_bottom" begin
             test_NPZD(grid, sinking, open_bottom)
         end
     end
