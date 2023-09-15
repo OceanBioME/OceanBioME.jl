@@ -56,7 +56,7 @@ One area where novel ideas must be explored with BGC codes is assessing ocean ca
 Moreover, field trials of OCDR interventions are generally small-scale and targeted, while the intervention required to have a climate-scale impact is regional or global.
 This necessitates adaptable, easy-to-use, and verifiable BGC modelling tools which can be used to assess OCDR strategies at the fast pace with which they are being developed [@NationalAcademies2022].
 We have built ``OceanBioME.jl`` to meet these challenges by creating a tool that provides a modular interface to the different components, within the ocean modelling framework provided by ``Oceananigans.jl``.
-Previously implmenting biogeochemical models in ``Oceananigans.jl`` required the user to add forcing terms and boundary conditions to generic tracers [@SimoesSousa2022].
+Previously implementing biogeochemical models in ``Oceananigans.jl`` required the user to add forcing terms and boundary conditions to generic tracers [@SimoesSousa2022].
 ``OceanBioME.jl`` provides a suite of biogeochemical models ranging from simple idealized to full-complexity models and models for boundary fluxes (e.g. air-sea gas exchange).
 ``Oceananignas.jl`` and ``OceanBioME.jl`` are built from the ground-up to exploit the power of graphical processor units (GPUs), while also retaining the ability to run on CPUs.
 The flexibility of the ``Oceananigans.jl`` framework allows ``OceanBioME.jl`` to be applied across a wide range of scales and use cases, including small-scale large-eddy simulations and regional and global models.
