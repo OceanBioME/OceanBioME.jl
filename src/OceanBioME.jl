@@ -32,7 +32,9 @@ export ScaleNegativeTracers, ZeroNegativeTracers
 export ColumnField, isacolumn
 
 using Oceananigans.Biogeochemistry: AbstractContinuousFormBiogeochemistry
+using Oceananigans.Architectures: architecture, device
 using Adapt
+using KernelAbstractions: synchronize
 
 import Oceananigans.Biogeochemistry: required_biogeochemical_tracers,
                                      required_biogeochemical_auxiliary_fields,
@@ -108,6 +110,7 @@ function update_tendencies!(bgc::Biogeochemistry, model)
     update_tendencies!(bgc, bgc.sediment, model)
     update_tendencies!(bgc, bgc.particles, model)
     update_tendencies!(bgc, bgc.modifiers, model)
+    synchronize(device(architecture(model)))
 end
 
 update_tendencies!(bgc, modifier, model) = nothing
