@@ -46,15 +46,30 @@ set_defaults!(::lobster_variable_redfield, model) =
 
 set_defaults!(::NutrientPhytoplanktonZooplanktonDetritus, model) =  set!(model, N = 2.3, P = 0.4, Z = 0.5, D = 0.2)
 
-total_nitrogen(sed::SimpleMultiG) = sum(sed.fields.N_fast) + 
-                                    sum(sed.fields.N_slow) + 
-                                    sum(sed.fields.N_ref)
+total_nitrogen(sed::SimpleMultiG) = sum(Array(interior(sed.fields.N_fast))) + 
+                                    sum(Array(interior(sed.fields.N_slow))) + 
+                                    sum(Array(interior(sed.fields.N_ref)))
 
-total_nitrogen(sed::InstantRemineralisation) = sum(sed.fields.N_storage)
+total_nitrogen(sed::InstantRemineralisation) = sum(Array(interior(sed.fields.N_storage)))
 
-total_nitrogen(::LOBSTER, model) = sum(model.tracers.NO₃) + sum(model.tracers.NH₄) + sum(model.tracers.P) + sum(model.tracers.Z) + sum(model.tracers.DOM) + sum(model.tracers.sPOM) + sum(model.tracers.bPOM)
-total_nitrogen(::lobster_variable_redfield, model) = sum(model.tracers.NO₃) + sum(model.tracers.NH₄) + sum(model.tracers.P) + sum(model.tracers.Z) + sum(model.tracers.DON) + sum(model.tracers.sPON) + sum(model.tracers.bPON)
-total_nitrogen(::NutrientPhytoplanktonZooplanktonDetritus, model) = sum(model.tracers.N) + sum(model.tracers.P) + sum(model.tracers.Z) + sum(model.tracers.D)
+total_nitrogen(::LOBSTER, model) = sum(Array(interior(model.tracers.NO₃))) +
+                                   sum(Array(interior(model.tracers.NH₄))) +
+                                   sum(Array(interior(model.tracers.P))) +
+                                   sum(Array(interior(model.tracers.Z))) +
+                                   sum(Array(interior(model.tracers.DOM))) +
+                                   sum(Array(interior(model.tracers.sPOM))) +
+                                   sum(Array(interior(model.tracers.bPOM)
+total_nitrogen(::lobster_variable_redfield, model) = sum(Array(interior(model.tracers.NO₃))) +
+                                                     sum(Array(interior(model.tracers.NH₄))) +
+                                                     sum(Array(interior(model.tracers.P))) +
+                                                     sum(Array(interior(model.tracers.Z))) +
+                                                     sum(Array(interior(model.tracers.DON))) +
+                                                     sum(Array(interior(model.tracers.sPON))) +
+                                                     sum(Array(interior(model.tracers.bPON)
+total_nitrogen(::NutrientPhytoplanktonZooplanktonDetritus, model) = sum(Array(interior(model.tracers.N))) +
+                                                                    sum(Array(interior(model.tracers.P))) +
+                                                                    sum(Array(interior(model.tracers.Z))) +
+                                                                    sum(Array(interior(model.tracers.D)
 
 function test_flat_sediment(grid, biogeochemistry, model; timestepper = :QuasiAdamsBashforth2)
     model = isa(model, NonhydrostaticModel) ? model(; grid, 
