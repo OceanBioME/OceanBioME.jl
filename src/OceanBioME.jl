@@ -118,7 +118,7 @@ update_tendencies!(bgc, modifiers::Tuple, model) = [update_tendencies!(bgc, modi
 
 # do we still need this for CPU kernels???
 @inline biogeochemical_transition(i, j, k, grid, bgc::Biogeochemistry, val_tracer_name, clock, fields) =
-    @show biogeochemical_transition(i, j, k, grid, bgc.underlying_biogeochemistry, val_tracer_name, clock, fields) 
+    biogeochemical_transition(i, j, k, grid, bgc.underlying_biogeochemistry, val_tracer_name, clock, fields) 
 
 function update_biogeochemical_state!(bgc::Biogeochemistry, model)
     update_biogeochemical_state!(model, bgc.modifiers)
