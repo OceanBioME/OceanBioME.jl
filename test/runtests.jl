@@ -10,6 +10,6 @@ include("test_gasexchange.jl")
 include("test_slatissima.jl")
 include("test_sediments.jl")
 
-@testset "Doctests" begin
+architecture == CPU() && @testset "Doctests" begin
     doctest(OceanBioME)
 end
