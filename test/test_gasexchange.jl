@@ -25,7 +25,7 @@ function test_gas_exchange_model(grid, air_concentration)
     set!(model, T = 15.0, S = 35.0, DIC = 2220, Alk = 2500)
 
     # is everything communicating properly? (can't think of a way to not use allow scalar here)
-    value = CUDA.@allowscalar Oceananigans.getbc(model.tracers.DIC.boundary_conditions.top, 1, 1, grid, model.clock, fields(model))
+    value = CUDA.@allowscalar Oceananigans.getbc(model.tracers.DIC.boundary_conditions.top, 1.0, 1.0, grid, model.clock, fields(model))
 
     @test value ≈ -0.0003 atol = 0.0001
 
