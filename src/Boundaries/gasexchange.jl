@@ -259,4 +259,4 @@ end
 
 @inline get_value(x, y, t, air_concentration::Number) = air_concentration
 @inline get_value(x, y, t, air_concentration::Function) = air_concentration(x, y, t)
-@inline get_value(x, y, t, conc::Field{Center, Center, Center}) = interpolate(conc, Center(), Center(), Center(), conc.grid, x, y, 0)
+@inline get_value(x, y, t, conc::Field{Center, Center, Center}) = interpolate(conc, Center(), Center(), Center(), conc.grid, x, y, 0.0)
