@@ -134,7 +134,7 @@ We plan to expand the features of ``OceanBioME.jl`` in the future and very much 
 
 Finally, this software is currently facilitating multiple research projects into ocean CDR which would have been significantly harder with other models.
 For example, Chen et al. (in prep.) uses the active particle coupling provided to investigate the effects of location and planting density of kelp in the open ocean on their carbon drawdown effect, as in the example above.
-Strong-Wright et al. (n prep.) uses the coupling of both the biogeochemistry and easy interface to couple the physics to study flow interactions with a fully resolved giant kelp forest model including the effects on nutrient transport and distribution.
+Strong-Wright et al. (in prep.) uses the coupling of both the biogeochemistry and easy interface to couple the physics to study flow interactions with a fully resolved giant kelp forest model including the effects on nutrient transport and distribution.
 
 # Examples
 
