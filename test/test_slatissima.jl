@@ -79,7 +79,7 @@ sum_tracer_carbon(tracers, redfield, organic_carbon_calcate_ratio) =
     simulation = Simulation(model, Δt = 1.0, stop_iteration = 1)
 
     # slow but easiest to have this just done on CPU
-    intercepted_tendencies = (Array(interior(field)) for field in values(TracerFields(keys(model.tracers), grid)))
+    intercepted_tendencies = Tuple(Array(interior(field)) for field in values(TracerFields(keys(model.tracers), grid)))
 
     simulation.callbacks[:intercept_tendencies] = Callback(intercept_tendencies!; callsite = TendencyCallsite(), parameters = intercepted_tendencies)
 
