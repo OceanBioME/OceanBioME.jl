@@ -3,7 +3,7 @@
 ##### As per OCMIP Phase 2 http://ocmip5.ipsl.jussieu.fr/OCMIP/phase2/simulations/Abiotic/Cchem/co2calc.f simplified as in PISCESv2
 #####
 
-using Oceananigans.Fields: fractional_indices, _interpolate
+using Oceananigans.Fields: fractional_indices
 
 struct pCO₂{P0, P1, P2, PB, PW, FT}
                   solubility :: P0
@@ -264,10 +264,15 @@ end
 @inline function get_value(x, y, t, conc::Field{LX, LY, LZ}) where {LX, LY, LZ}
     grid = conc.grid
 
-    i, j, _ = fractional_indices(x, y, 0.0, (LX(), LY(), Center()), conc.grid)
+    i, j, _ = fractional_indices(x, y, 0.0, (LX(), LY(), Center()), grid)
 
     ξ, i = mod(i, 1), Base.unsafe_trunc(Int, i)
     η, j = mod(j, 1), Base.unsafe_trunc(Int, j)
 
-    return _interpolate(conc, ξ, η, 0, i+1, j+1, grid.Nz)
+    _, _, ks = eachindex(conc).indices
+
+    return @inbounds  ((1 - ξ) * (1 - η) * conc[i,   j,   ks[1]]
+                     + (1 - ξ) *      η  * conc[i,   j+1, ks[1]]
+                     +      ξ  * (1 - η) * conc[i+1, j,   ks[1]]
+                     +      ξ  *      η  * conc[i+1, j+1, ks[1]])
 end
