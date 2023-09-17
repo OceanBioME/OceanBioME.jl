@@ -17,12 +17,13 @@ sum_tracer_nitrogen(tracers) = sum(Array(interior(tracers.NO₃))) +
                                sum(Array(interior(tracers.bPON))) +
                                sum(Array(interior(tracers.DON)))
 
-sum_tracer_carbon(tracers, redfield) = sum(Array(interior(tracers.sPOC))) +
-                                       sum(Array(interior(tracers.bPOC))) +
-                                       sum(Array(interior(tracers.DOC))) +
-                                       sum(Array(interior(tracers.DIC))) + 
-                                       sum(Array(interior(tracers.P * (1 + model.biogeochemistry.underlying_biogeochemistry.organic_carbon_calcate_ratio) 
-                                                          + model.tracers.Z))) * redfield
+sum_tracer_carbon(tracers, redfield, organic_carbon_calcate_ratio) = 
+    sum(Array(interior(tracers.sPOC))) +
+    sum(Array(interior(tracers.bPOC))) +
+    sum(Array(interior(tracers.DOC))) +
+    sum(Array(interior(tracers.DIC))) + 
+    sum(Array(interior(tracers.P * (1 + organic_carbon_calcate_ratio) + tracers.Z))) * redfield
+
 @testset "SLatissima particle setup and conservations" begin
     grid = RectilinearGrid(architecture; size=(1, 1, 1), extent=(1, 1, 1))
 
@@ -52,7 +53,7 @@ sum_tracer_carbon(tracers, redfield) = sum(Array(interior(tracers.sPOC))) +
     initial_tracer_N = sum_tracer_nitrogen(model.tracers)
     initial_kelp_N = sum(Array(particles.A) .* particles.structural_dry_weight_per_area .* (Array(particles.N) .+ particles.structural_nitrogen)) ./ (14 * 0.001)
 
-    initial_tracer_C = sum_tracer_carbon(model.tracers, model.biogeochemistry.underlying_biogeochemistry.phytoplankton_redfield)
+    initial_tracer_C = sum_tracer_carbon(model.tracers, model.biogeochemistry.underlying_biogeochemistry.phytoplankton_redfield, model.biogeochemistry.underlying_biogeochemistry.organic_carbon_calcate_ratio)
     initial_kelp_C = sum(Array(particles.A) .* particles.structural_dry_weight_per_area .* (Array(particles.C) .+ particles.structural_carbon)) ./ (12 * 0.001)
 
     model.clock.time = 60days # get to a high growth phase
@@ -64,7 +65,7 @@ sum_tracer_carbon(tracers, redfield) = sum(Array(interior(tracers.sPOC))) +
     final_tracer_N = sum_tracer_nitrogen(model.tracers)
     final_kelp_N = sum(Array(particles.A) .* particles.structural_dry_weight_per_area .* (Array(particles.N) .+ particles.structural_nitrogen)) ./ (14 * 0.001)
 
-    final_tracer_C = sum_tracer_carbon(model.tracers, model.biogeochemistry.underlying_biogeochemistry.phytoplankton_redfield)
+    final_tracer_C = sum_tracer_carbon(model.tracers, model.biogeochemistry.underlying_biogeochemistry.phytoplankton_redfield, model.biogeochemistry.underlying_biogeochemistry.organic_carbon_calcate_ratio)
     final_kelp_C = sum(Array(particles.A) .* particles.structural_dry_weight_per_area .* (Array(particles.C) .+ particles.structural_carbon)) ./ (12 * 0.001)
 
     # kelp is being integrated
