@@ -3,7 +3,7 @@
 ##### As per OCMIP Phase 2 http://ocmip5.ipsl.jussieu.fr/OCMIP/phase2/simulations/Abiotic/Cchem/co2calc.f simplified as in PISCESv2
 #####
 
-using Oceananigans.Fields: interpolate
+using Oceananigans.Fields: fractional_indices, _interpolate
 
 struct pCO₂{P0, P1, P2, PB, PW, FT}
                   solubility :: P0
@@ -259,4 +259,15 @@ end
 
 @inline get_value(x, y, t, air_concentration::Number) = air_concentration
 @inline get_value(x, y, t, air_concentration::Function) = air_concentration(x, y, t)
-@inline get_value(x, y, t, conc::Field{Center, Center, Center}) = interpolate(conc, Center(), Center(), Center(), conc.grid, x, y, 0.0)
+
+# interpolate doesn't really work on 2D fields
+@inline function get_value(x, y, t, conc::Field{LX, LY, LZ}) where {LX, LY, LZ}
+    grid = conc.grid
+
+    i, j, _ = fractional_indices(x, y, 0.0, (LX(), LY(), Center()), conc.grid)
+
+    ξ, i = mod(i, 1), Base.unsafe_trunc(Int, i)
+    η, j = mod(j, 1), Base.unsafe_trunc(Int, j)
+
+    return _interpolate(conc, ξ, η, 0, i+1, j+1, grid.Nz)
+end
