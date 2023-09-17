@@ -53,12 +53,14 @@ end
     @test (mean(pCO₂_err) < 10 && std(pCO₂_err) < 15)
 end
 
+grid = RectilinearGrid(architecture; size=(1, 1, 2), extent=(1, 1, 1))
+
 @inline conc_function(x, y, t) = 413.0 + 10.0 * sin(t * π / year)
+
 conc_field = CenterField(grid, indices=(:, :, grid.Nz))
 set!(conc_field, 413.0)
 
 @testset "Gas exchange coupling" begin
-    grid = RectilinearGrid(architecture; size=(1, 1, 2), extent=(1, 1, 1))
     for air_concentration in [413.1, conc_function, conc_field]
         @info "Testing with $(typeof(air_concentration))"
         test_gas_exchange_model(grid, air_concentration)
