@@ -86,5 +86,5 @@ sum_tracer_carbon(tracers, redfield, organic_carbon_calcate_ratio) =
     run!(simulation)
 
     # the model is changing the tracer tendencies - not sure this test actually works as it didn't fail when it should have
-    @test any([any(intercepted_tendencies[tracer] .!= Array(interior(model.timestepper.Gⁿ[tracer]))) for tracer in (:NO₃, :NH₄, :DIC, :DOC, :bPON, :bPOC)])
+    @test any([any(intercepted_tendencies[idx] .!= Array(interior(model.timestepper.Gⁿ[tracer]))) for (idx, tracer) in enumerate((:NO₃, :NH₄, :DIC, :DOC, :bPON, :bPOC))])
 end
