@@ -232,10 +232,6 @@ sediment_fields(model::SimpleMultiG) = (C_slow = model.fields.C_slow,
                     sediment.anoxic_params.E * log(O₂) * log(reactivity) +
                     sediment.anoxic_params.F * log(NO₃) ^ 2) / (Cᵐⁱⁿ * day)
 
-        if isnan(pₐₙₒₓ)
-            error("Sediment anoxia has caused model failure")
-        end
-
         pₛₒₗᵢ = sediment.solid_dep_params.A * (sediment.solid_dep_params.C * sediment.solid_dep_params.depth ^ sediment.solid_dep_params.D) ^ sediment.solid_dep_params.B
 
         tendencies.NH₄[i, j, k] += Nᵐⁱⁿ * (1 - pₙᵢₜ) / Δz
