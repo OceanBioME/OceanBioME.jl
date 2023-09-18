@@ -194,7 +194,7 @@ sediment_fields(model::SimpleMultiG) = (C_slow = model.fields.C_slow,
         Cᵐⁱⁿ = C_min_slow + C_min_fast
         Nᵐⁱⁿ = N_min_slow + N_min_fast
         
-        k = Cᵐⁱⁿ * day / (sediment.fields.C_slow[i, j, 1] + sediment.fields.C_fast[i, j, 1])
+        reactivity = Cᵐⁱⁿ * day / (sediment.fields.C_slow[i, j, 1] + sediment.fields.C_fast[i, j, 1])
 
         # sediment evolution
         sediment.tendencies.Gⁿ.C_slow[i, j, 1] = (1 - sediment.refactory_fraction) * sediment.slow_fraction * carbon_deposition - C_min_slow
@@ -213,7 +213,7 @@ sediment_fields(model::SimpleMultiG) = (C_slow = model.fields.C_slow,
         pₙᵢₜ = exp(sediment.nitrate_oxidation_params.A +
                    sediment.nitrate_oxidation_params.B * log(Cᵐⁱⁿ * day) * log(O₂) +
                    sediment.nitrate_oxidation_params.C * log(Cᵐⁱⁿ * day) ^ 2 +
-                   sediment.nitrate_oxidation_params.D * log(k) * log(NH₄) +
+                   sediment.nitrate_oxidation_params.D * log(reactivity) * log(NH₄) +
                    sediment.nitrate_oxidation_params.E * log(Cᵐⁱⁿ * day) +
                    sediment.nitrate_oxidation_params.F * log(Cᵐⁱⁿ * day) * log(NH₄)) / (Nᵐⁱⁿ * day)
 
@@ -222,18 +222,18 @@ sediment_fields(model::SimpleMultiG) = (C_slow = model.fields.C_slow,
                      sediment.denitrification_params.B * log(Cᵐⁱⁿ * day) +
                      sediment.denitrification_params.C * log(NO₃) ^ 2 +
                      sediment.denitrification_params.D * log(Cᵐⁱⁿ * day) ^ 2 +
-                     sediment.denitrification_params.E * log(k) ^ 2 +
-                     sediment.denitrification_params.F * log(O₂) * log(k)) / (Cᵐⁱⁿ * day)
+                     sediment.denitrification_params.E * log(reactivity) ^ 2 +
+                     sediment.denitrification_params.F * log(O₂) * log(reactivity)) / (Cᵐⁱⁿ * day)
         =#
         pₐₙₒₓ = exp(sediment.anoxic_params.A +
                     sediment.anoxic_params.B * log(Cᵐⁱⁿ * day) +
                     sediment.anoxic_params.C * log(Cᵐⁱⁿ * day) ^ 2 +
-                    sediment.anoxic_params.D * log(k) +
-                    sediment.anoxic_params.E * log(O₂) * log(k) +
+                    sediment.anoxic_params.D * log(reactivity) +
+                    sediment.anoxic_params.E * log(O₂) * log(reactivity) +
                     sediment.anoxic_params.F * log(NO₃) ^ 2) / (Cᵐⁱⁿ * day)
 
         if isnan(pₐₙₒₓ)
-            #println("$(Cᵐⁱⁿ), $(k), $(O₂), $(NO₃)")
+            println("$(Cᵐⁱⁿ), $(reactivity), $(O₂), $(NO₃)")
             error("Sediment anoxia has caused model failure")
         end
 
