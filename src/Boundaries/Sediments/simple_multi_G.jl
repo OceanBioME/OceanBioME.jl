@@ -180,31 +180,30 @@ sediment_fields(model::SimpleMultiG) = (C_slow = model.fields.C_slow,
     Δz = zspacing(i, j, k, grid, Center(), Center(), Center())
 
     @inbounds begin
-
         carbon_deposition = carbon_flux(i, j, k, grid, advection, bgc, tracers) * Δz
                         
         nitrogen_deposition = nitrogen_flux(i, j, k, grid, advection, bgc, tracers) * Δz
 
         # rates
-        C_min_slow = sediment.fields.C_slow[i, j, k] * sediment.slow_decay_rate
-        C_min_fast = sediment.fields.C_fast[i, j, k] * sediment.fast_decay_rate
+        C_min_slow = sediment.fields.C_slow[i, j, 1] * sediment.slow_decay_rate
+        C_min_fast = sediment.fields.C_fast[i, j, 1] * sediment.fast_decay_rate
 
-        N_min_slow = sediment.fields.N_slow[i, j, k] * sediment.slow_decay_rate
-        N_min_fast = sediment.fields.N_fast[i, j, k] * sediment.fast_decay_rate
+        N_min_slow = sediment.fields.N_slow[i, j, 1] * sediment.slow_decay_rate
+        N_min_fast = sediment.fields.N_fast[i, j, 1] * sediment.fast_decay_rate
 
         Cᵐⁱⁿ = C_min_slow + C_min_fast
         Nᵐⁱⁿ = N_min_slow + N_min_fast
         
-        k = Cᵐⁱⁿ * day / (sediment.fields.C_slow[i, j, k] + sediment.fields.C_fast[i, j, k])
+        k = Cᵐⁱⁿ * day / (sediment.fields.C_slow[i, j, 1] + sediment.fields.C_fast[i, j, 1])
 
         # sediment evolution
-        sediment.tendencies.Gⁿ.C_slow[i, j, k] = (1 - sediment.refactory_fraction) * sediment.slow_fraction * carbon_deposition - C_min_slow
-        sediment.tendencies.Gⁿ.C_fast[i, j, k] = (1 - sediment.refactory_fraction) * sediment.fast_fraction * carbon_deposition - C_min_fast
-        sediment.tendencies.Gⁿ.C_ref[i, j, k] = sediment.refactory_fraction * carbon_deposition
+        sediment.tendencies.Gⁿ.C_slow[i, j, 1] = (1 - sediment.refactory_fraction) * sediment.slow_fraction * carbon_deposition - C_min_slow
+        sediment.tendencies.Gⁿ.C_fast[i, j, 1] = (1 - sediment.refactory_fraction) * sediment.fast_fraction * carbon_deposition - C_min_fast
+        sediment.tendencies.Gⁿ.C_ref[i, j, 1] = sediment.refactory_fraction * carbon_deposition
 
-        sediment.tendencies.Gⁿ.N_slow[i, j, k] = (1 - sediment.refactory_fraction) * sediment.slow_fraction * nitrogen_deposition - N_min_slow
-        sediment.tendencies.Gⁿ.N_fast[i, j, k] = (1 - sediment.refactory_fraction) * sediment.fast_fraction * nitrogen_deposition - N_min_fast
-        sediment.tendencies.Gⁿ.N_ref[i, j, k] = sediment.refactory_fraction * nitrogen_deposition
+        sediment.tendencies.Gⁿ.N_slow[i, j, 1] = (1 - sediment.refactory_fraction) * sediment.slow_fraction * nitrogen_deposition - N_min_slow
+        sediment.tendencies.Gⁿ.N_fast[i, j, 1] = (1 - sediment.refactory_fraction) * sediment.fast_fraction * nitrogen_deposition - N_min_fast
+        sediment.tendencies.Gⁿ.N_ref[i, j, 1] = sediment.refactory_fraction * nitrogen_deposition
 
         # efflux/influx
         O₂  = tracers.O₂[i, j, k]
@@ -243,7 +242,7 @@ sediment_fields(model::SimpleMultiG) = (C_slow = model.fields.C_slow,
         tendencies.NH₄[i, j, k] += Nᵐⁱⁿ * (1 - pₙᵢₜ) / Δz
         tendencies.NO₃[i, j, k] += Nᵐⁱⁿ * pₙᵢₜ / Δz
         tendencies.DIC[i, j, k] += Cᵐⁱⁿ / Δz
-        tendencies.O₂[i, j, k]  -= max(0, ((1 - pₐₙₒₓ * pₛₒₗᵢ) * Cᵐⁱⁿ + 2 * Nᵐⁱⁿ * pₙᵢₜ)/ Δz) # this seems dodge but this model doesn't cope with anoxia properly
+        tendencies.O₂[i, j, k]  -= max(0, ((1 - pₐₙₒₓ * pₛₒₗᵢ) * Cᵐⁱⁿ + 2 * Nᵐⁱⁿ * pₙᵢₜ)/ Δz) # this seems dodge but this model doesn't cope with anoxia properly (I think)
     end
 end
 
