@@ -63,7 +63,7 @@ function InstantRemineralisation(; grid,
     tendencies = (Gⁿ = NamedTuple{tracer_names}(Tuple(CenterField(grid) for tracer in tracer_names)),
                   G⁻ = NamedTuple{tracer_names}(Tuple(CenterField(grid) for tracer in tracer_names)))
 
-    bottom_indices = calculate_bottom_indices(grid)
+    bottom_indices = arch_array(architecture(grid), calculate_bottom_indices(grid))
 
     return InstantRemineralisation(burial_efficiency_constant1,
                                    burial_efficiency_constant2,

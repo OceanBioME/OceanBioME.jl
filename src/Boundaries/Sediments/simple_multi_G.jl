@@ -113,7 +113,7 @@ function SimpleMultiG(; grid,
     tendencies = (Gⁿ = NamedTuple{tracer_names}(Tuple(CenterField(grid) for tracer in tracer_names)),
                   G⁻ = NamedTuple{tracer_names}(Tuple(CenterField(grid) for tracer in tracer_names)))
 
-    bottom_indices = calculate_bottom_indices(grid)
+    bottom_indices = arch_array(architecture(grid), calculate_bottom_indices(grid))
 
     F = typeof(fields)
     TE = typeof(tendencies)
@@ -144,7 +144,8 @@ adapt_structure(to, sediment::SimpleMultiG) =
                  sediment.anoxic_params,
                  sediment.solid_dep_params,
                  adapt(to, sediment.fields),
-                 adapt(to, sediment.tendencies))
+                 adapt(to, sediment.tendencies),
+                 adapt(to, sediment.bottom_indices))
                   
 sediment_tracers(::SimpleMultiG) = (:C_slow, :C_fast, :C_ref, :N_slow, :N_fast, :N_ref)
 sediment_fields(model::SimpleMultiG) = (C_slow = model.fields.C_slow,
