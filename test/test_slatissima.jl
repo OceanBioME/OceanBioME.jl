@@ -2,6 +2,7 @@ using Test, OceanBioME, Oceananigans
 using OceanBioME.SLatissimaModel: SLatissima
 using Oceananigans.Units
 using Oceananigans.Fields: TracerFields
+using Oceananigans.Architectures: arch_array
 
 function intercept_tendencies!(model, intercepted_tendencies)
     for tracer in keys(model.tracers)
