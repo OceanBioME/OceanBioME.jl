@@ -22,7 +22,7 @@ sum_tracer_carbon(tracers, redfield, organic_carbon_calcate_ratio) =
     sum(Array(interior(tracers.bPOC))) +
     sum(Array(interior(tracers.DOC))) +
     sum(Array(interior(tracers.DIC))) + 
-    sum(Array(interior(tracers.P * (1 + organic_carbon_calcate_ratio) + tracers.Z))) * redfield
+    sum(Array(interior(tracers.P)) .* (1 + organic_carbon_calcate_ratio) .+ Array(interior(tracers.Z))) .* redfield
 
 @testset "SLatissima particle setup and conservations" begin
     grid = RectilinearGrid(architecture; size=(1, 1, 1), extent=(1, 1, 1))
