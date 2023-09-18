@@ -29,10 +29,11 @@ sum_tracer_carbon(tracers, redfield, organic_carbon_calcate_ratio) =
 
     # Initial properties
 
-    particles = SLatissima(; x = ones(Float64, 2),
-                             A = ones(Float64, 2) .* 5,
-                             N = ones(Float64, 2),
-                             C = ones(Float64, 2),
+    particles = SLatissima(; architecture
+                             x = arch_array(architecture, ones(Float64, 2)),
+                             A = arch_array(architecture, ones(Float64, 2) .* 5),
+                             N = arch_array(architecture, ones(Float64, 2)),
+                             C = arch_array(architecture, ones(Float64, 2)),
                              latitude = 1.0,
                              pescribed_temperature = (args...) -> 10.0,
                              pescribed_salinity = (args...) -> 35.0)
