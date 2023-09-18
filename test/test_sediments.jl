@@ -93,7 +93,7 @@ function test_flat_sediment(grid, biogeochemistry, model; timestepper = :QuasiAd
 
     simulation.callbacks[:intercept_tendencies] = Callback(intercept_tendencies!; callsite = TendencyCallsite(), parameters = intercepted_tendencies)
 
-    N₀ = total_nitrogen(biogeochemistry.underlying_biogeochemistry, model) * volume(1, 1, 1, grid, Center(), Center(), Center()) + total_nitrogen(biogeochemistry.sediment) * Azᶠᶜᶜ(1, 1, 1, grid)
+    N₀ = CUDA.@allowscalar total_nitrogen(biogeochemistry.underlying_biogeochemistry, model) * volume(1, 1, 1, grid, Center(), Center(), Center()) + total_nitrogen(biogeochemistry.sediment) * Azᶠᶜᶜ(1, 1, 1, grid)
 
     run!(simulation)
 
