@@ -34,11 +34,18 @@ set_defaults!(::LOBSTER, model) =
                 sPOM = 0.2299, bPOM = 0.0103)
 
 
-set_defaults!(::lobster_variable_redfield, model) =
+set_defaults!(::LOBSTER{<:Any, Val{(true, true, true)}}, model) =
     set!(model, P = 0.4686, Z = 0.5363, 
                 NO₃ = 2.3103, NH₄ = 0.0010, 
                 DIC = 2106.9, Alk = 2408.9, 
                 O₂ = 258.92, 
+                DOC = 5.3390, DON = 0.8115,
+                sPON = 0.2299, sPOC = 1.5080,
+                bPON = 0.0103, bPOC = 0.0781)
+
+set_defaults!(::LOBSTER{<:Any, Val{(false, false, true)}}, model) =
+    set!(model, P = 0.4686, Z = 0.5363, 
+                NO₃ = 2.3103, NH₄ = 0.0010, 
                 DOC = 5.3390, DON = 0.8115,
                 sPON = 0.2299, sPOC = 1.5080,
                 bPON = 0.0103, bPOC = 0.0781)
@@ -59,6 +66,7 @@ total_nitrogen(::LOBSTER, model) = sum(Array(interior(model.tracers.NO₃))) +
                                    sum(Array(interior(model.tracers.DOM))) +
                                    sum(Array(interior(model.tracers.sPOM))) +
                                    sum(Array(interior(model.tracers.bPOM)))
+                                   
 total_nitrogen(::lobster_variable_redfield, model) = sum(Array(interior(model.tracers.NO₃))) +
                                                      sum(Array(interior(model.tracers.NH₄))) +
                                                      sum(Array(interior(model.tracers.P))) +
@@ -66,6 +74,7 @@ total_nitrogen(::lobster_variable_redfield, model) = sum(Array(interior(model.tr
                                                      sum(Array(interior(model.tracers.DON))) +
                                                      sum(Array(interior(model.tracers.sPON))) +
                                                      sum(Array(interior(model.tracers.bPON)))
+
 total_nitrogen(::NutrientPhytoplanktonZooplanktonDetritus, model) = sum(Array(interior(model.tracers.N))) +
                                                                     sum(Array(interior(model.tracers.P))) +
                                                                     sum(Array(interior(model.tracers.Z))) +
