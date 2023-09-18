@@ -96,13 +96,23 @@ function test_flat_sediment(grid, biogeochemistry, model; timestepper = :QuasiAd
 
     set_defaults!(biogeochemistry.underlying_biogeochemistry, model)
 
-    simulation = Simulation(model, Δt = 50, stop_time = 1day)
+    N₀ = CUDA.@allowscalar total_nitrogen(biogeochemistry.underlying_biogeochemistry, model) * volume(1, 1, 1, grid, Center(), Center(), Center()) + total_nitrogen(biogeochemistry.sediment) * Azᶠᶜᶜ(1, 1, 1, grid)
+
+    [time_step!(model, 1) for i in 1:3]
+
+    N₁ = CUDA.@allowscalar total_nitrogen(biogeochemistry.underlying_biogeochemistry, model) * volume(1, 1, 1, grid, Center(), Center(), Center()) + total_nitrogen(biogeochemistry.sediment) * Azᶠᶜᶜ(1, 1, 1, grid)
+    
+    # conservations
+    
+    rtol = ifelse(isa(architecture, CPU), max(√eps(N₀), √eps(N₁)), 5e-7)
+    
+    @test isapprox(N₀, N₁; rtol) 
+
+    simulation = Simulation(model, Δt = 1, stop_iteration = 1)
 
     intercepted_tendencies = Tuple(Array(interior(field)) for field in values(TracerFields(keys(model.tracers), grid)))
 
     simulation.callbacks[:intercept_tendencies] = Callback(intercept_tendencies!; callsite = TendencyCallsite(), parameters = intercepted_tendencies)
-
-    N₀ = CUDA.@allowscalar total_nitrogen(biogeochemistry.underlying_biogeochemistry, model) * volume(1, 1, 1, grid, Center(), Center(), Center()) + total_nitrogen(biogeochemistry.sediment) * Azᶠᶜᶜ(1, 1, 1, grid)
 
     run!(simulation)
 
@@ -116,13 +126,6 @@ function test_flat_sediment(grid, biogeochemistry, model; timestepper = :QuasiAd
     # the sediment values are being integrated
     initial_values = (N_fast = 0.0230, N_slow = 0.0807, C_fast = 0.5893, C_slow = 0.1677, N_ref = 0.0, C_ref = 0.0, N_storage = 0.0)
     @test all([any(Array(interior(field)) .!= initial_values[name]) for (name, field) in pairs(model.biogeochemistry.sediment.fields)])
-
-    N₁ = CUDA.@allowscalar total_nitrogen(biogeochemistry.underlying_biogeochemistry, model) * volume(1, 1, 1, grid, Center(), Center(), Center()) + total_nitrogen(biogeochemistry.sediment) * Azᶠᶜᶜ(1, 1, 1, grid)
-
-    # conservations
-    rtol = ifelse(isa(architecture, CPU), max(√eps(N₀), √eps(N₁)), 5e-7)
-    @test isapprox(N₀, N₁; rtol) 
-
     return nothing
 end
 
