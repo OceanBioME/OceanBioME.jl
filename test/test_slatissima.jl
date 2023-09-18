@@ -29,7 +29,7 @@ sum_tracer_carbon(tracers, redfield, organic_carbon_calcate_ratio) =
 
     # Initial properties
 
-    particles = SLatissima(; architecture
+    particles = SLatissima(; architecture,
                              x = arch_array(architecture, ones(Float64, 2)),
                              A = arch_array(architecture, ones(Float64, 2) .* 5),
                              N = arch_array(architecture, ones(Float64, 2)),
