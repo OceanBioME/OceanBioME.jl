@@ -48,18 +48,18 @@ end
 
 """
     SimpleMultiG(; grid
-                   fast_decay_rate::FT = 2/day,
-                   slow_decay_rate::FT = 0.2/day,
-                   fast_redfield::FT = 0.1509,
-                   slow_redfield::FT = 0.13,
-                   fast_fraction::FT = 0.74,
-                   slow_fraction::FT = 0.26,
-                   refactory_fraction::FT = 0.1,
-                   nitrate_oxidation_params::P1 = (A = - 1.9785, B = 0.2261, C = -0.0615, D = -0.0289, E = - 0.36109, F = - 0.0232),
-                   denitrification_params::P2 = (A = - 3.0790, B = 1.7509, C = 0.0593, D = - 0.1923, E = 0.0604, F = 0.0662),
-                   anoxic_params::P3 = (A = - 3.9476, B = 2.6269, C = - 0.2426, D = -1.3349, E = 0.1826, F = - 0.0143),
+                   fast_decay_rate = 2/day,
+                   slow_decay_rate = 0.2/day,
+                   fast_redfield = 0.1509,
+                   slow_redfield = 0.13,
+                   fast_fraction = 0.74,
+                   slow_fraction = 0.26,
+                   refactory_fraction = 0.1,
+                   nitrate_oxidation_params = (A = - 1.9785, B = 0.2261, C = -0.0615, D = -0.0289, E = - 0.36109, F = - 0.0232),
+                   denitrification_params = (A = - 3.0790, B = 1.7509, C = 0.0593, D = - 0.1923, E = 0.0604, F = 0.0662),
+                   anoxic_params = (A = - 3.9476, B = 2.6269, C = - 0.2426, D = -1.3349, E = 0.1826, F = - 0.0143),
                    depth = abs(znodes(grid, Face())[1]),
-                   solid_dep_params::P4 = (A = 0.233, B = 0.336, C = 982, D = - 1.548, depth = depth))
+                   solid_dep_params = (A = 0.233, B = 0.336, C = 982, D = - 1.548, depth = depth))
 
 Return a single-layer "multi G" sediment model (`SimpleMultiG`) on `grid`, where parameters
 can be optionally specified.
@@ -90,37 +90,37 @@ Single-layer multi-G sediment model (Float64)
 ```
 """
 function SimpleMultiG(; grid,
-                       fast_decay_rate::FT = 2/day,
-                       slow_decay_rate::FT = 0.2/day,
-                       fast_redfield::FT = 0.1509,
-                       slow_redfield::FT = 0.13,
-                       fast_fraction::FT = 0.74,
-                       slow_fraction::FT = 0.26,
-                       refactory_fraction::FT = 0.1,
-                       nitrate_oxidation_params::P1 = (A = - 1.9785,
+                       fast_decay_rate = 2/day,
+                       slow_decay_rate = 0.2/day,
+                       fast_redfield = 0.1509,
+                       slow_redfield = 0.13,
+                       fast_fraction = 0.74,
+                       slow_fraction = 0.26,
+                       refactory_fraction = 0.1,
+                       nitrate_oxidation_params = (A = - 1.9785,
                                                        B = 0.2261,
                                                        C = -0.0615,
                                                        D = -0.0289,
                                                        E = - 0.36109,
                                                        F = - 0.0232),
-                       denitrification_params::P2 = (A = - 3.0790,
+                       denitrification_params = (A = - 3.0790,
                                                      B = 1.7509,
                                                      C = 0.0593,
                                                      D = - 0.1923,
                                                      E = 0.0604,
                                                      F = 0.0662),
-                       anoxic_params::P3 = (A  = - 3.9476,
+                       anoxic_params = (A  = - 3.9476,
                                             B = 2.6269,
                                             C = - 0.2426,
                                             D = -1.3349,
                                             E = 0.1826,
                                             F = - 0.0143),
                        depth = abs(znodes(grid, Face())[1]),
-                       solid_dep_params::P4 = (A = 0.233, 
+                       solid_dep_params = (A = 0.233, 
                                                B = 0.336, 
                                                C = 982, 
                                                D = - 1.548,
-                                               depth = depth)) where {FT, P1, P2, P3, P4}
+                                               depth = depth))
 
     @warn "Sediment models are an experimental feature and have not yet been validated."
     @info "This sediment model is currently only compatible with models providing NH₄, NO₃, O₂, and DIC."
@@ -134,20 +134,16 @@ function SimpleMultiG(; grid,
 
     bottom_indices = arch_array(architecture(grid), calculate_bottom_indices(grid))
 
-    F = typeof(fields)
-    TE = typeof(tendencies)
-    B = typeof(bottom_indices)
-
-    return SimpleMultiG{FT, P1, P2, P3, P4, F, TE, B}(fast_decay_rate, slow_decay_rate,
-                                                      fast_redfield, slow_redfield,
-                                                      fast_fraction, slow_fraction, refactory_fraction,
-                                                      nitrate_oxidation_params,
-                                                      denitrification_params,
-                                                      anoxic_params,
-                                                      solid_dep_params,
-                                                      fields,
-                                                      tendencies,
-                                                      bottom_indices)
+    return SimpleMultiG(fast_decay_rate, slow_decay_rate,
+                        fast_redfield, slow_redfield,
+                        fast_fraction, slow_fraction, refactory_fraction,
+                        nitrate_oxidation_params,
+                        denitrification_params,
+                        anoxic_params,
+                        solid_dep_params,
+                        fields,
+                        tendencies,
+                        bottom_indices)
 end
 
 adapt_structure(to, sediment::SimpleMultiG) = 
