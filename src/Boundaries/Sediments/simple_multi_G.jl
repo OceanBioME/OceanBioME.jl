@@ -186,30 +186,30 @@ sediment_fields(model::SimpleMultiG) = (C_slow = model.fields.C_slow,
         nitrogen_deposition = nitrogen_flux(i, j, k, grid, advection, bgc, tracers) * Δz
 
         # rates
-        C_min_slow = sediment.fields.C_slow[i, j, 1] * sediment.slow_decay_rate
-        C_min_fast = sediment.fields.C_fast[i, j, 1] * sediment.fast_decay_rate
+        C_min_slow = sediment.fields.C_slow[i, j, k] * sediment.slow_decay_rate
+        C_min_fast = sediment.fields.C_fast[i, j, k] * sediment.fast_decay_rate
 
-        N_min_slow = sediment.fields.N_slow[i, j, 1] * sediment.slow_decay_rate
-        N_min_fast = sediment.fields.N_fast[i, j, 1] * sediment.fast_decay_rate
+        N_min_slow = sediment.fields.N_slow[i, j, k] * sediment.slow_decay_rate
+        N_min_fast = sediment.fields.N_fast[i, j, k] * sediment.fast_decay_rate
 
         Cᵐⁱⁿ = C_min_slow + C_min_fast
         Nᵐⁱⁿ = N_min_slow + N_min_fast
         
-        k = Cᵐⁱⁿ * day / (sediment.fields.C_slow[i, j, 1] + sediment.fields.C_fast[i, j, 1])
+        k = Cᵐⁱⁿ * day / (sediment.fields.C_slow[i, j, k] + sediment.fields.C_fast[i, j, k])
 
         # sediment evolution
-        sediment.tendencies.Gⁿ.C_slow[i, j, 1] = (1 - sediment.refactory_fraction) * sediment.slow_fraction * carbon_deposition - C_min_slow
-        sediment.tendencies.Gⁿ.C_fast[i, j, 1] = (1 - sediment.refactory_fraction) * sediment.fast_fraction * carbon_deposition - C_min_fast
-        sediment.tendencies.Gⁿ.C_ref[i, j, 1] = sediment.refactory_fraction * carbon_deposition
+        sediment.tendencies.Gⁿ.C_slow[i, j, k] = (1 - sediment.refactory_fraction) * sediment.slow_fraction * carbon_deposition - C_min_slow
+        sediment.tendencies.Gⁿ.C_fast[i, j, k] = (1 - sediment.refactory_fraction) * sediment.fast_fraction * carbon_deposition - C_min_fast
+        sediment.tendencies.Gⁿ.C_ref[i, j, k] = sediment.refactory_fraction * carbon_deposition
 
-        sediment.tendencies.Gⁿ.N_slow[i, j, 1] = (1 - sediment.refactory_fraction) * sediment.slow_fraction * nitrogen_deposition - N_min_slow
-        sediment.tendencies.Gⁿ.N_fast[i, j, 1] = (1 - sediment.refactory_fraction) * sediment.fast_fraction * nitrogen_deposition - N_min_fast
-        sediment.tendencies.Gⁿ.N_ref[i, j, 1] = sediment.refactory_fraction * nitrogen_deposition
+        sediment.tendencies.Gⁿ.N_slow[i, j, k] = (1 - sediment.refactory_fraction) * sediment.slow_fraction * nitrogen_deposition - N_min_slow
+        sediment.tendencies.Gⁿ.N_fast[i, j, k] = (1 - sediment.refactory_fraction) * sediment.fast_fraction * nitrogen_deposition - N_min_fast
+        sediment.tendencies.Gⁿ.N_ref[i, j, k] = sediment.refactory_fraction * nitrogen_deposition
 
         # efflux/influx
-        O₂  = tracers.O₂[i, j, 1]
-        NO₃ = tracers.NO₃[i, j, 1]
-        NH₄ = tracers.NH₄[i, j, 1]
+        O₂  = tracers.O₂[i, j, k]
+        NO₃ = tracers.NO₃[i, j, k]
+        NH₄ = tracers.NH₄[i, j, k]
 
         pₙᵢₜ = exp(sediment.nitrate_oxidation_params.A +
                    sediment.nitrate_oxidation_params.B * log(Cᵐⁱⁿ * day) * log(O₂) +
@@ -234,18 +234,16 @@ sediment_fields(model::SimpleMultiG) = (C_slow = model.fields.C_slow,
                     sediment.anoxic_params.F * log(NO₃) ^ 2) / (Cᵐⁱⁿ * day)
 
         if isnan(pₐₙₒₓ)
-            println("$(Cᵐⁱⁿ), $(k), $(O₂), $(NO₃)")
+            #println("$(Cᵐⁱⁿ), $(k), $(O₂), $(NO₃)")
             error("Sediment anoxia has caused model failure")
         end
 
         pₛₒₗᵢ = sediment.solid_dep_params.A * (sediment.solid_dep_params.C * sediment.solid_dep_params.depth ^ sediment.solid_dep_params.D) ^ sediment.solid_dep_params.B
 
-        Δz = grid.Δzᵃᵃᶜ[1]
-
-        tendencies.NH₄[i, j, 1] += Nᵐⁱⁿ * (1 - pₙᵢₜ) / Δz
-        tendencies.NO₃[i, j, 1] += Nᵐⁱⁿ * pₙᵢₜ / Δz
-        tendencies.DIC[i, j, 1] += Cᵐⁱⁿ / Δz
-        tendencies.O₂[i, j, 1]  -= max(0, ((1 - pₐₙₒₓ * pₛₒₗᵢ) * Cᵐⁱⁿ + 2 * Nᵐⁱⁿ * pₙᵢₜ)/ Δz) # this seems dodge but this model doesn't cope with anoxia properly
+        tendencies.NH₄[i, j, k] += Nᵐⁱⁿ * (1 - pₙᵢₜ) / Δz
+        tendencies.NO₃[i, j, k] += Nᵐⁱⁿ * pₙᵢₜ / Δz
+        tendencies.DIC[i, j, k] += Cᵐⁱⁿ / Δz
+        tendencies.O₂[i, j, k]  -= max(0, ((1 - pₐₙₒₓ * pₛₒₗᵢ) * Cᵐⁱⁿ + 2 * Nᵐⁱⁿ * pₙᵢₜ)/ Δz) # this seems dodge but this model doesn't cope with anoxia properly
     end
 end
 
