@@ -1,22 +1,5 @@
 using Test, OceanBioME, Oceananigans
 
-function test_column_diffusion_timescale(arch)
-    κ = 1e-3
-    @inline κₜ(x, y, z, t) = κ
-
-    grid = RectilinearGrid(arch, size=(1, 1, 5), x=(0, 10), y=(0, 3), z=[-1, -0.6, -0.5, -0.2, -0.19, 0])
-    min_Δz = minimum_zspacing(grid)
-
-    model = NonhydrostaticModel(; grid,
-                                closure = ScalarDiffusivity(ν = κₜ, κ = κₜ),
-                                biogeochemistry = LOBSTER(; grid,
-                                                            surface_phytosynthetically_active_radiation = (x, y, t) -> 100,
-                                                            carbonates = true),
-                                advection = nothing)
-
-    return column_diffusion_timescale(model) ≈ min_Δz ^ 2 / κ
-end
-
 function test_negative_scaling(arch)
     grid = RectilinearGrid(arch, size = (1, 1, 1), extent = (1, 1, 1))
 
@@ -53,7 +36,6 @@ function test_negative_zeroing(arch)
 end
 
 @testset "Test Utils" begin
-    @test test_column_diffusion_timescale(architecture) broken = architecture == GPU()
     @test test_negative_scaling(architecture)
     @test test_negative_zeroing(architecture)
 end

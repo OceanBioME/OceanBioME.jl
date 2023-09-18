@@ -111,7 +111,7 @@ end
         end
     end 
 
-    t < 0 && t = NaN
+    t < 0 && (t = NaN)
 
     @unroll for tracer in tracers
         value = @inbounds tracer[i, j, k]
