@@ -3,7 +3,7 @@
 ##### As per OCMIP Phase 2 http://ocmip5.ipsl.jussieu.fr/OCMIP/phase2/simulations/Abiotic/Cchem/co2calc.f simplified as in PISCESv2
 #####
 
-using Oceananigans.Fields: fractional_indices
+using Oceananigans.Fields: fractional_indices, indices
 
 struct pCO₂{P0, P1, P2, PB, PW, FT}
                   solubility :: P0
@@ -269,7 +269,7 @@ end
     ξ, i = mod(i, 1), Base.unsafe_trunc(Int, i)
     η, j = mod(j, 1), Base.unsafe_trunc(Int, j)
 
-    _, _, ks = eachindex(conc).indices
+    _, _, ks = indices(conc)
 
     return @inbounds  ((1 - ξ) * (1 - η) * conc[i,   j,   ks[1]]
                      + (1 - ξ) *      η  * conc[i,   j+1, ks[1]]
