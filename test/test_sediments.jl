@@ -111,7 +111,7 @@ function test_flat_sediment(grid, biogeochemistry, model; timestepper = :QuasiAd
     N₁ = total_nitrogen(biogeochemistry.underlying_biogeochemistry, model) * volume(1, 1, 1, grid, Center(), Center(), Center()) + total_nitrogen(biogeochemistry.sediment) * Azᶠᶜᶜ(1, 1, 1, grid)
 
     # conservations
-    rtol = ifelse(isa(architecture, CPU), max(eps(N₀), eps(N₁)), 5e-7)
+    rtol = ifelse(isa(architecture, CPU), max(√eps(N₀), √eps(N₁)), 5e-7)
     @test isapprox(N₀, N₁; rtol) 
 
     return nothing

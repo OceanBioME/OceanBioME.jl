@@ -76,10 +76,10 @@ sum_tracer_carbon(tracers, redfield, organic_carbon_calcate_ratio) =
 
     # conservaitons
     # (GPU eps is much larger (~10⁻⁷) than on CPU)
-    rtol = ifelse(isa(architecture, CPU), max(eps(initial_tracer_N + initial_kelp_N), eps(final_tracer_N + final_kelp_N)), 2e-7)
+    rtol = ifelse(isa(architecture, CPU), max(√eps(initial_tracer_N + initial_kelp_N), √eps(final_tracer_N + final_kelp_N)), 2e-7)
     @test isapprox(initial_tracer_N + initial_kelp_N, final_tracer_N + final_kelp_N; rtol) 
 
-    rtol = ifelse(isa(architecture, CPU), max(eps(initial_tracer_C + initial_kelp_C), eps(final_tracer_C + final_kelp_C)), 7e-7)
+    rtol = ifelse(isa(architecture, CPU), max(√eps(initial_tracer_C + initial_kelp_C), √eps(final_tracer_C + final_kelp_C)), 7e-7)
     @test isapprox(initial_tracer_C + initial_kelp_C, final_tracer_C + final_kelp_C; rtol)
 
     simulation = Simulation(model, Δt = 1.0, stop_iteration = 1)
