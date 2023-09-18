@@ -25,6 +25,25 @@ struct SimpleMultiG{FT, P1, P2, P3, P4, F, TE, B} <: FlatSediment
                       fields :: F
                   tendencies :: TE
               bottom_indices :: B
+    
+    SimpleMultiG(fast_decay_rate::FT, slow_decay_rate::FT,
+                 fast_redfield::FT,   slow_redfield::FT,
+                 fast_fraction::FT,   slow_fraction::FT, refactory_fraction::FT,
+                 nitrate_oxidation_params::P1, 
+                 denitrification_params::P2,
+                 anoxic_params::P3,
+                 solid_dep_params::P4,
+                 fields::F, tendencies::TE,
+                 bottom_indices::B) where {FT, P1, P2, P3, P4, F, TE, B} =
+        new{FT, P1, P2, P3, P4, F, TE, B}(fast_decay_rate, slow_decay_rate,
+                                          fast_redfield,   slow_redfield,
+                                          fast_fraction,   slow_fraction, refactory_fraction,
+                                          nitrate_oxidation_params, 
+                                          denitrification_params,
+                                          anoxic_params,
+                                          solid_dep_params,
+                                          fields, tendencies,
+                                          bottom_indices)
 end
 
 """
