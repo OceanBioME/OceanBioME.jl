@@ -142,7 +142,7 @@ bottom_height(x, y) = -1000 + 500 * exp(- (x^2 + y^2) / 250) # a perfect hill
                                     LOBSTER(; grid,
                                               carbonates = ifelse(isa(sediment_model, SimpleMultiG), true, false), 
                                               oxygen = ifelse(isa(sediment_model, SimpleMultiG), true, false), 
-                                              variable_redfield = ifelse(isa(sediment_model, SimpleMultiG), true, false), 
+                                              variable_redfield = ifelse(isa(sediment_model, SimpleMultiG), false, true), 
                                               sediment_model))
                 # get rid of incompatible combinations
                 run = ifelse((model == NonhydrostaticModel && (isa(grid, ImmersedBoundaryGrid) || isa(grid, LatitudeLongitudeGrid))) ||
