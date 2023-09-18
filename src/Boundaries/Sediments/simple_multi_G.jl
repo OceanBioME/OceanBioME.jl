@@ -233,7 +233,6 @@ sediment_fields(model::SimpleMultiG) = (C_slow = model.fields.C_slow,
                     sediment.anoxic_params.F * log(NO₃) ^ 2) / (Cᵐⁱⁿ * day)
 
         if isnan(pₐₙₒₓ)
-            println("$(Cᵐⁱⁿ), $(reactivity), $(O₂), $(NO₃)")
             error("Sediment anoxia has caused model failure")
         end
 
