@@ -13,7 +13,7 @@ using OceanBioME.LOBSTERModel: lobster_variable_redfield
 
 function intercept_tendencies!(model, intercepted_tendencies)
     for tracer in keys(model.tracers)
-        copyto!(intercepted_tendencies[tracer], model.timestepper.Gⁿ[tracer])
+        intercepted_tendencies[tracer] = Array(interior(model.timestepper.Gⁿ[tracer]))
     end
 end
 
@@ -89,7 +89,7 @@ function test_flat_sediment(grid, biogeochemistry, model; timestepper = :QuasiAd
 
     simulation = Simulation(model, Δt = 50, stop_time = 1day)
 
-    intercepted_tendencies = TracerFields(keys(model.tracers), grid)
+    intercepted_tendencies = Tuple(Array(interior(field)) for field in values(TracerFields(keys(model.tracers), grid)))
 
     simulation.callbacks[:intercept_tendencies] = Callback(intercept_tendencies!; callsite = TendencyCallsite(), parameters = intercepted_tendencies)
 
@@ -98,11 +98,11 @@ function test_flat_sediment(grid, biogeochemistry, model; timestepper = :QuasiAd
     run!(simulation)
 
     # the model is changing the tracer tendencies
-    @test any([any(intercepted_tendencies[tracer] .!= model.timestepper.Gⁿ[tracer]) for tracer in keys(model.tracers)])
+    @test any([any(intercepted_tendencies[idx] .!= Array(interior(model.timestepper.Gⁿ[tracer]))) for (idx, tracer) in enumerate(keys(model.tracers))])
 
     # the sediment tendencies are being updated
-    @test all([any(tend .!= 0.0) for tend in model.biogeochemistry.sediment.tendencies.Gⁿ])
-    @test all([any(tend .!= 0.0) for tend in model.biogeochemistry.sediment.tendencies.G⁻])
+    @test all([any(Array(interior(tend)) .!= 0.0) for tend in model.biogeochemistry.sediment.tendencies.Gⁿ])
+    @test all([any(Array(interior(tend)) .!= 0.0) for tend in model.biogeochemistry.sediment.tendencies.G⁻])
 
     # the sediment values are being integrated
     initial_values = (N_fast = 0.0230, N_slow = 0.0807, C_fast = 0.5893, C_slow = 0.1677, N_ref = 0.0, C_ref = 0.0, N_storage = 0.0)
@@ -111,7 +111,8 @@ function test_flat_sediment(grid, biogeochemistry, model; timestepper = :QuasiAd
     N₁ = total_nitrogen(biogeochemistry.underlying_biogeochemistry, model) * volume(1, 1, 1, grid, Center(), Center(), Center()) + total_nitrogen(biogeochemistry.sediment) * Azᶠᶜᶜ(1, 1, 1, grid)
 
     # conservations
-    @test N₁ ≈ N₀
+    rtol = ifelse(isa(architecture, CPU), max(eps(N₀), eps(N₁)), 5e-7)
+    @test isapprox(N₀, N₁; rtol) 
 
     return nothing
 end
