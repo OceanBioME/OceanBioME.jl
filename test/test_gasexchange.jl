@@ -57,9 +57,9 @@ grid = RectilinearGrid(architecture; size=(1, 1, 2), extent=(1, 1, 1))
 
 @inline conc_function(x, y, t) = 413.0 + 10.0 * sin(t * π / year)
 
-conc_field = CenterField(grid, indices=(:, :, grid.Nz))
-set!(conc_field, 413.0)
-Oceananigans.fill_halo_regions!(conc_field)
+#conc_field = CenterField(grid, indices=(:, :, grid.Nz))
+#set!(conc_field, 413.0)
+#Oceananigans.fill_halo_regions!(conc_field)
 
 @testset "Gas exchange coupling" begin
     for air_concentration in [413.1, conc_function, conc_field]
