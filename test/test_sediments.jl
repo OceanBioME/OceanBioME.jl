@@ -58,18 +58,18 @@ total_nitrogen(::LOBSTER, model) = sum(Array(interior(model.tracers.NO₃))) +
                                    sum(Array(interior(model.tracers.Z))) +
                                    sum(Array(interior(model.tracers.DOM))) +
                                    sum(Array(interior(model.tracers.sPOM))) +
-                                   sum(Array(interior(model.tracers.bPOM)
+                                   sum(Array(interior(model.tracers.bPOM)))
 total_nitrogen(::lobster_variable_redfield, model) = sum(Array(interior(model.tracers.NO₃))) +
                                                      sum(Array(interior(model.tracers.NH₄))) +
                                                      sum(Array(interior(model.tracers.P))) +
                                                      sum(Array(interior(model.tracers.Z))) +
                                                      sum(Array(interior(model.tracers.DON))) +
                                                      sum(Array(interior(model.tracers.sPON))) +
-                                                     sum(Array(interior(model.tracers.bPON)
+                                                     sum(Array(interior(model.tracers.bPON)))
 total_nitrogen(::NutrientPhytoplanktonZooplanktonDetritus, model) = sum(Array(interior(model.tracers.N))) +
                                                                     sum(Array(interior(model.tracers.P))) +
                                                                     sum(Array(interior(model.tracers.Z))) +
-                                                                    sum(Array(interior(model.tracers.D)
+                                                                    sum(Array(interior(model.tracers.D)))
 
 function test_flat_sediment(grid, biogeochemistry, model; timestepper = :QuasiAdamsBashforth2)
     model = isa(model, NonhydrostaticModel) ? model(; grid, 
