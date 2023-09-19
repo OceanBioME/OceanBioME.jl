@@ -55,13 +55,9 @@ s_function(x, y, z, t) = salinity_itp(mod(t, 364days))
 surface_PAR(x, y, t) = PAR_itp(mod(t, 364days))
 κₜ(x, y, z, t) = 2e-2 * max(1 - (z + mld_itp(mod(t, 364days)) / 2)^2 / (mld_itp(mod(t, 364days)) / 2)^2, 0) + 1e-4
 
-clock = Clock(; time = 0.0)
-
-κ = FunctionField{Center, Center, Center}(κₜ, grid; clock)
-
 nothing #hide
 
-# ## Grid and PAR field
+# ## Grid and diffusivity field
 # Define the grid (in this case a non uniform grid for better resolution near the surface) and an extra Oceananigans field for the PAR to be stored in
 Nz = 33
 Lz = 600meters
@@ -73,6 +69,10 @@ h(k) = (k - 1) / Nz
 z_faces(k) = Lz * (ζ₀(k) * Σ(k) - 1)
 
 grid = RectilinearGrid(size = (1, 1, Nz), x = (0, 20meters), y = (0, 20meters), z = z_faces)
+
+clock = Clock(; time = 0.0)
+
+κ = FunctionField{Center, Center, Center}(κₜ, grid; clock)
 
 # ## Biogeochemical and Oceananigans model
 # Here we instantiate the LOBSTER model with carbonate chemistry and a surface flux of DIC (CO₂)
