@@ -37,7 +37,7 @@ import Oceananigans.Biogeochemistry: required_biogeochemical_tracers,
 
 import OceanBioME: maximum_sinking_velocity
 
-import OceanBioME.Boundaries.Sediments: nitrogen_flux, carbon_flux, remineralisation_receiver
+import OceanBioME.Boundaries.Sediments: nitrogen_flux, carbon_flux, remineralisation_receiver, sinking_tracers
 
 import Adapt: adapt_structure, adapt
 
@@ -332,4 +332,5 @@ adapt_structure(to, npzd::NPZD) =
 @inline remineralisation_receiver(::NPZD) = :N
 
 @inline conserved_tracers(::NPZD) = (:N, :P, :Z, :D)
+@inline sinking_tracers(::NPZD) = (:P, :D)
 end # module
