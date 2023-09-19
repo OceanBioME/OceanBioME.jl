@@ -25,6 +25,7 @@ using Oceananigans.Fields: FunctionField
 import Oceananigans.TurbulenceClosures: maximum_numeric_diffusivity
 
 maximum_numeric_diffusivity(κ::NamedTuple) = maximum(maximum.(values(κ)))
+maximum_numeric_diffusivity(κ::FunctionField) = maximum(κ)
 
 const year = years = 365days # just for these idealised cases
 nothing #hide
@@ -53,6 +54,11 @@ t_function(x, y, z, t) = temperature_itp(mod(t, 364days))
 s_function(x, y, z, t) = salinity_itp(mod(t, 364days))
 surface_PAR(x, y, t) = PAR_itp(mod(t, 364days))
 κₜ(x, y, z, t) = 2e-2 * max(1 - (z + mld_itp(mod(t, 364days)) / 2)^2 / (mld_itp(mod(t, 364days)) / 2)^2, 0) + 1e-4
+
+clock = Clock(; time = 0.0)
+
+κ = FunctionField{Center, Center, Center}(κₜ, grid; clock)
+
 nothing #hide
 
 # ## Grid and PAR field
@@ -77,10 +83,6 @@ biogeochemistry = LOBSTER(; grid,
                             scale_negatives = true)
 
 CO₂_flux = GasExchange(; gas = :CO₂, temperature = t_function, salinity = s_function)
-
-clock = Clock(; time = 0.0)
-
-κ = FunctionField{Center, Center, Center}(κₜ, grid; clock)
 
 model = NonhydrostaticModel(; grid, clock,
                               closure = ScalarDiffusivity(ν = κ, κ = κ),
