@@ -8,11 +8,6 @@ We have added a few additional utilities which extend the capabilities of Oceana
 wizard = TimeStepWizard(cfl = 0.2, diffusive_cfl = 0.2, max_change = 2.0, min_change = 0.5, cell_advection_timescale = column_advection_timescale)
 simulation.callbacks[:wizard] = Callback(wizard, IterationInterval(10))
 ```
-Additionally, in a column model you may have a functional definition for the viscosity, so we define an additional diffusion timescale function:
-```julia
-wizard = TimeStepWizard(cfl = 0.2, diffusive_cfl = 0.2, max_change = 2.0, min_change = 0.5, cell_diffusion_timescale = column_diffusion_timescale, cell_advection_timescale = column_advection_timescale)
-simulation.callbacks[:wizard] = Callback(wizard, IterationInterval(10))
-```
 Finally, sinking may be more limiting than the normal advective CFL conditions so, we have an additional cell advection timescale defined for 3D models:
 ```julia
 wizard = TimeStepWizard(cfl = 0.6, diffusive_cfl = 0.5, max_change = 1.5, min_change = 0., cell_advection_timescale = sinking_advection_timescale)

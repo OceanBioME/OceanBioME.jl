@@ -106,7 +106,6 @@ simulation.output_writers[:profiles] = JLD2OutputWriter(model,
 
 wizard = TimeStepWizard(cfl = 0.2, diffusive_cfl = 0.2,
                         max_change = 1.5, min_change = 0.75,
-                        cell_diffusion_timescale = column_diffusion_timescale,
                         cell_advection_timescale = column_advection_timescale)
 
 simulation.callbacks[:wizard] = Callback(wizard, IterationInterval(10))

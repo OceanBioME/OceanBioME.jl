@@ -23,7 +23,7 @@ export TwoBandPhotosyntheticallyActiveRadiation
 export Boundaries, Sediments, GasExchange, FlatSediment
 
 # Utilities
-export column_advection_timescale, column_diffusion_timescale, sinking_advection_timescale, Budget
+export column_advection_timescale, sinking_advection_timescale, Budget
 
 # Positivity preservaiton utilities
 export ScaleNegativeTracers, ZeroNegativeTracers

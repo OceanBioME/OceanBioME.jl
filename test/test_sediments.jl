@@ -34,18 +34,11 @@ set_defaults!(::LOBSTER, model) =
                 sPOM = 0.2299, bPOM = 0.0103)
 
 
-set_defaults!(::LOBSTER{<:Any, Val{(true, true, true)}}, model) =
+set_defaults!(::lobster_variable_redfield, model) =
     set!(model, P = 0.4686, Z = 0.5363, 
                 NO₃ = 2.3103, NH₄ = 0.0010, 
                 DIC = 2106.9, Alk = 2408.9, 
                 O₂ = 258.92, 
-                DOC = 5.3390, DON = 0.8115,
-                sPON = 0.2299, sPOC = 1.5080,
-                bPON = 0.0103, bPOC = 0.0781)
-
-set_defaults!(::LOBSTER{<:Any, Val{(false, false, true)}}, model) =
-    set!(model, P = 0.4686, Z = 0.5363, 
-                NO₃ = 2.3103, NH₄ = 0.0010, 
                 DOC = 5.3390, DON = 0.8115,
                 sPON = 0.2299, sPOC = 1.5080,
                 bPON = 0.0103, bPOC = 0.0781)
@@ -66,7 +59,6 @@ total_nitrogen(::LOBSTER, model) = sum(Array(interior(model.tracers.NO₃))) +
                                    sum(Array(interior(model.tracers.DOM))) +
                                    sum(Array(interior(model.tracers.sPOM))) +
                                    sum(Array(interior(model.tracers.bPOM)))
-                                   
 total_nitrogen(::lobster_variable_redfield, model) = sum(Array(interior(model.tracers.NO₃))) +
                                                      sum(Array(interior(model.tracers.NH₄))) +
                                                      sum(Array(interior(model.tracers.P))) +
@@ -74,7 +66,6 @@ total_nitrogen(::lobster_variable_redfield, model) = sum(Array(interior(model.tr
                                                      sum(Array(interior(model.tracers.DON))) +
                                                      sum(Array(interior(model.tracers.sPON))) +
                                                      sum(Array(interior(model.tracers.bPON)))
-
 total_nitrogen(::NutrientPhytoplanktonZooplanktonDetritus, model) = sum(Array(interior(model.tracers.N))) +
                                                                     sum(Array(interior(model.tracers.P))) +
                                                                     sum(Array(interior(model.tracers.Z))) +
@@ -96,23 +87,13 @@ function test_flat_sediment(grid, biogeochemistry, model; timestepper = :QuasiAd
 
     set_defaults!(biogeochemistry.underlying_biogeochemistry, model)
 
-    N₀ = CUDA.@allowscalar total_nitrogen(biogeochemistry.underlying_biogeochemistry, model) * volume(1, 1, 1, grid, Center(), Center(), Center()) + total_nitrogen(biogeochemistry.sediment) * Azᶠᶜᶜ(1, 1, 1, grid)
-
-    [time_step!(model, 1) for i in 1:3]
-
-    N₁ = CUDA.@allowscalar total_nitrogen(biogeochemistry.underlying_biogeochemistry, model) * volume(1, 1, 1, grid, Center(), Center(), Center()) + total_nitrogen(biogeochemistry.sediment) * Azᶠᶜᶜ(1, 1, 1, grid)
-    
-    # conservations
-    
-    rtol = ifelse(isa(architecture, CPU), max(√eps(N₀), √eps(N₁)), 5e-7)
-    
-    @test isapprox(N₀, N₁; rtol) 
-
-    simulation = Simulation(model, Δt = 1, stop_iteration = 1)
+    simulation = Simulation(model, Δt = 50, stop_time = 1day)
 
     intercepted_tendencies = Tuple(Array(interior(field)) for field in values(TracerFields(keys(model.tracers), grid)))
 
     simulation.callbacks[:intercept_tendencies] = Callback(intercept_tendencies!; callsite = TendencyCallsite(), parameters = intercepted_tendencies)
+
+    N₀ = CUDA.@allowscalar total_nitrogen(biogeochemistry.underlying_biogeochemistry, model) * volume(1, 1, 1, grid, Center(), Center(), Center()) + total_nitrogen(biogeochemistry.sediment) * Azᶠᶜᶜ(1, 1, 1, grid)
 
     run!(simulation)
 
@@ -126,6 +107,13 @@ function test_flat_sediment(grid, biogeochemistry, model; timestepper = :QuasiAd
     # the sediment values are being integrated
     initial_values = (N_fast = 0.0230, N_slow = 0.0807, C_fast = 0.5893, C_slow = 0.1677, N_ref = 0.0, C_ref = 0.0, N_storage = 0.0)
     @test all([any(Array(interior(field)) .!= initial_values[name]) for (name, field) in pairs(model.biogeochemistry.sediment.fields)])
+
+    N₁ = CUDA.@allowscalar total_nitrogen(biogeochemistry.underlying_biogeochemistry, model) * volume(1, 1, 1, grid, Center(), Center(), Center()) + total_nitrogen(biogeochemistry.sediment) * Azᶠᶜᶜ(1, 1, 1, grid)
+
+    # conservations
+    rtol = ifelse(isa(architecture, CPU), max(√eps(N₀), √eps(N₁)), 5e-7)
+    @test isapprox(N₀, N₁; rtol) 
+
     return nothing
 end
 
@@ -154,12 +142,18 @@ bottom_height(x, y) = -1000 + 500 * exp(- (x^2 + y^2) / 250) # a perfect hill
                                     LOBSTER(; grid,
                                               carbonates = ifelse(isa(sediment_model, SimpleMultiG), true, false), 
                                               oxygen = ifelse(isa(sediment_model, SimpleMultiG), true, false), 
-                                              variable_redfield = ifelse(isa(sediment_model, SimpleMultiG), false, true), 
+                                              variable_redfield = ifelse(isa(sediment_model, SimpleMultiG), true, false), 
                                               sediment_model))
                 # get rid of incompatible combinations
                 run = ifelse((model == NonhydrostaticModel && (isa(grid, ImmersedBoundaryGrid) || isa(grid, LatitudeLongitudeGrid))) ||
                              (model == HydrostaticFreeSurfaceModel && timestepper == :RungeKutta3) ||
                              (isa(sediment_model, SimpleMultiG) && isa(biogeochemistry.underlying_biogeochemistry, NutrientPhytoplanktonZooplanktonDetritus)), false, true)
+                
+                if isa(sediment_model, SimpleMultiG) && isa(grid, LatitudeLongitudeGrid) && isa(architecture, CPU)
+                    @testset "$architecture, $timestepper, $(display_name(sediment_model)), $(display_name(biogeochemistry.underlying_biogeochemistry)), $(display_name(grid))" begin
+                        @test false broken = true
+                    end
+                end
                 
                 if run
                     @info "Testing sediment on $(typeof(architecture)) with $timestepper and $(display_name(sediment_model)) on $(display_name(biogeochemistry.underlying_biogeochemistry)) with $(display_name(grid))"
