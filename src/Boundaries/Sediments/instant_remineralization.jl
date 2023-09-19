@@ -78,7 +78,7 @@ adapt_structure(to, sediment::InstantRemineralisation) =
                             sediment.burial_efficiency_constant2,
                             sediment.burial_efficiency_half_saturaiton,
                             adapt(to, sediment.fields),
-                            adapt(to, sediment.tendencies),
+                            nothing,
                             adapt(to, sediment.bottom_indices))
                   
 sediment_tracers(::InstantRemineralisation) = (:N_storage, )
@@ -86,7 +86,7 @@ sediment_fields(model::InstantRemineralisation) = (N_storage = model.fields.N_st
 
 @inline bottom_index_array(sediment::InstantRemineralisation) = sediment.bottom_indices
 
-@kernel function _calculate_tendencies!(sediment::InstantRemineralisation, bgc, grid, advection, tracers, tendencies)
+@kernel function _calculate_tendencies!(sediment::InstantRemineralisation, bgc, grid, advection, tracers, tendencies, sediment_tendencies)
     i, j = @index(Global, NTuple)
 
     k = bottom_index(i, j, sediment)
@@ -98,7 +98,7 @@ sediment_fields(model::InstantRemineralisation) = (N_storage = model.fields.N_st
     burial_efficiency = sediment.burial_efficiency_constant1 + sediment.burial_efficiency_constant2 * ((flux * 6.56) / (7 + flux * 6.56)) ^ 2
 
     # sediment evolution
-    @inbounds sediment.tendencies.Gⁿ.N_storage[i, j, 1] = burial_efficiency * flux
+    @inbounds sediment_tendencies.N_storage[i, j, 1] = burial_efficiency * flux
 
     @inbounds tendencies[remineralisation_receiver(bgc)][i, j, k] += flux * (1 - burial_efficiency) / Δz
 end

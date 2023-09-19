@@ -159,7 +159,7 @@ adapt_structure(to, sediment::SimpleMultiG) =
                  sediment.anoxic_params,
                  sediment.solid_dep_params,
                  adapt(to, sediment.fields),
-                 adapt(to, sediment.tendencies.Gⁿ),
+                 nothing,
                  adapt(to, sediment.bottom_indices))
                   
 sediment_tracers(::SimpleMultiG) = (:C_slow, :C_fast, :C_ref, :N_slow, :N_fast, :N_ref)
@@ -172,7 +172,7 @@ sediment_fields(model::SimpleMultiG) = (C_slow = model.fields.C_slow,
 
 @inline bottom_index_array(sediment::SimpleMultiG) = sediment.bottom_indices
 
-@kernel function _calculate_tendencies!(sediment::SimpleMultiG, bgc, grid, advection, tracers, tendencies)
+@kernel function _calculate_tendencies!(sediment::SimpleMultiG, bgc, grid, advection, tracers, tendencies, sediment_tendencies)
     i, j = @index(Global, NTuple)
 
     k = bottom_index(i, j, sediment)
@@ -197,13 +197,13 @@ sediment_fields(model::SimpleMultiG) = (C_slow = model.fields.C_slow,
         reactivity = Cᵐⁱⁿ * day / (sediment.fields.C_slow[i, j, 1] + sediment.fields.C_fast[i, j, 1])
 
         # sediment evolution
-        sediment.tendencies.C_slow[i, j, 1] = (1 - sediment.refactory_fraction) * sediment.slow_fraction * carbon_deposition - C_min_slow
-        sediment.tendencies.C_fast[i, j, 1] = (1 - sediment.refactory_fraction) * sediment.fast_fraction * carbon_deposition - C_min_fast
-        sediment.tendencies.C_ref[i, j, 1] = sediment.refactory_fraction * carbon_deposition
+        sediment_tendencies.C_slow[i, j, 1] = (1 - sediment.refactory_fraction) * sediment.slow_fraction * carbon_deposition - C_min_slow
+        sediment_tendencies.C_fast[i, j, 1] = (1 - sediment.refactory_fraction) * sediment.fast_fraction * carbon_deposition - C_min_fast
+        sediment_tendencies.C_ref[i, j, 1] = sediment.refactory_fraction * carbon_deposition
 
-        sediment.tendencies.N_slow[i, j, 1] = (1 - sediment.refactory_fraction) * sediment.slow_fraction * nitrogen_deposition - N_min_slow
-        sediment.tendencies.N_fast[i, j, 1] = (1 - sediment.refactory_fraction) * sediment.fast_fraction * nitrogen_deposition - N_min_fast
-        sediment.tendencies.N_ref[i, j, 1] = sediment.refactory_fraction * nitrogen_deposition
+        sediment_tendencies.N_slow[i, j, 1] = (1 - sediment.refactory_fraction) * sediment.slow_fraction * nitrogen_deposition - N_min_slow
+        sediment_tendencies.N_fast[i, j, 1] = (1 - sediment.refactory_fraction) * sediment.fast_fraction * nitrogen_deposition - N_min_fast
+        sediment_tendencies.N_ref[i, j, 1] = sediment.refactory_fraction * nitrogen_deposition
 
         # efflux/influx
         O₂  = tracers.O₂[i, j, k]
