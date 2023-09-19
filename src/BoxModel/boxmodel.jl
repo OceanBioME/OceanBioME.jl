@@ -77,7 +77,7 @@ function calculate_tendencies!(model)
 
     for tracer in required_biogeochemical_tracers(model.biogeochemistry)
         if !(tracer == :T)
-            @inbounds getproperty(Gⁿ, tracer) .= model.biogeochemistry(Val(tracer), 0.0, 0.0, 0.0, model.clock.time, model.values[1]...) + model.forcing[tracer](model.clock.time, model.values[1]...)
+            @inbounds getproperty(Gⁿ, tracer) .= model.biogeochemistry.underlying_biogeochemistry(Val(tracer), 0.0, 0.0, 0.0, model.clock.time, model.values[1]...) + model.forcing[tracer](model.clock.time, model.values[1]...)
         end
     end
 
