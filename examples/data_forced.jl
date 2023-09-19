@@ -20,6 +20,11 @@
 using OceanBioME
 using Oceananigans, Random, Printf, NetCDF, Interpolations, DataDeps
 using Oceananigans.Units
+using Oceananigans.Fields: FunctionField
+
+import Oceananigans.TurbulenceClosures: maximum_numeric_diffusivity
+
+maximum_numeric_diffusivity(κ::NamedTuple) = maximum(maximum.(values(κ)))
 
 const year = years = 365days # just for these idealised cases
 nothing #hide
@@ -73,8 +78,12 @@ biogeochemistry = LOBSTER(; grid,
 
 CO₂_flux = GasExchange(; gas = :CO₂, temperature = t_function, salinity = s_function)
 
-model = NonhydrostaticModel(; grid,
-                              closure = ScalarDiffusivity(ν = κₜ, κ = κₜ),
+clock = Clock(; time = 0.0)
+
+κ = FunctionField{Center, Center, Center}(κₜ, grid; clock)
+
+model = NonhydrostaticModel(; grid, clock,
+                              closure = ScalarDiffusivity(ν = κ, κ = κ),
                               biogeochemistry,
                               boundary_conditions = (DIC = FieldBoundaryConditions(top = CO₂_flux),))
 
