@@ -120,7 +120,7 @@ update_tendencies!(bgc, modifiers::Tuple, model) = [update_tendencies!(bgc, modi
 @inline biogeochemical_transition(i, j, k, grid, bgc::Biogeochemistry, val_tracer_name, clock, fields) =
     biogeochemical_transition(i, j, k, grid, bgc.underlying_biogeochemistry, val_tracer_name, clock, fields) 
 
-@inoine (bgc::Biogeochemistry)(args...) = bgc.underlying_biogeochemistry(args...)
+@inline (bgc::Biogeochemistry)(args...) = bgc.underlying_biogeochemistry(args...)
 
 function update_biogeochemical_state!(bgc::Biogeochemistry, model)
     update_biogeochemical_state!(model, bgc.modifiers)
