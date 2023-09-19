@@ -153,6 +153,8 @@ bottom_height(x, y) = -1000 + 500 * exp(- (x^2 + y^2) / 250) # a perfect hill
                     @testset "$architecture, $timestepper, $(display_name(sediment_model)), $(display_name(biogeochemistry.underlying_biogeochemistry)), $(display_name(grid))" begin
                         @test false broken = true
                     end
+
+                    run = false
                 end
                 
                 if run
