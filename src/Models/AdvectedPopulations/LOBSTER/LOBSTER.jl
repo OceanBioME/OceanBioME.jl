@@ -450,7 +450,7 @@ include("carbonate_chemistry.jl")
 include("oxygen_chemistry.jl")
 include("variable_redfield.jl")
 
-const lobster_variable_redfield = Union{LOBSTER{<:Any, <:Val{(false, false, true)}, <:Any},
+const VariableRedfieldLobster = Union{LOBSTER{<:Any, <:Val{(false, false, true)}, <:Any},
                                         LOBSTER{<:Any, <:Val{(true, false, true)}, <:Any},
                                         LOBSTER{<:Any, <:Val{(false, true, true)}, <:Any},
                                         LOBSTER{<:Any, <:Val{(true, true, true)}, <:Any}}
@@ -463,13 +463,13 @@ const lobster_variable_redfield = Union{LOBSTER{<:Any, <:Val{(false, false, true
 @inline redfield(::Union{Val{:sPOM}, Val{:bPOM}, Val{:DOM}}, bgc::LOBSTER) = bgc.organic_redfield
 @inline redfield(::Union{Val{:sPOC}, Val{:bPOC}, Val{:DOC}, Val{:DIC}}, bgc::LOBSTER) = 1
 
-@inline redfield(i, j, k, ::Val{:sPON}, bgc::lobster_variable_redfield, tracers) = @inbounds tracers.sPOC[i, j, k] / tracers.sPON[i, j, k]
-@inline redfield(i, j, k, ::Val{:bPON}, bgc::lobster_variable_redfield, tracers) = @inbounds tracers.bPOC[i, j, k] / tracers.bPON[i, j, k]
-@inline redfield(i, j, k, ::Val{:DON}, bgc::lobster_variable_redfield, tracers) = @inbounds tracers.DOC[i, j, k] / tracers.DON[i, j, k]
+@inline redfield(i, j, k, ::Val{:sPON}, bgc::VariableRedfieldLobster, tracers) = @inbounds tracers.sPOC[i, j, k] / tracers.sPON[i, j, k]
+@inline redfield(i, j, k, ::Val{:bPON}, bgc::VariableRedfieldLobster, tracers) = @inbounds tracers.bPOC[i, j, k] / tracers.bPON[i, j, k]
+@inline redfield(i, j, k, ::Val{:DON}, bgc::VariableRedfieldLobster, tracers) = @inbounds tracers.DOC[i, j, k] / tracers.DON[i, j, k]
 
-@inline redfield(::Val{:sPON}, bgc::lobster_variable_redfield, tracers) = tracers.sPOC / tracers.sPON
-@inline redfield(::Val{:bPON}, bgc::lobster_variable_redfield, tracers) = tracers.bPOC / tracers.bPON
-@inline redfield(::Val{:DON}, bgc::lobster_variable_redfield, tracers) = tracers.DOC / tracers.DON
+@inline redfield(::Val{:sPON}, bgc::VariableRedfieldLobster, tracers) = tracers.sPOC / tracers.sPON
+@inline redfield(::Val{:bPON}, bgc::VariableRedfieldLobster, tracers) = tracers.bPOC / tracers.bPON
+@inline redfield(::Val{:DON}, bgc::VariableRedfieldLobster, tracers) = tracers.DOC / tracers.DON
 
 @inline nitrogen_flux(i, j, k, grid, advection, bgc::LOBSTER, tracers) = 
     sinking_flux(i, j, k, grid, advection, Val(:sPOM), bgc, tracers) +
@@ -477,19 +477,19 @@ const lobster_variable_redfield = Union{LOBSTER{<:Any, <:Val{(false, false, true
 
 @inline carbon_flux(i, j, k, grid, advection, bgc::LOBSTER, tracers) = nitrogen_flux(i, j, k, grid, advection, bgc, tracers) * redfield(Val(:sPOM), bgc)
 
-@inline nitrogen_flux(i, j, k, grid, advection, bgc::lobster_variable_redfield, tracers) = 
+@inline nitrogen_flux(i, j, k, grid, advection, bgc::VariableRedfieldLobster, tracers) = 
     sinking_flux(i, j, k, grid, advection, Val(:sPON), bgc, tracers) +
     sinking_flux(i, j, k, grid, advection, Val(:bPON), bgc, tracers)
 
-@inline carbon_flux(i, j, k, grid, advection, bgc::lobster_variable_redfield, tracers) =  
+@inline carbon_flux(i, j, k, grid, advection, bgc::VariableRedfieldLobster, tracers) =  
     sinking_flux(i, j, k, grid, advection, Val(:sPOC), bgc, tracers) +
     sinking_flux(i, j, k, grid, advection, Val(:bPOC), bgc, tracers)
 
 @inline remineralisation_receiver(::LOBSTER) = :NH₄
 
 @inline conserved_tracers(::LOBSTER) = (:NO₃, :NH₄, :P, :Z, :sPOM, :bPOM, :DOM)
-@inline conserved_tracers(::lobster_variable_redfield) = (:NO₃, :NH₄, :P, :Z, :sPON, :bPON, :DON)
+@inline conserved_tracers(::VariableRedfieldLobster) = (:NO₃, :NH₄, :P, :Z, :sPON, :bPON, :DON)
 
 @inline sinking_tracers(::LOBSTER) = (:sPOM, :bPOM)
-@inline sinking_tracers(::lobster_variable_redfield) = (:sPON, :bPON, :sPOC, :bPOC)
+@inline sinking_tracers(::VariableRedfieldLobster) = (:sPON, :bPON, :sPOC, :bPOC)
 end # module

@@ -9,7 +9,7 @@ using Oceananigans.Fields: TracerFields
 
 using Oceananigans.Operators: volume, Azᶠᶜᶜ
 
-using OceanBioME.LOBSTERModel: lobster_variable_redfield
+using OceanBioME.LOBSTERModel: VariableRedfieldLobster
 
 function intercept_tendencies!(model, intercepted_tendencies)
     for tracer in keys(model.tracers)
@@ -34,7 +34,7 @@ set_defaults!(::LOBSTER, model) =
                 sPOM = 0.2299, bPOM = 0.0103)
 
 
-set_defaults!(::lobster_variable_redfield, model) =
+set_defaults!(::VariableRedfieldLobster, model) =
     set!(model, P = 0.4686, Z = 0.5363, 
                 NO₃ = 2.3103, NH₄ = 0.0010, 
                 DIC = 2106.9, Alk = 2408.9, 
@@ -59,7 +59,7 @@ total_nitrogen(::LOBSTER, model) = sum(Array(interior(model.tracers.NO₃))) +
                                    sum(Array(interior(model.tracers.DOM))) +
                                    sum(Array(interior(model.tracers.sPOM))) +
                                    sum(Array(interior(model.tracers.bPOM)))
-total_nitrogen(::lobster_variable_redfield, model) = sum(Array(interior(model.tracers.NO₃))) +
+total_nitrogen(::VariableRedfieldLobster, model) = sum(Array(interior(model.tracers.NO₃))) +
                                                      sum(Array(interior(model.tracers.NH₄))) +
                                                      sum(Array(interior(model.tracers.P))) +
                                                      sum(Array(interior(model.tracers.Z))) +
