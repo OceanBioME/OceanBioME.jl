@@ -35,9 +35,14 @@ function update_tendencies!(bgc, sediment::FlatSediment, model)
         launch!(arch, model.grid, :xy, store_flat_tendencies!, sediment.tendencies.G⁻[i], sediment.tendencies.Gⁿ[i])
     end
 
+    Biogeochemistry = bgc.underlying_biogeochemistry
+
     launch!(arch, model.grid, :xy,
             _calculate_tendencies!,
-            sediment, bgc.underlying_biogeochemistry, model.grid, sinking_advection(bgc.underlying_biogeochemistry, model.advection), model.tracers, model.timestepper.Gⁿ, sediment.tendencies.Gⁿ)
+            sediment, biogeochemistry, model.grid, 
+            sinking_advection(biogeochemistry, model.advection), 
+            required_tracers(sediment, biogeochemistry, model.tracers), 
+            required_tendencies(sediment, biogeochemistry, model.timestepper.Gⁿ), sediment.tendencies.Gⁿ)
             
     return nothing
 end
@@ -52,6 +57,8 @@ end
 @inline carbon_flux() = 0
 @inline remineralisation_receiver() = nothing
 @inline sinking_tracers() = nothing
+@inline required_tracers() = nothing
+@inline required_tendencies() = nothing
 
 @inline sinking_advection(bgc, advection) = advection
 @inline sinking_advection(bgc, advection::NamedTuple) = advection[sinking_tracers(bgc)]

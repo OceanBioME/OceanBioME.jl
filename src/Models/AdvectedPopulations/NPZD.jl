@@ -284,6 +284,14 @@ end
     return phytoplankton_mortality_loss + zooplankton_assimilation_loss + zooplankton_mortality_loss - remineralization
 end
 
+@inline function biogeochemical_drift_velocity(bgc::NPZD, ::Val{tracer_name}) where tracer_name
+    if tracer_name in keys(bgc.sinking_velocities)
+        return (u = ZeroField(), v = ZeroField(), w = bgc.sinking_velocities[tracer_name])
+    else
+        return (u = ZeroField(), v = ZeroField(), w = ZeroField())
+    end
+end
+
 function update_boxmodel_state!(model::BoxModel{<:Biogeochemistry{<:NPZD}, <:Any, <:Any, <:Any, <:Any, <:Any})
     getproperty(model.values, :PAR) .= model.forcing.PAR(model.clock.time)
     getproperty(model.values, :T) .= model.forcing.T(model.clock.time)
