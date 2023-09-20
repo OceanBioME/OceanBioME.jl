@@ -155,7 +155,7 @@ sediment_fields(model::SimpleMultiG) = (C_slow = model.fields.C_slow,
     i, j = @index(Global, NTuple)
 
     k = bottom_index(i, j, sediment)
-    depth = @inbounds znodes(grid, Center(), Center(), Center())[k]
+    depth = @inbounds -znodes(grid, Center(), Center(), Center())[k]
 
     Δz = zspacing(i, j, k, grid, Center(), Center(), Center())
 
