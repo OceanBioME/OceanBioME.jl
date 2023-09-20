@@ -149,14 +149,6 @@ bottom_height(x, y) = -1000 + 500 * exp(- (x^2 + y^2) / 250) # a perfect hill
                              (model == HydrostaticFreeSurfaceModel && timestepper == :RungeKutta3) ||
                              (isa(sediment_model, SimpleMultiG) && isa(biogeochemistry.underlying_biogeochemistry, NutrientPhytoplanktonZooplanktonDetritus)), false, true)
                 
-                if run == true && isa(sediment_model, SimpleMultiG) && (isa(grid, LatitudeLongitudeGrid) || isa(grid, ImmersedBoundaryGrid)) && isa(architecture, GPU)
-                    @testset "$architecture, $timestepper, $(display_name(sediment_model)), $(display_name(biogeochemistry.underlying_biogeochemistry)), $(display_name(grid))" begin
-                        @test false broken = true
-                    end
-
-                    run = false
-                end
-                
                 if run
                     @info "Testing sediment on $(typeof(architecture)) with $timestepper and $(display_name(sediment_model)) on $(display_name(biogeochemistry.underlying_biogeochemistry)) with $(display_name(grid))"
                     @testset "$architecture, $timestepper, $(display_name(sediment_model)), $(display_name(biogeochemistry.underlying_biogeochemistry)), $(display_name(grid))" test_flat_sediment(grid, biogeochemistry, model; timestepper)
