@@ -30,6 +30,7 @@ using KernelAbstractions.Extras.LoopInfo: @unroll
 using Oceananigans.Operators: volume
 using Oceananigans.Grids: AbstractGrid
 using Oceananigans.Fields: fractional_indices, _interpolate, datatuple
+using Oceananigans.Models: total_velocities
 
 import Adapt: adapt_structure, adapt
 import Oceananigans.Biogeochemistry: update_tendencies!
@@ -342,13 +343,13 @@ function update_lagrangian_particle_properties!(particles::SLatissima, model, bg
 
     advect_particles_kernel!((x = particles.x, y = particles.y, z = particles.z), 
                              1.0, model.grid, Δt,
-                             datatuple(model.velocities))
+                             total_velocities(model))
 
 
     update_particle_properties_kernel! = _update_lagrangian_particle_properties!(device(arch), workgroup, worksize)
 
     update_particle_properties_kernel!(particles, bgc.light_attenuation, bgc.underlying_biogeochemistry, model.grid, 
-                                       model.velocities, model.tracers, model.clock, Δt)
+                                       total_velocities(model), model.tracers, model.clock, Δt)
 
     particles.custom_dynamics(particles, model, bgc, Δt)
 end
