@@ -42,7 +42,8 @@ function update_tendencies!(bgc, sediment::FlatSediment, model)
             sediment, biogeochemistry, model.grid, 
             sinking_advection(biogeochemistry, model.advection), 
             required_tracers(sediment, biogeochemistry, model.tracers), 
-            required_tendencies(sediment, biogeochemistry, model.timestepper.Gⁿ), sediment.tendencies.Gⁿ)
+            required_tendencies(sediment, biogeochemistry, model.timestepper.Gⁿ), 
+            sediment.tendencies.Gⁿ)
             
     return nothing
 end
