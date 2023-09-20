@@ -55,10 +55,10 @@ end
                    fast_fraction = 0.74,
                    slow_fraction = 0.26,
                    refactory_fraction = 0.1,
-                   nitrate_oxidation_params = (- 1.9785, 0.2261, -0.0615, -0.0289, - 0.36109, - 0.0232),
-                   denitrification_params = (- 3.0790, 1.7509, 0.0593, - 0.1923, 0.0604, 0.0662),
-                   anoxic_params = (- 3.9476, 2.6269, - 0.2426, -1.3349, 0.1826, - 0.0143),
-                   solid_dep_params = (0.233, 0.336, 982.0, - 1.548))
+                   nitrate_oxidation_params = arch_array(architecture(grid), (- 1.9785, 0.2261, -0.0615, -0.0289, - 0.36109, - 0.0232)),
+                   denitrification_params = arch_array(architecture(grid), (- 3.0790, 1.7509, 0.0593, - 0.1923, 0.0604, 0.0662)),
+                   anoxic_params = arch_array(architecture(grid), (- 3.9476, 2.6269, - 0.2426, -1.3349, 0.1826, - 0.0143)),
+                   solid_dep_params = arch_array(architecture(grid), (0.233, 0.336, 982.0, - 1.548)))
 
 Return a single-layer "multi G" sediment model (`SimpleMultiG`) on `grid`, where parameters
 can be optionally specified.
@@ -89,17 +89,17 @@ Single-layer multi-G sediment model (Float64)
 ```
 """
 function SimpleMultiG(; grid,
-                       fast_decay_rate = 2/day,
-                       slow_decay_rate = 0.2/day,
-                       fast_redfield = 0.1509,
-                       slow_redfield = 0.13,
-                       fast_fraction = 0.74,
-                       slow_fraction = 0.26,
-                       refactory_fraction = 0.1,
-                       nitrate_oxidation_params = (- 1.9785, 0.2261, -0.0615, -0.0289, - 0.36109, - 0.0232),
-                       denitrification_params = (- 3.0790, 1.7509, 0.0593, - 0.1923, 0.0604, 0.0662),
-                       anoxic_params = (- 3.9476, 2.6269, - 0.2426, -1.3349, 0.1826, - 0.0143),
-                       solid_dep_params = (0.233, 0.336, 982.0, - 1.548))
+                        fast_decay_rate = 2/day,
+                        slow_decay_rate = 0.2/day,
+                        fast_redfield = 0.1509,
+                        slow_redfield = 0.13,
+                        fast_fraction = 0.74,
+                        slow_fraction = 0.26,
+                        refactory_fraction = 0.1,
+                        nitrate_oxidation_params = arch_array(architecture(grid), (- 1.9785, 0.2261, -0.0615, -0.0289, - 0.36109, - 0.0232)),
+                        denitrification_params = arch_array(architecture(grid), (- 3.0790, 1.7509, 0.0593, - 0.1923, 0.0604, 0.0662)),
+                        anoxic_params = arch_array(architecture(grid), (- 3.9476, 2.6269, - 0.2426, -1.3349, 0.1826, - 0.0143)),
+                        solid_dep_params = arch_array(architecture(grid), (0.233, 0.336, 982.0, - 1.548)))
 
     @warn "Sediment models are an experimental feature and have not yet been validated."
     @info "This sediment model is currently only compatible with models providing NH₄, NO₃, O₂, and DIC."

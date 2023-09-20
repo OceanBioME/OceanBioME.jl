@@ -389,7 +389,7 @@ const DOM = Union{Val{:DOM}, Val{:DON}}
 
 @inline function biogeochemical_drift_velocity(bgc::LOBSTER, ::Val{tracer_name}) where tracer_name
     if tracer_name in keys(bgc.sinking_velocities)
-        return bgc.sinking_velocities[tracer_name]
+        return (u = ZeroField(), v = ZeroField(), w = bgc.sinking_velocities[tracer_name])
     else
         return (u = ZeroField(), v = ZeroField(), w = ZeroField())
     end
