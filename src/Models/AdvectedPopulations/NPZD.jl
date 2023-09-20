@@ -308,7 +308,7 @@ adapt_structure(to, npzd::NPZD) =
                                              adapt(to, npzd.base_maximum_growth),
                                              adapt(to, npzd.nutrient_half_saturation),
                                              adapt(to, npzd.base_respiration_rate),
-                                             adapt(to, npzd.phyto_base_mortality_rate,
+                                             adapt(to, npzd.phyto_base_mortality_rate),
 
                                              adapt(to, npzd.maximum_grazing_rate),
                                              adapt(to, npzd.grazing_half_saturation),
