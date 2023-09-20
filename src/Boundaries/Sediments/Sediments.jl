@@ -35,7 +35,7 @@ function update_tendencies!(bgc, sediment::FlatSediment, model)
         launch!(arch, model.grid, :xy, store_flat_tendencies!, sediment.tendencies.G⁻[i], sediment.tendencies.Gⁿ[i])
     end
 
-    Biogeochemistry = bgc.underlying_biogeochemistry
+    biogeochemistry = bgc.underlying_biogeochemistry
 
     launch!(arch, model.grid, :xy,
             _calculate_tendencies!,
