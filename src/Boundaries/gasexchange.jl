@@ -43,8 +43,11 @@ adapt_structure(to, pCO₂_model::pCO₂) = pCO₂(adapt(to, pCO₂_model.solubi
                                              adapt(to, pCO₂_model.carbonate_dissociation),
                                              adapt(to, pCO₂_model.boric_acid_dissociation),
                                              adapt(to, pCO₂_model.water_dissociaiton),
-                                             pCO₂_model.lower_pH_bound, pCO₂_model.upper_pH_bound,
-                                             pCO₂_model.boron_ratio, pCO₂_model.thermal_expansion, pCO₂_model.haline_contraction)
+                                             adapt(to, pCO₂_model.lower_pH_bound),
+                                             adapt(to, pCO₂_model.upper_pH_bound),
+                                             adapt(to, pCO₂_model.boron_ratio),
+                                             adapt(to, pCO₂_model.thermal_expansion),
+                                             adapt(to, pCO₂_model.haline_contraction))
 
 @inline function titrate_alkalinity(H, p)
     return p.DIC * (p.k¹ * H + 2 * p.k¹ * p.k²) / (H ^ 2 + p.k¹ * H + p.k¹ * p.k²) -

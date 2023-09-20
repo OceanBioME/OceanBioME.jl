@@ -304,19 +304,19 @@ show(io::IO, model::NPZD) = string(summary(model), " \n",
 @inline maximum_sinking_velocity(bgc::NPZD) = maximum(abs, bgc.sinking_velocities.D.w)
 
 adapt_structure(to, npzd::NPZD) = 
-    NutrientPhytoplanktonZooplanktonDetritus(npzd.initial_photosynthetic_slope,
-                                             npzd.base_maximum_growth,
-                                             npzd.nutrient_half_saturation,
-                                             npzd.base_respiration_rate,
-                                             npzd.phyto_base_mortality_rate,
+    NutrientPhytoplanktonZooplanktonDetritus(adapt(to, npzd.initial_photosynthetic_slope),
+                                             adapt(to, npzd.base_maximum_growth),
+                                             adapt(to, npzd.nutrient_half_saturation),
+                                             adapt(to, npzd.base_respiration_rate),
+                                             adapt(to, npzd.phyto_base_mortality_rate,
 
-                                             npzd.maximum_grazing_rate,
-                                             npzd.grazing_half_saturation,
-                                             npzd.assimulation_efficiency,
-                                             npzd.base_excretion_rate,
-                                             npzd.zoo_base_mortality_rate,
+                                             adapt(to, npzd.maximum_grazing_rate),
+                                             adapt(to, npzd.grazing_half_saturation),
+                                             adapt(to, npzd.assimulation_efficiency),
+                                             adapt(to, npzd.base_excretion_rate),
+                                             adapt(to, npzd.zoo_base_mortality_rate),
 
-                                             npzd.remineralization_rate,
+                                             adapt(to, npzd.remineralization_rate),
 
                                              adapt(to, npzd.sinking_velocities))
 

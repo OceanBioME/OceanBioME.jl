@@ -74,9 +74,9 @@ function InstantRemineralisation(; grid,
 end
 
 adapt_structure(to, sediment::InstantRemineralisation) = 
-    InstantRemineralisation(sediment.burial_efficiency_constant1,
-                            sediment.burial_efficiency_constant2,
-                            sediment.burial_efficiency_half_saturaiton,
+    InstantRemineralisation(adapt(to, sediment.burial_efficiency_constant1),
+                            adapt(to, sediment.burial_efficiency_constant2),
+                            adapt(to, sediment.burial_efficiency_half_saturaiton),
                             adapt(to, sediment.fields),
                             nothing,
                             adapt(to, sediment.bottom_indices))
