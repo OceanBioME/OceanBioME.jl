@@ -84,7 +84,7 @@ adapt_structure(to, sediment::InstantRemineralisation) =
 sediment_tracers(::InstantRemineralisation) = (:N_storage, )
 sediment_fields(model::InstantRemineralisation) = (N_storage = model.fields.N_storage, )
 
-@inline required_tracers(::InstantRemineralisation, bgc, tracers) = tracers[(sinking_tracers(bgc)..., remineralisation_receiver(bgc)...)]
+@inline required_tracers(::InstantRemineralisation, bgc, tracers) = tracers[(sinking_tracers(bgc)..., remineralisation_receiver(bgc))]
 @inline required_tendencies(::InstantRemineralisation, bgc, tracers) = tracers[remineralisation_receiver(bgc)]
 
 @inline bottom_index_array(sediment::InstantRemineralisation) = sediment.bottom_indices
