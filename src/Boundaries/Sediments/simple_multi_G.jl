@@ -55,11 +55,10 @@ end
                    fast_fraction = 0.74,
                    slow_fraction = 0.26,
                    refactory_fraction = 0.1,
-                   nitrate_oxidation_params = (A = - 1.9785, B = 0.2261, C = -0.0615, D = -0.0289, E = - 0.36109, F = - 0.0232),
-                   denitrification_params = (A = - 3.0790, B = 1.7509, C = 0.0593, D = - 0.1923, E = 0.0604, F = 0.0662),
-                   anoxic_params = (A = - 3.9476, B = 2.6269, C = - 0.2426, D = -1.3349, E = 0.1826, F = - 0.0143),
-                   depth = abs(znodes(grid, Face())[1]),
-                   solid_dep_params = (A = 0.233, B = 0.336, C = 982, D = - 1.548, depth = depth))
+                   nitrate_oxidation_params = (- 1.9785, 0.2261, -0.0615, -0.0289, - 0.36109, - 0.0232),
+                   denitrification_params = (- 3.0790, 1.7509, 0.0593, - 0.1923, 0.0604, 0.0662),
+                   anoxic_params = (- 3.9476, 2.6269, - 0.2426, -1.3349, 0.1826, - 0.0143),
+                   solid_dep_params = (0.233, 0.336, 982.0, - 1.548))
 
 Return a single-layer "multi G" sediment model (`SimpleMultiG`) on `grid`, where parameters
 can be optionally specified.
@@ -97,30 +96,10 @@ function SimpleMultiG(; grid,
                        fast_fraction = 0.74,
                        slow_fraction = 0.26,
                        refactory_fraction = 0.1,
-                       nitrate_oxidation_params = (A = - 1.9785,
-                                                       B = 0.2261,
-                                                       C = -0.0615,
-                                                       D = -0.0289,
-                                                       E = - 0.36109,
-                                                       F = - 0.0232),
-                       denitrification_params = (A = - 3.0790,
-                                                     B = 1.7509,
-                                                     C = 0.0593,
-                                                     D = - 0.1923,
-                                                     E = 0.0604,
-                                                     F = 0.0662),
-                       anoxic_params = (A  = - 3.9476,
-                                            B = 2.6269,
-                                            C = - 0.2426,
-                                            D = -1.3349,
-                                            E = 0.1826,
-                                            F = - 0.0143),
-                       depth = abs(znodes(grid, Face())[1]),
-                       solid_dep_params = (A = 0.233, 
-                                               B = 0.336, 
-                                               C = 982, 
-                                               D = - 1.548,
-                                               depth = depth))
+                       nitrate_oxidation_params = (- 1.9785, 0.2261, -0.0615, -0.0289, - 0.36109, - 0.0232),
+                       denitrification_params = (- 3.0790, 1.7509, 0.0593, - 0.1923, 0.0604, 0.0662),
+                       anoxic_params = (- 3.9476, 2.6269, - 0.2426, -1.3349, 0.1826, - 0.0143),
+                       solid_dep_params = (0.233, 0.336, 982.0, - 1.548))
 
     @warn "Sediment models are an experimental feature and have not yet been validated."
     @info "This sediment model is currently only compatible with models providing NH₄, NO₃, O₂, and DIC."
@@ -147,17 +126,17 @@ function SimpleMultiG(; grid,
 end
 
 adapt_structure(to, sediment::SimpleMultiG) = 
-    SimpleMultiG(sediment.fast_decay_rate,
-                 sediment.slow_decay_rate,
-                 sediment.fast_redfield,
-                 sediment.slow_redfield,
-                 sediment.fast_fraction,
-                 sediment.slow_fraction,
-                 sediment.refactory_fraction,
-                 sediment.nitrate_oxidation_params,
-                 sediment.denitrification_params,
-                 sediment.anoxic_params,
-                 sediment.solid_dep_params,
+    SimpleMultiG(adapt(to, sediment.fast_decay_rate),
+                 adapt(to, sediment.slow_decay_rate),
+                 adapt(to, sediment.fast_redfield),
+                 adapt(to, sediment.slow_redfield),
+                 adapt(to, sediment.fast_fraction),
+                 adapt(to, sediment.slow_fraction),
+                 adapt(to, sediment.refactory_fraction),
+                 adapt(to, sediment.nitrate_oxidation_params),
+                 adapt(to, sediment.denitrification_params),
+                 adapt(to, sediment.anoxic_params),
+                 adapt(to, sediment.solid_dep_params),
                  adapt(to, sediment.fields),
                  nothing,
                  adapt(to, sediment.bottom_indices))
@@ -176,6 +155,7 @@ sediment_fields(model::SimpleMultiG) = (C_slow = model.fields.C_slow,
     i, j = @index(Global, NTuple)
 
     k = bottom_index(i, j, sediment)
+    depth = @inbounds znodes(grid, Center(), Center(), Center())[k]
 
     Δz = zspacing(i, j, k, grid, Center(), Center(), Center())
 
@@ -209,13 +189,15 @@ sediment_fields(model::SimpleMultiG) = (C_slow = model.fields.C_slow,
         O₂  = tracers.O₂[i, j, k]
         NO₃ = tracers.NO₃[i, j, k]
         NH₄ = tracers.NH₄[i, j, k]
+        
+        A, B, C, D, E, F = sediment.nitrate_oxidation_params
 
-        pₙᵢₜ = exp(sediment.nitrate_oxidation_params.A +
-                   sediment.nitrate_oxidation_params.B * log(Cᵐⁱⁿ * day) * log(O₂) +
-                   sediment.nitrate_oxidation_params.C * log(Cᵐⁱⁿ * day) ^ 2 +
-                   sediment.nitrate_oxidation_params.D * log(reactivity) * log(NH₄) +
-                   sediment.nitrate_oxidation_params.E * log(Cᵐⁱⁿ * day) +
-                   sediment.nitrate_oxidation_params.F * log(Cᵐⁱⁿ * day) * log(NH₄)) / (Nᵐⁱⁿ * day)
+        pₙᵢₜ = exp(A +
+                  B * log(Cᵐⁱⁿ * day) * log(O₂) +
+                  C * log(Cᵐⁱⁿ * day) ^ 2 +
+                  D * log(reactivity) * log(NH₄) +
+                  E * log(Cᵐⁱⁿ * day) +
+                  F * log(Cᵐⁱⁿ * day) * log(NH₄)) / (Nᵐⁱⁿ * day)
 
         #=
         pᵈᵉⁿⁱᵗ = exp(sediment.denitrification_params.A +
@@ -225,14 +207,18 @@ sediment_fields(model::SimpleMultiG) = (C_slow = model.fields.C_slow,
                      sediment.denitrification_params.E * log(reactivity) ^ 2 +
                      sediment.denitrification_params.F * log(O₂) * log(reactivity)) / (Cᵐⁱⁿ * day)
         =#
-        pₐₙₒₓ = exp(sediment.anoxic_params.A +
-                    sediment.anoxic_params.B * log(Cᵐⁱⁿ * day) +
-                    sediment.anoxic_params.C * log(Cᵐⁱⁿ * day) ^ 2 +
-                    sediment.anoxic_params.D * log(reactivity) +
-                    sediment.anoxic_params.E * log(O₂) * log(reactivity) +
-                    sediment.anoxic_params.F * log(NO₃) ^ 2) / (Cᵐⁱⁿ * day)
+        
+        A, B, C, D, E, F = sediment.anoxic_params
+        
+        pₐₙₒₓ = exp(A +
+                    B * log(Cᵐⁱⁿ * day) +
+                    C * log(Cᵐⁱⁿ * day) ^ 2 +
+                    D * log(reactivity) +
+                    E * log(O₂) * log(reactivity) +
+                    F * log(NO₃) ^ 2) / (Cᵐⁱⁿ * day)
 
-        pₛₒₗᵢ = sediment.solid_dep_params.A * (sediment.solid_dep_params.C * sediment.solid_dep_params.depth ^ sediment.solid_dep_params.D) ^ sediment.solid_dep_params.B
+        A, B, C, D = sediment.solid_dep_params
+        pₛₒₗᵢ = A * (C * depth ^ D) ^ B
 
         tendencies.NH₄[i, j, k] += Nᵐⁱⁿ * (1 - pₙᵢₜ) / Δz
         tendencies.NO₃[i, j, k] += Nᵐⁱⁿ * pₙᵢₜ / Δz
