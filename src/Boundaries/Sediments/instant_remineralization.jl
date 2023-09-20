@@ -103,7 +103,7 @@ sediment_fields(model::InstantRemineralisation) = (N_storage = model.fields.N_st
     # sediment evolution
     @inbounds sediment_tendencies.N_storage[i, j, 1] = burial_efficiency * flux
 
-    @inbounds tendencies[remineralisation_receiver(bgc)][i, j, k] += flux * (1 - burial_efficiency) / Δz
+    @inbounds tendencies[i, j, k] += flux * (1 - burial_efficiency) / Δz
 end
 
 summary(::InstantRemineralisation{FT}) where {FT} = string("Single-layer instant remineralisaiton ($FT)")
