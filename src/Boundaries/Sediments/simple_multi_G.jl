@@ -150,7 +150,7 @@ sediment_fields(model::SimpleMultiG) = (C_slow = model.fields.C_slow,
                                          N_ref = model.fields.N_ref)
 
 @inline required_tracers(::SimpleMultiG, bgc, tracers) = tracers[(:NO₃, :NH₄, :O₂, sinking_tracers(bgc)...)]
-@inline required_tendencies(::SimpleMultiG, bgc, tracers) = tracers[(:NO₃, :NH₄, :O₂,, :DIC)]
+@inline required_tendencies(::SimpleMultiG, bgc, tracers) = tracers[(:NO₃, :NH₄, :O₂, :DIC)]
 
 @inline bottom_index_array(sediment::SimpleMultiG) = sediment.bottom_indices
 
