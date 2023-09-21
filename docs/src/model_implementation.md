@@ -213,7 +213,7 @@ Another aspect that OceanBioME includes is sediment models. Doing this varies be
 ```@example implementing
 using OceanBioME.Boundaries.Sediments: sinking_flux
 
-import OceanBioME.Boundaries.Sediments: nitrogen_flux, carbon_flux, remineralisation_receiver
+import OceanBioME.Boundaries.Sediments: nitrogen_flux, carbon_flux, remineralisation_receiver, sinking_tracers
 
 @inline nitrogen_flux(i, j, k, grid, advection, bgc::NutrientPhytoplankton, tracers) =
      sinking_flux(i, j, k, grid, advection, Val(:P), bgc, tracers)
@@ -221,6 +221,8 @@ import OceanBioME.Boundaries.Sediments: nitrogen_flux, carbon_flux, remineralisa
 @inline carbon_flux(i, j, k, grid, advection, bgc::NutrientPhytoplankton, tracers) = nitrogen_flux(i, j, k, grid, advection, bgc, tracers) * 6.56
 
 @inline remineralisation_receiver(::NutrientPhytoplankton) = :N
+
+@inline siniking_tracers(::NutrientPhytoplankton) = (:P, )
 ```
 
 ### Putting it together
