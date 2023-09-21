@@ -222,7 +222,7 @@ import OceanBioME.Boundaries.Sediments: nitrogen_flux, carbon_flux, remineralisa
 
 @inline remineralisation_receiver(::NutrientPhytoplankton) = :N
 
-@inline siniking_tracers(::NutrientPhytoplankton) = (:P, )
+@inline sinking_tracers(::NutrientPhytoplankton) = (:P, )
 ```
 
 ### Putting it together
