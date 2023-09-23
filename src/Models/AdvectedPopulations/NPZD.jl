@@ -332,5 +332,5 @@ adapt_structure(to, npzd::NPZD) =
 @inline remineralisation_receiver(::NPZD) = :N
 
 @inline conserved_tracers(::NPZD) = (:N, :P, :Z, :D)
-@inline sinking_tracers(::NPZD) = (:P, :D)
+@inline sinking_tracers(bgc::NPZD) = keys(bgc.sinking_velocities)
 end # module
