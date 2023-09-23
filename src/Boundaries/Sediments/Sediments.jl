@@ -64,10 +64,6 @@ end
 @inline sinking_advection(bgc, advection) = advection
 @inline sinking_advection(bgc, advection::NamedTuple) = advection[sinking_tracers(bgc)]
 
-@inline nitrogen_flux(i, j, k, grid, advection, bgc::Biogeochemistry, tracers) = nitrogen_flux(i, j, k, grid, advection, bgc.underlying_biogeochemistry, tracers)
-@inline carbon_flux(i, j, k, grid, advection, bgc::Biogeochemistry, tracers) = carbon_flux(i, j, k, grid, advection, bgc.underlying_biogeochemistry, tracers)
-@inline remineralisation_receiver(bgc::Biogeochemistry) = remineralisation_receiver(bgc.underlying_biogeochemistry)
-
 @inline advection_scheme(advection, val_tracer) = advection
 @inline advection_scheme(advection::NamedTuple, val_tracer::Val{T}) where T = advection[T]
 
