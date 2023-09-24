@@ -153,6 +153,6 @@ $^6$ `SLatissima`
 
 # Acknowledgements
 
-We would like to thank the [Climate Modeling Alliance](https://clima.caltech.edu) team and ``Oceananigans.jl`` contributors for their fantastic project. We also thank ``JuliaGPU`` contributors for ``KernelAbstractions.jl`` and ``CUDA.jl`` which make this code possible. Additionally, we are very grateful for the support and funding of the [Centre for Climate Repair, Cambridge](https://www.climaterepair.cam.ac.uk/) and the [Gordon and Betty Moore Foundation](https://www.moore.org/).
+We would like to thank the [Climate Modeling Alliance](https://clima.caltech.edu) team and ``Oceananigans.jl`` contributors for their fantastic project. We also thank ``JuliaGPU`` contributors for ``KernelAbstractions.jl`` and ``CUDA.jl`` which make this code possible. Additionally, we are very grateful for the support and funding of the [Centre for Climate Repair, Cambridge](https://www.climaterepair.cam.ac.uk/) and the [Gordon and Betty Moore Foundation](https://www.moore.org/). N.C.C. acknowledges support by the Australian Research Council DECRA Fellowship DE210100749.
 
 # References
