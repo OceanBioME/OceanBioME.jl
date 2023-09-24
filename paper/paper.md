@@ -74,6 +74,7 @@ To this physical setup, we added a medium complexity (9 tracers) biogeochemical 
 On top of this, we added particles modelling the growth of sugar kelp, which are free-floating and advected by the flow, and carbon dioxide exchange from the air.
 Thanks to Julia's speed and efficiency the above model (1 km × 1 km × 100 m with 512 × 512 × 64 grid points) took about 2 hours of computing time to simulate 10 days of evolution on an Nvidia A100 GPU. 
 The figure shows the domain with the colour representing the concentration of various biogeochemical tracer fields: nutrients (nitrate and ammonia), phytoplankton, organic carbon (dissolved and particulate), and inorganic carbon. 
+Darker colours represent higher values.
 The increase in organic carbon concentration in the centre of the eddy can be seen, as well as carbon being subducted (most visible in the xz face in the phytoplankton).
 Points on the surface represent the kelp particle positions, with the colour representing the range of frond size.
 Figure made with ``Makie.jl`` [@makie]. \label{eady}](eady_example.png)
@@ -139,7 +140,7 @@ Strong-Wright et al. (in prep.) uses the coupling of both the biogeochemistry an
 
 | Example| OceanBioME features utilised        | Code location |
 |--------------|--------------|---------------|
-| Sub-mesoscale eddy (\autoref{eady}) | LOBSTER biogeochemical model$^1$ with carbonate model active, CO$_2$ exchange with the air$^2$, Light attenuation$^3$, mass conserving negativity protection$^4$ | `examples/eady.jl` with resolution increased to 64x64x16|
+| Sub-mesoscale eddy (\autoref{eady}) | LOBSTER biogeochemical model$^1$ with carbonate model active, CO$_2$ exchange with the air$^2$, Light attenuation$^3$, mass conserving negativity protection$^4$ |  `paper/figures/eady.jl`, similar to `examples/eady.jl` |
 | Near-global (\autoref{global}) proof of concept | Light attenuation$^3$, NPZD model$^5$| [https://github.com/OceanBioME/GlobalOceanBioME.jl/releases/tag/v0.0.1](https://github.com/OceanBioME/GlobalOceanBioME.jl/releases/tag/v0.0.1) |
 | Idealised 1D model with kelp individuals (\autoref{column}) |  LOBSTER biogeochemical model$^1$ with carbonate model and variable Redfield ratio for organic components active, CO$_2$ exchange with the air$^2$, light attenuation$^3$, mass conserving negativity protection$^4$, and Saccharina Latissima (sugar kelp) model$^6$ | `paper/figures/column.jl`, similar to `examples/column.jl` and `examples/kelp.jl` |
 
