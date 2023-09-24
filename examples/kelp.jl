@@ -68,6 +68,7 @@ biogeochemistry = LOBSTER(; grid,
                             surface_phytosynthetically_active_radiation = PAR⁰,
                             carbonates = true,
                             variable_redfield = true,
+                            scale_negatives = true,
                             particles)
 
 model = NonhydrostaticModel(; grid,
@@ -103,8 +104,6 @@ simulation.output_writers[:particles] = JLD2OutputWriter(model, (; particles),
                                                          schedule = TimeInterval(1day),
                                                          overwrite_existing = true)
 
-scale_negative_tracers = ScaleNegativeTracers(; model, tracers = (:NO₃, :NH₄, :P, :Z, :sPON, :bPON, :DON))
-simulation.callbacks[:neg] = Callback(scale_negative_tracers; callsite = UpdateStateCallsite())
 nothing #hide
 
 # ## Run!
@@ -123,6 +122,7 @@ bPOC = FieldTimeSeries("$filename.jld2", "bPOC")
 
 x, y, z = nodes(P)
 times = P.times
+nothing #hide
 
 # We compute the  air-sea CO₂ flux at the surface (corresponding to vertical index `k = grid.Nz`) and
 # the carbon export by computing how much carbon sinks below some arbirtrary depth; here we use depth 
@@ -130,10 +130,12 @@ times = P.times
 air_sea_CO₂_flux = zeros(length(times))
 carbon_export = zeros(length(times))
 
+using Oceananigans.Biogeochemistry: biogeochemical_drift_velocity
+
 for (i, t) in enumerate(times)
     air_sea_CO₂_flux[i] = CO₂_flux.condition.parameters(0.0, 0.0, t, DIC[1, 1, grid.Nz, i], Alk[1, 1, grid.Nz, i], temp(1, 1, 0, t), 35)
-    carbon_export[i] = sPOC[1, 1, grid.Nz-20, i] * model.biogeochemistry.sinking_velocities.sPOM.w[1, 1, grid.Nz-20] +
-                       bPOC[1, 1, grid.Nz-20, i] * model.biogeochemistry.sinking_velocities.bPOM.w[1, 1, grid.Nz-20]
+    carbon_export[i] = sPOC[1, 1, grid.Nz-20, i] * biogeochemical_drift_velocity(biogeochemistry, Val(:sPOC)).w[1, 1, grid.Nz-20] +
+                       bPOC[1, 1, grid.Nz-20, i] * biogeochemical_drift_velocity(biogeochemistry, Val(:bPOC)).w[1, 1, grid.Nz-20]
 end
 
 # Both `air_sea_CO₂_flux` and `carbon_export` are in units `mmol CO₂ / (m² s)`.

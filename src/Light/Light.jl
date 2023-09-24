@@ -18,16 +18,13 @@ using Oceananigans.BoundaryConditions: fill_halo_regions!,
                                        regularize_field_boundary_conditions, 
                                        ContinuousBoundaryFunction
 using Oceananigans.Units
+using Oceananigans.ImmersedBoundaries: ImmersedBoundaryGrid
 
 import Adapt: adapt_structure, adapt
 import Base: show, summary
 
-import Oceananigans.Biogeochemistry: biogeochemical_auxiliary_fields
+import Oceananigans.Biogeochemistry: biogeochemical_auxiliary_fields, update_biogeochemical_state!, required_biogeochemical_auxiliary_fields
 import Oceananigans.BoundaryConditions: _fill_top_halo!
-
-# Fallback
-update_PAR!(model, PAR) = nothing
-required_PAR_fields(PAR) = ()
 
 include("2band.jl")
 include("morel.jl")

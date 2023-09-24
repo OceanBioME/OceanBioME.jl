@@ -20,11 +20,11 @@ const EXAMPLES_DIR = joinpath(@__DIR__, "..", "examples")
 const OUTPUT_DIR   = joinpath(@__DIR__, "src/generated")
 
 examples = [
-    "Simple column model" => "column",
-    "Data forced column model" => "data_forced",
-    "Model with particles (kelp) interacting with the biogeochemistry" => "kelp",
     "Box model" => "box",
-    "Baroclinic instability" => "eady"
+    "Simple column model" => "column",
+    "Baroclinic instability" => "eady",
+    "Data forced column model" => "data_forced",
+    "Model with particles (kelp) interacting with the biogeochemistry" => "kelp"
 ]
 
 example_scripts = [ filename * ".jl" for (title, filename) in examples ]
@@ -82,7 +82,9 @@ bgc_pages = [
 ]
 
 sed_pages = [
-    "Overview" => "model_components/sediment.md",
+    "Overview" => "model_components/sediments/index.md",
+    "Simple Multi-G" => "model_components/sediments/simple_multi_g.md",
+    "Instant remineralisation" => "model_components/sediments/instant_remineralisation.md"
 ]
 
 individuals_pages = [
@@ -112,10 +114,12 @@ appendix_pages = [
 pages = [
     "Home" => "index.md",
     "Quick start" => "quick_start.md",
-    "Model components and setup" => component_pages,
-    "Visualization" => "visualization.md",
     "Examples" => example_pages,
+    "Model components and setup" => component_pages,
+    "Implementing new models" => "model_implementation.md",
     "Numerical implementation" => numerical_pages,
+    "Visualization" => "visualization.md",
+    "Contibutors guide" => "contributing.md",
     "References" => "references.md",
     "Appendix" => appendix_pages
 ]

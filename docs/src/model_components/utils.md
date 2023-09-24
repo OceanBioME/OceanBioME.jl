@@ -22,20 +22,17 @@ simulation.callbacks[:wizard] = Callback(wizard, IterationInterval(10))
 ## Negative tracer detection
 As a temporary measure we have implemented a callback to either detect negative tracers and either scale a conserved group, force them back to zero, or throw an error. Please see the numerical implementations' page for details. This can be set up by:
 ```julia
-negativity_protection! = ScaleNegativeTracers(tracers = (:P, :Z, :N))
-simulation.callbacks[:neg] = Callback(negativity_protection!; callsite = UpdateStateCallsite())
+negativity_protection = ScaleNegativeTracers((:P, :Z, :N))
+biogeochemistry = Biogeochemistry(...; modifiers = negativity_protection)
 ```
 You may also pass a scale factor for each component (e.g. in case they have different redfield ratios):
 ```julia
-negativity_protection! = ScaleNegativeTracers(tracers = (:P, :Z, :D), scalefactors = (P = 1, Z = 1, D = 2))
-simulation.callbacks[:neg] = Callback(negativity_protection!; callsite = UpdateStateCallsite())
+negativity_protection = ScaleNegativeTracers((:P, :Z, :N); scalefactors = (1, 1, 2))
+biogeochemistry = Biogeochemistry(...; modifiers = negativity_protection)
 ```
 Here you should carefully consider which tracers form a conserved group (if at all). Alternatively, force to zero by:
 ```julia
-simulation.callbacks[:neg] = Callback(OceanBioME.no_negative_tracers!, callsite = UpdateStateCallsite())
+negativity_protection = ZeroNegativeTracers()
+biogeochemistry = Biogeochemistry(...; modifiers = negativity_protection)
 ```
-or throw an error:
-```julia
-simulation.callbacks[:neg] = Callback(OceanBioME.error_on_neg!, callsite = UpdateStateCallsite())
-```
-The latter two both optionally take a named tuple of parameters which may include `exclude` which can be a tuple of tracer names (Symbols) which are allowed to be negative.
+The latter optionally takes a named tuple of parameters that may include `exclude`, which can be a tuple of tracer names (Symbols) which are allowed to be negative.

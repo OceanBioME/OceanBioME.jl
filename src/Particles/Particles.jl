@@ -1,8 +1,9 @@
 module Particles 
 
-using OceanBioME: ContinuousFormBiogeochemistry
 using Oceananigans: NonhydrostaticModel, HydrostaticFreeSurfaceModel
+using OceanBioME: Biogeochemistry
 
+import Oceananigans.Biogeochemistry: update_tendencies!
 import Oceananigans.Models.LagrangianParticleTracking: update_lagrangian_particle_properties!, step_lagrangian_particles!
 import Oceananigans.OutputWriters: fetch_output
 import Base: length, size, show, summary
@@ -13,20 +14,19 @@ abstract type BiogeochemicalParticles end
 
 @inline step_lagrangian_particles!(::Nothing, 
     model::NonhydrostaticModel{<:Any, <:Any, <:Any, <:Any, <:Any, <:Any, <:Any, <:Any, <:Any, <:Any, <:Any, <:Any, <:Any, <:Any, <:Any, <:Any, <:Any, 
-                               <:ContinuousFormBiogeochemistry{<:Any, <:Any, <:BiogeochemicalParticles}}, 
+                               <:Biogeochemistry{<:Any, <:Any, <:Any, <:BiogeochemicalParticles}}, 
     Δt) = update_lagrangian_particle_properties!(model, model.biogeochemistry, Δt)
 
 @inline step_lagrangian_particles!(::Nothing,
     model::HydrostaticFreeSurfaceModel{<:Any, <:Any, <:Any, <:Any, <:Any, <:Any, <:Any, <:Any, <:Any, <:Any, <:Any, 
-                                       <:ContinuousFormBiogeochemistry{<:Any, <:Any, <:BiogeochemicalParticles}, 
+                                       <:Biogeochemistry{<:Any, <:Any, <:Any, <:BiogeochemicalParticles}, 
                                        <:Any, <:Any, <:Any, <:Any, <:Any,}, 
     Δt) = update_lagrangian_particle_properties!(model, model.biogeochemistry, Δt)
 
-@inline update_lagrangian_particle_properties!(model, bgc::ContinuousFormBiogeochemistry{<:Any, <:Any, <:BiogeochemicalParticles}, Δt) = 
+@inline update_lagrangian_particle_properties!(model, bgc::Biogeochemistry{<:Any, <:Any, <:Any, <:BiogeochemicalParticles}, Δt) = 
     update_lagrangian_particle_properties!(bgc.particles, model, bgc, Δt)
 
 update_lagrangian_particle_properties!(::BiogeochemicalParticles, model, bgc, Δt) = nothing
-update_particles_tendencies!(bgc, particles, model) = nothing
 
 size(particles::BiogeochemicalParticles) = size(particles.x)
 length(particles::BiogeochemicalParticles) = length(particles.x)

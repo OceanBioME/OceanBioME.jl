@@ -40,14 +40,22 @@ nothing #hide
 # Define the grid.
 grid = RectilinearGrid(size=(1, 1, 50), extent=(20meters, 20meters, 200meters))
 
-# Specify the boundary conditions for DIC and O₂ based on the air-sea CO₂ and O₂ flux
+
+# ## Model
+# First we define the biogeochemical model including carbonate chemistry 
+# and scaling of negative tracers(see discussion in the [positivity preservation](@ref pos-preservation))
+# and then setup the Oceananigans model with the boundary condition for the DIC based on the air-sea CO₂ flux.
+
+biogeochemistry = LOBSTER(; grid,
+                            surface_phytosynthetically_active_radiation = PAR⁰,
+                            carbonates = true,
+                            scale_negatives = true)
+
 CO₂_flux = GasExchange(; gas = :CO₂, temperature = temp, salinity = (args...) -> 35)
 
 model = NonhydrostaticModel(; grid,
-                              closure = ScalarDiffusivity(ν = κₜ, κ = κₜ), 
-                              biogeochemistry = LOBSTER(; grid,
-                                                          surface_phytosynthetically_active_radiation = PAR⁰,
-                                                          carbonates = true),
+                              closure = ScalarDiffusivity(ν = κₜ, κ = κₜ),
+                              biogeochemistry,
                               boundary_conditions = (DIC = FieldBoundaryConditions(top = CO₂_flux), ))
 
 set!(model, P = 0.03, Z = 0.03, NO₃ = 4.0, NH₄ = 0.05, DIC = 2239.8, Alk = 2409.0)
@@ -56,15 +64,14 @@ set!(model, P = 0.03, Z = 0.03, NO₃ = 4.0, NH₄ = 0.05, DIC = 2239.8, Alk = 2
 # Next we setup a simulation and add some callbacks that:
 # - Show the progress of the simulation
 # - Store the model and particles output
-# - Prevent the tracers from going negative from numerical error (see discussion in the [positivity preservation](@ref pos-preservation) implementation section)
 
 simulation = Simulation(model, Δt = 3minutes, stop_time = 100days)
 
 progress_message(sim) = @printf("Iteration: %04d, time: %s, Δt: %s, wall time: %s\n",
-                                                        iteration(sim),
-                                                        prettytime(sim),
-                                                        prettytime(sim.Δt),
-                                                        prettytime(sim.run_wall_time))      
+                                iteration(sim),
+                                prettytime(sim),
+                                prettytime(sim.Δt),
+                                prettytime(sim.run_wall_time))
                                                                   
 simulation.callbacks[:progress] = Callback(progress_message, TimeInterval(10days))
 
@@ -73,9 +80,6 @@ simulation.output_writers[:profiles] = JLD2OutputWriter(model, merge(model.trace
                                                         filename = "$filename.jld2",
                                                         schedule = TimeInterval(1day),
                                                         overwrite_existing = true)
-
-scale_negative_tracers = ScaleNegativeTracers(; model, tracers = (:NO₃, :NH₄, :P, :Z, :sPOM, :bPOM, :DOM))
-simulation.callbacks[:neg] = Callback(scale_negative_tracers; callsite = UpdateStateCallsite())
 nothing #hide
 
 # ## Run!
@@ -95,6 +99,7 @@ bPOM = FieldTimeSeries("$filename.jld2", "bPOM")
 
 x, y, z = nodes(P)
 times = P.times
+nothing #hide
 
 # We compute the  air-sea CO₂ flux at the surface (corresponding to vertical index `k = grid.Nz`) and
 # the carbon export by computing how much carbon sinks below some arbirtrary depth; here we use depth 
@@ -102,10 +107,12 @@ times = P.times
 air_sea_CO₂_flux = zeros(length(times))
 carbon_export = zeros(length(times))
 
+using Oceananigans.Biogeochemistry: biogeochemical_drift_velocity
+
 for (i, t) in enumerate(times)
     air_sea_CO₂_flux[i] = CO₂_flux.condition.parameters(0.0, 0.0, t, DIC[1, 1, grid.Nz, i], Alk[1, 1, grid.Nz, i], temp(1, 1, 0, t), 35)
-    carbon_export[i] = (sPOM[1, 1, grid.Nz-20, i] * model.biogeochemistry.sinking_velocities.sPOM.w[1, 1, grid.Nz-20] +
-                        bPOM[1, 1, grid.Nz-20, i] * model.biogeochemistry.sinking_velocities.bPOM.w[1, 1, grid.Nz-20]) * model.biogeochemistry.organic_redfield
+    carbon_export[i] = (sPOM[1, 1, grid.Nz-20, i] * biogeochemical_drift_velocity(model.biogeochemistry, Val(:sPOM)).w[1, 1, grid.Nz-20] +
+                        bPOM[1, 1, grid.Nz-20, i] * biogeochemical_drift_velocity(model.biogeochemistry, Val(:bPOM)).w[1, 1, grid.Nz-20]) * redfield(Val(:sPOM), model.biogeochemistry)
 end
 
 # Both `air_sea_CO₂_flux` and `carbon_export` are in units `mmol CO₂ / (m² s)`.

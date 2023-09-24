@@ -25,25 +25,6 @@ struct SimpleMultiG{FT, P1, P2, P3, P4, F, TE, B} <: FlatSediment
                       fields :: F
                   tendencies :: TE
               bottom_indices :: B
-    
-    SimpleMultiG(fast_decay_rate::FT, slow_decay_rate::FT,
-                 fast_redfield::FT,   slow_redfield::FT,
-                 fast_fraction::FT,   slow_fraction::FT, refactory_fraction::FT,
-                 nitrate_oxidation_params::P1, 
-                 denitrification_params::P2,
-                 anoxic_params::P3,
-                 solid_dep_params::P4,
-                 fields::F, tendencies::TE,
-                 bottom_indices::B) where {FT, P1, P2, P3, P4, F, TE, B} =
-        new{FT, P1, P2, P3, P4, F, TE, B}(fast_decay_rate, slow_decay_rate,
-                                          fast_redfield,   slow_redfield,
-                                          fast_fraction,   slow_fraction, refactory_fraction,
-                                          nitrate_oxidation_params, 
-                                          denitrification_params,
-                                          anoxic_params,
-                                          solid_dep_params,
-                                          fields, tendencies,
-                                          bottom_indices)
 end
 
 """
@@ -110,19 +91,23 @@ function SimpleMultiG(; grid,
     fields = NamedTuple{tracer_names}(Tuple(CenterField(grid) for tracer in tracer_names))
     tendencies = (Gⁿ = NamedTuple{tracer_names}(Tuple(CenterField(grid) for tracer in tracer_names)),
                   G⁻ = NamedTuple{tracer_names}(Tuple(CenterField(grid) for tracer in tracer_names)))
+  
+    bottom_indices = calculate_bottom_indices(grid)
 
-    bottom_indices = arch_array(architecture(grid), calculate_bottom_indices(grid))
+    F = typeof(fields)
+    TE = typeof(tendencies)
+    B = typeof(bottom_indices)
 
-    return SimpleMultiG(fast_decay_rate, slow_decay_rate,
-                        fast_redfield, slow_redfield,
-                        fast_fraction, slow_fraction, refactory_fraction,
-                        nitrate_oxidation_params,
-                        denitrification_params,
-                        anoxic_params,
-                        solid_dep_params,
-                        fields,
-                        tendencies,
-                        bottom_indices)
+    return SimpleMultiG{FT, P1, P2, P3, P4, F, TE, B}(fast_decay_rate, slow_decay_rate,
+                                                      fast_redfield, slow_redfield,
+                                                      fast_fraction, slow_fraction, refactory_fraction,
+                                                      nitrate_oxidation_params,
+                                                      denitrification_params,
+                                                      anoxic_params,
+                                                      solid_dep_params,
+                                                      fields,
+                                                      tendencies,
+                                                      bottom_indices)
 end
 
 adapt_structure(to, sediment::SimpleMultiG) = 
@@ -155,11 +140,11 @@ sediment_fields(model::SimpleMultiG) = (C_slow = model.fields.C_slow,
     i, j = @index(Global, NTuple)
 
     k = bottom_index(i, j, sediment)
-    depth = @inbounds znodes(grid, Center(), Center(), Center())[k]
 
     Δz = zspacing(i, j, k, grid, Center(), Center(), Center())
 
     @inbounds begin
+
         carbon_deposition = carbon_flux(i, j, k, grid, advection, bgc, tracers) * Δz
                         
         nitrogen_deposition = nitrogen_flux(i, j, k, grid, advection, bgc, tracers) * Δz
@@ -204,26 +189,29 @@ sediment_fields(model::SimpleMultiG) = (C_slow = model.fields.C_slow,
                      sediment.denitrification_params.B * log(Cᵐⁱⁿ * day) +
                      sediment.denitrification_params.C * log(NO₃) ^ 2 +
                      sediment.denitrification_params.D * log(Cᵐⁱⁿ * day) ^ 2 +
-                     sediment.denitrification_params.E * log(reactivity) ^ 2 +
-                     sediment.denitrification_params.F * log(O₂) * log(reactivity)) / (Cᵐⁱⁿ * day)
+                     sediment.denitrification_params.E * log(k) ^ 2 +
+                     sediment.denitrification_params.F * log(O₂) * log(k)) / (Cᵐⁱⁿ * day)
         =#
-        
-        A, B, C, D, E, F = sediment.anoxic_params
-        
-        pₐₙₒₓ = exp(A +
-                    B * log(Cᵐⁱⁿ * day) +
-                    C * log(Cᵐⁱⁿ * day) ^ 2 +
-                    D * log(reactivity) +
-                    E * log(O₂) * log(reactivity) +
-                    F * log(NO₃) ^ 2) / (Cᵐⁱⁿ * day)
+        pₐₙₒₓ = exp(sediment.anoxic_params.A +
+                    sediment.anoxic_params.B * log(Cᵐⁱⁿ * day) +
+                    sediment.anoxic_params.C * log(Cᵐⁱⁿ * day) ^ 2 +
+                    sediment.anoxic_params.D * log(k) +
+                    sediment.anoxic_params.E * log(O₂) * log(k) +
+                    sediment.anoxic_params.F * log(NO₃) ^ 2) / (Cᵐⁱⁿ * day)
 
-        A, B, C, D = sediment.solid_dep_params
-        pₛₒₗᵢ = A * (C * depth ^ D) ^ B
+        if isnan(pₐₙₒₓ)
+            println("$(Cᵐⁱⁿ), $(k), $(O₂), $(NO₃)")
+            error("Sediment anoxia has caused model failure")
+        end
 
-        tendencies.NH₄[i, j, k] += Nᵐⁱⁿ * (1 - pₙᵢₜ) / Δz
-        tendencies.NO₃[i, j, k] += Nᵐⁱⁿ * pₙᵢₜ / Δz
-        tendencies.DIC[i, j, k] += Cᵐⁱⁿ / Δz
-        tendencies.O₂[i, j, k]  -= max(0, ((1 - pₐₙₒₓ * pₛₒₗᵢ) * Cᵐⁱⁿ + 2 * Nᵐⁱⁿ * pₙᵢₜ)/ Δz) # this seems dodgy but it seems like this model doesn't cope with anoxia properly
+        pₛₒₗᵢ = sediment.solid_dep_params.A * (sediment.solid_dep_params.C * sediment.solid_dep_params.depth ^ sediment.solid_dep_params.D) ^ sediment.solid_dep_params.B
+
+        Δz = grid.Δzᵃᵃᶜ[1]
+
+        timestepper.Gⁿ.NH₄[i, j, 1] += Nᵐⁱⁿ * (1 - pₙᵢₜ) / Δz
+        timestepper.Gⁿ.NO₃[i, j, 1] += Nᵐⁱⁿ * pₙᵢₜ / Δz
+        timestepper.Gⁿ.DIC[i, j, 1] += Cᵐⁱⁿ / Δz
+        timestepper.Gⁿ.O₂[i, j, 1]  -= max(0, ((1 - pₐₙₒₓ * pₛₒₗᵢ) * Cᵐⁱⁿ + 2 * Nᵐⁱⁿ * pₙᵢₜ)/ Δz) # this seems dodge but this model doesn't cope with anoxia properly
     end
 end
 

@@ -32,7 +32,7 @@ using Oceananigans.Grids: AbstractGrid
 using Oceananigans.Fields: fractional_indices, _interpolate, datatuple
 
 import Adapt: adapt_structure, adapt
-import OceanBioME.Particles: update_particles_tendencies!
+import Oceananigans.Biogeochemistry: update_tendencies!
 import Oceananigans.Models.LagrangianParticleTracking: update_lagrangian_particle_properties!, _advect_particles!
 
 @inline no_dynamics(args...) = nothing
@@ -264,7 +264,7 @@ adapt_structure(to, kelp::SLatissima) = SLatissima(kelp.architecture,
                                                    kelp.scalefactor,
                                                    kelp.latitude)
 
-function update_particles_tendencies!(bgc, particles::SLatissima, model)
+function update_tendencies!(bgc, particles::SLatissima, model)
     num_particles = length(particles)
     workgroup = min(num_particles, 256)
     worksize = num_particles
