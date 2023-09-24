@@ -120,16 +120,18 @@ fig
 #####
 ##### Static Figure
 #####
-
 n = 37
 
-fig = Figure(resolution = (1600, 1200))
+lims[1] = (min(minimum(N_plt[:, :, end]), minimum(N_plt[1, :, :]), minimum(N_plt[:, 1, :])), max(maximum(N_plt[:, :, end]), maximum(N_plt[1, :, :]), maximum(N_plt[:, 1, :])))
+
+
+fig = Figure(resolution = (1600, 1000))
 
 ax = Axis3(fig[1:4, 1:4], aspect = (1, 1, 0.28), xticks = [0, 1000], yticks = [0, 1000], zticks = [-140, 0],
                                              xlabel = "x (m)", ylabel = "y (m)", zlabel = "z (m)",
                                              xgridvisible = false, ygridvisible = false, zgridvisible = false,
                                              xspinesvisible = false, yspinesvisible = false, zspinesvisible = false,
-                                             protrusions = (50, 30, 30, 30))
+                                             protrusions = (50, 5, 5, 5))
 
 
 N_plt   =   N[n]
@@ -151,10 +153,15 @@ sc = scatter!(ax, x_plt, y_plt, z_plt, color = A_plt, colormap=:grayC)
 
 txt = text!(ax,
             [Point3f(xc[Int(1 + (i - 1) * Nx / 4)], yc[1], zc[1]) for i in 1:4],
-            text = ["Nutrients", "Phytoplankton", "Organic carbon", "Inorganic carbon"],
+            text = ["| Nutrients", "| Phytoplankton", "| Organic carbon", "| Inorganic carbon"],
             rotation = [0 for i in 1:4],
             align = (:left, :top),
-            fontsize = 35,
+            fontsize = 33,
             markerspace = :data)
+
+Colorbar(fig[5, 1], limits = (minimum(N_plt), maximum(N_plt)), colormap = Reverse(:bamako), vertical = false, label = "Nutrients (mmol N / m³)")
+Colorbar(fig[5, 2], limits = (minimum(P_plt), maximum(P_plt)), colormap = Reverse(:batlow), vertical = false, label = "Phytoplankton (mmol N / m³)")
+Colorbar(fig[5, 3], limits = (minimum(OC_plt), maximum(OC_plt)), colormap = :lajolla, vertical = false, label = "Organic Carbon (mmol C / m³)")
+Colorbar(fig[5, 4], limits = (minimum(DIC_plt), maximum(DIC_plt)), colormap = Reverse(:devon), vertical = false, label = "Inorganic Carbon (mmol C / m³)")
 
 save("eady.png", fig)

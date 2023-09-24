@@ -66,7 +66,7 @@ biogeochemistry = LOBSTER(; grid,
                             open_bottom = true,
                             particles,
                             scale_negatives = true,
-			    surface_phytosynthetically_active_radiation = (x, y, t) -> 100)
+			                surface_phytosynthetically_active_radiation = (x, y, t) -> 100)
 
 DIC_bcs = FieldBoundaryConditions(top = GasExchange(; gas = :CO₂, temperature = (args...) -> 12, salinity = (args...) -> 35))
 
