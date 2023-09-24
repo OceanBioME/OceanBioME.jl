@@ -122,7 +122,7 @@ fig
 #####
 n = 37
 
-lims[1] = (min(minimum(N_plt[:, :, end]), minimum(N_plt[1, :, :]), minimum(N_plt[:, 1, :])), max(maximum(N_plt[:, :, end]), maximum(N_plt[1, :, :]), maximum(N_plt[:, 1, :])) * 1.05)
+lims[1] = (min(minimum(N_plt[:, :, end]), minimum(N_plt[1, :, :]), minimum(N_plt[:, 1, :])), max(maximum(N_plt[:, :, end]), maximum(N_plt[1, :, :]), maximum(N_plt[:, 1, :])))
 
 
 fig = Figure(resolution = (1600, 1000))
