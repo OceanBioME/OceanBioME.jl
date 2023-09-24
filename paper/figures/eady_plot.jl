@@ -122,7 +122,7 @@ fig
 #####
 n = 37
 
-lims[1] = (min(minimum(N_plt[:, :, end]), minimum(N_plt[1, :, :]), minimum(N_plt[:, 1, :])), max(maximum(N_plt[:, :, end]), maximum(N_plt[1, :, :]), maximum(N_plt[:, 1, :])))
+lims[1] = (min(minimum(N_plt[:, :, end]), minimum(N_plt[1, :, :]), minimum(N_plt[:, 1, :])), max(maximum(N_plt[:, :, end]), maximum(N_plt[1, :, :]), maximum(N_plt[:, 1, :])) * 1.05)
 
 
 fig = Figure(resolution = (1600, 1000))
@@ -144,7 +144,7 @@ y_plt = y[:, n]
 z_plt = z[:, n]
 A_plt = A[:, n]
 
-vm1 = contour!(ax, xc[1:Int(Nx / 4)], yc, zc, N_plt, levels = 50, colormap = Reverse(:bamako))
+vm1 = contour!(ax, xc[1:Int(Nx / 4)], yc, zc, N_plt, levels = 50, colormap = Reverse(:bamako), colorrange = lims[1])
 vm2 = contour!(ax, xc[Int(Nx / 4 + 1):Int(2 * Nx / 4)], yc, zc, P_plt, levels = 50, colormap = Reverse(:batlow))
 vm3 = contour!(ax, xc[Int(2 * Nx / 4 + 1):Int(3 * Nx / 4)], yc, zc, OC_plt, levels = 50, colormap = :lajolla)
 vm4 = contour!(ax, xc[Int(3 * Nx / 4 + 1):Int(4 * Nx / 4)], yc, zc, DIC_plt, levels = 50, colormap = Reverse(:devon))
