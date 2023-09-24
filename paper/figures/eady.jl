@@ -6,7 +6,7 @@ using Oceananigans.Solvers: FFTBasedPoissonSolver
 
 using Random
 
-Random.seed!(11)
+Random.seed!(43)
 
 h(k) = (k - 1) / Nz
 
@@ -16,17 +16,15 @@ h(k) = (k - 1) / Nz
 
 z_faces(k) = Lz * (ζ₀(k) * Σ(k) - 1)
 
-Nz = 64
-Lz = 140  
+Nx, Ny, Nz = 512, 512, 64
+Lx, Ly, Lz = 1kilometer, 1kilometer, 140.0
 
 refinement = 1.8
 stretching = 3
 
 arch = GPU()
 
-grid = RectilinearGrid(arch; size = (512, 512, Nz), x = (0, 1kilometer), y = (0, 1kilometer), z = z_faces)
-
-Lx, Ly, Lz = grid.Lz, grid.Ly, grid.Lz
+grid = RectilinearGrid(arch; size = (Nx, Ny, Nz), x = (0, Lx), y = (0, Ly), z = z_faces)
 
 coriolis = FPlane(f = 1e-4) # [s⁻¹]
 
@@ -46,28 +44,29 @@ V_field = BackgroundField(V, parameters = background_state_parameters)
 B_field = BackgroundField(B, parameters = background_state_parameters)
 
 νᵥ = κᵥ = 1e-4 # [m² s⁻¹]
-vertical_diffusivity = VerticalScalarDiffusivity(ν = νᵥ, κ = κᵥ)
+closure = ScalarDiffusivity(ν = νᵥ, κ = κᵥ)
 
 @info "Setting up kelp particles"
 
-n = 32
+n = 36 # must be a square number
 
-x = arch_array(arch, [repeat([-200.0, -100.0, 0.0, 100.0, 200.0], 1, 5)...] .+ Lx / 2)
-y = arch_array(arch, [repeat([-200.0, -100.0, 0.0, 100.0, 200.0], 1, 5)'...] .+ Ly / 2)
+x = arch_array(arch, [repeat([Lx / (sqrt(n) + 1) * n for n in 1:Int(sqrt(n))], 1, Int(sqrt(n)))...])
+y = arch_array(arch, [repeat([Ly / (sqrt(n) + 1) * n for n in 1:Int(sqrt(n))], 1, Int(sqrt(n)))'...])
 z = arch_array(arch, zeros(Float64, n))
 
 particles = SLatissima(; architecture = arch,
                          x, y, z, 
-                         A = arch_array(arch, 5.0 .* ones(n)), N = arch_array(arch, 0.01.* ones(n)), C = arch_array(arch, 0.18.* ones(n)), 
-                         latitude = 57.5,
-                         scalefactor = 10.0 ^ 2,
+                         A = arch_array(arch, 5.0 .* ones(n)), N = arch_array(arch, 0.01 .* ones(n)), C = arch_array(arch, 0.18 .* ones(n)), 
+                         latitude = 43.3,
+                         scalefactor = 500.0,
                          pescribed_temperature = (args...) -> 12.0)
 
 biogeochemistry = LOBSTER(; grid,
                             carbonates = true,
                             open_bottom = true,
                             particles,
-			    scale_negatives = true)
+                            scale_negatives = true,
+			    surface_phytosynthetically_active_radiation = (x, y, t) -> 100)
 
 DIC_bcs = FieldBoundaryConditions(top = GasExchange(; gas = :CO₂, temperature = (args...) -> 12, salinity = (args...) -> 35))
 
@@ -81,7 +80,7 @@ model = NonhydrostaticModel(; grid,
                               tracers = :b,
                               buoyancy = BuoyancyTracer(),
                               background_fields = (b = B_field, v = V_field),
-                              closure = vertical_diffusivity)
+                              closure)
 
 model.clock.time = 50days
 
@@ -97,12 +96,12 @@ set!(model, u=uᵢ, v=vᵢ, P = 0.03, Z = 0.03, NO₃ = 4.0, NH₄ = 0.05, DIC =
 Δy = minimum_yspacing(grid, Center(), Center(), Center())
 Δz = minimum_zspacing(grid, Center(), Center(), Center())
 
-Δt₀ = 0.75 * min(Δx, Δy, Δz) / V(0, 0, 0, 0, background_state_parameters)
+Δt₀ = 0.6 * min(Δx, Δy, Δz) / V(0, 0, 0, 0, background_state_parameters)
 
 simulation = Simulation(model, Δt = Δt₀, stop_time = 60days)
 
 # Adapt the time step while keeping the CFL number fixed.
-wizard = TimeStepWizard(cfl = 0.7, diffusive_cfl = 0.7, max_Δt = 30minutes, min_change = 0.1, max_change = 2)
+wizard = TimeStepWizard(cfl = 0.6, diffusive_cfl = 0.6, max_Δt = 30minutes, min_change = 0.1, max_change = 2)
 simulation.callbacks[:wizard] = Callback(wizard, IterationInterval(1))
 
 # Create a progress message.
@@ -123,8 +122,12 @@ simulation.output_writers[:fields] = JLD2OutputWriter(model, merge(model.tracers
                                                       overwrite_existing = true)
 
 simulation.output_writers[:particles] = JLD2OutputWriter(model, (; particles);
-                                                          schedule = TimeInterval(6hours),
-                                                          filename = "eady_particles.jld2",
-                                                          overwrite_existing = true)
+                                                         schedule = TimeInterval(6hours),
+                                                         filename = "eady_particles.jld2",
+                                                         overwrite_existing = true)
+
+run!(simulation)
+
+simulation.output_writers[:checkpointer] = Checkpointer(model, schedule=IterationInterval(1), prefix="model_checkpoint")
 
 run!(simulation)
