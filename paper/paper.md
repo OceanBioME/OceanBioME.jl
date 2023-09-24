@@ -55,16 +55,16 @@ Most traditional BGC models also require CPU-based supercomputers to run quickly
 One area where novel ideas must be explored with BGC codes is assessing ocean carbon dioxide removal (OCDR) strategies. Quantifying the effectiveness and identifying the impacts of OCDR is challenging due to the aforementioned complexity of the ocean BGC system.
 Moreover, field trials of OCDR interventions are generally small-scale and targeted, while the intervention required to have a climate-scale impact is regional or global.
 This necessitates adaptable, easy-to-use, and verifiable BGC modelling tools which can be used to assess OCDR strategies at the fast pace with which they are being developed [@NationalAcademies2022].
-We have built ``OceanBioME.jl`` to meet these challenges by creating a tool that provides a modular interface to the different components, within the ocean modelling framework provided by ``Oceananigans.jl``.
+We have built ``OceanBioME.jl`` to meet these challenges by creating a tool that provides a modular interface to the different components, within the ocean modelling framework provided by ``Oceananigans.jl`` [@Oceananigans].
 Previously implementing biogeochemical models in ``Oceananigans.jl`` required the user to add forcing terms and boundary conditions to generic tracers [e.g. @SimoesSousa2022].
 ``OceanBioME.jl`` provides a suite of biogeochemical models ranging from simple idealized to full-complexity models and models for boundary fluxes (e.g. air-sea gas exchange).
-``Oceananignas.jl`` and ``OceanBioME.jl`` are built from the ground-up to exploit the power of graphical processor units (GPUs), while also retaining the ability to run on CPUs.
+``Oceananignas.jl`` and ``OceanBioME.jl`` are built from the ground-up to exploit the power of graphical processor units (GPUs) while also retaining the ability to run on CPUs, facilitated by ``KernelAbstractions.jl`` and ``CUDA.jl`` [@CUDA, @KA].
 The flexibility of the ``Oceananigans.jl`` framework allows ``OceanBioME.jl`` to be applied across a wide range of scales and use cases, including small-scale large-eddy simulations and regional and global models.
 
 # Summary
 
 ``OceanBioME.jl`` is a flexible modelling environment written in Julia [@julia] for simulating the coupled interactions between ocean biogeochemistry, carbonate chemistry, and physics.
-``OceanBioME.jl`` can be used as a stand-alone box model, or integrated into ``Oceananigans.jl`` [@Oceananigans] for coupled physical-biogeochemical simulations in one, two, or three dimensions.
+``OceanBioME.jl`` can be used as a stand-alone box model, or integrated into ``Oceananigans.jl`` for coupled physical-biogeochemical simulations in one, two, or three dimensions.
 As a result, ``OceanBioME.jl`` and ``Oceananigans.jl`` can be used to simulate the biogeochemical response across an enormous range of scales: from surface boundary layer turbulence at the sub-meter scale to eddying global ocean simulations at the planetary scale, and on computational systems ranging from laptops to supercomputers.
 An example of a problem involving small-scale flow features is showcased in \autoref{eady}, which shows a simulation of a sub-mesoscale eddy in a 1km x 1km horizontal domain with an intermediate complexity biogeochemical model and a kelp growth model solved along the trajectories of drifting buoys (a list of of examples shown in this paper and links to source code are given at the end of the paper).
 ``OceanBioME.jl`` leverages Julia's multiple dispatch and effective inline capabilities to fuse its computations directly into existing ``Oceananigans.jl`` kernels, thus maintaining ``Oceananigans.jl``'s bespoke performance, memory- and cost-efficiency on GPUs in ``OceanBioME.jl``-augmented simulations.
