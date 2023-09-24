@@ -58,7 +58,7 @@ This necessitates adaptable, easy-to-use, and verifiable BGC modelling tools whi
 We have built ``OceanBioME.jl`` to meet these challenges by creating a tool that provides a modular interface to the different components, within the ocean modelling framework provided by ``Oceananigans.jl`` [@Oceananigans].
 Previously implementing biogeochemical models in ``Oceananigans.jl`` required the user to add forcing terms and boundary conditions to generic tracers [e.g. @SimoesSousa2022].
 ``OceanBioME.jl`` provides a suite of biogeochemical models ranging from simple idealized to full-complexity models and models for boundary fluxes (e.g. air-sea gas exchange).
-``Oceananignas.jl`` and ``OceanBioME.jl`` are built from the ground-up to exploit the power of graphical processor units (GPUs) while also retaining the ability to run on CPUs, facilitated by ``KernelAbstractions.jl`` and ``CUDA.jl`` [@CUDA, @KA].
+Facilitated by ``KernelAbstractions.jl`` and ``CUDA.jl`` [@KA; @CUDA], ``Oceananignas.jl`` and ``OceanBioME.jl`` are built from the ground-up to exploit the power of graphical processor units (GPUs) while also retaining the ability to run on CPUs.
 The flexibility of the ``Oceananigans.jl`` framework allows ``OceanBioME.jl`` to be applied across a wide range of scales and use cases, including small-scale large-eddy simulations and regional and global models.
 
 # Summary
