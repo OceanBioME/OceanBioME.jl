@@ -75,7 +75,7 @@ On top of this, we added particles modelling the growth of sugar kelp, which are
 Thanks to Julia's speed and efficiency the above model (1 km × 1 km × 140 m with 512 × 512 × 64 grid points) took about 2 hours of computing time to simulate 10 days of evolution on an Nvidia A100 GPU. 
 The figure shows the domain with the colour representing the concentration of various biogeochemical tracer fields: nutrients (nitrate and ammonia), phytoplankton, organic matter (dissolved and particulate), and inorganic carbon. 
 Darker colours represent higher values.
-The increase in organic matter concentration in the centre of the eddy can be seen, as well as carbon being subducted (most visible in the xz face in the phytoplankton).
+The increase in organic matter concentration in the centre of the eddy can be seen, as well as carbon being subducted.
 Points on the surface represent the kelp particle positions, with the colour representing the range of frond size.
 Figure made with ``Makie.jl`` [@makie]. \label{eady}](eady_example.png)
 
