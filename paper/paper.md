@@ -73,9 +73,9 @@ An example of a problem involving small-scale flow features is showcased in \aut
 To this physical setup, we added a medium complexity (9 tracers) biogeochemical model, some components of which are shown above.
 On top of this, we added particles modelling the growth of sugar kelp, which are free-floating and advected by the flow, and carbon dioxide exchange from the air.
 Thanks to Julia's speed and efficiency the above model (1 km × 1 km × 140 m with 512 × 512 × 64 grid points) took about 2 hours of computing time to simulate 10 days of evolution on an Nvidia A100 GPU. 
-The figure shows the domain with the colour representing the concentration of various biogeochemical tracer fields: nutrients (nitrate and ammonia), phytoplankton, organic matter (dissolved and particulate), and inorganic carbon. 
+The figure shows the domain with the colour representing the concentration of various biogeochemical tracer fields: nutrients (nitrate and ammonia), phytoplankton, organic matter (dissolved and particulate), and dissolved inorganic carbon. 
 Darker colours represent higher values.
-The increase in organic matter concentration in the centre of the eddy can be seen, as well as carbon being subducted.
+High concentrations of organic matter develop near the center of the eddy. Small-scale variability and enhanced subduction can also be seen along a sub-mesoscale front.
 Points on the surface represent the kelp particle positions, with the colour representing the range of frond size.
 Figure made with ``Makie.jl`` [@makie]. \label{eady}](eady_example.png)
 
