@@ -72,7 +72,7 @@ An example of a problem involving small-scale flow features is showcased in \aut
 ![In this simulation of baroclinic instability in the Eady problem, a background buoyancy gradient and corresponding thermal wind generates a sub-mesoscale eddy, roughly following the setup of @taylor:2016. A submesoscale front develops on the periphery of the eddy where intense three-dimensional turbulence develops with inherently non-hydrostatic dynamics.
 To this physical setup, we added a medium complexity (9 tracers) biogeochemical model, some components of which are shown above.
 On top of this, we added particles modelling the growth of sugar kelp, which are free-floating and advected by the flow, and carbon dioxide exchange from the air.
-Thanks to Julia's speed and efficiency the above model (1 km × 1 km × 100 m with 512 × 512 × 64 grid points) took about 2 hours of computing time to simulate 10 days of evolution on an Nvidia A100 GPU. 
+Thanks to Julia's speed and efficiency the above model (1 km × 1 km × 140 m with 512 × 512 × 64 grid points) took about 2 hours of computing time to simulate 10 days of evolution on an Nvidia A100 GPU. 
 The figure shows the domain with the colour representing the concentration of various biogeochemical tracer fields: nutrients (nitrate and ammonia), phytoplankton, organic matter (dissolved and particulate), and inorganic carbon. 
 Darker colours represent higher values.
 The increase in organic matter concentration in the centre of the eddy can be seen, as well as carbon being subducted (most visible in the xz face in the phytoplankton).
