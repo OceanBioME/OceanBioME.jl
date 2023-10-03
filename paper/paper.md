@@ -12,6 +12,7 @@ authors:
     corresponding: true
     affiliation: "1, 2"
   - name: Si Chen
+    orcid: 0009-0002-1296-7166
     affiliation: "1, 2"
     equal-contrib: true
   - name: Navid C Constantinou
