@@ -19,6 +19,7 @@ authors:
     affiliation: 3, 4
     equal-contrib: true
   - name: Simone Silvestri
+    orcid: 0000-0002-7156-946X
     affiliation: 5
     equal-contrib: true
   - name: Gregory LeClaire Wagner
