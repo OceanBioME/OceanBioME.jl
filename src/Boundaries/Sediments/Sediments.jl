@@ -7,7 +7,7 @@ using KernelAbstractions
 using OceanBioME: Biogeochemistry, BoxModelGrid
 
 using Oceananigans
-using Oceananigans.Architectures: device
+using Oceananigans.Architectures: device, architecture, arch_array
 using Oceananigans.Utils: launch!
 using Oceananigans.Advection: advective_tracer_flux_z
 using Oceananigans.Units: day
@@ -35,12 +35,19 @@ function update_tendencies!(bgc, sediment::FlatSediment, model)
         launch!(arch, model.grid, :xy, store_flat_tendencies!, sediment.tendencies.G⁻[i], sediment.tendencies.Gⁿ[i])
     end
 
+    biogeochemistry = bgc.underlying_biogeochemistry
+
     launch!(arch, model.grid, :xy,
             _calculate_tendencies!,
-            sediment, bgc, model.grid, model.advection, model.tracers, model.timestepper)
+            sediment, biogeochemistry, model.grid, 
+            sinking_advection(biogeochemistry, model.advection), 
+            required_tracers(sediment, biogeochemistry, model.tracers), 
+            required_tendencies(sediment, biogeochemistry, model.timestepper.Gⁿ), 
+            sediment.tendencies.Gⁿ)
             
     return nothing
 end
+
 
 @kernel function store_flat_tendencies!(G⁻, G⁰)
     i, j = @index(Global, NTuple)
@@ -50,10 +57,12 @@ end
 @inline nitrogen_flux() = 0
 @inline carbon_flux() = 0
 @inline remineralisation_receiver() = nothing
+@inline sinking_tracers() = nothing
+@inline required_tracers() = nothing
+@inline required_tendencies() = nothing
 
-@inline nitrogen_flux(i, j, k, grid, advection, bgc::Biogeochemistry, tracers) = nitrogen_flux(i, j, k, grid, advection, bgc.underlying_biogeochemistry, tracers)
-@inline carbon_flux(i, j, k, grid, advection, bgc::Biogeochemistry, tracers) = carbon_flux(i, j, k, grid, advection, bgc.underlying_biogeochemistry, tracers)
-@inline remineralisation_receiver(bgc::Biogeochemistry) = remineralisation_receiver(bgc.underlying_biogeochemistry)
+@inline sinking_advection(bgc, advection) = advection
+@inline sinking_advection(bgc, advection::NamedTuple) = advection[sinking_tracers(bgc)]
 
 @inline advection_scheme(advection, val_tracer) = advection
 @inline advection_scheme(advection::NamedTuple, val_tracer::Val{T}) where T = advection[T]
@@ -81,7 +90,8 @@ calculate_bottom_indices(grid) = ones(Int, size(grid)[1:2]...)
 end
 
 function calculate_bottom_indices(grid::ImmersedBoundaryGrid)
-    indices = zeros(Int, size(grid)[1:2]...)
+    arch = architecture(grid)
+    indices = arch_array(arch, zeros(Int, size(grid)[1:2]...))
 
     launch!(grid.architecture, grid, :xy, find_bottom_cell, grid, indices)
 

@@ -65,7 +65,7 @@ import OceanBioME: maximum_sinking_velocity
 import Adapt: adapt_structure, adapt
 import Base: show, summary
 
-import OceanBioME.Boundaries.Sediments: nitrogen_flux, carbon_flux, remineralisation_receiver
+import OceanBioME.Boundaries.Sediments: nitrogen_flux, carbon_flux, remineralisation_receiver, sinking_tracers
 
 struct LOBSTER{FT, B, W} <: AbstractContinuousFormBiogeochemistry
     phytoplankton_preference :: FT
@@ -352,7 +352,7 @@ function LOBSTER(; grid,
                                          sinking_velocities)
 
     if scale_negatives
-        scaler = ScaleNegativeTracers(underlying_biogeochemistry)
+        scaler = ScaleNegativeTracers(underlying_biogeochemistry, grid)
         modifiers = isnothing(modifiers) ? scaler : (modifiers..., scaler)
     end
 
@@ -389,7 +389,7 @@ const DOM = Union{Val{:DOM}, Val{:DON}}
 
 @inline function biogeochemical_drift_velocity(bgc::LOBSTER, ::Val{tracer_name}) where tracer_name
     if tracer_name in keys(bgc.sinking_velocities)
-        return bgc.sinking_velocities[tracer_name]
+        return (u = ZeroField(), v = ZeroField(), w = bgc.sinking_velocities[tracer_name])
     else
         return (u = ZeroField(), v = ZeroField(), w = ZeroField())
     end
@@ -400,36 +400,36 @@ function update_boxmodel_state!(model::BoxModel{<:Biogeochemistry{<:LOBSTER}, <:
 end
 
 adapt_structure(to, lobster::LOBSTER) =
-    LOBSTER(lobster.phytoplankton_preference,
-            lobster.maximum_grazing_rate,
-            lobster.grazing_half_saturation,
-            lobster.light_half_saturation,
-            lobster.nitrate_ammonia_inhibition,
-            lobster.nitrate_half_saturation,
-            lobster.ammonia_half_saturation,
-            lobster.maximum_phytoplankton_growthrate,
-            lobster.zooplankton_assimilation_fraction,
-            lobster.zooplankton_mortality,
-            lobster.zooplankton_excretion_rate,
-            lobster.phytoplankton_mortality,
-            lobster.small_detritus_remineralisation_rate,
-            lobster.large_detritus_remineralisation_rate,
-            lobster.phytoplankton_exudation_fraction,
-            lobster.nitrifcaiton_rate,
-            lobster.ammonia_fraction_of_exudate,
-            lobster.ammonia_fraction_of_excriment,
-            lobster.ammonia_fraction_of_detritus,
-            lobster.phytoplankton_redfield,
-            lobster.organic_redfield,
-            lobster.phytoplankton_chlorophyll_ratio,
-            lobster.organic_carbon_calcate_ratio,
-            lobster.respiraiton_oxygen_nitrogen_ratio,
-            lobster.nitrifcation_oxygen_nitrogen_ratio,
-            lobster.slow_sinking_mortality_fraction,
-            lobster.fast_sinking_mortality_fraction,
-            lobster.disolved_organic_breakdown_rate,
-            lobster.zooplankton_calcite_dissolution,
-            lobster.optionals,
+    LOBSTER(adapt(to, lobster.phytoplankton_preference),
+            adapt(to, lobster.maximum_grazing_rate),
+            adapt(to, lobster.grazing_half_saturation),
+            adapt(to, lobster.light_half_saturation),
+            adapt(to, lobster.nitrate_ammonia_inhibition),
+            adapt(to, lobster.nitrate_half_saturation),
+            adapt(to, lobster.ammonia_half_saturation),
+            adapt(to, lobster.maximum_phytoplankton_growthrate),
+            adapt(to, lobster.zooplankton_assimilation_fraction),
+            adapt(to, lobster.zooplankton_mortality),
+            adapt(to, lobster.zooplankton_excretion_rate),
+            adapt(to, lobster.phytoplankton_mortality),
+            adapt(to, lobster.small_detritus_remineralisation_rate),
+            adapt(to, lobster.large_detritus_remineralisation_rate),
+            adapt(to, lobster.phytoplankton_exudation_fraction),
+            adapt(to, lobster.nitrifcaiton_rate),
+            adapt(to, lobster.ammonia_fraction_of_exudate),
+            adapt(to, lobster.ammonia_fraction_of_excriment),
+            adapt(to, lobster.ammonia_fraction_of_detritus),
+            adapt(to, lobster.phytoplankton_redfield),
+            adapt(to, lobster.organic_redfield),
+            adapt(to, lobster.phytoplankton_chlorophyll_ratio),
+            adapt(to, lobster.organic_carbon_calcate_ratio),
+            adapt(to, lobster.respiraiton_oxygen_nitrogen_ratio),
+            adapt(to, lobster.nitrifcation_oxygen_nitrogen_ratio),
+            adapt(to, lobster.slow_sinking_mortality_fraction),
+            adapt(to, lobster.fast_sinking_mortality_fraction),
+            adapt(to, lobster.disolved_organic_breakdown_rate),
+            adapt(to, lobster.zooplankton_calcite_dissolution),
+            adapt(to, lobster.optionals),
             adapt(to, lobster.sinking_velocities))
 
 summary(::LOBSTER{FT, B, W}) where {FT, B, W} = string("Lodyc-DAMTP Ocean Biogeochemical Simulation Tools for Ecosystem and Resources (LOBSTER) model ($FT)")
@@ -450,7 +450,7 @@ include("carbonate_chemistry.jl")
 include("oxygen_chemistry.jl")
 include("variable_redfield.jl")
 
-const lobster_variable_redfield = Union{LOBSTER{<:Any, <:Val{(false, false, true)}, <:Any},
+const VariableRedfieldLobster = Union{LOBSTER{<:Any, <:Val{(false, false, true)}, <:Any},
                                         LOBSTER{<:Any, <:Val{(true, false, true)}, <:Any},
                                         LOBSTER{<:Any, <:Val{(false, true, true)}, <:Any},
                                         LOBSTER{<:Any, <:Val{(true, true, true)}, <:Any}}
@@ -463,13 +463,13 @@ const lobster_variable_redfield = Union{LOBSTER{<:Any, <:Val{(false, false, true
 @inline redfield(::Union{Val{:sPOM}, Val{:bPOM}, Val{:DOM}}, bgc::LOBSTER) = bgc.organic_redfield
 @inline redfield(::Union{Val{:sPOC}, Val{:bPOC}, Val{:DOC}, Val{:DIC}}, bgc::LOBSTER) = 1
 
-@inline redfield(i, j, k, ::Val{:sPON}, bgc::lobster_variable_redfield, tracers) = @inbounds tracers.sPOC[i, j, k] / tracers.sPON[i, j, k]
-@inline redfield(i, j, k, ::Val{:bPON}, bgc::lobster_variable_redfield, tracers) = @inbounds tracers.bPOC[i, j, k] / tracers.bPON[i, j, k]
-@inline redfield(i, j, k, ::Val{:DON}, bgc::lobster_variable_redfield, tracers) = @inbounds tracers.DOC[i, j, k] / tracers.DON[i, j, k]
+@inline redfield(i, j, k, ::Val{:sPON}, bgc::VariableRedfieldLobster, tracers) = @inbounds tracers.sPOC[i, j, k] / tracers.sPON[i, j, k]
+@inline redfield(i, j, k, ::Val{:bPON}, bgc::VariableRedfieldLobster, tracers) = @inbounds tracers.bPOC[i, j, k] / tracers.bPON[i, j, k]
+@inline redfield(i, j, k, ::Val{:DON}, bgc::VariableRedfieldLobster, tracers) = @inbounds tracers.DOC[i, j, k] / tracers.DON[i, j, k]
 
-@inline redfield(::Val{:sPON}, bgc::lobster_variable_redfield, tracers) = tracers.sPOC / tracers.sPON
-@inline redfield(::Val{:bPON}, bgc::lobster_variable_redfield, tracers) = tracers.bPOC / tracers.bPON
-@inline redfield(::Val{:DON}, bgc::lobster_variable_redfield, tracers) = tracers.DOC / tracers.DON
+@inline redfield(::Val{:sPON}, bgc::VariableRedfieldLobster, tracers) = tracers.sPOC / tracers.sPON
+@inline redfield(::Val{:bPON}, bgc::VariableRedfieldLobster, tracers) = tracers.bPOC / tracers.bPON
+@inline redfield(::Val{:DON}, bgc::VariableRedfieldLobster, tracers) = tracers.DOC / tracers.DON
 
 @inline nitrogen_flux(i, j, k, grid, advection, bgc::LOBSTER, tracers) = 
     sinking_flux(i, j, k, grid, advection, Val(:sPOM), bgc, tracers) +
@@ -477,16 +477,19 @@ const lobster_variable_redfield = Union{LOBSTER{<:Any, <:Val{(false, false, true
 
 @inline carbon_flux(i, j, k, grid, advection, bgc::LOBSTER, tracers) = nitrogen_flux(i, j, k, grid, advection, bgc, tracers) * redfield(Val(:sPOM), bgc)
 
-@inline nitrogen_flux(i, j, k, grid, advection, bgc::lobster_variable_redfield, tracers) = 
+@inline nitrogen_flux(i, j, k, grid, advection, bgc::VariableRedfieldLobster, tracers) = 
     sinking_flux(i, j, k, grid, advection, Val(:sPON), bgc, tracers) +
     sinking_flux(i, j, k, grid, advection, Val(:bPON), bgc, tracers)
 
-@inline carbon_flux(i, j, k, grid, advection, bgc::lobster_variable_redfield, tracers) =  
+@inline carbon_flux(i, j, k, grid, advection, bgc::VariableRedfieldLobster, tracers) =  
     sinking_flux(i, j, k, grid, advection, Val(:sPOC), bgc, tracers) +
     sinking_flux(i, j, k, grid, advection, Val(:bPOC), bgc, tracers)
 
 @inline remineralisation_receiver(::LOBSTER) = :NH₄
 
 @inline conserved_tracers(::LOBSTER) = (:NO₃, :NH₄, :P, :Z, :sPOM, :bPOM, :DOM)
-@inline conserved_tracers(::lobster_variable_redfield) = (:NO₃, :NH₄, :P, :Z, :sPON, :bPON, :DON)
+@inline conserved_tracers(::VariableRedfieldLobster) = (:NO₃, :NH₄, :P, :Z, :sPON, :bPON, :DON)
+
+@inline sinking_tracers(::LOBSTER) = (:sPOM, :bPOM)
+@inline sinking_tracers(::VariableRedfieldLobster) = (:sPON, :bPON, :sPOC, :bPOC)
 end # module

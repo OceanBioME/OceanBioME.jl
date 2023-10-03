@@ -7,7 +7,6 @@ import Adapt: adapt_structure, adapt
 function setup_velocity_fields(drift_speeds, grid::AbstractGrid, open_bottom; smoothing_distance = 2)
     drift_velocities = []
     for w in values(drift_speeds)
-        u, v = maybe_constant_field.((0, 0))
         if isa(values(w), Number)
             w_field = ZFaceField(grid)
             for k=1:grid.Nz 
@@ -18,7 +17,7 @@ function setup_velocity_fields(drift_speeds, grid::AbstractGrid, open_bottom; sm
             error("Provided sinking speeds are an unsuitable value, must be a `NamedTuple` of scalar values (positive = sinking) with keys of tracer names, or `NamedTuple` of `VelocityFields`")
         end
 
-        push!(drift_velocities, (; u, v, w))
+        push!(drift_velocities, w)
     end
 
     return NamedTuple{keys(drift_speeds)}(drift_velocities)
