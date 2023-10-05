@@ -126,7 +126,7 @@ Biologically active particles can also be used to model OCDR deployment strategi
 Kelp (500 frond / m² in the top 50 m of water) is added in December of the 2ⁿᵈ year (black vertical line) which causes an increase in air-sea carbon dioxide exchange and sinking export, as shown in panel (d). Panel (a) shows the phytoplankton growth cycle which also changes in response to the altered nutrient dynamics visible in panel (b). Panel (c) shows the kelp growth with the front size in (i), the carbon storage in (ii), and the nitrogen storage in (iii). 
 Figure made with ``Makie.jl`` [@makie]. \label{column}](column_example.png)
 
-The implementation of OceanBioME.jl models allows for seamless integration with data assimilation packages, such as ``EnsembleKalmanProcesses.jl`` [@ekp]. 
+The implementation of ``OceanBioME.jl`` models allows for seamless integration with data assimilation packages, such as ``EnsembleKalmanProcesses.jl`` [@ekp]. 
 This enables rapid calibration of model parameters and provides a powerful utility for integrating observations and models, with the potential to improve model skill and identify key sources of uncertainty.
 
 A key metric for the validity of biogeochemical systems is the conservation of elements such as carbon and nitrogen in the system.
