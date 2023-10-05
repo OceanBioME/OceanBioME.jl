@@ -141,3 +141,22 @@ If you're interested in contributing to the development of OceanBioME we would a
 If you'd like to work on a new feature, or if you're new to open source and want to crowd-source projects that fit your interests, please start a discussion.
 
 For more information check out our [contributor's guide](https://oceanbiome.github.io/OceanBioME.jl/stable/contributing/).
+
+## Citing
+
+If you use OceanBioME.jl as part of your research, teaching, or other activities, we would be grateful if you could cite the package by name.
+
+```bibtex
+@article{OceanBioMEJOSS,
+  doi = {10.21105/joss.05669},
+  url = {https://doi.org/10.21105/joss.05669},
+  year = {2023},
+  publisher = {The Open Journal},
+  volume = {8},
+  number = {90},
+  pages = {5669},
+  author = {Jago Strong-Wright and Si Chen and Navid C. Constantinou and Simone Silvestri and Gregory LeClaire Wagner and John R. and Taylor},
+  title = {{OceanBioME.jl: A flexible environment for modelling the coupled interactions between ocean biogeochemistry and physics}},
+  journal = {Journal of Open Source Software}
+}
+```
