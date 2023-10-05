@@ -10,7 +10,7 @@ using Oceananigans.Biogeochemistry:
         required_biogeochemical_tracers, 
         required_biogeochemical_auxiliary_fields
 
-using Oceananigans: Clock, prettytime
+using Oceananigans: Clock, prettytime, CPU
 using Oceananigans.TimeSteppers: tick!
 
 using OceanBioME: BoxModelGrid
@@ -19,6 +19,7 @@ using StructArrays, JLD2
 import Oceananigans.Simulations: run!
 import Oceananigans: set!
 import Oceananigans.Fields: CenterField, regularize_field_boundary_conditions
+import Oceananigans.Architectures: architecture
 import Base: show, summary
 
 @inline no_func(args...) = 0.0
@@ -188,5 +189,6 @@ show(io::IO, model::BoxModel{B, V, FT, F, TS, C}) where {B, V, FT, F, TS, C} =
 
 CenterField(::BoxModelGrid, args...; kwargs...) = nothing
 regularize_field_boundary_conditions(::Any, ::BoxModelGrid, ::Any) = nothing
+architecture(::BoxModelGrid) = CPU()
 
 end # module

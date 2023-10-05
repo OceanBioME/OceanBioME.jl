@@ -133,13 +133,13 @@ show(io::IO, model::TwoBandPhotosyntheticallyActiveRadiation{FT}) where {FT} = p
 biogeochemical_auxiliary_fields(par::TwoBandPhotosyntheticallyActiveRadiation) = (PAR = par.field, )
 
 adapt_structure(to, par::TwoBandPhotosyntheticallyActiveRadiation) = 
-    TwoBandPhotosyntheticallyActiveRadiation(par.water_red_attenuation,
-                                             par.water_blue_attenuation,
-                                             par.chlorophyll_red_attenuation,
-                                             par.chlorophyll_blue_attenuation,
-                                             par.chlorophyll_red_exponent,
-                                             par.chlorophyll_blue_exponent,
-                                             par.pigment_ratio,
-                                             par.phytoplankton_chlorophyll_ratio,
+    TwoBandPhotosyntheticallyActiveRadiation(adapt(to, par.water_red_attenuation),
+                                             adapt(to, par.water_blue_attenuation),
+                                             adapt(to, par.chlorophyll_red_attenuation),
+                                             adapt(to, par.chlorophyll_blue_attenuation),
+                                             adapt(to, par.chlorophyll_red_exponent),
+                                             adapt(to, par.chlorophyll_blue_exponent),
+                                             adapt(to, par.pigment_ratio),
+                                             adapt(to, par.phytoplankton_chlorophyll_ratio),
                                              adapt(to, par.field),
                                              adapt(to, par.surface_PAR))

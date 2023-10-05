@@ -63,7 +63,7 @@ function InstantRemineralisation(; grid,
     tendencies = (Gⁿ = NamedTuple{tracer_names}(Tuple(CenterField(grid) for tracer in tracer_names)),
                   G⁻ = NamedTuple{tracer_names}(Tuple(CenterField(grid) for tracer in tracer_names)))
 
-    bottom_indices = calculate_bottom_indices(grid)
+    bottom_indices = arch_array(architecture(grid), calculate_bottom_indices(grid))
 
     return InstantRemineralisation(burial_efficiency_constant1,
                                    burial_efficiency_constant2,
@@ -74,18 +74,22 @@ function InstantRemineralisation(; grid,
 end
 
 adapt_structure(to, sediment::InstantRemineralisation) = 
-    SimpleMultiG(sediment.burial_efficiency_constant1,
-                 sediment.burial_efficiency_constant2,
-                 sediment.burial_efficiency_half_saturaiton,
-                 adapt(to, sediment.fields),
-                 adapt(to, sediment.tendencies))
+    InstantRemineralisation(adapt(to, sediment.burial_efficiency_constant1),
+                            adapt(to, sediment.burial_efficiency_constant2),
+                            adapt(to, sediment.burial_efficiency_half_saturaiton),
+                            adapt(to, sediment.fields),
+                            nothing,
+                            adapt(to, sediment.bottom_indices))
                   
 sediment_tracers(::InstantRemineralisation) = (:N_storage, )
 sediment_fields(model::InstantRemineralisation) = (N_storage = model.fields.N_storage, )
 
+@inline required_tracers(::InstantRemineralisation, bgc, tracers) = tracers[(sinking_tracers(bgc)..., remineralisation_receiver(bgc))]
+@inline required_tendencies(::InstantRemineralisation, bgc, tracers) = tracers[remineralisation_receiver(bgc)]
+
 @inline bottom_index_array(sediment::InstantRemineralisation) = sediment.bottom_indices
 
-@kernel function _calculate_tendencies!(sediment::InstantRemineralisation, bgc, grid, advection, tracers, timestepper)
+@kernel function _calculate_tendencies!(sediment::InstantRemineralisation, bgc, grid, advection, tracers, tendencies, sediment_tendencies)
     i, j = @index(Global, NTuple)
 
     k = bottom_index(i, j, sediment)
@@ -97,9 +101,9 @@ sediment_fields(model::InstantRemineralisation) = (N_storage = model.fields.N_st
     burial_efficiency = sediment.burial_efficiency_constant1 + sediment.burial_efficiency_constant2 * ((flux * 6.56) / (7 + flux * 6.56)) ^ 2
 
     # sediment evolution
-    @inbounds sediment.tendencies.Gⁿ.N_storage[i, j, 1] = burial_efficiency * flux
+    @inbounds sediment_tendencies.N_storage[i, j, 1] = burial_efficiency * flux
 
-    @inbounds timestepper.Gⁿ[remineralisation_receiver(bgc)][i, j, 1] += flux * (1 - burial_efficiency) / Δz
+    @inbounds tendencies[i, j, k] += flux * (1 - burial_efficiency) / Δz
 end
 
 summary(::InstantRemineralisation{FT}) where {FT} = string("Single-layer instant remineralisaiton ($FT)")

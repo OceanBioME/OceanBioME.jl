@@ -9,11 +9,11 @@ using Oceananigans.Fields: TracerFields
 
 using Oceananigans.Operators: volume, Azᶠᶜᶜ
 
-using OceanBioME.LOBSTERModel: lobster_variable_redfield
+using OceanBioME.LOBSTERModel: VariableRedfieldLobster
 
 function intercept_tendencies!(model, intercepted_tendencies)
     for tracer in keys(model.tracers)
-        copyto!(intercepted_tendencies[tracer], model.timestepper.Gⁿ[tracer])
+        intercepted_tendencies[tracer] = Array(interior(model.timestepper.Gⁿ[tracer]))
     end
 end
 
@@ -34,7 +34,7 @@ set_defaults!(::LOBSTER, model) =
                 sPOM = 0.2299, bPOM = 0.0103)
 
 
-set_defaults!(::lobster_variable_redfield, model) =
+set_defaults!(::VariableRedfieldLobster, model) =
     set!(model, P = 0.4686, Z = 0.5363, 
                 NO₃ = 2.3103, NH₄ = 0.0010, 
                 DIC = 2106.9, Alk = 2408.9, 
@@ -52,9 +52,26 @@ total_nitrogen(sed::SimpleMultiG) = sum(sed.fields.N_fast) +
 
 total_nitrogen(sed::InstantRemineralisation) = sum(sed.fields.N_storage)
 
-total_nitrogen(::LOBSTER, model) = sum(model.tracers.NO₃) + sum(model.tracers.NH₄) + sum(model.tracers.P) + sum(model.tracers.Z) + sum(model.tracers.DOM) + sum(model.tracers.sPOM) + sum(model.tracers.bPOM)
-total_nitrogen(::lobster_variable_redfield, model) = sum(model.tracers.NO₃) + sum(model.tracers.NH₄) + sum(model.tracers.P) + sum(model.tracers.Z) + sum(model.tracers.DON) + sum(model.tracers.sPON) + sum(model.tracers.bPON)
-total_nitrogen(::NutrientPhytoplanktonZooplanktonDetritus, model) = sum(model.tracers.N) + sum(model.tracers.P) + sum(model.tracers.Z) + sum(model.tracers.D)
+total_nitrogen(::LOBSTER, model) = sum(model.tracers.NO₃) +
+                                   sum(model.tracers.NH₄) +
+                                   sum(model.tracers.P) +
+                                   sum(model.tracers.Z) +
+                                   sum(model.tracers.DOM) +
+                                   sum(model.tracers.sPOM) +
+                                   sum(model.tracers.bPOM)
+
+total_nitrogen(::VariableRedfieldLobster, model) = sum(model.tracers.NO₃) +
+                                                     sum(model.tracers.NH₄) +
+                                                     sum(model.tracers.P) +
+                                                     sum(model.tracers.Z) +
+                                                     sum(model.tracers.DON) +
+                                                     sum(model.tracers.sPON) +
+                                                     sum(model.tracers.bPON)
+                                                     
+total_nitrogen(::NutrientPhytoplanktonZooplanktonDetritus, model) = sum(model.tracers.N) +
+                                                                    sum(model.tracers.P) +
+                                                                    sum(model.tracers.Z) +
+                                                                    sum(model.tracers.D)
 
 function test_flat_sediment(grid, biogeochemistry, model; timestepper = :QuasiAdamsBashforth2)
     model = isa(model, NonhydrostaticModel) ? model(; grid, 
@@ -74,29 +91,30 @@ function test_flat_sediment(grid, biogeochemistry, model; timestepper = :QuasiAd
 
     simulation = Simulation(model, Δt = 50, stop_time = 1day)
 
-    intercepted_tendencies = TracerFields(keys(model.tracers), grid)
+    intercepted_tendencies = Tuple(Array(interior(field)) for field in values(TracerFields(keys(model.tracers), grid)))
 
     simulation.callbacks[:intercept_tendencies] = Callback(intercept_tendencies!; callsite = TendencyCallsite(), parameters = intercepted_tendencies)
 
-    N₀ = total_nitrogen(biogeochemistry.underlying_biogeochemistry, model) * volume(1, 1, 1, grid, Center(), Center(), Center()) + total_nitrogen(biogeochemistry.sediment) * Azᶠᶜᶜ(1, 1, 1, grid)
+    N₀ = CUDA.@allowscalar total_nitrogen(biogeochemistry.underlying_biogeochemistry, model) * volume(1, 1, 1, grid, Center(), Center(), Center()) + total_nitrogen(biogeochemistry.sediment) * Azᶠᶜᶜ(1, 1, 1, grid)
 
     run!(simulation)
 
     # the model is changing the tracer tendencies
-    @test any([any(intercepted_tendencies[tracer] .!= model.timestepper.Gⁿ[tracer]) for tracer in keys(model.tracers)])
+    @test any([any(intercepted_tendencies[idx] .!= Array(interior(model.timestepper.Gⁿ[tracer]))) for (idx, tracer) in enumerate(keys(model.tracers))])
 
     # the sediment tendencies are being updated
-    @test all([any(tend .!= 0.0) for tend in model.biogeochemistry.sediment.tendencies.Gⁿ])
-    @test all([any(tend .!= 0.0) for tend in model.biogeochemistry.sediment.tendencies.G⁻])
+    @test all([any(Array(interior(tend)) .!= 0.0) for tend in model.biogeochemistry.sediment.tendencies.Gⁿ])
+    @test all([any(Array(interior(tend)) .!= 0.0) for tend in model.biogeochemistry.sediment.tendencies.G⁻])
 
     # the sediment values are being integrated
     initial_values = (N_fast = 0.0230, N_slow = 0.0807, C_fast = 0.5893, C_slow = 0.1677, N_ref = 0.0, C_ref = 0.0, N_storage = 0.0)
-    @test all([any(field .!= initial_values[name]) for (name, field) in pairs(model.biogeochemistry.sediment.fields)])
+    @test all([any(Array(interior(field)) .!= initial_values[name]) for (name, field) in pairs(model.biogeochemistry.sediment.fields)])
 
-    N₁ = total_nitrogen(biogeochemistry.underlying_biogeochemistry, model) * volume(1, 1, 1, grid, Center(), Center(), Center()) + total_nitrogen(biogeochemistry.sediment) * Azᶠᶜᶜ(1, 1, 1, grid)
+    N₁ = CUDA.@allowscalar total_nitrogen(biogeochemistry.underlying_biogeochemistry, model) * volume(1, 1, 1, grid, Center(), Center(), Center()) + total_nitrogen(biogeochemistry.sediment) * Azᶠᶜᶜ(1, 1, 1, grid)
 
     # conservations
-    @test N₁ ≈ N₀
+    rtol = ifelse(isa(architecture, CPU), max(√eps(N₀), √eps(N₁)), 5e-7)
+    @test isapprox(N₀, N₁; rtol) 
 
     return nothing
 end
@@ -113,30 +131,29 @@ display_name(::ImmersedBoundaryGrid) = "Immersed boundary grid"
 bottom_height(x, y) = -1000 + 500 * exp(- (x^2 + y^2) / 250) # a perfect hill
 
 @testset "Sediment integration" begin
-    for architecture in (CPU(), )
-        grids = [RectilinearGrid(architecture; size=(3, 3, 50), extent=(10, 10, 500)),
-                 LatitudeLongitudeGrid(architecture; size = (3, 3, 16), latitude = (0, 10), longitude = (0, 10), z = (-500, 0)),
-                 ImmersedBoundaryGrid(
-                    LatitudeLongitudeGrid(architecture; size = (3, 3, 16), latitude = (0, 10), longitude = (0, 10), z = (-500, 0)), 
-                    GridFittedBottom(bottom_height))]
-        for grid in grids
-            for timestepper in (:QuasiAdamsBashforth2, :RungeKutta3),
-                sediment_model in (InstantRemineralisation(; grid), SimpleMultiG(; grid)),
-                model in (NonhydrostaticModel, HydrostaticFreeSurfaceModel)
-                for biogeochemistry in (NutrientPhytoplanktonZooplanktonDetritus(; grid, sediment_model),
-                                        LOBSTER(; grid,
-                                                  carbonates = ifelse(isa(sediment_model, SimpleMultiG), true, false), 
-                                                  oxygen = ifelse(isa(sediment_model, SimpleMultiG), true, false), 
-                                                  variable_redfield = ifelse(isa(sediment_model, SimpleMultiG), true, false), 
-                                                  sediment_model))
-                    # get rid of incompatible combinations
-                    run = ifelse((model == NonhydrostaticModel && (isa(grid, ImmersedBoundaryGrid) || isa(grid, LatitudeLongitudeGrid))) ||
-                                 (model == HydrostaticFreeSurfaceModel && timestepper == :RungeKutta3) ||
-                                 (isa(sediment_model, SimpleMultiG) && isa(biogeochemistry.underlying_biogeochemistry, NutrientPhytoplanktonZooplanktonDetritus)), false, true)
-                    if run
-                        @info "Testing sediment on $(typeof(architecture)) with $timestepper and $(display_name(sediment_model)) on $(display_name(biogeochemistry.underlying_biogeochemistry))"
-                        @testset "$architecture, $timestepper, $(display_name(sediment_model)), $(display_name(biogeochemistry.underlying_biogeochemistry))" test_flat_sediment(grid, biogeochemistry, model; timestepper)
-                    end
+    grids = [RectilinearGrid(architecture; size=(3, 3, 50), extent=(10, 10, 500)),
+             LatitudeLongitudeGrid(architecture; size = (3, 3, 16), latitude = (0, 10), longitude = (0, 10), z = (-500, 0)),
+             ImmersedBoundaryGrid(
+                LatitudeLongitudeGrid(architecture; size = (3, 3, 16), latitude = (0, 10), longitude = (0, 10), z = (-500, 0)), 
+                GridFittedBottom(bottom_height))]
+    for grid in grids
+        for timestepper in (:QuasiAdamsBashforth2, :RungeKutta3),
+            sediment_model in (InstantRemineralisation(; grid), SimpleMultiG(; grid)),
+            model in (NonhydrostaticModel, HydrostaticFreeSurfaceModel)
+            for biogeochemistry in (NutrientPhytoplanktonZooplanktonDetritus(; grid, sediment_model),
+                                    LOBSTER(; grid,
+                                              carbonates = ifelse(isa(sediment_model, SimpleMultiG), true, false), 
+                                              oxygen = ifelse(isa(sediment_model, SimpleMultiG), true, false), 
+                                              variable_redfield = ifelse(isa(sediment_model, SimpleMultiG), true, false), 
+                                              sediment_model))
+                # get rid of incompatible combinations
+                run = ifelse((model == NonhydrostaticModel && (isa(grid, ImmersedBoundaryGrid) || isa(grid, LatitudeLongitudeGrid))) ||
+                             (model == HydrostaticFreeSurfaceModel && timestepper == :RungeKutta3) ||
+                             (isa(sediment_model, SimpleMultiG) && isa(biogeochemistry.underlying_biogeochemistry, NutrientPhytoplanktonZooplanktonDetritus)), false, true)
+                
+                if run
+                    @info "Testing sediment on $(typeof(architecture)) with $timestepper and $(display_name(sediment_model)) on $(display_name(biogeochemistry.underlying_biogeochemistry)) with $(display_name(grid))"
+                    @testset "$architecture, $timestepper, $(display_name(sediment_model)), $(display_name(biogeochemistry.underlying_biogeochemistry)), $(display_name(grid))" test_flat_sediment(grid, biogeochemistry, model; timestepper)
                 end
             end
         end

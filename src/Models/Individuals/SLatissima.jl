@@ -30,6 +30,7 @@ using KernelAbstractions.Extras.LoopInfo: @unroll
 using Oceananigans.Operators: volume
 using Oceananigans.Grids: AbstractGrid
 using Oceananigans.Fields: fractional_indices, _interpolate, datatuple
+using Oceananigans.Models: total_velocities
 
 import Adapt: adapt_structure, adapt
 import Oceananigans.Biogeochemistry: update_tendencies!
@@ -200,54 +201,54 @@ Base.@kwdef struct SLatissima{AR, FT, U, T, S, P, F} <: BiogeochemicalParticles
     latitude :: FT = 57.5
 end
 
-adapt_structure(to, kelp::SLatissima) = SLatissima(kelp.architecture,
-                                                   kelp.growth_rate_adjustement, 
-                                                   kelp.photosynthetic_efficiency,
-                                                   kelp.minimum_carbon_reserve,
-                                                   kelp.structural_carbon,
-                                                   kelp.exudation,
-                                                   kelp.erosion,
-                                                   kelp.saturation_irradiance,
-                                                   kelp.structural_dry_weight_per_area,
-                                                   kelp.structural_dry_to_wet_weight,
-                                                   kelp.carbon_reserve_per_carbon,
-                                                   kelp.nitrogen_reserve_per_nitrogen,
-                                                   kelp.minimum_nitrogen_reserve,
-                                                   kelp.maximum_nitrogen_reserve,
-                                                   kelp.growth_adjustement_2,
-                                                   kelp.growth_adjustement_1,
-                                                   kelp.maximum_specific_growth_rate,
-                                                   kelp.structural_nitrogen,
-                                                   kelp.photosynthesis_at_ref_temp_1,
-                                                   kelp.photosynthesis_at_ref_temp_2,
-                                                   kelp.photosynthesis_ref_temp_1,
-                                                   kelp.photosynthesis_ref_temp_2,
-                                                   kelp.photoperiod_1,
-                                                   kelp.photoperiod_2,
-                                                   kelp.respiration_at_ref_temp_1,
-                                                   kelp.respiration_at_ref_temp_2,
-                                                   kelp.respiration_ref_temp_1,
-                                                   kelp.respiration_ref_temp_2,
-                                                   kelp.photosynthesis_arrhenius_temp,
-                                                   kelp.photosynthesis_low_temp,
-                                                   kelp.photosynthesis_high_temp,
-                                                   kelp.photosynthesis_high_arrhenius_temp,
-                                                   kelp.photosynthesis_low_arrhenius_temp,
-                                                   kelp.respiration_arrhenius_temp,
-                                                   kelp.current_speed_for_0p65_uptake,
-                                                   kelp.nitrate_half_saturation,
-                                                   kelp.ammonia_half_saturation,
-                                                   kelp.maximum_nitrate_uptake,
-                                                   kelp.maximum_ammonia_uptake,
-                                                   kelp.current_1,
-                                                   kelp.current_2,
-                                                   kelp.current_3,
-                                                   kelp.respiration_reference_A,
-                                                   kelp.respiration_reference_B,
-                                                   kelp.exudation_redfield_ratio,
-                                                   kelp.pescribed_velocity,
-                                                   kelp.pescribed_temperature,
-                                                   kelp.pescribed_salinity,
+adapt_structure(to, kelp::SLatissima) = SLatissima(adapt(to, kelp.architecture),
+                                                   adapt(to, kelp.growth_rate_adjustement), 
+                                                   adapt(to, kelp.photosynthetic_efficiency),
+                                                   adapt(to, kelp.minimum_carbon_reserve),
+                                                   adapt(to, kelp.structural_carbon),
+                                                   adapt(to, kelp.exudation),
+                                                   adapt(to, kelp.erosion),
+                                                   adapt(to, kelp.saturation_irradiance),
+                                                   adapt(to, kelp.structural_dry_weight_per_area),
+                                                   adapt(to, kelp.structural_dry_to_wet_weight),
+                                                   adapt(to, kelp.carbon_reserve_per_carbon),
+                                                   adapt(to, kelp.nitrogen_reserve_per_nitrogen),
+                                                   adapt(to, kelp.minimum_nitrogen_reserve),
+                                                   adapt(to, kelp.maximum_nitrogen_reserve),
+                                                   adapt(to, kelp.growth_adjustement_2),
+                                                   adapt(to, kelp.growth_adjustement_1),
+                                                   adapt(to, kelp.maximum_specific_growth_rate),
+                                                   adapt(to, kelp.structural_nitrogen),
+                                                   adapt(to, kelp.photosynthesis_at_ref_temp_1),
+                                                   adapt(to, kelp.photosynthesis_at_ref_temp_2),
+                                                   adapt(to, kelp.photosynthesis_ref_temp_1),
+                                                   adapt(to, kelp.photosynthesis_ref_temp_2),
+                                                   adapt(to, kelp.photoperiod_1),
+                                                   adapt(to, kelp.photoperiod_2),
+                                                   adapt(to, kelp.respiration_at_ref_temp_1),
+                                                   adapt(to, kelp.respiration_at_ref_temp_2),
+                                                   adapt(to, kelp.respiration_ref_temp_1),
+                                                   adapt(to, kelp.respiration_ref_temp_2),
+                                                   adapt(to, kelp.photosynthesis_arrhenius_temp),
+                                                   adapt(to, kelp.photosynthesis_low_temp),
+                                                   adapt(to, kelp.photosynthesis_high_temp),
+                                                   adapt(to, kelp.photosynthesis_high_arrhenius_temp),
+                                                   adapt(to, kelp.photosynthesis_low_arrhenius_temp),
+                                                   adapt(to, kelp.respiration_arrhenius_temp),
+                                                   adapt(to, kelp.current_speed_for_0p65_uptake),
+                                                   adapt(to, kelp.nitrate_half_saturation),
+                                                   adapt(to, kelp.ammonia_half_saturation),
+                                                   adapt(to, kelp.maximum_nitrate_uptake),
+                                                   adapt(to, kelp.maximum_ammonia_uptake),
+                                                   adapt(to, kelp.current_1),
+                                                   adapt(to, kelp.current_2),
+                                                   adapt(to, kelp.current_3),
+                                                   adapt(to, kelp.respiration_reference_A),
+                                                   adapt(to, kelp.respiration_reference_B),
+                                                   adapt(to, kelp.exudation_redfield_ratio),
+                                                   adapt(to, kelp.pescribed_velocity),
+                                                   adapt(to, kelp.pescribed_temperature),
+                                                   adapt(to, kelp.pescribed_salinity),
                                                    adapt(to, kelp.x),
                                                    adapt(to, kelp.y),
                                                    adapt(to, kelp.z),
@@ -260,9 +261,9 @@ adapt_structure(to, kelp::SLatissima) = SLatissima(kelp.architecture,
                                                    adapt(to, kelp.frond_exudation),
                                                    adapt(to, kelp.nitrogen_erosion),
                                                    adapt(to, kelp.carbon_erosion),
-                                                   kelp.custom_dynamics,
-                                                   kelp.scalefactor,
-                                                   kelp.latitude)
+                                                   adapt(to, kelp.custom_dynamics),
+                                                   adapt(to, kelp.scalefactor),
+                                                   adapt(to, kelp.latitude))
 
 function update_tendencies!(bgc, particles::SLatissima, model)
     num_particles = length(particles)
@@ -342,18 +343,18 @@ function update_lagrangian_particle_properties!(particles::SLatissima, model, bg
 
     advect_particles_kernel!((x = particles.x, y = particles.y, z = particles.z), 
                              1.0, model.grid, Δt,
-                             datatuple(model.velocities))
+                             total_velocities(model))
 
 
     update_particle_properties_kernel! = _update_lagrangian_particle_properties!(device(arch), workgroup, worksize)
 
-    update_particle_properties_kernel!(particles, bgc, model.grid, 
-                                       model.velocities, model.tracers, model.clock, Δt)
+    update_particle_properties_kernel!(particles, bgc.light_attenuation, bgc.underlying_biogeochemistry, model.grid, 
+                                       total_velocities(model), model.tracers, model.clock, Δt)
 
     particles.custom_dynamics(particles, model, bgc, Δt)
 end
 
-@kernel function _update_lagrangian_particle_properties!(p, bgc, grid, velocities, tracers, clock, Δt)
+@kernel function _update_lagrangian_particle_properties!(p, light_attenuation, bgc, grid, velocities, tracers, clock, Δt)
     idx = @index(Global)
 
     @inbounds begin
@@ -369,7 +370,7 @@ end
     t = clock.time
 
     @inbounds if p.A[idx] > 0
-        NO₃, NH₄, PAR, u, T, S = get_arguments(x, y, z, t, p, bgc, grid, velocities, tracers)
+        NO₃, NH₄, PAR, u, T, S = get_arguments(x, y, z, t, p, bgc, grid, velocities, tracers, biogeochemical_auxiliary_fields(light_attenuation).PAR)
 
         photo = photosynthesis(T, PAR, p)
         e = exudation(C, p)
@@ -510,10 +511,8 @@ end
 
 @inline normed_day_length_change(n, ϕ) = (day_length(n, ϕ) - day_length(n - 1, ϕ)) / (day_length(76, ϕ) - day_length(75, ϕ))
 
-@inline function get_arguments(x, y, z, t, particles, bgc, grid, velocities, tracers)
-
+@inline function get_arguments(x, y, z, t, particles, bgc, grid, velocities, tracers, PAR_field)
     bgc_tracers = required_biogeochemical_tracers(bgc)
-    auxiliary_fields = biogeochemical_auxiliary_fields(bgc)
 
     i, j, k = fractional_indices(x, y, z, (Center(), Center(), Center()), grid)
 
@@ -524,7 +523,7 @@ end
     # TODO: ADD ALIASING/RENAMING OF TRACERS SO WE CAN USE E.G. N IN STEAD OF NO3
 
     NO₃ = _interpolate(tracers.NO₃, ξ, η, ζ, Int(i+1), Int(j+1), Int(k+1))
-    PAR = _interpolate(auxiliary_fields.PAR, ξ, η, ζ, Int(i+1), Int(j+1), Int(k+1)) * day / (3.99e-10 * 545e12) # W / m² / s to einstein / m² / day
+    PAR = _interpolate(PAR_field, ξ, η, ζ, Int(i+1), Int(j+1), Int(k+1)) * day / (3.99e-10 * 545e12) # W / m² / s to einstein / m² / day
 
     if :NH₄ in bgc_tracers
         NH₄ = _interpolate(tracers.NH₄, ξ, η, ζ, Int(i+1), Int(j+1), Int(k+1))

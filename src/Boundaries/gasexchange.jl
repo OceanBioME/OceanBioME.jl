@@ -3,6 +3,8 @@
 ##### As per OCMIP Phase 2 http://ocmip5.ipsl.jussieu.fr/OCMIP/phase2/simulations/Abiotic/Cchem/co2calc.f simplified as in PISCESv2
 #####
 
+using Oceananigans.Fields: fractional_indices, indices
+
 struct pCO₂{P0, P1, P2, PB, PW, FT}
                   solubility :: P0
     bicarbonate_dissociation :: P1
@@ -41,8 +43,11 @@ adapt_structure(to, pCO₂_model::pCO₂) = pCO₂(adapt(to, pCO₂_model.solubi
                                              adapt(to, pCO₂_model.carbonate_dissociation),
                                              adapt(to, pCO₂_model.boric_acid_dissociation),
                                              adapt(to, pCO₂_model.water_dissociaiton),
-                                             pCO₂_model.lower_pH_bound, pCO₂_model.upper_pH_bound,
-                                             pCO₂_model.boron_ratio, pCO₂_model.thermal_expansion, pCO₂_model.haline_contraction)
+                                             adapt(to, pCO₂_model.lower_pH_bound),
+                                             adapt(to, pCO₂_model.upper_pH_bound),
+                                             adapt(to, pCO₂_model.boron_ratio),
+                                             adapt(to, pCO₂_model.thermal_expansion),
+                                             adapt(to, pCO₂_model.haline_contraction))
 
 @inline function titrate_alkalinity(H, p)
     return p.DIC * (p.k¹ * H + 2 * p.k¹ * p.k²) / (H ^ 2 + p.k¹ * H + p.k¹ * p.k²) -
@@ -257,9 +262,23 @@ end
 
 @inline get_value(x, y, t, air_concentration::Number) = air_concentration
 @inline get_value(x, y, t, air_concentration::Function) = air_concentration(x, y, t)
+#=It is not possible for this to work on GPU since we need the grid and locs before (since fields are reduced to vectors)
+  We probably need a more generic and better way todo this but here is not the place.
+  For now if you wanted to use data you could do similar to https://github.com/OceanBioME/GlobalOceanBioME.jl/blob/main/src/one_degree_surface_par.jl
+# interpolate doesn't really work on 2D fields
+@inline function get_value(x, y, t, conc::Field{LX, LY, LZ}) where {LX, LY, LZ}
+    grid = conc.grid
 
-# interpolation does not work on 2d grids as trilinear interpolation fails but we're only ever going to be asking for values on grid points
-@inline function get_value(x, y, t, air_concentration::Field{Center, Center, Center})
-    (ξ, i), (η, j), (ζ, k) = modf.(fractional_indices(x, y, znodes(air_concentration)[end], (Center(), Center(), Center()), air_concentration.grid))
-    return air_concentration[floor(Int, i) + 1, floor(Int, j) + 1, floor(Int, k) + 1]
+    i, j, _ = fractional_indices(x, y, 0.0, (LX(), LY(), Center()), grid)
+
+    ξ, i = mod(i, 1), Base.unsafe_trunc(Int, i)
+    η, j = mod(j, 1), Base.unsafe_trunc(Int, j)
+
+    _, _, ks = indices(conc)
+
+    return @inbounds  ((1 - ξ) * (1 - η) * conc[i,   j,   ks[1]]
+                     + (1 - ξ) *      η  * conc[i,   j+1, ks[1]]
+                     +      ξ  * (1 - η) * conc[i+1, j,   ks[1]]
+                     +      ξ  *      η  * conc[i+1, j+1, ks[1]])
 end
+=#
