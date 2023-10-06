@@ -144,7 +144,7 @@ For more information check out our [contributor's guide](https://oceanbiome.gith
 
 ## Citing
 
-If you use OceanBioME.jl as part of your research, teaching, or other activities, we would be grateful if you could cite the package by name.
+If you use OceanBioME.jl as part of your research, teaching, or other activities, we would be grateful if you could cite our work below and mention the package by name.
 
 ```bibtex
 @article{OceanBioMEJOSS,
