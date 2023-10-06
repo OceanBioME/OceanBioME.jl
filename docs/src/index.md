@@ -137,9 +137,22 @@ Whether you need help getting started with OceanBioME, found a bug, want OceanBi
 
 ## Citing
 
-If you use OceanBioME as part of your research, teaching, or other activities, we would be grateful if you could cite our work and mention OceanBioME by name, as well as citing and [acknowledging Oceananigans](https://clima.github.io/OceananigansDocumentation/stable/#Citing) as without them this package would not be possible.
+If you use OceanBioME as part of your research, teaching, or other activities, we would be grateful if you could cite our work below and mention OceanBioME by name, as well as citing and [acknowledging Oceananigans](https://clima.github.io/OceananigansDocumentation/stable/#Citing) as without them this package would not be possible.
 
-We do not currently have a citation for OceanBioME so please reach out if you wish to cite it, and we will expedite the process of [making it citable](https://joss.theoj.org/about).
+```bibtex
+@article{OceanBioMEJOSS,
+  doi = {10.21105/joss.05669},
+  url = {https://doi.org/10.21105/joss.05669},
+  year = {2023},
+  publisher = {The Open Journal},
+  volume = {8},
+  number = {90},
+  pages = {5669},
+  author = {Jago Strong-Wright and Si Chen and Navid C. Constantinou and Simone Silvestri and Gregory LeClaire Wagner and John R. and Taylor},
+  title = {{OceanBioME.jl: A flexible environment for modelling the coupled interactions between ocean biogeochemistry and physics}},
+  journal = {Journal of Open Source Software}
+}
+```
 
 
 ## Funding
