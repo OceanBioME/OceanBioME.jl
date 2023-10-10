@@ -1,6 +1,6 @@
 # [Implementing a new models](@id model_implementation)
 
-Here we will describe how OceanBioME defines biogeochemical (BGC) models, how this varies from Oceananigans, and how to implement your own model.
+Here we describe how OceanBioME defines biogeochemical (BGC) models, how this varies from Oceananigans, and how to implement your own model.
 
 ## Model structure
 OceanBioME BGC models are `struct`s of type `ContinuousFormBiogeochemistry`, which is of abstract type `AbstractContinuousFormBiogeochemistry` from Oceananigans. In Oceananigans this describes BGC models which are defined using continuous functions (depending continuously on ``x``, ``y``, and ``z``) rather than discrete functions (depending on ``i``, ``j``, ``k``). This allows the user to implement the BGC model equations without worrying about details of the grid or discretization, and then Oceananigans handles the rest.
@@ -39,12 +39,11 @@ We then define our `struct` with the model parameters, as well as slots for the 
          optimal_temperature :: FT = 28.0                    # °C
               mortality_rate :: FT = 0.15 / day              # 1 / seconds
      crowding_mortality_rate :: FT = 0.004 / day / 1000 * 14 # 1 / seconds / mmol N / m³
-
             sinking_velocity :: W  = 2 / day
 end
 ```
 
-Here, we use descriptive names for the parameters. Below, each of these parameters correspond to a symbol (or letter) which is more convenient mathematically and when defining the BGC model functions. In the above code we used `@kwdef` to set default values for the models so that we don't have to set all of these parameters each time we use the model. The default parameter values can optionally be over-ridden by the user when running the model. We have also included a `sinking_velocity` field in the parameter set to demonstrate how we can get tracers (e.g. detritus) to sink. We also need to define some functions so that OceanBioME and Oceananigans know what tracers and auxiliary fields (e.g. light intensity) we will use:
+Here, we use descriptive names for the parameters. Below, each of these parameters correspond to a symbol (or letter) which is more convenient mathematically and when defining the BGC model functions. In the above code we used `@kwdef` to set default values for the models so that we don't have to set all of these parameters each time we use the model. The default parameter values can optionally be over-ridden by the user when running the model. We have also included a `sinking_velocity` field in the parameter set to demonstrate how we can get tracers (e.g. detritus) to sink. We also need to define some functions so that OceanBioME and Oceananigans know what tracers and auxiliary fields (e.g. light intensity) we use:
 
 ```@example implementing
 required_biogeochemical_tracers(::NutrientPhytoplankton) = (:N, :P, :T)
@@ -109,7 +108,7 @@ For this model, the nutrient evolution can be inferred from the rate of change o
 ```math
 \frac{\partial N}{\partial t} = - \frac{\partial P}{\partial t}
 ```
-Hence, we will define the nutrient forcing using as the negative of the phytoplankton forcing
+Hence, we define the nutrient forcing using as the negative of the phytoplankton forcing
 ```@example implementing
 @inline (bgc::NutrientPhytoplankton)(::Val{:N}, args...) = -bgc(Val(:P), args...)
 ```
