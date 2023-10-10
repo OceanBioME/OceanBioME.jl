@@ -1,15 +1,17 @@
 # # One dimensional column forced by external data with carbonate chemistry
-# In this example we will setup a simple 1D column with the [LOBSTER](@ref LOBSTER) biogeochemical model and observe its evolution. This demonstrates:
+# In this example we setup a simple 1D column with the [LOBSTER](@ref LOBSTER) biogeochemical model and observe its evolution.
+# This example demonstrates:
 # - How to setup OceanBioME's biogeochemical models
 # - How to load external forcing data
 # - How to run with optional tracer sets such as carbonate chemistry
 # - How to setup a non-uniform grid for better near surface resolution
 # - How to visualise results
 
-# This is forced by mixing layer depth and surface photosynthetically available radiation (PAR) data from the Mercator Ocean model and NASA VIIRS observations
+# For this example we use force by mixing layer depth and surface photosynthetically available radiation (PAR) data from the
+# Mercator Ocean model and NASA VIIRS observations.
 
 # ## Install dependencies
-# First we will check we have the dependencies installed
+# First we check we have the dependencies installed
 # ```julia
 # using Pkg
 # pkg"add OceanBioME, Oceananigans, NetCDF, Interpolations, DataDeps, CairoMakie"
