@@ -42,12 +42,10 @@ background_state_parameters = (M = 1e-4,       # s⁻¹, geostrophic shear
 # so that the thermal wind relationship is satisfied, that is, ``f \partial_z U = - \partial_y B`` and
 # ``f \partial_z V = \partial_x B``.
 T(x, y, z, t, p) = (p.M^2 * x + p.N^2 * (z + p.H)) / (p.g * p.α)
-S(x, y, z, t) = 35
 V(x, y, z, t, p) = p.M^2 / p.f * (z + p.H)
 
 V_field = BackgroundField(V, parameters = background_state_parameters)
 T_field = BackgroundField(T, parameters = background_state_parameters)
-S_field = BackgroundField(S)
 
 # Specify some horizontal and vertical viscosity and diffusivity.
 νᵥ = κᵥ = 1e-4 # [m² s⁻¹]
@@ -71,7 +69,7 @@ model = NonhydrostaticModel(; grid,
                               coriolis,
                               tracers = (:T, :S),
                               buoyancy,
-                              background_fields = (T = T_field, S = S_field, v = V_field),
+                              background_fields = (T = T_field, v = V_field),
                               closure = vertical_diffusivity)
 
 # ## Initial conditions
@@ -84,7 +82,7 @@ Ũ = 1e-3
 uᵢ(x, y, z) = Ũ * Ξ(z)
 vᵢ(x, y, z) = Ũ * Ξ(z)
 
-set!(model, u=uᵢ, v=vᵢ, P = 0.03, Z = 0.03, NO₃ = 4.0, NH₄ = 0.05, DIC = 2200.0, Alk = 2409.0)
+set!(model, u=uᵢ, v=vᵢ, P = 0.03, Z = 0.03, NO₃ = 4.0, NH₄ = 0.05, DIC = 2200.0, Alk = 2409.0, S = 35, T = 20)
 
 # ## Setup the simulation
 # Choose an appropriate initial timestep for this resolution and set up the simulation
