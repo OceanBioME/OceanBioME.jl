@@ -16,6 +16,7 @@
 # ## Model setup
 # First load the required packages
 using OceanBioME, Oceananigans, Printf
+using Oceananigans.Fields: FunctionField, ConstantField
 using Oceananigans.Units
 using Oceananigans.Architectures: arch_array
 
@@ -46,7 +47,11 @@ Lx, Ly = 20meters, 20meters
 grid = RectilinearGrid(architecture, size=(1, 1, 50), extent=(Lx, Ly, 200)) 
 
 # Specify the boundary conditions for DIC and O₂ based on the air-sea CO₂ and O₂ flux
-CO₂_flux = GasExchange(; gas = :CO₂, temperature = temp, salinity = (args...) -> 35)
+CO₂_flux = GasExchange(; gas = :CO₂)
+
+clock = Clock(; time = 0.0)
+T = FunctionField{Center, Center, Center}(temp, grid; clock)
+S = ConstantField(35)
 
 # ## Kelp Particle setup
 @info "Setting up kelp particles"
@@ -60,8 +65,7 @@ particles = SLatissima(; architecture,
                          z = arch_array(architecture, z₀), 
                          A = arch_array(architecture, ones(n) * 10.0),
                          latitude = 57.5,
-                         scalefactor = 500.0,
-                         pescribed_temperature = temp)
+                         scalefactor = 500.0)
 
 # ## Setup BGC model
 biogeochemistry = LOBSTER(; grid,
@@ -72,8 +76,10 @@ biogeochemistry = LOBSTER(; grid,
                             particles)
 
 model = NonhydrostaticModel(; grid,
+                              clock,
                               closure = ScalarDiffusivity(ν = κₜ, κ = κₜ), 
-                              biogeochemistry)
+                              biogeochemistry,
+                              auxiliary_fields = (; T, S))
 
 set!(model, P = 0.03, Z = 0.03, NO₃ = 4.0, NH₄ = 0.05, DIC = 2239.8, Alk = 2409.0)
 

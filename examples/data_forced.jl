@@ -82,12 +82,16 @@ biogeochemistry = LOBSTER(; grid,
                             carbonates = true,
                             scale_negatives = true)
 
-CO₂_flux = GasExchange(; gas = :CO₂, temperature = t_function, salinity = s_function)
+CO₂_flux = GasExchange(; gas = :CO₂)
+
+T = FunctionField{Center, Center, Center}(t_function, grid; clock)
+T = FunctionField{Center, Center, Center}(s_function, grid; clock)
 
 model = NonhydrostaticModel(; grid, clock,
                               closure = ScalarDiffusivity(ν = κ, κ = κ),
                               biogeochemistry,
-                              boundary_conditions = (DIC = FieldBoundaryConditions(top = CO₂_flux),))
+                              boundary_conditions = (DIC = FieldBoundaryConditions(top = CO₂_flux),),
+                              auxiliary_fields = (; T, S))
 
 set!(model, P = 0.03, Z = 0.03, NO₃ = 11.0, NH₄ = 0.05, DIC = 2200.0, Alk = 2400.0)
 
@@ -110,7 +114,7 @@ simulation.callbacks[:progress] = Callback(progress_message, IterationInterval(5
 
 filename = "data_forced"
 simulation.output_writers[:profiles] = JLD2OutputWriter(model, 
-                                                        merge(model.tracers, model.auxiliary_fields),
+                                                        model.tracers,
                                                         filename = "$filename.jld2",
                                                         schedule = TimeInterval(1day),
                                                         overwrite_existing = true)
