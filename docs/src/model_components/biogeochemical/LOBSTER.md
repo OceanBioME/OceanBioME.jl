@@ -164,4 +164,20 @@ All default parameter values are given in [Parameters](@ref parameters); and a m
 
 ## Model conservations
 
-In the core configuration nitrogen is conserved in the evolution of the equations (excluding external sources and sinking), i.e. ``\partial_t NO_3 + \partial_t NH_4 + \partial_t P + \partial_t Z + \partial_t sPOM + \partial_t bPOM + \partial_t DOM = 0``. When the carbonate chemistry component is activated carbon is also conserved, i.e. ``R(\partial_t P + \partial_t Z + \partial_t sPOM + \partial_t bPOM + \partial_t DOM) + \partial_t DIC = 0``. Trivially this is also the case when the variable Redfield component is also activated, i.e. ``R(\partial_t P + \partial_t Z) + \partial_t sPOC + \partial_t bPOC + \partial_t DOC + \partial_t DIC = 0``.
+In the core configuration nitrogen is conserved in the evolution of the equations (excluding external sources and sinking), i.e.,
+
+```math
+\partial_t NO_3 + \partial_t NH_4 + \partial_t P + \partial_t Z + \partial_t sPOM + \partial_t bPOM + \partial_t DOM = 0 .
+```
+
+When the carbonate chemistry component is activated carbon is also conserved, i.e.,
+
+```math
+R(\partial_t P + \partial_t Z + \partial_t sPOM + \partial_t bPOM + \partial_t DOM) + \partial_t DIC = 0 .
+```
+
+Trivially, this is also the case when the variable Redfield component is also activated, i.e.,
+
+```math
+R(\partial_t P + \partial_t Z) + \partial_t sPOC + \partial_t bPOC + \partial_t DOC + \partial_t DIC = 0.
+```
