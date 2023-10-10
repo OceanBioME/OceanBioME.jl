@@ -109,7 +109,7 @@ When the oxygen chemistry is activated additional tracer ``O_2`` evolve like:
 
 ### Variable Redfield
 
-When the variable Redfield modification is activated the organic components are modified to evolve their nitrogen and carbon content separately. This means that the waste from non-Redfield models (e.g. loss from the [kelp](@id SLatissima)) can be accounted for.
+When the variable Redfield modification is activated the organic components are modified to evolve their nitrogen and carbon content separately. This means that the waste from non-Redfield models (e.g. loss from the [kelp](@ref SLatissima)) can be accounted for.
 
 In this case the organic components are split into nitrogen and carbon compartments, so the tracers ``sPOM``, ``bPOM``, and ``DOM`` are replaced with ``sPON``, ``sPOC``, ``bPON``, ``bPOC``, ``DON``, and ``DOC``. The nitrogen compartments evolve as per the organic matter equations above (i.e. replacing each ``XOM`` with ``XON``), while the carbon compartments evolve like:
 
