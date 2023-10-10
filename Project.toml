@@ -1,6 +1,6 @@
 name = "OceanBioME"
 uuid = "a49af516-9db8-4be4-be45-1dad61c5a376"
-authors = ["Jago Strong-Wright <js2430@damtp.cam.ac.uk>" and contributors]
+authors = ["Jago Strong-Wright <js2430@damtp.cam.ac.uk>" and contributors"]
 version = "0.7.1"
 
 [deps]
