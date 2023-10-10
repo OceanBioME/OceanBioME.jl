@@ -5,18 +5,18 @@ Biogeochemical (BGC) models can be used within the [Oceananigans biogeochemistry
 For details of the BGC models currently implemented please see the following pages.
 
 ## Oceananigans setup
-At the simplest level all that is required to setup an existing OceanBioME BGC model is to pass it to the Oceananigans model setup:
+At the simplest level, all that is required to setup an existing OceanBioME BGC model is to pass it to the Oceananigans model setup:
 ```julia
 model = NonhydrostaticModel(; grid,
                               ...,
                               biogeochemistry = MODEL_NAME(; grid))
 ```
-Where `MODEL_NAME` is the name of the model, you may also need to pass other parameters like:
+where `MODEL_NAME` is the name of the model. You may also need to pass additional parameters like:
 ```julia
 MODEL_NAME(; grid, growth_rate = 10.0)
 ```
 
-This will set up the required tracers and auxiliary fields, and you may also set boundary conditions or additional forcing through the normal Oceananigans setup. 
+The above will set up the required tracers and auxiliary fields, and you may also set boundary conditions or additional forcing through the usual Oceananigans setup.
 
 Models usually have a default [light attenuation model](@ref light) specified, these may be substituted easily by passing different models as parameters as above.
 
