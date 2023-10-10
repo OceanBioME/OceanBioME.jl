@@ -37,7 +37,7 @@ import Oceananigans.Biogeochemistry: required_biogeochemical_tracers,
 
 import OceanBioME: maximum_sinking_velocity
 
-import OceanBioME.Boundaries.Sediments: nitrogen_flux, carbon_flux, remineralisation_receiver
+import OceanBioME.Boundaries.Sediments: nitrogen_flux, carbon_flux, remineralisation_receiver, sinking_tracers
 
 import Adapt: adapt_structure, adapt
 
@@ -199,7 +199,7 @@ function NutrientPhytoplanktonZooplanktonDetritus(; grid,
                                                  sinking_velocities)
 
     if scale_negatives
-        scaler = ScaleNegativeTracers(underlying_biogeochemistry)
+        scaler = ScaleNegativeTracers(underlying_biogeochemistry, grid)
         modifiers = isnothing(modifiers) ? scaler : (modifiers..., scaler)
     end
 
@@ -286,7 +286,7 @@ end
 
 @inline function biogeochemical_drift_velocity(bgc::NPZD, ::Val{tracer_name}) where tracer_name
     if tracer_name in keys(bgc.sinking_velocities)
-        return bgc.sinking_velocities[tracer_name]
+        return (u = ZeroField(), v = ZeroField(), w = bgc.sinking_velocities[tracer_name])
     else
         return (u = ZeroField(), v = ZeroField(), w = ZeroField())
     end
@@ -304,19 +304,19 @@ show(io::IO, model::NPZD) = string(summary(model), " \n",
 @inline maximum_sinking_velocity(bgc::NPZD) = maximum(abs, bgc.sinking_velocities.D.w)
 
 adapt_structure(to, npzd::NPZD) = 
-    NutrientPhytoplanktonZooplanktonDetritus(npzd.initial_photosynthetic_slope,
-                                             npzd.base_maximum_growth,
-                                             npzd.nutrient_half_saturation,
-                                             npzd.base_respiration_rate,
-                                             npzd.phyto_base_mortality_rate,
+    NutrientPhytoplanktonZooplanktonDetritus(adapt(to, npzd.initial_photosynthetic_slope),
+                                             adapt(to, npzd.base_maximum_growth),
+                                             adapt(to, npzd.nutrient_half_saturation),
+                                             adapt(to, npzd.base_respiration_rate),
+                                             adapt(to, npzd.phyto_base_mortality_rate),
 
-                                             npzd.maximum_grazing_rate,
-                                             npzd.grazing_half_saturation,
-                                             npzd.assimulation_efficiency,
-                                             npzd.base_excretion_rate,
-                                             npzd.zoo_base_mortality_rate,
+                                             adapt(to, npzd.maximum_grazing_rate),
+                                             adapt(to, npzd.grazing_half_saturation),
+                                             adapt(to, npzd.assimulation_efficiency),
+                                             adapt(to, npzd.base_excretion_rate),
+                                             adapt(to, npzd.zoo_base_mortality_rate),
 
-                                             npzd.remineralization_rate,
+                                             adapt(to, npzd.remineralization_rate),
 
                                              adapt(to, npzd.sinking_velocities))
 
@@ -332,4 +332,5 @@ adapt_structure(to, npzd::NPZD) =
 @inline remineralisation_receiver(::NPZD) = :N
 
 @inline conserved_tracers(::NPZD) = (:N, :P, :Z, :D)
+@inline sinking_tracers(bgc::NPZD) = keys(bgc.sinking_velocities)
 end # module

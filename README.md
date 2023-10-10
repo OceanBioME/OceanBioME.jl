@@ -2,7 +2,7 @@
 [![Documentation](https://img.shields.io/badge/documentation-stable%20release-blue?style=flat-square)](https://oceanbiome.github.io/OceanBioME.jl/stable/)
 [![Documentation](https://img.shields.io/badge/documentation-dev%20release-orange?style=flat-square)](https://oceanbiome.github.io/OceanBioME.jl/dev/)
 [![MIT license](https://img.shields.io/badge/License-MIT-blue.svg?style=flat-square)](https://mit-license.org)
-[![status](https://joss.theoj.org/papers/f991f4a8f0fc5ab1aba3dd1ac51f20bd/status.svg)](https://joss.theoj.org/papers/f991f4a8f0fc5ab1aba3dd1ac51f20bd)
+[![DOI](https://joss.theoj.org/papers/10.21105/joss.05669/status.svg)](https://doi.org/10.21105/joss.05669)
 [![ColPrac: Contributor's Guide on Collaborative Practices for Community Packages](https://img.shields.io/badge/ColPrac-Contributor's%20Guide-blueviolet)](https://github.com/SciML/ColPrac)
 [![Ask us anything: discussion](https://img.shields.io/badge/Ask%20us-anything-1abc9c.svg?style=flat-square)](https://github.com/OceanBioME/OceanBioME.jl/discussions)
 [![GitHub tag (latest SemVer pre-release)](https://img.shields.io/github/v/tag/OceanBioME/OceanBioME.jl?include_prereleases&label=latest%20version&logo=github&sort=semver&style=flat-square)](https://github.com/OceanBioME/OceanBioME.jl/releases)
@@ -141,3 +141,22 @@ If you're interested in contributing to the development of OceanBioME we would a
 If you'd like to work on a new feature, or if you're new to open source and want to crowd-source projects that fit your interests, please start a discussion.
 
 For more information check out our [contributor's guide](https://oceanbiome.github.io/OceanBioME.jl/stable/contributing/).
+
+## Citing
+
+If you use OceanBioME.jl as part of your research, teaching, or other activities, we would be grateful if you could cite our work below and mention the package by name.
+
+```bibtex
+@article{OceanBioMEJOSS,
+  doi = {10.21105/joss.05669},
+  url = {https://doi.org/10.21105/joss.05669},
+  year = {2023},
+  publisher = {The Open Journal},
+  volume = {8},
+  number = {90},
+  pages = {5669},
+  author = {Jago Strong-Wright and Si Chen and Navid C. Constantinou and Simone Silvestri and Gregory LeClaire Wagner and John R. and Taylor},
+  title = {{OceanBioME.jl: A flexible environment for modelling the coupled interactions between ocean biogeochemistry and physics}},
+  journal = {Journal of Open Source Software}
+}
+```
