@@ -142,7 +142,6 @@ makedocs(sitename = "OceanBioME.jl",
          pages = pages,
          modules = [OceanBioME],
          plugins = [bib],
-         warnonly = [:footnote, :cross_references],
          doctest = true,
          clean = true,
          checkdocs = :exports)
