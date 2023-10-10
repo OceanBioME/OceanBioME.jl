@@ -1,9 +1,10 @@
 # # [Box model](@id box_example)
-# In this example we will setup a [LOBSTER](@ref LOBSTER) biogeochemical model in a single box configuration. This demonstrates:
+# In this example we setup a [LOBSTER](@ref LOBSTER) biogeochemical model in a single box configuration.
+# This example demonstrates:
 # - How to setup OceanBioME's biogeochemical models as a stand-alone box model
 
 # ## Install dependencies
-# First we will check we have the dependencies installed
+# First we check we have the dependencies installed
 # ```julia
 # using Pkg
 # pkg"add OceanBioME"
@@ -20,7 +21,7 @@ nothing #hide
 PAR⁰(t) = 60 * (1 - cos((t + 15days) * 2π / year)) * (1 / (1 + 0.2 * exp(-((mod(t, year) - 200days) / 50days)^2))) + 2
 
 z = -10 # specify the nominal depth of the box for the PAR profile
-PAR(t) = PAR⁰(t) * exp(0.2z) # Modify the PAR based on the nominal depth and exponential decay 
+PAR(t) = PAR⁰(t) * exp(0.2z) # Modify the PAR based on the nominal depth and exponential decay
 nothing #hide
 
 # Set up the model. Here, first specify the biogeochemical model, followed by initial conditions and the start and end times

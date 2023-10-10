@@ -1,7 +1,7 @@
 name = "OceanBioME"
 uuid = "a49af516-9db8-4be4-be45-1dad61c5a376"
-authors = ["Jago Strong-Wright <js2430@damtp.cam.ac.uk>", "John R Taylor <j.r.taylor@damtp.cam.ac.uk>", "Si Chen <sc2350@damtp.cam.ac.uk>"]
-version = "0.7.0"
+authors = ["Jago Strong-Wright <js2430@damtp.cam.ac.uk> and contributors"]
+version = "0.7.1"
 
 [deps]
 Adapt = "79e6a3ab-5dfb-504d-930d-738a2a938a0e"
@@ -15,7 +15,7 @@ StructArrays = "09ab397b-f2b6-538f-b94a-2f83cf4a842a"
 Adapt = "3"
 JLD2 = "0.4"
 KernelAbstractions = "0.9"
-Oceananigans = "0.84.1, 0.85, 0.86, 0.87, 0.88"
+Oceananigans = "0.84.1, 0.85 - 0.87"
 Roots = "2"
 StructArrays = "0.4, 0.5, 0.6"
 julia = "1.9"
