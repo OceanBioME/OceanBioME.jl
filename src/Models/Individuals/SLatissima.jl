@@ -21,10 +21,10 @@ module SLatissimaModel
 using Roots, KernelAbstractions
 using OceanBioME.Particles: BiogeochemicalParticles, get_node
 using Oceananigans.Units
-using Oceananigans: CPU, Center
+using Oceananigans: CPU, Center, NonhydrostaticModel, HydrostaticFreeSurfaceModel
 using Oceananigans.Architectures: arch_array, device, architecture
-using Oceananigans: NonhydrostaticModel, HydrostaticFreeSurfaceModel
 using Oceananigans.Biogeochemistry: required_biogeochemical_tracers, biogeochemical_auxiliary_fields
+using Oceananigans.Utils: SumOfArrays
 
 using KernelAbstractions.Extras.LoopInfo: @unroll 
 using Oceananigans.Operators: volume
@@ -326,6 +326,8 @@ end
     end
 end
 
+@inline total_field(field_name, field, background_fields) = field_name in names(background_fields) ? SumOfArrays{2}(field, background_fields[field_name]) : field
+
 function update_lagrangian_particle_properties!(particles::SLatissima, model, bgc, Δt)
     workgroup = min(length(particles), 256)
     worksize = length(particles)
@@ -342,8 +344,10 @@ function update_lagrangian_particle_properties!(particles::SLatissima, model, bg
 
     update_particle_properties_kernel! = _update_lagrangian_particle_properties!(device(arch), workgroup, worksize)
 
+    tracer_fields = NameTuple(field_name => total_field(field_name, field, model.background_fields) for (field_name, field) in pairs(merge(model.tracers, model.auxiliary_fields)))
+
     update_particle_properties_kernel!(particles, bgc.light_attenuation, bgc.underlying_biogeochemistry, model.grid, 
-                                       total_velocities(model), merge(model.tracers, model.auxiliary_fields), model.clock, Δt)
+                                       total_velocities(model), tracer_fields, model.clock, Δt)
 
     particles.custom_dynamics(particles, model, bgc, Δt)
 end
@@ -537,7 +541,7 @@ end
 
     T = _interpolate(tracers.T, ξ, η, ζ, Int(i+1), Int(j+1), Int(k+1))
 
-    S = _interpolate(model.tracers.S, ξ, η, ζ, Int(i+1), Int(j+1), Int(k+1))
+    S = _interpolate(tracers.S, ξ, η, ζ, Int(i+1), Int(j+1), Int(k+1))
 
     return NO₃, NH₄, PAR, u, T, S
 end
