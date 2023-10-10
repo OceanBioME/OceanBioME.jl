@@ -100,7 +100,7 @@ progress_message(sim) = @printf("Iteration: %04d, time: %s, Δt: %s, wall time: 
 simulation.callbacks[:progress] = Callback(progress_message, TimeInterval(10days))
 
 filename = "kelp"
-simulation.output_writers[:profiles] = JLD2OutputWriter(model, merge(model.tracers, model.auxiliary_fields),
+simulation.output_writers[:profiles] = JLD2OutputWriter(model, model.tracers,
                                                         filename = "$filename.jld2",
                                                         schedule = TimeInterval(1day),
                                                         overwrite_existing = true)
