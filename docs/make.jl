@@ -136,12 +136,13 @@ format = Documenter.HTML(
     assets = String["assets/citations.css"]
 )
 
-makedocs(bib,
+makedocs(
     sitename = "OceanBioME.jl",
     authors = "Jago Strong-Wright, John R. Taylor, and Si Chen",
     format = format,
     pages = pages,
     modules = [OceanBioME],
+    plugins = [bib],
     doctest = true,
     clean = true,
     checkdocs = :exports
