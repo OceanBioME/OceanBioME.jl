@@ -114,7 +114,7 @@ OceanBioME or by requesting something you think is missing.
 
 * Connect your repository to the upstream (main project).
   ```
-  git remote add oceananigans https://github.com/OceanBioME/OceanBioME.jl.git
+  git remote add oceanbiome https://github.com/OceanBioME/OceanBioME.jl.git
   ```
 
 * Create the development environment by opening Julia via `julia --project` then
