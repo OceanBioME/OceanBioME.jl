@@ -267,7 +267,7 @@ biogeochemistry = Biogeochemistry(NutrientPhytoplankton(; sinking_velocity);
 model = NonhydrostaticModel(; grid,
                               biogeochemistry,
                               closure = ScalarDiffusivity(ν = κₜ, κ = κₜ), 
-                              forcing = (T = Relaxation(rate = 1/day, target=temp), ))
+                              forcing = (T = Relaxation(rate = 1/day, target = temp), ))
 
 set!(model, P = 0.01, N = 15, T = 28)
 
@@ -306,9 +306,11 @@ axSed = Axis(fig[3, 1:2], ylabel = "Sediment (mmol N / m²)", xlabel = "Time (ye
 _, _, zc = nodes(grid, Center(), Center(), Center())
 times = N.times
 
-hmN = heatmap!(axN, times ./ year, zc, N[1, 1, 1:grid.Nz, 1:end]', interpolate = true, colormap = Reverse(:batlow))
+hmN = heatmap!(axN, times ./ year, zc, N[1, 1, 1:grid.Nz, 1:end]',
+               interpolate = true, colormap = Reverse(:batlow))
 
-hmP = heatmap!(axP, times ./ year, zc, P[1, 1, 1:grid.Nz, 1:end]', interpolate = true, colormap = Reverse(:batlow))
+hmP = heatmap!(axP, times ./ year, zc, P[1, 1, 1:grid.Nz, 1:end]',
+               interpolate = true, colormap = Reverse(:batlow))
 
 lines!(axSed, times ./ year, sed[1, 1, 1, :])
 
