@@ -1,9 +1,10 @@
 # # Box model
-# In this example we will setup a simple NPZD biogeochemical model in a single box configuration. This demonstrates:
+# In this example we setup a simple NPZD biogeochemical model in a single box configuration.
+# This example demonstrates:
 # - How to setup OceanBioME's biogeochemical models as a stand-alone box model
 
 # ## Install dependencies
-# First we will check we have the dependencies installed
+# First we check we have the dependencies installed
 # ```julia
 # using Pkg
 # pkg"add OceanBioME, JLD2, CairoMakie"

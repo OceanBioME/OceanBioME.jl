@@ -1,13 +1,14 @@
 # # Simple active particle example
-# In this example we will setup a simple 1D column with the [LOBSTER](@ref LOBSTER) biogeochemical model and active particles modelling the growth of sugar kelp. This demonstrates:
+# Here, we setup a simple 1D column example with the [LOBSTER](@ref LOBSTER) biogeochemical model and active particles modelling the growth of sugar kelp.
+# This example demonstrates:
 # - How to setup OceanBioME's biogeochemical models
 # - How to add biologically active particles which interact with the biodeochemical model
 # - How to visualise results
 
-# This is forced by idealised mixing layer depth and surface photosynthetically available radiation (PAR) which are setup first
+# This is forced by idealised mixing layer depth and surface photosynthetically available radiation (PAR) which are setup first.
 
 # ## Install dependencies
-# First we will check we have the dependencies installed
+# First we check we have the dependencies installed
 # ```julia
 # using Pkg
 # pkg "add OceanBioME, Oceananigans, CairoMakie, JLD2"
@@ -24,7 +25,7 @@ const year = years = 365days # just for these idealised cases
 nothing #hide
 
 # ## Surface PAR and turbulent vertical diffusivity based on idealised mixed layer depth 
-# Setting up idealised functions for PAR and diffusivity (details here can be ignored but these are typical of the North Atlantic)
+# Setting up idealised functions for PAR and diffusivity (details here can be ignored but these are typical of the North Atlantic).
 
 @inline PAR⁰(x, y, t) = 60 * (1 - cos((t + 15days) * 2π / year)) * (1 / (1 + 0.2 * exp(-((mod(t, year) - 200days) / 50days) ^ 2))) + 2
 
@@ -42,7 +43,7 @@ nothing #hide
 architecture = CPU()
 
 # ## Grid and PAR field
-# Define the grid and an extra Oceananigans field for the PAR to be stored in
+# Define the grid and an extra Oceananigans' field that the PAR will be stored in
 Lx, Ly = 20meters, 20meters
 grid = RectilinearGrid(architecture, size=(1, 1, 50), extent=(Lx, Ly, 200)) 
 

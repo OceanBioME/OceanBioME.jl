@@ -1,11 +1,11 @@
 # # [One-dimensional column example](@id OneD_column)
-# In this example we setup a simple 1D column with the [LOBSTER](@ref LOBSTER) biogeochemical model and observe its evolution. This demonstrates:
+# In this example we setup a simple 1D column with the [LOBSTER](@ref LOBSTER) biogeochemical model and observe its evolution. The example demonstrates:
 # - How to setup OceanBioME's biogeochemical models
 # - How to visualise results
-# This is forced by idealised mixing layer depth and surface photosynthetically available radiation (PAR) which are setup first
+# This is forced by idealised mixing layer depth and surface photosynthetically available radiation (PAR) which are setup first.
 
 # ## Install dependencies
-# First we will check we have the dependencies installed
+# First we check we have the dependencies installed
 # ```julia
 # using Pkg
 # pkg"add OceanBioME, Oceananigans, CairoMakie"

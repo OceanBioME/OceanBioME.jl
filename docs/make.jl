@@ -136,17 +136,15 @@ format = Documenter.HTML(
     assets = String["assets/citations.css"]
 )
 
-makedocs(bib,
-    sitename = "OceanBioME.jl",
-    authors = "Jago Strong-Wright, John R. Taylor, and Si Chen",
-    format = format,
-    pages = pages,
-    modules = [OceanBioME],
-    doctest = true,
-    strict = true,
-    clean = true,
-    checkdocs = :exports
-)
+makedocs(sitename = "OceanBioME.jl",
+         authors = "Jago Strong-Wright and contributors",
+         format = format,
+         pages = pages,
+         modules = [OceanBioME],
+         plugins = [bib],
+         doctest = true,
+         clean = true,
+         checkdocs = :exports)
 
 @info "Clean up temporary .jld2/.nc files created by doctests..."
 

@@ -1,6 +1,6 @@
 # [Implementing a new models](@id model_implementation)
 
-Here we will describe how OceanBioME defines biogeochemical (BGC) models, how this varies from Oceananigans, and how to implement your own model.
+Here we describe how OceanBioME defines biogeochemical (BGC) models, how this varies from Oceananigans, and how to implement your own model.
 
 ## Model structure
 OceanBioME BGC models are `struct`s of type `ContinuousFormBiogeochemistry`, which is of abstract type `AbstractContinuousFormBiogeochemistry` from Oceananigans. In Oceananigans this describes BGC models which are defined using continuous functions (depending continuously on ``x``, ``y``, and ``z``) rather than discrete functions (depending on ``i``, ``j``, ``k``). This allows the user to implement the BGC model equations without worrying about details of the grid or discretization, and then Oceananigans handles the rest.
@@ -15,7 +15,7 @@ The nature of multiple dispatch in Julia means that we define new BGC models as 
 
 For this example we are going to implement the simple Nutrient-Phytoplankton model similar to that used in [Chen2015](@citep), although we neglect the nutrient in/outflow terms since they may be added as [boundary conditions](https://clima.github.io/OceananigansDocumentation/stable/model_setup/boundary_conditions/), and modified to conserve nitrogen.
 
-The first step is to import the abstract type from OceanBioME, some units from Oceananigans (for ease of parameter definition), and [`import`](https://stackoverflow.com/questions/27086159/what-is-the-difference-between-using-and-import-in-julia-when-building-a-mod) some functions from Oceananigans in order to add methods to:
+The first step is to import the abstract type from OceanBioME, some units from Oceananigans (for ease of parameter definition), and [`import`](https://docs.julialang.org/en/v1/manual/faq/#What-is-the-difference-between-%22using%22-and-%22import%22?) some functions from Oceananigans in order to add methods to:
 
 ```@example implementing
 using OceanBioME: Biogeochemistry
@@ -39,12 +39,11 @@ We then define our `struct` with the model parameters, as well as slots for the 
          optimal_temperature :: FT = 28.0                    # °C
               mortality_rate :: FT = 0.15 / day              # 1 / seconds
      crowding_mortality_rate :: FT = 0.004 / day / 1000 * 14 # 1 / seconds / mmol N / m³
-
             sinking_velocity :: W  = 2 / day
 end
 ```
 
-Here, we use descriptive names for the parameters. Below, each of these parameters correspond to a symbol (or letter) which is more convenient mathematically and when defining the BGC model functions. In the above code we used `@kwdef` to set default values for the models so that we don't have to set all of these parameters each time we use the model. The default parameter values can optionally be over-ridden by the user when running the model. We have also included a `sinking_velocity` field in the parameter set to demonstrate how we can get tracers (e.g. detritus) to sink. We also need to define some functions so that OceanBioME and Oceananigans know what tracers and auxiliary fields (e.g. light intensity) we will use:
+Here, we use descriptive names for the parameters. Below, each of these parameters correspond to a symbol (or letter) which is more convenient mathematically and when defining the BGC model functions. In the above code we used `@kwdef` to set default values for the models so that we don't have to set all of these parameters each time we use the model. The default parameter values can optionally be over-ridden by the user when running the model. We have also included a `sinking_velocity` field in the parameter set to demonstrate how we can get tracers (e.g. detritus) to sink. We also need to define some functions so that OceanBioME and Oceananigans know what tracers and auxiliary fields (e.g. light intensity) we use:
 
 ```@example implementing
 required_biogeochemical_tracers(::NutrientPhytoplankton) = (:N, :P, :T)
@@ -109,7 +108,7 @@ For this model, the nutrient evolution can be inferred from the rate of change o
 ```math
 \frac{\partial N}{\partial t} = - \frac{\partial P}{\partial t}
 ```
-Hence, we will define the nutrient forcing using as the negative of the phytoplankton forcing
+Hence, we define the nutrient forcing using as the negative of the phytoplankton forcing
 ```@example implementing
 @inline (bgc::NutrientPhytoplankton)(::Val{:N}, args...) = -bgc(Val(:P), args...)
 ```
@@ -268,7 +267,7 @@ biogeochemistry = Biogeochemistry(NutrientPhytoplankton(; sinking_velocity);
 model = NonhydrostaticModel(; grid,
                               biogeochemistry,
                               closure = ScalarDiffusivity(ν = κₜ, κ = κₜ), 
-                              forcing = (T = Relaxation(rate = 1/day, target=temp), ))
+                              forcing = (T = Relaxation(rate = 1/day, target = temp), ))
 
 set!(model, P = 0.01, N = 15, T = 28)
 
@@ -307,9 +306,11 @@ axSed = Axis(fig[3, 1:2], ylabel = "Sediment (mmol N / m²)", xlabel = "Time (ye
 _, _, zc = nodes(grid, Center(), Center(), Center())
 times = N.times
 
-hmN = heatmap!(axN, times ./ year, zc, N[1, 1, 1:grid.Nz, 1:end]', interpolate = true, colormap = Reverse(:batlow))
+hmN = heatmap!(axN, times ./ year, zc, N[1, 1, 1:grid.Nz, 1:end]',
+               interpolate = true, colormap = Reverse(:batlow))
 
-hmP = heatmap!(axP, times ./ year, zc, P[1, 1, 1:grid.Nz, 1:end]', interpolate = true, colormap = Reverse(:batlow))
+hmP = heatmap!(axP, times ./ year, zc, P[1, 1, 1:grid.Nz, 1:end]',
+               interpolate = true, colormap = Reverse(:batlow))
 
 lines!(axSed, times ./ year, sed[1, 1, 1, :])
 

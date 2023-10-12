@@ -103,4 +103,4 @@ Nitrogen and carbon is conserved between the model domain and sediment, any nitr
 
 ## Model compatibility
 
-This model is currently only compatible with the [LOBSTER](@id LOBSTER) biogeochemical model.
+This model is currently only compatible with the [LOBSTER](@ref LOBSTER) biogeochemical model.

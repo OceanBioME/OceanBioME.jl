@@ -109,7 +109,7 @@ When the oxygen chemistry is activated additional tracer ``O_2`` evolve like:
 
 ### Variable Redfield
 
-When the variable Redfield modification is activated the organic components are modified to evolve their nitrogen and carbon content separately. This means that the waste from non-Redfield models (e.g. loss from the [kelp](@id SLatissima)) can be accounted for.
+When the variable Redfield modification is activated the organic components are modified to evolve their nitrogen and carbon content separately. This means that the waste from non-Redfield models (e.g. loss from the [kelp](@ref SLatissima)) can be accounted for.
 
 In this case the organic components are split into nitrogen and carbon compartments, so the tracers ``sPOM``, ``bPOM``, and ``DOM`` are replaced with ``sPON``, ``sPOC``, ``bPON``, ``bPOC``, ``DON``, and ``DOC``. The nitrogen compartments evolve as per the organic matter equations above (i.e. replacing each ``XOM`` with ``XON``), while the carbon compartments evolve like:
 
@@ -164,4 +164,20 @@ All default parameter values are given in [Parameters](@ref parameters); and a m
 
 ## Model conservations
 
-In the core configuration nitrogen is conserved in the evolution of the equations (excluding external sources and sinking), i.e. ``\partial_t NO_3 + \partial_t NH_4 + \partial_t P + \partial_t Z + \partial_t sPOM + \partial_t bPOM + \partial_t DOM = 0``. When the carbonate chemistry component is activated carbon is also conserved, i.e. ``R(\partial_t P + \partial_t Z + \partial_t sPOM + \partial_t bPOM + \partial_t DOM) + \partial_t DIC = 0``. Trivially this is also the case when the variable Redfield component is also activated, i.e. ``R(\partial_t P + \partial_t Z) + \partial_t sPOC + \partial_t bPOC + \partial_t DOC + \partial_t DIC = 0``.
+In the core configuration nitrogen is conserved in the evolution of the equations (excluding external sources and sinking), i.e.,
+
+```math
+\partial_t NO_3 + \partial_t NH_4 + \partial_t P + \partial_t Z + \partial_t sPOM + \partial_t bPOM + \partial_t DOM = 0 .
+```
+
+When the carbonate chemistry component is activated carbon is also conserved, i.e.,
+
+```math
+R(\partial_t P + \partial_t Z + \partial_t sPOM + \partial_t bPOM + \partial_t DOM) + \partial_t DIC = 0 .
+```
+
+Trivially, this is also the case when the variable Redfield component is also activated, i.e.,
+
+```math
+R(\partial_t P + \partial_t Z) + \partial_t sPOC + \partial_t bPOC + \partial_t DOC + \partial_t DIC = 0.
+```
