@@ -87,7 +87,7 @@ biogeochemistry = LOBSTER(; grid,
 CO₂_flux = GasExchange(; gas = :CO₂)
 
 T = FunctionField{Center, Center, Center}(t_function, grid; clock)
-T = FunctionField{Center, Center, Center}(s_function, grid; clock)
+S = FunctionField{Center, Center, Center}(s_function, grid; clock)
 
 model = NonhydrostaticModel(; grid, clock,
                               closure = ScalarDiffusivity(ν = κ, κ = κ),
