@@ -35,9 +35,7 @@ sum_tracer_carbon(tracers, redfield, organic_carbon_calcate_ratio) =
                              A = arch_array(architecture, ones(Float64, 2) .* 5),
                              N = arch_array(architecture, ones(Float64, 2)),
                              C = arch_array(architecture, ones(Float64, 2)),
-                             latitude = 1.0,
-                             pescribed_temperature = (args...) -> 10.0,
-                             pescribed_salinity = (args...) -> 35.0)
+                             latitude = 1.0)
 
     @test length(particles) == 2
 
@@ -48,9 +46,10 @@ sum_tracer_carbon(tracers, redfield, organic_carbon_calcate_ratio) =
                                                                     variable_redfield = true, 
                                                                     sinking_speeds = NamedTuple(), 
                                                                     particles),
-                                  advection = nothing)
+                                  advection = nothing,
+                                  tracers = (:T, :S))
 
-    set!(model, NO₃ = 10.0, NH₄ = 1.0, DIC = 2000, Alk = 2000)
+    set!(model, NO₃ = 10.0, NH₄ = 1.0, DIC = 2000, Alk = 2000, T = 10, S = 35)
 
     initial_tracer_N = sum_tracer_nitrogen(model.tracers)
     initial_kelp_N = sum(Array(particles.A) .* particles.structural_dry_weight_per_area .* (Array(particles.N) .+ particles.structural_nitrogen)) ./ (14 * 0.001)
