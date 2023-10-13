@@ -35,7 +35,8 @@ grid = RectilinearGrid(size=(3, 3, 30), extent=(10, 10, 200));
 
 model = NonhydrostaticModel(; grid,
                               biogeochemistry = LOBSTER(; grid, carbonates = true),
-                              boundary_conditions = (DIC = FieldBoundaryConditions(top = CO₂_flux), ))
+                              boundary_conditions = (DIC = FieldBoundaryConditions(top = CO₂_flux), ),
+                              tracers = (:T, :S))
 ```
 
 ## Model equations
