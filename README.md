@@ -1,11 +1,10 @@
 ![](OceanBioME_headerbar.jpg?raw=true)
 [![Documentation](https://img.shields.io/badge/documentation-stable%20release-blue?style=flat-square)](https://oceanbiome.github.io/OceanBioME.jl/stable/)
 [![Documentation](https://img.shields.io/badge/documentation-dev%20release-orange?style=flat-square)](https://oceanbiome.github.io/OceanBioME.jl/dev/)
-[![MIT license](https://img.shields.io/badge/License-MIT-blue.svg?style=flat-square)](https://mit-license.org)
 [![DOI](https://joss.theoj.org/papers/10.21105/joss.05669/status.svg)](https://doi.org/10.21105/joss.05669)
+[![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.10038575.svg)](https://doi.org/10.5281/zenodo.10038575)
+[![MIT license](https://img.shields.io/badge/License-MIT-blue.svg?style=flat-square)](https://mit-license.org)
 [![ColPrac: Contributor's Guide on Collaborative Practices for Community Packages](https://img.shields.io/badge/ColPrac-Contributor's%20Guide-blueviolet)](https://github.com/SciML/ColPrac)
-[![Ask us anything: discussion](https://img.shields.io/badge/Ask%20us-anything-1abc9c.svg?style=flat-square)](https://github.com/OceanBioME/OceanBioME.jl/discussions)
-[![GitHub tag (latest SemVer pre-release)](https://img.shields.io/github/v/tag/OceanBioME/OceanBioME.jl?include_prereleases&label=latest%20version&logo=github&sort=semver&style=flat-square)](https://github.com/OceanBioME/OceanBioME.jl/releases)
 
 [![Testing](https://github.com/OceanBioME/OceanBioME.jl/actions/workflows/tests.yml/badge.svg)](https://github.com/OceanBioME/OceanBioME.jl/actions/workflows/tests.yml)
 [![codecov](https://codecov.io/gh/OceanBioME/OceanBioME.jl/branch/main/graph/badge.svg?token=3DIW4R7N3R)](https://codecov.io/gh/OceanBioME/OceanBioME.jl)
