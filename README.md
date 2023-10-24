@@ -143,7 +143,7 @@ For more information check out our [contributor's guide](https://oceanbiome.gith
 
 ## Citing
 
-If you use OceanBioME.jl as part of your research, teaching, or other activities, we would be grateful if you could cite our work below and mention the package by name.
+If you use OceanBioME as part of your research, teaching, or other activities, we would be grateful if you could cite our work below and mention the package by name.
 
 ```bibtex
 @article{OceanBioMEJOSS,
@@ -159,3 +159,5 @@ If you use OceanBioME.jl as part of your research, teaching, or other activities
   journal = {Journal of Open Source Software}
 }
 ```
+
+To cite a specific version of the package please also cite its [Zenode archive](https://doi.org/10.5281/zenodo.10038575).
