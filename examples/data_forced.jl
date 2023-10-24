@@ -84,12 +84,16 @@ biogeochemistry = LOBSTER(; grid,
                             carbonates = true,
                             scale_negatives = true)
 
-CO₂_flux = GasExchange(; gas = :CO₂, temperature = t_function, salinity = s_function)
+CO₂_flux = GasExchange(; gas = :CO₂)
+
+T = FunctionField{Center, Center, Center}(t_function, grid; clock)
+S = FunctionField{Center, Center, Center}(s_function, grid; clock)
 
 model = NonhydrostaticModel(; grid, clock,
                               closure = ScalarDiffusivity(ν = κ, κ = κ),
                               biogeochemistry,
-                              boundary_conditions = (DIC = FieldBoundaryConditions(top = CO₂_flux),))
+                              boundary_conditions = (DIC = FieldBoundaryConditions(top = CO₂_flux),),
+                              auxiliary_fields = (; T, S))
 
 set!(model, P = 0.03, Z = 0.03, NO₃ = 11.0, NH₄ = 0.05, DIC = 2200.0, Alk = 2400.0)
 
@@ -112,7 +116,7 @@ simulation.callbacks[:progress] = Callback(progress_message, IterationInterval(5
 
 filename = "data_forced"
 simulation.output_writers[:profiles] = JLD2OutputWriter(model, 
-                                                        merge(model.tracers, model.auxiliary_fields),
+                                                        model.tracers,
                                                         filename = "$filename.jld2",
                                                         schedule = TimeInterval(1day),
                                                         overwrite_existing = true)
@@ -152,7 +156,7 @@ carbon_export = zeros(length(times))
 using Oceananigans.Biogeochemistry: biogeochemical_drift_velocity
 
 for (i, t) in enumerate(times)
-    air_sea_CO₂_flux[i] = CO₂_flux.condition.parameters(0.0, 0.0, t, DIC[1, 1, grid.Nz, i], Alk[1, 1, grid.Nz, i], t_function(1, 1, 0, t), s_function(1, 1, 0, t))
+    air_sea_CO₂_flux[i] = CO₂_flux.condition.func(0.0, 0.0, t, DIC[1, 1, grid.Nz, i], Alk[1, 1, grid.Nz, i], t_function(1, 1, 0, t), s_function(1, 1, 0, t))
     carbon_export[i] = (sPOM[1, 1, grid.Nz-20, i] * biogeochemical_drift_velocity(model.biogeochemistry, Val(:sPOM)).w[1, 1, grid.Nz-20] +
                         bPOM[1, 1, grid.Nz-20, i] * biogeochemical_drift_velocity(model.biogeochemistry, Val(:bPOM)).w[1, 1, grid.Nz-20]) * redfield(Val(:sPOM), model.biogeochemistry)
 end

@@ -137,7 +137,7 @@ K(T, S, uₐᵥ, Sc_params, β_params, ρₒ) = k(T, uₐᵥ, Sc_params) * β(T 
 ##### Boundary condition setup
 #####
 
-struct GasExchange{G, ScP, βP, FT, AC, AP, T, S, PCO}
+struct GasExchange{G, ScP, βP, FT, AC, AP, PCO} <: Function
     gas :: G
 
     schmidt_params :: ScP
@@ -146,9 +146,6 @@ struct GasExchange{G, ScP, βP, FT, AC, AP, T, S, PCO}
     air_concentration :: AC
     air_pressure :: AP
     average_wind_speed :: FT
-
-    temperature :: T
-    salinity :: S
 
     pCO₂ :: PCO
 end
@@ -160,8 +157,6 @@ adapt_structure(to, gasexchange::GasExchange) = GasExchange(adapt(to, gasexchang
                                                             adapt(to, gasexchange.air_concentration),
                                                             adapt(to, gasexchange.air_pressure),
                                                             gasexchange.average_wind_speed,
-                                                            adapt(to, gasexchange.temperature),
-                                                            adapt(to, gasexchange.salinity),
                                                             adapt(to, gasexchange.pCO₂))
 
 """
@@ -174,9 +169,7 @@ adapt_structure(to, gasexchange::GasExchange) = GasExchange(adapt(to, gasexchang
                   air_concentration::AC = (CO₂ = 413.4, O₂ = 9352.7)[gas], # ppmv, mmolO₂/m³ (20.95 mol O₂/mol air, 0.0224m^3/mol air)
                   air_pressure::FT = 1.0, # atm
                   average_wind_speed::FT = 10, # m/s
-                  field_dependencies = (CO₂ = (:DIC, :ALK), O₂ = (:OXY, ))[gas],
-                  temperature::T = nothing,
-                  salinity::S = nothing)
+                  field_dependencies = (CO₂ = (:DIC, :ALK), O₂ = (:OXY, ))[gas])
 
 Construct an Oceananigans `FluxBoundaryCondition` for the exchange of `gas` with the relevant tracer (i.e., DIC for CO₂ and oxygen for O₂).
 Please see note for other gases.
@@ -192,8 +185,6 @@ Keyword arguments
 - `air_pressure` : air pressure in atm (only used for CO₂), can also be a function of x, y, t, or a field
 - `average_wind_speed` : average wind speed at 10m used to calculate the gas transfer velocity by the [Wanninkhof1992](@citet) parameterisation
 - `field_dependencies` : tracer fields that gas exchange depends on, if the defaults have different names in your model you can specify as long as they are in the same order
-- `temperature` : either `nothing` to track a temperature tracer field, or a function or shape `f(x, y, z, t)` for the temperature in °C
-- `salinity` : either `nothing` to track a salinity tracer field, or a function or shape `f(x, y, z, t)` for the salinity in ‰
 - `pCO₂` : pCO₂ calculator
 
 !!! note "Gases other than CO₂ and O₂"
@@ -212,40 +203,22 @@ function GasExchange(; gas,
                        air_pressure::AP = 1.0, # atm
                        average_wind_speed::FT = 10.0, # m/s
                        field_dependencies = (CO₂ = (:DIC, :Alk), O₂ = (:O₂, ))[gas],
-                       temperature::T = nothing,
-                       salinity::S = nothing,
-                       pCO₂::PCO = gas == :CO₂ ? OCMIP_default : nothing) where {ScP, βP, FT, AC, AP, T, S, PCO}
+                       pCO₂::PCO = gas == :CO₂ ? OCMIP_default : nothing) where {ScP, βP, FT, AC, AP, PCO}
 
     gas = Val(gas)
     G = typeof(gas)
 
-    gasexchange =  GasExchange{G, ScP, βP, FT, AC, AP, T, S, PCO}(gas, 
-                                                                  schmidt_params, 
-                                                                  solubility_params, 
-                                                                  ocean_density, 
-                                                                  air_concentration, 
-                                                                  air_pressure, 
-                                                                  average_wind_speed, 
-                                                                  temperature, 
-                                                                  salinity,
-                                                                  pCO₂)
+    gasexchange =  GasExchange{G, ScP, βP, FT, AC, AP, PCO}(gas, 
+                                                            schmidt_params, 
+                                                            solubility_params, 
+                                                            ocean_density, 
+                                                            air_concentration, 
+                                                            air_pressure, 
+                                                            average_wind_speed, 
+                                                            pCO₂)
 
-    if isnothing(temperature)
-        field_dependencies = (field_dependencies..., :T)
-    end
-
-    if isnothing(salinity)
-        field_dependencies = (field_dependencies..., :S)
-    end
-
-    return FluxBoundaryCondition(gasexchange_function, field_dependencies = field_dependencies, parameters = gasexchange)
+    return FluxBoundaryCondition(gasexchange, field_dependencies = (field_dependencies..., :T, :S))
 end
-
-# Hack this nicer format into Oceananigans boundary conditions because `typeof(gasexchange) = DataType` and `BoundaryCondition` has a special use for `DataType` in the first argument so doesn't work
-@inline gasexchange_function(x, y, t, args...) = @inbounds args[end](x, y, t, args[1:end-1]...)
-
-@inline (gasexchange::GasExchange)(x, y, t, conc) = gasexchange(x, y, t, conc, gasexchange.temperature(x, y, 0.0, t), gasexchange.salinity(x, y, 0.0, t))
-@inline (gasexchange::GasExchange)(x, y, t, DIC, ALK) = gasexchange(x, y, t, DIC, ALK, gasexchange.temperature(x, y, 0.0, t), gasexchange.salinity(x, y, 0.0, t))
 
 @inline function (gasexchange::GasExchange)(x, y, t, DIC, ALK, T, S) 
     conc = gasexchange.pCO₂(DIC, ALK, T, S)

@@ -15,7 +15,8 @@ grid = RectilinearGrid(size=(3, 3, 30), extent=(10, 10, 200));
 
 model = NonhydrostaticModel(; grid,
                               biogeochemistry = LOBSTER(; grid, carbonates = true),
-                              boundary_conditions = (DIC = FieldBoundaryConditions(top = CO₂_flux), ))
+                              boundary_conditions = (DIC = FieldBoundaryConditions(top = CO₂_flux), ),
+                              tracers = (:T, :S))
 ```
 
 
@@ -34,16 +35,8 @@ grid = RectilinearGrid(size=(3, 3, 30), extent=(10, 10, 200));
 
 model = NonhydrostaticModel(; grid,
                               biogeochemistry = LOBSTER(; grid, carbonates = true),
-                              boundary_conditions = (DIC = FieldBoundaryConditions(top = CO₂_flux), ))
-```
-
-If the temperature and salinity are not included in the model they can be passed as functions
-(or even anonymous functions):
-
-```@example gasexchange
-T_function(x, y, z, t) = 12.0
-
-CO₂_flux = GasExchange(; gas = :CO₂, temperature = T_function, salinity = (args...) -> 35)
+                              boundary_conditions = (DIC = FieldBoundaryConditions(top = CO₂_flux), ),
+                              tracers = (:T, :S))
 ```
 
 ## Model equations

@@ -21,9 +21,8 @@ module SLatissimaModel
 using Roots, KernelAbstractions
 using OceanBioME.Particles: BiogeochemicalParticles, get_node
 using Oceananigans.Units
-using Oceananigans: CPU, Center
+using Oceananigans: Center, CPU
 using Oceananigans.Architectures: arch_array, device, architecture
-using Oceananigans: NonhydrostaticModel, HydrostaticFreeSurfaceModel
 using Oceananigans.Biogeochemistry: required_biogeochemical_tracers, biogeochemical_auxiliary_fields
 
 using KernelAbstractions.Extras.LoopInfo: @unroll 
@@ -86,9 +85,7 @@ import Oceananigans.Models.LagrangianParticleTracking: update_lagrangian_particl
                  respiration_reference_B :: FT = 5.57e-5 * 24,
                  exudation_redfield_ratio :: FT = Inf,
 
-                 pescribed_velocity :: U = 0.1,
-                 pescribed_temperature :: T = nothing,
-                 pescribed_salinity :: S = nothing,
+                 prescribed_velocity :: U = 0.1,
 
                  #position
                  x :: P = arch_array(architecture, [0.0])
@@ -118,7 +115,7 @@ Keyword Arguments
 
 - `architecture`: the architecture to adapt arrays to
 - `growth_rate_adjustement`, ..., `exudation_redfield_ratio`: parameter values
-- `pescribed_velocity`, `pescribed_temperature` and `pescribed_salinity`: functions for the relative velocity, temperature and salinity in the form `f(x, y, z, t)`
+- `prescribed_velocity`: functions for the relative velocity `f(x, y, z, t)`
 - `x`,`y` and `z`: positions of the particles
 - `A`, `N`, and `C`: area, nitrogen, and carbon reserves
 - `nitrate_uptake` ... `carbon_erosion`: diagnostic values coupled to tracer fields
@@ -126,7 +123,7 @@ Keyword Arguments
 - `scalefactor`: scalar scaling for tracer coupling
 - `latitude`: model latitude for seasonal growth modulation
 """
-Base.@kwdef struct SLatissima{AR, FT, U, T, S, P, F} <: BiogeochemicalParticles
+Base.@kwdef struct SLatissima{AR, FT, U, P, F} <: BiogeochemicalParticles
     architecture :: AR = CPU()
     growth_rate_adjustement :: FT = 4.5
     photosynthetic_efficiency :: FT = 4.15e-5 * 24 * 10^6 / (24 * 60 * 60)
@@ -173,9 +170,7 @@ Base.@kwdef struct SLatissima{AR, FT, U, T, S, P, F} <: BiogeochemicalParticles
     respiration_reference_B :: FT = 5.57e-5 * 24
     exudation_redfield_ratio :: FT = Inf
 
-    pescribed_velocity :: U = 0.1
-    pescribed_temperature :: T = nothing
-    pescribed_salinity :: S = nothing
+    prescribed_velocity :: U = 0.1
 
     #position
     x :: P = arch_array(architecture, [0.0])
@@ -246,9 +241,7 @@ adapt_structure(to, kelp::SLatissima) = SLatissima(adapt(to, kelp.architecture),
                                                    adapt(to, kelp.respiration_reference_A),
                                                    adapt(to, kelp.respiration_reference_B),
                                                    adapt(to, kelp.exudation_redfield_ratio),
-                                                   adapt(to, kelp.pescribed_velocity),
-                                                   adapt(to, kelp.pescribed_temperature),
-                                                   adapt(to, kelp.pescribed_salinity),
+                                                   adapt(to, kelp.prescribed_velocity),
                                                    adapt(to, kelp.x),
                                                    adapt(to, kelp.y),
                                                    adapt(to, kelp.z),
@@ -348,8 +341,10 @@ function update_lagrangian_particle_properties!(particles::SLatissima, model, bg
 
     update_particle_properties_kernel! = _update_lagrangian_particle_properties!(device(arch), workgroup, worksize)
 
+    tracer_fields = merge(model.tracers, model.auxiliary_fields)
+
     update_particle_properties_kernel!(particles, bgc.light_attenuation, bgc.underlying_biogeochemistry, model.grid, 
-                                       total_velocities(model), model.tracers, model.clock, Δt)
+                                       total_velocities(model), tracer_fields, model.clock, Δt)
 
     particles.custom_dynamics(particles, model, bgc, Δt)
 end
@@ -531,30 +526,19 @@ end
         NH₄ = 0.0
     end
 
-    if isnothing(particles.pescribed_velocity)
+    if isnothing(particles.prescribed_velocity)
         u =  sqrt(_interpolate(velocities.u, ξ, η, ζ, Int(i+1), Int(j+1), Int(k+1)) .^ 2 + 
                   _interpolate(velocities.v, ξ, η, ζ, Int(i+1), Int(j+1), Int(k+1)) .^ 2 + 
                   _interpolate(velocities.w, ξ, η, ζ, Int(i+1), Int(j+1), Int(k+1)) .^ 2)
-    elseif isa(particles.pescribed_velocity, Number)
-        u = particles.pescribed_velocity
+    elseif isa(particles.prescribed_velocity, Number)
+        u = particles.prescribed_velocity
     else
-        u = particles.pescribed_velocity(x, y, z, t)
+        u = particles.prescribed_velocity(x, y, z, t)
     end
 
-    if isnothing(particles.pescribed_temperature)
-        T = _interpolate(tracers.T, ξ, η, ζ, Int(i+1), Int(j+1), Int(k+1))
-    elseif isa(particles.pescribed_temperature, Number)
-        T = particles.pescribed_temperature
-    else
-        T = particles.pescribed_temperature(x, y, z, t)
-    end
+    T = _interpolate(tracers.T, ξ, η, ζ, Int(i+1), Int(j+1), Int(k+1))
 
-    #=if isnothing(particles.pescribed_salinity)
-        S = _interpolate(model.tracers.S, ξ, η, ζ, Int(i+1), Int(j+1), Int(k+1))
-    else
-        S = particles.pescribed_salinity(x, y, z, t)
-    end=#
-    S = 35.0 # we currently don't use S for anything
+    S = _interpolate(tracers.S, ξ, η, ζ, Int(i+1), Int(j+1), Int(k+1))
 
     return NO₃, NH₄, PAR, u, T, S
 end

@@ -56,8 +56,8 @@ model_parameters = (LOBSTER(; grid = BoxModelGrid()),
                     SimpleMultiG(; grid = BoxModelGrid()),
                     InstantRemineralisation(; grid = BoxModelGrid()),
                     OCMIP_default,
-                    GasExchange(; gas = :CO₂).condition.parameters,
-                    GasExchange(; gas = :O₂).condition.parameters)
+                    GasExchange(; gas = :CO₂).condition.func,
+                    GasExchange(; gas = :O₂).condition.func)
 
 gas_exchange_gas(::Val{G}) where G = G
 

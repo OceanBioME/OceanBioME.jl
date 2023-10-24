@@ -14,13 +14,12 @@ dd = DataDep(
 register(dd)
 
 function test_gas_exchange_model(grid, air_concentration)
-    PAR = CenterField(grid)
     model = NonhydrostaticModel(; grid, 
                                   tracers = (:T, :S),
                                   biogeochemistry = LOBSTER(; grid, carbonates = true), 
                                   boundary_conditions = (DIC = FieldBoundaryConditions(top = GasExchange(; air_concentration, gas = :CO₂)), ))
 
-    @test isa(model.tracers.DIC.boundary_conditions.top.condition.parameters, GasExchange)
+    @test isa(model.tracers.DIC.boundary_conditions.top.condition.func, GasExchange)
 
     set!(model, T = 15.0, S = 35.0, DIC = 2220, Alk = 2500)
 

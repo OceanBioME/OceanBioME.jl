@@ -15,6 +15,7 @@
 # We load the packages and choose the default LOBSTER parameter set
 using OceanBioME, Oceananigans, Printf
 using OceanBioME.SLatissimaModel: SLatissima
+using Oceananigans.Fields: FunctionField, ConstantField
 using Oceananigans.Units
 
 const year = years = 365days
@@ -38,11 +39,11 @@ nothing #hide
 
 # ## Grid
 # Define the grid.
-grid = RectilinearGrid(size=(1, 1, 50), extent=(20meters, 20meters, 200meters))
+grid = RectilinearGrid(size = (1, 1, 50), extent = (20meters, 20meters, 200meters))
 
 
 # ## Model
-# First we define the biogeochemical model including carbonate chemistry 
+# First we define the biogeochemical model including carbonate chemistry (for which we also define temperature (``T``) and salinity (``S``) fields)
 # and scaling of negative tracers(see discussion in the [positivity preservation](@ref pos-preservation))
 # and then setup the Oceananigans model with the boundary condition for the DIC based on the air-sea CO₂ flux.
 
@@ -51,12 +52,18 @@ biogeochemistry = LOBSTER(; grid,
                             carbonates = true,
                             scale_negatives = true)
 
-CO₂_flux = GasExchange(; gas = :CO₂, temperature = temp, salinity = (args...) -> 35)
+CO₂_flux = GasExchange(; gas = :CO₂)
+
+clock = Clock(; time = 0.0)
+T = FunctionField{Center, Center, Center}(temp, grid; clock)
+S = ConstantField(35)
 
 model = NonhydrostaticModel(; grid,
+                              clock,
                               closure = ScalarDiffusivity(ν = κₜ, κ = κₜ),
                               biogeochemistry,
-                              boundary_conditions = (DIC = FieldBoundaryConditions(top = CO₂_flux), ))
+                              boundary_conditions = (DIC = FieldBoundaryConditions(top = CO₂_flux), ),
+                              auxiliary_fields = (; T, S))
 
 set!(model, P = 0.03, Z = 0.03, NO₃ = 4.0, NH₄ = 0.05, DIC = 2239.8, Alk = 2409.0)
 
@@ -76,7 +83,7 @@ progress_message(sim) = @printf("Iteration: %04d, time: %s, Δt: %s, wall time: 
 simulation.callbacks[:progress] = Callback(progress_message, TimeInterval(10days))
 
 filename = "column"
-simulation.output_writers[:profiles] = JLD2OutputWriter(model, merge(model.tracers, model.auxiliary_fields),
+simulation.output_writers[:profiles] = JLD2OutputWriter(model, model.tracers,
                                                         filename = "$filename.jld2",
                                                         schedule = TimeInterval(1day),
                                                         overwrite_existing = true)
@@ -110,7 +117,7 @@ carbon_export = zeros(length(times))
 using Oceananigans.Biogeochemistry: biogeochemical_drift_velocity
 
 for (i, t) in enumerate(times)
-    air_sea_CO₂_flux[i] = CO₂_flux.condition.parameters(0.0, 0.0, t, DIC[1, 1, grid.Nz, i], Alk[1, 1, grid.Nz, i], temp(1, 1, 0, t), 35)
+    air_sea_CO₂_flux[i] = CO₂_flux.condition.func(0.0, 0.0, t, DIC[1, 1, grid.Nz, i], Alk[1, 1, grid.Nz, i], temp(1, 1, 0, t), 35)
     carbon_export[i] = (sPOM[1, 1, grid.Nz-20, i] * biogeochemical_drift_velocity(model.biogeochemistry, Val(:sPOM)).w[1, 1, grid.Nz-20] +
                         bPOM[1, 1, grid.Nz-20, i] * biogeochemical_drift_velocity(model.biogeochemistry, Val(:bPOM)).w[1, 1, grid.Nz-20]) * redfield(Val(:sPOM), model.biogeochemistry)
 end
