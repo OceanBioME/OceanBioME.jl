@@ -21,6 +21,7 @@ module SLatissimaModel
 using Roots, KernelAbstractions
 using OceanBioME.Particles: BiogeochemicalParticles, get_node
 using Oceananigans.Units
+using Oceananigans: Center, CPU
 using Oceananigans.Architectures: arch_array, device, architecture
 using Oceananigans.Biogeochemistry: required_biogeochemical_tracers, biogeochemical_auxiliary_fields
 
