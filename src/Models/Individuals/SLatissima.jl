@@ -21,10 +21,8 @@ module SLatissimaModel
 using Roots, KernelAbstractions
 using OceanBioME.Particles: BiogeochemicalParticles, get_node
 using Oceananigans.Units
-using Oceananigans: CPU, Center, NonhydrostaticModel, HydrostaticFreeSurfaceModel
 using Oceananigans.Architectures: arch_array, device, architecture
 using Oceananigans.Biogeochemistry: required_biogeochemical_tracers, biogeochemical_auxiliary_fields
-using Oceananigans.Utils: SumOfArrays
 
 using KernelAbstractions.Extras.LoopInfo: @unroll 
 using Oceananigans.Operators: volume
@@ -116,7 +114,7 @@ Keyword Arguments
 
 - `architecture`: the architecture to adapt arrays to
 - `growth_rate_adjustement`, ..., `exudation_redfield_ratio`: parameter values
-- `prescribed_velocity`: functions for the relative velocity, temperature and salinity in the form `f(x, y, z, t)`
+- `prescribed_velocity`: functions for the relative velocity `f(x, y, z, t)`
 - `x`,`y` and `z`: positions of the particles
 - `A`, `N`, and `C`: area, nitrogen, and carbon reserves
 - `nitrate_uptake` ... `carbon_erosion`: diagnostic values coupled to tracer fields
@@ -343,7 +341,6 @@ function update_lagrangian_particle_properties!(particles::SLatissima, model, bg
     update_particle_properties_kernel! = _update_lagrangian_particle_properties!(device(arch), workgroup, worksize)
 
     tracer_fields = merge(model.tracers, model.auxiliary_fields)
-                    #NameTuple(field_name => total_field(field_name, field, model.background_fields.tracers) for (field_name, field) in pairs(merge(model.tracers, model.auxiliary_fields)))
 
     update_particle_properties_kernel!(particles, bgc.light_attenuation, bgc.underlying_biogeochemistry, model.grid, 
                                        total_velocities(model), tracer_fields, model.clock, Δt)

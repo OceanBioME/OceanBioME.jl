@@ -43,7 +43,7 @@ grid = RectilinearGrid(size = (1, 1, 50), extent = (20meters, 20meters, 200meter
 
 
 # ## Model
-# First we define the biogeochemical model including carbonate chemistry (for which we are also going to define fields for T and S)
+# First we define the biogeochemical model including carbonate chemistry (for which we also define temperature (``T``) and salinity (``S``) fields)
 # and scaling of negative tracers(see discussion in the [positivity preservation](@ref pos-preservation))
 # and then setup the Oceananigans model with the boundary condition for the DIC based on the air-sea CO₂ flux.
 
