@@ -154,7 +154,7 @@ If you use OceanBioME as part of your research, teaching, or other activities, w
   volume = {8},
   number = {90},
   pages = {5669},
-  author = {Jago Strong-Wright and Si Chen and Navid C. Constantinou and Simone Silvestri and Gregory LeClaire Wagner and John R. and Taylor},
+  author = {Jago Strong-Wright and Si Chen and Navid C. Constantinou and Simone Silvestri and Gregory LeClaire Wagner and John R. Taylor},
   title = {{OceanBioME.jl: A flexible environment for modelling the coupled interactions between ocean biogeochemistry and physics}},
   journal = {Journal of Open Source Software}
 }
