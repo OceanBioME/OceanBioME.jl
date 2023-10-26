@@ -163,7 +163,7 @@ conserved_tracers(model::Biogeochemistry) = conserved_tracers(model.underlying_b
 
 summary(bgc::Biogeochemistry) = string("Biogeochemical model based on $(summary(bgc.underlying_biogeochemistry))")
 show(io::IO, model::Biogeochemistry) =
-       print(io, show(model.underlying_biogeochemistry), " \n",
+       print(io, summary(model.underlying_biogeochemistry), " \n",
                 " Light attenuation: ", summary(model.light_attenuation), "\n",
                 " Sediment: ", summary(model.sediment), "\n",
                 " Particles: ", summary(model.particles))
