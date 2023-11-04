@@ -11,7 +11,7 @@
 
 # Carbonates and oxygen
 # We can't tell the difference between carbonates and oxygen, and variable redfields without specifying more 
-# We're lucky that the optional groups have 2, 1, 3 extra variables each so this is the only non-unique conbination
+# We're lucky that the optional groups have 2, 1, 3 extra variables each so this is the only non-unique combination
 @inline (bgc::LOBSTER{<:Any, <:Val{(true, true, false)}, <:Any})(tracer::Val{:DIC}, x, y, z, t, NO₃, NH₄, P, Z, sPOM, bPOM, DOM, DIC, Alk, O₂, PAR) = bgc(tracer, x, y, z, t, NO₃, NH₄, P, Z, sPOM, bPOM, DOM, DIC, Alk, PAR)
 @inline (bgc::LOBSTER{<:Any, <:Val{(true, true, false)}, <:Any})(tracer::Val{:Alk}, x, y, z, t, NO₃, NH₄, P, Z, sPOM, bPOM, DOM, DIC, Alk, O₂, PAR) = bgc(tracer, x, y, z, t, NO₃, NH₄, P, Z, sPOM, bPOM, DOM, DIC, Alk, PAR)
 @inline (bgc::LOBSTER{<:Any, <:Val{(true, true, false)}, <:Any})(tracer::Val{:O₂}, x, y, z, t, NO₃, NH₄, P, Z, sPOM, bPOM, DOM, DIC, Alk, O₂, PAR) = bgc(tracer, x, y, z, t, NO₃, NH₄, P, Z, sPOM, bPOM, DOM, O₂, PAR)
