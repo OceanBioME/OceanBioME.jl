@@ -14,7 +14,7 @@
     kₚₐᵣ = bgc.light_half_saturation
     ψ = bgc.nitrate_ammonia_inhibition
     kₙₒ₃ = bgc.nitrate_half_saturation
-    μₙ = bgc.nitrifcaiton_rate
+    μₙ = bgc.nitrification_rate
 
     return μₙ*NH₄ - μₚ*Lₚₐᵣ(PAR, kₚₐᵣ)*Lₙₒ₃(NO₃, NH₄, ψ, kₙₒ₃)*P
 end
@@ -27,12 +27,12 @@ end
     ψ = bgc.nitrate_ammonia_inhibition
     kₙₒ₃ = bgc.nitrate_half_saturation
     kₙₕ₄ = bgc.ammonia_half_saturation
-    μₙ = bgc.nitrifcaiton_rate
+    μₙ = bgc.nitrification_rate
     αᶻ = bgc.ammonia_fraction_of_excriment
     αᵈ = bgc.ammonia_fraction_of_detritus
     μᵈ = bgc.small_detritus_remineralisation_rate
     μᵈᵈ = bgc.large_detritus_remineralisation_rate
-    μᵈᵒᵐ = bgc.disolved_organic_breakdown_rate
+    μᵈᵒᵐ = bgc.dissolved_organic_breakdown_rate
     μᶻ = bgc.zooplankton_excretion_rate
 
     return (αᵖ * γ * μₚ * Lₚₐᵣ(PAR, kₚₐᵣ) * (Lₙₒ₃(NO₃, NH₄, ψ, kₙₒ₃) + Lₙₕ₄(NH₄, kₙₕ₄)) * P 
@@ -56,7 +56,7 @@ end
     αᵈ = bgc.ammonia_fraction_of_detritus
     μᵈ = bgc.small_detritus_remineralisation_rate
     μᵈᵈ = bgc.large_detritus_remineralisation_rate
-    μᵈᵒᵐ = bgc.disolved_organic_breakdown_rate
+    μᵈᵒᵐ = bgc.dissolved_organic_breakdown_rate
     μᶻ = bgc.zooplankton_excretion_rate
 
     return ((1 - αᵖ) * γ * μₚ * Lₚₐᵣ(PAR, kₚₐᵣ) * (Lₙₒ₃(NO₃, NH₄, ψ, kₙₒ₃) + Lₙₕ₄(NH₄, kₙₕ₄)) * P 
