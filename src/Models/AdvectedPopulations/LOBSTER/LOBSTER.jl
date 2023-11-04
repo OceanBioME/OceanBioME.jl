@@ -11,13 +11,13 @@ Tracers
 * Zooplankton: Z (mmol N/m³)
 * Small (slow sinking) particulate organic matter: sPOM (mmol N/m³)
 * Large (fast sinking) particulate organic matter: bPOM (mmol N/m³)
-* Disolved organic matter: DOM (mmol N/m³)
+* Dissolved organic matter: DOM (mmol N/m³)
 
 Optional tracers
 ================
 
 Carbonate chemistry
-* Disolved inorganic carbon: DIC (mmol C/m³)
+* Dissolved inorganic carbon: DIC (mmol C/m³)
 * Alkalinity: Alk (meq/m³)
 
 Oxygen chemistry
@@ -27,7 +27,7 @@ Variable redfield
 
 * Small (slow sinking) particulate organic matter carbon content: sPOC (mmol C/m³)
 * Large (fast sinking) particulate organic matter carbon content: bPOC (mmol C/m³)
-* Disolved organic matter carbon content: DOC (mmol C/m³)
+* Dissolved organic matter carbon content: DOC (mmol C/m³)
 * When this option is enabled then the usual sPOM and bPOM change to sPON and bPON as they explicitly represent the nitrogen contained in the particulate matter
 
 Required submodels
@@ -83,7 +83,7 @@ struct LOBSTER{FT, B, W} <: AbstractContinuousFormBiogeochemistry
     small_detritus_remineralisation_rate :: FT
     large_detritus_remineralisation_rate :: FT
     phytoplankton_exudation_fraction :: FT
-    nitrifcaiton_rate :: FT
+    nitrification_rate :: FT
     ammonia_fraction_of_exudate :: FT
     ammonia_fraction_of_excriment :: FT
     ammonia_fraction_of_detritus :: FT
@@ -91,11 +91,11 @@ struct LOBSTER{FT, B, W} <: AbstractContinuousFormBiogeochemistry
     organic_redfield :: FT
     phytoplankton_chlorophyll_ratio :: FT
     organic_carbon_calcate_ratio :: FT
-    respiraiton_oxygen_nitrogen_ratio :: FT
-    nitrifcation_oxygen_nitrogen_ratio :: FT
+    respiration_oxygen_nitrogen_ratio :: FT
+    nitrification_oxygen_nitrogen_ratio :: FT
     slow_sinking_mortality_fraction :: FT
     fast_sinking_mortality_fraction :: FT
-    disolved_organic_breakdown_rate :: FT
+    dissolved_organic_breakdown_rate :: FT
     zooplankton_calcite_dissolution :: FT
 
     optionals :: B
@@ -117,7 +117,7 @@ struct LOBSTER{FT, B, W} <: AbstractContinuousFormBiogeochemistry
                      small_detritus_remineralisation_rate::FT,
                      large_detritus_remineralisation_rate::FT,
                      phytoplankton_exudation_fraction::FT,
-                     nitrifcaiton_rate::FT,
+                     nitrification_rate::FT,
                      ammonia_fraction_of_exudate::FT,
                      ammonia_fraction_of_excriment::FT,
                      ammonia_fraction_of_detritus::FT,
@@ -125,11 +125,11 @@ struct LOBSTER{FT, B, W} <: AbstractContinuousFormBiogeochemistry
                      organic_redfield::FT,
                      phytoplankton_chlorophyll_ratio::FT,
                      organic_carbon_calcate_ratio::FT,
-                     respiraiton_oxygen_nitrogen_ratio::FT,
-                     nitrifcation_oxygen_nitrogen_ratio::FT,
+                     respiration_oxygen_nitrogen_ratio::FT,
+                     nitrification_oxygen_nitrogen_ratio::FT,
                      slow_sinking_mortality_fraction::FT,
                      fast_sinking_mortality_fraction::FT,
-                     disolved_organic_breakdown_rate::FT,
+                     dissolved_organic_breakdown_rate::FT,
                      zooplankton_calcite_dissolution::FT,
 
                      optionals::B,
@@ -151,7 +151,7 @@ struct LOBSTER{FT, B, W} <: AbstractContinuousFormBiogeochemistry
                              small_detritus_remineralisation_rate,
                              large_detritus_remineralisation_rate,
                              phytoplankton_exudation_fraction,
-                             nitrifcaiton_rate,
+                             nitrification_rate,
                              ammonia_fraction_of_exudate,
                              ammonia_fraction_of_excriment,
                              ammonia_fraction_of_detritus,
@@ -159,11 +159,11 @@ struct LOBSTER{FT, B, W} <: AbstractContinuousFormBiogeochemistry
                              organic_redfield,
                              phytoplankton_chlorophyll_ratio,
                              organic_carbon_calcate_ratio,
-                             respiraiton_oxygen_nitrogen_ratio,
-                             nitrifcation_oxygen_nitrogen_ratio,
+                             respiration_oxygen_nitrogen_ratio,
+                             nitrification_oxygen_nitrogen_ratio,
                              slow_sinking_mortality_fraction,
                              fast_sinking_mortality_fraction,
-                             disolved_organic_breakdown_rate,
+                             dissolved_organic_breakdown_rate,
                              zooplankton_calcite_dissolution,
 
                              optionals,
@@ -189,7 +189,7 @@ end
               small_detritus_remineralisation_rate::FT = 5.88e-7, # 1/s
               large_detritus_remineralisation_rate::FT = 5.88e-7, # 1/s
               phytoplankton_exudation_fraction::FT = 0.05,
-              nitrifcaiton_rate::FT = 5.8e-7, # 1/s
+              nitrification_rate::FT = 5.8e-7, # 1/s
               ammonia_fraction_of_exudate::FT = 0.75,
               ammonia_fraction_of_excriment::FT = 0.5,
               ammonia_fraction_of_detritus::FT = 0.0,
@@ -197,11 +197,11 @@ end
               organic_redfield::FT = 6.56, # mol C/mol N
               phytoplankton_chlorophyll_ratio::FT = 1.31, # g Chl/mol N
               organic_carbon_calcate_ratio::FT = 0.1, # mol CaCO₃/mol C
-              respiraiton_oxygen_nitrogen_ratio::FT = 10.75, # mol O/molN
-              nitrifcation_oxygen_nitrogen_ratio::FT = 2.0, # mol O/molN
+              respiration_oxygen_nitrogen_ratio::FT = 10.75, # mol O/molN
+              nitrification_oxygen_nitrogen_ratio::FT = 2.0, # mol O/molN
               slow_sinking_mortality_fraction::FT = 0.5,
               fast_sinking_mortality_fraction::FT = 0.5,
-              disolved_organic_breakdown_rate::FT = 3.86e-7, # 1/s
+              dissolved_organic_breakdown_rate::FT = 3.86e-7, # 1/s
               zooplankton_calcite_dissolution::FT = 0.3,
 
               surface_phytosynthetically_active_radiation::SPAR = (x, y, t) -> 100*max(0.0, cos(t*π/(12hours))),
@@ -226,11 +226,11 @@ Keyword Arguments
 =================
 
 - `grid`: (required) the geometry to build the model on, required to calculate sinking
-- `phytoplankton_preference`, ..., `disolved_organic_breakdown_rate`: LOBSTER parameter values
+- `phytoplankton_preference`, ..., `dissolved_organic_breakdown_rate`: LOBSTER parameter values
 - `surface_phytosynthetically_active_radiation`: funciton (or array in the future) for the photosynthetically available radiation at the surface, should be shape `f(x, y, t)`
 - `light_attenuation_model`: light attenuation model which integrated the attenuation of available light
 - `sediment_model`: slot for `AbstractSediment`
-- `carbonates`, `oxygen`, and `variable_redfield`: include models for carbonate chemistry and/or oxygen chemistry and/or variable redfield ratio disolved and particulate organic matter
+- `carbonates`, `oxygen`, and `variable_redfield`: include models for carbonate chemistry and/or oxygen chemistry and/or variable redfield ratio dissolved and particulate organic matter
 - `sinking_speed`: named tuple of constant sinking, of fields (i.e. `ZFaceField(...)`) for any tracers which sink (convention is that a sinking speed is positive, but a field will need to follow the usual down being negative)
 - `open_bottom`: should the sinking velocity be smoothly brought to zero at the bottom to prevent the tracers leaving the domain
 - `particles`: slot for `BiogeochemicalParticles`
@@ -275,7 +275,7 @@ function LOBSTER(; grid,
                    small_detritus_remineralisation_rate::FT = 5.88e-7, # 1/s
                    large_detritus_remineralisation_rate::FT = 5.88e-7, # 1/s
                    phytoplankton_exudation_fraction::FT = 0.05,
-                   nitrifcaiton_rate::FT = 5.8e-7, # 1/s
+                   nitrification_rate::FT = 5.8e-7, # 1/s
                    ammonia_fraction_of_exudate::FT = 0.75, 
                    ammonia_fraction_of_excriment::FT = 0.5,
                    ammonia_fraction_of_detritus::FT = 0.0,
@@ -283,11 +283,11 @@ function LOBSTER(; grid,
                    organic_redfield::FT = 6.56, # mol C/mol N
                    phytoplankton_chlorophyll_ratio::FT = 1.31, # g Chl/mol N
                    organic_carbon_calcate_ratio::FT = 0.1, # mol CaCO₃/mol C
-                   respiraiton_oxygen_nitrogen_ratio::FT = 10.75, # mol O/molN
-                   nitrifcation_oxygen_nitrogen_ratio::FT = 2.0, # mol O/molN
+                   respiration_oxygen_nitrogen_ratio::FT = 10.75, # mol O/molN
+                   nitrification_oxygen_nitrogen_ratio::FT = 2.0, # mol O/molN
                    slow_sinking_mortality_fraction::FT = 0.5, 
                    fast_sinking_mortality_fraction::FT = 0.5,
-                   disolved_organic_breakdown_rate::FT = 3.86e-7, # 1/s
+                   dissolved_organic_breakdown_rate::FT = 3.86e-7, # 1/s
                    zooplankton_calcite_dissolution::FT = 0.3,
 
                    surface_phytosynthetically_active_radiation = (x, y, t) -> 100 * max(0.0, cos(t * π / (12hours))),
@@ -332,7 +332,7 @@ function LOBSTER(; grid,
                                          small_detritus_remineralisation_rate,
                                          large_detritus_remineralisation_rate,
                                          phytoplankton_exudation_fraction,
-                                         nitrifcaiton_rate,
+                                         nitrification_rate,
                                          ammonia_fraction_of_exudate,
                                          ammonia_fraction_of_excriment,
                                          ammonia_fraction_of_detritus,
@@ -340,11 +340,11 @@ function LOBSTER(; grid,
                                          organic_redfield,
                                          phytoplankton_chlorophyll_ratio,
                                          organic_carbon_calcate_ratio,
-                                         respiraiton_oxygen_nitrogen_ratio,
-                                         nitrifcation_oxygen_nitrogen_ratio,
+                                         respiration_oxygen_nitrogen_ratio,
+                                         nitrification_oxygen_nitrogen_ratio,
                                          slow_sinking_mortality_fraction,
                                          fast_sinking_mortality_fraction,
-                                         disolved_organic_breakdown_rate,
+                                         dissolved_organic_breakdown_rate,
                                          zooplankton_calcite_dissolution,
 
                                          optionals,
@@ -377,7 +377,7 @@ required_biogeochemical_auxiliary_fields(::LOBSTER) = (:PAR, )
 
 const small_detritus = Union{Val{:sPON}, Val{:sPOC}}
 const large_detritus = Union{Val{:bPON}, Val{:bPOC}}
-const disolved_organic_matter = Union{Val{:DON}, Val{:DOC}}
+const dissolved_organic_matter = Union{Val{:DON}, Val{:DOC}}
 
 const sPOM = Union{Val{:sPOM}, Val{:sPON}}
 const bPOM = Union{Val{:bPOM}, Val{:bPON}}
@@ -385,7 +385,7 @@ const DOM = Union{Val{:DOM}, Val{:DON}}
 
 @inline biogeochemical_drift_velocity(bgc::LOBSTER, ::small_detritus) = biogeochemical_drift_velocity(bgc, Val(:sPOM))
 @inline biogeochemical_drift_velocity(bgc::LOBSTER, ::large_detritus) = biogeochemical_drift_velocity(bgc, Val(:bPOM))
-@inline biogeochemical_drift_velocity(bgc::LOBSTER, ::disolved_organic_matter) = biogeochemical_drift_velocity(bgc, Val(:DOM))
+@inline biogeochemical_drift_velocity(bgc::LOBSTER, ::dissolved_organic_matter) = biogeochemical_drift_velocity(bgc, Val(:DOM))
 
 @inline function biogeochemical_drift_velocity(bgc::LOBSTER, ::Val{tracer_name}) where tracer_name
     if tracer_name in keys(bgc.sinking_velocities)
@@ -415,7 +415,7 @@ adapt_structure(to, lobster::LOBSTER) =
             adapt(to, lobster.small_detritus_remineralisation_rate),
             adapt(to, lobster.large_detritus_remineralisation_rate),
             adapt(to, lobster.phytoplankton_exudation_fraction),
-            adapt(to, lobster.nitrifcaiton_rate),
+            adapt(to, lobster.nitrification_rate),
             adapt(to, lobster.ammonia_fraction_of_exudate),
             adapt(to, lobster.ammonia_fraction_of_excriment),
             adapt(to, lobster.ammonia_fraction_of_detritus),
@@ -423,11 +423,11 @@ adapt_structure(to, lobster::LOBSTER) =
             adapt(to, lobster.organic_redfield),
             adapt(to, lobster.phytoplankton_chlorophyll_ratio),
             adapt(to, lobster.organic_carbon_calcate_ratio),
-            adapt(to, lobster.respiraiton_oxygen_nitrogen_ratio),
-            adapt(to, lobster.nitrifcation_oxygen_nitrogen_ratio),
+            adapt(to, lobster.respiration_oxygen_nitrogen_ratio),
+            adapt(to, lobster.nitrification_oxygen_nitrogen_ratio),
             adapt(to, lobster.slow_sinking_mortality_fraction),
             adapt(to, lobster.fast_sinking_mortality_fraction),
-            adapt(to, lobster.disolved_organic_breakdown_rate),
+            adapt(to, lobster.dissolved_organic_breakdown_rate),
             adapt(to, lobster.zooplankton_calcite_dissolution),
             adapt(to, lobster.optionals),
             adapt(to, lobster.sinking_velocities))
