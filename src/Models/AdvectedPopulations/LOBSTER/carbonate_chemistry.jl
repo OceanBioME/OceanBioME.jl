@@ -10,7 +10,7 @@
     αᵈ = bgc.ammonia_fraction_of_detritus
     μˢᵖᵒᶜ = bgc.small_detritus_remineralisation_rate
     μᵇᵖᵒᶜ = bgc.large_detritus_remineralisation_rate
-    μᵈᵒᵐ = bgc.disolved_organic_breakdown_rate
+    μᵈᵒᵐ = bgc.dissolved_organic_breakdown_rate
     μᶻ = bgc.zooplankton_excretion_rate
     ρᶜᵃᶜᵒ³ = bgc.organic_carbon_calcate_ratio
     Rdᵖ = bgc.phytoplankton_redfield
