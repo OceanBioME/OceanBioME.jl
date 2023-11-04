@@ -40,7 +40,7 @@ import Oceananigans.Models.LagrangianParticleTracking: update_lagrangian_particl
 
 """
     SLatissima(; architecture :: AR = CPU(),
-                 growth_rate_adjustement :: FT = 4.5,
+                 growth_rate_adjustment :: FT = 4.5,
                  photosynthetic_efficiency :: FT = 4.15e-5 * 24 * 10^6 / (24 * 60 * 60),
                  minimum_carbon_reserve :: FT = 0.01,
                  structural_carbon :: FT = 0.2,
@@ -53,8 +53,8 @@ import Oceananigans.Models.LagrangianParticleTracking: update_lagrangian_particl
                  nitrogen_reserve_per_nitrogen :: FT = 2.72,
                  minimum_nitrogen_reserve :: FT = 0.0126,
                  maximum_nitrogen_reserve :: FT = 0.0216,
-                 growth_adjustement_2 :: FT = 0.039 / (2 * (1 - minimum_nitrogen_reserve / maximum_nitrogen_reserve)),
-                 growth_adjustement_1 :: FT = 0.18 / (2 * (1 - minimum_nitrogen_reserve / maximum_nitrogen_reserve)) - growth_adjustement_2,
+                 growth_adjustment_2 :: FT = 0.039 / (2 * (1 - minimum_nitrogen_reserve / maximum_nitrogen_reserve)),
+                 growth_adjustment_1 :: FT = 0.18 / (2 * (1 - minimum_nitrogen_reserve / maximum_nitrogen_reserve)) - growth_adjustment_2,
                  maximum_specific_growth_rate :: FT = 0.18,
                  structural_nitrogen :: FT = 0.0146,
                  photosynthesis_at_ref_temp_1 :: FT = 1.22e-3 * 24,
@@ -114,7 +114,7 @@ Keyword Arguments
 =================
 
 - `architecture`: the architecture to adapt arrays to
-- `growth_rate_adjustement`, ..., `exudation_redfield_ratio`: parameter values
+- `growth_rate_adjustment`, ..., `exudation_redfield_ratio`: parameter values
 - `prescribed_velocity`: functions for the relative velocity `f(x, y, z, t)`
 - `x`,`y` and `z`: positions of the particles
 - `A`, `N`, and `C`: area, nitrogen, and carbon reserves
@@ -125,7 +125,7 @@ Keyword Arguments
 """
 Base.@kwdef struct SLatissima{AR, FT, U, P, F} <: BiogeochemicalParticles
     architecture :: AR = CPU()
-    growth_rate_adjustement :: FT = 4.5
+    growth_rate_adjustment :: FT = 4.5
     photosynthetic_efficiency :: FT = 4.15e-5 * 24 * 10^6 / (24 * 60 * 60)
     minimum_carbon_reserve :: FT = 0.01
     structural_carbon :: FT = 0.2
@@ -138,8 +138,8 @@ Base.@kwdef struct SLatissima{AR, FT, U, P, F} <: BiogeochemicalParticles
     nitrogen_reserve_per_nitrogen :: FT = 2.72
     minimum_nitrogen_reserve :: FT = 0.0126
     maximum_nitrogen_reserve :: FT = 0.0216
-    growth_adjustement_2 :: FT = 0.039 / (2 * (1 - minimum_nitrogen_reserve / maximum_nitrogen_reserve))
-    growth_adjustement_1 :: FT = 0.18 / (2 * (1 - minimum_nitrogen_reserve / maximum_nitrogen_reserve)) - growth_adjustement_2
+    growth_adjustment_2 :: FT = 0.039 / (2 * (1 - minimum_nitrogen_reserve / maximum_nitrogen_reserve))
+    growth_adjustment_1 :: FT = 0.18 / (2 * (1 - minimum_nitrogen_reserve / maximum_nitrogen_reserve)) - growth_adjustment_2
     maximum_specific_growth_rate :: FT = 0.18
     structural_nitrogen :: FT = 0.0146
     photosynthesis_at_ref_temp_1 :: FT = 1.22e-3 * 24
@@ -197,7 +197,7 @@ Base.@kwdef struct SLatissima{AR, FT, U, P, F} <: BiogeochemicalParticles
 end
 
 adapt_structure(to, kelp::SLatissima) = SLatissima(adapt(to, kelp.architecture),
-                                                   adapt(to, kelp.growth_rate_adjustement), 
+                                                   adapt(to, kelp.growth_rate_adjustment), 
                                                    adapt(to, kelp.photosynthetic_efficiency),
                                                    adapt(to, kelp.minimum_carbon_reserve),
                                                    adapt(to, kelp.structural_carbon),
@@ -210,8 +210,8 @@ adapt_structure(to, kelp::SLatissima) = SLatissima(adapt(to, kelp.architecture),
                                                    adapt(to, kelp.nitrogen_reserve_per_nitrogen),
                                                    adapt(to, kelp.minimum_nitrogen_reserve),
                                                    adapt(to, kelp.maximum_nitrogen_reserve),
-                                                   adapt(to, kelp.growth_adjustement_2),
-                                                   adapt(to, kelp.growth_adjustement_1),
+                                                   adapt(to, kelp.growth_adjustment_2),
+                                                   adapt(to, kelp.growth_adjustment_1),
                                                    adapt(to, kelp.maximum_specific_growth_rate),
                                                    adapt(to, kelp.structural_nitrogen),
                                                    adapt(to, kelp.photosynthesis_at_ref_temp_1),
@@ -475,7 +475,7 @@ end
 
 @inline f_curr(u, p) = p.current_1 * (1 - exp(-u / p.current_3)) + p.current_2
 
-@inline f_area(a, p) = p.growth_adjustement_1 * exp(-(a / p.growth_rate_adjustement)^2) + p.growth_adjustement_2
+@inline f_area(a, p) = p.growth_adjustment_1 * exp(-(a / p.growth_rate_adjustment)^2) + p.growth_adjustment_2
 
 @inline function f_temp(T, p)
     # should probably parameterise these limits
