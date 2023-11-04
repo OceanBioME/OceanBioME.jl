@@ -69,11 +69,11 @@ function Makie.plot!(res::ResultsLOBSTER)
     hm_DD = heatmap!(ax_DD, res.t/years, res.z, res.DD')
     Colorbar(fig[2, 8], hm_DD)
 
-    ax_DOM = Axis(fig[3, 1], title = "Disolved organic matter (mmol N/m³)")
+    ax_DOM = Axis(fig[3, 1], title = "Dissolved organic matter (mmol N/m³)")
     hm_DOM = heatmap!(ax_DOM, res.t/years, res.z, res.DOM')
     Colorbar(fig[3, 2], hm_DOM)
 
-    ax_DIC = Axis(fig[3, 3], title = "Disolved inorganic matter (mmol N/m³)")
+    ax_DIC = Axis(fig[3, 3], title = "Dissolved inorganic matter (mmol N/m³)")
     hm_DIC = heatmap!(ax_DIC, res.t/years, res.z, res.DIC')
     Colorbar(fig[3, 4], hm_DIC)
 
