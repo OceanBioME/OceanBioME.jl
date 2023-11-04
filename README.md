@@ -160,4 +160,4 @@ If you use OceanBioME as part of your research, teaching, or other activities, w
 }
 ```
 
-To cite a specific version of the package please also cite its [Zenode archive](https://doi.org/10.5281/zenodo.10038575).
+To cite a specific version of the package please also cite its [Zenodo archive](https://doi.org/10.5281/zenodo.10038575).
