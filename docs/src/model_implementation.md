@@ -251,7 +251,7 @@ sediment = InstantRemineralisation(; grid)
 
 sinking_velocity = ZFaceField(grid)
 
-w_sink(x, y, z) = 2 / day * tanh(z / 5)
+w_sink(z) = 2 / day * tanh(z / 5)
 
 set!(sinking_velocity, w_sink)
 
