@@ -146,7 +146,7 @@ Additionally, the ``DIC`` and ``Alk`` equations are modified to replace each ``X
 | ``\mu_{sPOM}``     | `small_detritus_remineralisation_rate` | 1 / s              |
 | ``\mu_{bPOM}``     | `large_detritus_remineralisation_rate` | 1 / s              |
 | ``\gamma``         | `phytoplankton_exudation_fraction`     | -                  |
-| ``\mu_n``          | `nitrification_rate`                    | 1 / 2              |
+| ``\mu_n``          | `nitrification_rate`                   | 1 / 2              |
 | ``\alpha_P``       | `ammonia_fraction_of_exudate`          | -                  |
 | ``\alpha_Z``       | `ammonia_fraction_of_excriment`        | -                  |
 | ``\alpha_d``       | `ammonia_fraction_of_detritus`         | -                  |
