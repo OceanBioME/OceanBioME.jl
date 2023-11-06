@@ -126,7 +126,7 @@ R = \left[R_A\left(\frac{\mu}{\mu_\text{max}} + \frac{J}{J_\text{max}}\right) + 
 
 | Symbol                   | Variable name                        | Units                   |
 |--------------------------|--------------------------------------|-------------------------|
-| ``A_0``                  | `growth_rate_adjustment`            | 1 / dm²                 |
+| ``A_0``                  | `growth_rate_adjustment`             | 1 / dm²                 |
 | ``\alpha``               | `photosynthetic_efficiency`          | gC / dm² / s / einstein |
 | ``C_\text{min}``         | `minimum_carbon_reserve`             | gC / gSW                |
 | ``C_\text{struct}``      | `structural_carbon`                  | gC / gSW                |
