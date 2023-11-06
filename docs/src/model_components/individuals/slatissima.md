@@ -139,8 +139,8 @@ R = \left[R_A\left(\frac{\mu}{\mu_\text{max}} + \frac{J}{J_\text{max}}\right) + 
 | ``k_N``                  | `nitrogen_reserve_per_nitrogen`      | g / gN                  |
 | ``N_\text{min}``         | `minimum_nitrogen_reserve`           | gN / gSW                |
 | ``N_\text{max}``         | `maximum_nitrogen_reserve`           | gN / gSW                |
-| ``m_2``                  | `growth_adjustment_2`               | -                       |
-| ``m_1``                  | `growth_adjustment_1`               | -                       |
+| ``m_2``                  | `growth_adjustment_2`                | -                       |
+| ``m_1``                  | `growth_adjustment_1`                | -                       |
 | ``\mu_\text{max}``       | `maximum_specific_growth_rate`       | 1 / s                   |
 | ``N_\text{struct}``      | `structural_nitrogen`                | gN / gSW                |
 | ``P_1``                  | `photosynthesis_at_ref_temp_1`       | gC / dm² / s            |
