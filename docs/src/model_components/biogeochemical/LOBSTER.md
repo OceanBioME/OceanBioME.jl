@@ -155,7 +155,7 @@ Additionally, the ``DIC`` and ``Alk`` equations are modified to replace each ``X
 | ``R_{Chl:N}``      | `phytoplankton_chlorophyll_ratio`      | mg Chl / mmol N    |
 | ``\rho_{CaCO_3}``  | `organic_carbon_calcate_ratio`         | mmol CaCO₃/ mmol C |
 | ``R_{O_2}``        | `respiration_oxygen_nitrogen_ratio`    | mmol O / mmol N    |
-| ``R_{nit}``        | `nitrification_oxygen_nitrogen_ratio`   | mmol O / mmol N    |
+| ``R_{nit}``        | `nitrification_oxygen_nitrogen_ratio`  | mmol O / mmol N    |
 | ``f_s``            | `slow_sinking_mortality_fraction`      | -                  |
 | ``\mu_{DOM}``      | `dissolved_organic_breakdown_rate`      | 1 / s              |
 | ``\eta``           | `zooplankton_calcite_dissolution`      | -                  |
