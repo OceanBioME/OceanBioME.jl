@@ -146,13 +146,9 @@ julia> grid = RectilinearGrid(size=(20, 30), extent=(200, 200), topology=(Bounde
 
 julia> model = NutrientPhytoplanktonZooplanktonDetritus(; grid)
 Nutrient Phytoplankton Zooplankton Detritus model (Float64) 
- Sinking Velocities:
-    ├── P: 0.0 to -2.9525462962962963e-6 m/s 
-    └── D: 0.0 to -3.181597222222222e-5 m/s 
  Light attenuation: Two-band light attenuation model (Float64)
  Sediment: Nothing
  Particles: Nothing
-
 ```
 """
 function NutrientPhytoplanktonZooplanktonDetritus(; grid,
