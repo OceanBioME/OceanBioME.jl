@@ -105,8 +105,7 @@ function TwoBandPhotosyntheticallyActiveRadiation(; grid,
 
     field = CenterField(grid; boundary_conditions = 
                             regularize_field_boundary_conditions(
-                            FieldBoundaryConditions(top = ValueBoundaryCondition(surface_PAR)),
-                            grid, :PAR))
+                                FieldBoundaryConditions(top = ValueBoundaryCondition(surface_PAR)), grid, :PAR))
 
     return TwoBandPhotosyntheticallyActiveRadiation(water_red_attenuation,
                                                     water_blue_attenuation,
