@@ -11,7 +11,7 @@ using Oceananigans.Architectures: device, architecture
 using Oceananigans.Utils: launch!
 using Oceananigans: Center, Face, fields
 using Oceananigans.Grids: node, znodes
-using Oceananigans.Fields: CenterField, TracerFields
+using Oceananigans.Fields: CenterField, TracerFields, location
 using Oceananigans.BoundaryConditions: fill_halo_regions!, 
                                        ValueBoundaryCondition, 
                                        FieldBoundaryConditions, 
