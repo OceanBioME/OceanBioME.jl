@@ -22,7 +22,7 @@ using Oceananigans.Biogeochemistry: AbstractContinuousFormBiogeochemistry
 using Oceananigans.Units
 using Oceananigans.Fields: ZeroField
 
-using OceanBioME.Light: TwoBandPhotosyntheticallyActiveRadiation
+using OceanBioME.Light: TwoBandPhotosyntheticallyActiveRadiation, default_surface_PAR
 using OceanBioME: setup_velocity_fields, show_sinking_velocities
 using OceanBioME.BoxModels: BoxModel
 using OceanBioME.Boundaries.Sediments: sinking_flux
