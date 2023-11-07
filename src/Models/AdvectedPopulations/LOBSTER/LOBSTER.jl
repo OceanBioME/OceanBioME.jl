@@ -46,7 +46,7 @@ export LOBSTER
 using Oceananigans.Units
 using Oceananigans.Fields: Field, TracerFields, CenterField, ZeroField
 
-using OceanBioME.Light: TwoBandPhotosyntheticallyActiveRadiation
+using OceanBioME.Light: TwoBandPhotosyntheticallyActiveRadiation, default_surface_PAR
 using OceanBioME: setup_velocity_fields, show_sinking_velocities, Biogeochemistry, ScaleNegativeTracers
 using OceanBioME.BoxModels: BoxModel
 using OceanBioME.Boundaries.Sediments: sinking_flux
@@ -204,7 +204,7 @@ end
               disolved_organic_breakdown_rate::FT = 3.86e-7, # 1/s
               zooplankton_calcite_dissolution::FT = 0.3,
 
-              surface_phytosynthetically_active_radiation::SPAR = (x, y, t) -> 100*max(0.0, cos(t*π/(12hours))),
+              surface_phytosynthetically_active_radiation::SPAR = default_surface_PAR,
 
               light_attenuation_model::LA =
                   TwoBandPhotosyntheticallyActiveRadiation(; grid,
@@ -290,7 +290,7 @@ function LOBSTER(; grid,
                    disolved_organic_breakdown_rate::FT = 3.86e-7, # 1/s
                    zooplankton_calcite_dissolution::FT = 0.3,
 
-                   surface_phytosynthetically_active_radiation = (x, y, t) -> 100 * max(0.0, cos(t * π / (12hours))),
+                   surface_phytosynthetically_active_radiation = default_surface_PAR,
 
                    light_attenuation_model::LA =
                        TwoBandPhotosyntheticallyActiveRadiation(; grid, 
