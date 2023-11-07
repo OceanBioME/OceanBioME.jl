@@ -5,7 +5,7 @@ module Light
 
 export TwoBandPhotosyntheticallyActiveRadiation, update_PAR!
 
-using KernelAbstractions
+using KernelAbstractions, Oceananigans.Units
 using KernelAbstractions.Extras.LoopInfo: @unroll
 using Oceananigans.Architectures: device, architecture
 using Oceananigans.Utils: launch!
@@ -16,8 +16,10 @@ using Oceananigans.BoundaryConditions: fill_halo_regions!,
                                        ValueBoundaryCondition, 
                                        FieldBoundaryConditions, 
                                        regularize_field_boundary_conditions, 
-                                       ContinuousBoundaryFunction
-using Oceananigans.Units
+                                       ContinuousBoundaryFunction,
+                                       z_boundary_node,
+                                       domain_boundary_indices,
+                                       RightBoundary
 using Oceananigans.ImmersedBoundaries: ImmersedBoundaryGrid
 
 import Adapt: adapt_structure, adapt
