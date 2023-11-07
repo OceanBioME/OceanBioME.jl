@@ -2,7 +2,7 @@
 
 julia_version = "1.9.3"
 manifest_format = "2.0"
-project_hash = "abd05af8b9fe6476515dbe2a1c676a74ac1e6059"
+project_hash = "9c3a43fcc42b0e8b4f92f9c38f0c935f93e8165c"
 
 [[deps.AbstractFFTs]]
 deps = ["LinearAlgebra"]
@@ -501,9 +501,15 @@ version = "1.2.0"
 
 [[deps.Oceananigans]]
 deps = ["Adapt", "CUDA", "Crayons", "CubedSphere", "Dates", "Distances", "DocStringExtensions", "FFTW", "Glob", "IncompleteLU", "InteractiveUtils", "IterativeSolvers", "JLD2", "KernelAbstractions", "LinearAlgebra", "Logging", "MPI", "NCDatasets", "OffsetArrays", "OrderedCollections", "PencilArrays", "PencilFFTs", "Pkg", "Printf", "Random", "Rotations", "SeawaterPolynomials", "SparseArrays", "Statistics", "StructArrays"]
-git-tree-sha1 = "e8caa94d03ec34434abc0fb036d43d34d1903411"
+git-tree-sha1 = "7ef7083f3fb79f225c50716bee81265c626ff98d"
 uuid = "9e8cae18-63c1-5223-a75c-80ca9d6e9a09"
-version = "0.89.2"
+version = "0.90.1"
+
+    [deps.Oceananigans.extensions]
+    OceananigansEnzymeCoreExt = "EnzymeCore"
+
+    [deps.Oceananigans.weakdeps]
+    EnzymeCore = "f151be2c-9106-41f4-ab19-57ee4f262869"
 
 [[deps.OffsetArrays]]
 deps = ["Adapt"]
