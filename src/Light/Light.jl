@@ -33,6 +33,6 @@ include("morel.jl")
 
 default_surface_PAR(x, y, t) = default_surface_PAR(t)
 default_surface_PAR(x_or_y, t) = default_surface_PAR(t)
-default_surface_PAR(t) = 100 * max(0.0, cos(t * π / 12hours))
+default_surface_PAR(t) = 100 * max(0, cos(t * π / 12hours))
 
 end
