@@ -44,9 +44,9 @@ model = NonhydrostaticModel(; grid, biogeochemistry,
 
 @inline front(x, z, μ, δ) = μ + δ * tanh((x - 7000 + 4 * z) / 500)
 
-Pᵢ(x, y, z) = ifelse(z > -50, 0.03, 0.01) 
-Nᵢ(x, y, z) = front(x, z, 2.5, -2)
-Tᵢ(x, y, z) = front(x, z, 9, 0.05)
+Pᵢ(x, z) = ifelse(z > -50, 0.03, 0.01)
+Nᵢ(x, z) = front(x, z, 2.5, -2)
+Tᵢ(x, z) = front(x, z, 9, 0.05)
 
 set!(model, N = Nᵢ, P = Pᵢ, Z = Pᵢ, T = Tᵢ)
 
