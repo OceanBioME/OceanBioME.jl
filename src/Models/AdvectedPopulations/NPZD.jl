@@ -145,14 +145,11 @@ julia> using Oceananigans
 julia> grid = RectilinearGrid(size=(20, 30), extent=(200, 200), topology=(Bounded, Flat, Bounded));
 
 julia> model = NutrientPhytoplanktonZooplanktonDetritus(; grid)
-Nutrient Phytoplankton Zooplankton Detritus model (Float64) 
- Sinking Velocities:
-    ├── P: 0.0 to -2.9525462962962963e-6 m/s 
-    └── D: 0.0 to -3.181597222222222e-5 m/s 
+NutrientPhytoplanktonZooplanktonDetritus{Float64} model, with (:P, :D) sinking 
  Light attenuation: Two-band light attenuation model (Float64)
  Sediment: Nothing
  Particles: Nothing
-
+ Modifiers: Nothing
 ```
 """
 function NutrientPhytoplanktonZooplanktonDetritus(; grid,
@@ -297,9 +294,9 @@ function update_boxmodel_state!(model::BoxModel{<:Biogeochemistry{<:NPZD}, <:Any
     getproperty(model.values, :T) .= model.forcing.T(model.clock.time)
 end
 
-summary(::NPZD{FT, W}) where {FT, W} = string("Nutrient Phytoplankton Zooplankton Detritus model ($FT)")
-show(io::IO, model::NPZD) = string(summary(model), " \n",
-                                   " Sinking Velocities:", "\n", show_sinking_velocities(model.sinking_velocities))
+summary(::NPZD{FT, NamedTuple{K, V}}) where {FT, K, V} = string("NutrientPhytoplanktonZooplanktonDetritus{$FT} model, with $K sinking")
+show(io::IO, model::NPZD{FT}) where {FT} = print(io, string("NutrientPhytoplanktonZooplanktonDetritus{$FT} model \n",
+                                                            "└── Sinking Velocities:", "\n", show_sinking_velocities(model.sinking_velocities)))
 
 @inline maximum_sinking_velocity(bgc::NPZD) = maximum(abs, bgc.sinking_velocities.D.w)
 
