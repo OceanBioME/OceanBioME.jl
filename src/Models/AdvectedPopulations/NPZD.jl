@@ -22,7 +22,7 @@ using Oceananigans.Biogeochemistry: AbstractContinuousFormBiogeochemistry
 using Oceananigans.Units
 using Oceananigans.Fields: ZeroField
 
-using OceanBioME.Light: TwoBandPhotosyntheticallyActiveRadiation
+using OceanBioME.Light: TwoBandPhotosyntheticallyActiveRadiation, default_surface_PAR
 using OceanBioME: setup_velocity_fields, show_sinking_velocities
 using OceanBioME.BoxModels: BoxModel
 using OceanBioME.Boundaries.Sediments: sinking_flux
@@ -109,7 +109,7 @@ end
                                                zoo_base_mortality_rate::FT = 0.3395 / day, # 1/s/(mmol N / m³)²
                                                remineralization_rate::FT = 0.1213 / day, # 1/s
 
-                                               surface_phytosynthetically_active_radiation = (x, y, t) -> 100 * max(0.0, cos(t * π / 12hours)),
+                                               surface_phytosynthetically_active_radiation = default_surface_PAR,
                                                light_attenuation_model::LA =
                                                    TwoBandPhotosyntheticallyActiveRadiation(; grid,
                                                                                               surface_PAR = surface_phytosynthetically_active_radiation),
@@ -165,7 +165,7 @@ function NutrientPhytoplanktonZooplanktonDetritus(; grid,
                                                     zoo_base_mortality_rate::FT = 0.3395 / day, # 1/s/(mmol N / m³)²
                                                     remineralization_rate::FT = 0.1213 / day, # 1/s
 
-                                                    surface_phytosynthetically_active_radiation = (x, y, t) -> 100 * max(0.0, cos(t * π / 12hours)),
+                                                    surface_phytosynthetically_active_radiation = default_surface_PAR,
                                                     light_attenuation_model::LA =
                                                         TwoBandPhotosyntheticallyActiveRadiation(; grid,
                                                                                                    surface_PAR = surface_phytosynthetically_active_radiation),

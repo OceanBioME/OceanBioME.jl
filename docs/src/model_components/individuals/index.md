@@ -54,16 +54,22 @@ using OceanBioME.Particles: get_node
 
 function update_tendencies!(bgc, particles::GrowingParticles, model)
     @inbounds for p in 1:length(particles)
-        # here we use an OceanBioME utility to find the nearest nodes to apply the tendency to
-        nodes, normfactor = @inbounds get_nearest_nodes(particles.x[p], particles.y[p], particles.z[p], model.grid, (Center(), Center(), Center()))
+        i, j, k = fractional_indices(x, y, z, (Center(), Center(), Center()), grid)
 
-        for (i, j, k, d) in nodes 
-            # Reflect back on Bounded boundaries or wrap around for Periodic boundaries
-            i, j, k = (get_node(TX(), i, grid.Nx), get_node(TY(), j, grid.Ny), get_node(TZ(), k, grid.Nz))
+        # Convert fractional indices to unit cell coordinates 0 ≤ (ξ, η, ζ) ≤ 1
+        # and integer indices (with 0-based indexing).
+        ξ, i = modf(i)
+        η, j = modf(j)
+        ζ, k = modf(k)
 
-            node_volume = volume(i, j, k, grid, LX(), LY(), LZ())
-            @inbounds model.timestepper.Gⁿ.NO₃[i, j, k] += particles.nitrate_uptake[p] / (d * node_volume)
-        end
+        # Round to nearest node and enforce boundary conditions
+        i, j, k = (get_node(TX(), Int(ifelse(ξ < 0.5, i + 1, i + 2)), grid.Nx),
+                   get_node(TY(), Int(ifelse(η < 0.5, j + 1, j + 2)), grid.Ny),
+                   get_node(TZ(), Int(ifelse(ζ < 0.5, k + 1, k + 2)), grid.Nz))
+
+        node_volume = volume(i, j, k, grid, Center(), Center(), Center())
+
+        model.timestepper.Gⁿ.NO₃[i, j, k] += particles.nitrate_uptake[p] / (d * node_volume)
     end
     return nothing
 end

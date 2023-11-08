@@ -5,19 +5,21 @@ module Light
 
 export TwoBandPhotosyntheticallyActiveRadiation, update_PAR!
 
-using KernelAbstractions
+using KernelAbstractions, Oceananigans.Units
 using KernelAbstractions.Extras.LoopInfo: @unroll
 using Oceananigans.Architectures: device, architecture
 using Oceananigans.Utils: launch!
 using Oceananigans: Center, Face, fields
 using Oceananigans.Grids: node, znodes
-using Oceananigans.Fields: CenterField, TracerFields
+using Oceananigans.Fields: CenterField, TracerFields, location
 using Oceananigans.BoundaryConditions: fill_halo_regions!, 
                                        ValueBoundaryCondition, 
                                        FieldBoundaryConditions, 
                                        regularize_field_boundary_conditions, 
-                                       ContinuousBoundaryFunction
-using Oceananigans.Units
+                                       ContinuousBoundaryFunction,
+                                       z_boundary_node,
+                                       domain_boundary_indices,
+                                       RightBoundary
 using Oceananigans.ImmersedBoundaries: ImmersedBoundaryGrid
 
 import Adapt: adapt_structure, adapt
@@ -28,5 +30,9 @@ import Oceananigans.BoundaryConditions: _fill_top_halo!
 
 include("2band.jl")
 include("morel.jl")
+
+default_surface_PAR(x, y, t) = default_surface_PAR(t)
+default_surface_PAR(x_or_y, t) = default_surface_PAR(t)
+default_surface_PAR(t) = 100 * max(0, cos(t * π / 12hours))
 
 end
