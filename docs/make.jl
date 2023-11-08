@@ -59,10 +59,10 @@ model_parameters = (LOBSTER(; grid = BoxModelGrid()),
                     GasExchange(; gas = :CO₂).condition.func,
                     GasExchange(; gas = :O₂).condition.func)
 
-gas_exchange_gas(::Val{G}) where G = G
+exchanged_gas(::Val{G}) where G = G
 
 model_name(model) = if Base.typename(typeof(model)).wrapper == GasExchange
-                        "$(gas_exchange_gas(model.gas)) air-sea exchange"
+                        "$(exchanged_gas(model.gas)) air-sea exchange"
                     else
                         Base.typename(typeof(model)).wrapper
                     end

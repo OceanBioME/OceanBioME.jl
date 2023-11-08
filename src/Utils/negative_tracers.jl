@@ -6,6 +6,7 @@ using Oceananigans.Architectures: device, architecture, arch_array
 using Oceananigans.Biogeochemistry: AbstractBiogeochemistry
 
 import Adapt: adapt_structure, adapt
+import Base: summary, show
 import Oceananigans.Biogeochemistry: update_tendencies!, update_biogeochemical_state!
 
 """
@@ -83,6 +84,10 @@ function ScaleNegativeTracers(bgc::AbstractBiogeochemistry, grid; warn = false)
 
     return ScaleNegativeTracers(tracers, scalefactors, warn)
 end
+
+summary(scaler::ScaleNegativeTracers) = string("Mass conserving negative scaling of $(scaler.tracers)")
+show(io::IO, scaler::ScaleNegativeTracers) = print(io, string(summary(scaler), "\n",
+                                                          "└── Scalefactors: $(scaler.scalefactors)"))
 
 function update_biogeochemical_state!(model, scale::ScaleNegativeTracers)
     workgroup, worksize = work_layout(model.grid, :xyz)

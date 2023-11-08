@@ -1,9 +1,13 @@
 @kernel function update_TwoBandPhotosyntheticallyActiveRadiation!(PAR, grid, P, surface_PAR, t, PAR_model) 
     i, j = @index(Global, NTuple)
 
-    x, y, _ = node(i, j, 1, grid, Center(), Center(), Center())
+    LX, LY, _ = location(P)
+
+    k, k′ = domain_boundary_indices(RightBoundary(), grid.Nz)
+
+    X = z_boundary_node(i, j, k′, grid, LX(), LY())
     
-    PAR⁰ = surface_PAR(x, y, t)
+    PAR⁰ = surface_PAR(X..., t)
 
     kʳ = PAR_model.water_red_attenuation
     kᵇ = PAR_model.water_blue_attenuation
@@ -105,8 +109,7 @@ function TwoBandPhotosyntheticallyActiveRadiation(; grid,
 
     field = CenterField(grid; boundary_conditions = 
                             regularize_field_boundary_conditions(
-                            FieldBoundaryConditions(top = ValueBoundaryCondition(surface_PAR)),
-                            grid, :PAR))
+                                FieldBoundaryConditions(top = ValueBoundaryCondition(surface_PAR)), grid, :PAR))
 
     return TwoBandPhotosyntheticallyActiveRadiation(water_red_attenuation,
                                                     water_blue_attenuation,

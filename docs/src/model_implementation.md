@@ -233,11 +233,11 @@ using OceanBioME.Sediments: InstantRemineralisation
 
 # define some simple forcing
 
-@inline surface_PAR(x, y, t) = 200 * (1 - cos((t + 15days) * 2π / year)) * (1 / (1 + 0.2 * exp(-((mod(t, year) - 200days) / 50days)^2))) + 2
+@inline surface_PAR(t) = 200 * (1 - cos((t + 15days) * 2π / year)) * (1 / (1 + 0.2 * exp(-((mod(t, year) - 200days) / 50days)^2))) + 2
 
-@inline temp(x, y, z, t) = cos(t * 2π / year + 50days) + 28
+@inline ∂ₜT(z, t) = - 2π / year * sin(t * 2π / year + 50days)
 
-@inline κₜ(x, y, z, t) = 1e-2 * (1 + tanh((z - 50) / 10)) / 2 + 1e-4
+@inline κₜ(z, t) = 1e-2 * (1 + tanh((z - 50) / 10)) / 2 + 1e-4
 
 # define the grid
 
@@ -267,7 +267,7 @@ biogeochemistry = Biogeochemistry(NutrientPhytoplankton(; sinking_velocity);
 model = NonhydrostaticModel(; grid,
                               biogeochemistry,
                               closure = ScalarDiffusivity(ν = κₜ, κ = κₜ), 
-                              forcing = (T = Relaxation(rate = 1/day, target = temp), ))
+                              forcing = (; T = ∂ₜT))
 
 set!(model, P = 0.01, N = 15, T = 28)
 

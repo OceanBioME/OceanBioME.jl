@@ -14,9 +14,7 @@ using Oceananigans.Units
 
 grid = RectilinearGrid(size = 10, extent = 200meters, topology = (Flat, Flat, Bounded))
 
-PAR = CenterField(grid)
-
-model = NonhydrostaticModel(; grid, biogeochemistry = LOBSTER(; grid), auxiliary_fields = (; PAR))
+model = NonhydrostaticModel(; grid, biogeochemistry = LOBSTER(; grid))
 
 set!(model, P = 0.001, Z = 0.001, NO₃ = 1, NH₄ = 0.01)
 

@@ -46,7 +46,7 @@ export LOBSTER
 using Oceananigans.Units
 using Oceananigans.Fields: Field, TracerFields, CenterField, ZeroField
 
-using OceanBioME.Light: TwoBandPhotosyntheticallyActiveRadiation
+using OceanBioME.Light: TwoBandPhotosyntheticallyActiveRadiation, default_surface_PAR
 using OceanBioME: setup_velocity_fields, show_sinking_velocities, Biogeochemistry, ScaleNegativeTracers
 using OceanBioME.BoxModels: BoxModel
 using OceanBioME.Boundaries.Sediments: sinking_flux
@@ -204,7 +204,7 @@ end
               dissolved_organic_breakdown_rate::FT = 3.86e-7, # 1/s
               zooplankton_calcite_dissolution::FT = 0.3,
 
-              surface_phytosynthetically_active_radiation::SPAR = (x, y, t) -> 100*max(0.0, cos(t*π/(12hours))),
+              surface_phytosynthetically_active_radiation::SPAR = default_surface_PAR,
 
               light_attenuation_model::LA =
                   TwoBandPhotosyntheticallyActiveRadiation(; grid,
@@ -246,17 +246,11 @@ julia> using Oceananigans
 julia> grid = RectilinearGrid(size=(3, 3, 30), extent=(10, 10, 200));
 
 julia> model = LOBSTER(; grid)
-Lodyc-DAMTP Ocean Biogeochemical Simulation Tools for Ecosystem and Resources (LOBSTER) model (Float64) 
- Optional components:
-    ├── Carbonates ❌ 
-    ├── Oxygen ❌ 
-    └── Variable Redfield Ratio ❌
- Sinking Velocities:
-    ├── sPOM: 0.0 to -3.47e-5 m/s 
-    └── bPOM: 0.0 to -0.0023148148148148147 m/s 
+LOBSTER{Float64} with carbonates ❌, oxygen ❌, variable Redfield ratio ❌and (:sPOM, :bPOM) sinking 
  Light attenuation: Two-band light attenuation model (Float64)
  Sediment: Nothing
  Particles: Nothing
+ Modifiers: Nothing
 ```
 """
 function LOBSTER(; grid,
@@ -290,7 +284,7 @@ function LOBSTER(; grid,
                    dissolved_organic_breakdown_rate::FT = 3.86e-7, # 1/s
                    zooplankton_calcite_dissolution::FT = 0.3,
 
-                   surface_phytosynthetically_active_radiation = (x, y, t) -> 100 * max(0.0, cos(t * π / (12hours))),
+                   surface_phytosynthetically_active_radiation = default_surface_PAR,
 
                    light_attenuation_model::LA =
                        TwoBandPhotosyntheticallyActiveRadiation(; grid, 
@@ -353,7 +347,13 @@ function LOBSTER(; grid,
 
     if scale_negatives
         scaler = ScaleNegativeTracers(underlying_biogeochemistry, grid)
-        modifiers = isnothing(modifiers) ? scaler : (modifiers..., scaler)
+        if isnothing(modifiers)
+            modifiers = scaler
+        elseif modifiers isa Tuple
+            modifiers = (modifiers..., scaler)
+        else
+            modifiers = (modifiers, scaler)
+        end
     end
 
     return Biogeochemistry(underlying_biogeochemistry;
@@ -432,14 +432,14 @@ adapt_structure(to, lobster::LOBSTER) =
             adapt(to, lobster.optionals),
             adapt(to, lobster.sinking_velocities))
 
-summary(::LOBSTER{FT, B, W}) where {FT, B, W} = string("Lodyc-DAMTP Ocean Biogeochemical Simulation Tools for Ecosystem and Resources (LOBSTER) model ($FT)")
+summary(::LOBSTER{FT, Val{B}, NamedTuple{K, V}}) where {FT, B, K, V} = string("LOBSTER{$FT} with carbonates $(B[1] ? :✅ : :❌), oxygen $(B[2] ? :✅ : :❌), variable Redfield ratio $(B[3] ? :✅ : :❌)and $K sinking")
 
-show(io::IO, model::LOBSTER{FT, Val{B}, W}) where {FT, B, W}  = string(summary(model), " \n",
-                                                                       " Optional components:", "\n",
-                                                                       "    ├── Carbonates $(B[1] ? :✅ : :❌) \n",
-                                                                       "    ├── Oxygen $(B[2] ? :✅ : :❌) \n",
-                                                                       "    └── Variable Redfield Ratio $(B[3] ? :✅ : :❌)", "\n",
-                                                                       " Sinking Velocities:", "\n", show_sinking_velocities(model.sinking_velocities))
+show(io::IO, model::LOBSTER{FT, Val{B}, W}) where {FT, B, W}  = print(io, string("Lodyc-DAMTP Ocean Biogeochemical Simulation Tools for Ecosystem and Resources (LOBSTER) model \n",
+                                                                                 "├── Optional components:", "\n",
+                                                                                 "│   ├── Carbonates $(B[1] ? :✅ : :❌) \n",
+                                                                                 "│   ├── Oxygen $(B[2] ? :✅ : :❌) \n",
+                                                                                 "│   └── Variable Redfield Ratio $(B[3] ? :✅ : :❌)", "\n",
+                                                                                 "└── Sinking Velocities:", "\n", show_sinking_velocities(model.sinking_velocities)))
 
 @inline maximum_sinking_velocity(bgc::LOBSTER) = maximum(abs, bgc.sinking_velocities.bPOM.w)
 
