@@ -25,7 +25,7 @@ export Boundaries, Sediments, GasExchange, FlatSediment
 # Utilities
 export column_advection_timescale, sinking_advection_timescale, Budget
 
-# Positivity preservaiton utilities
+# Positivity preservation utilities
 export ScaleNegativeTracers, ZeroNegativeTracers
 
 # Oceananigans extensions
@@ -82,7 +82,7 @@ Keyword Arguments
 - `light_attenuation_model`: light attenuation model which integrated the attenuation of available light
 - `sediment_model`: slot for `AbstractSediment`
 - `particles`: slot for `BiogeochemicalParticles`
-- `modifiers`: slot for components which modfiy the biogeochemistry when the tendencies have been calculated or when the state is updated
+- `modifiers`: slot for components which modify the biogeochemistry when the tendencies have been calculated or when the state is updated
 """
 Biogeochemistry(underlying_biogeochemistry;
                 light_attenuation = nothing,

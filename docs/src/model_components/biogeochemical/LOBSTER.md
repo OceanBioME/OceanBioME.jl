@@ -140,7 +140,7 @@ Additionally, the ``DIC`` and ``Alk`` equations are modified to replace each ``X
 | ``\mu_{sPOM}``     | `small_detritus_remineralisation_rate` | 1 / s              |
 | ``\mu_{bPOM}``     | `large_detritus_remineralisation_rate` | 1 / s              |
 | ``\gamma``         | `phytoplankton_exudation_fraction`     | -                  |
-| ``\mu_n``          | `nitrifcaiton_rate`                    | 1 / 2              |
+| ``\mu_n``          | `nitrification_rate`                   | 1 / 2              |
 | ``\alpha_P``       | `ammonia_fraction_of_exudate`          | -                  |
 | ``\alpha_Z``       | `ammonia_fraction_of_excriment`        | -                  |
 | ``\alpha_d``       | `ammonia_fraction_of_detritus`         | -                  |
@@ -148,10 +148,10 @@ Additionally, the ``DIC`` and ``Alk`` equations are modified to replace each ``X
 | ``R_O``            | `organic_redfield`                     | mmol C / mmol N    |
 | ``R_{Chl:N}``      | `phytoplankton_chlorophyll_ratio`      | mg Chl / mmol N    |
 | ``\rho_{CaCO_3}``  | `organic_carbon_calcate_ratio`         | mmol CaCO₃/ mmol C |
-| ``R_{O_2}``        | `respiraiton_oxygen_nitrogen_ratio`    | mmol O / mmol N    |
-| ``R_{nit}``        | `nitrifcation_oxygen_nitrogen_ratio`   | mmol O / mmol N    |
+| ``R_{O_2}``        | `respiration_oxygen_nitrogen_ratio`    | mmol O / mmol N    |
+| ``R_{nit}``        | `nitrification_oxygen_nitrogen_ratio`  | mmol O / mmol N    |
 | ``f_s``            | `slow_sinking_mortality_fraction`      | -                  |
-| ``\mu_{DOM}``      | `disolved_organic_breakdown_rate`      | 1 / s              |
+| ``\mu_{DOM}``      | `dissolved_organic_breakdown_rate`     | 1 / s              |
 | ``\eta``           | `zooplankton_calcite_dissolution`      | -                  |
 
 All default parameter values are given in [Parameters](@ref parameters); and a more thorough explanation of new terms will be included in a publication that is in prep.

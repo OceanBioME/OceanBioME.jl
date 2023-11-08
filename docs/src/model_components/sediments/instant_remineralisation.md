@@ -18,7 +18,7 @@ where ``F_{OC}`` is the carbon flux (in this implementation the nitrogen flux mu
 |---------|-------------------------------------|-----------------|
 | ``E_0`` | `burial_efficiency_constant1`       | -               |        
 | ``E_1`` | `burial_efficiency_constant2`       | -               |
-| ``k_B`` | `burial_efficiency_half_saturaiton` | mmol C / m² / s |
+| ``k_B`` | `burial_efficiency_half_saturation` | mmol C / m² / s |
 
 ## Model conservations
 
