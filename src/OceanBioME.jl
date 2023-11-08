@@ -166,7 +166,10 @@ show(io::IO, model::Biogeochemistry) =
        print(io, summary(model.underlying_biogeochemistry), " \n",
                 " Light attenuation: ", summary(model.light_attenuation), "\n",
                 " Sediment: ", summary(model.sediment), "\n",
-                " Particles: ", summary(model.particles))
+                " Particles: ", summary(model.particles), "\n",
+                " Modifiers: ", summary(model.modifiers))
+
+summary(modifiers::Tuple) = tuple([summary(modifier) for modifier in modifiers])
 
 include("Utils/Utils.jl")
 include("Boundaries/Boundaries.jl")

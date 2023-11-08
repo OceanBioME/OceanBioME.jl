@@ -346,7 +346,13 @@ function LOBSTER(; grid,
 
     if scale_negatives
         scaler = ScaleNegativeTracers(underlying_biogeochemistry, grid)
-        modifiers = isnothing(modifiers) ? scaler : (modifiers..., scaler)
+        if isnothing(modifiers)
+            modifiers = scaler
+        elseif modifiers isa Tuple
+            modifiers = (modifiers..., scaler)
+        else
+            modifiers = (modifiers, scaler)
+        end
     end
 
     return Biogeochemistry(underlying_biogeochemistry;
@@ -425,14 +431,14 @@ adapt_structure(to, lobster::LOBSTER) =
             adapt(to, lobster.optionals),
             adapt(to, lobster.sinking_velocities))
 
-summary(::LOBSTER{FT, B, W}) where {FT, B, W} = string("Lodyc-DAMTP Ocean Biogeochemical Simulation Tools for Ecosystem and Resources (LOBSTER) model ($FT)")
+summary(::LOBSTER{FT, Val{B}, NamedTuple{K, V}}) where {FT, B, K, V} = string("LOBSTER{$FT} with carbonates $(B[1] ? :✅ : :❌), oxygen $(B[2] ? :✅ : :❌), variable Redfield ratio $(B[3] ? :✅ : :❌)and $K sinking")
 
-show(io::IO, model::LOBSTER{FT, Val{B}, W}) where {FT, B, W}  = print(io, string(summary(model), " \n",
-                                                                                 " Optional components:", "\n",
-                                                                                 "    ├── Carbonates $(B[1] ? :✅ : :❌) \n",
-                                                                                 "    ├── Oxygen $(B[2] ? :✅ : :❌) \n",
-                                                                                 "    └── Variable Redfield Ratio $(B[3] ? :✅ : :❌)", "\n",
-                                                                                 " Sinking Velocities:", "\n", show_sinking_velocities(model.sinking_velocities)))
+show(io::IO, model::LOBSTER{FT, Val{B}, W}) where {FT, B, W}  = print(io, string("Lodyc-DAMTP Ocean Biogeochemical Simulation Tools for Ecosystem and Resources (LOBSTER) model \n",
+                                                                                 "├── Optional components:", "\n",
+                                                                                 "│   ├── Carbonates $(B[1] ? :✅ : :❌) \n",
+                                                                                 "│   ├── Oxygen $(B[2] ? :✅ : :❌) \n",
+                                                                                 "│   └── Variable Redfield Ratio $(B[3] ? :✅ : :❌)", "\n",
+                                                                                 "└── Sinking Velocities:", "\n", show_sinking_velocities(model.sinking_velocities)))
 
 @inline maximum_sinking_velocity(bgc::LOBSTER) = maximum(abs, bgc.sinking_velocities.bPOM.w)
 
