@@ -246,10 +246,11 @@ julia> using Oceananigans
 julia> grid = RectilinearGrid(size=(3, 3, 30), extent=(10, 10, 200));
 
 julia> model = LOBSTER(; grid)
-Lodyc-DAMTP Ocean Biogeochemical Simulation Tools for Ecosystem and Resources (LOBSTER) model (Float64) 
+LOBSTER{Float64} with carbonates ❌, oxygen ❌, variable Redfield ratio ❌and (:sPOM, :bPOM) sinking 
  Light attenuation: Two-band light attenuation model (Float64)
  Sediment: Nothing
  Particles: Nothing
+ Modifiers: Nothing
 ```
 """
 function LOBSTER(; grid,

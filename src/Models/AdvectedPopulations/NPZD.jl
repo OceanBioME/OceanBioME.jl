@@ -145,10 +145,11 @@ julia> using Oceananigans
 julia> grid = RectilinearGrid(size=(20, 30), extent=(200, 200), topology=(Bounded, Flat, Bounded));
 
 julia> model = NutrientPhytoplanktonZooplanktonDetritus(; grid)
-Nutrient Phytoplankton Zooplankton Detritus model (Float64) 
+NutrientPhytoplanktonZooplanktonDetritus{Float64} model, with (:P, :D) sinking 
  Light attenuation: Two-band light attenuation model (Float64)
  Sediment: Nothing
  Particles: Nothing
+ Modifiers: Nothing
 ```
 """
 function NutrientPhytoplanktonZooplanktonDetritus(; grid,
