@@ -109,10 +109,10 @@ end
                                                zoo_base_mortality_rate::FT = 0.3395 / day, # 1/s/(mmol N / m³)²
                                                remineralization_rate::FT = 0.1213 / day, # 1/s
 
-                                               surface_phytosynthetically_active_radiation = default_surface_PAR,
+                                               surface_photosynthetically_active_radiation = default_surface_PAR,
                                                light_attenuation_model::LA =
                                                    TwoBandPhotosyntheticallyActiveRadiation(; grid,
-                                                                                              surface_PAR = surface_phytosynthetically_active_radiation),
+                                                                                              surface_PAR = surface_photosynthetically_active_radiation),
                                               sediment_model::S = nothing,
 
                                                sinking_speeds = (P = 0.2551/day, D = 2.7489/day),
@@ -127,7 +127,7 @@ Keyword Arguments
 
 - `grid`: (required) the geometry to build the model on, required to calculate sinking
 - `initial_photosynthetic_slope`, ..., `remineralization_rate`: NPZD parameter values
-- `surface_phytosynthetically_active_radiation`: function (or array in the future) for the photosynthetically available radiation at the surface, should be shape `f(x, y, t)`
+- `surface_photosynthetically_active_radiation`: function (or array in the future) for the photosynthetically available radiation at the surface, should be shape `f(x, y, t)`
 - `light_attenuation_model`: light attenuation model which integrated the attenuation of available light
 - `sediment_model`: slot for `AbstractSediment`
 - `sinking_speed`: named tuple of constant sinking, of fields (i.e. `ZFaceField(...)`) for any tracers which sink (convention is that a sinking speed is positive, but a field will need to follow the usual down being negative)
@@ -165,10 +165,10 @@ function NutrientPhytoplanktonZooplanktonDetritus(; grid,
                                                     zoo_base_mortality_rate::FT = 0.3395 / day, # 1/s/(mmol N / m³)²
                                                     remineralization_rate::FT = 0.1213 / day, # 1/s
 
-                                                    surface_phytosynthetically_active_radiation = default_surface_PAR,
+                                                    surface_photosynthetically_active_radiation = default_surface_PAR,
                                                     light_attenuation_model::LA =
                                                         TwoBandPhotosyntheticallyActiveRadiation(; grid,
-                                                                                                   surface_PAR = surface_phytosynthetically_active_radiation),
+                                                                                                   surface_PAR = surface_photosynthetically_active_radiation),
                                                     sediment_model::S = nothing,
                 
                                                     sinking_speeds = (P = 0.2551/day, D = 2.7489/day),
