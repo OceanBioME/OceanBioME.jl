@@ -1,15 +1,13 @@
 ![](OceanBioME_headerbar.jpg?raw=true)
-[![Documentation](https://img.shields.io/badge/documentation-stable%20release-blue?style=flat-square)](https://oceanbiome.github.io/OceanBioME.jl/stable/)
-[![Documentation](https://img.shields.io/badge/documentation-dev%20release-orange?style=flat-square)](https://oceanbiome.github.io/OceanBioME.jl/dev/)
 [![DOI](https://joss.theoj.org/papers/10.21105/joss.05669/status.svg)](https://doi.org/10.21105/joss.05669)
 [![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.10038575.svg)](https://doi.org/10.5281/zenodo.10038575)
 [![MIT license](https://img.shields.io/badge/License-MIT-blue.svg?style=flat-square)](https://mit-license.org)
 [![ColPrac: Contributor's Guide on Collaborative Practices for Community Packages](https://img.shields.io/badge/ColPrac-Contributor's%20Guide-blueviolet)](https://github.com/SciML/ColPrac)
 
-[![Testing](https://github.com/OceanBioME/OceanBioME.jl/actions/workflows/tests.yml/badge.svg)](https://github.com/OceanBioME/OceanBioME.jl/actions/workflows/tests.yml)
-[![GPU testing status](https://badge.buildkite.com/3d79ccbf2cba42de1d4e54a2f31cc6f99d377198bf63334d0d.svg)](https://buildkite.com/oceanbiome-dot-jl/gpu-tests)
+[![Documentation](https://img.shields.io/badge/documentation-stable%20release-blue?style=flat-square)](https://oceanbiome.github.io/OceanBioME.jl/stable/)
+[![Documentation](https://img.shields.io/badge/documentation-dev%20release-orange?style=flat-square)](https://oceanbiome.github.io/OceanBioME.jl/dev/)
+[![Testing build status](https://badge.buildkite.com/3d79ccbf2cba42de1d4e54a2f31cc6f99d377198bf63334d0d.svg)](https://buildkite.com/oceanbiome-dot-jl/gpu-tests)
 [![codecov](https://codecov.io/gh/OceanBioME/OceanBioME.jl/branch/main/graph/badge.svg?token=3DIW4R7N3R)](https://codecov.io/gh/OceanBioME/OceanBioME.jl)
-[![Documentation](https://github.com/OceanBioME/OceanBioME.jl/actions/workflows/documentation.yml/badge.svg)](https://github.com/OceanBioME/OceanBioME.jl/actions/workflows/documentation.yml)
 # *Ocean* *Bio*geochemical *M*odelling *E*nvironment
 
 ## Description
