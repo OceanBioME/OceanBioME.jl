@@ -70,7 +70,7 @@ particles = SLatissima(; architecture,
 
 # ## Setup BGC model
 biogeochemistry = LOBSTER(; grid,
-                            surface_phytosynthetically_active_radiation = PAR⁰,
+                            surface_photosynthetically_active_radiation = PAR⁰,
                             carbonates = true,
                             variable_redfield = true,
                             scale_negatives = true,

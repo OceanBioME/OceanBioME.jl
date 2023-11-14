@@ -204,11 +204,11 @@ end
               dissolved_organic_breakdown_rate::FT = 3.86e-7, # 1/s
               zooplankton_calcite_dissolution::FT = 0.3,
 
-              surface_phytosynthetically_active_radiation::SPAR = default_surface_PAR,
+              surface_photosynthetically_active_radiation::SPAR = default_surface_PAR,
 
               light_attenuation_model::LA =
                   TwoBandPhotosyntheticallyActiveRadiation(; grid,
-                                                             surface_PAR = surface_phytosynthetically_active_radiation),
+                                                             surface_PAR = surface_photosynthetically_active_radiation),
               sediment_model::S = nothing,
 
               carbonates::Bool = false,
@@ -227,7 +227,7 @@ Keyword Arguments
 
 - `grid`: (required) the geometry to build the model on, required to calculate sinking
 - `phytoplankton_preference`, ..., `dissolved_organic_breakdown_rate`: LOBSTER parameter values
-- `surface_phytosynthetically_active_radiation`: funciton (or array in the future) for the photosynthetically available radiation at the surface, should be shape `f(x, y, t)`
+- `surface_photosynthetically_active_radiation`: funciton (or array in the future) for the photosynthetically available radiation at the surface, should be shape `f(x, y, t)`
 - `light_attenuation_model`: light attenuation model which integrated the attenuation of available light
 - `sediment_model`: slot for `AbstractSediment`
 - `carbonates`, `oxygen`, and `variable_redfield`: include models for carbonate chemistry and/or oxygen chemistry and/or variable redfield ratio dissolved and particulate organic matter
@@ -284,11 +284,11 @@ function LOBSTER(; grid,
                    dissolved_organic_breakdown_rate::FT = 3.86e-7, # 1/s
                    zooplankton_calcite_dissolution::FT = 0.3,
 
-                   surface_phytosynthetically_active_radiation = default_surface_PAR,
+                   surface_photosynthetically_active_radiation = default_surface_PAR,
 
                    light_attenuation_model::LA =
                        TwoBandPhotosyntheticallyActiveRadiation(; grid, 
-                                                                  surface_PAR = surface_phytosynthetically_active_radiation),
+                                                                  surface_PAR = surface_photosynthetically_active_radiation),
                    sediment_model::S = nothing,
 
                    carbonates::Bool = false,
