@@ -80,7 +80,7 @@ clock = Clock(; time = 0.0)
 # Here we instantiate the LOBSTER model with carbonate chemistry and a surface flux of DIC (CO₂)
 
 biogeochemistry = LOBSTER(; grid,
-                            surface_phytosynthetically_active_radiation = surface_PAR,
+                            surface_photosynthetically_active_radiation = surface_PAR,
                             carbonates = true,
                             scale_negatives = true)
 

@@ -7,7 +7,7 @@ Pᵢ(x,y,z) = 2.5 + z
 function test_two_band(grid, bgc, model_type)
     biogeochemistry = bgc(; grid,
                             light_attenuation_model = TwoBandPhotosyntheticallyActiveRadiation(; grid),
-                            surface_phytosynthetically_active_radiation = (x, y, t) -> 100.0)
+                            surface_photosynthetically_active_radiation = (x, y, t) -> 100.0)
 
     model = model_type(; grid, 
                          biogeochemistry,
