@@ -1,11 +1,9 @@
 @kernel function update_TwoBandPhotosyntheticallyActiveRadiation!(PAR, grid, P, surface_PAR, t, PAR_model) 
     i, j = @index(Global, NTuple)
 
-    LX, LY, _ = location(P)
-
     k, k′ = domain_boundary_indices(RightBoundary(), grid.Nz)
 
-    X = z_boundary_node(i, j, k′, grid, LX(), LY())
+    X = z_boundary_node(i, j, k′, grid, Center(), Center())
     
     PAR⁰ = surface_PAR(X..., t)
 
