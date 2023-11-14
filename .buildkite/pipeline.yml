@@ -14,11 +14,17 @@ steps:
      - "$JULIA_PATH/julia-$JULIA_VERSION/bin/julia -O0 --color=yes --project -e 'using Pkg; Pkg.build()'"
      - "$JULIA_PATH/julia-$JULIA_VERSION/bin/julia -O0 --color=yes --project -e 'using Pkg; Pkg.precompile()'"
      - "$JULIA_PATH/julia-$JULIA_VERSION/bin/julia -O0 --color=yes --project -e 'using Pkg; Pkg.status()'"
+    notify:
+      - github_commit_status:
+          context: "Initialise enviroment"
 
   - label: ":speedboat: GPU unit tests"
     commands: 
      - "$JULIA_PATH/julia-$JULIA_VERSION/bin/julia -O0 --color=yes --project -e 'using Pkg; Pkg.test()'"
     depends_on: "init"
+    notify:
+      - github_commit_status:
+          context: "GPU tests"
     
   - label: ":rowboat: CPU unit tests"
     env:
@@ -26,6 +32,9 @@ steps:
     commands: 
      - "$JULIA_PATH/julia-$JULIA_VERSION/bin/julia -O0 --color=yes --project -e 'using Pkg; Pkg.test()'"
     depends_on: "init"
+    notify:
+      - github_commit_status:
+          context: "CPU tests"
     
   - label: ":docusaurus: Documentation"
     env:
@@ -36,9 +45,15 @@ steps:
       - "$JULIA_PATH/julia-$JULIA_VERSION/bin/julia --color=yes --project=docs/ -e 'using Pkg; Pkg.develop(PackageSpec(path=pwd())); Pkg.instantiate()'"
       - "$JULIA_PATH/julia-$JULIA_VERSION/bin/julia --color=yes --project=docs/ docs/make.jl"
     depends_on: "init"
+    notify:
+      - github_commit_status:
+          context: "Documentation"
 
   - wait: ~
     continue_on_failure: true
     
   - label: ":skeleton-dance: clean up environment"
     command: "rm -rf $JULIA_PATH"
+    notify:
+      - github_commit_status:
+          context: "Clean up"
