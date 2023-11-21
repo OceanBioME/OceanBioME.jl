@@ -1,0 +1,13 @@
+[deps]
+CairoMakie = "13f3f980-e62b-5c42-98c6-ff1f3baf88f0"
+JLD2 = "033835bb-8acc-5ee8-8aae-3f567f8a3819"
+OceanBioME = "a49af516-9db8-4be4-be45-1dad61c5a376"
+Oceananigans = "9e8cae18-63c1-5223-a75c-80ca9d6e9a09"
+Printf = "de0858da-6303-5e67-8744-51eddeeeb8d7"
+Statistics = "10745b16-79ce-11e8-11f9-7d13ad32a3b2"
+
+[compat]
+CairoMakie = "^0.10"
+JLD2 = "^0.4"
+OceanBioME = "0.9"
+Statistics = "^1.9"
