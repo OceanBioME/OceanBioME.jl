@@ -154,9 +154,7 @@ sediment_fields(model::SimpleMultiG) = (C_slow = model.fields.C_slow,
 
 @inline bottom_index_array(sediment::SimpleMultiG) = sediment.bottom_indices
 
-@kernel function _calculate_tendencies!(sediment::SimpleMultiG, bgc, grid, advection, tracers, tendencies, sediment_tendencies, t)
-    i, j = @index(Global, NTuple)
-
+function _calculate_sediment_tendencies!(i, j, sediment::SimpleMultiG, bgc, grid, advection, tracers, tendencies, sediment_tendencies, t)
     k = bottom_index(i, j, sediment)
     depth = @inbounds -znodes(grid, Center(), Center(), Center())[k]
 
