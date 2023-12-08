@@ -52,8 +52,6 @@ end
     i, j = @index(Global, NTuple)
 
     _calculate_sediment_tendencies!(i, j, sediment, biogeochemistry, grid, advection, tracers, tendencies, sediment_tendencies, time)
-
-    return nothing
 end
 
 
