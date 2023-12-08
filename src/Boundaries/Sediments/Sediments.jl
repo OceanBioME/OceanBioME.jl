@@ -48,8 +48,13 @@ function update_tendencies!(bgc, sediment::FlatSediment, model)
     return nothing
 end
 
-@kernel calculate_sediment_tendencies!(sediment, biogeochemistry, grid, advection, tracers, tendencies, sediment_tendencies, time) = 
-    _calculate_sediment_tendencies!(@index(Global, NTuple)..., sediment, biogeochemistry, grid, advection, tracers, tendencies, sediment_tendencies, time)
+@kernel function calculate_sediment_tendencies!(sediment, biogeochemistry, grid, advection, tracers, tendencies, sediment_tendencies, time)
+    i, j = @index(Global, NTuple)
+
+    _calculate_sediment_tendencies!(i, j, sediment, biogeochemistry, grid, advection, tracers, tendencies, sediment_tendencies, time)
+
+    return nothing
+end
 
 
 @kernel function store_flat_tendencies!(G⁻, G⁰)
