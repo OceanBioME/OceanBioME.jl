@@ -57,7 +57,6 @@ biogeochemistry = LOBSTER(; grid,
                             carbonates = true,
                             open_bottom = true)
 
-# To-do: change to a buoyancy parameterisation so we don't have to fake the temperature and salinity.
 DIC_bcs = FieldBoundaryConditions(top = GasExchange(; gas = :CO₂))
 
 # Model instantiation
