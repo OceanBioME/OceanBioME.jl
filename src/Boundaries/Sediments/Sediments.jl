@@ -17,7 +17,6 @@ using Oceananigans.Grids: zspacing
 using Oceananigans.Operators: volume
 using Oceananigans.ImmersedBoundaries: ImmersedBoundaryGrid, immersed_cell
 
-
 import Adapt: adapt_structure, adapt
 import Oceananigans.Biogeochemistry: update_tendencies!
 
@@ -38,14 +37,21 @@ function update_tendencies!(bgc, sediment::FlatSediment, model)
     biogeochemistry = bgc.underlying_biogeochemistry
 
     launch!(arch, model.grid, :xy,
-            _calculate_tendencies!,
+            calculate_sediment_tendencies!,
             sediment, biogeochemistry, model.grid, 
             sinking_advection(biogeochemistry, model.advection), 
             required_tracers(sediment, biogeochemistry, model.tracers), 
             required_tendencies(sediment, biogeochemistry, model.timestepper.Gⁿ), 
-            sediment.tendencies.Gⁿ)
+            sediment.tendencies.Gⁿ,
+            model.clock.time)
             
     return nothing
+end
+
+@kernel function calculate_sediment_tendencies!(sediment, biogeochemistry, grid, advection, tracers, tendencies, sediment_tendencies, time)
+    i, j = @index(Global, NTuple)
+
+    _calculate_sediment_tendencies!(i, j, sediment, biogeochemistry, grid, advection, tracers, tendencies, sediment_tendencies, time)
 end
 
 
