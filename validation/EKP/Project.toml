@@ -1,0 +1,7 @@
+[deps]
+Distributions = "31c24e10-a181-5473-b8eb-7969acd0382f"
+EnsembleKalmanProcesses = "aa8a2aa5-91d8-4396-bcef-d4f2ec43552d"
+JLD2 = "033835bb-8acc-5ee8-8aae-3f567f8a3819"
+NetCDF = "30363a11-5582-574a-97bb-aa9a979735b9"
+OceanBioME = "a49af516-9db8-4be4-be45-1dad61c5a376"
+Oceananigans = "9e8cae18-63c1-5223-a75c-80ca9d6e9a09"
