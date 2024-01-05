@@ -1,7 +1,7 @@
 # # Calibrating a biogeochemical model with `EnsembleKalmanProcesses`
 #
 # In this example we calibrate some of the parameters for the [NPZD](@ref NPZD) model
-# using a data assimilaiton package called [EnsembleKalmanProcesses](https://github.com/CliMA/EnsembleKalmanProcesses.jl).
+# in a simple box model setup using a data assimilaiton package called [EnsembleKalmanProcesses](https://github.com/CliMA/EnsembleKalmanProcesses.jl).
 # First we setup the model and generate synthetic data with "true" parameters. We then
 # define priors and setup an EKP to solve.
 #
