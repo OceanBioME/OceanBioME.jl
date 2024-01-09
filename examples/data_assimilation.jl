@@ -35,11 +35,11 @@ rng = Random.MersenneTwister(rng_seed)
 
 @inline PAR(t) = PAR⁰(t) * exp(- 0.2 * 10)
 
-function model(initial_photosynthetic_slope, 
-               base_maximum_growth, 
-               nutrient_half_saturation, 
-               phyto_base_mortality_rate, 
-               j)
+function run_box_simulation(initial_photosynthetic_slope, 
+                            base_maximum_growth, 
+                            nutrient_half_saturation, 
+                            phyto_base_mortality_rate, 
+                            j)
 
     biogeochemistry = NutrientPhytoplanktonZooplanktonDetritus(; grid = BoxModelGrid(),
                                                                  initial_photosynthetic_slope, 
@@ -80,11 +80,11 @@ function G(u, j)
      nutrient_half_saturation, 
      phyto_base_mortality_rate) = u
 
-    P, times = model(initial_photosynthetic_slope, 
-                     base_maximum_growth, 
-                     nutrient_half_saturation, 
-                     phyto_base_mortality_rate, 
-                     j)
+    P, times = run_box_simulaiton(initial_photosynthetic_slope, 
+                                  base_maximum_growth, 
+                                  nutrient_half_saturation, 
+                                  phyto_base_mortality_rate, 
+                                  j)
 
     peak, winter, average, peak_timing, die_off_time = extract_observables(P, times)
 
