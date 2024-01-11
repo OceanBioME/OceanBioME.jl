@@ -54,7 +54,6 @@ using OceanBioME.Boundaries.Sediments: sinking_flux
 using Oceananigans.Biogeochemistry: AbstractContinuousFormBiogeochemistry
 
 import OceanBioME: redfield, conserved_tracers
-import OceanBioME.BoxModels: update_boxmodel_state!
 
 import Oceananigans.Biogeochemistry: required_biogeochemical_tracers,
                                      required_biogeochemical_auxiliary_fields,
@@ -393,10 +392,6 @@ const DOM = Union{Val{:DOM}, Val{:DON}}
     else
         return (u = ZeroField(), v = ZeroField(), w = ZeroField())
     end
-end
-
-function update_boxmodel_state!(model::BoxModel{<:Biogeochemistry{<:LOBSTER}, <:Any, <:Any, <:Any, <:Any, <:Any})
-    getproperty(model.values, :PAR) .= model.forcing.PAR(model.clock.time)
 end
 
 adapt_structure(to, lobster::LOBSTER) =

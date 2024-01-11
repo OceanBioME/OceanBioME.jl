@@ -23,8 +23,6 @@ function setup_velocity_fields(drift_speeds, grid::AbstractGrid, open_bottom; sm
     return NamedTuple{keys(drift_speeds)}(drift_velocities)
 end
 
-setup_velocity_fields(drift_speeds, grid::BoxModelGrid, open_bottom) = drift_speeds
-
 adapt_structure(to, velocities::NamedTuple{(:u, :v, :w), Tuple{AbstractField, AbstractField, AbstractField}}) = NamedTuple{(:u, :v, :w)}(adapt.(to, values(velocities)))
 
 function show_sinking_velocities(sinking_velocities::NamedTuple{T, V}) where {T, V} 

@@ -78,7 +78,6 @@ end
       volume(i, j, k, grid, Center(), Center(), Center())
 end
 
-calculate_bottom_indices(::BoxModelGrid) = 1
 calculate_bottom_indices(grid) = ones(Int, size(grid)[1:2]...)
 
 @kernel function find_bottom_cell(grid, bottom_indices)
