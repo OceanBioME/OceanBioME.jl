@@ -50,10 +50,10 @@ example_pages = [ title => "generated/$(filename).md" for (title, filename) in e
 
 if !isdir(OUTPUT_DIR) mkdir(OUTPUT_DIR) end
 
-model_parameters = (LOBSTER(; grid = BoxModelGrid),
-                    NutrientPhytoplanktonZooplanktonDetritus(; grid = BoxModelGrid),
+model_parameters = (LOBSTER(; grid = BoxModelGrid, light_attenuation_model = nothing),
+                    NutrientPhytoplanktonZooplanktonDetritus(; grid = BoxModelGrid, light_attenuation_model = nothing),
                     SLatissima(),
-                    TwoBandPhotosyntheticallyActiveRadiation(; grid = BoxModelGrid),
+                    TwoBandPhotosyntheticallyActiveRadiation(; grid = RectilinearGrid(size=(1, 1, 1), extent=(1, 1, 1))),
                     SimpleMultiG(; grid = BoxModelGrid),
                     InstantRemineralisation(; grid = BoxModelGrid),
                     OCMIP_default,
