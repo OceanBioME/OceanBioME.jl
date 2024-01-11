@@ -35,7 +35,7 @@ simulation.output_writers[:fields] = JLD2OutputWriter(model, model.fields; filen
 
 prog(sim) = @info "$(prettytime(time(sim))) in $(prettytime(simulation.run_wall_time))"
 
-simulation.callbacks[:progress] = Callback(prog, IterationInterval(10000))
+simulation.callbacks[:progress] = Callback(prog, IterationInterval(1000000))
 
 # ## Run the model (should only take a few seconds)
 @info "Running the model..."
@@ -50,11 +50,12 @@ timeseries = NamedTuple{keys(model.fields)}(FieldTimeSeries("box.jld2", "$field"
 # ## And plot
 using CairoMakie
 
-fig = Figure(resolution = (800, 1600), fontsize = 24)
+fig = Figure(resolution = (1200, 1200), fontsize = 24)
 
 axs = []
 for (name, tracer) in pairs(timeseries)
-    push!(axs, Axis(fig[length(axs) + 1, 1], ylabel = "$name", xlabel = "Year", xticks=(0:10)))
+    idx = (length(axs))
+    push!(axs, Axis(fig[floor(Int, idx/2), Int(idx%2)], ylabel = "$name", xlabel = "Year", xticks=(0:10)))
     lines!(axs[end], times / year, tracer, linewidth = 3)
 end
 
