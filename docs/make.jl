@@ -24,7 +24,8 @@ examples = [
     "Simple column model" => "column",
     "Baroclinic instability" => "eady",
     "Data forced column model" => "data_forced",
-    "Model with particles (kelp) interacting with the biogeochemistry" => "kelp"
+    "Model with particles (kelp) interacting with the biogeochemistry" => "kelp",
+    #"Data assimilation" => "data_assimilaiton"
 ]
 
 example_scripts = [ filename * ".jl" for (title, filename) in examples ]
@@ -49,12 +50,12 @@ example_pages = [ title => "generated/$(filename).md" for (title, filename) in e
 
 if !isdir(OUTPUT_DIR) mkdir(OUTPUT_DIR) end
 
-model_parameters = (LOBSTER(; grid = BoxModelGrid()),
-                    NutrientPhytoplanktonZooplanktonDetritus(; grid = BoxModelGrid()),
+model_parameters = (LOBSTER(; grid = BoxModelGrid),
+                    NutrientPhytoplanktonZooplanktonDetritus(; grid = BoxModelGrid),
                     SLatissima(),
-                    TwoBandPhotosyntheticallyActiveRadiation(; grid = BoxModelGrid()),
-                    SimpleMultiG(; grid = BoxModelGrid()),
-                    InstantRemineralisation(; grid = BoxModelGrid()),
+                    TwoBandPhotosyntheticallyActiveRadiation(; grid = BoxModelGrid),
+                    SimpleMultiG(; grid = BoxModelGrid),
+                    InstantRemineralisation(; grid = BoxModelGrid),
                     OCMIP_default,
                     GasExchange(; gas = :CO₂).condition.func,
                     GasExchange(; gas = :O₂).condition.func)
