@@ -76,8 +76,8 @@ function rk3_substep!(model, Δt, γⁿ, ζⁿ)
 end
 
 function rk3_substep!(model, Δt, γⁿ, ::Nothing)
-    @inbounds for (i, field) in enumerate(model.fields)
-        field[1] += Δt * γⁿ * model.timestepper.Gⁿ[i][1]
+    for (i, field) in enumerate(model.fields)
+        @inbounds field[1] += Δt * γⁿ * model.timestepper.Gⁿ[i][1]
     end
 end
 

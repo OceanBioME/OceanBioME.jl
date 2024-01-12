@@ -5,8 +5,8 @@
 # First we setup the model and generate synthetic data with "true" parameters. We then
 # define priors and setup an EKP to solve.
 #
-# While this is a very simple situation it illustraites the ease of integration with 
-# data assimilation tools. Examples given in the EnsembleKalmanProcesses docs illustraite
+# While this is a very simple situation it illustrates the ease of integration with 
+# data assimilation tools. Examples given in the EnsembleKalmanProcesses docs illustrate
 # how the package can be used to solve more complex forward models.
 
 # ## Install dependencies
@@ -139,7 +139,7 @@ ensemble_kalman_process = EnsembleKalmanProcess(initial_ensemble, y, Γ, Inversi
 P = zeros(1093, N_ensemble, N_iterations) # recording all of the results for plotting only (not essential)
 
 for i in 1:N_iterations
-    @info "Iteraition: $i"
+    @info "Iteration: $i"
     params_i = get_ϕ_final(prior, ensemble_kalman_process)
 
     G_ens = zeros(5, N_ensemble)
@@ -167,7 +167,7 @@ ax = Axis(fig[1, 1], xlabel = "Day of year", ylabel = "Phytoplankton concentrati
 
 lines!(ax, [1:8hours:365days-16hours;]./day, P₀, color = :black)
 
-record(fig, "data_assimilaiton.mp4", 1:size(P, 3); framerate = 2) do i; n[] = i; end
+record(fig, "data_assimilation.mp4", 1:size(P, 3); framerate = 2) do i; n[] = i; end
 nothing
 
-# ![](data_assimilaiton.mp4)
+# ![](data_assimilation.mp4)
