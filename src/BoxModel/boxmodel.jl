@@ -43,8 +43,9 @@ end
 """
     BoxModel(; biogeochemistry::B,
                forcing = NamedTuple(),
-               timestepper::TS = RungeKutta3TimeStepper((required_biogeochemical_tracers(biogeochemistry)..., required_biogeochemical_auxiliary_fields(biogeochemistry)...)),
-               clock::C = Clock(0.0, 0, 1))
+               timestepper = :RungeKutta3,
+               clock::C = Clock(0.0, 0, 1),
+               prescribed_fields::PF = (:T, :PAR))
 
 Constructs a box model of a `biogeochemistry` model. Once this has been constructed you can set initial condiitons by `set!(model, X=1.0...)` and then `run!(model)`.
 
@@ -53,8 +54,9 @@ Keyword Arguments
 
 - `biogeochemistry`: (required) an OceanBioME biogeochemical model, most models must be passed a `grid` which can be set to `BoxModelGrid` for box models
 - `forcing`: NamedTuple of additional forcing functions for the biogeochemical tracers to be integrated
-- `timestepper`: Timestepper to integrate model, only available is currently `RungeKutta3TimeStepper`
+- `timestepper`: Timestepper to integrate model
 - `clock`: Oceananigans clock to keep track of time
+- `prescribed_fields`: Tuple of fields names (Symbols) which are not integrated but provided in `forcing` as a function of time with signature `f(t)`
 """
 function BoxModel(; biogeochemistry::B,
                     forcing = NamedTuple(),

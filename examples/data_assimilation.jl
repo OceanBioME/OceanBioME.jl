@@ -16,7 +16,7 @@
 # pkg "add OceanBioME, Oceananigans, CairoMakie, EnsembleKalmanProcesses, Distributions"
 # ```
 
-using OceanBioME, EnsembleKalmanProcesses, JLD2, CairoMakie, Oceananigans.Units
+using OceanBioME, EnsembleKalmanProcesses, JLD2, CairoMakie, Oceananigans.Units, Oceananigans
 using LinearAlgebra, Random
 
 using Distributions
@@ -41,35 +41,30 @@ function run_box_simulation(initial_photosynthetic_slope,
                             phyto_base_mortality_rate, 
                             j)
 
-    biogeochemistry = NutrientPhytoplanktonZooplanktonDetritus(; grid = BoxModelGrid(),
+    biogeochemistry = NutrientPhytoplanktonZooplanktonDetritus(; grid = BoxModelGrid,
                                                                  initial_photosynthetic_slope, 
                                                                  base_maximum_growth, 
                                                                  nutrient_half_saturation, 
-                                                                 phyto_base_mortality_rate)
+                                                                 phyto_base_mortality_rate,
+                                                                 light_attenuation_model = nothing)
 
     model = BoxModel(; biogeochemistry, forcing = (; PAR))
 
-    model.Δt = 20minutes
-    model.stop_time = 5years
-
     set!(model, N = 10.0, P = 0.1, Z = 0.01)
 
-    run!(model, save_interval = 24, feedback_interval = Inf, save = SaveBoxModel("box_calibration_$j.jld2"))
+    simulation = Simulation(model; Δt = 20minutes, stop_time = 3years, verbose = false)
 
-    file = jldopen("box_calibration_$j.jld2")
-    times = parse.(Float64, keys(file["values"]))
+    simulation.output_writers[:fields] = JLD2OutputWriter(model, model.fields; filename = "box_calibration_$j.jld2", schedule = TimeInterval(8hours), overwrite_existing = true)
 
-    times = times[length(times)-1092:end]
+    # ## Run the model (should only take a few seconds)
+    @info "Running the model..."
+    run!(simulation)
 
-    P = zeros(1093)
+    P = FieldTimeSeries("box_calibration_$j.jld2", "P")
 
-    for (idx, t_idx) in enumerate(length(times)-1092:length(times))
-        P[idx] = file["values/$(times[t_idx])"].P
-    end
+    times = P.times
 
-    close(file)
-
-    return P, times
+    return P[1, 1, 1, length(times)-1092:end], times[length(times)-1092:end]
 end
 
 # Define the forward map
@@ -80,7 +75,7 @@ function G(u, j)
      nutrient_half_saturation, 
      phyto_base_mortality_rate) = u
 
-    P, times = run_box_simulaiton(initial_photosynthetic_slope, 
+    P, times = run_box_simulation(initial_photosynthetic_slope, 
                                   base_maximum_growth, 
                                   nutrient_half_saturation, 
                                   phyto_base_mortality_rate, 
@@ -129,8 +124,8 @@ prior_u4 = constrained_gaussian("phyto_base_mortality_rate", 0.0101 / day, 0.01 
 
 prior = combine_distributions([prior_u1, prior_u2, prior_u3, prior_u4])
 
-N_ensemble = 16
-N_iterations = 10
+N_ensemble = 8
+N_iterations = 5
 
 initial_ensemble = construct_initial_ensemble(rng, prior, N_ensemble)
 
@@ -154,6 +149,10 @@ end
 final_ensemble = get_ϕ_final(prior, ensemble_kalman_process)
 
 # Plot the results
+
+fig = Figure()
+
+n = Observable(1)
 
 title = @lift string("Generation: ", $n)
 
