@@ -6,6 +6,8 @@ using OceanBioME.LOBSTERModel: LOBSTER
 using OceanBioME.Boundaries.Sediments: SimpleMultiG, InstantRemineralisation
 using OceanBioME.Boundaries: OCMIP_default, GasExchange
 
+using Oceananigans.Grids: RectilinearGrid
+
 using CairoMakie
 CairoMakie.activate!(type = "svg")
 
