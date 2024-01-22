@@ -12,7 +12,7 @@ Roots = "f2b01f46-fcfa-551c-844a-d8ac1e96c665"
 StructArrays = "09ab397b-f2b6-538f-b94a-2f83cf4a842a"
 
 [compat]
-Adapt = "3"
+Adapt = "3, 4"
 Documenter = "1"
 JLD2 = "0.4"
 KernelAbstractions = "0.9"
