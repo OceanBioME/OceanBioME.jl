@@ -18,7 +18,7 @@ For this example we are going to implement the simple Nutrient-Phytoplankton mod
 The first step is to import the abstract type from OceanBioME, some units from Oceananigans (for ease of parameter definition), and [`import`](https://docs.julialang.org/en/v1/manual/faq/#What-is-the-difference-between-%22using%22-and-%22import%22?) some functions from Oceananigans in order to add methods to:
 
 ```@example implementing
-using OceanBioME: Biogeochemistry
+using OceanBioME, Oceananigans
 using Oceananigans.Biogeochemistry: AbstractContinuousFormBiogeochemistry
 using Oceananigans.Units
 
@@ -142,35 +142,25 @@ z = -10 # specify the nominal depth of the box for the PAR profile
 biogeochemistry = NutrientPhytoplankton() 
 
 model = BoxModel(; biogeochemistry, forcing = (; PAR, T = temp))
-model.Δt = 5minutes
-model.stop_time = 5years
 
 set!(model, N = 15, P = 15)
 
+simulation = Simulation(model; Δt = 5minutes, stop_time = 5years)
+
+simulation.output_writers[:fields] = JLD2OutputWriter(model, model.fields; filename = "box_np.jld2", schedule = TimeInterval(10days), overwrite_existing = true)
+
 # ## Run the model (should only take a few seconds)
 @info "Running the model..."
-run!(model, save_interval = 100, feedback_interval = Inf, save = SaveBoxModel("box_np.jld2"))
+run!(simulation)
 ```
 
 We can then visualise this:
 
 ```@example implementing
-using JLD2
+P = FieldTimeSeries("box_np.jld2", "P")
+N = FieldTimeSeries("box_np.jld2", "N")
 
-vars = (:N, :P, :T, :PAR)
-file = jldopen("box_np.jld2")
-times = parse.(Float64, keys(file["values"]))
-
-timeseries = NamedTuple{vars}(ntuple(t -> zeros(length(times)), length(vars)))
-
-for (idx, time) in enumerate(times)
-    values = file["values/$time"]
-    for tracer in vars
-        getproperty(timeseries, tracer)[idx] = values[tracer]
-    end
-end
-
-close(file)
+times = P.times
 
 # ## And plot
 using CairoMakie
@@ -178,16 +168,16 @@ using CairoMakie
 fig = Figure(resolution = (1200, 480), fontsize = 20)
 
 axN= Axis(fig[1, 1], ylabel = "Nutrient \n(mmol N / m³)")
-lines!(axN, times / year, timeseries.N, linewidth = 3)
+lines!(axN, times / year, N[1, 1, 1, :], linewidth = 3)
 
 axP = Axis(fig[1, 2], ylabel = "Phytoplankton \n(mmol N / m³)")
-lines!(axP, times / year, timeseries.P, linewidth = 3)
+lines!(axP, times / year, P[1, 1, 1, :], linewidth = 3)
 
 axPAR= Axis(fig[2, 1], ylabel = "PAR (einstein / m² / s)", xlabel = "Time (years)")
-lines!(axPAR, times / year, timeseries.PAR, linewidth = 3)
+lines!(axPAR, times / year, PAR.(times), linewidth = 3)
 
 axT = Axis(fig[2, 2], ylabel = "Temperature (°C)", xlabel = "Time (years)")
-lines!(axT, times / year, timeseries.T, linewidth = 3)
+lines!(axT, times / year, temp.(times), linewidth = 3)
 
 fig
 ```
