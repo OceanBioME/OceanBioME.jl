@@ -349,18 +349,6 @@ function update_lagrangian_particle_properties!(particles::SLatissima, model, bg
     particles.custom_dynamics(particles, model, bgc, Δt)
 end
 
-function C_uptake_modifier(dic)  ###change
-    if dic >= 2200
-        return 1.0
-    elseif dic >= 1650 && dic <2200
-        return 0.5 * dic /550 -1
-    elseif dic >=1282 && dic <1650
-        return 1/736*(dic -1282)
-    else
-        return 0
-    end
-end
-
 @kernel function _update_lagrangian_particle_properties!(p, light_attenuation, bgc, grid, velocities, tracers, clock, Δt)
     idx = @index(Global)
 
@@ -377,9 +365,9 @@ end
     t = clock.time
 
     @inbounds if p.A[idx] > 0
-        NO₃, NH₄, PAR, u, T, S, DIC = get_arguments(x, y, z, t, p, bgc, grid, velocities, tracers, biogeochemical_auxiliary_fields(light_attenuation).PAR) ###change
+        NO₃, NH₄, PAR, u, T, S = get_arguments(x, y, z, t, p, bgc, grid, velocities, tracers, biogeochemical_auxiliary_fields(light_attenuation).PAR)
 
-        photo = photosynthesis(T, PAR, p) * C_uptake_modifier(DIC) ###change
+        photo = photosynthesis(T, PAR, p)
         e = exudation(C, p)
         ν = erosion(A, p)
 
@@ -537,11 +525,7 @@ end
     else
         NH₄ = 0.0
     end
-    if :DIC in bgc_tracers  ###change
-        DIC = _interpolate(tracers.DIC, ξ, η, ζ, Int(i+1), Int(j+1), Int(k+1))
-    else
-        DIC = 2200.0
-    end
+
     if isnothing(particles.prescribed_velocity)
         u =  sqrt(_interpolate(velocities.u, ξ, η, ζ, Int(i+1), Int(j+1), Int(k+1)) .^ 2 + 
                   _interpolate(velocities.v, ξ, η, ζ, Int(i+1), Int(j+1), Int(k+1)) .^ 2 + 
@@ -556,7 +540,7 @@ end
 
     S = _interpolate(tracers.S, ξ, η, ζ, Int(i+1), Int(j+1), Int(k+1))
 
-    return NO₃, NH₄, PAR, u, T, S, DIC ###change NO₃, NH₄, PAR, u, T, S
+    return NO₃, NH₄, PAR, u, T, S
 end
 
 end #module
