@@ -64,7 +64,7 @@ mld_itp = LinearInterpolation((t_mldplus_node)days, mldplus_idealize)  #in secon
 ##grid = RectilinearGrid(size=(1, 1, 50), extent=(Lx, Ly, 200)) 
 ##PAR = Oceananigans.Fields.Field{Center, Center, Center}(grid)  
 architecture = CPU()
-duration= 4years
+duration= 2years
 Lx, Ly, Lz = 20, 20, 600
 Nx, Ny, Nz = 1, 1, 100
 grid = RectilinearGrid(architecture, size=(Nx, Ny, Nz), extent=(Lx, Ly, Lz))   ####change
@@ -96,6 +96,7 @@ kelp_particles = SLatissima(; architecture,
                                   C = arch_array(architecture, ones(n) * 0.1),
                                   latitude = 57.5,
                                   scalefactor = 450.0,
+                                  prescribed_velocity = 0.2, 
                                   # pescribed_temperature = t_function,  ####change
                                   # pescribed_salinity = s_function      ####change
                                   )
@@ -158,7 +159,7 @@ progress_message(sim) = @printf("Iteration: %04d, time: %s, Δt: %s, wall time: 
                                                         prettytime(sim.run_wall_time))                
 simulation.callbacks[:progress] = Callback(progress_message, IterationInterval(100))
 
-filename = "kelp450_11_new3"
+filename = "kelp450_11_new4"
 simulation.output_writers[:profiles] = JLD2OutputWriter(model, model.tracers, filename = "$filename.jld2", schedule = TimeInterval(1day), overwrite_existing=true) #merge(model.tracers, model.auxiliary_fields),
 simulation.output_writers[:particles] = JLD2OutputWriter(model, (; kelp_particles), filename = "$(filename)_particles.jld2", schedule = TimeInterval(1day), overwrite_existing = true)
 
