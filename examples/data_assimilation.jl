@@ -33,7 +33,8 @@ rng = Random.MersenneTwister(rng_seed)
 
 @inline PAR⁰(t) = 60 * (1 - cos((t + 15days) * 2π / year)) * (1 / (1 + 0.2 * exp(-((mod(t, year) - 200days) / 50days)^2))) + 2
 
-@inline PAR(t) = PAR⁰(t) * exp(- 0.2 * 10)
+z = -10 # nominal depth of the box for the PAR profile
+@inline PAR(t) = PAR⁰(t) * exp(0.2z) # Modify the PAR based on the nominal depth and exponential decay 
 
 function run_box_simulation(initial_photosynthetic_slope, 
                             base_maximum_growth, 
