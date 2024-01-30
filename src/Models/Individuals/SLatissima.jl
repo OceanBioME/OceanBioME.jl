@@ -261,7 +261,7 @@ adapt_structure(to, kelp::SLatissima) = SLatissima(adapt(to, kelp.architecture),
 function update_tendencies!(bgc, particles::SLatissima, model)
     num_particles = length(particles)
     workgroup = min(num_particles, 256)
-    worksize = num_particles
+    @show worksize = num_particles
 
     update_tracer_tendencies_kernel! = update_tracer_tendencies!(device(model.architecture), workgroup, worksize)
     update_tracer_tendencies_kernel!(bgc, particles, model.timestepper.Gⁿ, model.grid)
@@ -278,7 +278,7 @@ end
 
     bgc_tracers = required_biogeochemical_tracers(bgc)
 
-    i, j, k = fractional_indices(x, y, z, (Center(), Center(), Center()), grid)
+    i, j, k = fractional_indices((x, y, z), grid, Center(), Center(), Center())
 
     # Convert fractional indices to unit cell coordinates 0 ≤ (ξ, η, ζ) ≤ 1
     # and integer indices (with 0-based indexing).
