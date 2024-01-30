@@ -511,7 +511,7 @@ end
 
 
     ii, jj, kk = fractional_indices((x, y, z), grid, ifelse(isa(TX(), Flat), nothing, Center()),
-                                                     ifelse(isa(TY(), Flat)``, nothing, Center()),
+                                                     ifelse(isa(TY(), Flat), nothing, Center()),
                                                      ifelse(isa(TZ(), Flat), nothing, Center()))
 
     ix = interpolator(ii)
