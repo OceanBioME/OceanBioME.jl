@@ -217,7 +217,7 @@ import OceanBioME.Boundaries.Sediments: nitrogen_flux, carbon_flux, remineralisa
 ### Putting it together
 
 Now that we have added these elements we can put it together into another simple example:
-```@example implementing; filter = r"┌ Warning:.*\s+└ @ JLD2 ~/\.julia/packages/JLD2/.*/reconstructing_datatypes\.jl.*\n" => ""
+```@example implementing
 using Oceananigans, OceanBioME
 using OceanBioME.Sediments: InstantRemineralisation
 
@@ -252,11 +252,15 @@ biogeochemistry = Biogeochemistry(NutrientPhytoplankton(; sinking_velocity);
                                   sediment,
                                   modifiers = negative_tracer_scaling) 
 
+κ = CenterField(grid)
+
+set!(κ, κₜ)
+
 # put the model together
 
 model = NonhydrostaticModel(; grid,
                               biogeochemistry,
-                              closure = ScalarDiffusivity(ν = κₜ, κ = κₜ), 
+                              closure = ScalarDiffusivity(ν = κ; κ), 
                               forcing = (; T = ∂ₜT))
 
 set!(model, P = 0.01, N = 15, T = 28)
