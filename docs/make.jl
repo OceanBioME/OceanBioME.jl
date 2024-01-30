@@ -27,7 +27,7 @@ examples = [
     "Baroclinic instability" => "eady",
     "Data forced column model" => "data_forced",
     "Model with particles (kelp) interacting with the biogeochemistry" => "kelp",
-    # "Data assimilation" => "data_assimilation"
+    #"Data assimilation" => "data_assimilaiton"
 ]
 
 example_scripts = [ filename * ".jl" for (title, filename) in examples ]
@@ -84,7 +84,7 @@ bgc_pages = [
     "NPZD" => "model_components/biogeochemical/NPZ.md"
 ]
 
-sediments_pages = [
+sed_pages = [
     "Overview" => "model_components/sediments/index.md",
     "Simple Multi-G" => "model_components/sediments/simple_multi_g.md",
     "Instant remineralisation" => "model_components/sediments/instant_remineralisation.md"
@@ -98,7 +98,7 @@ individuals_pages = [
 component_pages = [
     "Biogeochemical models" => bgc_pages,
     "Air-sea gas exchange" => "model_components/air-sea-gas.md",
-    "Sediment models" => sediments_pages,
+    "Sediment models" => sed_pages,
     "Light attenuation models" => "model_components/light.md",
     "Individuals" => individuals_pages,
     "Utilities" => "model_components/utils.md"
@@ -136,7 +136,8 @@ format = Documenter.HTML(
     prettyurls = get(ENV, "CI", nothing) == "true",
     canonical = "https://OceanBioME.github.io/OceanBioME/stable/",
     mathengine = MathJax3(),
-    assets = String["assets/citations.css"]
+    assets = String["assets/citations.css"],
+    size_threshold = 800 * 10 ^ 10
 )
 
 makedocs(sitename = "OceanBioME.jl",
