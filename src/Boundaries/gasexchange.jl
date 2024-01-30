@@ -242,7 +242,7 @@ end
 @inline function get_value(x, y, t, conc::Field{LX, LY, LZ}) where {LX, LY, LZ}
     grid = conc.grid
 
-    i, j, _ = fractional_indices(x, y, 0.0, (LX(), LY(), Center()), grid)
+    i, j, _ = fractional_indices((x, y, 0.0), grid, LX(), LY(), Center())
 
     ξ, i = mod(i, 1), Base.unsafe_trunc(Int, i)
     η, j = mod(j, 1), Base.unsafe_trunc(Int, j)

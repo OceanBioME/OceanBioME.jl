@@ -509,7 +509,7 @@ end
 @inline function get_arguments(x, y, z, t, particles, bgc, grid, velocities, tracers, PAR_field)
     bgc_tracers = required_biogeochemical_tracers(bgc)
 
-    i, j, k = fractional_indices(x, y, z, (Center(), Center(), Center()), grid)
+    i, j, k = fractional_indices((x, y, z), grid, Center(), Center(), Center())
 
     ξ, i = modf(i)
     η, j = modf(j)
