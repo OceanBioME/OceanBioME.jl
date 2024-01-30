@@ -27,7 +27,7 @@ nothing #hide
 # ## Surface PAR and turbulent vertical diffusivity based on idealised mixed layer depth 
 # Setting up idealised functions for PAR and diffusivity (details here can be ignored but these are typical of the North Atlantic).
 
-@inline PAR⁰(x, y, t) = 60 * (1 - cos((t + 15days) * 2π / year)) * (1 / (1 + 0.2 * exp(-((mod(t, year) - 200days) / 50days) ^ 2))) + 2
+@inline PAR⁰(x, y, t) = 60 * (1 - cos((t + 15days) * 2π / year)) * (1 / (1 + 0.2 * exp(-((mod(t, year) - 200days) / 50days)^2))) + 2
 
 @inline H(t, t₀, t₁) = ifelse(t₀ < t < t₁, 1.0, 0.0)
 
@@ -45,7 +45,7 @@ architecture = CPU()
 # ## Grid and PAR field
 # Define the grid and an extra Oceananigans' field that the PAR will be stored in
 Lx, Ly = 20meters, 20meters
-grid = RectilinearGrid(architecture, size=(1, 1, 50), extent=(Lx, Ly, 200)) 
+grid = RectilinearGrid(architecture, size=(1, 1, 50), extent=(Lx, Ly, 200))
 
 # Specify the boundary conditions for DIC and O₂ based on the air-sea CO₂ and O₂ flux
 CO₂_flux = GasExchange(; gas = :CO₂)
@@ -61,9 +61,9 @@ n = 5 # number of kelp fronds
 z₀ = [-21:5:-1;] * 1.0 # depth of kelp fronds
 
 particles = SLatissima(; architecture, 
-                         x = arch_array(architecture, ones(n) * Lx / 2), 
-                         y = arch_array(architecture, ones(n) * Ly / 2), 
-                         z = arch_array(architecture, z₀), 
+                         x = arch_array(architecture, ones(n) * Lx / 2),
+                         y = arch_array(architecture, ones(n) * Ly / 2),
+                         z = arch_array(architecture, z₀),
                          A = arch_array(architecture, ones(n) * 10.0),
                          latitude = 57.5,
                          scalefactor = 500.0)
@@ -78,7 +78,7 @@ biogeochemistry = LOBSTER(; grid,
 
 model = NonhydrostaticModel(; grid,
                               clock,
-                              closure = ScalarDiffusivity(ν = κₜ, κ = κₜ), 
+                              closure = ScalarDiffusivity(ν = κₜ, κ = κₜ),
                               biogeochemistry,
                               auxiliary_fields = (; T, S))
 
@@ -93,10 +93,10 @@ set!(model, P = 0.03, Z = 0.03, NO₃ = 4.0, NH₄ = 0.05, DIC = 2239.8, Alk = 2
 simulation = Simulation(model, Δt = 3minutes, stop_time = 100days) 
 
 progress_message(sim) = @printf("Iteration: %04d, time: %s, Δt: %s, wall time: %s\n",
-                                                        iteration(sim),
-                                                        prettytime(sim),
-                                                        prettytime(sim.Δt),
-                                                        prettytime(sim.run_wall_time))      
+                                iteration(sim),
+                                prettytime(sim),
+                                prettytime(sim.Δt),
+                                prettytime(sim.run_wall_time))      
                                                                   
 simulation.callbacks[:progress] = Callback(progress_message, TimeInterval(10days))
 
