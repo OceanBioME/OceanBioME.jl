@@ -261,7 +261,7 @@ adapt_structure(to, kelp::SLatissima) = SLatissima(adapt(to, kelp.architecture),
 function update_tendencies!(bgc, particles::SLatissima, model)
     num_particles = length(particles)
     workgroup = min(num_particles, 256)
-    @show worksize = num_particles
+    worksize = num_particles
 
     update_tracer_tendencies_kernel! = update_tracer_tendencies!(device(model.architecture), workgroup, worksize)
     update_tracer_tendencies_kernel!(bgc, particles, model.timestepper.Gⁿ, model.grid)
