@@ -227,7 +227,7 @@ using OceanBioME.Sediments: InstantRemineralisation
 
 @inline ∂ₜT(z, t) = - 2π / year * sin(t * 2π / year + 50days)
 
-@inline κₜ(z, t) = 1e-2 * (1 + tanh((z - 50) / 10)) / 2 + 1e-4
+@inline κₚ(z) = 1e-2 * (1 + tanh((z - 50) / 10)) / 2 + 1e-4
 
 # define the grid
 
