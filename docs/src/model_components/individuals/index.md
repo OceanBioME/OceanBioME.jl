@@ -54,7 +54,7 @@ using OceanBioME.Particles: get_node
 
 function update_tendencies!(bgc, particles::GrowingParticles, model)
     @inbounds for p in 1:length(particles)
-        i, j, k = fractional_indices(x, y, z, (Center(), Center(), Center()), grid)
+        i, j, k = fractional_indices((x, y, z), grid, Center(), Center(), Center())
 
         # Convert fractional indices to unit cell coordinates 0 ≤ (ξ, η, ζ) ≤ 1
         # and integer indices (with 0-based indexing).
