@@ -1,7 +1,7 @@
 # # Calibrating a biogeochemical model with `EnsembleKalmanProcesses`
 #
 # In this example we calibrate some of the parameters for the [NPZD](@ref NPZD) model
-# in a simple box model setup using a data assimilaiton package called [EnsembleKalmanProcesses](https://github.com/CliMA/EnsembleKalmanProcesses.jl).
+# in a simple box model setup using a data assimilation package [EnsembleKalmanProcesses](https://github.com/CliMA/EnsembleKalmanProcesses.jl).
 # First we setup the model and generate synthetic data with "true" parameters. We then
 # define priors and setup an EKP to solve.
 #
@@ -36,16 +36,16 @@ rng = Random.MersenneTwister(rng_seed)
 z = -10 # nominal depth of the box for the PAR profile
 @inline PAR(t) = PAR⁰(t) * exp(0.2z) # Modify the PAR based on the nominal depth and exponential decay 
 
-function run_box_simulation(initial_photosynthetic_slope, 
-                            base_maximum_growth, 
-                            nutrient_half_saturation, 
-                            phyto_base_mortality_rate, 
+function run_box_simulation(initial_photosynthetic_slope,
+                            base_maximum_growth,
+                            nutrient_half_saturation,
+                            phyto_base_mortality_rate,
                             j)
 
     biogeochemistry = NutrientPhytoplanktonZooplanktonDetritus(; grid = BoxModelGrid,
-                                                                 initial_photosynthetic_slope, 
-                                                                 base_maximum_growth, 
-                                                                 nutrient_half_saturation, 
+                                                                 initial_photosynthetic_slope,
+                                                                 base_maximum_growth,
+                                                                 nutrient_half_saturation,
                                                                  phyto_base_mortality_rate,
                                                                  light_attenuation_model = nothing)
 
@@ -71,15 +71,15 @@ end
 # Define the forward map
 
 function G(u, j)
-    (initial_photosynthetic_slope, 
-     base_maximum_growth, 
-     nutrient_half_saturation, 
+    (initial_photosynthetic_slope,
+     base_maximum_growth,
+     nutrient_half_saturation,
      phyto_base_mortality_rate) = u
 
-    P, times = run_box_simulation(initial_photosynthetic_slope, 
-                                  base_maximum_growth, 
-                                  nutrient_half_saturation, 
-                                  phyto_base_mortality_rate, 
+    P, times = run_box_simulation(initial_photosynthetic_slope,
+                                  base_maximum_growth,
+                                  nutrient_half_saturation,
+                                  phyto_base_mortality_rate,
                                   j)
 
     peak, winter, average, peak_timing, die_off_time = extract_observables(P, times)
@@ -98,7 +98,7 @@ function extract_observables(P, times)
         growth_rate = diff(P)[546:end]
 
         die_off_time = times[545 + findmin(growth_rate)[2]]
-        
+
         return peak, winter, average, peak_timing./day, die_off_time./day
     else
         return NaN, NaN, NaN, NaN, NaN
@@ -114,7 +114,7 @@ noise_dist = MvNormal(zeros(5), Γ)
 truth = (0.15/day, 0.7/day, 2.4, 0.01/day)
 obs, P₀ = G(truth, 1)
 
-y = obs  .+ rand(noise_dist)
+y = obs .+ rand(noise_dist)
 
 # Solve the inverse problem and record all of the results for plotting purposes
 
@@ -168,6 +168,6 @@ ax = Axis(fig[1, 1], xlabel = "Day of year", ylabel = "Phytoplankton concentrati
 lines!(ax, [1:8hours:365days-16hours;]./day, P₀, color = :black)
 
 record(fig, "data_assimilation.mp4", 1:size(P, 3); framerate = 2) do i; n[] = i; end
-nothing
+nothing #hide
 
 # ![](data_assimilation.mp4)
