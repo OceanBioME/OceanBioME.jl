@@ -254,7 +254,7 @@ biogeochemistry = Biogeochemistry(NutrientPhytoplankton(; sinking_velocity);
 
 κ = CenterField(grid)
 
-set!(κ, κₜ)
+set!(κ, κₚ)
 
 # put the model together
 
