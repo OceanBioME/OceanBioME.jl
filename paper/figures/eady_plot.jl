@@ -85,11 +85,12 @@ A_plt = @lift A[:, $n]
 
 fig = Figure(size = (1600, 1000))
 
-ax = Axis3(fig[1:4, 1:4], aspect = (1, 1, 0.28), xticks = [0, 1000], yticks = [0, 1000], zticks = [-140, 0],
-                                             xlabel = "x (m)", ylabel = "y (m)", zlabel = "z (m)",
-                                             xgridvisible = false, ygridvisible = false, zgridvisible = false,
-                                             xspinesvisible = false, yspinesvisible = false, zspinesvisible = false,
-                                             protrusions = (50, 30, 30, 30))
+ax = Axis3(fig[1:4, 1:4], aspect = (1, 1, 0.28),
+           xticks = [0, 1000], yticks = [0, 1000], zticks = [-140, 0],
+           xlabel = "x (m)", ylabel = "y (m)", zlabel = "z (m)",
+           xgridvisible = false, ygridvisible = false, zgridvisible = false,
+           xspinesvisible = false, yspinesvisible = false, zspinesvisible = false,
+           protrusions = (50, 30, 30, 30))
 
 vm1 = contour!(ax, xc[1:Int(Nx / 4)], yc, zc, N_plt, levels = 50, colormap = Reverse(:bamako))
 vm2 = contour!(ax, xc[Int(Nx / 4 + 1):Int(2 * Nx / 4)], yc, zc, P_plt, levels = 50, colormap = Reverse(:batlow))
@@ -127,11 +128,12 @@ lims[1] = (min(minimum(N_plt[:, :, end]), minimum(N_plt[1, :, :]), minimum(N_plt
 
 fig = Figure(size = (1600, 1000))
 
-ax = Axis3(fig[1:4, 1:4], aspect = (1, 1, 0.28), xticks = [0, 1000], yticks = [0, 1000], zticks = [-140, 0],
-                                             xlabel = "x (m)", ylabel = "y (m)", zlabel = "z (m)",
-                                             xgridvisible = false, ygridvisible = false, zgridvisible = false,
-                                             xspinesvisible = false, yspinesvisible = false, zspinesvisible = false,
-                                             protrusions = (50, 5, 5, 5))
+ax = Axis3(fig[1:4, 1:4], aspect = (1, 1, 0.28),
+           xticks = [0, 1000], yticks = [0, 1000], zticks = [-140, 0],
+           xlabel = "x (m)", ylabel = "y (m)", zlabel = "z (m)",
+           xgridvisible = false, ygridvisible = false, zgridvisible = false,
+           xspinesvisible = false, yspinesvisible = false, zspinesvisible = false,
+           protrusions = (50, 5, 5, 5))
 
 
 N_plt   =   N[n]
