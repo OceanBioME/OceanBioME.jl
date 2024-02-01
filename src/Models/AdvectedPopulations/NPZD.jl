@@ -28,7 +28,6 @@ using OceanBioME.BoxModels: BoxModel
 using OceanBioME.Boundaries.Sediments: sinking_flux
 
 import OceanBioME: redfield, conserved_tracers
-import OceanBioME.BoxModels: update_boxmodel_state!
 import Base: show, summary
 
 import Oceananigans.Biogeochemistry: required_biogeochemical_tracers,
@@ -113,7 +112,7 @@ end
                                                light_attenuation_model::LA =
                                                    TwoBandPhotosyntheticallyActiveRadiation(; grid,
                                                                                               surface_PAR = surface_photosynthetically_active_radiation),
-                                              sediment_model::S = nothing,
+                                               sediment_model::S = nothing,
 
                                                sinking_speeds = (P = 0.2551/day, D = 2.7489/day),
                                                open_bottom::Bool = true,
@@ -287,11 +286,6 @@ end
     else
         return (u = ZeroField(), v = ZeroField(), w = ZeroField())
     end
-end
-
-function update_boxmodel_state!(model::BoxModel{<:Biogeochemistry{<:NPZD}, <:Any, <:Any, <:Any, <:Any, <:Any})
-    getproperty(model.values, :PAR) .= model.forcing.PAR(model.clock.time)
-    getproperty(model.values, :T) .= model.forcing.T(model.clock.time)
 end
 
 summary(::NPZD{FT, NamedTuple{K, V}}) where {FT, K, V} = string("NutrientPhytoplanktonZooplanktonDetritus{$FT} model, with $K sinking")

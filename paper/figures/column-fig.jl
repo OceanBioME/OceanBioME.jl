@@ -69,7 +69,7 @@ end
 
 zs = [-198:4:-2;]
 
-fig = Figure(resolution = (1200, 1000))
+fig = Figure(size = (1200, 1000))
 
 axP = Axis(fig[1:3, 1:2], xlabel = "Time (years)", ylabel = "Depth (m)", title = "(a) Phytoplankton concentration (mmol N / m³)", limits = (0, 3, -160, 0))
 

@@ -27,8 +27,8 @@ using Oceananigans.Biogeochemistry: required_biogeochemical_tracers, biogeochemi
 
 using KernelAbstractions.Extras.LoopInfo: @unroll 
 using Oceananigans.Operators: volume
-using Oceananigans.Grids: AbstractGrid
-using Oceananigans.Fields: fractional_indices, _interpolate, datatuple
+using Oceananigans.Grids: AbstractGrid, Flat
+using Oceananigans.Fields: fractional_indices, _interpolate, interpolator
 using Oceananigans.Models: total_velocities
 
 import Adapt: adapt_structure, adapt
@@ -278,17 +278,17 @@ end
 
     bgc_tracers = required_biogeochemical_tracers(bgc)
 
-    i, j, k = fractional_indices(x, y, z, (Center(), Center(), Center()), grid)
+    ii, jj, kk = fractional_indices((x, y, z), grid, ifelse(isa(TX(), Flat), nothing, Center()),
+                                                     ifelse(isa(TY(), Flat), nothing, Center()),
+                                                     ifelse(isa(TZ(), Flat), nothing, Center()))
 
-    # Convert fractional indices to unit cell coordinates 0 ≤ (ξ, η, ζ) ≤ 1
-    # and integer indices (with 0-based indexing).
-    ξ, i = modf(i)
-    η, j = modf(j)
-    ζ, k = modf(k)
+    ix = interpolator(ii)
+    iy = interpolator(jj)
+    iz = interpolator(kk)
 
-    i, j, k = (get_node(TX(), Int(ifelse(ξ < 0.5, i + 1, i + 2)), grid.Nx),
-               get_node(TY(), Int(ifelse(η < 0.5, j + 1, j + 2)), grid.Ny),
-               get_node(TZ(), Int(ifelse(ζ < 0.5, k + 1, k + 2)), grid.Nz))
+    i, j, k = (get_node(TX(), Int(ifelse(ix[3] < 0.5, ix[1], ix[2])), grid.Nx),
+               get_node(TY(), Int(ifelse(iy[3] < 0.5, iy[1], iy[2])), grid.Ny),
+               get_node(TZ(), Int(ifelse(iz[3] < 0.5, iz[1], iz[2])), grid.Nz))
 
     node_volume = volume(i, j, k, grid, Center(), Center(), Center())
 
@@ -500,47 +500,72 @@ end
     C = 1.9148 * sin(M * π / 180) + 0.02 * sin(2 * M * π / 180) + 0.0003 * sin(3 * M * π / 180)
     λ = mod(M + C + 180 + 102.9372, 360)
     δ = asin(sin(λ * π / 180) * sin(23.44 * π / 180))
-    ω = (sin(-0.83 * π / 180) * sin(ϕ * π / 180) * sin(δ))/(cos(ϕ * π / 180) * cos(δ))
+    ω = (sin(-0.83 * π / 180) * sin(ϕ * π / 180) * sin(δ)) / (cos(ϕ * π / 180) * cos(δ))
     return ω / 180
 end
 
 @inline normed_day_length_change(n, ϕ) = (day_length(n, ϕ) - day_length(n - 1, ϕ)) / (day_length(76, ϕ) - day_length(75, ϕ))
 
-@inline function get_arguments(x, y, z, t, particles, bgc, grid, velocities, tracers, PAR_field)
+@inline function get_arguments(x, y, z, t, particles, bgc, grid::AbstractGrid{FT, TX, TY, TZ}, velocities, tracers, PAR_field) where {FT, TX, TY, TZ}
     bgc_tracers = required_biogeochemical_tracers(bgc)
 
-    i, j, k = fractional_indices(x, y, z, (Center(), Center(), Center()), grid)
 
-    ξ, i = modf(i)
-    η, j = modf(j)
-    ζ, k = modf(k)
+    ii, jj, kk = fractional_indices((x, y, z), grid, ifelse(isa(TX(), Flat), nothing, Center()),
+                                                     ifelse(isa(TY(), Flat), nothing, Center()),
+                                                     ifelse(isa(TZ(), Flat), nothing, Center()))
+
+    ix = interpolator(ii)
+    iy = interpolator(jj)
+    iz = interpolator(kk)
 
     # TODO: ADD ALIASING/RENAMING OF TRACERS SO WE CAN USE E.G. N IN STEAD OF NO3
 
-    NO₃ = _interpolate(tracers.NO₃, ξ, η, ζ, Int(i+1), Int(j+1), Int(k+1))
-    PAR = _interpolate(PAR_field, ξ, η, ζ, Int(i+1), Int(j+1), Int(k+1)) * day / (3.99e-10 * 545e12) # W / m² / s to einstein / m² / day
+    NO₃ = _interpolate(tracers.NO₃, ix, iy, iz)
+    PAR = _interpolate(PAR_field, ix, iy, iz) * day / (3.99e-10 * 545e12) # W / m² / s to einstein / m² / day
 
     if :NH₄ in bgc_tracers
-        NH₄ = _interpolate(tracers.NH₄, ξ, η, ζ, Int(i+1), Int(j+1), Int(k+1))
+        NH₄ = _interpolate(tracers.NH₄, ix, iy, iz)
     else
         NH₄ = 0.0
     end
 
+    T = _interpolate(tracers.T, ix, iy, iz)
+
+    S = _interpolate(tracers.S, ix, iy, iz)
+
     if isnothing(particles.prescribed_velocity)
-        u =  sqrt(_interpolate(velocities.u, ξ, η, ζ, Int(i+1), Int(j+1), Int(k+1)) .^ 2 + 
-                  _interpolate(velocities.v, ξ, η, ζ, Int(i+1), Int(j+1), Int(k+1)) .^ 2 + 
-                  _interpolate(velocities.w, ξ, η, ζ, Int(i+1), Int(j+1), Int(k+1)) .^ 2)
+        ii, jj, kk = fractional_indices((x, y, z), grid, Face(), Center(), Center())
+
+        ix = interpolator(ii)
+        iy = interpolator(jj)
+        iz = interpolator(kk)
+
+        u = _interpolate(velocities.u, ix, iy, iz)
+
+        ii, jj, kk = fractional_indices((x, y, z), grid, Center(), Face(), Center())
+
+        ix = interpolator(ii)
+        iy = interpolator(jj)
+        iz = interpolator(kk)
+
+        v = _interpolate(velocities.v, ix, iy, iz)
+
+        ii, jj, kk = fractional_indices((x, y, z), grid, Center(), Center(), Face())
+
+        ix = interpolator(ii)
+        iy = interpolator(jj)
+        iz = interpolator(kk)
+
+        w = _interpolate(velocities.w, ix, iy, iz)
+
+        speed =  sqrt(u^2 + v^2 + w^2)
     elseif isa(particles.prescribed_velocity, Number)
-        u = particles.prescribed_velocity
+        speed = particles.prescribed_velocity
     else
-        u = particles.prescribed_velocity(x, y, z, t)
+        speed = particles.prescribed_velocity(x, y, z, t)
     end
 
-    T = _interpolate(tracers.T, ξ, η, ζ, Int(i+1), Int(j+1), Int(k+1))
-
-    S = _interpolate(tracers.S, ξ, η, ζ, Int(i+1), Int(j+1), Int(k+1))
-
-    return NO₃, NH₄, PAR, u, T, S
+    return NO₃, NH₄, PAR, speed, T, S
 end
 
 end #module

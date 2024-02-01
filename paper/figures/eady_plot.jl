@@ -83,7 +83,7 @@ z_plt = @lift z[:, $n]
 A_plt = @lift A[:, $n]
 
 
-fig = Figure(resolution = (1600, 1000))
+fig = Figure(size = (1600, 1000))
 
 ax = Axis3(fig[1:4, 1:4], aspect = (1, 1, 0.28), xticks = [0, 1000], yticks = [0, 1000], zticks = [-140, 0],
                                              xlabel = "x (m)", ylabel = "y (m)", zlabel = "z (m)",
@@ -125,7 +125,7 @@ n = 37
 lims[1] = (min(minimum(N_plt[:, :, end]), minimum(N_plt[1, :, :]), minimum(N_plt[:, 1, :])), max(maximum(N_plt[:, :, end]), maximum(N_plt[1, :, :]), maximum(N_plt[:, 1, :])))
 
 
-fig = Figure(resolution = (1600, 1000))
+fig = Figure(size = (1600, 1000))
 
 ax = Axis3(fig[1:4, 1:4], aspect = (1, 1, 0.28), xticks = [0, 1000], yticks = [0, 1000], zticks = [-140, 0],
                                              xlabel = "x (m)", ylabel = "y (m)", zlabel = "z (m)",

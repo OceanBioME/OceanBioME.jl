@@ -31,8 +31,10 @@ export ScaleNegativeTracers, ZeroNegativeTracers
 # Oceananigans extensions
 export ColumnField, isacolumn
 
-using Oceananigans.Biogeochemistry: AbstractContinuousFormBiogeochemistry
 using Oceananigans.Architectures: architecture, device
+using Oceananigans.Biogeochemistry: AbstractContinuousFormBiogeochemistry
+using Oceananigans.Grids: RectilinearGrid, Flat
+
 using Adapt
 using KernelAbstractions: synchronize
 
@@ -129,7 +131,7 @@ end
 
 update_biogeochemical_state!(model, modifiers::Tuple) = [update_biogeochemical_state!(model, modifier) for modifier in modifiers]
 
-struct BoxModelGrid end
+const BoxModelGrid = RectilinearGrid(topology = (Flat, Flat, Flat), size = ())
 
 @inline maximum_sinking_velocity(bgc) = 0.0
 

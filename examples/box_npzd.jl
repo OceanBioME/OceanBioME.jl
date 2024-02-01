@@ -62,7 +62,7 @@ close(file)
 # ## And plot
 using CairoMakie
 
-fig = Figure(resolution = (800, 1200), fontsize = 24)
+fig = Figure(size = (800, 1200), fontsize = 24)
 
 axs = []
 for (idx, tracer) in enumerate(vars)

@@ -150,7 +150,7 @@ n = Observable(1)
   Pₙ = @lift interior(  P[$n], :, :, grid.Nz)
 DICₙ = @lift interior(DIC[$n], :, :, grid.Nz)
 
-fig = Figure(resolution = (1600, 1600), fontsize = 20)
+fig = Figure(size = (1600, 1600), fontsize = 20)
 
 lims = [(minimum(T), maximum(T)) for T in (  ζ[:, :, grid.Nz, :],
                                            NO₃[:, :, grid.Nz, :] .+ NH₄[:, :, grid.Nz, :],

@@ -50,7 +50,7 @@ function load_LOBSTER(path, T, S)
 end
 
 function Makie.plot!(res::ResultsLOBSTER)
-    fig = Figure(resolution = (3600, 2000))
+    fig = Figure(size = (3600, 2000))
     fig[1, 1:8] = Label(fig, "LOBSTER results", tellwidth=false)
 
     ax_P = Axis(fig[2, 1], title = "Phytoplankton (mmol N/m³)")

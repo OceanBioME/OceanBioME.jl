@@ -1,10 +1,11 @@
 name = "OceanBioME"
 uuid = "a49af516-9db8-4be4-be45-1dad61c5a376"
 authors = ["Jago Strong-Wright <js2430@damtp.cam.ac.uk> and contributors"]
-version = "0.9.2"
+version = "0.10.0"
 
 [deps]
 Adapt = "79e6a3ab-5dfb-504d-930d-738a2a938a0e"
+CUDA = "052768ef-5323-5732-b1bb-66c8b64840ba"
 JLD2 = "033835bb-8acc-5ee8-8aae-3f567f8a3819"
 KernelAbstractions = "63c18a36-062a-441e-b654-da1e3ab1ce7c"
 Oceananigans = "9e8cae18-63c1-5223-a75c-80ca9d6e9a09"
@@ -13,10 +14,12 @@ StructArrays = "09ab397b-f2b6-538f-b94a-2f83cf4a842a"
 
 [compat]
 Adapt = "3, 4"
+CUDA = "5"
 Documenter = "1"
+EnsembleKalmanProcesses = "1"
 JLD2 = "0.4"
 KernelAbstractions = "0.9"
-Oceananigans = "0.90"
+Oceananigans = "0.90.6"
 Roots = "2"
 StructArrays = "0.4, 0.5, 0.6"
 julia = "1.9"
@@ -25,7 +28,9 @@ julia = "1.9"
 CUDA = "052768ef-5323-5732-b1bb-66c8b64840ba"
 CairoMakie = "13f3f980-e62b-5c42-98c6-ff1f3baf88f0"
 DataDeps = "124859b0-ceae-595e-8997-d05f6a7a8dfe"
+Distributions = "31c24e10-a181-5473-b8eb-7969acd0382f"
 Documenter = "e30172f5-a6a5-5a46-863b-614d45cd2de4"
+EnsembleKalmanProcesses = "aa8a2aa5-91d8-4396-bcef-d4f2ec43552d"
 Interpolations = "a98d9a8b-a2ab-59e6-89dd-64a1c18fca59"
 JLD2 = "033835bb-8acc-5ee8-8aae-3f567f8a3819"
 NetCDF = "30363a11-5582-574a-97bb-aa9a979735b9"
@@ -34,5 +39,5 @@ Statistics = "10745b16-79ce-11e8-11f9-7d13ad32a3b2"
 Test = "8dfed614-e22c-5e08-85e1-65c5234f0b40"
 
 [targets]
-examples = ["CairoMakie", "NetCDF", "Interpolations", "Statistics", "Printf", "JLD2", "DataDeps"]
+examples = ["CairoMakie", "NetCDF", "Interpolations", "Statistics", "Printf", "JLD2", "DataDeps", "EnsembleKalmanProcesses", "Distributions"]
 test = ["Test", "CUDA", "DataDeps", "Documenter", "Statistics", "JLD2"]

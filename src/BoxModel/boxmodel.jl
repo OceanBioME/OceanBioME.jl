@@ -5,126 +5,102 @@ module BoxModels
 
 export BoxModel, run!, set!, SaveBoxModel
 
+using Oceananigans: Clock, prettytime
 using Oceananigans.Biogeochemistry: 
         AbstractContinuousFormBiogeochemistry, 
         required_biogeochemical_tracers, 
-        required_biogeochemical_auxiliary_fields
+        required_biogeochemical_auxiliary_fields,
+        update_biogeochemical_state!
 
-using Oceananigans: Clock, prettytime, CPU
-using Oceananigans.TimeSteppers: tick!
+using Oceananigans.Fields: CenterField
+using Oceananigans.TimeSteppers: tick!, TimeStepper
 
 using OceanBioME: BoxModelGrid
 using StructArrays, JLD2
 
 import Oceananigans.Simulations: run!
 import Oceananigans: set!
-import Oceananigans.Fields: CenterField, regularize_field_boundary_conditions
+import Oceananigans.Fields: regularize_field_boundary_conditions, TracerFields
 import Oceananigans.Architectures: architecture
+import Oceananigans.Models: default_nan_checker, iteration, AbstractModel, prognostic_fields
+import Oceananigans.TimeSteppers: update_state!
+import Oceananigans.OutputWriters: default_included_properties
+
 import Base: show, summary
 
 @inline no_func(args...) = 0.0
 
-mutable struct BoxModel{B, V, FT, F, TS, C}
+mutable struct BoxModel{G, B, F, FO, TS, C, PF} <: AbstractModel{TS}
+               grid :: G # here so that simualtion can be built
     biogeochemistry :: B
-    values :: V
-    stop_time :: FT
-    forcing :: F
-    timestepper :: TS
-    Δt :: FT
-    clock :: C
+             fields :: F
+            forcing :: FO
+        timestepper :: TS
+              clock :: C
+  prescribed_fields :: PF
 end
 
 """
     BoxModel(; biogeochemistry::B,
-               stop_time::FT = 0.0,
                forcing = NamedTuple(),
-               timestepper::TS = RungeKutta3TimeStepper((required_biogeochemical_tracers(biogeochemistry)..., required_biogeochemical_auxiliary_fields(biogeochemistry)...)),
-               Δt::FT = 1.0,
-               clock::C = Clock(0.0, 0, 1))
+               timestepper = :RungeKutta3,
+               clock::C = Clock(0.0, 0, 1),
+               prescribed_fields::PF = (:T, :PAR))
 
 Constructs a box model of a `biogeochemistry` model. Once this has been constructed you can set initial condiitons by `set!(model, X=1.0...)` and then `run!(model)`.
 
 Keyword Arguments 
 =================
 
-- `biogeochemistry`: (required) an OceanBioME biogeochemical model, most models must be passed a `grid` which can be set to `BoxModelGrid()` for box models
-- `stop_time`: end time of simulation
+- `biogeochemistry`: (required) an OceanBioME biogeochemical model, most models must be passed a `grid` which can be set to `BoxModelGrid` for box models
 - `forcing`: NamedTuple of additional forcing functions for the biogeochemical tracers to be integrated
-- `timestepper`: Timestepper to integrate model, only available is currently `RungeKutta3TimeStepper`
-- `Δt`: time step length
+- `timestepper`: Timestepper to integrate model
 - `clock`: Oceananigans clock to keep track of time
+- `prescribed_fields`: Tuple of fields names (Symbols) which are not integrated but provided in `forcing` as a function of time with signature `f(t)`
 """
 function BoxModel(; biogeochemistry::B,
-                    stop_time::FT = 0.0,
                     forcing = NamedTuple(),
-                    timestepper::TS = RungeKutta3TimeStepper((required_biogeochemical_tracers(biogeochemistry)..., required_biogeochemical_auxiliary_fields(biogeochemistry)...)),
-                    Δt::FT = 1.0,
-                    clock::C = Clock(0.0, 0, 1)) where {B, FT, TS, C}
+                    timestepper = :RungeKutta3,
+                    clock::C = Clock(0.0, 0, 1),
+                    prescribed_fields::PF = (:T, :PAR)) where {B, C, PF}
 
     variables = (required_biogeochemical_tracers(biogeochemistry)..., required_biogeochemical_auxiliary_fields(biogeochemistry)...)
-    values = StructArray([NamedTuple{variables}(zeros(FT, length(variables)))])
+    fields = NamedTuple{variables}([CenterField(BoxModelGrid) for var in eachindex(variables)])
     forcing = NamedTuple{variables}([variable in keys(forcing) ? forcing[variable] : no_func for variable in variables])
 
-    V = typeof(values)
-    F = typeof(forcing)
+    timestepper = BoxModelTimeStepper(timestepper, BoxModelGrid, keys(fields))
 
-    return BoxModel{B, V, FT, F, TS, C}(biogeochemistry, values, stop_time, forcing, timestepper, Δt, clock)
+    F = typeof(fields)
+    FO = typeof(forcing)
+    TS = typeof(timestepper)
+
+    return BoxModel{typeof(BoxModelGrid), B, F, FO, TS, C, PF}(BoxModelGrid, biogeochemistry, fields, forcing, timestepper, clock, prescribed_fields)
 end
 
-function calculate_tendencies!(model)
-    # TODO: add sinking out of box
-    Gⁿ = model.timestepper.Gⁿ
+function update_state!(model::BoxModel, callbacks=[]; compute_tendencies = true)
+    t = model.clock.time
 
-    for tracer in required_biogeochemical_tracers(model.biogeochemistry)
-        if !(tracer == :T)
-            @inbounds getproperty(Gⁿ, tracer) .= model.biogeochemistry(Val(tracer), 0.0, 0.0, 0.0, model.clock.time, model.values[1]...) + model.forcing[tracer](model.clock.time, model.values[1]...)
-        end
+    @inbounds for field in model.prescribed_fields 
+        (field in keys(model.fields)) && (model.fields[field] .= model.forcing[field](t))
     end
 
-    for variable in required_biogeochemical_auxiliary_fields(model.biogeochemistry)
-        if !(variable == :PAR)
-            @inbounds getproperty(Gⁿ, variable) .= model.forcing[variable](model.clock.time, model.values[1]...)
-        end
+    for callback in callbacks
+        callback.callsite isa UpdateStateCallsite && callback(model)
     end
+
+    update_biogeochemical_state!(model.biogeochemistry, model)
+
+    compute_tendencies && 
+        compute_tendencies!(model, callbacks)
+
+    return nothing
 end
 
-# a user could overload this like `update_boxmodel_state!(model::BoxModel{<:SomeBiogeochemicalModel, <:Any, <:Any, <:Any, <:Any, <:Any})`
-# this could be used e.g. to update a PAR field
-@inline update_boxmodel_state!(model::BoxModel) = nothing
+architecture(::BoxModel) = architecture(BoxModelGrid)
+default_nan_checker(::BoxModel) = nothing
+iteration(model::BoxModel) = model.clock.iteration
+prognostic_fields(model::BoxModel) = @inbounds model.fields[required_biogeochemical_tracers(model.biogeochemistry)]
 
-"""
-    run!(model::BoxModel; feedback_interval = 1000, save_interval = Inf, save = nothing)
-
-Run a box model.
-
-Arguments
-=========
-
-- `model` - the `BoxModel` to solve
-
-Keyword Arguments
-=================
-
-- `feedback_interval`: how often (number of iterations) to display progress
-- `save_interval`: how often (number of iterations) to save output
-- `save`: `SaveBoxModel` object to specify how to save output
-
-TODO: should abstract out to simulation like Oceananigans to add e.g. callbacks
-"""
-function run!(model::BoxModel; feedback_interval = 10000, save_interval = Inf, save = nothing)
-    itter = 0
-    while model.clock.time < model.stop_time
-        itter % feedback_interval == 0 && @info "Reached $(prettytime(model.clock.time))"
-        time_step!(model, model.Δt)
-        itter += 1
-
-        itter % save_interval == 0 && save(model)
-    end
-
-    if !isnothing(save)
-        close(save.file)
-    end
-end
 
 """
     set!(model::BoxModel; kwargs...)
@@ -143,52 +119,28 @@ Keyword Arguments
 """
 function set!(model::BoxModel; kwargs...)
     for (fldname, value) in kwargs
-        if fldname ∈ keys(model.values[1])
-            # hacky with StructArrays
-            getproperty(model.values, fldname) .= value
+        if fldname ∈ propertynames(model.fields)
+            ϕ = getproperty(model.fields, fldname)
         else
-            throw(ArgumentError("name $fldname not found in model."))
+            throw(ArgumentError("name $fldname not found in model.fields."))
         end
+        set!(ϕ, value)
     end
+    return nothing
 end
 
-"""
-    SaveBoxModel(filepath::FP)
-
-Construct object to save box model outputs at `filepath`.
-
-Arguments
-=========
-
-- `filepath` - path to save results to
-"""
-struct SaveBoxModel{FP, F}
-    filepath :: FP
-    file :: F
-
-    function SaveBoxModel(filepath::FP) where FP
-        file = jldopen(filepath, "w+")
-        F = typeof(file)
-        return new{FP, F}(filepath, file)
-    end
-end
-
-(save::SaveBoxModel)(model) = save.file["values/$(model.clock.time)"] = model.values[1]
+default_included_properties(::BoxModel) = [:grid]
 
 include("timesteppers.jl")
 
-summary(::BoxModel{B, V, FT, F, TS, C}) where {B, V, FT, F, TS, C} = string("Biogeochemical box model")
-show(io::IO, model::BoxModel{B, V, FT, F, TS, C}) where {B, V, FT, F, TS, C} = 
+summary(::BoxModel{B, V, F, TS, C}) where {B, V, F, TS, C} = string("Biogeochemical box model")
+show(io::IO, model::BoxModel{B, V, F, TS, C}) where {B, V, F, TS, C} = 
        print(io, summary(model), "\n",
                 "  Biogeochemical model: ", "\n",
                 "    └── ", summary(model.biogeochemistry), "\n",
                 "  Time-stepper:", "\n", 
                 "    └── ", summary(model.timestepper), "\n",
                 "  Time:", "\n",
-                "    └── $(prettytime(model.clock.time)) with Δt = $(prettytime(model.Δt))")
-
-CenterField(::BoxModelGrid, args...; kwargs...) = nothing
-regularize_field_boundary_conditions(::Any, ::BoxModelGrid, ::Any) = nothing
-architecture(::BoxModelGrid) = CPU()
+                "    └── $(prettytime(model.clock.time))")
 
 end # module

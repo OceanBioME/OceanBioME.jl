@@ -6,6 +6,8 @@ using OceanBioME.LOBSTERModel: LOBSTER
 using OceanBioME.Boundaries.Sediments: SimpleMultiG, InstantRemineralisation
 using OceanBioME.Boundaries: OCMIP_default, GasExchange
 
+using Oceananigans.Grids: RectilinearGrid
+
 using CairoMakie
 CairoMakie.activate!(type = "svg")
 
@@ -24,7 +26,8 @@ examples = [
     "Simple column model" => "column",
     "Baroclinic instability" => "eady",
     "Data forced column model" => "data_forced",
-    "Model with particles (kelp) interacting with the biogeochemistry" => "kelp"
+    "Model with particles (kelp) interacting with the biogeochemistry" => "kelp",
+    "Data assimilation" => "data_assimilation"
 ]
 
 example_scripts = [ filename * ".jl" for (title, filename) in examples ]
@@ -49,12 +52,12 @@ example_pages = [ title => "generated/$(filename).md" for (title, filename) in e
 
 if !isdir(OUTPUT_DIR) mkdir(OUTPUT_DIR) end
 
-model_parameters = (LOBSTER(; grid = BoxModelGrid()),
-                    NutrientPhytoplanktonZooplanktonDetritus(; grid = BoxModelGrid()),
+model_parameters = (LOBSTER(; grid = BoxModelGrid, light_attenuation_model = nothing).underlying_biogeochemistry,
+                    NutrientPhytoplanktonZooplanktonDetritus(; grid = BoxModelGrid, light_attenuation_model = nothing).underlying_biogeochemistry,
                     SLatissima(),
-                    TwoBandPhotosyntheticallyActiveRadiation(; grid = BoxModelGrid()),
-                    SimpleMultiG(; grid = BoxModelGrid()),
-                    InstantRemineralisation(; grid = BoxModelGrid()),
+                    TwoBandPhotosyntheticallyActiveRadiation(; grid = RectilinearGrid(size=(1, 1, 1), extent=(1, 1, 1))),
+                    SimpleMultiG(; grid = BoxModelGrid),
+                    InstantRemineralisation(; grid = BoxModelGrid),
                     OCMIP_default,
                     GasExchange(; gas = :CO₂).condition.func,
                     GasExchange(; gas = :O₂).condition.func)
@@ -81,7 +84,7 @@ bgc_pages = [
     "NPZD" => "model_components/biogeochemical/NPZ.md"
 ]
 
-sed_pages = [
+sediments_pages = [
     "Overview" => "model_components/sediments/index.md",
     "Simple Multi-G" => "model_components/sediments/simple_multi_g.md",
     "Instant remineralisation" => "model_components/sediments/instant_remineralisation.md"
@@ -95,7 +98,7 @@ individuals_pages = [
 component_pages = [
     "Biogeochemical models" => bgc_pages,
     "Air-sea gas exchange" => "model_components/air-sea-gas.md",
-    "Sediment models" => sed_pages,
+    "Sediment models" => sediments_pages,
     "Light attenuation models" => "model_components/light.md",
     "Individuals" => individuals_pages,
     "Utilities" => "model_components/utils.md"

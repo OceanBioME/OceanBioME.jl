@@ -165,7 +165,7 @@ end
 
 using CairoMakie
 
-fig = Figure(resolution = (1000, 1500), fontsize = 20)
+fig = Figure(size = (1000, 1500), fontsize = 20)
 
 axis_kwargs = (xlabel = "Time (days)", ylabel = "z (m)", limits = ((0, times[end] / days), (-150meters, 0)))
 
