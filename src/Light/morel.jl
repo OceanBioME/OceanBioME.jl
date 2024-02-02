@@ -1,7 +1,6 @@
 module Morel
 
 using KernelAbstractions
-using KernelAbstractions.Extras.LoopInfo: @unroll
 using Oceananigans.Architectures: device
 using Oceananigans.Utils: launch!
 

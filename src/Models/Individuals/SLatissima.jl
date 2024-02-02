@@ -25,7 +25,6 @@ using Oceananigans: Center, CPU
 using Oceananigans.Architectures: arch_array, device, architecture
 using Oceananigans.Biogeochemistry: required_biogeochemical_tracers, biogeochemical_auxiliary_fields
 
-using KernelAbstractions.Extras.LoopInfo: @unroll 
 using Oceananigans.Operators: volume
 using Oceananigans.Grids: AbstractGrid, Flat
 using Oceananigans.Fields: fractional_indices, _interpolate, interpolator

@@ -1,6 +1,5 @@
 using Oceananigans: fields, Simulation
 using KernelAbstractions
-using KernelAbstractions.Extras.LoopInfo: @unroll
 using Oceananigans.Utils: work_layout
 using Oceananigans.Architectures: device, architecture, arch_array
 using Oceananigans.Biogeochemistry: AbstractBiogeochemistry
@@ -23,7 +22,7 @@ Construct a modifier that zeroes any negative tracers excluding those listed in 
 end
 
 function update_biogeochemical_state!(model, zero::ZeroNegativeTracers)
-    @unroll for (tracer_name, tracer) in pairs(model.tracers)
+    for (tracer_name, tracer) in pairs(model.tracers)
         if !(tracer_name in zero.exclude)
             parent(tracer) .= max.(0.0, parent(tracer))
         end
@@ -106,7 +105,7 @@ end
 
     t, p = 0.0, 0.0
 
-    @unroll for (idx, tracer) in enumerate(tracers)
+    for (idx, tracer) in enumerate(tracers)
         value = @inbounds tracer[i, j, k]
         scalefactor = @inbounds scalefactors[idx]
 
@@ -118,7 +117,7 @@ end
 
     t < 0 && (t = NaN)
 
-    @unroll for tracer in tracers
+    for tracer in tracers
         value = @inbounds tracer[i, j, k]
         
         if value > 0

@@ -6,7 +6,6 @@ module Light
 export TwoBandPhotosyntheticallyActiveRadiation, update_PAR!
 
 using KernelAbstractions, Oceananigans.Units
-using KernelAbstractions.Extras.LoopInfo: @unroll
 using Oceananigans.Architectures: device, architecture
 using Oceananigans.Utils: launch!
 using Oceananigans: Center, Face, fields
