@@ -7,7 +7,7 @@ using KernelAbstractions
 using OceanBioME: Biogeochemistry, BoxModelGrid
 
 using Oceananigans
-using Oceananigans.Architectures: device, architecture, arch_array
+using Oceananigans.Architectures: device, architecture, on_architecture
 using Oceananigans.Utils: launch!
 using Oceananigans.Advection: advective_tracer_flux_z
 using Oceananigans.Units: day
@@ -96,7 +96,7 @@ end
 
 function calculate_bottom_indices(grid::ImmersedBoundaryGrid)
     arch = architecture(grid)
-    indices = arch_array(arch, zeros(Int, size(grid)[1:2]...))
+    indices = on_architecture(arch, zeros(Int, size(grid)[1:2]...))
 
     launch!(grid.architecture, grid, :xy, find_bottom_cell, grid, indices)
 

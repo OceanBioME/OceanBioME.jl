@@ -2,7 +2,7 @@ using Test, OceanBioME, Oceananigans
 using OceanBioME.SLatissimaModel: SLatissima
 using Oceananigans.Units
 using Oceananigans.Fields: TracerFields
-using Oceananigans.Architectures: arch_array
+using Oceananigans.Architectures: on_architecture
 
 function intercept_tendencies!(model, intercepted_tendencies)
     for tracer in keys(model.tracers)
@@ -31,10 +31,10 @@ sum_tracer_carbon(tracers, redfield, organic_carbon_calcate_ratio) =
     # Initial properties
 
     particles = SLatissima(; architecture,
-                             x = arch_array(architecture, ones(Float64, 2)),
-                             A = arch_array(architecture, ones(Float64, 2) .* 5),
-                             N = arch_array(architecture, ones(Float64, 2)),
-                             C = arch_array(architecture, ones(Float64, 2)),
+                             x = on_architecture(architecture, ones(Float64, 2)),
+                             A = on_architecture(architecture, ones(Float64, 2) .* 5),
+                             N = on_architecture(architecture, ones(Float64, 2)),
+                             C = on_architecture(architecture, ones(Float64, 2)),
                              latitude = 1.0)
 
     @test length(particles) == 2

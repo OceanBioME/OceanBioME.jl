@@ -1,7 +1,7 @@
 using Oceananigans: fields, Simulation
 using KernelAbstractions
 using Oceananigans.Utils: work_layout
-using Oceananigans.Architectures: device, architecture, arch_array
+using Oceananigans.Architectures: device, architecture, on_architecture
 using Oceananigans.Biogeochemistry: AbstractBiogeochemistry
 
 import Adapt: adapt_structure, adapt
@@ -79,7 +79,7 @@ If `warn` is true then scaling will raise a warning.
 """
 function ScaleNegativeTracers(bgc::AbstractBiogeochemistry, grid; warn = false)
     tracers = conserved_tracers(bgc)
-    scalefactors = arch_array(architecture(grid), ones(length(tracers)))
+    scalefactors = on_architecture(architecture(grid), ones(length(tracers)))
 
     return ScaleNegativeTracers(tracers, scalefactors, warn)
 end

@@ -1,6 +1,6 @@
 using OceanBioME, Printf, Oceananigans, Oceananigans.Units
 
-using Oceananigans.Architectures: arch_array
+using Oceananigans.Architectures: on_architecture
 
 using Oceananigans.Solvers: FFTBasedPoissonSolver 
 
@@ -50,13 +50,13 @@ closure = ScalarDiffusivity(ν = νᵥ, κ = κᵥ)
 
 n = 36 # must be a square number
 
-x = arch_array(arch, [repeat([Lx / (sqrt(n) + 1) * n for n in 1:Int(sqrt(n))], 1, Int(sqrt(n)))...])
-y = arch_array(arch, [repeat([Ly / (sqrt(n) + 1) * n for n in 1:Int(sqrt(n))], 1, Int(sqrt(n)))'...])
-z = arch_array(arch, zeros(Float64, n))
+x = on_architecture(arch, [repeat([Lx / (sqrt(n) + 1) * n for n in 1:Int(sqrt(n))], 1, Int(sqrt(n)))...])
+y = on_architecture(arch, [repeat([Ly / (sqrt(n) + 1) * n for n in 1:Int(sqrt(n))], 1, Int(sqrt(n)))'...])
+z = on_architecture(arch, zeros(Float64, n))
 
 particles = SLatissima(; architecture = arch,
                          x, y, z, 
-                         A = arch_array(arch, 5.0 .* ones(n)), N = arch_array(arch, 0.01 .* ones(n)), C = arch_array(arch, 0.18 .* ones(n)), 
+                         A = on_architecture(arch, 5.0 .* ones(n)), N = on_architecture(arch, 0.01 .* ones(n)), C = on_architecture(arch, 0.18 .* ones(n)), 
                          latitude = 43.3,
                          scalefactor = 500.0,
                          pescribed_temperature = (args...) -> 12.0)
