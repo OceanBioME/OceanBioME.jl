@@ -4,9 +4,9 @@ using Oceananigans.Units
 using Oceananigans.Fields: TracerFields
 using Oceananigans.Architectures: on_architecture
 
-function intercept_tendencies!(model, intercepted_tendencies)
-    for tracer in keys(model.tracers)
-        intercepted_tendencies[tracer] = Array(interior(model.timestepper.Gⁿ[tracer]))
+function intercept_tracer_tendencies!(model, intercepted_tendencies)
+    for (name, field) in enumerate(intercepted_tendencies)
+        field .= Array(interior(model.timestepper.Gⁿ[name + 3]))
     end
 end
 
@@ -86,7 +86,7 @@ sum_tracer_carbon(tracers, redfield, organic_carbon_calcate_ratio) =
     # slow but easiest to have this just done on CPU
     intercepted_tendencies = Tuple(Array(interior(field)) for field in values(TracerFields(keys(model.tracers), grid)))
 
-    simulation.callbacks[:intercept_tendencies] = Callback(intercept_tendencies!; callsite = TendencyCallsite(), parameters = intercepted_tendencies)
+    simulation.callbacks[:intercept_tendencies] = Callback(intercept_tracer_tendencies!; callsite = TendencyCallsite(), parameters = intercepted_tendencies)
 
     run!(simulation)
 
