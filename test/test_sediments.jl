@@ -11,9 +11,9 @@ using Oceananigans.Operators: volume, Azᶠᶜᶜ
 
 using OceanBioME.LOBSTERModel: VariableRedfieldLobster
 
-function intercept_tendencies!(model, intercepted_tendencies)
-    for tracer in keys(model.tracers)
-        intercepted_tendencies[tracer] = Array(interior(model.timestepper.Gⁿ[tracer]))
+function intercept_tracer_tendencies!(model, intercepted_tendencies)
+    for (name, field) in enumerate(intercepted_tendencies)
+        field .= Array(interior(model.timestepper.Gⁿ[name + 3]))
     end
 end
 
@@ -93,7 +93,7 @@ function test_flat_sediment(grid, biogeochemistry, model; timestepper = :QuasiAd
 
     intercepted_tendencies = Tuple(Array(interior(field)) for field in values(TracerFields(keys(model.tracers), grid)))
 
-    simulation.callbacks[:intercept_tendencies] = Callback(intercept_tendencies!; callsite = TendencyCallsite(), parameters = intercepted_tendencies)
+    simulation.callbacks[:intercept_tendencies] = Callback(intercept_tracer_tendencies!; callsite = TendencyCallsite(), parameters = intercepted_tendencies)
 
     N₀ = CUDA.@allowscalar total_nitrogen(biogeochemistry.underlying_biogeochemistry, model) * volume(1, 1, 1, grid, Center(), Center(), Center()) + total_nitrogen(biogeochemistry.sediment) * Azᶠᶜᶜ(1, 1, 1, grid)
 
