@@ -85,7 +85,7 @@ Tₙ = @lift interior(T[$n], :, 1, :)
 Nₙ = @lift interior(N[$n], :, 1, :)
 Pₙ = @lift interior(P[$n], :, 1, :)
 
-fig = Figure(resolution = (1000, 520), fontsize = 20)
+fig = Figure(size = (1000, 520), fontsize = 20)
 
 title = @lift "t = $(prettytime(times[$n]))"
 Label(fig[0, :], title)

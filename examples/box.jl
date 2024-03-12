@@ -50,7 +50,7 @@ timeseries = NamedTuple{keys(model.fields)}(FieldTimeSeries("box.jld2", "$field"
 # ## And plot
 using CairoMakie
 
-fig = Figure(resolution = (1200, 1200), fontsize = 24)
+fig = Figure(size = (1200, 1200), fontsize = 24)
 
 axs = []
 for (name, tracer) in pairs(timeseries)

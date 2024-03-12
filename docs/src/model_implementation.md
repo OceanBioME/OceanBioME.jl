@@ -165,7 +165,7 @@ times = P.times
 # ## And plot
 using CairoMakie
 
-fig = Figure(resolution = (1200, 480), fontsize = 20)
+fig = Figure(size = (1200, 480), fontsize = 20)
 
 axN= Axis(fig[1, 1], ylabel = "Nutrient \n(mmol N / m³)")
 lines!(axN, times / year, N[1, 1, 1, :], linewidth = 3)

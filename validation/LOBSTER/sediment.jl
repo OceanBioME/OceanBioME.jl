@@ -125,7 +125,7 @@ function load_timeseries(; simulation, tracer_path = simulation.output_writers[:
 end
 
 function plot_timeseries(simulation, tracer_timeseries, sediment_timeseries; times = FieldTimeSeries(simulation.output_writers[:tracers].filepath, "P").times, zn = znodes(Center, simulation.model.grid)[1:simulation.model.grid.Nz], start_idx = 1)
-    fig = Figure(resolution = (1600, 1600))
+    fig = Figure(size = (1600, 1600))
 
     # since they seems to be wrong ...
     times = [1:size(tracer_timeseries.P)[1];] * 10minutes/day
@@ -146,7 +146,7 @@ function plot_timeseries(simulation, tracer_timeseries, sediment_timeseries; tim
     return fig
 end
 #=
-fig = Figure(resolution = (1600, 1000))
+fig = Figure(size = (1600, 1000))
 volume(fig[1, 1], xnodes(Face, u.grid)[1:u.grid.Nx], ynodes(Center, u.grid)[1:u.grid.Ny], znodes(Center, u.grid)[1:u.grid.Nz], u_plt, colorrange = (-uₘ, uₘ))
 GLMakie.record(fig, "ovs_fig.mp4", 1:length(u.times)) do i
     n[] = i
@@ -155,18 +155,19 @@ GLMakie.record(fig, "ovs_fig.mp4", 1:length(u.times)) do i
     #ax.title = "t=$(prettytime(u.times[i]))"
 end=#
 
-       fig = Figure(resolution = (1600, 1600))
-       l = Label(fig[1, 1:4], "t = 0.0")
-       v1 = volume(fig[2, 1], xnodes(grid, Face(), Center(), Center())[1:grid.Nx], ynodes(grid, Center(), Center(), Center())[1:grid.Ny], znodes(grid, Center(), Center(), Center())[1:grid.Nz], u_plt, colorrange = (-uₘ, uₘ), colormap=:vik); Colorbar(fig[2, 2], v1.plot, label = "u (m/s)")
-       v2 = volume(fig[3, 1], xnodes(grid, Center(), Center(), Center())[1:grid.Nx], ynodes(grid, Center(), Center(), Center())[1:grid.Ny], znodes(grid, Center(), Center(), Center())[1:grid.Nz], NO₃_plt, colorrange = (Nₘᵢ, Nₘₐ), colormap = Reverse(:bamako), algorithm = :mip)
-       Colorbar(fig[3, 2], v2.plot, label = "NO₃ (mmol N / m³)")
-       v3 = volume(fig[2, 3], xnodes(grid, Center(), Center(), Center())[1:grid.Nx], ynodes(grid, Center(), Center(), Center())[1:grid.Ny], znodes(grid, Center(), Center(), Center())[1:grid.Nz], P_plt, colorrange = (Pₘᵢ, Pₘₐ), colormap = Reverse(:bamako), algorithm = :mip)
-       Colorbar(fig[2, 4], v3.plot, label = "P (mmol N / m³)")
-       v4 = volume(fig[3, 3], xnodes(grid, Center(), Center(), Center())[1:grid.Nx], ynodes(grid, Center(), Center(), Center())[1:grid.Ny], znodes(grid, Center(), Center(), Center())[1:grid.Nz], POC_plt, colorrange = (POCₘᵢ, POCₘₐ), colormap = Reverse(:bamako), algorithm = :mip)
-       Colorbar(fig[3, 4], v4.plot, label = "POC (mmol C / m³)")
-       record(fig, "ovs_fig.mp4", 1:length(u.times); framerate = 10) do i
-           n[] = i
-           msg = string("Plotting frame ", i, " of ", length(u.times))
-           print(msg * " \r")
-           l.text = "t=$(prettytime(u.times[i]))"
-       end
+fig = Figure(size = (1600, 1600))
+l = Label(fig[1, 1:4], "t = 0.0")
+v1 = volume(fig[2, 1], xnodes(grid, Face(), Center(), Center())[1:grid.Nx], ynodes(grid, Center(), Center(), Center())[1:grid.Ny], znodes(grid, Center(), Center(), Center())[1:grid.Nz], u_plt, colorrange = (-uₘ, uₘ), colormap=:vik); Colorbar(fig[2, 2], v1.plot, label = "u (m/s)")
+v2 = volume(fig[3, 1], xnodes(grid, Center(), Center(), Center())[1:grid.Nx], ynodes(grid, Center(), Center(), Center())[1:grid.Ny], znodes(grid, Center(), Center(), Center())[1:grid.Nz], NO₃_plt, colorrange = (Nₘᵢ, Nₘₐ), colormap = Reverse(:bamako), algorithm = :mip)
+Colorbar(fig[3, 2], v2.plot, label = "NO₃ (mmol N / m³)")
+v3 = volume(fig[2, 3], xnodes(grid, Center(), Center(), Center())[1:grid.Nx], ynodes(grid, Center(), Center(), Center())[1:grid.Ny], znodes(grid, Center(), Center(), Center())[1:grid.Nz], P_plt, colorrange = (Pₘᵢ, Pₘₐ), colormap = Reverse(:bamako), algorithm = :mip)
+Colorbar(fig[2, 4], v3.plot, label = "P (mmol N / m³)")
+v4 = volume(fig[3, 3], xnodes(grid, Center(), Center(), Center())[1:grid.Nx], ynodes(grid, Center(), Center(), Center())[1:grid.Ny], znodes(grid, Center(), Center(), Center())[1:grid.Nz], POC_plt, colorrange = (POCₘᵢ, POCₘₐ), colormap = Reverse(:bamako), algorithm = :mip)
+Colorbar(fig[3, 4], v4.plot, label = "POC (mmol C / m³)")
+
+record(fig, "ovs_fig.mp4", 1:length(u.times); framerate = 10) do i
+    n[] = i
+    msg = string("Plotting frame ", i, " of ", length(u.times))
+    print(msg * " \r")
+    l.text = "t=$(prettytime(u.times[i]))"
+end

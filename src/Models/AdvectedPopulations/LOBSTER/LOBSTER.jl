@@ -245,7 +245,7 @@ julia> using Oceananigans
 julia> grid = RectilinearGrid(size=(3, 3, 30), extent=(10, 10, 200));
 
 julia> model = LOBSTER(; grid)
-LOBSTER{Float64} with carbonates ❌, oxygen ❌, variable Redfield ratio ❌and (:sPOM, :bPOM) sinking 
+LOBSTER{Float64} with carbonates ❌, oxygen ❌, variable Redfield ratio ❌ and (:sPOM, :bPOM) sinking 
  Light attenuation: Two-band light attenuation model (Float64)
  Sediment: Nothing
  Particles: Nothing
@@ -427,7 +427,7 @@ adapt_structure(to, lobster::LOBSTER) =
             adapt(to, lobster.optionals),
             adapt(to, lobster.sinking_velocities))
 
-summary(::LOBSTER{FT, Val{B}, NamedTuple{K, V}}) where {FT, B, K, V} = string("LOBSTER{$FT} with carbonates $(B[1] ? :✅ : :❌), oxygen $(B[2] ? :✅ : :❌), variable Redfield ratio $(B[3] ? :✅ : :❌)and $K sinking")
+summary(::LOBSTER{FT, Val{B}, NamedTuple{K, V}}) where {FT, B, K, V} = string("LOBSTER{$FT} with carbonates $(B[1] ? :✅ : :❌), oxygen $(B[2] ? :✅ : :❌), variable Redfield ratio $(B[3] ? :✅ : :❌) and $K sinking")
 
 show(io::IO, model::LOBSTER{FT, Val{B}, W}) where {FT, B, W}  = print(io, string("Lodyc-DAMTP Ocean Biogeochemical Simulation Tools for Ecosystem and Resources (LOBSTER) model \n",
                                                                                  "├── Optional components:", "\n",
