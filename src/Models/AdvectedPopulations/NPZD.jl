@@ -174,6 +174,7 @@ function NutrientPhytoplanktonZooplanktonDetritus(; grid,
                                                     open_bottom::Bool = true,
 
                                                     scale_negatives = false,
+                                                    nan_fill_value = NaN,
                                                                                            
                                                     particles::P = nothing,
                                                     modifiers::M = nothing) where {FT, LA, S, P, M}
@@ -195,7 +196,7 @@ function NutrientPhytoplanktonZooplanktonDetritus(; grid,
                                                  sinking_velocities)
 
     if scale_negatives
-        scaler = ScaleNegativeTracers(underlying_biogeochemistry, grid)
+        scaler = ScaleNegativeTracers(underlying_biogeochemistry, grid; nan_fill_value)
         modifiers = isnothing(modifiers) ? scaler : (modifiers..., scaler)
     end
 
