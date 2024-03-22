@@ -33,21 +33,23 @@ end
 ##### Infastructure to rescale negative values
 #####
 
-struct ScaleNegativeTracers{FA, SA, W}
-    tracers :: FA
-    scalefactors :: SA
-    warn :: W
+struct ScaleNegativeTracers{FA, SA, FV, W}
+           tracers :: FA
+      scalefactors :: SA
+    nan_fill_value :: FV
+              warn :: W
 
-    ScaleNegativeTracers(tracers::FA, scalefactors::SA, warn::W) where {FA, SA, W} =
-        warn ? error("Warning not currently implemented") : new{FA, SA, W}(tracers, scalefactors, warn)
+    ScaleNegativeTracers(tracers::FA, scalefactors::SA, warn::W, nan_fill_value::FV) where {FA, SA, FV, W} =
+        warn ? error("Warning not currently implemented") : new{FA, SA, W}(tracers, scalefactors, nan_fill_value, warn)
 end
 
 adapt_structure(to, snt::ScaleNegativeTracers) = ScaleNegativeTracers(adapt(to, snt.tracers),
                                                                       adapt(to, snt.scalefactors),
+                                                                      adapt(to, snt.nan_fill_value),
                                                                       adapt(to, snt.warn))
 
 """
-    ScaleNegativeTracers(; tracers, scalefactors = ones(length(tracers)), warn = false)
+    ScaleNegativeTracers(; tracers, scalefactors = ones(length(tracers)), warn = false, nan_fill_value = NaN)
 
 Constructs a modifier to scale `tracers` so that none are negative. Use like:
 ```julia
@@ -60,14 +62,17 @@ github](https://github.com/OceanBioME/OceanBioME.jl/discussions/48).
 
 Future plans include implement a positivity-preserving timestepping scheme as the ideal alternative.
 
-If `warn` is true then scaling will raise a warning.
+~~If `warn` is true then scaling will raise a warning.~~
+
+`nan_fill_value` specifies the value to set the total cell content to if the total is less than 0
+(meaning that total tracer conservation can not be enforced).
 """
-function ScaleNegativeTracers(tracers; scalefactors = ones(length(tracers)), warn = false)
+function ScaleNegativeTracers(tracers; scalefactors = ones(length(tracers)), nan_fill_value = NaN, warn = false)
     if length(scalefactors) != length(tracers)
         error("Incorrect number of scale factors provided")
     end
 
-    return ScaleNegativeTracers(tracers, scalefactors, warn)
+    return ScaleNegativeTracers(tracers, scalefactors, nan_fill_value, warn)
 end
 
 """
@@ -77,11 +82,11 @@ Construct a modifier to scale the conserved tracers in `model`.
 
 If `warn` is true then scaling will raise a warning.
 """
-function ScaleNegativeTracers(bgc::AbstractBiogeochemistry, grid; warn = false)
+function ScaleNegativeTracers(bgc::AbstractBiogeochemistry, grid; nan_fill_value = NaN, warn = false)
     tracers = conserved_tracers(bgc)
     scalefactors = on_architecture(architecture(grid), ones(length(tracers)))
 
-    return ScaleNegativeTracers(tracers, scalefactors, warn)
+    return ScaleNegativeTracers(tracers, scalefactors, nan_fill_value, warn)
 end
 
 summary(scaler::ScaleNegativeTracers) = string("Mass conserving negative scaling of $(scaler.tracers)")
