@@ -39,8 +39,8 @@ struct ScaleNegativeTracers{FA, SA, FV, W}
     nan_fill_value :: FV
               warn :: W
 
-    ScaleNegativeTracers(tracers::FA, scalefactors::SA, warn::W, nan_fill_value::FV) where {FA, SA, FV, W} =
-        warn ? error("Warning not currently implemented") : new{FA, SA, W}(tracers, scalefactors, nan_fill_value, warn)
+    ScaleNegativeTracers(tracers::FA, scalefactors::SA, nan_fill_value::FV, warn::W) where {FA, SA, W, FV} =
+        warn ? error("Warning not currently implemented") : new{FA, SA, FV, W}(tracers, scalefactors, nan_fill_value, warn)
 end
 
 adapt_structure(to, snt::ScaleNegativeTracers) = ScaleNegativeTracers(adapt(to, snt.tracers),
