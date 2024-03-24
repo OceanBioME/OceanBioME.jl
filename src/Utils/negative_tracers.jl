@@ -36,7 +36,7 @@ end
 struct ScaleNegativeTracers{FA, SA, FV, W}
            tracers :: FA
       scalefactors :: SA
-    invalid_fill_value :: FV
+invalid_fill_value :: FV
               warn :: W
 
     ScaleNegativeTracers(tracers::FA, scalefactors::SA, invalid_fill_value::FV, warn::W) where {FA, SA, W, FV} =
@@ -102,10 +102,10 @@ function update_biogeochemical_state!(model, scale::ScaleNegativeTracers)
 
     tracers_to_scale = Tuple(model.tracers[tracer_name] for tracer_name in keys(scale.tracers))
 
-    scale_for_negs_kernel!(tracers_to_scale, scale.scalefactors)
+    scale_for_negs_kernel!(tracers_to_scale, scale.scalefactors, scale.invalid_fill_value)
 end
 
-@kernel function scale_for_negs!(tracers, scalefactors)
+@kernel function scale_for_negs!(tracers, scalefactors, invalid_fill_value)
     i, j, k = @index(Global, NTuple)
 
     t, p = 0.0, 0.0
@@ -120,7 +120,7 @@ end
         end
     end 
 
-    t < 0 && (t = NaN)
+    t < 0 && (t = invalid_fill_value)
 
     for tracer in tracers
         value = @inbounds tracer[i, j, k]
