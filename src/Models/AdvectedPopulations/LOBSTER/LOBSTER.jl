@@ -189,7 +189,7 @@ end
               large_detritus_remineralisation_rate::FT = 5.88e-7, # 1/s
               phytoplankton_exudation_fraction::FT = 0.05,
               nitrification_rate::FT = 5.8e-7, # 1/s
-              ammonia_fraction_of_exudate::FT = 0.75,
+              ammonia_fraction_of_exudate::FT = 0.75, 
               ammonia_fraction_of_excriment::FT = 0.5,
               ammonia_fraction_of_detritus::FT = 0.0,
               phytoplankton_redfield::FT = 6.56, # mol C/mol N
@@ -198,26 +198,29 @@ end
               organic_carbon_calcate_ratio::FT = 0.1, # mol CaCO₃/mol C
               respiration_oxygen_nitrogen_ratio::FT = 10.75, # mol O/molN
               nitrification_oxygen_nitrogen_ratio::FT = 2.0, # mol O/molN
-              slow_sinking_mortality_fraction::FT = 0.5,
+              slow_sinking_mortality_fraction::FT = 0.5, 
               fast_sinking_mortality_fraction::FT = 0.5,
               dissolved_organic_breakdown_rate::FT = 3.86e-7, # 1/s
               zooplankton_calcite_dissolution::FT = 0.3,
 
-              surface_photosynthetically_active_radiation::SPAR = default_surface_PAR,
+              surface_photosynthetically_active_radiation = default_surface_PAR,
 
               light_attenuation_model::LA =
-                  TwoBandPhotosyntheticallyActiveRadiation(; grid,
+                  TwoBandPhotosyntheticallyActiveRadiation(; grid, 
                                                              surface_PAR = surface_photosynthetically_active_radiation),
               sediment_model::S = nothing,
 
               carbonates::Bool = false,
               oxygen::Bool = false,
-              variable_redfield = false,
+              variable_redfield::Bool = false,
 
-              sinking_speed = (sPOM = 3.47e-5, bPOM = 200/day),
+              sinking_speeds = (sPOM = 3.47e-5, bPOM = 200/day),
               open_bottom::Bool = true,
 
-              particles::P = nothing)
+              scale_negatives = false,
+
+              particles::P = nothing,
+              modifiers::M = nothing)
 
 Construct an instance of the [LOBSTER](@ref LOBSTER) biogeochemical model.
 
@@ -232,7 +235,9 @@ Keyword Arguments
 - `carbonates`, `oxygen`, and `variable_redfield`: include models for carbonate chemistry and/or oxygen chemistry and/or variable redfield ratio dissolved and particulate organic matter
 - `sinking_speed`: named tuple of constant sinking, of fields (i.e. `ZFaceField(...)`) for any tracers which sink (convention is that a sinking speed is positive, but a field will need to follow the usual down being negative)
 - `open_bottom`: should the sinking velocity be smoothly brought to zero at the bottom to prevent the tracers leaving the domain
+- `scale_negatives`: scale negative tracers?
 - `particles`: slot for `BiogeochemicalParticles`
+- `modifiers`: slot for components which modify the biogeochemistry when the tendencies have been calculated or when the state is updated
 
 Example
 =======

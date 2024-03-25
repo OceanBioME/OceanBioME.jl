@@ -103,7 +103,7 @@ end
                                                phyto_base_mortality_rate::FT = 0.0101 / day, # 1/s/(mmol N / m³)
                                                maximum_grazing_rate::FT = 2.1522 / day, # 1/s
                                                grazing_half_saturation::FT = 0.5573, # mmol N/m³
-                                               assimulation_efficiency::FT = 0.9116,
+                                               assimulation_efficiency::FT = 0.9116, 
                                                base_excretion_rate::FT = 0.0102 / day, # 1/s/(mmol N / m³)
                                                zoo_base_mortality_rate::FT = 0.3395 / day, # 1/s/(mmol N / m³)²
                                                remineralization_rate::FT = 0.1213 / day, # 1/s
@@ -113,11 +113,14 @@ end
                                                    TwoBandPhotosyntheticallyActiveRadiation(; grid,
                                                                                               surface_PAR = surface_photosynthetically_active_radiation),
                                                sediment_model::S = nothing,
-
+                
                                                sinking_speeds = (P = 0.2551/day, D = 2.7489/day),
                                                open_bottom::Bool = true,
 
-                                               particles::P = nothing)
+                                               scale_negatives = false,
+                                                                                      
+                                               particles::P = nothing,
+                                               modifiers::M = nothing)
 
 Construct a Nutrient-Phytoplankton-Zooplankton-Detritus ([NPZD](@ref NPZD)) biogeochemical model.
 
@@ -131,7 +134,9 @@ Keyword Arguments
 - `sediment_model`: slot for `AbstractSediment`
 - `sinking_speed`: named tuple of constant sinking, of fields (i.e. `ZFaceField(...)`) for any tracers which sink (convention is that a sinking speed is positive, but a field will need to follow the usual down being negative)
 - `open_bottom`: should the sinking velocity be smoothly brought to zero at the bottom to prevent the tracers leaving the domain
+- `scale_negatives`: scale negative tracers?
 - `particles`: slot for `BiogeochemicalParticles`
+- `modifiers`: slot for components which modify the biogeochemistry when the tendencies have been calculated or when the state is updated
 
 Example
 =======
