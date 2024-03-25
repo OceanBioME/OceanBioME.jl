@@ -72,9 +72,10 @@ to crashing care should be taken that the mass doesn't deviate too much.
 This scheme is similar to that used by [NEMO-PISCES](https://www.nemo-ocean.eu/), although they scale the 
 tendency rather than the value, while other Earth system models simply set negative tracers to zero, for 
 example [NCAR's MARBL](https://marbl-ecosys.github.io/versions/latest_release/index.html) and
-[NEMO-TOPAZ2](https://zenodo.org/records/2648099). More complicated schemes exist, for example 
-[ROMS-BECS](https://zenodo.org/records/3988618) uses an implicite-itterative approach where each component
-is updated in sequence to garantee mass conservation, possibly at the expense of numerical precision.
+[NEMO-TOPAZ2](https://zenodo.org/records/2648099), which does not conserve mass. More complicated schemes 
+exist, for example [ROMS-BECS](https://zenodo.org/records/3988618) uses an implicite-itterative 
+approach where each component is updated in sequence to garantee mass conservation, possibly at the 
+expense of numerical precision.
 """
 function ScaleNegativeTracers(tracers; scalefactors = ones(length(tracers)), invalid_fill_value = NaN, warn = false)
     if length(scalefactors) != length(tracers)
