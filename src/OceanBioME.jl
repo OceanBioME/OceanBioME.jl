@@ -126,6 +126,7 @@ update_tendencies!(bgc, modifiers::Tuple, model) = [update_tendencies!(bgc, modi
 
 function update_biogeochemical_state!(bgc::Biogeochemistry, model)
     update_biogeochemical_state!(model, bgc.modifiers)
+    synchronize(device(architecture(model)))
     update_biogeochemical_state!(model, bgc.light_attenuation)
 end
 

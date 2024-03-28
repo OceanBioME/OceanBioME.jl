@@ -33,21 +33,23 @@ end
 ##### Infastructure to rescale negative values
 #####
 
-struct ScaleNegativeTracers{FA, SA, W}
-    tracers :: FA
-    scalefactors :: SA
-    warn :: W
+struct ScaleNegativeTracers{FA, SA, FV, W}
+           tracers :: FA
+      scalefactors :: SA
+invalid_fill_value :: FV
+              warn :: W
 
-    ScaleNegativeTracers(tracers::FA, scalefactors::SA, warn::W) where {FA, SA, W} =
-        warn ? error("Warning not currently implemented") : new{FA, SA, W}(tracers, scalefactors, warn)
+    ScaleNegativeTracers(tracers::FA, scalefactors::SA, invalid_fill_value::FV, warn::W) where {FA, SA, W, FV} =
+        warn ? error("Warning not currently implemented") : new{FA, SA, FV, W}(tracers, scalefactors, invalid_fill_value, warn)
 end
 
 adapt_structure(to, snt::ScaleNegativeTracers) = ScaleNegativeTracers(adapt(to, snt.tracers),
                                                                       adapt(to, snt.scalefactors),
+                                                                      adapt(to, snt.invalid_fill_value),
                                                                       adapt(to, snt.warn))
 
 """
-    ScaleNegativeTracers(; tracers, scalefactors = ones(length(tracers)), warn = false)
+    ScaleNegativeTracers(; tracers, scalefactors = ones(length(tracers)), warn = false, invalid_fill_value = NaN)
 
 Constructs a modifier to scale `tracers` so that none are negative. Use like:
 ```julia
@@ -60,14 +62,27 @@ github](https://github.com/OceanBioME/OceanBioME.jl/discussions/48).
 
 Future plans include implement a positivity-preserving timestepping scheme as the ideal alternative.
 
-If `warn` is true then scaling will raise a warning.
+~~If `warn` is true then scaling will raise a warning.~~
+
+`invalid_fill_value` specifies the value to set the total cell content to if the total is less than 0
+(meaning that total tracer conservation can not be enforced). If the value is set to anything other than
+`NaN` this scheme no longer conserves mass. While this may be useful to prevent spurious numerics leading
+to crashing care should be taken that the mass doesn't deviate too much.
+
+This scheme is similar to that used by [NEMO-PISCES](https://www.nemo-ocean.eu/), although they scale the 
+tendency rather than the value, while other Earth system models simply set negative tracers to zero, for 
+example [NCAR's MARBL](https://marbl-ecosys.github.io/versions/latest_release/index.html) and
+[NEMO-TOPAZ2](https://zenodo.org/records/2648099), which does not conserve mass. More complicated schemes 
+exist, for example [ROMS-BECS](https://zenodo.org/records/3988618) uses an implicite-itterative 
+approach where each component is updated in sequence to garantee mass conservation, possibly at the 
+expense of numerical precision.
 """
-function ScaleNegativeTracers(tracers; scalefactors = ones(length(tracers)), warn = false)
+function ScaleNegativeTracers(tracers; scalefactors = ones(length(tracers)), invalid_fill_value = NaN, warn = false)
     if length(scalefactors) != length(tracers)
         error("Incorrect number of scale factors provided")
     end
 
-    return ScaleNegativeTracers(tracers, scalefactors, warn)
+    return ScaleNegativeTracers(tracers, scalefactors, invalid_fill_value, warn)
 end
 
 """
@@ -77,11 +92,11 @@ Construct a modifier to scale the conserved tracers in `model`.
 
 If `warn` is true then scaling will raise a warning.
 """
-function ScaleNegativeTracers(bgc::AbstractBiogeochemistry, grid; warn = false)
+function ScaleNegativeTracers(bgc::AbstractBiogeochemistry, grid; invalid_fill_value = NaN, warn = false)
     tracers = conserved_tracers(bgc)
     scalefactors = on_architecture(architecture(grid), ones(length(tracers)))
 
-    return ScaleNegativeTracers(tracers, scalefactors, warn)
+    return ScaleNegativeTracers(tracers, scalefactors, invalid_fill_value, warn)
 end
 
 summary(scaler::ScaleNegativeTracers) = string("Mass conserving negative scaling of $(scaler.tracers)")
@@ -97,10 +112,10 @@ function update_biogeochemical_state!(model, scale::ScaleNegativeTracers)
 
     tracers_to_scale = Tuple(model.tracers[tracer_name] for tracer_name in keys(scale.tracers))
 
-    scale_for_negs_kernel!(tracers_to_scale, scale.scalefactors)
+    scale_for_negs_kernel!(tracers_to_scale, scale.scalefactors, scale.invalid_fill_value)
 end
 
-@kernel function scale_for_negs!(tracers, scalefactors)
+@kernel function scale_for_negs!(tracers, scalefactors, invalid_fill_value)
     i, j, k = @index(Global, NTuple)
 
     t, p = 0.0, 0.0
@@ -115,7 +130,7 @@ end
         end
     end 
 
-    t < 0 && (t = NaN)
+    t < 0 && (t = invalid_fill_value)
 
     for tracer in tracers
         value = @inbounds tracer[i, j, k]
