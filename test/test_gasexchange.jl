@@ -1,4 +1,5 @@
-using Test
+include("dependencies_for_runtests.jl")
+
 using OceanBioME: Boundaries, GasExchange, LOBSTER
 using Oceananigans, DataDeps, JLD2, Statistics
 using Oceananigans.Units

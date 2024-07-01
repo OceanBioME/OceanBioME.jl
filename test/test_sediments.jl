@@ -1,4 +1,4 @@
-using OceanBioME, Oceananigans, Test, JLD2
+include("dependencies_for_runtests.jl")
 
 using OceanBioME.Sediments: SimpleMultiG, InstantRemineralisation
 using Oceananigans.Units

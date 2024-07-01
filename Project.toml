@@ -1,7 +1,7 @@
 name = "OceanBioME"
 uuid = "a49af516-9db8-4be4-be45-1dad61c5a376"
 authors = ["Jago Strong-Wright <js2430@damtp.cam.ac.uk> and contributors"]
-version = "0.10.2"
+version = "0.10.3"
 
 [deps]
 Adapt = "79e6a3ab-5dfb-504d-930d-738a2a938a0e"
@@ -19,10 +19,10 @@ Documenter = "1"
 EnsembleKalmanProcesses = "1"
 JLD2 = "0.4"
 KernelAbstractions = "0.9"
-Oceananigans = "0.90.11"
+Oceananigans = "0.91"
 Roots = "2"
 StructArrays = "0.4, 0.5, 0.6"
-julia = "1.9"
+julia = "1.10"
 
 [extras]
 CUDA = "052768ef-5323-5732-b1bb-66c8b64840ba"

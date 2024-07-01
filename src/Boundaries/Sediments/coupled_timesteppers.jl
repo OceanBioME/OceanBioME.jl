@@ -8,11 +8,12 @@ using Oceananigans.Architectures: AbstractArchitecture
 
 import Oceananigans.TimeSteppers: ab2_step!, rk3_substep!
 
-@inline function ab2_step!(model::NonhydrostaticModel{<:Any, <:Any, <:Any, <:Any, <:Any, <:Any, <:Any, <:Any, <:Any, <:Any, <:Any, <:Any, <:Any, <:Any, <:Any, <:Any, <:Any, <:Biogeochemistry{<:Any, <:Any, <:FlatSediment}}, Δt, χ)
+@inline function ab2_step!(model::NonhydrostaticModel{<:Any, <:Any, <:Any, <:Any, <:Any, <:Any, <:Any, <:Any, <:Any, <:Any, <:Any, <:Any, <:Any, <:Any, <:Any, <:Any, <:Any, <:Biogeochemistry{<:Any, <:Any, <:FlatSediment}}, Δt)
     workgroup, worksize = work_layout(model.grid, :xyz)
     arch = model.architecture
     step_field_kernel! = ab2_step_field!(device(arch), workgroup, worksize)
     model_fields = prognostic_fields(model)
+    χ = model.timestepper.χ
 
     for (i, field) in enumerate(model_fields)
 
@@ -45,7 +46,9 @@ import Oceananigans.TimeSteppers: ab2_step!, rk3_substep!
     return nothing
 end
 
-@inline function ab2_step!(model::HydrostaticFreeSurfaceModel{<:Any, <:Any, <:AbstractArchitecture, <:Any, <:Any, <:Any, <:Any, <:Any, <:Any, <:Any, <:Any, <:Biogeochemistry{<:Any, <:Any, <:FlatSediment}}, Δt, χ)
+@inline function ab2_step!(model::HydrostaticFreeSurfaceModel{<:Any, <:Any, <:AbstractArchitecture, <:Any, <:Any, <:Any, <:Any, <:Any, <:Any, <:Any, <:Any, <:Biogeochemistry{<:Any, <:Any, <:FlatSediment}}, Δt)
+    χ = model.timestepper.χ
+
     # Step locally velocity and tracers
     @apply_regionally local_ab2_step!(model, Δt, χ)
 
@@ -54,6 +57,7 @@ end
 
     sediment = model.biogeochemistry.sediment
     arch = model.architecture
+    
 
     for (i, field) in enumerate(sediment_fields(sediment))
         launch!(arch, model.grid, :xy, ab2_step_flat_field!, 
