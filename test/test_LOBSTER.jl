@@ -1,4 +1,5 @@
-using Test
+include("dependencies_for_runtests.jl")
+
 using OceanBioME: LOBSTER, conserved_tracers, redfield
 using Oceananigans, CUDA
 

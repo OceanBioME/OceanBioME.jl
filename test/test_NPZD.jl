@@ -1,4 +1,5 @@
-using Test
+include("dependencies_for_runtests.jl")
+
 using OceanBioME: NutrientPhytoplanktonZooplanktonDetritus
 using Oceananigans
 

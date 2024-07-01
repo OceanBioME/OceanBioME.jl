@@ -1,4 +1,4 @@
-using Test, OceanBioME, Oceananigans
+include("dependencies_for_runtests.jl")
 
 function test_negative_scaling(arch)
     grid = RectilinearGrid(arch, size = (1, 1, 1), extent = (1, 1, 1))

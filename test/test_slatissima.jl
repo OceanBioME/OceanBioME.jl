@@ -1,4 +1,5 @@
-using Test, OceanBioME, Oceananigans
+include("dependencies_for_runtests.jl")
+
 using OceanBioME.SLatissimaModel: SLatissima
 using Oceananigans.Units
 using Oceananigans.Fields: TracerFields

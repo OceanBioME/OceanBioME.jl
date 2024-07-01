@@ -1,4 +1,5 @@
-using Oceananigans, Test
+include("dependencies_for_runtests.jl")
+
 using OceanBioME: TwoBandPhotosyntheticallyActiveRadiation, LOBSTER, NutrientPhytoplanktonZooplanktonDetritus
 using Oceananigans.Biogeochemistry: update_biogeochemical_state!, required_biogeochemical_tracers, biogeochemical_auxiliary_fields
 
