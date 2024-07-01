@@ -44,7 +44,7 @@ end
     BoxModel(; biogeochemistry::B,
                forcing = NamedTuple(),
                timestepper = :RungeKutta3,
-               clock::C = Clock(0.0, 0, 1),
+               clock::C = Clock(; time = 0.0),
                prescribed_fields::PF = (:T, :PAR))
 
 Constructs a box model of a `biogeochemistry` model. Once this has been constructed you can set initial condiitons by `set!(model, X=1.0...)` and then `run!(model)`.
@@ -61,7 +61,7 @@ Keyword Arguments
 function BoxModel(; biogeochemistry::B,
                     forcing = NamedTuple(),
                     timestepper = :RungeKutta3,
-                    clock::C = Clock(0.0, 0, 1),
+                    clock::C = Clock(; time = 0.0),
                     prescribed_fields::PF = (:T, :PAR)) where {B, C, PF}
 
     variables = (required_biogeochemical_tracers(biogeochemistry)..., required_biogeochemical_auxiliary_fields(biogeochemistry)...)
