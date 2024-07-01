@@ -50,7 +50,7 @@ end
         bgc in (LOBSTER, NutrientPhytoplanktonZooplanktonDetritus) # this is now redundant since each model doesn't deal with the light separatly
 
         if !((model == NonhydrostaticModel) && ((grid isa LatitudeLongitudeGrid) | (grid isa OrthogonalSphericalShellGrid)))
-            @info "Testing $bgc in $model on $grid..."
+            @info "Testing light with $bgc in $model on $grid..."
             @test test_two_band(grid, bgc, model)
         end
     end

@@ -24,6 +24,7 @@ using Oceananigans.Units
 using Oceananigans: Center, CPU
 using Oceananigans.Architectures: on_architecture, device, architecture
 using Oceananigans.Biogeochemistry: required_biogeochemical_tracers, biogeochemical_auxiliary_fields
+using Oceananigans.Models.LagrangianParticleTracking: _advect_particles!
 
 using Oceananigans.Operators: volume
 using Oceananigans.Grids: AbstractGrid, Flat
@@ -32,7 +33,7 @@ using Oceananigans.Models: total_velocities
 
 import Adapt: adapt_structure, adapt
 import Oceananigans.Biogeochemistry: update_tendencies!
-import Oceananigans.Models.LagrangianParticleTracking: update_lagrangian_particle_properties!, _advect_particles!
+import Oceananigans.Models.LagrangianParticleTracking: update_lagrangian_particle_properties!
 
 @inline no_dynamics(args...) = nothing
 
@@ -333,10 +334,7 @@ function update_lagrangian_particle_properties!(particles::SLatissima, model, bg
     # Advect particles
     advect_particles_kernel! = _advect_particles!(device(arch), workgroup, worksize)
 
-    advect_particles_kernel!((x = particles.x, y = particles.y, z = particles.z), 
-                             1.0, model.grid, Δt,
-                             total_velocities(model))
-
+    advect_particles_kernel!(particles, 1.0, model.grid, Δt, total_velocities(model))
 
     update_particle_properties_kernel! = _update_lagrangian_particle_properties!(device(arch), workgroup, worksize)
 

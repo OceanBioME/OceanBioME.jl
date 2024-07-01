@@ -31,7 +31,9 @@ sum_tracer_carbon(tracers, redfield, organic_carbon_calcate_ratio) =
     # Initial properties
 
     particles = SLatissima(; architecture,
-                             x = on_architecture(architecture, ones(Float64, 2)),
+                             x = on_architecture(architecture,   ones(Float64, 2) .* .5),
+                             y = on_architecture(architecture,   ones(Float64, 2) .* .5),
+                             z = on_architecture(architecture, - ones(Float64, 2) .* .5),
                              A = on_architecture(architecture, ones(Float64, 2) .* 5),
                              N = on_architecture(architecture, ones(Float64, 2)),
                              C = on_architecture(architecture, ones(Float64, 2)),
@@ -60,7 +62,7 @@ sum_tracer_carbon(tracers, redfield, organic_carbon_calcate_ratio) =
     model.clock.time = 60days # get to a high growth phase
 
     for _ in 1:10
-        time_step!(model, 1.0)
+        time_step!(model, 1)
     end
 
     final_tracer_N = sum_tracer_nitrogen(model.tracers)
