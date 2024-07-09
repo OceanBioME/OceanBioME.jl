@@ -96,7 +96,7 @@ end
     CO₂ = DIC * H ^ 2/ (H ^ 2 + k¹ * H + k¹ * k²)
     pCO₂ = (CO₂ / ff) * 10 ^ 6
 
-    return pCO₂ # μatm
+    return pCO₂, -log10(H) # μatm
 end
 
 OCMIP_solubility = (C = -162.8301, invT = 218.2968 * 100, logCT = 1 / 100, ClogT = 90.9241, T² = - 1.47696 / (100 ^ 2), ST² = 0.0049867 / (100 ^ 2), ST = -0.025225 / 100, S = .025695)#
