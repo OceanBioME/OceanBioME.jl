@@ -90,7 +90,7 @@ end
     end
 
     ff = exp(pk⁰.C + pk⁰.invT / T  +
-             pk⁰.ClogT * log(T * pk⁰.logCT) + pk⁰.T² * T ^ 2 +
+             pk⁰.ClogT * log(T * pk⁰.logCT) +
     		 S * (pk⁰.S + pk⁰.ST * T + pk⁰.ST² * T ^ 2))
 
     CO₂ = DIC * H ^ 2/ (H ^ 2 + k¹ * H + k¹ * k²)
@@ -99,11 +99,11 @@ end
     return pCO₂, -log10(H) # μatm
 end
 
-OCMIP_solubility = (C = -162.8301, invT = 218.2968 * 100, logCT = 1 / 100, ClogT = 90.9241, T² = - 1.47696 / (100 ^ 2), ST² = 0.0049867 / (100 ^ 2), ST = -0.025225 / 100, S = .025695)#
+OCMIP_solubility = (C = -60.2409, invT = 93.4517 * 100, logCT = 1 / 100, ClogT = 23.3585,  ST² = 0.0047036 / (100 ^ 2), ST = -0.023656 / 100, S = .023517)
 
-OCMIP_bicarbonate_dissociation = (C = 62.008, S = 0.0118, S² = -0.000116, invT = -3670.7, logT = -9.7944)
+OCMIP_bicarbonate_dissociation = (C = 61.2172, S = 0.011555, S² = -0.0001152, invT = -3633.86, logT = -9.67770)
 
-OCMIP_carbonate_dissociation = (C = -4.777, S = 0.0184, S² = -0.000118, invT = -1394.7, logT = 0.0)
+OCMIP_carbonate_dissociation = (C = -25.9290, S = 0.01781, S² = -0.0001122, invT = -471.78, logT = 3.16967)
 
 OCMIP_boric_acid_dissociation = (C = 148.0248, invT = -8966.9, invTsqrtS = -2890.53, invTS = -77.942, invTS¹⁵ = 1.728, invTS² = - 0.0996,
                                  sqrtS = 137.1942, S = 1.62142, logT = - 24.4344, logTsqrtS = - 25.085, logTS = - 0.2474, TsqrtS = 0.053105)
