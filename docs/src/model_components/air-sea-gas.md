@@ -87,7 +87,7 @@ where ``S`` is salinity in practical units and the other default parameters are 
 
 ### Partial pressure of carbon dioxide
 
-We currently do not have the full OCMIP partial pressure formulation, instead we follow the simplified formulation (as used in [Aumont2015](@citet)) where the partial pressure of CO``_2`` (``\mu``atm) in gas is found from:
+We currently do not have the full OCMIP partial pressure formulation, instead, we follow the simplified formulation (as used in [Aumont2015](@citet)) where the partial pressure of CO``_2`` (``\mu``atm) in gas is found from:
 
 ```math
 pCO_{2a} = f_{CO_2}P_a,
@@ -156,7 +156,7 @@ Finally, taking the DIC and Alkalinity in mol / kg and equivilants / kg (i.e. sc
 The system can be rearranged to give two equations for the carbonate alkalinity:
 
 ```math
-\ce{Alk_C} = DIC\frac{K_1H + 2K^1K^2}{H^2 + K_1H+K_1K_2},
+\ce{Alk_C} = DIC\frac{K_1H + 2K_1K_2}{H^2 + K_1H+K_1K_2},
 ```
     
 ```math
