@@ -70,7 +70,7 @@ end
 
     k¹ = 10 ^ (pk¹.C + pk¹.invT / T + pk¹.logT * log(T) + pk¹.S * S + pk¹.S² * S ^ 2)
 
-    k² = 10 ^ (pk².C + pk².invT / T + pk².S * S + pk².S² * S ^ 2)
+    k² = 10 ^ (pk².C + pk².invT / T + pk².S * S + pk².S² * S ^ 2 + pk².logT * log(T))
 
     kᵇ = exp(pkᵇ.C + (pkᵇ.invT + pkᵇ.invTsqrtS * sqrt(S) + pkᵇ.invTS * S + pkᵇ.invTS¹⁵ * S ^ 1.5 + pkᵇ.invTS² * S ^ 2) / T
     		+ pkᵇ.sqrtS * sqrt(S) + pkᵇ.S * S + (pkᵇ.logT + pkᵇ.logTsqrtS * sqrt(S) + pkᵇ.logTS * S) * log(T) + pkᵇ.TsqrtS * sqrt(S) * T)
@@ -96,7 +96,7 @@ end
     CO₂ = DIC * H ^ 2/ (H ^ 2 + k¹ * H + k¹ * k²)
     pCO₂ = (CO₂ / ff) * 10 ^ 6
 
-    return pCO₂, -log10(H) # μatm
+    return pCO₂ # μatm
 end
 
 OCMIP_solubility = (C = -162.8301, invT = 218.2968 * 100, logCT = 1 / 100, ClogT = 90.9241, T² = - 1.47696 / (100 ^ 2), ST² = 0.0049867 / (100 ^ 2), ST = -0.025225 / 100, S = .025695)#
