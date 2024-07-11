@@ -90,7 +90,7 @@ end
     end
 
     ff = exp(pk⁰.C + pk⁰.invT / T  +
-             pk⁰.ClogT * log(T * pk⁰.logCT) + pk⁰.T² * T ^ 2 +
+             pk⁰.ClogT * log(T * pk⁰.logCT)  +
     		 S * (pk⁰.S + pk⁰.ST * T + pk⁰.ST² * T ^ 2))
 
     CO₂ = DIC * H ^ 2/ (H ^ 2 + k¹ * H + k¹ * k²)
