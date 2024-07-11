@@ -151,7 +151,7 @@ resulting in the equilibrium constant:
 K_B = \frac{\ce{[B(OH)^-_4][H^+]}}{\ce{[B(OH)_3]}}.
 ```
 
-Finally, taking the DIC and Alkalinity in micro equivalents (i.e. scaled by ``10^{-3}/\rho_o`` from mmol C/m``^3``) denoted by ``\bar{DIC}`` and ``\bar{Alk}``, the carbonate alkalinity is given by ``Alk_C = \bar{Alk} + [B(OH)^-_4] + [OH^-]``, and we define the boron content, ``B``, to be ``R_{B:S}S`` mol/kg.
+Finally, taking the DIC and Alkalinity in mol / kg and equivilants / kg (i.e. scaled by ``10^{-3}/\rho_o``) denoted by ``\bar{DIC}`` and ``\bar{Alk}``, the carbonate alkalinity is given by ``Alk_C = \bar{Alk} + [B(OH)^-_4] + [OH^-]``, and we define the boron content, ``B``, to be ``R_{B:S}S`` mol/kg.
 
 The system can be rearranged to give two equations for the carbonate alkalinity:
 
