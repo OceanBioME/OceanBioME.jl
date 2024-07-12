@@ -9,7 +9,13 @@
 
 # For use in NO₃ and NH₄ forcing equations.
 
-@inline ΔO₂(O₂ᵐⁱⁿ¹, O₂ᵐⁱⁿ², O₂) = min(1, max(0.4*(O₂ᵐⁱⁿ¹-O₂)/(O₂ᵐⁱⁿ²+O₂))) #(57)
+@inline function ΔO₂(O₂)
+    O₂ᵐⁱⁿ¹ = bgc.half_sat_const_for_denitrification1
+    O₂ᵐⁱⁿ² = bgc.half_sat_const_for_denitrification2
+
+    return min(1, max(0.4*(O₂ᵐⁱⁿ¹-O₂)/(O₂ᵐⁱⁿ²+O₂))) #(57)
+end
+
 PAR̄() = 0 #(56b)
 
 @inline Nitrif(λₙₕ₄, NH₄, O₂ᵐⁱⁿ¹, O₂ᵐⁱⁿ², O₂) = λₙₕ₄*NH₄*(1-ΔO₂(O₂ᵐⁱⁿ¹, O₂ᵐⁱⁿ², O₂))/(1+PAR̄()) #(56a)
