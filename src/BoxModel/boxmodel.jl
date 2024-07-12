@@ -30,10 +30,11 @@ import Base: show, summary
 
 @inline no_func(args...) = 0.0
 
-mutable struct BoxModel{G, B, F, FO, TS, C, PF} <: AbstractModel{TS}
+mutable struct BoxModel{G, B, F, FV, FO, TS, C, PF} <: AbstractModel{TS}
                grid :: G # here so that simualtion can be built
     biogeochemistry :: B
              fields :: F
+       field_values :: FV
             forcing :: FO
         timestepper :: TS
               clock :: C
@@ -66,22 +67,26 @@ function BoxModel(; biogeochemistry::B,
 
     variables = (required_biogeochemical_tracers(biogeochemistry)..., required_biogeochemical_auxiliary_fields(biogeochemistry)...)
     fields = NamedTuple{variables}([CenterField(BoxModelGrid) for var in eachindex(variables)])
+    field_values = zeros(length(variables))
     forcing = NamedTuple{variables}([variable in keys(forcing) ? forcing[variable] : no_func for variable in variables])
 
     timestepper = BoxModelTimeStepper(timestepper, BoxModelGrid, keys(fields))
 
     F = typeof(fields)
+    FV = typeof(field_values)
     FO = typeof(forcing)
     TS = typeof(timestepper)
 
-    return BoxModel{typeof(BoxModelGrid), B, F, FO, TS, C, PF}(BoxModelGrid, biogeochemistry, fields, forcing, timestepper, clock, prescribed_fields)
+    return BoxModel{typeof(BoxModelGrid), B, F, FV, FO, TS, C, PF}(BoxModelGrid, biogeochemistry, fields, field_values, forcing, timestepper, clock, prescribed_fields)
 end
 
 function update_state!(model::BoxModel, callbacks=[]; compute_tendencies = true)
     t = model.clock.time
 
-    @inbounds for field in model.prescribed_fields 
-        (field in keys(model.fields)) && (model.fields[field] .= model.forcing[field](t))
+    for field in model.prescribed_fields 
+        if field in keys(model.fields)
+            @inbounds model.fields[field][1, 1, 1] = @inbounds model.forcing[field](t)
+        end
     end
 
     for callback in callbacks
