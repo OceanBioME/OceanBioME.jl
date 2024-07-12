@@ -46,7 +46,7 @@ struct PISCES{FT, W} <: AbstractContinuousFormBiogeochemistry
     basal_respiration_rate :: FT
     temperature_sensitivity_of_growth :: FT
     initial_slope_of_PI_curve :: FT
-    exudiation_of_DOC :: FT
+    exudation_of_DOC :: FT
     absorption_in_the_blue_part_of_light :: FT
     absorption_in_the_green_part_of_light :: FT
     absorption_in_the_red_part_of_light :: FT
@@ -146,7 +146,7 @@ struct PISCES{FT, W} <: AbstractContinuousFormBiogeochemistry
                     basal_respiration_rate :: FT,
                     temperature_sensitivity_of_growth :: FT,
                     initial_slope_of_PI_curve :: FT,
-                    exudiation_of_DOC :: FT,
+                    exudation_of_DOC :: FT,
                     absorption_in_the_blue_part_of_light :: FT,
                     absorption_in_the_green_part_of_light :: FT,
                     absorption_in_the_red_part_of_light :: FT,
@@ -247,7 +247,7 @@ struct PISCES{FT, W} <: AbstractContinuousFormBiogeochemistry
                             basal_respiration_rate,
                             temperature_sensitivity_of_growth,
                             initial_slope_of_PI_curve,
-                            exudiation_of_DOC,
+                            exudation_of_DOC,
                             absorption_in_the_blue_part_of_light,
                             absorption_in_the_green_part_of_light,
                             absorption_in_the_red_part_of_light,
@@ -402,7 +402,7 @@ function PISCES(; grid, # finally the function
                    basal_respiration_rate :: FT = 0.033 / day,                             # 1/d
                    temperature_sensitivity_of_growth :: FT = 1.066,
                    initial_slope_of_PI_curve :: FT = [2, 2] ./ day,
-                   exudiation_of_DOC :: FT = [0.05, 0.05], 
+                   exudation_of_DOC :: FT = [0.05, 0.05], 
                    absorption_in_the_blue_part_of_light :: FT = [2.1, 1.6],
                    absorption_in_the_green_part_of_light :: FT = [0.42, 0.69],
                    absorption_in_the_red_part_of_light :: FT = [0.4, 0.7],
