@@ -43,6 +43,7 @@ end
 
 # Define sum of grazing rates, as this quantity freqeuently appears
 
+@inline ∑gᶻ() = gᶻ(P, ) + gᶻ(D, ) + gᶻ(POC, )
 @inline ∑gᴹ() = gᴹ(P, ) + gᴹ(D, ) + gᴹ(Z, ) + gᴹ(POC, )
 
 # NH₄ forcing also requires eᶻ, eᴹ (27), Rᵤₚᴹ (30b), gᶻ (26a), g_FF (29), μᴾₙₕ₄, μᴰₙₕ₄() (8)
