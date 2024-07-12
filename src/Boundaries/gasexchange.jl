@@ -14,8 +14,6 @@ struct pCO₂{P0, P1, P2, PB, PW, FT}
               lower_pH_bound :: FT
               upper_pH_bound :: FT
                  boron_ratio :: FT
-           thermal_expansion :: FT
-          haline_contraction :: FT
 
 
     pCO₂(solubility::P0,
@@ -25,17 +23,14 @@ struct pCO₂{P0, P1, P2, PB, PW, FT}
          water_dissociaiton::PW,
          lower_pH_bound::FT,
          upper_pH_bound::FT,
-         boron_ratio::FT,
-         thermal_expansion::FT,
-         haline_contraction::FT) where {P0, P1, P2, PB, PW, FT} =
+         boron_ratio::FT) where {P0,P1,P2,PB,PW,FT}
          new{P0, P1, P2, PB, PW, FT}(solubility, 
                                      bicarbonate_dissociation, 
                                      carbonate_dissociation, 
                                      boric_acid_dissociation, 
                                      water_dissociaiton, 
                                      lower_pH_bound, upper_pH_bound, 
-                                     boron_ratio, 
-                                     thermal_expansion, haline_contraction)
+                                     boron_ratio)
 end
 
 adapt_structure(to, pCO₂_model::pCO₂) = pCO₂(adapt(to, pCO₂_model.solubility),
@@ -45,18 +40,47 @@ adapt_structure(to, pCO₂_model::pCO₂) = pCO₂(adapt(to, pCO₂_model.solubi
                                              adapt(to, pCO₂_model.water_dissociaiton),
                                              adapt(to, pCO₂_model.lower_pH_bound),
                                              adapt(to, pCO₂_model.upper_pH_bound),
-                                             adapt(to, pCO₂_model.boron_ratio),
-                                             adapt(to, pCO₂_model.thermal_expansion),
-                                             adapt(to, pCO₂_model.haline_contraction))
+                                             adapt(to, pCO₂_model.boron_ratio))
 
 @inline function titrate_alkalinity(H, p)
     return p.DIC * (p.k¹ * H + 2 * p.k¹ * p.k²) / (H ^ 2 + p.k¹ * H + p.k¹ * p.k²) -
            (p.Alk - p.kʷ / H - p.boron / (1 + H / p.kᵇ))
 end
+"""
+     seawater_density(T, S)
+
+ Returns the density of seawater at `T` °C and `S` psu in kg/m³ as
+ per Chapter 5, Section 4.2 of Dickson, Sabine and Christian (2007, 
+ http://cdiac.ornl.gov/oceans/Handbook_2007.html).
+
+ With many thanks to Oscar Brandson for his implementation in cbsyst
+ (https://github.com/oscarbranson/cbsyst).
+ """
+ @inline function seawater_density(T, S)
+     # convert temperature to IPTS-68
+     T = (T + 0.0002) / 0.99975
+
+     pSMOW = (999.842594
+              + 6.793952e-2 * T
+              - 9.095290e-3 * T^2
+              + 1.001685e-4 * T^3
+              - 1.120083e-6 * T^4
+              + 6.536332e-9 * T^5)
+
+     A = (8.24493e-1
+          - 4.0899e-3 * T
+          + 7.6438e-5 * T^2
+          - 8.2467e-7 * T^3
+          + 5.3875e-9 * T^4)
+
+     B = -5.72466e-3 + 1.0227e-4 * T - 1.6546e-6 * T^2
+     C = 4.8314e-4
+
+     return pSMOW + A * S + B * S^1.5 + C * S^2
+ end
 
 @inline function (p::pCO₂)(DIC, Alk, T, S)
-    ρₒ = 1027 * (1 - p.thermal_expansion * T + p.haline_contraction * S)
-
+    ρₒ = seawater_density(T,S)
     T += 273.15
 
     Alk *= 1e-3 / ρₒ
@@ -116,8 +140,7 @@ OCMIP_default = pCO₂(OCMIP_solubility,
                      OCMIP_boric_acid_dissociation, 
                      OCMIP_water_dissociaiton, 
                      0.0, 14.0, 
-                     0.000232 / 1.80655 / 10.811,
-                     1.67e-4, 7.80e-4)
+                     0.000232 / 1.80655 / 10.811)
 
 #####
 ##### Gas exchange model of [Wanninkhof1992](@citet)
