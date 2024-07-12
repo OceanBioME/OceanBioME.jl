@@ -522,7 +522,7 @@ function PISCES(; grid, # finally the function
                                         basal_respiration_rate,
                                         temperature_sensitivity_of_growth,
                                         initial_slope_of_PI_curve,
-                                        exudiation_of_DOC,
+                                        exudation_of_DOC,
                                         absorption_in_the_blue_part_of_light,
                                         absorption_in_the_green_part_of_light,
                                         absorption_in_the_red_part_of_light,
