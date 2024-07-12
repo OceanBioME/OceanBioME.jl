@@ -16,7 +16,7 @@
 # pkg "add OceanBioME, Oceananigans, CairoMakie, EnsembleKalmanProcesses, Distributions"
 # ```
 
-using OceanBioME, EnsembleKalmanProcesses, JLD2, CairoMakie, Oceananigans.Units, Oceananigans, BenchmarkTools
+using OceanBioME, Oceananigans.Units, Oceananigans, BenchmarkTools
 
 const year = years = 365day
 
@@ -37,12 +37,29 @@ function run_box_simulation()
 
     simulation = Simulation(model; Δt = 20minutes, stop_iteration = 1000, verbose = false)
 
-    simulation.output_writers[:fields] = JLD2OutputWriter(model, model.fields; filename = "box_benchmarking.jld2", schedule = IterationInterval(20), overwrite_existing = true)
+    #simulation.output_writers[:fields] = JLD2OutputWriter(model, model.fields; filename = "box_benchmarking.jld2", schedule = IterationInterval(20), overwrite_existing = true)
+
+    fast_output = SpeedyOutput("box_benchmarking.jld2")
+
+    simulation.callbacks[:output] = Callback(fast_output, IterationInterval(20);)
 
     @info "Running the model..."
     run!(simulation)
 end
 
+function fast_output(sim, fname)
+    file = jldopen(fname, "w+")
+
+    model = sim.model
+
+    t = time(sim)
+
+    file["fields/$t"] = model.field_values
+
+    close(file)
+
+    return nothing
+end
 #####
 ##### results
 #####
@@ -53,3 +70,5 @@ end
 # removed kernel launching from rk3 substepping: 265.823 ms (1000607 allocations: 79.11 MiB)
 # removed broadcasting in update state: 120.605 ms (619379 allocations: 63.98 MiB)
 # no outputs:   23.523 ms (370344 allocations: 30.31 MiB)
+# outputting every 20 steps: 1.181s 
+# outputting every 20 steps with `SpeedyOutput`: 34ms
