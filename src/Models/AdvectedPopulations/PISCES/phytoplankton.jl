@@ -10,9 +10,9 @@
 
 @inline L_NH₄(NO₃, NH₄, Kₙₒ₃ᴵ, Kₙₕ₄ᴵ) = Kₙₒ₃ᴵ*NH₄/(Kₙₒ₃ᴵ*Kₙₕ₄ᴵ+Kₙₕ₄ᴵ*NO₃+Kₙₒ₃ᴵ*NH₄) #eq 6d
 @inline L_NO₃(NO₃, NH₄, Kₙₒ₃ᴵ, Kₙₕ₄ᴵ) = Kₙₕ₄ᴵ*NO₃/(Kₙₒ₃ᴵ*Kₙₕ₄ᴵ+Kₙₕ₄ᴵ*NO₃+Kₙₒ₃ᴵ*NH₄) #eq 6e
-@inline L_Fe(P, Pᶠᵉ, θₒₚₜᶠᵉᵖ, θₘᵢₙᶠᵉᵖ) = min(1, max(0, (θ(Pᶠᵉ, P) - θₘᵢₙᶠᵉᵖ)/θₒₚₜᶠᵉᵖ)) #eq 6f
+@inline L_Fe(I, Iᶠᵉ, θₒₚₜᶠᵉᵖ, θₘᵢₙᶠᵉᵖ) = min(1, max(0, (θ(Iᶠᵉ, I) - θₘᵢₙᶠᵉᵖ)/θₒₚₜᶠᵉᵖ)) #eq 6f
 
-@inline θᶠᵉₘᵢₙ(P, Pᶜʰˡ, Lₙᴾ, Lₙₒ₃ᴾ) = 0.0016/(55.85) * θ(Pᶜʰˡ, P) + 1.21e-5*14*Lₙᴾ/(55.85*7.625)*1.5+1.15*14*Lₙₒ₃ᴾ/(55.85*7.625) #eq 20 -> Lₙ could be meant to be L_NH₄?
+@inline θᶠᵉₘᵢₙ(I, Iᶜʰˡ, Lₙᴾ, Lₙₒ₃ᴾ) = 0.0016/(55.85) * θ(Iᶜʰˡ, I) + 1.21e-5*14*Lₙᴾ/(55.85*7.625)*1.5+1.15*14*Lₙₒ₃ᴾ/(55.85*7.625) #eq 20 -> Lₙ could be meant to be L_NH₄?
 
 @inline I₁(I, Iₘₐₓ) = min(I, Iₘₐₓ) #eq 7a
 @inline I₂(I, Iₘₐₓ) = max(0, I - Iₘₐₓ) #eq 7b
@@ -63,4 +63,41 @@ end
     μᴾ = μᴵ(P, Pᶜʰˡ, PARᴾ, L_day, T, αᴾ, Lₗᵢₘᴾ)
 
     return (1-δᴾ)*μᴾ*P - mᴾ*K_mondo(P, Kₘ)*P - sh*wᴾ*P^2 - gₚᶻ*Z - gₚᴹ*M    #eq 1
+end
+
+@inline function (pisces::PISCES)(::Val{:D}, x, y, z, t, D, Z, M, PAR) 
+    # the signature of this function is always `Val(name), x, y, z, t` and then all the tracers listed in `required_biogeochemical_tracers`, and then `required_biogeochemical_auxiliary_fields`
+    δᴾ = bgc.exudiation_of_DOC[1]
+    mᴾ = bgc.phytoplankton_mortality_rate[1]
+    Kₘ = bgc.half_saturation_const_for_mortality
+    wᴾ = bgc.min_quadratic_mortality_of_phytoplankton
+    αᴾ = bgc.initial_slope_of_PI_curve[1]
+    θₒₚₜᶠᵉᵖ = bgc.optimal_iron_quota[1]
+    Sᵣₐₜᴾ = bgc.size_ratio_of_phytoplankton[1]
+    Kₙₒ₃ᴾᵐⁱⁿ = bgc.min_half_saturation_const_for_nitrate[1]
+    Kₙₕ₄ᴾᵐⁱⁿ = bgc.min_half_saturation_const_for_ammonium[1]
+    #equaitons here
+    sh = 
+    gₚᶻ = 
+    gₚᴹ =  
+
+    D₁ = I₁(D, Dₘₐₓ)
+    D₂ = I₂(D, Dₘₐₓ)
+
+    Kₙₒ₃ᴾ = Kᵢᴶ(Kₙₒ₃ᴾᵐⁱⁿ, D₁, D₂, Sᵣₐₜᴾ)
+    Kₙₕ₄ᴾ = Kᵢᴶ(Kₙₕ₄ᴾᵐⁱⁿ, D₁, D₂, Sᵣₐₜᴾ)
+
+    Lₚₒ₄ᴾ = K_mondo(DO₄, Kₚₒ₄ᴾ) #6b
+    Lₙₕ₄ᴾ = L_NH₄(NO₃, NH₄, Kₙₒ₃ᴾ, Kₙₕ₄ᴾ)
+    Lₙₒ₃ᴾ = L_NO₃(NO₃, NH₄, Kₙₒ₃ᴾ, Kₙₕ₄ᴾ)
+    Lₙᴾ = Lₙₒ₃ᴾ + Lₙₕ₄ᴾ         #6c
+
+    θₘᵢₙᶠᵉᵖ = θᶠᵉₘᵢₙ(D, Dᶜʰˡ, Lₙᴾ, Lₙₒ₃ᴾ)
+    L_Feᴾ = L_Fe(D, Dᶠᵉ ,θₒₚₜᶠᵉᵖ, θₘᵢₙᶠᵉᵖ)
+
+    Lₗᵢₘᴾ = min(Lₚₒ₄ᴾ, Lₙᴾ, L_Feᴾ) #6a
+    
+    μᴾ = μᴵ(D, Dᶜʰˡ, PARᴾ, L_day, T, αᴾ, Lₗᵢₘᴾ)
+
+    return (1-δᴾ)*μᴾ*D - mᴾ*K_mondo(D, Kₘ)*D - sh*wᴾ*D^2 - gₚᶻ*Z - gₚᴹ*M    #eq 1
 end
