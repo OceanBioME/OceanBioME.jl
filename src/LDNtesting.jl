@@ -47,7 +47,7 @@ function set_defaults!(::VariableRedfieldLobster, model)
     uᵢ(x, y, z) = kick * randn()
     vᵢ(x, y, z) = kick * randn()
     wᵢ(x, y, z) = kick * randn()
-    bᵢ(x, y, z) = kick * randn()
+    bᵢ(x, y, z) = kick * randn() + 1
     Pᵢ(x, y, z) = (1000-z)/1500
     #Pᵢ(x, y, z) = 0.4686 + exp(-((z - 500) / 50)^2)
 
@@ -75,17 +75,18 @@ total_nitrogen(::VariableRedfieldLobster, model) = sum(model.tracers.NO₃) +
 function test_flat_sediment(grid, biogeochemistry, model; timestepper = :QuasiAdamsBashforth2)
     Re = 5000
     model = model(; grid, 
-                    biogeochemistry, 
-                    closure = (ScalarDiffusivity(ν = 1 / Re, κ = 1 / Re)),
+                    biogeochemistry,
+                    closure = nothing,
                     buoyancy = Buoyancy(model=BuoyancyTracer()),
                     tracers = :b)
-                                                      
+    
+                    @info "flag1"
     set_defaults!(model.biogeochemistry.sediment)
 
     set_defaults!(biogeochemistry.underlying_biogeochemistry, model)
 
     simulation = Simulation(model, Δt = 50, stop_time = 1day)
-
+                    @info "flag2"
     intercepted_tendencies = Tuple(Array(interior(field)) for field in values(TracerFields(keys(model.tracers), grid)))
 
     simulation.callbacks[:intercept_tendencies] = Callback(intercept_tracer_tendencies!; callsite = TendencyCallsite(), parameters = intercepted_tendencies)
@@ -94,7 +95,7 @@ function test_flat_sediment(grid, biogeochemistry, model; timestepper = :QuasiAd
                                                        filename = "LDNtesting.jld2",
                                                        schedule = TimeInterval(24minute),
                                                        overwrite_existing = true)
-
+@info "flag3"
 
     run!(simulation)
     return nothing

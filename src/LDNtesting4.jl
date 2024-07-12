@@ -14,8 +14,8 @@ using OceanBioME.LOBSTERModel: VariableRedfieldLobster
 using CairoMakie
 using CairoMakie: record
 
-Z = FieldTimeSeries("LDNtesting.jld2", "Z")
-N = FieldTimeSeries("LDNtesting.jld2", "NO₃")
+Z = FieldTimeSeries("LDNtesting.jld2", "b")
+N = FieldTimeSeries("LDNtesting.jld2", "Z")
 P = FieldTimeSeries("LDNtesting.jld2", "P")
 
 xc, yc, zc = nodes(Z)
