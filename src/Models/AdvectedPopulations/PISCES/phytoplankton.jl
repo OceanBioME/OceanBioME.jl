@@ -18,7 +18,7 @@
 @inline I₂(I, Iₘₐₓ) = max(0, I - Iₘₐₓ) #eq 7b
 @inline Kᵢᴶ(Kᵢᴶᵐⁱⁿ, J₁, J₂, Sᵣₐₜᴶ) = Kᵢᴶᵐⁱⁿ* (J₁ + Sᵣₐₜᴶ* J₂)/(J₁ + J₂) #eq 7c
 
-@inline function μᴵᶠᵉ(I, Iᶠᵉ, θₘₐₓᶠᵉᴵ, Sᵣₐₜᴵ, K_Feᴵᶠᵉᵐⁱⁿ, Iₘₐₓ, L_Feᴵ)
+@inline function μᴵᶠᵉ(I, Iᶠᵉ, θₘₐₓᶠᵉᴵ, Sᵣₐₜᴵ, K_Feᴵᶠᵉᵐⁱⁿ, Iₘₐₓ, L_Feᴵ, bFe)
     μ⁰ₘₐₓ = bgc.growth_rate_at_zero
 
     μₚ = μ⁰ₘₐₓ*fₚ(T) #4b
@@ -39,7 +39,6 @@ end
     
     μ⁰ₘₐₓ = bgc.growth_rate_at_zero
 
-
     μₚ = μ⁰ₘₐₓ*fₚ(T)    #eq 4b
 
     return μₚ * f₁(L_day) * f₂(zₘₓₗ, zₑᵤ, t_dark_lim) * Cₚᵣₒ(I, Iᶜʰˡ, PARᴵ, L_day, αᴵ, μₚ, Lₗᵢₘᴵ) * Lₗᵢₘᴵ #2b 
@@ -50,8 +49,7 @@ end
     Sᵣₐₜᴾ = bgc.size_ratio_of_phytoplankton[1]
     Kₙₒ₃ᴾᵐⁱⁿ = bgc.min_half_saturation_const_for_nitrate[1]
     Kₙₕ₄ᴾᵐⁱⁿ = bgc.min_half_saturation_const_for_ammonium[1]
-    Pₘₐₓ = 
-
+    Pₘₐₓ =
 
     P₁ = I₁(P, Pₘₐₓ)
     P₂ = I₂(P, Pₘₐₓ)
@@ -189,23 +187,73 @@ end
     return (1-δᴰ)*(12*θₘᵢₙᶜʰˡ + (θₘₐₓᶜʰˡᴰ - θₘᵢₙᶜʰˡ)*ρᴰᶜʰˡ)*μᴰ*D - mᴰ*K_mondo(D, Kₘ)*Dᶜʰˡ - sh*wᴰ*D*Dᶜʰˡ - θ(Dᶜʰˡ, D)*g_dᶻ*Z - θ(Dᶜʰˡ, D)*g_dᴹ*M
 end
 
-@inline function (pisces:PISCES)(::Val{:Pᶠᵉ}, x, y, z, t, P, Z, M, PO₄, NO₃, NH₄, Pᶜʰˡ, Pᶠᵉ, PARᴾ, T, L_day)
+@inline function (pisces:PISCES)(::Val{:Pᶠᵉ}, x, y, z, t, P, Z, M, PO₄, NO₃, NH₄, Pᶜʰˡ, Pᶠᵉ)
     δᴾ = bgc.exudation_of_DOC[1]
-    αᴾ = bgc.initial_slope_of_PI_curve[1]
     θₘₐₓᶠᵉᵖ = bgc.max_iron_quota[1]
     mᴾ = bgc.phytoplankton_mortality_rate[1]
     Kₘ = bgc.half_saturation_const_for_mortality
     wᴾ = bgc.min_quadratic_mortality_of_phytoplankton
     Sᵣₐₜᴾ = bgc.size_ratio_of_phytoplankton[1]
-    K_Feᴾᶠᵉᵐⁱⁿ = bgc.
-    Pₘₐₓ = 
-    L_Feᴾ = 
+    K_Feᴾᶠᵉᵐⁱⁿ = bgc.min_half_saturation_const_for_iron_uptake[1] # this seems wrong as doesn't quite match parameter list
+    θₒₚₜᶠᵉᵖ = bgc.optimal_iron_quota[1]
+    Kₙₒ₃ᴾᵐⁱⁿ = bgc.min_half_saturation_const_for_nitrate[1]
+    Kₙₕ₄ᴾᵐⁱⁿ = bgc.min_half_saturation_const_for_ammonium[1]
+
+    P₁ = I₁(P, Pₘₐₓ)
+    P₂ = I₂(P, Pₘₐₓ)
+
+    Kₙₒ₃ᴾ = Kᵢᴶ(Kₙₒ₃ᴾᵐⁱⁿ, P₁, P₂, Sᵣₐₜᴾ)
+    Kₙₕ₄ᴾ = Kᵢᴶ(Kₙₕ₄ᴾᵐⁱⁿ, P₁, P₂, Sᵣₐₜᴾ)
+
+    #Lₚₒ₄ᴾ = K_mondo(PO₄, Kₚₒ₄ᴾ) #6b
+    Lₙₕ₄ᴾ = L_NH₄(NO₃, NH₄, Kₙₒ₃ᴾ, Kₙₕ₄ᴾ)
+    Lₙₒ₃ᴾ = L_NO₃(NO₃, NH₄, Kₙₒ₃ᴾ, Kₙₕ₄ᴾ)
+    Lₙᴾ = Lₙₒ₃ᴾ + Lₙₕ₄ᴾ         #6c
+
+    θₘᵢₙᶠᵉᵖ = θᶠᵉₘᵢₙ(P, Pᶜʰˡ, Lₙᴾ, Lₙₒ₃ᴾ)
+    L_Feᴾ = L_Fe(P, Pᶠᵉ, θₒₚₜᶠᵉᵖ, θₘᵢₙᶠᵉᵖ)
 
     sh = 
     gₚᶻ =
     gₚᴹ = 
    
-    μᴾᶠᵉ = μᴵᶠᵉ(P, Pᶠᵉ, θₘₐₓᶠᵉᵖ, Sᵣₐₜᴾ, K_Feᴾᶠᵉᵐⁱⁿ, Pₘₐₓ, L_Feᴾ)
+    μᴾᶠᵉ = μᴵᶠᵉ(P, Pᶠᵉ, θₘₐₓᶠᵉᵖ, Sᵣₐₜᴾ, K_Feᴾᶠᵉᵐⁱⁿ, Pₘₐₓ, L_Feᴾ, bFe)
 
     return (1-δᴾ)*μᴾᶠᵉ*P - mᴾ*K_mondo(P, Kₘ)*Pᶠᵉ - sh*wᴾ*P*Pᶠᵉ - θ(Pᶠᵉ, P)*gₚᶻ*Z - θ(Pᶠᵉ, P)*gₚᴹ*M
+end
+
+@inline function (pisces:PISCES)(::Val{:Dᶠᵉ}, x, y, z, t, D, Z, M, PO₄, NO₃, NH₄, Dᶜʰˡ, Dᶠᵉ)
+    δᴰ = bgc.exudation_of_DOC[2]
+    θₘₐₓᶠᵉᴰ = bgc.max_iron_quota[2]
+    mᴰ = bgc.phytoplankton_mortality_rate[2]
+    Kₘ = bgc.half_saturation_const_for_mortality
+    wᴾ = bgc.min_quadratic_mortality_of_phytoplankton
+    θₒₚₜᶠᵉᴰ = bgc.optimal_iron_quota[2]
+    Sᵣₐₜᴰ = bgc.size_ratio_of_phytoplankton[2]
+    Kₙₒ₃ᴰᵐⁱⁿ = bgc.min_half_saturation_const_for_nitrate[2]
+    Kₙₕ₄ᴰᵐⁱⁿ = bgc.min_half_saturation_const_for_ammonium[2]
+    Dₘₐₓ = 
+
+    D₁ = I₁(D, Dₘₐₓ)
+    D₂ = I₂(D, Dₘₐₓ)
+
+    Kₙₒ₃ᴰ = Kᵢᴶ(Kₙₒ₃ᴰᵐⁱⁿ, D₁, D₂, Sᵣₐₜᴰ)
+    Kₙₕ₄ᴰ = Kᵢᴶ(Kₙₕ₄ᴰᵐⁱⁿ, D₁, D₂, Sᵣₐₜᴰ)
+    #Lₚₒ₄ᴰ = K_mondo(PO₄, Kₚₒ₄ᴰ) #6b
+    Lₙₕ₄ᴰ = L_NH₄(NO₃, NH₄, Kₙₒ₃ᴰ, Kₙₕ₄ᴰ)
+    Lₙₒ₃ᴰ = L_NO₃(NO₃, NH₄, Kₙₒ₃ᴰ, Kₙₕ₄ᴰ)
+    Lₙᴰ = Lₙₒ₃ᴰ + Lₙₕ₄ᴰ         #6c
+
+    θₘᵢₙᶠᵉᴰ = θᶠᵉₘᵢₙ(D, Dᶜʰˡ, Lₙᴰ, Lₙₒ₃ᴰ)
+    L_Feᴰ = L_Fe(D, Dᶠᵉ ,θₒₚₜᶠᵉᴰ, θₘᵢₙᶠᵉᴰ)
+
+    wᴰ = wᴾ + wₘₐₓᴰ*(1-Lₗᵢₘᴰ) #13
+
+    sh = 
+    g_dᶻ =
+    g_dᴹ = 
+   
+    μᴰᶠᵉ = μᴵᶠᵉ(D, Dᶠᵉ, θₘₐₓᶠᵉᴰ, Sᵣₐₜᴰ, K_Feᴰᶠᵉᵐⁱⁿ, Dₘₐₓ, L_Feᴰ, bFe)
+
+    return (1-δᴰ)*μᴰᶠᵉ*D - mᴰ*K_mondo(D, Kₘ)*Dᶠᵉ - sh*wᴰ*D*Dᶠᵉ - θ(Dᶠᵉ, D)*g_dᶻ*Z - θ(Dᶠᵉ, D)*g_dᴹ*M
 end
