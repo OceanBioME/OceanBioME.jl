@@ -42,9 +42,8 @@ Fe¹ = 0
     @inline Bactfe() = μₚ()*Lₗᵢₘᵇᵃᶜᵗ()*θₘₐₓᶠᵉᵇᵃᶜᵗ*Fe*Bact/(K_Feᴮ¹ + Fe) # where is K_Feᴮ¹ defined? where is θₘₐₓᶠᵉᵇᵃᶜᵗ defined?
 
     return max(0, (1-σᶻ)*(∑θᶠᵉⁱ*gᶻ())/∑gᶻ() - eₙᶻ()θ(Zᶠᵉ, Z))*∑gᶻ()*Z + 
-        max(0, (1-σᴹ)*(∑θᶠᵉⁱ*gᴹ() + ∑θᶠᵉⁱ*g_FFᴹ())/(∑gᴹ()+g_FFᴹ()+g_FFᴹ()) -  #How to write this term ∑θᶠᵉⁱ*g_FFᴹ() ?
-        eₙᴹ()*θ(Zᶠᵉ, Z))*(∑gᴹ()+g_FFᴹ()+g_FFᴹ())*M + 
-        γᴹ*θ(Zᶠᵉ, Z)*Rᵤₚᴹ() + λ_poc2*SFe #Find definition of λ_poc2 ?
+        max(0, (1-σᴹ)*(∑θᶠᵉⁱ*gᴹ() + ∑θᶠᵉⁱ*g_FFᴹ())/(∑gᴹ()+g_FFᴹ()+g_FFᴹ()) -  eₙᴹ()*θ(Zᶠᵉ, Z))*(∑gᴹ()+g_FFᴹ()+g_FFᴹ())*M #How to write this term ∑θᶠᵉⁱ*g_FFᴹ() ?
+        + γᴹ*θ(Zᶠᵉ, Z)*Rᵤₚᴹ() + λ_poc2*SFe #Find definition of λ_poc2 ?
         - (1 - δᴾ)*μᴾᶠᵉ()*P - (1 - δᴰ)*μᴰᶠᵉ()*D #What is this term μ^P^^Fe ?
         - Scav() - Cfge1() - Cgfe2() - Aggfe() - Bactfe()
 end

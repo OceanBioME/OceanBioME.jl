@@ -13,12 +13,16 @@
     O₂ᵐⁱⁿ¹ = bgc.half_sat_const_for_denitrification1
     O₂ᵐⁱⁿ² = bgc.half_sat_const_for_denitrification2
 
-    return min(1, max(0.4*(O₂ᵐⁱⁿ¹-O₂)/(O₂ᵐⁱⁿ²+O₂))) #(57)
+    return min(1, max(0.4*(O₂ᵐⁱⁿ¹-O₂)/(O₂ᵐⁱⁿ²+O₂))) #eq57
 end
 
 PAR̄() = 0 #(56b)
 
-@inline Nitrif(λₙₕ₄, NH₄, O₂ᵐⁱⁿ¹, O₂ᵐⁱⁿ², O₂) = λₙₕ₄*NH₄*(1-ΔO₂(O₂ᵐⁱⁿ¹, O₂ᵐⁱⁿ², O₂))/(1+PAR̄()) #(56a)
+@inline function Nitrif(NH₄, O₂, λₙₕ₄) 
+    O₂ᵐⁱⁿ¹ = bgc.half_sat_const_for_denitrification1
+    O₂ᵐⁱⁿ² = bgc.half_sat_const_for_denitrification2
+    
+    return λₙₕ₄*NH₄*(1-ΔO₂(O₂))/(1+PAR̄()) #eq56a
 
 # For NO₃ forcing only
 Rₙₕ₄ = 0 # set this value
@@ -28,21 +32,21 @@ Rₙₒ₃ = 0.86 # check this value
 
 @inline function (pisces::PISCES)(::Val{:NO₃}, x, y, z, t, P, D, NH₄, O₂, PAR) 
 
-    O₂ᵐⁱⁿ¹ = bgc.half_sat_const_for_denitrification1
-    O₂ᵐⁱⁿ² = bgc.half_sat_const_for_denitrification2
     λₙₕ₄ =  bgc.max_nitrification_rate
 
-    return Nitrif(λₙₕ₄, NH₄, O₂ᵐⁱⁿ¹, O₂ᵐⁱⁿ², O₂) - μₙₒ₃ᴾ()*P - μₙₒ₃ᴰ()*D - Rₙₕ₄*λₙₕ₄*ΔO₂(O₂ᵐⁱⁿ¹, O₂ᵐⁱⁿ², O₂)*NH₄ - Rₙₒ₃*Denit()
+    return Nitrif(λₙₕ₄, NH₄, O₂) - μₙₒ₃ᴾ()*P - μₙₒ₃ᴰ()*D - Rₙₕ₄*λₙₕ₄*ΔO₂(O₂)*NH₄ - Rₙₒ₃*Denit()
 end
 
 
 # The following relate specifically to NH₄ forcing
 
-@kwdef function Lₙᴰᶻ() #(58a), Lₙᵖ (6).
-    if Lₙᴾ() >= 0.08 #Fill parameters for this function. Check where Pₘₐₓ defined.
+@kwdef function Lₙᴰᶻ(P, PO₄, NO₃, NH₄, Pᶜʰˡ, Pᶠᵉ) #(58a), Lₙᵖ (6).
+    Lₙᴾ = Lᴾ(P, PO₄, NO₃, NH₄, Pᶜʰˡ, Pᶠᵉ)[5]
+    #Lₗᵢₘᴾ, Lₚₒ₄ᴾ, Lₙₕ₄ᴾ, Lₙₒ₃ᴾ, Lₙᴾ, L_Feᴾ = Lᴾ(P, PO₄, NO₃, NH₄, Pᶜʰˡ, Pᶠᵉ)
+    if Lₙᴾ >= 0.08 #Fill parameters for this function. Check where Pₘₐₓ defined.
         return 0.01
     else
-        return 1 - Lₙᴾ()
+        return 1 - Lₙᴾ
         
 @inline N_fix(N_fixᵐ, K_Feᴰᶻ, Kₚₒ₄ᴾᵐⁱⁿ, E_fix, Pₘₐₓ, Kᵢᴾᵐⁱⁿ, Sᵣₐₜᴾ) = N_fixᵐ*max(0,μₚ() - 2.15)*Lₙᴰᶻ()*min(bFe/(K_Feᴰᶻ + bFe), PO₄/(Kₚₒ₄ᴾᵐⁱⁿ + PO₄))*(1 - e^{-PAR/E_fix}) #(58b)
 
@@ -62,9 +66,6 @@ end
     γᴹ = bgc.excretion_as_DOM[2]
     σᴹ = bgc.non_assimilated_fraction[2]
     λₙₕ₄ = bgc.max_nitrification_rate
-    #Required for (57) and (56)
-    O₂ᵐⁱⁿ¹ = bgc.half_sat_const_for_denitrification1
-    O₂ᵐⁱⁿ² = bgc.half_sat_const_for_denitrification2
     #Required for (58)
     N_fixᵐ = bgc.max_rate_of_nitrogen_fixation
     K_Feᴰᶻ = bgc.Fe_half_saturation_constant_of_nitrogen_fixation
@@ -73,4 +74,4 @@ end
     Sᵣₐₜᴾ = bgc.size_ratio_of_phytoplankton[1]
      # Pₘₐₓ = ?
   
-    return γᶻ*(1-eᶻ()-σᶻ)*∑gᶻ()*Z + γᴹ*(1-eᴹ()-σᴹ)*(∑gᴹ() + g_FFᴹ(POC, ) + g_FFᴹ(GOC, ))*M + γᴹ*Rᵤₚᴹ() + Remin() + Denit() + N_fix(N_fixᵐ, K_Feᴰ, Kₚₒ₄ᴾᵐⁱⁿ, E_fix, Pₘₐₓ, Kᵢᴾᵐⁱⁿ, Sᵣₐₜᴾ) - Nitrif(λₙₕ₄, NH₄, O₂ᵐⁱⁿ¹, O₂ᵐⁱⁿ², O₂) - λₙₕ₄*ΔO₂(O₂ᵐⁱⁿ¹, O₂ᵐⁱⁿ², O₂)*NH₄ - μₙₕ₄ᴾ()*P - μₙₕ₄ᴰ()*D
+    return γᶻ*(1-eᶻ()-σᶻ)*∑gᶻ()*Z + γᴹ*(1-eᴹ()-σᴹ)*(∑gᴹ() + g_FFᴹ(POC, ) + g_FFᴹ(GOC, ))*M + γᴹ*Rᵤₚᴹ() + Remin() + Denit() + N_fix(N_fixᵐ, K_Feᴰ, Kₚₒ₄ᴾᵐⁱⁿ, E_fix, Pₘₐₓ, Kᵢᴾᵐⁱⁿ, Sᵣₐₜᴾ) - Nitrif(λₙₕ₄, NH₄, O₂) - λₙₕ₄*ΔO₂(O₂)*NH₄ - μₙₕ₄ᴾ()*P - μₙₕ₄ᴰ()*D
