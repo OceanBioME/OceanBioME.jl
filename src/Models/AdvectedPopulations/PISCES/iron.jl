@@ -7,15 +7,20 @@
     #Should λᶠᵉ be λ_Fe, else where is it defined?
     #Where is K_Feᴮ¹ defined? where is θₘₐₓᶠᵉᵇᵃᶜᵗ defined?
     #How to write this term ∑θᶠᵉⁱ*g_ᴹ()? What are we indexing over? Do we know POCᶠᵉ?
+    #For cgfe, etc, is it better convention to define inside the structure as variables, or as functions before the structure?
 
-#Ask Jago how to code simple chemistry model? What is L'?
+# K_eqᶠᵉ in original PISCES code given as function of temperature by K_Fe(T) = 10^(16.27 - 1565.7/max(T, 5)). Check this?
+@inline function K_eqᶠᵉ(T) = 10^(16.27 - 1565.7/max(T, 5))
 
-Lₜ = 0
-Fe¹ = 0
+@inline function Fe¹(T, Fe) #eq65
+    Δ = 1 +  K_eqᶠᵉ(T)*Lₜ -  K_eqᶠᵉ(T)*Fₑ
+    return (-Δ + sqrt(Δ^2 + 4*K_eqᶠᵉ(T)*Fe)/2*K_eqᶠᵉ(T))
+end
+
+# K_eqᶠᵉ in original PISCES code given as function of temperature by K_Fe(T) = 10^(16.27 - 1565.7/max(T, 5)).
 
 # Using simple chemistry model. 
 @inline function (pisces::PISCES)(::Val{:Fe}, x, y, z, t, P, PAR) #(60)
-    
     
     sh = # Find value
     θₘₐₓᶠᵉᵇᵃᶜᵗ = # check where is this defined?
@@ -36,10 +41,19 @@ Fe¹ = 0
     #For Aggfe
     λ_Fe = bgc.slope_of_scavenging_rate_of_iron
 
-    @inline Cgfe1(a₁, a₂, a₄, a₅) = ((a₁*DOC + a₂*POC)*sh+a₄*POC + a₅*DOC)*Fe_coll
-    @inline Cgfe2(a₃) = a₃*GOC*sh*Fe_coll
-    @inline Aggfe(λᶠᵉ) = 1000*λᶠᵉ*max(0, Fe - Lₜ)*Fe¹ #Should λᶠᵉ be λ_Fe, else where is it defined?
-    @inline Bactfe() = μₚ()*Lₗᵢₘᵇᵃᶜᵗ()*θₘₐₓᶠᵉᵇᵃᶜᵗ*Fe*Bact/(K_Feᴮ¹ + Fe) # where is K_Feᴮ¹ defined? where is θₘₐₓᶠᵉᵇᵃᶜᵗ defined?
+    #Is it best to define in here, or define outside of the struct as functions. Do these need to be defined as function here?
+    Lₜ = max(0.09*(DOC + 40) - 3, 0.6)
+    K_eqᶠᵉ = 10^(16.27 - 1565.7/max(T, 5))
+    Δ = 1 +  K_eqᶠᵉ(T)*Lₜ -  K_eqᶠᵉ(T)*Fₑ
+    Fe¹ = (-Δ + sqrt(Δ^2 + 4*K_eqᶠᵉ(T)*Fe)/2*K_eqᶠᵉ(T))
+
+    FeL = = Fe - Fe¹(T, Fe)
+    Fe_coll = 0.5*FeL
+
+    Cgfe1 = ((a₁*DOC + a₂*POC)*sh+a₄*POC + a₅*DOC)*Fe_coll
+    Cgfe2 = a₃*GOC*sh*Fe_coll
+    Aggfe = 1000*λᶠᵉ*max(0, Fe - Lₜ)*Fe¹ #Should λᶠᵉ be λ_Fe, else where is it defined?
+    Bactfe = μₚ()*Lₗᵢₘᵇᵃᶜᵗ()*θₘₐₓᶠᵉᵇᵃᶜᵗ*Fe*Bact/(K_Feᴮ¹ + Fe) # where is K_Feᴮ¹ defined? where is θₘₐₓᶠᵉᵇᵃᶜᵗ defined?
 
     return max(0, (1-σᶻ)*(∑θᶠᵉⁱ*gᶻ())/∑gᶻ() - eₙᶻ()θ(Zᶠᵉ, Z))*∑gᶻ()*Z + 
         max(0, (1-σᴹ)*(∑θᶠᵉⁱ*gᴹ() + ∑θᶠᵉⁱ*g_FFᴹ())/(∑gᴹ()+g_FFᴹ()+g_FFᴹ()) -  eₙᴹ()*θ(Zᶠᵉ, Z))*(∑gᴹ()+g_FFᴹ()+g_FFᴹ())*M #How to write this term ∑θᶠᵉⁱ*g_FFᴹ() ?

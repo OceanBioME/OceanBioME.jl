@@ -16,7 +16,7 @@
     return min(1, max(0.4*(O₂ᵐⁱⁿ¹-O₂)/(O₂ᵐⁱⁿ²+O₂))) #eq57
 end
 
-PAR̄() = 0 #(56b)
+PAR̄() = 0 #eq56b
 
 @inline function Nitrif(NH₄, O₂, λₙₕ₄) 
     O₂ᵐⁱⁿ¹ = bgc.half_sat_const_for_denitrification1
@@ -40,15 +40,23 @@ end
 
 # The following relate specifically to NH₄ forcing
 
-@kwdef function Lₙᴰᶻ(P, PO₄, NO₃, NH₄, Pᶜʰˡ, Pᶠᵉ) #(58a), Lₙᵖ (6).
+@inline function Lₙᴰᶻ(P, PO₄, NO₃, NH₄, Pᶜʰˡ, Pᶠᵉ) #eq58a
     Lₙᴾ = Lᴾ(P, PO₄, NO₃, NH₄, Pᶜʰˡ, Pᶠᵉ)[5]
-    #Lₗᵢₘᴾ, Lₚₒ₄ᴾ, Lₙₕ₄ᴾ, Lₙₒ₃ᴾ, Lₙᴾ, L_Feᴾ = Lᴾ(P, PO₄, NO₃, NH₄, Pᶜʰˡ, Pᶠᵉ)
+    #Lₗᵢₘᴾ, Lₚₒ₄ᴾ, Lₙₕ₄ᴾ, Lₙₒ₃ᴾ, Lₙᴾ, L_Feᴾ = Lᴾ(P, PO₄, NO₃, NH₄, Pᶜʰˡ, Pᶠᵉ), check the correct way to call the function.
     if Lₙᴾ >= 0.08 #Fill parameters for this function. Check where Pₘₐₓ defined.
         return 0.01
     else
         return 1 - Lₙᴾ
+    end
         
-@inline N_fix(N_fixᵐ, K_Feᴰᶻ, Kₚₒ₄ᴾᵐⁱⁿ, E_fix, Pₘₐₓ, Kᵢᴾᵐⁱⁿ, Sᵣₐₜᴾ) = N_fixᵐ*max(0,μₚ() - 2.15)*Lₙᴰᶻ()*min(bFe/(K_Feᴰᶻ + bFe), PO₄/(Kₚₒ₄ᴾᵐⁱⁿ + PO₄))*(1 - e^{-PAR/E_fix}) #(58b)
+@inline function N_fix() #eq 58b
+    N_fixᵐ = bgc.max_rate_of_nitrogen_fixation
+    K_Feᴰᶻ = bgc.Fe_half_saturation_constant_of_nitrogen_fixation
+    Kₚₒ₄ᴾᵐⁱⁿ = bgc.min_half_saturation_const_for_phosphate[1]
+    E_fix = bgc.photosynthetic_parameter_of_nitrogen_fixation
+
+    return N_fixᵐ*max(0,μₚ() - 2.15)*Lₙᴰᶻ()*min(K_mondo(bFe, K_Feᴰᶻ), K_mondo(PO₄, Kₚₒ₄ᴾᵐⁱⁿ))*(1 - e^{-PAR/E_fix})
+end
 
 
 # Define sum of grazing rates, as this quantity freqeuently appears
@@ -66,12 +74,5 @@ end
     γᴹ = bgc.excretion_as_DOM[2]
     σᴹ = bgc.non_assimilated_fraction[2]
     λₙₕ₄ = bgc.max_nitrification_rate
-    #Required for (58)
-    N_fixᵐ = bgc.max_rate_of_nitrogen_fixation
-    K_Feᴰᶻ = bgc.Fe_half_saturation_constant_of_nitrogen_fixation
-    Kₚₒ₄ᴾᵐⁱⁿ = bgc.min_half_saturation_const_for_phosphate[1]
-    E_fix = bgc.photosynthetic_parameter_of_nitrogen_fixation
-    Sᵣₐₜᴾ = bgc.size_ratio_of_phytoplankton[1]
-     # Pₘₐₓ = ?
-  
-    return γᶻ*(1-eᶻ()-σᶻ)*∑gᶻ()*Z + γᴹ*(1-eᴹ()-σᴹ)*(∑gᴹ() + g_FFᴹ(POC, ) + g_FFᴹ(GOC, ))*M + γᴹ*Rᵤₚᴹ() + Remin() + Denit() + N_fix(N_fixᵐ, K_Feᴰ, Kₚₒ₄ᴾᵐⁱⁿ, E_fix, Pₘₐₓ, Kᵢᴾᵐⁱⁿ, Sᵣₐₜᴾ) - Nitrif(λₙₕ₄, NH₄, O₂) - λₙₕ₄*ΔO₂(O₂)*NH₄ - μₙₕ₄ᴾ()*P - μₙₕ₄ᴰ()*D
+   
+    return γᶻ*(1-eᶻ()-σᶻ)*∑gᶻ()*Z + γᴹ*(1-eᴹ()-σᴹ)*(∑gᴹ() + g_FFᴹ(POC, ) + g_FFᴹ(GOC, ))*M + γᴹ*Rᵤₚᴹ() + Remin() + Denit() + N_fix(bFe, PO₄, PAR) - Nitrif(λₙₕ₄, NH₄, O₂) - λₙₕ₄*ΔO₂(O₂)*NH₄ - μₙₕ₄ᴾ()*P - μₙₕ₄ᴰ()*D
