@@ -107,7 +107,7 @@ function IronPhosphate(; grid,
     @warn "Sediment models are an experimental feature and have not yet been validated."
     @info "This sediment model is currently only compatible with models providing NH₄, NO₃, O₂, and DIC."
 
-    tracer_names = (:O2, :NH4, :NO3, :NO2, :N2, :TPO4, :FeOHP, :FeII, :FeS2, :SO4, :TH2S, :CH4, :TCO2, :Gi)
+    tracer_names = (:O₂, :NH₄, :NO₃, :NO₂, :N₂, :TPO₄, :FeOHP, :Feᴵᴵ, :FeS₂, :SO₄, :TH₂S, :CH₄, :TCO₂, :Gi)
         #:C_slow, :C_fast, :N_slow, :N_fast, :C_ref, :N_ref, :Fe_III, :Fe_II, :PO4_dissolved, :P_org)
 
     # add field slicing back ( indices = (:, :, 1)) when output writer can cope
@@ -145,7 +145,7 @@ adapt_structure(to, sediment::IronPhosphate) =
                  nothing,
                  adapt(to, sediment.bottom_indices))
                   
-sediment_tracers(::IronPhosphate) = (:O2, :NH4, :NO3, :NO2, :N2, :TPO4, :FeOHP, :FeII, :FeS2, :SO4, :TH2S, :CH4, :TCO2, :Gi)
+sediment_tracers(::IronPhosphate) = (:O₂, :NH₄, :NO₃, :NO₂, :N₂, :TPO₄, :FeOHP, :Feᴵᴵ, :FeS₂, :SO₄, :TH₂S, :CH₄, :TCO₂, :Gi)
 sediment_fields(model::IronPhosphate) = (O2 = model.fields.O2,
                                          NH4 = model.fields.NH4,
                                          NO3 = model.fields.NO3,
@@ -179,48 +179,49 @@ function _calculate_sediment_tendencies!(i, j, sediment::IronPhosphate, bgc, gri
 
         iron_deposition = iron_flux(i, j, k, grid, advection, bgc, tracers) * Δz
         
-        O2 = sediment.fields.O2[i, j, 1]
-        NH4 = sediment.fields.NH4[i, j, 1]
-        NO3 = sediment.fields.NO3[i, j, 1]
-        NO2 = sediment.fields.NO2[i, j, 1]
-        N2 = sediment.fields.N2[i, j, 1]
-        TPO4 = sediment.fields.TPO4[i, j, 1]
+        #(:O₂, :NH₄, :NO₃, :NO₂, :N₂, :TPO₄, :FeOHP, :Feᴵᴵ, :FeS₂, :SO₄, :TH₂S, :CH₄, :TCO₂, :Gi)
+        O₂ = sediment.fields.O₂[i, j, 1]
+        NH₄ = sediment.fields.NH₄[i, j, 1]
+        NO₃ = sediment.fields.NO₃[i, j, 1]
+        NO₂ = sediment.fields.NO₂[i, j, 1]
+        TPO₄ = sediment.fields.TPO₄[i, j, 1]
         FeOHP = sediment.fields.FeOHP[i, j, 1]
-        FeII = sediment.fields.FeII[i, j, 1]
-        FeS2 = sediment.fields.FeS2[i, j, 1]
-        SO4 = sediment.fields.SO4[i, j, 1]
-        TH2S = sediment.fields.TH2S[i, j, 1]
-        CH4 = sediment.fields.CH4[i, j, 1]
+        Feᴵᴵ = sediment.fields.Feᴵᴵ[i, j, 1]
+        FeS₂ = sediment.fields.FeS₂[i, j, 1]
+        SO₄ = sediment.fields.SO₄[i, j, 1]
+        TH₂S = sediment.fields.TH₂S[i, j, 1]
+        CH₄ = sediment.fields.CH₄[i, j, 1]
         Gi = sediment.fields.Gi[i, j, 1]
 
         #####
         ##### RATES
         #####
 
-        @inline KO2 = 1 # μM, Half–saturation constant for O2
-        @inline KNO3 = 10 # μM, Half–saturation constant for NO3
-        @inline KNO2 = 10 # μM, Half–saturation constant for NO2
-        @inline KFe = 0.028 # wt-%, Half–saturation constant for Fe
-        @inline KSO4 = 0.1 # μM, Half–saturation constant for SO4
-        @inline KTPO4 = 10 # μM, Half–saturation constant for TPO4
-        
+        @inline K_O₂ = 1 # μM, Half–saturation constant for O2
+        @inline K_NO₃ = 10 # μM, Half–saturation constant for NO3
+        @inline K_NO₂ = 10 # μM, Half–saturation constant for NO2
+        @inline K_Fe = 0.028 # wt-%, Half–saturation constant for Fe
+        @inline K_SO₄ = 0.1 # μM, Half–saturation constant for SO4
+        @inline K_TPO₄ = 10 # μM, Half–saturation constant for TPO4
+        #(:O₂, :NH₄, :NO₃, :NO₂, :N₂, :TPO₄, :FeOHP, :Feᴵᴵ, :FeS₂, :SO₄, :TH₂S, :CH₄, :TCO₂, :Gi)
+         
         @inline kGi = 0.016 # day⁻¹, Rate constant for G0 degradation, Dale et al
         @inline fT = 1 # TODO temperature correction for rates
-        @inline fox = 10 # Enhancement factor for POM degradation by O2
+        @inline fₒₓ = 10 # Enhancement factor for POM degradation by O2
+        
+        fₖ₋ₒ₂ = O₂ / (O₂ + K_O₂) # kinetic limiting term
+        fₖ₋ₙₒ₃ = NO₃ / (NO₃ + K_NO₃) # kinetic limiting term
+        fₖ₋ₙₒ₂ = NO₂ / (NO₂ + K_NO₂) # kinetic limiting term
+        fK_Fe = FeOHP / (FeOHP + K_Fe) # kinetic limiting term
+        fₖ₋ₛₒ₄ = SO₄ / (SO₄ + K_SO₄) # kinetic limiting term
+        fₖ₋ₜₚₒ₄ = TPO₄ / (TPO₄ + K_TPO₄) # kinetic limiting term
 
-        fK_O2 = O2 / (O2 + KO2) # kinetic limiting term
-        fK_NO3 = NO3 / (NO3 + KNO3) # kinetic limiting term
-        fK_NO2 = NO2 / (NO2 + KNO2) # kinetic limiting term
-        fK_Fe = FeOHP / (FeOHP + KFe) # kinetic limiting term
-        fK_SO4 = SO4 / (SO4 + KSO4) # kinetic limiting term
-        fK_TPO4 = TPO4 / (TPO4 + KTPO4) # kinetic limiting term
-
-        RO2 = Gi * (fT * kGi * fox * fK_O2)
-        RNO3 = Gi * (fT * kGi * fK_NO3 * (1 - fK_NO2) * (1 - fk_O2))
-        RNO2 = Gi * (fT * kGi * fK_NO2 * (1 - fk_O2))
-        RFe = Gi * (fT * kGi * fK_Fe * (1 - fK_NO3) * (1 - fK_NO2) * (1 - fk_NO2))
-        RSO4 = Gi * (fT * kGi * fK_SO4 * (1 - fK_Fe) *(1 - fK_NO3) * (1 - fK_NO2) * (1 - fK_NO2))
-        RCH4 = Gi * (fT * kGi * (1 - fK_SO4) * (1 - fK_Fe) *(1 - fK_NO3) * (1 - fK_NO3) * (1 - fK_NO2))
+        RO₂ = Gi * (fT * kGi * fₒₓ * fₖ₋ₒ₂)
+        RNO₃ = Gi * (fT * kGi * fₖ₋ₙₒ₃ * (1 - fₖ₋ₙₒ₂) * (1 - fₖ₋ₒ₂))
+        RNO₂ = Gi * (fT * kGi * fₖ₋ₙₒ₂ * (1 - fₖ₋ₒ₂))
+        RFe = Gi * (fT * kGi * fK_Fe * (1 - fₖ₋ₙₒ₃) * (1 - fₖ₋ₙₒ₂) * (1 - fₖ₋ₙₒ₂))
+        RSO₄ = Gi * (fT * kGi * fₖ₋ₛₒ₄ * (1 - fK_Fe) *(1 - fₖ₋ₙₒ₃) * (1 - fₖ₋ₙₒ₂) * (1 - fₖ₋ₙₒ₂))
+        RCH₄ = Gi * (fT * kGi * (1 - fₖ₋ₛₒ₄) * (1 - fK_Fe) *(1 - fₖ₋ₙₒ₃) * (1 - fₖ₋ₙₒ₃) * (1 - fₖ₋ₙₒ₂))
 
         @inline kDNRA = 2.7e5 # M-1 day-1
         @inline kamx = 2.7e4 # M-1 day-1
@@ -233,16 +234,16 @@ function _calculate_sediment_tendencies!(i, j, sediment::IronPhosphate, bgc, gri
         @inline kFeS2p = 2.7e4 # M-1 day-1
         @inline kFe3red = 0.82 # cm1.5 mmol−0.5 day−1
 
-        RDNRA = TH2S * NO3 * fT * kDNRA
-        Ramx = NH4 * NO2 * fT * kamx
-        RNH4ox = NH4 * O2 * fT * kNH4ox
-        RNO2ox = NO2 * O2 * fT * kNO2ox
-        RAOM = CH4 * SO4 * fT * kAOM
-        RH2Sox = TH2S * O2 * fT * kH2Sox
-        RFe2ox = FeII * O2 * fT * kFe2ox
-        RFeS2ox = FeS2 * O2 * fT * kFeS2ox
-        RFeS2p = TH2S * FeII * fT * kFeS2p # H2 should be produced here but I assume it dissociates...
-        RFe3red = TH2S ^ 0.5 * FeOHP * fT * kFe3red * (2 / (O2 + 2))
+        RDNRA = TH₂S * NO₃ * fT * kDNRA
+        Ramx = NH₄ * NO₂ * fT * kamx
+        RNH4ox = NH₄ * O₂ * fT * kNH4ox
+        RNO2ox = NO₂ * O₂ * fT * kNO2ox
+        RAOM = CH₄ * SO₄ * fT * kAOM
+        RH2Sox = TH₂S * O₂ * fT * kH2Sox
+        RFe2ox = Feᴵᴵ * O₂ * fT * kFe2ox
+        RFeS2ox = FeS₂ * O₂ * fT * kFeS2ox
+        RFeS2p = TH₂S * Feᴵᴵ * fT * kFeS2p # H2 should be produced here but I assume it dissociates...
+        RFe3red = TH₂S ^ 0.5 * FeOHP * fT * kFe3red * (2 / (O₂ + 2))
 
         @inline ratio_NC = 9.5/106
         @inline ratio_PC = 1/106
@@ -252,20 +253,20 @@ function _calculate_sediment_tendencies!(i, j, sediment::IronPhosphate, bgc, gri
         ##### sediment evolution
         #####
 
-        sediment_tendencies.Gi = POC_deposition - RO2 - RNO3 - RNO2 - RFe - RSO4 - RCH4
-        sediment_tendencies.O2 = oxygen_deposition - RO2 - 1.5 * RNH4ox - 0.5 * RNO2ox - 2 * RH2Sox - 0.25 * RFe2ox - 3.5 * RFeS2ox
-        sediment_tendencies.TCO2 = RO2 + RNO3 + RNO2 + RFe + RSO4 + RCH4 + RAOM
-        sediment_tendencies.NH4 = ratio_NC * (RO2 + RNO3 + RNO2 + RFe + RSO4 + RCH4) + RDNRA - Ramx - RNH4ox
-        sediment_tendencies.NO3 = -2 * RNO3 - RDNRA + RNO2ox
-        sediment_tendencies.NO2 = 2 * RNO3 - 1.33 * RNO2 - Ramx + RNH4ox - RNO2ox
-        sediment_tendencies.N2 = Ramx + 0.66 * RNO2
-        sediment_tendencies.TPO4 = ratio_PC * (RO2 + RNO3 + RNO2 + RFe + RSO4 + RCH4) + RFe * ratio_FeP - ratio_FeP * RFe2ox * fK_TPO4 + ratio_FeP * RFe3red
+        sediment_tendencies.Gi = POC_deposition - RO₂ - RNO₃ - RNO₂ - RFe - RSO₄ - RCH₄
+        sediment_tendencies.O₂ = oxygen_deposition - RO₂ - 1.5 * RNH4ox - 0.5 * RNO2ox - 2 * RH2Sox - 0.25 * RFe2ox - 3.5 * RFeS2ox
+        sediment_tendencies.TCO₂ = RO₂ + RNO₃ + RNO₂ + RFe + RSO₄ + RCH₄ + RAOM
+        sediment_tendencies.NH₄ = ratio_NC * (RO₂ + RNO₃ + RNO₂ + RFe + RSO₄ + RCH₄) + RDNRA - Ramx - RNH4ox
+        sediment_tendencies.NO₃ = -2 * RNO₃ - RDNRA + RNO2ox
+        sediment_tendencies.NO₂ = 2 * RNO₃ - 1.33 * RNO₂ - Ramx + RNH4ox - RNO2ox
+        sediment_tendencies.N₂ = Ramx + 0.66 * RNO₂
+        sediment_tendencies.TPO₄ = ratio_PC * (RO₂ + RNO₃ + RNO₂ + RFe + RSO₄ + RCH₄) + RFe * ratio_FeP - ratio_FeP * RFe2ox * fₖ₋ₜₚₒ₄ + ratio_FeP * RFe3red
         sediment_tendencies.FeOHP = iron_deposition - 4 * RFe + RFe2ox - RFe3red
-        sediment_tendencies.FeII = 4 * RFe - RFe2ox + RFeS2ox - RFeS2p + RFe3red
-        sediment_tendencies.FeS2 = RFeS2p - RFeS2ox
-        sediment_tendencies.SO4 = -0.5 * RSO4 + RDNRA - RAOM + RH2Sox + 2 * RFeS2ox + (RFe3red / 8)
-        sediment_tendencies.TH2S = 0.5 * RSO4 - RDNRA + RAOM - RH2Sox  - 2 * RFeS2p - (RFe3red / 8)
-        sediment_tendencies.CH4 = 0.5 * RCH4 - RAOM
+        sediment_tendencies.Feᴵᴵ = 4 * RFe - RFe2ox + RFeS2ox - RFeS2p + RFe3red
+        sediment_tendencies.FeS₂ = RFeS2p - RFeS2ox
+        sediment_tendencies.SO₄ = -0.5 * RSO₄ + RDNRA - RAOM + RH2Sox + 2 * RFeS2ox + (RFe3red / 8)
+        sediment_tendencies.TH₂S = 0.5 * RSO₄ - RDNRA + RAOM - RH2Sox  - 2 * RFeS2p - (RFe3red / 8)
+        sediment_tendencies.CH₄ = 0.5 * RCH₄ - RAOM
     end
 end
 
