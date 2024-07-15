@@ -52,7 +52,7 @@ include("equilibrium_constants.jl")
             silicic_acid :: PSi = KSi(; ionic_strength)
 end
 
-@inline function solve_for_H(H, p)
+@inline function alkalinity_residual(H, p)
     carbonate_denom = H^2 + p.K1 * H + p.K1 * p.K2
     phosphorus_denom = H^3 + p.KP1 * H^2 + p.KP1 * p.KP2 * H + p.KP1 * p.KP2 * p.KP3
     sulfate_denom = 1 + p.sulfate / p.KS
@@ -123,17 +123,17 @@ end
     params = (; DIC, Alk, boron, sulfate, fluoride, silicate, phosphate,
                 K1, K2, KB, KW, KS, KF, KP1, KP2, KP3, KSi)
 
-    H = compute_H(pH, params, upper_pH_bound, lower_pH_bound)
+    H = solve_for_H(pH, params, upper_pH_bound, lower_pH_bound)
 
     FF = p.solubility(T, S)
 
     CO₂ = DIC * H ^ 2 / (H ^ 2 + K1 * H + K1 * K2) 
     pCO₂ = (CO₂ / FF) * 10 ^ 6
 
-    return -log10(H)#pCO₂ # μatm
+    return pCO₂ # μatm
 end
 
-compute_H(pH, args...) = 10.0 ^ - pH
+solve_for_H(pH, args...) = 10.0 ^ - pH
 
-compute_H(pH::Nothing, params, upper_pH_bound, lower_pH_bound) =
-    find_zero(solve_for_H, (10.0 ^ - upper_pH_bound, 10.0 ^ - lower_pH_bound), Bisection(); atol = 1e-10, p = params)
+solve_for_H(pH::Nothing, params, upper_pH_bound, lower_pH_bound) =
+    find_zero(alkalinity_residual, (10.0 ^ - upper_pH_bound, 10.0 ^ - lower_pH_bound), Bisection(); atol = 1e-10, p = params)
