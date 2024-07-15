@@ -4,6 +4,11 @@
     #How to code ΔCO₃²⁻, where do we get the alue of CO₃²⁻ from?
     #Write a partial derivative in (75)
 
+#This document contains functions for:
+    #R_CaCO₃ (eq77)
+    #P_CaCO₃ (eq76)
+    #Forcing for CaCO₃
+
 
 @inline function R_CaCO₃(zₘₓₗ, T, P, PAR) 
     r_CaCO₃ = bgc.rain_ratio_parameter

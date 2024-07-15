@@ -7,9 +7,22 @@
     #Should λᶠᵉ be λ_Fe, else where is it defined?
     #Where is K_Feᴮ¹ defined? where is θₘₐₓᶠᵉᵇᵃᶜᵗ defined?
     #How to write this term ∑θᶠᵉⁱ*g_ᴹ()? What are we indexing over? Do we know POCᶠᵉ?
-    #For cgfe, etc, is it better convention to define inside the structure as variables, or as functions before the structure?
+    #For cgfe, etc, define as outside functions as called in other parts of the model.
 
 # Using simple chemistry model. 
+# This document contains functions for the following:
+    # Fe¹ (eq65)
+    # Cgfe1, Cgfe2, Aggfe, Bactfe (eqs 61, 62, 63)
+    # Forcing for Fe (eq60)
+
+@inline function Fe¹(DOC, T, Fe)
+    Lₜ = max(0.09*(DOC + 40) - 3, 0.6)
+    K_eqᶠᵉ = 10^(16.27 - 1565.7/max(T, 5))
+    Δ = 1 +  K_eqᶠᵉ(T)*Lₜ -  K_eqᶠᵉ(T)*Fₑ
+
+    return (-Δ + sqrt(Δ^2 + 4*K_eqᶠᵉ(T)*Fe))/2*K_eqᶠᵉ(T) #eq65
+end
+
 @inline function (pisces::PISCES)(::Val{:Fe}, x, y, z, t, P, PAR) #(60)
     
     sh = # Find value
@@ -21,7 +34,6 @@
     σᴹ = bgc.non_assimilated_fraction[2]
     δᴾ = bgc.exudation_of_DOC[1]
     δᴰ = bgc.exudation_of_DOC[2]
-
    
     a₁ = bgc.aggregation_rate_of_DOC_to_POC_1
     a₂ = bgc.aggregation_rate_of_DOC_to_POC_2
@@ -31,12 +43,6 @@
    
     λ_Fe = bgc.slope_of_scavenging_rate_of_iron
 
-    #Is it best to define in here, or define outside as own functions?
-    Lₜ = max(0.09*(DOC + 40) - 3, 0.6)
-    K_eqᶠᵉ = 10^(16.27 - 1565.7/max(T, 5))
-    Δ = 1 +  K_eqᶠᵉ(T)*Lₜ -  K_eqᶠᵉ(T)*Fₑ
-    Fe¹ = (-Δ + sqrt(Δ^2 + 4*K_eqᶠᵉ(T)*Fe)/2*K_eqᶠᵉ(T))
-
     FeL = Fe - Fe¹(T, Fe)
     Fe_coll = 0.5*FeL
 
@@ -45,10 +51,5 @@
     Aggfe = 1000*λᶠᵉ*max(0, Fe - Lₜ)*Fe¹ #Should λᶠᵉ be λ_Fe, else where is it defined?
     Bactfe = μₚ()*Lₗᵢₘᵇᵃᶜᵗ()*θₘₐₓᶠᵉᵇᵃᶜᵗ*Fe*Bact/(K_Feᴮ¹ + Fe) # where is K_Feᴮ¹ defined? where is θₘₐₓᶠᵉᵇᵃᶜᵗ defined?
 
-    #To finish fill in arguments when these functions written.
-    return max(0, (1-σᶻ)*(∑θᶠᵉⁱ*gᶻ())/∑gᶻ() - eₙᶻ()θ(Zᶠᵉ, Z))*∑gᶻ()*Z + 
-        max(0, (1-σᴹ)*(∑θᶠᵉⁱ*gᴹ() + ∑θᶠᵉⁱ*g_FFᴹ())/(∑gᴹ()+g_FFᴹ()+g_FFᴹ()) -  eₙᴹ()*θ(Zᶠᵉ, Z))*(∑gᴹ()+g_FFᴹ()+g_FFᴹ())*M #How to write this term ∑θᶠᵉⁱ*g_FFᴹ() ?
-        + γᴹ*θ(Zᶠᵉ, Z)*Rᵤₚᴹ() + λ_poc1*SFe #Find definition of λ_poc2 ?
-        - (1 - δᴾ)*μᴾᶠᵉ()*P - (1 - δᴰ)*μᴰᶠᵉ()*D #What is this term μ^P^^Fe ?
-        - Scav() - Cfge1() - Cgfe2() - Aggfe() - Bactfe()
+    return max(0, (1-σᶻ)*(∑θᶠᵉⁱ*gᶻ())/∑gᶻ() - eₙᶻ()θ(Zᶠᵉ, Z))*∑gᶻ()*Z + max(0, (1-σᴹ)*(∑θᶠᵉⁱ*gᴹ() + ∑θᶠᵉⁱ*g_FFᴹ())/(∑gᴹ()+g_FFᴹ()+g_FFᴹ()) - eₙᴹ()*θ(Zᶠᵉ, Z))*(∑gᴹ()+g_FFᴹ()+g_FFᴹ())*M + γᴹ*θ(Zᶠᵉ, Z)*Rᵤₚᴹ() + λ_poc1*SFe - (1 - δᴾ)*μᴾᶠᵉ()*P - (1 - δᴰ)*μᴰᶠᵉ()*D - Scav() - Cfge1() - Cgfe2() - Aggfe() - Bactfe()
 end

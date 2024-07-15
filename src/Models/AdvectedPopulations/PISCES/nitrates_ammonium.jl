@@ -20,8 +20,6 @@ end
 
 @inline function μₙₕ₄ᴾ(P, PO₄, NO₃, NH₄, Pᶜʰˡ, Pᶠᵉ, T, zₘₓₗ, zₑᵤ, L_day)
     #PARᴾ = 
-    zₘₓₗ = 
-    zₑᵤ = 
     t_darkᴾ = 
     αᴾ = bgc.initial_slope_of_PI_curve[1]
     Lₗᵢₘᴾ = Lᴾ(P, PO₄, NO₃, NH₄, Pᶜʰˡ, Pᶠᵉ)[1]
@@ -103,6 +101,7 @@ end
 
 
 # Define sum of grazing rates, as this quantity freqeuently appears
+# Move into zooplankton file?
 
 @inline function grazingᶻ(P, D, POC, T) 
     pₚᶻ = bgc.preference_for_nanophytoplankton[1]
@@ -163,12 +162,12 @@ end
     g_Dᶻ = grazingᶻ[3]
     gₚₒᶻ = grazingᶻ[4]
     g_Zᴹ = grazingᴹ[5]
-    eᶻ = eᴶ(eₘₐₓᶻ, σᶻ, gₚᶻ, g_Dᶻ, gₚₒᶻ, g_zᴹ, N, Fe, P, D, POC, Z, Z)
+    eᶻ = eᴶ(eₘₐₓᶻ, σᶻ, gₚᶻ, g_Dᶻ, gₚₒᶻ, g_zᴹ, N, Fe, P, D, POC, Z)
 
     gₚᴹ = grazingᴹ[2]
     g_Dᴹ = grazingᴹ)[3]
     gₚₒᴹ = grazingᴹ[4]
-    eᴹ = eᴶ(eₘₐₓᴹ, σᴹ, gₚᴹ, g_Dᴹ, gₚₒᴹ, g_zᴹ, N, Fe, P, D, POC, Z, Z)
+    eᴹ = eᴶ(eₘₐₓᴹ, σᴹ, gₚᴹ, g_Dᴹ, gₚₒᴹ, g_zᴹ, N, Fe, P, D, POC, Z)
 
     ∑gᶻ = grazingᶻ[1]
     ∑gᴹ = grazingᴹ[1]
