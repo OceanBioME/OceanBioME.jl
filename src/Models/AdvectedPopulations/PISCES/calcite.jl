@@ -15,10 +15,11 @@ sh =
     Kₘ = bgc.half_saturation_const_for_mortality
     ωᴾ = bgc.min_quadratic_mortality_of_phytoplankton
 
-    @inline R_CaCO₃() = r_CaCO₃*Lₗᵢₘᶜᵃᶜᵒ³()*T*max(1, P/2)*max(0, PAR - 1)*30*(1 + exp((-(T-10)^2)/25))*min(1, 50/zₘₓₗ)/((0.1 + T)*(4 + PAR)*(30 + PAR)) #(77)
-    @inline P_CaCO₃() = R_CaCO₃()*(ηᶻ*gᶻ(P, )*Z)+ηᴹ*gᴹ(P, )*M + 0.5*(mᴾ*K_mondo(P, K_m)*P) + sh*ωᴾ*P^2) #(76)
+    R_CaCO₃ = r_CaCO₃*Lₗᵢₘᶜᵃᶜᵒ³()*T*max(1, P/2)*max(0, PAR - 1)*30*(1 + exp((-(T-10)^2)/25))*min(1, 50/zₘₓₗ)/((0.1 + T)*(4 + PAR)*(30 + PAR)) #(77)
+    P_CaCO₃ = R_CaCO₃*(ηᶻ*gᶻ(P, )*Z)+ηᴹ*gᴹ(P, )*M + 0.5*(mᴾ*K_mondo(P, K_m)*P) + sh*ωᴾ*P^2 #eq76
 
-    @inline ΔCO₃²⁻() = #Ask Jago
-    @inline λ_CaCO₃¹() = #Ask Jago
+    ΔCO₃²⁻ = #Ask Jago
+    λ_CaCO₃¹ = #Ask Jago
     
     return P_CaCO₃() - λ_CaCO₃¹()*CaCO₃ - ω_goc* #(75) how to write partial derivative here
+end
