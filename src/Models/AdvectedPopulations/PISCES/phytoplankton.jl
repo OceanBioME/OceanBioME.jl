@@ -4,7 +4,7 @@
 
 @inline f₁(L_day) = 1.5*L_day/(0.5+L_day)  #eq 3a
 @inline t_dark(zₘₓₗ, zₑᵤ) = max(0, zₘₓₗ-zₑᵤ)^2/86400#eq 3b,c
-@inline f₂(zₘₓₗ, zₑᵤ, t_dark_lim) = 1 - t_dark(zₘₓₗ, zₑᵤ)/(t_dark(zₘₓₗ, zₑᵤ)+t_dark_lim) #eq 3d
+@inline f₂(zₘₓₗ, zₑᵤ, t_darkᴵ) = 1 - t_dark(zₘₓₗ, zₑᵤ)/(t_dark(zₘₓₗ, zₑᵤ) + t_darkᴵ) #eq 3d
 
 @inline fₚ(T) = bgc.temperature_sensitivity_of_growth^T #eq 4a
 
@@ -35,13 +35,13 @@
     return θₘₐₓᶠᵉᴵ*Lₗᵢₘ₁ᴵᶠᵉ*Lₗᵢₘ₂ᴵᶠᵉ*(1 - (θ(Iᶠᵉ, I))/(θₘₐₓᶠᵉᴵ))/(1.05 - (θ(Iᶠᵉ, I))/(θₘₐₓᶠᵉᴵ))*μₚ  #17
 end
 
-@inline function μᴵ(I, Iᶜʰˡ, PARᴵ, L_day, T, αᴵ, Lₗᵢₘᴵ)
+@inline function μᴵ(I, Iᶜʰˡ, PARᴵ, L_day, T, αᴵ, Lₗᵢₘᴵ, zₘₓₗ, zₑᵤ, t_darkᴵ)
     
     μ⁰ₘₐₓ = bgc.growth_rate_at_zero
 
-    μₚ = μ⁰ₘₐₓ*fₚ(T)    #eq 4b
+    μₚ = μ⁰ₘₐₓ*fₚ(T)    #eq 4b      #address t_darkᴵ
 
-    return μₚ * f₁(L_day) * f₂(zₘₓₗ, zₑᵤ, t_dark_lim) * Cₚᵣₒ(I, Iᶜʰˡ, PARᴵ, L_day, αᴵ, μₚ, Lₗᵢₘᴵ) * Lₗᵢₘᴵ #2b 
+    return μₚ * f₁(L_day) * f₂(zₘₓₗ, zₑᵤ, t_darkᴵ) * Cₚᵣₒ(I, Iᶜʰˡ, PARᴵ, L_day, αᴵ, μₚ, Lₗᵢₘᴵ) * Lₗᵢₘᴵ #2b 
 end
 
 @inline function Lᴾ(P, PO₄, NO₃, NH₄, Pᶜʰˡ, Pᶠᵉ)
@@ -120,7 +120,7 @@ end
 
 
 
-@inline function (pisces::PISCES)(::Val{:P}, x, y, z, t, P, Z, M, PO₄, NO₃, NH₄, Pᶜʰˡ, Pᶠᵉ, L_day, PARᴾ, T) 
+@inline function (pisces::PISCES)(::Val{:P}, x, y, z, t, P, Z, M, PO₄, NO₃, NH₄, Pᶜʰˡ, Pᶠᵉ, L_day, PARᴾ, T, zₘₓₗ, zₑᵤ) 
     # the signature of this function is always `Val(name), x, y, z, t` and then all the tracers listed in `required_biogeochemical_tracers`, and then `required_biogeochemical_auxiliary_fields`
     δᴾ = bgc.exudation_of_DOC[1]
     mᴾ = bgc.phytoplankton_mortality_rate[1]
@@ -133,14 +133,16 @@ end
     gₚᶻ = 
     gₚᴹ =  
 
+    t_darkᴾ = 
+
     Lₗᵢₘᴾ, Lₚₒ₄ᴾ, Lₙₕ₄ᴾ, Lₙₒ₃ᴾ, Lₙᴾ, L_Feᴾ = Lᴾ(P, PO₄, NO₃, NH₄, Pᶜʰˡ, Pᶠᵉ)
     
-    μᴾ = μᴵ(P, Pᶜʰˡ, PARᴾ, L_day, T, αᴾ, Lₗᵢₘᴾ)
+    μᴾ = μᴵ(P, Pᶜʰˡ, PARᴾ, L_day, T, αᴾ, Lₗᵢₘᴾ, zₘₓₗ, zₑᵤ, t_darkᴾ)
 
     return (1-δᴾ)*μᴾ*P - mᴾ*K_mondo(P, Kₘ)*P - sh*wᴾ*P^2 - gₚᶻ*Z - gₚᴹ*M    #eq 1
 end
 
-@inline function (pisces::PISCES)(::Val{:D}, x, y, z, t, D, Z, M, PO₄, NO₃, NH₄, Si, Dᶜʰˡ, Dᶠᵉ, L_day, PARᴰ, T)
+@inline function (pisces::PISCES)(::Val{:D}, x, y, z, t, D, Z, M, PO₄, NO₃, NH₄, Si, Dᶜʰˡ, Dᶠᵉ, L_day, PARᴰ, T, zₘₓₗ, zₑᵤ)
     # the signature of this function is always `Val(name), x, y, z, t` and then all the tracers listed in `required_biogeochemical_tracers`, and then `required_biogeochemical_auxiliary_fields`
     δᴰ = bgc.exudation_of_DOC[2]
     mᴰ = bgc.phytoplankton_mortality_rate[2]
@@ -154,16 +156,18 @@ end
     g_Dᶻ = 
     g_Dᴹ =  
 
+    t_darkᴰ = 
+
     Lₗᵢₘᴰ, Lₚₒ₄ᴰ, Lₙₕ₄ᴰ, Lₙₒ₃ᴰ, Lₙᴰ, Lₛᵢᴰ, L_Feᴰ = Lᴰ(D, PO₄, NO₃, NH₄, Si, Dᶜʰˡ, Dᶠᵉ)
 
     wᴰ = wᴾ + wₘₐₓᴰ*(1-Lₗᵢₘᴰ) #13
     
-    μᴰ = μᴵ(D, Dᶜʰˡ, PARᴰ, L_day, T, αᴰ, Lₗᵢₘᴰ)
+    μᴰ = μᴵ(D, Dᶜʰˡ, PARᴰ, L_day, T, αᴰ, Lₗᵢₘᴰ, zₘₓₗ, zₑᵤ, t_darkᴰ)
 
     return (1-δᴰ)*μᴰ*D - mᴰ*K_mondo(D, Kₘ)*D - sh*wᴰ*D^2 - g_Dᶻ*Z - g_Dᴹ*M    #eq 9
 end
 
-@inline function (pisces:PISCES)(::Val{:Pᶜʰˡ}, x, y, z, t, P, Z, M, PO₄, NO₃, NH₄, Pᶜʰˡ, Pᶠᵉ, PARᴾ, T, L_day)
+@inline function (pisces:PISCES)(::Val{:Pᶜʰˡ}, x, y, z, t, P, Z, M, PO₄, NO₃, NH₄, Pᶜʰˡ, Pᶠᵉ, PARᴾ, T, L_day, zₘₓₗ, zₑᵤ)
     δᴾ = bgc.exudation_of_DOC[1]
     αᴾ = bgc.initial_slope_of_PI_curve[1]
     θₘᵢₙᶜʰˡ = bgc.min_ChlC_ratios_of_phytoplankton
@@ -175,9 +179,11 @@ end
     gₚᶻ =
     gₚᴹ = 
 
+    t_darkᴾ = 
+    
     Lₗᵢₘᴾ, Lₚₒ₄ᴾ, Lₙₕ₄ᴾ, Lₙₒ₃ᴾ, Lₙᴾ, L_Feᴾ = Lᴾ(P, PO₄, NO₃, NH₄, Pᶜʰˡ, Pᶠᵉ)
 
-    μᴾ = μᴵ(P, Pᶜʰˡ, PARᴾ, L_day, T, αᴾ, Lₗᵢₘᴾ)
+    μᴾ = μᴵ(P, Pᶜʰˡ, PARᴾ, L_day, T, αᴾ, Lₗᵢₘᴾ, zₘₓₗ, zₑᵤ, t_darkᴾ)
 
     μ̌ᴾ = μᴾ / f₁(L_day) #15b
     ρᴾᶜʰˡ = 144*μ̌ᴾ * P / (αᴾ* Pᶜʰˡ* (PARᴾ)/L_day) #15a
@@ -185,7 +191,7 @@ end
     return (1-δᴾ)*(12*θₘᵢₙᶜʰˡ + (θₘₐₓᶜʰˡᴾ - θₘᵢₙᶜʰˡ)*ρᴾᶜʰˡ)*μᴾ*P - mᴾ*K_mondo(P, Kₘ)*Pᶜʰˡ - sh*wᴾ*P*Pᶜʰˡ - θ(Pᶜʰˡ, P)*gₚᶻ*Z - θ(Pᶜʰˡ, P)*gₚᴹ*M  #14
 end
 
-@inline function (pisces:PISCES)(::Val{:Dᶜʰˡ}, x, y, z, t, D, Dᶜʰˡ, Z, M, PO₄, NO₃, NH₄, Si, Dᶜʰˡ, Dᶠᵉ, PARᴰ, T, L_day)
+@inline function (pisces:PISCES)(::Val{:Dᶜʰˡ}, x, y, z, t, D, Dᶜʰˡ, Z, M, PO₄, NO₃, NH₄, Si, Dᶜʰˡ, Dᶠᵉ, PARᴰ, T, L_day, zₘₓₗ, zₑᵤ)
     δᴾ = bgc.exudation_of_DOC[2]
     αᴾ = bgc.initial_slope_of_PI_curve[2]
     θₘᵢₙᶜʰˡ = bgc.min_ChlC_ratios_of_phytoplankton
@@ -196,12 +202,13 @@ end
     sh = 
     g_Dᶻ =
     g_Dᴹ = 
+    t_darkᴰ = 
 
     Lₗᵢₘᴰ, Lₚₒ₄ᴰ, Lₙₕ₄ᴰ, Lₙₒ₃ᴰ, Lₙᴰ, Lₛᵢᴰ, L_Feᴰ = Lᴰ(D, PO₄, NO₃, NH₄, Si, Dᶜʰˡ, Dᶠᵉ)
 
     wᴰ = wᴾ + wₘₐₓᴰ*(1-Lₗᵢₘᴰ) #13
 
-    μᴰ = μᴵ(D, Dᶜʰˡ, PARᴰ, L_day, T, αᴰ, Lₗᵢₘᴰ)
+    μᴰ = μᴵ(D, Dᶜʰˡ, PARᴰ, L_day, T, αᴰ, Lₗᵢₘᴰ, zₘₓₗ, zₑᵤ, t_darkᴰ)
 
     μ̌ᴰ = μᴰ / f₁(L_day) #15b
     ρᴰᶜʰˡ = 144*μ̌ᴰ * D / (αᴰ* Dᶜʰˡ* (PARᴰ)/L_day) #15a
@@ -251,7 +258,7 @@ end
     return (1-δᴰ)*μᴰᶠᵉ*D - mᴰ*K_mondo(D, Kₘ)*Dᶠᵉ - sh*wᴰ*D*Dᶠᵉ - θ(Dᶠᵉ, D)*g_Dᶻ*Z - θ(Dᶠᵉ, D)*g_Dᴹ*M    #16
 end
 
-@inline function (pisces:PISCES)(::Val{:Dˢⁱ}, D, Dˢⁱ, M, Z, PO₄, NO₃, NH₄, Si, Dᶜʰˡ, Dᶠᵉ, PARᴰ, L_day, T, ϕ)       #ϕ is latitude
+@inline function (pisces:PISCES)(::Val{:Dˢⁱ}, D, Dˢⁱ, M, Z, PO₄, NO₃, NH₄, Si, Dᶜʰˡ, Dᶠᵉ, PARᴰ, L_day, T, ϕ, zₘₓₗ, zₑᵤ)       #ϕ is latitude
     δᴰ = bgc.exudation_of_DOC[2]
     mᴰ = bgc.phytoplankton_mortality_rate[2]
     Kₘ = bgc.half_saturation_const_for_mortality
@@ -262,6 +269,7 @@ end
     sh = 
     g_Dᶻ =
     g_Dᴹ =
+    t_darkᴰ = 
 
     θₒₚₜˢⁱᴰ = fθₒₚₜˢⁱᴰ(D, PO₄, NO₃, NH₄, Si, Dᶜʰˡ, Dᶠᵉ, μᴰ, T, ϕ)
 
@@ -269,7 +277,7 @@ end
 
     wᴰ = wᴾ + wₘₐₓᴰ*(1-Lₗᵢₘᴰ) #13
     
-    μᴰ = μᴵ(D, Dᶜʰˡ, PARᴰ, L_day, T, αᴰ, Lₗᵢₘᴰ)
+    μᴰ = μᴵ(D, Dᶜʰˡ, PARᴰ, L_day, T, αᴰ, Lₗᵢₘᴰ, zₘₓₗ, zₑᵤ, t_darkᴰ)
 
     return θₒₚₜˢⁱᴰ*(1-δᴰ)*μᴰ*D - θ(Dˢⁱ, D)*g_Dᴹ*M -  θ(Dˢⁱ, D)*g_Dᶻ*Z - mᴰ*K_mondo(D, Kₘ)*Dˢⁱ - sh*wᴰ*D*Dˢⁱ #21
 end
