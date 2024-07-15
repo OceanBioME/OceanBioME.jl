@@ -486,6 +486,16 @@ const VariableRedfieldLobster = Union{LOBSTER{<:Any, <:Val{(false, false, true)}
     sinking_flux(i, j, k, grid, advection, Val(:sPOC), bgc, tracers) +
     sinking_flux(i, j, k, grid, advection, Val(:bPOC), bgc, tracers)
 
+proportion_of_phosphor_as_ferric_phosphate = 0.5
+
+@inline inorg_phosphate_flux(i, j, k, grid, advection, bgc::VariableRedfieldLobster, tracers) = 
+    sinking_flux(i, j, k, grid, advection, Val(:DIC), bgc, tracers) * (1/106) * proportion_of_phosphor_as_ferric_phosphate
+
+@inline org_phosphate_flux(i, j, k, grid, advection, bgc::VariableRedfieldLobster, tracers) = 
+    (sinking_flux(i, j, k, grid, advection, Val(:sPON), bgc, tracers) +
+    sinking_flux(i, j, k, grid, advection, Val(:bPON), bgc, tracers)) * (1/16)
+
+
 @inline remineralisation_receiver(::LOBSTER) = :NH₄
 
 @inline conserved_tracers(::LOBSTER) = (:NO₃, :NH₄, :P, :Z, :sPOM, :bPOM, :DOM)
