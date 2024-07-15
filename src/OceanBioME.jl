@@ -20,7 +20,7 @@ export Particles
 export TwoBandPhotosyntheticallyActiveRadiation
 
 # airsea flux
-export GasExchange
+export GasExchange, CarbonChemistry
 
 # sediment
 export Sediments, FlatSediment
