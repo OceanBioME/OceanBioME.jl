@@ -44,7 +44,6 @@ end
 @inline function ∑g_FFᴹ(zₑᵤ, zₘₓₗ, T, POC, GOC)
     w_POC = bgc.sinking_speed_of_POC
     g_FF = bgc.flux_feeding_rate
-    w_GOCᵐⁱⁿ = bgc.min_sinking_speed_of_GOC
     bₘ = bgc.temperature_sensitivity_term[2]
 
     w_GOC = ω_GOC(zₑᵤ, zₘₓₗ)
