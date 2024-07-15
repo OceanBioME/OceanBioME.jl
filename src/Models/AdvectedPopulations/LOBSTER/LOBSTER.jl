@@ -486,9 +486,9 @@ const VariableRedfieldLobster = Union{LOBSTER{<:Any, <:Val{(false, false, true)}
     sinking_flux(i, j, k, grid, advection, Val(:sPOC), bgc, tracers) +
     sinking_flux(i, j, k, grid, advection, Val(:bPOC), bgc, tracers)
 
-@inline phosphate_flux(i, j, k, grid, advection, bgc::VariableRedfieldLobster, tracers) = 
+@inline iron_flux(i, j, k, grid, advection, bgc::VariableRedfieldLobster, tracers) = 
     (sinking_flux(i, j, k, grid, advection, Val(:sPOC), bgc, tracers) +
-     sinking_flux(i, j, k, grid, advection, Val(:bPOC), bgc, tracers)) * (1/106)
+     sinking_flux(i, j, k, grid, advection, Val(:bPOC), bgc, tracers)) * (1/106) * 0.1 # molar ratio from Dale et al 2012, p. 633
 
 @inline oxygen_flux(i, j, k, grid, advection, bgc::VariableRedfieldLobster, tracers) = 
     (sinking_flux(i, j, k, grid, advection, Val(:O2), bgc, tracers))
