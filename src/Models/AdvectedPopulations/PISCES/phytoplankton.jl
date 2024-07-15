@@ -120,7 +120,7 @@ end
 
 
 
-@inline function (pisces::PISCES)(::Val{:P}, x, y, z, t, P, Z, M, PO₄, NO₃, NH₄, Pᶜʰˡ, Pᶠᵉ, L_day, PARᴾ, T, zₘₓₗ, zₑᵤ) 
+@inline function (pisces::PISCES)(::Val{:P}, x, y, z, t, P, Z, M, POC, PO₄, NO₃, NH₄, Pᶜʰˡ, Pᶠᵉ, L_day, PARᴾ, T, zₘₓₗ, zₑᵤ) 
     # the signature of this function is always `Val(name), x, y, z, t` and then all the tracers listed in `required_biogeochemical_tracers`, and then `required_biogeochemical_auxiliary_fields`
     δᴾ = bgc.exudation_of_DOC[1]
     mᴾ = bgc.phytoplankton_mortality_rate[1]
@@ -130,8 +130,14 @@ end
     
     #equaitons here
     sh = 
-    gₚᶻ = 
-    gₚᴹ =  
+
+    [pₚᶻ, pₚᴹ] = bgc.preference_for_nanophytoplankton
+    Jₜₕᵣₑₛₕᶻ = bgc.specific_food_thresholds_for_microzooplankton
+    Jₜₕᵣₑₛₕᴹ = bgc.specific_food_thresholds_for_mesozooplankton
+    grazing_arg_m = grazing_argᴹ(P, POC, D, Z, T)
+    grazing_arg_z = grazing_argᶻ(P, POC, D, T) 
+    gₚᶻ = gᴶ(P, pₚᶻ, Jₜₕᵣₑₛₕᶻ, grazing_arg_z)
+    gₚᴹ =  gᴶ(P, pₚᴹ, Jₜₕᵣₑₛₕᴹ, grazing_arg_m)
 
     t_darkᴾ = 
 
@@ -142,7 +148,7 @@ end
     return (1-δᴾ)*μᴾ*P - mᴾ*K_mondo(P, Kₘ)*P - sh*wᴾ*P^2 - gₚᶻ*Z - gₚᴹ*M    #eq 1
 end
 
-@inline function (pisces::PISCES)(::Val{:D}, x, y, z, t, D, Z, M, PO₄, NO₃, NH₄, Si, Dᶜʰˡ, Dᶠᵉ, L_day, PARᴰ, T, zₘₓₗ, zₑᵤ)
+@inline function (pisces::PISCES)(::Val{:D}, x, y, z, t, D, Z, M, POC, PO₄, NO₃, NH₄, Si, Dᶜʰˡ, Dᶠᵉ, L_day, PARᴰ, T, zₘₓₗ, zₑᵤ)
     # the signature of this function is always `Val(name), x, y, z, t` and then all the tracers listed in `required_biogeochemical_tracers`, and then `required_biogeochemical_auxiliary_fields`
     δᴰ = bgc.exudation_of_DOC[2]
     mᴰ = bgc.phytoplankton_mortality_rate[2]
@@ -153,9 +159,15 @@ end
 
     #equaitons here
     sh = 
-    g_Dᶻ = 
-    g_Dᴹ =  
 
+    [p_Dᶻ, p_Dᴹ] = bgc.preference_for_diatoms
+    Jₜₕᵣₑₛₕᶻ = bgc.specific_food_thresholds_for_microzooplankton
+    Jₜₕᵣₑₛₕᴹ = bgc.specific_food_thresholds_for_mesozooplankton
+    grazing_arg_m = grazing_argᴹ(P, POC, D, Z, T)
+    grazing_arg_z = grazing_argᶻ(P, POC, D, T) 
+    g_Dᶻ = gᴶ(D, p_Dᶻ, Jₜₕᵣₑₛₕᶻ, grazing_arg_z)
+    g_Dᴹ =  gᴶ(D, p_Dᴹ, Jₜₕᵣₑₛₕᴹ, grazing_arg_m)
+ 
     t_darkᴰ = 
 
     Lₗᵢₘᴰ, Lₚₒ₄ᴰ, Lₙₕ₄ᴰ, Lₙₒ₃ᴰ, Lₙᴰ, Lₛᵢᴰ, L_Feᴰ = Lᴰ(D, PO₄, NO₃, NH₄, Si, Dᶜʰˡ, Dᶠᵉ)
@@ -176,8 +188,14 @@ end
     wᴾ = bgc.min_quadratic_mortality_of_phytoplankton
 
     sh = 
-    gₚᶻ =
-    gₚᴹ = 
+
+    [pₚᶻ, pₚᴹ] = bgc.preference_for_nanophytoplankton
+    Jₜₕᵣₑₛₕᶻ = bgc.specific_food_thresholds_for_microzooplankton
+    Jₜₕᵣₑₛₕᴹ = bgc.specific_food_thresholds_for_mesozooplankton
+    grazing_arg_m = grazing_argᴹ(P, POC, D, Z, T)
+    grazing_arg_z = grazing_argᶻ(P, POC, D, T) 
+    gₚᶻ = gᴶ(P, pₚᶻ, Jₜₕᵣₑₛₕᶻ, grazing_arg_z)
+    gₚᴹ =  gᴶ(P, pₚᴹ, Jₜₕᵣₑₛₕᴹ, grazing_arg_m)
 
     t_darkᴾ = 
     
@@ -200,8 +218,15 @@ end
     wᴾ = bgc.min_quadratic_mortality_of_phytoplankton
 
     sh = 
-    g_Dᶻ =
-    g_Dᴹ = 
+
+    [p_Dᶻ, p_Dᴹ] = bgc.preference_for_diatoms
+    Jₜₕᵣₑₛₕᶻ = bgc.specific_food_thresholds_for_microzooplankton
+    Jₜₕᵣₑₛₕᴹ = bgc.specific_food_thresholds_for_mesozooplankton
+    grazing_arg_m = grazing_argᴹ(P, POC, D, Z, T)
+    grazing_arg_z = grazing_argᶻ(P, POC, D, T) 
+    g_Dᶻ = gᴶ(D, p_Dᶻ, Jₜₕᵣₑₛₕᶻ, grazing_arg_z)
+    g_Dᴹ =  gᴶ(D, p_Dᴹ, Jₜₕᵣₑₛₕᴹ, grazing_arg_m)
+ 
     t_darkᴰ = 
 
     Lₗᵢₘᴰ, Lₚₒ₄ᴰ, Lₙₕ₄ᴰ, Lₙₒ₃ᴰ, Lₙᴰ, Lₛᵢᴰ, L_Feᴰ = Lᴰ(D, PO₄, NO₃, NH₄, Si, Dᶜʰˡ, Dᶠᵉ)
@@ -228,9 +253,15 @@ end
     Lₗᵢₘᴾ, Lₚₒ₄ᴾ, Lₙₕ₄ᴾ, Lₙₒ₃ᴾ, Lₙᴾ, L_Feᴾ = Lᴾ(P, PO₄, NO₃, NH₄, Pᶜʰˡ, Pᶠᵉ)
 
     sh = 
-    gₚᶻ =
-    gₚᴹ = 
-   
+
+    [pₚᶻ, pₚᴹ] = bgc.preference_for_nanophytoplankton
+    Jₜₕᵣₑₛₕᶻ = bgc.specific_food_thresholds_for_microzooplankton
+    Jₜₕᵣₑₛₕᴹ = bgc.specific_food_thresholds_for_mesozooplankton
+    grazing_arg_m = grazing_argᴹ(P, POC, D, Z, T)
+    grazing_arg_z = grazing_argᶻ(P, POC, D, T) 
+    gₚᶻ = gᴶ(P, pₚᶻ, Jₜₕᵣₑₛₕᶻ, grazing_arg_z)
+    gₚᴹ =  gᴶ(P, pₚᴹ, Jₜₕᵣₑₛₕᴹ, grazing_arg_m)
+
     μᴾᶠᵉ = μᴵᶠᵉ(P, Pᶠᵉ, θₘₐₓᶠᵉᵖ, Sᵣₐₜᴾ, K_Feᴾᶠᵉᵐⁱⁿ, Pₘₐₓ, L_Feᴾ, bFe)
 
     return (1-δᴾ)*μᴾᶠᵉ*P - mᴾ*K_mondo(P, Kₘ)*Pᶠᵉ - sh*wᴾ*P*Pᶠᵉ - θ(Pᶠᵉ, P)*gₚᶻ*Z - θ(Pᶠᵉ, P)*gₚᴹ*M  #16
@@ -250,8 +281,14 @@ end
     wᴰ = wᴾ + wₘₐₓᴰ*(1-Lₗᵢₘᴰ) #13
 
     sh = 
-    g_Dᶻ =
-    g_Dᴹ = 
+
+    [p_Dᶻ, p_Dᴹ] = bgc.preference_for_diatoms
+    Jₜₕᵣₑₛₕᶻ = bgc.specific_food_thresholds_for_microzooplankton
+    Jₜₕᵣₑₛₕᴹ = bgc.specific_food_thresholds_for_mesozooplankton
+    grazing_arg_m = grazing_argᴹ(P, POC, D, Z, T)
+    grazing_arg_z = grazing_argᶻ(P, POC, D, T) 
+    g_Dᶻ = gᴶ(D, p_Dᶻ, Jₜₕᵣₑₛₕᶻ, grazing_arg_z)
+    g_Dᴹ =  gᴶ(D, p_Dᴹ, Jₜₕᵣₑₛₕᴹ, grazing_arg_m)
    
     μᴰᶠᵉ = μᴵᶠᵉ(D, Dᶠᵉ, θₘₐₓᶠᵉᴰ, Sᵣₐₜᴰ, K_Feᴰᶠᵉᵐⁱⁿ, Dₘₐₓ, L_Feᴰ, bFe)
 
@@ -267,8 +304,15 @@ end
     αᴰ = bgc.initial_slope_of_PI_curve[2]
 
     sh = 
-    g_Dᶻ =
-    g_Dᴹ =
+
+    [p_Dᶻ, p_Dᴹ] = bgc.preference_for_diatoms
+    Jₜₕᵣₑₛₕᶻ = bgc.specific_food_thresholds_for_microzooplankton
+    Jₜₕᵣₑₛₕᴹ = bgc.specific_food_thresholds_for_mesozooplankton
+    grazing_arg_m = grazing_argᴹ(P, POC, D, Z, T)
+    grazing_arg_z = grazing_argᶻ(P, POC, D, T) 
+    g_Dᶻ = gᴶ(D, p_Dᶻ, Jₜₕᵣₑₛₕᶻ, grazing_arg_z)
+    g_Dᴹ =  gᴶ(D, p_Dᴹ, Jₜₕᵣₑₛₕᴹ, grazing_arg_m)
+ 
     t_darkᴰ = 
 
     θₒₚₜˢⁱᴰ = fθₒₚₜˢⁱᴰ(D, PO₄, NO₃, NH₄, Si, Dᶜʰˡ, Dᶠᵉ, μᴰ, T, ϕ)
