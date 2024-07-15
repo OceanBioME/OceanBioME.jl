@@ -4,7 +4,7 @@
     a₈ = bgc.aggregation_rate_of_POC_to_GOC_8
     a₉ = bgc.aggregation_rate_of_POC_to_GOC_9
 
-    return sh*a₆*POC^2 + sh*a₇*POC*GOC + a₈*POC*GOC + a₉*POC^2
+    return sh*a₆*POC^2 + sh*a₇*POC*GOC + a₈*POC*GOC + a₉*POC^2  #39
 end
 
 @inline function (pisces::PISCES)(::Val{:POC}, x, y, z, t, DOC, P, D, Pᶜʰˡ, Dᶜʰˡ, N, Fe, O₂, NO₃, PARᴾ, PARᴰ, Z, M, POC, GOC, T, L_day, zₘₓₗ, zₑᵤ)
@@ -36,7 +36,7 @@ end
 
     dPOCdz = 
 
-    return σᶻ*∑gᶻ*Z + 0.5*mᴰ*K_mondo(D, Kₘ) + rᶻ*b_z^T*K_mondo(Z, Kₘ)*Z + mᶻ*b_z^T*Z^2 + (1 - 0.5*R_CaCO₃)*(mᴾ*K_mondo(P, Kₘ)*P + wᴾ*P^2) + λₚₒ¹*GOC + Φ₁ᴰᴼᶜ + Φ₃ᴰᴼᶜ - (gₚₒᴹ + gₚₒ_FFᴹ)*M - gₚₒᶻ*Z - λₚₒ¹*POC - Φ - wₚₒ*dPOCdz
+    return σᶻ*∑gᶻ*Z + 0.5*mᴰ*K_mondo(D, Kₘ) + rᶻ*b_z^T*K_mondo(Z, Kₘ)*Z + mᶻ*b_z^T*Z^2 + (1 - 0.5*R_CaCO₃)*(mᴾ*K_mondo(P, Kₘ)*P + wᴾ*P^2) + λₚₒ¹*GOC + Φ₁ᴰᴼᶜ + Φ₃ᴰᴼᶜ - (gₚₒᴹ + gₚₒ_FFᴹ)*M - gₚₒᶻ*Z - λₚₒ¹*POC - Φ - wₚₒ*dPOCdz  #37
 end
 
 @inline function (pisces::PISCES)(::Val{:GOC}, x, y, z, t, DOC, P, D, Pᶜʰˡ, Dᶜʰˡ, N, Fe, O₂, NO₃, PARᴾ, PARᴰ, Z, M, POC, GOC, T, L_day, zₘₓₗ, zₑᵤ)
@@ -52,16 +52,19 @@ end
     ∑gᴹ = grazingᴹ(P, D, Z, POC, T)[1] 
     ∑g_FFᴹ = ∑g_FFᴹ(zₑᵤ, zₘₓₗ, T, POC, GOC)
     
-    Pᵤₚᴹ
+    Pᵤₚᴹ = Pᵤₚ(M, T)
     R_CaCO₃ = R_CaCO₃(zₘₓₗ, T, P, PAR)
 
-    wᴰ = 
-    Φ = 
-    Φ₂ᴰᴼᶜ = 
-    g_GOC_FFᴹ = 
-    λₚₒ¹ = 
-    w_GOC = 
+    wₘₐₓᴰ = bgc.max_quadratic_mortality_of_diatoms
+    Lₗᵢₘᴰ = Lᴰ(D, PO₄, NO₃, NH₄, Si, Dᶜʰˡ, Dᶠᵉ)[1]
+    wᴰ =  wᴾ + wₘₐₓᴰ*(1-Lₗᵢₘᴰ)
+    Φ = Φ(POC, GOC, sh)
+    Φ₂ᴰᴼᶜ = Φᴰᴼᶜ(DOC, POC, GOC, sh)[2]
+    w_GOC = ω(zₑᵤ, zₘₓₗ)
+    g_GOC_FFᴹ = g_FF*bₘ^T*w_GOC*GOC
+    λₚₒ¹ = λ¹(T, O₂)
+    
     dGOCdz =
 
-    return σᴹ*(∑gᴹ + ∑g_FFᴹ)*M + rᴹ*bₘ^T*K_mondo(M, Kₘ)*M + Pᵤₚᴹ + 0.5*R_CaCO₃*(mᴾ*K_mondo(P, Kₘ)*P + wᴾ*P^2) + 0.5*mᴰ*K_mondo(D, Kₘ)*D^3*wᴰ + Φ + Φ₂ᴰᴼᶜ - g_GOC_FFᴹ*M - λₚₒ¹*GOC - w_GOC*dGOCdz
+    return σᴹ*(∑gᴹ + ∑g_FFᴹ)*M + rᴹ*bₘ^T*K_mondo(M, Kₘ)*M + Pᵤₚᴹ + 0.5*R_CaCO₃*(mᴾ*K_mondo(P, Kₘ)*P + wᴾ*P^2) + 0.5*mᴰ*K_mondo(D, Kₘ)*D^3*wᴰ + Φ + Φ₂ᴰᴼᶜ - g_GOC_FFᴹ*M - λₚₒ¹*GOC - w_GOC*dGOCdz    #40
 end

@@ -6,6 +6,15 @@
     return (1 - σᴹ - eₘₐₓᴹ)*(1)/(1-eₘₐₓᴹ)*mᴹ*bₘ^T*M^2  #30b
 end
 
+@inline function Pᵤₚ(M, T)
+    σᴹ = bgc.non_assimilated_fraction[2]
+    eₘₐₓᴹ = bgc.max_growth_efficiency_of_zooplankton[2]
+    mᴹ = bgc.phytoplankton_mortality_rate[2]
+    bₘ = bgc.temperature_sensitivity_term[2]
+    return σᴹ*(1)/(1-eₘₐₓᴹ)*mᴹ*bₘ^T*M^2      #30 a
+end
+
+
 @inline function Remin(O₂, NO₃, PO₄, NH₄, DOC, T, bFe, Bact, Bactᵣₑ)
     O₂ᵘᵗ = bgc.OC_for_ammonium_based_processes
     λ_DOC = bgc.remineralisation_rate_of_DOC
@@ -32,7 +41,7 @@ end
     return
 end
 
-@inline function Φ(DOC, POC, GOC, sh)
+@inline function Φᴰᴼᶜ(DOC, POC, GOC, sh)
     a₁ = bgc.aggregation_rate_of_DOC_to_POC_1
     a₂ = bgc.aggregation_rate_of_DOC_to_POC_2
     a₃ = bgc.aggregation_rate_of_DOC_to_GOC_3
@@ -44,6 +53,13 @@ end
     Φ₃ᴰᴼᶜ = (a₄*POC + a₅*DOC)*DOC       #36c
 
     return Φ₁ᴰᴼᶜ, Φ₂ᴰᴼᶜ, Φ₃ᴰᴼᶜ
+end
+
+@inline function λ¹(T, O₂)
+    λₚₒ= bgc.degradation_rate_of_POC
+    bₚ = bgc.temperature_sensitivity_of_growth
+
+    return λₚₒ*bₚ^T*(1 - 0.45*ΔO₂(O₂))  #38
 end
 
 @inline function Lᵇᵃᶜᵗ(DOC, PO₄, NO₃, NH₄, bFe)
@@ -60,7 +76,7 @@ end
 
     Lₙₕ₄ᵇᵃᶜᵗ = L_NH₄(NO₃, NH₄, Kₙₒ₃ᵇᵃᶜᵗ, Kₙₕ₄ᵇᵃᶜᵗ) #34g
     Lₙₒ₃ᵇᵃᶜᵗ = L_NO₃(NO₃, NH₄, Kₙₒ₃ᵇᵃᶜᵗ, Kₙₕ₄ᵇᵃᶜᵗ) #34h
-    Lₙ = Lₙₒ₃ᵇᵃᶜᵗ + Lₙₕ₄ᵇᵃᶜᵗ         #34f
+    Lₙᵇᵃᶜᵗ = Lₙₒ₃ᵇᵃᶜᵗ + Lₙₕ₄ᵇᵃᶜᵗ         #34f
 
     Lₗᵢₘᵇᵃᶜᵗ = min(Lₙₕ₄ᵇᵃᶜᵗ, Lₚₒ₄ᵇᵃᶜᵗ, L_Feᵇᵃᶜᵗ) #34c
     Lᵇᵃᶜᵗ = Lₗᵢₘᵇᵃᶜᵗ*L_DOCᵇᵃᶜᵗ #34a
@@ -69,7 +85,7 @@ end
 end
 
 
-@inline function (pisces::PISCES)(::Val{:DOC}, x, y, z, t, P, D, Pᶜʰˡ, Dᶜʰˡ, N, Fe, O₂, NO₃, PARᴾ, PARᴰ, Z, M, POC, GOC, T, L_day, zₘₓₗ, zₑᵤ)
+@inline function (pisces::PISCES)(::Val{:DOC}, x, y, z, t, DOC, P, D, Pᶜʰˡ, Dᶜʰˡ, N, Fe, O₂, NO₃, PARᴾ, PARᴰ, Z, M, POC, GOC, T, L_day, zₘₓₗ, zₑᵤ)
     [γᶻ, γᴹ] = bgc.excretion_as_DOM
     [σᶻ, σᴹ] = bgc.non_assimilated_fraction
     [δᴾ, δᴰ] = bgc.exudation_of_DOC
@@ -98,7 +114,7 @@ end
     eᶻ = eᴶ(eₘₐₓᶻ, σᶻ, gₚᶻ, g_Dᶻ, gₚₒᶻ, 0, N, Fe, P, D, POC, 1, Z)
     eᴹ = eᴶ(eₘₐₓᴹ, σᴹ, gₚᴹ, g_Dᴹ, gₚₒᴹ, g_zᴹ, N, Fe, P, D, POC, Z, M)
 
-    λₚₒ¹ = 
+    λₚₒ¹ = λ¹(T, O₂)
     Rᵤₚᴹ = Rᵤₚ(M, T)
 
     zₘₐₓ = max(zₑᵤ, zₘₓₗ) #35a
@@ -108,7 +124,7 @@ end
     Remin = Remin(O₂, NO₃, PO₄, NH₄, DOC, T, bFe, Bact, Bactᵣₑ)
     Denit = Denit(NO₃, PO₄, NH₄, DOC, O₂, T, bFe, Bact, Bactᵣₑ)
 
-    Φ₁ᴰᴼᶜ, Φ₂ᴰᴼᶜ, Φ₃ᴰᴼᶜ = Φ(DOC, POC, GOC, sh)
+    Φ₁ᴰᴼᶜ, Φ₂ᴰᴼᶜ, Φ₃ᴰᴼᶜ = Φᴰᴼᶜ(DOC, POC, GOC, sh)
 
     return (1 - γᶻ)*(1 - eᶻ - σᶻ)*∑ᵢgᵢᶻ*Z + (1 - γᴹ)*(1 - eᴹ - σᴹ)*(∑ᵢgᵢᴹ + g_GOC_FFᴹ)*M + δᴰ*μᴰ*D + δᴾ*μᴾ*P + λₚₒ¹*POC + (1 - γᴹ)*Rᵤₚᴹ - Remin - Denit - Φ₁ᴰᴼᶜ - Φ₂ᴰᴼᶜ - Φ₃ᴰᴼᶜ #32
 end

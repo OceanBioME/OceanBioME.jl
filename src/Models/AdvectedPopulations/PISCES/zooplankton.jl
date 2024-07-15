@@ -42,15 +42,15 @@ end
 end
 
 @inline function ∑g_FFᴹ(zₑᵤ, zₘₓₗ, T, POC, GOC)
-    w_POC = bgc.sinking_speed_of_POC
+    wₚₒ = bgc.sinking_speed_of_POC
     g_FF = bgc.flux_feeding_rate
     bₘ = bgc.temperature_sensitivity_term[2]
 
     w_GOC = ω_GOC(zₑᵤ, zₘₓₗ)
 
-    g_POC_FFᴹ = g_FF*bₘ^T*w_POC*POC #29a
+    gₚₒ_FFᴹ = g_FF*bₘ^T*wₚₒ*POC #29a
     g_GOC_FFᴹ = g_FF*bₘ^T*w_GOC*GOC #29b
-    return g_GOC_FFᴹ + g_POC_FFᴹ
+    return g_GOC_FFᴹ + gₚₒ_FFᴹ
 end
 
 @inline function eᴶ(eₘₐₓᴶ, σᴶ, gₚᴶ, g_Dᴶ, gₚₒᴶ, g_zᴹ, N, Fe, P, D, POC, Z, J)
