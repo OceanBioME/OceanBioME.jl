@@ -19,8 +19,11 @@ export Particles
 # Light models
 export TwoBandPhotosyntheticallyActiveRadiation
 
-# Boundaries
-export Boundaries, Sediments, GasExchange, FlatSediment
+# airsea flux
+export GasExchange
+
+# sediment
+export Sediments, FlatSediment
 
 # Utilities
 export column_advection_timescale, sinking_advection_timescale, Budget
@@ -175,17 +178,13 @@ show(io::IO, model::Biogeochemistry) =
 summary(modifiers::Tuple) = tuple([summary(modifier) for modifier in modifiers])
 
 include("Utils/Utils.jl")
-include("Boundaries/Boundaries.jl")
 include("Light/Light.jl")
 include("Particles/Particles.jl")
 include("BoxModel/boxmodel.jl")
 include("Models/Models.jl")
 
-using .Boundaries
 using .Light
 using .BoxModels
-using .LOBSTERModel
-using .NPZDModel
-import .SLatissimaModel.SLatissima
+using .Models
 
 end #module

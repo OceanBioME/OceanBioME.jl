@@ -1,6 +1,7 @@
 include("dependencies_for_runtests.jl")
 
-using OceanBioME: Boundaries, GasExchange, LOBSTER
+using OceanBioME: GasExchange, LOBSTER
+using OceanBioME.Models: OCMIP_default
 using Oceananigans, DataDeps, JLD2, Statistics
 using Oceananigans.Units
 
@@ -37,7 +38,7 @@ end
 
 @testset "Gas exchange values" begin
     # approximatly correct sized pCO₂ from DIC and ALK
-    pCO₂_model = Boundaries.OCMIP_default
+    pCO₂_model = OCMIP_default
 
     @load datadep"test_data/CODAP_data.jld2" DIC Alk T S pH pCO₂
     
