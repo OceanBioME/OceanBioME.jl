@@ -44,8 +44,8 @@ end
     zₘₐₓ = max(zₑᵤ, zₘₓₗ)   #41a
     w_GOC = w_GOCᵐⁱⁿ + (200 - w_GOCᵐⁱⁿ)*(max(0, z-zₘₐₓ))/(5000) #41b
 
-    g_GOC_FFᴹ = g_FF*bₘ^T*w_POC*POC #29b
-    g_POC_FFᴹ = g_FF*bₘ^T*w_GOC*GOC #29a
+    g_POC_FFᴹ = g_FF*bₘ^T*w_POC*POC #29a
+    g_GOC_FFᴹ = g_FF*bₘ^T*w_GOC*GOC #29b
     return g_GOC_FFᴹ + g_POC_FFᴹ
 end
 
