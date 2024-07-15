@@ -175,13 +175,9 @@ function _calculate_sediment_tendencies!(i, j, sediment::IronPhosphate, bgc, gri
     @inbounds begin
         oxygen_deposition = oxygen_flux(i, j, k, grid, advection, bgc, tracers) * Δz
 
-        carbon_deposition = carbon_flux(i, j, k, grid, advection, bgc, tracers) * Δz
-                        
-        nitrogen_deposition = nitrogen_flux(i, j, k, grid, advection, bgc, tracers) * Δz
+        POC_deposition = poc_flux(i, j, k, grid, advection, bgc, tracers) * Δz
 
-        phosphate_deposition = phosphate_flux(i, j, k, grid, advection, bgc, tracers) * Δz
-
-        iron_deposition = phosphate_flux(i, j, k, grid, advection, bgc, tracers) * Δz * 0.1 # molar ratio from Dale et al 2012, p. 633
+        iron_deposition = iron_flux(i, j, k, grid, advection, bgc, tracers) * Δz
         
         O2 = sediment.fields.O2[i, j, 1]
         NH4 = sediment.fields.NH4[i, j, 1]
@@ -248,15 +244,15 @@ function _calculate_sediment_tendencies!(i, j, sediment::IronPhosphate, bgc, gri
         RFeS2p = TH2S * FeII * fT * kFeS2p # H2 should be produced here but I assume it dissociates...
         RFe3red = TH2S ^ 0.5 * FeOHP * fT * kFe3red * (2 / (O2 + 2))
 
-        ratio_NC = 9.5/106
-        ratio_PC = 1/106
-        ratio_FeP = 0.1
+        @inline ratio_NC = 9.5/106
+        @inline ratio_PC = 1/106
+        @inline ratio_FeP = 0.1
 
         #####
         ##### sediment evolution
         #####
 
-        sediment_tendencies.Gi = carbon_deposition - RO2 - RNO3 - RNO2 - RFe - RSO4 - RCH4
+        sediment_tendencies.Gi = POC_deposition - RO2 - RNO3 - RNO2 - RFe - RSO4 - RCH4
         sediment_tendencies.O2 = oxygen_deposition - RO2 - 1.5 * RNH4ox - 0.5 * RNO2ox - 2 * RH2Sox - 0.25 * RFe2ox - 3.5 * RFeS2ox
         sediment_tendencies.TCO2 = RO2 + RNO3 + RNO2 + RFe + RSO4 + RCH4 + RAOM
         sediment_tendencies.NH4 = ratio_NC * (RO2 + RNO3 + RNO2 + RFe + RSO4 + RCH4) + RDNRA - Ramx - RNH4ox
@@ -264,7 +260,7 @@ function _calculate_sediment_tendencies!(i, j, sediment::IronPhosphate, bgc, gri
         sediment_tendencies.NO2 = 2 * RNO3 - 1.33 * RNO2 - Ramx + RNH4ox - RNO2ox
         sediment_tendencies.N2 = Ramx + 0.66 * RNO2
         sediment_tendencies.TPO4 = ratio_PC * (RO2 + RNO3 + RNO2 + RFe + RSO4 + RCH4) + RFe * ratio_FeP - ratio_FeP * RFe2ox * fK_TPO4 + ratio_FeP * RFe3red
-        sediment_tendencies.FeOHP = -4 * RFe + RFe2ox - RFe3red
+        sediment_tendencies.FeOHP = iron_deposition - 4 * RFe + RFe2ox - RFe3red
         sediment_tendencies.FeII = 4 * RFe - RFe2ox + RFeS2ox - RFeS2p + RFe3red
         sediment_tendencies.FeS2 = RFeS2p - RFeS2ox
         sediment_tendencies.SO4 = -0.5 * RSO4 + RDNRA - RAOM + RH2Sox + 2 * RFeS2ox + (RFe3red / 8)

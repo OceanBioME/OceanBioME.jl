@@ -493,6 +493,11 @@ const VariableRedfieldLobster = Union{LOBSTER{<:Any, <:Val{(false, false, true)}
 @inline oxygen_flux(i, j, k, grid, advection, bgc::VariableRedfieldLobster, tracers) = 
     (sinking_flux(i, j, k, grid, advection, Val(:O2), bgc, tracers))
 
+@inline poc_flux(i, j, k, grid, advection, bgc::VariableRedfieldLobster, tracers) = 
+    (sinking_flux(i, j, k, grid, advection, Val(:sPOC), bgc, tracers) +
+     sinking_flux(i, j, k, grid, advection, Val(:bPOC), bgc, tracers))
+
+
 
 @inline remineralisation_receiver(::LOBSTER) = :NH₄
 
