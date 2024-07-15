@@ -1,7 +1,5 @@
  # TO DO:   
-    #Fill in the variables for these functions once they are written. Add relevant parameters to parameter lists inside forcing function. 
-    #Fill arguments for μᴾₙₒ₃(), μᴰₙₒ₃() (8), Denit() (33b) - for NO₃.
-    #Fill arguments for Lₙᴾ() (6c), μₚ() (4b), gᴹ() (26a), eᶻ() (27), Lₙᴰᶻ() (58a) - for NH₄.
+    #Fill in parameters for functions
     #Where is Pₘₐₓ defined? 
     #Write PAR̄, where to get PAR̄₁? (56b)
     #Set values for Rₙₕ₄ and Rₙₒ₃.
@@ -158,20 +156,22 @@ end
     Jₜₕᵣₑₛₕᴹ = bgc.specific_food_thresholds_for_mesozooplankton
     grazing_arg_z = grazing_argᶻ(P, POC, D, T) 
     grazing_arg_m = grazing_argᴹ(P, POC, D, T) 
+    
+    grazingᶻ = grazingᶻ()
 
-    gₚᶻ = grazingᶻ()[2]
-    g_Dᶻ = grazingᶻ()[3]
-    gₚₒᶻ = grazingᶻ()[4]
-    g_Zᴹ = grazingᴹ()[5]
+    gₚᶻ = grazingᶻ[2]
+    g_Dᶻ = grazingᶻ[3]
+    gₚₒᶻ = grazingᶻ[4]
+    g_Zᴹ = grazingᴹ[5]
     eᶻ = eᴶ(eₘₐₓᶻ, σᶻ, gₚᶻ, g_Dᶻ, gₚₒᶻ, g_zᴹ, N, Fe, P, D, POC, Z, Z)
 
-    gₚᴹ = grazingᴹ(P, D, Z, POC, T)[2]
-    g_Dᴹ = grazingᴹ()[3]
-    gₚₒᴹ = grazingᴹ()[4]
+    gₚᴹ = grazingᴹ[2]
+    g_Dᴹ = grazingᴹ)[3]
+    gₚₒᴹ = grazingᴹ[4]
     eᴹ = eᴶ(eₘₐₓᴹ, σᴹ, gₚᴹ, g_Dᴹ, gₚₒᴹ, g_zᴹ, N, Fe, P, D, POC, Z, Z)
 
-    ∑gᶻ = grazingᶻ()[1]
-    ∑gᴹ = grazingᴹ()[1]
+    ∑gᶻ = grazingᶻ[1]
+    ∑gᴹ = grazingᴹ[1]
    
-    return γᶻ*(1-eᶻ-σᶻ)*∑gᶻ*Z + γᴹ*(1-eᴹ-σᴹ)*(∑gᴹ + ∑g_FFᴹ(zₑᵤ, zₘₓₗ, T, POC, GOC))*M + γᴹ*Rᵤₚᴹ() + Remin() + Denit() + N_fix(bFe, PO₄, PAR) - Nitrif(λₙₕ₄, NH₄, O₂) - λₙₕ₄*ΔO₂(O₂)*NH₄ - μₙₕ₄ᴾ()*P - μₙₕ₄ᴰ()*D
+    return γᶻ*(1-eᶻ-σᶻ)*∑gᶻ*Z + γᴹ*(1-eᴹ-σᴹ)*(∑gᴹ + ∑g_FFᴹ())*M + γᴹ*Rᵤₚᴹ() + Remin() + Denit() + N_fix() - Nitrif() - λₙₕ₄*ΔO₂()*NH₄ - μₙₕ₄ᴾ()*P - μₙₕ₄ᴰ()*D
 end
