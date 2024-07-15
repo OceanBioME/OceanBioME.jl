@@ -107,7 +107,8 @@ function IronPhosphate(; grid,
     @warn "Sediment models are an experimental feature and have not yet been validated."
     @info "This sediment model is currently only compatible with models providing NH₄, NO₃, O₂, and DIC."
 
-    tracer_names = (:C_slow, :C_fast, :N_slow, :N_fast, :C_ref, :N_ref, :Fe_III, :Fe_II, :PO4_dissolved, :P_org)
+    tracer_names = (:O2, :NH4, :NO3, :NO2, :N2, :TPO4, :FeOHP, :FeII, :FeS2, :SO4, :TH2S, :CH4, :TCO2, :Gi)
+        #:C_slow, :C_fast, :N_slow, :N_fast, :C_ref, :N_ref, :Fe_III, :Fe_II, :PO4_dissolved, :P_org)
 
     # add field slicing back ( indices = (:, :, 1)) when output writer can cope
     fields = NamedTuple{tracer_names}(Tuple(CenterField(grid) for tracer in tracer_names))
@@ -144,20 +145,24 @@ adapt_structure(to, sediment::IronPhosphate) =
                  nothing,
                  adapt(to, sediment.bottom_indices))
                   
-sediment_tracers(::IronPhosphate) = (:C_slow, :C_fast, :C_ref, :N_slow, :N_fast, :N_ref, :Fe_III, :Fe_II, :PO4_dissolved, :P_org)
-sediment_fields(model::IronPhosphate) = (C_slow = model.fields.C_slow,
-                                        C_fast = model.fields.C_fast,
-                                        N_slow = model.fields.N_slow,
-                                        N_fast = model.fields.N_fast,
-                                         C_ref = model.fields.C_ref,
-                                         N_ref = model.fields.N_ref,
-                                         Fe_III = model.fields.Fe_III,
-                                         Fe_II = model.fields.Fe_II,
-                                         PO4_dissolved = model.fields.PO4_dissolved,
-                                         P_org = model.fields.P_org)
+sediment_tracers(::IronPhosphate) = (:O2, :NH4, :NO3, :NO2, :N2, :TPO4, :FeOHP, :FeII, :FeS2, :SO4, :TH2S, :CH4, :TCO2, :Gi)
+sediment_fields(model::IronPhosphate) = (O2 = model.fields.O2,
+                                         NH4 = model.fields.NH4,
+                                         NO3 = model.fields.NO3,
+                                         NO2 = model.fields.NO2,
+                                         N2 = model.fields.N2,
+                                         TPO4 = model.fields.TPO4,
+                                         FeOHP = model.fields.FeOHP,
+                                         FeII = model.fields.FeII,
+                                         FeS2 = model.fields.FeS2,
+                                         SO4 = model.fields.SO4,
+                                         TH2S = model.fields.TH2S,
+                                         CH4 = model.fields.CH4,
+                                         TCO2 = model.fields.TCO2,
+                                         Gi = model.fields.Gi)
 
-@inline required_tracers(::IronPhosphate, bgc, tracers) = tracers[(:NO₃, :NH₄, :O₂, :DOC, sinking_tracers(bgc)...)]
-@inline required_tendencies(::IronPhosphate, bgc, tracers) = tracers[(:NO₃, :NH₄, :O₂, :DIC, :DOC)] # TODO add effluxes of PO4 and Fe once PISCES is working
+@inline required_tracers(::IronPhosphate, bgc, tracers) = tracers[(:NO₃, :NH₄, :O₂, :DIC, :POC, :Feᴾ, sinking_tracers(bgc)...)]
+@inline required_tendencies(::IronPhosphate, bgc, tracers) = tracers[(:NO₃, :NH₄, :O₂, :DIC, :POC, :Feᴾ)] # TODO add effluxes of PO4 and Fe once PISCES is working
 
 @inline bottom_index_array(sediment::IronPhosphate) = sediment.bottom_indices
 
@@ -168,6 +173,8 @@ function _calculate_sediment_tendencies!(i, j, sediment::IronPhosphate, bgc, gri
     Δz = zspacing(i, j, k, grid, Center(), Center(), Center())
 
     @inbounds begin
+        oxygen_deposition = oxygen_flux(i, j, k, grid, advection, bgc, tracers) * Δz
+
         carbon_deposition = carbon_flux(i, j, k, grid, advection, bgc, tracers) * Δz
                         
         nitrogen_deposition = nitrogen_flux(i, j, k, grid, advection, bgc, tracers) * Δz
@@ -176,66 +183,84 @@ function _calculate_sediment_tendencies!(i, j, sediment::IronPhosphate, bgc, gri
 
         iron_deposition = phosphate_flux(i, j, k, grid, advection, bgc, tracers) * Δz * 0.1 # molar ratio from Dale et al 2012, p. 633
         
-        # rates
-        C_min_slow = sediment.fields.C_slow[i, j, 1] * sediment.slow_decay_rate
-        C_min_fast = sediment.fields.C_fast[i, j, 1] * sediment.fast_decay_rate
+        O2 = sediment.fields.O2[i, j, 1]
+        NH4 = sediment.fields.NH4[i, j, 1]
+        NO3 = sediment.fields.NO3[i, j, 1]
+        NO2 = sediment.fields.NO2[i, j, 1]
+        N2 = sediment.fields.N2[i, j, 1]
+        TPO4 = sediment.fields.TPO4[i, j, 1]
+        FeOHP = sediment.fields.FeOHP[i, j, 1]
+        FeII = sediment.fields.FeII[i, j, 1]
+        FeS2 = sediment.fields.FeS2[i, j, 1]
+        SO4 = sediment.fields.SO4[i, j, 1]
+        TH2S = sediment.fields.TH2S[i, j, 1]
+        CH4 = sediment.fields.CH4[i, j, 1]
+        TCO2 = sediment.fields.TCO2[i, j, 1]
+        Gi = sediment.fields.Gi[i, j, 1]
 
-        N_min_slow = sediment.fields.N_slow[i, j, 1] * sediment.slow_decay_rate
-        N_min_fast = sediment.fields.N_fast[i, j, 1] * sediment.fast_decay_rate
+        #####
+        ##### RATES
+        #####
 
-        Cᵐⁱⁿ = C_min_slow + C_min_fast
-        Nᵐⁱⁿ = N_min_slow + N_min_fast
+        @inline KO2 = 1 # μM, Half–saturation constant for O2
+        @inline KNO3 = 10 # μM, Half–saturation constant for NO3
+        @inline KNO2 = 10 # μM, Half–saturation constant for NO2
+        @inline KFe = 0.028 # wt-%, Half–saturation constant for Fe
+        @inline KSO4 = 0.1 # μM, Half–saturation constant for SO4
+        @inline KTPO4 = 10 # μM, Half–saturation constant for TPO4
         
-        reactivity = Cᵐⁱⁿ * day / (sediment.fields.C_slow[i, j, 1] + sediment.fields.C_fast[i, j, 1])
+        @inline kGi = 0.016 # day⁻¹, Rate constant for G0 degradation, Dale et al
+        @inline fT = 1 # TODO temperature correction for rates
+        @inline fox = 10 # Enhancement factor for POM degradation by O2
 
-        # sediment evolution
-        sediment_tendencies.C_slow[i, j, 1] = (1 - sediment.refactory_fraction) * sediment.slow_fraction * carbon_deposition - C_min_slow
-        sediment_tendencies.C_fast[i, j, 1] = (1 - sediment.refactory_fraction) * sediment.fast_fraction * carbon_deposition - C_min_fast
-        sediment_tendencies.C_ref[i, j, 1] = sediment.refactory_fraction * carbon_deposition
+        fK_O2 = O2 / (O2 + KO2) # kinetic limiting term
+        fK_NO3 = NO3 / (NO3 + KNO3) # kinetic limiting term
+        fK_NO2 = NO2 / (NO2 + KNO2) # kinetic limiting term
+        fK_Fe = FeOHP / (FeOHP + KFe) # kinetic limiting term
+        fK_SO4 = SO4 / (SO4 + KSO4) # kinetic limiting term
+        fK_TPO4 = TPO4 / (TPO4 + KTPO4) # kinetic limiting term
 
-        sediment_tendencies.N_slow[i, j, 1] = (1 - sediment.refactory_fraction) * sediment.slow_fraction * nitrogen_deposition - N_min_slow
-        sediment_tendencies.N_fast[i, j, 1] = (1 - sediment.refactory_fraction) * sediment.fast_fraction * nitrogen_deposition - N_min_fast
-        sediment_tendencies.N_ref[i, j, 1] = sediment.refactory_fraction * nitrogen_deposition
+        RO2 = Gi * (fT * kGi * fox * fK_O2)
+        RNO3 = Gi * (fT * kGi * fK_NO3 * (1 - fK_NO2) * (1 - fk_O2))
+        RNO2 = Gi * (fT * kGi * fK_NO2 * (1 - fk_O2))
+        RFe = Gi * (fT * kGi * fK_Fe * (1 - fK_NO3) * (1 - fK_NO2) * (1 - fk_NO2))
+        RSO4 = Gi * (fT * kGi * fK_SO4 * (1 - fK_Fe) *(1 - fK_NO3) * (1 - fK_NO2) * (1 - fK_NO2))
+        RCH4 = Gi * (fT * kGi * (1 - fK_SO4) * (1 - fK_Fe) *(1 - fK_NO3) * (1 - fK_NO3) * (1 - fK_NO2))
 
-        # efflux/influx
-        O₂  = tracers.O₂[i, j, k]
-        NO₃ = tracers.NO₃[i, j, k]
-        NH₄ = tracers.NH₄[i, j, k]
-        
-        A, B, C, D, E, F = sediment.nitrate_oxidation_params
+        @inline kDNRA = 2.7e5 # M-1 day-1
+        @inline kamx = 2.7e4 # M-1 day-1
+        @inline kNH4ox = 2.7e4# M-1 day-1
+        @inline kNO2ox = 2.7e4 # M-1 day-1
+        @inline kAOM = 0.27 # day-1
+        @inline kH2Sox = 2.7e4 # M-1 day-1
+        @inline kFe2ox = 2.7e5 # M-1 day-1
+        @inline kFeS2ox = 2.7e3 # M-1 day-1
+        @inline kFeS2p = 2.7e4 # M-1 day-1
+        @inline kFe3red = 0.82 # cm1.5 mmol−0.5 day−1
 
-        pₙᵢₜ = exp(A +
-                  B * log(Cᵐⁱⁿ * day) * log(O₂) +
-                  C * log(Cᵐⁱⁿ * day) ^ 2 +
-                  D * log(reactivity) * log(NH₄) +
-                  E * log(Cᵐⁱⁿ * day) +
-                  F * log(Cᵐⁱⁿ * day) * log(NH₄)) / (Nᵐⁱⁿ * day)
+        RDNRA = TH2S * NO3 * fT * kDNRA
+        Ramx = NH4 * NO2 * fT * kamx
+        RNH4ox = NH4 * O2 * fT * kNH4ox
+        RNO2ox = NO2 * O2 * fT * kNO2ox
+        RAOM = CH4 * SO4 * fT * kAOM
+        RH2Sox = TH2S * O2 * fT * kH2Sox
+        RFe2ox = FeII * O2 * fT * kFe2ox
+        RFeS2ox = FeS2 * O2 * fT * kFeS2ox
+        RFeS2p = TH2S * FeII * fT * kFeS2p
+        RFe3red = TH2S ^ 0.5 * FeOHP * fT * kFe3red * (2 / (O2 + 2))
 
-        #=
-        pᵈᵉⁿⁱᵗ = exp(sediment.denitrification_params.A +
-                     sediment.denitrification_params.B * log(Cᵐⁱⁿ * day) +
-                     sediment.denitrification_params.C * log(NO₃) ^ 2 +
-                     sediment.denitrification_params.D * log(Cᵐⁱⁿ * day) ^ 2 +
-                     sediment.denitrification_params.E * log(reactivity) ^ 2 +
-                     sediment.denitrification_params.F * log(O₂) * log(reactivity)) / (Cᵐⁱⁿ * day)
-        =#
-        
-        A, B, C, D, E, F = sediment.anoxic_params
-        
-        pₐₙₒₓ = exp(A +
-                    B * log(Cᵐⁱⁿ * day) +
-                    C * log(Cᵐⁱⁿ * day) ^ 2 +
-                    D * log(reactivity) +
-                    E * log(O₂) * log(reactivity) +
-                    F * log(NO₃) ^ 2) / (Cᵐⁱⁿ * day)
+        ratio_NC = 9.5/106
+        ratio_PC = 1/106
+        ratio_FeP = 0.1
 
-        A, B, C, D = sediment.solid_dep_params
-        pₛₒₗᵢ = A * (C * depth ^ D) ^ B
+        #####
+        ##### sediment evolution
+        #####
 
-        tendencies.NH₄[i, j, k] += Nᵐⁱⁿ * (1 - pₙᵢₜ) / Δz
-        tendencies.NO₃[i, j, k] += Nᵐⁱⁿ * pₙᵢₜ / Δz
-        tendencies.DIC[i, j, k] += Cᵐⁱⁿ / Δz
-        tendencies.O₂[i, j, k]  -= max(0, ((1 - pₐₙₒₓ * pₛₒₗᵢ) * Cᵐⁱⁿ + 2 * Nᵐⁱⁿ * pₙᵢₜ)/ Δz) # this seems dodge but this model doesn't cope with anoxia properly (I think)
+        sediment_tendencies.Gi = carbon_deposition - RO2 - RNO3 - RNO2 - RFe - RSO4 - RCH4
+
+        tendencies.PO4[i, j, k] = 0.1 * fK_TPO4 * RFe2ox
+
     end
 end
 

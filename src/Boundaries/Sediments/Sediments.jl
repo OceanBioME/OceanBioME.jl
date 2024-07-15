@@ -62,8 +62,8 @@ end
 
 @inline nitrogen_flux() = 0
 @inline carbon_flux() = 0
-@inline inorg_phosphate_flux() = 0
-@inline org_phosphate_flux() = 0
+@inline phosphate_flux() = 0
+@inline oxygen_flux() = 0
 @inline remineralisation_receiver() = nothing
 @inline sinking_tracers() = nothing
 @inline required_tracers() = nothing
