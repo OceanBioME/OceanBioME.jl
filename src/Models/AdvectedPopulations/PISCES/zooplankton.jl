@@ -35,18 +35,30 @@ end
 
 @inline gᴶ(I, pᵢᴶ, Iₜₕᵣₑₛₕᴶ, grazing_arg) = (pᵢᴶ*max(0, I - Iₜₕᵣₑₛₕᴶ))*grazing_arg #26a
 
+@inline function ∑g_FFᴹ(zₑᵤ, zₘₓₗ, T, POC, GOC)
+    w_POC = bgc.sinking_speed_of_POC
+    g_FF = bgc.flux_feeding_rate
+    w_GOCᵐⁱⁿ = bgc.min_sinking_speed_of_GOC
+    bₘ = bgc.temperature_sensitivity_term[2]
 
+    zₘₐₓ = max(zₑᵤ, zₘₓₗ)   #41a
+    w_GOC = w_GOCᵐⁱⁿ + (200 - w_GOCᵐⁱⁿ)*(max(0, z-zₘₐₓ))/(5000) #41b
+
+    g_GOC_FFᴹ = g_FF*bₘ^T*w_POC*POC #29b
+    g_POC_FFᴹ = g_FF*bₘ^T*w_GOC*GOC #29a
+    return g_GOC_FFᴹ + g_POC_FFᴹ
+end
 
 @inline function eᴶ(eₘₐₓᴶ, σᴶ, gₚᴶ, g_Dᴶ, gₚₒᴶ, g_zᴹ, N, Fe, P, D, POC, Z, J)
     θᴺᶜ = bgc.NC_redfield_ratio
 
-    Σᵢθᴺᴵgᵢᴶ = θ(N,P)*gₚᴶ + θ(N, D)*g_Dᴶ + θ(N, POC)*gₚₒᴶ + θ(N, Z)*g_zᴹ
-    Σᵢθᶠᵉᴵgᵢᴶ = θ(Fe, P)*gₚᴶ + θ(Fe, D)*g_Dᴶ + θ(Fe, POC)*gₚₒᴶ + θ(Fe, Z)*g_zᴹ
-    Σᵢgᵢᴶ = gₚᴶ + g_Dᴶ + gₚₒᴶ + g_zᴹ
+    ∑ᵢθᴺᴵgᵢᴶ = θ(N,P)*gₚᴶ + θ(N, D)*g_Dᴶ + θ(N, POC)*gₚₒᴶ + θ(N, Z)*g_zᴹ
+    ∑ᵢθᶠᵉᴵgᵢᴶ = θ(Fe, P)*gₚᴶ + θ(Fe, D)*g_Dᴶ + θ(Fe, POC)*gₚₒᴶ + θ(Fe, Z)*g_zᴹ
+    ∑ᵢgᵢᴶ = gₚᴶ + g_Dᴶ + gₚₒᴶ + g_zᴹ
 
-    eₙᴶ = min(1, (Σᵢθᴺᴵgᵢᴶ)/(θᴺᶜ*Σᵢgᵢᴶ), (Σᵢθᶠᵉᴵgᵢᴶ)/(θ(Fe, Z)*Σᵢgᵢᴶ))   #27a
+    eₙᴶ = min(1, (∑ᵢθᴺᴵgᵢᴶ)/(θᴺᶜ*∑ᵢgᵢᴶ), (∑ᵢθᶠᵉᴵgᵢᴶ)/(θ(Fe, Z)*∑ᵢgᵢᴶ))   #27a
 
-    return eₙᴶ*min(eₘₐₓᴶ, (1 - σᴶ)* (Σᵢθᶠᵉᴵgᵢᴶ)/(θ(Fe, J)*Σᵢgᵢᴶ)) #27b
+    return eₙᴶ*min(eₘₐₓᴶ, (1 - σᴶ)* (∑ᵢθᶠᵉᴵgᵢᴶ)/(θ(Fe, J)*∑ᵢgᵢᴶ)) #27b
 end
 
 
@@ -87,31 +99,22 @@ end
     eₘₐₓᴹ = bgc.max_growth_efficiency_of_zooplankton[2]
     σᴹ = bgc.non_assimilated_fraction[2]
 
-    w_GOCᵐⁱⁿ = bgc.min_sinking_speed_of_GOC
-
     Jₜₕᵣₑₛₕᴹ = bgc.specific_food_thresholds_for_mesozooplankton
     pₚᴹ = bgc.preference_for_nanophytoplankton[2]
     p_Dᴹ = bgc.preference_for_diatoms[2]
     pₚₒᴹ = bgc.preference_for_POC[2]
     p_zᴹ = bgc.preference_for_microzooplankton
 
-    w_POC = bgc.sinking_speed_of_POC
-    g_FF = bgc.flux_feeding_rate
-
     grazing_arg_m = grazing_argᴹ(P, POC, D, Z, T)
-
-    zₘₐₓ = max(zₑᵤ, zₘₓₗ)   #41a
-    w_GOC = w_GOCᵐⁱⁿ + (200 - w_GOCᵐⁱⁿ)*(max(0, z-zₘₐₓ))/(5000) #41b
 
     gₚᴹ = gᴶ(P, pₚᴹ, Jₜₕᵣₑₛₕᴹ, grazing_arg_m)
     g_Dᴹ = gᴶ(D, p_Dᴹ, Jₜₕᵣₑₛₕᴹ, grazing_arg_m)
     gₚₒᴹ = gᴶ(POC, pₚₒᴹ, Jₜₕᵣₑₛₕᴹ, grazing_arg_m)
     g_zᴹ = gᴶ(Z, p_zᴹ, Jₜₕᵣₑₛₕᴹ, grazing_arg_m)
 
-    g_GOC_FFᴹ = g_FF*bₘ^T*w_POC*POC #29b
-    g_POC_FFᴹ = g_FF*bₘ^T*w_GOC*GOC #29a
+    ∑g_FFᴹ = ∑g_FFᴹ(zₑᵤ, zₘₓₗ, T, POC, GOC)
     
     eᴹ =  eᴶ(eₘₐₓᴹ, σᴹ, gₚᴹ, g_Dᴹ, gₚₒᴹ, g_zᴹ, N, Fe, P, D, POC, Z, M)
 
-    return eᴹ*(gₚᴹ + g_Dᴹ + gₚₒᴹ + g_GOC_FFᴹ + g_POC_FFᴹ + g_zᴹ)*M - mᴹ*bₘ^T*M^2 - rᴹ*bₘ^T*(K_mondo(M, Kₘ) + 3*ΔO₂(O₂))*M   #28
+    return eᴹ*(gₚᴹ + g_Dᴹ + gₚₒᴹ + ∑g_FFᴹ + g_zᴹ)*M - mᴹ*bₘ^T*M^2 - rᴹ*bₘ^T*(K_mondo(M, Kₘ) + 3*ΔO₂(O₂))*M   #28
 end
