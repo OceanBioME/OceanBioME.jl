@@ -9,6 +9,27 @@
 
 # For use in NO₃ and NH₄ forcing equations.
 
+@inline function μₙₒ₃ᴾ(P, PO₄, NO₃, NH₄, Pᶜʰˡ, Pᶠᵉ, T) 
+    #L_day = 
+    # PARᴾ = 
+    αᴾ = bgc.initial_slope_of_PI_curve[1]
+    Lₗᵢₘᴾ = Lᴾ(P, PO₄, NO₃, NH₄, Pᶜʰˡ, Pᶠᵉ)[1]
+    μᴾ = μᴵ(P, Pᶜʰˡ, PARᴾ, L_day, T, αᴾ, Lₗᵢₘᴾ) #do we need to define L_day? PARᴾ?
+    Lₙₒ₃ᴾ = Lᴾ(P, PO₄, NO₃, NH₄, Pᶜʰˡ, Pᶠᵉ)[4]
+    Lₙₕ₄ᴾ = Lᴾ(P, PO₄, NO₃, NH₄, Pᶜʰˡ, Pᶠᵉ)[3]
+    return μᴾ * K_mondo(Lₙₒ₃ᴾ, Lₙₕ₄ᴾ) #eq 8
+end
+
+@inline function μₙₕ₄(P, PO₄, NO₃, NH₄, Pᶜʰˡ, Pᶠᵉ, T)
+    #L_day = 
+    αᴾ = bgc.initial_slope_of_PI_curve[1]
+    Lₗᵢₘᴾ = Lᴾ(P, PO₄, NO₃, NH₄, Pᶜʰˡ, Pᶠᵉ)[1]
+    μᴾ = μᴵ(P, Pᶜʰˡ, PARᴾ, L_day, T, αᴾ, Lₗᵢₘᴾ) 
+    Lₙₒ₃ᴾ = Lᴾ(P, PO₄, NO₃, NH₄, Pᶜʰˡ, Pᶠᵉ)[4]
+    Lₙₕ₄ᴾ = Lᴾ(P, PO₄, NO₃, NH₄, Pᶜʰˡ, Pᶠᵉ)[3]
+    return μᴾ * K_mondo(Lₙₕ₄ᴾ, Lₙₒ₃ᴾ) #eq 8
+    
+end
 @inline function ΔO₂(O₂)
     O₂ᵐⁱⁿ¹ = bgc.half_sat_const_for_denitrification1
     O₂ᵐⁱⁿ² = bgc.half_sat_const_for_denitrification2
@@ -61,10 +82,26 @@ end
 
 # Define sum of grazing rates, as this quantity freqeuently appears
 
-@inline ∑gᶻ() = gᶻ(P, ) + gᶻ(D, ) + gᶻ(POC, )
-@inline ∑gᴹ() = gᴹ(P, ) + gᴹ(D, ) + gᴹ(Z, ) + gᴹ(POC, )
+@inline function ∑gᶻ(P, D, POC, T) 
+    pₚᶻ = bgc.preference_for_nanophytoplankton[1]
+    p_Dᶻ = bgc.preference_for_diatoms[1]
+    p_pocᶻ = bgc.preference_for_POC[1]
+    Jₜₕᵣₑₛₕᶻ = bgc.specific_food_thresholds_for_microzooplankton
+    grazing_arg_z = grazing_argᶻ(P, POC, D, T) 
+    
+    return gᴶ(P, pₚᶻ, Jₜₕᵣₑₛₕᶻ, grazing_arg_z) + gᴶ(D, p_Dᶻ, Jₜₕᵣₑₛₕᶻ, grazing_arg_z) + gᴶ(POC, p_pocᶻ, Jₜₕᵣₑₛₕᶻ, grazing_arg_z) #Sum grazing rates on each prey species
+end
 
-# NH₄ forcing also requires eᶻ, eᴹ (27), Rᵤₚᴹ (30b), gᶻ (26a), g_FF (29), μᴾₙₕ₄, μᴰₙₕ₄() (8)
+@inline function ∑gᴹ(P, D, Z, POC, T) 
+    pₚᴹ = bgc.preference_for_nanophytoplankton[2]
+    p_Dᴹ = bgc.preference_for_diatoms[2]
+    p_pocᴹ = bgc.preference_for_POC[2]
+    p_zᴹ = bgc.preference_for_microzooplankton
+    Jₜₕᵣₑₛₕᴹ = bgc.specific_food_thresholds_for_mesozooplankton
+    grazing_arg_m = grazing_argᴹ(P, POC, D, T) 
+    
+    return gᴶ(P, pₚᴹ, Jₜₕᵣₑₛₕᴹ, grazing_arg_m) + gᴶ(D, p_Dᴹ, Jₜₕᵣₑₛₕᴹ, grazing_arg_m) + gᴶ(POC, p_pocᴹ, Jₜₕᵣₑₛₕᴹ, grazing_arg_m) + gᴶ(Z, p_zᴹ, Jₜₕᵣₑₛₕᴹ, grazing_arg_m)  #Sum grazing rates on each prey species
+end
 
 @inline function (pisces::PISCES)(::Val{:NH₄}, x, y, z, t, P, D, NH₄, O₂, bFe, POC, GOC, PAR) 
     # the signature of this function is always `Val(name), x, y, z, t` and then all the tracers listed in `required_biogeochemical_tracers`, and then `required_biogeochemical_auxiliary_fields`
