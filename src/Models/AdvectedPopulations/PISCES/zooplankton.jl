@@ -35,14 +35,19 @@ end
 
 @inline gᴶ(I, pᵢᴶ, Iₜₕᵣₑₛₕᴶ, grazing_arg) = (pᵢᴶ*max(0, I - Iₜₕᵣₑₛₕᴶ))*grazing_arg #26a
 
+@inline function ω_GOC(zₑᵤ, zₘₓₗ)
+    zₘₐₓ = max(zₑᵤ, zₘₓₗ) 
+    ω_GOCᵐⁱⁿ = bgc.min_sinking_speed_of_GOC
+    return ω_GOCᵐⁱⁿ + (200 - ω_GOCᵐⁱⁿ)*(max(0, z-zₘₐₓ))/(5000) #41b
+end
+
 @inline function ∑g_FFᴹ(zₑᵤ, zₘₓₗ, T, POC, GOC)
     w_POC = bgc.sinking_speed_of_POC
     g_FF = bgc.flux_feeding_rate
     w_GOCᵐⁱⁿ = bgc.min_sinking_speed_of_GOC
     bₘ = bgc.temperature_sensitivity_term[2]
 
-    zₘₐₓ = max(zₑᵤ, zₘₓₗ)   #41a
-    w_GOC = w_GOCᵐⁱⁿ + (200 - w_GOCᵐⁱⁿ)*(max(0, z-zₘₐₓ))/(5000) #41b
+    w_GOC = ω_GOC(zₑᵤ, zₘₓₗ)
 
     g_POC_FFᴹ = g_FF*bₘ^T*w_POC*POC #29a
     g_GOC_FFᴹ = g_FF*bₘ^T*w_GOC*GOC #29b
