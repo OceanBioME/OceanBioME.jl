@@ -1,6 +1,5 @@
  # TO DO:   
     #Write PAR̄, where to get PAR̄₁? (56b)
-    #Where is Pₘₐₓ defined? 
     #Set values for Rₙₕ₄ and Rₙₒ₃.
 
 #This document contains functions for:
@@ -86,7 +85,7 @@ end
 @inline function Lₙᴰᶻ(P, PO₄, NO₃, NH₄, Pᶜʰˡ, Pᶠᵉ) #eq58a
     Lₙᴾ = Lᴾ(P, PO₄, NO₃, NH₄, Pᶜʰˡ, Pᶠᵉ)[5]
     #Lₗᵢₘᴾ, Lₚₒ₄ᴾ, Lₙₕ₄ᴾ, Lₙₒ₃ᴾ, Lₙᴾ, L_Feᴾ = Lᴾ(P, PO₄, NO₃, NH₄, Pᶜʰˡ, Pᶠᵉ), check the correct way to call the function.
-    if Lₙᴾ >= 0.08 #Fill parameters for this function. Check where Pₘₐₓ defined.
+    if Lₙᴾ >= 0.08 
         return 0.01
     else
         return 1 - Lₙᴾ
