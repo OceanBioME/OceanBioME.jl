@@ -1,3 +1,6 @@
+# Still to implement Bact
+# Bactᵣₑf does not appear to be defined
+
 @inline function Rᵤₚ(M, T)
     σᴹ = bgc.non_assimilated_fraction[2]
     eₘₐₓᴹ = bgc.max_growth_efficiency_of_zooplankton[2]
@@ -11,7 +14,7 @@ end
     eₘₐₓᴹ = bgc.max_growth_efficiency_of_zooplankton[2]
     mᴹ = bgc.phytoplankton_mortality_rate[2]
     bₘ = bgc.temperature_sensitivity_term[2]
-    return σᴹ*(1)/(1-eₘₐₓᴹ)*mᴹ*bₘ^T*M^2      #30 a
+    return σᴹ*(1)/(1-eₘₐₓᴹ)*mᴹ*bₘ^T*M^2      #30a
 end
 
 
@@ -119,7 +122,7 @@ end
 
     zₘₐₓ = max(zₑᵤ, zₘₓₗ) #35a
     Bact = Bact()
-    Bactᵣₑ
+    Bactᵣₑ = 
   
     Remin = Remin(O₂, NO₃, PO₄, NH₄, DOC, T, bFe, Bact, Bactᵣₑ)
     Denit = Denit(NO₃, PO₄, NH₄, DOC, O₂, T, bFe, Bact, Bactᵣₑ)

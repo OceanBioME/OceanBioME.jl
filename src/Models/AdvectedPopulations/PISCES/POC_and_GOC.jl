@@ -1,3 +1,6 @@
+# Shear rate still to be added
+# Derivates also to still be added
+
 @inline function Φ(POC, GOC, sh)
     a₆ = bgc.aggregation_rate_of_POC_to_GOC_6
     a₇ = bgc.aggregation_rate_of_POC_to_GOC_7
@@ -21,6 +24,7 @@ end
 
     grazing = grazingᶻ(P, D, POC, T)
     ∑gᶻ = grazing[1]
+    gₚₒᶻ = grazing[4]
 
     sh =
 
@@ -29,9 +33,8 @@ end
     Φ₁ᴰᴼᶜ = Φᴰᴼᶜ(DOC, POC, GOC, sh)[1]
     Φ₃ᴰᴼᶜ = Φᴰᴼᶜ(DOC, POC, GOC, sh)[3]
 
-    gₚₒᴹ = grazingᴹ(P, D, Z, POC, T)
-    gₚₒ_FFᴹ = g_FF*bₘ^T*wₚₒ*POC 
-    gₚₒᶻ = grazing[4]
+    gₚₒᴹ = grazingᴹ(P, D, Z, POC, T)[4]
+    gₚₒ_FFᴹ = g_FF*bₘ^T*wₚₒ*POC #29a
     Φ = Φ(POC, GOC, sh)
 
     dPOCdz = 
@@ -48,6 +51,7 @@ end
     Kₘ = bgc.half_saturation_const_for_mortality
     bₘ = bgc.temperature_sensitivity_term[2]
     g_FF = bgc.flux_feeding_rate
+    wₘₐₓᴰ = bgc.max_quadratic_mortality_of_diatoms
 
     ∑gᴹ = grazingᴹ(P, D, Z, POC, T)[1] 
     ∑g_FFᴹ = ∑g_FFᴹ(zₑᵤ, zₘₓₗ, T, POC, GOC)
@@ -55,13 +59,12 @@ end
     Pᵤₚᴹ = Pᵤₚ(M, T)
     R_CaCO₃ = R_CaCO₃(zₘₓₗ, T, P, PAR)
 
-    wₘₐₓᴰ = bgc.max_quadratic_mortality_of_diatoms
     Lₗᵢₘᴰ = Lᴰ(D, PO₄, NO₃, NH₄, Si, Dᶜʰˡ, Dᶠᵉ)[1]
     wᴰ =  wᴾ + wₘₐₓᴰ*(1-Lₗᵢₘᴰ)
     Φ = Φ(POC, GOC, sh)
     Φ₂ᴰᴼᶜ = Φᴰᴼᶜ(DOC, POC, GOC, sh)[2]
     w_GOC = w(zₑᵤ, zₘₓₗ)
-    g_GOC_FFᴹ = g_FF*bₘ^T*w_GOC*GOC
+    g_GOC_FFᴹ = g_FF*bₘ^T*w_GOC*GOC #29b
     λₚₒ¹ = λ¹(T, O₂)
     
     dGOCdz =
