@@ -11,7 +11,7 @@
 
 # Using simple chemistry model. 
 # This document contains functions for the following:
-    # Fe¹ (eq65)
+    # Fe¹ (eq65), dissolved free inorganic iron
     # Cgfe1, Cgfe2, Aggfe, Bactfe (eqs 61, 62, 63)
     # Forcing for Fe (eq60)
 

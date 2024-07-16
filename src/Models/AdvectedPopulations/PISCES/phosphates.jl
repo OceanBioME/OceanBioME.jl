@@ -1,6 +1,8 @@
 #TO DO: 
-    #Fill in arguments of functions from earlier documentation
-    #Fill in eᶻ() (), ∑gᶻ(), eᴹ(), ∑gᴹ() , g_FFᴹ(), Rᵤₚᴹ(), Remin(), Denit(), μᴾ(), μᴰ()
+    #
+
+#This document contains functions for:
+    #PO₄ forcing (eq59)
 
 @inline function (pisces::PISCES)(::Val{:PO₄}, x, y, z, t, P, Z, M, POC, GOC, PAR) #(59)
     

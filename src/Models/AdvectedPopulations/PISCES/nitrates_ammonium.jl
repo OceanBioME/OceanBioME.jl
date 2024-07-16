@@ -1,11 +1,15 @@
  # TO DO:   
-    #Fill in parameters for functions
-    #Where is Pₘₐₓ defined? 
     #Write PAR̄, where to get PAR̄₁? (56b)
+    #Where is Pₘₐₓ defined? 
     #Set values for Rₙₕ₄ and Rₙₒ₃.
 
-
-# For use in NO₃ and NH₄ forcing equations.
+#This document contains functions for:
+    #μₙₒ₃ᴶ,  μₙₕ₄ᴶ (eq8)
+    #ΔO₂ (eq57)
+    #PAR̄ (eq56)
+    #Nitrif (eq56)
+    #N_fix (eq58)
+    #Forcing for NO₃ and NH₄ (eqs54, 55)
 
 @inline function μₙₒ₃ᴾ(P, PO₄, NO₃, NH₄, Pᶜʰˡ, Pᶠᵉ, T,  zₘₓₗ, zₑᵤ, L_day) 
     #PARᴾ = 
@@ -99,7 +103,6 @@ end
     return N_fixᵐ*max(0,μₚ - 2.15)*Lₙᴰᶻ()*min(K_mondo(bFe, K_Feᴰᶻ), K_mondo(PO₄, Kₚₒ₄ᴾᵐⁱⁿ))*(1 - e^{-PAR/E_fix})
 end
 
-
 @inline function (pisces::PISCES)(::Val{:NH₄}, x, y, z, t, P, D, NH₄, O₂, bFe, POC, GOC, PAR) 
     # the signature of this function is always `Val(name), x, y, z, t` and then all the tracers listed in `required_biogeochemical_tracers`, and then `required_biogeochemical_auxiliary_fields`
 
@@ -129,7 +132,7 @@ end
     eᶻ = eᴶ(eₘₐₓᶻ, σᶻ, gₚᶻ, g_Dᶻ, gₚₒᶻ, g_zᴹ, N, Fe, P, D, POC, Z)
 
     gₚᴹ = grazingᴹ[2]
-    g_Dᴹ = grazingᴹ)[3]
+    g_Dᴹ = grazingᴹ[3]
     gₚₒᴹ = grazingᴹ[4]
     eᴹ = eᴶ(eₘₐₓᴹ, σᴹ, gₚᴹ, g_Dᴹ, gₚₒᴹ, g_zᴹ, N, Fe, P, D, POC, Z)
 

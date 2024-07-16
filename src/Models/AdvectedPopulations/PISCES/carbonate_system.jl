@@ -25,17 +25,18 @@ end
     θᴺᶜ = bgc.NC_redfield_ratio
     rₙₒ₃¹ = bgc. CN_ratio_of_denitrification
     rₙₕ₄¹ = bgc.CN_ratio_of_ammonification
-    γᶻ =
-    σᶻ =
-    γᴹ =
-    σᴹ = 
-    λₙₕ₄ = 
+    γᶻ = bgc.excretion_as_DOM[1]
+    σᶻ = bgc.non_assimilated_fraction[1]
+    γᴹ = bgc.excretion_as_DOM[2]
+    σᴹ = bgc.non_assimilated_fraction[2]
+    λₙₕ₄ = bgc.max_nitrification_rate
 
-    eᶻ = 
-    eᴹ = 
+    eᶻ = eᴶ(eₘₐₓᶻ, σᶻ, gₚᶻ, g_Dᶻ, gₚₒᶻ, g_zᴹ, N, Fe, P, D, POC, Z)
+    eᴹ = eᴶ(eₘₐₓᴹ, σᴹ, gₚᴹ, g_Dᴹ, gₚₒᴹ, g_zᴹ, N, Fe, P, D, POC, Z)
 
-    ∑gᶻ = 
-    ∑gᴹ = 
+
+    ∑gᶻ = grazingᶻ()[1]
+    ∑gᴹ = grazingᴹ()[1]
 
     μₙₒ₃ᴾ = 
     μₙₕ₄ᴾ = 

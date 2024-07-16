@@ -1,5 +1,8 @@
 #TO DO:
-    #Fill in arguments for functions
+    #
+    
+#This document contains functions for:
+    #O₂ forcing (eq83)
 
     @inline function (pisces::PISCES)(::Val{:O₂}, x, y, z, t, P, D, Z, M, PAR) 
 

@@ -2,7 +2,11 @@
 #TO DO:
     #Add partial derivative to eq51
     #What is Dissₛᵢ?
-    #What are  λₚₛᵢˡᵃᵇ, λₚₛᵢʳᵉᶠ?
+    #What are  λₚₛᵢˡᵃᵇ, λₚₛᵢʳᵉᶠ? λₚₛᵢˢˡᵒʷ, λₚₛᵢᶠᵃˢᵗ given in parameter list but not used?
+
+#This document contains functions for:
+    #λₚₛᵢ¹ (eq52, parametrisation of dissolution rate of PSi)
+    #Forcing for PSi (eq51)
 
 @inline function χ_lab(zₘₓₗ, zₑᵤ, χ_lab⁰, λₚₛᵢˡᵃᵇ, λₚₛᵢʳᵉᶠ, z)
     zₘₐₓ = max(zₘₓₗ, zₑᵤ)

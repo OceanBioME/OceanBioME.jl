@@ -1,14 +1,20 @@
 #TO DO:
-    #What is η?
-    #What is Lₗᵢₘᶜᵃᶜᵒ³()?
-    #How to code ΔCO₃²⁻, where do we get the alue of CO₃²⁻ from?
     #Write a partial derivative in (75)
+    #How to code ΔCO₃²⁻, where do we get the value of CO₃²⁻ from?
+    #What is η? - check original PISCES documentation.
+    #What is Lₗᵢₘᶜᵃᶜᵒ³()?
 
 #This document contains functions for:
     #R_CaCO₃ (eq77)
     #P_CaCO₃ (eq76)
-    #Forcing for CaCO₃
+    #Forcing for CaCO₃ (eq75)
 
+@inline function λ_CaCO₃¹()
+    λ_CaCO₃ = bgc.dissolution_rate_of_calcite
+    nca = bgc.exponent_in_the_dissolution_rate_of_calcite
+    ΔCO₃²⁻ = 0 #how to define this?
+    return λ_CaCO³*(ΔCO₃²⁻)^nca
+end
 
 @inline function R_CaCO₃(zₘₓₗ, T, P, PAR) 
     r_CaCO₃ = bgc.rain_ratio_parameter
