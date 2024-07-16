@@ -69,7 +69,7 @@ model = NonhydrostaticModel(; grid,
 simulation = Simulation(model, Δt = 50, stop_time = 1day)
 
 intercepted_tendencies = Tuple(Array(interior(field)) for field in values(TracerFields(keys(model.tracers), grid)))
-
+POC
 simulation.callbacks[:intercept_tendencies] = Callback(intercept_tracer_tendencies!; callsite = TendencyCallsite(), parameters = intercepted_tendencies)
 
 run!(simulation

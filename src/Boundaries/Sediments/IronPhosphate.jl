@@ -161,8 +161,8 @@ sediment_fields(model::IronPhosphate) = (O2 = model.fields.O2,
                                          TCO2 = model.fields.TCO2,
                                          Gi = model.fields.Gi)
 
-@inline required_tracers(::IronPhosphate, bgc, tracers) = tracers[(sinking_tracers(bgc)...)]
-@inline required_tendencies(::IronPhosphate, bgc, tracers) = tracers[] # TODO add effluxes of PO4 and Fe once PISCES is working
+@inline required_tracers(::IronPhosphate, bgc, tracers) = tracers[(:NO₃, :NH₄, :O₂, :DIC, sinking_tracers(bgc)...)] # need :Gi, :FeOHP
+@inline required_tendencies(::IronPhosphate, bgc, tracers) = tracers[(:NO₃, :NH₄, :O₂, :DIC)] # TODO add effluxes of PO4 and Fe once PISCES is working
 
 @inline bottom_index_array(sediment::IronPhosphate) = sediment.bottom_indices
 
