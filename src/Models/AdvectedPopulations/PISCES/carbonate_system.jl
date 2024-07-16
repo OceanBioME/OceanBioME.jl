@@ -1,7 +1,3 @@
-#TO DO:
-    #Do we assume θᴺᶜ = N/C?
-    #Check all of this for typos.
-
 #This document contains functions for:
     #Forcing for DIC.
     #Forcing for Alk.

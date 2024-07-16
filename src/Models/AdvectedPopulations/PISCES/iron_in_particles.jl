@@ -2,11 +2,10 @@
 #TO DO:
     #How to define quotas, POCᶠᵉ is not defined?
     #Add partial derivative
-    #What is Dust()?
+    #D_dust?
     #Where is κ_Bactˢᶠᵉ, κ_Bactᴮᶠᵉ defined?
-    #Where is ωᴰ defined?
-    #Where to split longer functions to make more readable?
     #Change ω to w.
+    #Where to split longer functions to make more readable?
 
 #This document contains functions for the following:
     #θᶠᵉ for calculating iron quotas
@@ -19,8 +18,11 @@
     λ_Feᵐⁱⁿ = bgc.min_scavenging_rate_of_iron
     λ_Fe = bgc.slope_of_scavenging_rate_of_iron
     λ_Feᵈᵘˢᵗ = bgc.scavenging_rate_of_iron_by_dust
+    ω_dust = bgc.sinking_speed_of_dust
+
+    Dust = D_dust/ω_dust
     
-    return λ_Feᵐⁱⁿ + λ_Fe*(POC, GOC, CaCO₃, BSi) + λ_Feᵈᵘˢᵗ*Dust() #eq50, what is Dust()?
+    return λ_Feᵐⁱⁿ + λ_Fe*(POC, GOC, CaCO₃, BSi) + λ_Feᵈᵘˢᵗ*Dust #eq50
 end
 
 @inline Scav(POC, GOC, CaCO₃, BSi, DOC, T, Fe) = λ_Fe¹(POC, GOC, CaCO₃, BSi)*Fe¹(DOC, T, Fe)
@@ -61,12 +63,15 @@ mᴾ = bgc.phytoplankton_mortality_rate[1]
 Kₘ = bgc.half_saturation_const_for_mortality
 ωᴾ = bgc.min_quadratic_mortality_of_phytoplankton
 mᴰ = bgc.phytoplankton_mortality_rate[2]
-ωᴰ = #where defined?
 κ_Bactᴮᶠᵉ = #where defined?
 λ_Fe = bgc.slope_of_scavenging_rate_of_iron
 g_FF = bgc.flux_feeding_rate
 ωₚₒ = bgc.sinking_speed_of_POC
 bₘ = bgc.temperature_sensitivity_term[2]
+ωₘₐₓᴰ = bgc.max_quadratic_mortality_of_diatoms
+
+Lₗᵢₘᴰ = 
+ωᴰ = ωᴾ + ωₘₐₓᴰ*(1 - Lₗᵢₘᴰ)
 
 Fe¹ = Fe¹(DOC, T, Fe)
 

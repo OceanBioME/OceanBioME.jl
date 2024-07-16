@@ -1,4 +1,5 @@
  # TO DO:   
+    #Add eps to denominator. Change ω to w.
     #Write PAR̄, where to get PAR̄₁? (56b)
     #Set values for Rₙₕ₄ and Rₙₒ₃.
 
