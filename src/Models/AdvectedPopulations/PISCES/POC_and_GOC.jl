@@ -39,7 +39,9 @@ end
 
     dPOCdz = 
 
-    return σᶻ*∑gᶻ*Z + 0.5*mᴰ*K_mondo(D, Kₘ) + rᶻ*b_z^T*K_mondo(Z, Kₘ)*Z + mᶻ*b_z^T*Z^2 + (1 - 0.5*R_CaCO₃)*(mᴾ*K_mondo(P, Kₘ)*P + wᴾ*P^2) + λₚₒ¹*GOC + Φ₁ᴰᴼᶜ + Φ₃ᴰᴼᶜ - (gₚₒᴹ + gₚₒ_FFᴹ)*M - gₚₒᶻ*Z - λₚₒ¹*POC - Φ - wₚₒ*dPOCdz  #37
+    return σᶻ*∑gᶻ*Z + 0.5*mᴰ*K_mondo(D, Kₘ) + rᶻ*b_z^T*K_mondo(Z, Kₘ)*Z +
+     mᶻ*b_z^T*Z^2 + (1 - 0.5*R_CaCO₃)*(mᴾ*K_mondo(P, Kₘ)*P + wᴾ*P^2) + 
+     λₚₒ¹*GOC + Φ₁ᴰᴼᶜ + Φ₃ᴰᴼᶜ - (gₚₒᴹ + gₚₒ_FFᴹ)*M - gₚₒᶻ*Z - λₚₒ¹*POC - Φ - wₚₒ*dPOCdz  #37
 end
 
 @inline function (pisces::PISCES)(::Val{:GOC}, x, y, z, t, DOC, P, D, Pᶜʰˡ, Dᶜʰˡ, N, Fe, O₂, NO₃, PARᴾ, PARᴰ, Z, M, POC, GOC, T, L_day, zₘₓₗ, zₑᵤ)
@@ -69,5 +71,7 @@ end
     
     dGOCdz =
 
-    return σᴹ*(∑gᴹ + ∑g_FFᴹ)*M + rᴹ*bₘ^T*K_mondo(M, Kₘ)*M + Pᵤₚᴹ + 0.5*R_CaCO₃*(mᴾ*K_mondo(P, Kₘ)*P + wᴾ*P^2) + 0.5*mᴰ*K_mondo(D, Kₘ)*D^3*wᴰ + Φ + Φ₂ᴰᴼᶜ - g_GOC_FFᴹ*M - λₚₒ¹*GOC - w_GOC*dGOCdz    #40
+    return σᴹ*(∑gᴹ + ∑g_FFᴹ)*M + rᴹ*bₘ^T*K_mondo(M, Kₘ)*M + Pᵤₚᴹ + 
+    0.5*R_CaCO₃*(mᴾ*K_mondo(P, Kₘ)*P + wᴾ*P^2) + 0.5*mᴰ*K_mondo(D, Kₘ)*D^3*wᴰ +
+     Φ + Φ₂ᴰᴼᶜ - g_GOC_FFᴹ*M - λₚₒ¹*GOC - w_GOC*dGOCdz    #40
 end

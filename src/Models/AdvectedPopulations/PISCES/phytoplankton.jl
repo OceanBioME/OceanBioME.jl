@@ -3,9 +3,8 @@
 # zₘₓₗ is the depth of the mixed layer (not sure how to define this)
 # zₑᵤ is the depth of the euphotic zone defined as the depth at which there is 1% of surface PAR
 # shear rate is set to 1s⁻¹ in mixed layer and 0.01 s⁻¹ below
-# Pₘₐₓ, Dₘₐₓ seems to be a paramter again but not listed
 # SI seems to be undefined (maximum Si concentration over a year)
-#eq 20 -> Lₙ could be meant to be L_NH₄?
+# eq 20 -> Lₙ could be meant to be L_NH₄?
 # Still to define PAR - not sure how to do this
 # θ(A,B) ? What does it mean??
 
@@ -13,21 +12,21 @@
 @inline K_mondo(I, J) = I/(I + J + eps(0.0))
 @inline Cₚᵣₒ(I, Iᶜʰˡ, PARᴵ, L_day, αᴵ, μₚ, Lₗᵢₘᴵ)=1-exp(-αᴵ*(θ(Iᶜʰˡ,I))*PARᴵ/(L_day*μₚ*Lₗᵢₘᴵ + eps(0.0)))
 
-@inline f₁(L_day) = 1.5*L_day/(0.5+L_day)  #eq 3a
+@inline f₁(L_day) = 1.5*K_mondo(L_day, 0.5)  #eq 3a
 @inline t_dark(zₘₓₗ, zₑᵤ) = max(0, zₘₓₗ-zₑᵤ)^2/86400#eq 3b,c
-@inline f₂(zₘₓₗ, zₑᵤ, t_darkᴵ) = 1 - t_dark(zₘₓₗ, zₑᵤ)/(t_dark(zₘₓₗ, zₑᵤ) + t_darkᴵ) #eq 3d
+@inline f₂(zₘₓₗ, zₑᵤ, t_darkᴵ) = 1 - K_mondo(t_dark(zₘₓₗ, zₑᵤ), t_darkᴵ) #eq 3d
 
 @inline fₚ(T) = bgc.temperature_sensitivity_of_growth^T #eq 4a
 
-@inline L_NH₄(NO₃, NH₄, Kₙₒ₃ᴵ, Kₙₕ₄ᴵ) = Kₙₒ₃ᴵ*NH₄/(Kₙₒ₃ᴵ*Kₙₕ₄ᴵ+Kₙₕ₄ᴵ*NO₃+Kₙₒ₃ᴵ*NH₄) #eq 6d
-@inline L_NO₃(NO₃, NH₄, Kₙₒ₃ᴵ, Kₙₕ₄ᴵ) = Kₙₕ₄ᴵ*NO₃/(Kₙₒ₃ᴵ*Kₙₕ₄ᴵ+Kₙₕ₄ᴵ*NO₃+Kₙₒ₃ᴵ*NH₄) #eq 6e
-@inline L_Fe(I, Iᶠᵉ, θₒₚₜᶠᵉᴵ, θₘᵢₙᶠᵉᴵ) = min(1, max(0, (θ(Iᶠᵉ, I) - θₘᵢₙᶠᵉᴵ)/θₒₚₜᶠᵉᴵ)) #eq 6f
+@inline L_NH₄(NO₃, NH₄, Kₙₒ₃ᴵ, Kₙₕ₄ᴵ) = Kₙₒ₃ᴵ*NH₄/(Kₙₒ₃ᴵ*Kₙₕ₄ᴵ+Kₙₕ₄ᴵ*NO₃+Kₙₒ₃ᴵ*NH₄ + eps(0.0)) #eq 6d
+@inline L_NO₃(NO₃, NH₄, Kₙₒ₃ᴵ, Kₙₕ₄ᴵ) = Kₙₕ₄ᴵ*NO₃/(Kₙₒ₃ᴵ*Kₙₕ₄ᴵ+Kₙₕ₄ᴵ*NO₃+Kₙₒ₃ᴵ*NH₄ + eps(0.0)) #eq 6e
+@inline L_Fe(I, Iᶠᵉ, θₒₚₜᶠᵉᴵ, θₘᵢₙᶠᵉᴵ) = min(1, max(0, (θ(Iᶠᵉ, I) - θₘᵢₙᶠᵉᴵ)/(θₒₚₜᶠᵉᴵ + eps(0.0)))) #eq 6f
 
 @inline θᶠᵉₘᵢₙ(I, Iᶜʰˡ, Lₙᴵ, Lₙₒ₃ᴵ) = 0.0016/(55.85) * θ(Iᶜʰˡ, I) + 1.21e-5*14*Lₙᴵ/(55.85*7.625)*1.5+1.15*14*Lₙₒ₃ᴵ/(55.85*7.625) #eq 20 -> Lₙ could be meant to be L_NH₄?
 
 @inline I₁(I, Iₘₐₓ) = min(I, Iₘₐₓ) #eq 7a
 @inline I₂(I, Iₘₐₓ) = max(0, I - Iₘₐₓ) #eq 7b
-@inline Kᵢᴶ(Kᵢᴶᵐⁱⁿ, J₁, J₂, Sᵣₐₜᴶ) = Kᵢᴶᵐⁱⁿ* (J₁ + Sᵣₐₜᴶ* J₂)/(J₁ + J₂) #eq 7c
+@inline Kᵢᴶ(Kᵢᴶᵐⁱⁿ, J₁, J₂, Sᵣₐₜᴶ) = Kᵢᴶᵐⁱⁿ* (J₁ + Sᵣₐₜᴶ* J₂)/(J₁ + J₂ + eps(0.0)) #eq 7c
 
 @inline function μᴵᶠᵉ(I, Iᶠᵉ, θₘₐₓᶠᵉᴵ, Sᵣₐₜᴵ, K_Feᴵᶠᵉᵐⁱⁿ, Iₘₐₓ, L_Feᴵ, bFe)
     μ⁰ₘₐₓ = bgc.growth_rate_at_zero
@@ -37,13 +36,12 @@
     I₂ = max(0, I - Iₘₐₓ) #18c
     I₁ = I - I₂     #18c
 
-    K_Feᴵᶠᵉ = K_Feᴵᶠᵉᵐⁱⁿ*(I₁ + Sᵣₐₜᴵ*I₂)/(I₁+I₂)    #18b
+    K_Feᴵᶠᵉ = K_Feᴵᶠᵉᵐⁱⁿ*(I₁ + Sᵣₐₜᴵ*I₂)/(I₁+I₂+eps(0.0))    #18b
 
     Lₗᵢₘ₁ᴵᶠᵉ = K_mondo(bFe, K_Feᴵᶠᵉ)    #18a
     Lₗᵢₘ₂ᴵᶠᵉ = (4 - 4.5*L_Feᴵ)/(L_Feᴵ + 0.5) #19
 
-
-    return θₘₐₓᶠᵉᴵ*Lₗᵢₘ₁ᴵᶠᵉ*Lₗᵢₘ₂ᴵᶠᵉ*(1 - (θ(Iᶠᵉ, I))/(θₘₐₓᶠᵉᴵ))/(1.05 - (θ(Iᶠᵉ, I))/(θₘₐₓᶠᵉᴵ))*μₚ  #17
+    return θₘₐₓᶠᵉᴵ*Lₗᵢₘ₁ᴵᶠᵉ*Lₗᵢₘ₂ᴵᶠᵉ*(1 - (θ(Iᶠᵉ, I))/(θₘₐₓᶠᵉᴵ + eps(0.0)))/(1.05 - (θ(Iᶠᵉ, I))/(θₘₐₓᶠᵉᴵ + eps(0.0)))*μₚ  #17
 end
 
 #This function defines both μᴾ and μᴰ
@@ -63,7 +61,7 @@ end
     Kₙₒ₃ᴾᵐⁱⁿ = bgc.min_half_saturation_const_for_nitrate[1]
     Kₙₕ₄ᴾᵐⁱⁿ = bgc.min_half_saturation_const_for_ammonium[1]
     Kₚₒ₄ᴾᵐⁱⁿ = bgc.min_half_saturation_const_for_phosphate[1] 
-    Pₘₐₓ =
+    Pₘₐₓ = bgc.threshold_concentration_for_size_dependency[1]
 
     P₁ = I₁(P, Pₘₐₓ)
     P₂ = I₂(P, Pₘₐₓ)
@@ -92,7 +90,7 @@ end
     Kₚₒ₄ᴰᵐⁱⁿ = bgc.min_half_saturation_const_for_phosphate[2]
     Kₛᵢᴰᵐⁱⁿ = bgc.min_half_saturation_const_for_silicate
     Kₛᵢ = bgc.parameter_for_half_saturation_const
-    Dₘₐₓ = 
+    Dₘₐₓ = bgc.threshold_concentration_for_size_dependency[2]
     SI = #Si with a crescent moon on it
 
     D₁ = I₁(D, Dₘₐₓ)
@@ -128,7 +126,7 @@ end
     Lₗᵢₘ₁ᴰˢⁱ = K_mondo(Si, Kₛᵢ¹)    #23c
     Lₗᵢₘ₂ᴰˢⁱ = ϕ < 0 ? K_mondo((Si)^3, (Kₛᵢ²)^3) : 0    #23d
     
-    Fₗᵢₘ₁ᴰˢⁱ = min((μᴰ)/(μₚ*Lₗᵢₘᴰ), Lₚₒ₄ᴰ, Lₙᴰ, L_Feᴰ)  #23a
+    Fₗᵢₘ₁ᴰˢⁱ = min((μᴰ)/(μₚ*Lₗᵢₘᴰ + eps(0.0)), Lₚₒ₄ᴰ, Lₙᴰ, L_Feᴰ)  #23a
     Fₗᵢₘ₂ᴰˢⁱ = min(1, 2.2*max(0, Lₗᵢₘ₁ᴰˢⁱ - 0.5)) #23b
 
     return θₘˢⁱᴰ*Lₗᵢₘ₁ᴰˢⁱ*min(5.4, ((4.4*exp(-4.23*Fₗᵢₘ₁ᴰˢⁱ)*Fₗᵢₘ₂ᴰˢⁱ + 1)*(1 + 2*Lₗᵢₘ₂ᴰˢⁱ)))   #22
@@ -149,7 +147,7 @@ end
     #equaitons here
     sh = 
 
-    gₚᶻ = grazingᶻ(P, D, POC, T)[2]     #is this efficient enough?
+    gₚᶻ = grazingᶻ(P, D, POC, T)[2]     
     gₚᴹ =  grazingᶻ(P, D, POC, T)[3]
 
     t_darkᴾ = 
@@ -191,13 +189,14 @@ end
     δᴾ = bgc.exudation_of_DOC[1]
     αᴾ = bgc.initial_slope_of_PI_curve[1]
     θₘᵢₙᶜʰˡ = bgc.min_ChlC_ratios_of_phytoplankton
+    θₘₐₓᶜʰˡᴾ = bgc.max_ChlC_ratios_of_phytoplankton[1]
     mᴾ = bgc.phytoplankton_mortality_rate[1]
     Kₘ = bgc.half_saturation_const_for_mortality
     wᴾ = bgc.min_quadratic_mortality_of_phytoplankton
 
     sh = 
 
-    gₚᶻ = grazingᶻ(P, D, POC, T)[2]     #is this efficient enough?
+    gₚᶻ = grazingᶻ(P, D, POC, T)[2]    
     gₚᴹ = grazingᴹ(P, D, Z, POC, T)[2]
 
     t_darkᴾ = 
@@ -207,7 +206,7 @@ end
     μᴾ = μᴵ(P, Pᶜʰˡ, PARᴾ, L_day, T, αᴾ, Lₗᵢₘᴾ, zₘₓₗ, zₑᵤ, t_darkᴾ)
 
     μ̌ᴾ = μᴾ / f₁(L_day) #15b
-    ρᴾᶜʰˡ = 144*μ̌ᴾ * P / (αᴾ* Pᶜʰˡ* (PARᴾ)/L_day) #15a
+    ρᴾᶜʰˡ = 144*μ̌ᴾ * P / (αᴾ* Pᶜʰˡ* ((PARᴾ)/(L_day + eps(0.0))) + eps(0.0)) #15a
 
     return (1-δᴾ)*(12*θₘᵢₙᶜʰˡ + (θₘₐₓᶜʰˡᴾ - θₘᵢₙᶜʰˡ)*ρᴾᶜʰˡ)*μᴾ*P - mᴾ*K_mondo(P, Kₘ)*Pᶜʰˡ - sh*wᴾ*P*Pᶜʰˡ - θ(Pᶜʰˡ, P)*gₚᶻ*Z - θ(Pᶜʰˡ, P)*gₚᴹ*M  #14
 end
@@ -216,6 +215,7 @@ end
     δᴰ = bgc.exudation_of_DOC[2]
     αᴰ = bgc.initial_slope_of_PI_curve[2]
     θₘᵢₙᶜʰˡ = bgc.min_ChlC_ratios_of_phytoplankton
+    θₘₐₓᶜʰˡᴰ = bgc.max_ChlC_ratios_of_phytoplankton[2]
     mᴰ = bgc.phytoplankton_mortality_rate[2]
     Kₘ = bgc.half_saturation_const_for_mortality
     wᴾ = bgc.min_quadratic_mortality_of_phytoplankton
@@ -234,7 +234,7 @@ end
     μᴰ = μᴵ(D, Dᶜʰˡ, PARᴰ, L_day, T, αᴰ, Lₗᵢₘᴰ, zₘₓₗ, zₑᵤ, t_darkᴰ)
 
     μ̌ᴰ = μᴰ / f₁(L_day) #15b
-    ρᴰᶜʰˡ = 144*μ̌ᴰ * D / (αᴰ* Dᶜʰˡ* (PARᴰ)/L_day) #15a
+    ρᴰᶜʰˡ = 144*μ̌ᴰ * D / (αᴰ* Dᶜʰˡ* ((PARᴰ)/(L_day + eps(0.0))) + eps(0.0)) #15a
   
     return (1-δᴰ)*(12*θₘᵢₙᶜʰˡ + (θₘₐₓᶜʰˡᴰ - θₘᵢₙᶜʰˡ)*ρᴰᶜʰˡ)*μᴰ*D - mᴰ*K_mondo(D, Kₘ)*Dᶜʰˡ - sh*wᴰ*D*Dᶜʰˡ - θ(Dᶜʰˡ, D)*g_Dᶻ*Z - θ(Dᶜʰˡ, D)*g_Dᴹ*M    #14
 end
@@ -252,7 +252,7 @@ end
 
     sh = 
 
-    gₚᶻ = grazingᶻ(P, D, POC, T)[2]     #is this efficient enough?
+    gₚᶻ = grazingᶻ(P, D, POC, T)[2]    
     gₚᴹ = grazingᴹ(P, D, Z, POC, T)[2]
 
     μᴾᶠᵉ = μᴵᶠᵉ(P, Pᶠᵉ, θₘₐₓᶠᵉᵖ, Sᵣₐₜᴾ, K_Feᴾᶠᵉᵐⁱⁿ, Pₘₐₓ, L_Feᴾ, bFe)
@@ -267,8 +267,9 @@ end
     Kₘ = bgc.half_saturation_const_for_mortality
     wᴾ = bgc.min_quadratic_mortality_of_phytoplankton
     Sᵣₐₜᴰ = bgc.size_ratio_of_phytoplankton[2]
-    Dₘₐₓ = 
-
+    Dₘₐₓ = bgc.threshold_concentration_for_size_dependency[2]
+    K_Feᴰᶠᵉᵐⁱⁿ = bgc.min_half_saturation_const_for_iron_uptake[2]
+     
     Lₗᵢₘᴰ = Lᴰ(D, PO₄, NO₃, NH₄, Si, Dᶜʰˡ, Dᶠᵉ)[1]
     L_Feᴰ = Lᴰ(D, PO₄, NO₃, NH₄, Si, Dᶜʰˡ, Dᶠᵉ)[6]
     wᴰ = wᴾ + wₘₐₓᴰ*(1-Lₗᵢₘᴰ) #13

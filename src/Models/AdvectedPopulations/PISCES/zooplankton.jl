@@ -82,7 +82,7 @@ end
 
 @inline function (pisces::PISCES)(::Val{:Z}, x, y, z, t, Z, M, P, POC, D, T, O₂)    #args not correct
     mᶻ = bgc.zooplankton_quadratic_mortality[1]
-    b_z = bgc.temperature_sensitivity_term
+    b_z = bgc.temperature_sensitivity_term[1]
     Kₘ = bgc.half_saturation_const_for_mortality
     rᶻ = bgc.zooplankton_linear_mortality[1]
     eₘₐₓᶻ = bgc.max_growth_efficiency_of_zooplankton[1]
