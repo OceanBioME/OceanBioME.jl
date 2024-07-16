@@ -13,7 +13,7 @@
 @inline Cₚᵣₒ(I, Iᶜʰˡ, PARᴵ, L_day, αᴵ, μₚ, Lₗᵢₘᴵ)=1-exp(-αᴵ*(θ(Iᶜʰˡ,I))*PARᴵ/(L_day*μₚ*Lₗᵢₘᴵ + eps(0.0)))
 
 @inline f₁(L_day) = 1.5*K_mondo(L_day, 0.5)  #eq 3a
-@inline t_dark(zₘₓₗ, zₑᵤ) = max(0, zₘₓₗ-zₑᵤ)^2/86400#eq 3b,c
+@inline t_dark(zₘₓₗ, zₑᵤ) = max(0, zₘₓₗ-zₑᵤ)^2/86400#eq 3b,c    #is this necessary if working in seconds
 @inline f₂(zₘₓₗ, zₑᵤ, t_darkᴵ) = 1 - K_mondo(t_dark(zₘₓₗ, zₑᵤ), t_darkᴵ) #eq 3d
 
 @inline fₚ(T) = bgc.temperature_sensitivity_of_growth^T #eq 4a
@@ -150,7 +150,7 @@ end
     gₚᶻ = grazingᶻ(P, D, POC, T)[2]     
     gₚᴹ =  grazingᶻ(P, D, POC, T)[3]
 
-    t_darkᴾ = 
+    t_darkᴾ = bgc.mean_residence_time_of_phytoplankton_in_unlit_mixed_layer[1]
 
     Lₗᵢₘᴾ = Lᴾ(P, PO₄, NO₃, NH₄, Pᶜʰˡ, Pᶠᵉ)[1]
     
@@ -174,7 +174,7 @@ end
     g_Dᶻ = grazingᶻ(P, D, POC, T)[3]
     g_Dᴹ = grazingᴹ(P, D, Z, POC, T)[3]
  
-    t_darkᴰ = 
+    t_darkᴰ = bgc.mean_residence_time_of_phytoplankton_in_unlit_mixed_layer[2]
 
     Lₗᵢₘᴰ = Lᴰ(D, PO₄, NO₃, NH₄, Si, Dᶜʰˡ, Dᶠᵉ)[1]
 
@@ -199,7 +199,7 @@ end
     gₚᶻ = grazingᶻ(P, D, POC, T)[2]    
     gₚᴹ = grazingᴹ(P, D, Z, POC, T)[2]
 
-    t_darkᴾ = 
+    t_darkᴾ = bgc.mean_residence_time_of_phytoplankton_in_unlit_mixed_layer[1]
     
     Lₗᵢₘᴾ= Lᴾ(P, PO₄, NO₃, NH₄, Pᶜʰˡ, Pᶠᵉ)[1]
 
@@ -225,7 +225,7 @@ end
     g_Dᶻ = grazingᶻ(P, D, POC, T)[3]
     g_Dᴹ = grazingᴹ(P, D, Z, POC, T)[3]
  
-    t_darkᴰ = 
+    t_darkᴰ = bgc.mean_residence_time_of_phytoplankton_in_unlit_mixed_layer[2]
 
     Lₗᵢₘᴰ = Lᴰ(D, PO₄, NO₃, NH₄, Si, Dᶜʰˡ, Dᶠᵉ)[1]
 
@@ -297,7 +297,7 @@ end
     g_Dᶻ = grazingᶻ(P, D, POC, T)[3]
     g_Dᴹ = grazingᴹ(P, D, Z, POC, T)[3]
  
-    t_darkᴰ = 
+    t_darkᴰ = bgc.mean_residence_time_of_phytoplankton_in_unlit_mixed_layer[2]
 
     θₒₚₜˢⁱᴰ = fθₒₚₜˢⁱᴰ(D, PO₄, NO₃, NH₄, Si, Dᶜʰˡ, Dᶠᵉ, μᴰ, T, ϕ)
 

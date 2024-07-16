@@ -67,6 +67,7 @@ struct PISCES{FT, W} <: AbstractContinuousFormBiogeochemistry
     max_ChlC_ratios_of_phytoplankton :: FT
     min_ChlC_ratios_of_phytoplankton :: FT
     threshold_concentration_for_size_dependency :: FT
+    mean_residence_time_of_phytoplankton_in_unlit_mixed_layer :: FT
 
 
     temperature_sensitivity_term :: FT
@@ -167,7 +168,8 @@ struct PISCES{FT, W} <: AbstractContinuousFormBiogeochemistry
                     max_ChlC_ratios_of_phytoplankton :: FT,
                     min_ChlC_ratios_of_phytoplankton :: FT,
                     threshold_concentration_for_size_dependency :: FT,
-    
+                    mean_residence_time_of_phytoplankton_in_unlit_mixed_layer :: FT,
+
     
                     temperature_sensitivity_term :: FT,
                     max_growth_efficiency_of_zooplankton :: FT,
@@ -268,6 +270,7 @@ struct PISCES{FT, W} <: AbstractContinuousFormBiogeochemistry
                             max_ChlC_ratios_of_phytoplankton,
                             min_ChlC_ratios_of_phytoplankton,
                             threshold_concentration_for_size_dependency,
+                            mean_residence_time_of_phytoplankton_in_unlit_mixed_layer,
 
 
                             temperature_sensitivity_term,
@@ -423,7 +426,7 @@ function PISCES(; grid, # finally the function
                    max_ChlC_ratios_of_phytoplankton :: FT = [0.033, 0.05],  #mg Chl/(mg C)
                    min_ChlC_ratios_of_phytoplankton :: FT = [0.0033],    #mg Chl/(mg C)
                    threshold_concentration_for_size_dependency :: FT = [1, 1],  #μmolCL⁻¹
-   
+                   mean_residence_time_of_phytoplankton_in_unlit_mixed_layer :: FT = [3, 4] ./ day, #/day
    
                    temperature_sensitivity_term :: FT = [1.079, 1.079],   
                    max_growth_efficiency_of_zooplankton :: FT = [0.3, 0.35],
@@ -543,8 +546,9 @@ function PISCES(; grid, # finally the function
                                         max_ChlC_ratios_of_phytoplankton,
                                         min_ChlC_ratios_of_phytoplankton,
                                         threshold_concentration_for_size_dependency,
+                                        mean_residence_time_of_phytoplankton_in_unlit_mixed_layer,
 
-
+                                        
                                         temperature_sensitivity_term,
                                         max_growth_efficiency_of_zooplankton,
                                         non_assimilated_fraction,

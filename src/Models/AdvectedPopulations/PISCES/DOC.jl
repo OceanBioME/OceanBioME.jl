@@ -106,8 +106,8 @@ end
     w_GOC = w_GOCᵐⁱⁿ + (200 - w_GOCᵐⁱⁿ)*(max(0, z-zₘₐₓ))/(5000) #41b
     g_GOC_FFᴹ = g_FF*bₘ^T*w_GOC*GOC #29b
 
-    t_darkᴾ =
-    t_darkᴰ =
+    t_darkᴾ = bgc.mean_residence_time_of_phytoplankton_in_unlit_mixed_layer[1]
+    t_darkᴰ = bgc.mean_residence_time_of_phytoplankton_in_unlit_mixed_layer[2]
 
     Lₗᵢₘᴾ = Lᴾ(P, PO₄, NO₃, NH₄, Pᶜʰˡ, Pᶠᵉ)[1]
     Lₗᵢₘᴰ = Lᴰ(D, PO₄, NO₃, NH₄, Si, Dᶜʰˡ, Dᶠᵉ)[1]
