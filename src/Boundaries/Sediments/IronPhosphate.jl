@@ -223,6 +223,7 @@ function _calculate_sediment_tendencies!(i, j, sediment::IronPhosphate, bgc, gri
         RSO₄ = Gi * (fT * kGi * fₖ₋ₛₒ₄ * (1 - fK_Fe) *(1 - fₖ₋ₙₒ₃) * (1 - fₖ₋ₙₒ₂) * (1 - fₖ₋ₙₒ₂))
         RCH₄ = Gi * (fT * kGi * (1 - fₖ₋ₛₒ₄) * (1 - fK_Fe) *(1 - fₖ₋ₙₒ₃) * (1 - fₖ₋ₙₒ₃) * (1 - fₖ₋ₙₒ₂))
 
+        
         @inline kDNRA = 2.7e5 # M-1 day-1
         @inline kamx = 2.7e4 # M-1 day-1
         @inline kNH4ox = 2.7e4# M-1 day-1
@@ -234,16 +235,16 @@ function _calculate_sediment_tendencies!(i, j, sediment::IronPhosphate, bgc, gri
         @inline kFeS2p = 2.7e4 # M-1 day-1
         @inline kFe3red = 0.82 # cm1.5 mmol−0.5 day−1
 
-        RDNRA = TH₂S * NO₃ * fT * kDNRA
-        Ramx = NH₄ * NO₂ * fT * kamx
-        RNH4ox = NH₄ * O₂ * fT * kNH4ox
-        RNO2ox = NO₂ * O₂ * fT * kNO2ox
-        RAOM = CH₄ * SO₄ * fT * kAOM
-        RH2Sox = TH₂S * O₂ * fT * kH2Sox
-        RFe2ox = Feᴵᴵ * O₂ * fT * kFe2ox
-        RFeS2ox = FeS₂ * O₂ * fT * kFeS2ox
-        RFeS2p = TH₂S * Feᴵᴵ * fT * kFeS2p # H2 should be produced here but I assume it dissociates...
-        RFe3red = TH₂S ^ 0.5 * FeOHP * fT * kFe3red * (2 / (O₂ + 2))
+        R_DNRA = TH₂S * NO₃ * fT * kDNRA
+        R_amx = NH₄ * NO₂ * fT * kamx
+        R_NH4ox = NH₄ * O₂ * fT * kNH4ox
+        R_NO2ox = NO₂ * O₂ * fT * kNO2ox
+        R_AOM = CH₄ * SO₄ * fT * kAOM
+        R_H2Sox = TH₂S * O₂ * fT * kH2Sox
+        R_Fe2ox = Feᴵᴵ * O₂ * fT * kFe2ox
+        R_FeS2ox = FeS₂ * O₂ * fT * kFeS2ox
+        R_FeS2p = TH₂S * Feᴵᴵ * fT * kFeS2p # H2 should be produced here but I assume it dissociates...
+        R_Fe3red = TH₂S ^ 0.5 * FeOHP * fT * kFe3red * (2 / (O₂ + 2))
 
         @inline ratio_NC = 9.5/106
         @inline ratio_PC = 1/106
@@ -254,19 +255,19 @@ function _calculate_sediment_tendencies!(i, j, sediment::IronPhosphate, bgc, gri
         #####
 
         sediment_tendencies.Gi = POC_deposition - RO₂ - RNO₃ - RNO₂ - RFe - RSO₄ - RCH₄
-        sediment_tendencies.O₂ = oxygen_deposition - RO₂ - 1.5 * RNH4ox - 0.5 * RNO2ox - 2 * RH2Sox - 0.25 * RFe2ox - 3.5 * RFeS2ox
-        sediment_tendencies.TCO₂ = RO₂ + RNO₃ + RNO₂ + RFe + RSO₄ + RCH₄ + RAOM
-        sediment_tendencies.NH₄ = ratio_NC * (RO₂ + RNO₃ + RNO₂ + RFe + RSO₄ + RCH₄) + RDNRA - Ramx - RNH4ox
-        sediment_tendencies.NO₃ = -2 * RNO₃ - RDNRA + RNO2ox
-        sediment_tendencies.NO₂ = 2 * RNO₃ - 1.33 * RNO₂ - Ramx + RNH4ox - RNO2ox
-        sediment_tendencies.N₂ = Ramx + 0.66 * RNO₂
-        sediment_tendencies.TPO₄ = ratio_PC * (RO₂ + RNO₃ + RNO₂ + RFe + RSO₄ + RCH₄) + RFe * ratio_FeP - ratio_FeP * RFe2ox * fₖ₋ₜₚₒ₄ + ratio_FeP * RFe3red
-        sediment_tendencies.FeOHP = iron_deposition - 4 * RFe + RFe2ox - RFe3red
-        sediment_tendencies.Feᴵᴵ = 4 * RFe - RFe2ox + RFeS2ox - RFeS2p + RFe3red
-        sediment_tendencies.FeS₂ = RFeS2p - RFeS2ox
-        sediment_tendencies.SO₄ = -0.5 * RSO₄ + RDNRA - RAOM + RH2Sox + 2 * RFeS2ox + (RFe3red / 8)
-        sediment_tendencies.TH₂S = 0.5 * RSO₄ - RDNRA + RAOM - RH2Sox  - 2 * RFeS2p - (RFe3red / 8)
-        sediment_tendencies.CH₄ = 0.5 * RCH₄ - RAOM
+        sediment_tendencies.O₂ = oxygen_deposition - RO₂ - 1.5 * R_NH4ox - 0.5 * R_NO2ox - 2 * R_H2Sox - 0.25 * R_Fe2ox - 3.5 * R_FeS2ox
+        sediment_tendencies.TCO₂ = RO₂ + RNO₃ + RNO₂ + RFe + RSO₄ + RCH₄ + R_AOM
+        sediment_tendencies.NH₄ = ratio_NC * (RO₂ + RNO₃ + RNO₂ + RFe + RSO₄ + RCH₄) + R_DNRA - R_amx - R_NH4ox
+        sediment_tendencies.NO₃ = -2 * RNO₃ - R_DNRA + R_NO2ox
+        sediment_tendencies.NO₂ = 2 * RNO₃ - 1.33 * RNO₂ - R_amx + R_NH4ox - R_NO2ox
+        sediment_tendencies.N₂ = R_amx + 0.66 * RNO₂
+        sediment_tendencies.TPO₄ = ratio_PC * (RO₂ + RNO₃ + RNO₂ + RFe + RSO₄ + RCH₄) + RFe * ratio_FeP - ratio_FeP * R_Fe2ox * fₖ₋ₜₚₒ₄ + ratio_FeP * R_Fe3red
+        sediment_tendencies.FeOHP = iron_deposition - 4 * RFe + R_Fe2ox - R_Fe3red
+        sediment_tendencies.Feᴵᴵ = 4 * RFe - R_Fe2ox + R_FeS2ox - R_FeS2p + R_Fe3red
+        sediment_tendencies.FeS₂ = R_FeS2p - R_FeS2ox
+        sediment_tendencies.SO₄ = -0.5 * RSO₄ + R_DNRA - R_AOM + R_H2Sox + 2 * R_FeS2ox + (R_Fe3red / 8)
+        sediment_tendencies.TH₂S = 0.5 * RSO₄ - R_DNRA + R_AOM - R_H2Sox  - 2 * R_FeS2p - (R_Fe3red / 8)
+        sediment_tendencies.CH₄ = 0.5 * RCH₄ - R_AOM
     end
 end
 
