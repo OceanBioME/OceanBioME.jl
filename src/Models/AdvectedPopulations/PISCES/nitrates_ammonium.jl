@@ -100,42 +100,6 @@ end
 end
 
 
-# Define sum of grazing rates, as this quantity freqeuently appears
-# Move into zooplankton file?
-
-@inline function grazingᶻ(P, D, POC, T) 
-    pₚᶻ = bgc.preference_for_nanophytoplankton[1]
-    p_Dᶻ = bgc.preference_for_diatoms[1]
-    pₚₒᶻ = bgc.preference_for_POC[1]
-    Jₜₕᵣₑₛₕᶻ = bgc.specific_food_thresholds_for_microzooplankton
-    grazing_arg_z = grazing_argᶻ(P, POC, D, T) 
-
-    gₚᶻ = gᴶ(P, pₚᶻ, Jₜₕᵣₑₛₕᶻ, grazing_arg_z)
-    g_Dᶻ = gᴶ(D, p_Dᶻ, Jₜₕᵣₑₛₕᶻ, grazing_arg_z)
-    gₚₒᶻ = gᴶ(POC, pₚₒᶻ, Jₜₕᵣₑₛₕᶻ, grazing_arg_z)
-    
-    ∑gᶻ(P, D, POC, T) = gₚᶻ + g_Dᶻ + gₚₒᶻ  #Sum grazing rates on each prey species for microzooplankton
-
-    return ∑gᶻ, gₚᶻ, g_Dᶻ, gₚₒᶻ
-end
-
-@inline function grazingᴹ(P, D, Z, POC, T) 
-    pₚᴹ = bgc.preference_for_nanophytoplankton[2]
-    p_Dᴹ = bgc.preference_for_diatoms[2]
-    pₚₒᴹ = bgc.preference_for_POC[2]
-    p_zᴹ = bgc.preference_for_microzooplankton
-    Jₜₕᵣₑₛₕᴹ = bgc.specific_food_thresholds_for_mesozooplankton
-    grazing_arg_m = grazing_argᴹ(P, POC, D, T) 
-    
-    gₚᴹ = gᴶ(P, pₚᴹ, Jₜₕᵣₑₛₕᴹ, grazing_arg_m)
-    g_Dᴹ = gᴶ(D, p_Dᴹ, Jₜₕᵣₑₛₕᴹ, grazing_arg_m)
-    gₚₒᴹ = gᴶ(POC, pₚₒᴹ, Jₜₕᵣₑₛₕᴹ, grazing_arg_m)
-    g_Zᴹ = gᴶ(Z, p_zᴹ, Jₜₕᵣₑₛₕᴹ, grazing_arg_m)
-    ∑gᴹ = gₚᴹ +  g_Dᴹ + gₚₒᴹ + g_Zᴹ #Sum grazing rates on each prey species for mesozooplankton
-    
-    return  ∑gᴹ, gₚᴹ, g_Dᴹ, gₚₒᴹ, g_Zᴹ 
-end
-
 @inline function (pisces::PISCES)(::Val{:NH₄}, x, y, z, t, P, D, NH₄, O₂, bFe, POC, GOC, PAR) 
     # the signature of this function is always `Val(name), x, y, z, t` and then all the tracers listed in `required_biogeochemical_tracers`, and then `required_biogeochemical_auxiliary_fields`
 
