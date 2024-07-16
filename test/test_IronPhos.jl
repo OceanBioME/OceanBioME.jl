@@ -87,3 +87,5 @@ intercepted_tendencies = Tuple(Array(interior(field)) for field in values(Tracer
 simulation.callbacks[:intercept_tendencies] = Callback(intercept_tracer_tendencies!; callsite = TendencyCallsite(), parameters = intercepted_tendencies)
 
 run!(simulation)
+
+@info "Success!"
