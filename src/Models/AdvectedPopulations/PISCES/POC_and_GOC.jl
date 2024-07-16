@@ -60,7 +60,7 @@ end
     wᴰ =  wᴾ + wₘₐₓᴰ*(1-Lₗᵢₘᴰ)
     Φ = Φ(POC, GOC, sh)
     Φ₂ᴰᴼᶜ = Φᴰᴼᶜ(DOC, POC, GOC, sh)[2]
-    w_GOC = ω(zₑᵤ, zₘₓₗ)
+    w_GOC = w(zₑᵤ, zₘₓₗ)
     g_GOC_FFᴹ = g_FF*bₘ^T*w_GOC*GOC
     λₚₒ¹ = λ¹(T, O₂)
     

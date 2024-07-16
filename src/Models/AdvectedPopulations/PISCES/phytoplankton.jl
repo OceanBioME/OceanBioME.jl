@@ -1,3 +1,14 @@
+# L_day is length of day - not sure how to pass in, since assume this comes from date/time data
+#t_darkᴵ is seemingly a parameter for both nanophytoplankton and diatoms, but not listed in parameter list (3 days for nanophytoplankton, 4 days for diatoms)
+# zₘₓₗ is the depth of the mixed layer (not sure how to define this)
+# zₑᵤ is the depth of the euphotic zone defined as the depth at which there is 1% of surface PAR
+# shear rate is set to 1s⁻¹ in mixed layer and 0.01 s⁻¹ below
+# Pₘₐₓ, Dₘₐₓ seems to be a paramter again but not listed
+# SI seems to be undefined (maximum Si concentration over a year)
+#eq 20 -> Lₙ could be meant to be L_NH₄?
+# Still to define PAR - not sure how to do this
+# θ(A,B) ? What does it mean??
+
 @inline θ(I,J) = I/(J + eps(0.0))   #eq 0
 @inline K_mondo(I, J) = I/(I + J + eps(0.0))
 @inline Cₚᵣₒ(I, Iᶜʰˡ, PARᴵ, L_day, αᴵ, μₚ, Lₗᵢₘᴵ)=1-exp(-αᴵ*(θ(Iᶜʰˡ,I))*PARᴵ/(L_day*μₚ*Lₗᵢₘᴵ + eps(0.0)))
@@ -35,6 +46,7 @@
     return θₘₐₓᶠᵉᴵ*Lₗᵢₘ₁ᴵᶠᵉ*Lₗᵢₘ₂ᴵᶠᵉ*(1 - (θ(Iᶠᵉ, I))/(θₘₐₓᶠᵉᴵ))/(1.05 - (θ(Iᶠᵉ, I))/(θₘₐₓᶠᵉᴵ))*μₚ  #17
 end
 
+#This function defines both μᴾ and μᴰ
 @inline function μᴵ(I, Iᶜʰˡ, PARᴵ, L_day, T, αᴵ, Lₗᵢₘᴵ, zₘₓₗ, zₑᵤ, t_darkᴵ)
     
     μ⁰ₘₐₓ = bgc.growth_rate_at_zero
@@ -44,6 +56,7 @@ end
     return μₚ * f₁(L_day) * f₂(zₘₓₗ, zₑᵤ, t_darkᴵ) * Cₚᵣₒ(I, Iᶜʰˡ, PARᴵ, L_day, αᴵ, μₚ, Lₗᵢₘᴵ) * Lₗᵢₘᴵ #2b 
 end
 
+# This function returns Lₗᵢₘᴾ as well as all the constituent parts as a vector so we can use all the parts in separate parts of the code
 @inline function Lᴾ(P, PO₄, NO₃, NH₄, Pᶜʰˡ, Pᶠᵉ)
     θₒₚₜᶠᵉᵖ = bgc.optimal_iron_quota[1]
     Sᵣₐₜᴾ = bgc.size_ratio_of_phytoplankton[1]
@@ -70,6 +83,7 @@ end
     return min(Lₚₒ₄ᴾ, Lₙᴾ, L_Feᴾ), Lₚₒ₄ᴾ, Lₙₕ₄ᴾ, Lₙₒ₃ᴾ, Lₙᴾ, L_Feᴾ #6a
 end
 
+#Same for Lₗᵢₘᴰ
 @inline function Lᴰ(D, PO₄, NO₃, NH₄, Si, Dᶜʰˡ, Dᶠᵉ)
     θₒₚₜᶠᵉᴰ = bgc.optimal_iron_quota[2]
     Sᵣₐₜᴰ = bgc.size_ratio_of_phytoplankton[2]
@@ -159,13 +173,8 @@ end
     #equaitons here
     sh = 
 
-    [p_Dᶻ, p_Dᴹ] = bgc.preference_for_diatoms
-    Jₜₕᵣₑₛₕᶻ = bgc.specific_food_thresholds_for_microzooplankton
-    Jₜₕᵣₑₛₕᴹ = bgc.specific_food_thresholds_for_mesozooplankton
-    grazing_arg_m = grazing_argᴹ(P, POC, D, Z, T)   #this is alternative
-    grazing_arg_z = grazing_argᶻ(P, POC, D, T) 
-    g_Dᶻ = gᴶ(D, p_Dᶻ, Jₜₕᵣₑₛₕᶻ, grazing_arg_z)
-    g_Dᴹ =  gᴶ(D, p_Dᴹ, Jₜₕᵣₑₛₕᴹ, grazing_arg_m)
+    g_Dᶻ = grazingᶻ(P, D, POC, T)[3]
+    g_Dᴹ = grazingᴹ(P, D, Z, POC, T)[3]
  
     t_darkᴰ = 
 
