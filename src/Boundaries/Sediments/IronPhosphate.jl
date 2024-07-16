@@ -146,19 +146,19 @@ adapt_structure(to, sediment::IronPhosphate) =
                  adapt(to, sediment.bottom_indices))
                   
 sediment_tracers(::IronPhosphate) = (:O₂, :NH₄, :NO₃, :NO₂, :N₂, :TPO₄, :FeOHP, :Feᴵᴵ, :FeS₂, :SO₄, :TH₂S, :CH₄, :TCO₂, :Gi)
-sediment_fields(model::IronPhosphate) = (O2 = model.fields.O2,
-                                         NH4 = model.fields.NH4,
-                                         NO3 = model.fields.NO3,
-                                         NO2 = model.fields.NO2,
-                                         N2 = model.fields.N2,
-                                         TPO4 = model.fields.TPO4,
+sediment_fields(model::IronPhosphate) = (O₂ = model.fields.O₂,
+                                         NH₄ = model.fields.NH₄,
+                                         NO₃ = model.fields.NO₃,
+                                         NO₂ = model.fields.NO₂,
+                                         N₂ = model.fields.N₂,
+                                         TPO₄ = model.fields.TPO₄,
                                          FeOHP = model.fields.FeOHP,
-                                         FeII = model.fields.FeII,
-                                         FeS2 = model.fields.FeS2,
-                                         SO4 = model.fields.SO4,
-                                         TH2S = model.fields.TH2S,
-                                         CH4 = model.fields.CH4,
-                                         TCO2 = model.fields.TCO2,
+                                         Feᴵᴵ = model.fields.Feᴵᴵ,
+                                         FeS₂ = model.fields.FeS₂,
+                                         SO₄ = model.fields.SO₄,
+                                         TH₂S = model.fields.TH₂S,
+                                         CH₄ = model.fields.CH₄,
+                                         TCO₂ = model.fields.TCO₂,
                                          Gi = model.fields.Gi)
 
 @inline required_tracers(::IronPhosphate, bgc, tracers) = tracers[(:NO₃, :NH₄, :O₂, :DIC, sinking_tracers(bgc)...)] # need :Gi, :FeOHP
@@ -173,11 +173,11 @@ function _calculate_sediment_tendencies!(i, j, sediment::IronPhosphate, bgc, gri
     Δz = zspacing(i, j, k, grid, Center(), Center(), Center())
 
     @inbounds begin
-        oxygen_deposition = oxygen_flux(i, j, k, grid, advection, bgc, tracers) * Δz
+        oxygen_deposition = 0 #oxygen_flux(i, j, k, grid, advection, bgc, tracers) * Δz
 
-        POC_deposition = poc_flux(i, j, k, grid, advection, bgc, tracers) * Δz
+        POC_deposition = carbon_flux(i, j, k, grid, advection, bgc, tracers) * Δz
 
-        iron_deposition = iron_flux(i, j, k, grid, advection, bgc, tracers) * Δz
+        iron_deposition = carbon_flux(i, j, k, grid, advection, bgc, tracers) * Δz * (1/106) * 0.1
         
         #(:O₂, :NH₄, :NO₃, :NO₂, :N₂, :TPO₄, :FeOHP, :Feᴵᴵ, :FeS₂, :SO₄, :TH₂S, :CH₄, :TCO₂, :Gi)
         O₂ = sediment.fields.O₂[i, j, 1]
@@ -254,20 +254,20 @@ function _calculate_sediment_tendencies!(i, j, sediment::IronPhosphate, bgc, gri
         ##### sediment evolution
         #####
 
-        sediment_tendencies.Gi = POC_deposition - RO₂ - RNO₃ - RNO₂ - RFe - RSO₄ - RCH₄
-        sediment_tendencies.O₂ = oxygen_deposition - RO₂ - 1.5 * R_NH4ox - 0.5 * R_NO2ox - 2 * R_H2Sox - 0.25 * R_Fe2ox - 3.5 * R_FeS2ox
-        sediment_tendencies.TCO₂ = RO₂ + RNO₃ + RNO₂ + RFe + RSO₄ + RCH₄ + R_AOM
-        sediment_tendencies.NH₄ = ratio_NC * (RO₂ + RNO₃ + RNO₂ + RFe + RSO₄ + RCH₄) + R_DNRA - R_amx - R_NH4ox
-        sediment_tendencies.NO₃ = -2 * RNO₃ - R_DNRA + R_NO2ox
-        sediment_tendencies.NO₂ = 2 * RNO₃ - 1.33 * RNO₂ - R_amx + R_NH4ox - R_NO2ox
-        sediment_tendencies.N₂ = R_amx + 0.66 * RNO₂
-        sediment_tendencies.TPO₄ = ratio_PC * (RO₂ + RNO₃ + RNO₂ + RFe + RSO₄ + RCH₄) + RFe * ratio_FeP - ratio_FeP * R_Fe2ox * fₖ₋ₜₚₒ₄ + ratio_FeP * R_Fe3red
-        sediment_tendencies.FeOHP = iron_deposition - 4 * RFe + R_Fe2ox - R_Fe3red
-        sediment_tendencies.Feᴵᴵ = 4 * RFe - R_Fe2ox + R_FeS2ox - R_FeS2p + R_Fe3red
-        sediment_tendencies.FeS₂ = R_FeS2p - R_FeS2ox
-        sediment_tendencies.SO₄ = -0.5 * RSO₄ + R_DNRA - R_AOM + R_H2Sox + 2 * R_FeS2ox + (R_Fe3red / 8)
-        sediment_tendencies.TH₂S = 0.5 * RSO₄ - R_DNRA + R_AOM - R_H2Sox  - 2 * R_FeS2p - (R_Fe3red / 8)
-        sediment_tendencies.CH₄ = 0.5 * RCH₄ - R_AOM
+        sediment_tendencies.Gi[i, j, 1] = POC_deposition - RO₂ - RNO₃ - RNO₂ - RFe - RSO₄ - RCH₄
+        sediment_tendencies.O₂[i, j, 1] = oxygen_deposition - RO₂ - 1.5 * R_NH4ox - 0.5 * R_NO2ox - 2 * R_H2Sox - 0.25 * R_Fe2ox - 3.5 * R_FeS2ox
+        sediment_tendencies.TCO₂[i, j, 1] = RO₂ + RNO₃ + RNO₂ + RFe + RSO₄ + RCH₄ + R_AOM
+        sediment_tendencies.NH₄[i, j, 1] = ratio_NC * (RO₂ + RNO₃ + RNO₂ + RFe + RSO₄ + RCH₄) + R_DNRA - R_amx - R_NH4ox
+        sediment_tendencies.NO₃[i, j, 1] = -2 * RNO₃ - R_DNRA + R_NO2ox
+        sediment_tendencies.NO₂[i, j, 1] = 2 * RNO₃ - 1.33 * RNO₂ - R_amx + R_NH4ox - R_NO2ox
+        sediment_tendencies.N₂[i, j, 1] = R_amx + 0.66 * RNO₂
+        sediment_tendencies.TPO₄[i, j, 1] = ratio_PC * (RO₂ + RNO₃ + RNO₂ + RFe + RSO₄ + RCH₄) + RFe * ratio_FeP - ratio_FeP * R_Fe2ox * fₖ₋ₜₚₒ₄ + ratio_FeP * R_Fe3red
+        sediment_tendencies.FeOHP[i, j, 1] = iron_deposition - 4 * RFe + R_Fe2ox - R_Fe3red
+        sediment_tendencies.Feᴵᴵ[i, j, 1] = 4 * RFe - R_Fe2ox + R_FeS2ox - R_FeS2p + R_Fe3red
+        sediment_tendencies.FeS₂[i, j, 1] = R_FeS2p - R_FeS2ox
+        sediment_tendencies.SO₄[i, j, 1] = -0.5 * RSO₄ + R_DNRA - R_AOM + R_H2Sox + 2 * R_FeS2ox + (R_Fe3red / 8)
+        sediment_tendencies.TH₂S[i, j, 1] = 0.5 * RSO₄ - R_DNRA + R_AOM - R_H2Sox  - 2 * R_FeS2p - (R_Fe3red / 8)
+        sediment_tendencies.CH₄[i, j, 1] = 0.5 * RCH₄ - R_AOM
     end
 end
 
