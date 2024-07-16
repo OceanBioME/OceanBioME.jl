@@ -85,6 +85,7 @@ end
 
 @inline function (p::CarbonChemistry)(DIC, Alk, T, S;
                                       pH = nothing,
+                                      return_pH = false,
                                       boron = 0.000232 / 10.811 * S / 1.80655,
                                       sulfate = 0.14 / 96.06 * S / 1.80655,
                                       fluoride = 0.000067 / 18.9984 * S / 1.80655,
@@ -130,10 +131,17 @@ end
     CO₂ = DIC * H ^ 2 / (H ^ 2 + K1 * H + K1 * K2) 
     pCO₂ = (CO₂ / FF) * 10 ^ 6
 
-    return pCO₂ # μatm
+    return ifelse(return_pH, -log10(H), pCO₂) # μatm
 end
 
 solve_for_H(pH, args...) = 10.0 ^ - pH
 
-solve_for_H(pH::Nothing, params, upper_pH_bound, lower_pH_bound) =
-    find_zero(alkalinity_residual, (10.0 ^ - upper_pH_bound, 10.0 ^ - lower_pH_bound), Bisection(); atol = 1e-10, p = params)
+#=solve_for_H(::Nothing, params, upper_pH_bound, lower_pH_bound) =
+    find_zero(alkalinity_residual, (10.0 ^ - upper_pH_bound, 10.0 ^ - lower_pH_bound), Bisection(); atol = 1e-10, p = params)=#
+function solve_for_H(::Nothing, params, upper_pH_bound, lower_pH_bound)
+    if alkalinity_residual(10.0 ^ - upper_pH_bound, params) * alkalinity_residual(10.0 ^ - lower_pH_bound, params) .< 0
+        return find_zero(alkalinity_residual, (10.0 ^ - upper_pH_bound, 10.0 ^ - lower_pH_bound), Bisection(); atol = 1e-10, p = params)
+    else
+        return NaN
+    end
+end

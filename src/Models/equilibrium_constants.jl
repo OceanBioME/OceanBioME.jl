@@ -37,10 +37,10 @@ end
 @kwdef struct KB{FT}
           constant :: FT =  148.0248
          inverse_T :: FT = -8966.90
-  invsese_T_sqrt_S :: FT = - 2890.53
-       invsese_T_S :: FT = - 77.942
+  invsese_T_sqrt_S :: FT = -2890.53
+       invsese_T_S :: FT = -77.942
  invsese_T_sqrt_S³ :: FT =  1.728
-      inverse_T_S² :: FT = - 0.0996
+      inverse_T_S² :: FT = -0.0996
             sqrt_S :: FT = 137.1942
                  S :: FT = 1.62142
              log_T :: FT = -24.4344
@@ -63,7 +63,7 @@ end
             sqrt_S :: FT = -5.977
   inverse_T_sqrt_S :: FT =  118.67
       log_T_sqrt_S :: FT =  1.0495
-                 S :: FT = - 0.01615
+                 S :: FT = -0.01615
 end
 
 @inline (c::KW)(T, S) = exp(c.constant

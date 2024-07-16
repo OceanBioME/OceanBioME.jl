@@ -1,10 +1,9 @@
 using Documenter, DocumenterCitations, Literate
 
 using OceanBioME
-using OceanBioME.SLatissimaModel: SLatissima
-using OceanBioME.LOBSTERModel: LOBSTER
-using OceanBioME.Boundaries.Sediments: SimpleMultiG, InstantRemineralisation
-using OceanBioME.Boundaries: OCMIP_default, GasExchange
+using OceanBioME: SLatissima, LOBSTER, NutrientPhytoplanktonZooplanktonDetritus
+using OceanBioME.Sediments: SimpleMultiG, InstantRemineralisation
+using OceanBioME: CarbonChemistry, GasExchange
 
 using Oceananigans.Grids: RectilinearGrid
 
@@ -58,7 +57,7 @@ model_parameters = (LOBSTER(; grid = BoxModelGrid, light_attenuation_model = not
                     TwoBandPhotosyntheticallyActiveRadiation(; grid = RectilinearGrid(size=(1, 1, 1), extent=(1, 1, 1))),
                     SimpleMultiG(; grid = BoxModelGrid),
                     InstantRemineralisation(; grid = BoxModelGrid),
-                    OCMIP_default,
+                    CarbonChemistry(),
                     GasExchange(; gas = :CO₂).condition.func,
                     GasExchange(; gas = :O₂).condition.func)
 
