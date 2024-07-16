@@ -17,12 +17,12 @@ function intercept_tracer_tendencies!(model, intercepted_tendencies)
     end
 end
 
-function set_defaults!(sediment::SimpleMultiG)
-    set!(sediment.fields.N_fast, 0.0230)
-    set!(sediment.fields.N_slow, 0.0807)
+function set_defaults!(sediment::IronPhosphate)
+    #set!(sediment.fields.N_fast, 0.0230)
+    #set!(sediment.fields.N_slow, 0.0807)
 
-    set!(sediment.fields.C_fast, 0.5893)
-    set!(sediment.fields.C_slow, 0.1677)
+    #set!(sediment.fields.C_fast, 0.5893)
+    #set!(sediment.fields.C_slow, 0.1677)
 end 
 
 set_defaults!(::VariableRedfieldLobster, model) =
@@ -55,16 +55,16 @@ function test_flat_sediment(timestepper = :QuasiAdamsBashforth2)
                                       oxygen = true, 
                                       variable_redfield = true, 
                                       sediment_model)
-    model = NonhydrostaticModel        
-
-    model = model(; grid, 
+         
+    model = NonhydrostaticModel(; grid, 
                 biogeochemistry, 
                 closure = nothing,
-                timestepper,
+                :RungeKutta3,
                 buoyancy = nothing)
-    set_defaults!(model.biogeochemistry.sediment)
+   # set_defaults!(model.biogeochemistry.sediment)
 
-    set_defaults!(biogeochemistry.underlying_biogeochemistry, model)
+    # set_defaults!(biogeochemistry.underlying_biogeochemistry, model)
+        println("test")
 
     simulation = Simulation(model, Δt = 50, stop_time = 1day)
 
@@ -72,26 +72,7 @@ function test_flat_sediment(timestepper = :QuasiAdamsBashforth2)
 
     simulation.callbacks[:intercept_tendencies] = Callback(intercept_tracer_tendencies!; callsite = TendencyCallsite(), parameters = intercepted_tendencies)
 
-    #N₀ = CUDA.@allowscalar total_nitrogen(biogeochemistry.underlying_biogeochemistry, model) * volume(1, 1, 1, grid, Center(), Center(), Center()) + total_nitrogen(biogeochemistry.sediment) * Azᶠᶜᶜ(1, 1, 1, grid)
-
     run!(simulation)
-
-    # the model is changing the tracer tendencies
-    #@test any([any(intercepted_tendencies[idx] .!= Array(interior(model.timestepper.Gⁿ[tracer]))) for (idx, tracer) in enumerate(keys(model.tracers))])
-
-    # the sediment tendencies are being updated
-    #@test all([any(Array(interior(tend)) .!= 0.0) for tend in model.biogeochemistry.sediment.tendencies.Gⁿ])
-    #@test all([any(Array(interior(tend)) .!= 0.0) for tend in model.biogeochemistry.sediment.tendencies.G⁻])
-
-    # the sediment values are being integrated
-    #initial_values = (N_fast = 0.0230, N_slow = 0.0807, C_fast = 0.5893, C_slow = 0.1677, N_ref = 0.0, C_ref = 0.0, N_storage = 0.0)
-    #@test all([any(Array(interior(field)) .!= initial_values[name]) for (name, field) in pairs(model.biogeochemistry.sediment.fields)])
-
-    #N₁ = CUDA.@allowscalar total_nitrogen(biogeochemistry.underlying_biogeochemistry, model) * volume(1, 1, 1, grid, Center(), Center(), Center()) + total_nitrogen(biogeochemistry.sediment) * Azᶠᶜᶜ(1, 1, 1, grid)
-
-    # conservations
-   # rtol = ifelse(isa(architecture, CPU), max(√eps(N₀), √eps(N₁)), 5e-7)
-    #@test isapprox(N₀, N₁; rtol) 
 
     return nothing
 end
