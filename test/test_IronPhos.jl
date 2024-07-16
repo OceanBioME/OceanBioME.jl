@@ -46,40 +46,31 @@ set_defaults!(::VariableRedfieldLobster, model) =
 #                                                     sum(model.tracers.sPON) +
 #                                                     sum(model.tracers.bPON)
 
-function test_flat_sediment(timestepper = :QuasiAdamsBashforth2)
-
-    grid = RectilinearGrid(architecture; size=(3, 3, 50), extent=(10, 10, 500))
-    sediment_model = IronPhosphate(; grid)
-    biogeochemistry = LOBSTER(; grid,
-                                      carbonates = true, 
-                                      oxygen = true, 
-                                      variable_redfield = true, 
-                                      sediment_model)
-         
-    model = NonhydrostaticModel(; grid, 
-                biogeochemistry, 
-                closure = nothing,
-                :RungeKutta3,
-                buoyancy = nothing)
-   # set_defaults!(model.biogeochemistry.sediment)
-
-    # set_defaults!(biogeochemistry.underlying_biogeochemistry, model)
-        println("test")
-
-    simulation = Simulation(model, Δt = 50, stop_time = 1day)
-
-    intercepted_tendencies = Tuple(Array(interior(field)) for field in values(TracerFields(keys(model.tracers), grid)))
-
-    simulation.callbacks[:intercept_tendencies] = Callback(intercept_tracer_tendencies!; callsite = TendencyCallsite(), parameters = intercepted_tendencies)
-
-    run!(simulation)
-
-    return nothing
-end
-
-
 bottom_height(x, y) = -1000 + 500 * exp(- (x^2 + y^2) / 250) # a perfect hill
 
-@testset "Sediment integration" begin
-    test_flat_sediment(:RungeKutta3)  
-end
+grid = RectilinearGrid(architecture; size=(3, 3, 50), extent=(10, 10, 500))
+sediment_model = IronPhosphate(; grid)
+biogeochemistry = LOBSTER(; grid,
+                                    carbonates = true, 
+                                    oxygen = true, 
+                                    variable_redfield = true, 
+                                    sediment_model)
+        
+model = NonhydrostaticModel(; grid, 
+            biogeochemistry, 
+            closure = nothing,
+            timestepper = :RungeKutta3,
+            buoyancy = nothing)
+# set_defaults!(model.biogeochemistry.sediment)
+
+# set_defaults!(biogeochemistry.underlying_biogeochemistry, model)
+    println("test")
+
+simulation = Simulation(model, Δt = 50, stop_time = 1day)
+
+intercepted_tendencies = Tuple(Array(interior(field)) for field in values(TracerFields(keys(model.tracers), grid)))
+
+simulation.callbacks[:intercept_tendencies] = Callback(intercept_tracer_tendencies!; callsite = TendencyCallsite(), parameters = intercepted_tendencies)
+
+run!(simulation
+)
