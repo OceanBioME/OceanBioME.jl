@@ -82,7 +82,7 @@ function GasExchange(; gas,
                        air_pressure::AP = 1.0, # atm
                        average_wind_speed::FT = 10.0, # m/s
                        field_dependencies = (CO₂ = (:DIC, :Alk), O₂ = (:O₂, ))[gas],
-                       pCO₂::PCO = gas == :CO₂ ? OCMIP_default : nothing) where {ScP, βP, FT, AC, AP, PCO}
+                       pCO₂::PCO = gas == :CO₂ ? CarbonChemistry() : nothing) where {ScP, βP, FT, AC, AP, PCO}
 
     gas = Val(gas)
     G = typeof(gas)
