@@ -72,10 +72,6 @@ end
     
     λₚₒ¹ = λ¹(T, O₂)
 
-    #Gross growth efficiency
-    eᶻ = eᴶ(eₘₐₓᶻ, σᶻ, gₚᶻ, g_Dᶻ, gₚₒᶻ, g_zᴹ, N, Fe, P, D, POC, Z)
-    eᴹ =  eᴶ(eₘₐₓᴹ, σᴹ, gₚᴹ, g_Dᴹ, gₚₒᴹ, g_zᴹ,Pᶠᵉ, Dᶠᵉ, SFe, P, D, POC)
-
     μᴾᶠᵉ = μᴵᶠᵉ(P, Pᶠᵉ, θₘₐₓᶠᵉᴾ, Sᵣₐₜᴾ, K_Feᴾᶠᵉᵐⁱⁿ, Pₘₐₓ, L_Feᴾ, bFe)
     μᴰᶠᵉ = μᴵᶠᵉ(D, Dᶠᵉ, θₘₐₓᶠᵉᴰ, Sᵣₐₜᴰ, K_Feᴰᶠᵉᵐⁱⁿ, Dₘₐₓ, L_Feᴰ, bFe)
    
@@ -85,17 +81,19 @@ end
     θᶠᵉᴾᴼᶜ = θ(SFe, POC)
     θᶠᵉᴳᴼᶜ = θ(BFe, GOC)
     #Grazing
-    grazingᶻ = grazingᶻ(P, D, POC, T)
-    grazingᴹ = grazingᴹ(P, D, Z, POC, T)
-    ∑gᶻ = grazingᶻ[1]
-    ∑gᴹ = grazingᴹ[1]
+    ∑gᶻ, gₚᶻ, g_Dᶻ, gₚₒᶻ = grazingᶻ(P, D, POC, T)
+    ∑gᴹ, gₚᴹ, g_Dᴹ, gₚₒᴹ, g_zᴹ = grazingᴹ(P, D, Z, POC, T)
+    ∑g_FFᴹ = ∑g_FFᴹ(zₑᵤ, zₘₓₗ, T, POC, GOC)
     ∑g_FFᴹ = ∑g_FFᴹ(zₑᵤ, zₘₓₗ, T, POC, GOC)
     
-
     ∑θᶠᵉⁱgᵢᶻ = θᶠᵉᴾ*grazingᶻ[2] + θᶠᵉᴰ*grazingᶻ[3] + θᶠᵉᴾᴼᶜ*grazingᶻ[4] #over P, D, POC
     ∑θᶠᵉⁱgᵢᴹ = θᶠᵉᴾ*grazingᴹ[2] + θᶠᵉᴰ*grazingᴹ[3] + θᶠᵉᴾᴼᶜ*grazingᴹ[4] + θᶠᵉᶻ*grazingᴹ[5] #graze on P, D, POC, Z 
 
     Bactfe = Bactfe(μₘₐₓ⁰, z, Z, M, Fe, DOC, PO₄, NO₃, NH₄, bFe, T, zₘₐₓ)
 
+    #Gross growth efficiency
+    eₙᶻ = eₙᴶ(gₚᶻ, g_Dᶻ, gₚₒᶻ, g_zᴹ, Pᶠᵉ, Dᶠᵉ, SFe, P, D, POC)
+    eₙᴹ = eₙᴶ(gₚᴹ, g_Dᴹ, gₚₒᴹ, g_zᴹ, Pᶠᵉ, Dᶠᵉ, SFe, P, D, POC)
+    
     return max(0, (1-σᶻ)*(∑θᶠᵉⁱgᵢᶻ/∑gᶻ - eₙᶻ*θᶠᵉᶻ))*∑gᶻ*Z + max(0, (1-σᴹ)*(∑θᶠᵉⁱgᵢᴹ + θᶠᵉᴾᴼᶜ*gₚₒ_FF + θᶠᵉᴳᴼᶜ*g_GOC_FF )/(∑gᴹ+∑g_FFᴹ) - eₙᴹ*θᶠᵉᶻ)*(∑gᴹ+∑g_FFᴹ)*M + γᴹ*θᶠᵉᶻ*Rᵤₚᴹ(M, T) + λₚₒ¹*SFe - (1 - δᴾ)*μᴾᶠᵉ*P - (1 - δᴰ)*μᴰᶠᵉ*D - Scav(POC, GOC, CaCO₃, BSi, DOC, T, Fe) - Cgfe1(sh, Fe, POC, DOC, T) - Cgfe2(sh, Fe, T, DOC, GOC) - Aggfe(Fe, DOC, T) - Bactfe
 end

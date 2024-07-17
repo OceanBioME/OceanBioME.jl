@@ -7,14 +7,14 @@
     σᶻ = bgc.non_assimilated_fraction.Z
     γᴹ = bgc.excretion_as_DOM.M
     σᴹ = bgc.non_assimilated_fraction.M
+    eₘₐₓᶻ = bgc. max_growth_efficiency_of_zooplankton.Z
+    eₘₐₓᴹ = bgc.max_growth_efficiency_of_zooplankton.M
     
     #Grazing
-    grazingᶻ = grazingᶻ(P, D, POC, T)
-    grazingᴹ = grazingᴹ(P, D, Z, POC, T)
-    ∑gᶻ = grazingᶻ[1]
-    ∑gᴹ = grazingᴹ[1]
+    ∑gᶻ, gₚᶻ, g_Dᶻ, gₚₒᶻ = grazingᶻ(P, D, POC, T)
+    ∑gᴹ, gₚᴹ, g_Dᴹ, gₚₒᴹ, g_zᴹ = grazingᴹ(P, D, Z, POC, T)
     ∑g_FFᴹ = ∑g_FFᴹ(zₑᵤ, zₘₓₗ, T, POC, GOC)
-
+    
     #Gross growth efficiency
     eᶻ = eᴶ(eₘₐₓᶻ, σᶻ, gₚᶻ, g_Dᶻ, gₚₒᶻ, g_zᴹ, N, Fe, P, D, POC, Z)
     eᴹ =  eᴶ(eₘₐₓᴹ, σᴹ, gₚᴹ, g_Dᴹ, gₚₒᴹ, g_zᴹ,Pᶠᵉ, Dᶠᵉ, SFe, P, D, POC)

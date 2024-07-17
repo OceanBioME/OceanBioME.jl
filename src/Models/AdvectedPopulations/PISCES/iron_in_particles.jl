@@ -59,13 +59,14 @@ end
     Kₘ = bgc.half_saturation_const_for_mortality
     wᴾ = bgc.min_quadratic_mortality_of_phytoplankton
     mᴰ = bgc.phytoplankton_mortality_rate.D
-    κ_Bactᴮᶠᵉ = #where defined?
+    κ_Bactˢᶠᵉ = 0.5 #check name in parameter list
     λ_Fe = bgc.slope_of_scavenging_rate_of_iron
     g_FF = bgc.flux_feeding_rate
     wₚₒ = bgc.sinking_speed_of_POC
     bₘ = bgc.temperature_sensitivity_term.M
     wₘₐₓᴰ = bgc.max_quadratic_mortality_of_diatoms
-    κ_Bactᴮᶠᵉ = #define this in parameter list = 0.5
+    κ_Bactᴮᶠᵉ = 0.5 #define this in parameter list = 0.5
+    w_GOCᵐⁱⁿ = bgc.min_sinking_speed_of_GOC
 
     Lₗᵢₘᴰ = Lᴰ(D, PO₄, NO₃, NH₄, Si, Dᶜʰˡ, Dᶠᵉ, Si̅)[1]
 
@@ -78,10 +79,12 @@ end
     θᶠᵉᴾᴼᶜ = θ(SFe, POC)
     θᶠᵉᴳᴼᶜ = θ(BFe, GOC)
     #Grazing
-    grazingᴹ = grazingᴹ()
+    grazingᴹ = grazingᴹ(P, D, Z, POC, T)
     ∑θᶠᵉⁱgᵢᴹ = θᶠᵉᴾ*grazingᴹ[2] + θᶠᵉᴰ*grazingᴹ[3] + θᶠᵉᴾᴼᶜ*grazingᴹ[4] + θᶠᵉᶻ*grazingᴹ[5] #graze on P, D, POC, Z 
     gₚₒ_FFᴹ = g_FF*bₘ^T*wₚₒ*POC 
-    g_GOC_FFᴹ = g_FF*bₘ^T*w_GOC()*GOC 
+    zₘₐₓ = max(zₑᵤ, zₘₓₗ)   #41a
+    w_GOC = w_GOCᵐⁱⁿ + (200 - w_GOCᵐⁱⁿ)*(max(0, z-zₘₐₓ))/(5000) #41b
+    g_GOC_FFᴹ = g_FF*bₘ^T*w_GOC*GOC 
 
     return σᴹ*(∑θᶠᵉⁱgᵢᴹ + θᶠᵉᴾᴼᶜ*gₚₒ_FFᴹ + θᶠᵉᴳᴼᶜ*g_GOC_FFᴹ)*M + θᶠᵉᴹ*(rᴹ*(bₘ^T)*K_mondo(M, Kₘ)*M + Pᵤₚᴹ()) + θᶠᵉᴾ*0.5*R_CaCO₃()*(mᴾ*K_mondo(P, Kₘ)*P + sh*wᴾ*P^2) + θᶠᵉᴰ*(0.5*mᴰ*K_mondo(D, Kₘ)*D + sh*wᴰ*D^2) + κ_Bactᴮᶠᵉ*Bactfe() + λ_Fe*GOC*Fe¹ + θᶠᵉᴾᴼᶜ*Φ() + Cgfe2() - θᶠᵉᴳᴼᶜ* g_GOC_FFᴹ*M - λₚₒ¹*BFe #Partial derivative omitted
 end
