@@ -1,64 +1,118 @@
-# TO DO: Forcing equations depend on functions from other documents. Fill in the variables for these functions once they are written. Add relevant parameters to parameter lists inside forcing function. Where is Pₘₐₓ defined?
 
+#This document contains functions for:
+    #μₙₒ₃ᴶ,  μₙₕ₄ᴶ (eq8)
+    #ΔO₂ (eq57)
+    #Nitrif (eq56)
+    #N_fix (eq58)
+    #Forcing for NO₃ and NH₄ (eqs54, 55)
 
-# For use in NO₃ and NH₄ forcing equations.
-
-@inline ΔO₂(O₂ᵐⁱⁿ¹, O₂ᵐⁱⁿ², O₂) = min(1, max(0.4*(O₂ᵐⁱⁿ¹-O₂)/(O₂ᵐⁱⁿ²+O₂))) #(57)
-PAR̄ = 0 # where are PAR₁, etc defined? (56b)
-
-@inline Nitrif(λₙₕ₄, NH₄, O₂ᵐⁱⁿ¹, O₂ᵐⁱⁿ², O₂) = λₙₕ₄*NH₄*(1-ΔO₂)/(1+PAR̄) #(56a)
-
-# For NO₃ forcing only
-Rₙₕ₄ = 0 # set this value
-Rₙₒ₃ = 0.86 # check this value
-
-#NO₃ forcing also requires μᴾₙₒ₃, μᴰₙₒ₃ (8), Denit (33b)
-
-@inline function (pisces::PISCES)(::Val{:NO₃}, x, y, z, t, P, D, NH₄, O₂, PAR) #May need to add other tracers here to call with functions defined elsewhere
-    # the signature of this function is always `Val(name), x, y, z, t` and then all the tracers listed in `required_biogeochemical_tracers`, and then `required_biogeochemical_auxiliary_fields`
-
-    #Write parameters as symbols, also check which parameters are required to pass into functions.
-    O₂ᵐⁱⁿ¹ = 
-    O₂ᵐⁱⁿ² = 
-
-    return Nitrif(λₙₕ₄, NH₄, O₂ᵐⁱⁿ¹, O₂ᵐⁱⁿ², O₂) - μᴾₙₒ₃()*P - μᴰₙₒ₃()*D - Rₙₕ₄*λₙₕ₄*ΔO₂(O₂ᵐⁱⁿ¹, O₂ᵐⁱⁿ², O₂)*NH₄ - Rₙₒ₃*Denit()
+@inline function μₙₒ₃ᴾ(P, PO₄, NO₃, NH₄, Pᶜʰˡ, Pᶠᵉ, T,  zₘₓₗ, zₑᵤ, L_day, PARᴾ, t_darkᴾ) 
+    αᴾ = bgc.initial_slope_of_PI_curve.P
+    Lₗᵢₘᴾ = Lᴾ(P, PO₄, NO₃, NH₄, Pᶜʰˡ, Pᶠᵉ)[1]
+    μᴾ = μᴵ(P, Pᶜʰˡ, PARᴾ, L_day, T, αᴾ, Lₗᵢₘᴾ, zₘₓₗ, zₑᵤ, t_darkᴾ) 
+    Lₙₒ₃ᴾ = Lᴾ(P, PO₄, NO₃, NH₄, Pᶜʰˡ, Pᶠᵉ)[4]
+    Lₙₕ₄ᴾ = Lᴾ(P, PO₄, NO₃, NH₄, Pᶜʰˡ, Pᶠᵉ)[3]
+    return μᴾ * K_mondo(Lₙₒ₃ᴾ, Lₙₕ₄ᴾ) #eq8
 end
 
+@inline function μₙₕ₄ᴾ(P, PO₄, NO₃, NH₄, Pᶜʰˡ, Pᶠᵉ, T, zₘₓₗ, zₑᵤ, L_day, PARᴾ, t_darkᴾ)
+    αᴾ = bgc.initial_slope_of_PI_curve.P
+    Lₗᵢₘᴾ = Lᴾ(P, PO₄, NO₃, NH₄, Pᶜʰˡ, Pᶠᵉ)[1]
+    μᴾ = μᴵ(P, Pᶜʰˡ, PARᴾ, L_day, T, αᴾ, Lₗᵢₘᴾ, zₘₓₗ, zₑᵤ, t_darkᴾ) 
+    Lₙₒ₃ᴾ = Lᴾ(P, PO₄, NO₃, NH₄, Pᶜʰˡ, Pᶠᵉ)[4]
+    Lₙₕ₄ᴾ = Lᴾ(P, PO₄, NO₃, NH₄, Pᶜʰˡ, Pᶠᵉ)[3]
+    return μᴾ * K_mondo(Lₙₕ₄ᴾ, Lₙₒ₃ᴾ) #eq8
+end
+
+@inline function μₙₒ₃ᴰ(D, PO₄, NO₃, NH₄, Si, Dᶜʰˡ, Dᶠᵉ, T, zₘₓₗ, zₑᵤ, L_day, PARᴰ, t_darkᴰ) 
+    αᴰ = bgc.initial_slope_of_PI_curve.D
+    Lₗᵢₘᴰ = Lᴰ(D, PO₄, NO₃, NH₄, Si, Dᶜʰˡ, Dᶠᵉ)[1]
+    μᴰ =  μᴵ(D, Dᶜʰˡ, PARᴰ, L_day, T, αᴰ, Lₗᵢₘᴰ, zₘₓₗ, zₑᵤ, t_darkᴰ)
+    Lₙₒ₃ᴰ = Lᴰ(D, PO₄, NO₃, NH₄, Si, Dᶜʰˡ, Dᶠᵉ)[4]
+    Lₙₕ₄ᴰ = Lᴰ(D, PO₄, NO₃, NH₄, Si, Dᶜʰˡ, Dᶠᵉ)[3]
+    return μᴰ * K_mondo(Lₙₒ₃ᴰ, Lₙₕ₄ᴰ) #eq8
+end
+
+@inline function μₙₕ₄ᴰ(D, PO₄, NO₃, NH₄, Si, Dᶜʰˡ, Dᶠᵉ, T, zₘₓₗ, zₑᵤ, L_day, PARᴰ, t_darkᴰ)
+    αᴰ = bgc.initial_slope_of_PI_curve[2]
+    Lₗᵢₘᴰ = Lᴰ(D, PO₄, NO₃, NH₄, Si, Dᶜʰˡ, Dᶠᵉ)[1]
+    μᴰ =  μᴵ(D, Dᶜʰˡ, PARᴰ, L_day, T, αᴰ, Lₗᵢₘᴰ, zₘₓₗ, zₑᵤ, t_darkᴰ)
+    Lₙₒ₃ᴰ = Lᴰ(D, PO₄, NO₃, NH₄, Si, Dᶜʰˡ, Dᶠᵉ)[4]
+    Lₙₕ₄ᴰ = Lᴰ(D, PO₄, NO₃, NH₄, Si, Dᶜʰˡ, Dᶠᵉ)[3]
+    return μᴰ * K_mondo(Lₙₕ₄ᴰ, Lₙₒ₃ᴰ) #eq8
+end
+
+@inline function ΔO₂(O₂)
+    O₂ᵐⁱⁿ¹ = bgc.half_sat_const_for_denitrification1
+    O₂ᵐⁱⁿ² = bgc.half_sat_const_for_denitrification2
+
+    return min(1, max(0.4*(O₂ᵐⁱⁿ¹-O₂)/(O₂ᵐⁱⁿ²+O₂))) #eq57
+end
+
+@inline Nitrif(NH₄, O₂, λₙₕ₄, PAR) = λₙₕ₄*NH₄*(1-ΔO₂(O₂))/(1+PAR) #eq56a
+
+@inline function (pisces::PISCES)(::Val{:NO₃}, x, y, z, t, P, D, Z, M, Pᶜʰˡ, Dᶜʰˡ, Pᶠᵉ, Dᶠᵉ, Dˢⁱ, DOC, POC, GOC, SFe, BFe, PSi, NO₃, NH₄, PO₄, Fe, Si, CaCO₃, DIC, Alk, O₂, T, PAR, PAR¹, PAR², PAR³, zₘₓₗ, zₑᵤ, Si̅, D_dust) 
+
+    λₙₕ₄ =  bgc.max_nitrification_rate
+
+    Rₙₕ₄ = bgc.NC_stoichiometric_ratio_of_ANOTHERPLACEHOLDER
+    Rₙₒ₃ = bgc.NC_stoichiometric_ratio_of_dentitrification
+
+    μₙₒ₃ᴾ = μₙₒ₃ᴾ(P, PO₄, NO₃, NH₄, Pᶜʰˡ, Pᶠᵉ, T, zₘₓₗ, zₑᵤ, L_day, PARᴾ, t_darkᴾ)
+    μₙₒ₃ᴰ = μₙₒ₃ᴰ(D, PO₄, NO₃, NH₄, Si, Dᶜʰˡ, Dᶠᵉ, T, zₘₓₗ, zₑᵤ, L_day, PARᴰ, t_darkᴰ)
+
+    return Nitrif(NH₄, O₂, λₙₕ₄, PAR) - μₙₒ₃ᴾ*P - μₙₒ₃ᴰ*D - Rₙₕ₄*λₙₕ₄*ΔO₂(O₂)*NH₄ - Rₙₒ₃*Denit(NO₃, PO₄, NH₄, DOC, O₂, T, bFe, Bact)
+end
 
 # The following relate specifically to NH₄ forcing
+#Change to ifelse
 
-@kwdef function Lₙᴰᶻ(Pₘₐₓ, Kᵢᴾᵐⁱⁿ, Sᵣₐₜᴾ) #(58a), Lₙᵖ (6).
-    if Lₙᴾ() >= 0.08 #Fill parameters for this function. Check where Pₘₐₓ defined.
-        return 0.01
-    else
-        return 1 - Lₙᴾ()
-        
-@inline N_fix(N_fixᵐ, K_Feᴰ, Kₚₒ₄ᴾᵐⁱⁿ, E_fix, Pₘₐₓ, Kᵢᴾᵐⁱⁿ, Sᵣₐₜᴾ) = N_fixᵐ*max(0,μₚ() - 2.15)*Lₙᴰᶻ(Pₘₐₓ, Kᵢᴾᵐⁱⁿ, Sᵣₐₜᴾ)*min(bFe/(K_Feᴰᶻ + bFe), PO₄/(Kₚₒ₄ᴾᵐⁱⁿ + PO₄))*(1 - e^{-PAR/E_fix}) #(58b)
+@inline Lₙᴰᶻ(Lₙᴾ) = ifelse(Lₙᴾ>=0.08, 0.01, 1 - Lₙᴾ) #eq58
+    
+@inline function N_fix(bFe, PO₄, T, P, NO₃, NH₄, Pᶜʰˡ, Pᶠᵉ, PAR) #eq 58b
+    N_fixᵐ = bgc.max_rate_of_nitrogen_fixation
+    K_Feᴰᶻ = bgc.Fe_half_saturation_constant_of_nitrogen_fixation
+    Kₚₒ₄ᴾᵐⁱⁿ = bgc.min_half_saturation_const_for_phosphate.P
+    E_fix = bgc.photosynthetic_parameter_of_nitrogen_fixation
+    μ⁰ₘₐₓ = bgc.growth_rate_at_zero
+    μₚ = μ⁰ₘₐₓ*fₚ(T)
+    Lₙᴾ = Lᴾ(P, PO₄, NO₃, NH₄, Pᶜʰˡ, Pᶠᵉ)[5]
 
+    return N_fixᵐ*max(0,μₚ - 2.15)*Lₙᴰᶻ(Lₙᴾ)*min(K_mondo(bFe, K_Feᴰᶻ), K_mondo(PO₄, Kₚₒ₄ᴾᵐⁱⁿ))*(1 - e^{-PAR/E_fix})
+end
 
-# Define sum of grazing rates, as this quantity freqeuently appears
+@inline function (pisces::PISCES)(::Val{:NH₄}, x, y, z, t, P, D, Z, M, Pᶜʰˡ, Dᶜʰˡ, Pᶠᵉ, Dᶠᵉ, Dˢⁱ, DOC, POC, GOC, SFe, BFe, PSi, NO₃, NH₄, PO₄, Fe, Si, CaCO₃, DIC, Alk, O₂, T, PAR, PAR¹, PAR², PAR³, zₘₓₗ, zₑᵤ, Si̅, D_dust) 
+    
+    #Parameters
+    γᶻ = bgc.excretion_as_DOM.Z
+    σᶻ = bgc.non_assimilated_fraction.Z
+    γᴹ = bgc.excretion_as_DOM.M
+    σᴹ = bgc.non_assimilated_fraction.M
+    λₙₕ₄ = bgc.max_nitrification_rate
+    t_darkᴾ = bgc.mean_residence_time_of_phytoplankton_in_unlit_mixed_layer.P
+    t_darkᴰ = bgc.mean_residence_time_of_phytoplankton_in_unlit_mixed_layer.D
 
-@inline ∑gᴹ() 
+    bFe = 1 #Change this!
 
-# NH₄ forcing also requires eᶻ, eᴹ (27), Rᵤₚᴹ (30b), gᶻ (26a), g_FF (29), μᴾₙₕ₄, μᴰₙₕ₄() (8)
+    #L_day
+    ϕ₀ = bgc.latitude
+    L_day_param = bgc.length_of_day
+    ϕ = get_ϕ(ϕ₀, y)
+    L_day = get_L_day(ϕ, t, L_day_param)
+    
+    #Grazing
+    grazingᶻ = grazingᶻ(P, D, POC, T)
+    grazingᴹ = grazingᴹ(P, D, Z, POC, T)
+    ∑gᶻ = grazingᶻ[1]
+    ∑gᴹ = grazingᴹ[1]
+    ∑g_FFᴹ = ∑g_FFᴹ(zₑᵤ, zₘₓₗ, T, POC, GOC)
 
-@inline function (pisces::PISCES)(::Val{:NH₄}, x, y, z, t, P, D, NH₄, O₂, bFe, POC, GOC, PAR) 
-    # the signature of this function is always `Val(name), x, y, z, t` and then all the tracers listed in `required_biogeochemical_tracers`, and then `required_biogeochemical_auxiliary_fields`
+    #Gross growth efficiency
+    eᶻ = eᴶ(eₘₐₓᶻ, σᶻ, gₚᶻ, g_Dᶻ, gₚₒᶻ, g_zᴹ, N, Fe, P, D, POC, Z)
+    eᴹ =  eᴶ(eₘₐₓᴹ, σᴹ, gₚᴹ, g_Dᴹ, gₚₒᴹ, g_zᴹ,Pᶠᵉ, Dᶠᵉ, SFe, P, D, POC)
 
-    γᶻ = 
-    σᶻ = 
-    γᴹ = 
-    σᴹ = 
-    λₙₕ₄ = 
-    #Required for (57) and (56)
-    O₂ᵐⁱⁿ¹ = 
-    O₂ᵐⁱⁿ² =
-    #Required for (58)
-    N_fixᵐ = 
-    K_Feᴰ = 
-    Kₚₒ₄ᴾᵐⁱⁿ = 
-    E_fix, Pₘₐₓ = 
-    Kᵢᴾᵐⁱⁿ = 
-    Sᵣₐₜᴾ = 
-  
-    return γᶻ*(1-eᶻ()-σᶻ)*∑gᴹ()*Z + γᴹ*(1-eᴹ()-σᴹ)*(∑gᴹ() + g_FFᴹ() + g_FFᴹ())*M + γᴹ*Rᵤₚᴹ() + Remin() + Denit() + N_fix(N_fixᵐ, K_Feᴰ, Kₚₒ₄ᴾᵐⁱⁿ, E_fix, Pₘₐₓ, Kᵢᴾᵐⁱⁿ, Sᵣₐₜᴾ) - Nitrif(λₙₕ₄, NH₄, O₂ᵐⁱⁿ¹, O₂ᵐⁱⁿ², O₂) - λₙₕ₄*ΔO₂(O₂ᵐⁱⁿ¹, O₂ᵐⁱⁿ², O₂)*NH₄ - μₙₕ₄ᴾ()*P - μₙₕ₄ᴰ()*D
+    μₙₕ₄ᴾ = μₙₕ₄ᴾ(P, PO₄, NO₃, NH₄, Pᶜʰˡ, Pᶠᵉ, T, zₘₓₗ, zₑᵤ, L_day, PARᴾ, t_darkᴾ)
+    μₙₕ₄ᴰ = μₙₕ₄ᴰ(D, PO₄, NO₃, NH₄, Si, Dᶜʰˡ, Dᶠᵉ, T, zₘₓₗ, zₑᵤ, L_day, PARᴰ, t_darkᴰ)
+   
+    return γᶻ*(1-eᶻ-σᶻ)*∑gᶻ*Z + γᴹ*(1-eᴹ-σᴹ)*(∑gᴹ + ∑g_FFᴹ)*M + γᴹ*Rᵤₚᴹ(M, T) + Remin(O₂, NO₃, PO₄, NH₄, DOC, T, bFe, Bact) + Denit(NO₃, PO₄, NH₄, DOC, O₂, T, bFe, Bact) + N_fix(bFe, PO₄, T, P, NO₃, NH₄, Pᶜʰˡ, Pᶠᵉ, PAR) - Nitrif(NH₄, O₂, λₙₕ₄, PAR) - λₙₕ₄*ΔO₂(O₂)*NH₄ - μₙₕ₄ᴾ*P - μₙₕ₄ᴰ*D
+end
