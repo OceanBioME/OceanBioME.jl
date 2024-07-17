@@ -63,16 +63,27 @@ end
     return g_GOC_FFᴹ + gₚₒ_FFᴹ
 end
 
-# gross growth efficiency, defined for both but g_zᴹ and Z do not appear for eᶻ so have passed in as 0 and 1 respectively to avoid divide by zero error.
-@inline function eᴶ(eₘₐₓᴶ, σᴶ, gₚᴶ, g_Dᴶ, gₚₒᴶ, g_zᴹ, Pᶠᵉ, Dᶠᵉ, SFe, P, D, POC)
+# gross growth efficiency, defined for both but g_zᴹ and Z do not appear for eᶻ so have passed in as 0 
+@inline function eₙᴶ(gₚᴶ, g_Dᴶ, gₚₒᴶ, g_zᴹ, Pᶠᵉ, Dᶠᵉ, SFe, P, D, POC)
     θᴺᶜ = bgc.NC_redfield_ratio
     θᶠᵉᶜ = bgc.FeZ_redfield_ratio  #Assumed the same for both types of zooplankton
 
     ∑ᵢθᴺᴵgᵢᴶ = θᴺᶜ*gₚᴶ + θᴺᶜ*g_Dᴶ + θᴺᶜ*gₚₒᴶ + θᴺᶜ*g_zᴹ
     ∑ᵢθᶠᵉᴵgᵢᴶ = θ(Pᶠᵉ, P)*gₚᴶ + θ(Dᶠᵉ, D)*g_Dᴶ + θ(SFe, POC)*gₚₒᴶ + θᶠᵉᶜ*g_zᴹ
     ∑ᵢgᵢᴶ = gₚᴶ + g_Dᴶ + gₚₒᴶ + g_zᴹ
+    
+    return min(1, (∑ᵢθᴺᴵgᵢᴶ)/(θᴺᶜ*∑ᵢgᵢᴶ), (∑ᵢθᶠᵉᴵgᵢᴶ)/(θᶠᵉᶜ*∑ᵢgᵢᴶ))   #27a
+end
 
-    eₙᴶ = min(1, (∑ᵢθᴺᴵgᵢᴶ)/(θᴺᶜ*∑ᵢgᵢᴶ), (∑ᵢθᶠᵉᴵgᵢᴶ)/(θᶠᵉᶜ*∑ᵢgᵢᴶ))   #27a
+
+@inline function eᴶ(eₘₐₓᴶ, σᴶ, gₚᴶ, g_Dᴶ, gₚₒᴶ, g_zᴹ, Pᶠᵉ, Dᶠᵉ, SFe, P, D, POC)
+    
+    θᶠᵉᶜ = bgc.FeZ_redfield_ratio  #Assumed the same for both types of zooplankton
+
+    ∑ᵢθᶠᵉᴵgᵢᴶ = θ(Pᶠᵉ, P)*gₚᴶ + θ(Dᶠᵉ, D)*g_Dᴶ + θ(SFe, POC)*gₚₒᴶ + θᶠᵉᶜ*g_zᴹ
+    ∑ᵢgᵢᴶ = gₚᴶ + g_Dᴶ + gₚₒᴶ + g_zᴹ
+
+    eₙᴶ = eₙᴶ(gₚᴶ, g_Dᴶ, gₚₒᴶ, g_zᴹ, Pᶠᵉ, Dᶠᵉ, SFe, P, D, POC) #27a
 
     return eₙᴶ*min(eₘₐₓᴶ, (1 - σᴶ)* (∑ᵢθᶠᵉᴵgᵢᴶ)/(θᶠᵉᶜ*∑ᵢgᵢᴶ)) #27b
 end
