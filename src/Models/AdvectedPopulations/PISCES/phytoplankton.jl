@@ -295,7 +295,7 @@ end
     gₚᶻ = grazingᶻ(P, D, POC, T)[2]    
     gₚᴹ = grazingᴹ(P, D, Z, POC, T)[2]
 
-    bFe =  
+    bFe =  1
     μᴾᶠᵉ = μᴵᶠᵉ(P, Pᶠᵉ, θₘₐₓᶠᵉᵖ, Sᵣₐₜᴾ, K_Feᴾᶠᵉᵐⁱⁿ, Pₘₐₓ, L_Feᴾ, bFe)
 
     return (1-δᴾ)*μᴾᶠᵉ*P - mᴾ*K_mondo(P, Kₘ)*Pᶠᵉ - sh*wᴾ*P*Pᶠᵉ - θ(Pᶠᵉ, P)*gₚᶻ*Z - θ(Pᶠᵉ, P)*gₚᴹ*M  #16
@@ -321,7 +321,7 @@ end
     g_Dᶻ = grazingᶻ(P, D, POC, T)[3]
     g_Dᴹ = grazingᴹ(P, D, Z, POC, T)[3]
    
-    bFe = 
+    bFe = 1
 
     μᴰᶠᵉ = μᴵᶠᵉ(D, Dᶠᵉ, θₘₐₓᶠᵉᴰ, Sᵣₐₜᴰ, K_Feᴰᶠᵉᵐⁱⁿ, Dₘₐₓ, L_Feᴰ, bFe)
 

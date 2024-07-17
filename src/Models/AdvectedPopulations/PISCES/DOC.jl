@@ -113,7 +113,7 @@ end
     PARᴰ = PARᴰ(PAR¹, PAR², PAR³)
 
     Lₗᵢₘᴾ = Lᴾ(P, PO₄, NO₃, NH₄, Pᶜʰˡ, Pᶠᵉ)[1]
-    Lₗᵢₘᴰ = Lᴰ(D, PO₄, NO₃, NH₄, Si, Dᶜʰˡ, Dᶠᵉ)[1]
+    Lₗᵢₘᴰ = Lᴰ(D, PO₄, NO₃, NH₄, Si, Dᶜʰˡ, Dᶠᵉ, Si̅)[1]
 
     μᴾ = μᴵ(P, Pᶜʰˡ, PARᴾ, L_day, T, αᴾ, Lₗᵢₘᴾ, zₘₓₗ, zₑᵤ, t_darkᴾ)
     μᴰ = μᴵ(D, Dᶜʰˡ, PARᴰ, L_day, T, αᴰ, Lₗᵢₘᴰ, zₘₓₗ, zₑᵤ, t_darkᴰ)
@@ -126,7 +126,7 @@ end
     zₘₐₓ = max(zₑᵤ, zₘₓₗ) #35a
     Bact = Bact(zₘₐₓ, z, Z, M)
 
-    bFe = 
+    bFe = 1
   
     Remin = Remin(O₂, NO₃, PO₄, NH₄, DOC, T, bFe, Bact)
     Denit = Denit(NO₃, PO₄, NH₄, DOC, O₂, T, bFe, Bact)
