@@ -3,10 +3,10 @@
     #Forcing for Alk.
 
 @inline function (pisces::PISCES)(::Val{:DIC}, x, y, z, t, P, D, Z, M, CaCO₃, T, PAR, zₘₓₗ)
-    γᶻ = bgc.excretion_as_DOM[1]
-    σᶻ = bgc.non_assimilated_fraction[1]
-    γᴹ = bgc.excretion_as_DOM[2]
-    σᴹ = bgc.non_assimilated_fraction[2]
+    γᶻ = bgc.excretion_as_DOM.Z
+    σᶻ = bgc.non_assimilated_fraction.Z
+    γᴹ = bgc.excretion_as_DOM.M
+    σᴹ = bgc.non_assimilated_fraction.M
     
     #Grazing
     grazingᶻ = grazingᶻ(P, D, POC, T)
@@ -31,10 +31,10 @@ end
     θᴺᶜ = bgc.NC_redfield_ratio
     rₙₒ₃¹ = bgc. CN_ratio_of_denitrification
     rₙₕ₄¹ = bgc.CN_ratio_of_ammonification
-    γᶻ = bgc.excretion_as_DOM[1]
-    σᶻ = bgc.non_assimilated_fraction[1]
-    γᴹ = bgc.excretion_as_DOM[2]
-    σᴹ = bgc.non_assimilated_fraction[2]
+    γᶻ = bgc.excretion_as_DOM.Z
+    σᶻ = bgc.non_assimilated_fraction.Z
+    γᴹ = bgc.excretion_as_DOM.M
+    σᴹ = bgc.non_assimilated_fraction.M
     λₙₕ₄ = bgc.max_nitrification_rate
 
     #Grazing

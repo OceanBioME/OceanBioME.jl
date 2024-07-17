@@ -27,7 +27,7 @@ end
 end
 
 @inline function P_CaCO₃(P, Z, M, T, PAR, zₘₓₗ, z) 
-    mᴾ = bgc.zooplankton_quadratic_mortality[1]
+    mᴾ = bgc.zooplankton_quadratic_mortality.P
     Kₘ = bgc.half_saturation_const_for_mortality
     wᴾ = bgc.min_quadratic_mortality_of_phytoplankton
     ηᶻ = #add to parameter list
