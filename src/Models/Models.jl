@@ -6,6 +6,7 @@ include("Sediments/Sediments.jl")
 include("AdvectedPopulations/LOBSTER/LOBSTER.jl")
 include("AdvectedPopulations/NPZD.jl")
 include("Individuals/SLatissima.jl")
+include("seawater_density.jl")
 include("carbonate_chemistry.jl")
 include("gasexchange.jl")
 
