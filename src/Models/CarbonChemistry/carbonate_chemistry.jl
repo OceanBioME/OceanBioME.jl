@@ -1,11 +1,4 @@
-##### 
-##### Carbonate chemistry to determine pCO₂
-##### As per OCMIP Phase 2 http://ocmip5.ipsl.jussieu.fr/OCMIP/phase2/simulations/Abiotic/Cchem/co2calc.f simplified as in PISCESv2
-#####
-
 using Roots
-
-include("equilibrium_constants.jl")
 
 @kwdef struct CarbonChemistry{P0, PC, PB, PS, PF, PP, PSi, PW, IS}
           ionic_strength :: IS  = IonicStrength()

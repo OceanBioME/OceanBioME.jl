@@ -7,12 +7,13 @@ include("AdvectedPopulations/LOBSTER/LOBSTER.jl")
 include("AdvectedPopulations/NPZD.jl")
 include("Individuals/SLatissima.jl")
 include("seawater_density.jl")
-include("carbonate_chemistry.jl")
+include("CarbonChemistry/CarbonChemistry.jl")
 include("gasexchange.jl")
 
 using .Sediments
 using .LOBSTERModel
 using .NPZDModel
 using .SLatissimaModel
+using .CarbonChemistryModel
 
 end # module
