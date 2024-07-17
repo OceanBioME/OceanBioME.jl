@@ -2,13 +2,13 @@
 # Jₜₕᵣₑₛₕᶻ seems to only be defined for micro and meso zooplankton rather than each species.
 
 @inline function grazingᶻ(P, D, POC, T) 
-    pₚᶻ = bgc.preference_for_nanophytoplankton[1]
-    p_Dᶻ = bgc.preference_for_diatoms[1]
-    pₚₒᶻ = bgc.preference_for_POC[1]
+    pₚᶻ = bgc.preference_for_nanophytoplankton.Z
+    p_Dᶻ = bgc.preference_for_diatoms.Z
+    pₚₒᶻ = bgc.preference_for_POC.Z
     Jₜₕᵣₑₛₕᶻ = bgc.specific_food_thresholds_for_microzooplankton
-    Fₜₕᵣₑₛₕᶻ = bgc.food_threshold_for_zooplankton[1]
-    gₘₐₓᶻ = bgc.max_grazing_rate[1]
-    K_Gᶻ = bgc.half_saturation_const_for_grazing[1]
+    Fₜₕᵣₑₛₕᶻ = bgc.food_threshold_for_zooplankton.Z
+    gₘₐₓᶻ = bgc.max_grazing_rate.Z
+    K_Gᶻ = bgc.half_saturation_const_for_grazing.Z
 
     F = pₚᶻ*max(0, P - Jₜₕᵣₑₛₕᶻ) + p_Dᶻ*max(0, D - Jₜₕᵣₑₛₕᶻ) + pₚₒᶻ*max(0, POC - Jₜₕᵣₑₛₕᶻ)
     Fₗᵢₘ = max(0, F - min(0.5*F, Fₜₕᵣₑₛₕᶻ))
@@ -25,14 +25,14 @@
 end
 
 @inline function grazingᴹ(P, D, Z, POC, T) 
-    pₚᴹ = bgc.preference_for_nanophytoplankton[2]
-    p_Dᴹ = bgc.preference_for_diatoms[2]
-    pₚₒᴹ = bgc.preference_for_POC[2]
+    pₚᴹ = bgc.preference_for_nanophytoplankton.M
+    p_Dᴹ = bgc.preference_for_diatoms.M
+    pₚₒᴹ = bgc.preference_for_POC.M
     p_zᴹ = bgc.preference_for_microzooplankton
     Jₜₕᵣₑₛₕᴹ = bgc.specific_food_thresholds_for_mesozooplankton
-    Fₜₕᵣₑₛₕᴹ = bgc.food_threshold_for_zooplankton[2]
-    gₘₐₓᴹ = bgc.max_grazing_rate[2]
-    K_Gᴹ = bgc.half_saturation_const_for_grazing[2]
+    Fₜₕᵣₑₛₕᴹ = bgc.food_threshold_for_zooplankton.M
+    gₘₐₓᴹ = bgc.max_grazing_rate.M
+    K_Gᴹ = bgc.half_saturation_const_for_grazing.M
     
     F = pₚᴹ*max(0, P - Jₜₕᵣₑₛₕᴹ) + p_Dᴹ*max(0, D - Jₜₕᵣₑₛₕᴹ) + pₚₒᴹ*max(0, POC - Jₜₕᵣₑₛₕᴹ) + p_zᴹ*max(0, POC - Jₜₕᵣₑₛₕᴹ)
     Fₗᵢₘ = max(0, F - min(0.5*F, Fₜₕᵣₑₛₕᴹ))
@@ -57,7 +57,7 @@ end
 @inline function ∑g_FFᴹ(zₑᵤ, zₘₓₗ, T, POC, GOC)
     wₚₒ = bgc.sinking_speed_of_POC
     g_FF = bgc.flux_feeding_rate
-    bₘ = bgc.temperature_sensitivity_term[2]
+    bₘ = bgc.temperature_sensitivity_term.M
 
     w_GOC = w_GOC(zₑᵤ, zₘₓₗ)
 
@@ -67,49 +67,50 @@ end
 end
 
 # gross growth efficiency, defined for both but g_zᴹ and Z do not appear for eᶻ so have passed in as 0 and 1 respectively to avoid divide by zero error.
-@inline function eᴶ(eₘₐₓᴶ, σᴶ, gₚᴶ, g_Dᴶ, gₚₒᴶ, g_zᴹ, N, Fe, P, D, POC, Z, J)
+@inline function eᴶ(eₘₐₓᴶ, σᴶ, gₚᴶ, g_Dᴶ, gₚₒᴶ, g_zᴹ, Pᶠᵉ, Dᶠᵉ, SFe, P, D, POC)
     θᴺᶜ = bgc.NC_redfield_ratio
+    θᶠᵉᶜ = bgc.FeZ_redfield_ratio  #Assumed the same for both types of zooplankton
 
-    ∑ᵢθᴺᴵgᵢᴶ = θ(N,P)*gₚᴶ + θ(N, D)*g_Dᴶ + θ(N, POC)*gₚₒᴶ + θ(N, Z)*g_zᴹ
-    ∑ᵢθᶠᵉᴵgᵢᴶ = θ(Fe, P)*gₚᴶ + θ(Fe, D)*g_Dᴶ + θ(Fe, POC)*gₚₒᴶ + θ(Fe, Z)*g_zᴹ
+    ∑ᵢθᴺᴵgᵢᴶ = θᴺᶜ*gₚᴶ + θᴺᶜ*g_Dᴶ + θᴺᶜ*gₚₒᴶ + θᴺᶜ*g_zᴹ
+    ∑ᵢθᶠᵉᴵgᵢᴶ = θ(Pᶠᵉ, P)*gₚᴶ + θ(Dᶠᵉ, D)*g_Dᴶ + θ(SFe, POC)*gₚₒᴶ + θᶠᵉᶜ*g_zᴹ
     ∑ᵢgᵢᴶ = gₚᴶ + g_Dᴶ + gₚₒᴶ + g_zᴹ
 
-    eₙᴶ = min(1, (∑ᵢθᴺᴵgᵢᴶ)/(θᴺᶜ*∑ᵢgᵢᴶ), (∑ᵢθᶠᵉᴵgᵢᴶ)/(θ(Fe, Z)*∑ᵢgᵢᴶ))   #27a
+    eₙᴶ = min(1, (∑ᵢθᴺᴵgᵢᴶ)/(θᴺᶜ*∑ᵢgᵢᴶ), (∑ᵢθᶠᵉᴵgᵢᴶ)/(θᶠᵉᶜ*∑ᵢgᵢᴶ))   #27a
 
-    return eₙᴶ*min(eₘₐₓᴶ, (1 - σᴶ)* (∑ᵢθᶠᵉᴵgᵢᴶ)/(θ(Fe, J)*∑ᵢgᵢᴶ)) #27b
+    return eₙᴶ*min(eₘₐₓᴶ, (1 - σᴶ)* (∑ᵢθᶠᵉᴵgᵢᴶ)/(θᶠᵉᶜ*∑ᵢgᵢᴶ)) #27b
 end
 
 
-@inline function (pisces::PISCES)(::Val{:Z}, x, y, z, t, Z, M, P, POC, D, T, O₂)    #args not correct
-    mᶻ = bgc.zooplankton_quadratic_mortality[1]
-    b_z = bgc.temperature_sensitivity_term[1]
+@inline function (pisces::PISCES)(::Val{:Z}, x, y, z, t, P, D, Z, M, Pᶜʰˡ, Dᶜʰˡ, Pᶠᵉ, Dᶠᵉ, Dˢⁱ, DOC, POC, GOC, SFe, BFe, PSi, NO₃, NH₄, PO₄, Fe, Si, CaCO₃, DIC, O₂, T, PAR, PAR¹, PAR², PAR³, zₘₓₗ, zₑᵤ, Si̅)    #args not correct
+    mᶻ = bgc.zooplankton_quadratic_mortality.Z
+    b_z = bgc.temperature_sensitivity_term.Z
     Kₘ = bgc.half_saturation_const_for_mortality
-    rᶻ = bgc.zooplankton_linear_mortality[1]
-    eₘₐₓᶻ = bgc.max_growth_efficiency_of_zooplankton[1]
-    σᶻ = bgc.non_assimilated_fraction[1]
+    rᶻ = bgc.zooplankton_linear_mortality.Z
+    eₘₐₓᶻ = bgc.max_growth_efficiency_of_zooplankton.Z
+    σᶻ = bgc.non_assimilated_fraction.Z
 
     ∑gᶻ, gₚᶻ, g_Dᶻ, gₚₒᶻ = grazingᶻ(P, D, POC, T) 
     g_zᴹ = grazingᴹ(P, D, Z, POC, T)[5]
 
-    eᶻ = eᴶ(eₘₐₓᶻ, σᶻ, gₚᶻ, g_Dᶻ, gₚₒᶻ, 0, N, Fe, P, D, POC, 1, Z)
+    eᶻ = eᴶ(eₘₐₓᶻ, σᶻ, gₚᶻ, g_Dᶻ, gₚₒᶻ, 0, Pᶠᵉ, Dᶠᵉ, SFe, P, D, POC)
 
     return eᶻ*(gₚᶻ + g_Dᶻ + gₚₒᶻ)*Z - g_zᴹ*M - mᶻ*b_z^T*Z^2 - rᶻ*b_z^T*(K_mondo(Z, Kₘ) + 3*ΔO₂(O₂))*Z   #24
 end
 
-@inline function (pisces::PISCES)(::Val{:M}, x, y, z, t, Z, M, P, POC, GOC, D, T, O₂, zₘₓₗ, zₑᵤ) #args not correct
-    mᴹ = bgc.zooplankton_quadratic_mortality[2]
-    bₘ = bgc.temperature_sensitivity_term[2]
-    rᴹ = bgc.zooplankton_linear_mortality[2]
+@inline function (pisces::PISCES)(::Val{:M}, x, y, z, t, P, D, Z, M, Pᶜʰˡ, Dᶜʰˡ, Pᶠᵉ, Dᶠᵉ, Dˢⁱ, DOC, POC, GOC, SFe, BFe, PSi, NO₃, NH₄, PO₄, Fe, Si, CaCO₃, DIC, O₂, T, PAR, PAR¹, PAR², PAR³, zₘₓₗ, zₑᵤ, Si̅) #args not correct
+    mᴹ = bgc.zooplankton_quadratic_mortality.M
+    bₘ = bgc.temperature_sensitivity_term.M
+    rᴹ = bgc.zooplankton_linear_mortality.M
     Kₘ = bgc.half_saturation_const_for_mortality
 
-    eₘₐₓᴹ = bgc.max_growth_efficiency_of_zooplankton[2]
-    σᴹ = bgc.non_assimilated_fraction[2]
+    eₘₐₓᴹ = bgc.max_growth_efficiency_of_zooplankton.M
+    σᴹ = bgc.non_assimilated_fraction.M
 
     ∑gᴹ, gₚᴹ, g_Dᴹ, gₚₒᴹ, g_zᴹ  = grazingᴹ(P, D, Z, POC, T) 
 
     ∑g_FFᴹ = ∑g_FFᴹ(zₑᵤ, zₘₓₗ, T, POC, GOC)
     
-    eᴹ =  eᴶ(eₘₐₓᴹ, σᴹ, gₚᴹ, g_Dᴹ, gₚₒᴹ, g_zᴹ, N, Fe, P, D, POC, Z, M)
+    eᴹ =  eᴶ(eₘₐₓᴹ, σᴹ, gₚᴹ, g_Dᴹ, gₚₒᴹ, g_zᴹ,Pᶠᵉ, Dᶠᵉ, SFe, P, D, POC)
 
     return eᴹ*(gₚᴹ + g_Dᴹ + gₚₒᴹ + ∑g_FFᴹ + g_zᴹ)*M - mᴹ*bₘ^T*M^2 - rᴹ*bₘ^T*(K_mondo(M, Kₘ) + 3*ΔO₂(O₂))*M   #28
 end

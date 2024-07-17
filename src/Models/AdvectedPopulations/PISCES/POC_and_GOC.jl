@@ -10,14 +10,14 @@
     return sh*a₆*POC^2 + sh*a₇*POC*GOC + a₈*POC*GOC + a₉*POC^2  #39
 end
 
-@inline function (pisces::PISCES)(::Val{:POC}, x, y, z, t, DOC, P, D, Pᶜʰˡ, Dᶜʰˡ, N, Fe, O₂, NO₃, PARᴾ, PARᴰ, Z, M, POC, GOC, T, L_day, zₘₓₗ, zₑᵤ)
-    σᶻ = bgc.non_assimilated_fraction[1]
-    mᴾ = bgc.phytoplankton_mortality_rate[1]
-    mᶻ = bgc.zooplankton_quadratic_mortality[1]
-    mᴰ = bgc.phytoplankton_mortality_rate[2]
+@inline function (pisces::PISCES)(::Val{:POC}, x, y, z, t, P, D, Z, M, Pᶜʰˡ, Dᶜʰˡ, Pᶠᵉ, Dᶠᵉ, Dˢⁱ, DOC, POC, GOC, SFe, BFe, PSi, NO₃, NH₄, PO₄, Fe, Si, CaCO₃, DIC, O₂, T, PAR, PAR¹, PAR², PAR³, zₘₓₗ, zₑᵤ, Si̅)
+    σᶻ = bgc.non_assimilated_fraction.Z
+    mᴾ = bgc.phytoplankton_mortality_rate.P
+    mᶻ = bgc.zooplankton_quadratic_mortality.Z
+    mᴰ = bgc.phytoplankton_mortality_rate.D
     wᴾ = bgc.min_quadratic_mortality_of_phytoplankton
     wₚₒ = bgc.sinking_speed_of_POC
-    rᶻ = bgc.zooplankton_linear_mortality[1]
+    rᶻ = bgc.zooplankton_linear_mortality.Z
     Kₘ = bgc.half_saturation_const_for_mortality
     b_z, bₘ = bgc.temperature_sensitivity_term
     g_FF = bgc.flux_feeding_rate
@@ -37,21 +37,19 @@ end
     gₚₒ_FFᴹ = g_FF*bₘ^T*wₚₒ*POC #29a
     Φ = Φ(POC, GOC, sh)
 
-    dPOCdz = 
-
     return σᶻ*∑gᶻ*Z + 0.5*mᴰ*K_mondo(D, Kₘ) + rᶻ*b_z^T*K_mondo(Z, Kₘ)*Z +
      mᶻ*b_z^T*Z^2 + (1 - 0.5*R_CaCO₃)*(mᴾ*K_mondo(P, Kₘ)*P + wᴾ*P^2) + 
-     λₚₒ¹*GOC + Φ₁ᴰᴼᶜ + Φ₃ᴰᴼᶜ - (gₚₒᴹ + gₚₒ_FFᴹ)*M - gₚₒᶻ*Z - λₚₒ¹*POC - Φ - wₚₒ*dPOCdz  #37
+     λₚₒ¹*GOC + Φ₁ᴰᴼᶜ + Φ₃ᴰᴼᶜ - (gₚₒᴹ + gₚₒ_FFᴹ)*M - gₚₒᶻ*Z - λₚₒ¹*POC - Φ  #37
 end
 
-@inline function (pisces::PISCES)(::Val{:GOC}, x, y, z, t, DOC, P, D, Pᶜʰˡ, Dᶜʰˡ, N, Fe, O₂, NO₃, PARᴾ, PARᴰ, Z, M, POC, GOC, T, L_day, zₘₓₗ, zₑᵤ)
-    σᴹ = bgc.non_assimilated_fraction[2]
-    mᴾ = bgc.phytoplankton_mortality_rate[1]
-    mᴰ = bgc.phytoplankton_mortality_rate[2]
+@inline function (pisces::PISCES)(::Val{:GOC}, x, y, z, t, P, D, Z, M, Pᶜʰˡ, Dᶜʰˡ, Pᶠᵉ, Dᶠᵉ, Dˢⁱ, DOC, POC, GOC, SFe, BFe, PSi, NO₃, NH₄, PO₄, Fe, Si, CaCO₃, DIC, O₂, T, PAR, PAR¹, PAR², PAR³, zₘₓₗ, zₑᵤ, Si̅)
+    σᴹ = bgc.non_assimilated_fraction.M
+    mᴾ = bgc.phytoplankton_mortality_rate.P
+    mᴰ = bgc.phytoplankton_mortality_rate.D
     wᴾ = bgc.min_quadratic_mortality_of_phytoplankton
-    rᴹ = bgc.zooplankton_linear_mortality[2]
+    rᴹ = bgc.zooplankton_linear_mortality.M
     Kₘ = bgc.half_saturation_const_for_mortality
-    bₘ = bgc.temperature_sensitivity_term[2]
+    bₘ = bgc.temperature_sensitivity_term.M
     g_FF = bgc.flux_feeding_rate
     wₘₐₓᴰ = bgc.max_quadratic_mortality_of_diatoms
 
@@ -69,9 +67,8 @@ end
     g_GOC_FFᴹ = g_FF*bₘ^T*w_GOC*GOC #29b
     λₚₒ¹ = λ¹(T, O₂)
     
-    dGOCdz =
 
     return σᴹ*(∑gᴹ + ∑g_FFᴹ)*M + rᴹ*bₘ^T*K_mondo(M, Kₘ)*M + Pᵤₚᴹ + 
     0.5*R_CaCO₃*(mᴾ*K_mondo(P, Kₘ)*P + wᴾ*P^2) + 0.5*mᴰ*K_mondo(D, Kₘ)*D^3*wᴰ +
-     Φ + Φ₂ᴰᴼᶜ - g_GOC_FFᴹ*M - λₚₒ¹*GOC - w_GOC*dGOCdz    #40
+     Φ + Φ₂ᴰᴼᶜ - g_GOC_FFᴹ*M - λₚₒ¹*GOC     #40
 end
