@@ -731,7 +731,18 @@ show(io::IO, model::PISCES) where {FT, B, W}  = print(io, string("Pelagic Intera
 
 # write most of the code here (i.e. make a file falled phytoplankton.jl and then include it here)
 include("phytoplankton.jl")
-include()
+include("calcite.jl")
+include("carbonate_system.jl")
+include("DOC.jl")
+include("iron_in_particles.jl")
+include("iron.jl")
+include("nitrates_ammonium.jl")
+include("oxygen.jl")
+include("phosphates.jl")
+include("POC_and_GOC.jl")
+include("psi.jl")
+include("si.jl")
+include("zooplankton.jl")
 
 # to work with the sediment model we need to tell in the redfield ratio etc. of some things, but for now we can ignore
 @inline redfield(i, j, k, val_tracer_name, bgc::PISCES, tracers) = NaN
