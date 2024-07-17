@@ -30,7 +30,8 @@ import OceanBioME: redfield, conserved_tracers
 
 import Oceananigans.Biogeochemistry: required_biogeochemical_tracers,
                                      required_biogeochemical_auxiliary_fields,
-                                     biogeochemical_drift_velocity
+                                     biogeochemical_drift_velocity,
+                                     biogeochemical_auxiliary_fields
 
 import OceanBioME: maximum_sinking_velocity
 
@@ -39,7 +40,7 @@ import Base: show, summary
 
 import OceanBioME.Boundaries.Sediments: nitrogen_flux, carbon_flux, remineralisation_receiver, sinking_tracers
 
-struct PISCES{FT, NT, W} <: AbstractContinuousFormBiogeochemistry
+struct PISCES{FT, NT, W, F} <: AbstractContinuousFormBiogeochemistry
 
     growth_rate_at_zero :: FT # add list of parameters here, assuming theyre all just numbers FT will be fine for advect_particles_kernel
     growth_rate_reference_for_light_limitation :: FT
@@ -153,7 +154,8 @@ struct PISCES{FT, NT, W} <: AbstractContinuousFormBiogeochemistry
     proportion_of_sinking_grazed_shells :: NT
 
 
-
+    vertical_diffusivity :: F 
+    carbonate_sat_ratio :: F
 
     sinking_velocities :: W
 
@@ -268,10 +270,13 @@ struct PISCES{FT, NT, W} <: AbstractContinuousFormBiogeochemistry
                     Fe_half_saturation_const_for_PLACEHOLDER :: FT,    #not sure what this should be called
                     proportion_of_sinking_grazed_shells :: NT,
                     
-                    sinking_velocities :: W,) where {FT, NT, W} # then do the same here (this is all just annoying boiler plate but we need it to make the next function work)
+                    vertical_diffusivity :: F, 
+                    carbonate_sat_ratio :: F,
+
+                    sinking_velocities :: W,) where {FT, NT, W, F} # then do the same here (this is all just annoying boiler plate but we need it to make the next function work)
 
 
-        return new{FT, NT, W}(growth_rate_at_zero,
+        return new{FT, NT, W, F}(growth_rate_at_zero,
                             growth_rate_reference_for_light_limitation,
                             basal_respiration_rate,
                             temperature_sensitivity_of_growth,
@@ -381,6 +386,9 @@ struct PISCES{FT, NT, W} <: AbstractContinuousFormBiogeochemistry
                             max_FeC_ratio_of_bacteria,
                             Fe_half_saturation_const_for_PLACEHOLDER,    #not sure what this should be called
                             proportion_of_sinking_grazed_shells,
+
+                            vertical_diffusivity,
+                            carbonate_sat_ratio,
 
                           sinking_velocities)
     end
@@ -559,7 +567,9 @@ function PISCES(; grid, # finally the function
                   # just keep all this stuff for now but you can ignore it
                   sediment_model::S = nothing,
 
-                  sinking_speeds = (sPOM = 3.47e-5, bPOM = 200/day),
+                  sinking_speeds = (  ),
+                  vertical_diffusivity :: F  = constantField(1),
+                  carbonate_sat_ratio :: F = ZeroField(),
                   open_bottom::Bool = true,
 
                   scale_negatives = false,
@@ -684,6 +694,9 @@ function PISCES(; grid, # finally the function
                                         Fe_half_saturation_const_for_PLACEHOLDER,    #not sure what this should be called
                                         proportion_of_sinking_grazed_shells,
 
+                                        vertical_diffusivity,
+                                        carbonate_sat_ratio,
+
                                         sinking_velocities)
 
     if scale_negatives
@@ -704,7 +717,7 @@ function PISCES(; grid, # finally the function
                            modifiers)
 end
 
-@inline required_biogeochemical_tracers(::PISCES) = (:P, :D, :Z, :M, :Pᶜʰˡ, :Dᶜʰˡ, :Pᶠᵉ, :Dᶠᵉ, :Dˢⁱ, :DOC, :POC, :GOC, :SFe, :BFe, :PSi, :NO₃, :NH₄, :PO₄, :Fe, :Si, :CaCO₃, :DIC, :O₂, :T) # list all the parameters here, also if you need T and S put them here too
+@inline required_biogeochemical_tracers(::PISCES) = (:P, :D, :Z, :M, :Pᶜʰˡ, :Dᶜʰˡ, :Pᶠᵉ, :Dᶠᵉ, :Dˢⁱ, :DOC, :POC, :GOC, :SFe, :BFe, :PSi, :NO₃, :NH₄, :PO₄, :Fe, :Si, :CaCO₃, :DIC, :Alk, :O₂, :T) # list all the parameters here, also if you need T and S put them here too
 
 @inline required_biogeochemical_auxiliary_fields(::PISCES) = (:PAR, :PAR¹, :PAR², :PAR³, :zₘₓₗ, :zₑᵤ, :Si̅)
 
@@ -754,7 +767,7 @@ include("zooplankton.jl")
 @inline remineralisation_receiver(::PISCES) = :NH₄
 
 # this is for positivity preservation, if you can work it out it would be great, I don't think PISCES conserves C but probably does Nitrogen
-@inline conserved_tracers(::PISCES) = ()
+@inline conserved_tracers(::PISCES) = NaN
 
-@inline sinking_tracers(::PISCES) = () # please list them here
+@inline sinking_tracers(::PISCES) = (:POC, :GOC, :SFe, :BFe, :PSi, :Ca, :CaCO₃) # please list them here
 end # module

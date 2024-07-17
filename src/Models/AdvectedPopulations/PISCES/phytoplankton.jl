@@ -9,7 +9,10 @@
 @inline get_L_day(ϕ, t, L_day) = L_day  #temporary
 
 @inline f₁(L_day) = 1.5*K_mondo(L_day, 0.5)  #eq 3a
-@inline t_dark(zₘₓₗ, zₑᵤ) = max(0, zₘₓₗ-zₑᵤ)^2 #eq 3b,c    #is this necessary if working in seconds
+@inline function t_dark(zₘₓₗ, zₑᵤ)
+    κᵥₑᵣₜ = bgc.vertical_diffusivity    #can edit this later
+    return max(0, zₘₓₗ-zₑᵤ)^2/(κᵥₑᵣₜ(0,0,0) + eps(0.0)) #eq 3b,c    
+end
 @inline f₂(zₘₓₗ, zₑᵤ, t_darkᴵ) = 1 - K_mondo(t_dark(zₘₓₗ, zₑᵤ), t_darkᴵ) #eq 3d
 
 @inline fₚ(T) = bgc.temperature_sensitivity_of_growth^T #eq 4a
