@@ -56,16 +56,17 @@ end
     δᴰ = bgc.exudation_of_DOC.D
     θᶠᵉᶻ = bgc.FeZ_redfield_ratio
     μₘₐₓ⁰ = bgc.growth_rate_at_zero
-    θₘₐₓᶠᵉᴾ = 
-    Sᵣₐₜᴾ = 
-    K_Feᴾᶠᵉᵐⁱⁿ = 
-    Pₘₐₓ = 
-    L_Feᴾ = 
-    θₘₐₓᶠᵉᴰ = 
-    Sᵣₐₜᴰ = 
-    K_Feᴰᶠᵉᵐⁱⁿ = 
-    Iₘₐₓ = 
-    L_Feᴰ = 
+    θₘₐₓᶠᵉᴾ = bgc.max_iron_quota.P
+    Sᵣₐₜᴾ = bgc.size_ratio_of_phytoplankton.P
+    K_Feᴾᶠᵉᵐⁱⁿ = bgc.min_half_saturation_const_for_iron_uptake.P
+    Pₘₐₓ = bgc.threshold_concentration_for_size_dependency.P
+    θₘₐₓᶠᵉᴰ = bgc.max_iron_quota.D
+    Sᵣₐₜᴰ = bgc.size_ratio_of_phytoplankton.D
+    K_Feᴰᶠᵉᵐⁱⁿ = bgc.min_half_saturation_const_for_iron_uptake.D
+    Dₘₐₓ = bgc.threshold_concentration_for_size_dependency.D
+
+    L_Feᴾ = Lᴾ(P, PO₄, NO₃, NH₄, Pᶜʰˡ, Pᶠᵉ)[6]
+    L_Feᴰ = Lᴰ(D, PO₄, NO₃, NH₄, Si, Dᶜʰˡ, Dᶠᵉ, Si̅)[6]
     
     sh = get_sh(z, zₘₓₗ)
     
@@ -76,7 +77,7 @@ end
     eᴹ =  eᴶ(eₘₐₓᴹ, σᴹ, gₚᴹ, g_Dᴹ, gₚₒᴹ, g_zᴹ,Pᶠᵉ, Dᶠᵉ, SFe, P, D, POC)
 
     μᴾᶠᵉ = μᴵᶠᵉ(P, Pᶠᵉ, θₘₐₓᶠᵉᴾ, Sᵣₐₜᴾ, K_Feᴾᶠᵉᵐⁱⁿ, Pₘₐₓ, L_Feᴾ, bFe)
-    μᴰᶠᵉ = μᴵᶠᵉ(D, Dᶠᵉ, θₘₐₓᶠᵉᴰ, Sᵣₐₜᴰ, K_Feᴰᶠᵉᵐⁱⁿ, Iₘₐₓ, L_Feᴰ, bFe)
+    μᴰᶠᵉ = μᴵᶠᵉ(D, Dᶠᵉ, θₘₐₓᶠᵉᴰ, Sᵣₐₜᴰ, K_Feᴰᶠᵉᵐⁱⁿ, Dₘₐₓ, L_Feᴰ, bFe)
    
     #Iron quotas
     θᶠᵉᴾ = θ(Pᶠᵉ, P)
@@ -96,6 +97,5 @@ end
 
     Bactfe = Bactfe(μₘₐₓ⁰, z, Z, M, Fe, DOC, PO₄, NO₃, NH₄, bFe, T, zₘₐₓ)
 
-    return max(0, (1-σᶻ)*(∑θᶠᵉⁱgᵢᶻ/∑gᶻ - eₙᶻ*θᶠᵉᶻ)*∑gᶻ*Z + max(0, (1-σᴹ)*(∑θᶠᵉⁱgᵢᴹ + θᶠᵉᴾᴼᶜ*gₚₒ_FF + θᶠᵉᴳᴼᶜ*g_GOC_FF )/(∑gᴹ+∑g_FFᴹ) - eₙᴹ*θᶠᵉᶻ)*(∑gᴹ+∑g_FFᴹ)*M + γᴹ*θᶠᵉᶻ*Rᵤₚᴹ(M, T) + λₚₒ¹*SFe - (1 - δᴾ)*μᴾᶠᵉ*P - (1 - δᴰ)*μᴰᶠᵉ*D 
-    - Scav(POC, GOC, CaCO₃, BSi, DOC, T, Fe) - Cgfe1(sh, Fe, POC, DOC, T) - Cgfe2(sh, Fe, T, DOC, GOC) - Aggfe(Fe, DOC, T) - Bactfe
+    return max(0, (1-σᶻ)*(∑θᶠᵉⁱgᵢᶻ/∑gᶻ - eₙᶻ*θᶠᵉᶻ)*∑gᶻ*Z + max(0, (1-σᴹ)*(∑θᶠᵉⁱgᵢᴹ + θᶠᵉᴾᴼᶜ*gₚₒ_FF + θᶠᵉᴳᴼᶜ*g_GOC_FF )/(∑gᴹ+∑g_FFᴹ) - eₙᴹ*θᶠᵉᶻ)*(∑gᴹ+∑g_FFᴹ)*M + γᴹ*θᶠᵉᶻ*Rᵤₚᴹ(M, T) + λₚₒ¹*SFe - (1 - δᴾ)*μᴾᶠᵉ*P - (1 - δᴰ)*μᴰᶠᵉ*D - Scav(POC, GOC, CaCO₃, BSi, DOC, T, Fe) - Cgfe1(sh, Fe, POC, DOC, T) - Cgfe2(sh, Fe, T, DOC, GOC) - Aggfe(Fe, DOC, T) - Bactfe
 end
