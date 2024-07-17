@@ -3,14 +3,13 @@
     #Forcing equations for SFe and BFe. (eqs 48 and 49)
 
 
-@inline function λ_Fe¹(POC, GOC, CaCO₃, BSi) 
+@inline function λ_Fe¹(POC, GOC, CaCO₃, BSi, D_dust) 
     λ_Feᵐⁱⁿ = bgc.min_scavenging_rate_of_iron
     λ_Fe = bgc.slope_of_scavenging_rate_of_iron
     λ_Feᵈᵘˢᵗ = bgc.scavenging_rate_of_iron_by_dust
     w_dust = bgc.sinking_speed_of_dust
-    D_dust = #what is this value, complicated definition in original PISCES?
 
-    Dust = D_dust/w_dust #eq84
+    Dust = D_dust/w_dust #eq84, check how to define D_dust?
     
     return λ_Feᵐⁱⁿ + λ_Fe*(POC + GOC + CaCO₃ + BSi) + λ_Feᵈᵘˢᵗ*Dust #eq50
 end
@@ -27,9 +26,8 @@ end
     wᴾ = bgc.min_quadratic_mortality_of_phytoplankton
     mᴰ = bgc.phytoplankton_mortality_rate.D
     λ_Fe = bgc.slope_of_scavenging_rate_of_iron
-    κ_Bactˢᶠᵉ = #where defined?
+    κ_Bactˢᶠᵉ = bgc.coefficient_of_bacterial_uptake_of_iron_in_POC
     wₚₒ = bgc.sinking_speed_of_POC
-    κ_Bactˢᶠᵉ = #add to parameter list = 0.5
     g_FF = bgc.flux_feeding_rate
     bₘ = bgc.temperature_sensitivity_term.M
 
@@ -59,13 +57,12 @@ end
     Kₘ = bgc.half_saturation_const_for_mortality
     wᴾ = bgc.min_quadratic_mortality_of_phytoplankton
     mᴰ = bgc.phytoplankton_mortality_rate.D
-    κ_Bactˢᶠᵉ = 0.5 #check name in parameter list
     λ_Fe = bgc.slope_of_scavenging_rate_of_iron
     g_FF = bgc.flux_feeding_rate
     wₚₒ = bgc.sinking_speed_of_POC
     bₘ = bgc.temperature_sensitivity_term.M
     wₘₐₓᴰ = bgc.max_quadratic_mortality_of_diatoms
-    κ_Bactᴮᶠᵉ = 0.5 #define this in parameter list = 0.5
+    κ_Bactᴮᶠᵉ = bgc.coefficient_of_bacterial_uptake_of_iron_in_GOC
     w_GOCᵐⁱⁿ = bgc.min_sinking_speed_of_GOC
 
     Lₗᵢₘᴰ = Lᴰ(D, PO₄, NO₃, NH₄, Si, Dᶜʰˡ, Dᶠᵉ, Si̅)[1]
