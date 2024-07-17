@@ -152,6 +152,7 @@ struct PISCES{FT, NT, W, F} <: AbstractContinuousFormBiogeochemistry
     max_FeC_ratio_of_bacteria :: FT
     Fe_half_saturation_const_for_PLACEHOLDER :: FT    #not sure what this should be called
     proportion_of_sinking_grazed_shells :: NT
+    carbonate_limitation_term :: FT
 
 
     vertical_diffusivity :: F 
@@ -269,6 +270,7 @@ struct PISCES{FT, NT, W, F} <: AbstractContinuousFormBiogeochemistry
                     max_FeC_ratio_of_bacteria :: FT,
                     Fe_half_saturation_const_for_PLACEHOLDER :: FT,    #not sure what this should be called
                     proportion_of_sinking_grazed_shells :: NT,
+                    carbonate_limitation_term :: FT,
                     
                     vertical_diffusivity :: F, 
                     carbonate_sat_ratio :: F,
@@ -386,6 +388,7 @@ struct PISCES{FT, NT, W, F} <: AbstractContinuousFormBiogeochemistry
                             max_FeC_ratio_of_bacteria,
                             Fe_half_saturation_const_for_PLACEHOLDER,    #not sure what this should be called
                             proportion_of_sinking_grazed_shells,
+                            carbonate_limitation_term,
 
                             vertical_diffusivity,
                             carbonate_sat_ratio,
@@ -557,6 +560,7 @@ function PISCES(; grid, # finally the function
                    max_FeC_ratio_of_bacteria :: FT = 6,     #or 10e-6
                    Fe_half_saturation_const_for_PLACEHOLDER :: FT = 0.01, #or 2.5e-10    #not sure what this should be called
                    proportion_of_sinking_grazed_shells :: NT = (Z = 0.3, M = 0.3),  # 0.3 for both? not sure
+                   carbonate_limitation_term :: FT = 1.0,       #do not think this is a parameter
 
                   surface_photosynthetically_active_radiation = default_surface_PAR,
 
@@ -693,6 +697,7 @@ function PISCES(; grid, # finally the function
                                         max_FeC_ratio_of_bacteria,
                                         Fe_half_saturation_const_for_PLACEHOLDER,    #not sure what this should be called
                                         proportion_of_sinking_grazed_shells,
+                                        carbonate_limitation_term,
 
                                         vertical_diffusivity,
                                         carbonate_sat_ratio,
@@ -719,7 +724,7 @@ end
 
 @inline required_biogeochemical_tracers(::PISCES) = (:P, :D, :Z, :M, :Pᶜʰˡ, :Dᶜʰˡ, :Pᶠᵉ, :Dᶠᵉ, :Dˢⁱ, :DOC, :POC, :GOC, :SFe, :BFe, :PSi, :NO₃, :NH₄, :PO₄, :Fe, :Si, :CaCO₃, :DIC, :Alk, :O₂, :T) # list all the parameters here, also if you need T and S put them here too
 
-@inline required_biogeochemical_auxiliary_fields(::PISCES) = (:PAR, :PAR¹, :PAR², :PAR³, :zₘₓₗ, :zₑᵤ, :Si̅)
+@inline required_biogeochemical_auxiliary_fields(::PISCES) = (:PAR, :PAR¹, :PAR², :PAR³, :zₘₓₗ, :zₑᵤ, :Si̅, :D_dust)
 
 # for sinking things like POM this is how we tell oceananigans ther sinking speed
 @inline function biogeochemical_drift_velocity(bgc::PISCES, ::Val{tracer_name}) where tracer_name
