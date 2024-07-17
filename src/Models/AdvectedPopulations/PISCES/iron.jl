@@ -41,8 +41,8 @@ end
 end
 
 @inline function Bactfe(μₘₐₓ⁰, z, Z, M, Fe, DOC, PO₄, NO₃, NH₄, bFe, T, zₘₐₓ)
-    K_Feᴮ¹ = #add as parameter = 0.01 or 2.5e-10
-    θₘₐₓᶠᵉᵇᵃᶜᵗ = #add as parameter, 10e-6?
+    K_Feᴮ¹ = bgc.Fe_half_saturation_const_for_PLACEHOLDER
+    θₘₐₓᶠᵉᵇᵃᶜᵗ = bgc.max_FeC_ratio_of_bacteria
     Bact = Bact(zₘₐₓ, z, Z, M) 
     Lₗᵢₘᵇᵃᶜᵗ = Lᵇᵃᶜᵗ(DOC, PO₄, NO₃, NH₄, bFe)[2]
     return μₘₐₓ⁰*fₚ(T)*Lₗᵢₘᵇᵃᶜᵗ*θₘₐₓᶠᵉᵇᵃᶜᵗ*Fe*Bact/(K_Feᴮ¹ + Fe) 

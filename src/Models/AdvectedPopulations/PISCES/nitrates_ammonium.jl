@@ -55,8 +55,8 @@ end
 
     λₙₕ₄ =  bgc.max_nitrification_rate
 
-    Rₙₕ₄ = # fill parameter list 
-    Rₙₒ₃ = 
+    Rₙₕ₄ = bgc.NC_stoichiometric_ratio_of_ANOTHERPLACEHOLDER
+    Rₙₒ₃ = bgc.NC_stoichiometric_ratio_of_dentitrification
 
     μₙₒ₃ᴾ = μₙₒ₃ᴾ(P, PO₄, NO₃, NH₄, Pᶜʰˡ, Pᶠᵉ, T, zₘₓₗ, zₑᵤ, L_day, PARᴾ, t_darkᴾ)
     μₙₒ₃ᴰ = μₙₒ₃ᴰ(D, PO₄, NO₃, NH₄, Si, Dᶜʰˡ, Dᶠᵉ, T, zₘₓₗ, zₑᵤ, L_day, PARᴰ, t_darkᴰ)
@@ -91,6 +91,8 @@ end
     λₙₕ₄ = bgc.max_nitrification_rate
     t_darkᴾ = bgc.mean_residence_time_of_phytoplankton_in_unlit_mixed_layer.P
     t_darkᴰ = bgc.mean_residence_time_of_phytoplankton_in_unlit_mixed_layer.D
+
+    bFe = 1 #Change this!
 
     #L_day
     ϕ₀ = bgc.latitude
