@@ -1,6 +1,3 @@
-# Shear rate still to be added
-# Derivates also to still be added
-
 @inline function Φ(POC, GOC, sh)
     a₆ = bgc.aggregation_rate_of_POC_to_GOC_6
     a₇ = bgc.aggregation_rate_of_POC_to_GOC_7
@@ -26,7 +23,7 @@ end
     ∑gᶻ = grazing[1]
     gₚₒᶻ = grazing[4]
 
-    sh =
+    sh = get_sh(z, zₘₓₗ)
 
     R_CaCO₃ = R_CaCO₃(zₘₓₗ, T, P, PAR) 
     λₚₒ¹ = λ¹(T, O₂)
@@ -58,6 +55,8 @@ end
     
     Pᵤₚᴹ = Pᵤₚ(M, T)
     R_CaCO₃ = R_CaCO₃(zₘₓₗ, T, P, PAR)
+
+    sh = get_sh(z, zₘₓₗ)
 
     Lₗᵢₘᴰ = Lᴰ(D, PO₄, NO₃, NH₄, Si, Dᶜʰˡ, Dᶠᵉ)[1]
     wᴰ =  wᴾ + wₘₐₓᴰ*(1-Lₗᵢₘᴰ)

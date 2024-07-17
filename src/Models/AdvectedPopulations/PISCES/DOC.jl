@@ -1,6 +1,3 @@
-# Still to implement Bact
-# Bactᵣₑf does not appear to be defined
-
 @inline function Rᵤₚ(M, T)
     σᴹ = bgc.non_assimilated_fraction.M
     eₘₐₓᴹ = bgc.max_growth_efficiency_of_zooplankton.M
@@ -120,14 +117,16 @@ end
 
     μᴾ = μᴵ(P, Pᶜʰˡ, PARᴾ, L_day, T, αᴾ, Lₗᵢₘᴾ, zₘₓₗ, zₑᵤ, t_darkᴾ)
     μᴰ = μᴵ(D, Dᶜʰˡ, PARᴰ, L_day, T, αᴰ, Lₗᵢₘᴰ, zₘₓₗ, zₑᵤ, t_darkᴰ)
-    eᶻ = eᴶ(eₘₐₓᶻ, σᶻ, gₚᶻ, g_Dᶻ, gₚₒᶻ, 0, N, Fe, P, D, POC, 1, Z)
-    eᴹ = eᴶ(eₘₐₓᴹ, σᴹ, gₚᴹ, g_Dᴹ, gₚₒᴹ, g_zᴹ, N, Fe, P, D, POC, Z, M)
+    eᶻ = eᴶ(eₘₐₓᶻ, σᶻ, gₚᶻ, g_Dᶻ, gₚₒᶻ, 0, Pᶠᵉ, Dᶠᵉ, SFe, P, D, POC)
+    eᴹ = eᴶ(eₘₐₓᴹ, σᴹ, gₚᴹ, g_Dᴹ, gₚₒᴹ, g_zᴹ,Pᶠᵉ, Dᶠᵉ, SFe, P, D, POC)
 
     λₚₒ¹ = λ¹(T, O₂)
     Rᵤₚᴹ = Rᵤₚ(M, T)
 
     zₘₐₓ = max(zₑᵤ, zₘₓₗ) #35a
     Bact = Bact(zₘₐₓ, z, Z, M)
+
+    bFe = 
   
     Remin = Remin(O₂, NO₃, PO₄, NH₄, DOC, T, bFe, Bact)
     Denit = Denit(NO₃, PO₄, NH₄, DOC, O₂, T, bFe, Bact)

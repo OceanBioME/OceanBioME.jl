@@ -1,6 +1,3 @@
-# Grazing function is defined below. Similar to the L parameter, it returns all the components as they get used frequently
-# Jₜₕᵣₑₛₕᶻ seems to only be defined for micro and meso zooplankton rather than each species.
-
 @inline function grazingᶻ(P, D, POC, T) 
     pₚᶻ = bgc.preference_for_nanophytoplankton.Z
     p_Dᶻ = bgc.preference_for_diatoms.Z
@@ -97,7 +94,7 @@ end
     return eᶻ*(gₚᶻ + g_Dᶻ + gₚₒᶻ)*Z - g_zᴹ*M - mᶻ*b_z^T*Z^2 - rᶻ*b_z^T*(K_mondo(Z, Kₘ) + 3*ΔO₂(O₂))*Z   #24
 end
 
-@inline function (pisces::PISCES)(::Val{:M}, x, y, z, t, P, D, Z, M, Pᶜʰˡ, Dᶜʰˡ, Pᶠᵉ, Dᶠᵉ, Dˢⁱ, DOC, POC, GOC, SFe, BFe, PSi, NO₃, NH₄, PO₄, Fe, Si, CaCO₃, DIC, O₂, T, PAR, PAR¹, PAR², PAR³, zₘₓₗ, zₑᵤ, Si̅) #args not correct
+@inline function (pisces::PISCES)(::Val{:M}, x, y, z, t, P, D, Z, M, Pᶜʰˡ, Dᶜʰˡ, Pᶠᵉ, Dᶠᵉ, Dˢⁱ, DOC, POC, GOC, SFe, BFe, PSi, NO₃, NH₄, PO₄, Fe, Si, CaCO₃, DIC, O₂, T, PAR, PAR¹, PAR², PAR³, zₘₓₗ, zₑᵤ, Si̅ ) #args not correct
     mᴹ = bgc.zooplankton_quadratic_mortality.M
     bₘ = bgc.temperature_sensitivity_term.M
     rᴹ = bgc.zooplankton_linear_mortality.M
