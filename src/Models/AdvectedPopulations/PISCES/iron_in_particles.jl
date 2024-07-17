@@ -1,88 +1,87 @@
-
-#TO DO:
-    #How to define quotas, POCᶠᵉ is not defined?
-    #Add partial derivative
-    #D_dust?
-    #Where is κ_Bactˢᶠᵉ, κ_Bactᴮᶠᵉ defined?
-    #Change ω to w.
-    #Where to split longer functions to make more readable?
-
 #This document contains functions for the following:
-    #θᶠᵉ for calculating iron quotas
     #Scav (eq50)
     #Forcing equations for SFe and BFe. (eqs 48 and 49)
 
-@inline θᶠᵉ(J, Jᶠᵉ) = Jᶠᵉ/J #Is this the correct interpretation of the quotas? How does this work for POC?
 
 @inline function λ_Fe¹(POC, GOC, CaCO₃, BSi) 
     λ_Feᵐⁱⁿ = bgc.min_scavenging_rate_of_iron
     λ_Fe = bgc.slope_of_scavenging_rate_of_iron
     λ_Feᵈᵘˢᵗ = bgc.scavenging_rate_of_iron_by_dust
-    ω_dust = bgc.sinking_speed_of_dust
+    w_dust = bgc.sinking_speed_of_dust
+    D_dust = #what is this value, complicated definition in original PISCES?
 
-    Dust = D_dust/ω_dust
+    Dust = D_dust/w_dust #eq84
     
-    return λ_Feᵐⁱⁿ + λ_Fe*(POC, GOC, CaCO₃, BSi) + λ_Feᵈᵘˢᵗ*Dust #eq50
+    return λ_Feᵐⁱⁿ + λ_Fe*(POC + GOC + CaCO₃ + BSi) + λ_Feᵈᵘˢᵗ*Dust #eq50
 end
 
 @inline Scav(POC, GOC, CaCO₃, BSi, DOC, T, Fe) = λ_Fe¹(POC, GOC, CaCO₃, BSi)*Fe¹(DOC, T, Fe)
 
-@inline function (pisces::PISCES)(::Val{:SFe}, x, y, z, t, P, PAR) 
-    
-    σᶻ = bgc.non_assimilated_fraction[1]
-    rᶻ = bgc.zooplankton_linear_mortality[1]
-    mᶻ = bgc.zooplankton_quadratic_mortality[1]
-    λ_GOC¹ = #where is this defined?
-    mᴾ = bgc.zooplankton_quadratic_mortality[2]
-    ωᴾ = bgc.min_quadratic_mortality_of_phytoplankton
-    mᴰ = bgc.phytoplankton_mortality_rate[2] 
+@inline function (pisces::PISCES)(::Val{:SFe}, x, y, z, t, P, D, Z, M, Pᶜʰˡ, Dᶜʰˡ, Pᶠᵉ, Dᶠᵉ, Dˢⁱ, DOC, POC, GOC, SFe, BFe, PSi, NO₃, NH₄, PO₄, Fe, Si, CaCO₃, DIC, O₂, T, PAR, PAR¹, PAR², PAR³, zₘₓₗ, zₑᵤ, Si̅) 
+    #Parameters
+    σᶻ = bgc.non_assimilated_fraction.Z
+    rᶻ = bgc.zooplankton_linear_mortality.Z
+    Kₘ = bgc.half_saturation_const_for_mortality
+    mᶻ = bgc.zooplankton_quadratic_mortality.Z
+    mᴾ = bgc.zooplankton_quadratic_mortality.P
+    wᴾ = bgc.min_quadratic_mortality_of_phytoplankton
+    mᴰ = bgc.phytoplankton_mortality_rate.D
     λ_Fe = bgc.slope_of_scavenging_rate_of_iron
-    λₚₒ¹ = λ¹(T, O₂)
     κ_Bactˢᶠᵉ = #where defined?
-    ωₚₒ = bgc.sinking_speed_of_POC
+    wₚₒ = bgc.sinking_speed_of_POC
+    κ_Bactˢᶠᵉ = #add to parameter list = 0.5
+    g_FF = bgc.flux_feeding_rate
+    bₘ = bgc.temperature_sensitivity_term.M
+
+    sh = get_sh(z, zₘₓₗ)
 
     Fe¹ = Fe¹(DOC, T, Fe)
+    λₚₒ¹ = λ¹(T, O₂)
+    #Iron quotas
+    θᶠᵉᴾ = θ(Pᶠᵉ, P)
+    θᶠᵉᴰ = θ(Dᶠᵉ, D)
+    θᶠᵉᴾᴼᶜ = θ(SFe, POC)
+    #Grazing
+    grazingᶻ = grazingᶻ(P, D, POC, T)
+    ∑θᶠᵉⁱgᵢᶻ = θᶠᵉᴾ*grazingᶻ[2] + θᶠᵉᴰ*grazingᶻ[3] + θᶠᵉᴾᴼᶜ*grazingᶻ[4] #over P, D, POC
+    gₚₒ_FFᴹ = g_FF*(bₘ^T)*wₚₒ*POC
+    #Bacteria iron
+    Bactfe = Bactfe(μₘₐₓ⁰, z, Z, M, Fe, DOC, PO₄, NO₃, NH₄, bFe, T, zₘₐₓ)
 
-    grazingᶻ = grazingᶻ()
-    ∑θᶠᵉⁱgᵢᶻ = θᶠᵉ(P, )*grazingᶻ[2] + θᶠᵉ(D, )*grazingᶻ[3] + θᶠᵉ(POC, )*grazingᶻ[4] #over P, D, POC
-
-    g_POC_FFᴹ = g_FF*bₘ^T*w_POC*POC
-
-    partial_CaCO₃ = 
-
-    return σᶻ*∑θᶠᵉⁱgᵢᶻ*Z + θᶠᵉ(Z, )*(rᶻ*(b_Z^T)*K_mondo(Z, Kₘ)*Z + mᶻ*(b_Z^T)*(Z^2)) 
-    + λ_GOC¹*BFe + θᶠᵉ(P, )*(1 - 0.5*R_CaCO₃())*(mᵖ*K_mondo(P, Kₘ)*P + sh*ωᴾ*P^2) + θᶠᵉ(D, )*0.5*mᴰ*K_mondo(D, Kₘ)*D + λ_Fe*POC*Fe¹ 
-    + Cgfe1() - λₚₒ¹*SFe - θᶠᵉ(POC, )*Φ() - θᶠᵉ(POC, )*(grazingᴹ[4] + g_POC_FFᴹ)*M + κ_Bactˢᶠᵉ*Bactfe() - θᶠᵉ(POC, )*grazingᶻ()[4] - ωₚₒ*partial_CaCO₃ #add partial derivative #eq48
+    return σᶻ*∑θᶠᵉⁱgᵢᶻ*Z + θᶠᵉᶻ*(rᶻ*(b_Z^T)*K_mondo(Z, Kₘ)*Z + mᶻ*(b_Z^T)*(Z^2)) + λₚₒ¹*BFe + θᶠᵉᴾ*(1 - 0.5*R_CaCO₃(P, T, PAR, zₘₓₗ))*(mᵖ*K_mondo(P, Kₘ)*P + sh*wᴾ*P^2) + θᶠᵉᴰ*0.5*mᴰ*K_mondo(D, Kₘ)*D + λ_Fe*POC*Fe¹ + Cgfe1(h, Fe, POC, DOC, T) - λₚₒ¹*SFe - θᶠᵉᴾᴼᶜ*Φ(POC, GOC, sh) - θᶠᵉᴾᴼᶜ*(grazingᴹ[4] + gₚₒ_FFᴹ)*M + κ_Bactˢᶠᵉ*Bactfe - θᶠᵉᴾᴼᶜ*grazingᶻ[4] #Partial derivative omitted #eq48
 end 
 
-@inline function (pisces::PISCES)(::Val{:BFe}, x, y, z, t, P, PAR) 
-    
-σᴹ = bgc.non_assimilated_fraction[2]
-rᴹ = bgc.zooplankton_linear_mortality
-mᴾ = bgc.phytoplankton_mortality_rate[1]
-Kₘ = bgc.half_saturation_const_for_mortality
-ωᴾ = bgc.min_quadratic_mortality_of_phytoplankton
-mᴰ = bgc.phytoplankton_mortality_rate[2]
-κ_Bactᴮᶠᵉ = #where defined?
-λ_Fe = bgc.slope_of_scavenging_rate_of_iron
-g_FF = bgc.flux_feeding_rate
-ωₚₒ = bgc.sinking_speed_of_POC
-bₘ = bgc.temperature_sensitivity_term[2]
-ωₘₐₓᴰ = bgc.max_quadratic_mortality_of_diatoms
+@inline function (pisces::PISCES)(::Val{:BFe}, x, y, z, t, P, D, Z, M, Pᶜʰˡ, Dᶜʰˡ, Pᶠᵉ, Dᶠᵉ, Dˢⁱ, DOC, POC, GOC, SFe, BFe, PSi, NO₃, NH₄, PO₄, Fe, Si, CaCO₃, DIC, O₂, T, PAR, PAR¹, PAR², PAR³, zₘₓₗ, zₑᵤ, Si̅) 
+    #Parameters
+    σᴹ = bgc.non_assimilated_fraction.M
+    rᴹ = bgc.zooplankton_linear_mortality
+    mᴾ = bgc.phytoplankton_mortality_rate.P
+    Kₘ = bgc.half_saturation_const_for_mortality
+    wᴾ = bgc.min_quadratic_mortality_of_phytoplankton
+    mᴰ = bgc.phytoplankton_mortality_rate.D
+    κ_Bactᴮᶠᵉ = #where defined?
+    λ_Fe = bgc.slope_of_scavenging_rate_of_iron
+    g_FF = bgc.flux_feeding_rate
+    wₚₒ = bgc.sinking_speed_of_POC
+    bₘ = bgc.temperature_sensitivity_term.M
+    wₘₐₓᴰ = bgc.max_quadratic_mortality_of_diatoms
+    κ_Bactᴮᶠᵉ = #define this in parameter list = 0.5
 
-Lₗᵢₘᴰ = 
-ωᴰ = ωᴾ + ωₘₐₓᴰ*(1 - Lₗᵢₘᴰ)
+    Lₗᵢₘᴰ = Lᴰ(D, PO₄, NO₃, NH₄, Si, Dᶜʰˡ, Dᶠᵉ, Si̅)[1]
 
-Fe¹ = Fe¹(DOC, T, Fe)
+    wᴰ = wᴾ + wₘₐₓᴰ*(1 - Lₗᵢₘᴰ)
 
-grazingᴹ = grazingᴹ()
-∑θᶠᵉⁱgᵢᴹ = θᶠᵉ(P, )*grazingᴹ[2] + θᶠᵉ(D, )*grazingᴹ[3] + θᶠᵉ(POC, )*grazingᴹ[4] + θᶠᵉ(Z )*grazingᴹ[5] #graze on P, D, POC, Z 
+    Fe¹ = Fe¹(DOC, T, Fe)
+    #Iron quotas
+    θᶠᵉᴾ = θ(Pᶠᵉ, P)
+    θᶠᵉᴰ = θ(Dᶠᵉ, D)
+    θᶠᵉᴾᴼᶜ = θ(SFe, POC)
+    θᶠᵉᴳᴼᶜ = θ(BFe, GOC)
+    #Grazing
+    grazingᴹ = grazingᴹ()
+    ∑θᶠᵉⁱgᵢᴹ = θᶠᵉᴾ*grazingᴹ[2] + θᶠᵉᴰ*grazingᴹ[3] + θᶠᵉᴾᴼᶜ*grazingᴹ[4] + θᶠᵉᶻ*grazingᴹ[5] #graze on P, D, POC, Z 
+    gₚₒ_FFᴹ = g_FF*bₘ^T*wₚₒ*POC 
+    g_GOC_FFᴹ = g_FF*bₘ^T*w_GOC()*GOC 
 
-gₚₒ_FFᴹ = g_FF*bₘ^T*wₚₒ*POC 
-g_GOC_FFᴹ = g_FF*bₘ^T*ω_GOC()*GOC 
-
-    return σᴹ*(∑θᶠᵉⁱgᵢᴹ + θᶠᵉ(POC,)*gₚₒ_FFᴹ + θᶠᵉ(GOC,)*g_GOC_FFᴹ)*M 
-    + θᶠᵉ(M, )*(rᴹ*(bₘ^T)*K_mondo(M, Kₘ)*M + Pᵤₚᴹ()) + θᶠᵉ(P, )*0.5*R_CaCO₃()*(mᴾ*K_mondo(P, Kₘ)*P + sh*ωᴾ*P^2) 
-    + θᶠᵉ(D, )*(0.5*mᴰ*K_mondo(D, Kₘ)*D + sh*ωᴰ*D^2) 
-    + κ_Bactᴮᶠᵉ*Bactfe() + λ_Fe*GOC*Fe¹ + θᶠᵉ(POC, )*Φ() + Cgfe2() - θᶠᵉ(GOC, )* g_GOC_FFᴹ - λₚₒ¹*BFe - ω_GOC* #Add partial derivative
+    return σᴹ*(∑θᶠᵉⁱgᵢᴹ + θᶠᵉᴾᴼᶜ*gₚₒ_FFᴹ + θᶠᵉᴳᴼᶜ*g_GOC_FFᴹ)*M + θᶠᵉᴹ*(rᴹ*(bₘ^T)*K_mondo(M, Kₘ)*M + Pᵤₚᴹ()) + θᶠᵉᴾ*0.5*R_CaCO₃()*(mᴾ*K_mondo(P, Kₘ)*P + sh*wᴾ*P^2) + θᶠᵉᴰ*(0.5*mᴰ*K_mondo(D, Kₘ)*D + sh*wᴰ*D^2) + κ_Bactᴮᶠᵉ*Bactfe() + λ_Fe*GOC*Fe¹ + θᶠᵉᴾᴼᶜ*Φ() + Cgfe2() - θᶠᵉᴳᴼᶜ* g_GOC_FFᴹ*M - λₚₒ¹*BFe #Partial derivative omitted
 end
