@@ -2,10 +2,7 @@
 
 #TO DO:
     #How to code ΔCO₃²⁻, as auxiliary field or as in original PISCES?
-    #Fill parameter η in parameter list and name
-    #Fill in sh
-    #What is Lₗᵢₘᶜᵃᶜᵒ³()?
-    #Fill arguments for grazing and λ_CaCO₃¹()
+    #How to define Lₗᵢₘᶜᵃᶜᵒ³()?
 
 #This document contains functions for:
     #R_CaCO₃ (eq77)
