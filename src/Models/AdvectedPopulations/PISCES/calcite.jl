@@ -39,5 +39,5 @@ end
 
 @inline function (pisces::PISCES)(::Val{:CaCO₃}, x, y, z, t, P, D, Z, M, Pᶜʰˡ, Dᶜʰˡ, Pᶠᵉ, Dᶠᵉ, Dˢⁱ, DOC, POC, GOC, SFe, BFe, PSi, NO₃, NH₄, PO₄, Fe, Si, CaCO₃, DIC, O₂, T, PAR, PAR¹, PAR², PAR³, zₘₓₗ, zₑᵤ, Si̅) 
 
-    return P_CaCO₃(P, Z, M, T, PAR, zₘₓₗ) - λ_CaCO₃¹()*CaCO₃ #partial derivative omitted as sinking is accounted for in other parts of model
+    return P_CaCO₃(P, Z, M, T, PAR, zₘₓₗ, z) - λ_CaCO₃¹()*CaCO₃ #partial derivative omitted as sinking is accounted for in other parts of model
 end

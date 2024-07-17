@@ -127,8 +127,8 @@ end
 @inline function fθₒₚₜˢⁱᴰ(D, PO₄, NO₃, NH₄, Si, Dᶜʰˡ, Dᶠᵉ, μᴰ, T, ϕ, Si̅)
     θₘˢⁱᴰ = bgc.optimal_SiC_uptake_ratio_of_diatoms
     μ⁰ₘₐₓ = bgc.growth_rate_at_zero
-    Kₛᵢ¹ = bgc.parameter_for_SiC.P
-    Kₛᵢ² = bgc.parameter_for_SiC.D
+    Kₛᵢ¹ = bgc.parameter_for_SiC.one
+    Kₛᵢ² = bgc.parameter_for_SiC.two
 
     Lₗᵢₘᴰ, Lₚₒ₄ᴰ, Lₙₕ₄ᴰ, Lₙₒ₃ᴰ, Lₙᴰ, Lₛᵢᴰ, L_Feᴰ = Lᴰ(D, PO₄, NO₃, NH₄, Si, Dᶜʰˡ, Dᶠᵉ, Si̅)
     
@@ -346,7 +346,7 @@ end
 
     Lₗᵢₘᴰ = Lᴰ(D, PO₄, NO₃, NH₄, Si, Dᶜʰˡ, Dᶠᵉ, Si̅)[1]
     PARᴰ = PARᴰ(PAR¹, PAR², PAR³)
-    
+
     μᴰ = μᴵ(D, Dᶜʰˡ, PARᴰ, L_day, T, αᴰ, Lₗᵢₘᴰ, zₘₓₗ, zₑᵤ, t_darkᴰ)
 
     θₒₚₜˢⁱᴰ = fθₒₚₜˢⁱᴰ(D, PO₄, NO₃, NH₄, Si, Dᶜʰˡ, Dᶠᵉ, μᴰ, T, ϕ, Si̅)

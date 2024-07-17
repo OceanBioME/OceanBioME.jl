@@ -143,6 +143,18 @@ struct PISCES{FT, NT, W} <: AbstractContinuousFormBiogeochemistry
     rain_ratio_parameter :: FT
     bacterial_reference :: FT
 
+    NC_stoichiometric_ratio_of_dentitrification :: FT
+    NC_stoichiometric_ratio_of_ANOTHERPLACEHOLDER :: FT
+    dissolution_rate_of_silicon :: FT
+    coefficient_of_bacterial_uptake_of_iron_in_POC :: FT
+    coefficient_of_bacterial_uptake_of_iron_in_GOC :: FT
+    max_FeC_ratio_of_bacteria :: FT
+    Fe_half_saturation_const_for_PLACEHOLDER :: FT    #not sure what this should be called
+    proportion_of_sinking_grazed_shells :: NT
+
+
+
+
     sinking_velocities :: W
 
     function PISCES(growth_rate_at_zero :: FT,
@@ -247,6 +259,15 @@ struct PISCES{FT, NT, W} <: AbstractContinuousFormBiogeochemistry
                     rain_ratio_parameter :: FT,
                     bacterial_reference :: FT, 
 
+                    NC_stoichiometric_ratio_of_dentitrification :: FT,
+                    NC_stoichiometric_ratio_of_ANOTHERPLACEHOLDER :: FT,
+                    dissolution_rate_of_silicon :: FT,
+                    coefficient_of_bacterial_uptake_of_iron_in_POC :: FT,
+                    coefficient_of_bacterial_uptake_of_iron_in_GOC :: FT,
+                    max_FeC_ratio_of_bacteria :: FT,
+                    Fe_half_saturation_const_for_PLACEHOLDER :: FT,    #not sure what this should be called
+                    proportion_of_sinking_grazed_shells :: NT,
+                    
                     sinking_velocities :: W,) where {FT, NT, W} # then do the same here (this is all just annoying boiler plate but we need it to make the next function work)
 
 
@@ -352,6 +373,15 @@ struct PISCES{FT, NT, W} <: AbstractContinuousFormBiogeochemistry
                             rain_ratio_parameter,
                             bacterial_reference,
 
+                            NC_stoichiometric_ratio_of_dentitrification,
+                            NC_stoichiometric_ratio_of_ANOTHERPLACEHOLDER,
+                            dissolution_rate_of_silicon,
+                            coefficient_of_bacterial_uptake_of_iron_in_POC,
+                            coefficient_of_bacterial_uptake_of_iron_in_GOC,
+                            max_FeC_ratio_of_bacteria,
+                            Fe_half_saturation_const_for_PLACEHOLDER,    #not sure what this should be called
+                            proportion_of_sinking_grazed_shells,
+
                           sinking_velocities)
     end
 end
@@ -423,7 +453,7 @@ function PISCES(; grid, # finally the function
                    min_half_saturation_const_for_nitrate :: NT = (P = 0.13, D =0.39),     #μmolNL⁻¹
                    min_half_saturation_const_for_silicate :: FT = 1,            #μmolSiL⁻¹
                    parameter_for_half_saturation_const :: FT = 16.6,            #μmolSiL⁻¹
-                   parameter_for_SiC :: NT = (P = 2, D = 20),                           #μmolSiL⁻¹
+                   parameter_for_SiC :: NT = (one = 2, two = 20),                           #μmolSiL⁻¹
                    min_half_saturation_const_for_iron_uptake :: NT = (P = 1, D = 3),   #nmolFeL⁻¹
                    size_ratio_of_phytoplankton :: NT = (P = 3, D = 3),
                    optimal_SiC_uptake_ratio_of_diatoms :: FT = 0.159,       #molSi/(mol C)
@@ -510,6 +540,15 @@ function PISCES(; grid, # finally the function
                    NC_redfield_ratio :: FT = 16/122,                                    #molN(mol C)⁻¹
                    rain_ratio_parameter :: FT = 0.3,
                    bacterial_reference :: FT = 1.0,     #Not sure if this is what its called : denoted Bact_ref in paper
+
+                   NC_stoichiometric_ratio_of_dentitrification :: FT = 0.86,
+                   NC_stoichiometric_ratio_of_ANOTHERPLACEHOLDER :: FT = 0,     #again not sure what this is called
+                   dissolution_rate_of_silicon :: FT = 1.0,
+                   coefficient_of_bacterial_uptake_of_iron_in_POC :: FT = 0.5,
+                   coefficient_of_bacterial_uptake_of_iron_in_GOC :: FT = 0.5,
+                   max_FeC_ratio_of_bacteria :: FT = 6,     #or 10e-6
+                   Fe_half_saturation_const_for_PLACEHOLDER :: FT = 0.01, #or 2.5e-10    #not sure what this should be called
+                   proportion_of_sinking_grazed_shells :: NT = (Z = 0.3, M = 0.3),  # 0.3 for both? not sure
 
                   surface_photosynthetically_active_radiation = default_surface_PAR,
 
@@ -636,6 +675,15 @@ function PISCES(; grid, # finally the function
                                         rain_ratio_parameter,
                                         bacterial_reference,
 
+                                        NC_stoichiometric_ratio_of_dentitrification,
+                                        NC_stoichiometric_ratio_of_ANOTHERPLACEHOLDER,
+                                        dissolution_rate_of_silicon,
+                                        coefficient_of_bacterial_uptake_of_iron_in_POC,
+                                        coefficient_of_bacterial_uptake_of_iron_in_GOC,
+                                        max_FeC_ratio_of_bacteria,
+                                        Fe_half_saturation_const_for_PLACEHOLDER,    #not sure what this should be called
+                                        proportion_of_sinking_grazed_shells,
+
                                         sinking_velocities)
 
     if scale_negatives
@@ -683,6 +731,7 @@ show(io::IO, model::PISCES) where {FT, B, W}  = print(io, string("Pelagic Intera
 
 # write most of the code here (i.e. make a file falled phytoplankton.jl and then include it here)
 include("phytoplankton.jl")
+include()
 
 # to work with the sediment model we need to tell in the redfield ratio etc. of some things, but for now we can ignore
 @inline redfield(i, j, k, val_tracer_name, bgc::PISCES, tracers) = NaN
