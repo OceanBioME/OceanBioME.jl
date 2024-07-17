@@ -30,7 +30,7 @@ end
     return ((a₁*DOC + a₂*POC)*sh+a₄*POC + a₅*DOC)*Fe_coll
 end
 
-@inline function  Cgfe2(GOC, Fe, T, DOC)
+@inline function Cgfe2(GOC, Fe, T, DOC)
     a₃ = bgc.aggregation_rate_of_DOC_to_GOC_3
     sh =
 

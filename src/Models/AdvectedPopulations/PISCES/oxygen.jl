@@ -1,6 +1,6 @@
 #TO DO:
     #
-    
+
 #This document contains functions for:
     #O₂ forcing (eq83)
 
