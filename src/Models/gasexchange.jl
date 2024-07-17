@@ -1,3 +1,5 @@
+using OceanBioME.Models.CarbonChemistryModel: CarbonChemistry
+
 #####
 ##### Gas exchange model of [Wanninkhof1992](@citet)
 #####
