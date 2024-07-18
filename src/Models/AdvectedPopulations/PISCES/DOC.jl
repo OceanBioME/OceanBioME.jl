@@ -107,7 +107,7 @@ end
     w_GOC = w_GOCᵐⁱⁿ + (200 - w_GOCᵐⁱⁿ)*(max(0, z-zₘₐₓ))/(5000) #41b
     g_GOC_FFᴹ = g_FF*bₘ^T*w_GOC*GOC #29b
 
-    t_darkᴾ = bgc.mean_residence_time_of_phytoplankton_in_unlit_mixed_layer.Z
+    t_darkᴾ = bgc.mean_residence_time_of_phytoplankton_in_unlit_mixed_layer.P
     t_darkᴰ = bgc.mean_residence_time_of_phytoplankton_in_unlit_mixed_layer.D
     PARᴾ = PARᴾ(PAR¹, PAR², PAR³)
     PARᴰ = PARᴰ(PAR¹, PAR², PAR³)
