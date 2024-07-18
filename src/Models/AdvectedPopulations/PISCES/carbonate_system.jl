@@ -9,6 +9,8 @@
     σᴹ = bgc.non_assimilated_fraction.M
     eₘₐₓᶻ = bgc. max_growth_efficiency_of_zooplankton.Z
     eₘₐₓᴹ = bgc.max_growth_efficiency_of_zooplankton.M
+
+    bFe = Fe
     
     #Grazing
     ∑gᶻ, gₚᶻ, g_Dᶻ, gₚₒᶻ = grazingᶻ(P, D, POC, T)
@@ -20,6 +22,8 @@
     eᴹ =  eᴶ(eₘₐₓᴹ, σᴹ, gₚᴹ, g_Dᴹ, gₚₒᴹ, g_zᴹ,Pᶠᵉ, Dᶠᵉ, SFe, P, D, POC)
 
     #Growth rates for phytoplankton
+    Lₗᵢₘᴾ = Lᴾ(P, PO₄, NO₃, NH₄, Pᶜʰˡ, Pᶠᵉ)[1]
+    Lₗᵢₘᴰ = Lᴰ(D, PO₄, NO₃, NH₄, Si, Dᶜʰˡ, Dᶠᵉ, Si̅)[1]
     μᴾ = μᴵ(P, Pᶜʰˡ, PARᴾ, L_day, T, αᴾ, Lₗᵢₘᴾ, zₘₓₗ, zₑᵤ, t_darkᴾ)
     μᴰ = μᴵ(D, Dᶜʰˡ, PARᴰ, L_day, T, αᴰ, Lₗᵢₘᴰ, zₘₓₗ, zₑᵤ, t_darkᴰ)
 
@@ -36,6 +40,8 @@ end
     γᴹ = bgc.excretion_as_DOM.M
     σᴹ = bgc.non_assimilated_fraction.M
     λₙₕ₄ = bgc.max_nitrification_rate
+
+    bFe = Fe
 
     #Grazing
     grazingᶻ = grazingᶻ(P, D, POC, T)
