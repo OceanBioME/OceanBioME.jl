@@ -48,7 +48,7 @@ Parameterisation for aquious carbon dioxide - bicarbonate dissociation equilibri
 
     K₁ = [H⁺][HCO₃⁻]/[CO₂*]
 
-Default values from Lueke, et. al (2000, Mar. Chem., 70, 105–119;).
+Default values from Millero (1995, Geochim. Cosmochim. Acta, 59, 664).
 """
 @kwdef struct K1{FT}
      constant :: FT =  62.008
@@ -60,9 +60,9 @@ end
 
 @inline (c::K1)(T, S) = 10 ^ (c.constant + c.inverse_T / T + c.log_T * log(T) + c.S * S + c.S² * S^2)
 
-summary(::IO, ::K2) = string("Second carbon dioxide dissociation constant")
-show(io::IO, k2::K2) = print(io, "Second carbon dioxide dissociation constant\n",
-    "    log₁₀(k₂/k°) = $(k2.constant) + $(k2.inverse_T) / T + $(k2.log_T) log(T) + $(k2.S) S + $(k2.S²) S²")
+summary(::IO, ::K1) = string("First carbon dioxide dissociation constant")
+show(io::IO, k1::K1) = print(io, "First carbon dioxide dissociation constant\n",
+    "    log₁₀(k₁/k°) = $(k1.constant) + $(k1.inverse_T) / T + $(k1.log_T) log(T) + $(k1.S) S + $(k1.S²) S²")
 
 """
     K2(; constant =  62.008, 
@@ -77,7 +77,7 @@ Parameterisation for bicarbonate dissociation equilibrium constant.
 
     K₂ = [H⁺][CO₃²⁻]/[HCO₃⁻]
 
-Default values from Lueke, et. al (2000, Mar. Chem., 70, 105–119).
+Default values from Millero (1995, Geochim. Cosmochim. Acta, 59, 664).
 """
 @kwdef struct K2{FT}
      constant :: FT = -4.777
@@ -88,10 +88,10 @@ Default values from Lueke, et. al (2000, Mar. Chem., 70, 105–119).
 end
 
 @inline (c::K2)(T, S) = 10 ^ (c.constant + c.inverse_T / T + c.S * S + c.S² * S^2 + c.log_T * log(T))
-    
-summary(::IO, ::K1) = string("First carbon dioxide dissociation constant")
-show(io::IO, k1::K1) = print(io, "First carbon dioxide dissociation constant\n",
-    "    log₁₀(k₁/k°) = $(k1.constant) + $(k1.inverse_T) / T + $(k1.log_T) log(T) + $(k1.S) S + $(k1.S²) S²")
+
+summary(::IO, ::K2) = string("Second carbon dioxide dissociation constant")
+show(io::IO, k2::K2) = print(io, "Second carbon dioxide dissociation constant\n",
+    "    log₁₀(k₂/k°) = $(k2.constant) + $(k2.inverse_T) / T + $(k2.log_T) log(T) + $(k2.S) S + $(k2.S²) S²")
 
 """
     KB(; constant =  148.0248,
@@ -233,24 +233,24 @@ Default values from Dickson (1990, Chem. Thermodyn., 22, 113–127).
           constant :: FT = 141.328
          inverse_T :: FT = -4276.1
              log_T :: FT = -23.093
-            sqrt_S :: FT =  324.57
-  inverse_T_sqrt_S :: FT = -13856.0
-      log_T_sqrt_S :: FT = -47.986
+           sqrt_Is :: FT =  324.57
+ inverse_T_sqrt_Is :: FT = -13856.0
+     log_T_sqrt_Is :: FT = -47.986
                 Is :: FT = -771.54
-      inverse_T_Is ::FT =  35474.0
+      inverse_T_Is :: FT =  35474.0
           log_T_Is :: FT =  114.723
- inverse_T_sqrt_S³ :: FT =  2698.0
-      inverse_T_S² :: FT =  1776.0
+inverse_T_sqrt_Is³ :: FT = -2698.0
+     inverse_T_Is² :: FT =  1776.0
              log_S :: FT = -0.001005
 end
 
 @inline (c::KS)(T, S, Is = c.ionic_strength(S)) = exp(c.constant
                                                       + c.inverse_T / T
                                                       + c.log_T * log(T)
-                                                      + (c.sqrt_S + c.inverse_T_sqrt_S / T + c.log_T_sqrt_S * log(T)) * √S
+                                                      + (c.sqrt_Is + c.inverse_T_sqrt_Is / T + c.log_T_sqrt_Is * log(T)) * √Is
                                                       + (c.Is + c.inverse_T_Is / T + c.log_T_Is * log(T)) * Is
-                                                      + c.inverse_T_sqrt_S³ * S^1.5 / T
-                                                      + c.inverse_T_S² * S^2 / T
+                                                      + c.inverse_T_sqrt_Is³ * Is^1.5 / T
+                                                      + c.inverse_T_Is² * Is^2 / T
                                                       + log(1 + c.log_S * S))
 
 summary(::IO, ::KS) = string("Bisulfate dissociation constant")
@@ -279,7 +279,7 @@ Parameterisation for hydrogen fluoride dissociation equilibrium constant.
 
     Kᶠ = [H⁺][F⁻]/[HF] 
 
-Default values from Perez and Fraga (1987, Mar. Chem., 21, 161–168).
+Default values from Dickson and Riley (1979, Mar. Chem., 7, 89–99).
 """
 @kwdef struct KF{IS, KS, FT}
      ionic_strength :: IS = IonicStrength()

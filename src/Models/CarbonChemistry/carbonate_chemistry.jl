@@ -1,8 +1,6 @@
 using Roots
 using OceanBioME.Models: seawater_density
 
-import Base: show, summary
-
 """
     CarbonChemistry(; ionic_strength = IonicStrength(),
                       solubility = K0(),
@@ -17,9 +15,8 @@ import Base: show, summary
 Carbon chemistry model capable of solving for sea water pCO₂ from DIC and 
 total alkalinity or DIC and pH. 
 
-Default form and parameters from Dickson, A.G., Sabine, C.L. and 
-Christian, J.R. (2007), Guide to Best Practices for Ocean CO 2 Measurements. 
-PICES Special Publication 3, 191 pp.
+Default form from Dickson, A.G., Sabine, C.L. and  Christian, J.R. (2007), 
+Guide to Best Practices for Ocean CO 2 Measurements. PICES Special Publication 3, 191 pp.
 
 See each parameters documentation for origional sources.
 

@@ -1,9 +1,10 @@
 include("dependencies_for_runtests.jl")
 
-using OceanBioME: GasExchange, LOBSTER
-using OceanBioME.Models: OCMIP_default
+using OceanBioME: GasExchange, LOBSTER, CarbonChemistry
 using Oceananigans, DataDeps, JLD2, Statistics
 using Oceananigans.Units
+
+using OceanBioME.Models.CarbonChemistryModel: IonicStrength, K0, K1, K2, KB, KW, KS, KF, KP, KSi
 
 const year = years = 365days # just for the idealised case below
 
@@ -38,7 +39,7 @@ end
 
 @testset "Gas exchange values" begin
     # approximatly correct sized pCO₂ from DIC and ALK
-    pCO₂_model = OCMIP_default
+    pCO₂_model = CarbonChemistry()
 
     @load datadep"test_data/CODAP_data.jld2" DIC Alk T S pH pCO₂
     
@@ -67,4 +68,33 @@ grid = RectilinearGrid(architecture; size=(1, 1, 2), extent=(1, 1, 1))
         @info "Testing with $(typeof(air_concentration))"
         test_gas_exchange_model(grid, air_concentration)
     end
+end
+
+@testset "Carbon chemistry" begin
+    # vary from default to use all parameters from for testing Dickson, A.G., Sabine, C.L. and  Christian, J.R. (2007), 
+    # Guide to Best Practices for Ocean CO 2 Measurements. PICES Special Publication 3, 191 pp.
+
+    carbon_chemistry =
+        CarbonChemistry(; # Weiss, R.F. (1974, Mar. Chem., 2, 203–215)
+                          solubility = K0(-60.2409, 93.4517 * 100, 23.3585, 0.0, 0.023517, -0.023656 / 100, 0.0047036 / 100^2),
+                          # Lueke, et. al (2000, Mar. Chem., 70, 105–119;)
+                          carbonic_acid = (K1 = K1(61.2172, -3633.86, -9.67770, 0.011555, -0.0001152), 
+                                           K2 = K2(-25.9290, -471.78, 0.01781, -0.0001122,  3.16967)),
+                          # Perez and Fraga (1987, Mar. Chem., 21, 161–168).
+                          fluoride = KF(IonicStrength(),  KS(), -9.68, 874.0, 0.111, 0.0, 0.0))
+
+    S = 35
+    Tk = 298.15
+
+    @test ≈(log10(carbon_chemistry.carbonic_acid.K1(Tk, S)), -5.8472; atol=0.0001)
+    @test ≈(log10(carbon_chemistry.carbonic_acid.K2(Tk, S)), -8.9660; atol=0.0001)
+    @test ≈(log(carbon_chemistry.boric_acid(Tk, S)), -19.7964; atol=0.0001)
+    @test ≈(log(carbon_chemistry.water(Tk, S)), -30.434; atol=0.001)
+    @test ≈(log(carbon_chemistry.sulfate(Tk, S)), -2.30; atol=0.01)
+    @test ≈(log(carbon_chemistry.fluoride(Tk, S)), -6.09; atol=0.01)
+    @test ≈(log(carbon_chemistry.phosphoric_acid.KP1(Tk, S)), -3.71; atol=0.01)
+    @test ≈(log(carbon_chemistry.phosphoric_acid.KP2(Tk, S)), -13.727; atol=0.001)
+    @test ≈(log(carbon_chemistry.phosphoric_acid.KP3(Tk, S)), -20.24; atol=0.01)
+    @test ≈(log(carbon_chemistry.silicic_acid(Tk, S)), -21.61; atol=0.01)
+    @test ≈(log(carbon_chemistry.solubility(Tk, S)), -3.5617; atol=0.0001)
 end
