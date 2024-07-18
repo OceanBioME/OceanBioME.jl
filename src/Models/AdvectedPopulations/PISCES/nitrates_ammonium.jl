@@ -108,7 +108,7 @@ end
     grazingᴹ = get_grazingᴹ(P, D, Z, POC, T, bgc)
     ∑gᶻ = grazingᶻ[1]
     ∑gᴹ = grazingᴹ[1]
-    ∑g_FFᴹ = ∑g_FFᴹ(zₑᵤ, zₘₓₗ, T, POC, GOC, bgc)
+    ∑g_FFᴹ = get_∑g_FFᴹ(zₑᵤ, zₘₓₗ, T, POC, GOC, bgc)
 
     #Gross growth efficiency
     eᶻ = eᴶ(eₘₐₓᶻ, σᶻ, gₚᶻ, g_Dᶻ, gₚₒᶻ, g_zᴹ, N, Fe, P, D, POC, Z, bgc)

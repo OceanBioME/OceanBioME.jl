@@ -166,8 +166,8 @@ end
     #equaitons here
     sh = get_sh(z, zₘₓₗ)
 
-    gₚᶻ = grazingᶻ(P, D, POC, T, bgc)[2]     
-    gₚᴹ =  grazingᴹ(P, D, Z, POC, T, bgc)[3]
+    gₚᶻ = get_grazingᶻ(P, D, POC, T, bgc)[2]     
+    gₚᴹ =  get_grazingᴹ(P, D, Z, POC, T, bgc)[3]
 
     t_darkᴾ = bgc.mean_residence_time_of_phytoplankton_in_unlit_mixed_layer.P
 
@@ -197,8 +197,8 @@ end
     #equaitons here
     sh = get_sh(z, zₘₓₗ)
 
-    g_Dᶻ = grazingᶻ(P, D, POC, T, bgc)[3]
-    g_Dᴹ = grazingᴹ(P, D, Z, POC, T, bgc)[3]
+    g_Dᶻ = get_grazingᶻ(P, D, POC, T, bgc)[3]
+    g_Dᴹ = get_grazingᴹ(P, D, Z, POC, T, bgc)[3]
  
     t_darkᴰ = bgc.mean_residence_time_of_phytoplankton_in_unlit_mixed_layer.D
 
@@ -228,8 +228,8 @@ end
 
     sh = get_sh(z, zₘₓₗ)
 
-    gₚᶻ = grazingᶻ(P, D, POC, T, bgc)[2]    
-    gₚᴹ = grazingᴹ(P, D, Z, POC, T, bgc)[2]
+    gₚᶻ = get_grazingᶻ(P, D, POC, T, bgc)[2]    
+    gₚᴹ = get_grazingᴹ(P, D, Z, POC, T, bgc)[2]
 
     t_darkᴾ = bgc.mean_residence_time_of_phytoplankton_in_unlit_mixed_layer.P
     
@@ -260,8 +260,8 @@ end
 
     sh = get_sh(z, zₘₓₗ)
     
-    g_Dᶻ = grazingᶻ(P, D, POC, T, bgc)[3]
-    g_Dᴹ = grazingᴹ(P, D, Z, POC, T, bgc)[3]
+    g_Dᶻ = get_grazingᶻ(P, D, POC, T, bgc)[3]
+    g_Dᴹ = get_grazingᴹ(P, D, Z, POC, T, bgc)[3]
  
     t_darkᴰ = bgc.mean_residence_time_of_phytoplankton_in_unlit_mixed_layer.D
 
@@ -292,8 +292,8 @@ end
 
     sh = get_sh(z, zₘₓₗ)
 
-    gₚᶻ = grazingᶻ(P, D, POC, T, bgc)[2]    
-    gₚᴹ = grazingᴹ(P, D, Z, POC, T, bgc)[2]
+    gₚᶻ = get_grazingᶻ(P, D, POC, T, bgc)[2]    
+    gₚᴹ = get_grazingᴹ(P, D, Z, POC, T, bgc)[2]
 
     bFe =  Fe   #defined in previous PISCES model
     μᴾᶠᵉ = μᴵᶠᵉ(P, Pᶠᵉ, θₘₐₓᶠᵉᵖ, Sᵣₐₜᴾ, K_Feᴾᶠᵉᵐⁱⁿ, Pₘₐₓ, L_Feᴾ, bFe, bgc)
@@ -318,8 +318,8 @@ end
 
     sh = get_sh(z, zₘₓₗ)
 
-    g_Dᶻ = grazingᶻ(P, D, POC, T, bgc)[3]
-    g_Dᴹ = grazingᴹ(P, D, Z, POC, T, bgc)[3]
+    g_Dᶻ = get_grazingᶻ(P, D, POC, T, bgc)[3]
+    g_Dᴹ = get_grazingᴹ(P, D, Z, POC, T, bgc)[3]
    
     bFe = Fe
 
@@ -342,8 +342,8 @@ end
     L_day = get_L_day(ϕ, t, L_day_param)
 
     sh = get_sh(z, zₘₓₗ)
-    g_Dᶻ = grazingᶻ(P, D, POC, T, bgc)[3]
-    g_Dᴹ = grazingᴹ(P, D, Z, POC, T, bgc)[3]
+    g_Dᶻ = get_grazingᶻ(P, D, POC, T, bgc)[3]
+    g_Dᴹ = get_grazingᴹ(P, D, Z, POC, T, bgc)[3]
  
     t_darkᴰ = bgc.mean_residence_time_of_phytoplankton_in_unlit_mixed_layer.D
 

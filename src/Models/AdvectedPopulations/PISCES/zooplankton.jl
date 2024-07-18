@@ -1,4 +1,4 @@
-@inline function grazingᶻ(P, D, POC, T, bgc) 
+@inline function get_grazingᶻ(P, D, POC, T, bgc) 
     pₚᶻ = bgc.preference_for_nanophytoplankton.Z
     p_Dᶻ = bgc.preference_for_diatoms.Z
     pₚₒᶻ = bgc.preference_for_POC.Z
@@ -22,7 +22,7 @@
     return ∑gᶻ, gₚᶻ, g_Dᶻ, gₚₒᶻ
 end
 
-@inline function grazingᴹ(P, D, Z, POC, T, bgc) 
+@inline function get_grazingᴹ(P, D, Z, POC, T, bgc) 
     pₚᴹ = bgc.preference_for_nanophytoplankton.M
     p_Dᴹ = bgc.preference_for_diatoms.M
     pₚₒᴹ = bgc.preference_for_POC.M
@@ -47,18 +47,18 @@ end
     return  ∑gᴹ, gₚᴹ, g_Dᴹ, gₚₒᴹ, g_Zᴹ 
 end
 
-@inline function w_GOC(zₑᵤ, zₘₓₗ, bgc)
+@inline function get_w_GOC(zₑᵤ, zₘₓₗ, bgc)
     zₘₐₓ = max(zₑᵤ, zₘₓₗ) 
     w_GOCᵐⁱⁿ = bgc.min_sinking_speed_of_GOC
     return w_GOCᵐⁱⁿ + (200 - w_GOCᵐⁱⁿ)*(max(0, z-zₘₐₓ))/(5000) #41b
 end
 
-@inline function ∑g_FFᴹ(zₑᵤ, zₘₓₗ, T, POC, GOC, bgc)
+@inline function get_∑g_FFᴹ(zₑᵤ, zₘₓₗ, T, POC, GOC, bgc)
     wₚₒ = bgc.sinking_speed_of_POC
     g_FF = bgc.flux_feeding_rate
     bₘ = bgc.temperature_sensitivity_term.M
 
-    w_GOC = w_GOC(zₑᵤ, zₘₓₗ, bgc)
+    w_GOC = get_w_GOC(zₑᵤ, zₘₓₗ, bgc)
 
     gₚₒ_FFᴹ = g_FF*bₘ^T*wₚₒ*POC #29a
     g_GOC_FFᴹ = g_FF*bₘ^T*w_GOC*GOC #29b
@@ -99,8 +99,8 @@ end
     eₘₐₓᶻ = bgc.max_growth_efficiency_of_zooplankton.Z
     σᶻ = bgc.non_assimilated_fraction.Z
 
-    ∑gᶻ, gₚᶻ, g_Dᶻ, gₚₒᶻ = grazingᶻ(P, D, POC, T, bgc) 
-    g_zᴹ = grazingᴹ(P, D, Z, POC, T, bgc)[5]
+    ∑gᶻ, gₚᶻ, g_Dᶻ, gₚₒᶻ = get_grazingᶻ(P, D, POC, T, bgc) 
+    g_zᴹ = get_grazingᴹ(P, D, Z, POC, T, bgc)[5]
 
     eᶻ = eᴶ(eₘₐₓᶻ, σᶻ, gₚᶻ, g_Dᶻ, gₚₒᶻ, 0, Pᶠᵉ, Dᶠᵉ, SFe, P, D, POC, bgc)
 
@@ -116,9 +116,9 @@ end
     eₘₐₓᴹ = bgc.max_growth_efficiency_of_zooplankton.M
     σᴹ = bgc.non_assimilated_fraction.M
 
-    ∑gᴹ, gₚᴹ, g_Dᴹ, gₚₒᴹ, g_zᴹ  = grazingᴹ(P, D, Z, POC, T, bgc) 
+    ∑gᴹ, gₚᴹ, g_Dᴹ, gₚₒᴹ, g_zᴹ  = get_grazingᴹ(P, D, Z, POC, T, bgc) 
 
-    ∑g_FFᴹ = ∑g_FFᴹ(zₑᵤ, zₘₓₗ, T, POC, GOC, bgc)
+    ∑g_FFᴹ = get_∑g_FFᴹ(zₑᵤ, zₘₓₗ, T, POC, GOC, bgc)
     
     eᴹ =  eᴶ(eₘₐₓᴹ, σᴹ, gₚᴹ, g_Dᴹ, gₚₒᴹ, g_zᴹ,Pᶠᵉ, Dᶠᵉ, SFe, P, D, POC, bgc)
 
