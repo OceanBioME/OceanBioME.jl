@@ -272,8 +272,8 @@ struct PISCES{FT, NT, W, FD} <: AbstractContinuousFormBiogeochemistry
                     proportion_of_sinking_grazed_shells :: NT,
                     carbonate_limitation_term :: FT,
                     
-                    vertical_diffusivity :: FD, 
-                    carbonate_sat_ratio :: FD,
+                  #  vertical_diffusivity :: FD, 
+                   # carbonate_sat_ratio :: FD,
 
                     sinking_velocities :: W,) where {FT, NT, W, FD} # then do the same here (this is all just annoying boiler plate but we need it to make the next function work)
 
@@ -390,8 +390,8 @@ struct PISCES{FT, NT, W, FD} <: AbstractContinuousFormBiogeochemistry
                             proportion_of_sinking_grazed_shells,
                             carbonate_limitation_term,
 
-                            vertical_diffusivity,
-                            carbonate_sat_ratio,
+                          #  vertical_diffusivity,
+                           # carbonate_sat_ratio,
 
                           sinking_velocities)
     end
@@ -572,8 +572,8 @@ function PISCES(; grid, # finally the function
                   sediment_model::S = nothing,
 
                   sinking_speeds = (POC = sinking_speed_of_POC, GOC = 1.0, SFe = sinking_speed_of_POC, BFe = 1.0, PSi = 1.0, CaCO₃ = 1.0),  #change all 1.0s to w_GOC
-                  vertical_diffusivity :: FD  = constantField(1),
-                  carbonate_sat_ratio :: FD = ZeroField(),
+                 # vertical_diffusivity :: FD  = constantField(1),
+                  #carbonate_sat_ratio :: FD = ZeroField(),
                   open_bottom::Bool = true,
 
                   scale_negatives = false,
@@ -699,8 +699,8 @@ function PISCES(; grid, # finally the function
                                         proportion_of_sinking_grazed_shells,
                                         carbonate_limitation_term,
 
-                                        vertical_diffusivity,
-                                        carbonate_sat_ratio,
+                                  #      vertical_diffusivity,
+                                   #     carbonate_sat_ratio,
 
                                         sinking_velocities)
 
