@@ -33,7 +33,7 @@ end
     wₘₐₓᴰ = bgc.max_quadratic_mortality_of_diatoms.D
     αᴰ = bgc.initial_slope_of_PI_curve.D
     t_darkᴰ = bgc.mean_residence_time_of_phytoplankton_in_unlit_mixed_layer.D
-    Dissₛᵢ =
+    Dissₛᵢ = bgc.dissolution_rate_of_silicon
 
     ϕ₀ = bgc.latitude
     L_day_param = bgc.length_of_day

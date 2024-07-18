@@ -6,7 +6,7 @@
     δᴰ = bgc.exudation_of_DOC.D
     αᴰ = bgc.initial_slope_of_PI_curve.D
     t_darkᴰ = bgc.mean_residence_time_of_phytoplankton_in_unlit_mixed_layer.D
-    Dissₛᵢ = bgc.
+    Dissₛᵢ = bgc.dissolution_rate_of_silicon
 
     PARᴰ = PARᴰ(PAR¹, PAR², PAR³)
     
@@ -22,3 +22,4 @@
     λₚₛᵢ¹ = λₚₛᵢ¹(zₘₓₗ, zₑᵤ, z, T, Si)
     
     return λₚₛᵢ¹*Dissₛᵢ*PSi - fθₒₚₜˢⁱᴰ(D, PO₄, NO₃, NH₄, Si, Dᶜʰˡ, Dᶠᵉ, μᴰ, T, ϕ, Si̅)*(1-δᴰ)*μᴰ*D 
+end
