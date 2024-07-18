@@ -11,6 +11,7 @@
         return χ_lab⁰
     else
         return χ_lab⁰*exp(-(λₚₛᵢˡᵃᵇ - λₚₛᵢʳᵉᶠ)*((z-zₘₐₓ)/w_GOC(zₑᵤ, zₘₓₗ))) #eq53
+    end
 end
 
 @inline function λₚₛᵢ¹(zₘₓₗ, zₑᵤ, z, T, Si)
