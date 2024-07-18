@@ -557,8 +557,8 @@ function PISCES(; grid, # finally the function
                    dissolution_rate_of_silicon :: FT = 1.0,
                    coefficient_of_bacterial_uptake_of_iron_in_POC :: FT = 0.5,
                    coefficient_of_bacterial_uptake_of_iron_in_GOC :: FT = 0.5,
-                   max_FeC_ratio_of_bacteria :: FT = 6,     #or 10e-6
-                   Fe_half_saturation_const_for_PLACEHOLDER :: FT = 0.01, #or 2.5e-10    #not sure what this should be called
+                   max_FeC_ratio_of_bacteria :: FT = 10e-6,     #or 6
+                   Fe_half_saturation_const_for_PLACEHOLDER :: FT = 2.5e-10, #or 2.5e-10    #not sure what this should be called
                    proportion_of_sinking_grazed_shells :: NT = (Z = 0.3, M = 0.3),  # 0.3 for both? not sure
                    carbonate_limitation_term :: FT = 1.0,       #do not think this is a parameter
 
@@ -571,7 +571,7 @@ function PISCES(; grid, # finally the function
                   # just keep all this stuff for now but you can ignore it
                   sediment_model::S = nothing,
 
-                  sinking_speeds = (  ),
+                  sinking_speeds = (POC = sinking_speed_of_POC, GOC = 1.0, SFe = sinking_speed_of_POC, BFe = 1.0, PSi = 1.0, CaCO₃ = 1.0),  #change all 1.0s to w_GOC
                   vertical_diffusivity :: F  = constantField(1),
                   carbonate_sat_ratio :: F = ZeroField(),
                   open_bottom::Bool = true,
@@ -774,5 +774,5 @@ include("zooplankton.jl")
 # this is for positivity preservation, if you can work it out it would be great, I don't think PISCES conserves C but probably does Nitrogen
 @inline conserved_tracers(::PISCES) = NaN
 
-@inline sinking_tracers(::PISCES) = (:POC, :GOC, :SFe, :BFe, :PSi, :Ca, :CaCO₃) # please list them here
+@inline sinking_tracers(::PISCES) = (:POC, :GOC, :SFe, :BFe, :PSi, :CaCO₃) # please list them here
 end # module
