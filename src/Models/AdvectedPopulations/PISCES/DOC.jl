@@ -126,7 +126,7 @@ end
     zₘₐₓ = max(zₑᵤ, zₘₓₗ) #35a
     Bact = Bact(zₘₐₓ, z, Z, M)
 
-    bFe = 1
+    bFe = Fe #defined in previous PISCES model
   
     Remin = Remin(O₂, NO₃, PO₄, NH₄, DOC, T, bFe, Bact)
     Denit = Denit(NO₃, PO₄, NH₄, DOC, O₂, T, bFe, Bact)
