@@ -84,7 +84,7 @@ struct PISCES{FT, PD, ZM, OT, W} <: AbstractContinuousFormBiogeochemistry
     preference_for_diatoms :: ZM
     preference_for_POC :: ZM
     preference_for_microzooplankton :: FT
-    food_threshold_for_zooplankton :: FT
+    food_threshold_for_zooplankton :: ZM
     specific_food_thresholds_for_microzooplankton :: FT
     specific_food_thresholds_for_mesozooplankton :: FT
     zooplankton_quadratic_mortality :: ZM
@@ -395,6 +395,7 @@ struct PISCES{FT, PD, ZM, OT, W} <: AbstractContinuousFormBiogeochemistry
 
                           sinking_velocities)
     end
+    
 end
 
 """
@@ -614,6 +615,7 @@ function PISCES(; grid, # finally the function
                                         min_ChlC_ratios_of_phytoplankton,
                                         threshold_concentration_for_size_dependency,
                                         mean_residence_time_of_phytoplankton_in_unlit_mixed_layer,
+
                                         latitude,
                                         length_of_day,
                                         
