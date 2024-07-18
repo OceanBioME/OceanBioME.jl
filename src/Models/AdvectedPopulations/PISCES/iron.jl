@@ -37,12 +37,12 @@ end
     return 1000*λ_Fe*max(0, Fe - Lₜ)*Fe¹(DOC, T, Fe)
 end
 
-@inline function Bactfe(μₘₐₓ⁰, z, Z, M, Fe, DOC, PO₄, NO₃, NH₄, bFe, T, zₘₐₓ, bgc)
+@inline function get_Bactfe(μₘₐₓ⁰, z, Z, M, Fe, DOC, PO₄, NO₃, NH₄, bFe, T, zₘₐₓ, bgc)
     K_Feᴮ¹ = bgc.Fe_half_saturation_const_for_PLACEHOLDER
     θₘₐₓᶠᵉᵇᵃᶜᵗ = bgc.max_FeC_ratio_of_bacteria
-    Bact = Bact(zₘₐₓ, z, Z, M) 
+    Bact = get_Bact(zₘₐₓ, z, Z, M) 
     Lₗᵢₘᵇᵃᶜᵗ = Lᵇᵃᶜᵗ(DOC, PO₄, NO₃, NH₄, bFe, bgc)[2]
-    return μₘₐₓ⁰*fₚ(T)*Lₗᵢₘᵇᵃᶜᵗ*θₘₐₓᶠᵉᵇᵃᶜᵗ*Fe*Bact/(K_Feᴮ¹ + Fe) 
+    return μₘₐₓ⁰*fₚ(T, bgc)*Lₗᵢₘᵇᵃᶜᵗ*θₘₐₓᶠᵉᵇᵃᶜᵗ*Fe*Bact/(K_Feᴮ¹ + Fe) 
 end
 
 @inline function (bgc::PISCES)(::Val{:Fe}, x, y, z, t, P, D, Z, M, Pᶜʰˡ, Dᶜʰˡ, Pᶠᵉ, Dᶠᵉ, Dˢⁱ, DOC, POC, GOC, SFe, BFe, PSi, NO₃, NH₄, PO₄, Fe, Si, CaCO₃, DIC, Alk, O₂, T, PAR, PAR¹, PAR², PAR³, zₘₓₗ, zₑᵤ, Si̅, D_dust) #eq60
@@ -80,14 +80,14 @@ end
     θᶠᵉᴾᴼᶜ = θ(SFe, POC)
     θᶠᵉᴳᴼᶜ = θ(BFe, GOC)
     #Grazing
-    ∑gᶻ, gₚᶻ, g_Dᶻ, gₚₒᶻ = grazingᶻ(P, D, POC, T, bgc)
-    ∑gᴹ, gₚᴹ, g_Dᴹ, gₚₒᴹ, g_zᴹ = grazingᴹ(P, D, Z, POC, T, bgc)
-    ∑g_FFᴹ = ∑g_FFᴹ(zₑᵤ, zₘₓₗ, T, POC, GOC, bgc)
+    ∑gᶻ, gₚᶻ, g_Dᶻ, gₚₒᶻ = get_grazingᶻ(P, D, POC, T, bgc)
+    ∑gᴹ, gₚᴹ, g_Dᴹ, gₚₒᴹ, g_zᴹ = get_grazingᴹ(P, D, Z, POC, T, bgc)
+    ∑g_FFᴹ = get_∑g_FFᴹ(zₑᵤ, zₘₓₗ, T, POC, GOC, bgc)
     
     ∑θᶠᵉⁱgᵢᶻ = θᶠᵉᴾ*grazingᶻ[2] + θᶠᵉᴰ*grazingᶻ[3] + θᶠᵉᴾᴼᶜ*grazingᶻ[4] #over P, D, POC
     ∑θᶠᵉⁱgᵢᴹ = θᶠᵉᴾ*grazingᴹ[2] + θᶠᵉᴰ*grazingᴹ[3] + θᶠᵉᴾᴼᶜ*grazingᴹ[4] + θᶠᵉᶻ*grazingᴹ[5] #graze on P, D, POC, Z 
 
-    Bactfe = Bactfe(μₘₐₓ⁰, z, Z, M, Fe, DOC, PO₄, NO₃, NH₄, bFe, T, zₘₐₓ, bgc)
+    Bactfe = get_Bactfe(μₘₐₓ⁰, z, Z, M, Fe, DOC, PO₄, NO₃, NH₄, bFe, T, zₘₐₓ, bgc)
 
     #Gross growth efficiency
     eₙᶻ = eₙᴶ(gₚᶻ, g_Dᶻ, gₚₒᶻ, g_zᴹ, Pᶠᵉ, Dᶠᵉ, SFe, P, D, POC, bgc)

@@ -15,7 +15,7 @@ end
 end
 
 
-@inline function Remin(O₂, NO₃, PO₄, NH₄, DOC, T, bFe, Bact, bgc)
+@inline function get_Remin(O₂, NO₃, PO₄, NH₄, DOC, T, bFe, Bact, bgc)
     O₂ᵘᵗ = bgc.OC_for_ammonium_based_processes
     λ_DOC = bgc.remineralisation_rate_of_DOC
     bₚ = bgc.temperature_sensitivity_of_growth
@@ -26,7 +26,7 @@ end
     return min(O₂/O₂ᵘᵗ, λ_DOC*bₚ^T(1 - ΔO₂(O₂, bgc)) * Lₗᵢₘᵇᵃᶜᵗ * (Bact)/(Bactᵣₑ) * DOC) #33a
 end
 
-@inline function Denit(NO₃, PO₄, NH₄, DOC, O₂, T, bFe, Bact, bgc)
+@inline function get_Denit(NO₃, PO₄, NH₄, DOC, O₂, T, bFe, Bact, bgc)
     λ_DOC = bgc.remineralisation_rate_of_DOC
     rₙₒ₃¹ = bgc.CN_ratio_of_denitrification
     bₚ = bgc.temperature_sensitivity_of_growth
@@ -37,7 +37,7 @@ end
     return min(NO₃/rₙₒ₃¹, λ_DOC*bₚ^T* ΔO₂(O₂, bgc)* Lₗᵢₘᵇᵃᶜᵗ*(Bact)/(Bactᵣₑ) * DOC) #33b
 end
 
-@inline Bact(zₘₐₓ, z, Z, M) = ifelse(z <= zₘₐₓ, min(0.7*(Z + 2*M), 4), min(0.7*(Z + 2*M), 4)*(zₘₐₓ/(z + eps(0.0))^0.683))  #35b
+@inline get_Bact(zₘₐₓ, z, Z, M) = ifelse(z <= zₘₐₓ, min(0.7*(Z + 2*M), 4), min(0.7*(Z + 2*M), 4)*(zₘₐₓ/(z + eps(0.0))^0.683))  #35b
 
 @inline function Φᴰᴼᶜ(DOC, POC, GOC, sh, bgc)
     a₁ = bgc.aggregation_rate_of_DOC_to_POC_1
@@ -105,8 +105,8 @@ end
     w_GOCᵐⁱⁿ = bgc.min_sinking_speed_of_GOC
     bₘ = bgc.temperature_sensitivity_term.M
 
-    ∑ᵢgᵢᶻ, gₚᶻ, g_Dᶻ, gₚₒᶻ  = grazingᶻ(P, D, POC, T, bgc) 
-    ∑ᵢgᵢᴹ, gₚᴹ, g_Dᴹ, gₚₒᴹ, g_zᴹ = grazingᴹ(P, D, Z, POC, T, bgc)
+    ∑ᵢgᵢᶻ, gₚᶻ, g_Dᶻ, gₚₒᶻ  = get_grazingᶻ(P, D, POC, T, bgc) 
+    ∑ᵢgᵢᴹ, gₚᴹ, g_Dᴹ, gₚₒᴹ, g_zᴹ = get_grazingᴹ(P, D, Z, POC, T, bgc)
 
     zₘₐₓ = max(zₑᵤ, zₘₓₗ)   #41a
     w_GOC = w_GOCᵐⁱⁿ + (200 - w_GOCᵐⁱⁿ)*(max(0, z-zₘₐₓ))/(5000) #41b
@@ -114,8 +114,8 @@ end
 
     t_darkᴾ = bgc.mean_residence_time_of_phytoplankton_in_unlit_mixed_layer.P
     t_darkᴰ = bgc.mean_residence_time_of_phytoplankton_in_unlit_mixed_layer.D
-    PARᴾ = PARᴾ(PAR¹, PAR², PAR³, bgc)
-    PARᴰ = PARᴰ(PAR¹, PAR², PAR³, bgc)
+    PARᴾ = get_PARᴾ(PAR¹, PAR², PAR³, bgc)
+    PARᴰ = get_PARᴰ(PAR¹, PAR², PAR³, bgc)
 
     Lₗᵢₘᴾ = Lᴾ(P, PO₄, NO₃, NH₄, Pᶜʰˡ, Pᶠᵉ, bgc)[1]
     Lₗᵢₘᴰ = Lᴰ(D, PO₄, NO₃, NH₄, Si, Dᶜʰˡ, Dᶠᵉ, Si̅, bgc)[1]
@@ -129,12 +129,12 @@ end
     Rᵤₚᴹ = Rᵤₚ(M, T, bgc)
 
     zₘₐₓ = max(zₑᵤ, zₘₓₗ) #35a
-    Bact = Bact(zₘₐₓ, z, Z, M)
+    Bact = get_Bact(zₘₐₓ, z, Z, M)
 
     bFe = Fe #defined in previous PISCES model
   
-    Remin = Remin(O₂, NO₃, PO₄, NH₄, DOC, T, bFe, Bact, bgc)
-    Denit = Denit(NO₃, PO₄, NH₄, DOC, O₂, T, bFe, Bact, bgc)
+    Remin = get_Remin(O₂, NO₃, PO₄, NH₄, DOC, T, bFe, Bact, bgc)
+    Denit = get_Denit(NO₃, PO₄, NH₄, DOC, O₂, T, bFe, Bact, bgc)
 
     Φ₁ᴰᴼᶜ, Φ₂ᴰᴼᶜ, Φ₃ᴰᴼᶜ = Φᴰᴼᶜ(DOC, POC, GOC, sh, bgc)
 

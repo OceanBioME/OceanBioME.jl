@@ -40,11 +40,11 @@ end
     θᶠᵉᴰ = θ(Dᶠᵉ, D)
     θᶠᵉᴾᴼᶜ = θ(SFe, POC)
     #Grazing
-    grazingᶻ = grazingᶻ(P, D, POC, T, bgc)
+    grazingᶻ = get_grazingᶻ(P, D, POC, T, bgc)
     ∑θᶠᵉⁱgᵢᶻ = θᶠᵉᴾ*grazingᶻ[2] + θᶠᵉᴰ*grazingᶻ[3] + θᶠᵉᴾᴼᶜ*grazingᶻ[4] #over P, D, POC
     gₚₒ_FFᴹ = g_FF*(bₘ^T)*wₚₒ*POC
     #Bacteria iron
-    Bactfe = Bactfe(μₘₐₓ⁰, z, Z, M, Fe, DOC, PO₄, NO₃, NH₄, bFe, T, zₘₐₓ, bgc)
+    Bactfe = get_Bactfe(μₘₐₓ⁰, z, Z, M, Fe, DOC, PO₄, NO₃, NH₄, bFe, T, zₘₐₓ, bgc)
 
     return σᶻ*∑θᶠᵉⁱgᵢᶻ*Z + θᶠᵉᶻ*(rᶻ*(b_Z^T)*K_mondo(Z, Kₘ)*Z + mᶻ*(b_Z^T)*(Z^2)) 
     + λₚₒ¹*BFe + θᶠᵉᴾ*(1 - 0.5*R_CaCO₃(P, T, PAR, zₘₓₗ, bgc))*(mᵖ*K_mondo(P, Kₘ)*P + sh*wᴾ*P^2) 
@@ -79,7 +79,7 @@ end
     θᶠᵉᴾᴼᶜ = θ(SFe, POC)
     θᶠᵉᴳᴼᶜ = θ(BFe, GOC)
     #Grazing
-    grazingᴹ = grazingᴹ(P, D, Z, POC, T, bgc)
+    grazingᴹ = get_grazingᴹ(P, D, Z, POC, T, bgc)
     ∑θᶠᵉⁱgᵢᴹ = θᶠᵉᴾ*grazingᴹ[2] + θᶠᵉᴰ*grazingᴹ[3] + θᶠᵉᴾᴼᶜ*grazingᴹ[4] + θᶠᵉᶻ*grazingᴹ[5] #graze on P, D, POC, Z 
     gₚₒ_FFᴹ = g_FF*bₘ^T*wₚₒ*POC 
     zₘₐₓ = max(zₑᵤ, zₘₓₗ)   #41a
@@ -87,8 +87,8 @@ end
     g_GOC_FFᴹ = g_FF*bₘ^T*w_GOC*GOC 
 
     return σᴹ*(∑θᶠᵉⁱgᵢᴹ + θᶠᵉᴾᴼᶜ*gₚₒ_FFᴹ + θᶠᵉᴳᴼᶜ*g_GOC_FFᴹ)*M + θᶠᵉᴹ*(rᴹ*(bₘ^T)*K_mondo(M, Kₘ)*M 
-    + Pᵤₚᴹ(M, T, bgc)) + θᶠᵉᴾ*0.5*R_CaCO₃(P, T, PAR, zₘₓₗ, bgc)*(mᴾ*K_mondo(P, Kₘ)*P 
+    + Pᵤₚ(M, T, bgc)) + θᶠᵉᴾ*0.5*R_CaCO₃(P, T, PAR, zₘₓₗ, bgc)*(mᴾ*K_mondo(P, Kₘ)*P 
     + sh*wᴾ*P^2) + θᶠᵉᴰ*(0.5*mᴰ*K_mondo(D, Kₘ)*D + sh*wᴰ*D^2) 
-    + κ_Bactᴮᶠᵉ*Bactfe(μₘₐₓ⁰, z, Z, M, Fe, DOC, PO₄, NO₃, NH₄, bFe, T, zₘₐₓ, bgc) + λ_Fe*GOC*Fe¹ 
+    + κ_Bactᴮᶠᵉ*get_Bactfe(μₘₐₓ⁰, z, Z, M, Fe, DOC, PO₄, NO₃, NH₄, bFe, T, zₘₐₓ, bgc) + λ_Fe*GOC*Fe¹ 
     + θᶠᵉᴾᴼᶜ*Φ(POC, GOC, sh, bgc) + Cgfe2(sh, Fe, T, DOC, GOC, bgc) - θᶠᵉᴳᴼᶜ* g_GOC_FFᴹ*M - λₚₒ¹*BFe #Partial derivative omitted
 end
