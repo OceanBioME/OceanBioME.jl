@@ -75,12 +75,12 @@ model = NonhydrostaticModel(; grid,
 
 # set_defaults!(biogeochemistry.underlying_biogeochemistry, model)
 
-simulation.output_writers[:tracers] = JLD2OutputWriter(model, model.tracers,
+simulation = Simulation(model, Δt = 50, stop_time = 1day)
+
+simulation.output_writers[:tracers] = JLD2OutputWriter(model, model.biogeochemistry.sediment.tendencies.G⁻,
     filename = "temp_plotting_data.jld2",
     schedule = TimeInterval(24minute),
     overwrite_existing = true)
-
-simulation = Simulation(model, Δt = 50, stop_time = 1day)
 
 intercepted_tendencies = Tuple(Array(interior(field)) for field in values(TracerFields(keys(model.tracers), grid)))
 
