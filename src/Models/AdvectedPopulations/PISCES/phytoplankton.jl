@@ -133,7 +133,7 @@ end
     Kₛᵢ¹ = bgc.parameter_for_SiC.one
     Kₛᵢ² = bgc.parameter_for_SiC.two
 
-    Lₗᵢₘᴰ, Lₚₒ₄ᴰ, Lₙₕ₄ᴰ, Lₙₒ₃ᴰ, Lₙᴰ, Lₛᵢᴰ, L_Feᴰ = Lᴰ(D, PO₄, NO₃, NH₄, Si, Dᶜʰˡ, Dᶠᵉ, Si̅)
+    Lₗᵢₘᴰ, Lₚₒ₄ᴰ, Lₙₕ₄ᴰ, Lₙₒ₃ᴰ, Lₙᴰ, Lₛᵢᴰ, L_Feᴰ = Lᴰ(D, PO₄, NO₃, NH₄, Si, Dᶜʰˡ, Dᶠᵉ, Si̅, bgc)
     
     μₚ = μ⁰ₘₐₓ*fₚ(T)
     
@@ -167,15 +167,15 @@ end
     sh = get_sh(z, zₘₓₗ)
 
     gₚᶻ = grazingᶻ(P, D, POC, T, bgc)[2]     
-    gₚᴹ =  grazingᴹ(P, D, Z, POC, T)[3]
+    gₚᴹ =  grazingᴹ(P, D, Z, POC, T, bgc)[3]
 
     t_darkᴾ = bgc.mean_residence_time_of_phytoplankton_in_unlit_mixed_layer.P
 
-    Lₗᵢₘᴾ = Lᴾ(P, PO₄, NO₃, NH₄, Pᶜʰˡ, Pᶠᵉ)[1]
+    Lₗᵢₘᴾ = Lᴾ(P, PO₄, NO₃, NH₄, Pᶜʰˡ, Pᶠᵉ, bgc)[1]
     
-    PARᴾ = PARᴾ(PAR¹, PAR², PAR³)
+    PARᴾ = PARᴾ(PAR¹, PAR², PAR³, bgc)
 
-    μᴾ = μᴵ(P, Pᶜʰˡ, PARᴾ, L_day, T, αᴾ, Lₗᵢₘᴾ, zₘₓₗ, zₑᵤ, t_darkᴾ)
+    μᴾ = μᴵ(P, Pᶜʰˡ, PARᴾ, L_day, T, αᴾ, Lₗᵢₘᴾ, zₘₓₗ, zₑᵤ, t_darkᴾ, bgc)
 
     return (1-δᴾ)*μᴾ*P - mᴾ*K_mondo(P, Kₘ)*P - sh*wᴾ*P^2 - gₚᶻ*Z - gₚᴹ*M    #eq 1
 end
@@ -197,17 +197,17 @@ end
     #equaitons here
     sh = get_sh(z, zₘₓₗ)
 
-    g_Dᶻ = grazingᶻ(P, D, POC, T)[3]
-    g_Dᴹ = grazingᴹ(P, D, Z, POC, T)[3]
+    g_Dᶻ = grazingᶻ(P, D, POC, T, bgc)[3]
+    g_Dᴹ = grazingᴹ(P, D, Z, POC, T, bgc)[3]
  
     t_darkᴰ = bgc.mean_residence_time_of_phytoplankton_in_unlit_mixed_layer.D
 
-    Lₗᵢₘᴰ = Lᴰ(D, PO₄, NO₃, NH₄, Si, Dᶜʰˡ, Dᶠᵉ, Si̅)[1]
-    PARᴰ = PARᴰ(PAR¹, PAR², PAR³)
+    Lₗᵢₘᴰ = Lᴰ(D, PO₄, NO₃, NH₄, Si, Dᶜʰˡ, Dᶠᵉ, Si̅, bgc)[1]
+    PARᴰ = PARᴰ(PAR¹, PAR², PAR³, bgc)
 
     wᴰ = wᴾ + wₘₐₓᴰ*(1-Lₗᵢₘᴰ) #13
     
-    μᴰ = μᴵ(D, Dᶜʰˡ, PARᴰ, L_day, T, αᴰ, Lₗᵢₘᴰ, zₘₓₗ, zₑᵤ, t_darkᴰ)
+    μᴰ = μᴵ(D, Dᶜʰˡ, PARᴰ, L_day, T, αᴰ, Lₗᵢₘᴰ, zₘₓₗ, zₑᵤ, t_darkᴰ, bgc)
 
     return (1-δᴰ)*μᴰ*D - mᴰ*K_mondo(D, Kₘ)*D - sh*wᴰ*D^2 - g_Dᶻ*Z - g_Dᴹ*M    #eq 9
 end
@@ -228,15 +228,15 @@ end
 
     sh = get_sh(z, zₘₓₗ)
 
-    gₚᶻ = grazingᶻ(P, D, POC, T)[2]    
-    gₚᴹ = grazingᴹ(P, D, Z, POC, T)[2]
+    gₚᶻ = grazingᶻ(P, D, POC, T, bgc)[2]    
+    gₚᴹ = grazingᴹ(P, D, Z, POC, T, bgc)[2]
 
     t_darkᴾ = bgc.mean_residence_time_of_phytoplankton_in_unlit_mixed_layer.P
     
-    Lₗᵢₘᴾ= Lᴾ(P, PO₄, NO₃, NH₄, Pᶜʰˡ, Pᶠᵉ)[1]
-    PARᴾ = PARᴾ(PAR¹, PAR², PAR³)
+    Lₗᵢₘᴾ= Lᴾ(P, PO₄, NO₃, NH₄, Pᶜʰˡ, Pᶠᵉ, bgc)[1]
+    PARᴾ = PARᴾ(PAR¹, PAR², PAR³, bgc)
     
-    μᴾ = μᴵ(P, Pᶜʰˡ, PARᴾ, L_day, T, αᴾ, Lₗᵢₘᴾ, zₘₓₗ, zₑᵤ, t_darkᴾ)
+    μᴾ = μᴵ(P, Pᶜʰˡ, PARᴾ, L_day, T, αᴾ, Lₗᵢₘᴾ, zₘₓₗ, zₑᵤ, t_darkᴾ, bgc)
 
     μ̌ᴾ = μᴾ / f₁(L_day) #15b
     ρᴾᶜʰˡ = 144*μ̌ᴾ * P / (αᴾ* Pᶜʰˡ* ((PARᴾ)/(L_day + eps(0.0))) + eps(0.0)) #15a
@@ -260,17 +260,17 @@ end
 
     sh = get_sh(z, zₘₓₗ)
     
-    g_Dᶻ = grazingᶻ(P, D, POC, T)[3]
-    g_Dᴹ = grazingᴹ(P, D, Z, POC, T)[3]
+    g_Dᶻ = grazingᶻ(P, D, POC, T, bgc)[3]
+    g_Dᴹ = grazingᴹ(P, D, Z, POC, T, bgc)[3]
  
     t_darkᴰ = bgc.mean_residence_time_of_phytoplankton_in_unlit_mixed_layer.D
 
-    Lₗᵢₘᴰ = Lᴰ(D, PO₄, NO₃, NH₄, Si, Dᶜʰˡ, Dᶠᵉ, Si̅)[1]
-    PARᴰ = PARᴰ(PAR¹, PAR², PAR³)
+    Lₗᵢₘᴰ = Lᴰ(D, PO₄, NO₃, NH₄, Si, Dᶜʰˡ, Dᶠᵉ, Si̅, bgc)[1]
+    PARᴰ = PARᴰ(PAR¹, PAR², PAR³, bgc)
 
     wᴰ = wᴾ + wₘₐₓᴰ*(1-Lₗᵢₘᴰ) #13
 
-    μᴰ = μᴵ(D, Dᶜʰˡ, PARᴰ, L_day, T, αᴰ, Lₗᵢₘᴰ, zₘₓₗ, zₑᵤ, t_darkᴰ)
+    μᴰ = μᴵ(D, Dᶜʰˡ, PARᴰ, L_day, T, αᴰ, Lₗᵢₘᴰ, zₘₓₗ, zₑᵤ, t_darkᴰ, bgc)
 
     μ̌ᴰ = μᴰ / f₁(L_day) #15b
     ρᴰᶜʰˡ = 144*μ̌ᴰ * D / (αᴰ* Dᶜʰˡ* ((PARᴰ)/(L_day + eps(0.0))) + eps(0.0)) #15a
@@ -288,15 +288,15 @@ end
     K_Feᴾᶠᵉᵐⁱⁿ = bgc.min_half_saturation_const_for_iron_uptake.P # this seems wrong as doesn't quite match parameter list
     Pₘₐₓ = bgc.threshold_concentration_for_size_dependency.P
 
-    L_Feᴾ = Lᴾ(P, PO₄, NO₃, NH₄, Pᶜʰˡ, Pᶠᵉ)[6]
+    L_Feᴾ = Lᴾ(P, PO₄, NO₃, NH₄, Pᶜʰˡ, Pᶠᵉ, bgc)[6]
 
     sh = get_sh(z, zₘₓₗ)
 
-    gₚᶻ = grazingᶻ(P, D, POC, T)[2]    
-    gₚᴹ = grazingᴹ(P, D, Z, POC, T)[2]
+    gₚᶻ = grazingᶻ(P, D, POC, T, bgc)[2]    
+    gₚᴹ = grazingᴹ(P, D, Z, POC, T, bgc)[2]
 
     bFe =  Fe   #defined in previous PISCES model
-    μᴾᶠᵉ = μᴵᶠᵉ(P, Pᶠᵉ, θₘₐₓᶠᵉᵖ, Sᵣₐₜᴾ, K_Feᴾᶠᵉᵐⁱⁿ, Pₘₐₓ, L_Feᴾ, bFe)
+    μᴾᶠᵉ = μᴵᶠᵉ(P, Pᶠᵉ, θₘₐₓᶠᵉᵖ, Sᵣₐₜᴾ, K_Feᴾᶠᵉᵐⁱⁿ, Pₘₐₓ, L_Feᴾ, bFe, bgc)
 
     return (1-δᴾ)*μᴾᶠᵉ*P - mᴾ*K_mondo(P, Kₘ)*Pᶠᵉ - sh*wᴾ*P*Pᶠᵉ - θ(Pᶠᵉ, P)*gₚᶻ*Z - θ(Pᶠᵉ, P)*gₚᴹ*M  #16
 end
@@ -311,19 +311,19 @@ end
     Dₘₐₓ = bgc.threshold_concentration_for_size_dependency.D
     K_Feᴰᶠᵉᵐⁱⁿ = bgc.min_half_saturation_const_for_iron_uptake.D
     
-    L = Lᴰ(D, PO₄, NO₃, NH₄, Si, Dᶜʰˡ, Dᶠᵉ, Si̅)
+    L = Lᴰ(D, PO₄, NO₃, NH₄, Si, Dᶜʰˡ, Dᶠᵉ, Si̅, bgc)
     Lₗᵢₘᴰ = L[1]
     L_Feᴰ = L[6]
     wᴰ = wᴾ + wₘₐₓᴰ*(1-Lₗᵢₘᴰ) #13
 
     sh = get_sh(z, zₘₓₗ)
 
-    g_Dᶻ = grazingᶻ(P, D, POC, T)[3]
-    g_Dᴹ = grazingᴹ(P, D, Z, POC, T)[3]
+    g_Dᶻ = grazingᶻ(P, D, POC, T, bgc)[3]
+    g_Dᴹ = grazingᴹ(P, D, Z, POC, T, bgc)[3]
    
     bFe = Fe
 
-    μᴰᶠᵉ = μᴵᶠᵉ(D, Dᶠᵉ, θₘₐₓᶠᵉᴰ, Sᵣₐₜᴰ, K_Feᴰᶠᵉᵐⁱⁿ, Dₘₐₓ, L_Feᴰ, bFe)
+    μᴰᶠᵉ = μᴵᶠᵉ(D, Dᶠᵉ, θₘₐₓᶠᵉᴰ, Sᵣₐₜᴰ, K_Feᴰᶠᵉᵐⁱⁿ, Dₘₐₓ, L_Feᴰ, bFe, bgc)
 
     return (1-δᴰ)*μᴰᶠᵉ*D - mᴰ*K_mondo(D, Kₘ)*Dᶠᵉ - sh*wᴰ*D*Dᶠᵉ - θ(Dᶠᵉ, D)*g_Dᶻ*Z - θ(Dᶠᵉ, D)*g_Dᴹ*M    #16
 end
@@ -342,17 +342,17 @@ end
     L_day = get_L_day(ϕ, t, L_day_param)
 
     sh = get_sh(z, zₘₓₗ)
-    g_Dᶻ = grazingᶻ(P, D, POC, T)[3]
-    g_Dᴹ = grazingᴹ(P, D, Z, POC, T)[3]
+    g_Dᶻ = grazingᶻ(P, D, POC, T, bgc)[3]
+    g_Dᴹ = grazingᴹ(P, D, Z, POC, T, bgc)[3]
  
     t_darkᴰ = bgc.mean_residence_time_of_phytoplankton_in_unlit_mixed_layer.D
 
-    Lₗᵢₘᴰ = Lᴰ(D, PO₄, NO₃, NH₄, Si, Dᶜʰˡ, Dᶠᵉ, Si̅)[1]
-    PARᴰ = PARᴰ(PAR¹, PAR², PAR³)
+    Lₗᵢₘᴰ = Lᴰ(D, PO₄, NO₃, NH₄, Si, Dᶜʰˡ, Dᶠᵉ, Si̅, bgc)[1]
+    PARᴰ = PARᴰ(PAR¹, PAR², PAR³, bgc)
 
-    μᴰ = μᴵ(D, Dᶜʰˡ, PARᴰ, L_day, T, αᴰ, Lₗᵢₘᴰ, zₘₓₗ, zₑᵤ, t_darkᴰ)
+    μᴰ = μᴵ(D, Dᶜʰˡ, PARᴰ, L_day, T, αᴰ, Lₗᵢₘᴰ, zₘₓₗ, zₑᵤ, t_darkᴰ, bgc)
 
-    θₒₚₜˢⁱᴰ = fθₒₚₜˢⁱᴰ(D, PO₄, NO₃, NH₄, Si, Dᶜʰˡ, Dᶠᵉ, μᴰ, T, ϕ, Si̅)
+    θₒₚₜˢⁱᴰ = fθₒₚₜˢⁱᴰ(D, PO₄, NO₃, NH₄, Si, Dᶜʰˡ, Dᶠᵉ, μᴰ, T, ϕ, Si̅, bgc)
     
     wᴰ = wᴾ + wₘₐₓᴰ*(1-Lₗᵢₘᴰ) #13
     

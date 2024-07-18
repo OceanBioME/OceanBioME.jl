@@ -19,20 +19,20 @@ end
     b_z, bₘ = bgc.temperature_sensitivity_term
     g_FF = bgc.flux_feeding_rate
 
-    grazing = grazingᶻ(P, D, POC, T)
+    grazing = grazingᶻ(P, D, POC, T, bgc)
     ∑gᶻ = grazing[1]
     gₚₒᶻ = grazing[4]
 
     sh = get_sh(z, zₘₓₗ)
 
-    R_CaCO₃ = R_CaCO₃(zₘₓₗ, T, P, PAR) 
-    λₚₒ¹ = λ¹(T, O₂)
-    Φ₁ᴰᴼᶜ = Φᴰᴼᶜ(DOC, POC, GOC, sh)[1]
-    Φ₃ᴰᴼᶜ = Φᴰᴼᶜ(DOC, POC, GOC, sh)[3]
+    R_CaCO₃ = R_CaCO₃(zₘₓₗ, T, P, PAR, bgc) 
+    λₚₒ¹ = λ¹(T, O₂, bgc)
+    Φ₁ᴰᴼᶜ = Φᴰᴼᶜ(DOC, POC, GOC, sh, bgc)[1]
+    Φ₃ᴰᴼᶜ = Φᴰᴼᶜ(DOC, POC, GOC, sh, bgc)[3]
 
-    gₚₒᴹ = grazingᴹ(P, D, Z, POC, T)[4]
+    gₚₒᴹ = grazingᴹ(P, D, Z, POC, T, bgc)[4]
     gₚₒ_FFᴹ = g_FF*bₘ^T*wₚₒ*POC #29a
-    Φ = Φ(POC, GOC, sh)
+    Φ = Φ(POC, GOC, sh, bgc)
 
     return σᶻ*∑gᶻ*Z + 0.5*mᴰ*K_mondo(D, Kₘ) + rᶻ*b_z^T*K_mondo(Z, Kₘ)*Z +
      mᶻ*b_z^T*Z^2 + (1 - 0.5*R_CaCO₃)*(mᴾ*K_mondo(P, Kₘ)*P + wᴾ*P^2) + 
@@ -50,21 +50,21 @@ end
     g_FF = bgc.flux_feeding_rate
     wₘₐₓᴰ = bgc.max_quadratic_mortality_of_diatoms
 
-    ∑gᴹ = grazingᴹ(P, D, Z, POC, T)[1] 
-    ∑g_FFᴹ = ∑g_FFᴹ(zₑᵤ, zₘₓₗ, T, POC, GOC)
+    ∑gᴹ = grazingᴹ(P, D, Z, POC, T, bgc)[1] 
+    ∑g_FFᴹ = ∑g_FFᴹ(zₑᵤ, zₘₓₗ, T, POC, GOC, bgc)
     
-    Pᵤₚᴹ = Pᵤₚ(M, T)
-    R_CaCO₃ = R_CaCO₃(zₘₓₗ, T, P, PAR)
+    Pᵤₚᴹ = Pᵤₚ(M, T, bgc)
+    R_CaCO₃ = R_CaCO₃(zₘₓₗ, T, P, PAR, bgc)
 
     sh = get_sh(z, zₘₓₗ)
 
-    Lₗᵢₘᴰ = Lᴰ(D, PO₄, NO₃, NH₄, Si, Dᶜʰˡ, Dᶠᵉ, Si̅)[1]
+    Lₗᵢₘᴰ = Lᴰ(D, PO₄, NO₃, NH₄, Si, Dᶜʰˡ, Dᶠᵉ, Si̅, bgc)[1]
     wᴰ =  wᴾ + wₘₐₓᴰ*(1-Lₗᵢₘᴰ)
-    Φ = Φ(POC, GOC, sh)
-    Φ₂ᴰᴼᶜ = Φᴰᴼᶜ(DOC, POC, GOC, sh)[2]
-    w_GOC = w(zₑᵤ, zₘₓₗ)
+    Φ = Φ(POC, GOC, sh, bgc)
+    Φ₂ᴰᴼᶜ = Φᴰᴼᶜ(DOC, POC, GOC, sh, bgc)[2]
+    w_GOC = w_GOC(zₑᵤ, zₘₓₗ, bgc)
     g_GOC_FFᴹ = g_FF*bₘ^T*w_GOC*GOC #29b
-    λₚₒ¹ = λ¹(T, O₂)
+    λₚₒ¹ = λ¹(T, O₂, bgc)
     
 
     return σᴹ*(∑gᴹ + ∑g_FFᴹ)*M + rᴹ*bₘ^T*K_mondo(M, Kₘ)*M + Pᵤₚᴹ + 

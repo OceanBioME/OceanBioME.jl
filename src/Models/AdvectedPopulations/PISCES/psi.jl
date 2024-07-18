@@ -10,7 +10,7 @@
     if z <= zₘₓₗ
         return χ_lab⁰
     else
-        return χ_lab⁰*exp(-(λₚₛᵢˡᵃᵇ - λₚₛᵢʳᵉᶠ)*((z-zₘₐₓ)/w_GOC(zₑᵤ, zₘₓₗ))) #eq53
+        return χ_lab⁰*exp(-(λₚₛᵢˡᵃᵇ - λₚₛᵢʳᵉᶠ)*((z-zₘₐₓ)/w_GOC(zₑᵤ, zₘₓₗ, bgc))) #eq53
     end
 end
 
@@ -19,7 +19,7 @@ end
     λₚₛᵢˡᵃᵇ = bgc.fast_dissolution_rate_of_BSi
     λₚₛᵢʳᵉᶠ = bgc.slow_dissolution_rate_of_BSi
 
-    λₚₛᵢ = χ_lab(zₘₓₗ, zₑᵤ, λₚₛᵢˡᵃᵇ, λₚₛᵢʳᵉᶠ, z)*λₚₛᵢˡᵃᵇ + (1 - χ_lab(zₘₓₗ, zₑᵤ, λₚₛᵢˡᵃᵇ, λₚₛᵢʳᵉᶠ, z))*λₚₛᵢʳᵉᶠ
+    λₚₛᵢ = χ_lab(zₘₓₗ, zₑᵤ, λₚₛᵢˡᵃᵇ, λₚₛᵢʳᵉᶠ, z, bgc)*λₚₛᵢˡᵃᵇ + (1 - χ_lab(zₘₓₗ, zₑᵤ, λₚₛᵢˡᵃᵇ, λₚₛᵢʳᵉᶠ, z, bgc))*λₚₛᵢʳᵉᶠ
 
     Si_eq = 10^(6.44 - 968/(T + 273.15))
     Siₛₐₜ = (Si_eq - Si)/Si_eq
@@ -40,16 +40,16 @@ end
     ϕ = get_ϕ(ϕ₀, y)
     L_day = get_L_day(ϕ, t, L_day_param)
 
-    PARᴰ = PARᴰ(PAR¹, PAR², PAR³)
+    PARᴰ = PARᴰ(PAR¹, PAR², PAR³, bgc)
 
-    Lₗᵢₘᴰ = Lᴰ(D, PO₄, NO₃, NH₄, Si, Dᶜʰˡ, Dᶠᵉ, Si̅)[1]
+    Lₗᵢₘᴰ = Lᴰ(D, PO₄, NO₃, NH₄, Si, Dᶜʰˡ, Dᶠᵉ, Si̅, bgc)[1]
 
     wᴰ = wᴾ + wₘₐₓᴰ*(1-Lₗᵢₘᴰ)
 
-    μᴰ = μᴵ(D, Dᶜʰˡ, PARᴰ, L_day, T, αᴰ, Lₗᵢₘᴰ, zₘₓₗ, zₑᵤ, t_darkᴰ)
+    μᴰ = μᴵ(D, Dᶜʰˡ, PARᴰ, L_day, T, αᴰ, Lₗᵢₘᴰ, zₘₓₗ, zₑᵤ, t_darkᴰ, bgc)
 
-    θˢⁱᴰ = fθₒₚₜˢⁱᴰ(D, PO₄, NO₃, NH₄, Si, Dᶜʰˡ, Dᶠᵉ, μᴰ, T, ϕ, Si̅)
+    θˢⁱᴰ = fθₒₚₜˢⁱᴰ(D, PO₄, NO₃, NH₄, Si, Dᶜʰˡ, Dᶠᵉ, μᴰ, T, ϕ, Si̅, bgc)
 
-    return  θˢⁱᴰ*grazingᴹ(P, D, Z, POC, T)[3]*M +  θˢⁱᴰ*grazingᶻ(P, D, Z, POC, T)[3]*Z + 
-     θˢⁱᴰ*mᴰ*K_mondo(D, Kₘ)*Dˢⁱ + sh*wᴰ*D*Dˢⁱ - λₚₛᵢ¹(zₘₓₗ, zₑᵤ, z, T, Si)*Dissₛᵢ*PSi #add partial derivative here
+    return  θˢⁱᴰ*grazingᴹ(P, D, Z, POC, T, bgc)[3]*M +  θˢⁱᴰ*grazingᶻ(P, D, Z, POC, T, bgc)[3]*Z + 
+     θˢⁱᴰ*mᴰ*K_mondo(D, Kₘ)*Dˢⁱ + sh*wᴰ*D*Dˢⁱ - λₚₛᵢ¹(zₘₓₗ, zₑᵤ, z, T, Si, bgc)*Dissₛᵢ*PSi #add partial derivative here
 end
