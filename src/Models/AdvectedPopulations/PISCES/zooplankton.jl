@@ -41,10 +41,10 @@ end
     gₚᴹ = (pₚᴹ*max(0, P - Jₜₕᵣₑₛₕᴹ))*grazing_arg #26a
     g_Dᴹ = (p_Dᴹ*max(0, D - Jₜₕᵣₑₛₕᴹ))*grazing_arg #26a
     gₚₒᴹ = (pₚₒᴹ*max(0, POC - Jₜₕᵣₑₛₕᴹ))*grazing_arg #26a
-    g_zᴹ = (p_zᴹ*max(0, Z - Jₜₕᵣₑₛₕᴹ))*grazing_arg #26a
+    g_Zᴹ = (p_zᴹ*max(0, Z - Jₜₕᵣₑₛₕᴹ))*grazing_arg #26a
     ∑gᴹ = gₚᴹ +  g_Dᴹ + gₚₒᴹ + g_Zᴹ #Sum grazing rates on each prey species for mesozooplankton
     
-    return  ∑gᴹ, gₚᴹ, g_Dᴹ, gₚₒᴹ, g_zᴹ 
+    return  ∑gᴹ, gₚᴹ, g_Dᴹ, gₚₒᴹ, g_Zᴹ 
 end
 
 @inline function w_GOC(zₑᵤ, zₘₓₗ, bgc)

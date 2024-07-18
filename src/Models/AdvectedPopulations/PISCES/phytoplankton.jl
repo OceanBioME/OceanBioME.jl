@@ -15,7 +15,7 @@
 end
 @inline f₂(zₘₓₗ, zₑᵤ, t_darkᴵ) = 1 - K_mondo(t_dark(zₘₓₗ, zₑᵤ), t_darkᴵ) #eq 3d
 
-@inline fₚ(T) = bgc.temperature_sensitivity_of_growth^T #eq 4a
+@inline fₚ(T, bgc) = bgc.temperature_sensitivity_of_growth^T #eq 4a
 
 @inline L_NH₄(NO₃, NH₄, Kₙₒ₃ᴵ, Kₙₕ₄ᴵ) = Kₙₒ₃ᴵ*NH₄/(Kₙₒ₃ᴵ*Kₙₕ₄ᴵ+Kₙₕ₄ᴵ*NO₃+Kₙₒ₃ᴵ*NH₄ + eps(0.0)) #eq 6d
 @inline L_NO₃(NO₃, NH₄, Kₙₒ₃ᴵ, Kₙₕ₄ᴵ) = Kₙₕ₄ᴵ*NO₃/(Kₙₒ₃ᴵ*Kₙₕ₄ᴵ+Kₙₕ₄ᴵ*NO₃+Kₙₒ₃ᴵ*NH₄ + eps(0.0)) #eq 6e
@@ -27,7 +27,7 @@ end
 @inline I₂(I, Iₘₐₓ) = max(0, I - Iₘₐₓ) #eq 7b
 @inline Kᵢᴶ(Kᵢᴶᵐⁱⁿ, J₁, J₂, Sᵣₐₜᴶ) = Kᵢᴶᵐⁱⁿ* (J₁ + Sᵣₐₜᴶ* J₂)/(J₁ + J₂ + eps(0.0)) #eq 7c
 
-@inline function PARᴾ(PAR¹, PAR², PAR³, bgc)
+@inline function get_PARᴾ(PAR¹, PAR², PAR³, bgc)
     β₁ᴾ = bgc.absorption_in_the_blue_part_of_light.P
     β₂ᴾ = bgc.absorption_in_the_green_part_of_light.P
     β₃ᴾ = bgc.absorption_in_the_red_part_of_light.P
@@ -35,7 +35,7 @@ end
     return β₁ᴾ*PAR¹ + β₂ᴾ*PAR² + β₃ᴾ*PAR³
 end
 
-@inline function PARᴰ(PAR¹, PAR², PAR³, bgc)
+@inline function get_PARᴰ(PAR¹, PAR², PAR³, bgc)
     β₁ᴰ = bgc.absorption_in_the_blue_part_of_light.D
     β₂ᴰ = bgc.absorption_in_the_green_part_of_light.D
     β₃ᴰ = bgc.absorption_in_the_red_part_of_light.D
@@ -46,7 +46,7 @@ end
 @inline function μᴵᶠᵉ(I, Iᶠᵉ, θₘₐₓᶠᵉᴵ, Sᵣₐₜᴵ, K_Feᴵᶠᵉᵐⁱⁿ, Iₘₐₓ, L_Feᴵ, bFe, bgc)
     μ⁰ₘₐₓ = bgc.growth_rate_at_zero
 
-    μₚ = μ⁰ₘₐₓ*fₚ(T) #4b
+    μₚ = μ⁰ₘₐₓ*fₚ(T,bgc) #4b
 
     I₂ = max(0, I - Iₘₐₓ) #18c
     I₁ = I - I₂     #18c
@@ -64,7 +64,7 @@ end
     
     μ⁰ₘₐₓ = bgc.growth_rate_at_zero
 
-    μₚ = μ⁰ₘₐₓ*fₚ(T)    #eq 4b      
+    μₚ = μ⁰ₘₐₓ*fₚ(T, bgc)    #eq 4b      
 
     return μₚ * f₁(L_day) * f₂(zₘₓₗ, zₑᵤ, t_darkᴵ) * Cₚᵣₒ(I, Iᶜʰˡ, PARᴵ, L_day, αᴵ, μₚ, Lₗᵢₘᴵ) * Lₗᵢₘᴵ #2b 
 end
@@ -135,7 +135,7 @@ end
 
     Lₗᵢₘᴰ, Lₚₒ₄ᴰ, Lₙₕ₄ᴰ, Lₙₒ₃ᴰ, Lₙᴰ, Lₛᵢᴰ, L_Feᴰ = Lᴰ(D, PO₄, NO₃, NH₄, Si, Dᶜʰˡ, Dᶠᵉ, Si̅, bgc)
     
-    μₚ = μ⁰ₘₐₓ*fₚ(T)
+    μₚ = μ⁰ₘₐₓ*fₚ(T, bgc)
     
     Lₗᵢₘ₁ᴰˢⁱ = K_mondo(Si, Kₛᵢ¹)    #23c
     Lₗᵢₘ₂ᴰˢⁱ = ifelse(ϕ < 0, (K_mondo((Si)^3, (Kₛᵢ²)^3)), 0)   #23d
@@ -172,8 +172,8 @@ end
     t_darkᴾ = bgc.mean_residence_time_of_phytoplankton_in_unlit_mixed_layer.P
 
     Lₗᵢₘᴾ = Lᴾ(P, PO₄, NO₃, NH₄, Pᶜʰˡ, Pᶠᵉ, bgc)[1]
-    
-    PARᴾ = PARᴾ(PAR¹, PAR², PAR³, bgc)
+
+    PARᴾ = get_PARᴾ(PAR¹, PAR², PAR³, bgc)
 
     μᴾ = μᴵ(P, Pᶜʰˡ, PARᴾ, L_day, T, αᴾ, Lₗᵢₘᴾ, zₘₓₗ, zₑᵤ, t_darkᴾ, bgc)
 
@@ -203,7 +203,7 @@ end
     t_darkᴰ = bgc.mean_residence_time_of_phytoplankton_in_unlit_mixed_layer.D
 
     Lₗᵢₘᴰ = Lᴰ(D, PO₄, NO₃, NH₄, Si, Dᶜʰˡ, Dᶠᵉ, Si̅, bgc)[1]
-    PARᴰ = PARᴰ(PAR¹, PAR², PAR³, bgc)
+    PARᴰ = get_PARᴰ(PAR¹, PAR², PAR³, bgc)
 
     wᴰ = wᴾ + wₘₐₓᴰ*(1-Lₗᵢₘᴰ) #13
     
@@ -234,7 +234,7 @@ end
     t_darkᴾ = bgc.mean_residence_time_of_phytoplankton_in_unlit_mixed_layer.P
     
     Lₗᵢₘᴾ= Lᴾ(P, PO₄, NO₃, NH₄, Pᶜʰˡ, Pᶠᵉ, bgc)[1]
-    PARᴾ = PARᴾ(PAR¹, PAR², PAR³, bgc)
+    PARᴾ = get_PARᴾ(PAR¹, PAR², PAR³, bgc)
     
     μᴾ = μᴵ(P, Pᶜʰˡ, PARᴾ, L_day, T, αᴾ, Lₗᵢₘᴾ, zₘₓₗ, zₑᵤ, t_darkᴾ, bgc)
 
@@ -266,7 +266,7 @@ end
     t_darkᴰ = bgc.mean_residence_time_of_phytoplankton_in_unlit_mixed_layer.D
 
     Lₗᵢₘᴰ = Lᴰ(D, PO₄, NO₃, NH₄, Si, Dᶜʰˡ, Dᶠᵉ, Si̅, bgc)[1]
-    PARᴰ = PARᴰ(PAR¹, PAR², PAR³, bgc)
+    PARᴰ = get_PARᴰ(PAR¹, PAR², PAR³, bgc)
 
     wᴰ = wᴾ + wₘₐₓᴰ*(1-Lₗᵢₘᴰ) #13
 
@@ -348,7 +348,7 @@ end
     t_darkᴰ = bgc.mean_residence_time_of_phytoplankton_in_unlit_mixed_layer.D
 
     Lₗᵢₘᴰ = Lᴰ(D, PO₄, NO₃, NH₄, Si, Dᶜʰˡ, Dᶠᵉ, Si̅, bgc)[1]
-    PARᴰ = PARᴰ(PAR¹, PAR², PAR³, bgc)
+    PARᴰ = get_PARᴰ(PAR¹, PAR², PAR³, bgc)
 
     μᴰ = μᴵ(D, Dᶜʰˡ, PARᴰ, L_day, T, αᴰ, Lₗᵢₘᴰ, zₘₓₗ, zₑᵤ, t_darkᴰ, bgc)
 
