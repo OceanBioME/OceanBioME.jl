@@ -1,4 +1,4 @@
-@inline function grazingᶻ(P, D, POC, T) 
+@inline function grazingᶻ(P, D, POC, T, bgc) 
     pₚᶻ = bgc.preference_for_nanophytoplankton.Z
     p_Dᶻ = bgc.preference_for_diatoms.Z
     pₚₒᶻ = bgc.preference_for_POC.Z
@@ -6,6 +6,7 @@
     Fₜₕᵣₑₛₕᶻ = bgc.food_threshold_for_zooplankton.Z
     gₘₐₓᶻ = bgc.max_grazing_rate.Z
     K_Gᶻ = bgc.half_saturation_const_for_grazing.Z
+    b_z = bgc.temperature_sensitivity_term.Z
 
     F = pₚᶻ*max(0, P - Jₜₕᵣₑₛₕᶻ) + p_Dᶻ*max(0, D - Jₜₕᵣₑₛₕᶻ) + pₚₒᶻ*max(0, POC - Jₜₕᵣₑₛₕᶻ)
     Fₗᵢₘ = max(0, F - min(0.5*F, Fₜₕᵣₑₛₕᶻ))

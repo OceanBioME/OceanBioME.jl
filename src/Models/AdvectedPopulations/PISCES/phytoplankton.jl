@@ -166,8 +166,8 @@ end
     #equaitons here
     sh = get_sh(z, zₘₓₗ)
 
-    gₚᶻ = grazingᶻ(P, D, POC, T)[2]     
-    gₚᴹ =  grazingᶻ(P, D, POC, T)[3]
+    gₚᶻ = grazingᶻ(P, D, POC, T, bgc)[2]     
+    gₚᴹ =  grazingᴹ(P, D, Z, POC, T)[3]
 
     t_darkᴾ = bgc.mean_residence_time_of_phytoplankton_in_unlit_mixed_layer.P
 
