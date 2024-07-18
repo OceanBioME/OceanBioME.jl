@@ -7,6 +7,8 @@
     σᶻ = bgc.non_assimilated_fraction.Z
     γᴹ = bgc.excretion_as_DOM.M
     σᴹ = bgc.non_assimilated_fraction.M
+    αᴾ = bgc.initial_slope_of_PI_curve.P
+    αᴰ = bgc.initial_slope_of_PI_curve.D
 
     bFe = Fe
 
@@ -15,17 +17,24 @@
     L_day_param = bgc.length_of_day
     ϕ = get_ϕ(ϕ₀, y)
     L_day = get_L_day(ϕ, t, L_day_param)
+
+    t_darkᴾ = bgc.mean_residence_time_of_phytoplankton_in_unlit_mixed_layer.P
+    t_darkᴰ = bgc.mean_residence_time_of_phytoplankton_in_unlit_mixed_layer.D
+    PARᴾ = get_PARᴾ(PAR¹, PAR², PAR³, bgc)
+    PARᴰ = get_PARᴰ(PAR¹, PAR², PAR³, bgc)
     
     #Grazing
-    grazingᶻ = get_grazingᶻ(P, D, POC, T, bgc)
-    grazingᴹ = get_grazingᴹ(P, D, Z, POC, T, bgc)
-    ∑gᶻ = grazingᶻ[1]
-    ∑gᴹ = grazingᴹ[1]
-    ∑g_FFᴹ = get_∑g_FFᴹ(zₑᵤ, zₘₓₗ, T, POC, GOC, bgc)
+    ∑gᶻ, gₚᶻ, g_Dᶻ, gₚₒᶻ = get_grazingᶻ(P, D, POC, T, bgc) 
+    ∑gᴹ, gₚᴹ, g_Dᴹ, gₚₒᴹ, g_Zᴹ  = get_grazingᴹ(P, D, Z, POC, T, bgc) 
 
+    ∑g_FFᴹ = get_∑g_FFᴹ(z, zₑᵤ, zₘₓₗ, T, POC, GOC, bgc)
+    #g_Z not called
     #Gross growth efficiency
-    eᶻ = eᴶ(eₘₐₓᶻ, σᶻ, gₚᶻ, g_Dᶻ, gₚₒᶻ, g_zᴹ, N, Fe, P, D, POC, Z, bgc)
-    eᴹ =  eᴶ(eₘₐₓᴹ, σᴹ, gₚᴹ, g_Dᴹ, gₚₒᴹ, g_zᴹ,Pᶠᵉ, Dᶠᵉ, SFe, P, D, POC, bgc)
+    eᶻ = e(eₘₐₓᶻ, σᶻ, gₚᶻ, g_Dᶻ, gₚₒᶻ, 0, Pᶠᵉ, Dᶠᵉ, SFe, P, D, POC, bgc)
+    eᴹ =  eᴶ(eₘₐₓᴹ, σᴹ, gₚᴹ, g_Dᴹ, gₚₒᴹ, g_Zᴹ,Pᶠᵉ, Dᶠᵉ, SFe, P, D, POC, bgc)
+
+    zₘₐₓ = max(zₑᵤ, zₘₓₗ) #35a
+    Bact = get_Bact(zₘₐₓ, z, Z, M)
 
     #Growth rates for phytoplankton
     Lₗᵢₘᴾ = Lᴾ(P, PO₄, NO₃, NH₄, Pᶜʰˡ, Pᶠᵉ, bgc)[1]

@@ -10,7 +10,7 @@
     if z <= zₘₓₗ
         return χ_lab⁰
     else
-        return χ_lab⁰*exp(-(λₚₛᵢˡᵃᵇ - λₚₛᵢʳᵉᶠ)*((z-zₘₐₓ)/w_GOC(zₑᵤ, zₘₓₗ, bgc))) #eq53
+        return χ_lab⁰*exp(-(λₚₛᵢˡᵃᵇ - λₚₛᵢʳᵉᶠ)*((z-zₘₐₓ)/get_w_GOC(z, zₑᵤ, zₘₓₗ, bgc))) #eq53
     end
 end
 
@@ -34,6 +34,9 @@ end
     αᴰ = bgc.initial_slope_of_PI_curve.D
     t_darkᴰ = bgc.mean_residence_time_of_phytoplankton_in_unlit_mixed_layer.D
     Dissₛᵢ = bgc.dissolution_rate_of_silicon
+    mᴰ = bgc.phytoplankton_mortality_rate.D
+
+    sh = get_sh(z, zₘₓₗ)
 
     ϕ₀ = bgc.latitude
     L_day_param = bgc.length_of_day

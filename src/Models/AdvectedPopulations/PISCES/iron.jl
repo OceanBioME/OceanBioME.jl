@@ -8,9 +8,9 @@
 @inline function Fe¹(Fe, DOC, T)
     Lₜ = max(0.09*(DOC + 40) - 3, 0.6) # bgc.total_concentration_of_iron_ligands
     K_eqᶠᵉ = 10^(16.27 - 1565.7/max(T, 5)) #check this value
-    Δ = 1 +  K_eqᶠᵉ(T)*Lₜ -  K_eqᶠᵉ(T)*Fₑ
+    Δ = 1 +  K_eqᶠᵉ*Lₜ -  K_eqᶠᵉ*Fe
 
-    return (-Δ + sqrt(Δ^2 + 4*K_eqᶠᵉ(T)*Fe))/(2*K_eqᶠᵉ(T)) #eq65
+    return (-Δ + sqrt(Δ^2 + 4*K_eqᶠᵉ*Fe))/(2*K_eqᶠᵉ) #eq65
 end
 
 @inline function Cgfe1(sh, Fe, POC, DOC, T, bgc)
@@ -19,7 +19,7 @@ end
     a₄ = bgc.aggregation_rate_of_DOC_to_POC_4
     a₅ = bgc.aggregation_rate_of_DOC_to_POC_5
    
-    FeL = Fe - Fe¹(DOC, T, Fe) #eq64
+    FeL = Fe - Fe¹(Fe, DOC, T) #eq64
     Fe_coll = 0.5*FeL
     return ((a₁*DOC + a₂*POC)*sh+a₄*POC + a₅*DOC)*Fe_coll
 end
@@ -61,6 +61,10 @@ end
     Sᵣₐₜᴰ = bgc.size_ratio_of_phytoplankton.D
     K_Feᴰᶠᵉᵐⁱⁿ = bgc.min_half_saturation_const_for_iron_uptake.D
     Dₘₐₓ = bgc.threshold_concentration_for_size_dependency.D
+    g_FF = bgc.flux_feeding_rate
+    bₘ = bgc.temperature_sensitivity_term.M
+    wₚₒ = bgc.sinking_speed_of_POC
+    w_GOCᵐⁱⁿ = bgc.min_sinking_speed_of_GOC
 
     bFe = Fe
 
@@ -71,9 +75,9 @@ end
     
     λₚₒ¹ = λ¹(T, O₂, bgc)
 
-    μᴾᶠᵉ = μᴵᶠᵉ(P, Pᶠᵉ, θₘₐₓᶠᵉᴾ, Sᵣₐₜᴾ, K_Feᴾᶠᵉᵐⁱⁿ, Pₘₐₓ, L_Feᴾ, bFe, bgc)
-    μᴰᶠᵉ = μᴵᶠᵉ(D, Dᶠᵉ, θₘₐₓᶠᵉᴰ, Sᵣₐₜᴰ, K_Feᴰᶠᵉᵐⁱⁿ, Dₘₐₓ, L_Feᴰ, bFe, bgc)
-   
+    μᴾᶠᵉ = μᴵᶠᵉ(P, Pᶠᵉ, θₘₐₓᶠᵉᴾ, Sᵣₐₜᴾ, K_Feᴾᶠᵉᵐⁱⁿ, Pₘₐₓ, L_Feᴾ, bFe, T, bgc)
+    μᴰᶠᵉ = μᴵᶠᵉ(D, Dᶠᵉ, θₘₐₓᶠᵉᴰ, Sᵣₐₜᴰ, K_Feᴰᶠᵉᵐⁱⁿ, Dₘₐₓ, L_Feᴰ, bFe, T, bgc)
+    zₘₐₓ = max(zₑᵤ, zₘₓₗ)
     #Iron quotas
     θᶠᵉᴾ = θ(Pᶠᵉ, P)
     θᶠᵉᴰ = θ(Dᶠᵉ, D)
@@ -81,21 +85,25 @@ end
     θᶠᵉᴳᴼᶜ = θ(BFe, GOC)
     #Grazing
     ∑gᶻ, gₚᶻ, g_Dᶻ, gₚₒᶻ = get_grazingᶻ(P, D, POC, T, bgc)
-    ∑gᴹ, gₚᴹ, g_Dᴹ, gₚₒᴹ, g_zᴹ = get_grazingᴹ(P, D, Z, POC, T, bgc)
-    ∑g_FFᴹ = get_∑g_FFᴹ(zₑᵤ, zₘₓₗ, T, POC, GOC, bgc)
+    ∑gᴹ, gₚᴹ, g_Dᴹ, gₚₒᴹ, g_Zᴹ = get_grazingᴹ(P, D, Z, POC, T, bgc)
+    ∑g_FFᴹ = get_∑g_FFᴹ(z, zₑᵤ, zₘₓₗ, T, POC, GOC, bgc)
     
     ∑θᶠᵉⁱgᵢᶻ = θᶠᵉᴾ*grazingᶻ[2] + θᶠᵉᴰ*grazingᶻ[3] + θᶠᵉᴾᴼᶜ*grazingᶻ[4] #over P, D, POC
     ∑θᶠᵉⁱgᵢᴹ = θᶠᵉᴾ*grazingᴹ[2] + θᶠᵉᴰ*grazingᴹ[3] + θᶠᵉᴾᴼᶜ*grazingᴹ[4] + θᶠᵉᶻ*grazingᴹ[5] #graze on P, D, POC, Z 
 
     Bactfe = get_Bactfe(μₘₐₓ⁰, z, Z, M, Fe, DOC, PO₄, NO₃, NH₄, bFe, T, zₘₐₓ, bgc)
 
+    gₚₒ_FF = g_FF*bₘ^T*wₚₒ*POC#
+    w_GOC = w_GOCᵐⁱⁿ + (200 - w_GOCᵐⁱⁿ)*(max(0, z-zₘₐₓ))/(5000) #41b
+    g_GOC_FFᴹ = g_FF*bₘ^T*w_GOC*GOC 
+
     #Gross growth efficiency
-    eₙᶻ = eₙᴶ(gₚᶻ, g_Dᶻ, gₚₒᶻ, g_zᴹ, Pᶠᵉ, Dᶠᵉ, SFe, P, D, POC, bgc)
-    eₙᴹ = eₙᴶ(gₚᴹ, g_Dᴹ, gₚₒᴹ, g_zᴹ, Pᶠᵉ, Dᶠᵉ, SFe, P, D, POC, bgc)
+    eₙᶻ = get_eₙᴶ(gₚᶻ, g_Dᶻ, gₚₒᶻ, 0, Pᶠᵉ, Dᶠᵉ, SFe, P, D, POC, bgc)
+    eₙᴹ = get_eₙᴶ(gₚᴹ, g_Dᴹ, gₚₒᴹ, g_Zᴹ, Pᶠᵉ, Dᶠᵉ, SFe, P, D, POC, bgc)
     
     return max(0, (1-σᶻ)*(∑θᶠᵉⁱgᵢᶻ/∑gᶻ - eₙᶻ*θᶠᵉᶻ))*∑gᶻ*Z 
-    + max(0, (1-σᴹ)*(∑θᶠᵉⁱgᵢᴹ + θᶠᵉᴾᴼᶜ*gₚₒ_FF + θᶠᵉᴳᴼᶜ*g_GOC_FF )/(∑gᴹ+∑g_FFᴹ) - eₙᴹ*θᶠᵉᶻ)*(∑gᴹ+∑g_FFᴹ)*M 
+    + max(0, (1-σᴹ)*(∑θᶠᵉⁱgᵢᴹ + θᶠᵉᴾᴼᶜ*gₚₒ_FF + θᶠᵉᴳᴼᶜ*g_GOC_FFᴹ )/(∑gᴹ+∑g_FFᴹ) - eₙᴹ*θᶠᵉᶻ)*(∑gᴹ+∑g_FFᴹ)*M 
     + γᴹ*θᶠᵉᶻ*Rᵤₚ(M, T, bgc) + λₚₒ¹*SFe - (1 - δᴾ)*μᴾᶠᵉ*P - (1 - δᴰ)*μᴰᶠᵉ*D 
-    - Scav(POC, GOC, CaCO₃, BSi, DOC, T, Fe) - Cgfe1(sh, Fe, POC, DOC, T, bgc) - Cgfe2(sh, Fe, T, DOC, GOC, bgc) 
+    - Scav(POC, GOC, CaCO₃, BSi, D_dust, DOC, T, Fe, bgc) - Cgfe1(sh, Fe, POC, DOC, T, bgc) - Cgfe2(sh, Fe, T, DOC, GOC, bgc) 
     - Aggfe(Fe, DOC, T, bgc) - Bactfe
 end

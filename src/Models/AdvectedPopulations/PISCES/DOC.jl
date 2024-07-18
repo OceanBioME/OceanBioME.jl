@@ -1,7 +1,7 @@
 @inline function Rᵤₚ(M, T, bgc)
     σᴹ = bgc.non_assimilated_fraction.M
     eₘₐₓᴹ = bgc.max_growth_efficiency_of_zooplankton.M
-    mᴹ = bgc.phytoplankton_mortality_rate.M
+    mᴹ = bgc.zooplankton_quadratic_mortality.M
     bₘ = bgc.temperature_sensitivity_term.M
     return (1 - σᴹ - eₘₐₓᴹ)*(1)/(1-eₘₐₓᴹ)*mᴹ*bₘ^T*M^2  #30b
 end
@@ -9,7 +9,7 @@ end
 @inline function Pᵤₚ(M, T, bgc)
     σᴹ = bgc.non_assimilated_fraction.M
     eₘₐₓᴹ = bgc.max_growth_efficiency_of_zooplankton.M
-    mᴹ = bgc.phytoplankton_mortality_rate.M
+    mᴹ = bgc.zooplankton_quadratic_mortality.M
     bₘ = bgc.temperature_sensitivity_term.M
     return σᴹ*(1)/(1-eₘₐₓᴹ)*mᴹ*bₘ^T*M^2      #30a
 end
@@ -23,7 +23,7 @@ end
 
     Lₗᵢₘᵇᵃᶜᵗ = Lᵇᵃᶜᵗ(DOC, PO₄, NO₃, NH₄, bFe, bgc)[2]
 
-    return min(O₂/O₂ᵘᵗ, λ_DOC*bₚ^T(1 - ΔO₂(O₂, bgc)) * Lₗᵢₘᵇᵃᶜᵗ * (Bact)/(Bactᵣₑ) * DOC) #33a
+    return min((O₂)/(O₂ᵘᵗ), λ_DOC*bₚ^T*(1 - ΔO₂(O₂, bgc)) * Lₗᵢₘᵇᵃᶜᵗ * (Bact)/(Bactᵣₑ) * DOC) #33a
 end
 
 @inline function get_Denit(NO₃, PO₄, NH₄, DOC, O₂, T, bFe, Bact, bgc)
@@ -77,9 +77,9 @@ end
     Lₙᵇᵃᶜᵗ = Lₙₒ₃ᵇᵃᶜᵗ + Lₙₕ₄ᵇᵃᶜᵗ         #34f
     #Lₙᵇᵃᶜᵗ is not used...
     Lₗᵢₘᵇᵃᶜᵗ = min(Lₙₕ₄ᵇᵃᶜᵗ, Lₚₒ₄ᵇᵃᶜᵗ, L_Feᵇᵃᶜᵗ) #34c
-    Lᵇᵃᶜᵗ = Lₗᵢₘᵇᵃᶜᵗ*L_DOCᵇᵃᶜᵗ #34a
+    Lᵇᵃᶜᵗᵣ = Lₗᵢₘᵇᵃᶜᵗ*L_DOCᵇᵃᶜᵗ #34a        #Lᵇᵃᶜᵗᵣ to avoid method call error
 
-    return Lᵇᵃᶜᵗ, Lₗᵢₘᵇᵃᶜᵗ
+    return Lᵇᵃᶜᵗᵣ, Lₗᵢₘᵇᵃᶜᵗ
 end
 
 
@@ -106,7 +106,7 @@ end
     bₘ = bgc.temperature_sensitivity_term.M
 
     ∑ᵢgᵢᶻ, gₚᶻ, g_Dᶻ, gₚₒᶻ  = get_grazingᶻ(P, D, POC, T, bgc) 
-    ∑ᵢgᵢᴹ, gₚᴹ, g_Dᴹ, gₚₒᴹ, g_zᴹ = get_grazingᴹ(P, D, Z, POC, T, bgc)
+    ∑ᵢgᵢᴹ, gₚᴹ, g_Dᴹ, gₚₒᴹ, g_Zᴹ = get_grazingᴹ(P, D, Z, POC, T, bgc)
 
     zₘₐₓ = max(zₑᵤ, zₘₓₗ)   #41a
     w_GOC = w_GOCᵐⁱⁿ + (200 - w_GOCᵐⁱⁿ)*(max(0, z-zₘₐₓ))/(5000) #41b
@@ -123,7 +123,7 @@ end
     μᴾ = μᴵ(P, Pᶜʰˡ, PARᴾ, L_day, T, αᴾ, Lₗᵢₘᴾ, zₘₓₗ, zₑᵤ, t_darkᴾ, bgc)
     μᴰ = μᴵ(D, Dᶜʰˡ, PARᴰ, L_day, T, αᴰ, Lₗᵢₘᴰ, zₘₓₗ, zₑᵤ, t_darkᴰ, bgc)
     eᶻ = eᴶ(eₘₐₓᶻ, σᶻ, gₚᶻ, g_Dᶻ, gₚₒᶻ, 0, Pᶠᵉ, Dᶠᵉ, SFe, P, D, POC, bgc)
-    eᴹ = eᴶ(eₘₐₓᴹ, σᴹ, gₚᴹ, g_Dᴹ, gₚₒᴹ, g_zᴹ,Pᶠᵉ, Dᶠᵉ, SFe, P, D, POC, bgc)
+    eᴹ = eᴶ(eₘₐₓᴹ, σᴹ, gₚᴹ, g_Dᴹ, gₚₒᴹ, g_Zᴹ,Pᶠᵉ, Dᶠᵉ, SFe, P, D, POC, bgc)
 
     λₚₒ¹ = λ¹(T, O₂, bgc)
     Rᵤₚᴹ = Rᵤₚ(M, T, bgc)
@@ -132,6 +132,7 @@ end
     Bact = get_Bact(zₘₐₓ, z, Z, M)
 
     bFe = Fe #defined in previous PISCES model
+    sh = get_sh(z, zₘₓₗ)
   
     Remin = get_Remin(O₂, NO₃, PO₄, NH₄, DOC, T, bFe, Bact, bgc)
     Denit = get_Denit(NO₃, PO₄, NH₄, DOC, O₂, T, bFe, Bact, bgc)

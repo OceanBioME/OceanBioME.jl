@@ -16,7 +16,7 @@ end
     wₚₒ = bgc.sinking_speed_of_POC
     rᶻ = bgc.zooplankton_linear_mortality.Z
     Kₘ = bgc.half_saturation_const_for_mortality
-    b_z, bₘ = bgc.temperature_sensitivity_term
+    b_Z, bₘ = bgc.temperature_sensitivity_term
     g_FF = bgc.flux_feeding_rate
 
     grazing = get_grazingᶻ(P, D, POC, T, bgc)
@@ -25,7 +25,7 @@ end
 
     sh = get_sh(z, zₘₓₗ)
 
-    R_CaCO₃ = R_CaCO₃(zₘₓₗ, T, P, PAR, bgc) 
+    R_CaCO₃ = get_R_CaCO₃(zₘₓₗ, T, P, PAR, bgc) 
     λₚₒ¹ = λ¹(T, O₂, bgc)
     Φ₁ᴰᴼᶜ = Φᴰᴼᶜ(DOC, POC, GOC, sh, bgc)[1]
     Φ₃ᴰᴼᶜ = Φᴰᴼᶜ(DOC, POC, GOC, sh, bgc)[3]
@@ -34,8 +34,8 @@ end
     gₚₒ_FFᴹ = g_FF*bₘ^T*wₚₒ*POC #29a
     Φ = get_Φ(POC, GOC, sh, bgc)
 
-    return σᶻ*∑gᶻ*Z + 0.5*mᴰ*K_mondo(D, Kₘ) + rᶻ*b_z^T*K_mondo(Z, Kₘ)*Z +
-     mᶻ*b_z^T*Z^2 + (1 - 0.5*R_CaCO₃)*(mᴾ*K_mondo(P, Kₘ)*P + wᴾ*P^2) + 
+    return σᶻ*∑gᶻ*Z + 0.5*mᴰ*K_mondo(D, Kₘ) + rᶻ*b_Z^T*K_mondo(Z, Kₘ)*Z +
+     mᶻ*b_Z^T*Z^2 + (1 - 0.5*R_CaCO₃)*(mᴾ*K_mondo(P, Kₘ)*P + wᴾ*P^2) + 
      λₚₒ¹*GOC + Φ₁ᴰᴼᶜ + Φ₃ᴰᴼᶜ - (gₚₒᴹ + gₚₒ_FFᴹ)*M - gₚₒᶻ*Z - λₚₒ¹*POC - Φ  #37
 end
 
@@ -51,10 +51,10 @@ end
     wₘₐₓᴰ = bgc.max_quadratic_mortality_of_diatoms
 
     ∑gᴹ = get_grazingᴹ(P, D, Z, POC, T, bgc)[1] 
-    ∑g_FFᴹ = get_∑g_FFᴹ(zₑᵤ, zₘₓₗ, T, POC, GOC, bgc)
+    ∑g_FFᴹ = get_∑g_FFᴹ(z, zₑᵤ, zₘₓₗ, T, POC, GOC, bgc)
     
     Pᵤₚᴹ = Pᵤₚ(M, T, bgc)
-    R_CaCO₃ = R_CaCO₃(zₘₓₗ, T, P, PAR, bgc)
+    R_CaCO₃ = get_R_CaCO₃(zₘₓₗ, T, P, PAR, bgc)
 
     sh = get_sh(z, zₘₓₗ)
 
@@ -62,7 +62,7 @@ end
     wᴰ =  wᴾ + wₘₐₓᴰ*(1-Lₗᵢₘᴰ)
     Φ = get_Φ(POC, GOC, sh, bgc)
     Φ₂ᴰᴼᶜ = Φᴰᴼᶜ(DOC, POC, GOC, sh, bgc)[2]
-    w_GOC = get_w_GOC(zₑᵤ, zₘₓₗ, bgc)
+    w_GOC = get_w_GOC(z, zₑᵤ, zₘₓₗ, bgc)
     g_GOC_FFᴹ = g_FF*bₘ^T*w_GOC*GOC #29b
     λₚₒ¹ = λ¹(T, O₂, bgc)
     
