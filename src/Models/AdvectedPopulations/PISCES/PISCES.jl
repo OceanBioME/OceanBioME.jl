@@ -40,7 +40,7 @@ import Base: show, summary
 
 import OceanBioME.Boundaries.Sediments: nitrogen_flux, carbon_flux, remineralisation_receiver, sinking_tracers
 
-struct PISCES{FT, NT, W, F} <: AbstractContinuousFormBiogeochemistry
+struct PISCES{FT, NT, W, FD} <: AbstractContinuousFormBiogeochemistry
 
     growth_rate_at_zero :: FT # add list of parameters here, assuming theyre all just numbers FT will be fine for advect_particles_kernel
     growth_rate_reference_for_light_limitation :: FT
@@ -155,8 +155,8 @@ struct PISCES{FT, NT, W, F} <: AbstractContinuousFormBiogeochemistry
     carbonate_limitation_term :: FT
 
 
-    vertical_diffusivity :: F 
-    carbonate_sat_ratio :: F
+    vertical_diffusivity :: FD 
+    carbonate_sat_ratio :: FD
 
     sinking_velocities :: W
 
@@ -272,13 +272,13 @@ struct PISCES{FT, NT, W, F} <: AbstractContinuousFormBiogeochemistry
                     proportion_of_sinking_grazed_shells :: NT,
                     carbonate_limitation_term :: FT,
                     
-                    vertical_diffusivity :: F, 
-                    carbonate_sat_ratio :: F,
+                    vertical_diffusivity :: FD, 
+                    carbonate_sat_ratio :: FD,
 
-                    sinking_velocities :: W,) where {FT, NT, W, F} # then do the same here (this is all just annoying boiler plate but we need it to make the next function work)
+                    sinking_velocities :: W,) where {FT, NT, W, FD} # then do the same here (this is all just annoying boiler plate but we need it to make the next function work)
 
 
-        return new{FT, NT, W, F}(growth_rate_at_zero,
+        return new{FT, NT, W, FD}(growth_rate_at_zero,
                             growth_rate_reference_for_light_limitation,
                             basal_respiration_rate,
                             temperature_sensitivity_of_growth,
@@ -572,14 +572,14 @@ function PISCES(; grid, # finally the function
                   sediment_model::S = nothing,
 
                   sinking_speeds = (POC = sinking_speed_of_POC, GOC = 1.0, SFe = sinking_speed_of_POC, BFe = 1.0, PSi = 1.0, CaCO₃ = 1.0),  #change all 1.0s to w_GOC
-                  vertical_diffusivity :: F  = constantField(1),
-                  carbonate_sat_ratio :: F = ZeroField(),
+                  vertical_diffusivity :: FD  = constantField(1),
+                  carbonate_sat_ratio :: FD = ZeroField(),
                   open_bottom::Bool = true,
 
                   scale_negatives = false,
 
                   particles::P = nothing,
-                  modifiers::M = nothing) where {FT, NT, LA, S, P, M}
+                  modifiers::M = nothing) where {FT, NT, LA, S, P, M, FD}
 
     if !isnothing(sediment_model) && !open_bottom
         @warn "You have specified a sediment model but not `open_bottom` which will not work as the tracer will settle in the bottom cell"
@@ -743,7 +743,7 @@ adapt_structure(to, pisces::PISCES) =
 # you can updatye these if you want it to have a pretty way of showing uyou its a pisces model
 summary(::PISCES{FT}) where {FT} = string("PISCES{$FT}") 
 
-show(io::IO, model::PISCES) where {FT, B, W}  = print(io, string("Pelagic Interactions Scheme for Carbon and Ecosystem Studies (PISCES) model")) # maybe add some more info here
+show(io::IO, model::PISCES) where {FT, B, W, NT, FD}  = print(io, string("Pelagic Interactions Scheme for Carbon and Ecosystem Studies (PISCES) model")) # maybe add some more info here
 
 @inline maximum_sinking_velocity(bgc::PISCES) = maximum(abs, bgc.sinking_velocities.bPOM.w) # might need ot update this for wghatever the fastest sinking pareticles are
 
