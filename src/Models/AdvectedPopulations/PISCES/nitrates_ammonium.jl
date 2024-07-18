@@ -80,7 +80,7 @@ end
     μₚ = μ⁰ₘₐₓ*fₚ(T)
     Lₙᴾ = Lᴾ(P, PO₄, NO₃, NH₄, Pᶜʰˡ, Pᶠᵉ)[5]
 
-    return N_fixᵐ*max(0,μₚ - 2.15)*Lₙᴰᶻ(Lₙᴾ)*min(K_mondo(bFe, K_Feᴰᶻ), K_mondo(PO₄, Kₚₒ₄ᴾᵐⁱⁿ))*(1 - e^{-PAR/E_fix})
+    return N_fixᵐ*max(0,μₚ - 2.15)*Lₙᴰᶻ(Lₙᴾ)*min(K_mondo(bFe, K_Feᴰᶻ), K_mondo(PO₄, Kₚₒ₄ᴾᵐⁱⁿ))*(1 - e^(-PAR/E_fix))
 end
 
 @inline function (pisces::PISCES)(::Val{:NH₄}, x, y, z, t, P, D, Z, M, Pᶜʰˡ, Dᶜʰˡ, Pᶠᵉ, Dᶠᵉ, Dˢⁱ, DOC, POC, GOC, SFe, BFe, PSi, NO₃, NH₄, PO₄, Fe, Si, CaCO₃, DIC, Alk, O₂, T, PAR, PAR¹, PAR², PAR³, zₘₓₗ, zₑᵤ, Si̅, D_dust) 
