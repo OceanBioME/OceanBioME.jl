@@ -22,7 +22,7 @@
     return ∑gᶻ, gₚᶻ, g_Dᶻ, gₚₒᶻ
 end
 
-@inline function grazingᴹ(P, D, Z, POC, T) 
+@inline function grazingᴹ(P, D, Z, POC, T, bgc) 
     pₚᴹ = bgc.preference_for_nanophytoplankton.M
     p_Dᴹ = bgc.preference_for_diatoms.M
     pₚₒᴹ = bgc.preference_for_POC.M
@@ -46,13 +46,13 @@ end
     return  ∑gᴹ, gₚᴹ, g_Dᴹ, gₚₒᴹ, g_zᴹ 
 end
 
-@inline function w_GOC(zₑᵤ, zₘₓₗ)
+@inline function w_GOC(zₑᵤ, zₘₓₗ, bgc)
     zₘₐₓ = max(zₑᵤ, zₘₓₗ) 
     w_GOCᵐⁱⁿ = bgc.min_sinking_speed_of_GOC
     return w_GOCᵐⁱⁿ + (200 - w_GOCᵐⁱⁿ)*(max(0, z-zₘₐₓ))/(5000) #41b
 end
 
-@inline function ∑g_FFᴹ(zₑᵤ, zₘₓₗ, T, POC, GOC)
+@inline function ∑g_FFᴹ(zₑᵤ, zₘₓₗ, T, POC, GOC, bgc)
     wₚₒ = bgc.sinking_speed_of_POC
     g_FF = bgc.flux_feeding_rate
     bₘ = bgc.temperature_sensitivity_term.M
@@ -65,7 +65,7 @@ end
 end
 
 # gross growth efficiency, defined for both but g_zᴹ and Z do not appear for eᶻ so have passed in as 0 
-@inline function eₙᴶ(gₚᴶ, g_Dᴶ, gₚₒᴶ, g_zᴹ, Pᶠᵉ, Dᶠᵉ, SFe, P, D, POC)
+@inline function eₙᴶ(gₚᴶ, g_Dᴶ, gₚₒᴶ, g_zᴹ, Pᶠᵉ, Dᶠᵉ, SFe, P, D, POC, bgc)
     θᴺᶜ = bgc.NC_redfield_ratio
     θᶠᵉᶜ = bgc.FeZ_redfield_ratio  #Assumed the same for both types of zooplankton
 
@@ -77,7 +77,7 @@ end
 end
 
 
-@inline function eᴶ(eₘₐₓᴶ, σᴶ, gₚᴶ, g_Dᴶ, gₚₒᴶ, g_zᴹ, Pᶠᵉ, Dᶠᵉ, SFe, P, D, POC)
+@inline function eᴶ(eₘₐₓᴶ, σᴶ, gₚᴶ, g_Dᴶ, gₚₒᴶ, g_zᴹ, Pᶠᵉ, Dᶠᵉ, SFe, P, D, POC, bgc)
 
     θᶠᵉᶜ = bgc.FeZ_redfield_ratio  #Assumed the same for both types of zooplankton
 

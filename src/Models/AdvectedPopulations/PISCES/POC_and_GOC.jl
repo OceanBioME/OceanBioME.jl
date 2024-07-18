@@ -1,4 +1,4 @@
-@inline function Φ(POC, GOC, sh)
+@inline function Φ(POC, GOC, sh, bgc)
     a₆ = bgc.aggregation_rate_of_POC_to_GOC_6
     a₇ = bgc.aggregation_rate_of_POC_to_GOC_7
     a₈ = bgc.aggregation_rate_of_POC_to_GOC_8

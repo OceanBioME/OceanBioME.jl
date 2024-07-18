@@ -2,7 +2,7 @@
     #λₚₛᵢ¹ (eq52, parametrisation of dissolution rate of PSi)
     #Forcing for PSi (eq51)
 
-@inline function χ_lab(zₘₓₗ, zₑᵤ, λₚₛᵢˡᵃᵇ, λₚₛᵢʳᵉᶠ, z)
+@inline function χ_lab(zₘₓₗ, zₑᵤ, λₚₛᵢˡᵃᵇ, λₚₛᵢʳᵉᶠ, z, bgc)
 
     χ_lab⁰ = bgc.proportion_of_the_most_labile_phase_in_PSi
     zₘₐₓ = max(zₘₓₗ, zₑᵤ)
@@ -14,7 +14,7 @@
     end
 end
 
-@inline function λₚₛᵢ¹(zₘₓₗ, zₑᵤ, z, T, Si)
+@inline function λₚₛᵢ¹(zₘₓₗ, zₑᵤ, z, T, Si, bgc)
 
     λₚₛᵢˡᵃᵇ = bgc.fast_dissolution_rate_of_BSi
     λₚₛᵢʳᵉᶠ = bgc.slow_dissolution_rate_of_BSi

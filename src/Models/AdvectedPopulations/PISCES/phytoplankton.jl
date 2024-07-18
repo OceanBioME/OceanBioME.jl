@@ -27,7 +27,7 @@ end
 @inline I₂(I, Iₘₐₓ) = max(0, I - Iₘₐₓ) #eq 7b
 @inline Kᵢᴶ(Kᵢᴶᵐⁱⁿ, J₁, J₂, Sᵣₐₜᴶ) = Kᵢᴶᵐⁱⁿ* (J₁ + Sᵣₐₜᴶ* J₂)/(J₁ + J₂ + eps(0.0)) #eq 7c
 
-@inline function PARᴾ(PAR¹, PAR², PAR³)
+@inline function PARᴾ(PAR¹, PAR², PAR³, bgc)
     β₁ᴾ = bgc.absorption_in_the_blue_part_of_light.P
     β₂ᴾ = bgc.absorption_in_the_green_part_of_light.P
     β₃ᴾ = bgc.absorption_in_the_red_part_of_light.P
@@ -35,7 +35,7 @@ end
     return β₁ᴾ*PAR¹ + β₂ᴾ*PAR² + β₃ᴾ*PAR³
 end
 
-@inline function PARᴰ(PAR¹, PAR², PAR³)
+@inline function PARᴰ(PAR¹, PAR², PAR³, bgc)
     β₁ᴰ = bgc.absorption_in_the_blue_part_of_light.D
     β₂ᴰ = bgc.absorption_in_the_green_part_of_light.D
     β₃ᴰ = bgc.absorption_in_the_red_part_of_light.D
@@ -43,7 +43,7 @@ end
     return β₁ᴰ*PAR¹ + β₂ᴰ*PAR² + β₃ᴰ*PAR³
 end
 
-@inline function μᴵᶠᵉ(I, Iᶠᵉ, θₘₐₓᶠᵉᴵ, Sᵣₐₜᴵ, K_Feᴵᶠᵉᵐⁱⁿ, Iₘₐₓ, L_Feᴵ, bFe)
+@inline function μᴵᶠᵉ(I, Iᶠᵉ, θₘₐₓᶠᵉᴵ, Sᵣₐₜᴵ, K_Feᴵᶠᵉᵐⁱⁿ, Iₘₐₓ, L_Feᴵ, bFe, bgc)
     μ⁰ₘₐₓ = bgc.growth_rate_at_zero
 
     μₚ = μ⁰ₘₐₓ*fₚ(T) #4b
@@ -60,7 +60,7 @@ end
 end
 
 #This function defines both μᴾ and μᴰ
-@inline function μᴵ(I, Iᶜʰˡ, PARᴵ, L_day, T, αᴵ, Lₗᵢₘᴵ, zₘₓₗ, zₑᵤ, t_darkᴵ)
+@inline function μᴵ(I, Iᶜʰˡ, PARᴵ, L_day, T, αᴵ, Lₗᵢₘᴵ, zₘₓₗ, zₑᵤ, t_darkᴵ, bgc)
     
     μ⁰ₘₐₓ = bgc.growth_rate_at_zero
 
@@ -70,7 +70,7 @@ end
 end
 
 # This function returns Lₗᵢₘᴾ as well as all the constituent parts as a vector so we can use all the parts in separate parts of the code
-@inline function Lᴾ(P, PO₄, NO₃, NH₄, Pᶜʰˡ, Pᶠᵉ)
+@inline function Lᴾ(P, PO₄, NO₃, NH₄, Pᶜʰˡ, Pᶠᵉ, bgc)
     θₒₚₜᶠᵉᵖ = bgc.optimal_iron_quota.P
     Sᵣₐₜᴾ = bgc.size_ratio_of_phytoplankton.P
     Kₙₒ₃ᴾᵐⁱⁿ = bgc.min_half_saturation_const_for_nitrate.P
@@ -97,7 +97,7 @@ end
 end
 
 #Same for Lₗᵢₘᴰ
-@inline function Lᴰ(D, PO₄, NO₃, NH₄, Si, Dᶜʰˡ, Dᶠᵉ, Si̅)
+@inline function Lᴰ(D, PO₄, NO₃, NH₄, Si, Dᶜʰˡ, Dᶠᵉ, Si̅, bgc)
     θₒₚₜᶠᵉᴰ = bgc.optimal_iron_quota.D
     Sᵣₐₜᴰ = bgc.size_ratio_of_phytoplankton.D
     Kₙₒ₃ᴰᵐⁱⁿ = bgc.min_half_saturation_const_for_nitrate.D
@@ -127,7 +127,7 @@ end
     return min(Lₚₒ₄ᴰ, Lₙᴰ, L_Feᴰ, Lₛᵢᴰ), Lₚₒ₄ᴰ, Lₙₕ₄ᴰ, Lₙₒ₃ᴰ, Lₙᴰ, Lₛᵢᴰ, L_Feᴰ    #11a
 end
 
-@inline function fθₒₚₜˢⁱᴰ(D, PO₄, NO₃, NH₄, Si, Dᶜʰˡ, Dᶠᵉ, μᴰ, T, ϕ, Si̅)
+@inline function fθₒₚₜˢⁱᴰ(D, PO₄, NO₃, NH₄, Si, Dᶜʰˡ, Dᶠᵉ, μᴰ, T, ϕ, Si̅, bgc)
     θₘˢⁱᴰ = bgc.optimal_SiC_uptake_ratio_of_diatoms
     μ⁰ₘₐₓ = bgc.growth_rate_at_zero
     Kₛᵢ¹ = bgc.parameter_for_SiC.one
