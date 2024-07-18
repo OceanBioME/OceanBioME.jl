@@ -31,6 +31,7 @@ end
     Fₜₕᵣₑₛₕᴹ = bgc.food_threshold_for_zooplankton.M
     gₘₐₓᴹ = bgc.max_grazing_rate.M
     K_Gᴹ = bgc.half_saturation_const_for_grazing.M
+    bₘ = bgc.temperature_sensitivity_term.M
     
     F = pₚᴹ*max(0, P - Jₜₕᵣₑₛₕᴹ) + p_Dᴹ*max(0, D - Jₜₕᵣₑₛₕᴹ) + pₚₒᴹ*max(0, POC - Jₜₕᵣₑₛₕᴹ) + p_zᴹ*max(0, POC - Jₜₕᵣₑₛₕᴹ)
     Fₗᵢₘ = max(0, F - min(0.5*F, Fₜₕᵣₑₛₕᴹ))
