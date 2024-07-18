@@ -52,7 +52,7 @@ end
 @inline function (pisces::PISCES)(::Val{:BFe}, x, y, z, t, P, D, Z, M, Pᶜʰˡ, Dᶜʰˡ, Pᶠᵉ, Dᶠᵉ, Dˢⁱ, DOC, POC, GOC, SFe, BFe, PSi, NO₃, NH₄, PO₄, Fe, Si, CaCO₃, DIC, Alk, O₂, T, PAR, PAR¹, PAR², PAR³, zₘₓₗ, zₑᵤ, Si̅, D_dust) 
     #Parameters
     σᴹ = bgc.non_assimilated_fraction.M
-    rᴹ = bgc.zooplankton_linear_mortality
+    rᴹ = bgc.zooplankton_linear_mortality.M
     mᴾ = bgc.phytoplankton_mortality_rate.P
     Kₘ = bgc.half_saturation_const_for_mortality
     wᴾ = bgc.min_quadratic_mortality_of_phytoplankton
