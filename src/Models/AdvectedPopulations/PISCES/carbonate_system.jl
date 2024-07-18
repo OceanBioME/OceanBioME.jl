@@ -27,7 +27,7 @@
     μᴾ = μᴵ(P, Pᶜʰˡ, PARᴾ, L_day, T, αᴾ, Lₗᵢₘᴾ, zₘₓₗ, zₑᵤ, t_darkᴾ)
     μᴰ = μᴵ(D, Dᶜʰˡ, PARᴰ, L_day, T, αᴰ, Lₗᵢₘᴰ, zₘₓₗ, zₑᵤ, t_darkᴰ)
 
-    return γᶻ*(1 - eᶻ - σᶻ)*∑gᶻ*Z + γᴹ*(1 - eᴹ - σᴹ)*(∑gᴹ + ∑g_FFᴹ)*M + γᴹ*Rᵤₚᴹ(M, T) + Remin(O₂, NO₃, PO₄, NH₄, DOC, T, bFe, Bact) + Denit(NO₃, PO₄, NH₄, DOC, O₂, T, bFe, Bact) + λ_CaCO₃¹(CaCO₃)*CaCO₃ - P_CaCO₃(P, Z, M, T, PAR, zₘₓₗ) - μᴰ*D - μᴾ*P #eq59
+    return γᶻ*(1 - eᶻ - σᶻ)*∑gᶻ*Z + γᴹ*(1 - eᴹ - σᴹ)*(∑gᴹ + ∑g_FFᴹ)*M + γᴹ*Rᵤₚᴹ(M, T) + Remin(O₂, NO₃, PO₄, NH₄, DOC, T, bFe, Bact) + Denit(NO₃, PO₄, NH₄, DOC, O₂, T, bFe, Bact) + λ_CaCO₃¹(CaCO₃)*CaCO₃ - P_CaCO₃(P, Z, M, T, PAR, zₘₓₗ, z) - μᴰ*D - μᴾ*P #eq59
 end
 
 @inline function (pisces::PISCES)(::Val{:Alk}, x, y, z, t, P, D, Z, M, Pᶜʰˡ, Dᶜʰˡ, Pᶠᵉ, Dᶠᵉ, Dˢⁱ, DOC, POC, GOC, SFe, BFe, PSi, NO₃, NH₄, PO₄, Fe, Si, CaCO₃, DIC, Alk, O₂, T, PAR, PAR¹, PAR², PAR³, zₘₓₗ, zₑᵤ, Si̅, D_dust) # eq59

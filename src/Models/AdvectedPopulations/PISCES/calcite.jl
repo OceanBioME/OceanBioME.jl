@@ -1,5 +1,3 @@
-#Checked equations
-
 #TO DO:
     #How to code ΔCO₃²⁻, as auxiliary field or as in original PISCES?
     #How to define Lₗᵢₘᶜᵃᶜᵒ³()?
@@ -31,7 +29,7 @@ end
     ηᴹ = bgc.proportion_of_sinking_grazed_shells.M
     sh = get_sh(z, zₘₓₗ)
     
-    return R_CaCO₃(P, T, PAR, zₘₓₗ)*(ηᶻ*grazingᶻ()[2]*Z+ηᴹ*grazingᴹ[2]*M + 0.5*(mᴾ*K_mondo(P, Kₘ)*P + sh*wᴾ*P^2)) #eq76
+    return R_CaCO₃(P, T, PAR, zₘₓₗ)*(ηᶻ*grazingᶻ(P, D, POC, T)[2]*Z+ηᴹ*grazingᴹ(P, D, Z, POC, T)[2]*M + 0.5*(mᴾ*K_mondo(P, Kₘ)*P + sh*wᴾ*P^2)) #eq76
 end
 
 @inline function (pisces::PISCES)(::Val{:CaCO₃}, x, y, z, t, P, D, Z, M, Pᶜʰˡ, Dᶜʰˡ, Pᶠᵉ, Dᶠᵉ, Dˢⁱ, DOC, POC, GOC, SFe, BFe, PSi, NO₃, NH₄, PO₄, Fe, Si, CaCO₃, DIC, Alk, O₂, T, PAR, PAR¹, PAR², PAR³, zₘₓₗ, zₑᵤ, Si̅, D_dust) 
