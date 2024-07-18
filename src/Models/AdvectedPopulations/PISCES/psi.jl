@@ -11,6 +11,7 @@
         return χ_lab⁰
     else
         return χ_lab⁰*exp(-(λₚₛᵢˡᵃᵇ - λₚₛᵢʳᵉᶠ)*((z-zₘₐₓ)/w_GOC(zₑᵤ, zₘₓₗ))) #eq53
+    end
 end
 
 @inline function λₚₛᵢ¹(zₘₓₗ, zₑᵤ, z, T, Si)
@@ -32,7 +33,7 @@ end
     wₘₐₓᴰ = bgc.max_quadratic_mortality_of_diatoms.D
     αᴰ = bgc.initial_slope_of_PI_curve.D
     t_darkᴰ = bgc.mean_residence_time_of_phytoplankton_in_unlit_mixed_layer.D
-    Dissₛᵢ =
+    Dissₛᵢ = bgc.dissolution_rate_of_silicon
 
     ϕ₀ = bgc.latitude
     L_day_param = bgc.length_of_day

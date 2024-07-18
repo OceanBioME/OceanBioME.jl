@@ -10,6 +10,8 @@
     σᶻ = bgc.non_assimilated_fraction.Z
     σᴹ = bgc.non_assimilated_fraction.M
 
+    bFe = Fe
+
     #L_day
     ϕ₀ = bgc.latitude
     L_day_param = bgc.length_of_day

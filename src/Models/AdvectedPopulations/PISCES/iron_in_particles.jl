@@ -14,7 +14,7 @@
     return λ_Feᵐⁱⁿ + λ_Fe*(POC + GOC + CaCO₃ + BSi) + λ_Feᵈᵘˢᵗ*Dust #eq50
 end
 
-@inline Scav(POC, GOC, CaCO₃, BSi, DOC, T, Fe) = λ_Fe¹(POC, GOC, CaCO₃, BSi)*Fe¹(DOC, T, Fe)
+@inline Scav(POC, GOC, CaCO₃, BSi, DOC, T, Fe) = λ_Fe¹(POC, GOC, CaCO₃, BSi, D_dust)*Fe¹(DOC, T, Fe)
 
 @inline function (pisces::PISCES)(::Val{:SFe}, x, y, z, t, P, D, Z, M, Pᶜʰˡ, Dᶜʰˡ, Pᶠᵉ, Dᶠᵉ, Dˢⁱ, DOC, POC, GOC, SFe, BFe, PSi, NO₃, NH₄, PO₄, Fe, Si, CaCO₃, DIC, Alk, O₂, T, PAR, PAR¹, PAR², PAR³, zₘₓₗ, zₑᵤ, Si̅, D_dust) 
     #Parameters
@@ -52,7 +52,7 @@ end
 @inline function (pisces::PISCES)(::Val{:BFe}, x, y, z, t, P, D, Z, M, Pᶜʰˡ, Dᶜʰˡ, Pᶠᵉ, Dᶠᵉ, Dˢⁱ, DOC, POC, GOC, SFe, BFe, PSi, NO₃, NH₄, PO₄, Fe, Si, CaCO₃, DIC, Alk, O₂, T, PAR, PAR¹, PAR², PAR³, zₘₓₗ, zₑᵤ, Si̅, D_dust) 
     #Parameters
     σᴹ = bgc.non_assimilated_fraction.M
-    rᴹ = bgc.zooplankton_linear_mortality
+    rᴹ = bgc.zooplankton_linear_mortality.M
     mᴾ = bgc.phytoplankton_mortality_rate.P
     Kₘ = bgc.half_saturation_const_for_mortality
     wᴾ = bgc.min_quadratic_mortality_of_phytoplankton
@@ -83,5 +83,5 @@ end
     w_GOC = w_GOCᵐⁱⁿ + (200 - w_GOCᵐⁱⁿ)*(max(0, z-zₘₐₓ))/(5000) #41b
     g_GOC_FFᴹ = g_FF*bₘ^T*w_GOC*GOC 
 
-    return σᴹ*(∑θᶠᵉⁱgᵢᴹ + θᶠᵉᴾᴼᶜ*gₚₒ_FFᴹ + θᶠᵉᴳᴼᶜ*g_GOC_FFᴹ)*M + θᶠᵉᴹ*(rᴹ*(bₘ^T)*K_mondo(M, Kₘ)*M + Pᵤₚᴹ()) + θᶠᵉᴾ*0.5*R_CaCO₃()*(mᴾ*K_mondo(P, Kₘ)*P + sh*wᴾ*P^2) + θᶠᵉᴰ*(0.5*mᴰ*K_mondo(D, Kₘ)*D + sh*wᴰ*D^2) + κ_Bactᴮᶠᵉ*Bactfe() + λ_Fe*GOC*Fe¹ + θᶠᵉᴾᴼᶜ*Φ() + Cgfe2() - θᶠᵉᴳᴼᶜ* g_GOC_FFᴹ*M - λₚₒ¹*BFe #Partial derivative omitted
+    return σᴹ*(∑θᶠᵉⁱgᵢᴹ + θᶠᵉᴾᴼᶜ*gₚₒ_FFᴹ + θᶠᵉᴳᴼᶜ*g_GOC_FFᴹ)*M + θᶠᵉᴹ*(rᴹ*(bₘ^T)*K_mondo(M, Kₘ)*M + Pᵤₚᴹ()) + θᶠᵉᴾ*0.5*R_CaCO₃(P, T, PAR, zₘₓₗ)*(mᴾ*K_mondo(P, Kₘ)*P + sh*wᴾ*P^2) + θᶠᵉᴰ*(0.5*mᴰ*K_mondo(D, Kₘ)*D + sh*wᴰ*D^2) + κ_Bactᴮᶠᵉ*Bactfe(μₘₐₓ⁰, z, Z, M, Fe, DOC, PO₄, NO₃, NH₄, bFe, T, zₘₐₓ) + λ_Fe*GOC*Fe¹ + θᶠᵉᴾᴼᶜ*Φ(POC, GOC, sh) + Cgfe2(sh, Fe, T, DOC, GOC) - θᶠᵉᴳᴼᶜ* g_GOC_FFᴹ*M - λₚₒ¹*BFe #Partial derivative omitted
 end

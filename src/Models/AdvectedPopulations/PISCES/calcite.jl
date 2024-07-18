@@ -1,5 +1,3 @@
-#Checked equations
-
 #TO DO:
     #How to code ΔCO₃²⁻, as auxiliary field or as in original PISCES?
     #How to define Lₗᵢₘᶜᵃᶜᵒ³()?
@@ -12,8 +10,9 @@
 @inline function λ_CaCO₃¹(CaCO₃) #no argument required, CaCO₃ given as placeholder
     λ_CaCO₃ = bgc.dissolution_rate_of_calcite
     nca = bgc.exponent_in_the_dissolution_rate_of_calcite
-    Ω = bgc.carbonate_sat_ratio #define this as an auxiliary field, or using Nemo source code as in PISCES?
-    ΔCO₃²⁻ = max(0, 1 - Ω(0,0,0))
+    #Ω = bgc.carbonate_sat_ratio #define this as an auxiliary field, or using Nemo source code as in PISCES?
+    Ω = 0
+    ΔCO₃²⁻ = max(0, 1 - Ω)
     return λ_CaCO³*(ΔCO₃²⁻)^nca
 end
 
@@ -31,7 +30,7 @@ end
     ηᴹ = bgc.proportion_of_sinking_grazed_shells.M
     sh = get_sh(z, zₘₓₗ)
     
-    return R_CaCO₃(P, T, PAR, zₘₓₗ)*(ηᶻ*grazingᶻ()[2]*Z+ηᴹ*grazingᴹ[2]*M + 0.5*(mᴾ*K_mondo(P, Kₘ)*P + sh*wᴾ*P^2)) #eq76
+    return R_CaCO₃(P, T, PAR, zₘₓₗ)*(ηᶻ*grazingᶻ(P, D, POC, T)[2]*Z+ηᴹ*grazingᴹ(P, D, Z, POC, T)[2]*M + 0.5*(mᴾ*K_mondo(P, Kₘ)*P + sh*wᴾ*P^2)) #eq76
 end
 
 @inline function (pisces::PISCES)(::Val{:CaCO₃}, x, y, z, t, P, D, Z, M, Pᶜʰˡ, Dᶜʰˡ, Pᶠᵉ, Dᶠᵉ, Dˢⁱ, DOC, POC, GOC, SFe, BFe, PSi, NO₃, NH₄, PO₄, Fe, Si, CaCO₃, DIC, Alk, O₂, T, PAR, PAR¹, PAR², PAR³, zₘₓₗ, zₑᵤ, Si̅, D_dust) 

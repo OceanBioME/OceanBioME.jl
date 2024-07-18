@@ -65,6 +65,8 @@ end
     K_Feᴰᶠᵉᵐⁱⁿ = bgc.min_half_saturation_const_for_iron_uptake.D
     Dₘₐₓ = bgc.threshold_concentration_for_size_dependency.D
 
+    bFe = Fe
+
     L_Feᴾ = Lᴾ(P, PO₄, NO₃, NH₄, Pᶜʰˡ, Pᶠᵉ)[6]
     L_Feᴰ = Lᴰ(D, PO₄, NO₃, NH₄, Si, Dᶜʰˡ, Dᶠᵉ, Si̅)[6]
     
