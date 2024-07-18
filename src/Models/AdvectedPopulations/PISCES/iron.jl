@@ -90,12 +90,12 @@ end
     Bactfe = Bactfe(μₘₐₓ⁰, z, Z, M, Fe, DOC, PO₄, NO₃, NH₄, bFe, T, zₘₐₓ, bgc)
 
     #Gross growth efficiency
-    eₙᶻ = eₙᴶ(gₚᶻ, g_Dᶻ, gₚₒᶻ, g_zᴹ, Pᶠᵉ, Dᶠᵉ, SFe, P, D, POC)
-    eₙᴹ = eₙᴶ(gₚᴹ, g_Dᴹ, gₚₒᴹ, g_zᴹ, Pᶠᵉ, Dᶠᵉ, SFe, P, D, POC)
+    eₙᶻ = eₙᴶ(gₚᶻ, g_Dᶻ, gₚₒᶻ, g_zᴹ, Pᶠᵉ, Dᶠᵉ, SFe, P, D, POC, bgc)
+    eₙᴹ = eₙᴶ(gₚᴹ, g_Dᴹ, gₚₒᴹ, g_zᴹ, Pᶠᵉ, Dᶠᵉ, SFe, P, D, POC, bgc)
     
     return max(0, (1-σᶻ)*(∑θᶠᵉⁱgᵢᶻ/∑gᶻ - eₙᶻ*θᶠᵉᶻ))*∑gᶻ*Z 
     + max(0, (1-σᴹ)*(∑θᶠᵉⁱgᵢᴹ + θᶠᵉᴾᴼᶜ*gₚₒ_FF + θᶠᵉᴳᴼᶜ*g_GOC_FF )/(∑gᴹ+∑g_FFᴹ) - eₙᴹ*θᶠᵉᶻ)*(∑gᴹ+∑g_FFᴹ)*M 
     + γᴹ*θᶠᵉᶻ*Rᵤₚᴹ(M, T) + λₚₒ¹*SFe - (1 - δᴾ)*μᴾᶠᵉ*P - (1 - δᴰ)*μᴰᶠᵉ*D 
-    - Scav(POC, GOC, CaCO₃, BSi, DOC, T, Fe) - Cgfe1(sh, Fe, POC, DOC, T) - Cgfe2(sh, Fe, T, DOC, GOC) 
-    - Aggfe(Fe, DOC, T) - Bactfe
+    - Scav(POC, GOC, CaCO₃, BSi, DOC, T, Fe) - Cgfe1(sh, Fe, POC, DOC, T, bgc - Cgfe2(sh, Fe, T, DOC, GOC, bgc) 
+    - Aggfe(Fe, DOC, T, bgc) - Bactfe
 end

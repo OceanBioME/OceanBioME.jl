@@ -60,11 +60,11 @@ end
     #Uptake rates of nitrogen and ammonium
     μₙₒ₃ᴾ = μₙₒ₃ᴾ(P, PO₄, NO₃, NH₄, Pᶜʰˡ, Pᶠᵉ, T, zₘₓₗ, zₑᵤ, L_day, PARᴾ, t_darkᴾ, bgc)
     μₙₒ₃ᴰ = μₙₒ₃ᴰ(D, PO₄, NO₃, NH₄, Si, Dᶜʰˡ, Dᶠᵉ, T, zₘₓₗ, zₑᵤ, L_day, PARᴰ, t_darkᴰ, bgc)
-    μₙₕ₄ᴾ = μₙₕ₄ᴾ(P, PO₄, NO₃, NH₄, Pᶜʰˡ, Pᶠᵉ, T, zₘₓₗ, zₑᵤ, L_day, PARᴾ, t_darkᴾ)
-    μₙₕ₄ᴰ = μₙₕ₄ᴰ(D, PO₄, NO₃, NH₄, Si, Dᶜʰˡ, Dᶠᵉ, T, zₘₓₗ, zₑᵤ, L_day, PARᴰ, t_darkᴰ)
+    μₙₕ₄ᴾ = μₙₕ₄ᴾ(P, PO₄, NO₃, NH₄, Pᶜʰˡ, Pᶠᵉ, T, zₘₓₗ, zₑᵤ, L_day, PARᴾ, t_darkᴾ, bgc)
+    μₙₕ₄ᴰ = μₙₕ₄ᴰ(D, PO₄, NO₃, NH₄, Si, Dᶜʰˡ, Dᶠᵉ, T, zₘₓₗ, zₑᵤ, L_day, PARᴰ, t_darkᴰ, bgc)
 
-    return θᴺᶜ*Remin(O₂, NO₃, PO₄, NH₄, DOC, T, bFe, Bact) + θᴺᶜ*(rₙₒ₃¹ + 1)*Denit(NO₃, PO₄, NH₄, DOC, O₂, T, bFe, Bact) 
+    return θᴺᶜ*Remin(O₂, NO₃, PO₄, NH₄, DOC, T, bFe, Bact, bgc) + θᴺᶜ*(rₙₒ₃¹ + 1)*Denit(NO₃, PO₄, NH₄, DOC, O₂, T, bFe, Bact, bgc) 
     + θᴺᶜ*γᶻ*(1 - eᶻ - σᶻ)*∑gᶻ*Z + θᴺᶜ*γᴹ*(1 - eᴹ - σᴹ)*(∑gᴹ + ∑g_FFᴹ + θᴺᶜ*γᴹ*Rᵤₚ(M, T))*M + θᴺᶜ*μₙₒ₃ᴾ*P + θᴺᶜ*μₙₒ₃ᴰ*D 
-    + θᴺᶜ*N_fix(bFe, PO₄, T, P, NO₃, NH₄, Pᶜʰˡ, Pᶠᵉ, PAR) + 2*λ_CaCO₃¹(CaCO₃)*CaCO₃ + θᴺᶜ*ΔO₂(O₂)*(rₙₕ₄¹ - 1)*λₙₕ₄*NH₄ 
-    - θᴺᶜ*μₙₕ₄ᴾ*P - θᴺᶜ*μₙₕ₄ᴰ*D- 2*θᴺᶜ*Nitrif(NH₄, O₂, λₙₕ₄, PAR) - 2*P_CaCO₃(P, Z, M, T, PAR, zₘₓₗ)
+    + θᴺᶜ*N_fix(bFe, PO₄, T, P, NO₃, NH₄, Pᶜʰˡ, Pᶠᵉ, PA, bgc) + 2*λ_CaCO₃¹(CaCO₃, bgc)*CaCO₃ + θᴺᶜ*ΔO₂(O₂, bgc)*(rₙₕ₄¹ - 1)*λₙₕ₄*NH₄ 
+    - θᴺᶜ*μₙₕ₄ᴾ*P - θᴺᶜ*μₙₕ₄ᴰ*D- 2*θᴺᶜ*Nitrif(NH₄, O₂, λₙₕ₄, PAR) - 2*P_CaCO₃(P, Z, M, T, PAR, zₘₓₗ, bgc)
 end
