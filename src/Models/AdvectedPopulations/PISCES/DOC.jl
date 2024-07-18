@@ -23,7 +23,7 @@ end
 
     Lₗᵢₘᵇᵃᶜᵗ = Lᵇᵃᶜᵗ(DOC, PO₄, NO₃, NH₄, bFe, bgc)[2]
 
-    return min(O₂/O₂ᵘᵗ, λ_DOC*bₚ^T(1 - ΔO₂(O₂)) * Lₗᵢₘᵇᵃᶜᵗ * (Bact)/(Bactᵣₑ) * DOC) #33a
+    return min(O₂/O₂ᵘᵗ, λ_DOC*bₚ^T(1 - ΔO₂(O₂, bgc)) * Lₗᵢₘᵇᵃᶜᵗ * (Bact)/(Bactᵣₑ) * DOC) #33a
 end
 
 @inline function Denit(NO₃, PO₄, NH₄, DOC, O₂, T, bFe, Bact, bgc)
@@ -57,7 +57,7 @@ end
     λₚₒ= bgc.degradation_rate_of_POC
     bₚ = bgc.temperature_sensitivity_of_growth
 
-    return λₚₒ*bₚ^T*(1 - 0.45*ΔO₂(O₂))  #38
+    return λₚₒ*bₚ^T*(1 - 0.45*ΔO₂(O₂, bgc))  #38
 end
 
 @inline function Lᵇᵃᶜᵗ(DOC, PO₄, NO₃, NH₄, bFe, bgc)
