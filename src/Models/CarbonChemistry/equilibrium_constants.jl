@@ -31,6 +31,10 @@ end
                             + c.T² * T^2
                             + (c.S + c.ST * T + c.ST² * T^2) * S)
 
+summary(::IO, ::K0) = string("Solubility constant")
+show(io::IO, k0::K0) = print(io, "Solubility constant\n",
+    "    ln(k₀/k°) = $(k0.constant) + $(k0.inverse_T) / T + $(k0.log_T) (log(T) - log(100)) + $(k0.T²) T² + ($(k0.S) + $(k0.ST) T + $(k0.ST²) T²)S")
+
 """
     K1(; constant =  62.008, 
          inverse_T = -3670.7,
@@ -55,6 +59,10 @@ Default values from Lueke, et. al (2000, Mar. Chem., 70, 105–119;).
 end
 
 @inline (c::K1)(T, S) = 10 ^ (c.constant + c.inverse_T / T + c.log_T * log(T) + c.S * S + c.S² * S^2)
+
+summary(::IO, ::K2) = string("Second carbon dioxide dissociation constant")
+show(io::IO, k2::K2) = print(io, "Second carbon dioxide dissociation constant\n",
+    "    log₁₀(k₂/k°) = $(k2.constant) + $(k2.inverse_T) / T + $(k2.log_T) log(T) + $(k2.S) S + $(k2.S²) S²")
 
 """
     K2(; constant =  62.008, 
@@ -81,6 +89,10 @@ end
 
 @inline (c::K2)(T, S) = 10 ^ (c.constant + c.inverse_T / T + c.S * S + c.S² * S^2 + c.log_T * log(T))
     
+summary(::IO, ::K1) = string("First carbon dioxide dissociation constant")
+show(io::IO, k1::K1) = print(io, "First carbon dioxide dissociation constant\n",
+    "    log₁₀(k₁/k°) = $(k1.constant) + $(k1.inverse_T) / T + $(k1.log_T) log(T) + $(k1.S) S + $(k1.S²) S²")
+
 """
     KB(; constant =  148.0248,
          inverse_T = -8966.90,
@@ -124,7 +136,15 @@ end
                             + c.S * S
                             + (c.log_T + c.log_T_sqrt_S * √S + c.S_log_T * S ) * log(T)
                             + c.T_sqrt_S * √S * T)
- 
+
+summary(::IO, ::KB) = string("Boric acid dissociation constant")
+show(io::IO, c::KB) = print(io, "Boric acid dissociation constant\n",
+    "    ln(kᵇ/k°) = $(c.constant) + ($(c.inverse_T) + $(c.invsese_T_sqrt_S) √S + $(c.invsese_T_S) S + $(c.invsese_T_sqrt_S³) √S³ + $(c.inverse_T_S²) S²) / T
+                + $(c.sqrt_S) * √S
+                + $(c.S) * S
+                + ($(c.log_T) + $(c.log_T_sqrt_S) √S + $(c.S_log_T) S ) * log(T)
+                + $(c.T_sqrt_S) * √S * T")
+
 """
     KW(; constant =  148.9652,
          inverse_T = -13847.26,
@@ -158,6 +178,15 @@ end
                             + (c.sqrt_S + c.inverse_T_sqrt_S / T + c.log_T_sqrt_S * log(T))* √S
                             + c.S * S)
 
+summary(::IO, ::KW) = string("Water dissociation constant")
+show(io::IO, c::KW) = print(io, "Water dissociation constant\n",
+    "    ln(kʷ/k°) = $(c.constant)
+                + $(c.inverse_T) / T
+                + $(c.log_T) log(T)
+                + ($(c.sqrt_S) + $(c.inverse_T_sqrt_S) / T + $(c.log_T_sqrt_S) log(T)) √S
+                + $(c.S) * S")
+
+
 """
     IonicStrength(; a =  19.924,
                     b =  1000.0,
@@ -177,6 +206,10 @@ end
 
 @inline (c::IonicStrength)(S) = c.a * S / (c.b + c.c * S)
 
+summary(::IO, ::IonicStrength) = string("Ionic strength")
+show(io::IO, c::IonicStrength) = print(io, "Ionic strength\n",
+    "    Is = $(c.a) S/($(c.b) + $(c.c) S)")
+
 """
     KS(; constant =  148.9652,
          inverse_T = -13847.26,
@@ -188,7 +221,7 @@ end
 
 Parameterisation for bisulfate dissociation equilibrium constant.
 
-    HSO₄⁻ ⇌ SO₄⁻ + H⁺
+    HSO₄⁻ ⇌ SO₄²⁻ + H⁺
 
     Kˢ = [H⁺][SO₄⁻]/[HSO₄⁻] 
 
@@ -219,6 +252,17 @@ end
                                                       + c.inverse_T_sqrt_S³ * S^1.5 / T
                                                       + c.inverse_T_S² * S^2 / T
                                                       + log(1 + c.log_S * S))
+
+summary(::IO, ::KS) = string("Bisulfate dissociation constant")
+show(io::IO, c::KS) = print(io, "Bisulfate dissociation constant\n",
+    "    ln(kˢ/k°) = $(c.constant)
+                + $(c.inverse_T) / T
+                + $(c.log_T) log(T)
+                + ($(c.sqrt_S) + $(c.inverse_T_sqrt_S) / T + $(c.log_T_sqrt_S) log(T)) √S
+                + ($(c.Is) + $(c.inverse_T_Is) / T + $(c.log_T_Is) log(T)) Is
+                + $(c.inverse_T_sqrt_S³) √S³ / T
+                + $(c.inverse_T_S²) S² / T
+                + log(1 + $(c.log_S) S)")                                               
 
 """
     KF(; ionic_strength = IonicStrength(),
@@ -255,6 +299,14 @@ end
         + log(1 + c.log_S * S)
         + log(1 + c.log_S_KS * S / KS))
 
+summary(::IO, ::KF) = string("Hydrogen fluoride dissociation constant")
+show(io::IO, c::KF) = print(io, "Hydrogen fluoride dissociation constant\n",
+    "    ln(kᶠ/k°) = $(c.constant)
+                + $(c.inverse_T) / T
+                + $(c.sqrt_S) √S
+                + log(1 + $(c.log_S) S)
+                + log(1 + $(c.log_S_KS) S / Kˢ)")   
+
 """
     KP(constant,
        inverse_T,
@@ -283,6 +335,14 @@ end
                             + c.log_T * log(T)
                             + (c.sqrt_S + c.inverse_T_sqrt_S / T) * √S
                             + (c.S + c.inverse_T_S / T) * S)
+
+summary(::IO, ::KP) = string("Phosphate dissociation constant")
+show(io::IO, c::KP) = print(io, "Phosphate dissociation constant\n",
+    "    ln(kᵖⁿ/k°) = $(c.constant)
+                + $(c.inverse_T) / T
+                + $(c.log_T) log(T)
+                + ($(c.sqrt_S) + $(c.inverse_T_sqrt_S) / T) √S
+                + ($(c.S) + $(c.inverse_T_S) / T) S")   
 
 """
     KP1(; constant = 115.525,
@@ -326,9 +386,9 @@ KP1(; constant = 115.525,
 
 Instance of `KP` returning the second phosphocic acid equilibrium constant.
 
-    H₂PO₄⁻ ⇌ HPO₄ + H⁺
+    H₂PO₄⁻ ⇌ HPO₄²⁻ + H⁺
 
-    Kᵖ² = [H⁺][HPO₄]/[H₂PO₄⁻] 
+    Kᵖ² = [H⁺][HPO₄²⁻]/[H₂PO₄⁻] 
 
 Default values from Millero (1995, Geochim. Cosmochim. Acta, 59, 661–677).
 """
@@ -357,9 +417,9 @@ KP2(; constant = 172.0883,
 
 Instance of `KP` returning the third phosphocic acid equilibrium constant.
 
-    HPO₄⁻ ⇌ PO₄ + H⁺
+    HPO₄²⁻ ⇌ PO₄ + H⁺
 
-    Kᵖ³ = [H⁺][PO₄]/[HPO₄⁻] 
+    Kᵖ³ = [H⁺][PO₄³⁻]/[HPO₄⁻] 
 
 Default values from Millero (1995, Geochim. Cosmochim. Acta, 59, 661–677).
 """
@@ -420,3 +480,14 @@ end
                                                        + (c.Is + c.inverse_T_Is / T) * Is
                                                        + (c.Is² + c.inverse_T_Is² / T) * Is^2
                                                        + log(1 + c.log_S * S))
+
+summary(::IO, ::KSi) = string("Silicic acid constant")
+show(io::IO, c::KSi) = print(io, "Silicic acid constant\n",
+    "    ln(kˢⁱ/k°) = $(c.constant)
+                + $(c.inverse_T) / T
+                + $(c.log_T) log(T)
+                + ($(c.sqrt_Is) + $(c.inverse_T_sqrt_Is) / T) √Is
+                + ($(c.Is) + $(c.inverse_T_Is) / T) Is
+                + ($(c.Is²) + $(c.inverse_T_Is²) / T) Is²
+                + log(1 + $(c.log_S) S)")   
+

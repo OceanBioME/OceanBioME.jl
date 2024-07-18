@@ -111,23 +111,3 @@ end
 
 @inline get_value(x, y, t, air_concentration::Number) = air_concentration
 @inline get_value(x, y, t, air_concentration::Function) = air_concentration(x, y, t)
-#=It is not possible for this to work on GPU since we need the grid and locs before (since fields are reduced to vectors)
-  We probably need a more generic and better way todo this but here is not the place.
-  For now if you wanted to use data you could do similar to https://github.com/OceanBioME/GlobalOceanBioME.jl/blob/main/src/one_degree_surface_par.jl
-# interpolate doesn't really work on 2D fields
-@inline function get_value(x, y, t, conc::Field{LX, LY, LZ}) where {LX, LY, LZ}
-    grid = conc.grid
-
-    i, j, _ = fractional_indices((x, y, 0.0), grid, LX(), LY(), Center())
-
-    ξ, i = mod(i, 1), Base.unsafe_trunc(Int, i)
-    η, j = mod(j, 1), Base.unsafe_trunc(Int, j)
-
-    _, _, ks = indices(conc)
-
-    return @inbounds  ((1 - ξ) * (1 - η) * conc[i,   j,   ks[1]]
-                     + (1 - ξ) *      η  * conc[i,   j+1, ks[1]]
-                     +      ξ  * (1 - η) * conc[i+1, j,   ks[1]]
-                     +      ξ  *      η  * conc[i+1, j+1, ks[1]])
-end
-=#
