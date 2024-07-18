@@ -33,7 +33,7 @@ end
     return R_CaCO₃(P, T, PAR, zₘₓₗ)*(ηᶻ*grazingᶻ(P, D, POC, T)[2]*Z+ηᴹ*grazingᴹ(P, D, Z, POC, T)[2]*M + 0.5*(mᴾ*K_mondo(P, Kₘ)*P + sh*wᴾ*P^2)) #eq76
 end
 
-@inline function (pisces::PISCES)(::Val{:CaCO₃}, x, y, z, t, P, D, Z, M, Pᶜʰˡ, Dᶜʰˡ, Pᶠᵉ, Dᶠᵉ, Dˢⁱ, DOC, POC, GOC, SFe, BFe, PSi, NO₃, NH₄, PO₄, Fe, Si, CaCO₃, DIC, Alk, O₂, T, PAR, PAR¹, PAR², PAR³, zₘₓₗ, zₑᵤ, Si̅, D_dust) 
+@inline function (bgc::PISCES)(::Val{:CaCO₃}, x, y, z, t, P, D, Z, M, Pᶜʰˡ, Dᶜʰˡ, Pᶠᵉ, Dᶠᵉ, Dˢⁱ, DOC, POC, GOC, SFe, BFe, PSi, NO₃, NH₄, PO₄, Fe, Si, CaCO₃, DIC, Alk, O₂, T, PAR, PAR¹, PAR², PAR³, zₘₓₗ, zₑᵤ, Si̅, D_dust) 
 
     return P_CaCO₃(P, Z, M, T, PAR, zₘₓₗ, z) - λ_CaCO₃¹(CaCO₃)*CaCO₃ #partial derivative omitted as sinking is accounted for in other parts of model
 end
