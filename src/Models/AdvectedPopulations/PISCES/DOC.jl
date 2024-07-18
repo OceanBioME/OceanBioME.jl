@@ -84,11 +84,16 @@ end
 
 
 @inline function (pisces::PISCES)(::Val{:DOC}, x, y, z, t, P, D, Z, M, Pᶜʰˡ, Dᶜʰˡ, Pᶠᵉ, Dᶠᵉ, Dˢⁱ, DOC, POC, GOC, SFe, BFe, PSi, NO₃, NH₄, PO₄, Fe, Si, CaCO₃, DIC, Alk, O₂, T, PAR, PAR¹, PAR², PAR³, zₘₓₗ, zₑᵤ, Si̅, D_dust)
-    γᶻ, γᴹ = bgc.excretion_as_DOM
-    σᶻ, σᴹ = bgc.non_assimilated_fraction
-    δᴾ, δᴰ = bgc.exudation_of_DOC
-    eₘₐₓᶻ, eₘₐₓᴹ = bgc.max_growth_efficiency_of_zooplankton
-    αᴾ, αᴰ = bgc.initial_slope_of_PI_curve
+    γᶻ = bgc.excretion_as_DOM.Z
+    γᴹ = bgc.excretion_as_DOM.M
+    σᶻ = bgc.non_assimilated_fraction.Z
+    σᴹ = bgc.non_assimilated_fraction.M
+    δᴾ = bgc.exudation_of_DOC.P
+    δᴰ = bgc.exudation_of_DOC.D
+    eₘₐₓᶻ = bgc.max_growth_efficiency_of_zooplankton.Z
+    eₘₐₓᴹ = bgc.max_growth_efficiency_of_zooplankton.M
+    αᴾ= bgc.initial_slope_of_PI_curve.P
+    αᴰ = bgc.initial_slope_of_PI_curve.D
 
     ϕ₀ = bgc.latitude
     L_day_param = bgc.length_of_day
