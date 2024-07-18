@@ -1,7 +1,4 @@
 
-# TO DO: 
-    #Fill in Bact function
-
 # Using simple chemistry model. 
 # This document contains functions for the following:
     # Fe¹ (eq65), dissolved free inorganic iron
@@ -16,7 +13,7 @@
     return (-Δ + sqrt(Δ^2 + 4*K_eqᶠᵉ(T)*Fe))/(2*K_eqᶠᵉ(T)) #eq65
 end
 
-@inline function Cgfe1(sh, Fe, POC, DOC, T)
+@inline function Cgfe1(sh, Fe, POC, DOC, T, bgc)
     a₁ = bgc.aggregation_rate_of_DOC_to_POC_1
     a₂ = bgc.aggregation_rate_of_DOC_to_POC_2
     a₄ = bgc.aggregation_rate_of_DOC_to_POC_4
@@ -27,20 +24,20 @@ end
     return ((a₁*DOC + a₂*POC)*sh+a₄*POC + a₅*DOC)*Fe_coll
 end
 
-@inline function Cgfe2(sh, Fe, T, DOC, GOC)
+@inline function Cgfe2(sh, Fe, T, DOC, GOC, bgc)
     a₃ = bgc.aggregation_rate_of_DOC_to_GOC_3
     FeL = Fe - Fe¹(Fe, DOC, T)
     Fe_coll = 0.5*FeL
     return a₃*GOC*sh*Fe_coll
 end
 
-@inline function Aggfe(Fe, DOC, T)
+@inline function Aggfe(Fe, DOC, T, bgc)
     λ_Fe = bgc.slope_of_scavenging_rate_of_iron
     Lₜ = max(0.09*(DOC + 40) - 3, 0.6)
     return 1000*λ_Fe*max(0, Fe - Lₜ)*Fe¹(DOC, T, Fe)
 end
 
-@inline function Bactfe(μₘₐₓ⁰, z, Z, M, Fe, DOC, PO₄, NO₃, NH₄, bFe, T, zₘₐₓ)
+@inline function Bactfe(μₘₐₓ⁰, z, Z, M, Fe, DOC, PO₄, NO₃, NH₄, bFe, T, zₘₐₓ, bgc)
     K_Feᴮ¹ = bgc.Fe_half_saturation_const_for_PLACEHOLDER
     θₘₐₓᶠᵉᵇᵃᶜᵗ = bgc.max_FeC_ratio_of_bacteria
     Bact = Bact(zₘₐₓ, z, Z, M) 

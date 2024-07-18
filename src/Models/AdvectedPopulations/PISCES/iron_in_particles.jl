@@ -3,7 +3,7 @@
     #Forcing equations for SFe and BFe. (eqs 48 and 49)
 
 
-@inline function λ_Fe¹(POC, GOC, CaCO₃, BSi, D_dust) 
+@inline function λ_Fe¹(POC, GOC, CaCO₃, BSi, D_dust, bgc) 
     λ_Feᵐⁱⁿ = bgc.min_scavenging_rate_of_iron
     λ_Fe = bgc.slope_of_scavenging_rate_of_iron
     λ_Feᵈᵘˢᵗ = bgc.scavenging_rate_of_iron_by_dust

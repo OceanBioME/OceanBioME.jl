@@ -7,7 +7,7 @@
     #P_CaCO₃ (eq76)
     #Forcing for CaCO₃ (eq75)
 
-@inline function λ_CaCO₃¹(CaCO₃) #no argument required, CaCO₃ given as placeholder
+@inline function λ_CaCO₃¹(CaCO₃, bgc) #no argument required, CaCO₃ given as placeholder
     λ_CaCO₃ = bgc.dissolution_rate_of_calcite
     nca = bgc.exponent_in_the_dissolution_rate_of_calcite
     #Ω = bgc.carbonate_sat_ratio #define this as an auxiliary field, or using Nemo source code as in PISCES?
@@ -16,13 +16,13 @@
     return λ_CaCO³*(ΔCO₃²⁻)^nca
 end
 
-@inline function R_CaCO₃(P, T, PAR, zₘₓₗ) 
+@inline function R_CaCO₃(P, T, PAR, zₘₓₗ, bgc) 
     r_CaCO₃ = bgc.rain_ratio_parameter
     Lₗᵢₘᶜᵃᶜᵒ³ = #does this equal 1 or as defined in original PISCES?
     return r_CaCO₃*Lₗᵢₘᶜᵃᶜᵒ³*T*max(1, P/2)*max(0, PAR - 1)*30*(1 + exp((-(T-10)^2)/25))*min(1, 50/zₘₓₗ)/((0.1 + T)*(4 + PAR)*(30 + PAR)) #eq77
 end
 
-@inline function P_CaCO₃(P, Z, M, T, PAR, zₘₓₗ, z) 
+@inline function P_CaCO₃(P, Z, M, T, PAR, zₘₓₗ, z, bgc) 
     mᴾ = bgc.zooplankton_quadratic_mortality.P
     Kₘ = bgc.half_saturation_const_for_mortality
     wᴾ = bgc.min_quadratic_mortality_of_phytoplankton

@@ -1,4 +1,4 @@
-@inline function Rᵤₚ(M, T)
+@inline function Rᵤₚ(M, T, bgc)
     σᴹ = bgc.non_assimilated_fraction.M
     eₘₐₓᴹ = bgc.max_growth_efficiency_of_zooplankton.M
     mᴹ = bgc.phytoplankton_mortality_rate.M
@@ -6,7 +6,7 @@
     return (1 - σᴹ - eₘₐₓᴹ)*(1)/(1-eₘₐₓᴹ)*mᴹ*bₘ^T*M^2  #30b
 end
 
-@inline function Pᵤₚ(M, T)
+@inline function Pᵤₚ(M, T, bgc)
     σᴹ = bgc.non_assimilated_fraction.M
     eₘₐₓᴹ = bgc.max_growth_efficiency_of_zooplankton.M
     mᴹ = bgc.phytoplankton_mortality_rate.M
@@ -15,7 +15,7 @@ end
 end
 
 
-@inline function Remin(O₂, NO₃, PO₄, NH₄, DOC, T, bFe, Bact)
+@inline function Remin(O₂, NO₃, PO₄, NH₄, DOC, T, bFe, Bact, bgc)
     O₂ᵘᵗ = bgc.OC_for_ammonium_based_processes
     λ_DOC = bgc.remineralisation_rate_of_DOC
     bₚ = bgc.temperature_sensitivity_of_growth
@@ -26,7 +26,7 @@ end
     return min(O₂/O₂ᵘᵗ, λ_DOC*bₚ^T(1 - ΔO₂(O₂)) * Lₗᵢₘᵇᵃᶜᵗ * (Bact)/(Bactᵣₑ) * DOC) #33a
 end
 
-@inline function Denit(NO₃, PO₄, NH₄, DOC, O₂, T, bFe, Bact)
+@inline function Denit(NO₃, PO₄, NH₄, DOC, O₂, T, bFe, Bact, bgc)
     λ_DOC = bgc.remineralisation_rate_of_DOC
     rₙₒ₃¹ = bgc.CN_ratio_of_denitrification
     bₚ = bgc.temperature_sensitivity_of_growth
@@ -39,7 +39,7 @@ end
 
 @inline Bact(zₘₐₓ, z, Z, M) = ifelse(z <= zₘₐₓ, min(0.7*(Z + 2*M), 4), min(0.7*(Z + 2*M), 4)*(zₘₐₓ/(z + eps(0.0))^0.683))  #35b
 
-@inline function Φᴰᴼᶜ(DOC, POC, GOC, sh)
+@inline function Φᴰᴼᶜ(DOC, POC, GOC, sh, bgc)
     a₁ = bgc.aggregation_rate_of_DOC_to_POC_1
     a₂ = bgc.aggregation_rate_of_DOC_to_POC_2
     a₃ = bgc.aggregation_rate_of_DOC_to_GOC_3
@@ -53,14 +53,14 @@ end
     return Φ₁ᴰᴼᶜ, Φ₂ᴰᴼᶜ, Φ₃ᴰᴼᶜ
 end
 
-@inline function λ¹(T, O₂)
+@inline function λ¹(T, O₂, bgc)
     λₚₒ= bgc.degradation_rate_of_POC
     bₚ = bgc.temperature_sensitivity_of_growth
 
     return λₚₒ*bₚ^T*(1 - 0.45*ΔO₂(O₂))  #38
 end
 
-@inline function Lᵇᵃᶜᵗ(DOC, PO₄, NO₃, NH₄, bFe)
+@inline function Lᵇᵃᶜᵗ(DOC, PO₄, NO₃, NH₄, bFe, bgc)
    
     Kₚₒ₄ᵇᵃᶜᵗ = bgc.PO4_half_saturation_const_for_DOC_remin
     Kₙₒ₃ᵇᵃᶜᵗ = bgc.NO3_half_saturation_const_for_DOC_remin
