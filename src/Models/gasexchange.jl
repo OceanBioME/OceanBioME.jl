@@ -1,5 +1,7 @@
 using OceanBioME.Models.CarbonChemistryModel: CarbonChemistry
 
+using Oceananigans.BoundaryConditions: FluxBoundaryCondition
+
 #####
 ##### Gas exchange model of [Wanninkhof1992](@citet)
 #####

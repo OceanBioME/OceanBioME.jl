@@ -8,7 +8,7 @@ using OceanBioME.Models: seawater_density
 using OceanBioME.Models.CarbonChemistryModel: IonicStrength, K0, K1, K2, KB, KW, KS, KF, KP, KSi
 
 const year = years = 365days # just for the idealised case below
-#=
+
 dd = DataDep(
     "test_data",
     "CODAP-NA (https://essd.copernicus.org/articles/13/2777/2021/) data for testing pCO₂ calculations", 
@@ -60,17 +60,13 @@ grid = RectilinearGrid(architecture; size=(1, 1, 2), extent=(1, 1, 1))
 
 @inline conc_function(x, y, t) = 413.0 + 10.0 * sin(t * π / year)
 
-#conc_field = CenterField(grid, indices=(:, :, grid.Nz))
-#set!(conc_field, 413.0)
-#Oceananigans.fill_halo_regions!(conc_field)
-
 @testset "Gas exchange coupling" begin
-    for air_concentration in [413.1, conc_function]#, conc_field]
+    for air_concentration in [413.1, conc_function]
         @info "Testing with $(typeof(air_concentration))"
         test_gas_exchange_model(grid, air_concentration)
     end
 end
-=#
+
 @testset "Seawater density" begin
     @test ≈(seawater_density(25, 35), 1023.343; atol = 0.01)
 end
@@ -104,8 +100,6 @@ end
     @test ≈(log(carbon_chemistry.silicic_acid(Tk, S)), -21.61; atol=0.01)
 
     # values from Zeebe & Wolf-Gladrow, 2001
-    S = 35
-    Tk = 298.15
     P = 300
     @test ≈(carbon_chemistry.carbonic_acid.K1.pressure_correction(Tk, P), 1.30804; atol=0.00001)
     @test ≈(carbon_chemistry.carbonic_acid.K2.pressure_correction(Tk, P), 1.21341; atol=0.00001)
