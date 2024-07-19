@@ -9,6 +9,8 @@
     σᴹ = bgc.non_assimilated_fraction.M
     αᴾ = bgc.initial_slope_of_PI_curve.P
     αᴰ = bgc.initial_slope_of_PI_curve.D
+    eₘₐₓᶻ = bgc.max_growth_efficiency_of_zooplankton.Z
+    eₘₐₓᴹ = bgc.max_growth_efficiency_of_zooplankton.M
 
     bFe = Fe
 
@@ -30,7 +32,7 @@
     ∑g_FFᴹ = get_∑g_FFᴹ(z, zₑᵤ, zₘₓₗ, T, POC, GOC, bgc)
     #g_Z not called
     #Gross growth efficiency
-    eᶻ = e(eₘₐₓᶻ, σᶻ, gₚᶻ, g_Dᶻ, gₚₒᶻ, 0, Pᶠᵉ, Dᶠᵉ, SFe, P, D, POC, bgc)
+    eᶻ = eᴶ(eₘₐₓᶻ, σᶻ, gₚᶻ, g_Dᶻ, gₚₒᶻ, 0, Pᶠᵉ, Dᶠᵉ, SFe, P, D, POC, bgc)
     eᴹ =  eᴶ(eₘₐₓᴹ, σᴹ, gₚᴹ, g_Dᴹ, gₚₒᴹ, g_Zᴹ,Pᶠᵉ, Dᶠᵉ, SFe, P, D, POC, bgc)
 
     zₘₐₓ = max(zₑᵤ, zₘₓₗ) #35a
