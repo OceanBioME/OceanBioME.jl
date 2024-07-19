@@ -28,7 +28,7 @@ nothing #hide
 # Set up the model. Here, first specify the biogeochemical model, followed by initial conditions and the start and end times
 model = BoxModel(biogeochemistry = PISCES(grid = BoxModelGrid, light_attenuation_model = nothing), forcing = (; PAR))
 
-set!(model, NO₃ = 10.0, NH₄ = 0.1, P = 0.1, Z = 0.01)
+set!(model, P = 0.1, D = 0.1, Z = 0.1, M = 0.1, Pᶜʰˡ = 0.1, Dᶜʰˡ = 0.1, Pᶠᵉ = 0.1, Dᶠᵉ = 0.1, Dˢⁱ = 0.1, DOC = 0.1, POC = 0.1, GOC=0.1, SFe = 0.1, BFe = 0.1, PSi= 0.1, NO₃ = 0.1, NH₄ = 0.1, PO₄ = 0.1, Fe = 0.1, Si = 0.1, CaCO₃ =0.1, DIC = 0.1, Alk = 0.1, O₂ =0.1)
 
 simulation = Simulation(model; Δt = 5minutes, stop_time = 30days)
 
@@ -51,7 +51,7 @@ timeseries = NamedTuple{keys(model.fields)}(FieldTimeSeries("box.jld2", "$field"
 # ## And plot
 using CairoMakie
 
-fig = Figure(size = (1200, 1200), fontsize = 24)
+fig = Figure(size = (1200, 7200), fontsize = 24)
 
 axs = []
 for (name, tracer) in pairs(timeseries)

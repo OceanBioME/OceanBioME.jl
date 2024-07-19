@@ -17,7 +17,7 @@ module PISCESModel
 export PISCES
 
 using Oceananigans.Units
-using Oceananigans.Fields: Field, TracerFields, CenterField, ZeroField
+using Oceananigans.Fields: Field, TracerFields, CenterField, ZeroField, ConstantField
 
 using OceanBioME.Light: TwoBandPhotosyntheticallyActiveRadiation, default_surface_PAR
 using OceanBioME: setup_velocity_fields, show_sinking_velocities, Biogeochemistry, ScaleNegativeTracers
@@ -40,7 +40,7 @@ import Base: show, summary
 
 import OceanBioME.Boundaries.Sediments: nitrogen_flux, carbon_flux, remineralisation_receiver, sinking_tracers
 
-struct PISCES{FT, PD, ZM, OT, W} <: AbstractContinuousFormBiogeochemistry
+struct PISCES{FT, PD, ZM, OT, W, CF} <: AbstractContinuousFormBiogeochemistry
 
     growth_rate_at_zero :: FT # add list of parameters here, assuming theyre all just numbers FT will be fine for advect_particles_kernel
     growth_rate_reference_for_light_limitation :: FT
@@ -154,6 +154,10 @@ struct PISCES{FT, PD, ZM, OT, W} <: AbstractContinuousFormBiogeochemistry
     proportion_of_sinking_grazed_shells :: ZM
     carbonate_limitation_term :: FT
 
+    mixed_layer_depth :: CF
+    euphotic_layer_depth :: CF
+    yearly_maximum_silicate :: FT
+    dust_deposition :: FT
 
   #  vertical_diffusivity :: FD 
    # carbonate_sat_ratio :: FD
@@ -272,13 +276,17 @@ struct PISCES{FT, PD, ZM, OT, W} <: AbstractContinuousFormBiogeochemistry
                     proportion_of_sinking_grazed_shells :: ZM,
                     carbonate_limitation_term :: FT,
                     
+                    mixed_layer_depth :: CF,
+                    euphotic_layer_depth :: CF,
+                    yearly_maximum_silicate :: FT,
+                    dust_deposition :: FT,
                   #  vertical_diffusivity :: FD, 
                    # carbonate_sat_ratio :: FD,
 
-                    sinking_velocities :: W,) where {FT, PD, ZM, OT, W} # then do the same here (this is all just annoying boiler plate but we need it to make the next function work)
+                    sinking_velocities :: W,) where {FT, PD, ZM, OT, W, CF} # then do the same here (this is all just annoying boiler plate but we need it to make the next function work)
 
 
-        return new{FT, PD, ZM, OT, W}(growth_rate_at_zero,
+        return new{FT, PD, ZM, OT, W, CF}(growth_rate_at_zero,
                             growth_rate_reference_for_light_limitation,
                             basal_respiration_rate,
                             temperature_sensitivity_of_growth,
@@ -390,6 +398,10 @@ struct PISCES{FT, PD, ZM, OT, W} <: AbstractContinuousFormBiogeochemistry
                             proportion_of_sinking_grazed_shells,
                             carbonate_limitation_term,
 
+                            mixed_layer_depth,
+                            euphotic_layer_depth,
+                            yearly_maximum_silicate,
+                            dust_deposition,
                           #  vertical_diffusivity,
                            # carbonate_sat_ratio,
 
@@ -563,6 +575,11 @@ function PISCES(; grid, # finally the function
                    proportion_of_sinking_grazed_shells :: ZM = (Z = 0.3, M = 0.3),  # 0.3 for both? not sure
                    carbonate_limitation_term :: FT = 1.0,       #do not think this is a parameter
 
+                   mixed_layer_depth :: CF = ConstantField(100),
+                   euphotic_layer_depth :: CF = ConstantField(50),
+                   yearly_maximum_silicate :: FT = 1.0,
+                   dust_deposition :: FT = 1.0,
+
                   surface_photosynthetically_active_radiation = default_surface_PAR,
 
                   light_attenuation_model::LA =
@@ -580,7 +597,7 @@ function PISCES(; grid, # finally the function
                   scale_negatives = false,
 
                   particles::P = nothing,
-                  modifiers::M = nothing) where {FT, PD, ZM, OT, LA, S, P, M}
+                  modifiers::M = nothing) where {FT, PD, ZM, OT, LA, S, P, M, CF}
 
     if !isnothing(sediment_model) && !open_bottom
         @warn "You have specified a sediment model but not `open_bottom` which will not work as the tracer will settle in the bottom cell"
@@ -701,6 +718,12 @@ function PISCES(; grid, # finally the function
                                         proportion_of_sinking_grazed_shells,
                                         carbonate_limitation_term,
 
+                                        mixed_layer_depth,
+                                        euphotic_layer_depth,
+                                        yearly_maximum_silicate,
+                                        dust_deposition,
+
+
                                   #      vertical_diffusivity,
                                    #     carbonate_sat_ratio,
 
@@ -736,6 +759,8 @@ end
         return (u = ZeroField(), v = ZeroField(), w = ZeroField())
     end
 end
+
+@inline biogeochemical_auxiliary_fields(bgc::PISCES) = (zₘₓₗ = bgc.mixed_layer_depth, zₑᵤ = bgc.euphotic_layer_depth, Si̅ = bgc.yearly_maximum_silicate, D_dust = bgc.dust_deposition, PAR₁ = ConstantField(100), PAR₂ = ConstantField(100), PAR₃ = ConstantField(100))
 
 # don't worry about this for now
 adapt_structure(to, pisces::PISCES) =
