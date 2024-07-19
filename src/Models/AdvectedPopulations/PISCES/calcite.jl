@@ -13,7 +13,7 @@
     #Ω = bgc.carbonate_sat_ratio #define this as an auxiliary field, or using Nemo source code as in PISCES?
     Ω = 0
     ΔCO₃²⁻ = max(0, 1 - Ω)
-    return λ_CaCO³*(ΔCO₃²⁻)^nca
+    return λ_CaCO₃*(ΔCO₃²⁻)^nca
 end
 
 @inline function get_R_CaCO₃(P, T, PAR, zₘₓₗ, bgc) 
