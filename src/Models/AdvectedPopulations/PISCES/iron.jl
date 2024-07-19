@@ -88,8 +88,8 @@ end
     ∑gᴹ, gₚᴹ, g_Dᴹ, gₚₒᴹ, g_Zᴹ = get_grazingᴹ(P, D, Z, POC, T, bgc)
     ∑g_FFᴹ = get_∑g_FFᴹ(z, zₑᵤ, zₘₓₗ, T, POC, GOC, bgc)
     
-    ∑θᶠᵉⁱgᵢᶻ = θᶠᵉᴾ*grazingᶻ[2] + θᶠᵉᴰ*grazingᶻ[3] + θᶠᵉᴾᴼᶜ*grazingᶻ[4] #over P, D, POC
-    ∑θᶠᵉⁱgᵢᴹ = θᶠᵉᴾ*grazingᴹ[2] + θᶠᵉᴰ*grazingᴹ[3] + θᶠᵉᴾᴼᶜ*grazingᴹ[4] + θᶠᵉᶻ*grazingᴹ[5] #graze on P, D, POC, Z 
+    ∑θᶠᵉⁱgᵢᶻ = θᶠᵉᴾ*gₚᶻ + θᶠᵉᴰ*g_Dᶻ + θᶠᵉᴾᴼᶜ*gₚₒᶻ #over P, D, POC
+    ∑θᶠᵉⁱgᵢᴹ = θᶠᵉᴾ*gₚᴹ + θᶠᵉᴰ*g_Dᴹ + θᶠᵉᴾᴼᶜ*ggₚₒᴹ + θᶠᵉᶻ*g_Zᴹ #graze on P, D, POC, Z 
 
     Bactfe = get_Bactfe(μₘₐₓ⁰, z, Z, M, Fe, DOC, PO₄, NO₃, NH₄, bFe, T, zₘₐₓ, bgc)
 
