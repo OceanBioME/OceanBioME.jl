@@ -152,7 +152,6 @@ struct PISCES{FT, PD, ZM, OT, W, CF} <: AbstractContinuousFormBiogeochemistry
     max_FeC_ratio_of_bacteria :: FT
     Fe_half_saturation_const_for_PLACEHOLDER :: FT    #not sure what this should be called
     proportion_of_sinking_grazed_shells :: ZM
-    carbonate_limitation_term :: FT
 
     mixed_layer_depth :: CF
     euphotic_layer_depth :: CF
@@ -274,7 +273,6 @@ struct PISCES{FT, PD, ZM, OT, W, CF} <: AbstractContinuousFormBiogeochemistry
                     max_FeC_ratio_of_bacteria :: FT,
                     Fe_half_saturation_const_for_PLACEHOLDER :: FT,    #not sure what this should be called
                     proportion_of_sinking_grazed_shells :: ZM,
-                    carbonate_limitation_term :: FT,
                     
                     mixed_layer_depth :: CF,
                     euphotic_layer_depth :: CF,
@@ -396,7 +394,6 @@ struct PISCES{FT, PD, ZM, OT, W, CF} <: AbstractContinuousFormBiogeochemistry
                             max_FeC_ratio_of_bacteria,
                             Fe_half_saturation_const_for_PLACEHOLDER,    #not sure what this should be called
                             proportion_of_sinking_grazed_shells,
-                            carbonate_limitation_term,
 
                             mixed_layer_depth,
                             euphotic_layer_depth,
@@ -573,7 +570,6 @@ function PISCES(; grid, # finally the function
                    max_FeC_ratio_of_bacteria :: FT = 10.0e-6,     #or 6
                    Fe_half_saturation_const_for_PLACEHOLDER :: FT = 2.5e-10, #or 2.5e-10    #not sure what this should be called
                    proportion_of_sinking_grazed_shells :: ZM = (Z = 0.3, M = 0.3),  # 0.3 for both? not sure
-                   carbonate_limitation_term :: FT = 1.0,       #do not think this is a parameter
 
                    mixed_layer_depth :: CF = ConstantField(100),
                    euphotic_layer_depth :: CF = ConstantField(50),
@@ -716,7 +712,6 @@ function PISCES(; grid, # finally the function
                                         max_FeC_ratio_of_bacteria,
                                         Fe_half_saturation_const_for_PLACEHOLDER,    #not sure what this should be called
                                         proportion_of_sinking_grazed_shells,
-                                        carbonate_limitation_term,
 
                                         mixed_layer_depth,
                                         euphotic_layer_depth,
