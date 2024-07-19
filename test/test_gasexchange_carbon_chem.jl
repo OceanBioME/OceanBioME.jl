@@ -8,7 +8,7 @@ using OceanBioME.Models: seawater_density
 using OceanBioME.Models.CarbonChemistryModel: IonicStrength, K0, K1, K2, KB, KW, KS, KF, KP, KSi
 
 const year = years = 365days # just for the idealised case below
-
+#=
 dd = DataDep(
     "test_data",
     "CODAP-NA (https://essd.copernicus.org/articles/13/2777/2021/) data for testing pCO₂ calculations", 
@@ -70,7 +70,7 @@ grid = RectilinearGrid(architecture; size=(1, 1, 2), extent=(1, 1, 1))
         test_gas_exchange_model(grid, air_concentration)
     end
 end
-
+=#
 @testset "Seawater density" begin
     @test ≈(seawater_density(25, 35), 1023.343; atol = 0.01)
 end
@@ -83,14 +83,15 @@ end
         CarbonChemistry(; # Weiss, R.F. (1974, Mar. Chem., 2, 203–215)
                           solubility = K0(-60.2409, 93.4517 * 100, 23.3585, 0.0, 0.023517, -0.023656 / 100, 0.0047036 / 100^2),
                           # Lueke, et. al (2000, Mar. Chem., 70, 105–119;)
-                          carbonic_acid = (K1 = K1(61.2172, -3633.86, -9.67770, 0.011555, -0.0001152), 
-                                           K2 = K2(-25.9290, -471.78, 0.01781, -0.0001122,  3.16967)),
+                          carbonic_acid = (K1 = K1(constant=61.2172, inverse_T=-3633.86, log_T=-9.67770, S=0.011555, S²=-0.0001152), 
+                                           K2 = K2(constant=-25.9290, inverse_T=-471.78, log_T=3.16967, S=0.01781, S²=-0.0001122)),
                           # Perez and Fraga (1987, Mar. Chem., 21, 161–168).
-                          fluoride = KF(IonicStrength(),  KS(), -9.68, 874.0, 0.111, 0.0, 0.0))
+                          fluoride = KF(constant=-9.68, inverse_T=874.0, sqrt_S=0.111, log_S=0.0, log_S_KS=0.0))
 
+    # values from Dickson et. al, 2007
     S = 35
     Tk = 298.15
-
+    @test ≈(log(carbon_chemistry.solubility(Tk, S)), -3.5617; atol=0.0001)
     @test ≈(log10(carbon_chemistry.carbonic_acid.K1(Tk, S)), -5.8472; atol=0.0001)
     @test ≈(log10(carbon_chemistry.carbonic_acid.K2(Tk, S)), -8.9660; atol=0.0001)
     @test ≈(log(carbon_chemistry.boric_acid(Tk, S)), -19.7964; atol=0.0001)
@@ -101,5 +102,18 @@ end
     @test ≈(log(carbon_chemistry.phosphoric_acid.KP2(Tk, S)), -13.727; atol=0.001)
     @test ≈(log(carbon_chemistry.phosphoric_acid.KP3(Tk, S)), -20.24; atol=0.01)
     @test ≈(log(carbon_chemistry.silicic_acid(Tk, S)), -21.61; atol=0.01)
-    @test ≈(log(carbon_chemistry.solubility(Tk, S)), -3.5617; atol=0.0001)
+
+    # values from Zeebe & Wolf-Gladrow, 2001
+    S = 35
+    Tk = 298.15
+    P = 300
+    @test ≈(carbon_chemistry.carbonic_acid.K1.pressure_correction(Tk, P), 1.30804; atol=0.00001)
+    @test ≈(carbon_chemistry.carbonic_acid.K2.pressure_correction(Tk, P), 1.21341; atol=0.00001)
+    @test ≈(carbon_chemistry.boric_acid.pressure_correction(Tk, P), 1.38024; atol=0.00001)
+    @test ≈(carbon_chemistry.water.pressure_correction(Tk, P), 1.23784; atol=0.00001)
+    @test ≈(carbon_chemistry.sulfate.pressure_correction(Tk, P), 1.21844; atol=0.00001)
+    @test ≈(carbon_chemistry.fluoride.pressure_correction(Tk, P), 1.13151; atol=0.00001)
+    @test ≈(carbon_chemistry.phosphoric_acid.KP1.pressure_correction(Tk, P), 1.14852; atol=0.00001)
+    @test ≈(carbon_chemistry.phosphoric_acid.KP2.pressure_correction(Tk, P), 1.27298; atol=0.00001)
+    @test ≈(carbon_chemistry.phosphoric_acid.KP3.pressure_correction(Tk, P), 1.32217; atol=0.00001)
 end

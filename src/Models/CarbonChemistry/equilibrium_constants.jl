@@ -1,4 +1,36 @@
 """
+    PressureCorrection(a₀, a₁, a₂,
+                       b₀, b₁, b₂,
+                       R)
+
+Parameterisation for the pressure effect on thermodynamic constants.
+
+Form from Millero, F. J. (2007, Chemical Reviews, 107(2), 308–341).
+"""
+@kwdef struct PressureCorrection{FT}
+    a₀ :: FT
+    a₁ :: FT
+    a₂ :: FT
+    b₀ :: FT
+    b₁ :: FT
+
+    R  :: FT = 83.14472
+end
+
+@inline function (pc::PressureCorrection)(Tk, P)
+    Tc = Tk - 273.15
+
+    ΔV = pc.a₀ + pc.a₁ * Tc + pc.a₂ * Tc^2
+    Δκ = pc.b₀ + pc.b₁ * Tc
+
+    RT = pc.R * Tk
+
+    return exp((-ΔV + 0.5 * Δκ * P) * P / RT)
+end
+
+@inline (pc::PressureCorrection)(T, ::Nothing) = 1
+
+"""
     K0(; constant = -162.8301
          inverse_T =  218.2968 * 100
          log_T =  90.9241
@@ -25,11 +57,12 @@ Default values from Weiss & Price (1980, Mar. Chem., 8, 347-359; Eq 13 with tabl
           ST² :: FT =  0.0049867 / 100^2
 end
 
-@inline (c::K0)(T, S) = exp(c.constant 
-                            + c.inverse_T / T
-                            + c.log_T * (log(T) - log(100))
-                            + c.T² * T^2
-                            + (c.S + c.ST * T + c.ST² * T^2) * S)
+@inline (c::K0)(T, S; P = nothing) = 
+    exp(c.constant 
+        + c.inverse_T / T
+        + c.log_T * (log(T) - log(100))
+        + c.T² * T^2
+        + (c.S + c.ST * T + c.ST² * T^2) * S)
 
 summary(::IO, ::K0) = string("Solubility constant")
 show(io::IO, k0::K0) = print(io, "Solubility constant\n",
@@ -40,7 +73,9 @@ show(io::IO, k0::K0) = print(io, "Solubility constant\n",
          inverse_T = -3670.7,
          log_T = -9.7944,
          S =  0.0118,
-         S² = -0.000116)
+         S² = -0.000116,
+         pressure_correction = 
+            PressureCorrection(; a₀=-25.50, a₁=0.1271, a₂=0.0, b₀=-0.00308, b₁=0.0000877))
 
 Parameterisation for aquious carbon dioxide - bicarbonate dissociation equilibrium constant.
 
@@ -50,15 +85,20 @@ Parameterisation for aquious carbon dioxide - bicarbonate dissociation equilibri
 
 Default values from Millero (1995, Geochim. Cosmochim. Acta, 59, 664).
 """
-@kwdef struct K1{FT}
-     constant :: FT =  62.008
-    inverse_T :: FT = -3670.7
-        log_T :: FT = -9.7944
-            S :: FT =  0.0118
-           S² :: FT = -0.000116
+@kwdef struct K1{FT, PC}
+               constant :: FT =  62.008
+              inverse_T :: FT = -3670.7
+                  log_T :: FT = -9.7944
+                      S :: FT =  0.0118
+                     S² :: FT = -0.000116
+
+    pressure_correction :: PC = 
+        PressureCorrection(; a₀=-25.50, a₁=0.1271, a₂=0.0, b₀=-0.00308, b₁=0.0000877)
 end
 
-@inline (c::K1)(T, S) = 10 ^ (c.constant + c.inverse_T / T + c.log_T * log(T) + c.S * S + c.S² * S^2)
+@inline (c::K1)(T, S; P = nothing) = 
+    c.pressure_correction(T, P) *
+    10 ^ (c.constant + c.inverse_T / T + c.log_T * log(T) + c.S * S + c.S² * S^2)
 
 summary(::IO, ::K1) = string("First carbon dioxide dissociation constant")
 show(io::IO, k1::K1) = print(io, "First carbon dioxide dissociation constant\n",
@@ -69,7 +109,9 @@ show(io::IO, k1::K1) = print(io, "First carbon dioxide dissociation constant\n",
          inverse_T = -3670.7,
          log_T = -9.7944,
          S =  0.0118,
-         S² = -0.000116)
+         S² = -0.000116,
+         pressure_correction = 
+            PressureCorrection(; a₀=-15.82, a₁=-0.0219, a₂=0.0, b₀=0.00113, b₁=-0.0001475))
 
 Parameterisation for bicarbonate dissociation equilibrium constant.
 
@@ -79,15 +121,20 @@ Parameterisation for bicarbonate dissociation equilibrium constant.
 
 Default values from Millero (1995, Geochim. Cosmochim. Acta, 59, 664).
 """
-@kwdef struct K2{FT}
-     constant :: FT = -4.777
-    inverse_T :: FT = -1394.7
-            S :: FT =  0.0184
-           S² :: FT = -0.000118
-        log_T :: FT =  0.0
+@kwdef struct K2{FT, PC}
+               constant :: FT = -4.777
+              inverse_T :: FT = -1394.7
+                      S :: FT =  0.0184
+                     S² :: FT = -0.000118
+                  log_T :: FT =  0.0
+
+    pressure_correction :: PC = 
+        PressureCorrection(; a₀=-15.82, a₁=-0.0219, a₂=0.0, b₀=0.00113, b₁=-0.0001475)
 end
 
-@inline (c::K2)(T, S) = 10 ^ (c.constant + c.inverse_T / T + c.S * S + c.S² * S^2 + c.log_T * log(T))
+@inline (c::K2)(T, S; P = nothing) = 
+    c.pressure_correction(T, P) *
+    10 ^ (c.constant + c.inverse_T / T + c.S * S + c.S² * S^2 + c.log_T * log(T))
 
 summary(::IO, ::K2) = string("Second carbon dioxide dissociation constant")
 show(io::IO, k2::K2) = print(io, "Second carbon dioxide dissociation constant\n",
@@ -105,7 +152,9 @@ show(io::IO, k2::K2) = print(io, "Second carbon dioxide dissociation constant\n"
          log_T = -24.4344,
          log_T_sqrt_S = -25.085,
          S_log_T = -0.2474,
-         T_sqrt_S =  0.053105)
+         T_sqrt_S =  0.053105,  
+         pressure_correction = 
+            PressureCorrection(; a₀=-29.48, a₁=0.1622, a₂=-0.0026080, b₀=-0.00284, b₁=0.0))
 
 Parameterisation for boric acid dissociation equilibrium constant.
 
@@ -115,27 +164,32 @@ Parameterisation for boric acid dissociation equilibrium constant.
 
 Default values from Dickson (1990, Deep-Sea Res., 37, 755–766).
 """
-@kwdef struct KB{FT}
+@kwdef struct KB{FT, PC}
           constant :: FT =  148.0248
-         inverse_T :: FT = -8966.90
-  invsese_T_sqrt_S :: FT = -2890.53
-       invsese_T_S :: FT = -77.942
- invsese_T_sqrt_S³ :: FT =  1.728
-      inverse_T_S² :: FT = -0.0996
-            sqrt_S :: FT = 137.1942
-                 S :: FT = 1.62142
-             log_T :: FT = -24.4344
-      log_T_sqrt_S :: FT = -25.085
-           S_log_T :: FT = -0.2474
-          T_sqrt_S :: FT =  0.053105
+              inverse_T :: FT = -8966.90
+       invsese_T_sqrt_S :: FT = -2890.53
+            invsese_T_S :: FT = -77.942
+      invsese_T_sqrt_S³ :: FT =  1.728
+           inverse_T_S² :: FT = -0.0996
+                 sqrt_S :: FT = 137.1942
+                      S :: FT = 1.62142
+                  log_T :: FT = -24.4344
+           log_T_sqrt_S :: FT = -25.085
+                S_log_T :: FT = -0.2474
+               T_sqrt_S :: FT =  0.053105
+
+    pressure_correction :: PC = 
+        PressureCorrection(; a₀=-29.48, a₁=0.1622, a₂=-0.0026080, b₀=-0.00284, b₁=0.0)
 end
 
-@inline (c::KB)(T, S) = exp(c.constant 
-                            + (c.inverse_T + c.invsese_T_sqrt_S * √S + c.invsese_T_S * S + c.invsese_T_sqrt_S³ * S^1.5 + c.inverse_T_S² * S^2) / T
-                            + c.sqrt_S * √S
-                            + c.S * S
-                            + (c.log_T + c.log_T_sqrt_S * √S + c.S_log_T * S ) * log(T)
-                            + c.T_sqrt_S * √S * T)
+@inline (c::KB)(T, S; P = nothing) = 
+    c.pressure_correction(T, P) *
+    exp(c.constant 
+        + (c.inverse_T + c.invsese_T_sqrt_S * √S + c.invsese_T_S * S + c.invsese_T_sqrt_S³ * S^1.5 + c.inverse_T_S² * S^2) / T
+        + c.sqrt_S * √S
+        + c.S * S
+        + (c.log_T + c.log_T_sqrt_S * √S + c.S_log_T * S ) * log(T)
+        + c.T_sqrt_S * √S * T)
 
 summary(::IO, ::KB) = string("Boric acid dissociation constant")
 show(io::IO, c::KB) = print(io, "Boric acid dissociation constant\n",
@@ -152,7 +206,9 @@ show(io::IO, c::KB) = print(io, "Boric acid dissociation constant\n",
          sqrt_S = -5.977,
          inverse_T_sqrt_S =  118.67,
          log_T_sqrt_S =  1.0495,
-         S = -0.01615)
+         S = -0.01615,
+         pressure_correction = 
+            PressureCorrection(; a₀=-20.02, a₁=0.1119, a₂=-0.001409, b₀=-0.00513, b₁=0.0000794))
 
 Parameterisation for water dissociation equilibrium constant.
 
@@ -162,21 +218,26 @@ Parameterisation for water dissociation equilibrium constant.
 
 Default values from Millero (1995, Geochim. Cosmochim. Acta, 59, 661–677).
 """
-@kwdef struct KW{FT}
-          constant :: FT =  148.9652
-         inverse_T :: FT = -13847.26
-             log_T :: FT = -23.6521
-            sqrt_S :: FT = -5.977
-  inverse_T_sqrt_S :: FT =  118.67
-      log_T_sqrt_S :: FT =  1.0495
-                 S :: FT = -0.01615
+@kwdef struct KW{FT, PC}
+               constant :: FT =  148.9652
+              inverse_T :: FT = -13847.26
+                  log_T :: FT = -23.6521
+                 sqrt_S :: FT = -5.977
+       inverse_T_sqrt_S :: FT =  118.67
+           log_T_sqrt_S :: FT =  1.0495
+                      S :: FT = -0.01615
+
+    pressure_correction :: PC = 
+        PressureCorrection(; a₀=-20.02, a₁=0.1119, a₂=-0.001409, b₀=-0.00513, b₁=0.0000794)
 end
 
-@inline (c::KW)(T, S) = exp(c.constant
-                            + c.inverse_T / T
-                            + c.log_T * log(T)
-                            + (c.sqrt_S + c.inverse_T_sqrt_S / T + c.log_T_sqrt_S * log(T))* √S
-                            + c.S * S)
+@inline (c::KW)(T, S; P = nothing) =
+    c.pressure_correction(T, P) *
+    exp(c.constant
+        + c.inverse_T / T
+        + c.log_T * log(T)
+        + (c.sqrt_S + c.inverse_T_sqrt_S / T + c.log_T_sqrt_S * log(T))* √S
+        + c.S * S)
 
 summary(::IO, ::KW) = string("Water dissociation constant")
 show(io::IO, c::KW) = print(io, "Water dissociation constant\n",
@@ -217,7 +278,9 @@ show(io::IO, c::IonicStrength) = print(io, "Ionic strength\n",
          sqrt_S = -5.977,
          inverse_T_sqrt_S =  118.67,
          log_T_sqrt_S =  1.0495,
-         S = -0.01615)
+         S = -0.01615,
+         pressure_correction = 
+            PressureCorrection(; a₀=-18.03, a₁=0.0466, a₂=0.000316, b₀=-0.00453, b₁=0.00009))
 
 Parameterisation for bisulfate dissociation equilibrium constant.
 
@@ -227,31 +290,36 @@ Parameterisation for bisulfate dissociation equilibrium constant.
 
 Default values from Dickson (1990, Chem. Thermodyn., 22, 113–127).
 """
-@kwdef struct KS{IS, FT}
-    ionic_strength :: IS = IonicStrength()
+@kwdef struct KS{IS, FT, PC}
+         ionic_strength :: IS = IonicStrength()
+     
+               constant :: FT = 141.328
+              inverse_T :: FT = -4276.1
+                  log_T :: FT = -23.093
+                sqrt_Is :: FT =  324.57
+      inverse_T_sqrt_Is :: FT = -13856.0
+          log_T_sqrt_Is :: FT = -47.986
+                     Is :: FT = -771.54
+           inverse_T_Is :: FT =  35474.0
+               log_T_Is :: FT =  114.723
+     inverse_T_sqrt_Is³ :: FT = -2698.0
+          inverse_T_Is² :: FT =  1776.0
+                  log_S :: FT = -0.001005
 
-          constant :: FT = 141.328
-         inverse_T :: FT = -4276.1
-             log_T :: FT = -23.093
-           sqrt_Is :: FT =  324.57
- inverse_T_sqrt_Is :: FT = -13856.0
-     log_T_sqrt_Is :: FT = -47.986
-                Is :: FT = -771.54
-      inverse_T_Is :: FT =  35474.0
-          log_T_Is :: FT =  114.723
-inverse_T_sqrt_Is³ :: FT = -2698.0
-     inverse_T_Is² :: FT =  1776.0
-             log_S :: FT = -0.001005
+    pressure_correction :: PC =
+        PressureCorrection(; a₀=-18.03, a₁=0.0466, a₂=0.000316, b₀=-0.00453, b₁=0.00009)
 end
 
-@inline (c::KS)(T, S, Is = c.ionic_strength(S)) = exp(c.constant
-                                                      + c.inverse_T / T
-                                                      + c.log_T * log(T)
-                                                      + (c.sqrt_Is + c.inverse_T_sqrt_Is / T + c.log_T_sqrt_Is * log(T)) * √Is
-                                                      + (c.Is + c.inverse_T_Is / T + c.log_T_Is * log(T)) * Is
-                                                      + c.inverse_T_sqrt_Is³ * Is^1.5 / T
-                                                      + c.inverse_T_Is² * Is^2 / T
-                                                      + log(1 + c.log_S * S))
+@inline (c::KS)(T, S, Is = c.ionic_strength(S); P = nothing) = 
+    c.pressure_correction(T, P) *
+    exp(c.constant
+        + c.inverse_T / T
+        + c.log_T * log(T)
+        + (c.sqrt_Is + c.inverse_T_sqrt_Is / T + c.log_T_sqrt_Is * log(T)) * √Is
+        + (c.Is + c.inverse_T_Is / T + c.log_T_Is * log(T)) * Is
+        + c.inverse_T_sqrt_Is³ * Is^1.5 / T
+        + c.inverse_T_Is² * Is^2 / T
+        + log(1 + c.log_S * S))
 
 summary(::IO, ::KS) = string("Bisulfate dissociation constant")
 show(io::IO, c::KS) = print(io, "Bisulfate dissociation constant\n",
@@ -271,7 +339,9 @@ show(io::IO, c::KS) = print(io, "Bisulfate dissociation constant\n",
           inverse_T =  1590.2,
           sqrt_S =  1.525,
           log_S = -0.001005,
-          log_S_KS = 0.1400 / 96.062 / 1.80655)
+          log_S_KS = 0.1400 / 96.062 / 1.80655,
+          pressure_correction = 
+             PressureCorrection(; a₀=-9.78, a₁=-0.0090, a₂=-0.000942, b₀=-0.00391, b₁=0.000054))
 
 Parameterisation for hydrogen fluoride dissociation equilibrium constant.
 
@@ -281,18 +351,22 @@ Parameterisation for hydrogen fluoride dissociation equilibrium constant.
 
 Default values from Dickson and Riley (1979, Mar. Chem., 7, 89–99).
 """
-@kwdef struct KF{IS, KS, FT}
-     ionic_strength :: IS = IonicStrength()
-   sulfate_constant :: KS = KS(; ionic_strength)
+@kwdef struct KF{IS, KS, FT, PC}
+         ionic_strength :: IS = IonicStrength()
+       sulfate_constant :: KS = KS(; ionic_strength)
+    
+               constant :: FT = -12.641
+              inverse_T :: FT =  1590.2
+                 sqrt_S :: FT =  1.525
+                  log_S :: FT = -0.001005
+               log_S_KS :: FT = 0.1400 / 96.062 / 1.80655
 
-           constant :: FT = -12.641
-          inverse_T :: FT =  1590.2
-             sqrt_S :: FT =  1.525
-              log_S :: FT = -0.001005
-           log_S_KS :: FT = 0.1400 / 96.062 / 1.80655
+    pressure_correction :: PC = 
+        PressureCorrection(; a₀=-9.78, a₁=-0.0090, a₂=-0.000942, b₀=-0.00391, b₁=0.000054)
 end
 
-@inline (c::KF)(T, S, Is = c.ionic_strength(S), KS = c.sulfate_constant(T, S, Is)) =
+@inline (c::KF)(T, S, Is = c.ionic_strength(S), KS = c.sulfate_constant(T, S, Is); P = nothing) =
+    c.pressure_correction(T, P) *
     exp(c.constant
         + c.inverse_T / T
         + c.sqrt_S * √S
@@ -314,27 +388,32 @@ show(io::IO, c::KF) = print(io, "Hydrogen fluoride dissociation constant\n",
        sqrt_S,
        inverse_T_sqrt_S,
        S,
-       inverse_T_S)
+       inverse_T_S,
+       pressure_correction)
 
 Generic equilibrium constant parameterisation of the form used by 
 Millero (1995, Geochim. Cosmochim. Acta, 59, 661–677) for phosphoric 
 acid dissociation.
 """
-struct KP{FT}
-          constant :: FT
-         inverse_T :: FT
-             log_T :: FT
-            sqrt_S :: FT
-  inverse_T_sqrt_S :: FT
-                 S :: FT
-       inverse_T_S :: FT
+struct KP{FT, PC}
+               constant :: FT
+              inverse_T :: FT
+                  log_T :: FT
+                 sqrt_S :: FT
+       inverse_T_sqrt_S :: FT
+                      S :: FT
+            inverse_T_S :: FT
+
+    pressure_correction :: PC
 end
 
-@inline (c::KP)(T, S) = exp(c.constant
-                            + c.inverse_T / T
-                            + c.log_T * log(T)
-                            + (c.sqrt_S + c.inverse_T_sqrt_S / T) * √S
-                            + (c.S + c.inverse_T_S / T) * S)
+@inline (c::KP)(T, S; P = nothing) = 
+    c.pressure_correction(T, P) *
+    exp(c.constant
+        + c.inverse_T / T
+        + c.log_T * log(T)
+        + (c.sqrt_S + c.inverse_T_sqrt_S / T) * √S
+        + (c.S + c.inverse_T_S / T) * S)
 
 summary(::IO, ::KP) = string("Phosphate dissociation constant")
 show(io::IO, c::KP) = print(io, "Phosphate dissociation constant\n",
@@ -351,7 +430,9 @@ show(io::IO, c::KP) = print(io, "Phosphate dissociation constant\n",
           sqrt_S = 0.69171,
           inverse_T_sqrt_S = -106.736,
           S = -0.01844,
-          inverse_T_S = -0.65643)
+          inverse_T_S = -0.65643,
+          pressure_correction = 
+             PressureCorrection(; a₀=-14.51, a₁=0.1211, a₂=-0.000321, b₀=-0.00267, b₁=0.0000427))
 
 Instance of `KP` returning the first phosphocic acid equilibrium constant.
 
@@ -367,13 +448,17 @@ KP1(; constant = 115.525,
       sqrt_S = 0.69171,
       inverse_T_sqrt_S = -106.736,
       S = -0.01844,
-      inverse_T_S = -0.65643) = KP(constant,
-                                   inverse_T,
-                                   log_T,
-                                   sqrt_S,
-                                   inverse_T_sqrt_S,
-                                   S,
-                                   inverse_T_S)
+      inverse_T_S = -0.65643,
+      pressure_correction =
+        PressureCorrection(; a₀=-14.51, a₁=0.1211, a₂=-0.000321, b₀=-0.00267, b₁=0.0000427)) = 
+    KP(constant,
+       inverse_T,
+       log_T,
+       sqrt_S,
+       inverse_T_sqrt_S,
+       S,
+       inverse_T_S,
+       pressure_correction)
 
 """
     KP2(; constant = 172.0883,
@@ -382,7 +467,9 @@ KP1(; constant = 115.525,
           sqrt_S = 1.3566,
           inverse_T_sqrt_S = -160.340,
           S = -0.05778,
-          inverse_T_S = 0.37335)
+          inverse_T_S = 0.37335,
+          pressure_correction = 
+            PressureCorrection(; a₀=-23.12, a₁=0.1758, a₂=-0.002647, b₀=-0.00515, b₁=0.00009))
 
 Instance of `KP` returning the second phosphocic acid equilibrium constant.
 
@@ -398,13 +485,17 @@ KP2(; constant = 172.0883,
       sqrt_S = 1.3566,
       inverse_T_sqrt_S = -160.340,
       S = -0.05778,
-      inverse_T_S = 0.37335) = KP(constant,
-                                   inverse_T,
-                                   log_T,
-                                   sqrt_S,
-                                   inverse_T_sqrt_S,
-                                   S,
-                                   inverse_T_S)
+      inverse_T_S = 0.37335,
+      pressure_correction = 
+        PressureCorrection(; a₀=-23.12, a₁=0.1758, a₂=-0.002647, b₀=-0.00515, b₁=0.00009)) = 
+    KP(constant,
+       inverse_T,
+       log_T,
+       sqrt_S,
+       inverse_T_sqrt_S,
+       S,
+       inverse_T_S,
+       pressure_correction)
 
 """
     KP3(; constant = - 18.141,
@@ -413,7 +504,9 @@ KP2(; constant = 172.0883,
           sqrt_S = 2.81197,
           inverse_T_sqrt_S = 17.27039,
           S = -0.09984,
-          inverse_T_S = -44.99486)
+          inverse_T_S = -44.99486,
+          pressure_correction = 
+            PressureCorrection(; a₀=-26.57, a₁=0.2020, a₂=-0.0030420, b₀=-0.00408, b₁=0.0000714))
 
 Instance of `KP` returning the third phosphocic acid equilibrium constant.
 
@@ -429,13 +522,17 @@ KP3(; constant = - 18.141,
       sqrt_S = 2.81197,
       inverse_T_sqrt_S = 17.27039,
       S = -0.09984,
-      inverse_T_S = -44.99486) = KP(constant,
-                                   inverse_T,
-                                   log_T,
-                                   sqrt_S,
-                                   inverse_T_sqrt_S,
-                                   S,
-                                   inverse_T_S)
+      inverse_T_S = -44.99486,
+      pressure_correction =
+        PressureCorrection(; a₀=-26.57, a₁=0.2020, a₂=-0.0030420, b₀=-0.00408, b₁=0.0000714)) = 
+    KP(constant,
+       inverse_T,
+       log_T,
+       sqrt_S,
+       inverse_T_sqrt_S,
+       S,
+       inverse_T_S,
+       pressure_correction)
 
 """
     KSi(; ionic_strength = IonicStrength(),
@@ -473,13 +570,14 @@ Default values from Millero (1995, Geochim. Cosmochim. Acta, 59, 661–677).
     log_S :: FT = -0.001005
 end
 
-@inline (c::KSi)(T, S, Is = c.ionic_strength(S)) = exp(c.constant
-                                                       + c.inverse_T / T
-                                                       + c.log_T * log(T)
-                                                       + (c.sqrt_Is + c.inverse_T_sqrt_Is / T) * √Is
-                                                       + (c.Is + c.inverse_T_Is / T) * Is
-                                                       + (c.Is² + c.inverse_T_Is² / T) * Is^2
-                                                       + log(1 + c.log_S * S))
+@inline (c::KSi)(T, S, Is = c.ionic_strength(S); P = nothing) = 
+    exp(c.constant
+        + c.inverse_T / T
+        + c.log_T * log(T)
+        + (c.sqrt_Is + c.inverse_T_sqrt_Is / T) * √Is
+        + (c.Is + c.inverse_T_Is / T) * Is
+        + (c.Is² + c.inverse_T_Is² / T) * Is^2
+        + log(1 + c.log_S * S))
 
 summary(::IO, ::KSi) = string("Silicic acid constant")
 show(io::IO, c::KSi) = print(io, "Silicic acid constant\n",
@@ -490,4 +588,3 @@ show(io::IO, c::KSi) = print(io, "Silicic acid constant\n",
                 + ($(c.Is) + $(c.inverse_T_Is) / T) Is
                 + ($(c.Is²) + $(c.inverse_T_Is²) / T) Is²
                 + log(1 + $(c.log_S) S)")   
-
