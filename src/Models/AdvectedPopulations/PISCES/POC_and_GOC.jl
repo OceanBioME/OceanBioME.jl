@@ -25,7 +25,7 @@ end
 
     sh = get_sh(z, zₘₓₗ)
 
-    R_CaCO₃ = get_R_CaCO₃(zₘₓₗ, T, P, PAR, bgc) 
+    R_CaCO₃ = get_R_CaCO₃(P, PO₄, NO₃, NH₄, Pᶜʰˡ, Pᶠᵉ, Fe, T, PAR, zₘₓₗ, bgc) 
     λₚₒ¹ = λ¹(T, O₂, bgc)
     Φ₁ᴰᴼᶜ = Φᴰᴼᶜ(DOC, POC, GOC, sh, bgc)[1]
     Φ₃ᴰᴼᶜ = Φᴰᴼᶜ(DOC, POC, GOC, sh, bgc)[3]
@@ -54,7 +54,7 @@ end
     ∑g_FFᴹ = get_∑g_FFᴹ(z, zₑᵤ, zₘₓₗ, T, POC, GOC, bgc)
     
     Pᵤₚᴹ = Pᵤₚ(M, T, bgc)
-    R_CaCO₃ = get_R_CaCO₃(zₘₓₗ, T, P, PAR, bgc)
+    R_CaCO₃ = get_R_CaCO₃(P, PO₄, NO₃, NH₄, Pᶜʰˡ, Pᶠᵉ, Fe, T, PAR, zₘₓₗ, bgc)
 
     sh = get_sh(z, zₘₓₗ)
 

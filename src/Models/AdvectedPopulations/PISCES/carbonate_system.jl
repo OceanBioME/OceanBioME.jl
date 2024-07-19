@@ -43,7 +43,7 @@
 
     return γᶻ*(1 - eᶻ - σᶻ)*∑gᶻ*Z + γᴹ*(1 - eᴹ - σᴹ)*(∑gᴹ + ∑g_FFᴹ)*M + γᴹ*Rᵤₚ(M, T, bgc) 
     + get_Remin(O₂, NO₃, PO₄, NH₄, DOC, T, bFe, Bact, bgc) + get_Denit(NO₃, PO₄, NH₄, DOC, O₂, T, bFe, Bact, bgc) 
-    + λ_CaCO₃¹(CaCO₃, bgc)*CaCO₃ - P_CaCO₃(P, D, Z, M, POC, T, PAR, zₘₓₗ, z, bgc) - μᴰ*D - μᴾ*P #eq59
+    + λ_CaCO₃¹(CaCO₃, bgc)*CaCO₃ - P_CaCO₃(P, PO₄, NO₃, NH₄, Pᶜʰˡ, Pᶠᵉ, Fe, D, Z, M, POC, T, PAR, zₘₓₗ, z, bgc) - μᴰ*D - μᴾ*P #eq59
 end
 
 @inline function (bgc::PISCES)(::Val{:Alk}, x, y, z, t, P, D, Z, M, Pᶜʰˡ, Dᶜʰˡ, Pᶠᵉ, Dᶠᵉ, Dˢⁱ, DOC, POC, GOC, SFe, BFe, PSi, NO₃, NH₄, PO₄, Fe, Si, CaCO₃, DIC, Alk, O₂, T, PAR, PAR¹, PAR², PAR³, zₘₓₗ, zₑᵤ, Si̅, D_dust) # eq59
@@ -93,5 +93,5 @@ end
     return θᴺᶜ*get_Remin(O₂, NO₃, PO₄, NH₄, DOC, T, bFe, Bact, bgc) + θᴺᶜ*(rₙₒ₃¹ + 1)*get_Denit(NO₃, PO₄, NH₄, DOC, O₂, T, bFe, Bact, bgc) 
     + θᴺᶜ*γᶻ*(1 - eᶻ - σᶻ)*∑gᶻ*Z + θᴺᶜ*γᴹ*(1 - eᴹ - σᴹ)*(∑gᴹ + ∑g_FFᴹ + θᴺᶜ*γᴹ*Rᵤₚ(M, T, bgc))*M + θᴺᶜ*μₙₒ₃ᴾ*P + θᴺᶜ*μₙₒ₃ᴰ*D 
     + θᴺᶜ*N_fix(bFe, PO₄, T, P, NO₃, NH₄, Pᶜʰˡ, Pᶠᵉ, PA, bgc) + 2*λ_CaCO₃¹(CaCO₃, bgc)*CaCO₃ + θᴺᶜ*ΔO₂(O₂, bgc)*(rₙₕ₄¹ - 1)*λₙₕ₄*NH₄ 
-    - θᴺᶜ*μₙₕ₄ᴾ*P - θᴺᶜ*μₙₕ₄ᴰ*D- 2*θᴺᶜ*Nitrif(NH₄, O₂, λₙₕ₄, PAR, bgc) - 2*P_CaCO₃(P, D, Z, M, POC, T, PAR, zₘₓₗ, z, bgc)
+    - θᴺᶜ*μₙₕ₄ᴾ*P - θᴺᶜ*μₙₕ₄ᴰ*D- 2*θᴺᶜ*Nitrif(NH₄, O₂, λₙₕ₄, PAR, bgc) - 2*P_CaCO₃(P, PO₄, NO₃, NH₄, Pᶜʰˡ, Pᶠᵉ, Fe, D, Z, M, POC, T, PAR, zₘₓₗ, z, bgc)
 end
