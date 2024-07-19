@@ -14,7 +14,6 @@
 # ## Model setup
 # We load the packages and choose the default LOBSTER parameter set
 using OceanBioME, Oceananigans, Printf
-using OceanBioME.SLatissimaModel: SLatissima
 using Oceananigans.Fields: FunctionField, ConstantField
 using Oceananigans.Units
 
