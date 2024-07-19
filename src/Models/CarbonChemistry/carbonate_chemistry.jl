@@ -177,13 +177,7 @@ end
 solve_for_H(pH, args...) = 10.0 ^ - pH
 
 solve_for_H(::Nothing, params, upper_pH_bound, lower_pH_bound) =
-    solve_for_H(nothing, params, upper_pH_bound, lower_pH_bound,
-                Val(alkalinity_residual(10.0 ^ - upper_pH_bound, params) * alkalinity_residual(10.0 ^ - lower_pH_bound, params) .< 0))
-
-solve_for_H(::Nothing, params, upper_pH_bound, lower_pH_bound, val_zero_between_bounds) =
     find_zero(alkalinity_residual, (10.0 ^ - upper_pH_bound, 10.0 ^ - lower_pH_bound), Bisection(); atol = 1e-10, p = params)
-
-solve_for_H(::Nothing, params, upper_pH_bound, lower_pH_bound, ::Val{false}) = NaN
 
 # display
 summary(::IO, ::CarbonChemistry) = string("Carbon chemistry model")
