@@ -18,20 +18,20 @@ function intercept_tracer_tendencies!(model, intercepted_tendencies)
 end
 
 function set_defaults!(sediment::IronPhosphate)
-    set!(sediment.fields.O₂, 0.5)
-    set!(sediment.fields.NH₄, 0.5)
-    set!(sediment.fields.NO₃, 0.5)
-    set!(sediment.fields.NO₂, 0.5)
-    set!(sediment.fields.N₂, 0.5)
-    set!(sediment.fields.TPO₄, 0.5)
-    set!(sediment.fields.FeOHP, 0.5)
-    set!(sediment.fields.Feᴵᴵ, 0.5)
-    set!(sediment.fields.FeS₂, 0.5)
-    set!(sediment.fields.SO₄, 0.5)
-    set!(sediment.fields.TH₂S, 0.5)
-    set!(sediment.fields.CH₄, 0.5)
-    set!(sediment.fields.TCO₂, 0.5)
-    set!(sediment.fields.Gi, 0.5)
+    set!(sediment.fields.O₂, 0.00005)
+    set!(sediment.fields.NH₄, 0.00005)
+    set!(sediment.fields.NO₃, 0.00005)
+    set!(sediment.fields.NO₂, 0.00005)
+    set!(sediment.fields.N₂, 0.00005)
+    set!(sediment.fields.TPO₄, 0.00005)
+    set!(sediment.fields.FeOHP, 0.00005)
+    set!(sediment.fields.Feᴵᴵ, 0.00005)
+    set!(sediment.fields.FeS₂, 0.00005)
+    set!(sediment.fields.SO₄, 0.00005)
+    set!(sediment.fields.TH₂S, 0.00005)
+    set!(sediment.fields.CH₄, 0.00005)
+    set!(sediment.fields.TCO₂, 0.00005)
+    set!(sediment.fields.Gi, 0.00005)
 end 
 
 set_defaults!(::VariableRedfieldLobster, model) =
@@ -65,15 +65,15 @@ biogeochemistry = LOBSTER(; grid,
                                     variable_redfield = true, 
                                     sediment_model)
 
-
 model = NonhydrostaticModel(; grid, 
             biogeochemistry, 
             closure = nothing,
             timestepper = :RungeKutta3,
             buoyancy = nothing)
-# set_defaults!(model.biogeochemistry.sediment)
 
-# set_defaults!(biogeochemistry.underlying_biogeochemistry, model)
+set_defaults!(model.biogeochemistry.sediment)
+
+set_defaults!(biogeochemistry.underlying_biogeochemistry, model)
 
 simulation = Simulation(model, Δt = 50, stop_time = 1day)
 
