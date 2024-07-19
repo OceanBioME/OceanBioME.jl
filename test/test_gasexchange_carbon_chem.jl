@@ -5,7 +5,7 @@ using Oceananigans, DataDeps, JLD2, Statistics
 using Oceananigans.Units
 
 using OceanBioME.Models: seawater_density
-using OceanBioME.Models.CarbonChemistryModel: IonicStrength, K0, K1, K2, KB, KW, KS, KF, KP, KSi
+using OceanBioME.Models.CarbonChemistryModel: IonicStrength, K0, K1, K2, KB, KW, KS, KF, KP, KSi, KSP_aragonite, KSP_calcite
 
 const year = years = 365days # just for the idealised case below
 
@@ -84,9 +84,12 @@ end
                           # Perez and Fraga (1987, Mar. Chem., 21, 161–168).
                           fluoride = KF(constant=-9.68, inverse_T=874.0, sqrt_S=0.111, log_S=0.0, log_S_KS=0.0))
 
-    # values from Dickson et. al, 2007
+    # test conditions
     S = 35
     Tk = 298.15
+    P = 300
+    
+    # values from Dickson et. al, 2007
     @test ≈(log(carbon_chemistry.solubility(Tk, S)), -3.5617; atol=0.0001)
     @test ≈(log10(carbon_chemistry.carbonic_acid.K1(Tk, S)), -5.8472; atol=0.0001)
     @test ≈(log10(carbon_chemistry.carbonic_acid.K2(Tk, S)), -8.9660; atol=0.0001)
@@ -100,7 +103,6 @@ end
     @test ≈(log(carbon_chemistry.silicic_acid(Tk, S)), -21.61; atol=0.01)
 
     # values from Zeebe & Wolf-Gladrow, 2001
-    P = 300
     @test ≈(carbon_chemistry.carbonic_acid.K1.pressure_correction(Tk, P), 1.30804; atol=0.00001)
     @test ≈(carbon_chemistry.carbonic_acid.K2.pressure_correction(Tk, P), 1.21341; atol=0.00001)
     @test ≈(carbon_chemistry.boric_acid.pressure_correction(Tk, P), 1.38024; atol=0.00001)
@@ -110,4 +112,15 @@ end
     @test ≈(carbon_chemistry.phosphoric_acid.KP1.pressure_correction(Tk, P), 1.14852; atol=0.00001)
     @test ≈(carbon_chemistry.phosphoric_acid.KP2.pressure_correction(Tk, P), 1.27298; atol=0.00001)
     @test ≈(carbon_chemistry.phosphoric_acid.KP3.pressure_correction(Tk, P), 1.32217; atol=0.00001)
+
+    # Calcite and aragonite solubility
+    KspA = KSP_aragonite()
+    KspC = KSP_calcite()
+
+    # Zeebe & Wolf-Gladrow, 2001, Appendix A
+    @test ≈(log(KspA(Tk, S)), -6.1883; atol = 0.0001)
+    @test ≈(log(KspC(Tk, S)), -6.3693; atol = 0.0001)
+
+    @test ≈(KspA.pressure_correction(Tk, P), 1.47866; atol=0.00001)
+    @test ≈(KspC.pressure_correction(Tk, P), 1.52962; atol=0.00001)
 end

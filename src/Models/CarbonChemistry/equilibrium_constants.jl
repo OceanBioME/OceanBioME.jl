@@ -498,7 +498,7 @@ KP2(; constant = 172.0883,
        pressure_correction)
 
 """
-    KP3(; constant = - 18.141,
+    KP3(; constant = -18.141,
           inverse_T = -3070.75,
           log_T = 0.0,
           sqrt_S = 2.81197,
@@ -588,3 +588,128 @@ show(io::IO, c::KSi) = print(io, "Silicic acid constant\n",
                 + ($(c.Is) + $(c.inverse_T_Is) / T) Is
                 + ($(c.Is²) + $(c.inverse_T_Is²) / T) Is²
                 + log(1 + $(c.log_S) S)")   
+
+"""
+    KSP(therm_constant,
+        therm_T,
+        therm_inverse_T,
+        therm_log_T,
+        sea_sqrt_S,
+        sea_T_sqrt_S,
+        sea_inverse_T_sqrt_S,
+        sea_S,
+        sea_S_sqrt_S³,
+        pressure_correction)
+
+Generic CaCO₃ solubility parameterisation of the form given by
+Form from Millero, F. J. (2007, Chemical Reviews, 107(2), 308–341).
+"""
+struct KSP{FT, PC}
+         therm_constant :: FT
+                therm_T :: FT
+        therm_inverse_T :: FT
+            therm_log_T :: FT
+             sea_sqrt_S :: FT
+           sea_T_sqrt_S :: FT
+   sea_inverse_T_sqrt_S :: FT
+                  sea_S :: FT
+          sea_S_sqrt_S³ :: FT
+
+    pressure_correction :: PC
+end
+
+@inline function (c::KSP)(T, S; P = nothing) 
+
+    pressure_correction = c.pressure_correction(T, P)
+
+    lnK_therm = c.therm_constant + c.therm_T * T + c.therm_inverse_T / T + c.therm_log_T * log10(T)
+    lnK_sea = ((c.sea_sqrt_S + c.sea_T_sqrt_S * T + c.sea_inverse_T_sqrt_S / T) * √S 
+                + c.sea_S * S
+                + c.sea_S_sqrt_S³ * S^1.5)
+
+    return  pressure_correction * exp(lnK_therm + lnK_sea)
+end
+
+summary(::IO, ::KSP) = string("Calcite solubility")
+show(io::IO, c::KSP) = print(io, "Calcite solubility\n",
+    "    ln(kₛₚ) = $(c.therm_constant) + $(c.therm_T) T + $(c.therm_inverse_T) / T + $(c.therm_log_T) log(T)\n",
+    "    ln(kₛₚˢ) = ln(kₛₚ) + ($(c.sea_sqrt_S) + $(c.sea_T_sqrt_S) T + $(c.sea_inverse_T_sqrt_S) / T) √S\n",
+    "                + $(c.sea_S) S + $(c.sea_S_sqrt_S³) √S³")   
+
+"""
+    KSP_calcite(; therm_constant = -171.9065,
+                  therm_T = -0.077993,
+                  therm_inverse_T = 2839.319,
+                  therm_log_T = 71.595,
+                  sea_sqrt_S = -0.77712,
+                  sea_T_sqrt_S = 0.0028426,
+                  sea_inverse_T_sqrt_S = 178.34,
+                  sea_S = -0.07711,
+                  sea_S_sqrt_S³ = 0.0041249,
+                  pressure_correction =
+                      PressureCorrection(; a₀=-48.76, a₁=0.5304, a₂=-0.0, b₀=-0.01176, b₁=0.0003692))
+
+Instance of `KSP` returning calcite solubility.
+
+Default values from Millero, F. J. (2007, Chemical Reviews, 107(2), 308–341).
+"""
+KSP_calcite(; therm_constant = -171.9065,
+              therm_T = -0.077993,
+              therm_inverse_T = 2839.319,
+              therm_log_T = 71.595,
+              sea_sqrt_S = -0.77712,
+              sea_T_sqrt_S = 0.0028426,
+              sea_inverse_T_sqrt_S = 178.34,
+              sea_S = -0.07711,
+              sea_S_sqrt_S³ = 0.0041249,
+              pressure_correction =
+                  PressureCorrection(; a₀=-48.76, a₁=0.5304, a₂=-0.0, b₀=-0.01176, b₁=0.0003692)) =
+    KSP(therm_constant,
+        therm_T,
+        therm_inverse_T,
+        therm_log_T,
+        sea_sqrt_S,
+        sea_T_sqrt_S,
+        sea_inverse_T_sqrt_S,
+        sea_S,
+        sea_S_sqrt_S³,
+        pressure_correction)
+
+"""
+KSP_aragonite(; therm_constant = -171.945,
+                therm_T = -0.077993,
+                therm_inverse_T = 2903.293,
+                therm_log_T = 71.595,
+                sea_sqrt_S = -0.068393,
+                sea_T_sqrt_S = 0.0017276,
+                sea_inverse_T_sqrt_S = 88.135,
+                sea_S = -0.10018,
+                sea_S_sqrt_S³ = 0.0059415,
+                pressure_correction =
+                    PressureCorrection(; a₀=-45.96, a₁=0.5304, a₂=-0.0, b₀=-0.01176, b₁=0.0003692))
+
+Instance of `KSP` returning calcite solubility.
+
+Default values from Millero, F. J. (2007, Chemical Reviews, 107(2), 308–341).
+"""
+KSP_aragonite(; therm_constant = -171.945,
+                therm_T = -0.077993,
+                therm_inverse_T = 2903.293,
+                therm_log_T = 71.595,
+                sea_sqrt_S = -0.068393,
+                sea_T_sqrt_S = 0.0017276,
+                sea_inverse_T_sqrt_S = 88.135,
+                sea_S = -0.10018,
+                sea_S_sqrt_S³ = 0.0059415,
+                pressure_correction =
+                    PressureCorrection(; a₀=-45.96, a₁=0.5304, a₂=-0.0, b₀=-0.01176, b₁=0.0003692)) =
+    KSP(therm_constant,
+        therm_T,
+        therm_inverse_T,
+        therm_log_T,
+        sea_sqrt_S,
+        sea_T_sqrt_S,
+        sea_inverse_T_sqrt_S,
+        sea_S,
+        sea_S_sqrt_S³,
+        pressure_correction)

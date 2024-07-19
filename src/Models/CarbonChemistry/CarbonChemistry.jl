@@ -9,5 +9,6 @@ import Base: show, summary
 
 include("equilibrium_constants.jl")
 include("carbonate_chemistry.jl")
+include("calcite_concentration.jl")
 
 end

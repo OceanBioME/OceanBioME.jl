@@ -10,7 +10,8 @@ using OceanBioME.Models: seawater_density
                       sulfate = KS(; ionic_strength),
                       fluoride = KF(; ionic_strength),
                       phosphoric_acid = (KP1 = KP1(), KP2 = KP2(), KP3 = KP3()),
-                      silicic_acid = KSi(; ionic_strength))
+                      silicic_acid = KSi(; ionic_strength),
+                      calcite_solubility = KSP_calcite())
 
 Carbon chemistry model capable of solving for sea water pCO₂ from DIC and 
 total alkalinity or DIC and pH. 
@@ -40,7 +41,7 @@ julia> pCO₂_higher_pH = carbon_chemistry(2000, NaN, 10, 35, 7.5)
 
 ```
 """
-@kwdef struct CarbonChemistry{P0, PC, PB, PS, PF, PP, PSi, PW, IS}
+@kwdef struct CarbonChemistry{P0, PC, PB, PS, PF, PP, PSi, PW, IS, PKS}
           ionic_strength :: IS  = IonicStrength()
               solubility :: P0  = K0()
            carbonic_acid :: PC  = (K1 = K1(), K2 = K2())
@@ -50,6 +51,7 @@ julia> pCO₂_higher_pH = carbon_chemistry(2000, NaN, 10, 35, 7.5)
                 fluoride :: PF  = KF(; ionic_strength)
          phosphoric_acid :: PP  = (KP1 = KP1(), KP2 = KP2(), KP3 = KP3())
             silicic_acid :: PSi = KSi(; ionic_strength)
+      calcite_solubility :: PKS = KSP_calcite()
 end
 
 """
@@ -117,6 +119,7 @@ unless `pH` is specified, in which case intermediate computation of `pH` is skip
 Alternativly, `pH` is returned if `return_pH` is `true`.
 """
 @inline function (p::CarbonChemistry)(DIC, Alk, T, S, pH = nothing;
+                                      P = nothing,
                                       return_pH = false,
                                       boron = 0.000232 / 10.811 * S / 1.80655,
                                       sulfate = 0.14 / 96.06 * S / 1.80655,
@@ -143,15 +146,15 @@ Alternativly, `pH` is returned if `return_pH` is `true`.
     Is = p.ionic_strength(S)
 
     # compute equilibrium constants
-    K1 = p.carbonic_acid.K1(T, S)
-    K2 = p.carbonic_acid.K2(T, S)
-    KB = p.boric_acid(T, S)
-    KW = p.water(T, S)
-    KS = p.sulfate(T, S, Is)
-    KF = p.fluoride(T, S, Is, KS)
-    KP1 = p.phosphoric_acid.KP1(T, S)
-    KP2 = p.phosphoric_acid.KP2(T, S)
-    KP3 = p.phosphoric_acid.KP3(T, S)
+    K1 = p.carbonic_acid.K1(T, S; P)
+    K2 = p.carbonic_acid.K2(T, S; P)
+    KB = p.boric_acid(T, S; P)
+    KW = p.water(T, S; P)
+    KS = p.sulfate(T, S, Is; P)
+    KF = p.fluoride(T, S, Is, KS; P)
+    KP1 = p.phosphoric_acid.KP1(T, S; P)
+    KP2 = p.phosphoric_acid.KP2(T, S; P)
+    KP3 = p.phosphoric_acid.KP3(T, S; P)
     KSi = p.silicic_acid(T, S, Is)
 
     params = (; DIC, Alk, boron, sulfate, fluoride, silicate, phosphate,
