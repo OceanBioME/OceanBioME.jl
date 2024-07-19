@@ -35,6 +35,7 @@ end
     t_darkᴰ = bgc.mean_residence_time_of_phytoplankton_in_unlit_mixed_layer.D
     Dissₛᵢ = bgc.dissolution_rate_of_silicon
     mᴰ = bgc.phytoplankton_mortality_rate.D
+    wᴾ = bgc.min_quadratic_mortality_of_phytoplankton
 
     sh = get_sh(z, zₘₓₗ)
 

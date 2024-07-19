@@ -6,7 +6,7 @@
     #N_fix (eq58)
     #Forcing for NO₃ and NH₄ (eqs54, 55)
 
-@inline function get_μₙₒ₃ᴾ(P, PO₄, NO₃, NH₄, Pᶜʰˡ, Pᶠᵉ, T,  zₘₓₗ, zₑᵤ, L_day, PARᴾ, t_darkᴾ, bgc) 
+@inline function get_μₙₒ₃ᴾ(P, PO₄, NO₃, NH₄, Pᶜʰˡ, Pᶠᵉ, T,  zₘₓₗ, zₑᵤ, L_day, PARᴾ, t_darkᴾ, Si̅, bgc) 
     αᴾ = bgc.initial_slope_of_PI_curve.P
     Lₗᵢₘᴾ = Lᴾ(P, PO₄, NO₃, NH₄, Pᶜʰˡ, Pᶠᵉ, bgc)[1]
     μᴾ = μᴵ(P, Pᶜʰˡ, PARᴾ, L_day, T, αᴾ, Lₗᵢₘᴾ, zₘₓₗ, zₑᵤ, t_darkᴾ, bgc) 
@@ -15,7 +15,7 @@
     return μᴾ * K_mondo(Lₙₒ₃ᴾ, Lₙₕ₄ᴾ) #eq8
 end
 
-@inline function get_μₙₕ₄ᴾ(P, PO₄, NO₃, NH₄, Pᶜʰˡ, Pᶠᵉ, T, zₘₓₗ, zₑᵤ, L_day, PARᴾ, t_darkᴾ, bgc)
+@inline function get_μₙₕ₄ᴾ(P, PO₄, NO₃, NH₄, Pᶜʰˡ, Pᶠᵉ, T, zₘₓₗ, zₑᵤ, L_day, PARᴾ, t_darkᴾ, Si̅, bgc)
     αᴾ = bgc.initial_slope_of_PI_curve.P
     Lₗᵢₘᴾ = Lᴾ(P, PO₄, NO₃, NH₄, Pᶜʰˡ, Pᶠᵉ, bgc)[1]
     μᴾ = μᴵ(P, Pᶜʰˡ, PARᴾ, L_day, T, αᴾ, Lₗᵢₘᴾ, zₘₓₗ, zₑᵤ, t_darkᴾ, bgc) 
@@ -24,7 +24,7 @@ end
     return μᴾ * K_mondo(Lₙₕ₄ᴾ, Lₙₒ₃ᴾ) #eq8
 end
 
-@inline function get_μₙₒ₃ᴰ(D, PO₄, NO₃, NH₄, Si, Dᶜʰˡ, Dᶠᵉ, T, zₘₓₗ, zₑᵤ, L_day, PARᴰ, t_darkᴰ, bgc) 
+@inline function get_μₙₒ₃ᴰ(D, PO₄, NO₃, NH₄, Si, Dᶜʰˡ, Dᶠᵉ, T, zₘₓₗ, zₑᵤ, L_day, PARᴰ, t_darkᴰ, Si̅, bgc) 
     αᴰ = bgc.initial_slope_of_PI_curve.D
     Lₗᵢₘᴰ = Lᴰ(D, PO₄, NO₃, NH₄, Si, Dᶜʰˡ, Dᶠᵉ, Si̅, bgc)[1]
     μᴰ =  μᴵ(D, Dᶜʰˡ, PARᴰ, L_day, T, αᴰ, Lₗᵢₘᴰ, zₘₓₗ, zₑᵤ, t_darkᴰ, bgc)
@@ -33,7 +33,7 @@ end
     return μᴰ * K_mondo(Lₙₒ₃ᴰ, Lₙₕ₄ᴰ) #eq8
 end
 
-@inline function get_μₙₕ₄ᴰ(D, PO₄, NO₃, NH₄, Si, Dᶜʰˡ, Dᶠᵉ, T, zₘₓₗ, zₑᵤ, L_day, PARᴰ, t_darkᴰ, bgc)
+@inline function get_μₙₕ₄ᴰ(D, PO₄, NO₃, NH₄, Si, Dᶜʰˡ, Dᶠᵉ, T, zₘₓₗ, zₑᵤ, L_day, PARᴰ, t_darkᴰ, Si̅, bgc)
     αᴰ = bgc.initial_slope_of_PI_curve.D
     Lₗᵢₘᴰ = Lᴰ(D, PO₄, NO₃, NH₄, Si, Dᶜʰˡ, Dᶠᵉ, Si̅, bgc)[1]
     μᴰ =  μᴵ(D, Dᶜʰˡ, PARᴰ, L_day, T, αᴰ, Lₗᵢₘᴰ, zₘₓₗ, zₑᵤ, t_darkᴰ, bgc)
@@ -71,8 +71,8 @@ end
     zₘₐₓ = max(zₑᵤ, zₘₓₗ) #35a
     Bact = get_Bact(zₘₐₓ, z, Z, M)
 
-    μₙₒ₃ᴾ = get_μₙₒ₃ᴾ(P, PO₄, NO₃, NH₄, Pᶜʰˡ, Pᶠᵉ, T, zₘₓₗ, zₑᵤ, L_day, PARᴾ, t_darkᴾ, bgc)
-    μₙₒ₃ᴰ = get_μₙₒ₃ᴰ(D, PO₄, NO₃, NH₄, Si, Dᶜʰˡ, Dᶠᵉ, T, zₘₓₗ, zₑᵤ, L_day, PARᴰ, t_darkᴰ, bgc)
+    μₙₒ₃ᴾ = get_μₙₒ₃ᴾ(P, PO₄, NO₃, NH₄, Pᶜʰˡ, Pᶠᵉ, T, zₘₓₗ, zₑᵤ, L_day, PARᴾ, t_darkᴾ, Si̅, bgc)
+    μₙₒ₃ᴰ = get_μₙₒ₃ᴰ(D, PO₄, NO₃, NH₄, Si, Dᶜʰˡ, Dᶠᵉ, T, zₘₓₗ, zₑᵤ, L_day, PARᴰ, t_darkᴰ, Si̅, bgc)
 
     return Nitrif(NH₄, O₂, λₙₕ₄, PAR) - μₙₒ₃ᴾ*P - μₙₒ₃ᴰ*D - Rₙₕ₄*λₙₕ₄*ΔO₂(O₂, bgc)*NH₄ 
     - Rₙₒ₃*get_Denit(NO₃, PO₄, NH₄, DOC, O₂, T, bFe, Bact, bgc)
@@ -131,8 +131,8 @@ end
     eᶻ = (eₘₐₓᶻ, σᶻ, gₚᶻ, g_Dᶻ, gₚₒᶻ, 0, Pᶠᵉ, Dᶠᵉ, SFe, P, D, POC, bgc)
     eᴹ =  eᴶ(eₘₐₓᴹ, σᴹ, gₚᴹ, g_Dᴹ, gₚₒᴹ, g_Zᴹ,Pᶠᵉ, Dᶠᵉ, SFe, P, D, POC, bgc)
 
-    μₙₕ₄ᴾ = get_μₙₕ₄ᴾ(P, PO₄, NO₃, NH₄, Pᶜʰˡ, Pᶠᵉ, T, zₘₓₗ, zₑᵤ, L_day, PARᴾ, t_darkᴾ, bgc)
-    μₙₕ₄ᴰ = get_μₙₕ₄ᴰ(D, PO₄, NO₃, NH₄, Si, Dᶜʰˡ, Dᶠᵉ, T, zₘₓₗ, zₑᵤ, L_day, PARᴰ, t_darkᴰ, bgc)
+    μₙₕ₄ᴾ = get_μₙₕ₄ᴾ(P, PO₄, NO₃, NH₄, Pᶜʰˡ, Pᶠᵉ, T, zₘₓₗ, zₑᵤ, L_day, PARᴾ, t_darkᴾ, Si̅, bgc)
+    μₙₕ₄ᴰ = get_μₙₕ₄ᴰ(D, PO₄, NO₃, NH₄, Si, Dᶜʰˡ, Dᶠᵉ, T, zₘₓₗ, zₑᵤ, L_day, PARᴰ, t_darkᴰ, Si̅, bgc)
 
     zₘₐₓ = max(zₑᵤ, zₘₓₗ) #35a
     Bact = get_Bact(zₘₐₓ, z, Z, M)
