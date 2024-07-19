@@ -5,7 +5,7 @@
     # Cgfe1, Cgfe2, Aggfe, Bactfe (eqs 61, 62, 63)
     # Forcing for Fe (eq60)
 
-@inline function Fe¹(Fe, DOC, T)
+@inline function get_Fe¹(Fe, DOC, T)
     Lₜ = max(0.09*(DOC + 40) - 3, 0.6) # bgc.total_concentration_of_iron_ligands
     K_eqᶠᵉ = 10^(16.27 - 1565.7/max(T, 5)) #check this value
     Δ = 1 +  K_eqᶠᵉ*Lₜ -  K_eqᶠᵉ*Fe
@@ -19,14 +19,14 @@ end
     a₄ = bgc.aggregation_rate_of_DOC_to_POC_4
     a₅ = bgc.aggregation_rate_of_DOC_to_POC_5
    
-    FeL = Fe - Fe¹(Fe, DOC, T) #eq64
+    FeL = Fe - get_Fe¹(Fe, DOC, T) #eq64
     Fe_coll = 0.5*FeL
     return ((a₁*DOC + a₂*POC)*sh+a₄*POC + a₅*DOC)*Fe_coll
 end
 
 @inline function Cgfe2(sh, Fe, T, DOC, GOC, bgc)
     a₃ = bgc.aggregation_rate_of_DOC_to_GOC_3
-    FeL = Fe - Fe¹(Fe, DOC, T)
+    FeL = Fe - get_Fe¹(Fe, DOC, T)
     Fe_coll = 0.5*FeL
     return a₃*GOC*sh*Fe_coll
 end

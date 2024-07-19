@@ -30,7 +30,7 @@ end
 @inline function (bgc::PISCES)(::Val{:PSi}, x, y, z, t, P, D, Z, M, Pᶜʰˡ, Dᶜʰˡ, Pᶠᵉ, Dᶠᵉ, Dˢⁱ, DOC, POC, GOC, SFe, BFe, PSi, NO₃, NH₄, PO₄, Fe, Si, CaCO₃, DIC, Alk, O₂, T, PAR, PAR¹, PAR², PAR³, zₘₓₗ, zₑᵤ, Si̅, D_dust) 
 
     Kₘ = bgc.half_saturation_const_for_mortality
-    wₘₐₓᴰ = bgc.max_quadratic_mortality_of_diatoms.D
+    wₘₐₓᴰ = bgc.max_quadratic_mortality_of_diatoms
     αᴰ = bgc.initial_slope_of_PI_curve.D
     t_darkᴰ = bgc.mean_residence_time_of_phytoplankton_in_unlit_mixed_layer.D
     Dissₛᵢ = bgc.dissolution_rate_of_silicon

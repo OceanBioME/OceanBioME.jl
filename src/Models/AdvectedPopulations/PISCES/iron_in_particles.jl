@@ -38,7 +38,7 @@ end
 
     bFe = Fe
     zₘₐₓ = max(zₑᵤ, zₘₓₗ)
-    Fe¹ = Fe¹(Fe, DOC, T)   #same name
+    Fe¹ = get_Fe¹(Fe, DOC, T)   #same name
     λₚₒ¹ = λ¹(T, O₂, bgc)
     #Iron quotas
     θᶠᵉᴾ = θ(Pᶠᵉ, P)
@@ -82,7 +82,7 @@ end
 
     wᴰ = wᴾ + wₘₐₓᴰ*(1 - Lₗᵢₘᴰ)
 
-    Fe¹ = Fe¹(Fe, DOC, T)
+    Fe¹ = get_Fe¹(Fe, DOC, T)
     #Iron quotas
     θᶠᵉᴾ = θ(Pᶠᵉ, P)
     θᶠᵉᴰ = θ(Dᶠᵉ, D)
