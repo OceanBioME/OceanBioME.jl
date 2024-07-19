@@ -10,6 +10,13 @@
     σᴹ = bgc.non_assimilated_fraction.M
     eₘₐₓᶻ = bgc. max_growth_efficiency_of_zooplankton.Z
     eₘₐₓᴹ = bgc.max_growth_efficiency_of_zooplankton.M
+    αᴾ= bgc.initial_slope_of_PI_curve.P
+    αᴰ = bgc.initial_slope_of_PI_curve.D
+
+    ϕ₀ = bgc.latitude
+    L_day_param = bgc.length_of_day
+    ϕ = get_ϕ(ϕ₀, y)
+    L_day = get_L_day(ϕ, t, L_day_param)
 
     bFe = Fe
     
@@ -17,7 +24,13 @@
     ∑gᶻ, gₚᶻ, g_Dᶻ, gₚₒᶻ = get_grazingᶻ(P, D, POC, T, bgc)
     ∑gᴹ, gₚᴹ, g_Dᴹ, gₚₒᴹ, g_Zᴹ = get_grazingᴹ(P, D, Z, POC, T, bgc)
     ∑g_FFᴹ = get_∑g_FFᴹ(z, zₑᵤ, zₘₓₗ, T, POC, GOC, bgc)
-    
+
+    #PAR
+    t_darkᴾ = bgc.mean_residence_time_of_phytoplankton_in_unlit_mixed_layer.P
+    t_darkᴰ = bgc.mean_residence_time_of_phytoplankton_in_unlit_mixed_layer.D
+    PARᴾ = get_PARᴾ(PAR¹, PAR², PAR³, bgc)
+    PARᴰ = get_PARᴰ(PAR¹, PAR², PAR³, bgc)
+
     #Gross growth efficiency
     eᶻ = eᴶ(eₘₐₓᶻ, σᶻ, gₚᶻ, g_Dᶻ, gₚₒᶻ, 0, Pᶠᵉ, Dᶠᵉ, SFe, P, D, POC, bgc)
     eᴹ =  eᴶ(eₘₐₓᴹ, σᴹ, gₚᴹ, g_Dᴹ, gₚₒᴹ, g_Zᴹ,Pᶠᵉ, Dᶠᵉ, SFe, P, D, POC, bgc)
@@ -43,6 +56,8 @@ end
     γᴹ = bgc.excretion_as_DOM.M
     σᴹ = bgc.non_assimilated_fraction.M
     λₙₕ₄ = bgc.max_nitrification_rate
+    eₘₐₓᶻ = bgc. max_growth_efficiency_of_zooplankton.Z
+    eₘₐₓᴹ = bgc.max_growth_efficiency_of_zooplankton.M
 
     bFe = Fe
 
@@ -59,10 +74,8 @@ end
     PARᴰ = get_PARᴰ(PAR¹, PAR², PAR³, bgc)
 
     #Grazing
-    grazingᶻ = get_grazingᶻ(P, D, POC, T, bgc)
-    grazingᴹ = get_grazingᴹ(P, D, Z, POC, T, bgc)
-    ∑gᶻ = grazingᶻ[1]
-    ∑gᴹ = grazingᴹ[1]
+    ∑gᶻ, gₚᶻ, g_Dᶻ, gₚₒᶻ = get_grazingᶻ(P, D, POC, T, bgc)
+    ∑gᴹ, gₚᴹ, g_Dᴹ, gₚₒᴹ, g_Zᴹ = get_grazingᴹ(P, D, Z, POC, T, bgc)
     ∑g_FFᴹ = get_∑g_FFᴹ(z, zₑᵤ, zₘₓₗ, T, POC, GOC, bgc)
 
     Bact = get_Bact(zₘₐₓ, z, Z, M)
@@ -80,5 +93,5 @@ end
     return θᴺᶜ*get_Remin(O₂, NO₃, PO₄, NH₄, DOC, T, bFe, Bact, bgc) + θᴺᶜ*(rₙₒ₃¹ + 1)*get_Denit(NO₃, PO₄, NH₄, DOC, O₂, T, bFe, Bact, bgc) 
     + θᴺᶜ*γᶻ*(1 - eᶻ - σᶻ)*∑gᶻ*Z + θᴺᶜ*γᴹ*(1 - eᴹ - σᴹ)*(∑gᴹ + ∑g_FFᴹ + θᴺᶜ*γᴹ*Rᵤₚ(M, T, bgc))*M + θᴺᶜ*μₙₒ₃ᴾ*P + θᴺᶜ*μₙₒ₃ᴰ*D 
     + θᴺᶜ*N_fix(bFe, PO₄, T, P, NO₃, NH₄, Pᶜʰˡ, Pᶠᵉ, PA, bgc) + 2*λ_CaCO₃¹(CaCO₃, bgc)*CaCO₃ + θᴺᶜ*ΔO₂(O₂, bgc)*(rₙₕ₄¹ - 1)*λₙₕ₄*NH₄ 
-    - θᴺᶜ*μₙₕ₄ᴾ*P - θᴺᶜ*μₙₕ₄ᴰ*D- 2*θᴺᶜ*Nitrif(NH₄, O₂, λₙₕ₄, PAR) - 2*P_CaCO₃(P, D, Z, M, POC, T, PAR, zₘₓₗ, z, bgc)
+    - θᴺᶜ*μₙₕ₄ᴾ*P - θᴺᶜ*μₙₕ₄ᴰ*D- 2*θᴺᶜ*Nitrif(NH₄, O₂, λₙₕ₄, PAR, bgc) - 2*P_CaCO₃(P, D, Z, M, POC, T, PAR, zₘₓₗ, z, bgc)
 end
