@@ -31,7 +31,7 @@ as practial salinity.
 This method is less accurate than `teos10_density` but will run on GPU.
 """
 @inline function teos10_polynomial_approximation(T, Sp, Pbar = 0, lon = 0, lat = 0)
-    Z = 10 * Pbar * 1 # m / dbar
+    Z = 10 * Pbar # 10 m / bar
 
     Sa = Sp # error is *very* small in the pH and pCO₂ from this approximation
 
