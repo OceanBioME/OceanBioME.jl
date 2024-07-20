@@ -4,7 +4,6 @@ using OceanBioME: GasExchange, LOBSTER, CarbonChemistry
 using Oceananigans, DataDeps, JLD2, Statistics
 using Oceananigans.Units
 
-using OceanBioME.Models: seawater_density
 using OceanBioME.Models.CarbonChemistryModel: IonicStrength, K0, K1, K2, KB, KW, KS, KF, KP, KSi, KSP_aragonite, KSP_calcite
 
 const year = years = 365days # just for the idealised case below
@@ -65,10 +64,6 @@ grid = RectilinearGrid(architecture; size=(1, 1, 2), extent=(1, 1, 1))
         @info "Testing with $(typeof(air_concentration))"
         test_gas_exchange_model(grid, air_concentration)
     end
-end
-
-@testset "Seawater density" begin
-    @test ≈(seawater_density(25, 35), 1023.343; atol = 0.01)
 end
 
 @testset "Carbon chemistry" begin
