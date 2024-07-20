@@ -31,13 +31,13 @@ julia> carbon_chemistry = CarbonChemistry()
 Carbon chemistry model which solves for pCO₂ and pH
 
 julia> pCO₂ = carbon_chemistry(2000, 2000, 10, 35)
-1324.9552445980498
+1324.9372021360682
 
 julia> pH = carbon_chemistry(2000, 2000, 10, 35; return_pH = true)
-7.494532434173077
+7.4945380464223
 
 julia> pCO₂_higher_pH = carbon_chemistry(2000, NaN, 10, 35, 7.5)
-1308.551434411831
+1308.5503433443541
 
 ```
 """
