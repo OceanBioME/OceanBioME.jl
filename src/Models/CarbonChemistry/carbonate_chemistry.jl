@@ -1,5 +1,5 @@
 using Roots
-using OceanBioME.Models: seawater_density
+using OceanBioME.Models: teos10_polynomial_approximation
 
 """
     CarbonChemistry(; ionic_strength = IonicStrength(),
@@ -11,7 +11,8 @@ using OceanBioME.Models: seawater_density
                       fluoride = KF(; ionic_strength),
                       phosphoric_acid = (KP1 = KP1(), KP2 = KP2(), KP3 = KP3()),
                       silicic_acid = KSi(; ionic_strength),
-                      calcite_solubility = KSP_calcite())
+                      calcite_solubility = KSP_calcite(),
+                      density_function = teos10_polynomial_approximation)
 
 Carbon chemistry model capable of solving for sea water pCO₂ from DIC and 
 total alkalinity or DIC and pH. 
@@ -41,17 +42,18 @@ julia> pCO₂_higher_pH = carbon_chemistry(2000, NaN, 10, 35, 7.5)
 
 ```
 """
-@kwdef struct CarbonChemistry{P0, PC, PB, PS, PF, PP, PSi, PW, IS, PKS}
-          ionic_strength :: IS  = IonicStrength()
-              solubility :: P0  = K0()
-           carbonic_acid :: PC  = (K1 = K1(), K2 = K2())
-              boric_acid :: PB  = KB()
-                   water :: PW  = KW()
-                 sulfate :: PS  = KS(; ionic_strength)
-                fluoride :: PF  = KF(; ionic_strength)
-         phosphoric_acid :: PP  = (KP1 = KP1(), KP2 = KP2(), KP3 = KP3())
-            silicic_acid :: PSi = KSi(; ionic_strength)
-      calcite_solubility :: PKS = KSP_calcite()
+@kwdef struct CarbonChemistry{P0, PC, PB, PS, PF, PP, PSi, PW, IS, PKS, PRho}
+          ionic_strength :: IS   = IonicStrength()
+              solubility :: P0   = K0()
+           carbonic_acid :: PC   = (K1 = K1(), K2 = K2())
+              boric_acid :: PB   = KB()
+                   water :: PW   = KW()
+                 sulfate :: PS   = KS(; ionic_strength)
+                fluoride :: PF   = KF(; ionic_strength)
+         phosphoric_acid :: PP   = (KP1 = KP1(), KP2 = KP2(), KP3 = KP3())
+            silicic_acid :: PSi  = KSi(; ionic_strength)
+      calcite_solubility :: PKS  = KSP_calcite()
+        density_function :: PRho = teos10_polynomial_approximation
 end
 
 """
@@ -131,7 +133,7 @@ Alternativly, `pH` is returned if `return_pH` is `true`.
                                       upper_pH_bound = 14,
                                       lower_pH_bound = 0)
 
-    ρₒ = seawater_density(T, S, ifelse(isnothing(P), 0, P), lon, lat)
+    ρₒ = p.density_function(T, S, ifelse(isnothing(P), 0, P), lon, lat)
 
     # Centigrade to kelvin
     T += 273.15
