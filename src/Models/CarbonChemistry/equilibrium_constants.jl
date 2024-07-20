@@ -622,7 +622,7 @@ end
 
     pressure_correction = c.pressure_correction(T, P)
 
-    lnK_therm = c.therm_constant + c.therm_T * T + c.therm_inverse_T / T + c.therm_log_T * log10(T)
+    lnK_therm = c.therm_constant + c.therm_T * T + c.therm_inverse_T / T + c.therm_log_T * log10(T) # seems wrong
     lnK_sea = ((c.sea_sqrt_S + c.sea_T_sqrt_S * T + c.sea_inverse_T_sqrt_S / T) * √S 
                 + c.sea_S * S
                 + c.sea_S_sqrt_S³ * S^1.5)
