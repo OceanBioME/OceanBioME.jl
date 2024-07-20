@@ -76,7 +76,7 @@ so it will therefore be important to also thoroughly validate the oxygen model (
 Example
 =======
 
-```jldoctest simplemultig; filter = r".*@ OceanBioME.Sediments.*"
+```jldoctest simplemultig; filter = r".*@ OceanBioME.Models.Sediments.*"
 julia> using OceanBioME, Oceananigans, OceanBioME.Sediments
 
 julia> grid = RectilinearGrid(size=(3, 3, 30), extent=(10, 10, 200));

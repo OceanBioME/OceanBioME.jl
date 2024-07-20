@@ -4,7 +4,7 @@ This model, proposed by [Soetaert2000](@citet), is a "G class" model that evolve
 
 It is straightforward to set up:
 
-```jldoctest simplemultig; filter = r".*@ OceanBioME.Sediments.*"
+```jldoctest simplemultig; filter = r".*@ OceanBioME.Models.Sediments.*"
 using OceanBioME, Oceananigans, OceanBioME.Sediments
 
 grid = RectilinearGrid(size=(3, 3, 30), extent=(10, 10, 200))
