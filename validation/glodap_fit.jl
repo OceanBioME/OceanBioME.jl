@@ -4,7 +4,7 @@ using OceanBioME: CarbonChemistry
 using OceanBioME.Models: seawater_density
 using OceanBioME.Models.CarbonChemistryModel: K0, K1, K2, KF
 
-# get the glodap data
+# get the glodap data - downloaded "merged" file from https://www.ncei.noaa.gov/data/oceans/ncei/ocads/data/0283442/
 data = CSV.read("validation/GLODAP.csv", DataFrame)
 
 DIC_name = "G2tco2"
@@ -46,7 +46,7 @@ Nrows = size(data, 1)
 
 # setup the model
 
-# pH_error = 0.00059 ± 0.012 -> mean is zero
+# pH_error = 0.00059 ± 0.01217 -> mean is zero
 # pCO₂_error = -7.6 ± 29.5 -> mean is also zero
 carbon_chemistry =
     CarbonChemistry(; # Weiss, R.F. (1974, Mar. Chem., 2, 203–215)
