@@ -120,6 +120,8 @@ Alternativly, `pH` is returned if `return_pH` is `true`.
 """
 @inline function (p::CarbonChemistry)(DIC, Alk, T, S, pH = nothing;
                                       P = nothing,
+                                      lon = 0,
+                                      lat = 0,
                                       return_pH = false,
                                       boron = 0.000232 / 10.811 * S / 1.80655,
                                       sulfate = 0.14 / 96.06 * S / 1.80655,
@@ -129,7 +131,7 @@ Alternativly, `pH` is returned if `return_pH` is `true`.
                                       upper_pH_bound = 14,
                                       lower_pH_bound = 0)
 
-    ρₒ = seawater_density(T, S)
+    ρₒ = seawater_density(T, S, ifelse(isnothing(P), 0, P), lon, lat)
 
     # Centigrade to kelvin
     T += 273.15
