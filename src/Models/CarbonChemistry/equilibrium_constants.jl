@@ -326,10 +326,10 @@ show(io::IO, c::KS) = print(io, "Bisulfate dissociation constant\n",
     "    ln(kˢ/k°) = $(c.constant)
                 + $(c.inverse_T) / T
                 + $(c.log_T) log(T)
-                + ($(c.sqrt_S) + $(c.inverse_T_sqrt_S) / T + $(c.log_T_sqrt_S) log(T)) √S
+                + ($(c.sqrt_Is) + $(c.inverse_T_sqrt_Is) / T + $(c.log_T_sqrt_Is) log(T)) √Is
                 + ($(c.Is) + $(c.inverse_T_Is) / T + $(c.log_T_Is) log(T)) Is
-                + $(c.inverse_T_sqrt_S³) √S³ / T
-                + $(c.inverse_T_S²) S² / T
+                + $(c.inverse_T_sqrt_Is³) √Is³ / T
+                + $(c.inverse_T_Is²) Is² / T
                 + log(1 + $(c.log_S) S)")                                               
 
 """
