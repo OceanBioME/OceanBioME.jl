@@ -200,9 +200,9 @@ biogeochemical_drift_velocity(bgc::NutrientPhytoplankton, ::Val{:P}) =
 Another aspect that OceanBioME includes is sediment models. Doing this varies between sediment models, but for the most generic and simplest, all we need to do is add methods to two functions:
 
 ```@example implementing
-using OceanBioME.Boundaries.Sediments: sinking_flux
+using OceanBioME.Sediments: sinking_flux
 
-import OceanBioME.Boundaries.Sediments: nitrogen_flux, carbon_flux, remineralisation_receiver, sinking_tracers
+import OceanBioME.Sediments: nitrogen_flux, carbon_flux, remineralisation_receiver, sinking_tracers
 
 @inline nitrogen_flux(i, j, k, grid, advection, bgc::NutrientPhytoplankton, tracers) =
      sinking_flux(i, j, k, grid, advection, Val(:P), bgc, tracers)
