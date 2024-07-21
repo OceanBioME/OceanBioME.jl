@@ -5,7 +5,6 @@ Documenting the user interface.
 ## OceanBioME.jl
 ```@autodocs
 Modules = [OceanBioME]
-private = false
 ```
 
 ## Biogeochemical Models
@@ -13,46 +12,41 @@ private = false
 ### Nutrient Phytoplankton Zooplankton Detritus
 
 ```@autodocs
-Modules = [OceanBioME.NPZDModel]
-private = false
+Modules = [OceanBioME.Models.NPZDModel]
 ```
 
 ### The Lodyc-DAMTP Ocean Biogeochemical Simulation Tools for Ecosystem and Resources (LOBSTER)
 
 ```@autodocs
-Modules = [OceanBioME.LOBSTERModel]
-private = true
+Modules = [OceanBioME.Models.LOBSTERModel]
 ```
 
 ### Sugar kelp (Saccharina latissima)
 
 ```@autodocs
-Modules = [OceanBioME.SLatissimaModel]
-private = true
+Modules = [OceanBioME.Models.SLatissimaModel]
+```
+
+### Carbon Chemistry 
+
+```@autodocs
+Modules = [OceanBioME.Models.CarbonChemistryModel]
 ```
 
 ## Light Attenuation Models
 
 ```@autodocs
 Modules = [OceanBioME.Light]
-private = false
 ```
 
-## Boundary Conditions
+## Sediments
 
 ```@autodocs
-Modules = [OceanBioME.Boundaries]
-private = false
-```
-
-```@autodocs
-Modules = [OceanBioME.Boundaries.Sediments]
-private = false
+Modules = [OceanBioME.Models.Sediments]
 ```
 
 ## Box Model
 
 ```@autodocs
 Modules = [OceanBioME.BoxModels]
-private = false
 ```
