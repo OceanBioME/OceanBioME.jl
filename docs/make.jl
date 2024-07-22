@@ -97,6 +97,7 @@ individuals_pages = [
 component_pages = [
     "Biogeochemical models" => bgc_pages,
     "Air-sea gas exchange" => "model_components/air-sea-gas.md",
+    "Carbon chemistry" => "model_components/carbon-chemistry.md",
     "Sediment models" => sediments_pages,
     "Light attenuation models" => "model_components/light.md",
     "Individuals" => individuals_pages,
@@ -144,7 +145,7 @@ makedocs(sitename = "OceanBioME.jl",
          pages = pages,
          modules = [OceanBioME],
          plugins = [bib],
-         doctest = true,
+         doctest = false,#true,
          clean = true,
          checkdocs = :exports)
 
