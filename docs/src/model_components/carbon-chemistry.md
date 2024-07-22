@@ -89,7 +89,7 @@ from which we define the total dissolved inorganic carbon (`DIC`) to be ``DIC = 
 The equilibrium constants for these equations are defined as:
 
 ```math
-K_0=\frac{[\ce{O_2(aq)}]}{\ce{pCO_2}},
+K_0=\frac{[\ce{CO_2(aq)}]}{\ce{pCO_2}},
 ```
 
 ```math
