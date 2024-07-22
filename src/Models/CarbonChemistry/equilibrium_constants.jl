@@ -30,6 +30,12 @@ end
 
 @inline (pc::PressureCorrection)(T, ::Nothing) = 1
 
+summary(::IO, ::PressureCorrection) = string("Equilibrium constant pressure correction")
+show(io::IO, pc::PressureCorrection) = print(io, "Equilibrium constant pressure correction\n",
+    "    ΔV = $(pc.a₀) + $(pc.a₁) Tc + $(pc.a₂) * Tc²\n",
+    "    Δκ = $(pc.b₀) + $(pc.b₁) T\n",
+    "    ln(kᵖ/k⁰) = (-ΔV + Δκ P / 2) * P / RT")
+
 """
     K0(; constant = -162.8301
          inverse_T =  218.2968 * 100
@@ -156,7 +162,7 @@ show(io::IO, k2::K2) = print(io, "Second carbon dioxide dissociation constant\n"
          pressure_correction = 
             PressureCorrection(; a₀=-29.48, a₁=0.1622, a₂=-0.0026080, b₀=-0.00284, b₁=0.0))
 
-Parameterisation for boric acid dissociation equilibrium constant.
+Parameterisation for boric acid equilibrium with water.
 
     B(OH)₃ + H₂O ⇌ B(OH)₄⁻ + H⁺
 
@@ -286,7 +292,7 @@ Parameterisation for bisulfate dissociation equilibrium constant.
 
     HSO₄⁻ ⇌ SO₄²⁻ + H⁺
 
-    Kˢ = [H⁺][SO₄⁻]/[HSO₄⁻] 
+    Kˢ = [H⁺][SO₄²⁻]/[HSO₄⁻] 
 
 Default values from Dickson (1990, Chem. Thermodyn., 22, 113–127).
 """

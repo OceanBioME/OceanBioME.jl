@@ -1,6 +1,8 @@
 function calcite_concentration(cc::CarbonChemistry, 
                                DIC, Alk, T, S, pH = nothing;
                                P = nothing,
+                               lon = 0,
+                               lat = 0,
                                boron = 0.000232 / 10.811 * S / 1.80655,
                                sulfate = 0.14 / 96.06 * S / 1.80655,
                                fluoride = 0.000067 / 18.9984 * S / 1.80655,
@@ -9,8 +11,7 @@ function calcite_concentration(cc::CarbonChemistry,
                                upper_pH_bound = 14,
                                lower_pH_bound = 0)
 
-    
-    ρₒ = seawater_density(T, S)
+    ρₒ = cc.density_function(T, S, ifelse(isnothing(P), 0, P), lon, lat)
 
     # Centigrade to kelvin
     T += 273.15
