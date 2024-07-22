@@ -49,6 +49,8 @@ Finally, for slightly improved accuracy you may wish to specify that the seawate
 using OceanBioME.Models: teos10_density
 carbon_chemistry = CarbonChemistry(; density_function = teos10_density)
 ```
+But this comes at the cost of significantly increased computational expense and GPU incompatability.
+
 During the conversion from practical to absolute salinity units the location can then also be entered for (very slightly, in this example ~``10^{-4}\mu``atm) improved accuracy:
 ```@example carbon-chem
 carbon_chemistry(2145, 2448, 25.4, 36.45; lon = -31.52, lat = 33.75)
