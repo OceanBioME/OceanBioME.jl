@@ -253,9 +253,9 @@ This means that we must parameterise their concentrations, usually this results 
 Usually these ratios are:
 ```math
 \begin{align}
-\text{Boron} &= 0.000232 / 10.811 * S / 1.80655,
-\text{Sulfate} &= 0.14 / 96.06 * S / 1.80655,
-\text{Fluoride} &= 0.000067 / 18.9984 * S / 1.80655.
+\text{Boron} &= \frac{0.000232}{10.811}\frac{S}{1.80655},\\
+\text{Sulfate} &= \frac{0.14}{96.06} \frac{S}{1.80655},\\
+\text{Fluoride} &= \frac{0.000067}{18.9984} \frac{S}{1.80655}.\\
 \end{align}
 ```
 We use these ratios by default in the model (but they can be changed when calling the models functions described below).
