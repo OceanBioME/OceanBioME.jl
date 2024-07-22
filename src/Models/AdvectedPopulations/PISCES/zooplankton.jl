@@ -68,7 +68,7 @@ end
 # gross growth efficiency, defined for both but g_zᴹ and Z do not appear for eᶻ so have passed in as 0 
 @inline function get_eₙᴶ(gₚᴶ, g_Dᴶ, gₚₒᴶ, g_Zᴹ, Pᶠᵉ, Dᶠᵉ, SFe, P, D, POC, bgc)
     θᴺᶜ = bgc.NC_redfield_ratio
-    θᶠᵉᶜ = bgc.FeZ_redfield_ratio  #Assumed the same for both types of zooplankton
+    θᶠᵉᶜ = bgc.FeC_ratio_of_zooplankton  #Assumed the same for both types of zooplankton
 
     ∑ᵢθᴺᴵgᵢᴶ = θᴺᶜ*gₚᴶ + θᴺᶜ*g_Dᴶ + θᴺᶜ*gₚₒᴶ + θᴺᶜ*g_Zᴹ
     ∑ᵢθᶠᵉᴵgᵢᴶ = θ(Pᶠᵉ, P)*gₚᴶ + θ(Dᶠᵉ, D)*g_Dᴶ + θ(SFe, POC)*gₚₒᴶ + θᶠᵉᶜ*g_Zᴹ
@@ -80,7 +80,7 @@ end
 
 @inline function eᴶ(eₘₐₓᴶ, σᴶ, gₚᴶ, g_Dᴶ, gₚₒᴶ, g_Zᴹ, Pᶠᵉ, Dᶠᵉ, SFe, P, D, POC, bgc)
 
-    θᶠᵉᶜ = bgc.FeZ_redfield_ratio  #Assumed the same for both types of zooplankton
+    θᶠᵉᶜ = bgc.FeC_ratio_of_zooplankton  #Assumed the same for both types of zooplankton
 
     ∑ᵢθᶠᵉᴵgᵢᴶ = θ(Pᶠᵉ, P)*gₚᴶ + θ(Dᶠᵉ, D)*g_Dᴶ + θ(SFe, POC)*gₚₒᴶ + θᶠᵉᶜ*g_Zᴹ
     ∑ᵢgᵢᴶ = gₚᴶ + g_Dᴶ + gₚₒᴶ + g_Zᴹ

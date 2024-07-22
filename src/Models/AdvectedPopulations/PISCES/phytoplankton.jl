@@ -9,11 +9,11 @@
 @inline get_L_day(ϕ, t, L_day) = L_day  #temporary
 
 @inline f₁(L_day) = 1.5*K_mondo(L_day, 0.5)  #eq 3a
-@inline function t_dark(zₘₓₗ, zₑᵤ)
-    #κᵥₑᵣₜ = bgc.vertical_diffusivity    #can edit this later
-    return max(0, zₘₓₗ-zₑᵤ)^2 #eq 3b,c    max(0, zₘₓₗ-zₑᵤ)^2/(κᵥₑᵣₜ(0,0,0) + eps(0.0))
+@inline function t_dark(zₘₓₗ, zₑᵤ, bgc)
+    κᵥₑᵣₜ = bgc.vertical_diffusivity    #can edit this later
+    return max(0, zₘₓₗ-zₑᵤ)^2/(κᵥₑᵣₜ[0,0,0] + eps(0.0)) #eq 3b,c    
 end
-@inline f₂(zₘₓₗ, zₑᵤ, t_darkᴵ) = 1 - K_mondo(t_dark(zₘₓₗ, zₑᵤ), t_darkᴵ) #eq 3d
+@inline f₂(zₘₓₗ, zₑᵤ, t_darkᴵ, bgc) = 1 - K_mondo(t_dark(zₘₓₗ, zₑᵤ, bgc), t_darkᴵ) #eq 3d
 
 @inline fₚ(T, bgc) = bgc.temperature_sensitivity_of_growth^T #eq 4a
 
@@ -66,7 +66,7 @@ end
 
     μₚ = μ⁰ₘₐₓ*fₚ(T, bgc)    #eq 4b      
 
-    return μₚ * f₁(L_day) * f₂(zₘₓₗ, zₑᵤ, t_darkᴵ) * Cₚᵣₒ(I, Iᶜʰˡ, PARᴵ, L_day, αᴵ, μₚ, Lₗᵢₘᴵ) * Lₗᵢₘᴵ #2b 
+    return μₚ * f₁(L_day) * f₂(zₘₓₗ, zₑᵤ, t_darkᴵ, bgc) * Cₚᵣₒ(I, Iᶜʰˡ, PARᴵ, L_day, αᴵ, μₚ, Lₗᵢₘᴵ) * Lₗᵢₘᴵ #2b 
 end
 
 # This function returns Lₗᵢₘᴾ as well as all the constituent parts as a vector so we can use all the parts in separate parts of the code

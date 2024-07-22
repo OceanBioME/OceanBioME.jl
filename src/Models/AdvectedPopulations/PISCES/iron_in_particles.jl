@@ -32,7 +32,7 @@ end
     bₘ = bgc.temperature_sensitivity_term.M
     b_Z = bgc.temperature_sensitivity_term.Z
     μₘₐₓ⁰ = bgc.growth_rate_at_zero
-    θᶠᵉᶻ = bgc.FeZ_redfield_ratio
+    θᶠᵉᶻ = bgc.FeC_ratio_of_zooplankton
 
     sh = get_sh(z, zₘₓₗ)
 
@@ -73,7 +73,7 @@ end
     wₘₐₓᴰ = bgc.max_quadratic_mortality_of_diatoms
     κ_Bactᴮᶠᵉ = bgc.coefficient_of_bacterial_uptake_of_iron_in_GOC
     w_GOCᵐⁱⁿ = bgc.min_sinking_speed_of_GOC
-    θᶠᵉᶻ = bgc.FeZ_redfield_ratio
+    θᶠᵉᶻ = bgc.FeC_ratio_of_zooplankton
     μₘₐₓ⁰ = bgc.growth_rate_at_zero
 
     bFe = Fe

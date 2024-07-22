@@ -10,9 +10,9 @@
 @inline function λ_CaCO₃¹(CaCO₃, bgc) #no argument required, CaCO₃ given as placeholder
     λ_CaCO₃ = bgc.dissolution_rate_of_calcite
     nca = bgc.exponent_in_the_dissolution_rate_of_calcite
-    #Ω = bgc.carbonate_sat_ratio #define this as an auxiliary field, or using Nemo source code as in PISCES?
-    Ω = 0
-    ΔCO₃²⁻ = max(0, 1 - Ω)
+    Ω = bgc.carbonate_sat_ratio 
+    Ω¹ = Ω[0,0,0]
+    ΔCO₃²⁻ = max(0, 1 - Ω¹)
     return λ_CaCO₃*(ΔCO₃²⁻)^nca
 end
 

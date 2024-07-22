@@ -51,7 +51,7 @@ end
     σᴹ = bgc.non_assimilated_fraction.M
     δᴾ = bgc.exudation_of_DOC.P
     δᴰ = bgc.exudation_of_DOC.D
-    θᶠᵉᶻ = bgc.FeZ_redfield_ratio
+    θᶠᵉᶻ = bgc.FeC_ratio_of_zooplankton
     μₘₐₓ⁰ = bgc.growth_rate_at_zero
     θₘₐₓᶠᵉᴾ = bgc.max_iron_quota.P
     Sᵣₐₜᴾ = bgc.size_ratio_of_phytoplankton.P

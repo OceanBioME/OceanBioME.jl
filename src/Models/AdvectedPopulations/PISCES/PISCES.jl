@@ -40,7 +40,7 @@ import Base: show, summary
 
 import OceanBioME.Boundaries.Sediments: nitrogen_flux, carbon_flux, remineralisation_receiver, sinking_tracers
 
-struct PISCES{FT, PD, ZM, OT, W, CF} <: AbstractContinuousFormBiogeochemistry
+struct PISCES{FT, PD, ZM, OT, W, CF, ZF} <: AbstractContinuousFormBiogeochemistry
 
     growth_rate_at_zero :: FT # add list of parameters here, assuming theyre all just numbers FT will be fine for advect_particles_kernel
     growth_rate_reference_for_light_limitation :: FT
@@ -158,8 +158,8 @@ struct PISCES{FT, PD, ZM, OT, W, CF} <: AbstractContinuousFormBiogeochemistry
     yearly_maximum_silicate :: FT
     dust_deposition :: FT
 
-  #  vertical_diffusivity :: FD 
-   # carbonate_sat_ratio :: FD
+    vertical_diffusivity :: CF 
+    carbonate_sat_ratio :: ZF
 
     sinking_velocities :: W
 
@@ -278,13 +278,13 @@ struct PISCES{FT, PD, ZM, OT, W, CF} <: AbstractContinuousFormBiogeochemistry
                     euphotic_layer_depth :: CF,
                     yearly_maximum_silicate :: FT,
                     dust_deposition :: FT,
-                  #  vertical_diffusivity :: FD, 
-                   # carbonate_sat_ratio :: FD,
+                    vertical_diffusivity :: CF, 
+                    carbonate_sat_ratio :: ZF,
 
-                    sinking_velocities :: W,) where {FT, PD, ZM, OT, W, CF} # then do the same here (this is all just annoying boiler plate but we need it to make the next function work)
+                    sinking_velocities :: W,) where {FT, PD, ZM, OT, W, CF, ZF} # then do the same here (this is all just annoying boiler plate but we need it to make the next function work)
 
 
-        return new{FT, PD, ZM, OT, W, CF}(growth_rate_at_zero,
+        return new{FT, PD, ZM, OT, W, CF, ZF}(growth_rate_at_zero,
                             growth_rate_reference_for_light_limitation,
                             basal_respiration_rate,
                             temperature_sensitivity_of_growth,
@@ -399,8 +399,8 @@ struct PISCES{FT, PD, ZM, OT, W, CF} <: AbstractContinuousFormBiogeochemistry
                             euphotic_layer_depth,
                             yearly_maximum_silicate,
                             dust_deposition,
-                          #  vertical_diffusivity,
-                           # carbonate_sat_ratio,
+                            vertical_diffusivity,
+                            carbonate_sat_ratio,
 
                           sinking_velocities)
     end
@@ -573,6 +573,7 @@ function PISCES(; grid, # finally the function
 
                    mixed_layer_depth :: CF = ConstantField(100),
                    euphotic_layer_depth :: CF = ConstantField(50),
+                   vertical_diffusivity :: CF  = ConstantField(1),
                    yearly_maximum_silicate :: FT = 1.0,
                    dust_deposition :: FT = 1.0,
 
@@ -585,15 +586,15 @@ function PISCES(; grid, # finally the function
                   # just keep all this stuff for now but you can ignore it
                   sediment_model::S = nothing,
 
-                  sinking_speeds = (POC = sinking_speed_of_POC, GOC = 1.0, SFe = sinking_speed_of_POC, BFe = 1.0, PSi = 1.0, CaCO₃ = 1.0),  #change all 1.0s to w_GOC
-                 # vertical_diffusivity :: FD  = constantField(1),
-                  #carbonate_sat_ratio :: FD = ZeroField(),
+                  sinking_speeds = (POC = 0.0, GOC = 0.0, SFe = 0.0, BFe = 1.0, PSi = 0.0, CaCO₃ = 0.0),  #change all 1.0s to w_GOC
+                  
+                  carbonate_sat_ratio :: ZF = ZeroField(),
                   open_bottom::Bool = true,
 
                   scale_negatives = false,
 
                   particles::P = nothing,
-                  modifiers::M = nothing) where {FT, PD, ZM, OT, LA, S, P, M, CF}
+                  modifiers::M = nothing) where {FT, PD, ZM, OT, LA, S, P, M, CF, ZF}
 
     if !isnothing(sediment_model) && !open_bottom
         @warn "You have specified a sediment model but not `open_bottom` which will not work as the tracer will settle in the bottom cell"
@@ -719,8 +720,8 @@ function PISCES(; grid, # finally the function
                                         dust_deposition,
 
 
-                                  #      vertical_diffusivity,
-                                   #     carbonate_sat_ratio,
+                                        vertical_diffusivity,
+                                        carbonate_sat_ratio,
 
                                         sinking_velocities)
 
@@ -755,7 +756,7 @@ end
     end
 end
 
-@inline biogeochemical_auxiliary_fields(bgc::PISCES) = (zₘₓₗ = bgc.mixed_layer_depth, zₑᵤ = bgc.euphotic_layer_depth, Si̅ = bgc.yearly_maximum_silicate, D_dust = bgc.dust_deposition, PAR₁ = ConstantField(100), PAR₂ = ConstantField(100), PAR₃ = ConstantField(100))
+@inline biogeochemical_auxiliary_fields(bgc::PISCES) = (zₘₓₗ = bgc.mixed_layer_depth, zₑᵤ = bgc.euphotic_layer_depth, Si̅ = bgc.yearly_maximum_silicate, D_dust = bgc.dust_deposition, PAR¹ = ConstantField(100), PAR² = ConstantField(100), PAR³ = ConstantField(100))
 
 # don't worry about this for now
 adapt_structure(to, pisces::PISCES) =
