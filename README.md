@@ -130,8 +130,7 @@ grid = RectilinearGrid(GPU(), size = (256, 32), extent = (500meters, 100meters),
 
 ## Documentation
 
-See the [documentation](https://oceanbiome.github.io/OceanBioME.jl) for full description of the software
-package and more examples.
+See the [documentation](https://oceanbiome.github.io/OceanBioME.jl) for full description of the software package and more examples, as well as full descriptions of the included models and parametrisations.
 
 ## Contributing
 If you're interested in contributing to the development of OceanBioME we would appreciate your help!
