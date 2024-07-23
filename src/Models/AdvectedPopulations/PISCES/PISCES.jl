@@ -3,8 +3,33 @@ Pelagic Interactions Scheme for Carbon and Ecosystem Studies (PISCES) model.
 
 Tracers
 =======
-# see the others for the formatting here...you might also want to change some of the units buit molC/L is the origional (described at the start of sec 4)
-* Nano-phytoplankton: P (mol C/L)
+
+* Nano-phytoplankton: P (μmol C/L)
+* Diatoms: D (μmol C/L)
+* Zooplankton: Z (μmol C/L)
+* Mesozooplankton: M (μmol C/L)
+* Chlorophyll in nano-phytoplankton: Pᶜʰˡ (μgChl/L)
+* Chlorophyll in diatoms: Dᶜʰˡ (μgChl/L)
+* Iron in nano-phytoplanktons: Pᶠᵉ (pmolFe/L) 
+* Iron in diatoms: Dᶠᵉ (pmolFe/L) 
+* Silicon in diatoms: Dˢⁱ (μmolSi/L)
+
+* Dissolved organic carbon: DOC (μmol C/L)
+* Small sinking particles : POC (μmol C/L)
+* Large sinking particles: GOC (μmol C/L)
+* Iron in small particles: SFe (pmolFe/L) 
+* Iron in large particles: BFe (pmolFe/L) 
+*  : PSi 
+* Nitrates: NO₃ (μmolN/L)
+* Ammonium: NH₄ (μmolN/L)
+* Phosphate: PO₄ (μmolP/L)
+* Dissolved iron: Fe (molFe/L)
+* Silicate: Si (μmolSi/L)
+* Calcite: CaCO₃ (μmolC/L)
+* Dissolved oxygen: O₂ (μmolO₂/L)
+* Dissolved inorganic carbon: DIC (μmolC/L)
+* Total alkalinity: Alk (μmolN/L)
+
 
 Required submodels
 ==================
@@ -540,7 +565,7 @@ end
                   # just keep all this stuff for now but you can ignore it
                   sediment_model::S = nothing,
 
-                  sinking_speeds = (POC = 0.0, GOC = 0.0, SFe = 0.0, BFe = 1.0, PSi = 0.0, CaCO₃ = 0.0),  #change all 1.0s to w_GOC
+                  sinking_speeds = (POC = 0.0, GOC = 0.0, SFe = 0.0, BFe = 0.0, PSi = 0.0, CaCO₃ = 0.0),  #change all 1.0s to w_GOC
                   
                   carbonate_sat_ratio :: ZF = ZeroField(),
                   open_bottom::Bool = true,
@@ -709,7 +734,7 @@ function PISCES(; grid, # finally the function
                   # just keep all this stuff for now but you can ignore it
                   sediment_model::S = nothing,
 
-                  sinking_speeds = (POC = 0.0, GOC = 0.0, SFe = 0.0, BFe = 1.0, PSi = 0.0, CaCO₃ = 0.0),  #change all 1.0s to w_GOC
+                  sinking_speeds = (POC = 0.0, GOC = 0.0, SFe = 0.0, BFe = 0.0, PSi = 0.0, CaCO₃ = 0.0),  #change all 1.0s to w_GOC
                   
                   carbonate_sat_ratio :: ZF = ZeroField(),
                   open_bottom::Bool = true,
