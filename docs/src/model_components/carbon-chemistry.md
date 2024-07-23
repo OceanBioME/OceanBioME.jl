@@ -229,7 +229,7 @@ Now that we know ``[DIC]``, ``Alk``, and ``[\ce{H^+}]`` we can return to the equ
 
 from which we determine gas phase carbon dioxide concentration as
 ```math
-fCO_2 = [CO_2(aq)] / K_0,
+fCO_2 = \frac{[CO_2(aq)]}{K_0},
 ```
 in atmospheres.
 
@@ -250,7 +250,7 @@ K_{SP} = [\ce{Ca^{2+}}][\ce{CO_3^{2-}}].
 
 The calcite saturation can then be defined as ``\Omega=\frac{[\ce{CO_3^{2-}}]}{[\ce{CO_{3, saturation}^{2-}}]}`` which can be diagnised as:
 ```math
-\Omega = \frac{[\ce{Ca^{2+}}][\ce{CO_3^{2-}}]}{K_SP}.
+\Omega = \frac{[\ce{Ca^{2+}}][\ce{CO_3^{2-}}]}{K_{SP}}.
 ```
 
 ### Missing pieces
