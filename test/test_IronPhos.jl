@@ -18,20 +18,20 @@ function intercept_tracer_tendencies!(model, intercepted_tendencies)
 end
 
 function set_defaults!(sediment::IronPhosphate)
-    set!(sediment.fields.O₂, 0.00005)
-    set!(sediment.fields.NH₄, 0.00005)
-    set!(sediment.fields.NO₃, 0.00005)
-    set!(sediment.fields.NO₂, 0.00005)
-    set!(sediment.fields.N₂, 0.00005)
-    set!(sediment.fields.TPO₄, 0.00005)
-    set!(sediment.fields.FeOHP, 0.00005)
-    set!(sediment.fields.Feᴵᴵ, 0.00005)
-    set!(sediment.fields.FeS₂, 0.00005)
-    set!(sediment.fields.SO₄, 0.00005)
-    set!(sediment.fields.TH₂S, 0.00005)
-    set!(sediment.fields.CH₄, 0.00005)
-    set!(sediment.fields.TCO₂, 0.00005)
-    set!(sediment.fields.Gi, 0.00005)
+    set!(sediment.fields.O₂, 100e-6)
+    set!(sediment.fields.NH₄, 100e-6)
+    set!(sediment.fields.NO₃, 6e-6)
+    set!(sediment.fields.NO₂, 0.5e-6)
+    set!(sediment.fields.N₂, 0)
+    set!(sediment.fields.TPO₄, 1.5e-6)
+    set!(sediment.fields.FeOHP, 410e-6)
+    set!(sediment.fields.Feᴵᴵ, 0.1e-6)
+    set!(sediment.fields.FeS₂, 0)
+    set!(sediment.fields.SO₄, 0.5e-6)
+    set!(sediment.fields.TH₂S, 0.1e-6)
+    set!(sediment.fields.CH₄, 10e-9)
+    set!(sediment.fields.TCO₂, 2e-3)
+    set!(sediment.fields.Gi, 1e-3)
 end 
 
 set_defaults!(::VariableRedfieldLobster, model) =
@@ -73,18 +73,11 @@ model = NonhydrostaticModel(; grid,
 
 set_defaults!(model.biogeochemistry.sediment)
 
-<<<<<<< HEAD
-simulation = Simulation(model, Δt = 50, stop_time = 1day)
-
-
-simulation.output_writers[:tracers] = JLD2OutputWriter(model, model.biogeochemistry.sediment_model.fields,
-=======
 set_defaults!(biogeochemistry.underlying_biogeochemistry, model)
 
 simulation = Simulation(model, Δt = 50, stop_time = 1day)
 
 simulation.output_writers[:tracers] = JLD2OutputWriter(model, model.biogeochemistry.sediment.tendencies.G⁻,
->>>>>>> 90aedaf0180696b25e7756616f1f0287b6715a8f
     filename = "temp_plotting_data.jld2",
     schedule = TimeInterval(24minute),
     overwrite_existing = true)
