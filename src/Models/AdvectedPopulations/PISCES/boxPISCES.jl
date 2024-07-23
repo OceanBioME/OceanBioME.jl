@@ -23,20 +23,21 @@ PAR⁰(t) = 60 * (1 - cos((t + 15days) * 2π / year)) * (1 / (1 + 0.2 * exp(-((m
 
 z = -10 # specify the nominal depth of the box for the PAR profile
 PAR(t) = PAR⁰(t) * exp(0.2z) # Modify the PAR based on the nominal depth and exponential decay
+
 nothing #hide
 
 # Set up the model. Here, first specify the biogeochemical model, followed by initial conditions and the start and end times
 model = BoxModel(biogeochemistry = PISCES(grid = BoxModelGrid, light_attenuation_model = nothing), forcing = (; PAR))
 
-set!(model, P = 0.1, D = 0.1, Z = 0.1, M = 0.1, Pᶜʰˡ = 0.1, Dᶜʰˡ = 0.1, Pᶠᵉ = 0.1, Dᶠᵉ = 0.1, Dˢⁱ = 0.1, DOC = 0.1, POC = 0.1, GOC=0.1, SFe = 0.1, BFe = 0.1, PSi= 0.1, NO₃ = 0.1, NH₄ = 0.1, PO₄ = 0.1, Fe = 0.1, Si = 0.1, CaCO₃ =0.1, DIC = 0.1, Alk = 0.1, O₂ =0.1)
+set!(model,NO₃ = 4.0, NH₄ = 0.1, P = 4.26, D = 4.26, Z = 0.426, M = 0.426, Pᶠᵉ = 3.5, Dᶠᵉ = 3.5, Pᶜʰˡ = 1.60, Dᶜʰˡ = 1.60, Dˢⁱ = 0.525, Fe = 0.8241, O₂ = 264.0, Si = 4.557, Alk = 2360.0, PO₄ = 0.8114)
 
-simulation = Simulation(model; Δt = 5minutes, stop_time = 30days)
+simulation = Simulation(model; Δt = 0.5, stop_time = 3600.0)
 
-simulation.output_writers[:fields] = JLD2OutputWriter(model, model.fields; filename = "box.jld2", schedule = TimeInterval(10days), overwrite_existing = true)
+simulation.output_writers[:fields] = JLD2OutputWriter(model, model.fields; filename = "box.jld2", schedule = TimeInterval(1.0), overwrite_existing = true)
 
 prog(sim) = @info "$(prettytime(time(sim))) in $(prettytime(simulation.run_wall_time))"
 
-simulation.callbacks[:progress] = Callback(prog, IterationInterval(1000000))
+simulation.callbacks[:progress] = Callback(prog, IterationInterval(10))
 
 # ## Run the model (should only take a few seconds)
 @info "Running the model..."
