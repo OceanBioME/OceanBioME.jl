@@ -54,17 +54,7 @@ density_function = teos10_density
 # pCO₂_error = -3 ± 28.8 -> mean is also zero
 # with teos polynomial appriximation error increases to -12 ± 31
 carbon_chemistry =
-    CarbonChemistry(; # Weiss, R.F. (1974, Mar. Chem., 2, 203–215)
-                    solubility = K0(-60.2409, 93.4517 * 100, 23.3585, 0.0, 0.023517, -0.023656 / 100, 0.0047036 / 100^2),
-                    # Lueke, et. al (2000, Mar. Chem., 70, 105–119;)
-                    carbonic_acid = (K1 = K1(constant=61.2172, inverse_T=-3633.86, log_T=-9.67770, S=0.011555, S²=-0.0001152), 
-                                     K2 = K2(constant=-25.9290, inverse_T=-471.78, log_T=3.16967, S=0.01781, S²=-0.0001122)),
-                    # Perez and Fraga (1987, Mar. Chem., 21, 161–168).
-                    fluoride = KF(constant=-9.68, inverse_T=874.0, sqrt_S=0.111, log_S=0.0, log_S_KS=0.0),
-                    density_function)
-# pH_error = 0.006 ± 0.012 -> mean is zero
-# pCO₂_error = 11 ± 28 -> mean is also zero
-#carbon_chemistry = CarbonChemistry()
+    CarbonChemistry()#; density_function)
 
 # compare
 glodap_pH = zeros(Nrows)
@@ -108,7 +98,7 @@ Threads.@threads for n in 1:Nrows
 
     if data[n, fCO2_name*"f"] == 2 && data[n, fCO2_name*"temp"] != -9999
         # fCO2 is reported at no pressure and at a different temp
-        model_pCO₂[n] = carbon_chemistry(; DIC, Alk, data[n, fCO2_name*"temp"], S, silicate, phosphate, lon, lat)
+        model_pCO₂[n] = carbon_chemistry(; DIC, Alk, T = data[n, fCO2_name*"temp"], S, silicate, phosphate, lon, lat)
         glodap_pCO₂[n] = data[n, fCO2_name]
         pCO₂_error[n] = model_pCO₂[n] - glodap_pCO₂[n]
     else

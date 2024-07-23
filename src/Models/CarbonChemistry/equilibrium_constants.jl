@@ -37,13 +37,13 @@ show(io::IO, pc::PressureCorrection) = print(io, "Equilibrium constant pressure 
     "    ln(kᵖ/k⁰) = (-ΔV + Δκ P / 2) * P / RT")
 
 """
-    K0(; constant = -162.8301
-         inverse_T =  218.2968 * 100
-         log_T =  90.9241
-         T² = -1.47696 / 100^2
-         S =  0.025695
-         ST = -0.025225 / 100
-         ST² =  0.0049867 / 100^2)
+    K0(; constant = -60.2409,
+         inverse_T =  93.4517 * 100,
+         log_T =  23.3585,
+         T² =  0.0,
+         S =  0.023517,
+         ST = -0.023656 / 100,
+         ST² =  0.0047036 / 100^2)
 
 Parameterisation for carbon dioxide solubility equilibrium constant.
 
@@ -51,16 +51,16 @@ Parameterisation for carbon dioxide solubility equilibrium constant.
 
     K₀ = [CO₂*(aq)]/f(CO₂)
 
-Default values from Weiss & Price (1980, Mar. Chem., 8, 347-359; Eq 13 with table 6 values).
+Default values from Weiss, R.F. (1974, Mar. Chem., 2, 203–215).
 """
 @kwdef struct K0{FT}
-     constant :: FT = -162.8301
-    inverse_T :: FT =  218.2968 * 100
-        log_T :: FT =  90.9241
-           T² :: FT = -1.47696 / 100^2
-            S :: FT =  0.025695
-           ST :: FT = -0.025225 / 100
-          ST² :: FT =  0.0049867 / 100^2
+     constant :: FT = -60.2409
+    inverse_T :: FT =  93.4517 * 100
+        log_T :: FT =  23.3585
+           T² :: FT =  0.0
+            S :: FT =  0.023517
+           ST :: FT = -0.023656 / 100
+          ST² :: FT =  0.0047036 / 100^2
 end
 
 @inline (c::K0)(T, S; P = nothing) = 
@@ -75,11 +75,11 @@ show(io::IO, k0::K0) = print(io, "Solubility constant\n",
     "    ln(k₀/k°) = $(k0.constant) + $(k0.inverse_T) / T + $(k0.log_T) (log(T) - log(100)) + $(k0.T²) T² + ($(k0.S) + $(k0.ST) T + $(k0.ST²) T²)S")
 
 """
-    K1(; constant =  62.008, 
-         inverse_T = -3670.7,
-         log_T = -9.7944,
-         S =  0.0118,
-         S² = -0.000116,
+    K1(; constant =  61.2172,
+         inverse_T = -3633.86,
+         log_T = -9.67770,
+         S =  0.011555,
+         S² = -0.0001152,
          pressure_correction = 
             PressureCorrection(; a₀=-25.50, a₁=0.1271, a₂=0.0, b₀=-0.00308, b₁=0.0000877))
 
@@ -89,14 +89,14 @@ Parameterisation for aquious carbon dioxide - bicarbonate dissociation equilibri
 
     K₁ = [H⁺][HCO₃⁻]/[CO₂*]
 
-Default values from Millero (1995, Geochim. Cosmochim. Acta, 59, 664).
+Default values from Lueker et al. (2000, Mar. Chem., 70: 105–119).
 """
 @kwdef struct K1{FT, PC}
-               constant :: FT =  62.008
-              inverse_T :: FT = -3670.7
-                  log_T :: FT = -9.7944
-                      S :: FT =  0.0118
-                     S² :: FT = -0.000116
+               constant :: FT =  61.2172
+              inverse_T :: FT = -3633.86
+                  log_T :: FT = -9.67770
+                      S :: FT =  0.011555
+                     S² :: FT = -0.0001152
 
     pressure_correction :: PC = 
         PressureCorrection(; a₀=-25.50, a₁=0.1271, a₂=0.0, b₀=-0.00308, b₁=0.0000877)
@@ -111,11 +111,11 @@ show(io::IO, k1::K1) = print(io, "First carbon dioxide dissociation constant\n",
     "    log₁₀(k₁/k°) = $(k1.constant) + $(k1.inverse_T) / T + $(k1.log_T) log(T) + $(k1.S) S + $(k1.S²) S²")
 
 """
-    K2(; constant =  62.008, 
-         inverse_T = -3670.7,
-         log_T = -9.7944,
-         S =  0.0118,
-         S² = -0.000116,
+    K2(; constant = -25.9290,
+         inverse_T = -471.78,
+         log_T =  3.16967,
+         S =  0.01781,
+         S² = -0.0001122,
          pressure_correction = 
             PressureCorrection(; a₀=-15.82, a₁=-0.0219, a₂=0.0, b₀=0.00113, b₁=-0.0001475))
 
@@ -125,14 +125,14 @@ Parameterisation for bicarbonate dissociation equilibrium constant.
 
     K₂ = [H⁺][CO₃²⁻]/[HCO₃⁻]
 
-Default values from Millero (1995, Geochim. Cosmochim. Acta, 59, 664).
+Default values from Lueker et al. (2000, Mar. Chem., 70: 105–119).
 """
 @kwdef struct K2{FT, PC}
-               constant :: FT = -4.777
-              inverse_T :: FT = -1394.7
-                      S :: FT =  0.0184
-                     S² :: FT = -0.000118
-                  log_T :: FT =  0.0
+               constant :: FT = -25.9290
+              inverse_T :: FT = -471.78
+                  log_T :: FT =  3.16967
+                      S :: FT =  0.01781
+                     S² :: FT = -0.0001122
 
     pressure_correction :: PC = 
         PressureCorrection(; a₀=-15.82, a₁=-0.0219, a₂=0.0, b₀=0.00113, b₁=-0.0001475)
@@ -171,7 +171,7 @@ Parameterisation for boric acid equilibrium with water.
 Default values from Dickson (1990, Deep-Sea Res., 37, 755–766).
 """
 @kwdef struct KB{FT, PC}
-          constant :: FT =  148.0248
+               constant :: FT =  148.0248
               inverse_T :: FT = -8966.90
        invsese_T_sqrt_S :: FT = -2890.53
             invsese_T_S :: FT = -77.942
@@ -341,11 +341,11 @@ show(io::IO, c::KS) = print(io, "Bisulfate dissociation constant\n",
 """
     KF(; ionic_strength = IonicStrength(),
           sulfate_constant = KS(; ionic_strength),
-          constant = -12.641,
-          inverse_T =  1590.2,
-          sqrt_S =  1.525,
-          log_S = -0.001005,
-          log_S_KS = 0.1400 / 96.062 / 1.80655,
+          constant = -9.68,
+          inverse_T = 874.0,
+          sqrt_S =  0.111,
+          log_S = 0.0,
+          log_S_KS = 0.0,
           pressure_correction = 
              PressureCorrection(; a₀=-9.78, a₁=-0.0090, a₂=-0.000942, b₀=-0.00391, b₁=0.000054))
 
@@ -355,17 +355,17 @@ Parameterisation for hydrogen fluoride dissociation equilibrium constant.
 
     Kᶠ = [H⁺][F⁻]/[HF] 
 
-Default values from Dickson and Riley (1979, Mar. Chem., 7, 89–99).
+Default values from Perez and Fraga (1987, Mar. Chem., 21, 161–168).
 """
 @kwdef struct KF{IS, KS, FT, PC}
          ionic_strength :: IS = IonicStrength()
        sulfate_constant :: KS = KS(; ionic_strength)
     
-               constant :: FT = -12.641
-              inverse_T :: FT =  1590.2
-                 sqrt_S :: FT =  1.525
-                  log_S :: FT = -0.001005
-               log_S_KS :: FT = 0.1400 / 96.062 / 1.80655
+               constant :: FT = -9.68
+              inverse_T :: FT =  874.0
+                 sqrt_S :: FT =  0.111
+                  log_S :: FT =  0.0
+               log_S_KS :: FT =  0.0
 
     pressure_correction :: PC = 
         PressureCorrection(; a₀=-9.78, a₁=-0.0090, a₂=-0.000942, b₀=-0.00391, b₁=0.000054)
