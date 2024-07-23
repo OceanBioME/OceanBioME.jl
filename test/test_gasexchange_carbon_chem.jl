@@ -39,7 +39,7 @@ end
     pCO₂_results = similar(pCO₂)
 
     for (idx, DIC) in enumerate(DIC)
-        pCO₂_results[idx] = pCO₂_model(DIC, Alk[idx], T[idx], S[idx])
+        pCO₂_results[idx] = pCO₂_model(; DIC, Alk = Alk[idx], T = T[idx], S = S[idx])
     end
 
     pCO₂_err = pCO₂ .- pCO₂_results
