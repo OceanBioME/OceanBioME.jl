@@ -248,7 +248,7 @@ which has an equilibrium constant
 K_{SP} = [\ce{Ca^{2+}}][\ce{CO_3^{2-}}].
 ```
 
-The calcite saturation can then be defined as ``\Omega=\frac{[\ce{CO_3^{2-}}]}{[\ce{CO_{3, saturation}^{2-}}]}`` which can be diagnised as:
+The calcite saturation can then be defined as ``\Omega=\frac{[\ce{CO_3^{2-}}]}{[\ce{CO_{3, saturation}^{2-}}]}`` which can be diagnosed as:
 ```math
 \Omega = \frac{[\ce{Ca^{2+}}][\ce{CO_3^{2-}}]}{K_{SP}}.
 ```
@@ -274,7 +274,7 @@ Is = \frac{19.924}{1000 - 1.005S},
 but these parameters are also variable in the model.
 
 ## Model parameterisation
-The chemical system described above has a large number of equilibrium constants, the constants are typically assumed to depend on the temperature, salinity, and pressure (hydrostatic pressure from depth under water).
+The chemical system described above has a large number of equilibrium constants, the constants are typically assumed to depend on the temperature, salinity, and pressure (hydrostatic pressure from depth underwater).
 [//]: # (This sentence is not currently actually true, but will be by the time of PR merge)
 By default, this model parameterises them based on the "best practice" guidelines of [dickson2007](@citet).
 These parameterisations are:
