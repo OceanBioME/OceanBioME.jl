@@ -52,9 +52,8 @@ density_function = teos10_density
 
 # pH_error = 0.00022 ± 0.01223 -> mean is zero
 # pCO₂_error = -3 ± 28.8 -> mean is also zero
-# with teos polynomial appriximation error increases to -12 ± 31
-carbon_chemistry =
-    CarbonChemistry()#; density_function)
+# with teos polynomial appriximation error is almost identical in pCO2 but slightly bigger in pH
+carbon_chemistry = CarbonChemistry()
 
 # compare
 glodap_pH = zeros(Nrows)
