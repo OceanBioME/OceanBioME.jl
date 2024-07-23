@@ -31,7 +31,7 @@ function test_gas_exchange_model(grid, air_concentration)
 end
 
 @testset "Gas exchange values" begin
-    # approximatly correct sized pCO₂ from DIC and ALK
+    # approximatly correct sized pCO₂ from DIC and Alk
     pCO₂_model = CarbonChemistry()
 
     @load datadep"test_data/CODAP_data.jld2" DIC Alk T S pH pCO₂

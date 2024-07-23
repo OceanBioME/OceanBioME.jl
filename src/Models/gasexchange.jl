@@ -49,7 +49,7 @@ adapt_structure(to, gasexchange::GasExchange) = GasExchange(adapt(to, gasexchang
                   air_concentration::AC = (CO₂ = 413.4, O₂ = 9352.7)[gas], # ppmv, mmolO₂/m³ (20.95 mol O₂/mol air, 0.0224m^3/mol air)
                   air_pressure::FT = 1.0, # atm
                   average_wind_speed::FT = 10, # m/s
-                  field_dependencies = (CO₂ = (:DIC, :ALK), O₂ = (:OXY, ))[gas]
+                  field_dependencies = (CO₂ = (:DIC, :Alk), O₂ = (:OXY, ))[gas]
                   pCO₂::PCO = gas == :CO₂ ? CarbonChemistry() : nothing)
 
 Construct an Oceananigans `FluxBoundaryCondition` for the exchange of `gas` with the relevant tracer (i.e., DIC for CO₂ and oxygen for O₂).
@@ -98,8 +98,8 @@ function GasExchange(; gas,
     return FluxBoundaryCondition(gasexchange, field_dependencies = (field_dependencies..., :T, :S))
 end
 
-@inline function (gasexchange::GasExchange)(x, y, t, DIC, ALK, T, S) 
-    conc = gasexchange.pCO₂(; DIC, ALK, T, S)
+@inline function (gasexchange::GasExchange)(x, y, t, DIC, Alk, T, S) 
+    conc = gasexchange.pCO₂(; DIC, Alk, T, S)
     return gasexchange(x, y, t, conc, T, S)
 end
 
