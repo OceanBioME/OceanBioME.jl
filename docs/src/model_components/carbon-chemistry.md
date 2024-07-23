@@ -17,31 +17,35 @@ carbon_chemistry = CarbonChemistry()
 ### Computing ``fCO_2`` and ``pH``
 To compute the fugacity of carbon dioxide (``fCO_2``) you call the model with the `DIC`, `Alk`alinity, `T`emperature, and `S`alinity:
 ```@example carbon-chem
-carbon_chemistry(2145, 2448, 25.4, 36.45)
+DIC = 2145
+Alk = 2448
+T = 25.4
+S = 36.45
+carbon_chemistry(; DIC, Alk, T, S)
 ```
 This is sufficient when computing ``fCO_2`` at the surface, but if we wanted to know ``fCO_2`` at depth where there is higher pressure we can specify the pressure in bar like:
 ```@example carbon-chem
-carbon_chemistry(2145, 2448, 25.4, 36.45; P = 100)
+carbon_chemistry(; DIC, Alk, T, S, P = 100)
 ```
 
 We may also be interested in the pH so we can request that be outputted:
 ```@example carbon-chem
-carbon_chemistry(2145, 2448, 25.4, 36.45; return_pH = true)
+carbon_chemistry(; DIC, Alk, T, S, return_pH = true)
 ```
 
 These function calls assume a constant boron, sulfate, and fluoride ratio relative to the salinity (as described below), but can be specified instead:
 ```@example carbon-chem
-carbon_chemistry(2145, 2448, 25.4, 36.45; boron = 0)
+carbon_chemistry(; DIC, Alk, T, S, boron = 0)
 ```
 
 And the silicate and phosphate concentrations are assumed to be zero but can similarly be specified:
 ```@example carbon-chem
-carbon_chemistry(2145, 2448, 25.4, 36.45; silicate = 2, phosphate = 1)
+carbon_chemistry(; DIC, Alk, T, S, silicate = 2, phosphate = 1)
 ```
 
 The same code can also be used to compute ``fCO_2`` when the pH is already known by passing it in the same way:
 ```@example carbon-chem
-carbon_chemistry(2145, NaN, 25.4, 36.45, 8.1)
+carbon_chemistry(; DIC, pH = 8.1, T, S)
 ```
 
 Finally, for slightly improved accuracy you may wish to specify that the seawater density calculation, is an intermediary step in the calculations above, is computed using the full TEOS-10 [feistel2008](@citet) standard by setting this as the `density_function` when you construct the carbon chemistry model:
@@ -53,17 +57,17 @@ But this comes at the cost of significantly increased computational expense and 
 
 During the conversion from practical to absolute salinity units the location can then also be entered for (very slightly, in this example ~``10^{-4}\mu``atm) improved accuracy:
 ```@example carbon-chem
-carbon_chemistry(2145, 2448, 25.4, 36.45; lon = -31.52, lat = 33.75)
+carbon_chemistry(; DIC, Alk, T, S, lon = -31.52, lat = 33.75)
 ```
 
 The default uses the polynomial approximation described in [roquet2015](@citet) as provided by [`SeawaterPolynomials.jl`](https://github.com/CliMA/SeawaterPolynomials.jl/).
 
 ### Computing the carbonate concentration
-So that this model can be used in calcite dissolution models it can also return the calcite saturation by calling the function `calcite_saturation`
+So that this model can be used in calcite dissolution models it can also return the carbonate saturation by calling the function `carbonate_saturation`
 ```@example carbon-chem
-using OceanBioME.Models.CarbonChemistryModel: calcite_saturation
+using OceanBioME.Models.CarbonChemistryModel: carbonate_saturation
 
-calcite_saturation(carbon_chemistry, 2145, 2448, 25.4, 36.45)
+carbonate_saturation(carbon_chemistry; DIC, Alk, T, S)
 ```
 This function takes all of the same arguments (e.g. `boron`) as `carbon_chemistry` above.
 

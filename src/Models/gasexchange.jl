@@ -99,7 +99,7 @@ function GasExchange(; gas,
 end
 
 @inline function (gasexchange::GasExchange)(x, y, t, DIC, ALK, T, S) 
-    conc = gasexchange.pCO₂(DIC, ALK, T, S)
+    conc = gasexchange.pCO₂(; DIC, ALK, T, S)
     return gasexchange(x, y, t, conc, T, S)
 end
 

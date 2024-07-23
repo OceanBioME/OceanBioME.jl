@@ -97,7 +97,7 @@ Threads.@threads for n in 1:Nrows
     P = ifelse(P == -9999, 0, P)
 
     if data[n, pH_name*"f"] == 2 && data[n, pH_name] != -9999
-        model_pH[n] = carbon_chemistry(DIC, Alk, T, S; P, silicate, phosphate, lon, lat, return_pH = true)
+        model_pH[n] = carbon_chemistry(; DIC, Alk, T, S, P, silicate, phosphate, lon, lat, return_pH = true)
         glodap_pH[n] = data[n, pH_name]
         pH_error[n] = model_pH[n] - glodap_pH[n]
     else
@@ -108,7 +108,7 @@ Threads.@threads for n in 1:Nrows
 
     if data[n, fCO2_name*"f"] == 2 && data[n, fCO2_name*"temp"] != -9999
         # fCO2 is reported at no pressure and at a different temp
-        model_pCO₂[n] = carbon_chemistry(DIC, Alk, data[n, fCO2_name*"temp"], S; silicate, phosphate, lon, lat)
+        model_pCO₂[n] = carbon_chemistry(; DIC, Alk, data[n, fCO2_name*"temp"], S, silicate, phosphate, lon, lat)
         glodap_pCO₂[n] = data[n, fCO2_name]
         pCO₂_error[n] = model_pCO₂[n] - glodap_pCO₂[n]
     else

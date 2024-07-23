@@ -104,15 +104,15 @@ Note ammonia (NH₃) is not currently included.
 end
 
 """
-    (p::CarbonChemistry)(DIC, Alk, T, S, pH = nothing;
-                         return_pH = false,
-                         boron = 0.000232 / 10.811 * S / 1.80655,
-                         sulfate = 0.14 / 96.06 * S / 1.80655,
-                         fluoride = 0.000067 / 18.9984 * S / 1.80655,
-                         silicate = 0,
-                         phosphate = 0,
-                         upper_pH_bound = 14,
-                         lower_pH_bound = 0)
+    (p::CarbonChemistry)(; DIC, T, S, Alk = 0, pH = nothing,
+                           return_pH = false,
+                           boron = 0.000232 / 10.811 * S / 1.80655,
+                           sulfate = 0.14 / 96.06 * S / 1.80655,
+                           fluoride = 0.000067 / 18.9984 * S / 1.80655,
+                           silicate = 0,
+                           phosphate = 0,
+                           upper_pH_bound = 14,
+                           lower_pH_bound = 0)
 
 Calculates `pCO₂` in sea water with `DIC`, `Alk`alinity, `T`emperature, and `S`alinity
 unless `pH` is specified, in which case intermediate computation of `pH` is skipped and
@@ -120,18 +120,18 @@ unless `pH` is specified, in which case intermediate computation of `pH` is skip
 
 Alternativly, `pH` is returned if `return_pH` is `true`.
 """
-@inline function (p::CarbonChemistry)(DIC, Alk, T, S, pH = nothing;
-                                      P = nothing,
-                                      lon = 0,
-                                      lat = 0,
-                                      return_pH = false,
-                                      boron = 0.000232 / 10.811 * S / 1.80655,
-                                      sulfate = 0.14 / 96.06 * S / 1.80655,
-                                      fluoride = 0.000067 / 18.9984 * S / 1.80655,
-                                      silicate = 0,
-                                      phosphate = 0,
-                                      upper_pH_bound = 14,
-                                      lower_pH_bound = 0)
+@inline function (p::CarbonChemistry)(; DIC, T, S, Alk = 0, pH = nothing,
+                                        P = nothing,
+                                        lon = 0,
+                                        lat = 0,
+                                        return_pH = false,
+                                        boron = 0.000232 / 10.811 * S / 1.80655,
+                                        sulfate = 0.14 / 96.06 * S / 1.80655,
+                                        fluoride = 0.000067 / 18.9984 * S / 1.80655,
+                                        silicate = 0,
+                                        phosphate = 0,
+                                        upper_pH_bound = 14,
+                                        lower_pH_bound = 0)
 
     ρₒ = p.density_function(T, S, ifelse(isnothing(P), 0, P), lon, lat)
 
@@ -150,12 +150,12 @@ Alternativly, `pH` is returned if `return_pH` is `true`.
     Is = p.ionic_strength(S)
 
     # compute equilibrium constants
-    K1 = p.carbonic_acid.K1(T, S; P)
-    K2 = p.carbonic_acid.K2(T, S; P)
-    KB = p.boric_acid(T, S; P)
-    KW = p.water(T, S; P)
-    KS = p.sulfate(T, S, Is; P)
-    KF = p.fluoride(T, S, Is, KS; P)
+    K1  = p.carbonic_acid.K1(T, S; P)
+    K2  = p.carbonic_acid.K2(T, S; P)
+    KB  = p.boric_acid(T, S; P)
+    KW  = p.water(T, S; P)
+    KS  = p.sulfate(T, S, Is; P)
+    KF  = p.fluoride(T, S, Is, KS; P)
     KP1 = p.phosphoric_acid.KP1(T, S; P)
     KP2 = p.phosphoric_acid.KP2(T, S; P)
     KP3 = p.phosphoric_acid.KP3(T, S; P)
@@ -168,13 +168,16 @@ Alternativly, `pH` is returned if `return_pH` is `true`.
     H = solve_for_H(pH, params, upper_pH_bound, lower_pH_bound)
 
     # compute solubility equilibrium constant
-    FF = p.solubility(T, S)
+    K0 = p.solubility(T, S)
 
-    # compute pco2
-    CO₂ = DIC * H ^ 2 / (H ^ 2 + K1 * H + K1 * K2) 
-    pCO₂ = (CO₂ / FF) * 10 ^ 6
+    # compute pCO₂
+    CO₂  = DIC * H ^ 2 / (H ^ 2 + K1 * H + K1 * K2) 
+    pCO₂ = (CO₂ / K0) * 10 ^ 6 # μatm
 
-    return ifelse(return_pH, -log10(H), pCO₂) # μatm
+    # compute pH
+    pH = -log10(H)
+
+    return ifelse(return_pH, pH, pCO₂) 
 end
 
 # solves `alkalinity_residual` for pH
