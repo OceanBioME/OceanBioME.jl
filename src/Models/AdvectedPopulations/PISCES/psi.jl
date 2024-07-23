@@ -16,8 +16,8 @@ end
 
 @inline function get_λₚₛᵢ¹(zₘₓₗ, zₑᵤ, z, T, Si, bgc)
 
-    λₚₛᵢˡᵃᵇ = bgc.fast_dissolution_rate_of_BSi
-    λₚₛᵢʳᵉᶠ = bgc.slow_dissolution_rate_of_BSi
+    λₚₛᵢˡᵃᵇ = bgc.fast_dissolution_rate_of_PSi
+    λₚₛᵢʳᵉᶠ = bgc.slow_dissolution_rate_of_PSi
 
     λₚₛᵢ = χ_lab(zₘₓₗ, zₑᵤ, λₚₛᵢˡᵃᵇ, λₚₛᵢʳᵉᶠ, z, bgc)*λₚₛᵢˡᵃᵇ + (1 - χ_lab(zₘₓₗ, zₑᵤ, λₚₛᵢˡᵃᵇ, λₚₛᵢʳᵉᶠ, z, bgc))*λₚₛᵢʳᵉᶠ
 
@@ -54,6 +54,5 @@ end
 
     θˢⁱᴰ = fθₒₚₜˢⁱᴰ(D, PO₄, NO₃, NH₄, Si, Dᶜʰˡ, Dᶠᵉ, μᴰ, T, ϕ, Si̅, bgc)
 
-    return  θˢⁱᴰ*get_grazingᴹ(P, D, Z, POC, T, bgc)[3]*M +  θˢⁱᴰ*get_grazingᶻ(P, D, POC, T, bgc)[3]*Z + 
-     θˢⁱᴰ*mᴰ*K_mondo(D, Kₘ)*Dˢⁱ + sh*wᴰ*D*Dˢⁱ - get_λₚₛᵢ¹(zₘₓₗ, zₑᵤ, z, T, Si, bgc)*Dissₛᵢ*PSi #add partial derivative here
+    return  θˢⁱᴰ*get_grazingᴹ(P, D, Z, POC, T, bgc)[3]*M +  θˢⁱᴰ*get_grazingᶻ(P, D, POC, T, bgc)[3]*Z + θˢⁱᴰ*mᴰ*K_mondo(D, Kₘ)*Dˢⁱ + sh*wᴰ*D*Dˢⁱ - get_λₚₛᵢ¹(zₘₓₗ, zₑᵤ, z, T, Si, bgc)*Dissₛᵢ*PSi #add partial derivative here
 end

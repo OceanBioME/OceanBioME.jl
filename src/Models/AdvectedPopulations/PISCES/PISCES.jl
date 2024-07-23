@@ -122,8 +122,8 @@ struct PISCES{FT, PD, ZM, OT, W, CF, ZF} <: AbstractContinuousFormBiogeochemistr
     dissolution_rate_of_calcite :: FT
     exponent_in_the_dissolution_rate_of_calcite :: FT
     proportion_of_the_most_labile_phase_in_PSi :: FT
-    slow_dissolution_rate_of_BSi :: FT
-    fast_dissolution_rate_of_BSi :: FT
+    slow_dissolution_rate_of_PSi :: FT
+    fast_dissolution_rate_of_PSi :: FT
 
 
     max_nitrification_rate :: FT
@@ -243,8 +243,8 @@ struct PISCES{FT, PD, ZM, OT, W, CF, ZF} <: AbstractContinuousFormBiogeochemistr
                     dissolution_rate_of_calcite :: FT,
                     exponent_in_the_dissolution_rate_of_calcite :: FT,
                     proportion_of_the_most_labile_phase_in_PSi :: FT,
-                    slow_dissolution_rate_of_BSi :: FT,
-                    fast_dissolution_rate_of_BSi :: FT,
+                    slow_dissolution_rate_of_PSi :: FT,
+                    fast_dissolution_rate_of_PSi :: FT,
     
     
                     max_nitrification_rate :: FT,
@@ -364,8 +364,8 @@ struct PISCES{FT, PD, ZM, OT, W, CF, ZF} <: AbstractContinuousFormBiogeochemistr
                             dissolution_rate_of_calcite,
                             exponent_in_the_dissolution_rate_of_calcite,
                             proportion_of_the_most_labile_phase_in_PSi,
-                            slow_dissolution_rate_of_BSi,
-                            fast_dissolution_rate_of_BSi,
+                            slow_dissolution_rate_of_PSi,
+                            fast_dissolution_rate_of_PSi,
 
 
                             max_nitrification_rate,
@@ -408,25 +408,143 @@ struct PISCES{FT, PD, ZM, OT, W, CF, ZF} <: AbstractContinuousFormBiogeochemistr
 end
 
 """
-    PISCES(; grid,
-             parameter_1::FT = 1.0, # now you can finally put the values here
+    PISCES(; grid, # finally the function
+                   # now you can finally put the values here
+                   growth_rate_at_zero :: FT = 0.6 / day,                                 # 1/d,
+                   growth_rate_reference_for_light_limitation :: FT = 1.0/ day,           # 1/d
+                   basal_respiration_rate :: FT = 0.033 / day,                             # 1/d
+                   temperature_sensitivity_of_growth :: FT = 1.066,
+                   initial_slope_of_PI_curve :: PD = (P = 2/day, D = 2/day),        #(Wm⁻²)⁻¹d⁻¹  
+                   exudation_of_DOC :: PD = (P = 0.05, D = 0.05),  
+                   absorption_in_the_blue_part_of_light :: PD = (P = 2.1, D = 1.6),
+                   absorption_in_the_green_part_of_light :: PD = (P = 0.42, D = 0.69),
+                   absorption_in_the_red_part_of_light :: PD = (P = 0.4, D = 0.7),
+                   min_half_saturation_const_for_phosphate :: PD = (P = 0.8, D = 2.4),     #nmolPL⁻¹    
+                   min_half_saturation_const_for_ammonium :: PD = (P = 0.013, D = 0.039),  #μmolNL⁻¹
+                   min_half_saturation_const_for_nitrate :: PD = (P = 0.13, D =0.39),     #μmolNL⁻¹
+                   min_half_saturation_const_for_silicate :: FT = 1.0,            #μmolSiL⁻¹
+                   parameter_for_half_saturation_const :: FT = 16.6,            #μmolSiL⁻¹
+                   parameter_for_SiC :: OT = (one = 2.0, two = 20.0),                           #μmolSiL⁻¹
+                   min_half_saturation_const_for_iron_uptake :: PD = (P = 1.0, D = 3.0),   #nmolFeL⁻¹
+                   size_ratio_of_phytoplankton :: PD = (P = 3.0, D = 3.0),
+                   optimal_SiC_uptake_ratio_of_diatoms :: FT = 0.159,       #molSi/(mol C)
+                   optimal_iron_quota :: PD = (P = 7.0, D = 7.0),               #μmolFe/(mol C)
+                   max_iron_quota :: PD = (P = 40.0, D = 40.0),                  #μmolFe/(mol C)
+                   phytoplankton_mortality_rate :: PD = (P = 0.01/day, D = 0.01/day),
+                   min_quadratic_mortality_of_phytoplankton :: FT = 0.01 / day,   #1/(d mol C)
+                   max_quadratic_mortality_of_diatoms :: FT = 0.03 / day,         #1/(d mol C)
+                   max_ChlC_ratios_of_phytoplankton :: PD = (P = 0.033, D = 0.05),  #mg Chl/(mg C)
+                   min_ChlC_ratios_of_phytoplankton :: FT = 0.0033,    #mg Chl/(mg C)
+                   threshold_concentration_for_size_dependency :: PD = (P = 1.0, D = 1.0),  #μmolCL⁻¹
+                   mean_residence_time_of_phytoplankton_in_unlit_mixed_layer :: PD = (P = 3.0/day, D = 4.0/day), #/day
+    
+                   latitude :: FT = -1.0, #still to be changed - this is temporary 
+                   length_of_day :: FT = 1.0, #temporary parameter for day length
 
-             surface_photosynthetically_active_radiation = default_surface_PAR,
+                   temperature_sensitivity_term :: ZM = (Z = 1.079, M = 1.079),   
+                   max_growth_efficiency_of_zooplankton :: ZM = (Z = 0.3, M = 0.35),
+                   non_assimilated_fraction :: ZM = (Z = 0.3, M = 0.3),
+                   excretion_as_DOM :: ZM = (Z = 0.6, M = 0.6),
+                   max_grazing_rate :: ZM = (Z = 3.0/day, M = 0.75/day),                       #1/d
+                   flux_feeding_rate :: FT = 2.0e3,                                #(m mol L⁻¹)⁻¹
+                   half_saturation_const_for_grazing :: ZM = (Z = 20.0, M = 20.0),               #μmolCL⁻¹
+                   preference_for_nanophytoplankton :: ZM = (Z = 1.0, M = 0.3),
+                   preference_for_diatoms :: ZM = (Z = 0.5, M = 1.0),
+                   preference_for_POC :: ZM= (Z = 0.1, M = 0.3),
+                   preference_for_microzooplankton :: FT = 1.0,
+                   food_threshold_for_zooplankton :: ZM = (Z = 0.3, M = 0.3),                  #μmolCL⁻¹
+                   specific_food_thresholds_for_microzooplankton :: FT = 0.001,        #μmolCL⁻¹
+                   specific_food_thresholds_for_mesozooplankton :: FT = 0.001,         #μmolCL⁻¹
+                   zooplankton_quadratic_mortality :: ZM = (Z = 0.004/day, M = 0.03/day),       #(μmolCL⁻¹)⁻¹d⁻¹
+                   zooplankton_linear_mortality :: ZM = (Z = 0.03/day, M = 0.005/day),           #1/d
+                   half_saturation_const_for_mortality :: FT = 0.2,                     #μmolCL⁻¹
+                   fraction_of_calcite_not_dissolving_in_guts :: ZM = (Z = 0.5, M = 0.75),
+                   FeC_ratio_of_zooplankton :: FT = 10.0,                                  #μmolFe molC⁻¹
+                   FeZ_redfield_ratio :: FT = 3.0,             #μmolFe molC⁻¹
+   
+   
+                   remineralisation_rate_of_DOC :: FT = 0.3 / day,                 #1/d
+                   half_saturation_const_for_DOC_remin :: FT = 417.0,                #μmolCL⁻¹
+                   NO3_half_saturation_const_for_DOC_remin :: FT = 0.03,            #μmolNL⁻¹
+                   NH4_half_saturation_const_for_DOC_remin :: FT = 0.003,           #μmolNL⁻¹
+                   PO4_half_saturation_const_for_DOC_remin :: FT = 0.003,       #μmolPL⁻¹
+                   Fe_half_saturation_const_for_DOC_remin :: FT = 0.01,         #μmolFeL⁻¹
+                   aggregation_rate_of_DOC_to_POC_1 :: FT = 0.37 / day,          #(μmolCL⁻¹)⁻¹d⁻¹
+                   aggregation_rate_of_DOC_to_POC_2 :: FT = 102.0 / day,           #(μmolCL⁻¹)⁻¹d⁻¹
+                   aggregation_rate_of_DOC_to_GOC_3 :: FT = 3530.0 / day,          #(μmolCL⁻¹)⁻¹d⁻¹
+                   aggregation_rate_of_DOC_to_POC_4 :: FT = 5095.0 / day,          #(μmolCL⁻¹)⁻¹d⁻¹
+                   aggregation_rate_of_DOC_to_POC_5 :: FT = 114.0 / day,           #(μmolCL⁻¹)⁻¹d⁻¹
+   
+   
+                   degradation_rate_of_POC :: FT = 0.025 / day,             #1/d
+                   sinking_speed_of_POC :: FT = 2.0 / day,                    #md⁻¹
+                   min_sinking_speed_of_GOC :: FT = 30.0 / day,               #md⁻¹
+                   sinking_speed_of_dust :: FT = 2.0,                         #ms⁻¹
+                   aggregation_rate_of_POC_to_GOC_6 :: FT = 25.9 / day,     #(μmolCL⁻¹)⁻¹d⁻¹
+                   aggregation_rate_of_POC_to_GOC_7 :: FT = 4452 / day,     #(μmolCL⁻¹)⁻¹d⁻¹
+                   aggregation_rate_of_POC_to_GOC_8 :: FT = 3.3 / day,      #(μmolCL⁻¹)⁻¹d⁻¹
+                   aggregation_rate_of_POC_to_GOC_9 :: FT = 47.1 / day,     #(μmolCL⁻¹)⁻¹d⁻¹
+                   min_scavenging_rate_of_iron :: FT = 3.0e-5 / day,          #1/d
+                   slope_of_scavenging_rate_of_iron :: FT = 0.005 / day,    #d⁻¹μmol⁻¹L
+                   scavenging_rate_of_iron_by_dust :: FT = 150.0 / day,       #d⁻¹mg⁻¹L
+                   dissolution_rate_of_calcite :: FT = 0.197 / day,         #1/d
+                   exponent_in_the_dissolution_rate_of_calcite :: FT = 1.0,
+                   proportion_of_the_most_labile_phase_in_PSi :: FT = 0.5,
+                   slow_dissolution_rate_of_PSi :: FT = 0.003 / day,        #1/d
+                   fast_dissolution_rate_of_PSi :: FT = 0.025 / day,        #1/d
+   
+   
+                   max_nitrification_rate :: FT = 0.05 / day,                           #1/d
+                   half_sat_const_for_denitrification1 :: FT = 1.0,                       #μmolO₂L⁻¹
+                   half_sat_const_for_denitrification2 :: FT = 6.0,                       #μmolO₂L⁻¹
+                   total_concentration_of_iron_ligands :: FT = 0.6,                     #nmolL⁻¹
+                   max_rate_of_nitrogen_fixation :: FT = 0.013,                         #μmolNL⁻¹d⁻¹
+                   Fe_half_saturation_constant_of_nitrogen_fixation :: FT = 0.1,        #nmolFeL⁻¹
+                   photosynthetic_parameter_of_nitrogen_fixation :: FT = 50.0,            #Wm⁻²
+                   iron_concentration_in_sea_ice :: FT = 15.0,                            #nmolFeL⁻¹   
+                   max_sediment_flux_of_Fe :: FT = 2.0 / day,                             #μmolFem⁻²d⁻¹
+                   solubility_of_iron_in_dust :: FT = 0.02,
+                   OC_for_ammonium_based_processes :: FT = 133/122,                     #molO₂(mol C)⁻¹
+                   OC_ratio_of_nitrification :: FT = 32/122,                            #molO₂(mol C)⁻¹
+                   CN_ratio_of_ammonification :: FT = 3/5,                              #molN(mol C)⁻¹
+                   CN_ratio_of_denitrification :: FT = 105/16,                          #molN(mol C)⁻¹
+                   NC_redfield_ratio :: FT = 16/122,                                    #molN(mol C)⁻¹
+                   rain_ratio_parameter :: FT = 0.3,
+                   bacterial_reference :: FT = 1.0,     #Not sure if this is what its called : denoted Bact_ref in paper
 
-             light_attenuation_model::LA =
-                 TwoBandPhotosyntheticallyActiveRadiation(; grid, 
-                                                     surface_PAR = surface_photosynthetically_active_radiation),
+                   NC_stoichiometric_ratio_of_dentitrification :: FT = 0.86,
+                   NC_stoichiometric_ratio_of_ANOTHERPLACEHOLDER :: FT = 0.0,     #again not sure what this is called
+                   dissolution_rate_of_silicon :: FT = 1.0,
+                   coefficient_of_bacterial_uptake_of_iron_in_POC :: FT = 0.5,
+                   coefficient_of_bacterial_uptake_of_iron_in_GOC :: FT = 0.5,
+                   max_FeC_ratio_of_bacteria :: FT = 10.0e-6,     #or 6
+                   Fe_half_saturation_const_for_PLACEHOLDER :: FT = 2.5e-10, #or 2.5e-10    #not sure what this should be called
+                   proportion_of_sinking_grazed_shells :: ZM = (Z = 0.3, M = 0.3),  # 0.3 for both? not sure
 
-             # just keep all this stuff for now but you can ignore it
-             sediment_model::S = nothing,
+                   mixed_layer_depth :: CF = ConstantField(100),
+                   euphotic_layer_depth :: CF = ConstantField(50),
+                   vertical_diffusivity :: CF  = ConstantField(1),
+                   yearly_maximum_silicate :: FT = 1.0,
+                   dust_deposition :: FT = 1.0,
 
-             sinking_speeds = (sPOM = 3.47e-5, bPOM = 200/day),
-             open_bottom::Bool = true,
+                  surface_photosynthetically_active_radiation = default_surface_PAR,
 
-             scale_negatives = false,
+                  light_attenuation_model::LA =
+                    TwoBandPhotosyntheticallyActiveRadiation(; grid, 
+                                            surface_PAR = surface_photosynthetically_active_radiation),
 
-             particles::P = nothing,
-             modifiers::M = nothing)
+                  # just keep all this stuff for now but you can ignore it
+                  sediment_model::S = nothing,
+
+                  sinking_speeds = (POC = 0.0, GOC = 0.0, SFe = 0.0, BFe = 1.0, PSi = 0.0, CaCO₃ = 0.0),  #change all 1.0s to w_GOC
+                  
+                  carbonate_sat_ratio :: ZF = ZeroField(),
+                  open_bottom::Bool = true,
+
+                  scale_negatives = false,
+
+                  particles::P = nothing,
+                  modifiers::M = nothing)
 
 Construct an instance of the [PISCES](@ref PISCES) biogeochemical model. 
 
@@ -540,8 +658,8 @@ function PISCES(; grid, # finally the function
                    dissolution_rate_of_calcite :: FT = 0.197 / day,         #1/d
                    exponent_in_the_dissolution_rate_of_calcite :: FT = 1.0,
                    proportion_of_the_most_labile_phase_in_PSi :: FT = 0.5,
-                   slow_dissolution_rate_of_BSi :: FT = 0.003 / day,        #1/d
-                   fast_dissolution_rate_of_BSi :: FT = 0.025 / day,        #1/d
+                   slow_dissolution_rate_of_PSi :: FT = 0.003 / day,        #1/d
+                   fast_dissolution_rate_of_PSi :: FT = 0.025 / day,        #1/d
    
    
                    max_nitrification_rate :: FT = 0.05 / day,                           #1/d
@@ -683,8 +801,8 @@ function PISCES(; grid, # finally the function
                                         dissolution_rate_of_calcite,
                                         exponent_in_the_dissolution_rate_of_calcite,
                                         proportion_of_the_most_labile_phase_in_PSi,
-                                        slow_dissolution_rate_of_BSi,
-                                        fast_dissolution_rate_of_BSi,
+                                        slow_dissolution_rate_of_PSi,
+                                        fast_dissolution_rate_of_PSi,
 
 
                                         max_nitrification_rate,
@@ -743,6 +861,8 @@ function PISCES(; grid, # finally the function
                            modifiers)
 end
 
+@inline biogeochemical_auxiliary_fields(bgc::PISCES) = (zₘₓₗ = bgc.mixed_layer_depth, zₑᵤ = bgc.euphotic_layer_depth, Si̅ = bgc.yearly_maximum_silicate, D_dust = bgc.dust_deposition, PAR¹ = ConstantField(100), PAR² = ConstantField(100), PAR³ = ConstantField(100))
+
 @inline required_biogeochemical_tracers(::PISCES) = (:P, :D, :Z, :M, :Pᶜʰˡ, :Dᶜʰˡ, :Pᶠᵉ, :Dᶠᵉ, :Dˢⁱ, :DOC, :POC, :GOC, :SFe, :BFe, :PSi, :NO₃, :NH₄, :PO₄, :Fe, :Si, :CaCO₃, :DIC, :Alk, :O₂, :T) # list all the parameters here, also if you need T and S put them here too
 
 @inline required_biogeochemical_auxiliary_fields(::PISCES) = (:PAR, :PAR¹, :PAR², :PAR³, :zₘₓₗ, :zₑᵤ, :Si̅, :D_dust)
@@ -756,7 +876,7 @@ end
     end
 end
 
-@inline biogeochemical_auxiliary_fields(bgc::PISCES) = (zₘₓₗ = bgc.mixed_layer_depth, zₑᵤ = bgc.euphotic_layer_depth, Si̅ = bgc.yearly_maximum_silicate, D_dust = bgc.dust_deposition, PAR¹ = ConstantField(100), PAR² = ConstantField(100), PAR³ = ConstantField(100))
+
 
 # don't worry about this for now
 adapt_structure(to, pisces::PISCES) =
