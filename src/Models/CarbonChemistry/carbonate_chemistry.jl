@@ -34,7 +34,7 @@ Carbon chemistry model which solves for pCO₂ and pH
 julia> pCO₂ = carbon_chemistry(; DIC = 2000, Alk = 2000, T = 10, S = 35)
 1325.07184935965
 
-julia> pH = carbon_chemistry(; DIC = 2000, Alk = 2000, T = 10, S = 35; return_pH = true)
+julia> pH = carbon_chemistry(; DIC = 2000, Alk = 2000, T = 10, S = 35, return_pH = true)
 7.494548148653669
 
 julia> pCO₂_higher_pH = carbon_chemistry(; DIC = 2000, T = 10, S = 35, pH = 7.5)
