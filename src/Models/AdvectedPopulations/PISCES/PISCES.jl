@@ -141,6 +141,7 @@ struct PISCES{FT, PD, ZM, OT, W, CF, ZF} <: AbstractContinuousFormBiogeochemistr
     CN_ratio_of_ammonification :: FT
     CN_ratio_of_denitrification :: FT
     NC_redfield_ratio :: FT
+    PC_redfield_ratio :: FT
     rain_ratio_parameter :: FT
     bacterial_reference :: FT
 
@@ -262,6 +263,7 @@ struct PISCES{FT, PD, ZM, OT, W, CF, ZF} <: AbstractContinuousFormBiogeochemistr
                     CN_ratio_of_ammonification :: FT,
                     CN_ratio_of_denitrification :: FT,
                     NC_redfield_ratio :: FT,
+                    PC_redfield_ratio :: FT,
                     rain_ratio_parameter :: FT,
                     bacterial_reference :: FT, 
 
@@ -383,6 +385,7 @@ struct PISCES{FT, PD, ZM, OT, W, CF, ZF} <: AbstractContinuousFormBiogeochemistr
                             CN_ratio_of_ammonification,
                             CN_ratio_of_denitrification,
                             NC_redfield_ratio,
+                            PC_redfield_ratio,
                             rain_ratio_parameter,
                             bacterial_reference,
 
@@ -508,7 +511,8 @@ end
                    OC_ratio_of_nitrification :: FT = 32/122,                            #molO₂(mol C)⁻¹
                    CN_ratio_of_ammonification :: FT = 3/5,                              #molN(mol C)⁻¹
                    CN_ratio_of_denitrification :: FT = 105/16,                          #molN(mol C)⁻¹
-                   NC_redfield_ratio :: FT = 16/122,                                    #molN(mol C)⁻¹
+                   NC_redfield_ratio :: FT = 16/122,    
+                   PC_redfield_ratio :: = 1/122,                                #molN(mol C)⁻¹
                    rain_ratio_parameter :: FT = 0.3,
                    bacterial_reference :: FT = 1.0,     #Not sure if this is what its called : denoted Bact_ref in paper
 
@@ -676,7 +680,8 @@ function PISCES(; grid, # finally the function
                    OC_ratio_of_nitrification :: FT = 32/122,                            #molO₂(mol C)⁻¹
                    CN_ratio_of_ammonification :: FT = 3/5,                              #molN(mol C)⁻¹
                    CN_ratio_of_denitrification :: FT = 105/16,                          #molN(mol C)⁻¹
-                   NC_redfield_ratio :: FT = 16/122,                                    #molN(mol C)⁻¹
+                   NC_redfield_ratio :: FT = 16/122, 
+                   PC_redfield_ratio :: FT = 1/122,                                   #molN(mol C)⁻¹
                    rain_ratio_parameter :: FT = 0.3,
                    bacterial_reference :: FT = 1.0,     #Not sure if this is what its called : denoted Bact_ref in paper
 
@@ -820,6 +825,7 @@ function PISCES(; grid, # finally the function
                                         CN_ratio_of_ammonification,
                                         CN_ratio_of_denitrification,
                                         NC_redfield_ratio,
+                                        PC_redfield_ratio,
                                         rain_ratio_parameter,
                                         bacterial_reference,
 

@@ -1,5 +1,5 @@
 #This document contains functions for:
-    #PO₄ forcing (eq59)
+    #PO₄ forcing (eq59), multiplied by redfield ratio to return in μmolP/L
 
 @inline function (bgc::PISCES)(::Val{:PO₄}, x, y, z, t, P, D, Z, M, Pᶜʰˡ, Dᶜʰˡ, Pᶠᵉ, Dᶠᵉ, Dˢⁱ, DOC, POC, GOC, SFe, BFe, PSi, NO₃, NH₄, PO₄, Fe, Si, CaCO₃, DIC, Alk, O₂, T, PAR, PAR¹, PAR², PAR³, zₘₓₗ, zₑᵤ, Si̅, D_dust) #eq59
     
@@ -11,6 +11,7 @@
     αᴰ = bgc.initial_slope_of_PI_curve.D
     eₘₐₓᶻ = bgc.max_growth_efficiency_of_zooplankton.Z
     eₘₐₓᴹ = bgc.max_growth_efficiency_of_zooplankton.M
+    θᴾᶜ = bgc.PC_redfield_ratio
 
     bFe = Fe
 
@@ -44,5 +45,5 @@
     μᴾ = μᴵ(P, Pᶜʰˡ, PARᴾ, L_day, T, αᴾ, Lₗᵢₘᴾ, zₘₓₗ, zₑᵤ, t_darkᴾ, bgc)
     μᴰ = μᴵ(D, Dᶜʰˡ, PARᴰ, L_day, T, αᴰ, Lₗᵢₘᴰ, zₘₓₗ, zₑᵤ, t_darkᴰ, bgc)
 
-    return γᶻ*(1-eᶻ-σᶻ)*∑gᶻ*Z + γᴹ*(1 - eᴹ - σᴹ)*(∑gᴹ + ∑g_FFᴹ)*M + γᴹ*Rᵤₚ(M, T, bgc) + get_Remin(O₂, NO₃, PO₄, NH₄, DOC, T, bFe, Bact, bgc) + get_Denit(NO₃, PO₄, NH₄, DOC, O₂, T, bFe, Bact, bgc) - μᴾ*P  - μᴰ*D
+    return θᴾᶜ*(γᶻ*(1-eᶻ-σᶻ)*∑gᶻ*Z + γᴹ*(1 - eᴹ - σᴹ)*(∑gᴹ + ∑g_FFᴹ)*M + γᴹ*Rᵤₚ(M, T, bgc) + get_Remin(O₂, NO₃, PO₄, NH₄, DOC, T, bFe, Bact, bgc) + get_Denit(NO₃, PO₄, NH₄, DOC, O₂, T, bFe, Bact, bgc) - μᴾ*P  - μᴰ*D)
 end
