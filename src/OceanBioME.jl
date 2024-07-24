@@ -17,7 +17,7 @@ export BoxModel, BoxModelGrid, SpeedyOutput, run!, set!
 export Particles
 
 # Light models
-export TwoBandPhotosyntheticallyActiveRadiation
+export TwoBandPhotosyntheticallyActiveRadiation, PrescribedPhotosyntheticallyActiveRadiation
 
 # Boundaries
 export Boundaries, Sediments, GasExchange, FlatSediment

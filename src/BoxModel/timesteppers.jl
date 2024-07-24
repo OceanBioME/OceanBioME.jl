@@ -1,5 +1,5 @@
 using Oceananigans.Architectures: device
-using Oceananigans.Biogeochemistry: update_tendencies!
+using Oceananigans.Biogeochemistry: update_tendencies!, biogeochemical_auxiliary_fields
 using Oceananigans.TimeSteppers: rk3_substep_field!, store_field_tendencies!, RungeKutta3TimeStepper, QuasiAdamsBashforth2TimeStepper
 using Oceananigans.Utils: work_layout, launch!
 
@@ -30,6 +30,10 @@ function compute_tendencies!(model::BoxModel, callbacks)
 
     @inbounds for (i, field) in enumerate(model.fields)
         model.field_values[i] = field[1, 1, 1]
+    end
+
+    @inbounds for (i, field) in enumerate(values(biogeochemical_auxiliary_fields(model.biogeochemistry)))
+        model.field_values[i+length(model.fields)] = field[1, 1, 1]
     end
 
     for tracer in required_biogeochemical_tracers(model.biogeochemistry)
