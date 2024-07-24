@@ -23,7 +23,8 @@ end
 
     Lₗᵢₘᵇᵃᶜᵗ = Lᵇᵃᶜᵗ(DOC, PO₄, NO₃, NH₄, bFe, bgc)[2]
 
-    return min((O₂)/(O₂ᵘᵗ), λ_DOC*bₚ^T*(1 - ΔO₂(O₂, bgc)) * Lₗᵢₘᵇᵃᶜᵗ * (Bact)/(Bactᵣₑ) * DOC) #33a
+    #min((O₂)/(O₂ᵘᵗ), λ_DOC*bₚ^T*(1 - ΔO₂(O₂, bgc)) * Lₗᵢₘᵇᵃᶜᵗ * (Bact)/(Bactᵣₑ) * DOC), definition did not make sense with dimensions
+    return λ_DOC*bₚ^T*(1 - ΔO₂(O₂, bgc)) * Lₗᵢₘᵇᵃᶜᵗ * (Bact)/(Bactᵣₑ) * DOC #33a
 end
 
 @inline function get_Denit(NO₃, PO₄, NH₄, DOC, O₂, T, bFe, Bact, bgc)
@@ -34,7 +35,8 @@ end
 
     Lₗᵢₘᵇᵃᶜᵗ = Lᵇᵃᶜᵗ(DOC, PO₄, NO₃, NH₄, bFe, bgc)[2]
 
-    return min(NO₃/rₙₒ₃¹, λ_DOC*bₚ^T* ΔO₂(O₂, bgc)* Lₗᵢₘᵇᵃᶜᵗ*(Bact)/(Bactᵣₑ) * DOC) #33b
+    #min(NO₃/rₙₒ₃¹, λ_DOC*bₚ^T* ΔO₂(O₂, bgc)* Lₗᵢₘᵇᵃᶜᵗ*(Bact)/(Bactᵣₑ) * DOC), definition did not make sense with dimensions
+    return λ_DOC*bₚ^T* ΔO₂(O₂, bgc)* Lₗᵢₘᵇᵃᶜᵗ*(Bact)/(Bactᵣₑ) * DOC #33b
 end
 
 @inline get_Bact(zₘₐₓ, z, Z, M) = ifelse(z <= zₘₐₓ, min(0.7*(Z + 2*M), 4), min(0.7*(Z + 2*M), 4)*(zₘₐₓ/(z + eps(0.0))^0.683))  #35b
