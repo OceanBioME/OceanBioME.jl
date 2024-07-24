@@ -3,7 +3,7 @@ Integrate biogeochemical models on a single point
 """
 module BoxModels
 
-export BoxModel, run!, set!, SaveBoxModel
+export BoxModel, run!, set!, SpeedyOutput
 
 using Oceananigans: Clock, prettytime
 using Oceananigans.Biogeochemistry: 
@@ -30,22 +30,23 @@ import Base: show, summary
 
 @inline no_func(args...) = 0.0
 
-mutable struct BoxModel{G, B, F, FO, TS, C, PF} <: AbstractModel{TS}
+mutable struct BoxModel{G, B, F, FV, FO, TS, C, PT} <: AbstractModel{TS}
                grid :: G # here so that simualtion can be built
     biogeochemistry :: B
              fields :: F
+       field_values :: FV
             forcing :: FO
         timestepper :: TS
               clock :: C
-  prescribed_fields :: PF
+  prescribed_tracers :: PT
 end
 
 """
-    BoxModel(; biogeochemistry::B,
+    BoxModel(; biogeochemistry,
                forcing = NamedTuple(),
                timestepper = :RungeKutta3,
-               clock::C = Clock(; time = 0.0),
-               prescribed_fields::PF = (:T, :PAR))
+               clock = Clock(; time = 0.0),
+               prescribed_tracers = (:T, ))
 
 Constructs a box model of a `biogeochemistry` model. Once this has been constructed you can set initial condiitons by `set!(model, X=1.0...)` and then `run!(model)`.
 
@@ -56,32 +57,36 @@ Keyword Arguments
 - `forcing`: NamedTuple of additional forcing functions for the biogeochemical tracers to be integrated
 - `timestepper`: Timestepper to integrate model
 - `clock`: Oceananigans clock to keep track of time
-- `prescribed_fields`: Tuple of fields names (Symbols) which are not integrated but provided in `forcing` as a function of time with signature `f(t)`
+- `prescribed_tracers`: Tuple of fields names (Symbols) which are not integrated but provided in `forcing` as a function of time with signature `f(t)`
 """
 function BoxModel(; biogeochemistry::B,
                     forcing = NamedTuple(),
                     timestepper = :RungeKutta3,
                     clock::C = Clock(; time = 0.0),
-                    prescribed_fields::PF = (:T, :PAR)) where {B, C, PF}
+                    prescribed_tracers::PT = (T = (t) -> 0, )) where {B, C, PT}
 
-    variables = (required_biogeochemical_tracers(biogeochemistry)..., required_biogeochemical_auxiliary_fields(biogeochemistry)...)
+    variables = required_biogeochemical_tracers(biogeochemistry)
     fields = NamedTuple{variables}([CenterField(BoxModelGrid) for var in eachindex(variables)])
+    field_values = zeros(length(variables)+length(required_biogeochemical_auxiliary_fields(biogeochemistry)))
     forcing = NamedTuple{variables}([variable in keys(forcing) ? forcing[variable] : no_func for variable in variables])
 
     timestepper = BoxModelTimeStepper(timestepper, BoxModelGrid, keys(fields))
 
     F = typeof(fields)
+    FV = typeof(field_values)
     FO = typeof(forcing)
     TS = typeof(timestepper)
 
-    return BoxModel{typeof(BoxModelGrid), B, F, FO, TS, C, PF}(BoxModelGrid, biogeochemistry, fields, forcing, timestepper, clock, prescribed_fields)
+    return BoxModel{typeof(BoxModelGrid), B, F, FV, FO, TS, C, PT}(BoxModelGrid, biogeochemistry, fields, field_values, forcing, timestepper, clock, prescribed_tracers)
 end
 
 function update_state!(model::BoxModel, callbacks=[]; compute_tendencies = true)
     t = model.clock.time
 
-    @inbounds for field in model.prescribed_fields 
-        (field in keys(model.fields)) && (model.fields[field] .= model.forcing[field](t))
+    for field in model.prescribed_tracers 
+        if field in keys(model.fields)
+            @inbounds model.fields[field][1, 1, 1] = @inbounds model.forcing[field](t)
+        end
     end
 
     for callback in callbacks
@@ -132,6 +137,7 @@ end
 default_included_properties(::BoxModel) = [:grid]
 
 include("timesteppers.jl")
+include("output_writer.jl")
 
 summary(::BoxModel{B, V, F, TS, C}) where {B, V, F, TS, C} = string("Biogeochemical box model")
 show(io::IO, model::BoxModel{B, V, F, TS, C}) where {B, V, F, TS, C} = 
