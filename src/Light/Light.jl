@@ -3,7 +3,7 @@ Light attenuation by chlorophyll as described by [Karleskind2011](@citet) (imple
 """
 module Light
 
-export TwoBandPhotosyntheticallyActiveRadiation, update_PAR!
+export TwoBandPhotosyntheticallyActiveRadiation, update_PAR!, PrescribedPhotosyntheticallyActiveRadiation
 
 using KernelAbstractions, Oceananigans.Units
 using Oceananigans.Architectures: device, architecture
@@ -29,6 +29,7 @@ import Oceananigans.BoundaryConditions: _fill_top_halo!
 
 include("2band.jl")
 include("morel.jl")
+include("prescribed.jl")
 
 default_surface_PAR(x, y, t) = default_surface_PAR(t)
 default_surface_PAR(x_or_y, t) = default_surface_PAR(t)

@@ -11,13 +11,13 @@ export Biogeochemistry, LOBSTER, NutrientPhytoplanktonZooplanktonDetritus, NPZD,
 export SLatissima
 
 # Box model
-export BoxModel, BoxModelGrid, SaveBoxModel, run!, set!
+export BoxModel, BoxModelGrid, SpeedyOutput, run!, set!
 
 # Particles
 export Particles
 
 # Light models
-export TwoBandPhotosyntheticallyActiveRadiation
+export TwoBandPhotosyntheticallyActiveRadiation, PrescribedPhotosyntheticallyActiveRadiation
 
 # Boundaries
 export Boundaries, Sediments, GasExchange, FlatSediment
