@@ -7,7 +7,7 @@
     return sh*a₆*POC^2 + sh*a₇*POC*GOC + a₈*POC*GOC + a₉*POC^2  #39
 end
 
-@inline function (bgc::PISCES)(::Val{:POC}, x, y, z, t, P, D, Z, M, Pᶜʰˡ, Dᶜʰˡ, Pᶠᵉ, Dᶠᵉ, Dˢⁱ, DOC, POC, GOC, SFe, BFe, PSi, NO₃, NH₄, PO₄, Fe, Si, CaCO₃, DIC, Alk, O₂, T, PAR, PAR¹, PAR², PAR³, zₘₓₗ, zₑᵤ, Si̅, D_dust)
+@inline function (bgc::PISCES)(::Val{:POC}, x, y, z, t, P, D, Z, M, Pᶜʰˡ, Dᶜʰˡ, Pᶠᵉ, Dᶠᵉ, Dˢⁱ, DOC, POC, GOC, SFe, BFe, PSi, NO₃, NH₄, PO₄, Fe, Si, CaCO₃, DIC, Alk, O₂, T, PAR, PAR¹, PAR², PAR³, zₘₓₗ, zₑᵤ, Si̅, D_dust, Ω)
     σᶻ = bgc.non_assimilated_fraction.Z
     mᴾ = bgc.phytoplankton_mortality_rate.P
     mᶻ = bgc.zooplankton_quadratic_mortality.Z
@@ -37,7 +37,7 @@ end
     return σᶻ*∑gᶻ*Z + 0.5*mᴰ*K_mondo(D, Kₘ) + rᶻ*b_Z^T*K_mondo(Z, Kₘ)*Z + mᶻ*b_Z^T*Z^2 + (1 - 0.5*R_CaCO₃)*(mᴾ*K_mondo(P, Kₘ)*P + wᴾ*P^2) + λₚₒ¹*GOC + Φ₁ᴰᴼᶜ + Φ₃ᴰᴼᶜ - (gₚₒᴹ + gₚₒ_FFᴹ)*M - gₚₒᶻ*Z - λₚₒ¹*POC - Φ  #37
 end
 
-@inline function (bgc::PISCES)(::Val{:GOC}, x, y, z, t, P, D, Z, M, Pᶜʰˡ, Dᶜʰˡ, Pᶠᵉ, Dᶠᵉ, Dˢⁱ, DOC, POC, GOC, SFe, BFe, PSi, NO₃, NH₄, PO₄, Fe, Si, CaCO₃, DIC, Alk, O₂, T, PAR, PAR¹, PAR², PAR³, zₘₓₗ, zₑᵤ, Si̅, D_dust)
+@inline function (bgc::PISCES)(::Val{:GOC}, x, y, z, t, P, D, Z, M, Pᶜʰˡ, Dᶜʰˡ, Pᶠᵉ, Dᶠᵉ, Dˢⁱ, DOC, POC, GOC, SFe, BFe, PSi, NO₃, NH₄, PO₄, Fe, Si, CaCO₃, DIC, Alk, O₂, T, PAR, PAR¹, PAR², PAR³, zₘₓₗ, zₑᵤ, Si̅, D_dust, Ω)
     σᴹ = bgc.non_assimilated_fraction.M
     mᴾ = bgc.phytoplankton_mortality_rate.P
     mᴰ = bgc.phytoplankton_mortality_rate.D

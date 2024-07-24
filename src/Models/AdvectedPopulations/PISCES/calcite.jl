@@ -7,12 +7,10 @@
     #P_CaCO₃ (eq76)
     #Forcing for CaCO₃ (eq75)
 
-@inline function λ_CaCO₃¹(CaCO₃, bgc) #no argument required, CaCO₃ given as placeholder
+@inline function λ_CaCO₃¹(CaCO₃, bgc, Ω) #no argument required, CaCO₃ given as placeholder
     λ_CaCO₃ = bgc.dissolution_rate_of_calcite
     nca = bgc.exponent_in_the_dissolution_rate_of_calcite
-    Ω = bgc.carbonate_sat_ratio 
-    Ω¹ = Ω[0,0,0]
-    ΔCO₃²⁻ = max(0, 1 - Ω¹)
+    ΔCO₃²⁻ = max(0, 1 - Ω)
     return λ_CaCO₃*(ΔCO₃²⁻)^nca
 end
 
@@ -40,7 +38,7 @@ end
     return get_R_CaCO₃(P, PO₄, NO₃, NH₄, Pᶜʰˡ, Pᶠᵉ, Fe, T, PAR, zₘₓₗ, bgc)*(ηᶻ*get_grazingᶻ(P, D, POC, T, bgc)[2]*Z+ηᴹ*get_grazingᴹ(P, D, Z, POC, T, bgc)[2]*M + 0.5*(mᴾ*K_mondo(P, Kₘ)*P + sh*wᴾ*P^2)) #eq76
 end
 
-@inline function (bgc::PISCES)(::Val{:CaCO₃}, x, y, z, t, P, D, Z, M, Pᶜʰˡ, Dᶜʰˡ, Pᶠᵉ, Dᶠᵉ, Dˢⁱ, DOC, POC, GOC, SFe, BFe, PSi, NO₃, NH₄, PO₄, Fe, Si, CaCO₃, DIC, Alk, O₂, T, PAR, PAR¹, PAR², PAR³, zₘₓₗ, zₑᵤ, Si̅, D_dust) 
+@inline function (bgc::PISCES)(::Val{:CaCO₃}, x, y, z, t, P, D, Z, M, Pᶜʰˡ, Dᶜʰˡ, Pᶠᵉ, Dᶠᵉ, Dˢⁱ, DOC, POC, GOC, SFe, BFe, PSi, NO₃, NH₄, PO₄, Fe, Si, CaCO₃, DIC, Alk, O₂, T, PAR, PAR¹, PAR², PAR³, zₘₓₗ, zₑᵤ, Si̅, D_dust, Ω) 
 
-    return P_CaCO₃(P, PO₄, NO₃, NH₄, Pᶜʰˡ, Pᶠᵉ, Fe, D, Z, M, POC, T, PAR, zₘₓₗ, z, bgc) - λ_CaCO₃¹(CaCO₃, bgc)*CaCO₃ #partial derivative omitted as sinking is accounted for in other parts of model
+    return P_CaCO₃(P, PO₄, NO₃, NH₄, Pᶜʰˡ, Pᶠᵉ, Fe, D, Z, M, POC, T, PAR, zₘₓₗ, z, bgc) - λ_CaCO₃¹(CaCO₃, bgc, Ω)*CaCO₃ #partial derivative omitted as sinking is accounted for in other parts of model
 end

@@ -91,7 +91,7 @@ end
 end
 
 
-@inline function (bgc::PISCES)(::Val{:Z}, x, y, z, t, P, D, Z, M, Pᶜʰˡ, Dᶜʰˡ, Pᶠᵉ, Dᶠᵉ, Dˢⁱ, DOC, POC, GOC, SFe, BFe, PSi, NO₃, NH₄, PO₄, Fe, Si, CaCO₃, DIC, Alk, O₂, T, PAR, PAR¹, PAR², PAR³, zₘₓₗ, zₑᵤ, Si̅, D_dust)    #args not correct
+@inline function (bgc::PISCES)(::Val{:Z}, x, y, z, t, P, D, Z, M, Pᶜʰˡ, Dᶜʰˡ, Pᶠᵉ, Dᶠᵉ, Dˢⁱ, DOC, POC, GOC, SFe, BFe, PSi, NO₃, NH₄, PO₄, Fe, Si, CaCO₃, DIC, Alk, O₂, T, PAR, PAR¹, PAR², PAR³, zₘₓₗ, zₑᵤ, Si̅, D_dust, Ω)    #args not correct
     mᶻ = bgc.zooplankton_quadratic_mortality.Z
     b_Z = bgc.temperature_sensitivity_term.Z
     Kₘ = bgc.half_saturation_const_for_mortality
@@ -107,7 +107,7 @@ end
     return eᶻ*(gₚᶻ + g_Dᶻ + gₚₒᶻ)*Z - g_Zᴹ*M - mᶻ*b_Z^T*Z^2 - rᶻ*b_Z^T*(K_mondo(Z, Kₘ) + 3*ΔO₂(O₂, bgc))*Z   #24
 end
 
-@inline function (bgc::PISCES)(::Val{:M}, x, y, z, t, P, D, Z, M, Pᶜʰˡ, Dᶜʰˡ, Pᶠᵉ, Dᶠᵉ, Dˢⁱ, DOC, POC, GOC, SFe, BFe, PSi, NO₃, NH₄, PO₄, Fe, Si, CaCO₃, DIC, Alk, O₂, T, PAR, PAR¹, PAR², PAR³, zₘₓₗ, zₑᵤ, Si̅, D_dust)
+@inline function (bgc::PISCES)(::Val{:M}, x, y, z, t, P, D, Z, M, Pᶜʰˡ, Dᶜʰˡ, Pᶠᵉ, Dᶠᵉ, Dˢⁱ, DOC, POC, GOC, SFe, BFe, PSi, NO₃, NH₄, PO₄, Fe, Si, CaCO₃, DIC, Alk, O₂, T, PAR, PAR¹, PAR², PAR³, zₘₓₗ, zₑᵤ, Si̅, D_dust, Ω)
     mᴹ = bgc.zooplankton_quadratic_mortality.M
     bₘ = bgc.temperature_sensitivity_term.M
     rᴹ = bgc.zooplankton_linear_mortality.M

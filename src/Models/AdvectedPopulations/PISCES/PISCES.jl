@@ -892,11 +892,11 @@ function PISCES(; grid, # finally the function
                            modifiers)
 end
 
-@inline biogeochemical_auxiliary_fields(bgc::PISCES) = (zₘₓₗ = bgc.mixed_layer_depth, zₑᵤ = bgc.euphotic_layer_depth, Si̅ = bgc.yearly_maximum_silicate, D_dust = bgc.dust_deposition, PAR¹ = ConstantField(100), PAR² = ConstantField(100), PAR³ = ConstantField(100))
+@inline biogeochemical_auxiliary_fields(bgc::PISCES) = (zₘₓₗ = bgc.mixed_layer_depth, zₑᵤ = bgc.euphotic_layer_depth, Si̅ = bgc.yearly_maximum_silicate, D_dust = bgc.dust_deposition, PAR¹ = ConstantField(100), PAR² = ConstantField(100), PAR³ = ConstantField(100), Ω = bgc.carbonate_sat_ratio)
 
 @inline required_biogeochemical_tracers(::PISCES) = (:P, :D, :Z, :M, :Pᶜʰˡ, :Dᶜʰˡ, :Pᶠᵉ, :Dᶠᵉ, :Dˢⁱ, :DOC, :POC, :GOC, :SFe, :BFe, :PSi, :NO₃, :NH₄, :PO₄, :Fe, :Si, :CaCO₃, :DIC, :Alk, :O₂, :T) # list all the parameters here, also if you need T and S put them here too
 
-@inline required_biogeochemical_auxiliary_fields(::PISCES) = (:PAR, :PAR¹, :PAR², :PAR³, :zₘₓₗ, :zₑᵤ, :Si̅, :D_dust)
+@inline required_biogeochemical_auxiliary_fields(::PISCES) = (:PAR, :PAR¹, :PAR², :PAR³, :zₘₓₗ, :zₑᵤ, :Si̅, :D_dust, :Ω)
 
 # for sinking things like POM this is how we tell oceananigans ther sinking speed
 @inline function biogeochemical_drift_velocity(bgc::PISCES, ::Val{tracer_name}) where tracer_name
