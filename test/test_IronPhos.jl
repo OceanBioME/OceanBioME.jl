@@ -2,7 +2,7 @@ include("dependencies_for_runtests.jl")
 
 using OceanBioME.Sediments: SimpleMultiG, InstantRemineralisation, IronPhosphate
 using Oceananigans.Units
-
+using Oceananigans
 using OceanBioME.Sediments: sediment_tracers, sediment_fields
 using Oceananigans: Field
 using Oceananigans.Fields: TracerFields
@@ -75,9 +75,11 @@ set_defaults!(model.biogeochemistry.sediment)
 
 set_defaults!(biogeochemistry.underlying_biogeochemistry, model)
 
-simulation = Simulation(model, Δt = 50, stop_time = 1day)
+sim_length = 10days
 
-simulation.output_writers[:tracers] = JLD2OutputWriter(model, model.biogeochemistry.sediment.tendencies.G⁻,
+simulation = Simulation(model, Δt = 50, stop_time = sim_length)
+
+simulation.output_writers[:tracers] = JLD2OutputWriter(model, model.biogeochemistry.sediment.fields,
     filename = "temp_plotting_data.jld2",
     schedule = TimeInterval(24minute),
     overwrite_existing = true)
@@ -87,5 +89,30 @@ intercepted_tendencies = Tuple(Array(interior(field)) for field in values(Tracer
 simulation.callbacks[:intercept_tendencies] = Callback(intercept_tracer_tendencies!; callsite = TendencyCallsite(), parameters = intercepted_tendencies)
 
 run!(simulation)
+
+var_name_example = keys(model.biogeochemistry.sediment.fields)[1]
+times = FieldTimeSeries("temp_plotting_data.jld2", "$var_name_example").times
+
+timeseries = NamedTuple{keys(model.biogeochemistry.sediment.fields)}(FieldTimeSeries("temp_plotting_data.jld2", "$field")[1, 1, 1, :] for field in keys(model.biogeochemistry.sediment.fields))
+
+# ## And plot
+using CairoMakie
+
+fig = Figure(size = (1200, 3600), fontsize = 24)
+
+tick_location_seconds = range(0, times[end]; length=5)
+tick_location_days = tick_location_seconds / (24 * 60 * 60)
+
+
+axs = []
+for (name, tracer) in pairs(timeseries)
+    idx = (length(axs))
+    push!(axs, Axis(fig[floor(Int, idx/2), Int(idx%2)], ylabel = "$name", xlabel = "Days", xticks=(collect(tick_location_seconds), string.(collect(tick_location_days)))))
+    lines!(axs[end], times, tracer, linewidth = 3)
+end
+
+display(fig)
+
+
 
 @info "Success!"

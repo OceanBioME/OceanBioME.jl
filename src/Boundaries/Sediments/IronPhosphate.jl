@@ -193,7 +193,7 @@ function _calculate_sediment_tendencies!(i, j, sediment::IronPhosphate, bgc, gri
 
         #println(FeOHP + FeS₂ + Feᴵᴵ) # iron is conserved
         #println(2*FeS₂+SO₄+TH₂S) # sulfur is conserved
-        println(TPO₄)
+        #saprintln(TPO₄)
         #####
         ##### RATES
         #####
@@ -247,10 +247,11 @@ function _calculate_sediment_tendencies!(i, j, sediment::IronPhosphate, bgc, gri
         R_FeS2p = TH₂S * Feᴵᴵ * fT * kFeS2p * per_day_to_per_seconds # H2 should be produced here but I assume it dissociates...
         R_Fe3red = max(0, TH₂S) ^ 0.5 * FeOHP * fT * kFe3red * (2 / (O₂ + 2)) * per_day_to_per_seconds
 
-        println(R_DNRA, "  ", R_amx, "  ", R_NH4ox, "  ", R_NO2ox, "  ", R_AOM, "  ", R_H2Sox, "  ", R_Fe2ox, "  ", R_FeS2ox, "  ", R_FeS2p, "  ", R_Fe3red, "  ")
+        #println(R_DNRA, "  ", R_amx, "  ", R_NH4ox, "  ", R_NO2ox, "  ", R_AOM, "  ", R_H2Sox, "  ", R_Fe2ox, "  ", R_FeS2ox, "  ", R_FeS2p, "  ", R_Fe3red, "  ")
         if isnan(TPO₄)
             sleep(10)
         end
+        println(O₂)
         @inline ratio_NC = 9.5/106
         @inline ratio_PC = 1/106
         @inline ratio_FeP = 0.1
