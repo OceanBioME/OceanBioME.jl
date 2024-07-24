@@ -17,6 +17,7 @@
 # ```
 
 using OceanBioME, Oceananigans.Units, Oceananigans, BenchmarkTools
+using Oceananigans.Fields: FunctionField
 
 const year = years = 365day
 
@@ -25,13 +26,20 @@ const year = years = 365day
 @inline PAR⁰(t) = 60 * (1 - cos((t + 15days) * 2π / year)) * (1 / (1 + 0.2 * exp(-((mod(t, year) - 200days) / 50days)^2))) + 2
 
 z = -10 # nominal depth of the box for the PAR profile
-@inline PAR(t)::Float64 = PAR⁰(t) * exp(0.2z) # Modify the PAR based on the nominal depth and exponential decay 
+@inline PAR_func(t)::Float64 = PAR⁰(t) * exp(0.2z) # Modify the PAR based on the nominal depth and exponential decay 
 
 function run_box_simulation()
-    biogeochemistry = NutrientPhytoplanktonZooplanktonDetritus(; grid = BoxModelGrid,
-                                                                 light_attenuation_model = nothing)
 
-    model = BoxModel(; biogeochemistry, forcing = (; PAR))
+    clock = Clock(time = Float64(0))
+
+    grid = BoxModelGrid
+
+    PAR = FunctionField{Center, Center, Center}(PAR_func, grid; clock)
+
+    biogeochemistry = NutrientPhytoplanktonZooplanktonDetritus(; grid = BoxModelGrid,
+                                                                 light_attenuation_model = PrescribedPhotosyntheticallyActiveRadiation(PAR))
+
+    model = BoxModel(; biogeochemistry, clock)
 
     set!(model, N = 10.0, P = 0.1, Z = 0.01)
 
@@ -41,25 +49,12 @@ function run_box_simulation()
 
     fast_output = SpeedyOutput("box_benchmarking.jld2")
 
-    simulation.callbacks[:output] = Callback(fast_output, IterationInterval(20);)
+    simulation.callbacks[:output] = Callback(fast_output, IterationInterval(20))
 
     @info "Running the model..."
     run!(simulation)
 end
 
-function fast_output(sim, fname)
-    file = jldopen(fname, "w+")
-
-    model = sim.model
-
-    t = time(sim)
-
-    file["fields/$t"] = model.field_values
-
-    close(file)
-
-    return nothing
-end
 #####
 ##### results
 #####

@@ -3,6 +3,12 @@ struct SpeedyOutput{FN, B} # I will make this an `AbstractOutputWriter` at some 
     overwrite_existing :: B
 
     function SpeedyOutput(filename::FN; overwrite_existing::B = true) where {FN, B}
+        file = jldopen(filename, ifelse(overwrite_existing, "w+", "w"))
+
+        file["filename"] = filename
+
+        close(file)
+
         return new{FN, B}(filename, overwrite_existing)
     end
 end
@@ -13,7 +19,7 @@ function (save::SpeedyOutput)(simulation)
     t = time(simulation)
     iter = model.clock.iteration
 
-    file = jldopen(save.filename, ifelse(save.overwrite_existing, "w+", "w"))
+    file = jldopen(save.filename, "a+")
 
     file["timeseries/t/$iter"] = t
 
