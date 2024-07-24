@@ -18,7 +18,7 @@ function intercept_tracer_tendencies!(model, intercepted_tendencies)
 end
 
 function set_defaults!(sediment::IronPhosphate)
-    set!(sediment.fields.O₂, 100e-6)
+    set!(sediment.fields.O₂, 1e-6)
     set!(sediment.fields.NH₄, 100e-6)
     set!(sediment.fields.NO₃, 6e-6)
     set!(sediment.fields.NO₂, 0.5e-6)
@@ -30,8 +30,8 @@ function set_defaults!(sediment::IronPhosphate)
     set!(sediment.fields.SO₄, 0.5e-6)
     set!(sediment.fields.TH₂S, 0.1e-6)
     set!(sediment.fields.CH₄, 10e-9)
-    set!(sediment.fields.TCO₂, 2e-3)
-    set!(sediment.fields.Gi, 1e-3)
+    set!(sediment.fields.TCO₂, 0)
+    set!(sediment.fields.Gi, 0)
 end 
 
 set_defaults!(::VariableRedfieldLobster, model) =
@@ -75,7 +75,7 @@ set_defaults!(model.biogeochemistry.sediment)
 
 set_defaults!(biogeochemistry.underlying_biogeochemistry, model)
 
-sim_length = 10days
+sim_length = 5days
 
 simulation = Simulation(model, Δt = 50, stop_time = sim_length)
 
