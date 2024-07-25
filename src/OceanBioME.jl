@@ -11,7 +11,7 @@ export Biogeochemistry, LOBSTER, NutrientPhytoplanktonZooplanktonDetritus, NPZD,
 export SLatissima
 
 # Box model
-export BoxModel, BoxModelGrid, SpeedyOutput, run!, set!
+export BoxModel, BoxModelGrid, SpeedyOutput, load_output
 
 # Particles
 export Particles
@@ -132,7 +132,7 @@ end
 
 update_biogeochemical_state!(model, modifiers::Tuple) = [update_biogeochemical_state!(model, modifier) for modifier in modifiers]
 
-BoxModelGrid(; arch = CPU()) = RectilinearGrid(arch; topology = (Flat, Flat, Flat), size = ())
+BoxModelGrid(; arch = CPU(), kwargs...) = RectilinearGrid(arch; topology = (Flat, Flat, Flat), size = (), kwargs...)
 
 @inline maximum_sinking_velocity(bgc) = 0.0
 

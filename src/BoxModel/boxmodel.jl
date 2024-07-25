@@ -3,7 +3,7 @@ Integrate biogeochemical models on a single point
 """
 module BoxModels
 
-export BoxModel, run!, set!, SpeedyOutput
+export BoxModel, run!, set!, SpeedyOutput, load_output
 
 using Oceananigans: Clock, prettytime
 using Oceananigans.Biogeochemistry: 
@@ -140,13 +140,13 @@ default_included_properties(::BoxModel) = [:grid]
 include("timesteppers.jl")
 include("output_writer.jl")
 
-summary(::BoxModel{B, V, F, TS, C}) where {B, V, F, TS, C} = string("Biogeochemical box model")
-show(io::IO, model::BoxModel{B, V, F, TS, C}) where {B, V, F, TS, C} = 
+summary(::BoxModel)  = string("Biogeochemical box model")
+show(io::IO, model::BoxModel{G, B, F, FV, FO, TS, C, PT}) where {G, B, F, FV, FO, TS, C, PT} = 
        print(io, summary(model), "\n",
                 "  Biogeochemical model: ", "\n",
                 "    └── ", summary(model.biogeochemistry), "\n",
                 "  Time-stepper:", "\n", 
-                "    └── ", summary(model.timestepper), "\n",
+                "    └── ", nameof(typeof(model.timestepper)), "\n",
                 "  Time:", "\n",
                 "    └── $(prettytime(model.clock.time))")
 
