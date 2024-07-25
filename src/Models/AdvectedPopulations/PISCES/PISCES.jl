@@ -633,7 +633,7 @@ function PISCES(; grid, # finally the function
                    max_ChlC_ratios_of_phytoplankton :: PD = (P = 0.033, D = 0.05),  #mg Chl/(mg C)
                    min_ChlC_ratios_of_phytoplankton :: FT = 0.0033,    #mg Chl/(mg C)
                    threshold_concentration_for_size_dependency :: PD = (P = 1.0, D = 1.0),  #μmolCL⁻¹
-                   mean_residence_time_of_phytoplankton_in_unlit_mixed_layer :: PD = (P = 3.0/day, D = 4.0/day), #/day
+                   mean_residence_time_of_phytoplankton_in_unlit_mixed_layer :: PD = (P = 3days, D = 4days), #day
     
                    latitude :: FT = -1.0, #still to be changed - this is temporary 
                    length_of_day :: FT = 1.0, #temporary parameter for day length

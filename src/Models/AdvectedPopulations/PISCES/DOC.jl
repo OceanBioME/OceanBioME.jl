@@ -3,7 +3,7 @@
     eₘₐₓᴹ = bgc.max_growth_efficiency_of_zooplankton.M
     mᴹ = bgc.zooplankton_quadratic_mortality.M
     bₘ = bgc.temperature_sensitivity_term.M
-    return (1 - σᴹ - eₘₐₓᴹ)*(1)/(1-eₘₐₓᴹ)*mᴹ*bₘ^T*M^2  #30b
+    return (1 - σᴹ - eₘₐₓᴹ)*(1)/(1-eₘₐₓᴹ + eps(0.0))*mᴹ*bₘ^T*M^2  #30b
 end
 
 @inline function Pᵤₚ(M, T, bgc)
@@ -11,7 +11,7 @@ end
     eₘₐₓᴹ = bgc.max_growth_efficiency_of_zooplankton.M
     mᴹ = bgc.zooplankton_quadratic_mortality.M
     bₘ = bgc.temperature_sensitivity_term.M
-    return σᴹ*(1)/(1-eₘₐₓᴹ)*mᴹ*bₘ^T*M^2      #30a
+    return σᴹ*(1)/(1-eₘₐₓᴹ + eps(0.0))*mᴹ*bₘ^T*M^2      #30a
 end
 
 
@@ -24,7 +24,7 @@ end
     Lₗᵢₘᵇᵃᶜᵗ = Lᵇᵃᶜᵗ(DOC, PO₄, NO₃, NH₄, bFe, bgc)[2]
 
     #min((O₂)/(O₂ᵘᵗ), λ_DOC*bₚ^T*(1 - ΔO₂(O₂, bgc)) * Lₗᵢₘᵇᵃᶜᵗ * (Bact)/(Bactᵣₑ) * DOC), definition did not make sense with dimensions
-    return λ_DOC*bₚ^T*(1 - ΔO₂(O₂, bgc)) * Lₗᵢₘᵇᵃᶜᵗ * (Bact)/(Bactᵣₑ) * DOC #33a
+    return λ_DOC*bₚ^T*(1 - ΔO₂(O₂, bgc)) * Lₗᵢₘᵇᵃᶜᵗ * (Bact)/(Bactᵣₑ + eps(0.0)) * DOC #33a
 end
 
 @inline function get_Denit(NO₃, PO₄, NH₄, DOC, O₂, T, bFe, Bact, bgc)
@@ -36,7 +36,7 @@ end
     Lₗᵢₘᵇᵃᶜᵗ = Lᵇᵃᶜᵗ(DOC, PO₄, NO₃, NH₄, bFe, bgc)[2]
 
     #min(NO₃/rₙₒ₃¹, λ_DOC*bₚ^T* ΔO₂(O₂, bgc)* Lₗᵢₘᵇᵃᶜᵗ*(Bact)/(Bactᵣₑ) * DOC), definition did not make sense with dimensions
-    return λ_DOC*bₚ^T* ΔO₂(O₂, bgc)* Lₗᵢₘᵇᵃᶜᵗ*(Bact)/(Bactᵣₑ) * DOC #33b
+    return λ_DOC*bₚ^T* ΔO₂(O₂, bgc)* Lₗᵢₘᵇᵃᶜᵗ*(Bact)/(Bactᵣₑ + eps(0.0)) * DOC #33b
 end
 
 @inline get_Bact(zₘₐₓ, z, Z, M) = ifelse(z <= zₘₐₓ, min(0.7*(Z + 2*M), 4), min(0.7*(Z + 2*M), 4)*(zₘₐₓ/(z + eps(0.0))^0.683))  #35b

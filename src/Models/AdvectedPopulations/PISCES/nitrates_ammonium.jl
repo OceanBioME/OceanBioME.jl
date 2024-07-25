@@ -138,6 +138,7 @@ end
 
     zₘₐₓ = max(zₑᵤ, zₘₓₗ) #35a
     Bact = get_Bact(zₘₐₓ, z, Z, M)
+
    
-    return θᴺᶜ*(γᶻ*(1-eᶻ-σᶻ)*∑gᶻ*Z + γᴹ*(1-eᴹ-σᴹ)*(∑gᴹ + ∑g_FFᴹ)*M + γᴹ*Rᵤₚ(M, T, bgc) + get_Remin(O₂, NO₃, PO₄, NH₄, DOC, T, bFe, Bact, bgc) + get_Denit(NO₃, PO₄, NH₄, DOC, O₂, T, bFe, Bact, bgc) + (1/θᴺᶜ)*N_fix(bFe, PO₄, T, P, NO₃, NH₄, Pᶜʰˡ, Pᶠᵉ, PAR, bgc) - Nitrif(NH₄, O₂, λₙₕ₄, PAR, bgc) - λₙₕ₄*ΔO₂(O₂, bgc)*NH₄ - μₙₕ₄ᴾ*P - μₙₕ₄ᴰ*D)
+    return θᴺᶜ*(γᶻ*(1-eᶻ-σᶻ)*∑gᶻ*Z + γᴹ*(1-eᴹ-σᴹ)*(∑gᴹ + ∑g_FFᴹ)*M + γᴹ*Rᵤₚ(M, T, bgc) + get_Remin(O₂, NO₃, PO₄, NH₄, DOC, T, bFe, Bact, bgc) + get_Denit(NO₃, PO₄, NH₄, DOC, O₂, T, bFe, Bact, bgc) + (1/(θᴺᶜ + eps(0.0)))*N_fix(bFe, PO₄, T, P, NO₃, NH₄, Pᶜʰˡ, Pᶠᵉ, PAR, bgc) - Nitrif(NH₄, O₂, λₙₕ₄, PAR, bgc) - λₙₕ₄*ΔO₂(O₂, bgc)*NH₄ - μₙₕ₄ᴾ*P - μₙₕ₄ᴰ*D)
 end

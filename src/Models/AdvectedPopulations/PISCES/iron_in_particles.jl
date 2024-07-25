@@ -9,7 +9,7 @@
     λ_Feᵈᵘˢᵗ = bgc.scavenging_rate_of_iron_by_dust
     w_dust = bgc.sinking_speed_of_dust
 
-    Dust = D_dust/w_dust #eq84, check how to define D_dust?
+    Dust = D_dust/(w_dust+ eps(0.0)) #eq84, check how to define D_dust?
     
     return λ_Feᵐⁱⁿ + λ_Fe*(POC + GOC + CaCO₃ + PSi) + λ_Feᵈᵘˢᵗ*Dust #eq50
 end

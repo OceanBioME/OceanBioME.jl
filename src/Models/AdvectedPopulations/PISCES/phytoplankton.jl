@@ -9,13 +9,17 @@
 @inline get_L_day(ϕ, t, L_day) = L_day  #temporary
 
 @inline f₁(L_day) = 1.5*K_mondo(L_day, 0.5)  #eq 3a
-@inline function t_dark(zₘₓₗ, zₑᵤ, bgc)
-    κᵥₑᵣₜ = bgc.vertical_diffusivity    #can edit this later
-    return max(0, zₘₓₗ-zₑᵤ)^2/(κᵥₑᵣₜ[0,0,0] + eps(0.0)) #eq 3b,c    
+@inline function t_dark(zₘₓₗ, zₑᵤ)
+    #κᵥₑᵣₜ = bgc.vertical_diffusivity    #can edit this later
+    return max(0, zₘₓₗ-zₑᵤ)^2/86400 #eq 3b,c    max(0, zₘₓₗ-zₑᵤ)^2/(κᵥₑᵣₜ(0,0,0) + eps(0.0))
 end
-@inline f₂(zₘₓₗ, zₑᵤ, t_darkᴵ, bgc) = 1 - K_mondo(t_dark(zₘₓₗ, zₑᵤ, bgc), t_darkᴵ) #eq 3d
+@inline f₂(zₘₓₗ, zₑᵤ, t_darkᴵ) = 1 - K_mondo(t_dark(zₘₓₗ, zₑᵤ), t_darkᴵ) #eq 3d
 
-@inline fₚ(T, bgc) = bgc.temperature_sensitivity_of_growth^T #eq 4a
+@inline function fₚ(T, bgc) 
+    bₚ = bgc.temperature_sensitivity_of_growth
+    
+    return bₚ^T  #eq 4a
+end
 
 @inline L_NH₄(NO₃, NH₄, Kₙₒ₃ᴵ, Kₙₕ₄ᴵ) = Kₙₒ₃ᴵ*NH₄/(Kₙₒ₃ᴵ*Kₙₕ₄ᴵ+Kₙₕ₄ᴵ*NO₃+Kₙₒ₃ᴵ*NH₄ + eps(0.0)) #eq 6d
 @inline L_NO₃(NO₃, NH₄, Kₙₒ₃ᴵ, Kₙₕ₄ᴵ) = Kₙₕ₄ᴵ*NO₃/(Kₙₒ₃ᴵ*Kₙₕ₄ᴵ+Kₙₕ₄ᴵ*NO₃+Kₙₒ₃ᴵ*NH₄ + eps(0.0)) #eq 6e
@@ -66,7 +70,7 @@ end
 
     μₚ = μ⁰ₘₐₓ*fₚ(T, bgc)    #eq 4b      
 
-    return μₚ * f₁(L_day) * f₂(zₘₓₗ, zₑᵤ, t_darkᴵ, bgc) * Cₚᵣₒ(I, Iᶜʰˡ, PARᴵ, L_day, αᴵ, μₚ, Lₗᵢₘᴵ) * Lₗᵢₘᴵ #2b 
+    return μₚ * f₁(L_day) * f₂(zₘₓₗ, zₑᵤ, t_darkᴵ) * Cₚᵣₒ(I, Iᶜʰˡ, PARᴵ, L_day, αᴵ, μₚ, Lₗᵢₘᴵ) * Lₗᵢₘᴵ #2b 
 end
 
 # This function returns Lₗᵢₘᴾ as well as all the constituent parts as a vector so we can use all the parts in separate parts of the code
@@ -93,7 +97,7 @@ end
     θₘᵢₙᶠᵉᵖ = θᶠᵉₘᵢₙ(P, Pᶜʰˡ, Lₙᴾ, Lₙₒ₃ᴾ)
     L_Feᴾ = L_Fe(P, Pᶠᵉ, θₒₚₜᶠᵉᵖ, θₘᵢₙᶠᵉᵖ)
 
-    return min(Lₚₒ₄ᴾ, Lₙᴾ, L_Feᴾ), Lₚₒ₄ᴾ, Lₙₕ₄ᴾ, Lₙₒ₃ᴾ, Lₙᴾ, L_Feᴾ #6a
+    return min(Lₚₒ₄ᴾ, Lₙᴾ, L_Feᴾ), Lₚₒ₄ᴾ, Lₙₕ₄ᴾ, Lₙₒ₃ᴾ, Lₙᴾ, L_Feᴾ#6a
 end
 
 #Same for Lₗᵢₘᴰ
@@ -121,7 +125,7 @@ end
 
     θₘᵢₙᶠᵉᴰ = θᶠᵉₘᵢₙ(D, Dᶜʰˡ, Lₙᴰ, Lₙₒ₃ᴰ)
     L_Feᴰ = L_Fe(D, Dᶠᵉ ,θₒₚₜᶠᵉᴰ, θₘᵢₙᶠᵉᴰ)
-    Kₛᵢᴰ = Kₛᵢᴰᵐⁱⁿ + 7*Si̅^2 / (Kₛᵢ^2 + Si̅^2) #12
+    Kₛᵢᴰ = Kₛᵢᴰᵐⁱⁿ + 7*Si̅^2 / (Kₛᵢ^2 + Si̅^2 + eps(0.0)) #12
     Lₛᵢᴰ = K_mondo(Si, Kₛᵢᴰ)    #11b
 
     return min(Lₚₒ₄ᴰ, Lₙᴰ, L_Feᴰ, Lₛᵢᴰ), Lₚₒ₄ᴰ, Lₙₕ₄ᴰ, Lₙₒ₃ᴰ, Lₙᴰ, Lₛᵢᴰ, L_Feᴰ    #11a
@@ -171,10 +175,9 @@ end
 
     t_darkᴾ = bgc.mean_residence_time_of_phytoplankton_in_unlit_mixed_layer.P
 
-    Lₗᵢₘᴾ = Lᴾ(P, PO₄, NO₃, NH₄, Pᶜʰˡ, Pᶠᵉ, bgc)[1]
+    Lₗᵢₘᴾ, Lₚₒ₄ᴾ, Lₙₕ₄ᴾ, Lₙₒ₃ᴾ, Lₙᴾ, L_Feᴾ= Lᴾ(P, PO₄, NO₃, NH₄, Pᶜʰˡ, Pᶠᵉ, bgc)
 
     PARᴾ = get_PARᴾ(PAR¹, PAR², PAR³, bgc)
-
     μᴾ = μᴵ(P, Pᶜʰˡ, PARᴾ, L_day, T, αᴾ, Lₗᵢₘᴾ, zₘₓₗ, zₑᵤ, t_darkᴾ, bgc)
 
     return (1-δᴾ)*μᴾ*P - mᴾ*K_mondo(P, Kₘ)*P - sh*wᴾ*P^2 - gₚᶻ*Z - gₚᴹ*M    #eq 1
@@ -273,7 +276,7 @@ end
 
     μᴰ = μᴵ(D, Dᶜʰˡ, PARᴰ, L_day, T, αᴰ, Lₗᵢₘᴰ, zₘₓₗ, zₑᵤ, t_darkᴰ, bgc)
 
-    μ̌ᴰ = μᴰ / f₁(L_day) #15b
+    μ̌ᴰ = μᴰ / (f₁(L_day) + eps(0.0)) #15b
     ρᴰᶜʰˡ = 144*μ̌ᴰ * D / (αᴰ* Dᶜʰˡ* ((PARᴰ)/(L_day + eps(0.0))) + eps(0.0)) #15a
   
     return (1-δᴰ)*(12*θₘᵢₙᶜʰˡ + (θₘₐₓᶜʰˡᴰ - θₘᵢₙᶜʰˡ)*ρᴰᶜʰˡ)*μᴰ*D - mᴰ*K_mondo(D, Kₘ)*Dᶜʰˡ - sh*wᴰ*D*Dᶜʰˡ - θ(Dᶜʰˡ, D)*g_Dᶻ*Z - θ(Dᶜʰˡ, D)*g_Dᴹ*M    #14

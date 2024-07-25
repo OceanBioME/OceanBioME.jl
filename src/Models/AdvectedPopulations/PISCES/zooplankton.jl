@@ -74,7 +74,7 @@ end
     ∑ᵢθᶠᵉᴵgᵢᴶ = θ(Pᶠᵉ, P)*gₚᴶ + θ(Dᶠᵉ, D)*g_Dᴶ + θ(SFe, POC)*gₚₒᴶ + θᶠᵉᶜ*g_Zᴹ
     ∑ᵢgᵢᴶ = gₚᴶ + g_Dᴶ + gₚₒᴶ + g_Zᴹ
     
-    return min(1, (∑ᵢθᴺᴵgᵢᴶ)/(θᴺᶜ*∑ᵢgᵢᴶ), (∑ᵢθᶠᵉᴵgᵢᴶ)/(θᶠᵉᶜ*∑ᵢgᵢᴶ))   #27a
+    return min(1, (∑ᵢθᴺᴵgᵢᴶ)/(θᴺᶜ*∑ᵢgᵢᴶ + eps(0.0)), (∑ᵢθᶠᵉᴵgᵢᴶ)/(θᶠᵉᶜ*∑ᵢgᵢᴶ + eps(0.0)))   #27a
 end
 
 
@@ -87,7 +87,7 @@ end
 
     eₙᴶ = get_eₙᴶ(gₚᴶ, g_Dᴶ, gₚₒᴶ, g_Zᴹ, Pᶠᵉ, Dᶠᵉ, SFe, P, D, POC, bgc) #27a
 
-    return eₙᴶ*min(eₘₐₓᴶ, (1 - σᴶ)* (∑ᵢθᶠᵉᴵgᵢᴶ)/(θᶠᵉᶜ*∑ᵢgᵢᴶ)) #27b
+    return eₙᴶ*min(eₘₐₓᴶ, (1 - σᴶ)* (∑ᵢθᶠᵉᴵgᵢᴶ)/(θᶠᵉᶜ*∑ᵢgᵢᴶ + eps(0.0))) #27b
 end
 
 
@@ -119,7 +119,7 @@ end
     ∑gᴹ, gₚᴹ, g_Dᴹ, gₚₒᴹ, g_Zᴹ  = get_grazingᴹ(P, D, Z, POC, T, bgc) 
 
     ∑g_FFᴹ = get_∑g_FFᴹ(z, zₑᵤ, zₘₓₗ, T, POC, GOC, bgc)
-    
+
     eᴹ =  eᴶ(eₘₐₓᴹ, σᴹ, gₚᴹ, g_Dᴹ, gₚₒᴹ, g_Zᴹ,Pᶠᵉ, Dᶠᵉ, SFe, P, D, POC, bgc)
 
     return eᴹ*(gₚᴹ + g_Dᴹ + gₚₒᴹ + ∑g_FFᴹ + g_Zᴹ)*M - mᴹ*bₘ^T*M^2 - rᴹ*bₘ^T*(K_mondo(M, Kₘ) + 3*ΔO₂(O₂, bgc))*M   #28

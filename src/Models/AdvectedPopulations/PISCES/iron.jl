@@ -10,7 +10,7 @@
     K_eqᶠᵉ = 10^(16.27 - 1565.7/max(T, 5)) #check this value
     Δ = 1 +  K_eqᶠᵉ*Lₜ -  K_eqᶠᵉ*Fe
 
-    return (-Δ + sqrt(Δ^2 + 4*K_eqᶠᵉ*Fe))/(2*K_eqᶠᵉ) #eq65
+    return (-Δ + sqrt(Δ^2 + 4*K_eqᶠᵉ*Fe))/(2*K_eqᶠᵉ + eps(0.0)) #eq65
 end
 
 @inline function Cgfe1(sh, Fe, POC, DOC, T, bgc)
@@ -42,7 +42,7 @@ end
     θₘₐₓᶠᵉᵇᵃᶜᵗ = bgc.max_FeC_ratio_of_bacteria
     Bact = get_Bact(zₘₐₓ, z, Z, M) 
     Lₗᵢₘᵇᵃᶜᵗ = Lᵇᵃᶜᵗ(DOC, PO₄, NO₃, NH₄, bFe, bgc)[2]
-    return μₘₐₓ⁰*fₚ(T, bgc)*Lₗᵢₘᵇᵃᶜᵗ*θₘₐₓᶠᵉᵇᵃᶜᵗ*Fe*Bact/(K_Feᴮ¹ + Fe) 
+    return μₘₐₓ⁰*fₚ(T, bgc)*Lₗᵢₘᵇᵃᶜᵗ*θₘₐₓᶠᵉᵇᵃᶜᵗ*Fe*Bact/(K_Feᴮ¹ + Fe + eps(0.0)) 
 end
 
 @inline function (bgc::PISCES)(::Val{:Fe}, x, y, z, t, P, D, Z, M, Pᶜʰˡ, Dᶜʰˡ, Pᶠᵉ, Dᶠᵉ, Dˢⁱ, DOC, POC, GOC, SFe, BFe, PSi, NO₃, NH₄, PO₄, Fe, Si, CaCO₃, DIC, Alk, O₂, T, PAR, PAR¹, PAR², PAR³, zₘₓₗ, zₑᵤ, Si̅, D_dust, Ω) #eq60
@@ -100,6 +100,9 @@ end
     #Gross growth efficiency
     eₙᶻ = get_eₙᴶ(gₚᶻ, g_Dᶻ, gₚₒᶻ, 0, Pᶠᵉ, Dᶠᵉ, SFe, P, D, POC, bgc)
     eₙᴹ = get_eₙᴶ(gₚᴹ, g_Dᴹ, gₚₒᴹ, g_Zᴹ, Pᶠᵉ, Dᶠᵉ, SFe, P, D, POC, bgc)
+
+    println("eₙᶻ = ", eₙᶻ)
+    println("eₙᴹ = ", eₙᴹ)
     
-    return max(0, (1-σᶻ)*(∑θᶠᵉⁱgᵢᶻ/∑gᶻ - eₙᶻ*θᶠᵉᶻ))*∑gᶻ*Z + max(0, (1-σᴹ)*(∑θᶠᵉⁱgᵢᴹ + θᶠᵉᴾᴼᶜ*gₚₒ_FF + θᶠᵉᴳᴼᶜ*g_GOC_FFᴹ )/(∑gᴹ+∑g_FFᴹ) - eₙᴹ*θᶠᵉᶻ)*(∑gᴹ+∑g_FFᴹ)*M + γᴹ*θᶠᵉᶻ*Rᵤₚ(M, T, bgc) + λₚₒ¹*SFe - (1 - δᴾ)*μᴾᶠᵉ*P - (1 - δᴰ)*μᴰᶠᵉ*D - Scav(POC, GOC, CaCO₃, PSi, D_dust, DOC, T, Fe, bgc) - Cgfe1(sh, Fe, POC, DOC, T, bgc) - Cgfe2(sh, Fe, T, DOC, GOC, bgc) - Aggfe(Fe, DOC, T, bgc) - Bactfe
+    return max(0, (1-σᶻ)*(∑θᶠᵉⁱgᵢᶻ/(∑gᶻ + eps(0.0)) - eₙᶻ*θᶠᵉᶻ))*∑gᶻ*Z + max(0, (1-σᴹ)*(∑θᶠᵉⁱgᵢᴹ + θᶠᵉᴾᴼᶜ*gₚₒ_FF + θᶠᵉᴳᴼᶜ*g_GOC_FFᴹ )/(∑gᴹ+∑g_FFᴹ + eps(0.0)) - eₙᴹ*θᶠᵉᶻ)*(∑gᴹ+∑g_FFᴹ)*M + γᴹ*θᶠᵉᶻ*Rᵤₚ(M, T, bgc) + λₚₒ¹*SFe - (1 - δᴾ)*μᴾᶠᵉ*P - (1 - δᴰ)*μᴰᶠᵉ*D - Scav(POC, GOC, CaCO₃, PSi, D_dust, DOC, T, Fe, bgc) - Cgfe1(sh, Fe, POC, DOC, T, bgc) - Cgfe2(sh, Fe, T, DOC, GOC, bgc) - Aggfe(Fe, DOC, T, bgc) - Bactfe
 end

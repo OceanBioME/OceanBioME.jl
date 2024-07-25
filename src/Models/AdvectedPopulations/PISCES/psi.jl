@@ -10,7 +10,7 @@
     if z <= zₘₓₗ
         return χ_lab⁰
     else
-        return χ_lab⁰*exp(-(λₚₛᵢˡᵃᵇ - λₚₛᵢʳᵉᶠ)*((z-zₘₐₓ)/get_w_GOC(z, zₑᵤ, zₘₓₗ, bgc))) #eq53
+        return χ_lab⁰*exp(-(λₚₛᵢˡᵃᵇ - λₚₛᵢʳᵉᶠ)*((z-zₘₐₓ)/(get_w_GOC(z, zₑᵤ, zₘₓₗ, bgc) + eps(0.0)))) #eq53
     end
 end
 
@@ -22,7 +22,7 @@ end
     λₚₛᵢ = χ_lab(zₘₓₗ, zₑᵤ, λₚₛᵢˡᵃᵇ, λₚₛᵢʳᵉᶠ, z, bgc)*λₚₛᵢˡᵃᵇ + (1 - χ_lab(zₘₓₗ, zₑᵤ, λₚₛᵢˡᵃᵇ, λₚₛᵢʳᵉᶠ, z, bgc))*λₚₛᵢʳᵉᶠ
 
     Si_eq = 10^(6.44 - 968/(T + 273.15))
-    Siₛₐₜ = (Si_eq - Si)/Si_eq
+    Siₛₐₜ = (Si_eq - Si)/(Si_eq + eps(0.0))
 
     return λₚₛᵢ*(0.225*(1 + T/15)*Siₛₐₜ + 0.775*(((1 + T/400)^4)*Siₛₐₜ)^9) #eq52
 end
