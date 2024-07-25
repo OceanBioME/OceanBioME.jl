@@ -175,7 +175,7 @@ function _calculate_sediment_tendencies!(i, j, sediment::IronPhosphate, bgc, gri
 
         POC_deposition = 5e-9 #carbon_flux(i, j, k, grid, advection, bgc, tracers) * Δz
 
-        iron_deposition = 5e-10 #carbon_flux(i, j, k, grid, advection, bgc, tracers) * Δz * (1/106) * 0.1
+        iron_deposition = 0#5e-10 #carbon_flux(i, j, k, grid, advection, bgc, tracers) * Δz * (1/106) * 0.1
         
         #(:O₂, :NH₄, :NO₃, :NO₂, :N₂, :TPO₄, :FeOHP, :Feᴵᴵ, :FeS₂, :SO₄, :TH₂S, :CH₄, :TCO₂, :Gi)
         O₂ = sediment.fields.O₂[i, j, 1]
@@ -225,7 +225,7 @@ function _calculate_sediment_tendencies!(i, j, sediment::IronPhosphate, bgc, gri
         RSO₄ = max(0, Gi * (fT * kGi * fₖ₋ₛₒ₄ * (1 - fK_Fe) *(1 - fₖ₋ₙₒ₃) * (1 - fₖ₋ₙₒ₂) * (1 - fₖ₋ₙₒ₂)) * per_day_to_per_seconds)
         RCH₄ = max(0, Gi * (fT * kGi * (1 - fₖ₋ₛₒ₄) * (1 - fK_Fe) *(1 - fₖ₋ₙₒ₃) * (1 - fₖ₋ₙₒ₂) * (1 - fₖ₋ₙₒ₂)) * per_day_to_per_seconds)
 
-        println(RO₂, "\n", RNO₂, "\n", fₖ₋ₒ₂, "\n", fₖ₋ₙₒ₂, "\n", fₖ₋ₙₒ₃, "\n\n")
+        
 
         @inline kDNRA = 2.7e5 # M-1 day-1
         @inline kamx = 2.7e4 # M-1 day-1
@@ -276,7 +276,7 @@ function _calculate_sediment_tendencies!(i, j, sediment::IronPhosphate, bgc, gri
         sediment_tendencies.SO₄[i, j, 1] = -0.5 * RSO₄ + R_DNRA - R_AOM + R_H2Sox + 2 * R_FeS2ox + (R_Fe3red / 8)
         sediment_tendencies.TH₂S[i, j, 1] = 0.5 * RSO₄ - R_DNRA + R_AOM - R_H2Sox  - 2 * R_FeS2p - (R_Fe3red / 8)
         sediment_tendencies.CH₄[i, j, 1] = 0.5 * RCH₄ - R_AOM
-        #println(sediment_tendencies)
+        println(sediment_tendencies.FeS₂[i, j, 1])
     end
 end
 

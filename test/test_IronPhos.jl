@@ -26,12 +26,12 @@ function set_defaults!(sediment::IronPhosphate)
     set!(sediment.fields.TPO₄, 1.5e-6)
     set!(sediment.fields.FeOHP, 410e-6)
     set!(sediment.fields.Feᴵᴵ, 0.1e-6)
-    set!(sediment.fields.FeS₂, 0)
+    set!(sediment.fields.FeS₂, 1e-7)
     set!(sediment.fields.SO₄, 0.5e-6)
-    set!(sediment.fields.TH₂S, 0.1e-6)
+    set!(sediment.fields.TH₂S, 1e-5)
     set!(sediment.fields.CH₄, 10e-9)
     set!(sediment.fields.TCO₂, 0)
-    set!(sediment.fields.Gi, 0)
+    set!(sediment.fields.Gi, 1e-6)
 end 
 
 set_defaults!(::VariableRedfieldLobster, model) =
