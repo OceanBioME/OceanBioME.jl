@@ -8,8 +8,6 @@ env:
 
 steps:
   - label: ":building_construction: initialize environment"
-    env:
-      JULIA_DEPOT_PATH: $ROOT_PATH/.julia-GPU
     key: "init"
     commands: 
      - "wget -N -P $JULIA_PATH https://julialang-s3.julialang.org/bin/linux/x64/$JULIA_MINOR_VERSION/julia-$JULIA_VERSION-linux-x86_64.tar.gz"
@@ -33,7 +31,6 @@ steps:
   - label: ":rowboat: CPU unit tests"
     env:
       CUDA_VISIBLE_DEVICES: "-1"
-      JULIA_DEPOT_PATH: $ROOT_PATH/.julia-CPU
     commands: 
      - "$JULIA_PATH/julia-$JULIA_VERSION/bin/julia -O0 --color=yes --project -e 'using Pkg; Pkg.Registry.update(); Pkg.test()'"
     depends_on: "init"
@@ -46,7 +43,6 @@ steps:
       CUDA_VISIBLE_DEVICES: "-1"
       JULIA_DEBUG: "Documenter"
       TMPDIR: "$ROOT_PATH/tmp"
-      JULIA_DEPOT_PATH: $ROOT_PATH/.julia-docs
     commands:
       - "$JULIA_PATH/julia-$JULIA_VERSION/bin/julia --color=yes --project=docs/ -e 'using Pkg; Pkg.Registry.update(); Pkg.develop(PackageSpec(path=pwd())); Pkg.instantiate()'"
       - "$JULIA_PATH/julia-$JULIA_VERSION/bin/julia --color=yes --project=docs/ docs/make.jl"
