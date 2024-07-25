@@ -137,7 +137,7 @@ format = Documenter.HTML(
     canonical = "https://OceanBioME.github.io/OceanBioME/stable/",
     mathengine = MathJax3(),
     assets = String["assets/citations.css"],
-    size_threshold = Inf
+    size_threshold = 1000000 * 10^10
 )
 
 makedocs(sitename = "OceanBioME.jl",
