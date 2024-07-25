@@ -54,7 +54,10 @@ steps:
     continue_on_failure: true
     
   - label: ":skeleton-dance: clean up environment"
-    command: "rm -rf $JULIA_PATH"
+    commands: 
+      - "rm -rf $JULIA_PATH"
+      - "rm -rf $JULIA_DEPOT_PATH"
+  
     notify:
       - github_commit_status:
           context: "Clean up"
