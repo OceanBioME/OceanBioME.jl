@@ -48,7 +48,7 @@ end
                clock = Clock(; time = 0.0),
                prescribed_tracers = (:T, ))
 
-Constructs a box model of a `biogeochemistry` model. Once this has been constructed you can set initial condiitons by `set!(model, X=1.0...)` and then `run!(model)`.
+Constructs a box model of a `biogeochemistry` model. Once this has been constructed you can set initial condiitons by `set!(model, X=1.0...)`.
 
 Keyword Arguments 
 =================
