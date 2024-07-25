@@ -1,8 +1,9 @@
 env:
   JULIA_VERSION: "1.10.2"
   JULIA_MINOR_VERSION: "1.10"
-  JULIA_PATH: /var/lib/buildkite-agent/julia_$BUILDKITE_BUILD_NUMBER
-  JULIA_DEPOT_PATH: /var/lib/buildkite-agent/.julia_$BUILDKITE_BUILD_NUMBER
+  ROOT_PATH: /var/lib/buildkite-agent/$BUILDKITE_BUILD_NUMBER
+  JULIA_PATH: $ROOT_PATH/julia
+  JULIA_DEPOT_PATH: $ROOT_PATH/.julia
   DATADEPS_ALWAYS_ACCEPT: true
 
 steps:
@@ -41,7 +42,7 @@ steps:
     env:
       CUDA_VISIBLE_DEVICES: "-1"
       JULIA_DEBUG: "Documenter"
-      TMPDIR: "/var/lib/buildkite-agent/tmp"
+      TMPDIR: "$ROOT_PATH/tmp"
     commands:
       - "$JULIA_PATH/julia-$JULIA_VERSION/bin/julia --color=yes --project=docs/ -e 'using Pkg; Pkg.Registry.update(); Pkg.develop(PackageSpec(path=pwd())); Pkg.instantiate()'"
       - "$JULIA_PATH/julia-$JULIA_VERSION/bin/julia --color=yes --project=docs/ docs/make.jl"
@@ -54,9 +55,7 @@ steps:
     continue_on_failure: true
     
   - label: ":skeleton-dance: clean up environment"
-    commands: 
-      - "rm -rf $JULIA_PATH"
-      - "rm -rf $JULIA_DEPOT_PATH"
+    command: "rm -rf $ROOT_PATH"
   
     notify:
       - github_commit_status:
