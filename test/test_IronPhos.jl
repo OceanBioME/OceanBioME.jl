@@ -25,7 +25,7 @@ function set_defaults!(sediment::IronPhosphate)
     set!(sediment.fields.N₂, 0)
     set!(sediment.fields.TPO₄, 1.5e-6)
     set!(sediment.fields.FeOHP, 410e-6)
-    set!(sediment.fields.Feᴵᴵ, 0.1e-6)
+    set!(sediment.fields.Feᴵᴵ, 1e-6)
     set!(sediment.fields.FeS₂, 1e-7)
     set!(sediment.fields.SO₄, 0.5e-6)
     set!(sediment.fields.TH₂S, 1e-5)
@@ -75,7 +75,7 @@ set_defaults!(model.biogeochemistry.sediment)
 
 set_defaults!(biogeochemistry.underlying_biogeochemistry, model)
 
-sim_length = 5days
+sim_length = 3days
 
 simulation = Simulation(model, Δt = 50, stop_time = sim_length)
 
@@ -98,7 +98,7 @@ timeseries = NamedTuple{keys(model.biogeochemistry.sediment.fields)}(FieldTimeSe
 # ## And plot
 using CairoMakie
 
-fig = Figure(size = (1200, 3600), fontsize = 24)
+fig = Figure(size = (2400, 2400), fontsize = 24)
 
 tick_location_seconds = range(0, times[end]; length=5)
 tick_location_days = tick_location_seconds / (24 * 60 * 60)
@@ -107,7 +107,7 @@ tick_location_days = tick_location_seconds / (24 * 60 * 60)
 axs = []
 for (name, tracer) in pairs(timeseries)
     idx = (length(axs))
-    push!(axs, Axis(fig[floor(Int, idx/2), Int(idx%2)], ylabel = "$name", xlabel = "Days", xticks=(collect(tick_location_seconds), string.(collect(tick_location_days)))))
+    push!(axs, Axis(fig[floor(Int, idx/4), Int(idx%4)], ylabel = "$name", xlabel = "Days", xticks=(collect(tick_location_seconds), string.(collect(tick_location_days)))))
     lines!(axs[end], times, tracer, linewidth = 3)
 end
 

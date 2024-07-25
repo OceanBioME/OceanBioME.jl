@@ -173,7 +173,7 @@ function _calculate_sediment_tendencies!(i, j, sediment::IronPhosphate, bgc, gri
     @inbounds begin
         oxygen_deposition = 0#oxygen_flux(i, j, k, grid, advection, bgc, tracers) * Δz
 
-        POC_deposition = 5e-9 #carbon_flux(i, j, k, grid, advection, bgc, tracers) * Δz
+        POC_deposition = 0#5e-9 #carbon_flux(i, j, k, grid, advection, bgc, tracers) * Δz
 
         iron_deposition = 0#5e-10 #carbon_flux(i, j, k, grid, advection, bgc, tracers) * Δz * (1/106) * 0.1
         
@@ -198,12 +198,12 @@ function _calculate_sediment_tendencies!(i, j, sediment::IronPhosphate, bgc, gri
         ##### RATES
         #####
 
-        @inline K_O₂ = 1e-6 # μM, Half–saturation constant for O2
-        @inline K_NO₃ = 10e-6 # μM, Half–saturation constant for NO3
-        @inline K_NO₂ = 10e-6 # μM, Half–saturation constant for NO2
+        @inline K_O₂ = 1e-6 # M, Half–saturation constant for O2
+        @inline K_NO₃ = 10e-6 # M, Half–saturation constant for NO3
+        @inline K_NO₂ = 10e-6 # M, Half–saturation constant for NO2
         @inline K_Fe = 0.028 # wt-%, Half–saturation constant for Fe
-        @inline K_SO₄ = 0.1e-6 # μM, Half–saturation constant for SO4
-        @inline K_TPO₄ = 10e-6 # μM, Half–saturation constant for TPO4
+        @inline K_SO₄ = 0.1e-6 # M, Half–saturation constant for SO4
+        @inline K_TPO₄ = 10e-6 # M, Half–saturation constant for TPO4
         #(:O₂, :NH₄, :NO₃, :NO₂, :N₂, :TPO₄, :FeOHP, :Feᴵᴵ, :FeS₂, :SO₄, :TH₂S, :CH₄, :TCO₂, :Gi)
          
         @inline kGi = 0.016 # day⁻¹, Rate constant for G0 degradation, Dale et al
@@ -236,7 +236,7 @@ function _calculate_sediment_tendencies!(i, j, sediment::IronPhosphate, bgc, gri
         @inline kFe2ox = 2.7e5 # M-1 day-1
         @inline kFeS2ox = 2.7e3 # M-1 day-1
         @inline kFeS2p = 2.7e4 # M-1 day-1
-        @inline kFe3red = 0.82 # cm1.5 mmol−0.5 day−1
+        @inline kFe3red = 0.82e3 # cm1.5 mol−0.5 day−1
 
         R_DNRA = max(0, TH₂S * NO₃ * fT * kDNRA * per_day_to_per_seconds)
         R_amx = max(0, NH₄ * NO₂ * fT * kamx * per_day_to_per_seconds)
@@ -253,7 +253,6 @@ function _calculate_sediment_tendencies!(i, j, sediment::IronPhosphate, bgc, gri
         if isnan(TPO₄)
             sleep(10)
         end
-        println(O₂)
         @inline ratio_NC = 9.5/106
         @inline ratio_PC = 1/106
         @inline ratio_FeP = 0.1
@@ -276,7 +275,7 @@ function _calculate_sediment_tendencies!(i, j, sediment::IronPhosphate, bgc, gri
         sediment_tendencies.SO₄[i, j, 1] = -0.5 * RSO₄ + R_DNRA - R_AOM + R_H2Sox + 2 * R_FeS2ox + (R_Fe3red / 8)
         sediment_tendencies.TH₂S[i, j, 1] = 0.5 * RSO₄ - R_DNRA + R_AOM - R_H2Sox  - 2 * R_FeS2p - (R_Fe3red / 8)
         sediment_tendencies.CH₄[i, j, 1] = 0.5 * RCH₄ - R_AOM
-        println(sediment_tendencies.FeS₂[i, j, 1])
+        println(4 * RFe - R_Fe2ox + R_FeS2ox - R_FeS2p + R_Fe3red)
     end
 end
 
