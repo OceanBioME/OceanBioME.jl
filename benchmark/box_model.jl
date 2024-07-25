@@ -32,11 +32,11 @@ function run_box_simulation()
 
     clock = Clock(time = Float64(0))
 
-    grid = BoxModelGrid
+    grid = BoxModelGrid()
 
     PAR = FunctionField{Center, Center, Center}(PAR_func, grid; clock)
 
-    biogeochemistry = NutrientPhytoplanktonZooplanktonDetritus(; grid = BoxModelGrid,
+    biogeochemistry = NutrientPhytoplanktonZooplanktonDetritus(; grid,
                                                                  light_attenuation_model = PrescribedPhotosyntheticallyActiveRadiation(PAR))
 
     model = BoxModel(; biogeochemistry, clock)
