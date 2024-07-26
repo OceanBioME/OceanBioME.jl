@@ -10,7 +10,7 @@ steps:
       - JuliaCI/julia#v1:
           version: "1.10"
       - JuliaCI/julia-test#v1:
-          update_registry: false
+          update_registry: true
           coverage: false
     notify:
       - github_commit_status:
@@ -24,7 +24,7 @@ steps:
       - JuliaCI/julia#v1:
           version: "1.10"
       - JuliaCI/julia-test#v1:
-          update_registry: false
+          update_registry: true
           coverage: true
     notify:
       - github_commit_status:
