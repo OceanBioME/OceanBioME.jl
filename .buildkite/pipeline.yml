@@ -13,9 +13,6 @@ steps:
       - JuliaCI/julia#v1:
           version: "1.10"
       - JuliaCI/julia-test#v1: ~
-    agents:
-      queue: Oceananigans
-      architecture: GPU
 
   - label: ":building_construction: :rowboat: cpu setup"
     key: "init_cpu"
@@ -27,9 +24,6 @@ steps:
           version: "1.10"
       - JuliaCI/julia-test#v1:
           coverage: true
-    agents:
-      queue: Oceananigans
-      architecture: CPU
 
   - label: ":speedboat: GPU unit tests"
     plugins:
@@ -38,9 +32,6 @@ steps:
       - JuliaCI/julia-test#v1:
           update_registry: false
           coverage: false
-    agents:
-      queue: Oceananigans
-      architecture: GPU
     depends_on: "init_gpu"
     notify:
       - github_commit_status:
@@ -56,9 +47,6 @@ steps:
       - JuliaCI/julia-test#v1:
           update_registry: false
           coverage: true
-    agents:
-      queue: Oceananigans
-      architecture: CPU
     depends_on: "init_cpu"
     notify:
       - github_commit_status:
@@ -74,9 +62,6 @@ steps:
           version: "1.10"
     command: |
       - "julia --color=yes --project=docs/ docs/make.jl"
-    agents:
-      queue: Oceananigans
-      architecture: CPU
     depends_on: "init_cpu"
     notify:
       - github_commit_status:
