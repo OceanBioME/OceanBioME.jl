@@ -1,6 +1,6 @@
 module Sediments
 
-export SimpleMultiG, InstantRemineralisation
+export SimpleMultiG, InstantRemineralisation, IronPhosphate
 
 using KernelAbstractions
 
@@ -62,6 +62,9 @@ end
 
 @inline nitrogen_flux() = 0
 @inline carbon_flux() = 0
+@inline iron_flux() = 0
+@inline oxygen_flux() = 0
+@inline poc_flux() = 0
 @inline remineralisation_receiver() = nothing
 @inline sinking_tracers() = nothing
 @inline required_tracers() = nothing
@@ -106,5 +109,6 @@ end
 include("coupled_timesteppers.jl")
 include("simple_multi_G.jl")
 include("instant_remineralization.jl")
+include("IronPhosphate.jl")
 
 end # module
