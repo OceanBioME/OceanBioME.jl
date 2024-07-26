@@ -10,10 +10,11 @@ steps:
     plugins:
       - JuliaCI/julia#v1:
           version: "1.10"
-          persist_depot_dirs: ""
+    command: "julia --color=yes --project -e 'using Pkg; Pkg.status()'"
     notify:
       - github_commit_status:
           context: "Setup test environment"
+    
 
   - label: ":speedboat: GPU tests"
     depends_on: "init"
