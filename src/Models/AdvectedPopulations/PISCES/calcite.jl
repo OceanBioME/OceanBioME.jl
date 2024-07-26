@@ -7,33 +7,38 @@
     #P_CaCO₃ (eq76)
     #Forcing for CaCO₃ (eq75)
 
-@inline function λ_CaCO₃¹(CaCO₃) #no argument required, CaCO₃ given as placeholder
+@inline function λ_CaCO₃¹(CaCO₃, bgc, Ω) #no argument required, CaCO₃ given as placeholder
     λ_CaCO₃ = bgc.dissolution_rate_of_calcite
     nca = bgc.exponent_in_the_dissolution_rate_of_calcite
-    #Ω = bgc.carbonate_sat_ratio #define this as an auxiliary field, or using Nemo source code as in PISCES?
-    Ω = 0
     ΔCO₃²⁻ = max(0, 1 - Ω)
-    return λ_CaCO³*(ΔCO₃²⁻)^nca
+    return λ_CaCO₃*(ΔCO₃²⁻)^nca
 end
 
-@inline function R_CaCO₃(P, T, PAR, zₘₓₗ) 
+@inline function get_R_CaCO₃(P, PO₄, NO₃, NH₄, Pᶜʰˡ, Pᶠᵉ, Fe, T, PAR, zₘₓₗ, bgc) 
     r_CaCO₃ = bgc.rain_ratio_parameter
-    Lₗᵢₘᶜᵃᶜᵒ³ = #does this equal 1 or as defined in original PISCES?
-    return r_CaCO₃*Lₗᵢₘᶜᵃᶜᵒ³*T*max(1, P/2)*max(0, PAR - 1)*30*(1 + exp((-(T-10)^2)/25))*min(1, 50/zₘₓₗ)/((0.1 + T)*(4 + PAR)*(30 + PAR)) #eq77
+    Kₙₕ₄ᴾᵐⁱⁿ = bgc.min_half_saturation_const_for_ammonium.P
+    Sᵣₐₜᴾ = bgc.size_ratio_of_phytoplankton.P
+    Pₘₐₓ = bgc.threshold_concentration_for_size_dependency.P
+    P₁ =  I₁(P, Pₘₐₓ)
+    P₂ = I₂(P, Pₘₐₓ)
+    Lₙᴾ = Lᴾ(P, PO₄, NO₃, NH₄, Pᶜʰˡ, Pᶠᵉ, bgc)[5]
+    Kₙₕ₄ᴾ = Kᵢᴶ(Kₙₕ₄ᴾᵐⁱⁿ, P₁, P₂, Sᵣₐₜᴾ)
+    Lₗᵢₘᶜᵃᶜᵒ³ = min(Lₙᴾ, K_mondo(Fe, 6e-11), K_mondo(PO₄, Kₙₕ₄ᴾ))
+    return r_CaCO₃*Lₗᵢₘᶜᵃᶜᵒ³*T*max(1, P/2)*max(0, PAR - 1)*30*(1 + exp((-(T-10)^2)/25))*min(1, 50/zₘₓₗ + eps(0.0))/((0.1 + T)*(4 + PAR)*(30 + PAR)) #eq77
 end
 
-@inline function P_CaCO₃(P, Z, M, T, PAR, zₘₓₗ, z) 
-    mᴾ = bgc.zooplankton_quadratic_mortality.P
+@inline function P_CaCO₃(P, PO₄, NO₃, NH₄, Pᶜʰˡ, Pᶠᵉ, Fe, D, Z, M, POC, T, PAR, zₘₓₗ, z, bgc) 
+    mᴾ = bgc.phytoplankton_mortality_rate.P
     Kₘ = bgc.half_saturation_const_for_mortality
     wᴾ = bgc.min_quadratic_mortality_of_phytoplankton
     ηᶻ = bgc.proportion_of_sinking_grazed_shells.Z
     ηᴹ = bgc.proportion_of_sinking_grazed_shells.M
     sh = get_sh(z, zₘₓₗ)
     
-    return R_CaCO₃(P, T, PAR, zₘₓₗ)*(ηᶻ*grazingᶻ(P, D, POC, T)[2]*Z+ηᴹ*grazingᴹ(P, D, Z, POC, T)[2]*M + 0.5*(mᴾ*K_mondo(P, Kₘ)*P + sh*wᴾ*P^2)) #eq76
+    return get_R_CaCO₃(P, PO₄, NO₃, NH₄, Pᶜʰˡ, Pᶠᵉ, Fe, T, PAR, zₘₓₗ, bgc)*(ηᶻ*get_grazingᶻ(P, D, POC, T, bgc)[2]*Z+ηᴹ*get_grazingᴹ(P, D, Z, POC, T, bgc)[2]*M + 0.5*(mᴾ*K_mondo(P, Kₘ)*P + sh*wᴾ*P^2)) #eq76
 end
 
-@inline function (pisces::PISCES)(::Val{:CaCO₃}, x, y, z, t, P, D, Z, M, Pᶜʰˡ, Dᶜʰˡ, Pᶠᵉ, Dᶠᵉ, Dˢⁱ, DOC, POC, GOC, SFe, BFe, PSi, NO₃, NH₄, PO₄, Fe, Si, CaCO₃, DIC, Alk, O₂, T, PAR, PAR¹, PAR², PAR³, zₘₓₗ, zₑᵤ, Si̅, D_dust) 
+@inline function (bgc::PISCES)(::Val{:CaCO₃}, x, y, z, t, P, D, Z, M, Pᶜʰˡ, Dᶜʰˡ, Pᶠᵉ, Dᶠᵉ, Dˢⁱ, DOC, POC, GOC, SFe, BFe, PSi, NO₃, NH₄, PO₄, Fe, Si, CaCO₃, DIC, Alk, O₂, T, PAR, PAR¹, PAR², PAR³, zₘₓₗ, zₑᵤ, Si̅, D_dust, Ω) 
 
-    return P_CaCO₃(P, Z, M, T, PAR, zₘₓₗ, z) - λ_CaCO₃¹(CaCO₃)*CaCO₃ #partial derivative omitted as sinking is accounted for in other parts of model
+    return P_CaCO₃(P, PO₄, NO₃, NH₄, Pᶜʰˡ, Pᶠᵉ, Fe, D, Z, M, POC, T, PAR, zₘₓₗ, z, bgc) - λ_CaCO₃¹(CaCO₃, bgc, Ω)*CaCO₃ #partial derivative omitted as sinking is accounted for in other parts of model
 end
