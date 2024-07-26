@@ -10,6 +10,7 @@ steps:
     plugins:
       - JuliaCI/julia#v1:
           version: "1.10"
+          persist_depot_dirs: ""
     notify:
       - github_commit_status:
           context: "Setup test environment"
