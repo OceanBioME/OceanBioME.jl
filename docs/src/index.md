@@ -19,9 +19,9 @@ julia> using Pkg
 julia> Pkg.add("OceanBioME")
 ```
 
-!!! compat "Julia 1.9"
+!!! compat "Julia 1.10"
 
-    OceanBioME.jl requires Julia version 1.9 or later.
+    OceanBioME.jl requires Julia version 1.10 or later.
 
 ## Running your first model
 
