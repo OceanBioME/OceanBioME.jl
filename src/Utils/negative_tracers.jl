@@ -1,5 +1,5 @@
 using Oceananigans: fields, Simulation
-using KernelAbstractions
+using KernelAbstractions: @kernel, @index
 using Oceananigans.Utils: work_layout
 using Oceananigans.Architectures: device, architecture, on_architecture
 using Oceananigans.Biogeochemistry: AbstractBiogeochemistry

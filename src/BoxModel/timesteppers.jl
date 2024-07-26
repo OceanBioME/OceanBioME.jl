@@ -1,5 +1,5 @@
 using Oceananigans.Architectures: device
-using Oceananigans.Biogeochemistry: update_tendencies!
+using Oceananigans.Biogeochemistry: update_tendencies!, biogeochemical_auxiliary_fields
 using Oceananigans.TimeSteppers: rk3_substep_field!, store_field_tendencies!, RungeKutta3TimeStepper, QuasiAdamsBashforth2TimeStepper
 using Oceananigans.Utils: work_layout, launch!
 
@@ -18,10 +18,8 @@ end
 function store_tendencies!(model::BoxModel)
     model_fields = prognostic_fields(model)
 
-    for field_name in keys(model_fields)
-        launch!(architecture(model), model.grid, :xyz, store_field_tendencies!,
-                model.timestepper.G⁻[field_name],
-                model.timestepper.Gⁿ[field_name])
+    @inbounds for field_name in keys(model_fields)
+        model.timestepper.G⁻[field_name][1, 1, 1] = model.timestepper.Gⁿ[field_name][1, 1, 1]
     end
 
     return nothing
@@ -30,18 +28,18 @@ end
 function compute_tendencies!(model::BoxModel, callbacks)
     Gⁿ = model.timestepper.Gⁿ
 
-    model_fields = @inbounds [field[1] for field in model.fields]
-
-    @inbounds for tracer in required_biogeochemical_tracers(model.biogeochemistry)
-        if !(tracer == :T)
-            getproperty(Gⁿ, tracer)[1] = model.biogeochemistry(Val(tracer), 0.0, 0.0, 0.0, model.clock.time, model_fields...) + model.forcing[tracer](model.clock.time, model_fields...)
-        end
+    @inbounds for (i, field) in enumerate(model.fields)
+        model.field_values[i] = field[1, 1, 1]
     end
 
-    @inbounds for variable in required_biogeochemical_auxiliary_fields(model.biogeochemistry)
-        if !(variable == :PAR)
-            getproperty(Gⁿ, variable)[1] = model.forcing[variable](model.clock.time, model_fields...)
-        end
+    @inbounds for (i, field) in enumerate(values(biogeochemical_auxiliary_fields(model.biogeochemistry)))
+        model.field_values[i+length(model.fields)] = field[1, 1, 1]
+    end
+
+    for tracer in required_biogeochemical_tracers(model.biogeochemistry)
+        forcing = @inbounds model.forcing[tracer]
+        
+        @inbounds Gⁿ[tracer][1, 1, 1] = tracer_tendency(Val(tracer), model.biogeochemistry, forcing, model.clock.time, model.field_values)
     end
 
     for callback in callbacks
@@ -53,15 +51,35 @@ function compute_tendencies!(model::BoxModel, callbacks)
     return nothing
 end
 
+@inline tracer_tendency(val_name, biogeochemistry, forcing, time, model_fields) =
+    biogeochemistry(val_name, 0, 0, 0, time, model_fields...) + forcing(time, model_fields...)
+
+@inline tracer_tendency(::Val{:T}, biogeochemistry, forcing, time, model_fields) = 0
+
 function rk3_substep!(model::BoxModel, Δt, γⁿ, ζⁿ)
-    workgroup, worksize = work_layout(model.grid, :xyz)
-    substep_field_kernel! = rk3_substep_field!(device(architecture(model)), workgroup, worksize)
     model_fields = prognostic_fields(model)
 
     for (i, field) in enumerate(model_fields)
-        substep_field_kernel!(field, Δt, γⁿ, ζⁿ,
-                              model.timestepper.Gⁿ[i],
-                              model.timestepper.G⁻[i])
+        Gⁿ = @inbounds model.timestepper.Gⁿ[i]
+        G⁻ = @inbounds model.timestepper.G⁻[i]
+
+        rk3_substep!(field, Δt, γⁿ, ζⁿ, Gⁿ, G⁻)
+    end
+
+    return nothing
+end
+
+function rk3_substep!(U, Δt, γⁿ::FT, ζⁿ, Gⁿ, G⁻) where FT
+    @inbounds begin
+        U[1, 1, 1] += convert(FT, Δt) * (γⁿ * Gⁿ[1, 1, 1] + ζⁿ * G⁻[1, 1, 1])
+    end
+    
+    return nothing
+end
+
+function rk3_substep!(U, Δt, γ¹::FT, ::Nothing, G¹, G⁰) where FT
+    @inbounds begin
+        U[1, 1, 1] += convert(FT, Δt) * γ¹ * G¹[1, 1, 1]
     end
 
     return nothing
