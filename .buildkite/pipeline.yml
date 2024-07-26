@@ -5,7 +5,7 @@ env:
   DATADEPS_ALWAYS_ACCEPT: true
 
 steps:
-  - label: ":building_construction: :speedboat: gpu setup"
+  - label: ":construction: gpu setup"
     key: "init_gpu"
     env:
       TEST_GROUP: "none"
@@ -14,7 +14,7 @@ steps:
           version: "1.10"
       - JuliaCI/julia-test#v1: ~
 
-  - label: ":building_construction: :rowboat: cpu setup"
+  - label: ":building_construction: cpu setup"
     key: "init_cpu"
     env:
       TEST_GROUP: "none"
@@ -25,7 +25,7 @@ steps:
       - JuliaCI/julia-test#v1:
           coverage: true
 
-  - label: ":speedboat: GPU unit tests"
+  - label: ":speedboat: GPU tests"
     plugins:
       - JuliaCI/julia#v1:
           version: "1.10"
@@ -35,10 +35,10 @@ steps:
     depends_on: "init_gpu"
     notify:
       - github_commit_status:
-          context: "GPU tests"
+          context: ":speedboat: GPU tests"
     if: !build.pull_request.draft
 
-  - label: ":rowboat: CPU unit tests"
+  - label: ":rowboat: CPU tests"
     env:
       CUDA_VISIBLE_DEVICES: "-1"
     plugins:
@@ -50,7 +50,7 @@ steps:
     depends_on: "init_cpu"
     notify:
       - github_commit_status:
-          context: "CPU tests"
+          context: ":rowboat: CPU tests"
     if: !build.pull_request.draft
 
   - label: ":docusaurus: Documentation"
@@ -60,10 +60,10 @@ steps:
     plugins:
       - JuliaCI/julia#v1:
           version: "1.10"
-    command: |
+    command: 
       - "julia --color=yes --project=docs/ docs/make.jl"
     depends_on: "init_cpu"
     notify:
       - github_commit_status:
-          context: "Documentation"
+          context: ":docusaurus: Documentation"
     if: !build.pull_request.draft
