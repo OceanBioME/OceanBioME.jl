@@ -10,7 +10,9 @@ steps:
     plugins:
       - JuliaCI/julia#v1:
           version: "1.10"
-    command: "julia --color=yes --project -e 'using Pkg; Pkg.status()'"
+    command: 
+      - "julia --color=yes --project -e 'using Pkg; Pkg.status()'"
+      - "echo 'this is the copy'"
     notify:
       - github_commit_status:
           context: "Setup test environment"
