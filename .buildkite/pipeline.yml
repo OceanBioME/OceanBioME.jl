@@ -5,7 +5,8 @@ env:
   DATADEPS_ALWAYS_ACCEPT: true
 
 steps:
-  -label: ":construction: setup julia"
+  - label: ":construction: setup julia"
+    key: "init"
     plugins:
       - JuliaCI/julia#v1:
           version: "1.10"
@@ -14,6 +15,7 @@ steps:
           context: "Setup test environment"
 
   - label: ":speedboat: GPU tests"
+    depends_on: "init"
     plugins:
       - JuliaCI/julia-test#v1:
           update_registry: true
@@ -24,6 +26,7 @@ steps:
     if: !build.pull_request.draft
 
   - label: ":rowboat: CPU tests"
+    depends_on: "init"
     env:
       CUDA_VISIBLE_DEVICES: "-1"
     plugins:
@@ -36,6 +39,7 @@ steps:
     if: !build.pull_request.draft
 
   - label: ":docusaurus: Documentation"
+    depends_on: "init"
     env:
       CUDA_VISIBLE_DEVICES: "-1"
       JULIA_DEBUG: "Documenter"
