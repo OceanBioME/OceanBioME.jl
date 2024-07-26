@@ -19,6 +19,8 @@ steps:
   - label: ":speedboat: GPU tests"
     depends_on: "init"
     plugins:
+      - JuliaCI/julia#v1:
+          version: "1.10"
       - JuliaCI/julia-test#v1:
           update_registry: true
           coverage: false
@@ -32,6 +34,8 @@ steps:
     env:
       CUDA_VISIBLE_DEVICES: "-1"
     plugins:
+      - JuliaCI/julia#v1:
+          version: "1.10"
       - JuliaCI/julia-test#v1:
           update_registry: true
           coverage: true
@@ -45,6 +49,9 @@ steps:
     env:
       CUDA_VISIBLE_DEVICES: "-1"
       JULIA_DEBUG: "Documenter"
+    plugind:
+      - JuliaCI/julia#v1:
+          version: "1.10"
     command: 
       - "julia --color=yes --project=docs/ -e 'using Pkg; Pkg.Registry.update(); Pkg.develop(PackageSpec(path=pwd())); Pkg.instantiate()'"
       - "julia --color=yes --project=docs/ docs/make.jl"
