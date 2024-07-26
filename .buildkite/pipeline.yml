@@ -5,10 +5,16 @@ env:
   DATADEPS_ALWAYS_ACCEPT: true
 
 steps:
-  - label: ":speedboat: GPU tests"
+  -label: ":construction: setup julia"
     plugins:
       - JuliaCI/julia#v1:
           version: "1.10"
+    notify:
+      - github_commit_status:
+          context: "Setup test environment"
+
+  - label: ":speedboat: GPU tests"
+    plugins:
       - JuliaCI/julia-test#v1:
           update_registry: true
           coverage: false
@@ -21,8 +27,6 @@ steps:
     env:
       CUDA_VISIBLE_DEVICES: "-1"
     plugins:
-      - JuliaCI/julia#v1:
-          version: "1.10"
       - JuliaCI/julia-test#v1:
           update_registry: true
           coverage: true
@@ -35,9 +39,6 @@ steps:
     env:
       CUDA_VISIBLE_DEVICES: "-1"
       JULIA_DEBUG: "Documenter"
-    plugins:
-      - JuliaCI/julia#v1:
-          version: "1.10"
     command: 
       - "julia --color=yes --project=docs/ -e 'using Pkg; Pkg.Registry.update(); Pkg.develop(PackageSpec(path=pwd())); Pkg.instantiate()'"
       - "julia --color=yes --project=docs/ docs/make.jl"
