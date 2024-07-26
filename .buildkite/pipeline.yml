@@ -49,7 +49,7 @@ steps:
     env:
       CUDA_VISIBLE_DEVICES: "-1"
       JULIA_DEBUG: "Documenter"
-    plugind:
+    plugins:
       - JuliaCI/julia#v1:
           version: "1.10"
     command: 
