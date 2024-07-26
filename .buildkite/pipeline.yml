@@ -12,7 +12,6 @@ steps:
       - JuliaCI/julia-test#v1:
           update_registry: false
           coverage: false
-    depends_on: "init_gpu"
     notify:
       - github_commit_status:
           context: "GPU tests"
@@ -27,7 +26,6 @@ steps:
       - JuliaCI/julia-test#v1:
           update_registry: false
           coverage: true
-    depends_on: "init_cpu"
     notify:
       - github_commit_status:
           context: "CPU tests"
@@ -43,7 +41,6 @@ steps:
     command: 
       - "julia --color=yes --project=docs/ -e 'using Pkg; Pkg.Registry.update(); Pkg.develop(PackageSpec(path=pwd())); Pkg.instantiate()'"
       - "julia --color=yes --project=docs/ docs/make.jl"
-    depends_on: "init_cpu"
     notify:
       - github_commit_status:
           context: "Documentation"
