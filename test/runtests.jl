@@ -8,6 +8,10 @@ include("test_NPZD.jl")
 include("test_gasexchange.jl")
 include("test_sediments.jl")
 
+if architecture == CPU() 
+    include("test_boxmodel.jl") # box models (probably) don't work on GPU, and it wouldn't be faster anyway
+end
+
 architecture == CPU() && @testset "Doctests" begin
     doctest(OceanBioME)
 end
