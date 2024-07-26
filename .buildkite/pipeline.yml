@@ -71,7 +71,7 @@ steps:
       JULIA_DEBUG: "Documenter"
     plugins:
       - JuliaCI/julia#v1:
-          version: "1.9"
+          version: "1.10"
     command: |
       - "julia --color=yes --project=docs/ docs/make.jl"
     agents:
