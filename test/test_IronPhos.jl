@@ -1,3 +1,7 @@
+#####
+##### This isn't really a test but you can run this to see if sediment works :)
+#####
+
 include("dependencies_for_runtests.jl")
 
 using OceanBioME.Sediments: SimpleMultiG, InstantRemineralisation, IronPhosphate
@@ -18,7 +22,7 @@ function intercept_tracer_tendencies!(model, intercepted_tendencies)
 end
 
 function set_defaults!(sediment::IronPhosphate)
-    set!(sediment.fields.O₂, 1e-6)
+    set!(sediment.fields.O₂, 1e-6) # defaults based of Dale et al and what looks realistic
     set!(sediment.fields.NH₄, 100e-6)
     set!(sediment.fields.NO₃, 6e-6)
     set!(sediment.fields.NO₂, 0.5e-6)
@@ -34,8 +38,8 @@ function set_defaults!(sediment::IronPhosphate)
     set!(sediment.fields.Gi, 1e-6)
 end 
 
-set_defaults!(::VariableRedfieldLobster, model) =
-    set!(model, P = 0.4686, Z = 0.5363, 
+set_defaults!(::VariableRedfieldLobster, model) = 
+    set!(model, P = 0.4686, Z = 0.5363,  # dont think these really matter
                 NO₃ = 2.3103, NH₄ = 0.0010, 
                 DIC = 2106.9, Alk = 2408.9, 
                 O₂ = 258.92, 
@@ -45,7 +49,7 @@ set_defaults!(::VariableRedfieldLobster, model) =
 
 #total_nitrogen(sed::SimpleMultiG) = sum(sed.fields.N_fast) + 
 #                                    sum(sed.fields.N_slow) + 
-#                                    sum(sed.fields.N_ref)
+#                                    sum(sed.fields.N_ref) TODO add these back when the model doesnt explode
 
 #total_nitrogen(::VariableRedfieldLobster, model) = sum(model.tracers.NO₃) +
 #                                                     sum(model.tracers.NH₄) +
@@ -54,6 +58,10 @@ set_defaults!(::VariableRedfieldLobster, model) =
 #                                                     sum(model.tracers.DON) +
 #                                                     sum(model.tracers.sPON) +
 #                                                     sum(model.tracers.bPON)
+
+#####
+##### Creates a the model and runs the simulation in a 1x1x50 grid (only top square represents the sediment)
+#####
 
 bottom_height(x, y) = -1000 + 500 * exp(- (x^2 + y^2) / 250) # a perfect hill
 
@@ -90,12 +98,15 @@ simulation.callbacks[:intercept_tendencies] = Callback(intercept_tracer_tendenci
 
 run!(simulation)
 
-var_name_example = keys(model.biogeochemistry.sediment.fields)[1]
+#####
+##### Plots all the tracers
+#####
+
+var_name_example = keys(model.biogeochemistry.sediment.fields)[1] # grabs a random sediment to get times
 times = FieldTimeSeries("temp_plotting_data.jld2", "$var_name_example").times
 
 timeseries = NamedTuple{keys(model.biogeochemistry.sediment.fields)}(FieldTimeSeries("temp_plotting_data.jld2", "$field")[1, 1, 1, :] for field in keys(model.biogeochemistry.sediment.fields))
 
-# ## And plot
 using CairoMakie
 
 fig = Figure(size = (2400, 2400), fontsize = 24)
@@ -112,7 +123,3 @@ for (name, tracer) in pairs(timeseries)
 end
 
 display(fig)
-
-
-
-@info "Success!"

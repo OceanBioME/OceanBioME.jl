@@ -66,10 +66,9 @@ can be optionally specified.
 
 The model is a single layer (i.e. does not include porous diffusion) model with three classes
 of sediment organic matter which decay at three different rates (fast, slow, refactory).
-The nitrification/denitrification/anoxic mineralisation fractions default to the parameterisation
-of Soetaert et al. 2000; doi:[10.1016/S0012-8252(00)00004-0](https://doi.org/10.1016/S0012-8252(00)00004-0).
+It is based on the equations and rate constants described in Dale et al, 2012 describing beggiatoa as a phosphate sink. 
 
-Additionally, Iron and Phosphate reactions are computed to adjust O2, NO3 and POC fluxes
+Fluxes are set to be constant
 
 This model has not yet been validated or compared to observational data. The variety of degridation
 processes is likely to be strongly dependent on oxygen availability (see
@@ -105,7 +104,7 @@ function IronPhosphate(; grid,
                         solid_dep_params = on_architecture(architecture(grid), [0.233, 0.336, 982.0, - 1.548]))
 
     @warn "Sediment models are an experimental feature and have not yet been validated."
-    @info "This sediment model is currently only compatible with models providing NH₄, NO₃, O₂, and DIC."
+    @info "This sediment model is currently only compatible with models providing POC and Iron deposition fluxes."
 
     tracer_names = (:O₂, :NH₄, :NO₃, :NO₂, :N₂, :TPO₄, :FeOHP, :Feᴵᴵ, :FeS₂, :SO₄, :TH₂S, :CH₄, :TCO₂, :Gi)
         #:C_slow, :C_fast, :N_slow, :N_fast, :C_ref, :N_ref, :Fe_III, :Fe_II, :PO4_dissolved, :P_org)
@@ -171,13 +170,17 @@ function _calculate_sediment_tendencies!(i, j, sediment::IronPhosphate, bgc, gri
     Δz = zspacing(i, j, k, grid, Center(), Center(), Center())
 
     @inbounds begin
-        oxygen_deposition = 0#oxygen_flux(i, j, k, grid, advection, bgc, tracers) * Δz
+        #####
+        ##### Define incoming fluxes
+        #####
 
-        POC_deposition = 0#5e-9 #carbon_flux(i, j, k, grid, advection, bgc, tracers) * Δz
+        oxygen_deposition = 0 #oxygen_flux(i, j, k, grid, advection, bgc, tracers) * Δz
 
-        iron_deposition = 0#5e-10 #carbon_flux(i, j, k, grid, advection, bgc, tracers) * Δz * (1/106) * 0.1
+        POC_deposition = carbon_flux(i, j, k, grid, advection, bgc, tracers) * Δz
+
+        iron_deposition = carbon_flux(i, j, k, grid, advection, bgc, tracers) * Δz * (1/106) * 0.1
         
-        #(:O₂, :NH₄, :NO₃, :NO₂, :N₂, :TPO₄, :FeOHP, :Feᴵᴵ, :FeS₂, :SO₄, :TH₂S, :CH₄, :TCO₂, :Gi)
+        # define current tracer concentrations
         O₂ = sediment.fields.O₂[i, j, 1]
         NH₄ = sediment.fields.NH₄[i, j, 1]
         NO₃ = sediment.fields.NO₃[i, j, 1]
@@ -189,13 +192,10 @@ function _calculate_sediment_tendencies!(i, j, sediment::IronPhosphate, bgc, gri
         SO₄ = sediment.fields.SO₄[i, j, 1]
         TH₂S = sediment.fields.TH₂S[i, j, 1]
         CH₄ = sediment.fields.CH₄[i, j, 1]
-        Gi = sediment.fields.Gi[i, j, 1]
+        Gi = sediment.fields.Gi[i, j, 1] # the particulate matter debris
 
-        #println(FeOHP + FeS₂ + Feᴵᴵ) # iron is conserved
-        #println(2*FeS₂+SO₄+TH₂S) # sulfur is conserved
-        #saprintln(TPO₄)
         #####
-        ##### RATES
+        ##### Calculate Rates of reactions
         #####
 
         @inline K_O₂ = 1e-6 # M, Half–saturation constant for O2
@@ -205,12 +205,21 @@ function _calculate_sediment_tendencies!(i, j, sediment::IronPhosphate, bgc, gri
         @inline K_SO₄ = 0.1e-6 # M, Half–saturation constant for SO4
         @inline K_TPO₄ = 10e-6 # M, Half–saturation constant for TPO4
         @inline K_CH₄ = 10e-6 # M, Half–saturation constant for TPO4
-        #(:O₂, :NH₄, :NO₃, :NO₂, :N₂, :TPO₄, :FeOHP, :Feᴵᴵ, :FeS₂, :SO₄, :TH₂S, :CH₄, :TCO₂, :Gi)
-         
+                 
         @inline kGi = 0.016 # day⁻¹, Rate constant for G0 degradation, Dale et al
         @inline fT = 1 # TODO temperature correction for rates
         @inline fₒₓ = 10 # Enhancement factor for POM degradation by O2
-        @inline per_day_to_per_seconds = 1 / (60 * 60 * 24) 
+
+        @inline kDNRA = 2.7e5 # M-1 day-1
+        @inline kamx = 2.7e4 # M-1 day-1
+        @inline kNH4ox = 2.7e4# M-1 day-1
+        @inline kNO2ox = 2.7e4 # M-1 day-1
+        @inline kAOM = 0.27e6 # day-1
+        @inline kH2Sox = 2.7e4 # M-1 day-1
+        @inline kFe2ox = 2.7e5 # M-1 day-1
+        @inline kFeS2ox = 2.7e3 # M-1 day-1
+        @inline kFeS2p = 2.7e4 # M-1 day-1
+        @inline kFe3red = 0.82e3 # cm1.5 mol−0.5 day−1
         
         fₖ₋ₒ₂ = O₂ / (O₂ + K_O₂) # kinetic limiting term
         fₖ₋ₙₒ₃ = NO₃ / (NO₃ + K_NO₃) # kinetic limiting term
@@ -227,19 +236,6 @@ function _calculate_sediment_tendencies!(i, j, sediment::IronPhosphate, bgc, gri
         RSO₄ = max(0, Gi * (fT * kGi * fₖ₋ₛₒ₄ * (1 - fK_Fe) *(1 - fₖ₋ₙₒ₃) * (1 - fₖ₋ₙₒ₂) * (1 - fₖ₋ₒ₂)))/day
         RCH₄ = max(0, Gi * (fT * kGi * fₖ₋cₕ₄ * (1 - fₖ₋ₛₒ₄) * (1 - fK_Fe) *(1 - fₖ₋ₙₒ₃) * (1 - fₖ₋ₙₒ₂) * (1 - fₖ₋ₒ₂)))/day
 
-        
-
-        @inline kDNRA = 2.7e5 # M-1 day-1
-        @inline kamx = 2.7e4 # M-1 day-1
-        @inline kNH4ox = 2.7e4# M-1 day-1
-        @inline kNO2ox = 2.7e4 # M-1 day-1
-        @inline kAOM = 0.27e6 # day-1
-        @inline kH2Sox = 2.7e4 # M-1 day-1
-        @inline kFe2ox = 2.7e5 # M-1 day-1
-        @inline kFeS2ox = 2.7e3 # M-1 day-1
-        @inline kFeS2p = 2.7e4 # M-1 day-1
-        @inline kFe3red = 0.82e3 # cm1.5 mol−0.5 day−1
-
         R_DNRA = max(0, TH₂S * NO₃ * fT * kDNRA)/day
         R_amx = max(0, NH₄ * NO₂ * fT * kamx)/day
         R_NH4ox = max(0, NH₄ * O₂ * fT * kNH4ox)/day
@@ -251,16 +247,12 @@ function _calculate_sediment_tendencies!(i, j, sediment::IronPhosphate, bgc, gri
         R_FeS2p = max(0, TH₂S * Feᴵᴵ * fT * kFeS2p)/day # H2 should be produced here but I assume it dissociates...
         R_Fe3red = max(0, max(0, TH₂S) ^ 0.5 * FeOHP * fT * kFe3red * (2 / (O₂ + 2)))/day
 
-        #println(R_DNRA, "  ", R_amx, "  ", R_NH4ox, "  ", R_NO2ox, "  ", R_AOM, "  ", R_H2Sox, "  ", R_Fe2ox, "  ", R_FeS2ox, "  ", R_FeS2p, "  ", R_Fe3red, "  ")
-        #if isnan(TPO₄)
-          #  sleep(10)
-        #end
-        @inline ratio_NC = 9.5/106
+        @inline ratio_NC = 9.5/106 # redfield rations (almost) for sediment ratios of Gi
         @inline ratio_PC = 1/106
         @inline ratio_FeP = 0.1
 
         #####
-        ##### sediment evolution
+        ##### calculate sediment evolution tendencies
         #####
 
         sediment_tendencies.Gi[i, j, 1] = POC_deposition - RO₂ - RNO₃ - RNO₂ - RFe - RSO₄ - RCH₄
@@ -272,12 +264,11 @@ function _calculate_sediment_tendencies!(i, j, sediment::IronPhosphate, bgc, gri
         sediment_tendencies.N₂[i, j, 1] = R_amx + 0.66 * RNO₂
         sediment_tendencies.TPO₄[i, j, 1] = ratio_PC * (RO₂ + RNO₃ + RNO₂ + RFe + RSO₄ + RCH₄) + RFe * ratio_FeP - ratio_FeP * R_Fe2ox * fₖ₋ₜₚₒ₄ + ratio_FeP * R_Fe3red # TODO P not conserved???
         sediment_tendencies.FeOHP[i, j, 1] = iron_deposition - 4 * RFe + R_Fe2ox - R_Fe3red
-        sediment_tendencies.Feᴵᴵ[i, j, 1] = 4 * RFe - R_Fe2ox + R_FeS2ox - R_FeS2p + R_Fe3red
+        sediment_tendencies.Feᴵᴵ[i, j, 1] = 4 * RFe - R_Fe2ox + R_FeS2ox - R_FeS2p + R_Fe3red # why is this tending -ve?
         sediment_tendencies.FeS₂[i, j, 1] = R_FeS2p - R_FeS2ox
         sediment_tendencies.SO₄[i, j, 1] = -0.5 * RSO₄ + R_DNRA - R_AOM + R_H2Sox + 2 * R_FeS2ox + (R_Fe3red / 8)
         sediment_tendencies.TH₂S[i, j, 1] = 0.5 * RSO₄ - R_DNRA + R_AOM - R_H2Sox  - 2 * R_FeS2p - (R_Fe3red / 8)
-        sediment_tendencies.CH₄[i, j, 1] = 0.5 * RCH₄ - R_AOM
-        println(sediment_tendencies.Feᴵᴵ[i, j, 1])
+        sediment_tendencies.CH₄[i, j, 1] = 0.5 * RCH₄ - R_AOM # why is this tending -ve?
     end
 end
 
