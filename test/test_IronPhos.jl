@@ -57,7 +57,7 @@ set_defaults!(::VariableRedfieldLobster, model) =
 
 bottom_height(x, y) = -1000 + 500 * exp(- (x^2 + y^2) / 250) # a perfect hill
 
-grid = RectilinearGrid(architecture; size=(3, 3, 50), extent=(10, 10, 500))
+grid = RectilinearGrid(architecture; size=(1, 1, 50), extent=(1, 1, 500))
 sediment_model = IronPhosphate(; grid)
 biogeochemistry = LOBSTER(; grid,
                                     carbonates = true, 

@@ -204,6 +204,7 @@ function _calculate_sediment_tendencies!(i, j, sediment::IronPhosphate, bgc, gri
         @inline K_Fe = 0.028 # wt-%, Half–saturation constant for Fe
         @inline K_SO₄ = 0.1e-6 # M, Half–saturation constant for SO4
         @inline K_TPO₄ = 10e-6 # M, Half–saturation constant for TPO4
+        @inline K_CH₄ = 10e-6 # M, Half–saturation constant for TPO4
         #(:O₂, :NH₄, :NO₃, :NO₂, :N₂, :TPO₄, :FeOHP, :Feᴵᴵ, :FeS₂, :SO₄, :TH₂S, :CH₄, :TCO₂, :Gi)
          
         @inline kGi = 0.016 # day⁻¹, Rate constant for G0 degradation, Dale et al
@@ -217,13 +218,14 @@ function _calculate_sediment_tendencies!(i, j, sediment::IronPhosphate, bgc, gri
         fK_Fe = FeOHP / (FeOHP + K_Fe) # kinetic limiting term
         fₖ₋ₛₒ₄ = SO₄ / (SO₄ + K_SO₄) # kinetic limiting term
         fₖ₋ₜₚₒ₄ = TPO₄ / (TPO₄ + K_TPO₄) # kinetic limiting term
+        fₖ₋cₕ₄ = CH₄ / (CH₄ + K_CH₄) # kinetic limiting term
 
-        RO₂ = max(0, Gi * (fT * kGi * fₒₓ * fₖ₋ₒ₂) * per_day_to_per_seconds)
-        RNO₃ = max(0, Gi * (fT * kGi * fₖ₋ₙₒ₃ * (1 - fₖ₋ₙₒ₂) * (1 - fₖ₋ₒ₂)) * per_day_to_per_seconds)
-        RNO₂ = max(0, Gi * (fT * kGi * fₖ₋ₙₒ₂ * (1 - fₖ₋ₒ₂)) * per_day_to_per_seconds)
-        RFe = max(0, Gi * (fT * kGi * fK_Fe * (1 - fₖ₋ₙₒ₃) * (1 - fₖ₋ₙₒ₂) * (1 - fₖ₋ₙₒ₂)) * per_day_to_per_seconds)
-        RSO₄ = max(0, Gi * (fT * kGi * fₖ₋ₛₒ₄ * (1 - fK_Fe) *(1 - fₖ₋ₙₒ₃) * (1 - fₖ₋ₙₒ₂) * (1 - fₖ₋ₙₒ₂)) * per_day_to_per_seconds)
-        RCH₄ = max(0, Gi * (fT * kGi * (1 - fₖ₋ₛₒ₄) * (1 - fK_Fe) *(1 - fₖ₋ₙₒ₃) * (1 - fₖ₋ₙₒ₂) * (1 - fₖ₋ₙₒ₂)) * per_day_to_per_seconds)
+        RO₂ = max(0, Gi * (fT * kGi * fₒₓ * fₖ₋ₒ₂))/day
+        RNO₂ = max(0, Gi * (fT * kGi * fₖ₋ₙₒ₂ * (1 - fₖ₋ₒ₂)))/day
+        RNO₃ = max(0, Gi * (fT * kGi * fₖ₋ₙₒ₃ * (1 - fₖ₋ₙₒ₂) * (1 - fₖ₋ₒ₂)))/day
+        RFe = max(0, Gi * (fT * kGi * fK_Fe * (1 - fₖ₋ₙₒ₃) * (1 - fₖ₋ₙₒ₂) * (1 - fₖ₋ₒ₂)))/day
+        RSO₄ = max(0, Gi * (fT * kGi * fₖ₋ₛₒ₄ * (1 - fK_Fe) *(1 - fₖ₋ₙₒ₃) * (1 - fₖ₋ₙₒ₂) * (1 - fₖ₋ₒ₂)))/day
+        RCH₄ = max(0, Gi * (fT * kGi * fₖ₋cₕ₄ * (1 - fₖ₋ₛₒ₄) * (1 - fK_Fe) *(1 - fₖ₋ₙₒ₃) * (1 - fₖ₋ₙₒ₂) * (1 - fₖ₋ₒ₂)))/day
 
         
 
@@ -231,28 +233,28 @@ function _calculate_sediment_tendencies!(i, j, sediment::IronPhosphate, bgc, gri
         @inline kamx = 2.7e4 # M-1 day-1
         @inline kNH4ox = 2.7e4# M-1 day-1
         @inline kNO2ox = 2.7e4 # M-1 day-1
-        @inline kAOM = 0.27 # day-1
+        @inline kAOM = 0.27e6 # day-1
         @inline kH2Sox = 2.7e4 # M-1 day-1
         @inline kFe2ox = 2.7e5 # M-1 day-1
         @inline kFeS2ox = 2.7e3 # M-1 day-1
         @inline kFeS2p = 2.7e4 # M-1 day-1
         @inline kFe3red = 0.82e3 # cm1.5 mol−0.5 day−1
 
-        R_DNRA = max(0, TH₂S * NO₃ * fT * kDNRA * per_day_to_per_seconds)
-        R_amx = max(0, NH₄ * NO₂ * fT * kamx * per_day_to_per_seconds)
-        R_NH4ox = max(0, NH₄ * O₂ * fT * kNH4ox * per_day_to_per_seconds)
-        R_NO2ox = max(0, NO₂ * O₂ * fT * kNO2ox * per_day_to_per_seconds)
-        R_AOM = max(0, CH₄ * SO₄ * fT * kAOM * per_day_to_per_seconds)
-        R_H2Sox = max(0, TH₂S * O₂ * fT * kH2Sox * per_day_to_per_seconds)
-        R_Fe2ox = max(0, Feᴵᴵ * O₂ * fT * kFe2ox * per_day_to_per_seconds)
-        R_FeS2ox = max(0, FeS₂ * O₂ * fT * kFeS2ox * per_day_to_per_seconds)
-        R_FeS2p = max(0, TH₂S * Feᴵᴵ * fT * kFeS2p * per_day_to_per_seconds) # H2 should be produced here but I assume it dissociates...
-        R_Fe3red = max(0, max(0, TH₂S) ^ 0.5 * FeOHP * fT * kFe3red * (2 / (O₂ + 2)) * per_day_to_per_seconds)
+        R_DNRA = max(0, TH₂S * NO₃ * fT * kDNRA)/day
+        R_amx = max(0, NH₄ * NO₂ * fT * kamx)/day
+        R_NH4ox = max(0, NH₄ * O₂ * fT * kNH4ox)/day
+        R_NO2ox = max(0, NO₂ * O₂ * fT * kNO2ox)/day
+        R_AOM = max(0, CH₄ * SO₄ * fT * kAOM)/day
+        R_H2Sox = max(0, TH₂S * O₂ * fT * kH2Sox)/day
+        R_Fe2ox = max(0, Feᴵᴵ * O₂ * fT * kFe2ox)/day
+        R_FeS2ox = max(0, FeS₂ * O₂ * fT * kFeS2ox)/day
+        R_FeS2p = max(0, TH₂S * Feᴵᴵ * fT * kFeS2p)/day # H2 should be produced here but I assume it dissociates...
+        R_Fe3red = max(0, max(0, TH₂S) ^ 0.5 * FeOHP * fT * kFe3red * (2 / (O₂ + 2)))/day
 
         #println(R_DNRA, "  ", R_amx, "  ", R_NH4ox, "  ", R_NO2ox, "  ", R_AOM, "  ", R_H2Sox, "  ", R_Fe2ox, "  ", R_FeS2ox, "  ", R_FeS2p, "  ", R_Fe3red, "  ")
-        if isnan(TPO₄)
-            sleep(10)
-        end
+        #if isnan(TPO₄)
+          #  sleep(10)
+        #end
         @inline ratio_NC = 9.5/106
         @inline ratio_PC = 1/106
         @inline ratio_FeP = 0.1
@@ -275,7 +277,7 @@ function _calculate_sediment_tendencies!(i, j, sediment::IronPhosphate, bgc, gri
         sediment_tendencies.SO₄[i, j, 1] = -0.5 * RSO₄ + R_DNRA - R_AOM + R_H2Sox + 2 * R_FeS2ox + (R_Fe3red / 8)
         sediment_tendencies.TH₂S[i, j, 1] = 0.5 * RSO₄ - R_DNRA + R_AOM - R_H2Sox  - 2 * R_FeS2p - (R_Fe3red / 8)
         sediment_tendencies.CH₄[i, j, 1] = 0.5 * RCH₄ - R_AOM
-        println(4 * RFe - R_Fe2ox + R_FeS2ox - R_FeS2p + R_Fe3red)
+        println(sediment_tendencies.Feᴵᴵ[i, j, 1])
     end
 end
 
