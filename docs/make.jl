@@ -32,7 +32,8 @@ examples = [
 
 example_scripts = [ filename * ".jl" for (title, filename) in examples ]
 
-replace_silly_warning(content) = replace(content, r"┌ Warning:.*\s+└ @ JLD2 ~/\.julia/packages/JLD2/.*/reconstructing_datatypes\.jl.*\n" => "")
+replace_silly_warning(content) = replace(content, r"┌ Warning:.*\s+└ @ JLD2 ~/\.julia/packages/JLD2/.*/reconstructing_datatypes\.jl.*\n" => "",
+                                                  r"┌ Warning:.*\s+└ @ JLD2 ~/.*/packages/JLD2/.*/reconstructing_datatypes\.jl.*\n" => "")
 
 for example in example_scripts
     example_filepath = joinpath(EXAMPLES_DIR, example)
