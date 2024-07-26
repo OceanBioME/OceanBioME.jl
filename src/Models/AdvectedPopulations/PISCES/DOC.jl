@@ -1,9 +1,9 @@
-@inline function Rᵤₚ(M, T, bgc)
+@inline function Rᵤₚ(M, T, bgc) #third term has small magnitude, as mᴹ per day
     σᴹ = bgc.non_assimilated_fraction.M
     eₘₐₓᴹ = bgc.max_growth_efficiency_of_zooplankton.M
     mᴹ = bgc.zooplankton_quadratic_mortality.M
     bₘ = bgc.temperature_sensitivity_term.M
-    return (1 - σᴹ - eₘₐₓᴹ)*(1)/(1-eₘₐₓᴹ + eps(0.0))*mᴹ*bₘ^T*M^2  #30b
+    return (1 - σᴹ - eₘₐₓᴹ)*(1/(1-eₘₐₓᴹ + eps(0.0)))*mᴹ*(bₘ^T)*M^2  #30b
 end
 
 @inline function Pᵤₚ(M, T, bgc)
@@ -55,10 +55,9 @@ end
     return Φ₁ᴰᴼᶜ, Φ₂ᴰᴼᶜ, Φ₃ᴰᴼᶜ
 end
 
-@inline function λ¹(T, O₂, bgc)
+@inline function λ¹(T, O₂, bgc) #has small magnitude as λₚₒ per day
     λₚₒ= bgc.degradation_rate_of_POC
     bₚ = bgc.temperature_sensitivity_of_growth
-
     return λₚₒ*bₚ^T*(1 - 0.45*ΔO₂(O₂, bgc))  #38
 end
 
