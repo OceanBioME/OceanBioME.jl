@@ -5,26 +5,6 @@ env:
   DATADEPS_ALWAYS_ACCEPT: true
 
 steps:
-  - label: ":construction: gpu setup"
-    key: "init_gpu"
-    env:
-      TEST_GROUP: "none"
-    plugins:
-      - JuliaCI/julia#v1:
-          version: "1.10"
-      - JuliaCI/julia-test#v1: ~
-
-  - label: ":building_construction: cpu setup"
-    key: "init_cpu"
-    env:
-      TEST_GROUP: "none"
-      CUDA_VISIBLE_DEVICES: "-1"
-    plugins:
-      - JuliaCI/julia#v1:
-          version: "1.10"
-      - JuliaCI/julia-test#v1:
-          coverage: true
-
   - label: ":speedboat: GPU tests"
     plugins:
       - JuliaCI/julia#v1:
@@ -61,6 +41,7 @@ steps:
       - JuliaCI/julia#v1:
           version: "1.10"
     command: 
+      - "julia --color=yes --project=docs/ -e 'using Pkg; Pkg.Registry.update(); Pkg.develop(PackageSpec(path=pwd())); Pkg.instantiate()'"
       - "julia --color=yes --project=docs/ docs/make.jl"
     depends_on: "init_cpu"
     notify:
