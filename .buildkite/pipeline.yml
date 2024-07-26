@@ -35,7 +35,7 @@ steps:
     depends_on: "init_gpu"
     notify:
       - github_commit_status:
-          context: ":speedboat: GPU tests"
+          context: "GPU tests"
     if: !build.pull_request.draft
 
   - label: ":rowboat: CPU tests"
@@ -50,7 +50,7 @@ steps:
     depends_on: "init_cpu"
     notify:
       - github_commit_status:
-          context: ":rowboat: CPU tests"
+          context: "CPU tests"
     if: !build.pull_request.draft
 
   - label: ":docusaurus: Documentation"
@@ -65,5 +65,5 @@ steps:
     depends_on: "init_cpu"
     notify:
       - github_commit_status:
-          context: ":docusaurus: Documentation"
+          context: "Documentation"
     if: !build.pull_request.draft
