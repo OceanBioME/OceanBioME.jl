@@ -17,7 +17,7 @@ using Oceananigans.Fields: FunctionField
 
 const year = years = 365day
 
-grid = BoxModelGrid
+grid = BoxModelGrid()
 clock = Clock(time = zero(grid))
 
 nothing #hide

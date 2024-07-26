@@ -42,7 +42,7 @@ function run_box_simulation(initial_photosynthetic_slope,
                             phyto_base_mortality_rate,
                             j)
 
-    biogeochemistry = NutrientPhytoplanktonZooplanktonDetritus(; grid = BoxModelGrid,
+    biogeochemistry = NutrientPhytoplanktonZooplanktonDetritus(; grid = BoxModelGrid(),
                                                                  initial_photosynthetic_slope,
                                                                  base_maximum_growth,
                                                                  nutrient_half_saturation,
