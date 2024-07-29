@@ -20,16 +20,17 @@ K(T, S, uₐᵥ, Sc_params, β_params, ρₒ) = k(T, uₐᵥ, Sc_params) * β(T 
 ##### Boundary condition setup
 #####
 
-struct GasExchange{G, ScP, βP, FT, AC, AP, PCO} <: Function
+struct GasExchange{G, ScP, βP, FT, AC, AP, AT, PCO} <: Function
     gas :: G
 
     schmidt_params :: ScP
     solubility_params :: βP
     air_concentration :: AC
     air_pressure :: AP
+    air_temperature :: AT
     average_wind_speed :: FT
 
-    pCO₂ :: PCO
+    fCO₂ :: PCO
 end
 
 adapt_structure(to, gasexchange::GasExchange) = GasExchange(adapt(to, gasexchange.gas),
@@ -37,8 +38,9 @@ adapt_structure(to, gasexchange::GasExchange) = GasExchange(adapt(to, gasexchang
                                                             adapt(to, gasexchange.solubility_params),
                                                             adapt(to, gasexchange.air_concentration),
                                                             adapt(to, gasexchange.air_pressure),
+                                                            adapt(to, gasexchange.air_temperature),
                                                             gasexchange.average_wind_speed,
-                                                            adapt(to, gasexchange.pCO₂))
+                                                            adapt(to, gasexchange.fCO₂))
 
 """
     GasExchange(; gas,
@@ -50,7 +52,7 @@ adapt_structure(to, gasexchange::GasExchange) = GasExchange(adapt(to, gasexchang
                   air_pressure::FT = 1.0, # atm
                   average_wind_speed::FT = 10, # m/s
                   field_dependencies = (CO₂ = (:DIC, :Alk), O₂ = (:OXY, ))[gas]
-                  pCO₂::PCO = gas == :CO₂ ? CarbonChemistry() : nothing)
+                  fCO₂::PCO = gas == :CO₂ ? CarbonChemistry() : nothing)
 
 Construct an Oceananigans `FluxBoundaryCondition` for the exchange of `gas` with the relevant tracer (i.e., DIC for CO₂ and oxygen for O₂).
 Please see note for other gases.
@@ -65,7 +67,7 @@ Keyword arguments
 - `air_pressure` : air pressure in atm (only used for CO₂), can also be a function of x, y, t, or a field
 - `average_wind_speed` : average wind speed at 10m used to calculate the gas transfer velocity by the [Wanninkhof1992](@citet) parameterisation
 - `field_dependencies` : tracer fields that gas exchange depends on, if the defaults have different names in your model you can specify as long as they are in the same order
-- `pCO₂` : pCO₂ calculator
+- `fCO₂` : fCO₂ calculator
 
 !!! note "Gases other than CO₂ and O₂"
     This model is fully capable of exchanging any gas but the parameters have only been configured for CO₂ and O₂, and the specific formulation
@@ -80,26 +82,28 @@ function GasExchange(; gas,
                                                  O₂ = (A₁ = -58.3877, A₂ = 85.8079, A₃ = 23.8439, B₁ = -0.034892, B₂ = 0.015568, B₃ = -0.0019387))[gas],
                        air_concentration::AC = (CO₂ = 413.4, O₂ = 9352.7)[gas], # ppmv, mmolO₂/m³ (20.95 mol O₂/mol air, 0.0224m^3/mol air)
                        air_pressure::AP = 1.0, # atm
+                       air_temperature::AT = 25, # °C
                        average_wind_speed::FT = 10.0, # m/s
                        field_dependencies = (CO₂ = (:DIC, :Alk), O₂ = (:O₂, ))[gas],
-                       pCO₂::PCO = gas == :CO₂ ? CarbonChemistry() : nothing) where {ScP, βP, FT, AC, AP, PCO}
+                       fCO₂::PCO = gas == :CO₂ ? CarbonChemistry() : nothing) where {ScP, βP, FT, AC, AP, AT, PCO}
 
     gas = Val(gas)
     G = typeof(gas)
 
-    gasexchange =  GasExchange{G, ScP, βP, FT, AC, AP, PCO}(gas, 
-                                                            schmidt_params, 
-                                                            solubility_params, 
-                                                            air_concentration, 
-                                                            air_pressure, 
-                                                            average_wind_speed, 
-                                                            pCO₂)
+    gasexchange =  GasExchange{G, ScP, βP, FT, AC, AP, AT, PCO}(gas, 
+                                                                schmidt_params, 
+                                                                solubility_params, 
+                                                                air_concentration, 
+                                                                air_pressure, 
+                                                                air_temperature,
+                                                                average_wind_speed, 
+                                                                fCO₂)
 
     return FluxBoundaryCondition(gasexchange, field_dependencies = (field_dependencies..., :T, :S))
 end
 
 @inline function (gasexchange::GasExchange)(x, y, t, DIC, Alk, T, S) 
-    conc = gasexchange.pCO₂(; DIC, Alk, T, S)
+    conc = gasexchange.fCO₂(; DIC, Alk, T, S)
     return gasexchange(x, y, t, conc, T, S)
 end
 
@@ -107,9 +111,21 @@ end
     return k(T, gasexchange.average_wind_speed, gasexchange.schmidt_params) * (conc - α(T, S, gasexchange.solubility_params) * get_value(x, y, t, gasexchange.air_concentration))
 end
 
-@inline function (gasexchange::GasExchange{<:Val{:CO₂}, <:Any, <:Any, <:Any, <:Any, <:Any})(x, y, t, conc, T, S) 
-    return K(T, S, gasexchange.average_wind_speed, gasexchange.schmidt_params, gasexchange.solubility_params, teos10_polynomial_approximation(T, S)) * (conc - get_value(x, y, t, gasexchange.air_concentration) / get_value(x, y, t, gasexchange.air_pressure)) / 1000
+@inline function (gasexchange::GasExchange{<:Val{:CO₂}})(x, y, t, conc, T, S) 
+    return K(T, S, gasexchange.average_wind_speed, gasexchange.schmidt_params, gasexchange.solubility_params, teos10_polynomial_approximation(T, S)) * (conc - mole_fraction_to_fugacity(gasexchange, x, y, t)) / 1000
 end
 
 @inline get_value(x, y, t, air_concentration::Number) = air_concentration
 @inline get_value(x, y, t, air_concentration::Function) = air_concentration(x, y, t)
+
+@inline function mole_fraction_to_fugacity(gasexchange, x, y, t)
+    fCO₂ = get_value(x, y, t, gasexchange.air_concentration) * 10^-6 # mol / mol
+    pAir = 1 - fCO₂ # mol / mol
+    P    = get_value(x, y, t, gasexchange.air_pressure) * 101325 # Pa
+    Tk   = get_value(x, y, t, gasexchange.air_temperature) + 273.15 # K
+
+    return fCO₂ * P * exp((first_viral_coefficient_for_co2(Tk) + 2 * pAir^2 * cross_viral_coefficient(Tk)) * P / (8.31446261815324 * Tk))
+end
+
+@inline cross_viral_coefficient(Tk) = (57.7 - 0.118 * Tk) * 10^-6 # m^3 / mol
+@inline first_viral_coefficient_for_co2(Tk) = (-1636.75 + 12.0408 * Tk - 3.27957 * 10^-2 * Tk^2 + 3.16528 * 10^-5 * Tk^3) * 10^-6 # m^3 / mol

@@ -49,7 +49,7 @@ julia> pCO₂_higher_pH = carbon_chemistry(; DIC = 2000, T = 10, S = 35, pH = 7.
               boric_acid :: PB   = KB()
                    water :: PW   = KW()
                  sulfate :: PS   = KS(; ionic_strength)
-                fluoride :: PF   = KF(; ionic_strength)
+                fluoride :: PF   = KF(; ionic_strength, sulfate_constant = sulfate)
          phosphoric_acid :: PP   = (KP1 = KP1(), KP2 = KP2(), KP3 = KP3())
             silicic_acid :: PSi  = KSi(; ionic_strength)
       calcite_solubility :: PKS  = KSP_calcite()
@@ -114,7 +114,7 @@ end
                            upper_pH_bound = 14,
                            lower_pH_bound = 0)
 
-Calculates `pCO₂` in sea water with `DIC`, `Alk`alinity, `T`emperature, and `S`alinity
+Calculates `fCO₂` in sea water with `DIC`, `Alk`alinity, `T`emperature, and `S`alinity
 unless `pH` is specified, in which case intermediate computation of `pH` is skipped and
 `pCO₂` is calculated from the `DIC`, `T`, `S` and `pH`.
 
@@ -172,12 +172,12 @@ Alternativly, `pH` is returned if `return_pH` is `true`.
 
     # compute pCO₂
     CO₂  = DIC * H ^ 2 / (H ^ 2 + K1 * H + K1 * K2) 
-    pCO₂ = (CO₂ / K0) * 10 ^ 6 # μatm
+    fCO₂ = (CO₂ / K0) * 10 ^ 6 # μatm
 
     # compute pH
     pH = -log10(H)
 
-    return ifelse(return_pH, pH, pCO₂) 
+    return ifelse(return_pH, pH, fCO₂) 
 end
 
 # solves `alkalinity_residual` for pH
