@@ -112,19 +112,18 @@ end
 end
 
 @inline function (gasexchange::GasExchange{<:Val{:CO₂}})(x, y, t, conc, T, S) 
-    return K(T, S, gasexchange.average_wind_speed, gasexchange.schmidt_params, gasexchange.solubility_params, teos10_polynomial_approximation(T, S)) * (conc - mole_fraction_to_fugacity(gasexchange, x, y, t)) / 1000
+    return K(T, S, gasexchange.average_wind_speed, gasexchange.schmidt_params, gasexchange.solubility_params, teos10_polynomial_approximation(T, S)) * (conc - get_value(x, y, t, gasexchange.air_concentration)) / 1000
 end
 
 @inline get_value(x, y, t, air_concentration::Number) = air_concentration
 @inline get_value(x, y, t, air_concentration::Function) = air_concentration(x, y, t)
 
-@inline function mole_fraction_to_fugacity(gasexchange, x, y, t)
-    fCO₂ = get_value(x, y, t, gasexchange.air_concentration) * 10^-6 # mol / mol
-    pAir = 1 - fCO₂ # mol / mol
+@inline function fugacity_to_mole_fraction(gasexchange, x, y, t, conc)
+    pAir = 1 - conc # ppmv
     P    = get_value(x, y, t, gasexchange.air_pressure) * 101325 # Pa
     Tk   = get_value(x, y, t, gasexchange.air_temperature) + 273.15 # K
 
-    return fCO₂ * P * exp((first_viral_coefficient_for_co2(Tk) + 2 * pAir^2 * cross_viral_coefficient(Tk)) * P / (8.31446261815324 * Tk))
+    return conc / (P * exp((first_viral_coefficient_for_co2(Tk) + 2 * pAir^2 * cross_viral_coefficient(Tk)) * P / (8.31446261815324 * Tk)))
 end
 
 @inline cross_viral_coefficient(Tk) = (57.7 - 0.118 * Tk) * 10^-6 # m^3 / mol
