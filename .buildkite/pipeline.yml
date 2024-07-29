@@ -1,7 +1,7 @@
 env:
   JULIA_VERSION: "1.10.2"
   JULIA_MINOR_VERSION: "1.10"
-  JULIA_PATH: /var/lib/buildkite-agent/julia_$BUILDKITE_BUILD_NUMBER
+  JULIA_PATH: /var/lib/buildkite-agent/julia
   DATADEPS_ALWAYS_ACCEPT: true
 
 steps:
