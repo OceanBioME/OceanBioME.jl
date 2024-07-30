@@ -8,13 +8,13 @@ using Oceananigans.BoundaryConditions: FluxBoundaryCondition
 # TODO: Implement Ho et al. 2006 wind speed dependence
 
 k(T, uₐᵥ, Sc_params) = 0.39 * (0.01 / 3600) * uₐᵥ ^ 2 * (Sc(T, Sc_params) / 660) ^ (-0.5)# m/s, may want to add variable wind speed instead of average wind here at some point
-Sc(T, params) = params.A - params.B * T + params.C * T ^ 2 - params.D * T ^ 3
+Sc(T, params) = (@info T; @show params.A - params.B * T + params.C * T ^ 2 - params.D * T ^ 3)
 
 α(T, S, β_params) = β(T + 273.15, S, β_params) * (T + 273.15) * 0.00367#/(T+273.15) - disagree with origional paper but this matches dimensionless Henry coefficiet of 3.2x10⁻² at 298.15K, S=0. See https://www.wikiwand.com/en/Henry%27s_law 
 β(T, S, params) = exp(params.A₁ + params.A₂ * (100 / T) + params.A₃ * log(T / 100) + S * (params.B₁ + params.B₂ * (T / 100) + params.B₃ * (T / 100) ^ 2))
 
 #now fairly sure that this is giving the correct result for CO₂  as βρ is the henrys coefficient which sould be ∼34mol/m³ atm
-K(T, S, uₐᵥ, Sc_params, β_params, ρₒ) = k(T, uₐᵥ, Sc_params) * β(T + 273.15, S, β_params) * ρₒ #L=ρ\_wK₀ ->  https://reader.elsevier.com/reader/sd/pii/0304420374900152 and here K₀=β
+K(T, S, uₐᵥ, Sc_params, β_params, ρₒ) = k(T, uₐᵥ, Sc_params)# * β(T + 273.15, S, β_params) * ρₒ #L=ρ\_wK₀ ->  https://reader.elsevier.com/reader/sd/pii/0304420374900152 and here K₀=β
 
 #####
 ##### Boundary condition setup
@@ -112,18 +112,25 @@ end
 end
 
 @inline function (gasexchange::GasExchange{<:Val{:CO₂}})(x, y, t, conc, T, S) 
-    return K(T, S, gasexchange.average_wind_speed, gasexchange.schmidt_params, gasexchange.solubility_params, teos10_polynomial_approximation(T, S)) * (conc - get_value(x, y, t, gasexchange.air_concentration)) / 1000
+    return (@show K(T, S, gasexchange.average_wind_speed, gasexchange.schmidt_params, gasexchange.solubility_params, teos10_polynomial_approximation(T, S))) * ((@show fugacity_to_mole_fraction(gasexchange, x, y, t, conc, T)) - (@show get_value(x, y, t, gasexchange.air_concentration)))
 end
 
 @inline get_value(x, y, t, air_concentration::Number) = air_concentration
 @inline get_value(x, y, t, air_concentration::Function) = air_concentration(x, y, t)
 
-@inline function fugacity_to_mole_fraction(gasexchange, x, y, t, conc)
-    pAir = 1 - conc # ppmv
+@inline function fugacity_to_mole_fraction(gasexchange, x, y, t, conc, T)
+    pAir = 1 - conc * 10^-6 # ppmv - assuming that to first order fugacity ≈ partial pressure, since that term is 1e-6 error
     P    = get_value(x, y, t, gasexchange.air_pressure) * 101325 # Pa
-    Tk   = get_value(x, y, t, gasexchange.air_temperature) + 273.15 # K
+    Tk   = T + 273.15 # K
 
-    return conc / (P * exp((first_viral_coefficient_for_co2(Tk) + 2 * pAir^2 * cross_viral_coefficient(Tk)) * P / (8.31446261815324 * Tk)))
+    xCO₂ = conc / P
+
+    for n = 1:3
+        φ = P * exp((first_viral_coefficient_for_co2(Tk) + 2 * pAir^2 * cross_viral_coefficient(Tk)) * P / (8.31446261815324 * Tk))
+        xCO₂ = conc / φ
+    end
+
+    return xCO₂ / 1e-6
 end
 
 @inline cross_viral_coefficient(Tk) = (57.7 - 0.118 * Tk) * 10^-6 # m^3 / mol
