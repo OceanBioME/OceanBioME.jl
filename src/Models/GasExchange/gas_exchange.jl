@@ -32,3 +32,5 @@ Adapt.adapt_structure(to, g::GasExchange) = GasExchange(adapt(to, g.wind_speed),
                                                         adapt(to, g.water_concentration),
                                                         adapt(to, g.air_concentration),
                                                         nothing)
+
+summary(::GasExchange{WS, TV, WC}) where {WS, TV, WC} = "Air-sea gas exchange model for $(nameof(WC))"

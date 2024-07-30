@@ -37,6 +37,9 @@ optional_fields(::CarbonDioxideConcentration) = (:silicate, :phosphate)
     return xCO₂ * P # mol/mol to ppm
 end
 
+summary(::CarbonDioxideConcentration{CC, FV, CV, AP}) where {CC, FV, CV, AP} = 
+    "Carbon chemistry derived CO₂ concentration {$(nameof(CC)), $(nameof(FV)), $(nameof(CV))}"
+
 @inline call_carbon_chemistry(cc, DIC, Alk, T, S) = cc(; DIC, Alk, T, S)
 @inline call_carbon_chemistry(cc, DIC, Alk, T, S, silicon, phosphate) = cc(; DIC, Alk, T, S, silicon, phosphate)
 

@@ -15,3 +15,9 @@ end
 
 Adapt.adapt_structure(to, k::ScaledTransferVelocity) = ScaledTransferVelocity(adapt(to, k.coeff),
                                                                               adapt(to, k.schmidt_number))
+
+summary(::ScaledTransferVelocity{FT, SC}) where {FT, SC} = "ScaledTransferVelocity{$(nameof(SC))}"
+show(io::IO, k::ScaledTransferVelocity{FT, SC}) where {FT, SC} = 
+    println(io, summary(k), "\n",
+                "    k = $(k.coeff) u₁₀² √(660/Sc(T)),\n",
+                "    Sc(T): $(nameof(SC))")

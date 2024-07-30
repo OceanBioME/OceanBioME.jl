@@ -14,6 +14,12 @@ struct PolynomialSchmidtNumber{FT}
     e :: FT
 end
 
+summary(::PolynomialSchmidtNumber) = "Polynomial Schmidt number (4th order)"
+show(io::IO, sc::PolynomialSchmidtNumber) = println(io, summary(sc), "\n",
+                                                        "    Sc = $(sc.a) + $(sc.b)T + $(sc.c)T² + $(sc.d)T³ + $(sc.e)T⁴")
+
+nameof(::PolynomialSchmidtNumber) = "PolynomialSchmidtNumber"
+
 @inline (sc::PolynomialSchmidtNumber)(T) = 
     sc.a + sc.b * T + sc.c * T^2 + sc.d * T^3 + sc.e * T^4
 

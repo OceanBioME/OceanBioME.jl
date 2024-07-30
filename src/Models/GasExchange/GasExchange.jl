@@ -27,6 +27,9 @@ struct TracerConcentration{T} <: Function
     tracer :: T
 end
 
+summary(tc::TracerConcentration) = "Model tracer concentration of $(tc.tracer)"
+show(io::IO, tc::TracerConcentration) = println(io, summar(tc))
+
 @inline (mc::TracerConcentration)(x, y, t, args...) = args[end]
 
 field_dependencies(mc::TracerConcentration) = (:T, mc.tracer)
