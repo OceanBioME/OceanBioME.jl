@@ -30,22 +30,25 @@ function test_gas_exchange_model(grid, air_concentration)
     return isa(model.tracers.DIC.boundary_conditions.top.condition.func, GasExchange)&&≈(value, -0.0002; atol = 0.0001)&&isnothing(time_step!(model, 1.0))
 end
 
-@testset "Gas exchange values" begin
+@testset "pCO₂ values" begin
     # approximatly correct sized pCO₂ from DIC and Alk
-    pCO₂_model = CarbonChemistry()
+    fCO₂_model = CarbonChemistry()
 
     @load datadep"test_data/CODAP_data.jld2" DIC Alk T S pH pCO₂
     
-    pCO₂_results = similar(pCO₂)
+    fCO₂_results = similar(pCO₂)
+    pH_results = similar(pH)
 
     for (idx, DIC) in enumerate(DIC)
-        pCO₂_results[idx] = pCO₂_model(; DIC, Alk = Alk[idx], T = T[idx], S = S[idx])
+        fCO₂_results[idx] = fCO₂_model(; DIC, Alk = Alk[idx], T = T[idx], S = S[idx])
+        pH_results[idx] = fCO₂_model(; DIC, Alk = Alk[idx], T = T[idx], S = S[idx], return_pH = true)
     end
 
-    pCO₂_err = pCO₂ .- pCO₂_results
+    fCO₂_err = pCO₂ .- fCO₂_results
+    pH_err = pH .- pH_results
 
     # not great not terrible
-    @test (mean(pCO₂_err) < 10 && std(pCO₂_err) < 15)
+    @test (mean(fCO₂_err) < 9 && std(fCO₂_err) < 10) && (mean(pH_err) < 0.01 && std(pH_err) < 0.01)
 end
 
 grid = RectilinearGrid(architecture; size=(1, 1, 2), extent=(1, 1, 1))
@@ -138,5 +141,5 @@ end
     DIC = 2136.242890518708
     Alk = 2500
     # value from Dickson et. al, 2007
-    @test ≈(CO₂_exchange.water_concentration(CO₂_exchange.field_dependencies_map, 0, 0, 0, DIC, Alk, T, S), 350, atol = 0.1)
+    @test ≈(CO₂_exchange.water_concentration(0, 0, 0, T, S, DIC, Alk), 350, atol = 0.1)
 end

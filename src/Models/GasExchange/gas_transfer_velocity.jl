@@ -4,7 +4,7 @@ using Oceananigans.Units
     ScaledTransferVelocity
 
 k(660) transfer velocity parameterisation, defaults from Ho et al., 2006,
-but `coeff` is wind product specific
+but `coeff` is wind product specific.
 """
 @kwdef struct ScaledTransferVelocity{FT, SC} 
              coeff :: FT = 0.266 / hour / 100 # cm/hour to m/s

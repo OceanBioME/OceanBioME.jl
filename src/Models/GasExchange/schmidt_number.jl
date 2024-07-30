@@ -1,3 +1,11 @@
+"""
+    PolynomialSchmidtNumber
+
+Returns schmidt number at a given temperature parameterised in the form
+``a + bT + cT² + dT³ + eT⁴``
+
+Form from Wanninkhof, 2014.
+"""
 struct PolynomialSchmidtNumber{FT}
     a :: FT
     b :: FT
