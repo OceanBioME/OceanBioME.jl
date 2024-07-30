@@ -1,85 +1,61 @@
 # [Air-sea gas exchange](@id air-sea-gas)
 
-We currently have one air-sea gas exchange model implemented. The model, proposed by [Wanninkhof1992](@citet), calculates the solubility of the gas in the water dependent on the temperature and salinity, and calculates the flux depending on the solubility and mixing from the wind.
+Air-sea gas transfer is typically parameterised as a function of temperature (``T``) and wind speed (``u_{10}``), and the concentration of the gas in the air (``C_a``) and in the surface water (``C_w``) in the form:
+```math
+F = k(u_{10}, T)(C_w - C_a),
+```
+where `k` is the gas transfer velocity.
 
-Currently, the parameters for CO₂ and oxygen are included, but it would be very straightforward to add the parameters given in the original publication for other gases (e.g. inert tracers of other nutrients such as N₂). We also currently have a very simple formulation of the gas transfer velocity which depends on an average wind speed, but it would straightforwardly be expanded to permit variable wind speed (e.g. to simulate enhanced exchange from storms).
+Our implementation is intended to be generic for any gas so you can specify `air_concentration`, `water_concentration`, `transfer_velocity`, and `wind_speed` as any function in `GasExchange`, but we also provide constructors and default values for carbon dioxide and oxygen. 
 
-It is straightforward to set up a boundary as an air-sea gas exchange:
-
+To setup carbon dioxide and/or oxygen boundary conditions you simply build the condition and then specify it in the model:
 ```@setup gasexchange
 using OceanBioME
-CO₂_flux = GasExchange(; gas = :CO₂)
+CO₂_flux = CarbonDioxideGasExchangeBoundaryCondition()
+O₂_flux  = OxygenGasExchangeBoundaryCondition()
 using Oceananigans
 
 grid = RectilinearGrid(size=(3, 3, 30), extent=(10, 10, 200));
 
 model = NonhydrostaticModel(; grid,
-                              biogeochemistry = LOBSTER(; grid, carbonates = true),
-                              boundary_conditions = (DIC = FieldBoundaryConditions(top = CO₂_flux), ),
+                              biogeochemistry = LOBSTER(; grid, carbonates = true, oxygen = true),
+                              boundary_conditions = (DIC = FieldBoundaryConditions(top = CO₂_flux), 
+                                                      O₂ = FieldBoundaryConditions(top =  O₂_flux)),
                               tracers = (:T, :S))
 ```
 
+!!! Field dependencies
 
-```@example gasexchange
-using OceanBioME
-
-CO₂_flux = GasExchange(; gas = :CO₂)
-```
-
-Where the symbol specifies the exchanged gas (currently `:CO₂` or `:O₂`). This can then be passed in the setup of a BGC model, for example:
-
-```@example gasexchange
-using Oceananigans
-
-grid = RectilinearGrid(size=(3, 3, 30), extent=(10, 10, 200));
-
-model = NonhydrostaticModel(; grid,
-                              biogeochemistry = LOBSTER(; grid, carbonates = true),
-                              boundary_conditions = (DIC = FieldBoundaryConditions(top = CO₂_flux), ),
-                              tracers = (:T, :S))
-```
+    All gas exchange models require temperature (`T`) to be present in the model, and carbon dioxide requires sailinity (`S`), total inorganic carbon (`DIC`), and alkalinity (`Alk`), and optionally can take silicate and phosphate where there names are specified in the keyword argument `silicate_and_phosphate_names`
 
 ## Model equations
 
-The gas flux is given by:
+### Gas transfer velocity
 
+The default gas transfer velocity (`ScaledTransferVelocity`) returns a velocity in the form:
 ```math
-F = k(C_w - \alpha C_a),
+k(u_{10}, T) = cu_{10}^2\left(\frac{Sc(T)}{660}\right)^{-1/2},
 ```
+where ``c`` is a coefficient (`coeff`) which typically is wind product specific with default value ``0.266`` cm/hour from [Ho2006](@citet), and ``Sc`` is gas specific the temperature dependent Schmidt number (the dimensionless ratio of momentum and mass diffusivity) specified as `schmidt_number` which can be any function of temperature. The default parameterisations is the 4th order polynomial formulation of [Wanninkhof2014](@citet).
 
-where ``C_w`` is the concentration in the water, ``C_a`` the concentration in the air, ``\alpha`` the Oswald solubility coefficient, and ``k`` the gas transfer velocity. For carbon dioxide the flux is modified to:
+Currently, the parameters for CO₂ and oxygen are included, but it would be very straightforward to add the parameters given in the original publication for other gases (e.g. inert tracers of other nutrients such as N₂).
 
+### Carbon dioxide partial pressure
+
+For most gasses the water concentration `C_w` is simply taken directly from the biogeochemical model or another tracer (in which case `water_concentration` should be set to `TracerConcentration(:tracer_name)`), but for carbon dioxide the fugacity (``fCO_2``) must be derived from the dissolved inorganic carbon (`DIC`) and `Alk`alinity by a `CarbonChemistry` model (please see the docs for [CarbonChemistry](@ref carbon-chemistry)), and used to calculate the partial pressure (``pCO_2``).
+
+The default parameterisation for the partial pressure (`CarbonDioxideConcentration`) is given by [dickson2007](@citet) and defines the partial pressure to be the mole fraction ``x(CO_2)`` multiplied by the pressure, ``P``, related to the fugacity by:
 ```math
-F = k\beta\rho_o(pCO_{2}(water) - pCO_{2}(air)),
+fCO_2 = x(CO_2)P\exp\left(\frac{1}{RT}\int_0^P\left(V(CO_2)-\frac{RT}{P'}\right)dP'\right).
 ```
-
-where ``pCO_{2}(water)`` and ``pCO_{2}(air)`` are the partial pressure of carbon dioxide in the water and air, ``\beta`` is the Bunsen Solubility Coefficient, and ``\rho_o`` is the density of the water.
-``pCO_{2}(water)`` is diagnosed from the dissolved inorganic carbon and alkalinity of the water using the [carbon chemistry](@ref carbon-chemistry) model.
-
-The gas transfer velocity is parameterised by the wind speed and Schmidt number, which in turn is parameterised by the temperature and salinity. The gas transfer velocity is given by:
-
+The volume (``V``) is related to the gas pressure by the virial expression:
 ```math
-k = 1.08\times10^{-6}u^2\left(\frac{Sc}{660}\right)^{-1/2},
+\frac{PV(CO_2)}{RT}\approx1+\frac{B(x, T)}{V(CO_2)}+\mathcal{O}(V(CO_2)^{-2}),
 ```
-
-where ``u`` is the winds speed 10m above the surface, and Sc is the Schmidt number parameterised as:
-
+and the first virial coefficient ``B`` for carbon dioxide in air can be approximated as:
 ```math
-Sc = A - BT + CT^2 - DT^3,
+B_{CO_2-\text{air}} \approx B_{CO_2}(T) + 2x(CO_2)\delta_{CO_2-\text{air}}(T),
 ```
+where ``\delta`` is the cross virial coefficient.
 
-where ``T`` is temperature in Kelvin and the other parameters are dependent on the gas type and given in [Parameters](@ref parameters).
-
-The solubilities are given by:
-
-```math
-\alpha = 0.00367 T \exp{A_1 + 100\frac{A_2}{T} + A_3 \ln{\frac{T}{100}} + S\left(B_1 + \frac{B_2}{T} + \frac{B_3}{T^2}\right)},
-```
-
-and
-
-```math
-\beta = \exp{A_1 + 100\frac{A_2}{T} + A_3 \ln{\frac{T}{100}} + S\left(B_1 + \frac{B_2}{T} + \frac{B_3}{T^2}\right)},
-```
-
-where ``S`` is salinity in practical units and the other default parameters are given in [Parameters](@ref parameters).
+``B_{CO_2}`` and ``\delta_{CO_2-\text{air}}`` are parameterised by [Weiss1974](@citet) and reccomended in [dickson2007](@citet) as fourth and first order polynomials respectively.
