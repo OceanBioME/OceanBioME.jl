@@ -58,11 +58,7 @@ grid = RectilinearGrid(architecture; size=(1, 1, 2), extent=(1, 1, 1))
 @testset "Gas exchange coupling" begin
     for air_concentration in [413.1, conc_function]
         @info "Testing with $(typeof(air_concentration))"
-        if air_concentration == conc_function && isa(architecture, GPU) # not sure why, adapt won't work for it
-            @test_broken test_gas_exchange_model(grid, air_concentration)
-        else
-            @test test_gas_exchange_model(grid, air_concentration)
-        end
+        @test test_gas_exchange_model(grid, air_concentration)
     end
 end
 
