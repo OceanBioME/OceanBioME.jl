@@ -55,11 +55,11 @@ model_parameters = (LOBSTER(; grid = BoxModelGrid(), light_attenuation_model = n
                     NutrientPhytoplanktonZooplanktonDetritus(; grid = BoxModelGrid(), light_attenuation_model = nothing).underlying_biogeochemistry,
                     SLatissima(),
                     TwoBandPhotosyntheticallyActiveRadiation(; grid = RectilinearGrid(size=(1, 1, 1), extent=(1, 1, 1))),
-                    SimpleMultiG(; grid = BoxModelGrid),
-                    InstantRemineralisation(; grid = BoxModelGrid),
+                    SimpleMultiG(; grid = BoxModelGrid()),
+                    InstantRemineralisation(; grid = BoxModelGrid()),
                     CarbonChemistry(),
-                    GasExchange(; gas = :CO₂).condition.func,
-                    GasExchange(; gas = :O₂).condition.func)
+                    CarbonDioxideGasExchangeBoundaryCondition().condition.func,
+                    OxygenDioxideGasExchangeBoundaryCondition().condition.func)
 
 exchanged_gas(::Val{G}) where G = G
 
