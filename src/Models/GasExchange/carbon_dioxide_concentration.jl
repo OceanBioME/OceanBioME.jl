@@ -8,7 +8,7 @@ Guide to Best Practices for Ocean CO 2 Measurements. PICES Special Publication 3
             carbon_chemistry :: CC 
     first_virial_coefficient :: FV = FirstVirialCoefficientForCarbonDioxide()
     cross_virial_coefficient :: CV = CrossVirialCoefficientForCarbonDioxide()
-                air_pressure :: AP = 1
+                air_pressure :: AP = 1 # atm
 end
 
 field_dependencies(::CarbonDioxideConcentration) = (:DIC, :Alk, :T, :S)
@@ -17,7 +17,7 @@ optional_fields(::CarbonDioxideConcentration) = (:silicate, :phosphate)
 @inline function (cc::CarbonDioxideConcentration)(field_dependencies_map, x, y, t, args...)
     fCO₂ = call_carbon_chemistry(cc.carbon_chemistry, args...)
     
-    P = surface_value(cc.air_pressure, x, y, t) * BAR
+    P = surface_value(cc.air_pressure, x, y, t) * ATM
     Tk = args[field_dependencies_map.T] + 273.15
 
     B = cc.first_virial_coefficient(Tk)

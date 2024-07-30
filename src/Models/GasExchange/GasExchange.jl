@@ -12,7 +12,7 @@ using OceanBioME.Models.CarbonChemistryModel: CarbonChemistry
 import Base: show, summary
 import Adapt: adapt_structure
 
-const BAR = 101325 # Pa
+const ATM = 101325 # Pa
 const GAS_CONSTANT = 8.31446261815324 # J / kg / mol
 
 # fallbacks
