@@ -31,4 +31,4 @@ Adapt.adapt_structure(to, g::GasExchange) = GasExchange(adapt(to, g.wind_speed),
                                                         adapt(to, g.transfer_velocity),
                                                         adapt(to, g.water_concentration),
                                                         adapt(to, g.air_concentration),
-                                                        adapt(to, g.field_dependencies))
+                                                        nothing)
