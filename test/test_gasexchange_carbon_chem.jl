@@ -116,3 +116,27 @@ end
     @test ≈(KspA.pressure_correction(Tk, P), 1.47866; atol=0.00001)
     @test ≈(KspC.pressure_correction(Tk, P), 1.52962; atol=0.00001)
 end
+
+@testset "Gas exchange constants defaults" begin
+    CO₂_exchange = CarbonDioxideGasExchangeBoundaryCondition().condition.func
+    O₂_exchange = OxygenGasExchangeBoundaryCondition().condition.func
+
+    T = 20
+
+    # values from Wanninkhof, 2014
+    @test ≈(CO₂_exchange.transfer_velocity.schmidt_number(T), 668, atol = 1)
+    @test ≈(O₂_exchange.transfer_velocity.schmidt_number(T), 568, atol = 1)
+
+    Tk = 25+273.15
+    # values from Dickson et. al, 2007
+    @test ≈(CO₂_exchange.water_concentration.first_virial_coefficient(Tk), -123.2 * 10^-6, atol=10^-8)
+    @test ≈(CO₂_exchange.water_concentration.cross_virial_coefficient(Tk), 22.5 * 10^-6, atol=10^-7)
+
+    T = 25
+    S = 35
+    p = 1
+    DIC = 2136.242890518708
+    Alk = 2500
+    # value from Dickson et. al, 2007
+    @test ≈(CO₂_exchange.water_concentration(CO₂_exchange.field_dependencies_map, 0, 0, 0, DIC, Alk, T, S), 350, atol = 0.1)
+end
