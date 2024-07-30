@@ -20,14 +20,14 @@ function test_gas_exchange_model(grid, air_concentration)
     model = NonhydrostaticModel(; grid, 
                                   tracers = (:T, :S),
                                   biogeochemistry = LOBSTER(; grid, carbonates = true), 
-                                  boundary_conditions = (DIC = FieldBoundaryConditions(top = GasExchange(; air_concentration, gas = :CO₂)), ))
+                                  boundary_conditions = (DIC = FieldBoundaryConditions(top = CarbonDioxideGasExchangeBoundaryCondition(; air_concentration)), ))
 
     set!(model, T = 15.0, S = 35.0, DIC = 2220, Alk = 2500)
 
     # is everything communicating properly? (can't think of a way to not use allow scalar here)
     value = CUDA.@allowscalar Oceananigans.getbc(model.tracers.DIC.boundary_conditions.top, 1, 1, grid, model.clock, fields(model))
 
-    return isa(model.tracers.DIC.boundary_conditions.top.condition.func, GasExchange)&&≈(value, -0.0003; atol = 0.0001)&&isnothing(time_step!(model, 1.0))
+    return isa(model.tracers.DIC.boundary_conditions.top.condition.func, GasExchange)&&≈(value, -0.0002; atol = 0.0001)&&isnothing(time_step!(model, 1.0))
 end
 
 @testset "Gas exchange values" begin
