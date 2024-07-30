@@ -20,7 +20,7 @@ export Particles
 export TwoBandPhotosyntheticallyActiveRadiation, PrescribedPhotosyntheticallyActiveRadiation
 
 # airsea flux
-export GasExchange, CarbonChemistry
+export GasExchange, CarbonDioxideGasExchangeBoundaryCondition, OxygenGasExchangeBoundaryCondition
 
 # sediment
 export Sediments, FlatSediment
