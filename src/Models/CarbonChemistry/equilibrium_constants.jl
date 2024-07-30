@@ -149,9 +149,9 @@ show(io::IO, k2::K2) = print(io, "Second carbon dioxide dissociation constant\n"
 """
     KB(; constant =  148.0248,
          inverse_T = -8966.90,
-         invsese_T_sqrt_S = -2890.53,
-         invsese_T_S = -77.942,
-         invsese_T_sqrt_S³ =  1.728,
+         inverse_T_sqrt_S = -2890.53,
+         inverse_T_S = -77.942,
+         inverse_T_sqrt_S³ =  1.728,
          inverse_T_S² = -0.0996,
          sqrt_S = 137.1942,
          S = 1.62142,
@@ -173,9 +173,9 @@ Default values from Dickson (1990, Deep-Sea Res., 37, 755–766).
 @kwdef struct KB{FT, PC}
                constant :: FT =  148.0248
               inverse_T :: FT = -8966.90
-       invsese_T_sqrt_S :: FT = -2890.53
-            invsese_T_S :: FT = -77.942
-      invsese_T_sqrt_S³ :: FT =  1.728
+       inverse_T_sqrt_S :: FT = -2890.53
+            inverse_T_S :: FT = -77.942
+      inverse_T_sqrt_S³ :: FT =  1.728
            inverse_T_S² :: FT = -0.0996
                  sqrt_S :: FT = 137.1942
                       S :: FT = 1.62142
@@ -191,7 +191,7 @@ end
 @inline (c::KB)(T, S; P = nothing) = 
     c.pressure_correction(T, P) *
     exp(c.constant 
-        + (c.inverse_T + c.invsese_T_sqrt_S * √S + c.invsese_T_S * S + c.invsese_T_sqrt_S³ * S^1.5 + c.inverse_T_S² * S^2) / T
+        + (c.inverse_T + c.inverse_T_sqrt_S * √S + c.inverse_T_S * S + c.inverse_T_sqrt_S³ * S^1.5 + c.inverse_T_S² * S^2) / T
         + c.sqrt_S * √S
         + c.S * S
         + (c.log_T + c.log_T_sqrt_S * √S + c.S_log_T * S ) * log(T)
@@ -199,7 +199,7 @@ end
 
 summary(::IO, ::KB) = string("Boric acid dissociation constant")
 show(io::IO, c::KB) = print(io, "Boric acid dissociation constant\n",
-    "    ln(kᵇ/k°) = $(c.constant) + ($(c.inverse_T) + $(c.invsese_T_sqrt_S) √S + $(c.invsese_T_S) S + $(c.invsese_T_sqrt_S³) √S³ + $(c.inverse_T_S²) S²) / T
+    "    ln(kᵇ/k°) = $(c.constant) + ($(c.inverse_T) + $(c.inverse_T_sqrt_S) √S + $(c.inverse_T_S) S + $(c.inverse_T_sqrt_S³) √S³ + $(c.inverse_T_S²) S²) / T
                 + $(c.sqrt_S) * √S
                 + $(c.S) * S
                 + ($(c.log_T) + $(c.log_T_sqrt_S) √S + $(c.S_log_T) S ) * log(T)
