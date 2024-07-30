@@ -84,7 +84,7 @@ biogeochemistry = LOBSTER(; grid,
                             carbonates = true,
                             scale_negatives = true)
 
-CO₂_flux = GasExchange(; gas = :CO₂)
+CO₂_flux = CarbonDioxideGasExchangeBoundaryCondition()
 
 T = FunctionField{Center, Center, Center}(t_function, grid; clock)
 S = FunctionField{Center, Center, Center}(s_function, grid; clock)

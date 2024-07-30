@@ -48,7 +48,7 @@ Lx, Ly = 20meters, 20meters
 grid = RectilinearGrid(architecture, size=(1, 1, 50), extent=(Lx, Ly, 200))
 
 # Specify the boundary conditions for DIC and O₂ based on the air-sea CO₂ and O₂ flux
-CO₂_flux = GasExchange(; gas = :CO₂)
+CO₂_flux = CarbonDioxideGasExchangeBoundaryCondition()
 
 clock = Clock(; time = 0.0)
 T = FunctionField{Center, Center, Center}(temp, grid; clock)
