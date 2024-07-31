@@ -47,6 +47,7 @@ end
     bₘ = bgc.temperature_sensitivity_term.M
     g_FF = bgc.flux_feeding_rate
     wₘₐₓᴰ = bgc.max_quadratic_mortality_of_diatoms
+    wₚₒ = bgc.sinking_speed_of_POC
 
     ∑gᴹ = get_grazingᴹ(P, D, Z, POC, T, bgc)[1] 
     ∑g_FFᴹ = get_∑g_FFᴹ(z, zₑᵤ, zₘₓₗ, T, POC, GOC, bgc)
@@ -61,9 +62,17 @@ end
     Φ = get_Φ(POC, GOC, sh, bgc)
     Φ₂ᴰᴼᶜ = Φᴰᴼᶜ(DOC, POC, GOC, sh, bgc)[2]
     w_GOC = get_w_GOC(z, zₑᵤ, zₘₓₗ, bgc)
+    gₚₒ_FFᴹ = g_FF*bₘ^T*wₚₒ*POC
     g_GOC_FFᴹ = g_FF*bₘ^T*w_GOC*GOC #29b
     λₚₒ¹ = λ¹(T, O₂, bgc)
     
+    #println("Sum of positive terms is ",  σᴹ*(∑gᴹ + ∑g_FFᴹ)*M + rᴹ*bₘ^T*K_mondo(M, Kₘ)*M + Pᵤₚᴹ + 0.5*R_CaCO₃*(mᴾ*K_mondo(P, Kₘ)*P + wᴾ*P^2) + 0.5*mᴰ*K_mondo(D, Kₘ)*D^3*wᴰ + Φ + Φ₂ᴰᴼᶜ)
+    #println("term a1 = $(σᴹ*(∑gᴹ)*M), term a2 = $(σᴹ*(gₚₒ_FFᴹ)*M), term a3 = $(σᴹ*g_GOC_FFᴹ*M), term b = $(rᴹ*bₘ^T*K_mondo(M, Kₘ)*M), term c = $(Pᵤₚᴹ), term d = $(0.5*R_CaCO₃*(mᴾ*K_mondo(P, Kₘ)*P + wᴾ*P^2)), term e = $(0.5*mᴰ*K_mondo(D, Kₘ)*D^2*wᴰ), term f = $(Φ), term g = $(Φ₂ᴰᴼᶜ)")
+    #println("Sum of negative terms is ", g_GOC_FFᴹ*M + λₚₒ¹*GOC)
+    #println("term 1 = $(g_GOC_FFᴹ*M), term 2 = $(λₚₒ¹*GOC)")
+    #println("-g_FF = $(g_FF), bₘ^T = $(bₘ^T), w_GOC = $(w_GOC), GOC = $(GOC) -")
+    #println("Total change is ", σᴹ*(∑gᴹ + ∑g_FFᴹ)*M + rᴹ*bₘ^T*K_mondo(M, Kₘ)*M + Pᵤₚᴹ + 0.5*R_CaCO₃*(mᴾ*K_mondo(P, Kₘ)*P + wᴾ*P^2) + 0.5*mᴰ*K_mondo(D, Kₘ)*D^2*wᴰ + Φ + Φ₂ᴰᴼᶜ - g_GOC_FFᴹ*M - λₚₒ¹*GOC )
+    #println("-------------------------------------")
 
-    return σᴹ*(∑gᴹ + ∑g_FFᴹ)*M + rᴹ*bₘ^T*K_mondo(M, Kₘ)*M + Pᵤₚᴹ + 0.5*R_CaCO₃*(mᴾ*K_mondo(P, Kₘ)*P + wᴾ*P^2) + 0.5*mᴰ*K_mondo(D, Kₘ)*D^3*wᴰ + Φ + Φ₂ᴰᴼᶜ - g_GOC_FFᴹ*M - λₚₒ¹*GOC     #40
+    return σᴹ*(∑gᴹ + ∑g_FFᴹ)*M + rᴹ*bₘ^T*K_mondo(M, Kₘ)*M + Pᵤₚᴹ + 0.5*R_CaCO₃*(mᴾ*K_mondo(P, Kₘ)*P + wᴾ*P^2) + 0.5*mᴰ*K_mondo(D, Kₘ)*D + D^2*wᴰ + Φ + Φ₂ᴰᴼᶜ - g_GOC_FFᴹ*M - λₚₒ¹*GOC     #40   assumed that there is a typo in the D^2 instead of D^3
 end

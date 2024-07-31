@@ -1,6 +1,6 @@
 # eq 20 -> Lₙ could be meant to be L_NH₄?
 
-@inline θ(I,J) = I/(J + eps(0.0))   #eq 0
+@inline θ(I,J) = ifelse(J != 0, I/(J + eps(0.0)), 0)   #eq 0
 @inline K_mondo(I, J) = I/(I + J + eps(0.0))
 @inline Cₚᵣₒ(I, Iᶜʰˡ, PARᴵ, L_day, αᴵ, μₚ, Lₗᵢₘᴵ)=1-exp(-αᴵ*(θ(Iᶜʰˡ,I))*PARᴵ/(L_day*μₚ*Lₗᵢₘᴵ + eps(0.0)))
 
@@ -171,7 +171,7 @@ end
     sh = get_sh(z, zₘₓₗ)
 
     gₚᶻ = get_grazingᶻ(P, D, POC, T, bgc)[2]     
-    gₚᴹ =  get_grazingᴹ(P, D, Z, POC, T, bgc)[3]
+    gₚᴹ =  get_grazingᴹ(P, D, Z, POC, T, bgc)[2]
 
     t_darkᴾ = bgc.mean_residence_time_of_phytoplankton_in_unlit_mixed_layer.P
 
@@ -179,6 +179,14 @@ end
 
     PARᴾ = get_PARᴾ(PAR¹, PAR², PAR³, bgc)
     μᴾ = μᴵ(P, Pᶜʰˡ, PARᴾ, L_day, T, αᴾ, Lₗᵢₘᴾ, zₘₓₗ, zₑᵤ, t_darkᴾ, bgc)
+
+    println("PARᴾ = $(PARᴾ), PAR¹ = $(PAR¹), PAR² = $(PAR²), PAR³ = $(PAR³), PAR = $(PAR)")
+   # println("P = $(P), D = $(D), Z = $(Z), M = $(M), Pᶜʰˡ = $(Pᶜʰˡ), Dᶜʰˡ = $(Dᶜʰˡ), Pᶠᵉ = $(Pᶠᵉ), Dᶠᵉ = $(Dᶠᵉ), Dˢⁱ = $(Dˢⁱ), DOC = $(DOC), POC = $(POC), GOC = $(GOC), SFe = $(SFe), BFe = $(BFe), PSi = $(PSi), NO₃ = $(NO₃), NH₄ = $(NH₄), PO₄ = $(PO₄), Fe = $(Fe), Si = $(Si), CaCO₃ = $(CaCO₃), DIC = $(DIC), Alk = $(Alk), O₂ = $(O₂)")
+    #println("POC = $(POC), GOC = $(GOC), SFe = $(SFe), BFe = $(BFe)")
+  #  println("----------------------")
+  #  println("Growth terms for P are $((1-δᴾ)*μᴾ*P)")
+  #  println("Decay terms for P are $(mᴾ*K_mondo(P, Kₘ)*P), $(sh*wᴾ*P^2), $(gₚᶻ*Z), $(gₚᴹ*M), with sum $(mᴾ*K_mondo(P, Kₘ)*P + sh*wᴾ*P^2 + gₚᶻ*Z + gₚᴹ*M)")
+  #  println("Total sum for P = ", (1-δᴾ)*μᴾ*P - mᴾ*K_mondo(P, Kₘ)*P - sh*wᴾ*P^2 - gₚᶻ*Z - gₚᴹ*M)
 
     return (1-δᴾ)*μᴾ*P - mᴾ*K_mondo(P, Kₘ)*P - sh*wᴾ*P^2 - gₚᶻ*Z - gₚᴹ*M    #eq 1
 end
@@ -211,6 +219,10 @@ end
     wᴰ = wᴾ + wₘₐₓᴰ*(1-Lₗᵢₘᴰ) #13
     
     μᴰ = μᴵ(D, Dᶜʰˡ, PARᴰ, L_day, T, αᴰ, Lₗᵢₘᴰ, zₘₓₗ, zₑᵤ, t_darkᴰ, bgc)
+
+   # println("Growth terms for D are $((1-δᴰ)*μᴰ*D)")
+   # println("Decay terms for D are $(mᴰ*K_mondo(D, Kₘ)*D), $(sh*wᴰ*D^2), $(g_Dᶻ*Z), $(g_Dᴹ*M), with sum $(mᴰ*K_mondo(D, Kₘ)*D + sh*wᴰ*D^2 + g_Dᶻ*Z + g_Dᴹ*M)")
+   # println("Total sum for D = ", (1-δᴰ)*μᴰ*D - mᴰ*K_mondo(D, Kₘ)*D - sh*wᴰ*D^2 - g_Dᶻ*Z - g_Dᴹ*M)
 
     return (1-δᴰ)*μᴰ*D - mᴰ*K_mondo(D, Kₘ)*D - sh*wᴰ*D^2 - g_Dᶻ*Z - g_Dᴹ*M    #eq 9
 end
