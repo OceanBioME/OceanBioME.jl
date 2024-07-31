@@ -59,7 +59,7 @@ model_parameters = (LOBSTER(; grid = BoxModelGrid(), light_attenuation_model = n
                     InstantRemineralisation(; grid = BoxModelGrid()),
                     CarbonChemistry(),
                     CarbonDioxideGasExchangeBoundaryCondition().condition.func,
-                    OxygenDioxideGasExchangeBoundaryCondition().condition.func)
+                    OxygenGasExchangeBoundaryCondition().condition.func)
 
 exchanged_gas(::Val{G}) where G = G
 
