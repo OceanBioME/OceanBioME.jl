@@ -16,8 +16,6 @@ function test_two_band(grid, bgc, model_type)
 
     set!(model, P = Pᵢ)
 
-    update_biogeochemical_state!(model.biogeochemistry, model)
-
     PAR_model = model.biogeochemistry.light_attenuation
 
     kʳ = PAR_model.water_red_attenuation
@@ -40,9 +38,61 @@ function test_two_band(grid, bgc, model_type)
 
     results_PAR = Array(interior(biogeochemical_auxiliary_fields(biogeochemistry).PAR))[1, 1, 1:2]
 
-    return all(results_PAR .≈ reverse(expected_PAR))
+    @test all(results_PAR .≈ reverse(expected_PAR))
+
+    return nothing
 end
 
+
+function test_multi_band(grid, bgc, model_type)
+    light_attenuation_model = MultiBandPhotosyntheticallyActiveRadiation(; grid, 
+                                                                           bands = ((1, 2), ),
+                                                                           base_bands = [1, 2],
+                                                                           base_water_attenuation_coefficient = [0.01, 0.01],
+                                                                           base_chlorophyll_exponent = [2, 2],
+                                                                           base_chlorophyll_attenuation_coefficient = [0.1, 0.1],
+                                                                           surface_PAR = (args...) -> 1)
+
+    biogeochemistry = bgc(; grid,
+                            light_attenuation_model)
+
+    model = model_type(; grid, 
+                         biogeochemistry,
+                         buoyancy = nothing,
+                         tracers = nothing)
+
+    set!(model, P = 2/1.31) # this will cause tests to fail for models with different chlorophyll ratios
+
+    expected_PAR = exp.(znodes(grid, Center()) * (0.01 + 0.1 * 2 ^ 2))
+
+    @test all(interior(light_attenuation_model.fields[1], 1, 1, :) .≈ expected_PAR)
+
+    light_attenuation_model = MultiBandPhotosyntheticallyActiveRadiation(; grid, 
+                                                                           bands = ((1, 2), (8, 9)),
+                                                                           base_bands = [1, 2, 8, 9],
+                                                                           base_water_attenuation_coefficient = [0.01, 0.01, 0.02, 0.02],
+                                                                           base_chlorophyll_exponent = [2, 2, 1.5, 1.5],
+                                                                           base_chlorophyll_attenuation_coefficient = [0.1, 0.1, 0.2, 0.2],
+                                                                           surface_PAR = (args...) -> 1)
+
+    biogeochemistry = bgc(; grid,
+                            light_attenuation_model)
+
+    model = model_type(; grid, 
+                         biogeochemistry,
+                         buoyancy = nothing,
+                         tracers = nothing)
+
+    set!(model, P = 2/1.31) # this will cause tests to fail for models with different chlorophyll ratios
+
+    expected_PAR1 = exp.(znodes(grid, Center()) * (0.01 + 0.1 * 2 ^ 2)) / 2
+    expected_PAR2 = exp.(znodes(grid, Center()) * (0.02 + 0.2 * 2 ^ 1.5)) / 2
+
+    @test all(interior(light_attenuation_model.fields[1], 1, 1, :) .≈ expected_PAR1)
+    @test all(interior(light_attenuation_model.fields[2], 1, 1, :) .≈ expected_PAR2)
+
+    return nothing
+end
 
 @testset "Light attenuaiton model" begin 
     for model in (NonhydrostaticModel, HydrostaticFreeSurfaceModel),
@@ -52,7 +102,8 @@ end
 
         if !((model == NonhydrostaticModel) && ((grid isa LatitudeLongitudeGrid) | (grid isa OrthogonalSphericalShellGrid)))
             @info "Testing light with $bgc in $model on $grid..."
-            @test test_two_band(grid, bgc, model)
+            test_two_band(grid, bgc, model)
+            test_multi_band(grid, bgc, model)
         end
     end
 end

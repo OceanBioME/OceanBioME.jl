@@ -1,9 +1,11 @@
 """
-Light attenuation by chlorophyll as described by [Karleskind2011](@citet) (implemented as twoBand) and [Morel1988](@citet).
+Light attenuation by chlorophyll as described by [Karleskind2011](@citet) (implemented as TwoBand) and [Morel1988](@citet) (as MultiBand).
 """
 module Light
 
-export TwoBandPhotosyntheticallyActiveRadiation, update_PAR!, PrescribedPhotosyntheticallyActiveRadiation
+export TwoBandPhotosyntheticallyActiveRadiation, 
+       PrescribedPhotosyntheticallyActiveRadiation, 
+       MultiBandPhotosyntheticallyActiveRadiation
 
 using KernelAbstractions, Oceananigans.Units
 using Oceananigans.Architectures: device, architecture
@@ -20,6 +22,7 @@ using Oceananigans.BoundaryConditions: fill_halo_regions!,
                                        domain_boundary_indices,
                                        RightBoundary
 using Oceananigans.ImmersedBoundaries: ImmersedBoundaryGrid
+using OceanBioME: chlorophyll
 
 import Adapt: adapt_structure, adapt
 import Base: show, summary

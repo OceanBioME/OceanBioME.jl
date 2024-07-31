@@ -1,77 +1,136 @@
-module Morel
+using Oceananigans.Utils: SumOfArrays
 
-using KernelAbstractions
-using Oceananigans.Architectures: device
-using Oceananigans.Utils: launch!
+include("morel_coefficients.jl")
 
-@kernel function _update_PAR(PAR¹, PAR², PAR³, Chl, zₑᵤ, grid, t, params) 
+struct ScaledSurfaceFunction{SF, SC} <: Function
+    surface_function :: SF
+        scale_factor :: SC
+end
+
+@inline (ssf::ScaledSurfaceFunction)(X...) = ssf.surface_function(X...) * ssf.scale_factor
+
+struct MultiBandPhotosyntheticallyActiveRadiation{F, FN, K, E, C, SPAR}
+    fields :: F
+    field_names :: FN
+
+    water_attenuation_coefficient :: K
+    chlorophyll_exponent :: E
+    chlorophyll_attenuation_coefficient :: C
+
+    surface_PAR :: SPAR
+end
+
+"""
+    MultiBandPhotosyntheticallyActiveRadiation(; )
+
+Keyword Arguments
+==================
+
+- `grid`: grid for building the model on
+- `water_red_attenuation`, ..., `phytoplankton_chlorophyll_ratio`: parameter values
+- `surface_PAR`: function (or array in the future) for the photosynthetically available radiation at the surface, 
+   which should be `f(x, y, t)` where `x` and `y` are the native coordinates (i.e. meters for rectilinear grids
+   and latitude/longitude as appropriate)
+"""
+function MultiBandPhotosyntheticallyActiveRadiation(; grid, 
+                                                      bands = ((400, 500), (500, 600), (600, 700)), #nm
+                                                      base_bands = MOREL_λ,
+                                                      base_water_attenuation_coefficient = MOREL_kʷ,
+                                                      base_chlorophyll_exponent = MOREL_e,
+                                                      base_chlorophyll_attenuation_coefficient = MOREL_χ,
+                                                      field_names = [par_symbol(n, length(bands)) for n in 1:length(bands)],
+                                                      surface_PAR = default_surface_PAR)
+    Nbands = length(bands)
+
+    kʷ = zeros(eltype(grid), Nbands)
+    e  = zeros(eltype(grid), Nbands)
+    χ  = zeros(eltype(grid), Nbands)
+
+    for (n, band) in enumerate(bands)
+        idx1 = findlast(base_bands .<= band[1])
+        idx2 = findlast(base_bands .< band[2])
+
+        kʷ[n] = sum(base_water_attenuation_coefficient[idx1:idx2] .* base_bands[idx1:idx2]) / sum(base_bands[idx1:idx2])
+        e[n]  = sum(base_chlorophyll_exponent[idx1:idx2] .* base_bands[idx1:idx2]) / sum(base_bands[idx1:idx2])
+        χ[n]  = sum(base_chlorophyll_attenuation_coefficient[idx1:idx2] .* base_bands[idx1:idx2]) / sum(base_bands[idx1:idx2])
+    end
+    
+
+    wrapped_surface_PAR_function = ScaledSurfaceFunction(surface_PAR, 1 / Nbands)
+
+    fields = [CenterField(grid; boundary_conditions = 
+                            regularize_field_boundary_conditions(
+                                FieldBoundaryConditions(top = ValueBoundaryCondition(wrapped_surface_PAR_function)), grid, name)) for name in field_names]
+
+
+    return MultiBandPhotosyntheticallyActiveRadiation(fields, field_names, kʷ, e, χ, surface_PAR)
+end
+
+function par_symbol(n, nbands)
+    if nbands <= 9
+        return Symbol(:PAR, Char('\xe2\x82\x80'+n))
+    else
+        Symbol(:PAR, n)
+    end
+end
+
+@kernel function update_MultiBandPhotosyntheticallyActiveRadiation!(PAR_model, grid, Chl, t) 
     i, j = @index(Global, NTuple)
 
-    Nz = grid.Nz
-    FT = eltype(grid)
-    point_sixtytwo = FT(0.62)
+    k, k′ = domain_boundary_indices(RightBoundary(), grid.Nz)
 
-    PAR⁰ = params.PAR⁰(t)
+    X = z_boundary_node(i, j, k′, grid, Center(), Center())
+
+    surface_PAR = PAR_model.surface_PAR(X..., t)
+    fields = PAR_model.fields
+
+    kʷ = PAR_model.water_attenuation_coefficient
+    e  = PAR_model.chlorophyll_exponent
+    χ  = PAR_model.chlorophyll_attenuation_coefficient
+
+    Nbands = length(fields)
+
+    zᶜ = znodes(grid, Center(), Center(), Center())
 
     # first point below surface
-    @inbounds begin
-        z = grid.zᵃᵃᶜ[Nz]
-
-        k₁ = params.a.B + params.A.B*Chl[Nz] + params.b.B + params.B.B * Chl[Nz]^point_sixtytwo
-        k₂ = params.a.G + params.A.G*Chl[Nz] + params.b.G + params.B.G * Chl[Nz]^point_sixtytwo
-        k₃ = params.a.R + params.A.R*Chl[Nz] + params.b.R + params.B.R * Chl[Nz]^point_sixtytwo
-
-        PAR¹[i, j, Nz] = PAR⁰ * params.PAR_frac.B * exp(k₁ * z)
-        PAR²[i, j, Nz] = PAR⁰ * params.PAR_frac.G * exp(k₂ * z)
-        PAR³[i, j, Nz] = PAR⁰ * params.PAR_frac.R * exp(k₃ * z)
+    k = grid.Nz
+    for n in 1:Nbands
+        @inbounds fields[n][i, j, k] = @inbounds (surface_PAR / Nbands) * exp(zᶜ[grid.Nz] * (kʷ[n] + χ[n] * Chl[i, j, k] ^ e[n]))
     end
 
     # the rest of the points
     for k in grid.Nz-1:-1:1
-        @inbounds begin
-            z = grid.zᵃᵃᶜ[k]
-            dz = grid.zᵃᵃᶜ[k+1] - z
-
-            k₁ = params.a.B + params.A.B * Chl[k] + params.b.B + params.B.B*Chl[k]^point_sixtytwo
-            k₂ = params.a.G + params.A.G * Chl[k] + params.b.G + params.B.G*Chl[k]^point_sixtytwo
-            k₃ = params.a.R + params.A.R * Chl[k] + params.b.R + params.B.R*Chl[k]^point_sixtytwo
-
-            PAR¹[i, j, k] = PAR¹[i, j, k+1] * exp(-k₁ * dz)
-            PAR²[i, j, k] = PAR²[i, j, k+1] * exp(-k₂ * dz)
-            PAR³[i, j, k] = PAR³[i, j, k+1] * exp(-k₃ * dz)
-
-            if sum(PAR¹[i, j, k] + PAR²[i, j, k] + PAR³[i, j, k]) / PAR⁰ > FT(0.001)
-                zₑᵤ[i, j] = - z #this and mixed layer depth are positive in PISCES
-            end
+        Δz = @inbounds zᶜ[k] - zᶜ[k + 1] 
+        for n in 1:Nbands
+            @inbounds fields[n][i, j, k] = @inbounds fields[n][i, j, k + 1] * exp(Δz * (kʷ[n] + χ[n] * Chl[i, j, k] ^ e[n]))
         end
     end
 end
 
-"""
-    update(sim, params)
 
-Function to integrate light attenuation using the [Morel1988](@citet) model which should be called
-in a callback as often as possible.
+function update_biogeochemical_state!(model, PAR::MultiBandPhotosyntheticallyActiveRadiation)
+    grid = model.grid
 
-Requires three PAR bands to be supplied as auxiliary fields: `PAR¹`, `PAR²`, and `PAR³`
-as well as `Chlᴾ` and `Chlᴰ` chlorophyll tracer fields.
-"""
-function update(sim, params)
-    PAR¹, PAR², PAR³ = sim.model.auxiliary_fields.PAR¹, sim.model.auxiliary_fields.PAR², sim.model.auxiliary_fields.PAR³
-    Chl = (sim.model.tracers.Chlᴾ .+ sim.model.tracers.Chlᴰ).*10^6
+    arch = architecture(grid)
 
-    zₑᵤ = sim.model.auxiliary_fields.zₑᵤ
+    launch!(arch, grid, :xy, update_MultiBandPhotosyntheticallyActiveRadiation!, PAR, grid, chlorophyll(model.biogeochemistry, model), model.clock.time)
 
-    launch!(sim.model.architecture, sim.model.grid, :xy, _update_PAR,
-            PAR¹, PAR², PAR³, Chl, zₑᵤ, sim.model.grid, sim.model.clock.time, params)
+    for field in PAR.fields
+        fill_halo_regions!(field, model.clock, fields(model))
+    end
 end
 
-const defaults = (
-    a = (B = 0.0145, G = 0.0754, R = 0.500),#m⁻¹
-    A = (B = 0.044, G = 0.007, R = 0.007),#m²mg⁻¹
-    b = (B = 0.0050, G = 0.00173, R = 0.0007),
-    B = (B = 0.375, G = 0.290, R = 0.239),
-    PAR_frac = (B = 1/3, G = 1/3, R = 1/3)
-)
+summary(par::MultiBandPhotosyntheticallyActiveRadiation) = 
+    string("Multi band light attenuation model with $(length(par.fields)) bands $(par.field_names)")
+show(io::IO, model::MultiBandPhotosyntheticallyActiveRadiation) = print(io, summary(model))
 
-end #module
+biogeochemical_auxiliary_fields(par::MultiBandPhotosyntheticallyActiveRadiation) = 
+    NamedTuple{(:PAR, par.field_names...)}([SumOfArrays{length(par.fields)}(par.fields...), par.fields...])
+
+adapt_structure(to, par::MultiBandPhotosyntheticallyActiveRadiation) = 
+    MultiBandPhotosyntheticallyActiveRadiation(adapt(to, par.fields),
+                                               nothing, # don't need this in the kernel
+                                               adapt(to, par.water_attenuation_coefficient),
+                                               adapt(to, chlorophyll_exponent),
+                                               adapt(to, chlorophyll_attenuation_coefficient),
+                                               adapt(to, surface_PAR))
