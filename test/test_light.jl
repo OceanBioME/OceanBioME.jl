@@ -94,6 +94,9 @@ function test_multi_band(grid, bgc, model_type)
     @test all(interior(PAR², 1, 1, :) .≈ expected_PAR2)
     @test all(PAR[1, 1, 1:grid.Nz]  .≈ expected_PAR1 .+ expected_PAR2)
 
+    # check all the models work as expected
+    @test isnothing(time_step!(model, 1))
+
     return nothing
 end
 
