@@ -17,24 +17,25 @@ abstract type AbstractMixedLayerDepth end
 @propagate_inbounds Base.getindex(f::AbstractMixedLayerDepth, inds...) = getindex(f.field, inds...)
 
 function update_biogeochemical_state!(model, mld::AbstractMixedLayerDepth)
-    arch = architecture(model.grid)
+    grid = model.grid
 
-    launch!(arch, model.grid, :xy, _compute_mixed_layer_depth!, mld, model.tracers[required_tracers(mld)]...)
+    arch = architecture(grid)
+
+    launch!(arch, grid, :xy, _compute_mixed_layer_depth!, mld, grid, model.tracers[required_tracers(mld)]...)
 
     fill_halo_regions!(mld.field)
 
     return nothing
 end
 
-@kwdef struct TemperatureChangeMixedLayerDepth{F, FT}
+@kwdef struct TemperatureChangeMixedLayerDepth{F, FT} <: AbstractMixedLayerDepth
                         field :: F
   temperature_change_criteria :: FT = 0.8 # Kara et. al. (2000)
-
-    TemperatureChangeMixedLayerDepth(; grid, temperature_change_criteria = 0.125) =
-        TemperatureChangeMixedLayerDepth(Field{Center, Center, Nothing}(grid; indices = (:, :, 1:1)), 
-                                         temperature_change_criteria)
-
 end
+
+TemperatureChangeMixedLayerDepth(; grid, temperature_change_criteria = 0.125) =
+    TemperatureChangeMixedLayerDepth(Field{Center, Center, Nothing}(grid; indices = (:, :, 1:1)), 
+                                    temperature_change_criteria)
 
 Adapt.adapt_structure(to, mld::TemperatureChangeMixedLayerDepth) =
     TemperatureChangeMixedLayerDepth(adapt(to, mld.field),
@@ -47,15 +48,12 @@ required_tracers(::TemperatureChangeMixedLayerDepth) = (:T, )
 
     k_surface = grid.Nz
 
-    # is this GPU safe...
-    k = @inbounds findlast(T[i, j, :] .< T[i, j, k_surface] - mld.temperature_change_criteria)
-
     k = 1
-    # if not this is probably correct:
-    #= for k′ in 1:k_surface
+    found = false
+    for k′ in 1:k_surface # maybe this is unrollable 
         k = ifelse(T[i, j, k′] < T[i, j, k_surface] - mld.temperature_change_criteria, k′, k)
+        found = ifelse(!found, T[i, j, k′] < T[i, j, k_surface] - mld.temperature_change_criteria, found)
     end
-    =# # maybe this is even unrollable?
 
-    @inbounds mld.field[i, j] = znode(i, j, k, grid, Center())
+    @inbounds mld.field[i, j] = ifelse(found, znode(i, j, k, grid, Center(), Center(), Center()), -Inf)
 end
