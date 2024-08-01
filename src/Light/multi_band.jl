@@ -22,7 +22,7 @@ and χ(i) the chlorophyll attenuation coefficient.
 When the fields are called with `biogeochemical_auxiliary_fields` an additional field named `PAR`
 is also returned which is a sum of the bands.
 """
-struct MultiBandPhotosyntheticallyActiveRadiation{F, FN, K, E, C, SPAR}
+struct MultiBandPhotosyntheticallyActiveRadiation{F, FN, K, E, C, SPAR, SPARD}
     fields :: F
     field_names :: FN
 
@@ -31,6 +31,7 @@ struct MultiBandPhotosyntheticallyActiveRadiation{F, FN, K, E, C, SPAR}
     chlorophyll_attenuation_coefficient :: C
 
     surface_PAR :: SPAR
+    surface_PAR_division :: SPARD
 end
 
 """
@@ -95,7 +96,7 @@ function MultiBandPhotosyntheticallyActiveRadiation(; grid,
               for (n, name) in enumerate(field_names)]
 
 
-    return MultiBandPhotosyntheticallyActiveRadiation(fields, field_names, kʷ, e, χ, surface_PAR)
+    return MultiBandPhotosyntheticallyActiveRadiation(fields, field_names, kʷ, e, χ, surface_PAR, surface_PAR_division)
 end
 
 function numerical_mean(λ, C, idx1, idx2)
@@ -134,7 +135,7 @@ end
     # first point below surface
     k = grid.Nz
     for n in 1:Nbands
-        @inbounds fields[n][i, j, k] = @inbounds (surface_PAR / Nbands) * exp(zᶜ[grid.Nz] * (kʷ[n] + χ[n] * Chl[i, j, k] ^ e[n]))
+        @inbounds fields[n][i, j, k] = @inbounds surface_PAR * PAR_model.surface_PAR_division[n] * exp(zᶜ[grid.Nz] * (kʷ[n] + χ[n] * Chl[i, j, k] ^ e[n]))
     end
 
     # the rest of the points
