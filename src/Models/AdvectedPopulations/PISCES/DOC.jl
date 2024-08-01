@@ -95,6 +95,7 @@ end
     eₘₐₓᴹ = bgc.max_growth_efficiency_of_zooplankton.M
     αᴾ= bgc.initial_slope_of_PI_curve.P
     αᴰ = bgc.initial_slope_of_PI_curve.D
+    wₚₒ = bgc.sinking_speed_of_POC
 
     ϕ₀ = bgc.latitude
     L_day_param = bgc.length_of_day
@@ -112,6 +113,7 @@ end
     zₘₐₓ = max(zₑᵤ, zₘₓₗ)   #41a
     w_GOC = w_GOCᵐⁱⁿ + (200 - w_GOCᵐⁱⁿ)*(max(0, z-zₘₐₓ))/(5000) #41b
     g_GOC_FFᴹ = g_FF*bₘ^T*w_GOC*GOC #29b
+    gₚₒ_FFᴹ = g_FF*bₘ^T*wₚₒ*POC
 
     t_darkᴾ = bgc.mean_residence_time_of_phytoplankton_in_unlit_mixed_layer.P
     t_darkᴰ = bgc.mean_residence_time_of_phytoplankton_in_unlit_mixed_layer.D
@@ -129,7 +131,6 @@ end
     λₚₒ¹ = λ¹(T, O₂, bgc)
     Rᵤₚᴹ = Rᵤₚ(M, T, bgc)
 
-    zₘₐₓ = max(zₑᵤ, zₘₓₗ) #35a
     Bact = get_Bact(zₘₐₓ, z, Z, M)
 
     bFe = Fe #defined in previous PISCES model
@@ -140,5 +141,5 @@ end
 
     Φ₁ᴰᴼᶜ, Φ₂ᴰᴼᶜ, Φ₃ᴰᴼᶜ = Φᴰᴼᶜ(DOC, POC, GOC, sh, bgc)
 
-    return (1 - γᶻ)*(1 - eᶻ - σᶻ)*∑ᵢgᵢᶻ*Z + (1 - γᴹ)*(1 - eᴹ - σᴹ)*(∑ᵢgᵢᴹ + g_GOC_FFᴹ)*M + δᴰ*μᴰ*D + δᴾ*μᴾ*P + λₚₒ¹*POC + (1 - γᴹ)*Rᵤₚᴹ - Remin - Denit - Φ₁ᴰᴼᶜ - Φ₂ᴰᴼᶜ - Φ₃ᴰᴼᶜ #32
-end
+    return (1 - γᶻ)*(1 - eᶻ - σᶻ)*∑ᵢgᵢᶻ*Z + (1 - γᴹ)*(1 - eᴹ - σᴹ)*(∑ᵢgᵢᴹ + g_GOC_FFᴹ + gₚₒ_FFᴹ)*M + δᴰ*μᴰ*D + δᴾ*μᴾ*P + λₚₒ¹*POC + (1 - γᴹ)*Rᵤₚᴹ - Remin - Denit - Φ₁ᴰᴼᶜ - Φ₂ᴰᴼᶜ - Φ₃ᴰᴼᶜ #32
+end #changed this to include gₚₒ_FF

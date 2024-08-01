@@ -33,7 +33,7 @@ end
     K_Gᴹ = bgc.half_saturation_const_for_grazing.M
     bₘ = bgc.temperature_sensitivity_term.M
     
-    F = pₚᴹ*max(0, P - Jₜₕᵣₑₛₕᴹ) + p_Dᴹ*max(0, D - Jₜₕᵣₑₛₕᴹ) + pₚₒᴹ*max(0, POC - Jₜₕᵣₑₛₕᴹ) + p_Zᴹ*max(0, POC - Jₜₕᵣₑₛₕᴹ)
+    F = pₚᴹ*max(0, P - Jₜₕᵣₑₛₕᴹ) + p_Dᴹ*max(0, D - Jₜₕᵣₑₛₕᴹ) + pₚₒᴹ*max(0, POC - Jₜₕᵣₑₛₕᴹ) + p_Zᴹ*max(0, Z - Jₜₕᵣₑₛₕᴹ)
     Fₗᵢₘ = max(0, F - min(0.5*F, Fₜₕᵣₑₛₕᴹ))
 
     grazing_arg =  gₘₐₓᴹ*bₘ^T*(Fₗᵢₘ)/((F + eps(0.0))*(K_Gᴹ + pₚᴹ*P + p_Dᴹ*D + pₚₒᴹ*POC + p_Zᴹ*Z + eps(0.0)))
