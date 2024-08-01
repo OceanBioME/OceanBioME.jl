@@ -70,7 +70,7 @@ function MultiBandPhotosyntheticallyActiveRadiation(; grid,
                                                       base_chlorophyll_attenuation_coefficient = MOREL_χ,
                                                       field_names = [par_symbol(n) for n in 1:length(bands)],
                                                       surface_PAR = default_surface_PAR,
-                                                      surface_PAR_division = fill(1 / length(bandss), length(bands)))
+                                                      surface_PAR_division = fill(1 / length(bands), length(bands)))
     Nbands = length(bands)
 
     kʷ = zeros(eltype(grid), Nbands)
