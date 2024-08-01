@@ -91,7 +91,7 @@ function MultiBandPhotosyntheticallyActiveRadiation(; grid,
     fields = [CenterField(grid; 
                 boundary_conditions = 
                     regularize_field_boundary_conditions(
-                        FieldBoundaryConditions(top = ValueBoundaryCondition(ScaledSurfaceFunction(wrapped_surface_PAR_function, surface_PAR_division[n]))), grid, name)) 
+                        FieldBoundaryConditions(top = ValueBoundaryCondition(ScaledSurfaceFunction(surface_PAR, surface_PAR_division[n]))), grid, name)) 
               for (n, name) in enumerate(field_names)]
 
 
