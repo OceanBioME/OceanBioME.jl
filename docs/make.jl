@@ -64,7 +64,7 @@ model_parameters = (LOBSTER(; grid = BoxModelGrid(), light_attenuation_model = n
 exchanged_gas(::Val{G}) where G = G
 
 model_name(model) = if Base.typename(typeof(model)).wrapper == GasExchange
-                        "$(exchanged_gas(model.gas)) air-sea exchange"
+                        ifelse(isa(model.water_concentration, CarbonChemistry), "CO₂", "O₂")*" air-sea exchange"
                     else
                         Base.typename(typeof(model)).wrapper
                     end
