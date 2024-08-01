@@ -31,7 +31,7 @@ import Oceananigans.Biogeochemistry: biogeochemical_auxiliary_fields, update_bio
 import Oceananigans.BoundaryConditions: _fill_top_halo!
 
 include("2band.jl")
-include("morel.jl")
+include("multi_band.jl")
 include("prescribed.jl")
 
 default_surface_PAR(x, y, t) = default_surface_PAR(t)

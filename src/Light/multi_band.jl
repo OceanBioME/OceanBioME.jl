@@ -9,6 +9,19 @@ end
 
 @inline (ssf::ScaledSurfaceFunction)(X...) = ssf.surface_function(X...) * ssf.scale_factor
 
+"""
+    MultiBandPhotosyntheticallyActiveRadiation
+
+Light attenuation model with multiple wave length bands where each band (i) is attenuated like:
+
+    ∂PARᵢ(z)/∂z = PARᵢ(kʷ(i) + χ(i)Chl(z)ᵉ⁽ⁱ⁾) 
+
+Where kʷ(i) is the band specific water attenuation coefficient, e(i) the chlorophyll exponent,
+and χ(i) the chlorophyll attenuation coefficient.
+
+When the fields are called with `biogeochemical_auxiliary_fields` an additional field named `PAR`
+is also returned which is a sum of the bands.
+"""
 struct MultiBandPhotosyntheticallyActiveRadiation{F, FN, K, E, C, SPAR}
     fields :: F
     field_names :: FN
@@ -21,7 +34,23 @@ struct MultiBandPhotosyntheticallyActiveRadiation{F, FN, K, E, C, SPAR}
 end
 
 """
-    MultiBandPhotosyntheticallyActiveRadiation(; )
+    MultiBandPhotosyntheticallyActiveRadiation(; grid, 
+                                                 bands = ((400, 500), (500, 600), (600, 700)), #nm
+                                                 base_bands = MOREL_λ,
+                                                 base_water_attenuation_coefficient = MOREL_kʷ,
+                                                 base_chlorophyll_exponent = MOREL_e,
+                                                 base_chlorophyll_attenuation_coefficient = MOREL_χ,
+                                                 field_names = [par_symbol(n, length(bands)) for n in 1:length(bands)],
+                                                 surface_PAR = default_surface_PAR)
+
+Returns a `MultiBandPhotosyntheticallyActiveRadiation` attenuation model of `surface_PAR` in divided 
+into `bands` by `surface_PAR_division`. 
+
+The attenuation morel_coefficients are computed from `base_water_attenuation_coefficient`,
+`base_chlorophyll_exponent`, and `base_chlorophyll_attenuation_coefficient` which should be 
+arrays of the coefficients at `base_bands` wavelengths. 
+
+The returned `field_names` default to `PAR₁`, `PAR₂`, etc., but may be specified by the user instead.
 
 Keyword Arguments
 ==================
@@ -31,6 +60,7 @@ Keyword Arguments
 - `surface_PAR`: function (or array in the future) for the photosynthetically available radiation at the surface, 
    which should be `f(x, y, t)` where `x` and `y` are the native coordinates (i.e. meters for rectilinear grids
    and latitude/longitude as appropriate)
+
 """
 function MultiBandPhotosyntheticallyActiveRadiation(; grid, 
                                                       bands = ((400, 500), (500, 600), (600, 700)), #nm
@@ -38,8 +68,9 @@ function MultiBandPhotosyntheticallyActiveRadiation(; grid,
                                                       base_water_attenuation_coefficient = MOREL_kʷ,
                                                       base_chlorophyll_exponent = MOREL_e,
                                                       base_chlorophyll_attenuation_coefficient = MOREL_χ,
-                                                      field_names = [par_symbol(n, length(bands)) for n in 1:length(bands)],
-                                                      surface_PAR = default_surface_PAR)
+                                                      field_names = [par_symbol(n) for n in 1:length(bands)],
+                                                      surface_PAR = default_surface_PAR,
+                                                      surface_PAR_division = fill(1 / length(bandss), length(bands)))
     Nbands = length(bands)
 
     kʷ = zeros(eltype(grid), Nbands)
@@ -50,28 +81,36 @@ function MultiBandPhotosyntheticallyActiveRadiation(; grid,
         idx1 = findlast(base_bands .<= band[1])
         idx2 = findlast(base_bands .< band[2])
 
-        kʷ[n] = sum(base_water_attenuation_coefficient[idx1:idx2] .* base_bands[idx1:idx2]) / sum(base_bands[idx1:idx2])
-        e[n]  = sum(base_chlorophyll_exponent[idx1:idx2] .* base_bands[idx1:idx2]) / sum(base_bands[idx1:idx2])
-        χ[n]  = sum(base_chlorophyll_attenuation_coefficient[idx1:idx2] .* base_bands[idx1:idx2]) / sum(base_bands[idx1:idx2])
+        kʷ[n] = numerical_mean(base_bands, base_water_attenuation_coefficient, idx1, idx2)
+        e[n]  = numerical_mean(base_bands, base_chlorophyll_exponent, idx1, idx2)
+        χ[n]  = numerical_mean(base_bands, base_chlorophyll_attenuation_coefficient, idx1, idx2)
     end
+
+    sum(surface_PAR_division) == 1 || throw(ArgumentError("surface_PAR_division does not sum to 1"))
     
-
-    wrapped_surface_PAR_function = ScaledSurfaceFunction(surface_PAR, 1 / Nbands)
-
-    fields = [CenterField(grid; boundary_conditions = 
-                            regularize_field_boundary_conditions(
-                                FieldBoundaryConditions(top = ValueBoundaryCondition(wrapped_surface_PAR_function)), grid, name)) for name in field_names]
+    fields = [CenterField(grid; 
+                boundary_conditions = 
+                    regularize_field_boundary_conditions(
+                        FieldBoundaryConditions(top = ValueBoundaryCondition(ScaledSurfaceFunction(wrapped_surface_PAR_function, surface_PAR_division[n]))), grid, name)) 
+              for (n, name) in enumerate(field_names)]
 
 
     return MultiBandPhotosyntheticallyActiveRadiation(fields, field_names, kʷ, e, χ, surface_PAR)
 end
 
-function par_symbol(n, nbands)
-    if nbands <= 9
-        return Symbol(:PAR, Char('\xe2\x82\x80'+n))
-    else
-        Symbol(:PAR, n)
+function numerical_mean(λ, C, idx1, idx2)
+    ∫Cdλ = sum([(C[n] + C[n-1]) * (λ[n] - λ[n-1]) / 2 for n = idx1+1:idx2])
+    ∫dλ = λ[idx2] - λ[idx1]
+    return ∫Cdλ / ∫dλ
+end
+
+function par_symbol(n)
+    subscripts = Symbol[]
+    for digit in reverse(digits(n))
+        push!(subscripts, Symbol(Char('\xe2\x82\x80'+digit)))
     end
+
+    return Symbol(:PAR, subscripts...)
 end
 
 @kernel function update_MultiBandPhotosyntheticallyActiveRadiation!(PAR_model, grid, Chl, t) 
