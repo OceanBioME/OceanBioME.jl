@@ -80,11 +80,11 @@ function MultiBandPhotosyntheticallyActiveRadiation(; grid,
 
     for (n, band) in enumerate(bands)
         idx1 = findlast(base_bands .<= band[1])
-        idx2 = findlast(base_bands .< band[2])
+        idx2 = findlast(base_bands .<= band[2])
 
         kʷ[n] = numerical_mean(base_bands, base_water_attenuation_coefficient, idx1, idx2)
-        e[n]  = numerical_mean(base_bands, base_chlorophyll_exponent, idx1, idx2)
-        χ[n]  = numerical_mean(base_bands, base_chlorophyll_attenuation_coefficient, idx1, idx2)
+         e[n] = numerical_mean(base_bands, base_chlorophyll_exponent, idx1, idx2)
+         χ[n] = numerical_mean(base_bands, base_chlorophyll_attenuation_coefficient, idx1, idx2)
     end
 
     sum(surface_PAR_division) == 1 || throw(ArgumentError("surface_PAR_division does not sum to 1"))
