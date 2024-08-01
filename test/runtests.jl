@@ -2,6 +2,8 @@ include("dependencies_for_runtests.jl")
 
 group = get(ENV, "TEST_GROUP", :all) |> Symbol
 
+@info "Please do not merge this branch I just want to see if it breaks the test"
+
 if group == :all
     include("test_utils.jl")
     include("test_light.jl")
