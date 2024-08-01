@@ -173,4 +173,5 @@ adapt_structure(to, par::MultiBandPhotosyntheticallyActiveRadiation) =
                                                adapt(to, par.water_attenuation_coefficient),
                                                adapt(to, par.chlorophyll_exponent),
                                                adapt(to, par.chlorophyll_attenuation_coefficient),
-                                               adapt(to, par.surface_PAR))
+                                               adapt(to, par.surface_PAR),
+                                               adapt(to, par.surface_PAR_division))
