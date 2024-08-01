@@ -329,6 +329,6 @@ adapt_structure(to, npzd::NPZD) =
 @inline conserved_tracers(::NPZD) = (:N, :P, :Z, :D)
 @inline sinking_tracers(bgc::NPZD) = keys(bgc.sinking_velocities)
 
-@inline chlorophyll(bcg::NPZD, model) = 1.31 * model.tracers.P
+@inline chlorophyll(bgc::NPZD, model) = 1.31 * model.tracers.P
 
 end # module

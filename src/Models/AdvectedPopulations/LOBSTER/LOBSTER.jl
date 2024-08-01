@@ -491,6 +491,6 @@ const VariableRedfieldLobster = Union{LOBSTER{<:Any, <:Val{(false, false, true)}
 @inline sinking_tracers(::LOBSTER) = (:sPOM, :bPOM)
 @inline sinking_tracers(::VariableRedfieldLobster) = (:sPON, :bPON, :sPOC, :bPOC)
 
-@inline chlorophyll(bcg::LOBSTER, model) = bgc.phytoplankton_chlorophyll_ratio * model.tracers.P
+@inline chlorophyll(bgc::LOBSTER, model) = bgc.phytoplankton_chlorophyll_ratio * model.tracers.P
 
 end # module
