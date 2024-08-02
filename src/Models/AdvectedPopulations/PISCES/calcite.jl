@@ -24,7 +24,7 @@ end
     Lₙᴾ = Lᴾ(P, PO₄, NO₃, NH₄, Pᶜʰˡ, Pᶠᵉ, bgc)[5]
     Kₙₕ₄ᴾ = Kᵢᴶ(Kₙₕ₄ᴾᵐⁱⁿ, P₁, P₂, Sᵣₐₜᴾ)
     Lₗᵢₘᶜᵃᶜᵒ³ = min(Lₙᴾ, K_mondo(Fe, 6e-11), K_mondo(PO₄, Kₙₕ₄ᴾ))
-    return r_CaCO₃*Lₗᵢₘᶜᵃᶜᵒ³*T*max(1, P/2)*max(0, PAR - 1)*30*(1 + exp((-(T-10)^2)/25))*min(1, 50/zₘₓₗ + eps(0.0))/((0.1 + T)*(4 + PAR)*(30 + PAR)) #eq77
+    return r_CaCO₃*Lₗᵢₘᶜᵃᶜᵒ³*T*max(1, P/2)*max(0, PAR - 1)*30*(1 + exp((-(T-10)^2)/25))*min(1, 50/(zₘₓₗ + eps(0.0)))/((0.1 + T)*(4 + PAR)*(30 + PAR)) #eq77
 end
 
 @inline function P_CaCO₃(P, PO₄, NO₃, NH₄, Pᶜʰˡ, Pᶠᵉ, Fe, D, Z, M, POC, T, PAR, zₘₓₗ, z, bgc) 

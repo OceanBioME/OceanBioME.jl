@@ -474,7 +474,7 @@ end
                    non_assimilated_fraction :: ZM = (Z = 0.3, M = 0.3),
                    excretion_as_DOM :: ZM = (Z = 0.6, M = 0.6),
                    max_grazing_rate :: ZM = (Z = 3.0/day, M = 0.75/day),                       #1/d
-                   flux_feeding_rate :: FT = 2.0e3,                                #(m mol L⁻¹)⁻¹
+                   flux_feeding_rate :: FT = 2.0e-3,                                #(m mol L⁻¹)⁻¹
                    half_saturation_const_for_grazing :: ZM = (Z = 20.0, M = 20.0),               #μmolCL⁻¹
                    preference_for_nanophytoplankton :: ZM = (Z = 1.0, M = 0.3),
                    preference_for_diatoms :: ZM = (Z = 0.5, M = 1.0),
@@ -643,7 +643,7 @@ function PISCES(; grid, # finally the function
                    non_assimilated_fraction :: ZM = (Z = 0.3, M = 0.3),
                    excretion_as_DOM :: ZM = (Z = 0.6, M = 0.6),
                    max_grazing_rate :: ZM = (Z = 3.0/day, M = 0.75/day),                       #1/d
-                   flux_feeding_rate :: FT = 2.0e3,                                #(m mol L⁻¹)⁻¹
+                   flux_feeding_rate :: FT = 2.0e-3,                                #(m mol L⁻¹)⁻¹
                    half_saturation_const_for_grazing :: ZM = (Z = 20.0, M = 20.0),               #μmolCL⁻¹
                    preference_for_nanophytoplankton :: ZM = (Z = 1.0, M = 0.3),
                    preference_for_diatoms :: ZM = (Z = 0.5, M = 1.0),
