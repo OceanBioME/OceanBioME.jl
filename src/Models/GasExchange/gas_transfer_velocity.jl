@@ -49,7 +49,8 @@ Wanninkhof99(scale_factor = 0.0283 / hour / 100) = PolynomialParameterisation{3}
 """
     Ho06(scale_factor = 0.266 / hour / 100)
 
-Quadratic k₆₆₀ parameterisation of Ho et al. (2006) suitable for the QuickSCAT satellite wind product.
+Quadratic k₆₆₀ parameterisation of Ho et al. (2006) suitable for the QuickSCAT satellite and short-term 
+steady wind product.
 """
 Ho06(scale_factor = 0.266 / hour / 100) = PolynomialParameterisation{2}((0, 0, scale_factor))
 
