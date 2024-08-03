@@ -2,13 +2,22 @@ module Models
 
 export Sediments
 
-export NPZD, NutrientPhytoplanktonZooplanktonDetritus, LOBSTER
+export NPZD, 
+       NutrientPhytoplanktonZooplanktonDetritus, 
+       LOBSTER
 
 export SLatissima
 
 export CarbonChemistry
 
-export GasExchange, CarbonDioxideGasExchangeBoundaryCondition, OxygenGasExchangeBoundaryCondition, GasExchangeBoundaryCondition
+export GasExchange, 
+       CarbonDioxideGasExchangeBoundaryCondition, 
+       OxygenGasExchangeBoundaryCondition, 
+       GasExchangeBoundaryCondition,
+       ScaledGasTransferVelocity,
+       SchmidtScaledTransferVelocity,
+       CarbonDioxidePolynomialSchmidtNumber,
+       OxygenPolynomialSchmidtNumber
 
 include("Sediments/Sediments.jl")
 include("AdvectedPopulations/LOBSTER/LOBSTER.jl")
@@ -17,7 +26,6 @@ include("Individuals/SLatissima.jl")
 include("seawater_density.jl")
 include("CarbonChemistry/CarbonChemistry.jl")
 include("GasExchange/GasExchange.jl")
-#include("gasexchange.jl")
 
 using .Sediments
 using .LOBSTERModel

@@ -3,7 +3,14 @@
 """
 module GasExchangeModel
 
-export GasExchange, CarbonDioxideGasExchangeBoundaryCondition, OxygenGasExchangeBoundaryCondition, GasExchangeBoundaryCondition
+export GasExchange, 
+       CarbonDioxideGasExchangeBoundaryCondition, 
+       OxygenGasExchangeBoundaryCondition, 
+       GasExchangeBoundaryCondition,
+       ScaledGasTransferVelocity,
+       SchmidtScaledTransferVelocity,
+       CarbonDioxidePolynomialSchmidtNumber,
+       OxygenPolynomialSchmidtNumber
 
 using Adapt
 using Oceananigans.BoundaryConditions: FluxBoundaryCondition
@@ -34,10 +41,13 @@ show(io::IO, tc::TracerConcentration) = println(io, summar(tc))
 
 field_dependencies(mc::TracerConcentration) = (:T, mc.tracer)
 
+include("generic_parameterisations.jl")
 include("gas_exchange.jl")
 include("carbon_dioxide_concentration.jl")
 include("schmidt_number.jl")
 include("gas_transfer_velocity.jl")
+
+using .ScaledGasTransferVelocity
 
 # wrappers to produce boundary conditions
 
@@ -71,7 +81,7 @@ end
 
 """
     CarbonDioxideGasExchangeBoundaryCondition(; carbon_chemistry = CarbonChemistry(),
-                                                transfer_velocity = ScaledTransferVelocity(; schmidt_number = CarbonDioxidePolynomialSchmidtNumber()),
+                                                transfer_velocity = SchmidtScaledTransferVelocity(; schmidt_number = CarbonDioxidePolynomialSchmidtNumber()),
                                                 air_concentration = 413, # ppmv
                                                 wind_speed = 2,
                                                 water_concentration = nothing,
@@ -86,7 +96,7 @@ and phosphate tracers for the `carbon_chemistry` model.
 Note: The model always requires `T`, `S`, `DIC`, and `Alk` to be present in the model.
 """
 function CarbonDioxideGasExchangeBoundaryCondition(; carbon_chemistry = CarbonChemistry(),
-                                                     transfer_velocity = ScaledTransferVelocity(; schmidt_number = CarbonDioxidePolynomialSchmidtNumber()),
+                                                     transfer_velocity = SchmidtScaledTransferVelocity(; schmidt_number = CarbonDioxidePolynomialSchmidtNumber()),
                                                      air_concentration = 413, # ppmv
                                                      wind_speed = 2,
                                                      water_concentration = nothing,
@@ -106,7 +116,7 @@ function CarbonDioxideGasExchangeBoundaryCondition(; carbon_chemistry = CarbonCh
 end
 
 """
-    OxygenGasExchangeBoundaryCondition(; transfer_velocity = ScaledTransferVelocity(; schmidt_number = OxygenPolynomialSchmidtNumber()),
+    OxygenGasExchangeBoundaryCondition(; transfer_velocity = SchmidtScaledTransferVelocity(; schmidt_number = OxygenPolynomialSchmidtNumber()),
                                          water_concentration = TracerConcentration(:O₂),
                                          air_concentration = 9352.7, # mmolO₂/m³
                                          wind_speed = 2)
@@ -114,7 +124,7 @@ end
 Returns a `FluxBoundaryCondition` for the gas exchange between oxygen dissolved in the water
 specified by the the `TracerConcentration` in the base model, and `air_concentration` with `transfer_velocity`.
 """
-OxygenGasExchangeBoundaryCondition(; transfer_velocity = ScaledTransferVelocity(; schmidt_number = OxygenPolynomialSchmidtNumber()),
+OxygenGasExchangeBoundaryCondition(; transfer_velocity = SchmidtScaledTransferVelocity(; schmidt_number = OxygenPolynomialSchmidtNumber()),
                                      water_concentration = TracerConcentration(:O₂),
                                      air_concentration = 9352.7, # mmolO₂/m³
                                      wind_speed = 2) = 

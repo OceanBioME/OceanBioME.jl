@@ -1,23 +1,100 @@
-using Oceananigans.Units
+module ScaledGasTransferVelocity
+
+export SchmidtScaledTransferVelocity
+
+using Oceananigans.Units, Adapt
+
+using OceanBioME.Models.GasExchangeModel: PolynomialParameterisation
+
+import Adapt: adapt_structure
 
 """
-    ScaledTransferVelocity
+    SchmidtScaledTransferVelocity(; schmidt_number, 
+                                    base_transfer_velocity = Ho06())
 
-k(660) transfer velocity parameterisation, defaults from Ho et al., 2006,
-but `coeff` is wind product specific.
+Returns a model for gas transfer velocity which depends on the `u₁₀`, the 10m-wind, and 
+`T`emperature. The model is of the typical form:
+
+    k(u₁₀, T) = k₆₆₀(u₁₀) √(660/Sc(T))
+
+The `base_transfer_velocity` (k₆₆₀) is typically an empirically derived gas transfer velocity
+normalised by the Scmidt number for CO₂ at 20°C (660), and the `schmidt_number` (Sc) is a parameterisation
+of the gas specific Schmidt number.
 """
-@kwdef struct ScaledTransferVelocity{FT, SC} 
-             coeff :: FT = 0.266 / hour / 100 # cm/hour to m/s
-    schmidt_number :: SC
+@kwdef struct SchmidtScaledTransferVelocity{KB, SC} 
+  base_transfer_velocity :: KB = Ho06()
+          schmidt_number :: SC
 end
 
-(k::ScaledTransferVelocity)(u₁₀, T) = k.coeff * u₁₀ ^ 2 * (k.schmidt_number(T) / 660)^(-1/2)
+(k::SchmidtScaledTransferVelocity)(u₁₀, T) = k.base_transfer_velocity(u₁₀) * (k.schmidt_number(T) / 660)^(-1/2)
 
-Adapt.adapt_structure(to, k::ScaledTransferVelocity) = ScaledTransferVelocity(adapt(to, k.coeff),
-                                                                              adapt(to, k.schmidt_number))
+Adapt.adapt_structure(to, k::SchmidtScaledTransferVelocity) = SchmidtScaledTransferVelocity(adapt(to, k.coeff),
+                                                                                            adapt(to, k.schmidt_number))
 
-summary(::ScaledTransferVelocity{FT, SC}) where {FT, SC} = "ScaledTransferVelocity{$(nameof(SC))}"
-show(io::IO, k::ScaledTransferVelocity{FT, SC}) where {FT, SC} = 
+summary(::SchmidtScaledTransferVelocity{KB, SC}) where {KB, SC} = "SchmidtScaledTransferVelocity{$(nameof(KB)), $(nameof(SC))}"
+show(io::IO, k::SchmidtScaledTransferVelocity{KB, SC}) where {KB, SC} = 
     println(io, summary(k), "\n",
-                "    k = $(k.coeff) u₁₀² √(660/Sc(T)),\n",
-                "    Sc(T): $(nameof(SC))")
+                "    k = k₆₆₀(u₁₀) √(660/Sc(T)),\n",
+                "    Sc(T): $(nameof(SC)),\n",
+                "    k₆₆₀(u₁₀) : $(nameof(KB))")
+
+"""
+    Wanninkhof99(scale_factor = 0.0283)
+
+Cubic k₆₆₀ parameterisation of Wanninkhof & McGillis (1999) suitable for 
+short term, in situ wind products.
+"""
+Wanninkhof99(scale_factor = 0.0283 / hour / 100) = PolynomialParameterisation{3}((0, 0, 0, scale_factor))
+
+"""
+    Ho06(scale_factor = 0.266)
+
+Cubic k₆₆₀ parameterisation of Ho et al. (2006) suitable for the QuickSCAT satellite wind product.
+"""
+Ho06(scale_factor = 0.266 / hour / 100) = PolynomialParameterisation{2}((0, 0, scale_factor))
+
+"""
+    Nightingale00(linear = 0.333, quadratic = 0.222)
+
+Cubic k₆₆₀ parameterisation of Nightingale et al. (2000) suitable for 
+short term, in situ wind products (?).
+"""
+Nightingale00(linear = 0.333 / hour / 100, quadratic = 0.222 / hour / 100) =
+    PolynomialParameterisation{2}((0, linear, quadratic))
+
+"""
+    McGillis01(constant = 3.3, cubic = 0.026)
+
+Cubic k₆₆₀ parameterisation of McGillis et al. (2001) suitable for 
+short term, in situ wind products.
+"""
+McGillis01(constant = 3.3 / hour / 100, cubic = 0.026 / hour / 100) =
+    PolynomialParameterisation{3}((constant, 0, 0, cubic))
+
+"""
+    Sweeny07(scale_factor = 0.27)
+
+Cubic k₆₆₀ parameterisation of Sweeny et al. (2007) suitable for the
+NCEP/NCAR reanalysis 1 product
+"""
+Sweeny07(scale_factor = 0.27 / hour / 100) = PolynomialParameterisation{2}((0, 0, scale_factor))
+
+"""
+    Wanninkhof09(constant = 3, linear = 0.1, quadratic = 0.064, cubic = 0.011)
+
+Cubic k₆₆₀ parameterisation of Wanninkhof et al (2009) suitable for the
+Cross-Calibrated Multi-Platform (CCMP) Winds product
+"""
+Wanninkhof09(constant = 3 / hour / 100, linear = 0.1 / hour / 100, quadratic = 0.064 / hour / 100, cubic = 0.011 / hour / 100) =
+    PolynomialParameterisation{3}((constant, linear, quadratic, cubic))
+
+
+"""
+    Wanninkhof14(scale_factor = 0.251)
+
+Cubic k₆₆₀ parameterisation of Wanninkhof et al (2014) suitable for the
+Cross-Calibrated Multi-Platform (CCMP) Winds product
+"""
+Wanninkhof14(scale_factor = 0.251 / hour / 100) = PolynomialParameterisation{2}((0, 0, scale_factor))
+
+end # module

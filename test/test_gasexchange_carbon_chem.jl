@@ -63,17 +63,7 @@ grid = RectilinearGrid(architecture; size=(1, 1, 2), extent=(1, 1, 1))
 end
 
 @testset "Carbon chemistry" begin
-    # vary from default to use all parameters from for testing Dickson, A.G., Sabine, C.L. and  Christian, J.R. (2007), 
-    # Guide to Best Practices for Ocean CO 2 Measurements. PICES Special Publication 3, 191 pp.
-
-    carbon_chemistry =
-        CarbonChemistry(; # Weiss, R.F. (1974, Mar. Chem., 2, 203–215)
-                          solubility = K0(-60.2409, 93.4517 * 100, 23.3585, 0.0, 0.023517, -0.023656 / 100, 0.0047036 / 100^2),
-                          # Lueke, et. al (2000, Mar. Chem., 70, 105–119;)
-                          carbonic_acid = (K1 = K1(constant=61.2172, inverse_T=-3633.86, log_T=-9.67770, S=0.011555, S²=-0.0001152), 
-                                           K2 = K2(constant=-25.9290, inverse_T=-471.78, log_T=3.16967, S=0.01781, S²=-0.0001122)),
-                          # Perez and Fraga (1987, Mar. Chem., 21, 161–168).
-                          fluoride = KF(constant=-9.68, inverse_T=874.0, sqrt_S=0.111, log_S=0.0, log_S_KS=0.0))
+    carbon_chemistry = CarbonChemistry()
 
     # test conditions
     S = 35
