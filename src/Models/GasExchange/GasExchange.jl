@@ -35,7 +35,7 @@ struct TracerConcentration{T} <: Function
 end
 
 summary(tc::TracerConcentration) = "Model tracer concentration of $(tc.tracer)"
-show(io::IO, tc::TracerConcentration) = println(io, summar(tc))
+show(io::IO, tc::TracerConcentration) = println(io, summary(tc))
 
 @inline (mc::TracerConcentration)(x, y, t, args...) = args[end]
 
