@@ -28,7 +28,7 @@ end
 
 (k::SchmidtScaledTransferVelocity)(u₁₀, T) = k.base_transfer_velocity(u₁₀) * (k.schmidt_number(T) / 660)^(-1/2)
 
-Adapt.adapt_structure(to, k::SchmidtScaledTransferVelocity) = SchmidtScaledTransferVelocity(adapt(to, k.coeff),
+Adapt.adapt_structure(to, k::SchmidtScaledTransferVelocity) = SchmidtScaledTransferVelocity(adapt(to, k.base_transfer_velocity),
                                                                                             adapt(to, k.schmidt_number))
 
 summary(::SchmidtScaledTransferVelocity{KB, SC}) where {KB, SC} = "SchmidtScaledTransferVelocity{$(nameof(KB)), $(nameof(SC))}"
