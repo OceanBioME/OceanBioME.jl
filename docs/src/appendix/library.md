@@ -48,7 +48,7 @@ Modules = [OceanBioME.Models.Sediments]
 ## Gas exchange boundary conditions
 
 ```@autodocs
-Modules = [OceanBioME.Models.GasExchangeModel]
+Modules = [OceanBioME.Models.GasExchangeModel, OceanBioME.Models.GasExchangeModel.ScaledGasTransferVelocity]
 ```
 
 ## Box Model
