@@ -165,7 +165,7 @@ summary(par::MultiBandPhotosyntheticallyActiveRadiation) =
 show(io::IO, model::MultiBandPhotosyntheticallyActiveRadiation) = print(io, summary(model))
 
 biogeochemical_auxiliary_fields(par::MultiBandPhotosyntheticallyActiveRadiation) = 
-    NamedTuple{(:PAR, par.field_names...)}([SumOfArrays{length(par.fields)}(par.fields...), par.fields...])
+    NamedTuple{(:PAR, par.field_names...)}([sum(par.fields), par.fields...])
 
 adapt_structure(to, par::MultiBandPhotosyntheticallyActiveRadiation) = 
     MultiBandPhotosyntheticallyActiveRadiation(adapt(to, par.fields),
