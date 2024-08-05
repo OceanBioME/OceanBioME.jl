@@ -199,20 +199,20 @@ K_w = \\ce{[H^+][OH^-]}.
 ```
 
 #### Alkalinity equilibration
-From these rate constants we can rewrite the total alkalinity (given above) in terms of only the rate constants, total hydrogen ion concentration (``\ce{H^+}``), the total dissolved inorganic carbon (``[DIC]``), boron (``B``), phosphate (``P``), silicate (``Si``), Sulfate (``Sulf``), and fluorine (``F``) content of the water, by rearranging the equations above. 
+From these rate constants we can rewrite the total alkalinity (given above) in terms of only the rate constants, total hydrogen ion concentration (``\ce{H^+}``), the total dissolved inorganic carbon (``[DIC]``), boron (``[\text{B}]``), phosphate (``[\text{P}]``), silicate (``[\text{Si}]``), Sulfate (``[\text{Sulf}]``), and fluorine (``[\text{F}]``) content of the water, by rearranging the equations above. 
 This results in a form of the total alkalinity:
 ```math
 \begin{align}
 Alk &\approx \frac{[DIC] K_1 [\ce{H^+}]}{[\ce{H^+}]^2 + K_1[\ce{H^+}] + K_1K_2}\\
     &+ \frac{2[DIC]K_1K_2}{[\ce{H^+}]^2 + K_1[\ce{H^+}] + K_1K_2}\\
-    &+ \frac{B}{1+[\ce{H^+}]/K_B}\\
+    &+ \frac{[\text{B}]}{1+[\ce{H^+}]/K_B}\\
     &+ \frac{K_w}{[\ce{H^+}]}\\
-    &+ \frac{PK_{P1}K_{P2}[\ce{H^+}]}{[\ce{H^+}]^3+K_{P1}[\ce{H^+}]^2+K_{P1}K_{P2}[\ce{H^+}] + K_{P1}K_{P2}K_{P3}}\\
-    &+ \frac{2PK_{P1}K_{P2}K_{P3}}{[\ce{H^+}]^3+K_{P1}[\ce{H^+}]^2+K_{P1}K_{P2}[\ce{H^+}] + K_{P1}K_{P2}K_{P3}}\\
-    &+ \frac{Si}{1+[\ce{H^+}]/K_{Si}}\\
-    &- \frac{[\ce{H^+}]}{1+S/K_S}\\
-    &- \frac{Sulf}{1+K_S/[\ce{H^+}]/(1+S/K_S)}\\
-    &- \frac{F}{1+K_F/[\ce{H^+}]}\\
+    &+ \frac{[\text{P}][\ce{H^+}]K_{P1}K_{P2}}{[\ce{H^+}]^3+K_{P1}[\ce{H^+}]^2+K_{P1}K_{P2}[\ce{H^+}] + K_{P1}K_{P2}K_{P3}}\\
+    &+ \frac{2[\text{P}]K_{P1}K_{P2}K_{P3}}{[\ce{H^+}]^3+K_{P1}[\ce{H^+}]^2+K_{P1}K_{P2}[\ce{H^+}] + K_{P1}K_{P2}K_{P3}}\\
+    &+ \frac{[\text{Si}]}{1+[\ce{H^+}]/K_{Si}}\\
+    &- \frac{[\ce{H^+}]}{1+\text{S}/K_S}\\
+    &- \frac{[\text{Sulf}]}{1+K_S/[\ce{H^+}]/(1+S/K_S)}\\
+    &- \frac{[\text{F}]}{1+K_F/[\ce{H^+}]}\\
     &- \frac{[\ce{H^+}]^2}{[\ce{H^+}]^3+K_{P1}[\ce{H^+}]^2+K_{P1}K_{P2}[\ce{H^+}] + K_{P1}K_{P2}K_{P3}}.
 \end{align}
 ```
@@ -259,9 +259,9 @@ This means that we must parameterise their concentrations, usually this results 
 Usually these ratios are:
 ```math
 \begin{align}
-\text{Boron} &= \frac{0.000232}{10.811}\frac{S}{1.80655},\\
-\text{Sulfate} &= \frac{0.14}{96.06} \frac{S}{1.80655},\\
-\text{Fluoride} &= \frac{0.000067}{18.9984} \frac{S}{1.80655}.\\
+[\text{B}] &= \frac{0.000232}{10.811}\frac{S}{1.80655},\\
+[\text{S}] &= \frac{0.14}{96.06} \frac{S}{1.80655},\\
+[\text{F}] &= \frac{0.000067}{18.9984} \frac{S}{1.80655}.\\
 \end{align}
 ```
 We use these ratios by default in the model (but they can be changed when calling the models functions described below).
