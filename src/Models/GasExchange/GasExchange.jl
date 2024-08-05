@@ -73,13 +73,12 @@ function GasExchangeBoundaryCondition(; water_concentration,
                                         air_concentration,
                                         transfer_velocity,
                                         wind_speed,
-                                        fields = field_dependencies(water_concentration),
                                         discrete_form = false)
 
     wind_speed = normalise_surface_function(wind_speed; discrete_form)
     air_concentration = normalise_surface_function(air_concentration; discrete_form)
 
-    exchange_function = GasExchange(wind_speed, transfer_velocity, water_concentration, air_concentration, fields)
+    exchange_function = GasExchange(wind_speed, transfer_velocity, water_concentration, air_concentration)
 
     return FluxBoundaryCondition(exchange_function; discrete_form = true)
 end
@@ -97,8 +96,8 @@ Returns a `FluxBoundaryCondition` for the gas exchange between carbon dioxide di
 specified by the `carbon_chemisty` model, and `air_concentration` with `transfer_velocity` (see 
 `GasExchangeBoundaryCondition` for details).
 
-`silicate_and_phosphate_names` should either be `nothing` or a tuple of symbols specifying the name of the silicate
-and phosphate tracers for the `carbon_chemistry` model.
+`silicate_and_phosphate_names` should either be `nothing`, a `Tuple`` of symbols specifying the name of the silicate
+and phosphate tracers, or a `NamedTuple`  of values for the `carbon_chemistry` model.
 
 `kwargs` are passed on to `GasExchangeBoundaryCondition`.
 
@@ -113,14 +112,12 @@ function CarbonDioxideGasExchangeBoundaryCondition(; carbon_chemistry = CarbonCh
                                                      kwargs...)
 
     if isnothing(water_concentration)
-        water_concentration = CarbonDioxideConcentration(; carbon_chemistry)
+        water_concentration = CarbonDioxideConcentration(; carbon_chemistry, silicate_and_phosphate_names)
     elseif !isnothing(carbon_chemistry)
         @warn "Make sure that the `carbon_chemistry` $(carbon_chemistry) is the same as that in `water_concentration` $(water_concentration) (or set it to `nothing`)"
     end
 
-    fields = (field_dependencies(water_concentration)..., ifelse(!isnothing(silicate_and_phosphate_names), silicate_and_phosphate_names, tuple())...)
-
-    return GasExchangeBoundaryCondition(; water_concentration, air_concentration, transfer_velocity, wind_speed, fields, kwargs...)
+    return GasExchangeBoundaryCondition(; water_concentration, air_concentration, transfer_velocity, wind_speed, kwargs...)
 end
 
 """
@@ -141,7 +138,6 @@ OxygenGasExchangeBoundaryCondition(; transfer_velocity = SchmidtScaledTransferVe
                                      air_concentration = 9352.7, # mmolO₂/m³
                                      wind_speed = 2,
                                      kwargs...) = 
-    GasExchangeBoundaryCondition(; water_concentration, air_concentration, transfer_velocity, wind_speed, 
-                                   fields = field_dependencies(water_concentration), kwargs...)
+    GasExchangeBoundaryCondition(; water_concentration, air_concentration, transfer_velocity, wind_speed, kwargs...)
 
 end # module

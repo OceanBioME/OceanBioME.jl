@@ -10,12 +10,11 @@
 `k(u, T)`), `water_concentration` a function of `c(x, y, t, T, field_dependencies...)`,
 and `air_concentration` of `ac(x, y, t)`, where `field_dependencies` are specified.
 """
-struct GasExchange{WS, TV, WC, AC, FD} <: Function
+struct GasExchange{WS, TV, WC, AC} <: Function
              wind_speed :: WS
       transfer_velocity :: TV
     water_concentration :: WC
       air_concentration :: AC
-     field_dependencies :: FD
 end
 
 @inline function (g::GasExchange)(i, j, grid, clock, model_fields)
@@ -27,9 +26,7 @@ end
 
     air_concentration = surface_value(g.air_concentration, i, j, grid, clock)
 
-    concentration_fields = @inbounds model_fields[g.field_dependencies]
-
-    water_concentration = surface_value(g.water_concentration, i, j, grid, clock, concentration_fields...)
+    water_concentration = surface_value(g.water_concentration, i, j, grid, clock, model_fields)
 
     return k * (water_concentration - air_concentration)
 end

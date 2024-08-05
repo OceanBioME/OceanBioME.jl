@@ -7,21 +7,30 @@
 Converts fCO₂ to partial pressure as per Dickson, A.G., Sabine, C.L. and  Christian, J.R. (2007), 
 Guide to Best Practices for Ocean CO 2 Measurements. PICES Special Publication 3, 191 pp.
 """
-@kwdef struct CarbonDioxideConcentration{CC<:CarbonChemistry, FV, CV, AP}
+@kwdef struct CarbonDioxideConcentration{CC<:CarbonChemistry, FV, CV, AP, SP}
             carbon_chemistry :: CC 
     first_virial_coefficient :: FV = PolynomialVirialCoefficientForCarbonDioxide()
     cross_virial_coefficient :: CV = CrossVirialCoefficientForCarbonDioxide()
                 air_pressure :: AP = 1 # atm
+silicate_and_phosphate_names :: SP = nothing
 end
 
-field_dependencies(::CarbonDioxideConcentration) = (:T, :S, :DIC, :Alk)
-optional_fields(::CarbonDioxideConcentration) = (:silicate, :phosphate)
+summary(::CarbonDioxideConcentration{CC, FV, CV, AP}) where {CC, FV, CV, AP} = 
+    "`CarbonChemistry` derived partial pressure of CO₂ (pCO₂) {$(nameof(CC)), $(nameof(FV)), $(nameof(CV))}"
 
-@inline function surface_value(cc::CarbonDioxideConcentration, i, j, grid, clock, T, S, DIC, Alk, args...)
-    fCO₂ = call_carbon_chemistry(cc.carbon_chemistry, i, j, grid.Nz, DIC, Alk, T, S, args...)
+@inline function surface_value(cc::CarbonDioxideConcentration, i, j, grid, clock, model_fields)
+    DIC = @inbounds model_fields.DIC[i, j, grid.Nz]
+    Alk = @inbounds model_fields.Alk[i, j, grid.Nz]
+
+    T = @inbounds model_fields.T[i, j, grid.Nz]
+    S = @inbounds model_fields.S[i, j, grid.Nz]
+
+    silicate, phosphate = silicate_and_phosphate(cc.silicate_and_phosphate_names, model_fields)
+
+    fCO₂ = cc.carbon_chemistry(; DIC, Alk, T, S, silicate, phosphate)
 
     P = surface_value(cc.air_pressure, i, j, grid, clock) * ATM
-    Tk = @inbounds T[i, j, grid.Nz] + 273.15
+    Tk = T + 273.15
 
     B = cc.first_virial_coefficient(Tk)
     δ = cc.cross_virial_coefficient(Tk)
@@ -37,12 +46,10 @@ optional_fields(::CarbonDioxideConcentration) = (:silicate, :phosphate)
     return xCO₂ * P # mol/mol to ppm
 end
 
-summary(::CarbonDioxideConcentration{CC, FV, CV, AP}) where {CC, FV, CV, AP} = 
-    "`CarbonChemistry` derived partial pressure of CO₂ (pCO₂) {$(nameof(CC)), $(nameof(FV)), $(nameof(CV))}"
+@inline silicate_and_phosphate(::Nothing, args...) = (0, 0)
+@inline silicate_and_phosphate(vals::NamedTuple, args...) = values(vals)
+@inline silicate_and_phosphate(val::Tuple, model_fields) = @inbounds getproperty(model_fields, val[1]), getproperty(model_fields, val[2])
 
-@inline call_carbon_chemistry(cc, i, j, k, DIC, Alk, T, S) = @inbounds cc(; DIC = DIC[i, j, k], Alk = Alk[i, j, k], T = T[i, j, k], S = S[i, j, k])
-@inline call_carbon_chemistry(cc, i, j, k, DIC, Alk, T, S, silicon, phosphate) = 
-    @inbounds cc(; DIC = DIC[i, j, k], Alk = Alk[i, j, k], T = T[i, j, k], S = S[i, j, k], silicon = silicon[i, j, k], phosphate = phosphate[i, j, k])
 
 # default values from Dickson et al., 2007
 @kwdef struct PolynomialVirialCoefficientForCarbonDioxide{FT}
