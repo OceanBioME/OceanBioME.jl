@@ -29,7 +29,7 @@ Example
 julia> using OceanBioME
 
 julia> carbon_chemistry = CarbonChemistry()
-Carbon chemistry model which solves for pCO₂ and pH
+`CarbonChemistry` model which solves for pCO₂ and pH
 
 julia> pCO₂ = carbon_chemistry(; DIC = 2000, Alk = 2000, T = 10, S = 35)
 1308.0843992121615
