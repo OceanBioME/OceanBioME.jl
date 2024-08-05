@@ -187,5 +187,5 @@ solve_for_H(::Nothing, params, upper_pH_bound, lower_pH_bound) =
     find_zero(alkalinity_residual, (10.0 ^ - upper_pH_bound, 10.0 ^ - lower_pH_bound), Bisection(); atol = 1e-10, p = params)
 
 # display
-summary(::IO, ::CarbonChemistry) = string("Carbon chemistry model")
-show(io::IO, ::CarbonChemistry) = print(io, "Carbon chemistry model which solves for pCO₂ and pH")
+summary(::IO, ::CarbonChemistry) = string("`CarbonChemistry` model")
+show(io::IO, ::CarbonChemistry) = print(io, "`CarbonChemistry` model which solves for pCO₂ and pH")

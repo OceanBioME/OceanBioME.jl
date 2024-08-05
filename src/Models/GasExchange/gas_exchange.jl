@@ -5,6 +5,7 @@
 `air_concentration` with a `transfer_velocity` computed from the temperature 
 (provided later), and the `wind_speed`.
 
+### TODO: UPDATE
 `transfer_velocity` should behave as a function of wind speed and temperature (i.e.
 `k(u, T)`), `water_concentration` a function of `c(x, y, t, T, field_dependencies...)`,
 and `air_concentration` of `ac(x, y, t)`, where `field_dependencies` are specified.
@@ -17,14 +18,20 @@ struct GasExchange{WS, TV, WC, AC, FD} <: Function
      field_dependencies :: FD
 end
 
-@inline function (g::GasExchange)(x, y, t, T, args...)
-    k = g.transfer_velocity(surface_value(g.wind_speed, x, y, t), T)
+@inline function (g::GasExchange)(i, j, grid, clock, model_fields)
+    T = @inbounds model_fields.T[i, j, grid.Nx]
 
-    conc = surface_value(g.water_concentration, x, y, t, T, args...)
+    u₁₀ = surface_value(g.wind_speed, i, j, grid, clock)
 
-    air_conc = surface_value(g.air_concentration, x, y, t)
+    k = g.transfer_velocity(u₁₀, T)
 
-    return k * (conc - air_conc)
+    air_concentration = surface_value(g.air_concentration, i, j, grid, clock)
+
+    concentration_fields = @inbounds model_fields[g.field_dependencies]
+
+    water_concentration = surface_value(g.water_concentration, i, j, grid, clock, concentration_fields...)
+
+    return k * (water_concentration - air_concentration)
 end
 
 Adapt.adapt_structure(to, g::GasExchange) = GasExchange(adapt(to, g.wind_speed),
@@ -33,4 +40,4 @@ Adapt.adapt_structure(to, g::GasExchange) = GasExchange(adapt(to, g.wind_speed),
                                                         adapt(to, g.air_concentration),
                                                         nothing)
 
-summary(::GasExchange{WS, TV, WC}) where {WS, TV, WC} = "Air-sea gas exchange model for $(nameof(WC))"
+summary(::GasExchange{WS, TV, WC}) where {WS, TV, WC} = "Air-sea `GasExchange` model for $(nameof(WC))"

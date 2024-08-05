@@ -1,8 +1,11 @@
 include("dependencies_for_runtests.jl")
 
+using Oceananigans, Oceananigans.Units, DataDeps, JLD2, Statistics
+
+using Oceananigans.Fields: ConstantField
+
 using OceanBioME: GasExchange, LOBSTER, CarbonChemistry
-using Oceananigans, DataDeps, JLD2, Statistics
-using Oceananigans.Units
+using OceanBioME.Models.GasExchangeModel: surface_value
 
 using OceanBioME.Models.CarbonChemistryModel: IonicStrength, K0, K1, K2, KB, KW, KS, KF, KP, KSi, KSP_aragonite, KSP_calcite
 
@@ -55,9 +58,13 @@ grid = RectilinearGrid(architecture; size=(1, 1, 2), extent=(1, 1, 1))
 
 @inline conc_function(x, y, t) = 413.0 + 10.0 * sin(t * π / year)
 
+conc_field = CenterField(grid)
+
+set!(conc_field, (args...) -> 10 * randn() + 413) 
+
 @testset "Gas exchange coupling" begin
-    for air_concentration in [413.1, conc_function]
-        @info "Testing with $(typeof(air_concentration))"
+    for air_concentration in [413.1, conc_function, conc_field]
+        @info "Testing gas exchange with $(typeof(air_concentration))"
         @test test_gas_exchange_model(grid, air_concentration)
     end
 end
@@ -121,11 +128,10 @@ end
     @test ≈(CO₂_exchange.water_concentration.first_virial_coefficient(Tk), -123.2 * 10^-6, atol=10^-8)
     @test ≈(CO₂_exchange.water_concentration.cross_virial_coefficient(Tk), 22.5 * 10^-6, atol=10^-7)
 
-    T = 25
-    S = 35
-    p = 1
-    DIC = 2136.242890518708
-    Alk = 2500
+    T = ConstantField(25)
+    S = ConstantField(35)
+    DIC = ConstantField(2136.242890518708)
+    Alk = ConstantField(2500)
     # value from Dickson et. al, 2007
-    @test ≈(CO₂_exchange.water_concentration(0, 0, 0, T, S, DIC, Alk), 350, atol = 0.1)
+    @test ≈(surface_value(CO₂_exchange.water_concentration, 1, 1, BoxModelGrid(), Clock(; time = 0), T, S, DIC, Alk), 350, atol = 0.1)
 end
