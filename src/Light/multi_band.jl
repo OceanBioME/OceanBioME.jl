@@ -1,3 +1,4 @@
+using Oceananigans.Fields: Field
 using Oceananigans.Utils: SumOfArrays
 
 include("morel_coefficients.jl")
