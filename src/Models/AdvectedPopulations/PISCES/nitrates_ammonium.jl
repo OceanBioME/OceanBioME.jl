@@ -46,7 +46,7 @@ end
     O₂ᵐⁱⁿ¹ = bgc.half_sat_const_for_denitrification1
     O₂ᵐⁱⁿ² = bgc.half_sat_const_for_denitrification2
 
-    return min(1, max(0, 0.4*(O₂ᵐⁱⁿ¹-O₂)/(O₂ᵐⁱⁿ²+O₂+eps(0.0)))) #eq57
+    return min(1, max(0, 0.4*(O₂ - O₂ᵐⁱⁿ¹)/(O₂ᵐⁱⁿ²+O₂+eps(0.0)))) #eq57
 end
 
 @inline Nitrif(NH₄, O₂, λₙₕ₄, PAR, bgc) = λₙₕ₄*NH₄*(1-ΔO₂(O₂, bgc))/(1+PAR) #eq56a
