@@ -139,10 +139,13 @@ carbon_export = zeros(length(times))
 
 using Oceananigans.Biogeochemistry: biogeochemical_drift_velocity
 
-for (i, t) in enumerate(times)
-    air_sea_CO₂_flux[i] = CO₂_flux.condition.func(0.0, 0.0, t, temp(1, 1, 0, t), 35, DIC[1, 1, grid.Nz, i], Alk[1, 1, grid.Nz, i])
-    carbon_export[i] = sPOC[1, 1, grid.Nz-20, i] * biogeochemical_drift_velocity(biogeochemistry, Val(:sPOC)).w[1, 1, grid.Nz-20] +
-                       bPOC[1, 1, grid.Nz-20, i] * biogeochemical_drift_velocity(biogeochemistry, Val(:bPOC)).w[1, 1, grid.Nz-20]
+for (n, t) in enumerate(times)(i, j, grid, clock, model_fields)
+    clock.time = t
+
+    air_sea_CO₂_flux[n] = CO₂_flux.condition.func(1, 1, grid, clock, (; DIC = DIC[n], Alk = Alk[n], T, S))
+
+    carbon_export[i] = sPOC[n][1, 1, grid.Nz-20] * biogeochemical_drift_velocity(biogeochemistry, Val(:sPOC)).w[1, 1, grid.Nz-20] +
+                       bPOC[n][1, 1, grid.Nz-20] * biogeochemical_drift_velocity(biogeochemistry, Val(:bPOC)).w[1, 1, grid.Nz-20]
 end
 
 # Both `air_sea_CO₂_flux` and `carbon_export` are in units `mmol CO₂ / (m² s)`.
