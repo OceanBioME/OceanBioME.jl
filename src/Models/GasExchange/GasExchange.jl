@@ -25,24 +25,16 @@ import Adapt: adapt_structure
 const ATM = 101325 # Pa
 const GAS_CONSTANT = 8.31446261815324 # J / kg / mol
 
-# fallbacks
-field_dependencies(name) = tuple()
-optional_fields(name) = tuple()
+include("surface_values.jl")
 
 # just get the value from the model tracer
-struct TracerConcentration{T}
-    tracer :: T
-end
+struct OxygenConcentration end
 
-summary(tc::TracerConcentration) = "Model tracer concentration of $(tc.tracer)"
-show(io::IO, tc::TracerConcentration) = println(io, summary(tc))
+summary(::OxygenConcentration) = "Model tracer `OxygenConcentration`"
 
-@inline surface_value(::TracerConcentration, i, j, grid, clock, args...) = @inbounds args[end][i, j, grid.Nz]
-
-field_dependencies(mc::TracerConcentration) = (:T, mc.tracer)
+@inline surface_value(::OxygenConcentration, i, j, grid, clock, model_fields) = @inbounds model_fields.O₂[i, j, grid.Nz]
 
 # include all the bits
-include("surface_values.jl")
 include("generic_parameterisations.jl")
 include("gas_exchange.jl")
 include("carbon_dioxide_concentration.jl")
@@ -66,9 +58,9 @@ with `transfer_velocity`.
 functions of the form `(x, y, t)`, functions of the form `(i, j, grid, clock, model_fields)` 
 if `discrete_form` is set to true, or any kind of `Field`.
 
-`water_concentration` should usually be a `TracerConcentration` (which specifies to read
-the concentration directly from the model), or a `CarbonDioxideConcentration` which diagnoses
-the partial pressure of CO₂ in the water.
+`water_concentration` should usually be a `[Tracer]Concentration` where is the name of the
+tracer (you will have to build your own if this is not `OxygenConcentration`), 
+or a `CarbonDioxideConcentration` which diagnoses the partial pressure of CO₂ in the water.
 
 `transfer_velocity` should be a function of the form `k(u₁₀, T)`.
 """
@@ -125,19 +117,19 @@ end
 
 """
     OxygenGasExchangeBoundaryCondition(; transfer_velocity = SchmidtScaledTransferVelocity(; schmidt_number = OxygenPolynomialSchmidtNumber()),
-                                         water_concentration = TracerConcentration(:O₂),
+                                         water_concentration = OxygenConcentration(),
                                          air_concentration = 9352.7, # mmolO₂/m³
                                          wind_speed = 2,
                                          kwagrs...)
 
 Returns a `FluxBoundaryCondition` for the gas exchange between oxygen dissolved in the water
-specified by the the `TracerConcentration` in the base model, and `air_concentration` with `transfer_velocity`
+specified by the the `OxygenConcentration` in the base model, and `air_concentration` with `transfer_velocity`
 (see `GasExchangeBoundaryCondition` for details).
 
 `kwargs` are passed on to `GasExchangeBoundaryCondition`.
 """
 OxygenGasExchangeBoundaryCondition(; transfer_velocity = SchmidtScaledTransferVelocity(; schmidt_number = OxygenPolynomialSchmidtNumber()),
-                                     water_concentration = TracerConcentration(:O₂),
+                                     water_concentration = OxygenConcentration(),
                                      air_concentration = 9352.7, # mmolO₂/m³
                                      wind_speed = 2,
                                      kwargs...) = 
