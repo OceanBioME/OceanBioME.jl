@@ -625,8 +625,8 @@ function PISCES(; grid, # finally the function
                    min_half_saturation_const_for_iron_uptake :: PD = (P = 1.0, D = 3.0),   #nmolFeL⁻¹
                    size_ratio_of_phytoplankton :: PD = (P = 3.0, D = 3.0),
                    optimal_SiC_uptake_ratio_of_diatoms :: FT = 0.159,       #molSi/(mol C)
-                   optimal_iron_quota :: PD = (P = 7.0, D = 7.0),               #mmolFe/(mol C)
-                   max_iron_quota :: PD = (P = 40.0, D = 40.0),                  #molFe/(mol C)
+                   optimal_iron_quota :: PD = (P = 7.0e-3, D = 7.0e-3),               #mmolFe/(mol C)
+                   max_iron_quota :: PD = (P = 40.0e-3, D = 40.0e-3),                  #molFe/(mol C)
                    phytoplankton_mortality_rate :: PD = (P = 0.01/day, D = 0.01/day),
                    min_quadratic_mortality_of_phytoplankton :: FT = 0.01 / day,   #1/(d mol C)
                    max_quadratic_mortality_of_diatoms :: FT = 0.03 / day,         #1/(d mol C)
@@ -715,7 +715,7 @@ function PISCES(; grid, # finally the function
                    dissolution_rate_of_silicon :: FT = 1.0,
                    coefficient_of_bacterial_uptake_of_iron_in_POC :: FT = 0.5,
                    coefficient_of_bacterial_uptake_of_iron_in_GOC :: FT = 0.5,
-                   max_FeC_ratio_of_bacteria :: FT = 10.0e-6,     #or 6
+                   max_FeC_ratio_of_bacteria :: FT = 10.0e-3,     #or 6
                    Fe_half_saturation_const_for_PLACEHOLDER :: FT = 2.5e-10, #or 2.5e-10    #not sure what this should be called
                    proportion_of_sinking_grazed_shells :: ZM = (Z = 0.3, M = 0.3),  # 0.3 for both? not sure
 
