@@ -32,9 +32,9 @@ end
 end
 
 @inline function Aggfe(Fe, DOC, T, bgc)
-    λ_Fe = bgc.slope_of_scavenging_rate_of_iron
+    λᶠᵉ = 1e-3 * bgc.slope_of_scavenging_rate_of_iron #parameter not defined in parameter list. Assumed scaled version λ_Fe to fit dimensions of Fe¹.
     Lₜ = max(0.09*(DOC + 40) - 3, 0.6)
-    return 1000*λ_Fe*max(0, Fe - Lₜ)*get_Fe¹(Fe, DOC, T)
+    return 1000*λᶠᵉ*max(0, Fe - Lₜ)*get_Fe¹(Fe, DOC, T)
 end
 
 @inline function get_Bactfe(μₘₐₓ⁰, z, Z, M, Fe, DOC, PO₄, NO₃, NH₄, bFe, T, zₘₐₓ, bgc)

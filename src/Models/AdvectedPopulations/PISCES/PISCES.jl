@@ -10,20 +10,20 @@ Tracers
 * Mesozooplankton: M (μmolC/L)
 * Chlorophyll in nano-phytoplankton: Pᶜʰˡ (μgChl/L)
 * Chlorophyll in diatoms: Dᶜʰˡ (μgChl/L)
-* Iron in nano-phytoplanktons: Pᶠᵉ (pmolFe/L) 
-* Iron in diatoms: Dᶠᵉ (pmolFe/L) 
+* Iron in nano-phytoplanktons: Pᶠᵉ (nmolFe/L) 
+* Iron in diatoms: Dᶠᵉ (nmolFe/L) 
 * Silicon in diatoms: Dˢⁱ (μmolSi/L)
 
 * Dissolved organic carbon: DOC (μmolC/L)
 * Small sinking particles : POC (μmolC/L)
 * Large sinking particles: GOC (μmolC/L)
-* Iron in small particles: SFe (pmolFe/L) 
-* Iron in large particles: BFe (pmolFe/L) 
+* Iron in small particles: SFe (nmolFe/L) 
+* Iron in large particles: BFe (nmolFe/L) 
 * Silicate in large particles : PSi (μmolSi/L)
 * Nitrates: NO₃ (μmolN/L)
 * Ammonium: NH₄ (μmolN/L)
 * Phosphate: PO₄ (μmolP/L)
-* Dissolved iron: Fe (pmolFe/L)
+* Dissolved iron: Fe (nmolFe/L)
 * Silicate: Si (μmolSi/L)
 * Calcite: CaCO₃ (μmolC/L)
 * Dissolved oxygen: O₂ (μmolO₂/L)
@@ -625,8 +625,8 @@ function PISCES(; grid, # finally the function
                    min_half_saturation_const_for_iron_uptake :: PD = (P = 1.0, D = 3.0),   #nmolFeL⁻¹
                    size_ratio_of_phytoplankton :: PD = (P = 3.0, D = 3.0),
                    optimal_SiC_uptake_ratio_of_diatoms :: FT = 0.159,       #molSi/(mol C)
-                   optimal_iron_quota :: PD = (P = 7.0, D = 7.0),               #μmolFe/(mol C)
-                   max_iron_quota :: PD = (P = 40.0, D = 40.0),                  #μmolFe/(mol C)
+                   optimal_iron_quota :: PD = (P = 7.0e-3, D = 7.0e-3),               #mmolFe/(mol C)
+                   max_iron_quota :: PD = (P = 40.0e-3, D = 40.0e-3),                  #molFe/(mol C)
                    phytoplankton_mortality_rate :: PD = (P = 0.01/day, D = 0.01/day),
                    min_quadratic_mortality_of_phytoplankton :: FT = 0.01 / day,   #1/(d mol C)
                    max_quadratic_mortality_of_diatoms :: FT = 0.03 / day,         #1/(d mol C)
@@ -656,8 +656,8 @@ function PISCES(; grid, # finally the function
                    zooplankton_linear_mortality :: ZM = (Z = 0.03/day, M = 0.005/day),           #1/d
                    half_saturation_const_for_mortality :: FT = 0.2,                     #μmolCL⁻¹
                    fraction_of_calcite_not_dissolving_in_guts :: ZM = (Z = 0.5, M = 0.75),
-                   FeC_ratio_of_zooplankton :: FT = 10.0,                                  #μmolFe molC⁻¹
-                   FeZ_redfield_ratio :: FT = 3.0,             #μmolFe molC⁻¹
+                   FeC_ratio_of_zooplankton :: FT = 10.0e-3,                                  #mmolFe molC⁻¹
+                   FeZ_redfield_ratio :: FT = 3.0e-3,             #mmolFe molC⁻¹, remove this, is actually FeC_ratio_of_zooplankton
    
    
                    remineralisation_rate_of_DOC :: FT = 0.3 / day,                 #1/d
