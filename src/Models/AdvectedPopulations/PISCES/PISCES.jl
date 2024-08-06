@@ -678,7 +678,7 @@ function PISCES(; grid, # finally the function
                    min_sinking_speed_of_GOC :: FT = 30.0 / day,               #md⁻¹
                    sinking_speed_of_dust :: FT = 2.0,                         #ms⁻¹
                    aggregation_rate_of_POC_to_GOC_6 :: FT = 25.9 / day,     #(μmolCL⁻¹)⁻¹d⁻¹
-                   aggregation_rate_of_POC_to_GOC_7 :: FT = 4452 / day,     #(μmolCL⁻¹)⁻¹d⁻¹
+                   aggregation_rate_of_POC_to_GOC_7 :: FT = 4452.0 / day,     #(μmolCL⁻¹)⁻¹d⁻¹
                    aggregation_rate_of_POC_to_GOC_8 :: FT = 3.3 / day,      #(μmolCL⁻¹)⁻¹d⁻¹
                    aggregation_rate_of_POC_to_GOC_9 :: FT = 47.1 / day,     #(μmolCL⁻¹)⁻¹d⁻¹
                    min_scavenging_rate_of_iron :: FT = 3.0e-5 / day,          #1/d

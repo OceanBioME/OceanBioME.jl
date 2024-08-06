@@ -7,7 +7,7 @@
 
 @inline function get_Fe¹(Fe, DOC, T)
     Lₜ = max(0.09*(DOC + 40) - 3, 0.6) # bgc.total_concentration_of_iron_ligands
-    K_eqᶠᵉ = 10^(16.27 - 1565.7/max(T, 5)) #check this value
+    K_eqᶠᵉ = 10^(16.27 - 1565.7/max(T + 273.15, 5)) #check this value
     Δ = 1 +  K_eqᶠᵉ*Lₜ -  K_eqᶠᵉ*Fe
 
     return (-Δ + sqrt(Δ^2 + 4*K_eqᶠᵉ*Fe))/(2*K_eqᶠᵉ + eps(0.0)) #eq65
