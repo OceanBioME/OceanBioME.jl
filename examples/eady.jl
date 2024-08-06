@@ -20,7 +20,7 @@ using OceanBioME, Oceananigans, Printf
 using Oceananigans.Units
 
 using Random
-Random.seed!(11)
+Random.seed!(12)
 
 # Construct a grid with uniform grid spacing.
 grid = RectilinearGrid(size = (32, 32, 8), extent = (1kilometer, 1kilometer, 100meters))
