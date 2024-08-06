@@ -231,7 +231,7 @@ using OceanBioME.Sediments: InstantRemineralisation
 
 # define the grid
 
-grid = RectilinearGrid(topology = (Flat, Flat, Bounded), size = (32, ), extent = (100, ))
+grid = RectilinearGrid(topology = (Flat, Flat, Bounded), size = (32, ), x = 1, y = 1, z = (-100, 0))
 
 # setup the biogeochemical model
 
