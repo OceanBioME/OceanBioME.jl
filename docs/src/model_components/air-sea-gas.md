@@ -9,7 +9,7 @@ where `k` is the gas transfer velocity.
 Our implementation is intended to be generic for any gas so you can specify `air_concentration`, `water_concentration`, `transfer_velocity`, and `wind_speed` as any function in `GasExchange`, but we also provide constructors and default values for carbon dioxide and oxygen. 
 
 To setup carbon dioxide and/or oxygen boundary conditions you simply build the condition and then specify it in the model:
-```@setup gasexchange
+```@example gasexchange
 using OceanBioME
 CO₂_flux = CarbonDioxideGasExchangeBoundaryCondition()
 O₂_flux  = OxygenGasExchangeBoundaryCondition()
@@ -24,7 +24,7 @@ model = NonhydrostaticModel(; grid,
                               tracers = (:T, :S))
 ```
 
-!!! Field dependencies
+!!! compat Field dependencies
 
     All gas exchange models require temperature (`T`) to be present in the model, and carbon dioxide requires sailinity (`S`), total inorganic carbon (`DIC`), and alkalinity (`Alk`), and optionally can take silicate and phosphate where there names are specified in the keyword argument `silicate_and_phosphate_names`
 
