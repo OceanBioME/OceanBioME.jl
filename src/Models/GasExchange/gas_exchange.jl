@@ -24,7 +24,7 @@ struct GasExchange{WS, TV, WC, AC} <: Function
 end
 
 @inline function (g::GasExchange)(i, j, grid, clock, model_fields)
-    T = @inbounds model_fields.T[i, j, grid.Nx]
+    T = @inbounds model_fields.T[i, j, grid.Nz]
 
     u₁₀ = surface_value(g.wind_speed, i, j, grid, clock)
 
