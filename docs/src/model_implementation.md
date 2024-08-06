@@ -113,35 +113,31 @@ Hence, we define the nutrient forcing using as the negative of the phytoplankton
 @inline (bgc::NutrientPhytoplankton)(::Val{:N}, args...) = -bgc(Val(:P), args...)
 ```
 
-Finally, we need to define some functions to allow us to update the time-dependent parameters (in this case the PAR and temperature, ``T``):
-
-```@example implementing
-using OceanBioME: BoxModel
-import OceanBioME.BoxModels: update_boxmodel_state!
-
-function update_boxmodel_state!(model::BoxModel{<:NutrientPhytoplankton, <:Any, <:Any, <:Any, <:Any, <:Any})
-    getproperty(model.values, :PAR) .= model.forcing.PAR(model.clock.time)
-    getproperty(model.values, :T) .= model.forcing.T(model.clock.time)
-end
-```
-
 Now we can run an example similar to the [LOBSTER box model example](@ref box_example):
 
 ```@example implementing
 using OceanBioME, Oceananigans.Units
+using Oceananigans.Fields: FunctionField
 
 const year = years = 365days
 
 @inline PAR⁰(t) = 500 * (1 - cos((t + 15days) * 2π / year)) * (1 / (1 + 0.2 * exp(-((mod(t, year) - 200days) / 50days)^2))) + 2
 
+clock = Clock(; time = 0.0)
+
 z = -10 # specify the nominal depth of the box for the PAR profile
-@inline PAR(t) = PAR⁰(t) * exp(0.2z) # Modify the PAR based on the nominal depth and exponential decay 
+@inline PAR_func(t) = PAR⁰(t) * exp(0.2z) # Modify the PAR based on the nominal depth and exponential decay 
+
+PAR = FunctionField{Center, Center, Center}(PAR_func, BoxModelGrid(); clock)
 
 @inline temp(t) = 2.4 * cos(t * 2π / year + 50days) + 26
 
-biogeochemistry = NutrientPhytoplankton() 
+biogeochemistry = Biogeochemistry(NutrientPhytoplankton(); 
+                                  light_attenuation = PrescribedPhotosyntheticallyActiveRadiation(PAR))
 
-model = BoxModel(; biogeochemistry, forcing = (; PAR, T = temp))
+model = BoxModel(; biogeochemistry,
+                   prescribed_tracers = (; T = temp),
+                   clock)
 
 set!(model, N = 15, P = 15)
 
@@ -174,7 +170,7 @@ axP = Axis(fig[1, 2], ylabel = "Phytoplankton \n(mmol N / m³)")
 lines!(axP, times / year, P[1, 1, 1, :], linewidth = 3)
 
 axPAR= Axis(fig[2, 1], ylabel = "PAR (einstein / m² / s)", xlabel = "Time (years)")
-lines!(axPAR, times / year, PAR.(times), linewidth = 3)
+lines!(axPAR, times / year, PAR_func.(times), linewidth = 3)
 
 axT = Axis(fig[2, 2], ylabel = "Temperature (°C)", xlabel = "Time (years)")
 lines!(axT, times / year, temp.(times), linewidth = 3)
