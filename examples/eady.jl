@@ -20,7 +20,7 @@ using OceanBioME, Oceananigans, Printf
 using Oceananigans.Units
 
 using Random
-Random.seed!(42)
+Random.seed!(1)
 
 # Construct a grid with uniform grid spacing.
 grid = RectilinearGrid(size = (32, 32, 8), extent = (1kilometer, 1kilometer, 100meters))
@@ -90,24 +90,24 @@ set!(model, u=uᵢ, v=vᵢ, P = 0.03, Z = 0.03, NO₃ = 4.0, NH₄ = 0.05, DIC =
 Δy = minimum_yspacing(grid, Center(), Center(), Center())
 Δz = minimum_zspacing(grid, Center(), Center(), Center())
 
-Δt₀ = 0.75 * min(Δx, Δy, Δz) / V(0, 0, 0, 0, background_state_parameters)
-
+Δt₀ = 100
 simulation = Simulation(model, Δt = Δt₀, stop_time = 10days)
 
 # Adapt the time step while keeping the CFL number fixed.
-wizard = TimeStepWizard(cfl = 0.75, diffusive_cfl = 0.75, max_Δt = 30minutes)
+wizard = TimeStepWizard(cfl = 0.3, diffusive_cfl = 0.3, max_Δt = 30minutes)
 simulation.callbacks[:wizard] = Callback(wizard, IterationInterval(5))
 nothing #hide
 
 # Create a progress message.
-progress(sim) = @printf("i: % 6d, sim time: % 10s, wall time: % 10s, Δt: % 10s, CFL: %.2e\n",
+progress(sim) = @printf("i: % 6d, sim time: % 10s, wall time: % 10s, Δt: % 10s, CFL: %.2e, DIC: %.2e\n",
                         sim.model.clock.iteration,
                         prettytime(sim.model.clock.time),
                         prettytime(sim.run_wall_time),
                         prettytime(sim.Δt),
-                        AdvectiveCFL(sim.Δt)(sim.model))
+                        AdvectiveCFL(sim.Δt)(sim.model),
+                        minimum(sim.model.tracers.DIC))
 
-simulation.callbacks[:progress] = Callback(progress, IterationInterval(20))
+simulation.callbacks[:progress] = Callback(progress, IterationInterval(2))
 
 # Here, we add some diagnostics to calculate and output.
 u, v, w = model.velocities # unpack velocity `Field`s
