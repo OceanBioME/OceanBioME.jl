@@ -30,14 +30,14 @@ field_dependencies(name) = tuple()
 optional_fields(name) = tuple()
 
 # just get the value from the model tracer
-struct TracerConcentration{T} <: Function
+struct TracerConcentration{T}
     tracer :: T
 end
 
 summary(tc::TracerConcentration) = "Model tracer concentration of $(tc.tracer)"
 show(io::IO, tc::TracerConcentration) = println(io, summary(tc))
 
-@inline surface_value(mc::TracerConcentration, i, j, grid, clock, args...) = @inbounds args[end][i, j, grid.Nz]
+@inline surface_value(::TracerConcentration, i, j, grid, clock, args...) = @inbounds args[end][i, j, grid.Nz]
 
 field_dependencies(mc::TracerConcentration) = (:T, mc.tracer)
 
@@ -62,10 +62,13 @@ using .ScaledGasTransferVelocity
 Returns a `FluxBoundaryCondition` for the gas exchange between `water_concentration` and `air_concentration`
 with `transfer_velocity`.
 
-`water_concentrations` should be a type with method `water_concentrations(x, y, t, T, field_dependencies(water_concentration)...)`
-(i.e. a method has to be created for `field_dependencies`).
+`water_concentration`, `air_concentration` and `wind_speed` can either be numbers, 
+functions of the form `(x, y, t)`, functions of the form `(i, j, grid, clock, model_fields)` 
+if `discrete_form` is set to true, or any kind of `Field`.
 
-`air_concentration` and `wind_speed` should either be numbers or functions of the form `f(x, y, t)`.
+`water_concentration` should usually be a `TracerConcentration` (which specifies to read
+the concentration directly from the model), or a `CarbonDioxideConcentration` which diagnoses
+the partial pressure of CO₂ in the water.
 
 `transfer_velocity` should be a function of the form `k(u₁₀, T)`.
 """

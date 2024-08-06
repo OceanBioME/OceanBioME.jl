@@ -5,10 +5,16 @@
 `air_concentration` with a `transfer_velocity` computed from the temperature 
 (provided later), and the `wind_speed`.
 
-### TODO: UPDATE
 `transfer_velocity` should behave as a function of wind speed and temperature (i.e.
-`k(u, T)`), `water_concentration` a function of `c(x, y, t, T, field_dependencies...)`,
-and `air_concentration` of `ac(x, y, t)`, where `field_dependencies` are specified.
+`k(u, T)`), `water_concentration` a function of `c(x, y, t, T, field_dependencies...)`.
+
+`water_concentration`, `air_concentration` and `wind_speed` can either be numbers, 
+functions of the form `(x, y, t)`, functions of the form `(i, j, grid, clock, model_fields)` 
+if `discrete_form` is set to true, or any kind of `Field`.
+
+`water_concentration` should usually be a `TracerConcentration` (which specifies to read
+the concentration directly from the model), or a `CarbonDioxideConcentration` which diagnoses
+the partial pressure of CO₂ in the water.
 """
 struct GasExchange{WS, TV, WC, AC} <: Function
              wind_speed :: WS
