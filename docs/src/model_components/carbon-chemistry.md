@@ -203,7 +203,7 @@ From these rate constants we can rewrite the total alkalinity (given above) in t
 This results in a form of the total alkalinity:
 ```math
 \begin{align}
-Alk &\approx \frac{[DIC] K_1 [\ce{H^+}]}{[\ce{H^+}]^2 + K_1[\ce{H^+}] + K_1K_2}\\
+Alk &\approx \frac{[DIC][\ce{H^+}]K_1}{[\ce{H^+}]^2 + K_1[\ce{H^+}] + K_1K_2}\\
     &+ \frac{2[DIC]K_1K_2}{[\ce{H^+}]^2 + K_1[\ce{H^+}] + K_1K_2}\\
     &+ \frac{[\text{B}]}{1+[\ce{H^+}]/K_B}\\
     &+ \frac{K_w}{[\ce{H^+}]}\\
