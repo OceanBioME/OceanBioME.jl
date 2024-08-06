@@ -625,8 +625,8 @@ function PISCES(; grid, # finally the function
                    min_half_saturation_const_for_iron_uptake :: PD = (P = 1.0, D = 3.0),   #nmolFeL⁻¹
                    size_ratio_of_phytoplankton :: PD = (P = 3.0, D = 3.0),
                    optimal_SiC_uptake_ratio_of_diatoms :: FT = 0.159,       #molSi/(mol C)
-                   optimal_iron_quota :: PD = (P = 7.0e-3, D = 7.0e-3),               #mmolFe/(mol C)
-                   max_iron_quota :: PD = (P = 40.0e-3, D = 40.0e-3),                  #molFe/(mol C)
+                   optimal_iron_quota :: PD = (P = 7.0, D = 7.0),               #mmolFe/(mol C)
+                   max_iron_quota :: PD = (P = 40.0, D = 40.0),                  #molFe/(mol C)
                    phytoplankton_mortality_rate :: PD = (P = 0.01/day, D = 0.01/day),
                    min_quadratic_mortality_of_phytoplankton :: FT = 0.01 / day,   #1/(d mol C)
                    max_quadratic_mortality_of_diatoms :: FT = 0.03 / day,         #1/(d mol C)
