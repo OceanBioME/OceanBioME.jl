@@ -3,7 +3,7 @@
     eₘₐₓᴹ = bgc.max_growth_efficiency_of_zooplankton.M
     mᴹ = bgc.zooplankton_quadratic_mortality.M
     bₘ = bgc.temperature_sensitivity_term.M
-    return (1 - σᴹ - eₘₐₓᴹ)*(1/(1-eₘₐₓᴹ + eps(0.0)))*mᴹ*(bₘ^T)*M^2  #30b
+    return (1 - σᴹ)*mᴹ*(bₘ^T)*M^2  #30b
 end
 
 @inline function Pᵤₚ(M, T, bgc)
@@ -11,7 +11,7 @@ end
     eₘₐₓᴹ = bgc.max_growth_efficiency_of_zooplankton.M
     mᴹ = bgc.zooplankton_quadratic_mortality.M
     bₘ = bgc.temperature_sensitivity_term.M
-    return σᴹ*(1)/(1-eₘₐₓᴹ + eps(0.0))*mᴹ*bₘ^T*M^2      #30a
+    return σᴹ*mᴹ*(bₘ^T)*M^2      #30a
 end
 
 
@@ -84,7 +84,7 @@ end
 end
 
 
-@inline function (bgc::PISCES)(::Val{:DOC}, x, y, z, t, P, D, Z, M, Pᶜʰˡ, Dᶜʰˡ, Pᶠᵉ, Dᶠᵉ, Dˢⁱ, DOC, POC, GOC, SFe, BFe, PSi, NO₃, NH₄, PO₄, Fe, Si, CaCO₃, DIC, Alk, O₂, T, PAR, PAR¹, PAR², PAR³, zₘₓₗ, zₑᵤ, Si̅, D_dust, Ω)
+@inline function (bgc::PISCES)(::Val{:DOC}, x, y, z, t, P, D, Z, M, Pᶜʰˡ, Dᶜʰˡ, Pᶠᵉ, Dᶠᵉ, Dˢⁱ, DOC, POC, GOC, SFe, BFe, PSi, NO₃, NH₄, PO₄, Fe, Si, CaCO₃, DIC, Alk, O₂, T, zₘₓₗ, zₑᵤ, Si̅, D_dust, Ω, PAR, PAR¹, PAR², PAR³)
     γᶻ = bgc.excretion_as_DOM.Z
     γᴹ = bgc.excretion_as_DOM.M
     σᶻ = bgc.non_assimilated_fraction.Z
@@ -95,6 +95,7 @@ end
     eₘₐₓᴹ = bgc.max_growth_efficiency_of_zooplankton.M
     αᴾ= bgc.initial_slope_of_PI_curve.P
     αᴰ = bgc.initial_slope_of_PI_curve.D
+    wₚₒ = bgc.sinking_speed_of_POC
 
     ϕ₀ = bgc.latitude
     L_day_param = bgc.length_of_day
@@ -112,6 +113,7 @@ end
     zₘₐₓ = max(zₑᵤ, zₘₓₗ)   #41a
     w_GOC = w_GOCᵐⁱⁿ + (200 - w_GOCᵐⁱⁿ)*(max(0, z-zₘₐₓ))/(5000) #41b
     g_GOC_FFᴹ = g_FF*bₘ^T*w_GOC*GOC #29b
+    gₚₒ_FFᴹ = g_FF*bₘ^T*wₚₒ*POC
 
     t_darkᴾ = bgc.mean_residence_time_of_phytoplankton_in_unlit_mixed_layer.P
     t_darkᴰ = bgc.mean_residence_time_of_phytoplankton_in_unlit_mixed_layer.D
@@ -129,7 +131,6 @@ end
     λₚₒ¹ = λ¹(T, O₂, bgc)
     Rᵤₚᴹ = Rᵤₚ(M, T, bgc)
 
-    zₘₐₓ = max(zₑᵤ, zₘₓₗ) #35a
     Bact = get_Bact(zₘₐₓ, z, Z, M)
 
     bFe = Fe #defined in previous PISCES model
@@ -140,5 +141,5 @@ end
 
     Φ₁ᴰᴼᶜ, Φ₂ᴰᴼᶜ, Φ₃ᴰᴼᶜ = Φᴰᴼᶜ(DOC, POC, GOC, sh, bgc)
 
-    return (1 - γᶻ)*(1 - eᶻ - σᶻ)*∑ᵢgᵢᶻ*Z + (1 - γᴹ)*(1 - eᴹ - σᴹ)*(∑ᵢgᵢᴹ + g_GOC_FFᴹ)*M + δᴰ*μᴰ*D + δᴾ*μᴾ*P + λₚₒ¹*POC + (1 - γᴹ)*Rᵤₚᴹ - Remin - Denit - Φ₁ᴰᴼᶜ - Φ₂ᴰᴼᶜ - Φ₃ᴰᴼᶜ #32
-end
+    return (1 - γᶻ)*(1 - eᶻ - σᶻ)*∑ᵢgᵢᶻ*Z + (1 - γᴹ)*(1 - eᴹ - σᴹ)*(∑ᵢgᵢᴹ + g_GOC_FFᴹ + gₚₒ_FFᴹ)*M + δᴰ*μᴰ*D + δᴾ*μᴾ*P + λₚₒ¹*POC + (1 - γᴹ)*Rᵤₚᴹ - Remin - Denit - Φ₁ᴰᴼᶜ - Φ₂ᴰᴼᶜ - Φ₃ᴰᴼᶜ #32
+end #changed this to include gₚₒ_FF

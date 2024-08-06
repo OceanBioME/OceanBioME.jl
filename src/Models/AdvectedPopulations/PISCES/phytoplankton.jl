@@ -25,7 +25,7 @@ end
 @inline L_NO₃(NO₃, NH₄, Kₙₒ₃ᴵ, Kₙₕ₄ᴵ) = Kₙₕ₄ᴵ*NO₃/(Kₙₒ₃ᴵ*Kₙₕ₄ᴵ+Kₙₕ₄ᴵ*NO₃+Kₙₒ₃ᴵ*NH₄ + eps(0.0)) #eq 6e
 @inline L_Fe(I, Iᶠᵉ, θₒₚₜᶠᵉᴵ, θₘᵢₙᶠᵉᴵ) = min(1, max(0, (θ(Iᶠᵉ, I) - θₘᵢₙᶠᵉᴵ)/(θₒₚₜᶠᵉᴵ + eps(0.0)))) #eq 6f
 
-@inline θᶠᵉₘᵢₙ(I, Iᶜʰˡ, Lₙᴵ, Lₙₒ₃ᴵ) = 0.0016/(55.85) * θ(Iᶜʰˡ, I) + 1.21e-5*14*Lₙᴵ/(55.85*7.625)*1.5+1.15*14*Lₙₒ₃ᴵ/(55.85*7.625) #eq 20 -> Lₙ could be meant to be L_NH₄?
+@inline θᶠᵉₘᵢₙ(I, Iᶜʰˡ, Lₙᴵ, Lₙₒ₃ᴵ) = 0.0016/(55.85) * θ(Iᶜʰˡ, I) + 1.21e-5*14*Lₙᴵ/(55.85*7.625)*1.5+1.15e-4*14*Lₙₒ₃ᴵ/(55.85*7.625) #eq 20 -> Lₙ could be meant to be L_NH₄?
 
 @inline I₁(I, Iₘₐₓ) = min(I, Iₘₐₓ) #eq 7a
 @inline I₂(I, Iₘₐₓ) = max(0, I - Iₘₐₓ) #eq 7b
@@ -58,7 +58,8 @@ end
     K_Feᴵᶠᵉ = K_Feᴵᶠᵉᵐⁱⁿ*(I₁ + Sᵣₐₜᴵ*I₂)/(I₁+I₂+eps(0.0))    #18b
 
     Lₗᵢₘ₁ᴵᶠᵉ = K_mondo(bFe, K_Feᴵᶠᵉ)    #18a
-    Lₗᵢₘ₂ᴵᶠᵉ = (4 - 4.5*L_Feᴵ)/(L_Feᴵ + 0.5) #19
+    #Lₗᵢₘ₂ᴵᶠᵉ = (4 - 4.5*L_Feᴵ)/(L_Feᴵ + 0.5) #19
+    Lₗᵢₘ₂ᴵᶠᵉ = (4 - 2*L_Feᴵ)/(L_Feᴵ + 1) #19
 
     return θₘₐₓᶠᵉᴵ*Lₗᵢₘ₁ᴵᶠᵉ*Lₗᵢₘ₂ᴵᶠᵉ*(1 - (θ(Iᶠᵉ, I))/(θₘₐₓᶠᵉᴵ + eps(0.0)))/(1.05 - (θ(Iᶠᵉ, I))/(θₘₐₓᶠᵉᴵ + eps(0.0)))*μₚ  #17
 end
@@ -94,7 +95,7 @@ end
     Lₙₒ₃ᴾ = L_NO₃(NO₃, NH₄, Kₙₒ₃ᴾ, Kₙₕ₄ᴾ)
     Lₙᴾ = Lₙₒ₃ᴾ + Lₙₕ₄ᴾ         #6c
 
-    θₘᵢₙᶠᵉᵖ = θᶠᵉₘᵢₙ(P, Pᶜʰˡ, Lₙᴾ, Lₙₒ₃ᴾ)
+    θₘᵢₙᶠᵉᵖ = θᶠᵉₘᵢₙ(P, Pᶜʰˡ, Lₙₕ₄ᴾ, Lₙₒ₃ᴾ)# changed from Lₙᴾ to Lₙₕ₄ᴾ
     L_Feᴾ = L_Fe(P, Pᶠᵉ, θₒₚₜᶠᵉᵖ, θₘᵢₙᶠᵉᵖ)
 
     return min(Lₚₒ₄ᴾ, Lₙᴾ, L_Feᴾ), Lₚₒ₄ᴾ, Lₙₕ₄ᴾ, Lₙₒ₃ᴾ, Lₙᴾ, L_Feᴾ#6a
@@ -123,12 +124,12 @@ end
     Lₙₒ₃ᴰ = L_NO₃(NO₃, NH₄, Kₙₒ₃ᴰ, Kₙₕ₄ᴰ)
     Lₙᴰ = Lₙₒ₃ᴰ + Lₙₕ₄ᴰ         #6c
 
-    θₘᵢₙᶠᵉᴰ = θᶠᵉₘᵢₙ(D, Dᶜʰˡ, Lₙᴰ, Lₙₒ₃ᴰ)
+    θₘᵢₙᶠᵉᴰ = θᶠᵉₘᵢₙ(D, Dᶜʰˡ, Lₙₕ₄ᴰ, Lₙₒ₃ᴰ) #changed from n to NH₄
     L_Feᴰ = L_Fe(D, Dᶠᵉ ,θₒₚₜᶠᵉᴰ, θₘᵢₙᶠᵉᴰ)
     Kₛᵢᴰ = Kₛᵢᴰᵐⁱⁿ + 7*Si̅^2 / (Kₛᵢ^2 + Si̅^2 + eps(0.0)) #12
     Lₛᵢᴰ = K_mondo(Si, Kₛᵢᴰ)    #11b
 
-    return min(Lₚₒ₄ᴰ, Lₙᴰ, L_Feᴰ, Lₛᵢᴰ), Lₚₒ₄ᴰ, Lₙₕ₄ᴰ, Lₙₒ₃ᴰ, Lₙᴰ, Lₛᵢᴰ, L_Feᴰ    #11a
+    return min(Lₚₒ₄ᴰ, Lₙᴰ, L_Feᴰ, Lₛᵢᴰ), Lₚₒ₄ᴰ, Lₙₕ₄ᴰ, Lₙₒ₃ᴰ, Lₙᴰ,  L_Feᴰ, Lₛᵢᴰ   #11a
 end
 
 @inline function fθₒₚₜˢⁱᴰ(D, PO₄, NO₃, NH₄, Si, Dᶜʰˡ, Dᶠᵉ, μᴰ, T, ϕ, Si̅, bgc)
@@ -154,7 +155,7 @@ end
 
 
 
-@inline function (bgc::PISCES)(::Val{:P}, x, y, z, t, P, D, Z, M, Pᶜʰˡ, Dᶜʰˡ, Pᶠᵉ, Dᶠᵉ, Dˢⁱ, DOC, POC, GOC, SFe, BFe, PSi, NO₃, NH₄, PO₄, Fe, Si, CaCO₃, DIC, Alk, O₂, T, PAR, PAR¹, PAR², PAR³, zₘₓₗ, zₑᵤ, Si̅, D_dust, Ω) 
+@inline function (bgc::PISCES)(::Val{:P}, x, y, z, t, P, D, Z, M, Pᶜʰˡ, Dᶜʰˡ, Pᶠᵉ, Dᶠᵉ, Dˢⁱ, DOC, POC, GOC, SFe, BFe, PSi, NO₃, NH₄, PO₄, Fe, Si, CaCO₃, DIC, Alk, O₂, T, zₘₓₗ, zₑᵤ, Si̅, D_dust, Ω, PAR, PAR¹, PAR², PAR³)
     # the signature of this function is always `Val(name), x, y, z, t` and then all the tracers listed in `required_biogeochemical_tracers`, and then `required_biogeochemical_auxiliary_fields`
     δᴾ = bgc.exudation_of_DOC.P
     mᴾ = bgc.phytoplankton_mortality_rate.P
@@ -180,18 +181,22 @@ end
     PARᴾ = get_PARᴾ(PAR¹, PAR², PAR³, bgc)
     μᴾ = μᴵ(P, Pᶜʰˡ, PARᴾ, L_day, T, αᴾ, Lₗᵢₘᴾ, zₘₓₗ, zₑᵤ, t_darkᴾ, bgc)
 
-    println("PARᴾ = $(PARᴾ), PAR¹ = $(PAR¹), PAR² = $(PAR²), PAR³ = $(PAR³), PAR = $(PAR)")
+    μ⁰ₘₐₓ = bgc.growth_rate_at_zero
+
+    μₚ = μ⁰ₘₐₓ*fₚ(T, bgc)    #eq 4b   
+
+    #println("----------------------")
+    #println("Lₗᵢₘᴾ =  $(Lₗᵢₘᴾ), Lₚₒ₄ᴾ = $(Lₚₒ₄ᴾ), Lₙᴾ = $(Lₙᴾ), L_Feᴾ = $(L_Feᴾ), Cₚᵣₒ = $(Cₚᵣₒ(P, Pᶜʰˡ, PARᴾ, L_day, αᴾ, μₚ, Lₗᵢₘᴾ))")
    # println("P = $(P), D = $(D), Z = $(Z), M = $(M), Pᶜʰˡ = $(Pᶜʰˡ), Dᶜʰˡ = $(Dᶜʰˡ), Pᶠᵉ = $(Pᶠᵉ), Dᶠᵉ = $(Dᶠᵉ), Dˢⁱ = $(Dˢⁱ), DOC = $(DOC), POC = $(POC), GOC = $(GOC), SFe = $(SFe), BFe = $(BFe), PSi = $(PSi), NO₃ = $(NO₃), NH₄ = $(NH₄), PO₄ = $(PO₄), Fe = $(Fe), Si = $(Si), CaCO₃ = $(CaCO₃), DIC = $(DIC), Alk = $(Alk), O₂ = $(O₂)")
     #println("POC = $(POC), GOC = $(GOC), SFe = $(SFe), BFe = $(BFe)")
-  #  println("----------------------")
-  #  println("Growth terms for P are $((1-δᴾ)*μᴾ*P)")
-  #  println("Decay terms for P are $(mᴾ*K_mondo(P, Kₘ)*P), $(sh*wᴾ*P^2), $(gₚᶻ*Z), $(gₚᴹ*M), with sum $(mᴾ*K_mondo(P, Kₘ)*P + sh*wᴾ*P^2 + gₚᶻ*Z + gₚᴹ*M)")
-  #  println("Total sum for P = ", (1-δᴾ)*μᴾ*P - mᴾ*K_mondo(P, Kₘ)*P - sh*wᴾ*P^2 - gₚᶻ*Z - gₚᴹ*M)
+    #println("Growth terms for P are $((1-δᴾ)*μᴾ*P)")
+    #println("Decay terms for P are $(mᴾ*K_mondo(P, Kₘ)*P), $(sh*wᴾ*P^2), $(gₚᶻ*Z), $(gₚᴹ*M), with sum $(mᴾ*K_mondo(P, Kₘ)*P + sh*wᴾ*P^2 + gₚᶻ*Z + gₚᴹ*M)")
+    #println("Total sum for P = ", (1-δᴾ)*μᴾ*P - mᴾ*K_mondo(P, Kₘ)*P - sh*wᴾ*P^2 - gₚᶻ*Z - gₚᴹ*M)
 
     return (1-δᴾ)*μᴾ*P - mᴾ*K_mondo(P, Kₘ)*P - sh*wᴾ*P^2 - gₚᶻ*Z - gₚᴹ*M    #eq 1
 end
 
-@inline function (bgc::PISCES)(::Val{:D}, x, y, z, t, P, D, Z, M, Pᶜʰˡ, Dᶜʰˡ, Pᶠᵉ, Dᶠᵉ, Dˢⁱ, DOC, POC, GOC, SFe, BFe, PSi, NO₃, NH₄, PO₄, Fe, Si, CaCO₃, DIC, Alk, O₂, T, PAR, PAR¹, PAR², PAR³, zₘₓₗ, zₑᵤ, Si̅, D_dust, Ω)
+@inline function (bgc::PISCES)(::Val{:D}, x, y, z, t, P, D, Z, M, Pᶜʰˡ, Dᶜʰˡ, Pᶠᵉ, Dᶠᵉ, Dˢⁱ, DOC, POC, GOC, SFe, BFe, PSi, NO₃, NH₄, PO₄, Fe, Si, CaCO₃, DIC, Alk, O₂, T, zₘₓₗ, zₑᵤ, Si̅, D_dust, Ω, PAR, PAR¹, PAR², PAR³)
     # the signature of this function is always `Val(name), x, y, z, t` and then all the tracers listed in `required_biogeochemical_tracers`, and then `required_biogeochemical_auxiliary_fields`
     δᴰ = bgc.exudation_of_DOC.D
     mᴰ = bgc.phytoplankton_mortality_rate.D
@@ -213,21 +218,34 @@ end
  
     t_darkᴰ = bgc.mean_residence_time_of_phytoplankton_in_unlit_mixed_layer.D
 
-    Lₗᵢₘᴰ = Lᴰ(D, PO₄, NO₃, NH₄, Si, Dᶜʰˡ, Dᶠᵉ, Si̅, bgc)[1]
+    #Lₗᵢₘᴰ = Lᴰ(D, PO₄, NO₃, NH₄, Si, Dᶜʰˡ, Dᶠᵉ, Si̅, bgc)[1]
+    L = Lᴰ(D, PO₄, NO₃, NH₄, Si, Dᶜʰˡ, Dᶠᵉ, Si̅, bgc)
+    Lₗᵢₘᴰ = L[1]
+    Lₚₒ₄ᴰ = L[2]
+    Lₙᴰ = L[5]
+    Lₛᵢᴰ = L[7]
+    L_Feᴰ = L[6]
+
     PARᴰ = get_PARᴰ(PAR¹, PAR², PAR³, bgc)
 
     wᴰ = wᴾ + wₘₐₓᴰ*(1-Lₗᵢₘᴰ) #13
     
     μᴰ = μᴵ(D, Dᶜʰˡ, PARᴰ, L_day, T, αᴰ, Lₗᵢₘᴰ, zₘₓₗ, zₑᵤ, t_darkᴰ, bgc)
 
-   # println("Growth terms for D are $((1-δᴰ)*μᴰ*D)")
-   # println("Decay terms for D are $(mᴰ*K_mondo(D, Kₘ)*D), $(sh*wᴰ*D^2), $(g_Dᶻ*Z), $(g_Dᴹ*M), with sum $(mᴰ*K_mondo(D, Kₘ)*D + sh*wᴰ*D^2 + g_Dᶻ*Z + g_Dᴹ*M)")
-   # println("Total sum for D = ", (1-δᴰ)*μᴰ*D - mᴰ*K_mondo(D, Kₘ)*D - sh*wᴰ*D^2 - g_Dᶻ*Z - g_Dᴹ*M)
+    μ⁰ₘₐₓ = bgc.growth_rate_at_zero
+
+    μₚ = μ⁰ₘₐₓ*fₚ(T, bgc)    #eq 4b    
+
+   # println("Lₗᵢₘᴰ =  $(Lₗᵢₘᴰ), Lₚₒ₄ᴰ = $(Lₚₒ₄ᴰ), Lₙᴰ = $(Lₙᴰ), Lₛᵢᴰ = $(Lₛᵢᴰ), L_Feᴰ = $(L_Feᴰ) Cₚᵣₒ = $(Cₚᵣₒ(D, Dᶜʰˡ, PARᴰ, L_day, αᴰ, μₚ, Lₗᵢₘᴰ))")
+   
+    #println("Growth terms for D are $((1-δᴰ)*μᴰ*D)")
+    #println("Decay terms for D are $(mᴰ*K_mondo(D, Kₘ)*D), $(sh*wᴰ*D^2), $(g_Dᶻ*Z), $(g_Dᴹ*M), with sum $(mᴰ*K_mondo(D, Kₘ)*D + sh*wᴰ*D^2 + g_Dᶻ*Z + g_Dᴹ*M)")
+    #println("Total sum for D = ", (1-δᴰ)*μᴰ*D - mᴰ*K_mondo(D, Kₘ)*D - sh*wᴰ*D^2 - g_Dᶻ*Z - g_Dᴹ*M)
 
     return (1-δᴰ)*μᴰ*D - mᴰ*K_mondo(D, Kₘ)*D - sh*wᴰ*D^2 - g_Dᶻ*Z - g_Dᴹ*M    #eq 9
 end
 
-@inline function (bgc::PISCES)(::Val{:Pᶜʰˡ}, x, y, z, t, P, D, Z, M, Pᶜʰˡ, Dᶜʰˡ, Pᶠᵉ, Dᶠᵉ, Dˢⁱ, DOC, POC, GOC, SFe, BFe, PSi, NO₃, NH₄, PO₄, Fe, Si, CaCO₃, DIC, Alk, O₂, T, PAR, PAR¹, PAR², PAR³, zₘₓₗ, zₑᵤ, Si̅, D_dust, Ω)
+@inline function (bgc::PISCES)(::Val{:Pᶜʰˡ}, x, y, z, t, P, D, Z, M, Pᶜʰˡ, Dᶜʰˡ, Pᶠᵉ, Dᶠᵉ, Dˢⁱ, DOC, POC, GOC, SFe, BFe, PSi, NO₃, NH₄, PO₄, Fe, Si, CaCO₃, DIC, Alk, O₂, T, zₘₓₗ, zₑᵤ, Si̅, D_dust, Ω, PAR, PAR¹, PAR², PAR³)
     δᴾ = bgc.exudation_of_DOC.P
     αᴾ = bgc.initial_slope_of_PI_curve.P
     θₘᵢₙᶜʰˡ = bgc.min_ChlC_ratios_of_phytoplankton
@@ -259,7 +277,7 @@ end
     return (1-δᴾ)*(12*θₘᵢₙᶜʰˡ + (θₘₐₓᶜʰˡᴾ - θₘᵢₙᶜʰˡ)*ρᴾᶜʰˡ)*μᴾ*P - mᴾ*K_mondo(P, Kₘ)*Pᶜʰˡ - sh*wᴾ*P*Pᶜʰˡ - θ(Pᶜʰˡ, P)*gₚᶻ*Z - θ(Pᶜʰˡ, P)*gₚᴹ*M  #14
 end
 
-@inline function (bgc::PISCES)(::Val{:Dᶜʰˡ}, x, y, z, t, P, D, Z, M, Pᶜʰˡ, Dᶜʰˡ, Pᶠᵉ, Dᶠᵉ, Dˢⁱ, DOC, POC, GOC, SFe, BFe, PSi, NO₃, NH₄, PO₄, Fe, Si, CaCO₃, DIC, Alk, O₂, T, PAR, PAR¹, PAR², PAR³, zₘₓₗ, zₑᵤ, Si̅, D_dust, Ω)
+@inline function (bgc::PISCES)(::Val{:Dᶜʰˡ}, x, y, z, t, P, D, Z, M, Pᶜʰˡ, Dᶜʰˡ, Pᶠᵉ, Dᶠᵉ, Dˢⁱ, DOC, POC, GOC, SFe, BFe, PSi, NO₃, NH₄, PO₄, Fe, Si, CaCO₃, DIC, Alk, O₂, T, zₘₓₗ, zₑᵤ, Si̅, D_dust, Ω, PAR, PAR¹, PAR², PAR³)
     δᴰ = bgc.exudation_of_DOC.D
     αᴰ = bgc.initial_slope_of_PI_curve.D
     θₘᵢₙᶜʰˡ = bgc.min_ChlC_ratios_of_phytoplankton
@@ -294,7 +312,7 @@ end
     return (1-δᴰ)*(12*θₘᵢₙᶜʰˡ + (θₘₐₓᶜʰˡᴰ - θₘᵢₙᶜʰˡ)*ρᴰᶜʰˡ)*μᴰ*D - mᴰ*K_mondo(D, Kₘ)*Dᶜʰˡ - sh*wᴰ*D*Dᶜʰˡ - θ(Dᶜʰˡ, D)*g_Dᶻ*Z - θ(Dᶜʰˡ, D)*g_Dᴹ*M    #14
 end
 
-@inline function (bgc::PISCES)(::Val{:Pᶠᵉ}, x, y, z, t, P, D, Z, M, Pᶜʰˡ, Dᶜʰˡ, Pᶠᵉ, Dᶠᵉ, Dˢⁱ, DOC, POC, GOC, SFe, BFe, PSi, NO₃, NH₄, PO₄, Fe, Si, CaCO₃, DIC, Alk, O₂, T, PAR, PAR¹, PAR², PAR³, zₘₓₗ, zₑᵤ, Si̅, D_dust, Ω)
+@inline function (bgc::PISCES)(::Val{:Pᶠᵉ}, x, y, z, t, P, D, Z, M, Pᶜʰˡ, Dᶜʰˡ, Pᶠᵉ, Dᶠᵉ, Dˢⁱ, DOC, POC, GOC, SFe, BFe, PSi, NO₃, NH₄, PO₄, Fe, Si, CaCO₃, DIC, Alk, O₂, T, zₘₓₗ, zₑᵤ, Si̅, D_dust, Ω, PAR, PAR¹, PAR², PAR³)
     δᴾ = bgc.exudation_of_DOC.P
     θₘₐₓᶠᵉᵖ = bgc.max_iron_quota.P
     mᴾ = bgc.phytoplankton_mortality_rate.P
@@ -317,7 +335,7 @@ end
     return (1-δᴾ)*μᴾᶠᵉ*P - mᴾ*K_mondo(P, Kₘ)*Pᶠᵉ - sh*wᴾ*P*Pᶠᵉ - θ(Pᶠᵉ, P)*gₚᶻ*Z - θ(Pᶠᵉ, P)*gₚᴹ*M  #16
 end
 
-@inline function (bgc::PISCES)(::Val{:Dᶠᵉ}, x, y, z, t, P, D, Z, M, Pᶜʰˡ, Dᶜʰˡ, Pᶠᵉ, Dᶠᵉ, Dˢⁱ, DOC, POC, GOC, SFe, BFe, PSi, NO₃, NH₄, PO₄, Fe, Si, CaCO₃, DIC, Alk, O₂, T, PAR, PAR¹, PAR², PAR³, zₘₓₗ, zₑᵤ, Si̅, D_dust, Ω)
+@inline function (bgc::PISCES)(::Val{:Dᶠᵉ}, x, y, z, t, P, D, Z, M, Pᶜʰˡ, Dᶜʰˡ, Pᶠᵉ, Dᶠᵉ, Dˢⁱ, DOC, POC, GOC, SFe, BFe, PSi, NO₃, NH₄, PO₄, Fe, Si, CaCO₃, DIC, Alk, O₂, T, zₘₓₗ, zₑᵤ, Si̅, D_dust, Ω, PAR, PAR¹, PAR², PAR³)
     δᴰ = bgc.exudation_of_DOC.D
     θₘₐₓᶠᵉᴰ = bgc.max_iron_quota.D
     mᴰ = bgc.phytoplankton_mortality_rate.D
@@ -345,7 +363,7 @@ end
     return (1-δᴰ)*μᴰᶠᵉ*D - mᴰ*K_mondo(D, Kₘ)*Dᶠᵉ - sh*wᴰ*D*Dᶠᵉ - θ(Dᶠᵉ, D)*g_Dᶻ*Z - θ(Dᶠᵉ, D)*g_Dᴹ*M    #16
 end
 
-@inline function (bgc::PISCES)(::Val{:Dˢⁱ}, x, y, z, t, P, D, Z, M, Pᶜʰˡ, Dᶜʰˡ, Pᶠᵉ, Dᶠᵉ, Dˢⁱ, DOC, POC, GOC, SFe, BFe, PSi, NO₃, NH₄, PO₄, Fe, Si, CaCO₃, DIC, Alk, O₂, T, PAR, PAR¹, PAR², PAR³, zₘₓₗ, zₑᵤ, Si̅, D_dust, Ω)       #ϕ is latitude
+@inline function (bgc::PISCES)(::Val{:Dˢⁱ}, x, y, z, t, P, D, Z, M, Pᶜʰˡ, Dᶜʰˡ, Pᶠᵉ, Dᶠᵉ, Dˢⁱ, DOC, POC, GOC, SFe, BFe, PSi, NO₃, NH₄, PO₄, Fe, Si, CaCO₃, DIC, Alk, O₂, T, zₘₓₗ, zₑᵤ, Si̅, D_dust, Ω, PAR, PAR¹, PAR², PAR³)    #ϕ is latitude
     δᴰ = bgc.exudation_of_DOC.D
     mᴰ = bgc.phytoplankton_mortality_rate.D
     Kₘ = bgc.half_saturation_const_for_mortality

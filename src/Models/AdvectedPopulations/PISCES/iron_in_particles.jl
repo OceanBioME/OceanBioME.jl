@@ -16,7 +16,7 @@ end
 
 @inline Scav(POC, GOC, CaCO₃, PSi, D_dust, DOC, T, Fe, bgc) = λ_Fe¹(POC, GOC, CaCO₃, PSi, D_dust, bgc)*get_Fe¹(Fe, DOC, T)
 
-@inline function (bgc::PISCES)(::Val{:SFe}, x, y, z, t, P, D, Z, M, Pᶜʰˡ, Dᶜʰˡ, Pᶠᵉ, Dᶠᵉ, Dˢⁱ, DOC, POC, GOC, SFe, BFe, PSi, NO₃, NH₄, PO₄, Fe, Si, CaCO₃, DIC, Alk, O₂, T, PAR, PAR¹, PAR², PAR³, zₘₓₗ, zₑᵤ, Si̅, D_dust, Ω) 
+@inline function (bgc::PISCES)(::Val{:SFe}, x, y, z, t, P, D, Z, M, Pᶜʰˡ, Dᶜʰˡ, Pᶠᵉ, Dᶠᵉ, Dˢⁱ, DOC, POC, GOC, SFe, BFe, PSi, NO₃, NH₄, PO₄, Fe, Si, CaCO₃, DIC, Alk, O₂, T, zₘₓₗ, zₑᵤ, Si̅, D_dust, Ω, PAR, PAR¹, PAR², PAR³) 
     #Parameters
     σᶻ = bgc.non_assimilated_fraction.Z
     rᶻ = bgc.zooplankton_linear_mortality.Z
@@ -52,18 +52,18 @@ end
     #Bacteria iron
     Bactfe = get_Bactfe(μₘₐₓ⁰, z, Z, M, Fe, DOC, PO₄, NO₃, NH₄, bFe, T, zₘₐₓ, bgc)
 
-    #println("Sum of positive terms is ", σᶻ*∑θᶠᵉⁱgᵢᶻ*Z + θᶠᵉᶻ*(rᶻ*(b_Z^T)*K_mondo(Z, Kₘ)*Z + mᶻ*(b_Z^T)*(Z^2)) + λₚₒ¹*BFe + θᶠᵉᴾ*(1 - 0.5*get_R_CaCO₃(P, PO₄, NO₃, NH₄, Pᶜʰˡ, Pᶠᵉ, Fe, T, PAR, zₘₓₗ, bgc))*(mᴾ*K_mondo(P, Kₘ)*P + sh*wᴾ*P^2) + θᶠᵉᴰ*0.5*mᴰ*K_mondo(D, Kₘ)*D + λ_Fe*POC*Fe¹ + Cgfe1(sh, Fe, POC, DOC, T, bgc) + κ_Bactˢᶠᵉ*Bactfe)
-    #println("term a = $(σᶻ*∑θᶠᵉⁱgᵢᶻ*Z)), term b = $( θᶠᵉᶻ*(rᶻ*(b_Z^T)*K_mondo(Z, Kₘ)*Z + mᶻ*(b_Z^T)*(Z^2))), term c = $( λₚₒ¹*BFe), term d = $(λₚₒ¹*BFe + θᶠᵉᴾ*(1 - 0.5*get_R_CaCO₃(P, PO₄, NO₃, NH₄, Pᶜʰˡ, Pᶠᵉ, Fe, T, PAR, zₘₓₗ, bgc))*(mᴾ*K_mondo(P, Kₘ)*P + sh*wᴾ*P^2)), term e = $(θᶠᵉᴰ*0.5*mᴰ*K_mondo(D, Kₘ)*D), term f = $(λ_Fe*POC*Fe¹), term g = $(Cgfe1(sh, Fe, POC, DOC, T, bgc)), term h = $(κ_Bactˢᶠᵉ*Bactfe)")
-    #println("Sum of negative terms is ", λₚₒ¹*SFe + θᶠᵉᴾᴼᶜ*get_Φ(POC, GOC, sh, bgc) + θᶠᵉᴾᴼᶜ*(grazingᴹ[4] + gₚₒ_FFᴹ)*M+ θᶠᵉᴾᴼᶜ*grazingᶻ[4])
-    #println("term 1 = $(λₚₒ¹*SFe), term 2 = $(θᶠᵉᴾᴼᶜ*get_Φ(POC, GOC, sh, bgc)), term 3 = $(θᶠᵉᴾᴼᶜ*(grazingᴹ[4] + gₚₒ_FFᴹ)*M), term 4 = $(θᶠᵉᴾᴼᶜ*grazingᶻ[4]))")
-    #println("--")
-    #println("Total change is ", σᶻ*∑θᶠᵉⁱgᵢᶻ*Z + θᶠᵉᶻ*(rᶻ*(b_Z^T)*K_mondo(Z, Kₘ)*Z + mᶻ*(b_Z^T)*(Z^2)) + λₚₒ¹*BFe + θᶠᵉᴾ*(1 - 0.5*get_R_CaCO₃(P, PO₄, NO₃, NH₄, Pᶜʰˡ, Pᶠᵉ, Fe, T, PAR, zₘₓₗ, bgc))*(mᴾ*K_mondo(P, Kₘ)*P + sh*wᴾ*P^2) + θᶠᵉᴰ*0.5*mᴰ*K_mondo(D, Kₘ)*D + λ_Fe*POC*Fe¹ + Cgfe1(sh, Fe, POC, DOC, T, bgc) - λₚₒ¹*SFe - θᶠᵉᴾᴼᶜ*get_Φ(POC, GOC, sh, bgc) - θᶠᵉᴾᴼᶜ*(grazingᴹ[4] + gₚₒ_FFᴹ)*M + κ_Bactˢᶠᵉ*Bactfe - θᶠᵉᴾᴼᶜ*grazingᶻ[4])
-    #println("-------------------------------------")
+    println("Sum of positive terms in SFe is ", σᶻ*∑θᶠᵉⁱgᵢᶻ*Z + θᶠᵉᶻ*(rᶻ*(b_Z^T)*K_mondo(Z, Kₘ)*Z + mᶻ*(b_Z^T)*(Z^2)) + λₚₒ¹*BFe + θᶠᵉᴾ*(1 - 0.5*get_R_CaCO₃(P, PO₄, NO₃, NH₄, Pᶜʰˡ, Pᶠᵉ, Fe, T, PAR, zₘₓₗ, bgc))*(mᴾ*K_mondo(P, Kₘ)*P + sh*wᴾ*P^2) + θᶠᵉᴰ*0.5*mᴰ*K_mondo(D, Kₘ)*D + λ_Fe*POC*Fe¹ + Cgfe1(sh, Fe, POC, DOC, T, bgc) + κ_Bactˢᶠᵉ*Bactfe)
+    println("term a = $(σᶻ*∑θᶠᵉⁱgᵢᶻ*Z)), term b = $( θᶠᵉᶻ*(rᶻ*(b_Z^T)*K_mondo(Z, Kₘ)*Z + mᶻ*(b_Z^T)*(Z^2))), term c = $( λₚₒ¹*BFe), term d = $(λₚₒ¹*BFe + θᶠᵉᴾ*(1 - 0.5*get_R_CaCO₃(P, PO₄, NO₃, NH₄, Pᶜʰˡ, Pᶠᵉ, Fe, T, PAR, zₘₓₗ, bgc))*(mᴾ*K_mondo(P, Kₘ)*P + sh*wᴾ*P^2)), term e = $(θᶠᵉᴰ*0.5*mᴰ*K_mondo(D, Kₘ)*D), term f = $(λ_Fe*POC*Fe¹), term g = $(Cgfe1(sh, Fe, POC, DOC, T, bgc)), term h = $(κ_Bactˢᶠᵉ*Bactfe)")
+    println("Sum of negative terms is ", λₚₒ¹*SFe + θᶠᵉᴾᴼᶜ*get_Φ(POC, GOC, sh, bgc) + θᶠᵉᴾᴼᶜ*(grazingᴹ[4] + gₚₒ_FFᴹ)*M+ θᶠᵉᴾᴼᶜ*grazingᶻ[4])
+    println("term 1 = $(λₚₒ¹*SFe), term 2 = $(θᶠᵉᴾᴼᶜ*get_Φ(POC, GOC, sh, bgc)), term 3 = $(θᶠᵉᴾᴼᶜ*(grazingᴹ[4] + gₚₒ_FFᴹ)*M), term 4 = $(θᶠᵉᴾᴼᶜ*grazingᶻ[4]))")
+    println("--")
+    println("Total change is ", σᶻ*∑θᶠᵉⁱgᵢᶻ*Z + θᶠᵉᶻ*(rᶻ*(b_Z^T)*K_mondo(Z, Kₘ)*Z + mᶻ*(b_Z^T)*(Z^2)) + λₚₒ¹*BFe + θᶠᵉᴾ*(1 - 0.5*get_R_CaCO₃(P, PO₄, NO₃, NH₄, Pᶜʰˡ, Pᶠᵉ, Fe, T, PAR, zₘₓₗ, bgc))*(mᴾ*K_mondo(P, Kₘ)*P + sh*wᴾ*P^2) + θᶠᵉᴰ*0.5*mᴰ*K_mondo(D, Kₘ)*D + λ_Fe*POC*Fe¹ + Cgfe1(sh, Fe, POC, DOC, T, bgc) - λₚₒ¹*SFe - θᶠᵉᴾᴼᶜ*get_Φ(POC, GOC, sh, bgc) - θᶠᵉᴾᴼᶜ*(grazingᴹ[4] + gₚₒ_FFᴹ)*M + κ_Bactˢᶠᵉ*Bactfe - θᶠᵉᴾᴼᶜ*grazingᶻ[4])
+    println("-------------------------------------")
 
-    return σᶻ*∑θᶠᵉⁱgᵢᶻ*Z + θᶠᵉᶻ*(rᶻ*(b_Z^T)*K_mondo(Z, Kₘ)*Z + mᶻ*(b_Z^T)*(Z^2)) + λₚₒ¹*BFe + θᶠᵉᴾ*(1 - 0.5*get_R_CaCO₃(P, PO₄, NO₃, NH₄, Pᶜʰˡ, Pᶠᵉ, Fe, T, PAR, zₘₓₗ, bgc))*(mᴾ*K_mondo(P, Kₘ)*P + sh*wᴾ*P^2) + θᶠᵉᴰ*0.5*mᴰ*K_mondo(D, Kₘ)*D + λ_Fe*POC*Fe¹ + Cgfe1(sh, Fe, POC, DOC, T, bgc) - λₚₒ¹*SFe - θᶠᵉᴾᴼᶜ*get_Φ(POC, GOC, sh, bgc) - θᶠᵉᴾᴼᶜ*(grazingᴹ[4] + gₚₒ_FFᴹ)*M + κ_Bactˢᶠᵉ*Bactfe - θᶠᵉᴾᴼᶜ*grazingᶻ[4] #Partial derivative omitted #eq48
+    return σᶻ*∑θᶠᵉⁱgᵢᶻ*Z + θᶠᵉᶻ*(rᶻ*(b_Z^T)*K_mondo(Z, Kₘ)*Z + mᶻ*(b_Z^T)*(Z^2)) + λₚₒ¹*BFe + θᶠᵉᴾ*(1 - 0.5*get_R_CaCO₃(P, PO₄, NO₃, NH₄, Pᶜʰˡ, Pᶠᵉ, Fe, T, PAR, zₘₓₗ, bgc))*(mᴾ*K_mondo(P, Kₘ)*P + sh*wᴾ*P^2) + θᶠᵉᴰ*0.5*mᴰ*K_mondo(D, Kₘ)*D + λ_Fe*POC*Fe¹ + Cgfe1(sh, Fe, POC, DOC, T, bgc) - λₚₒ¹*SFe - θᶠᵉᴾᴼᶜ*get_Φ(POC, GOC, sh, bgc) - θᶠᵉᴾᴼᶜ*(grazingᴹ[4] + gₚₒ_FFᴹ)*M + κ_Bactˢᶠᵉ*Bactfe - θᶠᵉᴾᴼᶜ*grazingᶻ[4]*Z #Partial derivative omitted #eq48
 end 
 
-@inline function (bgc::PISCES)(::Val{:BFe}, x, y, z, t, P, D, Z, M, Pᶜʰˡ, Dᶜʰˡ, Pᶠᵉ, Dᶠᵉ, Dˢⁱ, DOC, POC, GOC, SFe, BFe, PSi, NO₃, NH₄, PO₄, Fe, Si, CaCO₃, DIC, Alk, O₂, T, PAR, PAR¹, PAR², PAR³, zₘₓₗ, zₑᵤ, Si̅, D_dust, Ω) 
+@inline function (bgc::PISCES)(::Val{:BFe}, x, y, z, t, P, D, Z, M, Pᶜʰˡ, Dᶜʰˡ, Pᶠᵉ, Dᶠᵉ, Dˢⁱ, DOC, POC, GOC, SFe, BFe, PSi, NO₃, NH₄, PO₄, Fe, Si, CaCO₃, DIC, Alk, O₂, T, zₘₓₗ, zₑᵤ, Si̅, D_dust, Ω, PAR, PAR¹, PAR², PAR³)
     #Parameters
     σᴹ = bgc.non_assimilated_fraction.M
     rᴹ = bgc.zooplankton_linear_mortality.M

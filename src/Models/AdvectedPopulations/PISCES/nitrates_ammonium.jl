@@ -46,12 +46,12 @@ end
     O₂ᵐⁱⁿ¹ = bgc.half_sat_const_for_denitrification1
     O₂ᵐⁱⁿ² = bgc.half_sat_const_for_denitrification2
 
-    return min(1, max(0.4*(O₂ᵐⁱⁿ¹-O₂)/(O₂ᵐⁱⁿ²+O₂))) #eq57
+    return min(1, max(0, 0.4*(O₂ - O₂ᵐⁱⁿ¹)/(O₂ᵐⁱⁿ²+O₂+eps(0.0)))) #eq57
 end
 
 @inline Nitrif(NH₄, O₂, λₙₕ₄, PAR, bgc) = λₙₕ₄*NH₄*(1-ΔO₂(O₂, bgc))/(1+PAR) #eq56a
 
-@inline function (bgc::PISCES)(::Val{:NO₃}, x, y, z, t, P, D, Z, M, Pᶜʰˡ, Dᶜʰˡ, Pᶠᵉ, Dᶠᵉ, Dˢⁱ, DOC, POC, GOC, SFe, BFe, PSi, NO₃, NH₄, PO₄, Fe, Si, CaCO₃, DIC, Alk, O₂, T, PAR, PAR¹, PAR², PAR³, zₘₓₗ, zₑᵤ, Si̅, D_dust, Ω) 
+@inline function (bgc::PISCES)(::Val{:NO₃}, x, y, z, t, P, D, Z, M, Pᶜʰˡ, Dᶜʰˡ, Pᶠᵉ, Dᶠᵉ, Dˢⁱ, DOC, POC, GOC, SFe, BFe, PSi, NO₃, NH₄, PO₄, Fe, Si, CaCO₃, DIC, Alk, O₂, T, zₘₓₗ, zₑᵤ, Si̅, D_dust, Ω, PAR, PAR¹, PAR², PAR³) 
 
     λₙₕ₄ =  bgc.max_nitrification_rate
     θᴺᶜ = bgc.NC_redfield_ratio
@@ -83,7 +83,7 @@ end
 
 @inline Lₙᴰᶻ(Lₙᴾ) = ifelse(Lₙᴾ>=0.08, 0.01, 1 - Lₙᴾ) #eq58
     
-@inline function N_fix(bFe, PO₄, T, P, NO₃, NH₄, Pᶜʰˡ, Pᶠᵉ, PAR, bgc) #eq 58b, return in μmolN/L
+@inline function N_fix(bFe, PO₄, T, P, NO₃, NH₄, Pᶜʰˡ, Pᶠᵉ, PAR, bgc) #eq 58b, return in μmolN/L, changed to return carbon
     N_fixᵐ = bgc.max_rate_of_nitrogen_fixation
     K_Feᴰᶻ = bgc.Fe_half_saturation_constant_of_nitrogen_fixation
     Kₚₒ₄ᴾᵐⁱⁿ = bgc.min_half_saturation_const_for_phosphate.P
@@ -91,12 +91,12 @@ end
     μ⁰ₘₐₓ = bgc.growth_rate_at_zero
     μₚ = μ⁰ₘₐₓ*fₚ(T, bgc)
     Lₙᴾ = Lᴾ(P, PO₄, NO₃, NH₄, Pᶜʰˡ, Pᶠᵉ, bgc)[5]
-    θᴺᶜ = bgc.NC_redfield_ratio
+    θᴺᶜ = bgc.NC_redfield_ratio    
 
-    return (N_fixᵐ*max(0,μₚ - 2.15)*Lₙᴰᶻ(Lₙᴾ)*min(K_mondo(bFe, K_Feᴰᶻ), K_mondo(PO₄, Kₚₒ₄ᴾᵐⁱⁿ))*(1 - exp((-PAR/E_fix))))*(1/θᴺᶜ)
+    return (N_fixᵐ*max(0,μₚ - 2.15)*Lₙᴰᶻ(Lₙᴾ)*min(K_mondo(bFe, K_Feᴰᶻ), K_mondo(PO₄, Kₚₒ₄ᴾᵐⁱⁿ))*(1 - exp((-PAR/E_fix))))*(1/(θᴺᶜ + eps(0.0)))
 end
 
-@inline function (bgc::PISCES)(::Val{:NH₄}, x, y, z, t, P, D, Z, M, Pᶜʰˡ, Dᶜʰˡ, Pᶠᵉ, Dᶠᵉ, Dˢⁱ, DOC, POC, GOC, SFe, BFe, PSi, NO₃, NH₄, PO₄, Fe, Si, CaCO₃, DIC, Alk, O₂, T, PAR, PAR¹, PAR², PAR³, zₘₓₗ, zₑᵤ, Si̅, D_dust, Ω) 
+@inline function (bgc::PISCES)(::Val{:NH₄}, x, y, z, t, P, D, Z, M, Pᶜʰˡ, Dᶜʰˡ, Pᶠᵉ, Dᶠᵉ, Dˢⁱ, DOC, POC, GOC, SFe, BFe, PSi, NO₃, NH₄, PO₄, Fe, Si, CaCO₃, DIC, Alk, O₂, T, zₘₓₗ, zₑᵤ, Si̅, D_dust, Ω, PAR, PAR¹, PAR², PAR³) 
     
     #Parameters
     γᶻ = bgc.excretion_as_DOM.Z
@@ -140,5 +140,5 @@ end
     Bact = get_Bact(zₘₐₓ, z, Z, M)
 
    
-    return θᴺᶜ*(γᶻ*(1-eᶻ-σᶻ)*∑gᶻ*Z + γᴹ*(1-eᴹ-σᴹ)*(∑gᴹ + ∑g_FFᴹ)*M + γᴹ*Rᵤₚ(M, T, bgc) + get_Remin(O₂, NO₃, PO₄, NH₄, DOC, T, bFe, Bact, bgc) + get_Denit(NO₃, PO₄, NH₄, DOC, O₂, T, bFe, Bact, bgc) + (1/(θᴺᶜ + eps(0.0)))*N_fix(bFe, PO₄, T, P, NO₃, NH₄, Pᶜʰˡ, Pᶠᵉ, PAR, bgc) - Nitrif(NH₄, O₂, λₙₕ₄, PAR, bgc) - λₙₕ₄*ΔO₂(O₂, bgc)*NH₄ - μₙₕ₄ᴾ*P - μₙₕ₄ᴰ*D)
+    return θᴺᶜ*(γᶻ*(1-eᶻ-σᶻ)*∑gᶻ*Z + γᴹ*(1-eᴹ-σᴹ)*(∑gᴹ + ∑g_FFᴹ)*M + γᴹ*Rᵤₚ(M, T, bgc) + get_Remin(O₂, NO₃, PO₄, NH₄, DOC, T, bFe, Bact, bgc) + get_Denit(NO₃, PO₄, NH₄, DOC, O₂, T, bFe, Bact, bgc) + N_fix(bFe, PO₄, T, P, NO₃, NH₄, Pᶜʰˡ, Pᶠᵉ, PAR, bgc) - Nitrif(NH₄, O₂, λₙₕ₄, PAR, bgc) - λₙₕ₄*ΔO₂(O₂, bgc)*NH₄ - μₙₕ₄ᴾ*P - μₙₕ₄ᴰ*D)
 end

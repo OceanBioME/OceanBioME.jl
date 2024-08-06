@@ -10,20 +10,20 @@ Tracers
 * Mesozooplankton: M (μmolC/L)
 * Chlorophyll in nano-phytoplankton: Pᶜʰˡ (μgChl/L)
 * Chlorophyll in diatoms: Dᶜʰˡ (μgChl/L)
-* Iron in nano-phytoplanktons: Pᶠᵉ (pmolFe/L) 
-* Iron in diatoms: Dᶠᵉ (pmolFe/L) 
+* Iron in nano-phytoplanktons: Pᶠᵉ (nmolFe/L) 
+* Iron in diatoms: Dᶠᵉ (nmolFe/L) 
 * Silicon in diatoms: Dˢⁱ (μmolSi/L)
 
 * Dissolved organic carbon: DOC (μmolC/L)
 * Small sinking particles : POC (μmolC/L)
 * Large sinking particles: GOC (μmolC/L)
-* Iron in small particles: SFe (pmolFe/L) 
-* Iron in large particles: BFe (pmolFe/L) 
+* Iron in small particles: SFe (nmolFe/L) 
+* Iron in large particles: BFe (nmolFe/L) 
 * Silicate in large particles : PSi (μmolSi/L)
 * Nitrates: NO₃ (μmolN/L)
 * Ammonium: NH₄ (μmolN/L)
 * Phosphate: PO₄ (μmolP/L)
-* Dissolved iron: Fe (pmolFe/L)
+* Dissolved iron: Fe (nmolFe/L)
 * Silicate: Si (μmolSi/L)
 * Calcite: CaCO₃ (μmolC/L)
 * Dissolved oxygen: O₂ (μmolO₂/L)
@@ -474,7 +474,7 @@ end
                    non_assimilated_fraction :: ZM = (Z = 0.3, M = 0.3),
                    excretion_as_DOM :: ZM = (Z = 0.6, M = 0.6),
                    max_grazing_rate :: ZM = (Z = 3.0/day, M = 0.75/day),                       #1/d
-                   flux_feeding_rate :: FT = 2.0e3,                                #(m mol L⁻¹)⁻¹
+                   flux_feeding_rate :: FT = 2.0e-3,                                #(m mol L⁻¹)⁻¹
                    half_saturation_const_for_grazing :: ZM = (Z = 20.0, M = 20.0),               #μmolCL⁻¹
                    preference_for_nanophytoplankton :: ZM = (Z = 1.0, M = 0.3),
                    preference_for_diatoms :: ZM = (Z = 0.5, M = 1.0),
@@ -625,8 +625,8 @@ function PISCES(; grid, # finally the function
                    min_half_saturation_const_for_iron_uptake :: PD = (P = 1.0, D = 3.0),   #nmolFeL⁻¹
                    size_ratio_of_phytoplankton :: PD = (P = 3.0, D = 3.0),
                    optimal_SiC_uptake_ratio_of_diatoms :: FT = 0.159,       #molSi/(mol C)
-                   optimal_iron_quota :: PD = (P = 7.0, D = 7.0),               #μmolFe/(mol C)
-                   max_iron_quota :: PD = (P = 40.0, D = 40.0),                  #μmolFe/(mol C)
+                   optimal_iron_quota :: PD = (P = 7.0, D = 7.0),               #mmolFe/(mol C)
+                   max_iron_quota :: PD = (P = 40.0, D = 40.0),                  #molFe/(mol C)
                    phytoplankton_mortality_rate :: PD = (P = 0.01/day, D = 0.01/day),
                    min_quadratic_mortality_of_phytoplankton :: FT = 0.01 / day,   #1/(d mol C)
                    max_quadratic_mortality_of_diatoms :: FT = 0.03 / day,         #1/(d mol C)
@@ -643,7 +643,7 @@ function PISCES(; grid, # finally the function
                    non_assimilated_fraction :: ZM = (Z = 0.3, M = 0.3),
                    excretion_as_DOM :: ZM = (Z = 0.6, M = 0.6),
                    max_grazing_rate :: ZM = (Z = 3.0/day, M = 0.75/day),                       #1/d
-                   flux_feeding_rate :: FT = 2.0e3,                                #(m mol L⁻¹)⁻¹
+                   flux_feeding_rate :: FT = 2.0e-3,                                #(m mol L⁻¹)⁻¹
                    half_saturation_const_for_grazing :: ZM = (Z = 20.0, M = 20.0),               #μmolCL⁻¹
                    preference_for_nanophytoplankton :: ZM = (Z = 1.0, M = 0.3),
                    preference_for_diatoms :: ZM = (Z = 0.5, M = 1.0),
@@ -656,8 +656,8 @@ function PISCES(; grid, # finally the function
                    zooplankton_linear_mortality :: ZM = (Z = 0.03/day, M = 0.005/day),           #1/d
                    half_saturation_const_for_mortality :: FT = 0.2,                     #μmolCL⁻¹
                    fraction_of_calcite_not_dissolving_in_guts :: ZM = (Z = 0.5, M = 0.75),
-                   FeC_ratio_of_zooplankton :: FT = 10.0,                                  #μmolFe molC⁻¹
-                   FeZ_redfield_ratio :: FT = 3.0,             #μmolFe molC⁻¹
+                   FeC_ratio_of_zooplankton :: FT = 10.0e-3,                                  #mmolFe molC⁻¹
+                   FeZ_redfield_ratio :: FT = 3.0e-3,             #mmolFe molC⁻¹, remove this, is actually FeC_ratio_of_zooplankton
    
    
                    remineralisation_rate_of_DOC :: FT = 0.3 / day,                 #1/d
@@ -678,7 +678,7 @@ function PISCES(; grid, # finally the function
                    min_sinking_speed_of_GOC :: FT = 30.0 / day,               #md⁻¹
                    sinking_speed_of_dust :: FT = 2.0,                         #ms⁻¹
                    aggregation_rate_of_POC_to_GOC_6 :: FT = 25.9 / day,     #(μmolCL⁻¹)⁻¹d⁻¹
-                   aggregation_rate_of_POC_to_GOC_7 :: FT = 4452 / day,     #(μmolCL⁻¹)⁻¹d⁻¹
+                   aggregation_rate_of_POC_to_GOC_7 :: FT = 4452.0 / day,     #(μmolCL⁻¹)⁻¹d⁻¹
                    aggregation_rate_of_POC_to_GOC_8 :: FT = 3.3 / day,      #(μmolCL⁻¹)⁻¹d⁻¹
                    aggregation_rate_of_POC_to_GOC_9 :: FT = 47.1 / day,     #(μmolCL⁻¹)⁻¹d⁻¹
                    min_scavenging_rate_of_iron :: FT = 3.0e-5 / day,          #1/d
@@ -892,11 +892,11 @@ function PISCES(; grid, # finally the function
                            modifiers)
 end
 
-@inline biogeochemical_auxiliary_fields(bgc::PISCES) = (zₘₓₗ = bgc.mixed_layer_depth, zₑᵤ = bgc.euphotic_layer_depth, Si̅ = bgc.yearly_maximum_silicate, D_dust = bgc.dust_deposition, PAR¹ = ConstantField(100), PAR² = ConstantField(100), PAR³ = ConstantField(100), Ω = bgc.carbonate_sat_ratio)
+@inline biogeochemical_auxiliary_fields(bgc::PISCES) = (zₘₓₗ = bgc.mixed_layer_depth, zₑᵤ = bgc.euphotic_layer_depth, Si̅ = bgc.yearly_maximum_silicate, D_dust = bgc.dust_deposition, Ω = bgc.carbonate_sat_ratio)
 
 @inline required_biogeochemical_tracers(::PISCES) = (:P, :D, :Z, :M, :Pᶜʰˡ, :Dᶜʰˡ, :Pᶠᵉ, :Dᶠᵉ, :Dˢⁱ, :DOC, :POC, :GOC, :SFe, :BFe, :PSi, :NO₃, :NH₄, :PO₄, :Fe, :Si, :CaCO₃, :DIC, :Alk, :O₂, :T) # list all the parameters here, also if you need T and S put them here too
 
-@inline required_biogeochemical_auxiliary_fields(::PISCES) = (:PAR, :PAR¹, :PAR², :PAR³, :zₘₓₗ, :zₑᵤ, :Si̅, :D_dust, :Ω)
+@inline required_biogeochemical_auxiliary_fields(::PISCES) = (:zₘₓₗ, :zₑᵤ, :Si̅, :D_dust, :Ω, :PAR, :PAR¹, :PAR², :PAR³, )
 
 # for sinking things like POM this is how we tell oceananigans ther sinking speed
 @inline function biogeochemical_drift_velocity(bgc::PISCES, ::Val{tracer_name}) where tracer_name
