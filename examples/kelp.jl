@@ -144,7 +144,7 @@ for (n, t) in enumerate(times)
 
     air_sea_CO₂_flux[n] = CO₂_flux.condition.func(1, 1, grid, clock, (; DIC = DIC[n], Alk = Alk[n], T, S))
 
-    carbon_export[i] = sPOC[n][1, 1, grid.Nz-20] * biogeochemical_drift_velocity(biogeochemistry, Val(:sPOC)).w[1, 1, grid.Nz-20] +
+    carbon_export[n] = sPOC[n][1, 1, grid.Nz-20] * biogeochemical_drift_velocity(biogeochemistry, Val(:sPOC)).w[1, 1, grid.Nz-20] +
                        bPOC[n][1, 1, grid.Nz-20] * biogeochemical_drift_velocity(biogeochemistry, Val(:bPOC)).w[1, 1, grid.Nz-20]
 end
 

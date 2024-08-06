@@ -160,7 +160,7 @@ for (n, t) in enumerate(times)
 
     air_sea_CO₂_flux[n] = CO₂_flux.condition.func(1, 1, grid, clock, (; DIC = DIC[n], Alk = Alk[n], T, S))
 
-    carbon_export[i] = (sPOM[n][1, 1, grid.Nz-20] * biogeochemical_drift_velocity(model.biogeochemistry, Val(:sPOM)).w[1, 1, grid.Nz-20] +
+    carbon_export[n] = (sPOM[n][1, 1, grid.Nz-20] * biogeochemical_drift_velocity(model.biogeochemistry, Val(:sPOM)).w[1, 1, grid.Nz-20] +
                         bPOM[n][1, 1, grid.Nz-20] * biogeochemical_drift_velocity(model.biogeochemistry, Val(:bPOM)).w[1, 1, grid.Nz-20]) * redfield(Val(:sPOM), model.biogeochemistry)
 end
 
