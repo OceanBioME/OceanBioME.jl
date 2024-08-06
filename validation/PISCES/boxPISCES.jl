@@ -40,13 +40,13 @@ PAR³ = FunctionField{Center, Center, Center}(PAR_func3, grid; clock)
 nothing #hide
 
 # Set up the model. Here, first specify the biogeochemical model, followed by initial conditions and the start and end times
-model = BoxModel(; biogeochemistry = PISCES(; grid, light_attenuation_model = PrescribedPhotosyntheticallyActiveRadiation((; PAR, PAR¹, PAR², PAR³))),
+model = BoxModel(; biogeochemistry = PISCES(; grid, light_attenuation_model = PrescribedPhotosyntheticallyActiveRadiation((; PAR, PAR¹, PAR², PAR³)), flux_feeding_rate = 2.0e-3),
                    clock)
+#set!(model, P = 0.0, D = 1.0, Z = 2.0, M = 3.0, Pᶜʰˡ= 4.0, Dᶜʰˡ = 5.0, Pᶠᵉ = 6.0, Dᶠᵉ = 7.0, Dˢⁱ = 8.0, DOC = 9.0, POC = 10.0, GOC = 11.0, SFe = 12.0, BFe = 13.0, PSi = 14.0, NO₃ = 15.0, NH₄ = 16.0, PO₄ = 17.0, Fe = 18.0, Si = 19.0, CaCO₃ = 20.0, DIC = 21.0, Alk = 22.0, O₂ = 23.0, T = 14.0)
+set!(model, NO₃ = 4.0, NH₄ = 0.1, P = 4.26, D = 4.26, Z = 0.426, M = 0.426, Pᶠᵉ = 3.50, Dᶠᵉ = 3.50, Pᶜʰˡ = .1, Dᶜʰˡ = .01, Dˢⁱ = 0.525, Fe = 0.00082410, O₂ = 264.0, Si = 4.557, Alk = 2360.0, PO₄ = 0.8114, DIC = 2000.0, CaCO₃ = 0.0001, T = 14.0)
+#set!(model,P = 3.963367728460601, D = 3.763831823528108, Z = 0.620887631503286,  M = 0.4911996116700677, Pᶜʰˡ = 0.1263393104069646,  Dᶜʰˡ = 0.0966272698878372, Pᶠᵉ = 2.916749891527781, Dᶠᵉ = 2.6966762460922764, Dˢⁱ = 0.5250058442518801, DOC = 5.492834645446811e-5, POC = 0.00010816947467085888, GOC = 1.541376629008023, SFe = 6.94778354330689e-5, BFe = 1.3780182342394662, PSi = 0.138718322180627, NO₃ = 3.862629483089866, NH₄ = 0.10480738012675432, PO₄ = 0.8031309301476024, Fe = 0.00024547654218086575, Si = 4.413896794698411, CaCO₃ = 0.011644257272404535, DIC = 1998.9796292207268, Alk = 2360.118267032333, O₂ = 265.37453137881016, T = 14.0)
 
-#set!(model, NO₃ = 4.0, NH₄ = 0.1, P = 4.26, D = .426, Z = 0.426, M = 0.426, Pᶠᵉ = 3.50, Dᶠᵉ = 3.50, Pᶜʰˡ = .1, Dᶜʰˡ = .01, Dˢⁱ = 0.525, Fe = 0.00082410, O₂ = 264.0, Si = 4.557, Alk = 2360.0, PO₄ = 0.8114, DIC = 2000.0, CaCO₃ = 0.0001, T = 14.0)
-set!(model, P = 3.4969507431335574, D = 3.045411522412732, Z = 0.06632989062825102,  M = 0.2013934196815033, Pᶜʰˡ = 0.1649236496634812,  Dᶜʰˡ = 0.1744075407918407, Pᶠᵉ = 0.629885753182277, Dᶠᵉ = 0.5811469701875243, Dˢⁱ = 0.6798967635852701, DOC = 0.00038765439868301653, POC = 0.0015526645806093746, GOC = 15.59902032438512, SFe = 0.0003450130201159402, BFe = 3.7215124823095893, PSi = 0.5404372397384611, NO₃ = 2.828750058046986, NH₄ = 0.5246932481313445, PO₄ = 0.7647402066361438, Fe = 2.240993210202666e-5, Si = 3.7394628646278316, CaCO₃ = 0.00933485588389991, DIC = 1994.2982703537236, Alk = 2361.5639068719747, O₂ = 272.5482524012977, T = 14.0)
-
-simulation = Simulation(model; Δt = 5minutes, stop_time = 7hours)
+simulation = Simulation(model; Δt = 5minutes, stop_time = 40minutes)
 
 simulation.output_writers[:fields] = JLD2OutputWriter(model, model.fields; filename = "box.jld2", schedule = TimeInterval(5minutes), overwrite_existing = true)
 
@@ -99,5 +99,10 @@ end
 fi = length(timeseries.P)
 
 println("P = $(timeseries.P[fi]), D = $(timeseries.D[fi]), Z = $(timeseries.Z[fi]),  M = $(timeseries.M[fi]), Pᶜʰˡ = $(timeseries.Pᶜʰˡ[fi]),  Dᶜʰˡ = $(timeseries.Dᶜʰˡ[fi]), Pᶠᵉ = $(timeseries.Pᶠᵉ[fi]), Dᶠᵉ = $(timeseries.Dᶠᵉ[fi]), Dˢⁱ = $(timeseries.Dˢⁱ[fi]), DOC = $(timeseries.DOC[fi]), POC = $(timeseries.POC[fi]), GOC = $(timeseries.GOC[fi]), SFe = $(timeseries.SFe[fi]), BFe = $(timeseries.BFe[fi]), PSi = $(timeseries.PSi[fi]), NO₃ = $(timeseries.NO₃[fi]), NH₄ = $(timeseries.NH₄[fi]), PO₄ = $(timeseries.PO₄[fi]), Fe = $(timeseries.Fe[fi]), Si = $(timeseries.Si[fi]), CaCO₃ = $(timeseries.CaCO₃[fi]), DIC = $(timeseries.DIC[fi]), Alk = $(timeseries.Alk[fi]), O₂ = $(timeseries.O₂[fi]), T = 14.0")
+
+Carbon_at_start = timeseries.P[1] + timeseries.D[1] + timeseries.Z[1] + timeseries.M[1] + timeseries.DOC[1] + timeseries.POC[1] + timeseries.GOC[1] + timeseries.DIC[1] + timeseries.CaCO₃[1]
+Carbon_at_end = timeseries.P[fi] + timeseries.D[fi] + timeseries.Z[fi] + timeseries.M[fi] + timeseries.DOC[fi] + timeseries.POC[fi] + timeseries.GOC[fi] + timeseries.DIC[fi] + timeseries.CaCO₃[fi]
+
+println("Carbon at start = ", Carbon_at_start, "Carbon at end = ", Carbon_at_end)
 
 fig
