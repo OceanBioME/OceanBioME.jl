@@ -115,7 +115,7 @@ carbon_export = zeros(length(times))
 
 using Oceananigans.Biogeochemistry: biogeochemical_drift_velocity
 
-for (n, t) in enumerate(times)(i, j, grid, clock, model_fields)
+for (n, t) in enumerate(times)
     clock.time = t
 
     air_sea_CO₂_flux[n] = CO₂_flux.condition.func(1, 1, grid, clock, (; DIC = DIC[n], Alk = Alk[n], T, S))
