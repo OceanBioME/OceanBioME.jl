@@ -1,3 +1,7 @@
+
+# This documeent contains functions for:
+    # Φ, POC, GOC
+
 @inline function get_Φ(POC, GOC, sh, bgc)
     a₆ = bgc.aggregation_rate_of_POC_to_GOC_6
     a₇ = bgc.aggregation_rate_of_POC_to_GOC_7
@@ -9,9 +13,8 @@ end
 
 @inline function (bgc::PISCES)(::Val{:POC}, x, y, z, t, P, D, Z, M, Pᶜʰˡ, Dᶜʰˡ, Pᶠᵉ, Dᶠᵉ, Dˢⁱ, DOC, POC, GOC, SFe, BFe, PSi, NO₃, NH₄, PO₄, Fe, Si, CaCO₃, DIC, Alk, O₂, T, zₘₓₗ, zₑᵤ, Si̅, D_dust, Ω, PAR, PAR¹, PAR², PAR³)
     σᶻ = bgc.non_assimilated_fraction.Z
-    mᴾ = bgc.phytoplankton_mortality_rate.P
+    mᴾ, mᴰ = bgc.phytoplankton_mortality_rate
     mᶻ = bgc.zooplankton_quadratic_mortality.Z
-    mᴰ = bgc.phytoplankton_mortality_rate.D
     wᴾ = bgc.min_quadratic_mortality_of_phytoplankton
     wₚₒ = bgc.sinking_speed_of_POC
     rᶻ = bgc.zooplankton_linear_mortality.Z
@@ -31,10 +34,10 @@ end
     Φ₃ᴰᴼᶜ = Φᴰᴼᶜ(DOC, POC, GOC, sh, bgc)[3]
 
     gₚₒᴹ = get_grazingᴹ(P, D, Z, POC, T, bgc)[4]
-    gₚₒ_FFᴹ = g_FF*bₘ^T*wₚₒ*POC #29a
+    gₚₒ_FFᴹ = g_FF*(bₘ^T)*wₚₒ*POC #29a
     Φ = get_Φ(POC, GOC, sh, bgc)
 
-    return σᶻ*∑gᶻ*Z + 0.5*mᴰ*K_mondo(D, Kₘ)*D + rᶻ*b_Z^T*(K_mondo(Z, Kₘ) + 3*ΔO₂(O₂, bgc))*Z + mᶻ*b_Z^T*Z^2 + (1 - 0.5*R_CaCO₃)*(mᴾ*K_mondo(P, Kₘ)*P + wᴾ*P^2) + λₚₒ¹*GOC + Φ₁ᴰᴼᶜ + Φ₃ᴰᴼᶜ - (gₚₒᴹ + gₚₒ_FFᴹ)*M - gₚₒᶻ*Z - λₚₒ¹*POC - Φ  #37
+    return σᶻ*∑gᶻ*Z + 0.5*mᴰ*K_mondo(D, Kₘ)*D + rᶻ*(b_Z^T)*(K_mondo(Z, Kₘ) + 3*ΔO₂(O₂, bgc))*Z + mᶻ*(b_Z^T)*Z^2 + (1 - 0.5*R_CaCO₃)*(mᴾ*K_mondo(P, Kₘ)*P + wᴾ*P^2) + λₚₒ¹*GOC + Φ₁ᴰᴼᶜ + Φ₃ᴰᴼᶜ - (gₚₒᴹ + gₚₒ_FFᴹ)*M - gₚₒᶻ*Z - λₚₒ¹*POC - Φ  #37
 end
 
 @inline function (bgc::PISCES)(::Val{:GOC}, x, y, z, t, P, D, Z, M, Pᶜʰˡ, Dᶜʰˡ, Pᶠᵉ, Dᶠᵉ, Dˢⁱ, DOC, POC, GOC, SFe, BFe, PSi, NO₃, NH₄, PO₄, Fe, Si, CaCO₃, DIC, Alk, O₂, T, zₘₓₗ, zₑᵤ, Si̅, D_dust, Ω, PAR, PAR¹, PAR², PAR³)
