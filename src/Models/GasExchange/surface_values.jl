@@ -22,7 +22,9 @@ end
 
 @inline surface_value(f::DiscreteSurfaceFuncton, i, j, grid, clock, args...) = f.func(i, j, grid, clock, args...)
 
-@inline surface_value(f::AbstractField, i, j, grid, clock, args...) = @inbounds f[i, j, grid.Nz]
+# GPU compatible, mainly for fields
+@inline surface_value(f::AbstractArray{<:Any, 2}, i, j, grid, clock, args...) = @inbounds f[i, j]
+@inline surface_value(f::AbstractArray{<:Any, 3}, i, j, grid, clock, args...) = @inbounds f[i, j, grid.Nz]
 
 # fallback
 normalise_surface_function(f; kwargs...) = f
