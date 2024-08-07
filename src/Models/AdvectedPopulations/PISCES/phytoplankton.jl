@@ -276,7 +276,7 @@ end
     μ̌ᴾ = μᴾ / f₁(L_day) #15b
     ρᴾᶜʰˡ = 144*μ̌ᴾ * P / (αᴾ* Pᶜʰˡ* ((PARᴾ)/(L_day + eps(0.0))) + eps(0.0)) #15a
 
-    return (1-δᴾ)*(12*θₘᵢₙᶜʰˡ + (θₘₐₓᶜʰˡᴾ - θₘᵢₙᶜʰˡ)*ρᴾᶜʰˡ)*μᴾ*P - mᴾ*K_mondo(P, Kₘ)*Pᶜʰˡ - sh*wᴾ*P*Pᶜʰˡ - θ(Pᶜʰˡ, P)*gₚᶻ*Z - θ(Pᶜʰˡ, P)*gₚᴹ*M  #14
+    return ((1-δᴾ)*(12*θₘᵢₙᶜʰˡ + (θₘₐₓᶜʰˡᴾ - θₘᵢₙᶜʰˡ)*ρᴾᶜʰˡ)*μᴾ*P - mᴾ*K_mondo(P, Kₘ)*Pᶜʰˡ - sh*wᴾ*P*Pᶜʰˡ - θ(Pᶜʰˡ, P)*gₚᶻ*Z - θ(Pᶜʰˡ, P)*gₚᴹ*M)  #14
 end
 
 @inline function (bgc::PISCES)(::Val{:Dᶜʰˡ}, x, y, z, t, P, D, Z, M, Pᶜʰˡ, Dᶜʰˡ, Pᶠᵉ, Dᶠᵉ, Dˢⁱ, DOC, POC, GOC, SFe, BFe, PSi, NO₃, NH₄, PO₄, Fe, Si, CaCO₃, DIC, Alk, O₂, T, zₘₓₗ, zₑᵤ, Si̅, D_dust, Ω, PAR, PAR¹, PAR², PAR³)

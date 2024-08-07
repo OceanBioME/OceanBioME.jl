@@ -37,7 +37,9 @@ end
     gₚₒ_FFᴹ = g_FF*(bₘ^T)*wₚₒ*POC #29a
     Φ = get_Φ(POC, GOC, sh, bgc)
 
-    return σᶻ*∑gᶻ*Z + 0.5*mᴰ*K_mondo(D, Kₘ)*D + rᶻ*(b_Z^T)*(K_mondo(Z, Kₘ) + 3*ΔO₂(O₂, bgc))*Z + mᶻ*(b_Z^T)*Z^2 + (1 - 0.5*R_CaCO₃)*(mᴾ*K_mondo(P, Kₘ)*P + sh*wᴾ*P^2) + λₚₒ¹*GOC + Φ₁ᴰᴼᶜ + Φ₃ᴰᴼᶜ - (gₚₒᴹ + gₚₒ_FFᴹ)*M - gₚₒᶻ*Z - λₚₒ¹*POC - Φ  #37
+    return (σᶻ*∑gᶻ*Z + 0.5*mᴰ*K_mondo(D, Kₘ)*D + rᶻ*(b_Z^T)*(K_mondo(Z, Kₘ) + 3*ΔO₂(O₂, bgc))*Z 
+            + mᶻ*(b_Z^T)*Z^2 + (1 - 0.5*R_CaCO₃)*(mᴾ*K_mondo(P, Kₘ)*P + sh*wᴾ*P^2) 
+            + λₚₒ¹*GOC + Φ₁ᴰᴼᶜ + Φ₃ᴰᴼᶜ - (gₚₒᴹ + gₚₒ_FFᴹ)*M - gₚₒᶻ*Z - λₚₒ¹*POC - Φ)  #37
 end
 
 @inline function (bgc::PISCES)(::Val{:GOC}, x, y, z, t, P, D, Z, M, Pᶜʰˡ, Dᶜʰˡ, Pᶠᵉ, Dᶠᵉ, Dˢⁱ, DOC, POC, GOC, SFe, BFe, PSi, NO₃, NH₄, PO₄, Fe, Si, CaCO₃, DIC, Alk, O₂, T, zₘₓₗ, zₑᵤ, Si̅, D_dust, Ω, PAR, PAR¹, PAR², PAR³)
@@ -69,5 +71,7 @@ end
     g_GOC_FFᴹ = g_FF*bₘ^T*w_GOC*GOC #29b
     λₚₒ¹ = λ¹(T, O₂, bgc)
 
-    return σᴹ*(∑gᴹ + ∑g_FFᴹ)*M + rᴹ*bₘ^T*(K_mondo(M, Kₘ) + 3*ΔO₂(O₂, bgc))*M + Pᵤₚᴹ + 0.5*R_CaCO₃*(mᴾ*K_mondo(P, Kₘ)*P + sh*wᴾ*P^2) + 0.5*mᴰ*K_mondo(D, Kₘ)*D + sh*D^2*wᴰ + Φ + Φ₂ᴰᴼᶜ - g_GOC_FFᴹ*M - λₚₒ¹*GOC     #40   assumed that there is a typo in the D^2 instead of D^3
+    return (σᴹ*(∑gᴹ + ∑g_FFᴹ)*M + rᴹ*bₘ^T*(K_mondo(M, Kₘ) + 3*ΔO₂(O₂, bgc))*M 
+            + Pᵤₚᴹ + 0.5*R_CaCO₃*(mᴾ*K_mondo(P, Kₘ)*P + sh*wᴾ*P^2) + 0.5*mᴰ*K_mondo(D, Kₘ)*D
+            + sh*D^2*wᴰ + Φ + Φ₂ᴰᴼᶜ - g_GOC_FFᴹ*M - λₚₒ¹*GOC)     #40 
 end
