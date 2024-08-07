@@ -18,6 +18,8 @@ Optional
 """ 
 module SLatissimaModel
 
+export SLatissima
+
 using Roots, KernelAbstractions
 using OceanBioME.Particles: BiogeochemicalParticles, get_node
 using Oceananigans.Units

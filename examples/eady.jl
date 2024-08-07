@@ -57,7 +57,7 @@ biogeochemistry = LOBSTER(; grid,
                             carbonates = true,
                             open_bottom = true)
 
-DIC_bcs = FieldBoundaryConditions(top = GasExchange(; gas = :CO₂))
+DIC_bcs = FieldBoundaryConditions(top = CarbonDioxideGasExchangeBoundaryCondition())
 
 # Model instantiation
 model = NonhydrostaticModel(; grid,

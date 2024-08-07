@@ -14,7 +14,6 @@
 # ## Model setup
 # We load the packages and choose the default LOBSTER parameter set
 using OceanBioME, Oceananigans, Printf
-using OceanBioME.SLatissimaModel: SLatissima
 using Oceananigans.Fields: FunctionField, ConstantField
 using Oceananigans.Units
 
@@ -52,7 +51,7 @@ biogeochemistry = LOBSTER(; grid,
                             carbonates = true,
                             scale_negatives = true)
 
-CO₂_flux = GasExchange(; gas = :CO₂)
+CO₂_flux = CarbonDioxideGasExchangeBoundaryCondition()
 
 clock = Clock(; time = 0.0)
 T = FunctionField{Center, Center, Center}(temp, grid; clock)
@@ -116,10 +115,12 @@ carbon_export = zeros(length(times))
 
 using Oceananigans.Biogeochemistry: biogeochemical_drift_velocity
 
-for (i, t) in enumerate(times)
-    air_sea_CO₂_flux[i] = CO₂_flux.condition.func(0.0, 0.0, t, DIC[1, 1, grid.Nz, i], Alk[1, 1, grid.Nz, i], temp(1, 1, 0, t), 35)
-    carbon_export[i] = (sPOM[1, 1, grid.Nz-20, i] * biogeochemical_drift_velocity(model.biogeochemistry, Val(:sPOM)).w[1, 1, grid.Nz-20] +
-                        bPOM[1, 1, grid.Nz-20, i] * biogeochemical_drift_velocity(model.biogeochemistry, Val(:bPOM)).w[1, 1, grid.Nz-20]) * redfield(Val(:sPOM), model.biogeochemistry)
+for (n, t) in enumerate(times)
+    clock.time = t
+
+    air_sea_CO₂_flux[n] = CO₂_flux.condition.func(1, 1, grid, clock, (; DIC = DIC[n], Alk = Alk[n], T, S))
+    carbon_export[n] = (sPOM[n][1, 1, grid.Nz-20] * biogeochemical_drift_velocity(model.biogeochemistry, Val(:sPOM)).w[1, 1, grid.Nz-20] +
+                        bPOM[n][1, 1, grid.Nz-20] * biogeochemical_drift_velocity(model.biogeochemistry, Val(:bPOM)).w[1, 1, grid.Nz-20]) * redfield(Val(:sPOM), model.biogeochemistry)
 end
 
 # Both `air_sea_CO₂_flux` and `carbon_export` are in units `mmol CO₂ / (m² s)`.

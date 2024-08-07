@@ -9,7 +9,7 @@ using Oceananigans.Fields: TracerFields
 
 using Oceananigans.Operators: volume, Azᶠᶜᶜ
 
-using OceanBioME.LOBSTERModel: VariableRedfieldLobster
+using OceanBioME.Models.LOBSTERModel: VariableRedfieldLobster
 
 function intercept_tracer_tendencies!(model, intercepted_tendencies)
     for (name, field) in enumerate(intercepted_tendencies)

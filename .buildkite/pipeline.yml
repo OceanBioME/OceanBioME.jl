@@ -20,7 +20,7 @@ steps:
 
   - label: ":speedboat: GPU unit tests"
     commands: 
-     - "$JULIA_PATH/julia-$JULIA_VERSION/bin/julia -O0 --color=yes --project -e 'using Pkg; Pkg.Registry.update(); Pkg.test()'"
+     - "$JULIA_PATH/julia-$JULIA_VERSION/bin/julia -O0 --color=yes --project --check-bounds=yes -e 'using Pkg; Pkg.Registry.update(); Pkg.test()'"
     depends_on: "init"
     notify:
       - github_commit_status:
@@ -30,7 +30,7 @@ steps:
     env:
      CUDA_VISIBLE_DEVICES: "-1"
     commands: 
-     - "$JULIA_PATH/julia-$JULIA_VERSION/bin/julia -O0 --color=yes --project -e 'using Pkg; Pkg.Registry.update(); Pkg.test()'"
+     - "$JULIA_PATH/julia-$JULIA_VERSION/bin/julia -O0 --color=yes --project --check-bounds=yes -e 'using Pkg; Pkg.Registry.update(); Pkg.test()'"
     depends_on: "init"
     notify:
       - github_commit_status:

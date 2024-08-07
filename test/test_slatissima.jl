@@ -1,6 +1,6 @@
 include("dependencies_for_runtests.jl")
 
-using OceanBioME.SLatissimaModel: SLatissima
+using OceanBioME: SLatissima
 using Oceananigans.Units
 using Oceananigans.Fields: TracerFields
 using Oceananigans.Architectures: on_architecture
