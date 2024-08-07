@@ -176,7 +176,7 @@ struct PISCES{FT, PD, ZM, OT, W, CF, ZF} <: AbstractContinuousFormBiogeochemistr
     coefficient_of_bacterial_uptake_of_iron_in_POC :: FT
     coefficient_of_bacterial_uptake_of_iron_in_GOC :: FT
     max_FeC_ratio_of_bacteria :: FT
-    Fe_half_saturation_const_for_PLACEHOLDER :: FT    #not sure what this should be called
+    Fe_half_saturation_const_for_Bacteria :: FT    #not sure what this should be called
     proportion_of_sinking_grazed_shells :: ZM
 
     mixed_layer_depth :: CF
@@ -298,7 +298,7 @@ struct PISCES{FT, PD, ZM, OT, W, CF, ZF} <: AbstractContinuousFormBiogeochemistr
                     coefficient_of_bacterial_uptake_of_iron_in_POC :: FT,
                     coefficient_of_bacterial_uptake_of_iron_in_GOC :: FT,
                     max_FeC_ratio_of_bacteria :: FT,
-                    Fe_half_saturation_const_for_PLACEHOLDER :: FT,    #not sure what this should be called
+                    Fe_half_saturation_const_for_Bacteria :: FT,    #not sure what this should be called
                     proportion_of_sinking_grazed_shells :: ZM,
                     
                     mixed_layer_depth :: CF,
@@ -420,7 +420,7 @@ struct PISCES{FT, PD, ZM, OT, W, CF, ZF} <: AbstractContinuousFormBiogeochemistr
                             coefficient_of_bacterial_uptake_of_iron_in_POC,
                             coefficient_of_bacterial_uptake_of_iron_in_GOC,
                             max_FeC_ratio_of_bacteria,
-                            Fe_half_saturation_const_for_PLACEHOLDER,    #not sure what this should be called
+                            Fe_half_saturation_const_for_Bacteria,    #not sure what this should be called
                             proportion_of_sinking_grazed_shells,
 
                             mixed_layer_depth,
@@ -547,7 +547,7 @@ end
                    coefficient_of_bacterial_uptake_of_iron_in_POC :: FT = 0.5,
                    coefficient_of_bacterial_uptake_of_iron_in_GOC :: FT = 0.5,
                    max_FeC_ratio_of_bacteria :: FT = 10.0e-6,     #or 6
-                   Fe_half_saturation_const_for_PLACEHOLDER :: FT = 2.5e-10, #or 2.5e-10    #not sure what this should be called
+                   Fe_half_saturation_const_for_Bacteria :: FT = 2.5e-10, #or 2.5e-10    #not sure what this should be called
                    proportion_of_sinking_grazed_shells :: ZM = (Z = 0.3, M = 0.3),  # 0.3 for both? not sure
 
                    mixed_layer_depth :: CF = ConstantField(100),
@@ -716,7 +716,7 @@ function PISCES(; grid, # finally the function
                    coefficient_of_bacterial_uptake_of_iron_in_POC :: FT = 0.5,
                    coefficient_of_bacterial_uptake_of_iron_in_GOC :: FT = 0.5,
                    max_FeC_ratio_of_bacteria :: FT = 10.0e-3,     #or 6
-                   Fe_half_saturation_const_for_PLACEHOLDER :: FT = 0.03, #or 2.5e-10    #not sure what this should be called
+                   Fe_half_saturation_const_for_Bacteria :: FT = 0.03, #or 2.5e-10    #not sure what this should be called
                    proportion_of_sinking_grazed_shells :: ZM = (Z = 0.3, M = 0.3),  # 0.3 for both? not sure
 
                    mixed_layer_depth :: CF = ConstantField(100),
@@ -860,7 +860,7 @@ function PISCES(; grid, # finally the function
                                         coefficient_of_bacterial_uptake_of_iron_in_POC,
                                         coefficient_of_bacterial_uptake_of_iron_in_GOC,
                                         max_FeC_ratio_of_bacteria,
-                                        Fe_half_saturation_const_for_PLACEHOLDER,    #not sure what this should be called
+                                        Fe_half_saturation_const_for_Bacteria,    #not sure what this should be called
                                         proportion_of_sinking_grazed_shells,
 
                                         mixed_layer_depth,

@@ -14,8 +14,7 @@
     return λ_Feᵐⁱⁿ + λ_Fe*(POC + GOC + CaCO₃ + PSi) + λ_Feᵈᵘˢᵗ*Dust #eq50
 end
 
-@inline Scav(POC, GOC, CaCO₃, PSi, D_dust, DOC, T, Fe, bgc) = 0.0
-# λ_Fe¹(POC, GOC, CaCO₃, PSi, D_dust, bgc)*get_Fe¹(Fe, DOC, T)
+@inline Scav(POC, GOC, CaCO₃, PSi, D_dust, DOC, T, Fe, bgc) = λ_Fe¹(POC, GOC, CaCO₃, PSi, D_dust, bgc)*get_Fe¹(Fe, DOC, T)
 
 @inline function (bgc::PISCES)(::Val{:SFe}, x, y, z, t, P, D, Z, M, Pᶜʰˡ, Dᶜʰˡ, Pᶠᵉ, Dᶠᵉ, Dˢⁱ, DOC, POC, GOC, SFe, BFe, PSi, NO₃, NH₄, PO₄, Fe, Si, CaCO₃, DIC, Alk, O₂, T, zₘₓₗ, zₑᵤ, Si̅, D_dust, Ω, PAR, PAR¹, PAR², PAR³) 
     #Parameters
