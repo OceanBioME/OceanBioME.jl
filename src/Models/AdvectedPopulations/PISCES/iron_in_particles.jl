@@ -53,7 +53,7 @@ end
     Bactfe = get_Bactfe(μₘₐₓ⁰, z, Z, M, Fe, DOC, PO₄, NO₃, NH₄, bFe, T, zₘₐₓ, bgc)
 
     return (σᶻ*∑θᶠᵉⁱgᵢᶻ*Z 
-            + θᶠᵉᶻ*(rᶻ*(b_Z^T)*(K_mondo(Z, Kₘ) + 3ΔO₂)*Z + mᶻ*(b_Z^T)*(Z^2)) 
+            + θᶠᵉᶻ*(rᶻ*(b_Z^T)*(K_mondo(Z, Kₘ) + 3*ΔO₂(O₂, bgc))*Z + mᶻ*(b_Z^T)*(Z^2)) 
             + λₚₒ¹*BFe 
             + θᶠᵉᴾ*(1 - 0.5*get_R_CaCO₃(P, PO₄, NO₃, NH₄, Pᶜʰˡ, Pᶠᵉ, Fe, T, PAR, zₘₓₗ, bgc))*(mᴾ*K_mondo(P, Kₘ)*P + sh*wᴾ*P^2) 
             + θᶠᵉᴰ*0.5*mᴰ*K_mondo(D, Kₘ)*D + λ_Fe*POC*Fe¹ 
@@ -105,7 +105,7 @@ end
     g_GOC_FFᴹ = g_FF*bₘ^T*w_GOC*GOC 
 
     return (σᴹ*(∑θᶠᵉⁱgᵢᴹ + θᶠᵉᴾᴼᶜ*gₚₒ_FFᴹ + θᶠᵉᴳᴼᶜ*g_GOC_FFᴹ)*M 
-            + θᶠᵉᶻ*(rᴹ*(bₘ^T)*(K_mondo(M, Kₘ) + 3ΔO₂)*M + Pᵤₚ(M, T, bgc)) 
+            + θᶠᵉᶻ*(rᴹ*(bₘ^T)*(K_mondo(M, Kₘ) + 3*ΔO₂(O₂, bgc))*M + Pᵤₚ(M, T, bgc)) 
             + θᶠᵉᴾ*0.5*get_R_CaCO₃(P, PO₄, NO₃, NH₄, Pᶜʰˡ, Pᶠᵉ, Fe, T, PAR, zₘₓₗ, bgc)*(mᴾ*K_mondo(P, Kₘ)*P + sh*wᴾ*P^2) 
             + θᶠᵉᴰ*(0.5*mᴰ*K_mondo(D, Kₘ)*D + sh*wᴰ*D^2) 
             + κ_Bactᴮᶠᵉ*get_Bactfe(μₘₐₓ⁰, z, Z, M, Fe, DOC, PO₄, NO₃, NH₄, bFe, T, zₘₐₓ, bgc) 
