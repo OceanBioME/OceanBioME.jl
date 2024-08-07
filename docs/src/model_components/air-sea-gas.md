@@ -24,7 +24,7 @@ model = NonhydrostaticModel(; grid,
                               tracers = (:T, :S))
 ```
 
-!!! compat Field dependencies
+!!! note
 
     All gas exchange models require temperature (`T`) to be present in the model, and carbon dioxide requires sailinity (`S`), total inorganic carbon (`DIC`), and alkalinity (`Alk`), and optionally can take silicate and phosphate where there names are specified in the keyword argument `silicate_and_phosphate_names`
 
