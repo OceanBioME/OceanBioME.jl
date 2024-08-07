@@ -34,11 +34,11 @@ end
 @inline function Aggfe(Fe, DOC, T, bgc)
     λᶠᵉ = 1e-3 * bgc.slope_of_scavenging_rate_of_iron #parameter not defined in parameter list. Assumed scaled version λ_Fe to fit dimensions of Fe¹.
     Lₜ = max(0.09*(DOC + 40) - 3, 0.6)
-    return 1000*λᶠᵉ*max(0, Fe - Lₜ)*get_Fe¹(Fe, DOC, T)
+    return λᶠᵉ*max(0, Fe - Lₜ)*get_Fe¹(Fe, DOC, T)
 end
 
 @inline function get_Bactfe(μₘₐₓ⁰, z, Z, M, Fe, DOC, PO₄, NO₃, NH₄, bFe, T, zₘₐₓ, bgc)
-    K_Feᴮ¹ = bgc.Fe_half_saturation_const_for_PLACEHOLDER
+    K_Feᴮ¹ = bgc.Fe_half_saturation_const_for_Bacteria
     θₘₐₓᶠᵉᵇᵃᶜᵗ = bgc.max_FeC_ratio_of_bacteria
     Bact = get_Bact(zₘₐₓ, z, Z, M) 
     Lₗᵢₘᵇᵃᶜᵗ = Lᵇᵃᶜᵗ(DOC, PO₄, NO₃, NH₄, bFe, bgc)[2]
@@ -101,6 +101,8 @@ end
     #Gross growth efficiency
     eᶻ = eᴶ(eₘₐₓᶻ, σᶻ, gₚᶻ, g_Dᶻ, gₚₒᶻ, 0, Pᶠᵉ, Dᶠᵉ, SFe, P, D, POC, bgc) #eₘₐₓᶻ used in paper but changed here to be consistent with eqs 24, 28
     eᴹ =  eᴶ(eₘₐₓᴹ, σᴹ, gₚᴹ, g_Dᴹ, gₚₒᴹ, g_Zᴹ,Pᶠᵉ, Dᶠᵉ, SFe, P, D, POC, bgc)
+
+   # println("Scav = $(Scav(POC, GOC, CaCO₃, PSi, D_dust, DOC, T, Fe, bgc)), Aggfe = $(Aggfe(Fe, DOC, T, bgc) )")
 
     return (max(0, (1-σᶻ)*(∑θᶠᵉⁱgᵢᶻ/(∑gᶻ + eps(0.0)) - eᶻ*θᶠᵉᶻ))*∑gᶻ*Z 
             + max(0, (1-σᴹ)*(∑θᶠᵉⁱgᵢᴹ + θᶠᵉᴾᴼᶜ*gₚₒ_FF + θᶠᵉᴳᴼᶜ*g_GOC_FFᴹ )/(∑gᴹ+∑g_FFᴹ + eps(0.0)) - eᴹ*θᶠᵉᶻ)*(∑gᴹ+∑g_FFᴹ)*M 
