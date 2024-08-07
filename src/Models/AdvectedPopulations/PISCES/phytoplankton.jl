@@ -236,7 +236,9 @@ end
 
     μₚ = μ⁰ₘₐₓ*fₚ(T, bgc)    #eq 4b    
 
-   # println("Lₗᵢₘᴰ =  $(Lₗᵢₘᴰ), Lₚₒ₄ᴰ = $(Lₚₒ₄ᴰ), Lₙᴰ = $(Lₙᴰ), Lₛᵢᴰ = $(Lₛᵢᴰ), L_Feᴰ = $(L_Feᴰ) Cₚᵣₒ = $(Cₚᵣₒ(D, Dᶜʰˡ, PARᴰ, L_day, αᴰ, μₚ, Lₗᵢₘᴰ))")
+    #println(sh)
+
+   #println("Lₗᵢₘᴰ =  $(Lₗᵢₘᴰ), Lₚₒ₄ᴰ = $(Lₚₒ₄ᴰ), Lₙᴰ = $(Lₙᴰ), Lₛᵢᴰ = $(Lₛᵢᴰ), L_Feᴰ = $(L_Feᴰ) Cₚᵣₒ = $(Cₚᵣₒ(D, Dᶜʰˡ, PARᴰ, L_day, αᴰ, μₚ, Lₗᵢₘᴰ))")
    
     #println("Growth terms for D are $((1-δᴰ)*μᴰ*D)")
     #println("Decay terms for D are $(mᴰ*K_mondo(D, Kₘ)*D), $(sh*wᴰ*D^2), $(g_Dᶻ*Z), $(g_Dᴹ*M), with sum $(mᴰ*K_mondo(D, Kₘ)*D + sh*wᴰ*D^2 + g_Dᶻ*Z + g_Dᴹ*M)")
