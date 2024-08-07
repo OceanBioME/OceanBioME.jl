@@ -69,9 +69,9 @@ end
     K_Feᵇᵃᶜᵗ = bgc.Fe_half_saturation_const_for_DOC_remin
     K_DOC = bgc.half_saturation_const_for_DOC_remin
 
-    L_DOCᵇᵃᶜᵗ = K_mondo(DOC, K_DOC) #34b
-    L_Feᵇᵃᶜᵗ = K_mondo(bFe, K_Feᵇᵃᶜᵗ) #34d
-    Lₚₒ₄ᵇᵃᶜᵗ = K_mondo(PO₄, Kₚₒ₄ᵇᵃᶜᵗ) #34e
+    L_DOCᵇᵃᶜᵗ = concentration_limitation(DOC, K_DOC) #34b
+    L_Feᵇᵃᶜᵗ = concentration_limitation(bFe, K_Feᵇᵃᶜᵗ) #34d
+    Lₚₒ₄ᵇᵃᶜᵗ = concentration_limitation(PO₄, Kₚₒ₄ᵇᵃᶜᵗ) #34e
 
     Lₙₕ₄ᵇᵃᶜᵗ = L_NH₄(NO₃, NH₄, Kₙₒ₃ᵇᵃᶜᵗ, Kₙₕ₄ᵇᵃᶜᵗ) #34g
     Lₙₒ₃ᵇᵃᶜᵗ = L_NO₃(NO₃, NH₄, Kₙₒ₃ᵇᵃᶜᵗ, Kₙₕ₄ᵇᵃᶜᵗ) #34h
@@ -141,5 +141,6 @@ end
 
     Φ₁ᴰᴼᶜ, Φ₂ᴰᴼᶜ, Φ₃ᴰᴼᶜ = Φᴰᴼᶜ(DOC, POC, GOC, sh, bgc)
 
-    return (1 - γᶻ)*(1 - eᶻ - σᶻ)*∑ᵢgᵢᶻ*Z + (1 - γᴹ)*(1 - eᴹ - σᴹ)*(∑ᵢgᵢᴹ + g_GOC_FFᴹ + gₚₒ_FFᴹ)*M + δᴰ*μᴰ*D + δᴾ*μᴾ*P + λₚₒ¹*POC + (1 - γᴹ)*Rᵤₚᴹ - Remin - Denit - Φ₁ᴰᴼᶜ - Φ₂ᴰᴼᶜ - Φ₃ᴰᴼᶜ #32
+    return ((1 - γᶻ)*(1 - eᶻ - σᶻ)*∑ᵢgᵢᶻ*Z + (1 - γᴹ)*(1 - eᴹ - σᴹ)*(∑ᵢgᵢᴹ + g_GOC_FFᴹ + gₚₒ_FFᴹ)*M + 
+           δᴰ*μᴰ*D + δᴾ*μᴾ*P + λₚₒ¹*POC + (1 - γᴹ)*Rᵤₚᴹ - Remin - Denit - Φ₁ᴰᴼᶜ - Φ₂ᴰᴼᶜ - Φ₃ᴰᴼᶜ) #32
 end #changed this to include gₚₒ_FF

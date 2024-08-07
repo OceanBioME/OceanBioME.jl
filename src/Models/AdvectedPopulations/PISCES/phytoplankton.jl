@@ -1,19 +1,19 @@
 # eq 20 -> Lₙ could be meant to be L_NH₄?
 
 @inline θ(I,J) = ifelse(J != 0, I/(J + eps(0.0)), 0)   #eq 0
-@inline K_mondo(I, J) = I/(I + J + eps(0.0))
-@inline Cₚᵣₒ(I, Iᶜʰˡ, PARᴵ, L_day, αᴵ, μₚ, Lₗᵢₘᴵ)=1-exp(-αᴵ*(θ(Iᶜʰˡ,I))*PARᴵ/(L_day*μₚ*Lₗᵢₘᴵ + eps(0.0)))
+@inline concentration_limitation(I, J) = I/(I + J + eps(0.0))
+@inline phytoplankton_growth_rate(I, Iᶜʰˡ, PARᴵ, L_day, αᴵ, μₚ, Lₗᵢₘᴵ)=1-exp(-αᴵ*(θ(Iᶜʰˡ,I))*PARᴵ/(L_day*μₚ*Lₗᵢₘᴵ + eps(0.0)))
 
-@inline get_sh(z, zₘₓₗ) = ifelse(z >= zₘₓₗ, 1, 0.01)
+@inline get_sh(z, zₘₓₗ) = ifelse(z <= zₘₓₗ, 0.1, 0.01)
 @inline get_ϕ(ϕ₀, y) = ϕ₀     #need to fix
 @inline get_L_day(ϕ, t, L_day) = L_day  #temporary
 
-@inline f₁(L_day) = 1.5*K_mondo(L_day, 0.5)  #eq 3a
+@inline f₁(L_day) = 1.5*concentration_limitation(L_day, 0.5)  #eq 3a
 @inline function t_dark(zₘₓₗ, zₑᵤ)
     #κᵥₑᵣₜ = bgc.vertical_diffusivity    #can edit this later
     return max(0, zₘₓₗ-zₑᵤ)^2 #eq 3b,c    max(0, zₘₓₗ-zₑᵤ)^2/(κᵥₑᵣₜ(0,0,0) + eps(0.0))
 end
-@inline f₂(zₘₓₗ, zₑᵤ, t_darkᴵ) = 1 - K_mondo(t_dark(zₘₓₗ, zₑᵤ), t_darkᴵ) #eq 3d
+@inline f₂(zₘₓₗ, zₑᵤ, t_darkᴵ) = 1 - concentration_limitation(t_dark(zₘₓₗ, zₑᵤ), t_darkᴵ) #eq 3d
 
 @inline function fₚ(T, bgc) 
     bₚ = bgc.temperature_sensitivity_of_growth
@@ -57,7 +57,7 @@ end
 
     K_Feᴵᶠᵉ = K_Feᴵᶠᵉᵐⁱⁿ*(I₁ + Sᵣₐₜᴵ*I₂)/(I₁+I₂+eps(0.0))    #18b
 
-    Lₗᵢₘ₁ᴵᶠᵉ = K_mondo(bFe, K_Feᴵᶠᵉ)    #18a
+    Lₗᵢₘ₁ᴵᶠᵉ = concentration_limitation(bFe, K_Feᴵᶠᵉ)    #18a
     #Lₗᵢₘ₂ᴵᶠᵉ = (4 - 4.5*L_Feᴵ)/(L_Feᴵ + 0.5) #19
     Lₗᵢₘ₂ᴵᶠᵉ = (4 - 2*L_Feᴵ)/(L_Feᴵ + 1) #19
 
@@ -71,7 +71,7 @@ end
 
     μₚ = μ⁰ₘₐₓ*fₚ(T, bgc)    #eq 4b      
 
-    return μₚ * f₁(L_day) * f₂(zₘₓₗ, zₑᵤ, t_darkᴵ) * Cₚᵣₒ(I, Iᶜʰˡ, PARᴵ, L_day, αᴵ, μₚ, Lₗᵢₘᴵ) * Lₗᵢₘᴵ #2b 
+    return μₚ * f₁(L_day) * f₂(zₘₓₗ, zₑᵤ, t_darkᴵ) * phytoplankton_growth_rate(I, Iᶜʰˡ, PARᴵ, L_day, αᴵ, μₚ, Lₗᵢₘᴵ) * Lₗᵢₘᴵ #2b 
 end
 
 # This function returns Lₗᵢₘᴾ as well as all the constituent parts as a vector so we can use all the parts in separate parts of the code
@@ -90,7 +90,7 @@ end
     Kₙₕ₄ᴾ = Kᵢᴶ(Kₙₕ₄ᴾᵐⁱⁿ, P₁, P₂, Sᵣₐₜᴾ)
     Kₚₒ₄ᴾ = Kᵢᴶ(Kₚₒ₄ᴾᵐⁱⁿ, P₁, P₂, Sᵣₐₜᴾ)
 
-    Lₚₒ₄ᴾ = K_mondo(PO₄, Kₚₒ₄ᴾ) #6b
+    Lₚₒ₄ᴾ = concentration_limitation(PO₄, Kₚₒ₄ᴾ) #6b
     Lₙₕ₄ᴾ = L_NH₄(NO₃, NH₄, Kₙₒ₃ᴾ, Kₙₕ₄ᴾ)
     Lₙₒ₃ᴾ = L_NO₃(NO₃, NH₄, Kₙₒ₃ᴾ, Kₙₕ₄ᴾ)
     Lₙᴾ = Lₙₒ₃ᴾ + Lₙₕ₄ᴾ         #6c
@@ -119,7 +119,7 @@ end
     Kₙₕ₄ᴰ = Kᵢᴶ(Kₙₕ₄ᴰᵐⁱⁿ, D₁, D₂, Sᵣₐₜᴰ)
     Kₚₒ₄ᴰ = Kᵢᴶ(Kₚₒ₄ᴰᵐⁱⁿ, D₁, D₂, Sᵣₐₜᴰ)
 
-    Lₚₒ₄ᴰ = K_mondo(PO₄, Kₚₒ₄ᴰ) #6b
+    Lₚₒ₄ᴰ = concentration_limitation(PO₄, Kₚₒ₄ᴰ) #6b
     Lₙₕ₄ᴰ = L_NH₄(NO₃, NH₄, Kₙₒ₃ᴰ, Kₙₕ₄ᴰ)
     Lₙₒ₃ᴰ = L_NO₃(NO₃, NH₄, Kₙₒ₃ᴰ, Kₙₕ₄ᴰ)
     Lₙᴰ = Lₙₒ₃ᴰ + Lₙₕ₄ᴰ         #6c
@@ -127,7 +127,7 @@ end
     θₘᵢₙᶠᵉᴰ = θᶠᵉₘᵢₙ(D, Dᶜʰˡ, Lₙₕ₄ᴰ, Lₙₒ₃ᴰ) #changed from n to NH₄
     L_Feᴰ = L_Fe(D, Dᶠᵉ ,θₒₚₜᶠᵉᴰ, θₘᵢₙᶠᵉᴰ)
     Kₛᵢᴰ = Kₛᵢᴰᵐⁱⁿ + 7*Si̅^2 / (Kₛᵢ^2 + Si̅^2 + eps(0.0)) #12
-    Lₛᵢᴰ = K_mondo(Si, Kₛᵢᴰ)    #11b
+    Lₛᵢᴰ = concentration_limitation(Si, Kₛᵢᴰ)    #11b
 
     return min(Lₚₒ₄ᴰ, Lₙᴰ, L_Feᴰ, Lₛᵢᴰ), Lₚₒ₄ᴰ, Lₙₕ₄ᴰ, Lₙₒ₃ᴰ, Lₙᴰ,  L_Feᴰ, Lₛᵢᴰ   #11a
 end
@@ -142,8 +142,8 @@ end
     
     μₚ = μ⁰ₘₐₓ*fₚ(T, bgc)
     
-    Lₗᵢₘ₁ᴰˢⁱ = K_mondo(Si, Kₛᵢ¹)    #23c
-    Lₗᵢₘ₂ᴰˢⁱ = ifelse(ϕ < 0, (K_mondo((Si)^3, (Kₛᵢ²)^3)), 0)   #23d
+    Lₗᵢₘ₁ᴰˢⁱ = concentration_limitation(Si, Kₛᵢ¹)    #23c
+    Lₗᵢₘ₂ᴰˢⁱ = ifelse(ϕ < 0, (concentration_limitation((Si)^3, (Kₛᵢ²)^3)), 0)   #23d
     
     Fₗᵢₘ₁ᴰˢⁱ = min((μᴰ)/(μₚ*Lₗᵢₘᴰ + eps(0.0)), Lₚₒ₄ᴰ, Lₙᴰ, L_Feᴰ)  #23a
     Fₗᵢₘ₂ᴰˢⁱ = min(1, 2.2*max(0, Lₗᵢₘ₁ᴰˢⁱ - 0.5)) #23b
@@ -186,14 +186,14 @@ end
     μₚ = μ⁰ₘₐₓ*fₚ(T, bgc)    #eq 4b   
 
     #println("----------------------")
-    #println("Lₗᵢₘᴾ =  $(Lₗᵢₘᴾ), Lₚₒ₄ᴾ = $(Lₚₒ₄ᴾ), Lₙᴾ = $(Lₙᴾ), L_Feᴾ = $(L_Feᴾ), Cₚᵣₒ = $(Cₚᵣₒ(P, Pᶜʰˡ, PARᴾ, L_day, αᴾ, μₚ, Lₗᵢₘᴾ))")
+    #println("Lₗᵢₘᴾ =  $(Lₗᵢₘᴾ), Lₚₒ₄ᴾ = $(Lₚₒ₄ᴾ), Lₙᴾ = $(Lₙᴾ), L_Feᴾ = $(L_Feᴾ), phytoplankton_growth_rate = $(phytoplankton_growth_rate(P, Pᶜʰˡ, PARᴾ, L_day, αᴾ, μₚ, Lₗᵢₘᴾ))")
    # println("P = $(P), D = $(D), Z = $(Z), M = $(M), Pᶜʰˡ = $(Pᶜʰˡ), Dᶜʰˡ = $(Dᶜʰˡ), Pᶠᵉ = $(Pᶠᵉ), Dᶠᵉ = $(Dᶠᵉ), Dˢⁱ = $(Dˢⁱ), DOC = $(DOC), POC = $(POC), GOC = $(GOC), SFe = $(SFe), BFe = $(BFe), PSi = $(PSi), NO₃ = $(NO₃), NH₄ = $(NH₄), PO₄ = $(PO₄), Fe = $(Fe), Si = $(Si), CaCO₃ = $(CaCO₃), DIC = $(DIC), Alk = $(Alk), O₂ = $(O₂)")
     #println("POC = $(POC), GOC = $(GOC), SFe = $(SFe), BFe = $(BFe)")
     #println("Growth terms for P are $((1-δᴾ)*μᴾ*P)")
-    #println("Decay terms for P are $(mᴾ*K_mondo(P, Kₘ)*P), $(sh*wᴾ*P^2), $(gₚᶻ*Z), $(gₚᴹ*M), with sum $(mᴾ*K_mondo(P, Kₘ)*P + sh*wᴾ*P^2 + gₚᶻ*Z + gₚᴹ*M)")
-    #println("Total sum for P = ", (1-δᴾ)*μᴾ*P - mᴾ*K_mondo(P, Kₘ)*P - sh*wᴾ*P^2 - gₚᶻ*Z - gₚᴹ*M)
+    #println("Decay terms for P are $(mᴾ*concentration_limitation(P, Kₘ)*P), $(sh*wᴾ*P^2), $(gₚᶻ*Z), $(gₚᴹ*M), with sum $(mᴾ*concentration_limitation(P, Kₘ)*P + sh*wᴾ*P^2 + gₚᶻ*Z + gₚᴹ*M)")
+    #println("Total sum for P = ", (1-δᴾ)*μᴾ*P - mᴾ*concentration_limitation(P, Kₘ)*P - sh*wᴾ*P^2 - gₚᶻ*Z - gₚᴹ*M)
 
-    return (1-δᴾ)*μᴾ*P - mᴾ*K_mondo(P, Kₘ)*P - sh*wᴾ*P^2 - gₚᶻ*Z - gₚᴹ*M    #eq 1
+    return (1-δᴾ)*μᴾ*P - mᴾ*concentration_limitation(P, Kₘ)*P - sh*wᴾ*P^2 - gₚᶻ*Z - gₚᴹ*M    #eq 1
 end
 
 @inline function (bgc::PISCES)(::Val{:D}, x, y, z, t, P, D, Z, M, Pᶜʰˡ, Dᶜʰˡ, Pᶠᵉ, Dᶠᵉ, Dˢⁱ, DOC, POC, GOC, SFe, BFe, PSi, NO₃, NH₄, PO₄, Fe, Si, CaCO₃, DIC, Alk, O₂, T, zₘₓₗ, zₑᵤ, Si̅, D_dust, Ω, PAR, PAR¹, PAR², PAR³)
@@ -236,13 +236,15 @@ end
 
     μₚ = μ⁰ₘₐₓ*fₚ(T, bgc)    #eq 4b    
 
-   # println("Lₗᵢₘᴰ =  $(Lₗᵢₘᴰ), Lₚₒ₄ᴰ = $(Lₚₒ₄ᴰ), Lₙᴰ = $(Lₙᴰ), Lₛᵢᴰ = $(Lₛᵢᴰ), L_Feᴰ = $(L_Feᴰ) Cₚᵣₒ = $(Cₚᵣₒ(D, Dᶜʰˡ, PARᴰ, L_day, αᴰ, μₚ, Lₗᵢₘᴰ))")
-   
-    #println("Growth terms for D are $((1-δᴰ)*μᴰ*D)")
-    #println("Decay terms for D are $(mᴰ*K_mondo(D, Kₘ)*D), $(sh*wᴰ*D^2), $(g_Dᶻ*Z), $(g_Dᴹ*M), with sum $(mᴰ*K_mondo(D, Kₘ)*D + sh*wᴰ*D^2 + g_Dᶻ*Z + g_Dᴹ*M)")
-    #println("Total sum for D = ", (1-δᴰ)*μᴰ*D - mᴰ*K_mondo(D, Kₘ)*D - sh*wᴰ*D^2 - g_Dᶻ*Z - g_Dᴹ*M)
+    #println(sh)
 
-    return (1-δᴰ)*μᴰ*D - mᴰ*K_mondo(D, Kₘ)*D - sh*wᴰ*D^2 - g_Dᶻ*Z - g_Dᴹ*M    #eq 9
+    #println("Lₗᵢₘᴰ =  $(Lₗᵢₘᴰ), Lₚₒ₄ᴰ = $(Lₚₒ₄ᴰ), Lₙᴰ = $(Lₙᴰ), Lₛᵢᴰ = $(Lₛᵢᴰ), L_Feᴰ = $(L_Feᴰ) phytoplankton_growth_rate = $(phytoplankton_growth_rate(D, Dᶜʰˡ, PARᴰ, L_day, αᴰ, μₚ, Lₗᵢₘᴰ))")
+    #println("θᶠᵉᵈ = ", θ(Dᶠᵉ, D))
+    #println("Growth terms for D are $((1-δᴰ)*μᴰ*D)")
+    #println("Decay terms for D are $(mᴰ*concentration_limitation(D, Kₘ)*D), $(sh*wᴰ*D^2), $(g_Dᶻ*Z), $(g_Dᴹ*M), with sum $(mᴰ*concentration_limitation(D, Kₘ)*D + sh*wᴰ*D^2 + g_Dᶻ*Z + g_Dᴹ*M)")
+    #println("Total sum for D = ", (1-δᴰ)*μᴰ*D - mᴰ*concentration_limitation(D, Kₘ)*D - sh*wᴰ*D^2 - g_Dᶻ*Z - g_Dᴹ*M)
+
+    return (1-δᴰ)*μᴰ*D - mᴰ*concentration_limitation(D, Kₘ)*D - sh*wᴰ*D^2 - g_Dᶻ*Z - g_Dᴹ*M    #eq 9
 end
 
 @inline function (bgc::PISCES)(::Val{:Pᶜʰˡ}, x, y, z, t, P, D, Z, M, Pᶜʰˡ, Dᶜʰˡ, Pᶠᵉ, Dᶠᵉ, Dˢⁱ, DOC, POC, GOC, SFe, BFe, PSi, NO₃, NH₄, PO₄, Fe, Si, CaCO₃, DIC, Alk, O₂, T, zₘₓₗ, zₑᵤ, Si̅, D_dust, Ω, PAR, PAR¹, PAR², PAR³)
@@ -274,7 +276,7 @@ end
     μ̌ᴾ = μᴾ / f₁(L_day) #15b
     ρᴾᶜʰˡ = 144*μ̌ᴾ * P / (αᴾ* Pᶜʰˡ* ((PARᴾ)/(L_day + eps(0.0))) + eps(0.0)) #15a
 
-    return (1-δᴾ)*(12*θₘᵢₙᶜʰˡ + (θₘₐₓᶜʰˡᴾ - θₘᵢₙᶜʰˡ)*ρᴾᶜʰˡ)*μᴾ*P - mᴾ*K_mondo(P, Kₘ)*Pᶜʰˡ - sh*wᴾ*P*Pᶜʰˡ - θ(Pᶜʰˡ, P)*gₚᶻ*Z - θ(Pᶜʰˡ, P)*gₚᴹ*M  #14
+    return ((1-δᴾ)*(12*θₘᵢₙᶜʰˡ + (θₘₐₓᶜʰˡᴾ - θₘᵢₙᶜʰˡ)*ρᴾᶜʰˡ)*μᴾ*P - mᴾ*concentration_limitation(P, Kₘ)*Pᶜʰˡ - sh*wᴾ*P*Pᶜʰˡ - θ(Pᶜʰˡ, P)*gₚᶻ*Z - θ(Pᶜʰˡ, P)*gₚᴹ*M)  #14
 end
 
 @inline function (bgc::PISCES)(::Val{:Dᶜʰˡ}, x, y, z, t, P, D, Z, M, Pᶜʰˡ, Dᶜʰˡ, Pᶠᵉ, Dᶠᵉ, Dˢⁱ, DOC, POC, GOC, SFe, BFe, PSi, NO₃, NH₄, PO₄, Fe, Si, CaCO₃, DIC, Alk, O₂, T, zₘₓₗ, zₑᵤ, Si̅, D_dust, Ω, PAR, PAR¹, PAR², PAR³)
@@ -309,7 +311,7 @@ end
     μ̌ᴰ = μᴰ / (f₁(L_day) + eps(0.0)) #15b
     ρᴰᶜʰˡ = 144*μ̌ᴰ * D / (αᴰ* Dᶜʰˡ* ((PARᴰ)/(L_day + eps(0.0))) + eps(0.0)) #15a
   
-    return (1-δᴰ)*(12*θₘᵢₙᶜʰˡ + (θₘₐₓᶜʰˡᴰ - θₘᵢₙᶜʰˡ)*ρᴰᶜʰˡ)*μᴰ*D - mᴰ*K_mondo(D, Kₘ)*Dᶜʰˡ - sh*wᴰ*D*Dᶜʰˡ - θ(Dᶜʰˡ, D)*g_Dᶻ*Z - θ(Dᶜʰˡ, D)*g_Dᴹ*M    #14
+    return (1-δᴰ)*(12*θₘᵢₙᶜʰˡ + (θₘₐₓᶜʰˡᴰ - θₘᵢₙᶜʰˡ)*ρᴰᶜʰˡ)*μᴰ*D - mᴰ*concentration_limitation(D, Kₘ)*Dᶜʰˡ - sh*wᴰ*D*Dᶜʰˡ - θ(Dᶜʰˡ, D)*g_Dᶻ*Z - θ(Dᶜʰˡ, D)*g_Dᴹ*M    #14
 end
 
 @inline function (bgc::PISCES)(::Val{:Pᶠᵉ}, x, y, z, t, P, D, Z, M, Pᶜʰˡ, Dᶜʰˡ, Pᶠᵉ, Dᶠᵉ, Dˢⁱ, DOC, POC, GOC, SFe, BFe, PSi, NO₃, NH₄, PO₄, Fe, Si, CaCO₃, DIC, Alk, O₂, T, zₘₓₗ, zₑᵤ, Si̅, D_dust, Ω, PAR, PAR¹, PAR², PAR³)
@@ -332,7 +334,7 @@ end
     bFe =  Fe   #defined in previous PISCES model
     μᴾᶠᵉ = μᴵᶠᵉ(P, Pᶠᵉ, θₘₐₓᶠᵉᵖ, Sᵣₐₜᴾ, K_Feᴾᶠᵉᵐⁱⁿ, Pₘₐₓ, L_Feᴾ, bFe, T, bgc)
 
-    return (1-δᴾ)*μᴾᶠᵉ*P - mᴾ*K_mondo(P, Kₘ)*Pᶠᵉ - sh*wᴾ*P*Pᶠᵉ - θ(Pᶠᵉ, P)*gₚᶻ*Z - θ(Pᶠᵉ, P)*gₚᴹ*M  #16
+    return (1-δᴾ)*μᴾᶠᵉ*P - mᴾ*concentration_limitation(P, Kₘ)*Pᶠᵉ - sh*wᴾ*P*Pᶠᵉ - θ(Pᶠᵉ, P)*gₚᶻ*Z - θ(Pᶠᵉ, P)*gₚᴹ*M  #16
 end
 
 @inline function (bgc::PISCES)(::Val{:Dᶠᵉ}, x, y, z, t, P, D, Z, M, Pᶜʰˡ, Dᶜʰˡ, Pᶠᵉ, Dᶠᵉ, Dˢⁱ, DOC, POC, GOC, SFe, BFe, PSi, NO₃, NH₄, PO₄, Fe, Si, CaCO₃, DIC, Alk, O₂, T, zₘₓₗ, zₑᵤ, Si̅, D_dust, Ω, PAR, PAR¹, PAR², PAR³)
@@ -360,7 +362,7 @@ end
 
     μᴰᶠᵉ = μᴵᶠᵉ(D, Dᶠᵉ, θₘₐₓᶠᵉᴰ, Sᵣₐₜᴰ, K_Feᴰᶠᵉᵐⁱⁿ, Dₘₐₓ, L_Feᴰ, bFe, T, bgc)
 
-    return (1-δᴰ)*μᴰᶠᵉ*D - mᴰ*K_mondo(D, Kₘ)*Dᶠᵉ - sh*wᴰ*D*Dᶠᵉ - θ(Dᶠᵉ, D)*g_Dᶻ*Z - θ(Dᶠᵉ, D)*g_Dᴹ*M    #16
+    return (1-δᴰ)*μᴰᶠᵉ*D - mᴰ*concentration_limitation(D, Kₘ)*Dᶠᵉ - sh*wᴰ*D*Dᶠᵉ - θ(Dᶠᵉ, D)*g_Dᶻ*Z - θ(Dᶠᵉ, D)*g_Dᴹ*M    #16
 end
 
 @inline function (bgc::PISCES)(::Val{:Dˢⁱ}, x, y, z, t, P, D, Z, M, Pᶜʰˡ, Dᶜʰˡ, Pᶠᵉ, Dᶠᵉ, Dˢⁱ, DOC, POC, GOC, SFe, BFe, PSi, NO₃, NH₄, PO₄, Fe, Si, CaCO₃, DIC, Alk, O₂, T, zₘₓₗ, zₑᵤ, Si̅, D_dust, Ω, PAR, PAR¹, PAR², PAR³)    #ϕ is latitude
@@ -391,5 +393,5 @@ end
     
     wᴰ = wᴾ + wₘₐₓᴰ*(1-Lₗᵢₘᴰ) #13
     
-    return θₒₚₜˢⁱᴰ*(1-δᴰ)*μᴰ*D - θ(Dˢⁱ, D)*g_Dᴹ*M -  θ(Dˢⁱ, D)*g_Dᶻ*Z - mᴰ*K_mondo(D, Kₘ)*Dˢⁱ - sh*wᴰ*D*Dˢⁱ #21
+    return θₒₚₜˢⁱᴰ*(1-δᴰ)*μᴰ*D - θ(Dˢⁱ, D)*g_Dᴹ*M -  θ(Dˢⁱ, D)*g_Dᶻ*Z - mᴰ*concentration_limitation(D, Kₘ)*Dˢⁱ - sh*wᴰ*D*Dˢⁱ #21
 end

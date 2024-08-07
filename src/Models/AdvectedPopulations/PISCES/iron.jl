@@ -7,7 +7,7 @@
 
 @inline function get_Fe¹(Fe, DOC, T)
     Lₜ = max(0.09*(DOC + 40) - 3, 0.6) # bgc.total_concentration_of_iron_ligands
-    K_eqᶠᵉ = 10^(16.27 - 1565.7/max(T + 273.15, 5)) #check this value
+    K_eqᶠᵉ = exp(16.27 - 1565.7/max(T + 273.15, 5)) #check this value
     Δ = 1 +  K_eqᶠᵉ*Lₜ -  K_eqᶠᵉ*Fe
 
     return (-Δ + sqrt(Δ^2 + 4*K_eqᶠᵉ*Fe))/(2*K_eqᶠᵉ + eps(0.0)) #eq65
@@ -34,11 +34,11 @@ end
 @inline function Aggfe(Fe, DOC, T, bgc)
     λᶠᵉ = 1e-3 * bgc.slope_of_scavenging_rate_of_iron #parameter not defined in parameter list. Assumed scaled version λ_Fe to fit dimensions of Fe¹.
     Lₜ = max(0.09*(DOC + 40) - 3, 0.6)
-    return 1000*λᶠᵉ*max(0, Fe - Lₜ)*get_Fe¹(Fe, DOC, T)
+    return λᶠᵉ*max(0, Fe - Lₜ)*get_Fe¹(Fe, DOC, T)
 end
 
 @inline function get_Bactfe(μₘₐₓ⁰, z, Z, M, Fe, DOC, PO₄, NO₃, NH₄, bFe, T, zₘₐₓ, bgc)
-    K_Feᴮ¹ = bgc.Fe_half_saturation_const_for_PLACEHOLDER
+    K_Feᴮ¹ = bgc.Fe_half_saturation_const_for_Bacteria
     θₘₐₓᶠᵉᵇᵃᶜᵗ = bgc.max_FeC_ratio_of_bacteria
     Bact = get_Bact(zₘₐₓ, z, Z, M) 
     Lₗᵢₘᵇᵃᶜᵗ = Lᵇᵃᶜᵗ(DOC, PO₄, NO₃, NH₄, bFe, bgc)[2]
@@ -49,6 +49,7 @@ end
     σᶻ = bgc.non_assimilated_fraction.Z
     γᴹ = bgc.excretion_as_DOM.M
     σᴹ = bgc.non_assimilated_fraction.M
+    eₘₐₓᶻ, eₘₐₓᴹ = bgc.max_growth_efficiency_of_zooplankton
     δᴾ = bgc.exudation_of_DOC.P
     δᴰ = bgc.exudation_of_DOC.D
     θᶠᵉᶻ = bgc.FeC_ratio_of_zooplankton
@@ -98,16 +99,14 @@ end
     g_GOC_FFᴹ = g_FF*bₘ^T*w_GOC*GOC 
 
     #Gross growth efficiency
-    eₙᶻ = get_eₙᴶ(gₚᶻ, g_Dᶻ, gₚₒᶻ, 0, Pᶠᵉ, Dᶠᵉ, SFe, P, D, POC, bgc)
-    eₙᴹ = get_eₙᴶ(gₚᴹ, g_Dᴹ, gₚₒᴹ, g_Zᴹ, Pᶠᵉ, Dᶠᵉ, SFe, P, D, POC, bgc)
+    eᶻ = eᴶ(eₘₐₓᶻ, σᶻ, gₚᶻ, g_Dᶻ, gₚₒᶻ, 0, Pᶠᵉ, Dᶠᵉ, SFe, P, D, POC, bgc) #eₘₐₓᶻ used in paper but changed here to be consistent with eqs 24, 28
+    eᴹ =  eᴶ(eₘₐₓᴹ, σᴹ, gₚᴹ, g_Dᴹ, gₚₒᴹ, g_Zᴹ,Pᶠᵉ, Dᶠᵉ, SFe, P, D, POC, bgc)
 
-    #println("Sum of positive terms in Iron is ",  max(0, (1-σᶻ)*(∑θᶠᵉⁱgᵢᶻ/(∑gᶻ + eps(0.0)) - eₙᶻ*θᶠᵉᶻ))*∑gᶻ*Z + max(0, (1-σᴹ)*(∑θᶠᵉⁱgᵢᴹ + θᶠᵉᴾᴼᶜ*gₚₒ_FF + θᶠᵉᴳᴼᶜ*g_GOC_FFᴹ )/(∑gᴹ+∑g_FFᴹ + eps(0.0)) - eₙᴹ*θᶠᵉᶻ)*(∑gᴹ+∑g_FFᴹ)*M + γᴹ*θᶠᵉᶻ*Rᵤₚ(M, T, bgc) + λₚₒ¹*SFe)
-    #println("term a1 = $(max(0, (1-σᶻ)*(∑θᶠᵉⁱgᵢᶻ/(∑gᶻ + eps(0.0)) - eₙᶻ*θᶠᵉᶻ))*∑gᶻ*Z), term b = $(max(0, (1-σᴹ)*(∑θᶠᵉⁱgᵢᴹ + θᶠᵉᴾᴼᶜ*gₚₒ_FF + θᶠᵉᴳᴼᶜ*g_GOC_FFᴹ )/(∑gᴹ+∑g_FFᴹ + eps(0.0)) - eₙᴹ*θᶠᵉᶻ)*(∑gᴹ+∑g_FFᴹ)*M ), term c = $( γᴹ*θᶠᵉᶻ*Rᵤₚ(M, T, bgc)), term d = $(λₚₒ¹*SFe)")
-    #println("Sum of negative terms is ", (1 - δᴾ)*μᴾᶠᵉ*P + (1 - δᴰ)*μᴰᶠᵉ*D + Scav(POC, GOC, CaCO₃, PSi, D_dust, DOC, T, Fe, bgc) + Cgfe1(sh, Fe, POC, DOC, T, bgc) + Cgfe2(sh, Fe, T, DOC, GOC, bgc) + Aggfe(Fe, DOC, T, bgc) + Bactfe)
-    #println("term 1 = $((1 - δᴾ)*μᴾᶠᵉ*P ), term 2 = $((1 - δᴰ)*μᴰᶠᵉ*D), term 3 = $(Scav(POC, GOC, CaCO₃, PSi, D_dust, DOC, T, Fe, bgc)), term 4 = $(Cgfe1(sh, Fe, POC, DOC, T, bgc)), term 5 = $(Cgfe2(sh, Fe, T, DOC, GOC, bgc)), term 6 = $(Aggfe(Fe, DOC, T, bgc)), term 6 = $(Bactfe)")
-    #println("--")
-    #println("Total change is ",max(0, (1-σᶻ)*(∑θᶠᵉⁱgᵢᶻ/(∑gᶻ + eps(0.0)) - eₙᶻ*θᶠᵉᶻ))*∑gᶻ*Z + max(0, (1-σᴹ)*(∑θᶠᵉⁱgᵢᴹ + θᶠᵉᴾᴼᶜ*gₚₒ_FF + θᶠᵉᴳᴼᶜ*g_GOC_FFᴹ )/(∑gᴹ+∑g_FFᴹ + eps(0.0)) - eₙᴹ*θᶠᵉᶻ)*(∑gᴹ+∑g_FFᴹ)*M + γᴹ*θᶠᵉᶻ*Rᵤₚ(M, T, bgc) + λₚₒ¹*SFe - (1 - δᴾ)*μᴾᶠᵉ*P - (1 - δᴰ)*μᴰᶠᵉ*D - Scav(POC, GOC, CaCO₃, PSi, D_dust, DOC, T, Fe, bgc) - Cgfe1(sh, Fe, POC, DOC, T, bgc) - Cgfe2(sh, Fe, T, DOC, GOC, bgc) - Aggfe(Fe, DOC, T, bgc) - Bactfe)
-    #println("-------------------------------------")
+   # println("Scav = $(Scav(POC, GOC, CaCO₃, PSi, D_dust, DOC, T, Fe, bgc)), Aggfe = $(Aggfe(Fe, DOC, T, bgc) )")
 
-    return max(0, (1-σᶻ)*(∑θᶠᵉⁱgᵢᶻ/(∑gᶻ + eps(0.0)) - eₙᶻ*θᶠᵉᶻ))*∑gᶻ*Z + max(0, (1-σᴹ)*(∑θᶠᵉⁱgᵢᴹ + θᶠᵉᴾᴼᶜ*gₚₒ_FF + θᶠᵉᴳᴼᶜ*g_GOC_FFᴹ )/(∑gᴹ+∑g_FFᴹ + eps(0.0)) - eₙᴹ*θᶠᵉᶻ)*(∑gᴹ+∑g_FFᴹ)*M + γᴹ*θᶠᵉᶻ*Rᵤₚ(M, T, bgc) + λₚₒ¹*SFe - (1 - δᴾ)*μᴾᶠᵉ*P - (1 - δᴰ)*μᴰᶠᵉ*D - Scav(POC, GOC, CaCO₃, PSi, D_dust, DOC, T, Fe, bgc) - Cgfe1(sh, Fe, POC, DOC, T, bgc) - Cgfe2(sh, Fe, T, DOC, GOC, bgc) - Aggfe(Fe, DOC, T, bgc) - Bactfe
+    return (max(0, (1-σᶻ)*(∑θᶠᵉⁱgᵢᶻ/(∑gᶻ + eps(0.0)) - eᶻ*θᶠᵉᶻ))*∑gᶻ*Z 
+            + max(0, (1-σᴹ)*(∑θᶠᵉⁱgᵢᴹ + θᶠᵉᴾᴼᶜ*gₚₒ_FF + θᶠᵉᴳᴼᶜ*g_GOC_FFᴹ )/(∑gᴹ+∑g_FFᴹ + eps(0.0)) - eᴹ*θᶠᵉᶻ)*(∑gᴹ+∑g_FFᴹ)*M 
+            + γᴹ*θᶠᵉᶻ*Rᵤₚ(M, T, bgc) + λₚₒ¹*SFe 
+            - (1 - δᴾ)*μᴾᶠᵉ*P - (1 - δᴰ)*μᴰᶠᵉ*D 
+            - Scav(POC, GOC, CaCO₃, PSi, D_dust, DOC, T, Fe, bgc) - Cgfe1(sh, Fe, POC, DOC, T, bgc) - Cgfe2(sh, Fe, T, DOC, GOC, bgc) - Aggfe(Fe, DOC, T, bgc) - Bactfe)
 end

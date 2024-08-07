@@ -12,7 +12,7 @@
     μᴾ = μᴵ(P, Pᶜʰˡ, PARᴾ, L_day, T, αᴾ, Lₗᵢₘᴾ, zₘₓₗ, zₑᵤ, t_darkᴾ, bgc) 
     Lₙₒ₃ᴾ = Lᴾ(P, PO₄, NO₃, NH₄, Pᶜʰˡ, Pᶠᵉ, bgc)[4]
     Lₙₕ₄ᴾ = Lᴾ(P, PO₄, NO₃, NH₄, Pᶜʰˡ, Pᶠᵉ, bgc)[3]
-    return μᴾ * K_mondo(Lₙₒ₃ᴾ, Lₙₕ₄ᴾ) #eq8
+    return μᴾ * concentration_limitation(Lₙₒ₃ᴾ, Lₙₕ₄ᴾ) #eq8
 end
 
 @inline function get_μₙₕ₄ᴾ(P, PO₄, NO₃, NH₄, Pᶜʰˡ, Pᶠᵉ, T, zₘₓₗ, zₑᵤ, L_day, PARᴾ, t_darkᴾ, Si̅, bgc)
@@ -21,7 +21,7 @@ end
     μᴾ = μᴵ(P, Pᶜʰˡ, PARᴾ, L_day, T, αᴾ, Lₗᵢₘᴾ, zₘₓₗ, zₑᵤ, t_darkᴾ, bgc) 
     Lₙₒ₃ᴾ = Lᴾ(P, PO₄, NO₃, NH₄, Pᶜʰˡ, Pᶠᵉ, bgc)[4]
     Lₙₕ₄ᴾ = Lᴾ(P, PO₄, NO₃, NH₄, Pᶜʰˡ, Pᶠᵉ, bgc)[3]
-    return μᴾ * K_mondo(Lₙₕ₄ᴾ, Lₙₒ₃ᴾ) #eq8
+    return μᴾ * concentration_limitation(Lₙₕ₄ᴾ, Lₙₒ₃ᴾ) #eq8
 end
 
 @inline function get_μₙₒ₃ᴰ(D, PO₄, NO₃, NH₄, Si, Dᶜʰˡ, Dᶠᵉ, T, zₘₓₗ, zₑᵤ, L_day, PARᴰ, t_darkᴰ, Si̅, bgc) 
@@ -30,7 +30,7 @@ end
     μᴰ =  μᴵ(D, Dᶜʰˡ, PARᴰ, L_day, T, αᴰ, Lₗᵢₘᴰ, zₘₓₗ, zₑᵤ, t_darkᴰ, bgc)
     Lₙₒ₃ᴰ = Lᴰ(D, PO₄, NO₃, NH₄, Si, Dᶜʰˡ, Dᶠᵉ, Si̅, bgc)[4]
     Lₙₕ₄ᴰ = Lᴰ(D, PO₄, NO₃, NH₄, Si, Dᶜʰˡ, Dᶠᵉ, Si̅, bgc)[3]
-    return μᴰ * K_mondo(Lₙₒ₃ᴰ, Lₙₕ₄ᴰ) #eq8
+    return μᴰ * concentration_limitation(Lₙₒ₃ᴰ, Lₙₕ₄ᴰ) #eq8
 end
 
 @inline function get_μₙₕ₄ᴰ(D, PO₄, NO₃, NH₄, Si, Dᶜʰˡ, Dᶠᵉ, T, zₘₓₗ, zₑᵤ, L_day, PARᴰ, t_darkᴰ, Si̅, bgc)
@@ -39,14 +39,14 @@ end
     μᴰ =  μᴵ(D, Dᶜʰˡ, PARᴰ, L_day, T, αᴰ, Lₗᵢₘᴰ, zₘₓₗ, zₑᵤ, t_darkᴰ, bgc)
     Lₙₒ₃ᴰ = Lᴰ(D, PO₄, NO₃, NH₄, Si, Dᶜʰˡ, Dᶠᵉ, Si̅, bgc)[4]
     Lₙₕ₄ᴰ = Lᴰ(D, PO₄, NO₃, NH₄, Si, Dᶜʰˡ, Dᶠᵉ, Si̅, bgc)[3]
-    return μᴰ * K_mondo(Lₙₕ₄ᴰ, Lₙₒ₃ᴰ) #eq8
+    return μᴰ * concentration_limitation(Lₙₕ₄ᴰ, Lₙₒ₃ᴰ) #eq8
 end
 
 @inline function ΔO₂(O₂, bgc)
     O₂ᵐⁱⁿ¹ = bgc.half_sat_const_for_denitrification1
     O₂ᵐⁱⁿ² = bgc.half_sat_const_for_denitrification2
 
-    return min(1, max(0, 0.4*(O₂ - O₂ᵐⁱⁿ¹)/(O₂ᵐⁱⁿ²+O₂+eps(0.0)))) #eq57
+    return min(1, max(0, 0.4*(O₂ᵐⁱⁿ¹ - O₂)/(O₂ᵐⁱⁿ²+O₂+eps(0.0)))) #eq57
 end
 
 @inline Nitrif(NH₄, O₂, λₙₕ₄, PAR, bgc) = λₙₕ₄*NH₄*(1-ΔO₂(O₂, bgc))/(1+PAR) #eq56a
@@ -75,7 +75,8 @@ end
     μₙₒ₃ᴾ = get_μₙₒ₃ᴾ(P, PO₄, NO₃, NH₄, Pᶜʰˡ, Pᶠᵉ, T, zₘₓₗ, zₑᵤ, L_day, PARᴾ, t_darkᴾ, Si̅, bgc)
     μₙₒ₃ᴰ = get_μₙₒ₃ᴰ(D, PO₄, NO₃, NH₄, Si, Dᶜʰˡ, Dᶠᵉ, T, zₘₓₗ, zₑᵤ, L_day, PARᴰ, t_darkᴰ, Si̅, bgc)
 
-    return θᴺᶜ*(Nitrif(NH₄, O₂, λₙₕ₄, PAR, bgc) - μₙₒ₃ᴾ*P - μₙₒ₃ᴰ*D - Rₙₕ₄*λₙₕ₄*ΔO₂(O₂, bgc)*NH₄ - Rₙₒ₃*get_Denit(NO₃, PO₄, NH₄, DOC, O₂, T, bFe, Bact, bgc))
+    return (θᴺᶜ*(Nitrif(NH₄, O₂, λₙₕ₄, PAR, bgc) - μₙₒ₃ᴾ*P - μₙₒ₃ᴰ*D 
+            - Rₙₕ₄*λₙₕ₄*ΔO₂(O₂, bgc)*NH₄ - Rₙₒ₃*get_Denit(NO₃, PO₄, NH₄, DOC, O₂, T, bFe, Bact, bgc)))
 end
 
 # The following relate specifically to NH₄ forcing
@@ -93,7 +94,7 @@ end
     Lₙᴾ = Lᴾ(P, PO₄, NO₃, NH₄, Pᶜʰˡ, Pᶠᵉ, bgc)[5]
     θᴺᶜ = bgc.NC_redfield_ratio    
 
-    return (N_fixᵐ*max(0,μₚ - 2.15)*Lₙᴰᶻ(Lₙᴾ)*min(K_mondo(bFe, K_Feᴰᶻ), K_mondo(PO₄, Kₚₒ₄ᴾᵐⁱⁿ))*(1 - exp((-PAR/E_fix))))*(1/(θᴺᶜ + eps(0.0)))
+    return (N_fixᵐ*max(0,μₚ - 2.15)*Lₙᴰᶻ(Lₙᴾ)*min(concentration_limitation(bFe, K_Feᴰᶻ), concentration_limitation(PO₄, Kₚₒ₄ᴾᵐⁱⁿ))*(1 - exp((-PAR/E_fix))))*(1/(θᴺᶜ + eps(0.0)))
 end
 
 @inline function (bgc::PISCES)(::Val{:NH₄}, x, y, z, t, P, D, Z, M, Pᶜʰˡ, Dᶜʰˡ, Pᶠᵉ, Dᶠᵉ, Dˢⁱ, DOC, POC, GOC, SFe, BFe, PSi, NO₃, NH₄, PO₄, Fe, Si, CaCO₃, DIC, Alk, O₂, T, zₘₓₗ, zₑᵤ, Si̅, D_dust, Ω, PAR, PAR¹, PAR², PAR³) 
@@ -140,5 +141,7 @@ end
     Bact = get_Bact(zₘₐₓ, z, Z, M)
 
    
-    return θᴺᶜ*(γᶻ*(1-eᶻ-σᶻ)*∑gᶻ*Z + γᴹ*(1-eᴹ-σᴹ)*(∑gᴹ + ∑g_FFᴹ)*M + γᴹ*Rᵤₚ(M, T, bgc) + get_Remin(O₂, NO₃, PO₄, NH₄, DOC, T, bFe, Bact, bgc) + get_Denit(NO₃, PO₄, NH₄, DOC, O₂, T, bFe, Bact, bgc) + N_fix(bFe, PO₄, T, P, NO₃, NH₄, Pᶜʰˡ, Pᶠᵉ, PAR, bgc) - Nitrif(NH₄, O₂, λₙₕ₄, PAR, bgc) - λₙₕ₄*ΔO₂(O₂, bgc)*NH₄ - μₙₕ₄ᴾ*P - μₙₕ₄ᴰ*D)
+    return (θᴺᶜ*(γᶻ*(1-eᶻ-σᶻ)*∑gᶻ*Z + γᴹ*(1-eᴹ-σᴹ)*(∑gᴹ + ∑g_FFᴹ)*M + γᴹ*Rᵤₚ(M, T, bgc) 
+          + get_Remin(O₂, NO₃, PO₄, NH₄, DOC, T, bFe, Bact, bgc) + get_Denit(NO₃, PO₄, NH₄, DOC, O₂, T, bFe, Bact, bgc) 
+          + N_fix(bFe, PO₄, T, P, NO₃, NH₄, Pᶜʰˡ, Pᶠᵉ, PAR, bgc) - Nitrif(NH₄, O₂, λₙₕ₄, PAR, bgc) - λₙₕ₄*ΔO₂(O₂, bgc)*NH₄ - μₙₕ₄ᴾ*P - μₙₕ₄ᴰ*D))
 end

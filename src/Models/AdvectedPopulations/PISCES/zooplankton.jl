@@ -112,7 +112,7 @@ end
 
     eᶻ = eᴶ(eₘₐₓᶻ, σᶻ, gₚᶻ, g_Dᶻ, gₚₒᶻ, 0, Pᶠᵉ, Dᶠᵉ, SFe, P, D, POC, bgc)
 
-    return eᶻ*(gₚᶻ + g_Dᶻ + gₚₒᶻ)*Z - g_Zᴹ*M - mᶻ*(b_Z^T)*Z^2 - rᶻ*(b_Z^T)*(K_mondo(Z, Kₘ) + 3*ΔO₂(O₂, bgc))*Z   #24
+    return eᶻ*(gₚᶻ + g_Dᶻ + gₚₒᶻ)*Z - g_Zᴹ*M - mᶻ*(b_Z^T)*Z^2 - rᶻ*(b_Z^T)*(concentration_limitation(Z, Kₘ) + 3*ΔO₂(O₂, bgc))*Z   #24
 end
 
 @inline function (bgc::PISCES)(::Val{:M}, x, y, z, t, P, D, Z, M, Pᶜʰˡ, Dᶜʰˡ, Pᶠᵉ, Dᶠᵉ, Dˢⁱ, DOC, POC, GOC, SFe, BFe, PSi, NO₃, NH₄, PO₄, Fe, Si, CaCO₃, DIC, Alk, O₂, T, zₘₓₗ, zₑᵤ, Si̅, D_dust, Ω, PAR, PAR¹, PAR², PAR³)
@@ -129,5 +129,5 @@ end
 
     eᴹ =  eᴶ(eₘₐₓᴹ, σᴹ, gₚᴹ, g_Dᴹ, gₚₒᴹ, g_Zᴹ,Pᶠᵉ, Dᶠᵉ, SFe, P, D, POC, bgc)
 
-    return eᴹ*(gₚᴹ + g_Dᴹ + gₚₒᴹ + ∑g_FFᴹ + g_Zᴹ)*M - mᴹ*(bₘ^T)*M^2 - rᴹ*(bₘ^T)*(K_mondo(M, Kₘ) + 3*ΔO₂(O₂, bgc))*M   #28
+    return eᴹ*(gₚᴹ + g_Dᴹ + gₚₒᴹ + ∑g_FFᴹ + g_Zᴹ)*M - mᴹ*(bₘ^T)*M^2 - rᴹ*(bₘ^T)*(concentration_limitation(M, Kₘ) + 3*ΔO₂(O₂, bgc))*M   #28
 end
