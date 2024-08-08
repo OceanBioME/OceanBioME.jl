@@ -21,7 +21,7 @@ end
     Pₘₐₓ = bgc.threshold_concentration_for_size_dependency.P
     P₁ =  I₁(P, Pₘₐₓ)
     P₂ = I₂(P, Pₘₐₓ)
-    Lₙᴾ = Lᴾ(P, PO₄, NO₃, NH₄, Pᶜʰˡ, Pᶠᵉ, bgc)[5]
+    Lₙᴾ = P_nutrient_limitation(P, PO₄, NO₃, NH₄, Pᶜʰˡ, Pᶠᵉ, bgc)[5]
     Kₙₕ₄ᴾ = Kᵢᴶ(Kₙₕ₄ᴾᵐⁱⁿ, P₁, P₂, Sᵣₐₜᴾ)
     Lₗᵢₘᶜᵃᶜᵒ³ = min(Lₙᴾ, concentration_limitation(Fe, 6e-11), concentration_limitation(PO₄, Kₙₕ₄ᴾ))
     return r_CaCO₃*Lₗᵢₘᶜᵃᶜᵒ³*T*max(1, P/2)*max(0, PAR - 1)*30*(1 + exp((-(T-10)^2)/25))*min(1, 50/(zₘₓₗ + eps(0.0)))/((0.1 + T)*(4 + PAR)*(30 + PAR)) #eq77
