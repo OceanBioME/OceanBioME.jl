@@ -14,6 +14,7 @@ using Oceananigans.Biogeochemistry:
 
 using Oceananigans.Fields: CenterField
 using Oceananigans.TimeSteppers: tick!, TimeStepper
+using Oceananigans: UpdateStateCallsite, TendencyCallsite
 
 using OceanBioME: BoxModelGrid
 using StructArrays, JLD2

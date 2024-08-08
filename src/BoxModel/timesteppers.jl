@@ -2,6 +2,7 @@ using Oceananigans.Architectures: device
 using Oceananigans.Biogeochemistry: update_tendencies!, biogeochemical_auxiliary_fields
 using Oceananigans.TimeSteppers: rk3_substep_field!, store_field_tendencies!, RungeKutta3TimeStepper, QuasiAdamsBashforth2TimeStepper
 using Oceananigans.Utils: work_layout, launch!
+using Oceananigans: TendencyCallsite
 
 import Oceananigans.TimeSteppers: rk3_substep!, store_tendencies!, compute_tendencies!
 
