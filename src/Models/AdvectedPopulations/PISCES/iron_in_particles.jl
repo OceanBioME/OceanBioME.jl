@@ -82,7 +82,7 @@ end
 
     bFe = Fe
 
-    Lₗᵢₘᴰ = Lᴰ(D, PO₄, NO₃, NH₄, Si, Dᶜʰˡ, Dᶠᵉ, Si̅, bgc)[1]
+    Lₗᵢₘᴰ = D_nutrient_limitation(D, PO₄, NO₃, NH₄, Si, Dᶜʰˡ, Dᶠᵉ, Si̅, bgc)[1]
 
     wᴰ = wᴾ + wₘₐₓᴰ*(1 - Lₗᵢₘᴰ)
 
