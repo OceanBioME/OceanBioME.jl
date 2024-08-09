@@ -110,5 +110,5 @@ end
             + θᶠᵉᴰ*(0.5*mᴰ*concentration_limitation(D, Kₘ)*D + sh*wᴰ*D^2) 
             + κ_Bactᴮᶠᵉ*get_Bactfe(μₘₐₓ⁰, z, Z, M, Fe, DOC, PO₄, NO₃, NH₄, bFe, T, zₘₐₓ, bgc) 
             + λ_Fe*GOC*Fe¹ + θᶠᵉᴾᴼᶜ*get_Φ(POC, GOC, sh, bgc) + Cgfe2(sh, Fe, T, DOC, GOC, bgc) 
-            - θᶠᵉᴳᴼᶜ* g_GOC_FFᴹ*M - λₚₒ¹*BFe) #Partial derivative omitted
+            - θᶠᵉᴳᴼᶜ* g_GOC_FFᴹ*M - λₚₒ¹*BFe - θᶠᵉᶻ*grazingᴹ[5]*M) #Partial derivative omitted
 end

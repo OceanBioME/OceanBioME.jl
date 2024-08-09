@@ -3,7 +3,7 @@
     eₘₐₓᴹ = bgc.max_growth_efficiency_of_zooplankton.M
     mᴹ = bgc.zooplankton_quadratic_mortality.M
     bₘ = bgc.temperature_sensitivity_term.M
-    return (1 - σᴹ)*mᴹ*(bₘ^T)*M^2  #30b
+    return (1 - σᴹ - eₘₐₓᴹ)*(1/(1-eₘₐₓᴹ))*mᴹ*(bₘ^T)*M^2  #30b
 end
 
 @inline function Pᵤₚ(M, T, bgc)
@@ -11,7 +11,7 @@ end
     eₘₐₓᴹ = bgc.max_growth_efficiency_of_zooplankton.M
     mᴹ = bgc.zooplankton_quadratic_mortality.M
     bₘ = bgc.temperature_sensitivity_term.M
-    return σᴹ*mᴹ*(bₘ^T)*M^2      #30a
+    return σᴹ*mᴹ*(1/(1-eₘₐₓᴹ))*(bₘ^T)*M^2      #30a
 end
 
 

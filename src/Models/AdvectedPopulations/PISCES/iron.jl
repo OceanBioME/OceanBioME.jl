@@ -102,7 +102,7 @@ end
     eᶻ = eᴶ(eₘₐₓᶻ, σᶻ, gₚᶻ, g_Dᶻ, gₚₒᶻ, 0, Pᶠᵉ, Dᶠᵉ, SFe, P, D, POC, bgc) #eₘₐₓᶻ used in paper but changed here to be consistent with eqs 24, 28
     eᴹ =  eᴶ(eₘₐₓᴹ, σᴹ, gₚᴹ, g_Dᴹ, gₚₒᴹ, g_Zᴹ,Pᶠᵉ, Dᶠᵉ, SFe, P, D, POC, bgc)
 
-   # println("Scav = $(Scav(POC, GOC, CaCO₃, PSi, D_dust, DOC, T, Fe, bgc)), Aggfe = $(Aggfe(Fe, DOC, T, bgc) )")
+    #println("Scav = $(Scav(POC, GOC, CaCO₃, PSi, D_dust, DOC, T, Fe, bgc)), Aggfe = $(Aggfe(Fe, DOC, T, bgc) )")
 
     return (max(0, (1-σᶻ)*(∑θᶠᵉⁱgᵢᶻ/(∑gᶻ + eps(0.0)) - eᶻ*θᶠᵉᶻ))*∑gᶻ*Z 
             + max(0, (1-σᴹ)*(∑θᶠᵉⁱgᵢᴹ + θᶠᵉᴾᴼᶜ*gₚₒ_FF + θᶠᵉᴳᴼᶜ*g_GOC_FFᴹ )/(∑gᴹ+∑g_FFᴹ + eps(0.0)) - eᴹ*θᶠᵉᶻ)*(∑gᴹ+∑g_FFᴹ)*M 
