@@ -181,8 +181,8 @@ struct PISCES{FT, PD, ZM, OT, W, CF, ZF} <: AbstractContinuousFormBiogeochemistr
 
     mixed_layer_depth :: CF
     euphotic_layer_depth :: CF
-    yearly_maximum_silicate :: FT
-    dust_deposition :: FT
+    yearly_maximum_silicate :: CF
+    dust_deposition :: ZF
 
     vertical_diffusivity :: CF 
     carbonate_sat_ratio :: ZF
@@ -303,8 +303,8 @@ struct PISCES{FT, PD, ZM, OT, W, CF, ZF} <: AbstractContinuousFormBiogeochemistr
                     
                     mixed_layer_depth :: CF,
                     euphotic_layer_depth :: CF,
-                    yearly_maximum_silicate :: FT,
-                    dust_deposition :: FT,
+                    yearly_maximum_silicate :: CF,
+                    dust_deposition :: ZF,
                     vertical_diffusivity :: CF, 
                     carbonate_sat_ratio :: ZF,
 
@@ -625,8 +625,8 @@ function PISCES(; grid, # finally the function
                    min_half_saturation_const_for_iron_uptake :: PD = (P = 1.0, D = 3.0),   #nmolFeL⁻¹
                    size_ratio_of_phytoplankton :: PD = (P = 3.0, D = 3.0),
                    optimal_SiC_uptake_ratio_of_diatoms :: FT = 0.159,       #molSi/(mol C)
-                   optimal_iron_quota :: PD = (P = 7.0e-3, D = 7.0e-3),               #mmolFe/(mol C)
-                   max_iron_quota :: PD = (P = 40.0e-3, D = 40.0e-3),                  #molFe/(mol C)
+                   optimal_iron_quota :: PD = (P = 7.0, D = 7.0),               #mmolFe/(mol C)
+                   max_iron_quota :: PD = (P = 40.0, D = 40.0),                  #molFe/(mol C)
                    phytoplankton_mortality_rate :: PD = (P = 0.01/day, D = 0.01/day),
                    min_quadratic_mortality_of_phytoplankton :: FT = 0.01 / day,   #1/(d mol C)
                    max_quadratic_mortality_of_diatoms :: FT = 0.03 / day,         #1/(d mol C)
@@ -646,8 +646,8 @@ function PISCES(; grid, # finally the function
                    flux_feeding_rate :: FT = 2.0e-3,                                #(m mol L⁻¹)⁻¹
                    half_saturation_const_for_grazing :: ZM = (Z = 20.0, M = 20.0),               #μmolCL⁻¹
                    preference_for_nanophytoplankton :: ZM = (Z = 1.0, M = 0.3),
-                   preference_for_diatoms :: ZM = (Z = 0.5, M = 1.0),
-                   preference_for_POC :: ZM= (Z = 0.1, M = 0.3),
+                   preference_for_diatoms :: ZM = (Z = 0.5e-3, M = 1.0e-3),
+                   preference_for_POC :: ZM= (Z = 0.1e-3, M = 0.3e-3),
                    preference_for_microzooplankton :: FT = 1.0,
                    food_threshold_for_zooplankton :: ZM = (Z = 0.3, M = 0.3),                  #μmolCL⁻¹
                    specific_food_thresholds_for_microzooplankton :: FT = 0.001,        #μmolCL⁻¹
@@ -719,11 +719,11 @@ function PISCES(; grid, # finally the function
                    Fe_half_saturation_const_for_Bacteria :: FT = 0.03, #or 2.5e-10    #not sure what this should be called
                    proportion_of_sinking_grazed_shells :: ZM = (Z = 0.3, M = 0.3),  # 0.3 for both? not sure
 
-                   mixed_layer_depth :: CF = ConstantField(100),
-                   euphotic_layer_depth :: CF = ConstantField(50),
+                   mixed_layer_depth :: CF = ConstantField(-100),
+                   euphotic_layer_depth :: CF = ConstantField(-50),
                    vertical_diffusivity :: CF  = ConstantField(1),
-                   yearly_maximum_silicate :: FT = 1.0,
-                   dust_deposition :: FT = 0.0,
+                   yearly_maximum_silicate :: CF = ConstantField(1),
+                   dust_deposition :: ZF = ZeroField(),
 
                   surface_photosynthetically_active_radiation = default_surface_PAR,
 
@@ -734,6 +734,7 @@ function PISCES(; grid, # finally the function
                   # just keep all this stuff for now but you can ignore it
                   sediment_model::S = nothing,
 
+                
                   sinking_speeds = (POC = 0.0, GOC = 0.0, SFe = 0.0, BFe = 0.0, PSi = 0.0, CaCO₃ = 0.0),  #change all 1.0s to w_GOC
                   
                   carbonate_sat_ratio :: ZF = ZeroField(),
@@ -921,7 +922,6 @@ show(io::IO, model::PISCES) where {FT, B, W, PD, ZM, OT}  = print(io, string("Pe
 
 @inline maximum_sinking_velocity(bgc::PISCES) = maximum(abs, bgc.sinking_velocities.bPOM.w) # might need ot update this for wghatever the fastest sinking pareticles are
 
-# write most of the code here (i.e. make a file falled phytoplankton.jl and then include it here)
 include("phytoplankton.jl")
 include("calcite.jl")
 include("carbonate_system.jl")
@@ -949,4 +949,5 @@ include("zooplankton.jl")
 @inline conserved_tracers(::PISCES) = NaN
 
 @inline sinking_tracers(::PISCES) = (:POC, :GOC, :SFe, :BFe, :PSi, :CaCO₃) # please list them here
+
 end # module

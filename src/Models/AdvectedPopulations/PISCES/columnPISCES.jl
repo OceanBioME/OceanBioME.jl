@@ -17,7 +17,6 @@ using OceanBioME, Oceananigans, Printf
 using OceanBioME.SLatissimaModel: SLatissima
 using Oceananigans.Fields: FunctionField, ConstantField
 using Oceananigans.Units
-include("Nonhydrostaticmodel.jl")
 
 const year = years = 365days
 nothing #hide
@@ -38,11 +37,11 @@ nothing #hide
 @inline temp(x, y, z, t) = 2.4 * cos(t * 2π / year + 50days) + 10
 nothing #hide
 
-PAR_func(t) = 300.0 # Modify the PAR based on the nominal depth and exponential decay
+PAR_func(x, y, z, t) = 300.0 # Modify the PAR based on the nominal depth and exponential decay
 
-PAR_func1(t) = 100.0
-PAR_func2(t) = 100.0
-PAR_func3(t)= 100.0
+PAR_func1(x, y, z, t) = 100.0
+PAR_func2(x, y, z, t) = 100.0
+PAR_func3(x, y, z, t)= 100.0
 
 grid = RectilinearGrid(size = (1, 1, 50), extent = (20meters, 20meters, 200meters))
 
@@ -68,11 +67,11 @@ biogeochemistry = PISCES(; grid,
 
 CO₂_flux = GasExchange(; gas = :CO₂)
 
-T = FunctionField{Center, Center, Center}(temp, grid; clock)
+#T = FunctionField{Center, Center, Center}(temp, grid; clock)
 S = ConstantField(35)
 
-mixed_layer_depth = ConstantField(100)
-euphotic_layer_depth = ConstantField(50)
+mixed_layer_depth = ConstantField(-100)
+euphotic_layer_depth = ConstantField(-50)
 yearly_maximum_silicate = ConstantField(1) 
 dust_deposition = ConstantField(0)
 carbonate_sat_ratio = ConstantField(0)
@@ -82,16 +81,16 @@ model = NonhydrostaticModel(; grid,
                               closure = ScalarDiffusivity(ν = κₜ, κ = κₜ),
                               biogeochemistry,
                               boundary_conditions = (DIC = FieldBoundaryConditions(top = CO₂_flux), ),
-                              auxiliary_fields = (; T, S, zₘₓₗ = mixed_layer_depth, zₑᵤ = euphotic_layer_depth, Si̅ = yearly_maximum_silicate, D_dust = dust_deposition, Ω = carbonate_sat_ratio, PAR, PAR¹, PAR², PAR³ ))
+                              auxiliary_fields = (; S, zₘₓₗ = mixed_layer_depth, zₑᵤ = euphotic_layer_depth, Si̅ = yearly_maximum_silicate, D_dust = dust_deposition, Ω = carbonate_sat_ratio, PAR, PAR¹, PAR², PAR³ ))
 
-set!(model, NO₃ = 4.0, NH₄ = 0.1, P = 4.26, D = 4.26, Z = 4.26, M = 4.26,  Pᶠᵉ = 7e-6 * 1e9 / 1e6 * 4.26, Dᶠᵉ = 7e-6 * 1e9 / 1e6 * 4.26, Pᶜʰˡ = 1.0, Dᶜʰˡ = 1.0, Dˢⁱ = 0.67734, SFe = 7e-6 * 1e9 / 1e6 * 0.002, BFe = 7e-6 * 1e9 / 1e6 * 16, Fe = 0.0002, O₂ = 264.0, Si = 4.557, Alk = 2360.0, PO₄ = .8114, DIC = 2000.0, CaCO₃ = 0.0001)
+set!(model, NO₃ = 4.0, NH₄ = 0.1, P = 4.26, D = 4.26, Z = .426, M = .426,  Pᶠᵉ = 7e-6 * 1e9 / 1e6 * 4.26, Dᶠᵉ = 7e-6 * 1e9 / 1e6 * 4.26, Pᶜʰˡ = 1.0, Dᶜʰˡ = 1.0, Dˢⁱ = 0.67734, SFe = 7e-6 * 1e9 / 1e6 * 0.002, BFe = 7e-6 * 1e9 / 1e6 * 16, Fe = 0.0002, O₂ = 264.0, Si = 4.557, Alk = 2360.0, PO₄ = .8114, DIC = 2000.0, CaCO₃ = 0.0001)
 
 # ## Simulation
 # Next we setup a simulation and add some callbacks that:
 # - Show the progress of the simulation
 # - Store the model and particles output
 
-simulation = Simulation(model, Δt = 3minutes, stop_time = 100days)
+simulation = Simulation(model, Δt = 1minutes, stop_time = 50days)
 
 progress_message(sim) = @printf("Iteration: %04d, time: %s, Δt: %s, wall time: %s\n",
                                 iteration(sim),
@@ -112,16 +111,48 @@ nothing #hide
 # We are ready to run the simulation
 run!(simulation)
 
+function non_zero_fields!(model) 
+  @inbounds for (idx, tracer) in enumerate(model.tracers)
+      if isnan(tracer[1,1,1])
+          throw("$(keys(model.tracers)[idx]) has gone NaN")
+      else
+          tracer[1, 1, 1] = max(0, tracer[1, 1, 1])
+      end
+      
+  end
+  return nothing
+end
+simulation.callbacks[:non_zero_fields] = Callback(non_zero_fields!, callsite = UpdateStateCallsite())
+
+
 # ## Load saved output
 # Now we can load the results and do some post processing to diagnose the air-sea CO₂ flux. Hopefully, this looks different to the example without kelp!
 
-   P = FieldTimeSeries("$filename.jld2", "P")
- NO₃ = FieldTimeSeries("$filename.jld2", "NO₃")
-   Z = FieldTimeSeries("$filename.jld2", "Z")
-sPOM = FieldTimeSeries("$filename.jld2", "sPOM")
-bPOM = FieldTimeSeries("$filename.jld2", "bPOM")
- DIC = FieldTimeSeries("$filename.jld2", "DIC")
- Alk = FieldTimeSeries("$filename.jld2", "Alk")
+    P = FieldTimeSeries("$filename.jld2", "P")
+    D = FieldTimeSeries("$filename.jld2", "D")
+    Z = FieldTimeSeries("$filename.jld2", "Z")
+    M = FieldTimeSeries("$filename.jld2", "M")
+ Pᶜʰˡ = FieldTimeSeries("$filename.jld2", "Pᶜʰˡ")
+ Dᶜʰˡ = FieldTimeSeries("$filename.jld2", "Dᶜʰˡ")
+  Pᶠᵉ = FieldTimeSeries("$filename.jld2", "Pᶠᵉ")
+  Dᶠᵉ = FieldTimeSeries("$filename.jld2", "Dᶠᵉ")
+  Dˢⁱ = FieldTimeSeries("$filename.jld2", "Dˢⁱ")
+  DOC = FieldTimeSeries("$filename.jld2", "DOC")
+  POC = FieldTimeSeries("$filename.jld2", "POC")
+  GOC = FieldTimeSeries("$filename.jld2", "GOC")
+  SFe = FieldTimeSeries("$filename.jld2", "SFe")
+  BFe = FieldTimeSeries("$filename.jld2", "BFe")
+  PSi = FieldTimeSeries("$filename.jld2", "PSi")
+  NO₃ = FieldTimeSeries("$filename.jld2", "NO₃")
+  NH₄ = FieldTimeSeries("$filename.jld2", "NH₄")
+  PO₄ = FieldTimeSeries("$filename.jld2", "PO₄")
+   Fe = FieldTimeSeries("$filename.jld2", "Fe")
+   Si = FieldTimeSeries("$filename.jld2", "Si")
+CaCO₃ = FieldTimeSeries("$filename.jld2", "CaCO₃")
+  DIC = FieldTimeSeries("$filename.jld2", "DIC")
+  Alk = FieldTimeSeries("$filename.jld2", "Alk")
+   O₂ = FieldTimeSeries("$filename.jld2", "O₂")
+                 
 
 x, y, z = nodes(P)
 times = P.times
@@ -137,8 +168,8 @@ using Oceananigans.Biogeochemistry: biogeochemical_drift_velocity
 
 for (i, t) in enumerate(times)
     air_sea_CO₂_flux[i] = CO₂_flux.condition.func(0.0, 0.0, t, DIC[1, 1, grid.Nz, i], Alk[1, 1, grid.Nz, i], temp(1, 1, 0, t), 35)
-    carbon_export[i] = (sPOM[1, 1, grid.Nz-20, i] * biogeochemical_drift_velocity(model.biogeochemistry, Val(:sPOM)).w[1, 1, grid.Nz-20] +
-                        bPOM[1, 1, grid.Nz-20, i] * biogeochemical_drift_velocity(model.biogeochemistry, Val(:bPOM)).w[1, 1, grid.Nz-20]) * redfield(Val(:sPOM), model.biogeochemistry)
+    carbon_export[i] = (POC[1, 1, grid.Nz-20, i] * biogeochemical_drift_velocity(model.biogeochemistry, Val(:POC)).w[1, 1, grid.Nz-20] +
+                        GOC[1, 1, grid.Nz-20, i] * biogeochemical_drift_velocity(model.biogeochemistry, Val(:GOC)).w[1, 1, grid.Nz-20]) * redfield(Val(:GOC), model.biogeochemistry)
 end
 
 # Both `air_sea_CO₂_flux` and `carbon_export` are in units `mmol CO₂ / (m² s)`.
@@ -148,32 +179,112 @@ end
 
 using CairoMakie
 
-fig = Figure(size = (1000, 1500), fontsize = 20)
+fig = Figure(size = (4000, 2100), fontsize = 20)
 
 axis_kwargs = (xlabel = "Time (days)", ylabel = "z (m)", limits = ((0, times[end] / days), (-150meters, 0)))
 
-axP = Axis(fig[1, 1]; title = "Phytoplankton concentration (mmol N / m³)", axis_kwargs...)
+axP = Axis(fig[1, 1]; title = "Nanophytoplankton concentration (μmolC/L)", axis_kwargs...)
 hmP = heatmap!(times / days, z, interior(P, 1, 1, :, :)', colormap = :batlow)
 Colorbar(fig[1, 2], hmP)
 
-axNO₃ = Axis(fig[2, 1]; title = "Nitrate concentration (mmol N / m³)", axis_kwargs...)
-hmNO₃ = heatmap!(times / days, z, interior(NO₃, 1, 1, :, :)', colormap = :batlow)
-Colorbar(fig[2, 2], hmNO₃)
+axD = Axis(fig[1,3]; title = "Diatom concentration (μmolC/L)", axis_kwargs...)
+hmD = heatmap!(times / days, z, interior(D, 1, 1, :, :)', colormap = :batlow)
+Colorbar(fig[1, 4], hmD)
 
-axZ = Axis(fig[3, 1]; title = "Zooplankton concentration (mmol N / m³)", axis_kwargs...)
+axZ = Axis(fig[1, 5]; title = "Microzooplankton concentration (μmolC/L)", axis_kwargs...)
 hmZ = heatmap!(times / days, z, interior(Z, 1, 1, :, :)', colormap = :batlow)
-Colorbar(fig[3, 2], hmZ)
+Colorbar(fig[1, 6], hmZ)
 
-axD = Axis(fig[4, 1]; title = "Detritus concentration (mmol N / m³)", axis_kwargs...)
-hmD = heatmap!(times / days, z, interior(sPOM, 1, 1, :, :)' .+ interior(bPOM, 1, 1, :, :)', colormap = :batlow)
-Colorbar(fig[4, 2], hmD)
+axM = Axis(fig[1,7]; title = "Mesozooplankton concentration (μmolC/L)", axis_kwargs...)
+hmM = heatmap!(times / days, z, interior(M, 1, 1, :, :)', colormap = :batlow)
+Colorbar(fig[1, 8], hmM)
+
+axPᶜʰˡ  = Axis(fig[2,1]; title = "Chlorophyll concentration in P (μgChl/L)", axis_kwargs...)
+hmPᶜʰˡ  = heatmap!(times / days, z, interior(Pᶜʰˡ, 1, 1, :, :)', colormap = :batlow)
+Colorbar(fig[2, 2], hmPᶜʰˡ)
+
+axDᶜʰˡ = Axis(fig[2,3]; title = "Chlorophyll concentration in D (μgChl/L)", axis_kwargs...)
+hmDᶜʰˡ = heatmap!(times / days, z, interior(Dᶜʰˡ, 1, 1, :, :)', colormap = :batlow)
+Colorbar(fig[2, 4], hmDᶜʰˡ)
+
+axPᶠᵉ = Axis(fig[2,5]; title = "Iron concentration in P (nmolFe/L)", axis_kwargs...)
+hmPᶠᵉ = heatmap!(times / days, z, interior(Pᶠᵉ, 1, 1, :, :)', colormap = :batlow)
+Colorbar(fig[2,6], hmPᶠᵉ)
+
+axDᶠᵉ = Axis(fig[2,7]; title = "Iron concentration in D (nmolFe/L)", axis_kwargs...)
+hmDᶠᵉ = heatmap!(times / days, z, interior(Dᶠᵉ, 1, 1, :, :)', colormap = :batlow)
+Colorbar(fig[2, 8], hmDᶠᵉ)
+
+axDˢⁱ  = Axis(fig[3,1]; title = "Silicon concentration in D (μmolSi/L)", axis_kwargs...)
+hmDˢⁱ  = heatmap!(times / days, z, interior(Dˢⁱ, 1, 1, :, :)', colormap = :batlow)
+Colorbar(fig[3, 2], hmDˢⁱ)
+
+axDOC = Axis(fig[3,3]; title = "Dissolved Organic Carbon (μmolC/L)", axis_kwargs...)
+hmDOC = heatmap!(times / days, z, interior(DOC, 1, 1, :, :)', colormap = :batlow)
+Colorbar(fig[3, 4], hmDOC)
+
+axPOC = Axis(fig[3,5]; title = "Small particles of Organic Carbon (μmolC/L)", axis_kwargs...)
+hmPOC = heatmap!(times / days, z, interior(POC, 1, 1, :, :)', colormap = :batlow)
+Colorbar(fig[3,6], hmPOC)
+
+axGOC = Axis(fig[3,7]; title = "Large particles of Organic Carbon (μmolC/L)", axis_kwargs...)
+hmGOC = heatmap!(times / days, z, interior(GOC, 1, 1, :, :)', colormap = :batlow)
+Colorbar(fig[3, 8], hmGOC)
+
+axSFe  = Axis(fig[4,1]; title = "Iron in small particles (nmolFe/L)", axis_kwargs...)
+hmSFe  = heatmap!(times / days, z, interior(SFe, 1, 1, :, :)', colormap = :batlow)
+Colorbar(fig[4, 2], hmSFe)
+
+axBFe = Axis(fig[4,3]; title = "Iron in large particles (nmolFe/L)", axis_kwargs...)
+hmBFe = heatmap!(times / days, z, interior(BFe, 1, 1, :, :)', colormap = :batlow)
+Colorbar(fig[4, 4], hmBFe)
+
+axPSi = Axis(fig[4,5]; title = "Silicon in large particles (μmolSi/L)", axis_kwargs...)
+hmPSi = heatmap!(times / days, z, interior(PSi, 1, 1, :, :)', colormap = :batlow)
+Colorbar(fig[4,6], hmPSi)
+
+axNO₃ = Axis(fig[4, 7]; title = "Nitrate concentration (μmolN/L)", axis_kwargs...)
+hmNO₃ = heatmap!(times / days, z, interior(NO₃, 1, 1, :, :)', colormap = :batlow)
+Colorbar(fig[4, 8], hmNO₃)
+
+axNH₄  = Axis(fig[5,1]; title = "Ammonium concentration (μmolN/L)", axis_kwargs...)
+hmNH₄  = heatmap!(times / days, z, interior(NH₄, 1, 1, :, :)', colormap = :batlow)
+Colorbar(fig[5, 2], hmNH₄)
+
+axPO₄ = Axis(fig[5,3]; title = "Phosphate concentration (μmolP/L)", axis_kwargs...)
+hmPO₄ = heatmap!(times / days, z, interior(PO₄, 1, 1, :, :)', colormap = :batlow)
+Colorbar(fig[5, 4], hmPO₄)
+
+axFe = Axis(fig[5,5]; title = "Dissolved Iron Concentration (nmolFe/L)", axis_kwargs...)
+hmFe = heatmap!(times / days, z, interior(Fe, 1, 1, :, :)', colormap = :batlow)
+Colorbar(fig[5,6], hmFe)
+
+axSi = Axis(fig[5, 7]; title = "Silicon concentration (μmolSi/L)", axis_kwargs...)
+hmSi = heatmap!(times / days, z, interior(Si, 1, 1, :, :)', colormap = :batlow)
+Colorbar(fig[5, 8], hmSi)
+
+axCaCO₃  = Axis(fig[6,1]; title = "Calcite concentration (μmolC/L)", axis_kwargs...)
+hmCaCO₃  = heatmap!(times / days, z, interior(CaCO₃, 1, 1, :, :)', colormap = :batlow)
+Colorbar(fig[6, 2], hmCaCO₃)
+
+axO₂ = Axis(fig[6,3]; title = "Oxygen concentration (μmolO₂/L)", axis_kwargs...)
+hmO₂ = heatmap!(times / days, z, interior(O₂, 1, 1, :, :)', colormap = :batlow)
+Colorbar(fig[6, 4], hmO₂)
+
+axDIC = Axis(fig[6,5]; title = "Dissolved Inorganic Carbon concentration (μmolC/L)", axis_kwargs...)
+hmDIC = heatmap!(times / days, z, interior(DIC, 1, 1, :, :)', colormap = :batlow)
+Colorbar(fig[6,6], hmDIC)
+
+axAlk = Axis(fig[6, 7]; title = "Total Alkalinity (μmolN/L)", axis_kwargs...)
+hmAlk = heatmap!(times / days, z, interior(Alk, 1, 1, :, :)', colormap = :batlow)
+Colorbar(fig[6, 8], hmAlk)
 
 CO₂_molar_mass = (12 + 2 * 16) * 1e-3 # kg / mol
 
-axfDIC = Axis(fig[5, 1], xlabel = "Time (days)", ylabel = "Flux (kgCO₂/m²/year)",
+axfDIC = Axis(fig[7, 1], xlabel = "Time (days)", ylabel = "Flux (kgCO₂/m²/year)",
                          title = "Air-sea CO₂ flux and Sinking", limits = ((0, times[end] / days), nothing))
 lines!(axfDIC, times / days, air_sea_CO₂_flux / 1e3 * CO₂_molar_mass * year, linewidth = 3, label = "Air-sea flux")
 lines!(axfDIC, times / days, carbon_export / 1e3    * CO₂_molar_mass * year, linewidth = 3, label = "Sinking export")
-Legend(fig[5, 2], axfDIC, framevisible = false)
+Legend(fig[7, 2], axfDIC, framevisible = false)
 
 fig
