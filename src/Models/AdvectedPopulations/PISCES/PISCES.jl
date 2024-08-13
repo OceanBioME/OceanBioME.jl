@@ -625,8 +625,8 @@ function PISCES(; grid, # finally the function
                    min_half_saturation_const_for_iron_uptake :: PD = (P = 1.0, D = 3.0),   #nmolFeL⁻¹
                    size_ratio_of_phytoplankton :: PD = (P = 3.0, D = 3.0),
                    optimal_SiC_uptake_ratio_of_diatoms :: FT = 0.159,       #molSi/(mol C)
-                   optimal_iron_quota :: PD = (P = 7.0, D = 7.0),               #mmolFe/(mol C)
-                   max_iron_quota :: PD = (P = 40.0, D = 40.0),                  #molFe/(mol C)
+                   optimal_iron_quota :: PD = (P = 7.0e-3, D = 7.0e-3),               #mmolFe/(mol C)
+                   max_iron_quota :: PD = (P = 40.0e-3, D = 40.0e-3),                  #molFe/(mol C)
                    phytoplankton_mortality_rate :: PD = (P = 0.01/day, D = 0.01/day),
                    min_quadratic_mortality_of_phytoplankton :: FT = 0.01 / day,   #1/(d mol C)
                    max_quadratic_mortality_of_diatoms :: FT = 0.03 / day,         #1/(d mol C)
@@ -646,8 +646,8 @@ function PISCES(; grid, # finally the function
                    flux_feeding_rate :: FT = 2.0e-3,                                #(m mol L⁻¹)⁻¹
                    half_saturation_const_for_grazing :: ZM = (Z = 20.0, M = 20.0),               #μmolCL⁻¹
                    preference_for_nanophytoplankton :: ZM = (Z = 1.0, M = 0.3),
-                   preference_for_diatoms :: ZM = (Z = 0.5e-3, M = 1.0e-3),
-                   preference_for_POC :: ZM= (Z = 0.1e-3, M = 0.3e-3),
+                   preference_for_diatoms :: ZM = (Z = 0.5, M = 1.0),
+                   preference_for_POC :: ZM= (Z = 0.1, M = 0.3),
                    preference_for_microzooplankton :: FT = 1.0,
                    food_threshold_for_zooplankton :: ZM = (Z = 0.3, M = 0.3),                  #μmolCL⁻¹
                    specific_food_thresholds_for_microzooplankton :: FT = 0.001,        #μmolCL⁻¹
