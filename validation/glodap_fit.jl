@@ -77,13 +77,14 @@ Threads.@threads for n in 1:Nrows
 
     DIC = data[n, DIC_name] * density * 1e-3
     Alk = data[n, Alk_name] * density * 1e-3
+
+    silicate = ifelse(silicate == -9999, 0, silicate)
+    phosphate = ifelse(phosphate == -9999, 0, phosphate)
     
     silicate = data[n, Si_name] * density * 1e-3
     phosphate = data[n, PO_name] * density * 1e-3
 
-    silicate = ifelse(silicate == -9999, 0, silicate)
-    phosphate = ifelse(phosphate == -9999, 0, phosphate)
-    P = ifelse(P == -9999, 0, P)
+    P = ifelse(P == -9999 * 0.1, 0, P)
 
     if data[n, pH_name*"f"] == 2 && data[n, pH_name] != -9999
         model_pH[n] = carbon_chemistry(; DIC, Alk, T, S, P, silicate, phosphate, lon, lat, return_pH = true)
