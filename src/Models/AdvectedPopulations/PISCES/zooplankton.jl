@@ -95,7 +95,7 @@ end
     θᶠᵉᶻ = bgc.FeC_ratio_of_zooplankton  #Assumed the same for both types of zooplankton
 
     ∑ᵢθᴺᴵgᵢᴶ = θᴺᶜ*gₚᴶ + θᴺᶜ*g_Dᴶ + θᴺᶜ*gₚₒᴶ + θᴺᶜ*g_Zᴹ
-    ∑ᵢθᶠᵉᴵgᵢᴶ = θ(Pᶠᵉ, P)*gₚᴶ + θ(Dᶠᵉ, D)*g_Dᴶ + θ(SFe, POC)*gₚₒᴶ + θᶠᵉᶻ*g_Zᴹ
+    ∑ᵢθᶠᵉᴵgᵢᴶ = nutrient_quota(Pᶠᵉ, P)*gₚᴶ + nutrient_quota(Dᶠᵉ, D)*g_Dᴶ + nutrient_quota(SFe, POC)*gₚₒᴶ + θᶠᵉᶻ*g_Zᴹ
     ∑ᵢgᵢᴶ = gₚᴶ + g_Dᴶ + gₚₒᴶ + g_Zᴹ
     
     return min(1, (∑ᵢθᴺᴵgᵢᴶ)/(θᴺᶜ*∑ᵢgᵢᴶ + eps(0.0)), (∑ᵢθᶠᵉᴵgᵢᴶ)/(θᶠᵉᶻ*∑ᵢgᵢᴶ + eps(0.0)))   #27a
@@ -106,7 +106,7 @@ end
 
     θᶠᵉᶻ = bgc.FeC_ratio_of_zooplankton  #Assumed the same for both types of zooplankton
 
-    ∑ᵢθᶠᵉᴵgᵢᴶ = θ(Pᶠᵉ, P)*gₚᴶ + θ(Dᶠᵉ, D)*g_Dᴶ + θ(SFe, POC)*gₚₒᴶ + θᶠᵉᶻ*g_Zᴹ
+    ∑ᵢθᶠᵉᴵgᵢᴶ = nutrient_quota(Pᶠᵉ, P)*gₚᴶ + nutrient_quota(Dᶠᵉ, D)*g_Dᴶ + nutrient_quota(SFe, POC)*gₚₒᴶ + θᶠᵉᶻ*g_Zᴹ
     ∑ᵢgᵢᴶ = gₚᴶ + g_Dᴶ + gₚₒᴶ + g_Zᴹ
 
     eₙᴶ = get_eₙᴶ(gₚᴶ, g_Dᴶ, gₚₒᴶ, g_Zᴹ, Pᶠᵉ, Dᶠᵉ, SFe, P, D, POC, bgc) #27a

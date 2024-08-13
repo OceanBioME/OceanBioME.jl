@@ -75,8 +75,8 @@ end
     #Uptake of nitrate by phytoplankton and diatoms
     ϕ₀ = bgc.latitude
     L_day_param = bgc.length_of_day
-    ϕ = get_ϕ(ϕ₀, y)
-    L_day = get_L_day(ϕ, t, L_day_param)
+    ϕ = latitude(ϕ₀, y)
+    L_day = day_length(ϕ, t, L_day_param)
     t_darkᴾ = bgc.mean_residence_time_of_phytoplankton_in_unlit_mixed_layer.P
     t_darkᴰ = bgc.mean_residence_time_of_phytoplankton_in_unlit_mixed_layer.D
     PARᴾ = get_PARᴾ(PAR¹, PAR², PAR³, bgc)
@@ -104,7 +104,8 @@ end
     Kₚₒ₄ᴾᵐⁱⁿ = bgc.min_half_saturation_const_for_phosphate.P
     E_fix = bgc.photosynthetic_parameter_of_nitrogen_fixation
     μ⁰ₘₐₓ = bgc.growth_rate_at_zero
-    μₚ = μ⁰ₘₐₓ*fₚ(T, bgc)
+    bₚ = bgc.temperature_sensitivity_of_growth
+    μₚ = μ⁰ₘₐₓ*(bₚ^T)
     Lₙᴾ = P_nutrient_limitation(P, PO₄, NO₃, NH₄, Pᶜʰˡ, Pᶠᵉ, bgc)[5]
     θᴺᶜ = bgc.NC_redfield_ratio    
     return (1/(θᴺᶜ + eps(0.0)))*(N_fixᵐ*max(0,μₚ - 2.15)*Lₙᴰᶻ(Lₙᴾ)*min(concentration_limitation(bFe, K_Feᴰᶻ), concentration_limitation(PO₄, Kₚₒ₄ᴾᵐⁱⁿ))*(1 - exp((-PAR/E_fix)))) #eq 58b
@@ -127,8 +128,8 @@ end
     #Uptake rates of ammonium
     ϕ₀ = bgc.latitude
     L_day_param = bgc.length_of_day
-    ϕ = get_ϕ(ϕ₀, y)
-    L_day = get_L_day(ϕ, t, L_day_param)
+    ϕ = latitude(ϕ₀, y)
+    L_day = day_length(ϕ, t, L_day_param)
 
     t_darkᴾ = bgc.mean_residence_time_of_phytoplankton_in_unlit_mixed_layer.P
     t_darkᴰ = bgc.mean_residence_time_of_phytoplankton_in_unlit_mixed_layer.D

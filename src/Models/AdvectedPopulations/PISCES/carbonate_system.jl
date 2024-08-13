@@ -2,20 +2,16 @@
     #Forcing for DIC.
     #Forcing for Alk.
 
+#DIC is significant as required by phytoplankton for photosynthesis, and by calcifying organisms for calcite shells.
+
 @inline function (bgc::PISCES)(::Val{:DIC}, x, y, z, t, P, D, Z, M, Pᶜʰˡ, Dᶜʰˡ, Pᶠᵉ, Dᶠᵉ, Dˢⁱ, DOC, POC, GOC, SFe, BFe, PSi, NO₃, NH₄, PO₄, Fe, Si, CaCO₃, DIC, Alk, O₂, T, zₘₓₗ, zₑᵤ, Si̅, D_dust, Ω, PAR, PAR¹, PAR², PAR³)
     #Parameters
-    γᶻ = bgc.excretion_as_DOM.Z
-    σᶻ = bgc.non_assimilated_fraction.Z
-    γᴹ = bgc.excretion_as_DOM.M
-    σᴹ = bgc.non_assimilated_fraction.M
-    eₘₐₓᶻ = bgc. max_growth_efficiency_of_zooplankton.Z
-    eₘₐₓᴹ = bgc.max_growth_efficiency_of_zooplankton.M
-    αᴾ= bgc.initial_slope_of_PI_curve.P
-    αᴰ = bgc.initial_slope_of_PI_curve.D
+    γᶻ, γᴹ = bgc.excretion_as_DOM
+    σᶻ, σᴹ = bgc.non_assimilated_fraction
+    eₘₐₓᶻ, eₘₐₓᴹ = bgc. max_growth_efficiency_of_zooplankton
+    αᴾ, αᴰ = bgc.initial_slope_of_PI_curve
 
     bFe = Fe
-
-    zₘₐₓ = max(abs(zₘₓₗ), abs(zₑᵤ))
     
     #Grazing
     ∑gᶻ, gₚᶻ, g_Dᶻ, gₚₒᶻ = get_grazingᶻ(P, D, POC, T, bgc)
@@ -29,8 +25,8 @@
     #Growth rates for phytoplankton
     ϕ₀ = bgc.latitude
     L_day_param = bgc.length_of_day
-    ϕ = get_ϕ(ϕ₀, y)
-    L_day = get_L_day(ϕ, t, L_day_param)
+    ϕ = latitude(ϕ₀, y)
+    L_day = day_length(ϕ, t, L_day_param)
 
     t_darkᴾ = bgc.mean_residence_time_of_phytoplankton_in_unlit_mixed_layer.P
     t_darkᴰ = bgc.mean_residence_time_of_phytoplankton_in_unlit_mixed_layer.D
@@ -43,6 +39,7 @@
     μᴰ = phytoplankton_growth_rate(D, Dᶜʰˡ, PARᴰ, L_day, T, αᴰ, Lₗᵢₘᴰ, zₘₓₗ, zₑᵤ, t_darkᴰ, bgc)
 
     #Bacteria
+    zₘₐₓ = max(abs(zₘₓₗ), abs(zₑᵤ))
     Bact = get_Bact(zₘₐₓ, z, Z, M)
 
     return (γᶻ*(1 - eᶻ - σᶻ)*∑gᶻ*Z + γᴹ*(1 - eᴹ - σᴹ)*(∑gᴹ + ∑g_FFᴹ)*M + γᴹ*Rᵤₚ(M, T, bgc) + 
@@ -55,17 +52,12 @@ end
     θᴺᶜ = bgc.NC_redfield_ratio
     rₙₒ₃¹ = bgc. CN_ratio_of_denitrification
     rₙₕ₄¹ = bgc.CN_ratio_of_ammonification
-    γᶻ = bgc.excretion_as_DOM.Z
-    σᶻ = bgc.non_assimilated_fraction.Z
-    γᴹ = bgc.excretion_as_DOM.M
-    σᴹ = bgc.non_assimilated_fraction.M
+    γᶻ, γᴹ = bgc.excretion_as_DOM
+    σᶻ, σᴹ = bgc.non_assimilated_fraction
+    eₘₐₓᶻ, eₘₐₓᴹ = bgc. max_growth_efficiency_of_zooplankton
     λₙₕ₄ = bgc.max_nitrification_rate
-    eₘₐₓᶻ = bgc. max_growth_efficiency_of_zooplankton.Z
-    eₘₐₓᴹ = bgc.max_growth_efficiency_of_zooplankton.M
 
     bFe = Fe
-
-    zₘₐₓ = max(abs(zₘₓₗ), abs(zₑᵤ))
 
     #Grazing
     ∑gᶻ, gₚᶻ, g_Dᶻ, gₚₒᶻ = get_grazingᶻ(P, D, POC, T, bgc)
@@ -79,8 +71,8 @@ end
     #Uptake rates of nitrogen and ammonium
     ϕ₀ = bgc.latitude
     L_day_param = bgc.length_of_day
-    ϕ = get_ϕ(ϕ₀, y)
-    L_day = get_L_day(ϕ, t, L_day_param)
+    ϕ = latitude(ϕ₀, y)
+    L_day = day_length(ϕ, t, L_day_param)
 
     t_darkᴾ = bgc.mean_residence_time_of_phytoplankton_in_unlit_mixed_layer.P
     t_darkᴰ = bgc.mean_residence_time_of_phytoplankton_in_unlit_mixed_layer.D
@@ -93,6 +85,7 @@ end
     μₙₕ₄ᴰ = uptake_rate_ammonium_D(D, PO₄, NO₃, NH₄, Si, Dᶜʰˡ, Dᶠᵉ, T, zₘₓₗ, zₑᵤ, L_day, PARᴰ, t_darkᴰ, Si̅, bgc)
 
     #Bacteria
+    zₘₐₓ = max(abs(zₘₓₗ), abs(zₑᵤ))
     Bact = get_Bact(zₘₐₓ, z, Z, M)
 
     return (θᴺᶜ*get_Remin(O₂, NO₃, PO₄, NH₄, DOC, T, bFe, Bact, bgc) + θᴺᶜ*(rₙₒ₃¹ + 1)*get_Denit(NO₃, PO₄, NH₄, DOC, O₂, T, bFe, Bact, bgc) + 

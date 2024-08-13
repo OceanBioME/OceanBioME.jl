@@ -1,9 +1,8 @@
-#Discuss silicon compartment here.
-#Silicon is conserved.
+#The silicon compartment of the model is composed of Dˢⁱ, Si, PSi. Silicon is a limiting nutrient for diatoms, but not phytoplankton.
+#Silicon is conserved in the model.
 
 # This documentation contains functions for:
-    # Si
-    # Checked
+    #Si (eq74)
 
 @inline function (bgc::PISCES)(::Val{:Si}, x, y, z, t, P, D, Z, M, Pᶜʰˡ, Dᶜʰˡ, Pᶠᵉ, Dᶠᵉ, Dˢⁱ, DOC, POC, GOC, SFe, BFe, PSi, NO₃, NH₄, PO₄, Fe, Si, CaCO₃, DIC, Alk, O₂, T, zₘₓₗ, zₑᵤ, Si̅, D_dust, Ω, PAR, PAR¹, PAR², PAR³) #eq74
     #Parameters
@@ -11,19 +10,19 @@
     αᴰ = bgc.initial_slope_of_PI_curve.D
     t_darkᴰ = bgc.mean_residence_time_of_phytoplankton_in_unlit_mixed_layer.D
     Dissₛᵢ = bgc.dissolution_rate_of_silicon
+
+    λₚₛᵢ¹ = PSi_dissolution_rate(zₘₓₗ, zₑᵤ, z, T, Si, bgc)
     
     #L_day
     ϕ₀ = bgc.latitude
     L_day_param = bgc.length_of_day
-    ϕ = get_ϕ(ϕ₀, y)
-    L_day = get_L_day(ϕ, t, L_day_param)
+    ϕ = latitude(ϕ₀, y)
+    L_day = day_length(ϕ, t, L_day_param)
 
+    #Diatom growth
     Lₗᵢₘᴰ = D_nutrient_limitation(D, PO₄, NO₃, NH₄, Si, Dᶜʰˡ, Dᶠᵉ, Si̅, bgc)[1]
-
     PARᴰ = get_PARᴰ(PAR¹, PAR², PAR³, bgc)
     μᴰ = phytoplankton_growth_rate(D, Dᶜʰˡ, PARᴰ, L_day, T, αᴰ, Lₗᵢₘᴰ, zₘₓₗ, zₑᵤ, t_darkᴰ, bgc)
-
-    λₚₛᵢ¹ = get_λₚₛᵢ¹(zₘₓₗ, zₑᵤ, z, T, Si, bgc)
     
-    return λₚₛᵢ¹*Dissₛᵢ*PSi - get_θₒₚₜˢⁱᴰ(D, PO₄, NO₃, NH₄, Si, Dᶜʰˡ, Dᶠᵉ, μᴰ, T, ϕ, Si̅, bgc)*(1-δᴰ)*μᴰ*D 
+    return λₚₛᵢ¹*Dissₛᵢ*PSi - get_θₒₚₜˢⁱᴰ(D, PO₄, NO₃, NH₄, Si, Dᶜʰˡ, Dᶠᵉ, μᴰ, T, ϕ, Si̅, bgc)*(1-δᴰ)*μᴰ*D #eq74
 end

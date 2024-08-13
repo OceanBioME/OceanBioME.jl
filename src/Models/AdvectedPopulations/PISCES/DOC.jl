@@ -45,7 +45,7 @@ end
 end
 
 #Bacteria are responsible for carrying out biological remineralisation processes. They are represent in the following formulation, with biomass decreasing at depth.
-@inline get_Bact(zₘₐₓ, z, Z, M) = ifelse(abs(z) <= zₘₐₓ, min(0.7*(Z + 2*M), 4), min(0.7*(Z + 2*M), 4)*abs((zₘₐₓ/(z + eps(0.0)))^0.683))  #35b
+@inline get_Bact(zₘₐₓ, z, Z, M) = ifelse(abs(z) <= zₘₐₓ, min(0.7*(Z + 2*M), 4), min(0.7*(Z + 2*M), 4)*(abs(zₘₐₓ/(z + eps(0.0)))^0.683))  #35b
 
 #Bacterial activity parameterises remineralisation of DOC. It is dependent on nutrient availability, and remineraisation half saturation constant.
 @inline function Lᵇᵃᶜᵗ(DOC, PO₄, NO₃, NH₄, bFe, bgc)
@@ -84,8 +84,8 @@ end
     return Φ₁ᴰᴼᶜ, Φ₂ᴰᴼᶜ, Φ₃ᴰᴼᶜ
 end
 
-#Degradation rate of particles of matter (refers to POC and GOC)
-@inline function λ¹(T, O₂, bgc) #has small magnitude as λₚₒ per day
+#Degradation rate of particles of carbon (refers to POC and GOC)
+@inline function particles_carbon_degradation_rate(T, O₂, bgc) #has small magnitude as λₚₒ per day
     λₚₒ= bgc.degradation_rate_of_POC
     bₚ = bgc.temperature_sensitivity_of_growth
     return λₚₒ*bₚ^T*(1 - 0.45*oxygen_conditions(O₂, bgc))  #38
@@ -107,8 +107,8 @@ end
 
     ϕ₀ = bgc.latitude
     L_day_param = bgc.length_of_day
-    ϕ = get_ϕ(ϕ₀, y)
-    L_day = get_L_day(ϕ, t, L_day_param)
+    ϕ = latitude(ϕ₀, y)
+    L_day = day_length(ϕ, t, L_day_param)
 
 
     g_FF = bgc.flux_feeding_rate
@@ -135,14 +135,14 @@ end
     eᶻ = eᴶ(eₘₐₓᶻ, σᶻ, gₚᶻ, g_Dᶻ, gₚₒᶻ, 0, Pᶠᵉ, Dᶠᵉ, SFe, P, D, POC, bgc)
     eᴹ = eᴶ(eₘₐₓᴹ, σᴹ, gₚᴹ, g_Dᴹ, gₚₒᴹ, g_Zᴹ,Pᶠᵉ, Dᶠᵉ, SFe, P, D, POC, bgc)
 
-    λₚₒ¹ = λ¹(T, O₂, bgc)
+    λₚₒ¹ = particles_carbon_degradation_rate(T, O₂, bgc)
     Rᵤₚᴹ = Rᵤₚ(M, T, bgc)
 
     zₘₐₓ = max(abs(zₑᵤ), abs(zₘₓₗ))   #41a
     Bact = get_Bact(zₘₐₓ, z, Z, M)
 
     bFe = Fe #defined in previous PISCES model
-    sh = get_sh(z, zₘₓₗ)
+    sh = shear_rate(z, zₘₓₗ)
   
     Remin = get_Remin(O₂, NO₃, PO₄, NH₄, DOC, T, bFe, Bact, bgc)
     Denit = get_Denit(NO₃, PO₄, NH₄, DOC, O₂, T, bFe, Bact, bgc)

@@ -37,13 +37,13 @@ end
     gₚₒ_FFᴹ = g_FF*(bₘ^T)*wₚₒ*POC #29a
     
     #Aggregation
-    sh = get_sh(z, zₘₓₗ)
+    sh = shear_rate(z, zₘₓₗ)
     Φ₁ᴰᴼᶜ = Φᴰᴼᶜ(DOC, POC, GOC, sh, bgc)[1]
     Φ₃ᴰᴼᶜ = Φᴰᴼᶜ(DOC, POC, GOC, sh, bgc)[3]
     Φ = POC_aggregation(POC, GOC, sh, bgc)
 
     R_CaCO₃ = get_R_CaCO₃(P, PO₄, NO₃, NH₄, Pᶜʰˡ, Pᶠᵉ, Fe, T, PAR, zₘₓₗ, bgc) 
-    λₚₒ¹ = λ¹(T, O₂, bgc)
+    λₚₒ¹ = particles_carbon_degradation_rate(T, O₂, bgc)
 
     return (σᶻ*∑gᶻ*Z + 0.5*mᴰ*concentration_limitation(D, Kₘ)*D + rᶻ*(b_Z^T)*(concentration_limitation(Z, Kₘ) + 3*oxygen_conditions(O₂, bgc))*Z 
             + mᶻ*(b_Z^T)*Z^2 + (1 - 0.5*R_CaCO₃)*(mᴾ*concentration_limitation(P, Kₘ)*P + sh*wᴾ*P^2) 
@@ -71,15 +71,15 @@ end
     g_GOC_FFᴹ = g_FF*bₘ^T*w_GOC*GOC #29b
     
     #Aggregation
-    sh = get_sh(z, zₘₓₗ)
+    sh = shear_rate(z, zₘₓₗ)
     Φ = POC_aggregation(POC, GOC, sh, bgc)
     Φ₂ᴰᴼᶜ = Φᴰᴼᶜ(DOC, POC, GOC, sh, bgc)[2]
 
     Pᵤₚᴹ = Pᵤₚ(M, T, bgc)
     R_CaCO₃ = get_R_CaCO₃(P, PO₄, NO₃, NH₄, Pᶜʰˡ, Pᶠᵉ, Fe, T, PAR, zₘₓₗ, bgc)
-    λₚₒ¹ = λ¹(T, O₂, bgc)
+    λₚₒ¹ = particles_carbon_degradation_rate(T, O₂, bgc)
     Lₗᵢₘᴰ = D_nutrient_limitation(D, PO₄, NO₃, NH₄, Si, Dᶜʰˡ, Dᶠᵉ, Si̅, bgc)[1]
-    wᴰ =  wᴾ + wₘₐₓᴰ*(1-Lₗᵢₘᴰ)
+    wᴰ =  D_quadratic_mortality(D, PO₄, NO₃, NH₄, Si, Dᶜʰˡ, Dᶠᵉ, Si̅, bgc)
 
     return (σᴹ*(∑gᴹ + ∑g_FFᴹ)*M + rᴹ*(bₘ^T)*(concentration_limitation(M, Kₘ) + 3*oxygen_conditions(O₂, bgc))*M 
             + Pᵤₚᴹ + 0.5*R_CaCO₃*(mᴾ*concentration_limitation(P, Kₘ)*P + sh*wᴾ*P^2) + 0.5*mᴰ*concentration_limitation(D, Kₘ)*D
