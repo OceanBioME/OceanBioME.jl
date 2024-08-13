@@ -6,12 +6,12 @@
 @inline function χ_lab(zₘₓₗ, zₑᵤ, λₚₛᵢˡᵃᵇ, λₚₛᵢʳᵉᶠ, z, bgc)
 
     χ_lab⁰ = bgc.proportion_of_the_most_labile_phase_in_PSi
-    zₘₐₓ = max(zₘₓₗ, zₑᵤ)
+    zₘₐₓ = max(abs(zₘₓₗ), abs(zₑᵤ))
 
-    if z <= zₘₓₗ
+    if abs(z) <= zₘₐₓ
         return χ_lab⁰
     else
-        return χ_lab⁰*exp(-(λₚₛᵢˡᵃᵇ - λₚₛᵢʳᵉᶠ)*((z-zₘₐₓ)/(get_w_GOC(z, zₑᵤ, zₘₓₗ, bgc) + eps(0.0)))) #eq53
+        return χ_lab⁰*exp(-(λₚₛᵢˡᵃᵇ - λₚₛᵢʳᵉᶠ)*((abs(z)-zₘₐₓ)/(get_w_GOC(z, zₑᵤ, zₘₓₗ, bgc) + eps(0.0)))) #eq53
     end
 end
 

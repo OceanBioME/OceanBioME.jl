@@ -14,7 +14,7 @@
     return λ_Feᵐⁱⁿ + λ_Fe*(POC + GOC + CaCO₃ + PSi) + λ_Feᵈᵘˢᵗ*Dust #eq50
 end
 
-@inline Scav(POC, GOC, CaCO₃, PSi, D_dust, DOC, T, Fe, bgc) = λ_Fe¹(POC, GOC, CaCO₃, PSi, D_dust, bgc)*get_Fe¹(Fe, DOC, T)
+@inline Scav(POC, GOC, CaCO₃, PSi, D_dust, DOC, T, Fe, bgc) = λ_Fe¹(POC, GOC, CaCO₃, PSi, D_dust, bgc)*free_organic_iron(Fe, DOC, T)
 
 @inline function (bgc::PISCES)(::Val{:SFe}, x, y, z, t, P, D, Z, M, Pᶜʰˡ, Dᶜʰˡ, Pᶠᵉ, Dᶠᵉ, Dˢⁱ, DOC, POC, GOC, SFe, BFe, PSi, NO₃, NH₄, PO₄, Fe, Si, CaCO₃, DIC, Alk, O₂, T, zₘₓₗ, zₑᵤ, Si̅, D_dust, Ω, PAR, PAR¹, PAR², PAR³) 
     #Parameters
@@ -37,8 +37,8 @@ end
     sh = get_sh(z, zₘₓₗ)
 
     bFe = Fe
-    zₘₐₓ = max(zₑᵤ, zₘₓₗ)
-    Fe¹ = get_Fe¹(Fe, DOC, T)   #same name
+    zₘₐₓ = max(abs(zₑᵤ), abs(zₘₓₗ))
+    Fe¹ = free_organic_iron(Fe, DOC, T)   #same name
     λₚₒ¹ = λ¹(T, O₂, bgc)
     #Iron quotas
     θᶠᵉᴾ = θ(Pᶠᵉ, P)
@@ -53,11 +53,11 @@ end
     Bactfe = get_Bactfe(μₘₐₓ⁰, z, Z, M, Fe, DOC, PO₄, NO₃, NH₄, bFe, T, zₘₐₓ, bgc)
 
     return (σᶻ*∑θᶠᵉⁱgᵢᶻ*Z 
-            + θᶠᵉᶻ*(rᶻ*(b_Z^T)*(concentration_limitation(Z, Kₘ) + 3*ΔO₂(O₂, bgc))*Z + mᶻ*(b_Z^T)*(Z^2)) 
+            + θᶠᵉᶻ*(rᶻ*(b_Z^T)*(concentration_limitation(Z, Kₘ) + 3*oxygen_conditions(O₂, bgc))*Z + mᶻ*(b_Z^T)*(Z^2)) 
             + λₚₒ¹*BFe 
             + θᶠᵉᴾ*(1 - 0.5*get_R_CaCO₃(P, PO₄, NO₃, NH₄, Pᶜʰˡ, Pᶠᵉ, Fe, T, PAR, zₘₓₗ, bgc))*(mᴾ*concentration_limitation(P, Kₘ)*P + sh*wᴾ*P^2) 
             + θᶠᵉᴰ*0.5*mᴰ*concentration_limitation(D, Kₘ)*D + λ_Fe*POC*Fe¹ 
-            + Cgfe1(sh, Fe, POC, DOC, T, bgc) - λₚₒ¹*SFe - θᶠᵉᴾᴼᶜ*get_Φ(POC, GOC, sh, bgc) 
+            + Cgfe1(sh, Fe, POC, DOC, T, bgc) - λₚₒ¹*SFe - θᶠᵉᴾᴼᶜ*POC_aggregation(POC, GOC, sh, bgc) 
             - θᶠᵉᴾᴼᶜ*(grazingᴹ[4] + gₚₒ_FFᴹ)*M 
             + κ_Bactˢᶠᵉ*Bactfe - θᶠᵉᴾᴼᶜ*grazingᶻ[4]*Z) #Partial derivative omitted #eq48
 end 
@@ -86,7 +86,7 @@ end
 
     wᴰ = wᴾ + wₘₐₓᴰ*(1 - Lₗᵢₘᴰ)
 
-    Fe¹ = get_Fe¹(Fe, DOC, T)
+    Fe¹ = free_organic_iron(Fe, DOC, T)
     #Iron quotas
     θᶠᵉᴾ = θ(Pᶠᵉ, P)
     θᶠᵉᴰ = θ(Dᶠᵉ, D)
@@ -100,15 +100,17 @@ end
     grazingᴹ = get_grazingᴹ(P, D, Z, POC, T, bgc)
     ∑θᶠᵉⁱgᵢᴹ = θᶠᵉᴾ*grazingᴹ[2] + θᶠᵉᴰ*grazingᴹ[3] + θᶠᵉᴾᴼᶜ*grazingᴹ[4] + θᶠᵉᶻ*grazingᴹ[5] #graze on P, D, POC, Z 
     gₚₒ_FFᴹ = g_FF*bₘ^T*wₚₒ*POC 
-    zₘₐₓ = max(zₑᵤ, zₘₓₗ)   #41a
-    w_GOC = w_GOCᵐⁱⁿ + (200 - w_GOCᵐⁱⁿ)*(max(0, z-zₘₐₓ))/(5000) #41b
+    zₘₐₓ = max(abs(zₑᵤ), abs(zₘₓₗ))   #41a
+    w_GOC = get_w_GOC(z, zₑᵤ, zₘₓₗ, bgc)
     g_GOC_FFᴹ = g_FF*bₘ^T*w_GOC*GOC 
 
+
+    #Turned off new term, scavenging by POC and GOC
     return (σᴹ*(∑θᶠᵉⁱgᵢᴹ + θᶠᵉᴾᴼᶜ*gₚₒ_FFᴹ + θᶠᵉᴳᴼᶜ*g_GOC_FFᴹ)*M 
-            + θᶠᵉᶻ*(rᴹ*(bₘ^T)*(concentration_limitation(M, Kₘ) + 3*ΔO₂(O₂, bgc))*M + Pᵤₚ(M, T, bgc)) 
+            + θᶠᵉᶻ*(rᴹ*(bₘ^T)*(concentration_limitation(M, Kₘ) + 3*oxygen_conditions(O₂, bgc))*M + Pᵤₚ(M, T, bgc)) 
             + θᶠᵉᴾ*0.5*get_R_CaCO₃(P, PO₄, NO₃, NH₄, Pᶜʰˡ, Pᶠᵉ, Fe, T, PAR, zₘₓₗ, bgc)*(mᴾ*concentration_limitation(P, Kₘ)*P + sh*wᴾ*P^2) 
             + θᶠᵉᴰ*(0.5*mᴰ*concentration_limitation(D, Kₘ)*D + sh*wᴰ*D^2) 
             + κ_Bactᴮᶠᵉ*get_Bactfe(μₘₐₓ⁰, z, Z, M, Fe, DOC, PO₄, NO₃, NH₄, bFe, T, zₘₐₓ, bgc) 
-            + λ_Fe*GOC*Fe¹ + θᶠᵉᴾᴼᶜ*get_Φ(POC, GOC, sh, bgc) + Cgfe2(sh, Fe, T, DOC, GOC, bgc) 
-            - θᶠᵉᴳᴼᶜ* g_GOC_FFᴹ*M - λₚₒ¹*BFe - θᶠᵉᶻ*grazingᴹ[5]*M) #Partial derivative omitted
+            + λ_Fe*GOC*Fe¹ + θᶠᵉᴾᴼᶜ*POC_aggregation(POC, GOC, sh, bgc) + Cgfe2(sh, Fe, T, DOC, GOC, bgc) 
+            - θᶠᵉᴳᴼᶜ* g_GOC_FFᴹ*M - λₚₒ¹*BFe) #Partial derivative omitted
 end

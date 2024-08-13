@@ -1,3 +1,6 @@
+#Discuss silicon compartment here.
+#Silicon is conserved.
+
 # This documentation contains functions for:
     # Si
     # Checked

@@ -1,11 +1,14 @@
 
-# Using simple chemistry model. 
+#Iron is modelled in PISCES using simple chemistry model. Iron is assumed to be in the form of free organic iron Fe', and complexed iron FeL.
+#Discuss iron compartment here.
+
 # This document contains functions for the following:
-    # Fe¹ (eq65), dissolved free inorganic iron
+    # free_organic_iron(eq65), dissolved free inorganic iron
     # Cgfe1, Cgfe2, Aggfe, Bactfe (eqs 61, 62, 63)
     # Forcing for Fe (eq60)
 
-@inline function get_Fe¹(Fe, DOC, T)
+#Determine concentration of free organic iron. This is the only form of iron assumed susceptible to scavenging.
+@inline function free_organic_iron(Fe, DOC, T)
     Lₜ = max(0.09*(DOC + 40) - 3, 0.6) # bgc.total_concentration_of_iron_ligands
     K_eqᶠᵉ = exp(16.27 - 1565.7/max(T + 273.15, 5)) #check this value
     Δ = 1 +  K_eqᶠᵉ*Lₜ -  K_eqᶠᵉ*Fe
@@ -13,28 +16,30 @@
     return (-Δ + sqrt(Δ^2 + 4*K_eqᶠᵉ*Fe))/(2*K_eqᶠᵉ + eps(0.0)) #eq65
 end
 
+#Colloids of iron may aggregate with DOM and be transferred to particulate pool
 @inline function Cgfe1(sh, Fe, POC, DOC, T, bgc)
     a₁ = bgc.aggregation_rate_of_DOC_to_POC_1
     a₂ = bgc.aggregation_rate_of_DOC_to_POC_2
     a₄ = bgc.aggregation_rate_of_DOC_to_POC_4
     a₅ = bgc.aggregation_rate_of_DOC_to_POC_5
    
-    FeL = Fe - get_Fe¹(Fe, DOC, T) #eq64
+    FeL = Fe - free_organic_iron(Fe, DOC, T) #eq64
     Fe_coll = 0.5*FeL
     return ((a₁*DOC + a₂*POC)*sh+a₄*POC + a₅*DOC)*Fe_coll
 end
 
 @inline function Cgfe2(sh, Fe, T, DOC, GOC, bgc)
     a₃ = bgc.aggregation_rate_of_DOC_to_GOC_3
-    FeL = Fe - get_Fe¹(Fe, DOC, T)
+    FeL = Fe - free_organic_iron(Fe, DOC, T)
     Fe_coll = 0.5*FeL
     return a₃*GOC*sh*Fe_coll
 end
 
+#
 @inline function Aggfe(Fe, DOC, T, bgc)
     λᶠᵉ = 1e-3 * bgc.slope_of_scavenging_rate_of_iron #parameter not defined in parameter list. Assumed scaled version λ_Fe to fit dimensions of Fe¹.
     Lₜ = max(0.09*(DOC + 40) - 3, 0.6)
-    return λᶠᵉ*max(0, Fe - Lₜ)*get_Fe¹(Fe, DOC, T)
+    return λᶠᵉ*max(0, Fe - Lₜ)*free_organic_iron(Fe, DOC, T)
 end
 
 @inline function get_Bactfe(μₘₐₓ⁰, z, Z, M, Fe, DOC, PO₄, NO₃, NH₄, bFe, T, zₘₐₓ, bgc)
@@ -65,7 +70,6 @@ end
     g_FF = bgc.flux_feeding_rate
     bₘ = bgc.temperature_sensitivity_term.M
     wₚₒ = bgc.sinking_speed_of_POC
-    w_GOCᵐⁱⁿ = bgc.min_sinking_speed_of_GOC
 
     bFe = Fe
 
@@ -78,7 +82,7 @@ end
 
     μᴾᶠᵉ = phytoplankton_growth_rateᶠᵉ(P, Pᶠᵉ, θₘₐₓᶠᵉᴾ, Sᵣₐₜᴾ, K_Feᴾᶠᵉᵐⁱⁿ, Pₘₐₓ, L_Feᴾ, bFe, T, bgc)
     μᴰᶠᵉ = phytoplankton_growth_rateᶠᵉ(D, Dᶠᵉ, θₘₐₓᶠᵉᴰ, Sᵣₐₜᴰ, K_Feᴰᶠᵉᵐⁱⁿ, Dₘₐₓ, L_Feᴰ, bFe, T, bgc)
-    zₘₐₓ = max(zₑᵤ, zₘₓₗ)
+    zₘₐₓ = max(abs(zₑᵤ), abs(zₘₓₗ))
     #Iron quotas
     θᶠᵉᴾ = θ(Pᶠᵉ, P)
     θᶠᵉᴰ = θ(Dᶠᵉ, D)
@@ -95,18 +99,26 @@ end
     Bactfe = get_Bactfe(μₘₐₓ⁰, z, Z, M, Fe, DOC, PO₄, NO₃, NH₄, bFe, T, zₘₐₓ, bgc)
 
     gₚₒ_FF = g_FF*bₘ^T*wₚₒ*POC#
-    w_GOC = w_GOCᵐⁱⁿ + (200 - w_GOCᵐⁱⁿ)*(max(0, z-zₘₐₓ))/(5000) #41b
+    w_GOC = get_w_GOC(z, zₑᵤ, zₘₓₗ, bgc)
     g_GOC_FFᴹ = g_FF*bₘ^T*w_GOC*GOC 
 
     #Gross growth efficiency
     eᶻ = eᴶ(eₘₐₓᶻ, σᶻ, gₚᶻ, g_Dᶻ, gₚₒᶻ, 0, Pᶠᵉ, Dᶠᵉ, SFe, P, D, POC, bgc) #eₘₐₓᶻ used in paper but changed here to be consistent with eqs 24, 28
     eᴹ =  eᴶ(eₘₐₓᴹ, σᴹ, gₚᴹ, g_Dᴹ, gₚₒᴹ, g_Zᴹ,Pᶠᵉ, Dᶠᵉ, SFe, P, D, POC, bgc)
 
-    #println("Scav = $(Scav(POC, GOC, CaCO₃, PSi, D_dust, DOC, T, Fe, bgc)), Aggfe = $(Aggfe(Fe, DOC, T, bgc) )")
+    a = max(0, (1-σᶻ)*(∑θᶠᵉⁱgᵢᶻ/(∑gᶻ + eps(0.0)) - eᶻ*θᶠᵉᶻ))*∑gᶻ*Z 
+    b = max(0, (1-σᴹ)*(∑θᶠᵉⁱgᵢᴹ + θᶠᵉᴾᴼᶜ*gₚₒ_FF + θᶠᵉᴳᴼᶜ*g_GOC_FFᴹ )/(∑gᴹ+∑g_FFᴹ + eps(0.0)) - eᴹ*θᶠᵉᶻ)*(∑gᴹ+∑g_FFᴹ)*M 
 
+    #Check if max ever returns 0
+    mycheck = ifelse(a*b == 0, 1, 0)
+    if mycheck == 1
+        println("Gone zero")
+    end
+
+    #Removed γ factor
     return (max(0, (1-σᶻ)*(∑θᶠᵉⁱgᵢᶻ/(∑gᶻ + eps(0.0)) - eᶻ*θᶠᵉᶻ))*∑gᶻ*Z 
             + max(0, (1-σᴹ)*(∑θᶠᵉⁱgᵢᴹ + θᶠᵉᴾᴼᶜ*gₚₒ_FF + θᶠᵉᴳᴼᶜ*g_GOC_FFᴹ )/(∑gᴹ+∑g_FFᴹ + eps(0.0)) - eᴹ*θᶠᵉᶻ)*(∑gᴹ+∑g_FFᴹ)*M 
-            + γᴹ*θᶠᵉᶻ*Rᵤₚ(M, T, bgc) + λₚₒ¹*SFe 
+            + θᶠᵉᶻ*Rᵤₚ(M, T, bgc) + λₚₒ¹*SFe 
             - (1 - δᴾ)*μᴾᶠᵉ*P - (1 - δᴰ)*μᴰᶠᵉ*D 
             - Scav(POC, GOC, CaCO₃, PSi, D_dust, DOC, T, Fe, bgc) - Cgfe1(sh, Fe, POC, DOC, T, bgc) - Cgfe2(sh, Fe, T, DOC, GOC, bgc) - Aggfe(Fe, DOC, T, bgc) - Bactfe)
 end
