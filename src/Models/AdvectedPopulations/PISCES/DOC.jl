@@ -60,7 +60,7 @@ end
     L_Feᵇᵃᶜᵗ = concentration_limitation(bFe, K_Feᵇᵃᶜᵗ) #34d
     Lₚₒ₄ᵇᵃᶜᵗ = concentration_limitation(PO₄, Kₚₒ₄ᵇᵃᶜᵗ) #34e
 
-    Lₙₕ₄ᵇᵃᶜᵗ = L_NH₄(NO₃, NH₄, Kₙₒ₃ᵇᵃᶜᵗ, Kₙₕ₄ᵇᵃᶜᵗ) #34g
+    Lₙₕ₄ᵇᵃᶜᵗ = ammonium_limitation(NO₃, NH₄, Kₙₒ₃ᵇᵃᶜᵗ, Kₙₕ₄ᵇᵃᶜᵗ) #34g
     Lₙₒ₃ᵇᵃᶜᵗ = L_NO₃(NO₃, NH₄, Kₙₒ₃ᵇᵃᶜᵗ, Kₙₕ₄ᵇᵃᶜᵗ) #34h
     Lₙᵇᵃᶜᵗ = Lₙₒ₃ᵇᵃᶜᵗ + Lₙₕ₄ᵇᵃᶜᵗ         #34f
     Lₗᵢₘᵇᵃᶜᵗ = min(Lₙₕ₄ᵇᵃᶜᵗ, Lₚₒ₄ᵇᵃᶜᵗ, L_Feᵇᵃᶜᵗ) #34c
@@ -115,8 +115,8 @@ end
     w_GOCᵐⁱⁿ = bgc.min_sinking_speed_of_GOC
     bₘ = bgc.temperature_sensitivity_term.M
 
-    ∑ᵢgᵢᶻ, gₚᶻ, g_Dᶻ, gₚₒᶻ  = get_grazingᶻ(P, D, POC, T, bgc) 
-    ∑ᵢgᵢᴹ, gₚᴹ, g_Dᴹ, gₚₒᴹ, g_Zᴹ = get_grazingᴹ(P, D, Z, POC, T, bgc)
+    ∑ᵢgᵢᶻ, gₚᶻ, g_Dᶻ, gₚₒᶻ  = grazing_Z(P, D, POC, T, bgc) 
+    ∑ᵢgᵢᴹ, gₚᴹ, g_Dᴹ, gₚₒᴹ, g_Zᴹ = grazing_M(P, D, Z, POC, T, bgc)
 
     w_GOC = get_w_GOC(z, zₑᵤ, zₘₓₗ, bgc) #41b
     g_GOC_FFᴹ = g_FF*bₘ^T*w_GOC*GOC #29b
@@ -124,8 +124,8 @@ end
 
     t_darkᴾ = bgc.mean_residence_time_of_phytoplankton_in_unlit_mixed_layer.P
     t_darkᴰ = bgc.mean_residence_time_of_phytoplankton_in_unlit_mixed_layer.D
-    PARᴾ = get_PARᴾ(PAR¹, PAR², PAR³, bgc)
-    PARᴰ = get_PARᴰ(PAR¹, PAR², PAR³, bgc)
+    PARᴾ = P_PAR(PAR¹, PAR², PAR³, bgc)
+    PARᴰ = D_PAR(PAR¹, PAR², PAR³, bgc)
 
     Lₗᵢₘᴾ = P_nutrient_limitation(P, PO₄, NO₃, NH₄, Pᶜʰˡ, Pᶠᵉ, bgc)[1]
     Lₗᵢₘᴰ = D_nutrient_limitation(D, PO₄, NO₃, NH₄, Si, Dᶜʰˡ, Dᶠᵉ, Si̅, bgc)[1]
@@ -136,7 +136,7 @@ end
     eᴹ = eᴶ(eₘₐₓᴹ, σᴹ, gₚᴹ, g_Dᴹ, gₚₒᴹ, g_Zᴹ,Pᶠᵉ, Dᶠᵉ, SFe, P, D, POC, bgc)
 
     λₚₒ¹ = particles_carbon_degradation_rate(T, O₂, bgc)
-    Rᵤₚᴹ = Rᵤₚ(M, T, bgc)
+    Rᵤₚ = upper_respiration(M, T, bgc)
 
     zₘₐₓ = max(abs(zₑᵤ), abs(zₘₓₗ))   #41a
     Bact = get_Bact(zₘₐₓ, z, Z, M)
@@ -150,5 +150,5 @@ end
     Φ₁ᴰᴼᶜ, Φ₂ᴰᴼᶜ, Φ₃ᴰᴼᶜ = Φᴰᴼᶜ(DOC, POC, GOC, sh, bgc)
 
     return ((1 - γᶻ)*(1 - eᶻ - σᶻ)*∑ᵢgᵢᶻ*Z + (1 - γᴹ)*(1 - eᴹ - σᴹ)*(∑ᵢgᵢᴹ + g_GOC_FFᴹ + gₚₒ_FFᴹ)*M + 
-           δᴰ*μᴰ*D + δᴾ*μᴾ*P + λₚₒ¹*POC + (1 - γᴹ)*Rᵤₚᴹ - Remin - Denit - Φ₁ᴰᴼᶜ - Φ₂ᴰᴼᶜ - Φ₃ᴰᴼᶜ) #32
+           δᴰ*μᴰ*D + δᴾ*μᴾ*P + λₚₒ¹*POC + (1 - γᴹ)*Rᵤₚ - Remin - Denit - Φ₁ᴰᴼᶜ - Φ₂ᴰᴼᶜ - Φ₃ᴰᴼᶜ) #32
 end #changed this to include gₚₒ_FF

@@ -30,10 +30,10 @@ end
     g_FF = bgc.flux_feeding_rate
 
     #Grazing
-    grazing = get_grazingᶻ(P, D, POC, T, bgc)
+    grazing = grazing_Z(P, D, POC, T, bgc)
     ∑gᶻ = grazing[1]
     gₚₒᶻ = grazing[4]
-    gₚₒᴹ = get_grazingᴹ(P, D, Z, POC, T, bgc)[4]
+    gₚₒᴹ = grazing_M(P, D, Z, POC, T, bgc)[4]
     gₚₒ_FFᴹ = g_FF*(bₘ^T)*wₚₒ*POC #29a
     
     #Aggregation
@@ -65,10 +65,8 @@ end
 
     #Grazing
     w_GOC = get_w_GOC(z, zₑᵤ, zₘₓₗ, bgc)
-    ∑gᴹ = get_grazingᴹ(P, D, Z, POC, T, bgc)[1] 
-    ∑g_FFᴹ = get_∑g_FFᴹ(z, zₑᵤ, zₘₓₗ, T, POC, GOC, bgc)
-    gₚₒ_FFᴹ = g_FF*bₘ^T*wₚₒ*POC
-    g_GOC_FFᴹ = g_FF*bₘ^T*w_GOC*GOC #29b
+    ∑gᴹ = grazing_M(P, D, Z, POC, T, bgc)[1] 
+    ∑g_FFᴹ, gₚₒ_FFᴹ, g_GOC_FFᴹ = flux_feeding(z, zₑᵤ, zₘₓₗ, T, POC, GOC, bgc)
     
     #Aggregation
     sh = shear_rate(z, zₘₓₗ)

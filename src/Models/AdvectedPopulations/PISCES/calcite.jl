@@ -40,7 +40,7 @@ end
     ηᶻ = bgc.proportion_of_sinking_grazed_shells.Z
     ηᴹ = bgc.proportion_of_sinking_grazed_shells.M
     sh = shear_rate(z, zₘₓₗ)
-    return get_R_CaCO₃(P, PO₄, NO₃, NH₄, Pᶜʰˡ, Pᶠᵉ, Fe, T, PAR, zₘₓₗ, bgc)*(ηᶻ*get_grazingᶻ(P, D, POC, T, bgc)[2]*Z+ηᴹ*get_grazingᴹ(P, D, Z, POC, T, bgc)[2]*M + 0.5*(mᴾ*concentration_limitation(P, Kₘ)*P + sh*wᴾ*P^2)) #eq76
+    return get_R_CaCO₃(P, PO₄, NO₃, NH₄, Pᶜʰˡ, Pᶠᵉ, Fe, T, PAR, zₘₓₗ, bgc)*(ηᶻ*grazing_Z(P, D, POC, T, bgc)[2]*Z+ηᴹ*grazing_M(P, D, Z, POC, T, bgc)[2]*M + 0.5*(mᴾ*concentration_limitation(P, Kₘ)*P + sh*wᴾ*P^2)) #eq76
 end
 
 #Forcing for calcite

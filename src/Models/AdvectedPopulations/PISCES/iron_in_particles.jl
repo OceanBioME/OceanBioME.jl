@@ -45,8 +45,8 @@ end
     θᶠᵉᴾᴼᶜ = nutrient_quota(SFe, POC)
     
     #Grazing
-    grazingᶻ = get_grazingᶻ(P, D, POC, T, bgc)
-    grazingᴹ = get_grazingᴹ(P, D, Z, POC, T, bgc)
+    grazingᶻ = grazing_Z(P, D, POC, T, bgc)
+    grazingᴹ = grazing_M(P, D, Z, POC, T, bgc)
     ∑θᶠᵉⁱgᵢᶻ = θᶠᵉᴾ*grazingᶻ[2] + θᶠᵉᴰ*grazingᶻ[3] + θᶠᵉᴾᴼᶜ*grazingᶻ[4] #over P, D, POC
     gₚₒ_FFᴹ = g_FF*(bₘ^T)*wₚₒ*POC
     
@@ -98,7 +98,7 @@ end
     θᶠᵉᴳᴼᶜ = nutrient_quota(BFe, GOC)
 
     #Grazing
-    grazingᴹ = get_grazingᴹ(P, D, Z, POC, T, bgc)
+    grazingᴹ = grazing_M(P, D, Z, POC, T, bgc)
     ∑θᶠᵉⁱgᵢᴹ = θᶠᵉᴾ*grazingᴹ[2] + θᶠᵉᴰ*grazingᴹ[3] + θᶠᵉᴾᴼᶜ*grazingᴹ[4] + θᶠᵉᶻ*grazingᴹ[5] #graze on P, D, POC, Z 
     gₚₒ_FFᴹ = g_FF*bₘ^T*wₚₒ*POC 
     zₘₐₓ = max(abs(zₑᵤ), abs(zₘₓₗ))   #41a
