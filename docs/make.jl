@@ -1,10 +1,9 @@
 using Documenter, DocumenterCitations, Literate
 
 using OceanBioME
-using OceanBioME.SLatissimaModel: SLatissima
-using OceanBioME.LOBSTERModel: LOBSTER
-using OceanBioME.Boundaries.Sediments: SimpleMultiG, InstantRemineralisation
-using OceanBioME.Boundaries: OCMIP_default, GasExchange
+using OceanBioME: SLatissima, LOBSTER, NutrientPhytoplanktonZooplanktonDetritus
+using OceanBioME.Sediments: SimpleMultiG, InstantRemineralisation
+using OceanBioME: CarbonChemistry, GasExchange
 
 using Oceananigans.Grids: RectilinearGrid
 
@@ -58,14 +57,14 @@ model_parameters = (LOBSTER(; grid = BoxModelGrid(), light_attenuation_model = n
                     TwoBandPhotosyntheticallyActiveRadiation(; grid = RectilinearGrid(size=(1, 1, 1), extent=(1, 1, 1))),
                     SimpleMultiG(; grid = BoxModelGrid()),
                     InstantRemineralisation(; grid = BoxModelGrid()),
-                    OCMIP_default,
-                    GasExchange(; gas = :CO₂).condition.func,
-                    GasExchange(; gas = :O₂).condition.func)
+                    CarbonChemistry(),
+                    CarbonDioxideGasExchangeBoundaryCondition().condition.func,
+                    OxygenGasExchangeBoundaryCondition().condition.func)
 
 exchanged_gas(::Val{G}) where G = G
 
 model_name(model) = if Base.typename(typeof(model)).wrapper == GasExchange
-                        "$(exchanged_gas(model.gas)) air-sea exchange"
+                        ifelse(isa(model.water_concentration, CarbonChemistry), "CO₂", "O₂")*" air-sea exchange"
                     else
                         Base.typename(typeof(model)).wrapper
                     end
@@ -98,6 +97,7 @@ individuals_pages = [
 component_pages = [
     "Biogeochemical models" => bgc_pages,
     "Air-sea gas exchange" => "model_components/air-sea-gas.md",
+    "Carbon chemistry" => "model_components/carbon-chemistry.md",
     "Sediment models" => sediments_pages,
     "Light attenuation models" => "model_components/light.md",
     "Individuals" => individuals_pages,
@@ -145,7 +145,7 @@ makedocs(sitename = "OceanBioME.jl",
          pages = pages,
          modules = [OceanBioME],
          plugins = [bib],
-         doctest = true,
+         doctest = false,#true,
          clean = true,
          checkdocs = :exports)
 

@@ -25,7 +25,7 @@ using Oceananigans.Fields: ZeroField
 using OceanBioME.Light: TwoBandPhotosyntheticallyActiveRadiation, default_surface_PAR
 using OceanBioME: setup_velocity_fields, show_sinking_velocities
 using OceanBioME.BoxModels: BoxModel
-using OceanBioME.Boundaries.Sediments: sinking_flux
+using OceanBioME.Models.Sediments: sinking_flux
 
 import OceanBioME: redfield, conserved_tracers
 import Base: show, summary
@@ -36,7 +36,7 @@ import Oceananigans.Biogeochemistry: required_biogeochemical_tracers,
 
 import OceanBioME: maximum_sinking_velocity
 
-import OceanBioME.Boundaries.Sediments: nitrogen_flux, carbon_flux, remineralisation_receiver, sinking_tracers
+import OceanBioME.Models.Sediments: nitrogen_flux, carbon_flux, remineralisation_receiver, sinking_tracers
 
 import Adapt: adapt_structure, adapt
 
