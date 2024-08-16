@@ -11,7 +11,7 @@
     if abs(z) <= zₘₐₓ
         return χ_lab⁰
     else
-        return χ_lab⁰*exp(-(λₚₛᵢˡᵃᵇ - λₚₛᵢʳᵉᶠ)*((abs(z)-zₘₐₓ)/(get_w_GOC(z, zₑᵤ, zₘₓₗ, bgc) + eps(0.0)))) #eq53
+        return χ_lab⁰*exp(-(λₚₛᵢˡᵃᵇ - λₚₛᵢʳᵉᶠ)*((abs(z)-zₘₐₓ)/(sinking_speed_of_GOC(z, zₑᵤ, zₘₓₗ, bgc) + eps(0.0)))) #eq53
     end
 end
 
@@ -39,6 +39,6 @@ end
     wᴰ = D_quadratic_mortality(D, PO₄, NO₃, NH₄, Si, Dᶜʰˡ, Dᶠᵉ, Si̅, bgc)
     θˢⁱᴰ = nutrient_quota(Dˢⁱ, D)
 
-    return  (θˢⁱᴰ*get_grazingᴹ(P, D, Z, POC, T, bgc)[3]*M +  θˢⁱᴰ*get_grazingᶻ(P, D, POC, T, bgc)[3]*Z 
+    return  (θˢⁱᴰ*grazing_M(P, D, Z, POC, T, bgc)[3]*M +  θˢⁱᴰ*grazing_Z(P, D, POC, T, bgc)[3]*Z 
            + mᴰ*concentration_limitation(D, Kₘ)*Dˢⁱ + sh*wᴰ*D*Dˢⁱ - PSi_dissolution_rate(zₘₓₗ, zₑᵤ, z, T, Si, bgc)*Dissₛᵢ*PSi) #removed θˢⁱᴰ from third term, to conserve silicon
 end

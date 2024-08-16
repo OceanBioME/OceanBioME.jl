@@ -48,8 +48,8 @@ end
 @inline function bacterial_uptake_Fe(μₘₐₓ⁰, z, Z, M, Fe, DOC, PO₄, NO₃, NH₄, bFe, T, zₘₐₓ, bgc)
     K_Feᴮ¹ = bgc.Fe_half_saturation_const_for_Bacteria
     θₘₐₓᶠᵉᵇᵃᶜᵗ = bgc.max_FeC_ratio_of_bacteria
-    Bact = get_Bact(zₘₐₓ, z, Z, M) 
-    Lₗᵢₘᵇᵃᶜᵗ = Lᵇᵃᶜᵗ(DOC, PO₄, NO₃, NH₄, bFe, bgc)[2]
+    Bact = bacterial_biomass(zₘₐₓ, z, Z, M) 
+    Lₗᵢₘᵇᵃᶜᵗ = bacterial_activity(DOC, PO₄, NO₃, NH₄, bFe, bgc)[2]
     bₚ = bgc.temperature_sensitivity_of_growth
     return μₘₐₓ⁰*(bₚ^T)*Lₗᵢₘᵇᵃᶜᵗ*θₘₐₓᶠᵉᵇᵃᶜᵗ*Fe*Bact/(K_Feᴮ¹ + Fe + eps(0.0)) #eq63
 end
@@ -69,7 +69,7 @@ end
     bₘ = bgc.temperature_sensitivity_term.M
     wₚₒ = bgc.sinking_speed_of_POC
 
-    γᴹ = bgc.excretion_as_DOM.M #Removed γᴹ factor from Rᵤₚ to conserve iron implicitly lost through mesozooplankton quadratic mortality.
+    γᴹ = bgc.excretion_as_DOM.M #Removed γᴹ factor from upper_respiration to conserve iron implicitly lost through mesozooplankton quadratic mortality.
 
     bFe = Fe
 
@@ -87,12 +87,10 @@ end
     θᶠᵉᴳᴼᶜ = nutrient_quota(BFe, GOC)
     
     #Grazing
-    ∑gᶻ, gₚᶻ, g_Dᶻ, gₚₒᶻ = get_grazingᶻ(P, D, POC, T, bgc)
-    ∑gᴹ, gₚᴹ, g_Dᴹ, gₚₒᴹ, g_Zᴹ = get_grazingᴹ(P, D, Z, POC, T, bgc)
-    ∑g_FFᴹ = get_∑g_FFᴹ(z, zₑᵤ, zₘₓₗ, T, POC, GOC, bgc)
-    gₚₒ_FF = g_FF*bₘ^T*wₚₒ*POC#
-    w_GOC = get_w_GOC(z, zₑᵤ, zₘₓₗ, bgc)
-    g_GOC_FFᴹ = g_FF*bₘ^T*w_GOC*GOC 
+    ∑gᶻ, gₚᶻ, g_Dᶻ, gₚₒᶻ = grazing_Z(P, D, POC, T, bgc)
+    ∑gᴹ, gₚᴹ, g_Dᴹ, gₚₒᴹ, g_Zᴹ = grazing_M(P, D, Z, POC, T, bgc)
+    ∑g_FFᴹ, gₚₒ_FF, g_GOC_FFᴹ = flux_feeding(z, zₑᵤ, zₘₓₗ, T, POC, GOC, bgc)
+    w_GOC = sinking_speed_of_GOC(z, zₑᵤ, zₘₓₗ, bgc)
     
     ∑θᶠᵉⁱgᵢᶻ = θᶠᵉᴾ*gₚᶻ + θᶠᵉᴰ*g_Dᶻ + θᶠᵉᴾᴼᶜ*gₚₒᶻ #over P, D, POC
     ∑θᶠᵉⁱgᵢᴹ = θᶠᵉᴾ*gₚᴹ + θᶠᵉᴰ*g_Dᴹ + θᶠᵉᴾᴼᶜ*gₚₒᴹ + θᶠᵉᶻ*g_Zᴹ #graze on P, D, POC, Z 
@@ -102,23 +100,16 @@ end
     Bactfe = bacterial_uptake_Fe(μₘₐₓ⁰, z, Z, M, Fe, DOC, PO₄, NO₃, NH₄, bFe, T, zₘₐₓ, bgc)
 
     #Gross growth efficiency
-    eᶻ = eᴶ(eₘₐₓᶻ, σᶻ, gₚᶻ, g_Dᶻ, gₚₒᶻ, 0, Pᶠᵉ, Dᶠᵉ, SFe, P, D, POC, bgc) #eₘₐₓᶻ used in paper but changed here to be consistent with eqs 24, 28
-    eᴹ =  eᴶ(eₘₐₓᴹ, σᴹ, gₚᴹ, g_Dᴹ, gₚₒᴹ, g_Zᴹ,Pᶠᵉ, Dᶠᵉ, SFe, P, D, POC, bgc)
+    eᶻ = growth_efficiency(eₘₐₓᶻ, σᶻ, gₚᶻ, g_Dᶻ, gₚₒᶻ, 0, Pᶠᵉ, Dᶠᵉ, SFe, P, D, POC, bgc) #eₘₐₓᶻ used in paper but changed here to be consistent with eqs 24, 28
+    eᴹ =  growth_efficiency(eₘₐₓᴹ, σᴹ, gₚᴹ, g_Dᴹ, gₚₒᴹ, g_Zᴹ,Pᶠᵉ, Dᶠᵉ, SFe, P, D, POC, bgc)
 
     sh = shear_rate(z, zₘₓₗ)
     λₚₒ¹ = particles_carbon_degradation_rate(T, O₂, bgc)
 
-    #Check if max ever returns 0, in this case iron would not be conserved
-    a = max(0, (1-σᶻ)*(∑θᶠᵉⁱgᵢᶻ/(∑gᶻ + eps(0.0)) - eᶻ*θᶠᵉᶻ))*∑gᶻ*Z 
-    b = max(0, (1-σᴹ)*(∑θᶠᵉⁱgᵢᴹ + θᶠᵉᴾᴼᶜ*gₚₒ_FF + θᶠᵉᴳᴼᶜ*g_GOC_FFᴹ )/(∑gᴹ+∑g_FFᴹ + eps(0.0)) - eᴹ*θᶠᵉᶻ)*(∑gᴹ+∑g_FFᴹ)*M 
-    mycheck = ifelse(a*b == 0, 1, 0)
-    if mycheck == 1
-        println("max is zero")
-    end
-
     return (max(0, (1-σᶻ)*(∑θᶠᵉⁱgᵢᶻ/(∑gᶻ + eps(0.0))) - eᶻ*θᶠᵉᶻ)*∑gᶻ*Z 
             + max(0, (1-σᴹ)*(∑θᶠᵉⁱgᵢᴹ + θᶠᵉᴾᴼᶜ*gₚₒ_FF + θᶠᵉᴳᴼᶜ*g_GOC_FFᴹ )/(∑gᴹ+∑g_FFᴹ + eps(0.0)) - eᴹ*θᶠᵉᶻ)*(∑gᴹ+∑g_FFᴹ)*M 
-            + θᶠᵉᶻ*Rᵤₚ(M, T, bgc) + λₚₒ¹*SFe 
+            + θᶠᵉᶻ*upper_respiration(M, T, bgc) + λₚₒ¹*SFe 
             - (1 - δᴾ)*μᴾᶠᵉ*P - (1 - δᴰ)*μᴰᶠᵉ*D 
-            - Fe_scavenging(POC, GOC, CaCO₃, PSi, D_dust, DOC, T, Fe, bgc) - iron_colloid_aggregation_1(sh, Fe, POC, DOC, T, bgc) - iron_colloid_aggregation_2(sh, Fe, T, DOC, GOC, bgc) - enhanced_scavenging(Fe, DOC, T, bgc) - Bactfe) #eq60
+            - Fe_scavenging(POC, GOC, CaCO₃, PSi, D_dust, DOC, T, Fe, bgc) - iron_colloid_aggregation_1(sh, Fe, POC, DOC, T, bgc)
+            - iron_colloid_aggregation_2(sh, Fe, T, DOC, GOC, bgc) - enhanced_scavenging(Fe, DOC, T, bgc) - Bactfe) #eq60
 end

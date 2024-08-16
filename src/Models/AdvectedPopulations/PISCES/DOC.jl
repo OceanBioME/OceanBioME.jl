@@ -19,36 +19,36 @@
 #Remineralisation of DOM can be either oxic (Remin), or anoxic (Denit). This is regulated by oxygen_concentration. 
 #Remineralisation processes are responsible for breaking down organic matter back into inorganic forms. These terms contribute to forcing equations for inorganic nutrients.
 #Remineralisation occurs in oxic waters.
-@inline function get_Remin(O₂, NO₃, PO₄, NH₄, DOC, T, bFe, Bact, bgc)
+@inline function oxic_remineralization(O₂, NO₃, PO₄, NH₄, DOC, T, bFe, Bact, bgc)
     O₂ᵘᵗ = bgc.OC_for_ammonium_based_processes
     λ_DOC = bgc.remineralisation_rate_of_DOC
     bₚ = bgc.temperature_sensitivity_of_growth
     Bactᵣₑ = bgc.bacterial_reference
 
-    Lₗᵢₘᵇᵃᶜᵗ = Lᵇᵃᶜᵗ(DOC, PO₄, NO₃, NH₄, bFe, bgc)[2]
+    Lₗᵢₘᵇᵃᶜᵗ = bacterial_activity(DOC, PO₄, NO₃, NH₄, bFe, bgc)[2]
 
     #min((O₂)/(O₂ᵘᵗ), λ_DOC*bₚ^T*(1 - oxygen_conditions(O₂, bgc)) * Lₗᵢₘᵇᵃᶜᵗ * (Bact)/(Bactᵣₑ) * DOC), definition from paper did not make sense with dimensions, modified below
     return λ_DOC*bₚ^T*(1 - oxygen_conditions(O₂, bgc)) * Lₗᵢₘᵇᵃᶜᵗ * (Bact)/(Bactᵣₑ + eps(0.0)) * DOC #33a
 end
 
 #Denitrification is the remineralisation process in anoxic waters.
-@inline function get_Denit(NO₃, PO₄, NH₄, DOC, O₂, T, bFe, Bact, bgc)
+@inline function denitrification(NO₃, PO₄, NH₄, DOC, O₂, T, bFe, Bact, bgc)
     λ_DOC = bgc.remineralisation_rate_of_DOC
     rₙₒ₃¹ = bgc.CN_ratio_of_denitrification
     bₚ = bgc.temperature_sensitivity_of_growth
     Bactᵣₑ = bgc.bacterial_reference
 
-    Lₗᵢₘᵇᵃᶜᵗ = Lᵇᵃᶜᵗ(DOC, PO₄, NO₃, NH₄, bFe, bgc)[2]
+    Lₗᵢₘᵇᵃᶜᵗ = bacterial_activity(DOC, PO₄, NO₃, NH₄, bFe, bgc)[2]
 
     #min(NO₃/rₙₒ₃¹, λ_DOC*bₚ^T* oxygen_conditions(O₂, bgc)* Lₗᵢₘᵇᵃᶜᵗ*(Bact)/(Bactᵣₑ) * DOC), definition from paper did not make sense with dimensions, modified below
     return λ_DOC*bₚ^T* oxygen_conditions(O₂, bgc)* Lₗᵢₘᵇᵃᶜᵗ*(Bact)/(Bactᵣₑ + eps(0.0)) * DOC #33b
 end
 
 #Bacteria are responsible for carrying out biological remineralisation processes. They are represent in the following formulation, with biomass decreasing at depth.
-@inline get_Bact(zₘₐₓ, z, Z, M) = ifelse(abs(z) <= zₘₐₓ, min(0.7*(Z + 2*M), 4), min(0.7*(Z + 2*M), 4)*(abs(zₘₐₓ/(z + eps(0.0)))^0.683))  #35b
+@inline bacterial_biomass(zₘₐₓ, z, Z, M) = ifelse(abs(z) <= zₘₐₓ, min(0.7*(Z + 2*M), 4), min(0.7*(Z + 2*M), 4)*(abs(zₘₐₓ/(z + eps(0.0)))^0.683))  #35b
 
 #Bacterial activity parameterises remineralisation of DOC. It is dependent on nutrient availability, and remineraisation half saturation constant.
-@inline function Lᵇᵃᶜᵗ(DOC, PO₄, NO₃, NH₄, bFe, bgc)
+@inline function bacterial_activity(DOC, PO₄, NO₃, NH₄, bFe, bgc)
    
     Kₚₒ₄ᵇᵃᶜᵗ = bgc.PO4_half_saturation_const_for_DOC_remin
     Kₙₒ₃ᵇᵃᶜᵗ = bgc.NO3_half_saturation_const_for_DOC_remin
@@ -60,17 +60,17 @@ end
     L_Feᵇᵃᶜᵗ = concentration_limitation(bFe, K_Feᵇᵃᶜᵗ) #34d
     Lₚₒ₄ᵇᵃᶜᵗ = concentration_limitation(PO₄, Kₚₒ₄ᵇᵃᶜᵗ) #34e
 
-    Lₙₕ₄ᵇᵃᶜᵗ = L_NH₄(NO₃, NH₄, Kₙₒ₃ᵇᵃᶜᵗ, Kₙₕ₄ᵇᵃᶜᵗ) #34g
-    Lₙₒ₃ᵇᵃᶜᵗ = L_NO₃(NO₃, NH₄, Kₙₒ₃ᵇᵃᶜᵗ, Kₙₕ₄ᵇᵃᶜᵗ) #34h
+    Lₙₕ₄ᵇᵃᶜᵗ = ammonium_limitation(NO₃, NH₄, Kₙₒ₃ᵇᵃᶜᵗ, Kₙₕ₄ᵇᵃᶜᵗ) #34g
+    Lₙₒ₃ᵇᵃᶜᵗ = nitrate_limitation(NO₃, NH₄, Kₙₒ₃ᵇᵃᶜᵗ, Kₙₕ₄ᵇᵃᶜᵗ) #34h
     Lₙᵇᵃᶜᵗ = Lₙₒ₃ᵇᵃᶜᵗ + Lₙₕ₄ᵇᵃᶜᵗ         #34f
     Lₗᵢₘᵇᵃᶜᵗ = min(Lₙₕ₄ᵇᵃᶜᵗ, Lₚₒ₄ᵇᵃᶜᵗ, L_Feᵇᵃᶜᵗ) #34c
-    Lᵇᵃᶜᵗᵣ = Lₗᵢₘᵇᵃᶜᵗ*L_DOCᵇᵃᶜᵗ #34a    
+    Lᵇᵃᶜᵗ = Lₗᵢₘᵇᵃᶜᵗ*L_DOCᵇᵃᶜᵗ #34a    
 
-    return Lᵇᵃᶜᵗᵣ, Lₗᵢₘᵇᵃᶜᵗ
+    return Lᵇᵃᶜᵗ, Lₗᵢₘᵇᵃᶜᵗ
 end
 
 #Aggregation processes for DOC. DOC can aggregate via turbulence and Brownian aggregation. These aggregated move to pools of larger particulates.
-@inline function Φᴰᴼᶜ(DOC, POC, GOC, sh, bgc)
+@inline function aggregation_process_for_DOC(DOC, POC, GOC, sh, bgc)
     a₁ = bgc.aggregation_rate_of_DOC_to_POC_1
     a₂ = bgc.aggregation_rate_of_DOC_to_POC_2
     a₃ = bgc.aggregation_rate_of_DOC_to_GOC_3
@@ -115,40 +115,40 @@ end
     w_GOCᵐⁱⁿ = bgc.min_sinking_speed_of_GOC
     bₘ = bgc.temperature_sensitivity_term.M
 
-    ∑ᵢgᵢᶻ, gₚᶻ, g_Dᶻ, gₚₒᶻ  = get_grazingᶻ(P, D, POC, T, bgc) 
-    ∑ᵢgᵢᴹ, gₚᴹ, g_Dᴹ, gₚₒᴹ, g_Zᴹ = get_grazingᴹ(P, D, Z, POC, T, bgc)
+    ∑ᵢgᵢᶻ, gₚᶻ, g_Dᶻ, gₚₒᶻ  = grazing_Z(P, D, POC, T, bgc) 
+    ∑ᵢgᵢᴹ, gₚᴹ, g_Dᴹ, gₚₒᴹ, g_Zᴹ = grazing_M(P, D, Z, POC, T, bgc)
 
-    w_GOC = get_w_GOC(z, zₑᵤ, zₘₓₗ, bgc) #41b
+    w_GOC = sinking_speed_of_GOC(z, zₑᵤ, zₘₓₗ, bgc) #41b
     g_GOC_FFᴹ = g_FF*bₘ^T*w_GOC*GOC #29b
     gₚₒ_FFᴹ = g_FF*bₘ^T*wₚₒ*POC
 
     t_darkᴾ = bgc.mean_residence_time_of_phytoplankton_in_unlit_mixed_layer.P
     t_darkᴰ = bgc.mean_residence_time_of_phytoplankton_in_unlit_mixed_layer.D
-    PARᴾ = get_PARᴾ(PAR¹, PAR², PAR³, bgc)
-    PARᴰ = get_PARᴰ(PAR¹, PAR², PAR³, bgc)
+    PARᴾ = P_PAR(PAR¹, PAR², PAR³, bgc)
+    PARᴰ = D_PAR(PAR¹, PAR², PAR³, bgc)
 
     Lₗᵢₘᴾ = P_nutrient_limitation(P, PO₄, NO₃, NH₄, Pᶜʰˡ, Pᶠᵉ, bgc)[1]
     Lₗᵢₘᴰ = D_nutrient_limitation(D, PO₄, NO₃, NH₄, Si, Dᶜʰˡ, Dᶠᵉ, Si̅, bgc)[1]
 
     μᴾ = phytoplankton_growth_rate(P, Pᶜʰˡ, PARᴾ, L_day, T, αᴾ, Lₗᵢₘᴾ, zₘₓₗ, zₑᵤ, t_darkᴾ, bgc)
     μᴰ = phytoplankton_growth_rate(D, Dᶜʰˡ, PARᴰ, L_day, T, αᴰ, Lₗᵢₘᴰ, zₘₓₗ, zₑᵤ, t_darkᴰ, bgc)
-    eᶻ = eᴶ(eₘₐₓᶻ, σᶻ, gₚᶻ, g_Dᶻ, gₚₒᶻ, 0, Pᶠᵉ, Dᶠᵉ, SFe, P, D, POC, bgc)
-    eᴹ = eᴶ(eₘₐₓᴹ, σᴹ, gₚᴹ, g_Dᴹ, gₚₒᴹ, g_Zᴹ,Pᶠᵉ, Dᶠᵉ, SFe, P, D, POC, bgc)
+    eᶻ = growth_efficiency(eₘₐₓᶻ, σᶻ, gₚᶻ, g_Dᶻ, gₚₒᶻ, 0, Pᶠᵉ, Dᶠᵉ, SFe, P, D, POC, bgc)
+    eᴹ = growth_efficiency(eₘₐₓᴹ, σᴹ, gₚᴹ, g_Dᴹ, gₚₒᴹ, g_Zᴹ,Pᶠᵉ, Dᶠᵉ, SFe, P, D, POC, bgc)
 
     λₚₒ¹ = particles_carbon_degradation_rate(T, O₂, bgc)
-    Rᵤₚᴹ = Rᵤₚ(M, T, bgc)
+    Rᵤₚ = upper_respiration(M, T, bgc)
 
     zₘₐₓ = max(abs(zₑᵤ), abs(zₘₓₗ))   #41a
-    Bact = get_Bact(zₘₐₓ, z, Z, M)
+    Bact = bacterial_biomass(zₘₐₓ, z, Z, M)
 
     bFe = Fe #defined in previous PISCES model
     sh = shear_rate(z, zₘₓₗ)
   
-    Remin = get_Remin(O₂, NO₃, PO₄, NH₄, DOC, T, bFe, Bact, bgc)
-    Denit = get_Denit(NO₃, PO₄, NH₄, DOC, O₂, T, bFe, Bact, bgc)
+    Remin = oxic_remineralization(O₂, NO₃, PO₄, NH₄, DOC, T, bFe, Bact, bgc)
+    Denit = denitrification(NO₃, PO₄, NH₄, DOC, O₂, T, bFe, Bact, bgc)
 
-    Φ₁ᴰᴼᶜ, Φ₂ᴰᴼᶜ, Φ₃ᴰᴼᶜ = Φᴰᴼᶜ(DOC, POC, GOC, sh, bgc)
+    Φ₁ᴰᴼᶜ, Φ₂ᴰᴼᶜ, Φ₃ᴰᴼᶜ = aggregation_process_for_DOC(DOC, POC, GOC, sh, bgc)
 
     return ((1 - γᶻ)*(1 - eᶻ - σᶻ)*∑ᵢgᵢᶻ*Z + (1 - γᴹ)*(1 - eᴹ - σᴹ)*(∑ᵢgᵢᴹ + g_GOC_FFᴹ + gₚₒ_FFᴹ)*M + 
-           δᴰ*μᴰ*D + δᴾ*μᴾ*P + λₚₒ¹*POC + (1 - γᴹ)*Rᵤₚᴹ - Remin - Denit - Φ₁ᴰᴼᶜ - Φ₂ᴰᴼᶜ - Φ₃ᴰᴼᶜ) #32
+           δᴰ*μᴰ*D + δᴾ*μᴾ*P + λₚₒ¹*POC + (1 - γᴹ)*Rᵤₚ - Remin - Denit - Φ₁ᴰᴼᶜ - Φ₂ᴰᴼᶜ - Φ₃ᴰᴼᶜ) #32
 end #changed this to include gₚₒ_FF

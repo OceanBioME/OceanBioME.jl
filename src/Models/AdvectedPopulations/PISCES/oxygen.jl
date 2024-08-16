@@ -11,7 +11,7 @@
     σᴹ = bgc.non_assimilated_fraction.M
     λₙₕ₄ = bgc.max_nitrification_rate
     bFe = Fe
-
+    θᴺᶜ = bgc.NC_redfield_ratio
     #L_day
     ϕ₀ = bgc.latitude
     L_day_param = bgc.length_of_day
@@ -20,22 +20,22 @@
 
     t_darkᴾ = bgc.mean_residence_time_of_phytoplankton_in_unlit_mixed_layer.P
     t_darkᴰ = bgc.mean_residence_time_of_phytoplankton_in_unlit_mixed_layer.D
-    PARᴾ = get_PARᴾ(PAR¹, PAR², PAR³, bgc)
-    PARᴰ = get_PARᴰ(PAR¹, PAR², PAR³, bgc)
+    PARᴾ = P_PAR(PAR¹, PAR², PAR³, bgc)
+    PARᴰ = D_PAR(PAR¹, PAR², PAR³, bgc)
     eₘₐₓᶻ = bgc.max_growth_efficiency_of_zooplankton.Z
     eₘₐₓᴹ = bgc.max_growth_efficiency_of_zooplankton.M
     #Grazing
-    ∑gᶻ, gₚᶻ, g_Dᶻ, gₚₒᶻ = get_grazingᶻ(P, D, POC, T, bgc) 
-    ∑gᴹ, gₚᴹ, g_Dᴹ, gₚₒᴹ, g_Zᴹ  = get_grazingᴹ(P, D, Z, POC, T, bgc) 
-  
-    ∑g_FFᴹ = get_∑g_FFᴹ(z, zₑᵤ, zₘₓₗ, T, POC, GOC, bgc)
+    ∑gᶻ, gₚᶻ, g_Dᶻ, gₚₒᶻ = grazing_Z(P, D, POC, T, bgc) 
+    ∑gᴹ, gₚᴹ, g_Dᴹ, gₚₒᴹ, g_Zᴹ  = grazing_M(P, D, Z, POC, T, bgc) 
+    ∑g_FFᴹ = flux_feeding(z, zₑᵤ, zₘₓₗ, T, POC, GOC, bgc)[1]
     #g_Z not called
+    
     #Gross growth efficiency
-    eᶻ = eᴶ(eₘₐₓᶻ, σᶻ, gₚᶻ, g_Dᶻ, gₚₒᶻ, 0, Pᶠᵉ, Dᶠᵉ, SFe, P, D, POC, bgc)
-    eᴹ =  eᴶ(eₘₐₓᴹ, σᴹ, gₚᴹ, g_Dᴹ, gₚₒᴹ, g_Zᴹ,Pᶠᵉ, Dᶠᵉ, SFe, P, D, POC, bgc)
+    eᶻ = growth_efficiency(eₘₐₓᶻ, σᶻ, gₚᶻ, g_Dᶻ, gₚₒᶻ, 0, Pᶠᵉ, Dᶠᵉ, SFe, P, D, POC, bgc)
+    eᴹ =  growth_efficiency(eₘₐₓᴹ, σᴹ, gₚᴹ, g_Dᴹ, gₚₒᴹ, g_Zᴹ,Pᶠᵉ, Dᶠᵉ, SFe, P, D, POC, bgc)
 
     zₘₐₓ = max(abs(zₑᵤ), abs(zₘₓₗ)) #35a
-    Bact = get_Bact(zₘₐₓ, z, Z, M)
+    Bact = bacterial_biomass(zₘₐₓ, z, Z, M)
    
     #Uptake rates of nitrogen and ammonium
     μₙₒ₃ᴾ = uptake_rate_nitrate_P(P, PO₄, NO₃, NH₄, Pᶜʰˡ, Pᶠᵉ, T, zₘₓₗ, zₑᵤ, L_day, PARᴾ, t_darkᴾ, Si̅, bgc)
@@ -43,7 +43,7 @@
     μₙₕ₄ᴾ = uptake_rate_ammonium_P(P, PO₄, NO₃, NH₄, Pᶜʰˡ, Pᶠᵉ, T, zₘₓₗ, zₑᵤ, L_day, PARᴾ, t_darkᴾ, Si̅, bgc)
     μₙₕ₄ᴰ = uptake_rate_ammonium_D(D, PO₄, NO₃, NH₄, Si, Dᶜʰˡ, Dᶠᵉ, T, zₘₓₗ, zₑᵤ, L_day, PARᴰ, t_darkᴰ, Si̅, bgc)
     
-    return (O₂ᵘᵗ*(μₙₕ₄ᴾ*P + μₙₕ₄ᴰ*D) + (O₂ᵘᵗ + O₂ⁿⁱᵗ)*(μₙₒ₃ᴾ*P + μₙₒ₃ᴰ*D) + O₂ⁿⁱᵗ*N_fix(bFe, PO₄, T, P, NO₃, NH₄, Pᶜʰˡ, Pᶠᵉ, PAR, bgc) 
-            - O₂ᵘᵗ*γᶻ*(1 - eᶻ - σᶻ)*∑gᶻ*Z - O₂ᵘᵗ*γᴹ*(1 - eᴹ - σᴹ)*(∑gᴹ + ∑g_FFᴹ)*M - O₂ᵘᵗ*γᴹ*Rᵤₚ(M, T, bgc) - O₂ᵘᵗ*get_Remin(O₂, NO₃, PO₄, NH₄, DOC, T, bFe, Bact, bgc) 
-            - O₂ⁿⁱᵗ*Nitrif(NH₄, O₂, λₙₕ₄, PAR, bgc))
+    return (O₂ᵘᵗ*(μₙₕ₄ᴾ*P + μₙₕ₄ᴰ*D) + (O₂ᵘᵗ + O₂ⁿⁱᵗ)*(μₙₒ₃ᴾ*P + μₙₒ₃ᴰ*D) + O₂ⁿⁱᵗ*(1/θᴺᶜ)*N_fixation(bFe, PO₄, T, P, NO₃, NH₄, Pᶜʰˡ, Pᶠᵉ, PAR, bgc) 
+            - O₂ᵘᵗ*γᶻ*(1 - eᶻ - σᶻ)*∑gᶻ*Z - O₂ᵘᵗ*γᴹ*(1 - eᴹ - σᴹ)*(∑gᴹ + ∑g_FFᴹ)*M - O₂ᵘᵗ*γᴹ*upper_respiration(M, T, bgc)
+            - O₂ᵘᵗ*oxic_remineralization(O₂, NO₃, PO₄, NH₄, DOC, T, bFe, Bact, bgc) - O₂ⁿⁱᵗ*(1/θᴺᶜ)*nitrification(NH₄, O₂, λₙₕ₄, PAR, bgc))
 end

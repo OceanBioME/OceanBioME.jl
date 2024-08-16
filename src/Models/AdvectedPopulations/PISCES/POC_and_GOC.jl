@@ -30,23 +30,24 @@ end
     g_FF = bgc.flux_feeding_rate
 
     #Grazing
-    grazing = get_grazingᶻ(P, D, POC, T, bgc)
+    grazing = grazing_Z(P, D, POC, T, bgc)
     ∑gᶻ = grazing[1]
     gₚₒᶻ = grazing[4]
-    gₚₒᴹ = get_grazingᴹ(P, D, Z, POC, T, bgc)[4]
+    gₚₒᴹ = grazing_M(P, D, Z, POC, T, bgc)[4]
     gₚₒ_FFᴹ = g_FF*(bₘ^T)*wₚₒ*POC #29a
     
     #Aggregation
     sh = shear_rate(z, zₘₓₗ)
-    Φ₁ᴰᴼᶜ = Φᴰᴼᶜ(DOC, POC, GOC, sh, bgc)[1]
-    Φ₃ᴰᴼᶜ = Φᴰᴼᶜ(DOC, POC, GOC, sh, bgc)[3]
+    Φ₁ᴰᴼᶜ = aggregation_process_for_DOC(DOC, POC, GOC, sh, bgc)[1]
+    Φ₃ᴰᴼᶜ = aggregation_process_for_DOC(DOC, POC, GOC, sh, bgc)[3]
     Φ = POC_aggregation(POC, GOC, sh, bgc)
 
-    R_CaCO₃ = get_R_CaCO₃(P, PO₄, NO₃, NH₄, Pᶜʰˡ, Pᶠᵉ, Fe, T, PAR, zₘₓₗ, bgc) 
+    R_CaCO₃ = rain_ratio(P, PO₄, NO₃, NH₄, Pᶜʰˡ, Pᶠᵉ, Fe, T, PAR, zₘₓₗ, bgc) 
     λₚₒ¹ = particles_carbon_degradation_rate(T, O₂, bgc)
 
-    return (σᶻ*∑gᶻ*Z + 0.5*mᴰ*concentration_limitation(D, Kₘ)*D + rᶻ*(b_Z^T)*(concentration_limitation(Z, Kₘ) + 3*oxygen_conditions(O₂, bgc))*Z 
-            + mᶻ*(b_Z^T)*Z^2 + (1 - 0.5*R_CaCO₃)*(mᴾ*concentration_limitation(P, Kₘ)*P + sh*wᴾ*P^2) 
+    return (σᶻ*∑gᶻ*Z + 0.5*mᴰ*concentration_limitation(D, Kₘ)*D + rᶻ*(b_Z^T)*(concentration_limitation(Z, Kₘ)
+            + 3*oxygen_conditions(O₂, bgc))*Z + mᶻ*(b_Z^T)*Z^2 
+            + (1 - 0.5*R_CaCO₃)*(mᴾ*concentration_limitation(P, Kₘ)*P + sh*wᴾ*P^2) 
             + λₚₒ¹*GOC + Φ₁ᴰᴼᶜ + Φ₃ᴰᴼᶜ - (gₚₒᴹ + gₚₒ_FFᴹ)*M - gₚₒᶻ*Z - λₚₒ¹*POC - Φ)  #eq37, partial derivative ommitted as included elsewhere in OceanBioME
 end
 
@@ -64,19 +65,17 @@ end
     wₚₒ = bgc.sinking_speed_of_POC
 
     #Grazing
-    w_GOC = get_w_GOC(z, zₑᵤ, zₘₓₗ, bgc)
-    ∑gᴹ = get_grazingᴹ(P, D, Z, POC, T, bgc)[1] 
-    ∑g_FFᴹ = get_∑g_FFᴹ(z, zₑᵤ, zₘₓₗ, T, POC, GOC, bgc)
-    gₚₒ_FFᴹ = g_FF*bₘ^T*wₚₒ*POC
-    g_GOC_FFᴹ = g_FF*bₘ^T*w_GOC*GOC #29b
+    w_GOC = sinking_speed_of_GOC(z, zₑᵤ, zₘₓₗ, bgc)
+    ∑gᴹ = grazing_M(P, D, Z, POC, T, bgc)[1] 
+    ∑g_FFᴹ, gₚₒ_FFᴹ, g_GOC_FFᴹ = flux_feeding(z, zₑᵤ, zₘₓₗ, T, POC, GOC, bgc)
     
     #Aggregation
     sh = shear_rate(z, zₘₓₗ)
     Φ = POC_aggregation(POC, GOC, sh, bgc)
-    Φ₂ᴰᴼᶜ = Φᴰᴼᶜ(DOC, POC, GOC, sh, bgc)[2]
+    Φ₂ᴰᴼᶜ = aggregation_process_for_DOC(DOC, POC, GOC, sh, bgc)[2]
 
-    Pᵤₚᴹ = Pᵤₚ(M, T, bgc)
-    R_CaCO₃ = get_R_CaCO₃(P, PO₄, NO₃, NH₄, Pᶜʰˡ, Pᶠᵉ, Fe, T, PAR, zₘₓₗ, bgc)
+    Pᵤₚᴹ = production_of_fecal_pellets(M, T, bgc)
+    R_CaCO₃ = rain_ratio(P, PO₄, NO₃, NH₄, Pᶜʰˡ, Pᶠᵉ, Fe, T, PAR, zₘₓₗ, bgc)
     λₚₒ¹ = particles_carbon_degradation_rate(T, O₂, bgc)
     Lₗᵢₘᴰ = D_nutrient_limitation(D, PO₄, NO₃, NH₄, Si, Dᶜʰˡ, Dᶠᵉ, Si̅, bgc)[1]
     wᴰ =  D_quadratic_mortality(D, PO₄, NO₃, NH₄, Si, Dᶜʰˡ, Dᶠᵉ, Si̅, bgc)

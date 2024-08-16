@@ -4,15 +4,30 @@
 #Some changes have been made due to queries with the original paper, but changes and justification for these have been noted.
 
 #This document contains equations for:
-    #Iron in phytoplankton growth (eq17)
-    #Phytoplankton growth (eq2)
-    #P and D nutrient limitation (eqs6, 11)
-    #P and D forcing (eqs1, 10)
+    #nutrient_quotas
+    #concentration_limitation for determining Monod nutrient limitation terms
+
+    #shear_rate
+    #day_length
+    #day_dependent_growth_rate (eq3a), depth_dependent_growth_rate (eq3d), t_dark (eq3b)
+    #Half saturation constants
+    #P_nutrient_limitation (eq6a), D_nutrient_limitation (eq11a)
+
+    #minimum_iron_quota
+
+    #P_PAR
+    #phytoplankton_iron_biomass_growth_rate
+    #phytoplankton_growth_rate
+    #nutrient limitation
+    #variation_in_SiC_ratio
+    #D_quadratic_mortality
+    #Forcing equations
 
 @inline nutrient_quota(I,J) = ifelse(J != 0, I/(J + eps(0.0)), 0)
 @inline concentration_limitation(I, J) = I/(I + J + eps(0.0))
 
-@inline shear_rate(z, zₘₓₗ) = ifelse(z <= zₘₓₗ, 0.1, 0.01) #Given as 1 in Aumont paper
+@inline shear_rate(z, zₘₓₗ) = ifelse(z <= zₘₓₗ, 1, 0.01) #Given as 1 in Aumont paper
+
 @inline latitude(ϕ₀, y) = ϕ₀     #need to fix
 @inline day_length(ϕ, t, L_day) = L_day  #temporary
 
@@ -26,21 +41,18 @@
 end
 @inline depth_dependent_growth_rate(zₘₓₗ, zₑᵤ, t_darkᴵ, bgc) = 1 - concentration_limitation(t_dark(zₘₓₗ, zₑᵤ, bgc), t_darkᴵ) #eq 3d
 
-#Nutrient limitation terms.
-#Nutrient and phosphate limitations are based on Monod parametrisations, iron on quota parametrisations.
-@inline L_NH₄(NO₃, NH₄, Kₙₒ₃ᴵ, Kₙₕ₄ᴵ) = Kₙₒ₃ᴵ*NH₄/(Kₙₒ₃ᴵ*Kₙₕ₄ᴵ+Kₙₕ₄ᴵ*NO₃+Kₙₒ₃ᴵ*NH₄ + eps(0.0)) #eq 6d
-@inline L_NO₃(NO₃, NH₄, Kₙₒ₃ᴵ, Kₙₕ₄ᴵ) = Kₙₕ₄ᴵ*NO₃/(Kₙₒ₃ᴵ*Kₙₕ₄ᴵ+Kₙₕ₄ᴵ*NO₃+Kₙₒ₃ᴵ*NH₄ + eps(0.0)) #eq 6e
-@inline L_Fe(I, Iᶠᵉ, θₒₚₜᶠᵉᴵ, θₘᵢₙᶠᵉᴵ) = min(1, max(0, (nutrient_quota(Iᶠᵉ, I) - θₘᵢₙᶠᵉᴵ)/(θₒₚₜᶠᵉᴵ + eps(0.0)))) #eq 6f
-
 #The minimum iron quota is the sum of the three demands for iron in phytoplankton (photosynthesis, respiration, nitrate reduction)
 @inline minimum_iron_quota(I, Iᶜʰˡ, Lₙᴵ, Lₙₒ₃ᴵ) = 0.0016/(55.85) * nutrient_quota(Iᶜʰˡ, I) + 1.21e-5*14*Lₙᴵ/(55.85*7.625)*1.5+1.15e-4*14*Lₙₒ₃ᴵ/(55.85*7.625) #eq 20 -> Lₙ could be meant to be L_NH₄?
 
-
+#Different size classes of phytoplankton, have different half-saturation constants due to varying surface area to volume ratios. 
+#Generally increased biomass corresponds to larger size classes. 
+#Half saturation constants have biomass dependency.
 @inline I₁(I, Iₘₐₓ) = min(I, Iₘₐₓ) #eq 7a
 @inline I₂(I, Iₘₐₓ) = max(0, I - Iₘₐₓ) #eq 7b
-@inline Kᵢᴶ(Kᵢᴶᵐⁱⁿ, J₁, J₂, Sᵣₐₜᴶ) = Kᵢᴶᵐⁱⁿ* (J₁ + Sᵣₐₜᴶ* J₂)/(J₁ + J₂ + eps(0.0)) #eq 7c
+@inline nutrient_half_saturation_const(Kᵢᴶᵐⁱⁿ, J₁, J₂, Sᵣₐₜᴶ) = Kᵢᴶᵐⁱⁿ* (J₁ + Sᵣₐₜᴶ* J₂)/(J₁ + J₂ + eps(0.0)) #eq 7c
 
-@inline function get_PARᴾ(PAR¹, PAR², PAR³, bgc)
+#Light absorption by phytoplankton. Visible light split into 3 wavebands, where light absorption of each waveband controlled by coefficient.
+@inline function P_PAR(PAR¹, PAR², PAR³, bgc)
     β₁ᴾ = bgc.absorption_in_the_blue_part_of_light.P
     β₂ᴾ = bgc.absorption_in_the_green_part_of_light.P
     β₃ᴾ = bgc.absorption_in_the_red_part_of_light.P
@@ -48,7 +60,7 @@ end
     return β₁ᴾ*PAR¹ + β₂ᴾ*PAR² + β₃ᴾ*PAR³
 end
 
-@inline function get_PARᴰ(PAR¹, PAR², PAR³, bgc)
+@inline function D_PAR(PAR¹, PAR², PAR³, bgc)
     β₁ᴰ = bgc.absorption_in_the_blue_part_of_light.D
     β₂ᴰ = bgc.absorption_in_the_green_part_of_light.D
     β₃ᴰ = bgc.absorption_in_the_red_part_of_light.D
@@ -56,6 +68,7 @@ end
     return β₁ᴰ*PAR¹ + β₂ᴰ*PAR² + β₃ᴰ*PAR³
 end
 
+#The growth rate of the iron biomass of phytoplankton.
 @inline function phytoplankton_iron_biomass_growth_rate(I, Iᶠᵉ, θₘₐₓᶠᵉᴵ, Sᵣₐₜᴵ, K_Feᴵᶠᵉᵐⁱⁿ, Iₘₐₓ, L_Feᴵ, bFe, T, bgc) 
     μ⁰ₘₐₓ = bgc.growth_rate_at_zero
     bₚ = bgc.temperature_sensitivity_of_growth
@@ -63,30 +76,37 @@ end
     μₚ = μ⁰ₘₐₓ*(bₚ^T) #4b
 
     I₂ = max(0, I - Iₘₐₓ) #18c
-    I₁ = I - I₂     #18c
+    I₁ = I - I₂ #18c
 
-    K_Feᴵᶠᵉ = K_Feᴵᶠᵉᵐⁱⁿ*(I₁ + Sᵣₐₜᴵ*I₂)/(I₁+I₂+eps(0.0))    #18b
+    K_Feᴵᶠᵉ = K_Feᴵᶠᵉᵐⁱⁿ*(I₁ + Sᵣₐₜᴵ*I₂)/(I₁+I₂+eps(0.0)) #18b
 
-    Lₗᵢₘ₁ᴵᶠᵉ = concentration_limitation(bFe, K_Feᴵᶠᵉ)    #18a
-    #Lₗᵢₘ₂ᴵᶠᵉ = (4 - 4.5*L_Feᴵ)/(L_Feᴵ + 0.5) #19
-    Lₗᵢₘ₂ᴵᶠᵉ = (4 - 2*L_Feᴵ)/(L_Feᴵ + 1) #19
+    Lₗᵢₘ₁ᴵᶠᵉ = concentration_limitation(bFe, K_Feᴵᶠᵉ) #18a
+    #Lₗᵢₘ₂ᴵᶠᵉ = (4 - 4.5*L_Feᴵ)/(L_Feᴵ + 0.5) #Formulation given in paper does not vary between 1 and 4 as claimed
+    Lₗᵢₘ₂ᴵᶠᵉ = (4 - 2*L_Feᴵ)/(L_Feᴵ + 1) #19, reformulation is between given bounds
 
-    return θₘₐₓᶠᵉᴵ*Lₗᵢₘ₁ᴵᶠᵉ*Lₗᵢₘ₂ᴵᶠᵉ*(1 - (nutrient_quota(Iᶠᵉ, I))/(θₘₐₓᶠᵉᴵ + eps(0.0)))/(1.05 - (nutrient_quota(Iᶠᵉ, I))/(θₘₐₓᶠᵉᴵ + eps(0.0)))*μₚ  #17
+    return θₘₐₓᶠᵉᴵ*Lₗᵢₘ₁ᴵᶠᵉ*Lₗᵢₘ₂ᴵᶠᵉ*(1 - (nutrient_quota(Iᶠᵉ, I))/(θₘₐₓᶠᵉᴵ + eps(0.0)))/(1.05 - (nutrient_quota(Iᶠᵉ, I))/(θₘₐₓᶠᵉᴵ + eps(0.0)))*μₚ #eq17
 end
 
-#This function defines both μᴾ and μᴰ
+#Growth rates of phytoplankton depend on limiting nutrients, day length, and light absorbtion of phytoplankton.
 @inline function phytoplankton_growth_rate(I, Iᶜʰˡ, PARᴵ, L_day, T, αᴵ, Lₗᵢₘᴵ, zₘₓₗ, zₑᵤ, t_darkᴵ, bgc)
-    
     μ⁰ₘₐₓ = bgc.growth_rate_at_zero
     bₚ = bgc.temperature_sensitivity_of_growth
 
     μₚ = μ⁰ₘₐₓ*(bₚ^T)    #eq 4b      
 
-    return μₚ * day_dependent_growth_rate(L_day) * depth_dependent_growth_rate(zₘₓₗ, zₑᵤ, t_darkᴵ, bgc) * (1-exp(-αᴵ*(nutrient_quota(Iᶜʰˡ,I))*PARᴵ/(L_day*μₚ*Lₗᵢₘᴵ + eps(0.0)))) * Lₗᵢₘᴵ #2b 
+    return μₚ * day_dependent_growth_rate(L_day) * depth_dependent_growth_rate(zₘₓₗ, zₑᵤ, t_darkᴵ, bgc) * (1-exp(-αᴵ*(nutrient_quota(Iᶜʰˡ,I))*PARᴵ/(L_day*μₚ*Lₗᵢₘᴵ + eps(0.0)))) * Lₗᵢₘᴵ #eq2b 
 end
 
-# This function returns Lₗᵢₘᴾ as well as all the constituent parts as a vector so we can use all the parts in separate parts of the code
+
+#Nutrient limitation terms.
+#Nutrient and phosphate limitations are based on Monod parametrisations, iron on quota parametrisations.
+@inline ammonium_limitation(NO₃, NH₄, Kₙₒ₃ᴵ, Kₙₕ₄ᴵ) = Kₙₒ₃ᴵ*NH₄/(Kₙₒ₃ᴵ*Kₙₕ₄ᴵ+Kₙₕ₄ᴵ*NO₃+Kₙₒ₃ᴵ*NH₄ + eps(0.0)) #eq 6d
+@inline nitrate_limitation(NO₃, NH₄, Kₙₒ₃ᴵ, Kₙₕ₄ᴵ) = Kₙₕ₄ᴵ*NO₃/(Kₙₒ₃ᴵ*Kₙₕ₄ᴵ+Kₙₕ₄ᴵ*NO₃+Kₙₒ₃ᴵ*NH₄ + eps(0.0)) #eq 6e
+@inline iron_limitation(I, Iᶠᵉ, θₒₚₜᶠᵉᴵ, θₘᵢₙᶠᵉᴵ) = min(1, max(0, (nutrient_quota(Iᶠᵉ, I) - θₘᵢₙᶠᵉᴵ)/(θₒₚₜᶠᵉᴵ + eps(0.0)))) #eq 6f
+
+#Determines individual nutrient limitation terms, and overall limiting nutrients.
 @inline function P_nutrient_limitation(P, PO₄, NO₃, NH₄, Pᶜʰˡ, Pᶠᵉ, bgc)
+    #Parameters
     θₒₚₜᶠᵉᵖ = bgc.optimal_iron_quota.P
     Sᵣₐₜᴾ = bgc.size_ratio_of_phytoplankton.P
     Kₙₒ₃ᴾᵐⁱⁿ = bgc.min_half_saturation_const_for_nitrate.P
@@ -94,26 +114,27 @@ end
     Kₚₒ₄ᴾᵐⁱⁿ = bgc.min_half_saturation_const_for_phosphate.P 
     Pₘₐₓ = bgc.threshold_concentration_for_size_dependency.P
 
+    #Half saturation constants
     P₁ = I₁(P, Pₘₐₓ)
     P₂ = I₂(P, Pₘₐₓ)
+    Kₙₒ₃ᴾ = nutrient_half_saturation_const(Kₙₒ₃ᴾᵐⁱⁿ, P₁, P₂, Sᵣₐₜᴾ)
+    Kₙₕ₄ᴾ = nutrient_half_saturation_const(Kₙₕ₄ᴾᵐⁱⁿ, P₁, P₂, Sᵣₐₜᴾ)
+    Kₚₒ₄ᴾ = nutrient_half_saturation_const(Kₚₒ₄ᴾᵐⁱⁿ, P₁, P₂, Sᵣₐₜᴾ)
 
-    Kₙₒ₃ᴾ = Kᵢᴶ(Kₙₒ₃ᴾᵐⁱⁿ, P₁, P₂, Sᵣₐₜᴾ)
-    Kₙₕ₄ᴾ = Kᵢᴶ(Kₙₕ₄ᴾᵐⁱⁿ, P₁, P₂, Sᵣₐₜᴾ)
-    Kₚₒ₄ᴾ = Kᵢᴶ(Kₚₒ₄ᴾᵐⁱⁿ, P₁, P₂, Sᵣₐₜᴾ)
-
+    #Nutrient limitation terms (for phosphate, ammonium, nitrate, iron)
     Lₚₒ₄ᴾ = concentration_limitation(PO₄, Kₚₒ₄ᴾ) #6b
-    Lₙₕ₄ᴾ = L_NH₄(NO₃, NH₄, Kₙₒ₃ᴾ, Kₙₕ₄ᴾ)
-    Lₙₒ₃ᴾ = L_NO₃(NO₃, NH₄, Kₙₒ₃ᴾ, Kₙₕ₄ᴾ)
-    Lₙᴾ = Lₙₒ₃ᴾ + Lₙₕ₄ᴾ         #6c
+    Lₙₕ₄ᴾ = ammonium_limitation(NO₃, NH₄, Kₙₒ₃ᴾ, Kₙₕ₄ᴾ)
+    Lₙₒ₃ᴾ = nitrate_limitation(NO₃, NH₄, Kₙₒ₃ᴾ, Kₙₕ₄ᴾ)
+    Lₙᴾ = Lₙₒ₃ᴾ + Lₙₕ₄ᴾ #6c
+    θₘᵢₙᶠᵉᵖ = minimum_iron_quota(P, Pᶜʰˡ, Lₙₕ₄ᴾ, Lₙₒ₃ᴾ) #changed from Lₙᴾ to Lₙₕ₄ᴾ
+    L_Feᴾ = iron_limitation(P, Pᶠᵉ, θₒₚₜᶠᵉᵖ, θₘᵢₙᶠᵉᵖ)
 
-    θₘᵢₙᶠᵉᵖ = minimum_iron_quota(P, Pᶜʰˡ, Lₙₕ₄ᴾ, Lₙₒ₃ᴾ)# changed from Lₙᴾ to Lₙₕ₄ᴾ
-    L_Feᴾ = L_Fe(P, Pᶠᵉ, θₒₚₜᶠᵉᵖ, θₘᵢₙᶠᵉᵖ)
-
-    return min(Lₚₒ₄ᴾ, Lₙᴾ, L_Feᴾ), Lₚₒ₄ᴾ, Lₙₕ₄ᴾ, Lₙₒ₃ᴾ, Lₙᴾ, L_Feᴾ#6a
+    return min(Lₚₒ₄ᴾ, Lₙᴾ, L_Feᴾ), Lₚₒ₄ᴾ, Lₙₕ₄ᴾ, Lₙₒ₃ᴾ, Lₙᴾ, L_Feᴾ #6a
 end
 
 #Same for Lₗᵢₘᴰ
 @inline function D_nutrient_limitation(D, PO₄, NO₃, NH₄, Si, Dᶜʰˡ, Dᶠᵉ, Si̅, bgc)
+    #Parameters
     θₒₚₜᶠᵉᴰ = bgc.optimal_iron_quota.D
     Sᵣₐₜᴰ = bgc.size_ratio_of_phytoplankton.D
     Kₙₒ₃ᴰᵐⁱⁿ = bgc.min_half_saturation_const_for_nitrate.D
@@ -123,27 +144,28 @@ end
     Kₛᵢ = bgc.parameter_for_half_saturation_const
     Dₘₐₓ = bgc.threshold_concentration_for_size_dependency.D
 
+    #Half saturation constants
     D₁ = I₁(D, Dₘₐₓ)
     D₂ = I₂(D, Dₘₐₓ)
+    Kₙₒ₃ᴰ = nutrient_half_saturation_const(Kₙₒ₃ᴰᵐⁱⁿ, D₁, D₂, Sᵣₐₜᴰ)
+    Kₙₕ₄ᴰ = nutrient_half_saturation_const(Kₙₕ₄ᴰᵐⁱⁿ, D₁, D₂, Sᵣₐₜᴰ)
+    Kₚₒ₄ᴰ = nutrient_half_saturation_const(Kₚₒ₄ᴰᵐⁱⁿ, D₁, D₂, Sᵣₐₜᴰ)
 
-    Kₙₒ₃ᴰ = Kᵢᴶ(Kₙₒ₃ᴰᵐⁱⁿ, D₁, D₂, Sᵣₐₜᴰ)
-    Kₙₕ₄ᴰ = Kᵢᴶ(Kₙₕ₄ᴰᵐⁱⁿ, D₁, D₂, Sᵣₐₜᴰ)
-    Kₚₒ₄ᴰ = Kᵢᴶ(Kₚₒ₄ᴰᵐⁱⁿ, D₁, D₂, Sᵣₐₜᴰ)
-
+    #Nutrient limitation terms (for phosphate, ammonium, nitrate, iron, silicate)
     Lₚₒ₄ᴰ = concentration_limitation(PO₄, Kₚₒ₄ᴰ) #6b
-    Lₙₕ₄ᴰ = L_NH₄(NO₃, NH₄, Kₙₒ₃ᴰ, Kₙₕ₄ᴰ)
-    Lₙₒ₃ᴰ = L_NO₃(NO₃, NH₄, Kₙₒ₃ᴰ, Kₙₕ₄ᴰ)
+    Lₙₕ₄ᴰ = ammonium_limitation(NO₃, NH₄, Kₙₒ₃ᴰ, Kₙₕ₄ᴰ)
+    Lₙₒ₃ᴰ = nitrate_limitation(NO₃, NH₄, Kₙₒ₃ᴰ, Kₙₕ₄ᴰ)
     Lₙᴰ = Lₙₒ₃ᴰ + Lₙₕ₄ᴰ         #6c
-
     θₘᵢₙᶠᵉᴰ = minimum_iron_quota(D, Dᶜʰˡ, Lₙₕ₄ᴰ, Lₙₒ₃ᴰ) #changed from n to NH₄
-    L_Feᴰ = L_Fe(D, Dᶠᵉ ,θₒₚₜᶠᵉᴰ, θₘᵢₙᶠᵉᴰ)
+    L_Feᴰ = iron_limitation(D, Dᶠᵉ ,θₒₚₜᶠᵉᴰ, θₘᵢₙᶠᵉᴰ)
     Kₛᵢᴰ = Kₛᵢᴰᵐⁱⁿ + 7*Si̅^2 / (Kₛᵢ^2 + Si̅^2 + eps(0.0)) #12
     Lₛᵢᴰ = concentration_limitation(Si, Kₛᵢᴰ)    #11b
 
     return min(Lₚₒ₄ᴰ, Lₙᴰ, L_Feᴰ, Lₛᵢᴰ), Lₚₒ₄ᴰ, Lₙₕ₄ᴰ, Lₙₒ₃ᴰ, Lₙᴰ,  L_Feᴰ, Lₛᵢᴰ   #11a
 end
 
-@inline function get_θₒₚₜˢⁱᴰ(D, PO₄, NO₃, NH₄, Si, Dᶜʰˡ, Dᶠᵉ, μᴰ, T, ϕ, Si̅, bgc)
+
+@inline function variation_in_SiC_ratio(D, PO₄, NO₃, NH₄, Si, Dᶜʰˡ, Dᶠᵉ, μᴰ, T, ϕ, Si̅, bgc)
     θₘˢⁱᴰ = bgc.optimal_SiC_uptake_ratio_of_diatoms
     μ⁰ₘₐₓ = bgc.growth_rate_at_zero
     Kₛᵢ¹ = bgc.parameter_for_SiC.one
@@ -163,15 +185,15 @@ end
     return θₘˢⁱᴰ*Lₗᵢₘ₁ᴰˢⁱ*min(5.4, ((4.4*exp(-4.23*Fₗᵢₘ₁ᴰˢⁱ)*Fₗᵢₘ₂ᴰˢⁱ + 1)*(1 + 2*Lₗᵢₘ₂ᴰˢⁱ)))   #22
 end
 
-
+#Diatoms have variable quadratic mortality term.
 @inline function D_quadratic_mortality(D, PO₄, NO₃, NH₄, Si, Dᶜʰˡ, Dᶠᵉ, Si̅, bgc)
     wᴾ = bgc.min_quadratic_mortality_of_phytoplankton
     wₘₐₓᴰ = bgc.max_quadratic_mortality_of_diatoms
     Lₗᵢₘᴰ = D_nutrient_limitation(D, PO₄, NO₃, NH₄, Si, Dᶜʰˡ, Dᶠᵉ, Si̅, bgc)[1]
-    return wᴾ + wₘₐₓᴰ*(1-Lₗᵢₘᴰ)
+    return wᴾ + wₘₐₓᴰ*(1-Lₗᵢₘᴰ) #eq13
 end
 
-
+#Phytoplankton forcing
 @inline function (bgc::PISCES)(::Val{:P}, x, y, z, t, P, D, Z, M, Pᶜʰˡ, Dᶜʰˡ, Pᶠᵉ, Dᶠᵉ, Dˢⁱ, DOC, POC, GOC, SFe, BFe, PSi, NO₃, NH₄, PO₄, Fe, Si, CaCO₃, DIC, Alk, O₂, T, zₘₓₗ, zₑᵤ, Si̅, D_dust, Ω, PAR, PAR¹, PAR², PAR³)
     #Parameters
     δᴾ = bgc.exudation_of_DOC.P
@@ -180,6 +202,8 @@ end
     wᴾ = bgc.min_quadratic_mortality_of_phytoplankton
     αᴾ = bgc.initial_slope_of_PI_curve.P
 
+    sh = shear_rate(z, zₘₓₗ)
+
     #L_day
     ϕ₀ = bgc.latitude
     L_day_param = bgc.length_of_day
@@ -187,28 +211,27 @@ end
     L_day = day_length(ϕ, t, L_day_param)
 
     #Grazing
-    gₚᶻ = get_grazingᶻ(P, D, POC, T, bgc)[2]     
-    gₚᴹ =  get_grazingᴹ(P, D, Z, POC, T, bgc)[2]
+    gₚᶻ = grazing_Z(P, D, POC, T, bgc)[2]     
+    gₚᴹ =  grazing_M(P, D, Z, POC, T, bgc)[2]
     
     #Phytoplankton growth
     Lₗᵢₘᴾ = P_nutrient_limitation(P, PO₄, NO₃, NH₄, Pᶜʰˡ, Pᶠᵉ, bgc)[1]
     t_darkᴾ = bgc.mean_residence_time_of_phytoplankton_in_unlit_mixed_layer.P
-    PARᴾ = get_PARᴾ(PAR¹, PAR², PAR³, bgc)
+    PARᴾ = P_PAR(PAR¹, PAR², PAR³, bgc)
     μᴾ = phytoplankton_growth_rate(P, Pᶜʰˡ, PARᴾ, L_day, T, αᴾ, Lₗᵢₘᴾ, zₘₓₗ, zₑᵤ, t_darkᴾ, bgc)
 
-    sh = shear_rate(z, zₘₓₗ)
-
-    return (1-δᴾ)*μᴾ*P - mᴾ*concentration_limitation(P, Kₘ)*P - sh*wᴾ*P^2 - gₚᶻ*Z - gₚᴹ*M    #eq 1
+    return (1-δᴾ)*μᴾ*P - mᴾ*concentration_limitation(P, Kₘ)*P - sh*wᴾ*P^2 - gₚᶻ*Z - gₚᴹ*M #eq 1
 end
 
+#Diatom forcing
 @inline function (bgc::PISCES)(::Val{:D}, x, y, z, t, P, D, Z, M, Pᶜʰˡ, Dᶜʰˡ, Pᶠᵉ, Dᶠᵉ, Dˢⁱ, DOC, POC, GOC, SFe, BFe, PSi, NO₃, NH₄, PO₄, Fe, Si, CaCO₃, DIC, Alk, O₂, T, zₘₓₗ, zₑᵤ, Si̅, D_dust, Ω, PAR, PAR¹, PAR², PAR³)
     #Parameters
     δᴰ = bgc.exudation_of_DOC.D
     mᴰ = bgc.phytoplankton_mortality_rate.D
     Kₘ = bgc.half_saturation_const_for_mortality
-    wᴾ = bgc.min_quadratic_mortality_of_phytoplankton
-    wₘₐₓᴰ = bgc.max_quadratic_mortality_of_diatoms
     αᴰ = bgc.initial_slope_of_PI_curve.D
+
+    sh = shear_rate(z, zₘₓₗ)
 
     #L_day
     ϕ₀ = bgc.latitude
@@ -216,16 +239,15 @@ end
     ϕ = latitude(ϕ₀, y)
     L_day = day_length(ϕ, t, L_day_param)
 
-    sh = shear_rate(z, zₘₓₗ)
     #Grazing
-    g_Dᶻ = get_grazingᶻ(P, D, POC, T, bgc)[3]
-    g_Dᴹ = get_grazingᴹ(P, D, Z, POC, T, bgc)[3]
+    g_Dᶻ = grazing_Z(P, D, POC, T, bgc)[3]
+    g_Dᴹ = grazing_M(P, D, Z, POC, T, bgc)[3]
 
     #Nutrient limitation
-    L = D_nutrient_limitation(D, PO₄, NO₃, NH₄, Si, Dᶜʰˡ, Dᶠᵉ, Si̅, bgc)
-    Lₗᵢₘᴰ = L[1]
+    Lₗᵢₘᴰ = D_nutrient_limitation(D, PO₄, NO₃, NH₄, Si, Dᶜʰˡ, Dᶠᵉ, Si̅, bgc)[1]
 
-    PARᴰ = get_PARᴰ(PAR¹, PAR², PAR³, bgc)
+    #Also required
+    PARᴰ = D_PAR(PAR¹, PAR², PAR³, bgc)
     t_darkᴰ = bgc.mean_residence_time_of_phytoplankton_in_unlit_mixed_layer.D
     μᴰ = phytoplankton_growth_rate(D, Dᶜʰˡ, PARᴰ, L_day, T, αᴰ, Lₗᵢₘᴰ, zₘₓₗ, zₑᵤ, t_darkᴰ, bgc)
     wᴰ = D_quadratic_mortality(D, PO₄, NO₃, NH₄, Si, Dᶜʰˡ, Dᶠᵉ, Si̅, bgc) #13
@@ -233,6 +255,7 @@ end
     return (1-δᴰ)*μᴰ*D - mᴰ*concentration_limitation(D, Kₘ)*D - sh*wᴰ*D^2 - g_Dᶻ*Z - g_Dᴹ*M    #eq 9
 end
 
+#Forcing for chlorophyll biomass of nanophytoplankton
 @inline function (bgc::PISCES)(::Val{:Pᶜʰˡ}, x, y, z, t, P, D, Z, M, Pᶜʰˡ, Dᶜʰˡ, Pᶠᵉ, Dᶠᵉ, Dˢⁱ, DOC, POC, GOC, SFe, BFe, PSi, NO₃, NH₄, PO₄, Fe, Si, CaCO₃, DIC, Alk, O₂, T, zₘₓₗ, zₑᵤ, Si̅, D_dust, Ω, PAR, PAR¹, PAR², PAR³)
    #Parameters
     δᴾ = bgc.exudation_of_DOC.P
@@ -243,6 +266,8 @@ end
     Kₘ = bgc.half_saturation_const_for_mortality
     wᴾ = bgc.min_quadratic_mortality_of_phytoplankton
 
+    sh = shear_rate(z, zₘₓₗ)
+
     #L_day
     ϕ₀ = bgc.latitude
     L_day_param = bgc.length_of_day
@@ -250,23 +275,23 @@ end
     L_day = day_length(ϕ, t, L_day_param)
 
     #Grazing
-    gₚᶻ = get_grazingᶻ(P, D, POC, T, bgc)[2]    
-    gₚᴹ = get_grazingᴹ(P, D, Z, POC, T, bgc)[2]
+    gₚᶻ = grazing_Z(P, D, POC, T, bgc)[2]    
+    gₚᴹ = grazing_M(P, D, Z, POC, T, bgc)[2]
 
     #Phytoplankton growth
     t_darkᴾ = bgc.mean_residence_time_of_phytoplankton_in_unlit_mixed_layer.P
     Lₗᵢₘᴾ= P_nutrient_limitation(P, PO₄, NO₃, NH₄, Pᶜʰˡ, Pᶠᵉ, bgc)[1]
-    PARᴾ = get_PARᴾ(PAR¹, PAR², PAR³, bgc)
+    PARᴾ = P_PAR(PAR¹, PAR², PAR³, bgc)
     μᴾ = phytoplankton_growth_rate(P, Pᶜʰˡ, PARᴾ, L_day, T, αᴾ, Lₗᵢₘᴾ, zₘₓₗ, zₑᵤ, t_darkᴾ, bgc)
 
     μ̌ᴾ = μᴾ / day_dependent_growth_rate(L_day) #15b
     ρᴾᶜʰˡ = 144*μ̌ᴾ * P / (αᴾ* Pᶜʰˡ* ((PARᴾ)/(L_day + eps(0.0))) + eps(0.0)) #15a
 
-    sh = shear_rate(z, zₘₓₗ)
-
-    return ((1-δᴾ)*(12*θₘᵢₙᶜʰˡ + (θₘₐₓᶜʰˡᴾ - θₘᵢₙᶜʰˡ)*ρᴾᶜʰˡ)*μᴾ*P - mᴾ*concentration_limitation(P, Kₘ)*Pᶜʰˡ - sh*wᴾ*P*Pᶜʰˡ - nutrient_quota(Pᶜʰˡ, P)*gₚᶻ*Z - nutrient_quota(Pᶜʰˡ, P)*gₚᴹ*M)  #14
+    return ((1-δᴾ)*(12*θₘᵢₙᶜʰˡ + (θₘₐₓᶜʰˡᴾ - θₘᵢₙᶜʰˡ)*ρᴾᶜʰˡ)*μᴾ*P - mᴾ*concentration_limitation(P, Kₘ)*Pᶜʰˡ 
+             - sh*wᴾ*P*Pᶜʰˡ - nutrient_quota(Pᶜʰˡ, P)*gₚᶻ*Z - nutrient_quota(Pᶜʰˡ, P)*gₚᴹ*M)  #14
 end
 
+#Forcing for chlorophyll biomass of diatoms
 @inline function (bgc::PISCES)(::Val{:Dᶜʰˡ}, x, y, z, t, P, D, Z, M, Pᶜʰˡ, Dᶜʰˡ, Pᶠᵉ, Dᶠᵉ, Dˢⁱ, DOC, POC, GOC, SFe, BFe, PSi, NO₃, NH₄, PO₄, Fe, Si, CaCO₃, DIC, Alk, O₂, T, zₘₓₗ, zₑᵤ, Si̅, D_dust, Ω, PAR, PAR¹, PAR², PAR³)
     #Parameters
     δᴰ = bgc.exudation_of_DOC.D
@@ -287,12 +312,12 @@ end
     sh = shear_rate(z, zₘₓₗ)
     
     #Grazing
-    g_Dᶻ = get_grazingᶻ(P, D, POC, T, bgc)[3]
-    g_Dᴹ = get_grazingᴹ(P, D, Z, POC, T, bgc)[3]
+    g_Dᶻ = grazing_Z(P, D, POC, T, bgc)[3]
+    g_Dᴹ = grazing_M(P, D, Z, POC, T, bgc)[3]
 
     #Diatom growth
     Lₗᵢₘᴰ = D_nutrient_limitation(D, PO₄, NO₃, NH₄, Si, Dᶜʰˡ, Dᶠᵉ, Si̅, bgc)[1]
-    PARᴰ = get_PARᴰ(PAR¹, PAR², PAR³, bgc)
+    PARᴰ = D_PAR(PAR¹, PAR², PAR³, bgc)
     t_darkᴰ = bgc.mean_residence_time_of_phytoplankton_in_unlit_mixed_layer.D
     μᴰ = phytoplankton_growth_rate(D, Dᶜʰˡ, PARᴰ, L_day, T, αᴰ, Lₗᵢₘᴰ, zₘₓₗ, zₑᵤ, t_darkᴰ, bgc)
 
@@ -306,6 +331,7 @@ end
             - nutrient_quota(Dᶜʰˡ, D)*g_Dᶻ*Z - nutrient_quota(Dᶜʰˡ, D)*g_Dᴹ*M)    #14
 end
 
+#Forcing for iron biomass of nanophytoplankton
 @inline function (bgc::PISCES)(::Val{:Pᶠᵉ}, x, y, z, t, P, D, Z, M, Pᶜʰˡ, Dᶜʰˡ, Pᶠᵉ, Dᶠᵉ, Dˢⁱ, DOC, POC, GOC, SFe, BFe, PSi, NO₃, NH₄, PO₄, Fe, Si, CaCO₃, DIC, Alk, O₂, T, zₘₓₗ, zₑᵤ, Si̅, D_dust, Ω, PAR, PAR¹, PAR², PAR³)
     #Parameters
     δᴾ = bgc.exudation_of_DOC.P
@@ -317,31 +343,35 @@ end
     K_Feᴾᶠᵉᵐⁱⁿ = bgc.min_half_saturation_const_for_iron_uptake.P # this seems wrong as doesn't quite match parameter list
     Pₘₐₓ = bgc.threshold_concentration_for_size_dependency.P
 
+    sh = shear_rate(z, zₘₓₗ)
+
     #Grazing
-    gₚᶻ = get_grazingᶻ(P, D, POC, T, bgc)[2]    
-    gₚᴹ = get_grazingᴹ(P, D, Z, POC, T, bgc)[2]
+    gₚᶻ = grazing_Z(P, D, POC, T, bgc)[2]    
+    gₚᴹ = grazing_M(P, D, Z, POC, T, bgc)[2]
 
     #Phytoplankton iron growth
     L_Feᴾ = P_nutrient_limitation(P, PO₄, NO₃, NH₄, Pᶜʰˡ, Pᶠᵉ, bgc)[6]
     bFe =  Fe   #defined in previous PISCES model
     μᴾᶠᵉ = phytoplankton_iron_biomass_growth_rate(P, Pᶠᵉ, θₘₐₓᶠᵉᵖ, Sᵣₐₜᴾ, K_Feᴾᶠᵉᵐⁱⁿ, Pₘₐₓ, L_Feᴾ, bFe, T, bgc)
 
-    sh = shear_rate(z, zₘₓₗ)
-
-    return (1-δᴾ)*μᴾᶠᵉ*P - mᴾ*concentration_limitation(P, Kₘ)*Pᶠᵉ - sh*wᴾ*P*Pᶠᵉ - nutrient_quota(Pᶠᵉ, P)*gₚᶻ*Z - nutrient_quota(Pᶠᵉ, P)*gₚᴹ*M  #16
+    return ((1-δᴾ)*μᴾᶠᵉ*P - mᴾ*concentration_limitation(P, Kₘ)*Pᶠᵉ - sh*wᴾ*P*Pᶠᵉ
+             - nutrient_quota(Pᶠᵉ, P)*gₚᶻ*Z - nutrient_quota(Pᶠᵉ, P)*gₚᴹ*M ) #16
 end
 
+#Forcing for chlorophyll biomass of diatoms
 @inline function (bgc::PISCES)(::Val{:Dᶠᵉ}, x, y, z, t, P, D, Z, M, Pᶜʰˡ, Dᶜʰˡ, Pᶠᵉ, Dᶠᵉ, Dˢⁱ, DOC, POC, GOC, SFe, BFe, PSi, NO₃, NH₄, PO₄, Fe, Si, CaCO₃, DIC, Alk, O₂, T, zₘₓₗ, zₑᵤ, Si̅, D_dust, Ω, PAR, PAR¹, PAR², PAR³)
     #Parameters
     δᴰ = bgc.exudation_of_DOC.D
     θₘₐₓᶠᵉᴰ = bgc.max_iron_quota.D
     mᴰ = bgc.phytoplankton_mortality_rate.D
     Kₘ = bgc.half_saturation_const_for_mortality
-    wᴾ = bgc.min_quadratic_mortality_of_phytoplankton
     Sᵣₐₜᴰ = bgc.size_ratio_of_phytoplankton.D
     Dₘₐₓ = bgc.threshold_concentration_for_size_dependency.D
     K_Feᴰᶠᵉᵐⁱⁿ = bgc.min_half_saturation_const_for_iron_uptake.D
-    wₘₐₓᴰ = bgc.max_quadratic_mortality_of_diatoms
+
+    #Also required
+    wᴰ = D_quadratic_mortality(D, PO₄, NO₃, NH₄, Si, Dᶜʰˡ, Dᶠᵉ, Si̅, bgc) #13
+    sh = shear_rate(z, zₘₓₗ)
     
     #Limiting nutrients
     L = D_nutrient_limitation(D, PO₄, NO₃, NH₄, Si, Dᶜʰˡ, Dᶠᵉ, Si̅, bgc)
@@ -349,26 +379,23 @@ end
     L_Feᴰ = L[6]
 
     #Grazing
-    g_Dᶻ = get_grazingᶻ(P, D, POC, T, bgc)[3]
-    g_Dᴹ = get_grazingᴹ(P, D, Z, POC, T, bgc)[3]
+    g_Dᶻ = grazing_Z(P, D, POC, T, bgc)[3]
+    g_Dᴹ = grazing_M(P, D, Z, POC, T, bgc)[3]
    
     #Diatom iron growth
     bFe = Fe
     μᴰᶠᵉ = phytoplankton_iron_biomass_growth_rate(D, Dᶠᵉ, θₘₐₓᶠᵉᴰ, Sᵣₐₜᴰ, K_Feᴰᶠᵉᵐⁱⁿ, Dₘₐₓ, L_Feᴰ, bFe, T, bgc)
 
-    wᴰ = D_quadratic_mortality(D, PO₄, NO₃, NH₄, Si, Dᶜʰˡ, Dᶠᵉ, Si̅, bgc) #13
-    sh = shear_rate(z, zₘₓₗ)
-
-    return (1-δᴰ)*μᴰᶠᵉ*D - mᴰ*concentration_limitation(D, Kₘ)*Dᶠᵉ - sh*wᴰ*D*Dᶠᵉ - nutrient_quota(Dᶠᵉ, D)*g_Dᶻ*Z - nutrient_quota(Dᶠᵉ, D)*g_Dᴹ*M    #16
+    return ((1-δᴰ)*μᴰᶠᵉ*D - mᴰ*concentration_limitation(D, Kₘ)*Dᶠᵉ - sh*wᴰ*D*Dᶠᵉ
+            - nutrient_quota(Dᶠᵉ, D)*g_Dᶻ*Z - nutrient_quota(Dᶠᵉ, D)*g_Dᴹ*M)    #16
 end
 
+#Forcing equations for silicon biomass of diatoms
 @inline function (bgc::PISCES)(::Val{:Dˢⁱ}, x, y, z, t, P, D, Z, M, Pᶜʰˡ, Dᶜʰˡ, Pᶠᵉ, Dᶠᵉ, Dˢⁱ, DOC, POC, GOC, SFe, BFe, PSi, NO₃, NH₄, PO₄, Fe, Si, CaCO₃, DIC, Alk, O₂, T, zₘₓₗ, zₑᵤ, Si̅, D_dust, Ω, PAR, PAR¹, PAR², PAR³)    #ϕ is latitude
     #Parameters
     δᴰ = bgc.exudation_of_DOC.D
     mᴰ = bgc.phytoplankton_mortality_rate.D
     Kₘ = bgc.half_saturation_const_for_mortality
-    wᴾ = bgc.min_quadratic_mortality_of_phytoplankton
-    wₘₐₓᴰ = bgc.max_quadratic_mortality_of_diatoms
     αᴰ = bgc.initial_slope_of_PI_curve.D
 
     #L_day
@@ -378,19 +405,21 @@ end
     L_day = day_length(ϕ, t, L_day_param)
 
     #Grazing
-    g_Dᶻ = get_grazingᶻ(P, D, POC, T, bgc)[3]
-    g_Dᴹ = get_grazingᴹ(P, D, Z, POC, T, bgc)[3]
+    g_Dᶻ = grazing_Z(P, D, POC, T, bgc)[3]
+    g_Dᴹ = grazing_M(P, D, Z, POC, T, bgc)[3]
  
     t_darkᴰ = bgc.mean_residence_time_of_phytoplankton_in_unlit_mixed_layer.D
 
     #Diatom growth
     Lₗᵢₘᴰ = D_nutrient_limitation(D, PO₄, NO₃, NH₄, Si, Dᶜʰˡ, Dᶠᵉ, Si̅, bgc)[1]
-    PARᴰ = get_PARᴰ(PAR¹, PAR², PAR³, bgc)
+    PARᴰ = D_PAR(PAR¹, PAR², PAR³, bgc)
     μᴰ = phytoplankton_growth_rate(D, Dᶜʰˡ, PARᴰ, L_day, T, αᴰ, Lₗᵢₘᴰ, zₘₓₗ, zₑᵤ, t_darkᴰ, bgc)
 
-    θₒₚₜˢⁱᴰ = get_θₒₚₜˢⁱᴰ(D, PO₄, NO₃, NH₄, Si, Dᶜʰˡ, Dᶠᵉ, μᴰ, T, ϕ, Si̅, bgc)
+    #Also required
+    θₒₚₜˢⁱᴰ = variation_in_SiC_ratio(D, PO₄, NO₃, NH₄, Si, Dᶜʰˡ, Dᶠᵉ, μᴰ, T, ϕ, Si̅, bgc)
     wᴰ = D_quadratic_mortality(D, PO₄, NO₃, NH₄, Si, Dᶜʰˡ, Dᶠᵉ, Si̅, bgc) #13
     sh = shear_rate(z, zₘₓₗ)
     
-    return θₒₚₜˢⁱᴰ*(1-δᴰ)*μᴰ*D - nutrient_quota(Dˢⁱ, D)*g_Dᴹ*M -  nutrient_quota(Dˢⁱ, D)*g_Dᶻ*Z - mᴰ*concentration_limitation(D, Kₘ)*Dˢⁱ - sh*wᴰ*D*Dˢⁱ #21
+    return (θₒₚₜˢⁱᴰ*(1-δᴰ)*μᴰ*D - nutrient_quota(Dˢⁱ, D)*g_Dᴹ*M -  nutrient_quota(Dˢⁱ, D)*g_Dᶻ*Z
+           - mᴰ*concentration_limitation(D, Kₘ)*Dˢⁱ - sh*wᴰ*D*Dˢⁱ) #21
 end
