@@ -19,8 +19,8 @@
     ∑g_FFᴹ = flux_feeding(z, zₑᵤ, zₘₓₗ, T, POC, GOC, bgc)[1]
 
     #Gross growth efficiency
-    eᶻ = eᴶ(eₘₐₓᶻ, σᶻ, gₚᶻ, g_Dᶻ, gₚₒᶻ, 0, Pᶠᵉ, Dᶠᵉ, SFe, P, D, POC, bgc)
-    eᴹ =  eᴶ(eₘₐₓᴹ, σᴹ, gₚᴹ, g_Dᴹ, gₚₒᴹ, g_Zᴹ,Pᶠᵉ, Dᶠᵉ, SFe, P, D, POC, bgc)
+    eᶻ = growth_efficiency(eₘₐₓᶻ, σᶻ, gₚᶻ, g_Dᶻ, gₚₒᶻ, 0, Pᶠᵉ, Dᶠᵉ, SFe, P, D, POC, bgc)
+    eᴹ =  growth_efficiency(eₘₐₓᴹ, σᴹ, gₚᴹ, g_Dᴹ, gₚₒᴹ, g_Zᴹ,Pᶠᵉ, Dᶠᵉ, SFe, P, D, POC, bgc)
 
     #Growth rates for phytoplankton
     ϕ₀ = bgc.latitude
@@ -40,11 +40,15 @@
 
     #Bacteria
     zₘₐₓ = max(abs(zₘₓₗ), abs(zₑᵤ))
-    Bact = get_Bact(zₘₐₓ, z, Z, M)
+    Bact = bacterial_biomass(zₘₐₓ, z, Z, M)
 
-    return (γᶻ*(1 - eᶻ - σᶻ)*∑gᶻ*Z + γᴹ*(1 - eᴹ - σᴹ)*(∑gᴹ + ∑g_FFᴹ)*M + γᴹ*upper_respiration(M, T, bgc) + 
-    get_Remin(O₂, NO₃, PO₄, NH₄, DOC, T, bFe, Bact, bgc) + get_Denit(NO₃, PO₄, NH₄, DOC, O₂, T, bFe, Bact, bgc) + 
-    λ_CaCO₃¹(CaCO₃, bgc, Ω)*CaCO₃ - P_CaCO₃(P, PO₄, NO₃, NH₄, Pᶜʰˡ, Pᶠᵉ, Fe, D, Z, M, POC, T, PAR, zₘₓₗ, z, bgc) - μᴰ*D - μᴾ*P) #eq59
+    return (γᶻ*(1 - eᶻ - σᶻ)*∑gᶻ*Z + γᴹ*(1 - eᴹ - σᴹ)*(∑gᴹ + ∑g_FFᴹ)*M + 
+    γᴹ*upper_respiration(M, T, bgc) + 
+    oxic_remineralization(O₂, NO₃, PO₄, NH₄, DOC, T, bFe, Bact, bgc) + 
+    denitrification(NO₃, PO₄, NH₄, DOC, O₂, T, bFe, Bact, bgc) + 
+    dissolution_of_calcite(CaCO₃, bgc, Ω)*CaCO₃ - 
+    production_of_sinking_calcite(P, PO₄, NO₃, NH₄, Pᶜʰˡ, Pᶠᵉ, Fe, D, Z, M, POC, T, PAR, zₘₓₗ, z, bgc) - 
+    μᴰ*D - μᴾ*P) #eq59
 end
 
 @inline function (bgc::PISCES)(::Val{:Alk}, x, y, z, t, P, D, Z, M, Pᶜʰˡ, Dᶜʰˡ, Pᶠᵉ, Dᶠᵉ, Dˢⁱ, DOC, POC, GOC, SFe, BFe, PSi, NO₃, NH₄, PO₄, Fe, Si, CaCO₃, DIC, Alk, O₂, T, zₘₓₗ, zₑᵤ, Si̅, D_dust, Ω, PAR, PAR¹, PAR², PAR³) # eq59
@@ -65,8 +69,8 @@ end
     ∑g_FFᴹ = flux_feeding(z, zₑᵤ, zₘₓₗ, T, POC, GOC, bgc)[1]
 
     #Gross growth efficiency
-    eᶻ = eᴶ(eₘₐₓᶻ, σᶻ, gₚᶻ, g_Dᶻ, gₚₒᶻ, 0, Pᶠᵉ, Dᶠᵉ, SFe, P, D, POC, bgc) 
-    eᴹ =  eᴶ(eₘₐₓᴹ, σᴹ, gₚᴹ, g_Dᴹ, gₚₒᴹ, g_Zᴹ,Pᶠᵉ, Dᶠᵉ, SFe, P, D, POC, bgc)
+    eᶻ = growth_efficiency(eₘₐₓᶻ, σᶻ, gₚᶻ, g_Dᶻ, gₚₒᶻ, 0, Pᶠᵉ, Dᶠᵉ, SFe, P, D, POC, bgc) 
+    eᴹ =  growth_efficiency(eₘₐₓᴹ, σᴹ, gₚᴹ, g_Dᴹ, gₚₒᴹ, g_Zᴹ,Pᶠᵉ, Dᶠᵉ, SFe, P, D, POC, bgc)
     #Uptake rates of nitrogen and ammonium
     ϕ₀ = bgc.latitude
     L_day_param = bgc.length_of_day
@@ -85,10 +89,14 @@ end
 
     #Bacteria
     zₘₐₓ = max(abs(zₘₓₗ), abs(zₑᵤ))
-    Bact = get_Bact(zₘₐₓ, z, Z, M)
+    Bact = bacterial_biomass(zₘₐₓ, z, Z, M)
 
-    return (θᴺᶜ*get_Remin(O₂, NO₃, PO₄, NH₄, DOC, T, bFe, Bact, bgc) + θᴺᶜ*(rₙₒ₃¹ + 1)*get_Denit(NO₃, PO₄, NH₄, DOC, O₂, T, bFe, Bact, bgc) + 
-    θᴺᶜ*γᶻ*(1 - eᶻ - σᶻ)*∑gᶻ*Z + θᴺᶜ*γᴹ*(1 - eᴹ - σᴹ)*(∑gᴹ + ∑g_FFᴹ + θᴺᶜ*γᴹ*upper_respiration(M, T, bgc))*M + θᴺᶜ*μₙₒ₃ᴾ*P + θᴺᶜ*μₙₒ₃ᴰ*D + 
-    θᴺᶜ*N_fix(bFe, PO₄, T, P, NO₃, NH₄, Pᶜʰˡ, Pᶠᵉ, PAR, bgc) + 2*λ_CaCO₃¹(CaCO₃, bgc, Ω)*CaCO₃ + θᴺᶜ*oxygen_conditions(O₂, bgc)*(rₙₕ₄¹ - 1)*λₙₕ₄*NH₄ - 
-    θᴺᶜ*μₙₕ₄ᴾ*P - θᴺᶜ*μₙₕ₄ᴰ*D- 2*θᴺᶜ*Nitrif(NH₄, O₂, λₙₕ₄, PAR, bgc) - 2*P_CaCO₃(P, PO₄, NO₃, NH₄, Pᶜʰˡ, Pᶠᵉ, Fe, D, Z, M, POC, T, PAR, zₘₓₗ, z, bgc)) #eq81
+    return (θᴺᶜ*oxic_remineralization(O₂, NO₃, PO₄, NH₄, DOC, T, bFe, Bact, bgc)
+          + θᴺᶜ*(rₙₒ₃¹ + 1)*denitrification(NO₃, PO₄, NH₄, DOC, O₂, T, bFe, Bact, bgc)
+          + θᴺᶜ*γᶻ*(1 - eᶻ - σᶻ)*∑gᶻ*Z + θᴺᶜ*γᴹ*(1 - eᴹ - σᴹ)*(∑gᴹ + ∑g_FFᴹ 
+          + θᴺᶜ*γᴹ*upper_respiration(M, T, bgc))*M + θᴺᶜ*μₙₒ₃ᴾ*P + θᴺᶜ*μₙₒ₃ᴰ*D 
+          + N_fixation(bFe, PO₄, T, P, NO₃, NH₄, Pᶜʰˡ, Pᶠᵉ, PAR, bgc)
+          + 2*dissolution_of_calcite(CaCO₃, bgc, Ω)*CaCO₃ + θᴺᶜ*oxygen_conditions(O₂, bgc)*(rₙₕ₄¹ - 1)*λₙₕ₄*NH₄
+          - θᴺᶜ*μₙₕ₄ᴾ*P - θᴺᶜ*μₙₕ₄ᴰ*D- 2*θᴺᶜ*nitrification(NH₄, O₂, λₙₕ₄, PAR, bgc) 
+          - 2*production_of_sinking_calcite(P, PO₄, NO₃, NH₄, Pᶜʰˡ, Pᶠᵉ, Fe, D, Z, M, POC, T, PAR, zₘₓₗ, z, bgc)) #eq81
 end

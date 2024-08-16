@@ -48,8 +48,8 @@ end
 @inline function bacterial_uptake_Fe(μₘₐₓ⁰, z, Z, M, Fe, DOC, PO₄, NO₃, NH₄, bFe, T, zₘₐₓ, bgc)
     K_Feᴮ¹ = bgc.Fe_half_saturation_const_for_Bacteria
     θₘₐₓᶠᵉᵇᵃᶜᵗ = bgc.max_FeC_ratio_of_bacteria
-    Bact = get_Bact(zₘₐₓ, z, Z, M) 
-    Lₗᵢₘᵇᵃᶜᵗ = Lᵇᵃᶜᵗ(DOC, PO₄, NO₃, NH₄, bFe, bgc)[2]
+    Bact = bacterial_biomass(zₘₐₓ, z, Z, M) 
+    Lₗᵢₘᵇᵃᶜᵗ = bacterial_activity(DOC, PO₄, NO₃, NH₄, bFe, bgc)[2]
     bₚ = bgc.temperature_sensitivity_of_growth
     return μₘₐₓ⁰*(bₚ^T)*Lₗᵢₘᵇᵃᶜᵗ*θₘₐₓᶠᵉᵇᵃᶜᵗ*Fe*Bact/(K_Feᴮ¹ + Fe + eps(0.0)) #eq63
 end
@@ -90,7 +90,7 @@ end
     ∑gᶻ, gₚᶻ, g_Dᶻ, gₚₒᶻ = grazing_Z(P, D, POC, T, bgc)
     ∑gᴹ, gₚᴹ, g_Dᴹ, gₚₒᴹ, g_Zᴹ = grazing_M(P, D, Z, POC, T, bgc)
     ∑g_FFᴹ, gₚₒ_FF, g_GOC_FFᴹ = flux_feeding(z, zₑᵤ, zₘₓₗ, T, POC, GOC, bgc)
-    w_GOC = get_w_GOC(z, zₑᵤ, zₘₓₗ, bgc)
+    w_GOC = sinking_speed_of_GOC(z, zₑᵤ, zₘₓₗ, bgc)
     
     ∑θᶠᵉⁱgᵢᶻ = θᶠᵉᴾ*gₚᶻ + θᶠᵉᴰ*g_Dᶻ + θᶠᵉᴾᴼᶜ*gₚₒᶻ #over P, D, POC
     ∑θᶠᵉⁱgᵢᴹ = θᶠᵉᴾ*gₚᴹ + θᶠᵉᴰ*g_Dᴹ + θᶠᵉᴾᴼᶜ*gₚₒᴹ + θᶠᵉᶻ*g_Zᴹ #graze on P, D, POC, Z 
@@ -100,8 +100,8 @@ end
     Bactfe = bacterial_uptake_Fe(μₘₐₓ⁰, z, Z, M, Fe, DOC, PO₄, NO₃, NH₄, bFe, T, zₘₐₓ, bgc)
 
     #Gross growth efficiency
-    eᶻ = eᴶ(eₘₐₓᶻ, σᶻ, gₚᶻ, g_Dᶻ, gₚₒᶻ, 0, Pᶠᵉ, Dᶠᵉ, SFe, P, D, POC, bgc) #eₘₐₓᶻ used in paper but changed here to be consistent with eqs 24, 28
-    eᴹ =  eᴶ(eₘₐₓᴹ, σᴹ, gₚᴹ, g_Dᴹ, gₚₒᴹ, g_Zᴹ,Pᶠᵉ, Dᶠᵉ, SFe, P, D, POC, bgc)
+    eᶻ = growth_efficiency(eₘₐₓᶻ, σᶻ, gₚᶻ, g_Dᶻ, gₚₒᶻ, 0, Pᶠᵉ, Dᶠᵉ, SFe, P, D, POC, bgc) #eₘₐₓᶻ used in paper but changed here to be consistent with eqs 24, 28
+    eᴹ =  growth_efficiency(eₘₐₓᴹ, σᴹ, gₚᴹ, g_Dᴹ, gₚₒᴹ, g_Zᴹ,Pᶠᵉ, Dᶠᵉ, SFe, P, D, POC, bgc)
 
     sh = shear_rate(z, zₘₓₗ)
     λₚₒ¹ = particles_carbon_degradation_rate(T, O₂, bgc)

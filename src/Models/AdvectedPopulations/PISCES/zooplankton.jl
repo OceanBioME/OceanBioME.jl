@@ -18,7 +18,7 @@
 end
 
 #Fecal pellets from upper trophic levels
-@inline function Pᵤₚ(M, T, bgc)
+@inline function production_of_fecal_pellets(M, T, bgc)
     σᴹ = bgc.non_assimilated_fraction.M
     eₘₐₓᴹ = bgc.max_growth_efficiency_of_zooplankton.M
     mᴹ = bgc.zooplankton_quadratic_mortality.M
@@ -77,7 +77,7 @@ end
 end
 
 #GOC has variable sinking speed.
-@inline function get_w_GOC(z, zₑᵤ, zₘₓₗ, bgc)
+@inline function sinking_speed_of_GOC(z, zₑᵤ, zₘₓₗ, bgc)
     zₘₐₓ = max(abs(zₑᵤ), abs(zₘₓₗ)) 
     w_GOCᵐⁱⁿ = bgc.min_sinking_speed_of_GOC
     return w_GOCᵐⁱⁿ + (200/day - w_GOCᵐⁱⁿ)*(max(0, abs(z)-abs(zₘₐₓ)))/(5000) #41b
@@ -89,7 +89,7 @@ end
     g_FF = bgc.flux_feeding_rate
     bₘ = bgc.temperature_sensitivity_term.M
 
-    w_GOC = get_w_GOC(z, zₑᵤ, zₘₓₗ, bgc)
+    w_GOC = sinking_speed_of_GOC(z, zₑᵤ, zₘₓₗ, bgc)
 
     gₚₒ_FFᴹ = g_FF*(bₘ^T)*wₚₒ*POC #29a
     g_GOC_FFᴹ = g_FF*(bₘ^T)*w_GOC*GOC #29b
@@ -98,7 +98,7 @@ end
 end
 
 #Gross growth efficiency is formulated to be called with either Z or M. However grazing on Z is only relevant for M, so pass zero when computing gross growth efficiency for Z.
-@inline function get_eₙᴶ(gₚᴶ, g_Dᴶ, gₚₒᴶ, g_Zᴹ, Pᶠᵉ, Dᶠᵉ, SFe, P, D, POC, bgc)
+@inline function nutrient_quality(gₚᴶ, g_Dᴶ, gₚₒᴶ, g_Zᴹ, Pᶠᵉ, Dᶠᵉ, SFe, P, D, POC, bgc)
     θᴺᶜ = bgc.NC_redfield_ratio
     θᶠᵉᶻ = bgc.FeC_ratio_of_zooplankton  #Assumed the same for both types of zooplankton
 
@@ -110,14 +110,14 @@ end
 end
 
 
-@inline function eᴶ(eₘₐₓᴶ, σᴶ, gₚᴶ, g_Dᴶ, gₚₒᴶ, g_Zᴹ, Pᶠᵉ, Dᶠᵉ, SFe, P, D, POC, bgc)
+@inline function growth_efficiency(eₘₐₓᴶ, σᴶ, gₚᴶ, g_Dᴶ, gₚₒᴶ, g_Zᴹ, Pᶠᵉ, Dᶠᵉ, SFe, P, D, POC, bgc)
 
     θᶠᵉᶻ = bgc.FeC_ratio_of_zooplankton  #Assumed the same for both types of zooplankton
 
     ∑ᵢθᶠᵉᴵgᵢᴶ = nutrient_quota(Pᶠᵉ, P)*gₚᴶ + nutrient_quota(Dᶠᵉ, D)*g_Dᴶ + nutrient_quota(SFe, POC)*gₚₒᴶ + θᶠᵉᶻ*g_Zᴹ
     ∑ᵢgᵢᴶ = gₚᴶ + g_Dᴶ + gₚₒᴶ + g_Zᴹ
 
-    eₙᴶ = get_eₙᴶ(gₚᴶ, g_Dᴶ, gₚₒᴶ, g_Zᴹ, Pᶠᵉ, Dᶠᵉ, SFe, P, D, POC, bgc) #27a
+    eₙᴶ = nutrient_quality(gₚᴶ, g_Dᴶ, gₚₒᴶ, g_Zᴹ, Pᶠᵉ, Dᶠᵉ, SFe, P, D, POC, bgc) #27a
 
     return eₙᴶ*min(eₘₐₓᴶ, (1 - σᴶ)* (∑ᵢθᶠᵉᴵgᵢᴶ)/(θᶠᵉᶻ*∑ᵢgᵢᴶ + eps(0.0))) #27b
 end
@@ -137,9 +137,10 @@ end
     g_Zᴹ = grazing_M(P, D, Z, POC, T, bgc)[5]
 
     #Gross growth efficiency
-    eᶻ = eᴶ(eₘₐₓᶻ, σᶻ, gₚᶻ, g_Dᶻ, gₚₒᶻ, 0, Pᶠᵉ, Dᶠᵉ, SFe, P, D, POC, bgc)
+    eᶻ = growth_efficiency(eₘₐₓᶻ, σᶻ, gₚᶻ, g_Dᶻ, gₚₒᶻ, 0, Pᶠᵉ, Dᶠᵉ, SFe, P, D, POC, bgc)
 
-    return eᶻ*(gₚᶻ + g_Dᶻ + gₚₒᶻ)*Z - g_Zᴹ*M - mᶻ*(b_Z^T)*Z^2 - rᶻ*(b_Z^T)*(concentration_limitation(Z, Kₘ) + 3*oxygen_conditions(O₂, bgc))*Z   #24
+    return (eᶻ*(gₚᶻ + g_Dᶻ + gₚₒᶻ)*Z - g_Zᴹ*M - mᶻ*(b_Z^T)*Z^2
+        - rᶻ*(b_Z^T)*(concentration_limitation(Z, Kₘ) + 3*oxygen_conditions(O₂, bgc))*Z)   #24
 end
 
 @inline function (bgc::PISCES)(::Val{:M}, x, y, z, t, P, D, Z, M, Pᶜʰˡ, Dᶜʰˡ, Pᶠᵉ, Dᶠᵉ, Dˢⁱ, DOC, POC, GOC, SFe, BFe, PSi, NO₃, NH₄, PO₄, Fe, Si, CaCO₃, DIC, Alk, O₂, T, zₘₓₗ, zₑᵤ, Si̅, D_dust, Ω, PAR, PAR¹, PAR², PAR³)
@@ -156,7 +157,8 @@ end
     ∑g_FFᴹ = flux_feeding(z, zₑᵤ, zₘₓₗ, T, POC, GOC, bgc)[1]
 
     #Gross growth efficiency
-    eᴹ =  eᴶ(eₘₐₓᴹ, σᴹ, gₚᴹ, g_Dᴹ, gₚₒᴹ, g_Zᴹ,Pᶠᵉ, Dᶠᵉ, SFe, P, D, POC, bgc)
+    eᴹ =  growth_efficiency(eₘₐₓᴹ, σᴹ, gₚᴹ, g_Dᴹ, gₚₒᴹ, g_Zᴹ,Pᶠᵉ, Dᶠᵉ, SFe, P, D, POC, bgc)
 
-    return eᴹ*(gₚᴹ + g_Dᴹ + gₚₒᴹ + ∑g_FFᴹ + g_Zᴹ)*M - mᴹ*(bₘ^T)*M^2 - rᴹ*(bₘ^T)*(concentration_limitation(M, Kₘ) + 3*oxygen_conditions(O₂, bgc))*M   #28
+    return (eᴹ*(gₚᴹ + g_Dᴹ + gₚₒᴹ + ∑g_FFᴹ + g_Zᴹ)*M - mᴹ*(bₘ^T)*M^2 
+        - rᴹ*(bₘ^T)*(concentration_limitation(M, Kₘ) + 3*oxygen_conditions(O₂, bgc))*M)   #28
 end

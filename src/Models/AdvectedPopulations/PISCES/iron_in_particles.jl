@@ -57,7 +57,7 @@ end
     return (σᶻ*∑θᶠᵉⁱgᵢᶻ*Z 
             + θᶠᵉᶻ*(rᶻ*(b_Z^T)*(concentration_limitation(Z, Kₘ) + 3*oxygen_conditions(O₂, bgc))*Z + mᶻ*(b_Z^T)*(Z^2)) 
             + λₚₒ¹*BFe 
-            + θᶠᵉᴾ*(1 - 0.5*get_R_CaCO₃(P, PO₄, NO₃, NH₄, Pᶜʰˡ, Pᶠᵉ, Fe, T, PAR, zₘₓₗ, bgc))*(mᴾ*concentration_limitation(P, Kₘ)*P + sh*wᴾ*P^2) 
+            + θᶠᵉᴾ*(1 - 0.5*rain_ratio(P, PO₄, NO₃, NH₄, Pᶜʰˡ, Pᶠᵉ, Fe, T, PAR, zₘₓₗ, bgc))*(mᴾ*concentration_limitation(P, Kₘ)*P + sh*wᴾ*P^2) 
             + θᶠᵉᴰ*0.5*mᴰ*concentration_limitation(D, Kₘ)*D + λ_Fe*POC*Fe¹ 
             + iron_colloid_aggregation_1(sh, Fe, POC, DOC, T, bgc) - λₚₒ¹*SFe - θᶠᵉᴾᴼᶜ*POC_aggregation(POC, GOC, sh, bgc) 
             - θᶠᵉᴾᴼᶜ*(grazingᴹ[4] + gₚₒ_FFᴹ)*M 
@@ -102,12 +102,12 @@ end
     ∑θᶠᵉⁱgᵢᴹ = θᶠᵉᴾ*grazingᴹ[2] + θᶠᵉᴰ*grazingᴹ[3] + θᶠᵉᴾᴼᶜ*grazingᴹ[4] + θᶠᵉᶻ*grazingᴹ[5] #graze on P, D, POC, Z 
     gₚₒ_FFᴹ = g_FF*bₘ^T*wₚₒ*POC 
     zₘₐₓ = max(abs(zₑᵤ), abs(zₘₓₗ))   #41a
-    w_GOC = get_w_GOC(z, zₑᵤ, zₘₓₗ, bgc)
+    w_GOC = sinking_speed_of_GOC(z, zₑᵤ, zₘₓₗ, bgc)
     g_GOC_FFᴹ = g_FF*bₘ^T*w_GOC*GOC 
 
     return (σᴹ*(∑θᶠᵉⁱgᵢᴹ + θᶠᵉᴾᴼᶜ*gₚₒ_FFᴹ + θᶠᵉᴳᴼᶜ*g_GOC_FFᴹ)*M 
-            + θᶠᵉᶻ*(rᴹ*(bₘ^T)*(concentration_limitation(M, Kₘ) + 3*oxygen_conditions(O₂, bgc))*M + Pᵤₚ(M, T, bgc)) 
-            + θᶠᵉᴾ*0.5*get_R_CaCO₃(P, PO₄, NO₃, NH₄, Pᶜʰˡ, Pᶠᵉ, Fe, T, PAR, zₘₓₗ, bgc)*(mᴾ*concentration_limitation(P, Kₘ)*P + sh*wᴾ*P^2) 
+            + θᶠᵉᶻ*(rᴹ*(bₘ^T)*(concentration_limitation(M, Kₘ) + 3*oxygen_conditions(O₂, bgc))*M + production_of_fecal_pellets(M, T, bgc)) 
+            + θᶠᵉᴾ*0.5*rain_ratio(P, PO₄, NO₃, NH₄, Pᶜʰˡ, Pᶠᵉ, Fe, T, PAR, zₘₓₗ, bgc)*(mᴾ*concentration_limitation(P, Kₘ)*P + sh*wᴾ*P^2) 
             + θᶠᵉᴰ*(0.5*mᴰ*concentration_limitation(D, Kₘ)*D + sh*wᴰ*D^2) 
             + κ_Bactᴮᶠᵉ*bacterial_uptake_Fe(μₘₐₓ⁰, z, Z, M, Fe, DOC, PO₄, NO₃, NH₄, bFe, T, zₘₐₓ, bgc) 
             + λ_Fe*GOC*Fe¹ + θᶠᵉᴾᴼᶜ*POC_aggregation(POC, GOC, sh, bgc) + iron_colloid_aggregation_2(sh, Fe, T, DOC, GOC, bgc) 

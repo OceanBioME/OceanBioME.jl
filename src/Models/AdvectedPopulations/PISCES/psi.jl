@@ -11,7 +11,7 @@
     if abs(z) <= zₘₐₓ
         return χ_lab⁰
     else
-        return χ_lab⁰*exp(-(λₚₛᵢˡᵃᵇ - λₚₛᵢʳᵉᶠ)*((abs(z)-zₘₐₓ)/(get_w_GOC(z, zₑᵤ, zₘₓₗ, bgc) + eps(0.0)))) #eq53
+        return χ_lab⁰*exp(-(λₚₛᵢˡᵃᵇ - λₚₛᵢʳᵉᶠ)*((abs(z)-zₘₐₓ)/(sinking_speed_of_GOC(z, zₑᵤ, zₘₓₗ, bgc) + eps(0.0)))) #eq53
     end
 end
 

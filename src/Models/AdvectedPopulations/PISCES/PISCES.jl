@@ -453,15 +453,15 @@ end
                    min_half_saturation_const_for_iron_uptake :: PD = (P = 1.0, D = 3.0),   #nmolFeL⁻¹
                    size_ratio_of_phytoplankton :: PD = (P = 3.0, D = 3.0),
                    optimal_SiC_uptake_ratio_of_diatoms :: FT = 0.159,       #molSi/(mol C)
-                   optimal_iron_quota :: PD = (P = 7.0, D = 7.0),               #μmolFe/(mol C)
-                   max_iron_quota :: PD = (P = 40.0, D = 40.0),                  #μmolFe/(mol C)
+                   optimal_iron_quota :: PD = (P = 7.0e-3, D = 7.0e-3),               #mmolFe/(mol C)
+                   max_iron_quota :: PD = (P = 40.0e-3, D = 40.0e-3),                  #molFe/(mol C)
                    phytoplankton_mortality_rate :: PD = (P = 0.01/day, D = 0.01/day),
                    min_quadratic_mortality_of_phytoplankton :: FT = 0.01 / day,   #1/(d mol C)
                    max_quadratic_mortality_of_diatoms :: FT = 0.03 / day,         #1/(d mol C)
                    max_ChlC_ratios_of_phytoplankton :: PD = (P = 0.033, D = 0.05),  #mg Chl/(mg C)
                    min_ChlC_ratios_of_phytoplankton :: FT = 0.0033,    #mg Chl/(mg C)
                    threshold_concentration_for_size_dependency :: PD = (P = 1.0, D = 1.0),  #μmolCL⁻¹
-                   mean_residence_time_of_phytoplankton_in_unlit_mixed_layer :: PD = (P = 3.0/day, D = 4.0/day), #/day
+                   mean_residence_time_of_phytoplankton_in_unlit_mixed_layer :: PD = (P = 3days, D = 4days), #day
     
                    latitude :: FT = -1.0, #still to be changed - this is temporary 
                    length_of_day :: FT = 1.0, #temporary parameter for day length
@@ -484,8 +484,8 @@ end
                    zooplankton_linear_mortality :: ZM = (Z = 0.03/day, M = 0.005/day),           #1/d
                    half_saturation_const_for_mortality :: FT = 0.2,                     #μmolCL⁻¹
                    fraction_of_calcite_not_dissolving_in_guts :: ZM = (Z = 0.5, M = 0.75),
-                   FeC_ratio_of_zooplankton :: FT = 10.0,                                  #μmolFe molC⁻¹
-                   FeZ_redfield_ratio :: FT = 3.0,             #μmolFe molC⁻¹
+                   FeC_ratio_of_zooplankton :: FT = 10.0e-3,                                  #mmolFe molC⁻¹
+                   FeZ_redfield_ratio :: FT = 3.0e-3,             #mmolFe molC⁻¹, remove this, is actually FeC_ratio_of_zooplankton
    
    
                    remineralisation_rate_of_DOC :: FT = 0.3 / day,                 #1/d
@@ -494,21 +494,21 @@ end
                    NH4_half_saturation_const_for_DOC_remin :: FT = 0.003,           #μmolNL⁻¹
                    PO4_half_saturation_const_for_DOC_remin :: FT = 0.003,       #μmolPL⁻¹
                    Fe_half_saturation_const_for_DOC_remin :: FT = 0.01,         #μmolFeL⁻¹
-                   aggregation_rate_of_DOC_to_POC_1 :: FT = 0.37 / day,          #(μmolCL⁻¹)⁻¹d⁻¹
-                   aggregation_rate_of_DOC_to_POC_2 :: FT = 102.0 / day,           #(μmolCL⁻¹)⁻¹d⁻¹
-                   aggregation_rate_of_DOC_to_GOC_3 :: FT = 3530.0 / day,          #(μmolCL⁻¹)⁻¹d⁻¹
-                   aggregation_rate_of_DOC_to_POC_4 :: FT = 5095.0 / day,          #(μmolCL⁻¹)⁻¹d⁻¹
-                   aggregation_rate_of_DOC_to_POC_5 :: FT = 114.0 / day,           #(μmolCL⁻¹)⁻¹d⁻¹
+                   aggregation_rate_of_DOC_to_POC_1 :: FT = 0.37e-6 / day,          #(μmolCL⁻¹)⁻¹d⁻¹
+                   aggregation_rate_of_DOC_to_POC_2 :: FT = 102.0e-6 / day,           #(μmolCL⁻¹)⁻¹d⁻¹
+                   aggregation_rate_of_DOC_to_GOC_3 :: FT = 3530.0e-6 / day,          #(μmolCL⁻¹)⁻¹d⁻¹
+                   aggregation_rate_of_DOC_to_POC_4 :: FT = 5095.0e-6 / day,          #(μmolCL⁻¹)⁻¹d⁻¹
+                   aggregation_rate_of_DOC_to_POC_5 :: FT = 114.0e-6 / day,           #(μmolCL⁻¹)⁻¹d⁻¹
    
    
                    degradation_rate_of_POC :: FT = 0.025 / day,             #1/d
                    sinking_speed_of_POC :: FT = 2.0 / day,                    #md⁻¹
                    min_sinking_speed_of_GOC :: FT = 30.0 / day,               #md⁻¹
                    sinking_speed_of_dust :: FT = 2.0,                         #ms⁻¹
-                   aggregation_rate_of_POC_to_GOC_6 :: FT = 25.9 / day,     #(μmolCL⁻¹)⁻¹d⁻¹
-                   aggregation_rate_of_POC_to_GOC_7 :: FT = 4452 / day,     #(μmolCL⁻¹)⁻¹d⁻¹
-                   aggregation_rate_of_POC_to_GOC_8 :: FT = 3.3 / day,      #(μmolCL⁻¹)⁻¹d⁻¹
-                   aggregation_rate_of_POC_to_GOC_9 :: FT = 47.1 / day,     #(μmolCL⁻¹)⁻¹d⁻¹
+                   aggregation_rate_of_POC_to_GOC_6 :: FT = 25.9e-6 / day,     #(μmolCL⁻¹)⁻¹d⁻¹
+                   aggregation_rate_of_POC_to_GOC_7 :: FT = 4452.0e-6 / day,     #(μmolCL⁻¹)⁻¹d⁻¹
+                   aggregation_rate_of_POC_to_GOC_8 :: FT = 3.3e-6 / day,      #(μmolCL⁻¹)⁻¹d⁻¹
+                   aggregation_rate_of_POC_to_GOC_9 :: FT = 47.1e-6 / day,     #(μmolCL⁻¹)⁻¹d⁻¹
                    min_scavenging_rate_of_iron :: FT = 3.0e-5 / day,          #1/d
                    slope_of_scavenging_rate_of_iron :: FT = 0.005 / day,    #d⁻¹μmol⁻¹L
                    scavenging_rate_of_iron_by_dust :: FT = 150.0 / day,       #d⁻¹mg⁻¹L
@@ -523,7 +523,7 @@ end
                    half_sat_const_for_denitrification1 :: FT = 1.0,                       #μmolO₂L⁻¹
                    half_sat_const_for_denitrification2 :: FT = 6.0,                       #μmolO₂L⁻¹
                    total_concentration_of_iron_ligands :: FT = 0.6,                     #nmolL⁻¹
-                   max_rate_of_nitrogen_fixation :: FT = 0.013,                         #μmolNL⁻¹d⁻¹
+                   max_rate_of_nitrogen_fixation :: FT = 0.013 / day,                         #μmolNL⁻¹d⁻¹
                    Fe_half_saturation_constant_of_nitrogen_fixation :: FT = 0.1,        #nmolFeL⁻¹
                    photosynthetic_parameter_of_nitrogen_fixation :: FT = 50.0,            #Wm⁻²
                    iron_concentration_in_sea_ice :: FT = 15.0,                            #nmolFeL⁻¹   
@@ -533,8 +533,8 @@ end
                    OC_ratio_of_nitrification :: FT = 32/122,                            #molO₂(mol C)⁻¹
                    CN_ratio_of_ammonification :: FT = 3/5,                              #molN(mol C)⁻¹
                    CN_ratio_of_denitrification :: FT = 105/16,                          #molN(mol C)⁻¹
-                   NC_redfield_ratio :: FT = 16/122,    
-                   PC_redfield_ratio :: = 1/122,                                #molN(mol C)⁻¹
+                   NC_redfield_ratio :: FT = 16/122, 
+                   PC_redfield_ratio :: FT = 1/122,                                   #molN(mol C)⁻¹
                    rain_ratio_parameter :: FT = 0.3,
                    bacterial_reference :: FT = 1.0,     #Not sure if this is what its called : denoted Bact_ref in paper
 
@@ -543,14 +543,14 @@ end
                    dissolution_rate_of_silicon :: FT = 1.0,
                    coefficient_of_bacterial_uptake_of_iron_in_POC :: FT = 0.5,
                    coefficient_of_bacterial_uptake_of_iron_in_GOC :: FT = 0.5,
-                   max_FeC_ratio_of_bacteria :: FT = 10.0e-6,     #or 6
-                   Fe_half_saturation_const_for_Bacteria :: FT = 2.5e-10, #or 2.5e-10    #not sure what this should be called
+                   max_FeC_ratio_of_bacteria :: FT = 10.0e-3,     #or 6
+                   Fe_half_saturation_const_for_Bacteria :: FT = 0.03, #or 2.5e-10  
 
-                   mixed_layer_depth :: CF = ConstantField(100),
-                   euphotic_layer_depth :: CF = ConstantField(50),
+                   mixed_layer_depth :: CF = ConstantField(-100),
+                   euphotic_layer_depth :: CF = ConstantField(-50),
                    vertical_diffusivity :: CF  = ConstantField(1),
-                   yearly_maximum_silicate :: FT = 1.0,
-                   dust_deposition :: FT = 1.0,
+                   yearly_maximum_silicate :: CF = ConstantField(1),
+                   dust_deposition :: ZF = ZeroField(),
 
                   surface_photosynthetically_active_radiation = default_surface_PAR,
 
@@ -561,6 +561,7 @@ end
                   # just keep all this stuff for now but you can ignore it
                   sediment_model::S = nothing,
 
+                
                   sinking_speeds = (POC = 0.0, GOC = 0.0, SFe = 0.0, BFe = 0.0, PSi = 0.0, CaCO₃ = 0.0),  #change all 1.0s to w_GOC
                   
                   carbonate_sat_ratio :: ZF = ZeroField(),
@@ -691,7 +692,7 @@ function PISCES(; grid, # finally the function
                    half_sat_const_for_denitrification1 :: FT = 1.0,                       #μmolO₂L⁻¹
                    half_sat_const_for_denitrification2 :: FT = 6.0,                       #μmolO₂L⁻¹
                    total_concentration_of_iron_ligands :: FT = 0.6,                     #nmolL⁻¹
-                   max_rate_of_nitrogen_fixation :: FT = 0.013,                         #μmolNL⁻¹d⁻¹
+                   max_rate_of_nitrogen_fixation :: FT = 0.013 / day,                         #μmolNL⁻¹d⁻¹
                    Fe_half_saturation_constant_of_nitrogen_fixation :: FT = 0.1,        #nmolFeL⁻¹
                    photosynthetic_parameter_of_nitrogen_fixation :: FT = 50.0,            #Wm⁻²
                    iron_concentration_in_sea_ice :: FT = 15.0,                            #nmolFeL⁻¹   
@@ -712,7 +713,7 @@ function PISCES(; grid, # finally the function
                    coefficient_of_bacterial_uptake_of_iron_in_POC :: FT = 0.5,
                    coefficient_of_bacterial_uptake_of_iron_in_GOC :: FT = 0.5,
                    max_FeC_ratio_of_bacteria :: FT = 10.0e-3,     #or 6
-                   Fe_half_saturation_const_for_Bacteria :: FT = 0.03, #or 2.5e-10    #not sure what this should be called
+                   Fe_half_saturation_const_for_Bacteria :: FT = 0.03, #or 2.5e-10  
 
                    mixed_layer_depth :: CF = ConstantField(-100),
                    euphotic_layer_depth :: CF = ConstantField(-50),

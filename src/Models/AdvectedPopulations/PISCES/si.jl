@@ -24,5 +24,5 @@
     PARᴰ = D_PAR(PAR¹, PAR², PAR³, bgc)
     μᴰ = phytoplankton_growth_rate(D, Dᶜʰˡ, PARᴰ, L_day, T, αᴰ, Lₗᵢₘᴰ, zₘₓₗ, zₑᵤ, t_darkᴰ, bgc)
     
-    return λₚₛᵢ¹*Dissₛᵢ*PSi - get_θₒₚₜˢⁱᴰ(D, PO₄, NO₃, NH₄, Si, Dᶜʰˡ, Dᶠᵉ, μᴰ, T, ϕ, Si̅, bgc)*(1-δᴰ)*μᴰ*D #eq74
+    return λₚₛᵢ¹*Dissₛᵢ*PSi - variation_in_SiC_ratio(D, PO₄, NO₃, NH₄, Si, Dᶜʰˡ, Dᶠᵉ, μᴰ, T, ϕ, Si̅, bgc)*(1-δᴰ)*μᴰ*D #eq74
 end
