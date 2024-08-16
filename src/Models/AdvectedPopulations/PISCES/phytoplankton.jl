@@ -26,7 +26,7 @@
 @inline nutrient_quota(I,J) = ifelse(J != 0, I/(J + eps(0.0)), 0)
 @inline concentration_limitation(I, J) = I/(I + J + eps(0.0))
 
-@inline shear_rate(z, zₘₓₗ) = ifelse(z <= zₘₓₗ, 0.1, 0.01) #Given as 1 in Aumont paper
+@inline shear_rate(z, zₘₓₗ) = ifelse(z <= zₘₓₗ, 1, 0.01) #Given as 1 in Aumont paper
 
 @inline latitude(ϕ₀, y) = ϕ₀     #need to fix
 @inline day_length(ϕ, t, L_day) = L_day  #temporary

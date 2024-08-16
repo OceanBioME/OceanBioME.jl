@@ -37,8 +37,8 @@ end
     mᴾ = bgc.phytoplankton_mortality_rate.P
     Kₘ = bgc.half_saturation_const_for_mortality
     wᴾ = bgc.min_quadratic_mortality_of_phytoplankton
-    ηᶻ = bgc.proportion_of_sinking_grazed_shells.Z
-    ηᴹ = bgc.proportion_of_sinking_grazed_shells.M
+    ηᶻ = bgc.fraction_of_calcite_not_dissolving_in_guts.Z
+    ηᴹ = bgc.fraction_of_calcite_not_dissolving_in_guts.M
     sh = shear_rate(z, zₘₓₗ)
     return get_R_CaCO₃(P, PO₄, NO₃, NH₄, Pᶜʰˡ, Pᶠᵉ, Fe, T, PAR, zₘₓₗ, bgc)*(ηᶻ*grazing_Z(P, D, POC, T, bgc)[2]*Z+ηᴹ*grazing_M(P, D, Z, POC, T, bgc)[2]*M + 0.5*(mᴾ*concentration_limitation(P, Kₘ)*P + sh*wᴾ*P^2)) #eq76
 end

@@ -106,17 +106,10 @@ end
     sh = shear_rate(z, zₘₓₗ)
     λₚₒ¹ = particles_carbon_degradation_rate(T, O₂, bgc)
 
-    #Check if max ever returns 0, in this case iron would not be conserved
-    a = max(0, (1-σᶻ)*(∑θᶠᵉⁱgᵢᶻ/(∑gᶻ + eps(0.0)) - eᶻ*θᶠᵉᶻ))*∑gᶻ*Z 
-    b = max(0, (1-σᴹ)*(∑θᶠᵉⁱgᵢᴹ + θᶠᵉᴾᴼᶜ*gₚₒ_FF + θᶠᵉᴳᴼᶜ*g_GOC_FFᴹ )/(∑gᴹ+∑g_FFᴹ + eps(0.0)) - eᴹ*θᶠᵉᶻ)*(∑gᴹ+∑g_FFᴹ)*M 
-    mycheck = ifelse(a*b == 0, 1, 0)
-    if mycheck == 1
-        println("max is zero")
-    end
-
     return (max(0, (1-σᶻ)*(∑θᶠᵉⁱgᵢᶻ/(∑gᶻ + eps(0.0))) - eᶻ*θᶠᵉᶻ)*∑gᶻ*Z 
             + max(0, (1-σᴹ)*(∑θᶠᵉⁱgᵢᴹ + θᶠᵉᴾᴼᶜ*gₚₒ_FF + θᶠᵉᴳᴼᶜ*g_GOC_FFᴹ )/(∑gᴹ+∑g_FFᴹ + eps(0.0)) - eᴹ*θᶠᵉᶻ)*(∑gᴹ+∑g_FFᴹ)*M 
             + θᶠᵉᶻ*upper_respiration(M, T, bgc) + λₚₒ¹*SFe 
             - (1 - δᴾ)*μᴾᶠᵉ*P - (1 - δᴰ)*μᴰᶠᵉ*D 
-            - Fe_scavenging(POC, GOC, CaCO₃, PSi, D_dust, DOC, T, Fe, bgc) - iron_colloid_aggregation_1(sh, Fe, POC, DOC, T, bgc) - iron_colloid_aggregation_2(sh, Fe, T, DOC, GOC, bgc) - enhanced_scavenging(Fe, DOC, T, bgc) - Bactfe) #eq60
+            - Fe_scavenging(POC, GOC, CaCO₃, PSi, D_dust, DOC, T, Fe, bgc) - iron_colloid_aggregation_1(sh, Fe, POC, DOC, T, bgc)
+            - iron_colloid_aggregation_2(sh, Fe, T, DOC, GOC, bgc) - enhanced_scavenging(Fe, DOC, T, bgc) - Bactfe) #eq60
 end

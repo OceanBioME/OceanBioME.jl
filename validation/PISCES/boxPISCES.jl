@@ -22,15 +22,15 @@ grid = BoxModelGrid()
 clock = Clock(time = zero(grid))
 
 # This is forced by a prescribed time-dependent photosynthetically available radiation (PAR)
-PAR⁰(t) = 60 * (1 - cos((t + 15days) * 2π / year)) * (1 / (1 + 0.2 * exp(-((mod(t, year) - 200days) / 50days)^2))) + 2
+PAR_func(t) = 60 * (1 - cos((t + 15days) * 2π / year)) * (1 / (1 + 0.2 * exp(-((mod(t, year) - 200days) / 50days)^2))) + 2
 
 const z = -10 # specify the nominal depth of the box for the PAR profile
 # Modify the PAR based on the nominal depth and exponential decay
-PAR_func(t) = 3.0 # Modify the PAR based on the nominal depth and exponential decay
-
-PAR_func1(t) = 1.0
-PAR_func2(t) = 1.0
-PAR_func3(t)= 1.0
+#PAR_func(t) = 18.0 # Modify the PAR based on the nominal depth and exponential decay
+#PAR_func(t) = 18.0
+PAR_func1(t) = PAR_func(t)/3
+PAR_func2(t) = PAR_func(t)/3
+PAR_func3(t)= PAR_func(t)/3
 
 PAR = FunctionField{Center, Center, Center}(PAR_func, grid; clock)
 PAR¹ = FunctionField{Center, Center, Center}(PAR_func1, grid; clock)
@@ -43,10 +43,10 @@ nothing #hide
 model = BoxModel(; biogeochemistry = PISCES(; grid, light_attenuation_model = PrescribedPhotosyntheticallyActiveRadiation((; PAR, PAR¹, PAR², PAR³)), flux_feeding_rate = 2.0e-3),
                    clock)
 
-set!(model, NO₃ = 4.0, NH₄ = 0.1, P = 4.26, D = 4.26, Z = .426, M = .426,  Pᶠᵉ = 7e-6 * 1e9 / 1e6 * 4.26, Dᶠᵉ = 7e-6 * 1e9 / 1e6 * 4.26, Pᶜʰˡ = 1.0, Dᶜʰˡ = 1.0, Dˢⁱ = 0.67734, SFe = 7e-6 * 1e9 / 1e6 * 0.002, BFe = 7e-6 * 1e9 / 1e6 * 16, Fe = 0.0002, O₂ = 264.0, Si = 4.557, Alk = 2360.0, PO₄ = .8114, DIC = 2000.0, CaCO₃ = 0.0001, T = 14.0)
+set!(model, NO₃ = 4.0, NH₄ = 0.1, P = 4.26, D = 4.26, Z = .426, M = .426,  Pᶠᵉ = 7e-6 * 1e9 / 1e6 * 4.26, Dᶠᵉ = 7e-6 * 1e9 / 1e6 * 4.26, Pᶜʰˡ = 1.0, Dᶜʰˡ = 1.0, Dˢⁱ = 0.67734, SFe = 7e-6 * 1e9 / 1e6 * 0.8, BFe = 7e-6 * 1e9 / 1e6 * 0.8, Fe = 0.8, O₂ = 264.0, Si = 4.557, Alk = 2360.0, PO₄ = 1.8114, DIC = 2000.0, CaCO₃ = 0.0001, T = 14.0)
 #set!(model,P = 3.963367728460601, D = 3.763831823528108, Z = 0.620887631503286,  M = 0.4911996116700677, Pᶜʰˡ = 0.1263393104069646,  Dᶜʰˡ = 0.0966272698878372, Pᶠᵉ = 2.916749891527781, Dᶠᵉ = 2.6966762460922764, Dˢⁱ = 0.5250058442518801, DOC = 5.492834645446811e-5, POC = 0.00010816947467085888, GOC = 1.541376629008023, SFe = 6.94778354330689e-5, BFe = 1.3780182342394662, PSi = 0.138718322180627, NO₃ = 3.862629483089866, NH₄ = 0.10480738012675432, PO₄ = 0.8031309301476024, Fe = 0.00024547654218086575, Si = 4.413896794698411, CaCO₃ = 0.011644257272404535, DIC = 1998.9796292207268, Alk = 2360.118267032333, O₂ = 265.37453137881016, T = 14.0)
 
-simulation = Simulation(model; Δt = 1minute, stop_time = 5days)
+simulation = Simulation(model; Δt = 5minute, stop_time =5years)
 
 simulation.output_writers[:fields] = JLD2OutputWriter(model, model.fields; filename = "box.jld2", schedule = TimeInterval(1day), overwrite_existing = true)
 

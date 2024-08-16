@@ -34,15 +34,24 @@ nothing #hide
 
 @inline κₜ(x, y, z, t) = 1e-2 * (1 + tanh((z - MLD(t)) / 10)) / 2 + 1e-4
 
-@inline temp(x, y, z, t) = 2.4 * cos(t * 2π / year + 50days) + 10
+@inline temp(x, y, z, t) = (2.4 * cos(t * 2π / year + 50days) + 10)*exp(z/100)
 nothing #hide
 
-PAR_func(x, y, z, t) = 30.0 # Modify the PAR based on the nominal depth and exponential decay
+PAR_func(x, y, z, t) = 18.0*exp(z/100) # Modify the PAR based on the nominal depth and exponential decay
 
-PAR_func1(x, y, z, t) = 10.0
-PAR_func2(x, y, z, t) = 10.0
-PAR_func3(x, y, z, t)= 10.0
+PAR_func1(x, y, z, t) = 1/3*18.0*exp(z/100)
+PAR_func2(x, y, z, t) = 1/3*18.0*exp(z/100)
+PAR_func3(x, y, z, t)= 1/3*18.0*exp(z/100)
 
+mixed_layer_depth = ConstantField(-100)
+euphotic_layer_depth = ConstantField(-50)
+yearly_maximum_silicate = ConstantField(1) 
+dust_deposition = ConstantField(0)
+carbonate_sat_ratio = ConstantField(0)
+
+#w_GOC(z) = 30/day + (200/day - 30/day)*(max(0, abs(z)-100))/(5000)
+w_GOC = 30/day
+w_POC = 2.0/day
 grid = RectilinearGrid(size = (1, 1, 50), extent = (20meters, 20meters, 200meters))
 
 clock = Clock(; time = 0.0)
@@ -52,6 +61,7 @@ PAR¹ = FunctionField{Center, Center, Center}(PAR_func1, grid; clock)
 PAR² = FunctionField{Center, Center, Center}(PAR_func2, grid; clock)
 PAR³ = FunctionField{Center, Center, Center}(PAR_func3, grid; clock)
 
+#ff = FunctionField{Nothing, Nothing, Face}(w_GOC, grid)
 # ## Grid
 # Define the grid.
 
@@ -62,7 +72,7 @@ PAR³ = FunctionField{Center, Center, Center}(PAR_func3, grid; clock)
 # and then setup the Oceananigans model with the boundary condition for the DIC based on the air-sea CO₂ flux.
 
 biogeochemistry = PISCES(; grid,
-                            surface_photosynthetically_active_radiation = PAR⁰,
+                            surface_photosynthetically_active_radiation = PAR⁰, sinking_speeds = (; POC = w_POC, SFe = w_POC, GOC = w_GOC, BFe = w_GOC, PSi = w_GOC, CaCO₃ = w_GOC)
 )
 
 CO₂_flux = GasExchange(; gas = :CO₂)
@@ -70,27 +80,23 @@ CO₂_flux = GasExchange(; gas = :CO₂)
 funT = FunctionField{Center, Center, Center}(temp, grid; clock)
 S = ConstantField(35)
 
-mixed_layer_depth = ConstantField(-100)
-euphotic_layer_depth = ConstantField(-50)
-yearly_maximum_silicate = ConstantField(1) 
-dust_deposition = ConstantField(0)
-carbonate_sat_ratio = ConstantField(0)
-
+@info "Setting up the model..."
 model = NonhydrostaticModel(; grid,
                               clock,
                               closure = ScalarDiffusivity(ν = κₜ, κ = κₜ),
                               biogeochemistry,
                               boundary_conditions = (DIC = FieldBoundaryConditions(top = CO₂_flux), ),
-                              auxiliary_fields = (; S, zₘₓₗ = mixed_layer_depth, zₑᵤ = euphotic_layer_depth, Si̅ = yearly_maximum_silicate, D_dust = dust_deposition, Ω = carbonate_sat_ratio, PAR, PAR¹, PAR², PAR³ ))
+                              auxiliary_fields = (; S, zₘₓₗ = mixed_layer_depth, zₑᵤ = euphotic_layer_depth, Si̅ = yearly_maximum_silicate, D_dust = dust_deposition, Ω = carbonate_sat_ratio, PAR, PAR¹, PAR², PAR³ )
+                              )
 
-set!(model, NO₃ = 4.0, NH₄ = 0.1, P = 4.26, D = 4.26, Z = .426, M = .426,  Pᶠᵉ = 7e-6 * 1e9 / 1e6 * 4.26, Dᶠᵉ = 7e-6 * 1e9 / 1e6 * 4.26, Pᶜʰˡ = 1.0, Dᶜʰˡ = 1.0, Dˢⁱ = 0.67734, SFe = 7e-6 * 1e9 / 1e6 * 0.002, BFe = 7e-6 * 1e9 / 1e6 * 16, Fe = 0.0002, O₂ = 264.0, Si = 4.557, Alk = 2360.0, PO₄ = .8114, DIC = 2000.0, CaCO₃ = 0.0001, T = funT)
+set!(model, NO₃ = 4.0, NH₄ = 0.1, P = 4.26, D = 4.26, Z = .426, M = .426,  Pᶠᵉ = 7e-6 * 1e9 / 1e6 * 4.26, Dᶠᵉ = 7e-6 * 1e9 / 1e6 * 4.26, Pᶜʰˡ = 1.0, Dᶜʰˡ = 1.0, Dˢⁱ = 0.67734, SFe = 7e-6 * 1e9 / 1e6 * 0.8, BFe = 7e-6 * 1e9 / 1e6 * 0.8, Fe = 0.8, O₂ = 264.0, Si = 4.557, Alk = 2360.0, PO₄ = .8114, DIC = 2000.0, CaCO₃ = 0.0001, T = funT)
 
 # ## Simulation
 # Next we setup a simulation and add some callbacks that:
 # - Show the progress of the simulation
 # - Store the model and particles output
 
-simulation = Simulation(model, Δt = 1minutes, stop_time = 20days)
+simulation = Simulation(model, Δt = 5minutes, stop_time = 100days)
 
 progress_message(sim) = @printf("Iteration: %04d, time: %s, Δt: %s, wall time: %s\n",
                                 iteration(sim),
@@ -98,15 +104,17 @@ progress_message(sim) = @printf("Iteration: %04d, time: %s, Δt: %s, wall time: 
                                 prettytime(sim.Δt),
                                 prettytime(sim.run_wall_time))
                                                                   
-simulation.callbacks[:progress] = Callback(progress_message, TimeInterval(10days)
+simulation.callbacks[:progress] = Callback(progress_message, TimeInterval(10day)
 )
 
 function non_zero_fields!(model) 
     @inbounds for (idx, tracer) in enumerate(model.tracers)
-        if isnan(tracer[1,1,1])
-            throw("$(keys(model.tracers)[idx]) has gone NaN")
-        else
-            tracer[1, 1, 1] = max(0, tracer[1, 1, 1])
+        for i in 1:50
+            if isnan(tracer[1,1,i])
+                throw("$(keys(model.tracers)[idx]) has gone NaN")
+            else
+                tracer[1, 1, i] = max(0, tracer[1, 1, i])
+            end
         end
         
     end

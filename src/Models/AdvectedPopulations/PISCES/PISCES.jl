@@ -177,7 +177,6 @@ struct PISCES{FT, PD, ZM, OT, W, CF, ZF} <: AbstractContinuousFormBiogeochemistr
     coefficient_of_bacterial_uptake_of_iron_in_GOC :: FT
     max_FeC_ratio_of_bacteria :: FT
     Fe_half_saturation_const_for_Bacteria :: FT    #not sure what this should be called
-    proportion_of_sinking_grazed_shells :: ZM
 
     mixed_layer_depth :: CF
     euphotic_layer_depth :: CF
@@ -299,7 +298,6 @@ struct PISCES{FT, PD, ZM, OT, W, CF, ZF} <: AbstractContinuousFormBiogeochemistr
                     coefficient_of_bacterial_uptake_of_iron_in_GOC :: FT,
                     max_FeC_ratio_of_bacteria :: FT,
                     Fe_half_saturation_const_for_Bacteria :: FT,    #not sure what this should be called
-                    proportion_of_sinking_grazed_shells :: ZM,
                     
                     mixed_layer_depth :: CF,
                     euphotic_layer_depth :: CF,
@@ -421,8 +419,7 @@ struct PISCES{FT, PD, ZM, OT, W, CF, ZF} <: AbstractContinuousFormBiogeochemistr
                             coefficient_of_bacterial_uptake_of_iron_in_GOC,
                             max_FeC_ratio_of_bacteria,
                             Fe_half_saturation_const_for_Bacteria,    #not sure what this should be called
-                            proportion_of_sinking_grazed_shells,
-
+                          
                             mixed_layer_depth,
                             euphotic_layer_depth,
                             yearly_maximum_silicate,
@@ -548,7 +545,6 @@ end
                    coefficient_of_bacterial_uptake_of_iron_in_GOC :: FT = 0.5,
                    max_FeC_ratio_of_bacteria :: FT = 10.0e-6,     #or 6
                    Fe_half_saturation_const_for_Bacteria :: FT = 2.5e-10, #or 2.5e-10    #not sure what this should be called
-                   proportion_of_sinking_grazed_shells :: ZM = (Z = 0.3, M = 0.3),  # 0.3 for both? not sure
 
                    mixed_layer_depth :: CF = ConstantField(100),
                    euphotic_layer_depth :: CF = ConstantField(50),
@@ -666,21 +662,21 @@ function PISCES(; grid, # finally the function
                    NH4_half_saturation_const_for_DOC_remin :: FT = 0.003,           #μmolNL⁻¹
                    PO4_half_saturation_const_for_DOC_remin :: FT = 0.003,       #μmolPL⁻¹
                    Fe_half_saturation_const_for_DOC_remin :: FT = 0.01,         #μmolFeL⁻¹
-                   aggregation_rate_of_DOC_to_POC_1 :: FT = 0.37 / day,          #(μmolCL⁻¹)⁻¹d⁻¹
-                   aggregation_rate_of_DOC_to_POC_2 :: FT = 102.0 / day,           #(μmolCL⁻¹)⁻¹d⁻¹
-                   aggregation_rate_of_DOC_to_GOC_3 :: FT = 3530.0 / day,          #(μmolCL⁻¹)⁻¹d⁻¹
-                   aggregation_rate_of_DOC_to_POC_4 :: FT = 5095.0 / day,          #(μmolCL⁻¹)⁻¹d⁻¹
-                   aggregation_rate_of_DOC_to_POC_5 :: FT = 114.0 / day,           #(μmolCL⁻¹)⁻¹d⁻¹
+                   aggregation_rate_of_DOC_to_POC_1 :: FT = 0.37e-6 / day,          #(μmolCL⁻¹)⁻¹d⁻¹
+                   aggregation_rate_of_DOC_to_POC_2 :: FT = 102.0e-6 / day,           #(μmolCL⁻¹)⁻¹d⁻¹
+                   aggregation_rate_of_DOC_to_GOC_3 :: FT = 3530.0e-6 / day,          #(μmolCL⁻¹)⁻¹d⁻¹
+                   aggregation_rate_of_DOC_to_POC_4 :: FT = 5095.0e-6 / day,          #(μmolCL⁻¹)⁻¹d⁻¹
+                   aggregation_rate_of_DOC_to_POC_5 :: FT = 114.0e-6 / day,           #(μmolCL⁻¹)⁻¹d⁻¹
    
    
                    degradation_rate_of_POC :: FT = 0.025 / day,             #1/d
                    sinking_speed_of_POC :: FT = 2.0 / day,                    #md⁻¹
                    min_sinking_speed_of_GOC :: FT = 30.0 / day,               #md⁻¹
                    sinking_speed_of_dust :: FT = 2.0,                         #ms⁻¹
-                   aggregation_rate_of_POC_to_GOC_6 :: FT = 25.9 / day,     #(μmolCL⁻¹)⁻¹d⁻¹
-                   aggregation_rate_of_POC_to_GOC_7 :: FT = 4452.0 / day,     #(μmolCL⁻¹)⁻¹d⁻¹
-                   aggregation_rate_of_POC_to_GOC_8 :: FT = 3.3 / day,      #(μmolCL⁻¹)⁻¹d⁻¹
-                   aggregation_rate_of_POC_to_GOC_9 :: FT = 47.1 / day,     #(μmolCL⁻¹)⁻¹d⁻¹
+                   aggregation_rate_of_POC_to_GOC_6 :: FT = 25.9e-6 / day,     #(μmolCL⁻¹)⁻¹d⁻¹
+                   aggregation_rate_of_POC_to_GOC_7 :: FT = 4452.0e-6 / day,     #(μmolCL⁻¹)⁻¹d⁻¹
+                   aggregation_rate_of_POC_to_GOC_8 :: FT = 3.3e-6 / day,      #(μmolCL⁻¹)⁻¹d⁻¹
+                   aggregation_rate_of_POC_to_GOC_9 :: FT = 47.1e-6 / day,     #(μmolCL⁻¹)⁻¹d⁻¹
                    min_scavenging_rate_of_iron :: FT = 3.0e-5 / day,          #1/d
                    slope_of_scavenging_rate_of_iron :: FT = 0.005 / day,    #d⁻¹μmol⁻¹L
                    scavenging_rate_of_iron_by_dust :: FT = 150.0 / day,       #d⁻¹mg⁻¹L
@@ -717,7 +713,6 @@ function PISCES(; grid, # finally the function
                    coefficient_of_bacterial_uptake_of_iron_in_GOC :: FT = 0.5,
                    max_FeC_ratio_of_bacteria :: FT = 10.0e-3,     #or 6
                    Fe_half_saturation_const_for_Bacteria :: FT = 0.03, #or 2.5e-10    #not sure what this should be called
-                   proportion_of_sinking_grazed_shells :: ZM = (Z = 0.3, M = 0.3),  # 0.3 for both? not sure
 
                    mixed_layer_depth :: CF = ConstantField(-100),
                    euphotic_layer_depth :: CF = ConstantField(-50),
@@ -862,8 +857,7 @@ function PISCES(; grid, # finally the function
                                         coefficient_of_bacterial_uptake_of_iron_in_GOC,
                                         max_FeC_ratio_of_bacteria,
                                         Fe_half_saturation_const_for_Bacteria,    #not sure what this should be called
-                                        proportion_of_sinking_grazed_shells,
-
+ 
                                         mixed_layer_depth,
                                         euphotic_layer_depth,
                                         yearly_maximum_silicate,
