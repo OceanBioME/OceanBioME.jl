@@ -98,7 +98,8 @@ function MultiBandPhotosyntheticallyActiveRadiation(; grid,
 
     arch = architecture(grid)
 
-    return MultiBandPhotosyntheticallyActiveRadiation(fields, field_names, 
+    return MultiBandPhotosyntheticallyActiveRadiation(on_architecture(arch, fields), 
+                                                      field_names, 
                                                       on_architecture(arch, kʷ), 
                                                       on_architecture(arch, e), 
                                                       on_architecture(arch, χ), 
