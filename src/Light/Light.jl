@@ -10,7 +10,7 @@ export TwoBandPhotosyntheticallyActiveRadiation,
 using Adapt
 
 using KernelAbstractions, Oceananigans.Units
-using Oceananigans.Architectures: device, architecture
+using Oceananigans.Architectures: device, architecture, on_architecture
 using Oceananigans.Utils: launch!
 using Oceananigans: Center, Face, fields
 using Oceananigans.Grids: node, znodes

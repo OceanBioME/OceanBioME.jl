@@ -96,8 +96,14 @@ function MultiBandPhotosyntheticallyActiveRadiation(; grid,
                         FieldBoundaryConditions(top = ValueBoundaryCondition(ScaledSurfaceFunction(surface_PAR, surface_PAR_division[n]))), grid, name)) 
               for (n, name) in enumerate(field_names)]
 
+    arch = architecture(grid)
 
-    return MultiBandPhotosyntheticallyActiveRadiation(fields, field_names, kʷ, e, χ, surface_PAR, surface_PAR_division)
+    return MultiBandPhotosyntheticallyActiveRadiation(fields, field_names, 
+                                                      on_architecture(arch, kʷ), 
+                                                      on_architecture(arch, e), 
+                                                      on_architecture(arch, χ), 
+                                                      surface_PAR, 
+                                                      on_architecture(arch, surface_PAR_division))
 end
 
 function numerical_mean(λ, C, idx1, idx2)
