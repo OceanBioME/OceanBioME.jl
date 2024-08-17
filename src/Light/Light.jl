@@ -7,6 +7,8 @@ export TwoBandPhotosyntheticallyActiveRadiation,
        PrescribedPhotosyntheticallyActiveRadiation, 
        MultiBandPhotosyntheticallyActiveRadiation
 
+using Adapt
+
 using KernelAbstractions, Oceananigans.Units
 using Oceananigans.Architectures: device, architecture
 using Oceananigans.Utils: launch!
