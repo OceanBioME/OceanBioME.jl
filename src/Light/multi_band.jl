@@ -152,9 +152,9 @@ function update_biogeochemical_state!(model, PAR::MultiBandPhotosyntheticallyAct
 
     arch = architecture(grid)
 
-    k, k′ = domain_boundary_indices(RightBoundary(), grid.Nz)
+    _, k′ = domain_boundary_indices(RightBoundary(), grid.Nz)
 
-    for (n, field) in PAR.fields
+    for (n, field) in enumerate(PAR.fields)
         launch!(arch, grid, :xy, 
                 update_MultiBandPhotosyntheticallyActiveRadiation!, grid, 
                 field,
