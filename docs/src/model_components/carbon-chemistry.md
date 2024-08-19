@@ -103,7 +103,7 @@ K_1=\frac{\ce{[HCO^-_3][H^+]}}{\ce{[CO_2(aq)]}},
 ```
 and
 ```math
-K_2=\frac{\ce{[CO^{2-}_3][H^+]}}{\ce{HCO^-_3}}.
+K_2=\frac{\ce{[CO^{2-}_3][H^+]}}{\ce{[HCO^-_3]}}.
 ```
 
 These equilibria depend on the total hydrogen ion concentration ``[H^+]``, which depends on the concentration of acids and buffering of bases.
@@ -125,7 +125,7 @@ Sulfate in the form of hydrogen sulfate dissociates to form sulfate ions in the 
 ```
 with an equilibrium constant given by
 ```math
-K_S=\frac{\ce{[SO_4^{2-}][H^+]}}{\ce{HSO_4^-}}.
+K_S=\frac{\ce{[SO_4^{2-}][H^+]}}{\ce{[HSO_4^-]}}.
 ```
 
 #### Boric acid
@@ -135,7 +135,7 @@ Boron in the form of boric acid equilibrates with water in the reaction
 ```
 with equilibrium constant
 ```math
-K_B=\frac{\ce{[B(OH)_4^-][H^+]}}{\ce{B(OH)_3}}.
+K_B=\frac{\ce{[B(OH)_4^-][H^+]}}{\ce{[B(OH)_3]}}.
 ```
 
 #### Hydrogen fluoride
@@ -145,7 +145,7 @@ Hydrogen fluoride dissociated in the equilibrium
 ```
 with equilibrium constant
 ```math
-K_F=\frac{\ce{[F^-][H^+]}}{\ce{HF}}.
+K_F=\frac{\ce{[F^-][H^+]}}{\ce{[HF]}}.
 ```
 
 #### Phosphoric acid
@@ -165,15 +165,15 @@ Phosphoric acid undergoes a three stage dissociation given by the equilibrium
 with equilibrium constants
 
 ```math
-K_{P1} = \frac{\ce{[H^+][H_2PO_4^-]}}{\ce{H_3PO_4}},
+K_{P1} = \frac{\ce{[H^+][H_2PO_4^-]}}{\ce{[H_3PO_4]}},
 ```
 
 ```math
-K_{P2} = \frac{\ce{[H^+][HPO_4^{2-}]}}{\ce{H_2PO_4^-}},
+K_{P2} = \frac{\ce{[H^+][HPO_4^{2-}]}}{\ce{[H_2PO_4^-]}},
 ```
 
 ```math
-K_{P3} = \frac{\ce{[H^+][PO_4^{3-}]}}{\ce{HPO_4^{2-}}}.
+K_{P3} = \frac{\ce{[H^+][PO_4^{3-}]}}{\ce{[HPO_4^{2-}]}}.
 ```
 
 #### Silicic acid
@@ -184,7 +184,7 @@ Silicic acid dissociates in the equilibrium
 
 with equilibrium constant
 ```math
-K_{Si} = \frac{\ce{[H^+][SiO(OH)_3^-]}}{\ce{Si(OH)_4}}.
+K_{Si} = \frac{\ce{[H^+][SiO(OH)_3^-]}}{\ce{[Si(OH)_4]}}.
 ```
 
 #### Water
@@ -195,7 +195,7 @@ Finally, water dissociates in the equilibrium
 
 with equilibrium constant
 ```math
-K_w = \\ce{[H^+][OH^-]}.
+K_w = \ce{[H^+][OH^-]}.
 ```
 
 #### Alkalinity equilibration
