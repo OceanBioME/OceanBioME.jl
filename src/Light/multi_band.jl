@@ -97,18 +97,16 @@ function MultiBandPhotosyntheticallyActiveRadiation(; grid,
                         FieldBoundaryConditions(top = ValueBoundaryCondition(ScaledSurfaceFunction(surface_PAR, surface_PAR_division[n]))), grid, name)) 
               for (n, name) in enumerate(field_names)]
 
-    total_PAR = sum(fields) # need todo this before we convert `fields` to CuArray
-
-    arch = architecture(grid)
+    total_PAR = sum(fields)
 
     return MultiBandPhotosyntheticallyActiveRadiation(total_PAR,
-                                                      on_architecture(arch, fields), 
+                                                      fields, 
                                                       tuple(field_names...), 
-                                                      on_architecture(arch, kʷ), 
-                                                      on_architecture(arch, e), 
-                                                      on_architecture(arch, χ), 
+                                                      kʷ, 
+                                                      e, 
+                                                      χ, 
                                                       surface_PAR, 
-                                                      on_architecture(arch, surface_PAR_division))
+                                                      surface_PAR_division)
 end
 
 function numerical_mean(λ, C, idx1, idx2)
@@ -126,42 +124,25 @@ function par_symbol(n)
     return Symbol(:PAR, subscripts...)
 end
 
-@kernel function update_MultiBandPhotosyntheticallyActiveRadiation!(grid, fields, 
-                                                                    water_attenuation_coefficient, 
-                                                                    chlorophyll_exponent, 
-                                                                    chlorophyll_attenuation_coefficient, 
-                                                                    _surface_PAR, 
-                                                                    surface_PAR_division, 
-                                                                    Chl, t) 
+@kernel function update_MultiBandPhotosyntheticallyActiveRadiation!(grid, field, kʷ, e, χ,
+                                                                    _surface_PAR, surface_PAR_division, 
+                                                                    Chl, t, k′) 
     i, j = @index(Global, NTuple)
-
-    k, k′ = domain_boundary_indices(RightBoundary(), grid.Nz)
 
     X = z_boundary_node(i, j, k′, grid, Center(), Center())
 
     surface_PAR = _surface_PAR(X..., t)
-    fields = fields
-
-    kʷ = water_attenuation_coefficient
-    e  = chlorophyll_exponent
-    χ  = chlorophyll_attenuation_coefficient
-
-    Nbands = length(fields)
 
     zᶜ = znodes(grid, Center(), Center(), Center())
 
     # first point below surface
     k = grid.Nz
-    for n in 1:Nbands
-        @inbounds fields[n][i, j, k] = @inbounds surface_PAR * surface_PAR_division[n] * exp(zᶜ[grid.Nz] * (kʷ[n] + χ[n] * Chl[i, j, k] ^ e[n]))
-    end
+    @inbounds field[i, j, k] = surface_PAR * surface_PAR_division * exp(zᶜ[grid.Nz] * (kʷ + χ * Chl[i, j, k] ^ e))
 
     # the rest of the points
     for k in grid.Nz-1:-1:1
         Δz = @inbounds zᶜ[k] - zᶜ[k + 1] 
-        for n in 1:Nbands
-            @inbounds fields[n][i, j, k] = @inbounds fields[n][i, j, k + 1] * exp(Δz * (kʷ[n] + χ[n] * Chl[i, j, k] ^ e[n]))
-        end
+        @inbounds field[i, j, k] = @inbounds field[i, j, k + 1] * exp(Δz * (kʷ + χ * Chl[i, j, k] ^ e))
     end
 end
 
@@ -171,16 +152,21 @@ function update_biogeochemical_state!(model, PAR::MultiBandPhotosyntheticallyAct
 
     arch = architecture(grid)
 
-    launch!(arch, grid, :xy, 
-            update_MultiBandPhotosyntheticallyActiveRadiation!, grid, 
-            PAR.fields, 
-            PAR.water_attenuation_coefficient, 
-            PAR.chlorophyll_exponent, 
-            PAR.chlorophyll_attenuation_coefficient, 
-            PAR.surface_PAR, 
-            PAR.surface_PAR_division, 
-            chlorophyll(model.biogeochemistry, model), 
-            model.clock.time)
+    k, k′ = domain_boundary_indices(RightBoundary(), grid.Nz)
+
+    for (n, field) in PAR.fields
+        launch!(arch, grid, :xy, 
+                update_MultiBandPhotosyntheticallyActiveRadiation!, grid, 
+                field,
+                PAR.water_attenuation_coefficient[n], 
+                PAR.chlorophyll_exponent[n], 
+                PAR.chlorophyll_attenuation_coefficient[n], 
+                PAR.surface_PAR, 
+                PAR.surface_PAR_division[n], 
+                chlorophyll(model.biogeochemistry, model), 
+                model.clock.time,
+                k′)
+    end
 
     for field in PAR.fields
         fill_halo_regions!(field, model.clock, fields(model))
@@ -189,18 +175,11 @@ end
 
 summary(par::MultiBandPhotosyntheticallyActiveRadiation) = 
     string("Multi band light attenuation model with $(length(par.fields)) bands $(par.field_names)")
-    
+
 show(io::IO, model::MultiBandPhotosyntheticallyActiveRadiation) = print(io, summary(model))
 
 biogeochemical_auxiliary_fields(par::MultiBandPhotosyntheticallyActiveRadiation) = 
     merge((PAR = par.total, ), NamedTuple{par.field_names}(par.fields))
 
-Adapt.adapt_structure(to, par::MultiBandPhotosyntheticallyActiveRadiation) = 
-    MultiBandPhotosyntheticallyActiveRadiation(nothing, # never used in a kernel
-                                               adapt(to, par.fields),
-                                               nothing, # don't need this in the kernel
-                                               adapt(to, par.water_attenuation_coefficient),
-                                               adapt(to, par.chlorophyll_exponent),
-                                               adapt(to, par.chlorophyll_attenuation_coefficient),
-                                               adapt(to, par.surface_PAR),
-                                               adapt(to, par.surface_PAR_division))
+# avoid passing this into kernels
+Adapt.adapt_structure(to, par::MultiBandPhotosyntheticallyActiveRadiation) = nothing
