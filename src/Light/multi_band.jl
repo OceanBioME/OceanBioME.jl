@@ -103,7 +103,7 @@ function MultiBandPhotosyntheticallyActiveRadiation(; grid,
 
     return MultiBandPhotosyntheticallyActiveRadiation(total_PAR,
                                                       on_architecture(arch, fields), 
-                                                      field_names, 
+                                                      tuple(field_names...), 
                                                       on_architecture(arch, kʷ), 
                                                       on_architecture(arch, e), 
                                                       on_architecture(arch, χ), 
@@ -177,7 +177,7 @@ summary(par::MultiBandPhotosyntheticallyActiveRadiation) =
 show(io::IO, model::MultiBandPhotosyntheticallyActiveRadiation) = print(io, summary(model))
 
 biogeochemical_auxiliary_fields(par::MultiBandPhotosyntheticallyActiveRadiation) = 
-    merge((PAR = par.total, ), NamedTuple{tuple(par.field_names...)}(par.fields))
+    merge((PAR = par.total, ), NamedTuple{par.field_names}(par.fields))
 
 Adapt.adapt_structure(to, par::MultiBandPhotosyntheticallyActiveRadiation) = 
     MultiBandPhotosyntheticallyActiveRadiation(nothing, # never used in a kernel
