@@ -23,7 +23,8 @@ and χ(i) the chlorophyll attenuation coefficient.
 When the fields are called with `biogeochemical_auxiliary_fields` an additional field named `PAR`
 is also returned which is a sum of the bands.
 """
-struct MultiBandPhotosyntheticallyActiveRadiation{F, FN, K, E, C, SPAR, SPARD}
+struct MultiBandPhotosyntheticallyActiveRadiation{T, F, FN, K, E, C, SPAR, SPARD}
+                                total :: T
                                fields :: F
                           field_names :: FN
 
@@ -96,13 +97,12 @@ function MultiBandPhotosyntheticallyActiveRadiation(; grid,
                         FieldBoundaryConditions(top = ValueBoundaryCondition(ScaledSurfaceFunction(surface_PAR, surface_PAR_division[n]))), grid, name)) 
               for (n, name) in enumerate(field_names)]
 
-    PAR = sum(fields) # need todo this before we convert `fields` to CuArray
-
-    fields = [PAR, fields...]
+    total_PAR = sum(fields) # need todo this before we convert `fields` to CuArray
 
     arch = architecture(grid)
 
-    return MultiBandPhotosyntheticallyActiveRadiation(on_architecture(arch, fields), 
+    return MultiBandPhotosyntheticallyActiveRadiation(total_PAR,
+                                                      on_architecture(arch, fields), 
                                                       field_names, 
                                                       on_architecture(arch, kʷ), 
                                                       on_architecture(arch, e), 
@@ -146,15 +146,15 @@ end
 
     # first point below surface
     k = grid.Nz
-    for n in 2:Nbands
-        @inbounds fields[n][i, j, k] = @inbounds surface_PAR * PAR_model.surface_PAR_division[n + 1] * exp(zᶜ[grid.Nz] * (kʷ[n + 1] + χ[n + 1] * Chl[i, j, k] ^ e[n + 1]))
+    for n in 1:Nbands
+        @inbounds fields[n][i, j, k] = @inbounds surface_PAR * PAR_model.surface_PAR_division[n] * exp(zᶜ[grid.Nz] * (kʷ[n] + χ[n] * Chl[i, j, k] ^ e[n]))
     end
 
     # the rest of the points
     for k in grid.Nz-1:-1:1
         Δz = @inbounds zᶜ[k] - zᶜ[k + 1] 
-        for n in 2:Nbands
-            @inbounds fields[n][i, j, k] = @inbounds fields[n][i, j, k + 1] * exp(Δz * (kʷ[n + 1] + χ[n + 1] * Chl[i, j, k] ^ e[n + 1]))
+        for n in 1:Nbands
+            @inbounds fields[n][i, j, k] = @inbounds fields[n][i, j, k + 1] * exp(Δz * (kʷ[n] + χ[n] * Chl[i, j, k] ^ e[n]))
         end
     end
 end
@@ -177,7 +177,7 @@ summary(par::MultiBandPhotosyntheticallyActiveRadiation) =
 show(io::IO, model::MultiBandPhotosyntheticallyActiveRadiation) = print(io, summary(model))
 
 biogeochemical_auxiliary_fields(par::MultiBandPhotosyntheticallyActiveRadiation) = 
-    NamedTuple{tuple(par.field_names...)}(par.fields)
+    merge(NamedTuple{tuple(par.field_names...)}(par.fields), (PAR = par.total, ))
 
 Adapt.adapt_structure(to, par::MultiBandPhotosyntheticallyActiveRadiation) = 
     MultiBandPhotosyntheticallyActiveRadiation(adapt(to, par.fields),
