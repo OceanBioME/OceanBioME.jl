@@ -126,19 +126,25 @@ function par_symbol(n)
     return Symbol(:PAR, subscripts...)
 end
 
-@kernel function update_MultiBandPhotosyntheticallyActiveRadiation!(PAR_model, grid, Chl, t) 
+@kernel function update_MultiBandPhotosyntheticallyActiveRadiation!(grid, fields, 
+                                                                    water_attenuation_coefficient, 
+                                                                    chlorophyll_exponent, 
+                                                                    chlorophyll_attenuation_coefficient, 
+                                                                    _surface_PAR, 
+                                                                    surface_PAR_division, 
+                                                                    Chl, t) 
     i, j = @index(Global, NTuple)
 
     k, k′ = domain_boundary_indices(RightBoundary(), grid.Nz)
 
     X = z_boundary_node(i, j, k′, grid, Center(), Center())
 
-    surface_PAR = PAR_model.surface_PAR(X..., t)
-    fields = PAR_model.fields
+    surface_PAR = _surface_PAR(X..., t)
+    fields = fields
 
-    kʷ = PAR_model.water_attenuation_coefficient
-    e  = PAR_model.chlorophyll_exponent
-    χ  = PAR_model.chlorophyll_attenuation_coefficient
+    kʷ = water_attenuation_coefficient
+    e  = chlorophyll_exponent
+    χ  = chlorophyll_attenuation_coefficient
 
     Nbands = length(fields)
 
@@ -147,7 +153,7 @@ end
     # first point below surface
     k = grid.Nz
     for n in 1:Nbands
-        @inbounds fields[n][i, j, k] = @inbounds surface_PAR * PAR_model.surface_PAR_division[n] * exp(zᶜ[grid.Nz] * (kʷ[n] + χ[n] * Chl[i, j, k] ^ e[n]))
+        @inbounds fields[n][i, j, k] = @inbounds surface_PAR * surface_PAR_division[n] * exp(zᶜ[grid.Nz] * (kʷ[n] + χ[n] * Chl[i, j, k] ^ e[n]))
     end
 
     # the rest of the points
@@ -165,7 +171,16 @@ function update_biogeochemical_state!(model, PAR::MultiBandPhotosyntheticallyAct
 
     arch = architecture(grid)
 
-    launch!(arch, grid, :xy, update_MultiBandPhotosyntheticallyActiveRadiation!, PAR, grid, chlorophyll(model.biogeochemistry, model), model.clock.time)
+    launch!(arch, grid, :xy, 
+            update_MultiBandPhotosyntheticallyActiveRadiation!, grid, 
+            PAR.fields, 
+            PAR.water_attenuation_coefficient, 
+            PAR.chlorophyll_exponent, 
+            PAR.chlorophyll_attenuation_coefficient, 
+            PAR.surface_PAR, 
+            PAR.surface_PAR_division, 
+            chlorophyll(model.biogeochemistry, model), 
+            model.clock.time)
 
     for field in PAR.fields
         fill_halo_regions!(field, model.clock, fields(model))
@@ -174,6 +189,7 @@ end
 
 summary(par::MultiBandPhotosyntheticallyActiveRadiation) = 
     string("Multi band light attenuation model with $(length(par.fields)) bands $(par.field_names)")
+    
 show(io::IO, model::MultiBandPhotosyntheticallyActiveRadiation) = print(io, summary(model))
 
 biogeochemical_auxiliary_fields(par::MultiBandPhotosyntheticallyActiveRadiation) = 
