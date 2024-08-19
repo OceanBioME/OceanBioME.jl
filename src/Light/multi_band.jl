@@ -180,7 +180,8 @@ biogeochemical_auxiliary_fields(par::MultiBandPhotosyntheticallyActiveRadiation)
     merge((PAR = par.total, ), NamedTuple{tuple(par.field_names...)}(par.fields))
 
 Adapt.adapt_structure(to, par::MultiBandPhotosyntheticallyActiveRadiation) = 
-    MultiBandPhotosyntheticallyActiveRadiation(adapt(to, par.fields),
+    MultiBandPhotosyntheticallyActiveRadiation(nothing, # never used in a kernel
+                                               adapt(to, par.fields),
                                                nothing, # don't need this in the kernel
                                                adapt(to, par.water_attenuation_coefficient),
                                                adapt(to, par.chlorophyll_exponent),
