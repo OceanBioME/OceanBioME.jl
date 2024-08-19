@@ -65,7 +65,7 @@ function test_multi_band(grid, bgc, model_type)
 
     expected_PAR = exp.(znodes(grid, Center()) * (0.01 + 0.1 * 2 ^ 2))
 
-    @test all(interior(light_attenuation_model.fields[1], 1, 1, :) .≈ expected_PAR)
+    @test all(interior(light_attenuation_model.fields[2], 1, 1, :) .≈ expected_PAR)
 
     light_attenuation_model = MultiBandPhotosyntheticallyActiveRadiation(; grid, 
                                                                            bands = ((1, 2), (8, 9)),
