@@ -1,5 +1,6 @@
 include("dependencies_for_runtests.jl")
 
+using CUDA: @allowscalar
 using OceanBioME: TwoBandPhotosyntheticallyActiveRadiation, LOBSTER, NutrientPhytoplanktonZooplanktonDetritus
 using Oceananigans.Biogeochemistry: update_biogeochemical_state!, required_biogeochemical_tracers, biogeochemical_auxiliary_fields
 
@@ -63,9 +64,9 @@ function test_multi_band(grid, bgc, model_type)
 
     set!(model, P = 2/1.31) # this will cause tests to fail for models with different chlorophyll ratios
 
-    expected_PAR = exp.(znodes(grid, Center()) * (0.01 + 0.1 * 2 ^ 2))
+    expected_PAR = on_architecture(CPU(), exp.(znodes(grid, Center()) * (0.01 + 0.1 * 2 ^ 2)))
 
-    @test all(interior(light_attenuation_model.fields[1], 1, 1, :) .≈ expected_PAR)
+    @test (@allowscalar all(interior(on_architecture(CPU(), light_attenuation_model.fields[1]), 1, 1, :) .≈ expected_PAR))
 
     light_attenuation_model = MultiBandPhotosyntheticallyActiveRadiation(; grid, 
                                                                            bands = ((1, 2), (8, 9)),
@@ -85,10 +86,10 @@ function test_multi_band(grid, bgc, model_type)
 
     set!(model, P = 2/1.31) # this will cause tests to fail for models with different chlorophyll ratios (e.g. PISCES)
 
-    expected_PAR1 = exp.(znodes(grid, Center()) * (0.01 + 0.1 * 2 ^ 2)) / 2
-    expected_PAR2 = exp.(znodes(grid, Center()) * (0.02 + 0.2 * 2 ^ 1.5)) / 2
+    expected_PAR1 = on_architecture(CPU(), exp.(znodes(grid, Center()) * (0.01 + 0.1 * 2 ^ 2)) / 2)
+    expected_PAR2 = on_architecture(CPU(), exp.(znodes(grid, Center()) * (0.02 + 0.2 * 2 ^ 1.5)) / 2)
 
-    PAR, PAR¹, PAR² = values(biogeochemical_auxiliary_fields(light_attenuation_model))
+    PAR, PAR¹, PAR² = map(v-> on_architecture(CPU(), v), values(biogeochemical_auxiliary_fields(light_attenuation_model)))
 
     @test all(interior(PAR¹, 1, 1, :) .≈ expected_PAR1)
     @test all(interior(PAR², 1, 1, :) .≈ expected_PAR2)
