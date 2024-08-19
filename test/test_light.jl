@@ -1,7 +1,10 @@
 include("dependencies_for_runtests.jl")
 
 using CUDA: @allowscalar
+
 using OceanBioME: TwoBandPhotosyntheticallyActiveRadiation, LOBSTER, NutrientPhytoplanktonZooplanktonDetritus
+
+using Oceananigans.Architectures: on_architecture
 using Oceananigans.Biogeochemistry: update_biogeochemical_state!, required_biogeochemical_tracers, biogeochemical_auxiliary_fields
 
 Pᵢ(x,y,z) = 2.5 + z
@@ -43,7 +46,6 @@ function test_two_band(grid, bgc, model_type)
 
     return nothing
 end
-
 
 function test_multi_band(grid, bgc, model_type)
     light_attenuation_model = MultiBandPhotosyntheticallyActiveRadiation(; grid, 
