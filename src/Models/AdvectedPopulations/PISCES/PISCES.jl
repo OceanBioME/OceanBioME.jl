@@ -433,13 +433,12 @@ struct PISCES{FT, PD, ZM, OT, W, CF, ZF} <: AbstractContinuousFormBiogeochemistr
 end
 
 """
-    PISCES(; grid, # finally the function
-                   # now you can finally put the values here
-                   growth_rate_at_zero :: FT = 0.6 / day,                                 # 1/d,
-                   growth_rate_reference_for_light_limitation :: FT = 1.0/ day,           # 1/d
-                   basal_respiration_rate :: FT = 0.033 / day,                             # 1/d
+    PISCES(; grid,
+                   growth_rate_at_zero :: FT = 0.6 / day,                                 # 1/second
+                   growth_rate_reference_for_light_limitation :: FT = 1.0/ day,           # 1/second
+                   basal_respiration_rate :: FT = 0.033 / day,                             # 1/second
                    temperature_sensitivity_of_growth :: FT = 1.066,
-                   initial_slope_of_PI_curve :: PD = (P = 2/day, D = 2/day),        #(Wm⁻²)⁻¹d⁻¹  
+                   initial_slope_of_PI_curve :: PD = (P = 2/day, D = 2/day),        #(Wm⁻²)⁻¹s⁻¹  
                    exudation_of_DOC :: PD = (P = 0.05, D = 0.05),  
                    absorption_in_the_blue_part_of_light :: PD = (P = 2.1, D = 1.6),
                    absorption_in_the_green_part_of_light :: PD = (P = 0.42, D = 0.69),
@@ -455,13 +454,13 @@ end
                    optimal_SiC_uptake_ratio_of_diatoms :: FT = 0.159,       #molSi/(mol C)
                    optimal_iron_quota :: PD = (P = 7.0e-3, D = 7.0e-3),               #mmolFe/(mol C)
                    max_iron_quota :: PD = (P = 40.0e-3, D = 40.0e-3),                  #molFe/(mol C)
-                   phytoplankton_mortality_rate :: PD = (P = 0.01/day, D = 0.01/day),
+                   phytoplankton_mortality_rate :: PD = (P = 0.01/day, D = 0.01/day), #1/second
                    min_quadratic_mortality_of_phytoplankton :: FT = 0.01 / day,   #1/(d mol C)
                    max_quadratic_mortality_of_diatoms :: FT = 0.03 / day,         #1/(d mol C)
                    max_ChlC_ratios_of_phytoplankton :: PD = (P = 0.033, D = 0.05),  #mg Chl/(mg C)
                    min_ChlC_ratios_of_phytoplankton :: FT = 0.0033,    #mg Chl/(mg C)
                    threshold_concentration_for_size_dependency :: PD = (P = 1.0, D = 1.0),  #μmolCL⁻¹
-                   mean_residence_time_of_phytoplankton_in_unlit_mixed_layer :: PD = (P = 3days, D = 4days), #day
+                   mean_residence_time_of_phytoplankton_in_unlit_mixed_layer :: PD = (P = 3days, D = 4days), #seconds
     
                    latitude :: FT = -1.0, #still to be changed - this is temporary 
                    length_of_day :: FT = 1.0, #temporary parameter for day length
@@ -470,7 +469,7 @@ end
                    max_growth_efficiency_of_zooplankton :: ZM = (Z = 0.3, M = 0.35),
                    non_assimilated_fraction :: ZM = (Z = 0.3, M = 0.3),
                    excretion_as_DOM :: ZM = (Z = 0.6, M = 0.6),
-                   max_grazing_rate :: ZM = (Z = 3.0/day, M = 0.75/day),                       #1/d
+                   max_grazing_rate :: ZM = (Z = 3.0/day, M = 0.75/day),                       #1/second
                    flux_feeding_rate :: FT = 2.0e-3,                                #(m mol L⁻¹)⁻¹
                    half_saturation_const_for_grazing :: ZM = (Z = 20.0, M = 20.0),               #μmolCL⁻¹
                    preference_for_nanophytoplankton :: ZM = (Z = 1.0, M = 0.3),
@@ -480,54 +479,54 @@ end
                    food_threshold_for_zooplankton :: ZM = (Z = 0.3, M = 0.3),                  #μmolCL⁻¹
                    specific_food_thresholds_for_microzooplankton :: FT = 0.001,        #μmolCL⁻¹
                    specific_food_thresholds_for_mesozooplankton :: FT = 0.001,         #μmolCL⁻¹
-                   zooplankton_quadratic_mortality :: ZM = (Z = 0.004/day, M = 0.03/day),       #(μmolCL⁻¹)⁻¹d⁻¹
-                   zooplankton_linear_mortality :: ZM = (Z = 0.03/day, M = 0.005/day),           #1/d
+                   zooplankton_quadratic_mortality :: ZM = (Z = 0.004/day, M = 0.03/day),       #(μmolCL⁻¹)⁻¹s⁻¹
+                   zooplankton_linear_mortality :: ZM = (Z = 0.03/day, M = 0.005/day),           #1/second
                    half_saturation_const_for_mortality :: FT = 0.2,                     #μmolCL⁻¹
                    fraction_of_calcite_not_dissolving_in_guts :: ZM = (Z = 0.5, M = 0.75),
                    FeC_ratio_of_zooplankton :: FT = 10.0e-3,                                  #mmolFe molC⁻¹
                    FeZ_redfield_ratio :: FT = 3.0e-3,             #mmolFe molC⁻¹, remove this, is actually FeC_ratio_of_zooplankton
    
    
-                   remineralisation_rate_of_DOC :: FT = 0.3 / day,                 #1/d
+                   remineralisation_rate_of_DOC :: FT = 0.3 / day,                 #1/second
                    half_saturation_const_for_DOC_remin :: FT = 417.0,                #μmolCL⁻¹
                    NO3_half_saturation_const_for_DOC_remin :: FT = 0.03,            #μmolNL⁻¹
                    NH4_half_saturation_const_for_DOC_remin :: FT = 0.003,           #μmolNL⁻¹
                    PO4_half_saturation_const_for_DOC_remin :: FT = 0.003,       #μmolPL⁻¹
                    Fe_half_saturation_const_for_DOC_remin :: FT = 0.01,         #μmolFeL⁻¹
-                   aggregation_rate_of_DOC_to_POC_1 :: FT = 0.37e-6 / day,          #(μmolCL⁻¹)⁻¹d⁻¹
-                   aggregation_rate_of_DOC_to_POC_2 :: FT = 102.0e-6 / day,           #(μmolCL⁻¹)⁻¹d⁻¹
-                   aggregation_rate_of_DOC_to_GOC_3 :: FT = 3530.0e-6 / day,          #(μmolCL⁻¹)⁻¹d⁻¹
-                   aggregation_rate_of_DOC_to_POC_4 :: FT = 5095.0e-6 / day,          #(μmolCL⁻¹)⁻¹d⁻¹
-                   aggregation_rate_of_DOC_to_POC_5 :: FT = 114.0e-6 / day,           #(μmolCL⁻¹)⁻¹d⁻¹
+                   aggregation_rate_of_DOC_to_POC_1 :: FT = 0.37e-6 / day,          #(μmolCL⁻¹)⁻¹s⁻¹
+                   aggregation_rate_of_DOC_to_POC_2 :: FT = 102.0e-6 / day,           #(μmolCL⁻¹)⁻¹s⁻¹
+                   aggregation_rate_of_DOC_to_GOC_3 :: FT = 3530.0e-6 / day,          #(μmolCL⁻¹)⁻¹s⁻¹
+                   aggregation_rate_of_DOC_to_POC_4 :: FT = 5095.0e-6 / day,          #(μmolCL⁻¹)⁻¹s⁻¹
+                   aggregation_rate_of_DOC_to_POC_5 :: FT = 114.0e-6 / day,           #(μmolCL⁻¹)⁻¹s⁻¹
    
    
-                   degradation_rate_of_POC :: FT = 0.025 / day,             #1/d
-                   sinking_speed_of_POC :: FT = 2.0 / day,                    #md⁻¹
-                   min_sinking_speed_of_GOC :: FT = 30.0 / day,               #md⁻¹
+                   degradation_rate_of_POC :: FT = 0.025 / day,             #1/second
+                   sinking_speed_of_POC :: FT = 2.0 / day,                    #ms⁻¹
+                   min_sinking_speed_of_GOC :: FT = 30.0 / day,               #ms⁻¹
                    sinking_speed_of_dust :: FT = 2.0,                         #ms⁻¹
-                   aggregation_rate_of_POC_to_GOC_6 :: FT = 25.9e-6 / day,     #(μmolCL⁻¹)⁻¹d⁻¹
-                   aggregation_rate_of_POC_to_GOC_7 :: FT = 4452.0e-6 / day,     #(μmolCL⁻¹)⁻¹d⁻¹
-                   aggregation_rate_of_POC_to_GOC_8 :: FT = 3.3e-6 / day,      #(μmolCL⁻¹)⁻¹d⁻¹
-                   aggregation_rate_of_POC_to_GOC_9 :: FT = 47.1e-6 / day,     #(μmolCL⁻¹)⁻¹d⁻¹
-                   min_scavenging_rate_of_iron :: FT = 3.0e-5 / day,          #1/d
+                   aggregation_rate_of_POC_to_GOC_6 :: FT = 25.9e-6 / day,     #(μmolCL⁻¹)⁻¹s⁻¹
+                   aggregation_rate_of_POC_to_GOC_7 :: FT = 4452.0e-6 / day,     #(μmolCL⁻¹)⁻¹s⁻¹
+                   aggregation_rate_of_POC_to_GOC_8 :: FT = 3.3e-6 / day,      #(μmolCL⁻¹)⁻¹s⁻¹
+                   aggregation_rate_of_POC_to_GOC_9 :: FT = 47.1e-6 / day,     #(μmolCL⁻¹)⁻¹s⁻¹
+                   min_scavenging_rate_of_iron :: FT = 3.0e-5 / day,          #1/second
                    slope_of_scavenging_rate_of_iron :: FT = 0.005 / day,    #d⁻¹μmol⁻¹L
-                   scavenging_rate_of_iron_by_dust :: FT = 150.0 / day,       #d⁻¹mg⁻¹L
-                   dissolution_rate_of_calcite :: FT = 0.197 / day,         #1/d
+                   scavenging_rate_of_iron_by_dust :: FT = 150.0 / day,       #s⁻¹mg⁻¹L
+                   dissolution_rate_of_calcite :: FT = 0.197 / day,         #1/second
                    exponent_in_the_dissolution_rate_of_calcite :: FT = 1.0,
                    proportion_of_the_most_labile_phase_in_PSi :: FT = 0.5,
-                   slow_dissolution_rate_of_PSi :: FT = 0.003 / day,        #1/d
-                   fast_dissolution_rate_of_PSi :: FT = 0.025 / day,        #1/d
+                   slow_dissolution_rate_of_PSi :: FT = 0.003 / day,        #1/second
+                   fast_dissolution_rate_of_PSi :: FT = 0.025 / day,        #1/second
    
    
-                   max_nitrification_rate :: FT = 0.05 / day,                           #1/d
+                   max_nitrification_rate :: FT = 0.05 / day,                           #1/sedonc
                    half_sat_const_for_denitrification1 :: FT = 1.0,                       #μmolO₂L⁻¹
                    half_sat_const_for_denitrification2 :: FT = 6.0,                       #μmolO₂L⁻¹
                    total_concentration_of_iron_ligands :: FT = 0.6,                     #nmolL⁻¹
-                   max_rate_of_nitrogen_fixation :: FT = 0.013 / day,                         #μmolNL⁻¹d⁻¹
+                   max_rate_of_nitrogen_fixation :: FT = 0.013 / day,                         #μmolNL⁻¹s⁻¹
                    Fe_half_saturation_constant_of_nitrogen_fixation :: FT = 0.1,        #nmolFeL⁻¹
                    photosynthetic_parameter_of_nitrogen_fixation :: FT = 50.0,            #Wm⁻²
                    iron_concentration_in_sea_ice :: FT = 15.0,                            #nmolFeL⁻¹   
-                   max_sediment_flux_of_Fe :: FT = 2.0 / day,                             #μmolFem⁻²d⁻¹
+                   max_sediment_flux_of_Fe :: FT = 2.0 / day,                             #μmolFem⁻²s⁻¹
                    solubility_of_iron_in_dust :: FT = 0.02,
                    OC_for_ammonium_based_processes :: FT = 133/122,                     #molO₂(mol C)⁻¹
                    OC_ratio_of_nitrification :: FT = 32/122,                            #molO₂(mol C)⁻¹
@@ -599,16 +598,19 @@ julia> using Oceananigans
 julia> grid = RectilinearGrid(size=(3, 3, 30), extent=(10, 10, 200));
 
 julia> model = PISCES(; grid)
-PISCES{Float64} ... # we can fix this later
+PISCES{Float64} 
+ Light attenuation: Two-band light attenuation model (Float64)
+ Sediment: Nothing
+ Particles: Nothing
+ Modifiers: Nothing
 ```
 """
-function PISCES(; grid, # finally the function
-                   # now you can finally put the values here
-                   growth_rate_at_zero :: FT = 0.6 / day,                                 # 1/d,
-                   growth_rate_reference_for_light_limitation :: FT = 1.0/ day,           # 1/d
-                   basal_respiration_rate :: FT = 0.033 / day,                             # 1/d
+function PISCES(; grid,
+                   growth_rate_at_zero :: FT = 0.6 / day,                                 # 1/second
+                   growth_rate_reference_for_light_limitation :: FT = 1.0/ day,           # 1/second
+                   basal_respiration_rate :: FT = 0.033 / day,                             # 1/second
                    temperature_sensitivity_of_growth :: FT = 1.066,
-                   initial_slope_of_PI_curve :: PD = (P = 2/day, D = 2/day),        #(Wm⁻²)⁻¹d⁻¹  
+                   initial_slope_of_PI_curve :: PD = (P = 2/day, D = 2/day),        #(Wm⁻²)⁻¹s⁻¹  
                    exudation_of_DOC :: PD = (P = 0.05, D = 0.05),  
                    absorption_in_the_blue_part_of_light :: PD = (P = 2.1, D = 1.6),
                    absorption_in_the_green_part_of_light :: PD = (P = 0.42, D = 0.69),
@@ -624,13 +626,13 @@ function PISCES(; grid, # finally the function
                    optimal_SiC_uptake_ratio_of_diatoms :: FT = 0.159,       #molSi/(mol C)
                    optimal_iron_quota :: PD = (P = 7.0e-3, D = 7.0e-3),               #mmolFe/(mol C)
                    max_iron_quota :: PD = (P = 40.0e-3, D = 40.0e-3),                  #molFe/(mol C)
-                   phytoplankton_mortality_rate :: PD = (P = 0.01/day, D = 0.01/day),
+                   phytoplankton_mortality_rate :: PD = (P = 0.01/day, D = 0.01/day), #1/second
                    min_quadratic_mortality_of_phytoplankton :: FT = 0.01 / day,   #1/(d mol C)
                    max_quadratic_mortality_of_diatoms :: FT = 0.03 / day,         #1/(d mol C)
                    max_ChlC_ratios_of_phytoplankton :: PD = (P = 0.033, D = 0.05),  #mg Chl/(mg C)
                    min_ChlC_ratios_of_phytoplankton :: FT = 0.0033,    #mg Chl/(mg C)
                    threshold_concentration_for_size_dependency :: PD = (P = 1.0, D = 1.0),  #μmolCL⁻¹
-                   mean_residence_time_of_phytoplankton_in_unlit_mixed_layer :: PD = (P = 3days, D = 4days), #day
+                   mean_residence_time_of_phytoplankton_in_unlit_mixed_layer :: PD = (P = 3days, D = 4days), #seconds
     
                    latitude :: FT = -1.0, #still to be changed - this is temporary 
                    length_of_day :: FT = 1.0, #temporary parameter for day length
@@ -639,7 +641,7 @@ function PISCES(; grid, # finally the function
                    max_growth_efficiency_of_zooplankton :: ZM = (Z = 0.3, M = 0.35),
                    non_assimilated_fraction :: ZM = (Z = 0.3, M = 0.3),
                    excretion_as_DOM :: ZM = (Z = 0.6, M = 0.6),
-                   max_grazing_rate :: ZM = (Z = 3.0/day, M = 0.75/day),                       #1/d
+                   max_grazing_rate :: ZM = (Z = 3.0/day, M = 0.75/day),                       #1/second
                    flux_feeding_rate :: FT = 2.0e-3,                                #(m mol L⁻¹)⁻¹
                    half_saturation_const_for_grazing :: ZM = (Z = 20.0, M = 20.0),               #μmolCL⁻¹
                    preference_for_nanophytoplankton :: ZM = (Z = 1.0, M = 0.3),
@@ -649,54 +651,54 @@ function PISCES(; grid, # finally the function
                    food_threshold_for_zooplankton :: ZM = (Z = 0.3, M = 0.3),                  #μmolCL⁻¹
                    specific_food_thresholds_for_microzooplankton :: FT = 0.001,        #μmolCL⁻¹
                    specific_food_thresholds_for_mesozooplankton :: FT = 0.001,         #μmolCL⁻¹
-                   zooplankton_quadratic_mortality :: ZM = (Z = 0.004/day, M = 0.03/day),       #(μmolCL⁻¹)⁻¹d⁻¹
-                   zooplankton_linear_mortality :: ZM = (Z = 0.03/day, M = 0.005/day),           #1/d
+                   zooplankton_quadratic_mortality :: ZM = (Z = 0.004/day, M = 0.03/day),       #(μmolCL⁻¹)⁻¹s⁻¹
+                   zooplankton_linear_mortality :: ZM = (Z = 0.03/day, M = 0.005/day),           #1/second
                    half_saturation_const_for_mortality :: FT = 0.2,                     #μmolCL⁻¹
                    fraction_of_calcite_not_dissolving_in_guts :: ZM = (Z = 0.5, M = 0.75),
                    FeC_ratio_of_zooplankton :: FT = 10.0e-3,                                  #mmolFe molC⁻¹
                    FeZ_redfield_ratio :: FT = 3.0e-3,             #mmolFe molC⁻¹, remove this, is actually FeC_ratio_of_zooplankton
    
    
-                   remineralisation_rate_of_DOC :: FT = 0.3 / day,                 #1/d
+                   remineralisation_rate_of_DOC :: FT = 0.3 / day,                 #1/second
                    half_saturation_const_for_DOC_remin :: FT = 417.0,                #μmolCL⁻¹
                    NO3_half_saturation_const_for_DOC_remin :: FT = 0.03,            #μmolNL⁻¹
                    NH4_half_saturation_const_for_DOC_remin :: FT = 0.003,           #μmolNL⁻¹
                    PO4_half_saturation_const_for_DOC_remin :: FT = 0.003,       #μmolPL⁻¹
                    Fe_half_saturation_const_for_DOC_remin :: FT = 0.01,         #μmolFeL⁻¹
-                   aggregation_rate_of_DOC_to_POC_1 :: FT = 0.37e-6 / day,          #(μmolCL⁻¹)⁻¹d⁻¹
-                   aggregation_rate_of_DOC_to_POC_2 :: FT = 102.0e-6 / day,           #(μmolCL⁻¹)⁻¹d⁻¹
-                   aggregation_rate_of_DOC_to_GOC_3 :: FT = 3530.0e-6 / day,          #(μmolCL⁻¹)⁻¹d⁻¹
-                   aggregation_rate_of_DOC_to_POC_4 :: FT = 5095.0e-6 / day,          #(μmolCL⁻¹)⁻¹d⁻¹
-                   aggregation_rate_of_DOC_to_POC_5 :: FT = 114.0e-6 / day,           #(μmolCL⁻¹)⁻¹d⁻¹
+                   aggregation_rate_of_DOC_to_POC_1 :: FT = 0.37e-6 / day,          #(μmolCL⁻¹)⁻¹s⁻¹
+                   aggregation_rate_of_DOC_to_POC_2 :: FT = 102.0e-6 / day,           #(μmolCL⁻¹)⁻¹s⁻¹
+                   aggregation_rate_of_DOC_to_GOC_3 :: FT = 3530.0e-6 / day,          #(μmolCL⁻¹)⁻¹s⁻¹
+                   aggregation_rate_of_DOC_to_POC_4 :: FT = 5095.0e-6 / day,          #(μmolCL⁻¹)⁻¹s⁻¹
+                   aggregation_rate_of_DOC_to_POC_5 :: FT = 114.0e-6 / day,           #(μmolCL⁻¹)⁻¹s⁻¹
    
    
-                   degradation_rate_of_POC :: FT = 0.025 / day,             #1/d
-                   sinking_speed_of_POC :: FT = 2.0 / day,                    #md⁻¹
-                   min_sinking_speed_of_GOC :: FT = 30.0 / day,               #md⁻¹
+                   degradation_rate_of_POC :: FT = 0.025 / day,             #1/second
+                   sinking_speed_of_POC :: FT = 2.0 / day,                    #ms⁻¹
+                   min_sinking_speed_of_GOC :: FT = 30.0 / day,               #ms⁻¹
                    sinking_speed_of_dust :: FT = 2.0,                         #ms⁻¹
-                   aggregation_rate_of_POC_to_GOC_6 :: FT = 25.9e-6 / day,     #(μmolCL⁻¹)⁻¹d⁻¹
-                   aggregation_rate_of_POC_to_GOC_7 :: FT = 4452.0e-6 / day,     #(μmolCL⁻¹)⁻¹d⁻¹
-                   aggregation_rate_of_POC_to_GOC_8 :: FT = 3.3e-6 / day,      #(μmolCL⁻¹)⁻¹d⁻¹
-                   aggregation_rate_of_POC_to_GOC_9 :: FT = 47.1e-6 / day,     #(μmolCL⁻¹)⁻¹d⁻¹
-                   min_scavenging_rate_of_iron :: FT = 3.0e-5 / day,          #1/d
+                   aggregation_rate_of_POC_to_GOC_6 :: FT = 25.9e-6 / day,     #(μmolCL⁻¹)⁻¹s⁻¹
+                   aggregation_rate_of_POC_to_GOC_7 :: FT = 4452.0e-6 / day,     #(μmolCL⁻¹)⁻¹s⁻¹
+                   aggregation_rate_of_POC_to_GOC_8 :: FT = 3.3e-6 / day,      #(μmolCL⁻¹)⁻¹s⁻¹
+                   aggregation_rate_of_POC_to_GOC_9 :: FT = 47.1e-6 / day,     #(μmolCL⁻¹)⁻¹s⁻¹
+                   min_scavenging_rate_of_iron :: FT = 3.0e-5 / day,          #1/second
                    slope_of_scavenging_rate_of_iron :: FT = 0.005 / day,    #d⁻¹μmol⁻¹L
-                   scavenging_rate_of_iron_by_dust :: FT = 150.0 / day,       #d⁻¹mg⁻¹L
-                   dissolution_rate_of_calcite :: FT = 0.197 / day,         #1/d
+                   scavenging_rate_of_iron_by_dust :: FT = 150.0 / day,       #s⁻¹mg⁻¹L
+                   dissolution_rate_of_calcite :: FT = 0.197 / day,         #1/second
                    exponent_in_the_dissolution_rate_of_calcite :: FT = 1.0,
                    proportion_of_the_most_labile_phase_in_PSi :: FT = 0.5,
-                   slow_dissolution_rate_of_PSi :: FT = 0.003 / day,        #1/d
-                   fast_dissolution_rate_of_PSi :: FT = 0.025 / day,        #1/d
+                   slow_dissolution_rate_of_PSi :: FT = 0.003 / day,        #1/second
+                   fast_dissolution_rate_of_PSi :: FT = 0.025 / day,        #1/second
    
    
-                   max_nitrification_rate :: FT = 0.05 / day,                           #1/d
+                   max_nitrification_rate :: FT = 0.05 / day,                           #1/sedonc
                    half_sat_const_for_denitrification1 :: FT = 1.0,                       #μmolO₂L⁻¹
                    half_sat_const_for_denitrification2 :: FT = 6.0,                       #μmolO₂L⁻¹
                    total_concentration_of_iron_ligands :: FT = 0.6,                     #nmolL⁻¹
-                   max_rate_of_nitrogen_fixation :: FT = 0.013 / day,                         #μmolNL⁻¹d⁻¹
+                   max_rate_of_nitrogen_fixation :: FT = 0.013 / day,                         #μmolNL⁻¹s⁻¹
                    Fe_half_saturation_constant_of_nitrogen_fixation :: FT = 0.1,        #nmolFeL⁻¹
                    photosynthetic_parameter_of_nitrogen_fixation :: FT = 50.0,            #Wm⁻²
                    iron_concentration_in_sea_ice :: FT = 15.0,                            #nmolFeL⁻¹   
-                   max_sediment_flux_of_Fe :: FT = 2.0 / day,                             #μmolFem⁻²d⁻¹
+                   max_sediment_flux_of_Fe :: FT = 2.0 / day,                             #μmolFem⁻²s⁻¹
                    solubility_of_iron_in_dust :: FT = 0.02,
                    OC_for_ammonium_based_processes :: FT = 133/122,                     #molO₂(mol C)⁻¹
                    OC_ratio_of_nitrification :: FT = 32/122,                            #molO₂(mol C)⁻¹
