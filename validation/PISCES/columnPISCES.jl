@@ -32,16 +32,17 @@ nothing #hide
 
 @inline MLD(t) = - (10 + 340 * (1 - fmld1(year - eps(year)) * exp(-mod(t, year) / 25days) - fmld1(mod(t, year))))
 
-@inline κₜ(x, y, z, t) = 1e-2 * (1 + tanh((z - MLD(t)) / 10)) / 2 + 1e-4
+@inline κₜ(x, y, z, t) = 0.1*(1e-2 * (1 + tanh((z - MLD(t)) / 10)) / 2 + 1e-4)
 
-@inline temp(x, y, z, t) = (2.4 * cos(t * 2π / year + 50days) + 10)*exp(z/100)
+@inline temp(x, y, z, t) = (2.4 * cos(t * 2π / year + 50days) + 10)*exp(z/10)
+#@inline temp(x, y, z, t) = 14*exp(z/100)
 nothing #hide
 
-PAR_func(x, y, z, t) = 18.0*exp(z/100) # Modify the PAR based on the nominal depth and exponential decay
+PAR_func(x, y, z, t) = PAR⁰(x,y,t)*exp(z/10) # Modify the PAR based on the nominal depth and exponential decay
 
-PAR_func1(x, y, z, t) = 1/3*18.0*exp(z/100)
-PAR_func2(x, y, z, t) = 1/3*18.0*exp(z/100)
-PAR_func3(x, y, z, t)= 1/3*18.0*exp(z/100)
+PAR_func1(x, y, z, t) = 1/3*PAR⁰(x,y,t)*exp(z/10)
+PAR_func2(x, y, z, t) = 1/3*PAR⁰(x,y,t)*exp(z/10)
+PAR_func3(x, y, z, t) = 1/3*PAR⁰(x,y,t)*exp(z/10)
 
 mixed_layer_depth = ConstantField(-100)
 euphotic_layer_depth = ConstantField(-50)
@@ -72,7 +73,7 @@ PAR³ = FunctionField{Center, Center, Center}(PAR_func3, grid; clock)
 # and then setup the Oceananigans model with the boundary condition for the DIC based on the air-sea CO₂ flux.
 
 biogeochemistry = PISCES(; grid,
-                            surface_photosynthetically_active_radiation = PAR⁰, sinking_speeds = (; POC = w_POC, SFe = w_POC, GOC = w_GOC, BFe = w_GOC, PSi = w_GOC, CaCO₃ = w_GOC)
+                           light_attenuation_model = PrescribedPhotosyntheticallyActiveRadiation((; PAR, PAR¹, PAR², PAR³)), sinking_speeds = (; POC = w_POC, SFe = w_POC, GOC = w_GOC, BFe = w_GOC, PSi = w_GOC, CaCO₃ = w_GOC)
 )
 
 CO₂_flux = GasExchange(; gas = :CO₂)
@@ -88,15 +89,15 @@ model = NonhydrostaticModel(; grid,
                               boundary_conditions = (DIC = FieldBoundaryConditions(top = CO₂_flux), ),
                               auxiliary_fields = (; S, zₘₓₗ = mixed_layer_depth, zₑᵤ = euphotic_layer_depth, Si̅ = yearly_maximum_silicate, D_dust = dust_deposition, Ω = carbonate_sat_ratio, PAR, PAR¹, PAR², PAR³ )
                               )
-
-set!(model, NO₃ = 4.0, NH₄ = 0.1, P = 4.26, D = 4.26, Z = .426, M = .426,  Pᶠᵉ = 7e-6 * 1e9 / 1e6 * 4.26, Dᶠᵉ = 7e-6 * 1e9 / 1e6 * 4.26, Pᶜʰˡ = 1.0, Dᶜʰˡ = 1.0, Dˢⁱ = 0.67734, SFe = 7e-6 * 1e9 / 1e6 * 0.8, BFe = 7e-6 * 1e9 / 1e6 * 0.8, Fe = 0.8, O₂ = 264.0, Si = 4.557, Alk = 2360.0, PO₄ = .8114, DIC = 2000.0, CaCO₃ = 0.0001, T = funT)
+@info "Setting initial values..."
+set!(model, NO₃ = 4.0, NH₄ = 0.1, P = 4.26, D = 4.26, Z = .426, M = .426,  Pᶠᵉ = 7e-6 * 1e9 / 1e6 * 4.26, Dᶠᵉ = 7e-6 * 1e9 / 1e6 * 4.26, Pᶜʰˡ = 1.0, Dᶜʰˡ = 1.0, Dˢⁱ = 0.67734, SFe = 7e-6 * 1e9 / 1e6 * 0.8, BFe = 7e-6 * 1e9 / 1e6 * 0.8, Fe = 0.8, O₂ = 264.0, Si = 4.557, Alk = 2360.0, PO₄ = 1.8114, DIC = 2000.0, CaCO₃ = 0.0001, T = funT)
 
 # ## Simulation
 # Next we setup a simulation and add some callbacks that:
 # - Show the progress of the simulation
 # - Store the model and particles output
 
-simulation = Simulation(model, Δt = 5minutes, stop_time = 100days)
+simulation = Simulation(model, Δt = 10minutes, stop_time = 365days)
 
 progress_message(sim) = @printf("Iteration: %04d, time: %s, Δt: %s, wall time: %s\n",
                                 iteration(sim),
