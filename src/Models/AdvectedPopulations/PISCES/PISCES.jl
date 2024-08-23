@@ -47,11 +47,11 @@ using Oceananigans.Fields: Field, TracerFields, CenterField, ZeroField, Constant
 using OceanBioME.Light: TwoBandPhotosyntheticallyActiveRadiation, default_surface_PAR
 using OceanBioME: setup_velocity_fields, show_sinking_velocities, Biogeochemistry, ScaleNegativeTracers
 using OceanBioME.BoxModels: BoxModel
-using OceanBioME.Boundaries.Sediments: sinking_flux
 
 using Oceananigans.Biogeochemistry: AbstractContinuousFormBiogeochemistry
 
-import OceanBioME: redfield, conserved_tracers
+import OceanBioME: redfield, conserved_tracers, maximum_sinking_velocity, chlorophyll
+import OceanBioME.Models.Sediments: nitrogen_flux, carbon_flux, remineralisation_receiver, sinking_tracers # these need to be defined for PISCES
 
 import Oceananigans.Biogeochemistry: required_biogeochemical_tracers,
                                      required_biogeochemical_auxiliary_fields,
@@ -62,8 +62,6 @@ import OceanBioME: maximum_sinking_velocity
 
 import Adapt: adapt_structure, adapt
 import Base: show, summary
-
-import OceanBioME.Boundaries.Sediments: nitrogen_flux, carbon_flux, remineralisation_receiver, sinking_tracers
 
 struct PISCES{FT, PD, ZM, OT, W, CF, ZF} <: AbstractContinuousFormBiogeochemistry
 
