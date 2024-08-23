@@ -63,7 +63,7 @@ PAR¹ = FunctionField{Center, Center, Center}(PAR_func1, grid; clock)
 PAR² = FunctionField{Center, Center, Center}(PAR_func2, grid; clock)
 PAR³ = FunctionField{Center, Center, Center}(PAR_func3, grid; clock)
 zₘₓₗ = FunctionField{Center, Center, Center}(MLD, grid; clock)
-zₑᵤ = FucntionField{Center, Center, Center}(euphotic, grid; clock)
+zₑᵤ = FunctionField{Center, Center, Center}(euphotic, grid; clock)
 #ff = FunctionField{Nothing, Nothing, Face}(w_GOC, grid)
 # ## Grid
 # Define the grid.
@@ -92,7 +92,7 @@ model = NonhydrostaticModel(; grid,
                               auxiliary_fields = (; S, zₘₓₗ, zₑᵤ, Si̅ = yearly_maximum_silicate, D_dust = dust_deposition, Ω = carbonate_sat_ratio, PAR, PAR¹, PAR², PAR³)
                               )
 @info "Setting initial values..."
-set!(model, P = 6.95, D = 6.95, Z = 0.695,  M = 0.695, Pᶜʰˡ = 1.671,  Dᶜʰˡ = 1.671, Pᶠᵉ =7e-6 * 1e9 / 1e6 * 6.95, Dᶠᵉ = 7e-6 * 1e9 / 1e6 * 6.95, Dˢⁱ = 1.162767, DOC = 0.0, POC = 0.0, GOC = 0.0, SFe = 7e-6 * 1e9 / 1e6 *1.256, BFe =7e-6 * 1e9 / 1e6 *1.256, NO₃ = 6.202, NH₄ = 0.25*6.202, PO₄ = 0.8722, Fe = 1.256, Si = 7.313, CaCO₃ = 0.29679635764590534, DIC = 2139.0, Alk = 2366.0, O₂ = 237.0, T = funT) #Using Copernicus Data (26.665, 14.)
+set!(model, P = 6.95, D = 6.95, Z = 0.695,  M = 0.695, Pᶜʰˡ = 1.671,  Dᶜʰˡ = 1.671, Pᶠᵉ =7e-6 * 1e9 / 1e6 * 6.95, Dᶠᵉ = 7e-6 * 1e9 / 1e6 * 6.95, Dˢⁱ = 1.162767, DOC = 0.0, POC = 0.0, GOC = 0.0, SFe = 7e-6 * 1e9 / 1e6 *1.256, BFe =7e-6 * 1e9 / 1e6 *1.256, NO₃ = 6.202e-2, NH₄ = 0.25*6.202e-2, PO₄ = 0.8722, Fe = 1.256, Si = 7.313, CaCO₃ = 0.29679635764590534, DIC = 2139.0, Alk = 2366.0, O₂ = 237.0, T = funT) #Using Copernicus Data (26.665, 14.)
 # ## Simulation
 # Next we setup a simulation and add some callbacks that:
 # - Show the progress of the simulation
