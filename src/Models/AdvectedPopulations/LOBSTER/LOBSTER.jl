@@ -51,15 +51,12 @@ using OceanBioME: setup_velocity_fields, show_sinking_velocities, Biogeochemistr
 using OceanBioME.BoxModels: BoxModel
 using OceanBioME.Models.Sediments: sinking_flux
 
-using Oceananigans.Biogeochemistry: AbstractContinuousFormBiogeochemistry
-
-import OceanBioME: redfield, conserved_tracers
-
-import Oceananigans.Biogeochemistry: required_biogeochemical_tracers,
+import Oceananigans.Biogeochemistry: AbstractContinuousFormBiogeochemistry, 
+                                     required_biogeochemical_tracers,
                                      required_biogeochemical_auxiliary_fields,
                                      biogeochemical_drift_velocity
 
-import OceanBioME: maximum_sinking_velocity
+import OceanBioME: redfield, conserved_tracers, maximum_sinking_velocity, chlorophyll
 
 import Adapt: adapt_structure, adapt
 import Base: show, summary
@@ -493,4 +490,7 @@ const VariableRedfieldLobster = Union{LOBSTER{<:Any, <:Val{(false, false, true)}
 
 @inline sinking_tracers(::LOBSTER) = (:sPOM, :bPOM)
 @inline sinking_tracers(::VariableRedfieldLobster) = (:sPON, :bPON, :sPOC, :bPOC)
+
+@inline chlorophyll(bgc::LOBSTER, model) = bgc.phytoplankton_chlorophyll_ratio * model.tracers.P
+
 end # module
