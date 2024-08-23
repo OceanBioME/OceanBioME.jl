@@ -33,14 +33,14 @@ PAR_func2(t) = PAR_func(t)/3
 PAR_func3(t)= PAR_func(t)/3
 
 PAR = FunctionField{Center, Center, Center}(PAR_func, grid; clock)
-PAR¹ = FunctionField{Center, Center, Center}(PAR_func1, grid; clock)
-PAR² = FunctionField{Center, Center, Center}(PAR_func2, grid; clock)
-PAR³ = FunctionField{Center, Center, Center}(PAR_func3, grid; clock)
+PAR₁ = FunctionField{Center, Center, Center}(PAR_func1, grid; clock)
+PAR₂ = FunctionField{Center, Center, Center}(PAR_func2, grid; clock)
+PAR₃ = FunctionField{Center, Center, Center}(PAR_func3, grid; clock)
 
 nothing #hide
 
 # Set up the model. Here, first specify the biogeochemical model, followed by initial conditions and the start and end times
-model = BoxModel(; biogeochemistry = PISCES(; grid, light_attenuation_model = PrescribedPhotosyntheticallyActiveRadiation((; PAR, PAR¹, PAR², PAR³)), flux_feeding_rate = 2.0e-3),
+model = BoxModel(; biogeochemistry = PISCES(; grid, light_attenuation_model = PrescribedPhotosyntheticallyActiveRadiation((; PAR, PAR₁, PAR₂, PAR₃)), flux_feeding_rate = 2.0e-3),
                    clock)
 
 set!(model, NO₃ = 4.0, NH₄ = 0.1, P = 4.26, D = 4.26, Z = .426, M = .426,  Pᶠᵉ = 7e-6 * 1e9 / 1e6 * 4.26, Dᶠᵉ = 7e-6 * 1e9 / 1e6 * 4.26, Pᶜʰˡ = 1.0, Dᶜʰˡ = 1.0, Dˢⁱ = 0.67734, SFe = 7e-6 * 1e9 / 1e6 * 0.8, BFe = 7e-6 * 1e9 / 1e6 * 0.8, Fe = 0.8, O₂ = 264.0, Si = 4.557, Alk = 2360.0, PO₄ = 1.8114, DIC = 2000.0, CaCO₃ = 0.0001, T = 14.0)

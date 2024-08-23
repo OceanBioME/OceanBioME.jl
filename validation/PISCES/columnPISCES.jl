@@ -57,9 +57,9 @@ grid = RectilinearGrid(size = (1, 1, 50), extent = (20meters, 20meters, 200meter
 clock = Clock(; time = 0.0)
 
 PAR = FunctionField{Center, Center, Center}(PAR_func, grid; clock)
-PAR¹ = FunctionField{Center, Center, Center}(PAR_func1, grid; clock)
-PAR² = FunctionField{Center, Center, Center}(PAR_func2, grid; clock)
-PAR³ = FunctionField{Center, Center, Center}(PAR_func3, grid; clock)
+PAR₁ = FunctionField{Center, Center, Center}(PAR_func1, grid; clock)
+PAR₂ = FunctionField{Center, Center, Center}(PAR_func2, grid; clock)
+PAR₃ = FunctionField{Center, Center, Center}(PAR_func3, grid; clock)
 
 #ff = FunctionField{Nothing, Nothing, Face}(w_GOC, grid)
 # ## Grid

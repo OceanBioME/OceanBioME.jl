@@ -913,7 +913,7 @@ adapt_structure(to, pisces::PISCES) =
 # you can updatye these if you want it to have a pretty way of showing uyou its a pisces model
 summary(::PISCES{FT}) where {FT} = string("PISCES{$FT}") 
 
-show(io::IO, model::PISCES) where {FT, B, W, PD, ZM, OT}  = print(io, string("Pelagic Interactions Scheme for Carbon and Ecosystem Studies (PISCES) model")) # maybe add some more info here
+show(io::IO, model::PISCES) = print(io, string("Pelagic Interactions Scheme for Carbon and Ecosystem Studies (PISCES) model")) # maybe add some more info here
 
 @inline maximum_sinking_velocity(bgc::PISCES) = maximum(abs, bgc.sinking_velocities.bPOM.w) # might need ot update this for wghatever the fastest sinking pareticles are
 
