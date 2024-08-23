@@ -1,7 +1,7 @@
 #This document contains functions for:
     #O₂ forcing (eq83)
 
-@inline function (bgc::PISCES)(::Val{:O₂}, x, y, z, t, P, D, Z, M, Pᶜʰˡ, Dᶜʰˡ, Pᶠᵉ, Dᶠᵉ, Dˢⁱ, DOC, POC, GOC, SFe, BFe, PSi, NO₃, NH₄, PO₄, Fe, Si, CaCO₃, DIC, Alk, O₂, T, zₘₓₗ, zₑᵤ, Si̅, D_dust, Ω, PAR, PAR¹, PAR², PAR³) 
+@inline function (bgc::PISCES)(::Val{:O₂}, x, y, z, t, P, D, Z, M, Pᶜʰˡ, Dᶜʰˡ, Pᶠᵉ, Dᶠᵉ, Dˢⁱ, DOC, POC, GOC, SFe, BFe, PSi, NO₃, NH₄, PO₄, Fe, Si, CaCO₃, DIC, Alk, O₂, T, zₘₓₗ, zₑᵤ, Si̅, D_dust, Ω, PAR, PAR₁, PAR₂, PAR₃) 
 
     O₂ᵘᵗ = bgc.OC_for_ammonium_based_processes
     O₂ⁿⁱᵗ = bgc.OC_ratio_of_nitrification
@@ -20,8 +20,8 @@
 
     t_darkᴾ = bgc.mean_residence_time_of_phytoplankton_in_unlit_mixed_layer.P
     t_darkᴰ = bgc.mean_residence_time_of_phytoplankton_in_unlit_mixed_layer.D
-    PARᴾ = P_PAR(PAR¹, PAR², PAR³, bgc)
-    PARᴰ = D_PAR(PAR¹, PAR², PAR³, bgc)
+    PARᴾ = P_PAR(PAR₁, PAR₂, PAR₃, bgc)
+    PARᴰ = D_PAR(PAR₁, PAR₂, PAR₃, bgc)
     eₘₐₓᶻ = bgc.max_growth_efficiency_of_zooplankton.Z
     eₘₐₓᴹ = bgc.max_growth_efficiency_of_zooplankton.M
     #Grazing

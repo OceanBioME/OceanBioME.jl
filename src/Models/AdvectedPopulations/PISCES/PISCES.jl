@@ -51,7 +51,7 @@ using OceanBioME.Boundaries.Sediments: sinking_flux
 
 using Oceananigans.Biogeochemistry: AbstractContinuousFormBiogeochemistry
 
-import OceanBioME: redfield, conserved_tracers
+import OceanBioME: redfield, conserved_tracers, chlorophyll
 
 import Oceananigans.Biogeochemistry: required_biogeochemical_tracers,
                                      required_biogeochemical_auxiliary_fields,
@@ -894,7 +894,7 @@ end
 
 @inline required_biogeochemical_tracers(::PISCES) = (:P, :D, :Z, :M, :Pᶜʰˡ, :Dᶜʰˡ, :Pᶠᵉ, :Dᶠᵉ, :Dˢⁱ, :DOC, :POC, :GOC, :SFe, :BFe, :PSi, :NO₃, :NH₄, :PO₄, :Fe, :Si, :CaCO₃, :DIC, :Alk, :O₂, :T) # list all the parameters here, also if you need T and S put them here too
 
-@inline required_biogeochemical_auxiliary_fields(::PISCES) = (:zₘₓₗ, :zₑᵤ, :Si̅, :D_dust, :Ω, :PAR, :PAR¹, :PAR², :PAR³, )
+@inline required_biogeochemical_auxiliary_fields(::PISCES) = (:zₘₓₗ, :zₑᵤ, :Si̅, :D_dust, :Ω, :PAR, :PAR₁, :PAR₂, :PAR₃, )
 
 # for sinking things like POM this is how we tell oceananigans ther sinking speed
 @inline function biogeochemical_drift_velocity(bgc::PISCES, ::Val{tracer_name}) where tracer_name
@@ -947,4 +947,5 @@ include("zooplankton.jl")
 
 @inline sinking_tracers(::PISCES) = (:POC, :GOC, :SFe, :BFe, :PSi, :CaCO₃) # please list them here
 
+@inline chlorophyll(model) = model.tracers.Pᶜʰˡ + model.tracers.Dᶜʰˡ
 end # module
