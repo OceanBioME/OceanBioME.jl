@@ -65,7 +65,7 @@ import Base: show, summary
 
 import OceanBioME.Boundaries.Sediments: nitrogen_flux, carbon_flux, remineralisation_receiver, sinking_tracers
 
-struct PISCES{FT, PD, ZM, OT, W, CF, ZF} <: AbstractContinuousFormBiogeochemistry
+struct PISCES{FT, PD, ZM, OT, W, CF, ZF, FF} <: AbstractContinuousFormBiogeochemistry
 
     growth_rate_at_zero :: FT # add list of parameters here, assuming theyre all just numbers FT will be fine for advect_particles_kernel
     growth_rate_reference_for_light_limitation :: FT
@@ -178,7 +178,7 @@ struct PISCES{FT, PD, ZM, OT, W, CF, ZF} <: AbstractContinuousFormBiogeochemistr
     max_FeC_ratio_of_bacteria :: FT
     Fe_half_saturation_const_for_Bacteria :: FT    #not sure what this should be called
 
-    mixed_layer_depth :: CF
+    mixed_layer_depth :: FF
     euphotic_layer_depth :: CF
     yearly_maximum_silicate :: CF
     dust_deposition :: ZF
@@ -299,17 +299,17 @@ struct PISCES{FT, PD, ZM, OT, W, CF, ZF} <: AbstractContinuousFormBiogeochemistr
                     max_FeC_ratio_of_bacteria :: FT,
                     Fe_half_saturation_const_for_Bacteria :: FT,    #not sure what this should be called
                     
-                    mixed_layer_depth :: CF,
+                    mixed_layer_depth :: FF,
                     euphotic_layer_depth :: CF,
                     yearly_maximum_silicate :: CF,
                     dust_deposition :: ZF,
                     vertical_diffusivity :: CF, 
                     carbonate_sat_ratio :: ZF,
 
-                    sinking_velocities :: W,) where {FT, PD, ZM, OT, W, CF, ZF} # then do the same here (this is all just annoying boiler plate but we need it to make the next function work)
+                    sinking_velocities :: W,) where {FT, PD, ZM, OT, W, CF, ZF, FF} # then do the same here (this is all just annoying boiler plate but we need it to make the next function work)
 
 
-        return new{FT, PD, ZM, OT, W, CF, ZF}(growth_rate_at_zero,
+        return new{FT, PD, ZM, OT, W, CF, ZF, FF}(growth_rate_at_zero,
                             growth_rate_reference_for_light_limitation,
                             basal_respiration_rate,
                             temperature_sensitivity_of_growth,
@@ -717,7 +717,7 @@ function PISCES(; grid,
                    max_FeC_ratio_of_bacteria :: FT = 10.0e-3,     #or 6
                    Fe_half_saturation_const_for_Bacteria :: FT = 0.03, #or 2.5e-10  
 
-                   mixed_layer_depth :: CF = ConstantField(-100),
+                   mixed_layer_depth :: FF = FunctionField{Center, Center, Center}(0.0,grid),
                    euphotic_layer_depth :: CF = ConstantField(-50),
                    vertical_diffusivity :: CF  = ConstantField(1),
                    yearly_maximum_silicate :: CF = ConstantField(1),
@@ -741,7 +741,7 @@ function PISCES(; grid,
                   scale_negatives = false,
 
                   particles::P = nothing,
-                  modifiers::M = nothing) where {FT, PD, ZM, OT, LA, S, P, M, CF, ZF}
+                  modifiers::M = nothing) where {FT, PD, ZM, OT, LA, S, P, M, CF, ZF, FF}
 
     if !isnothing(sediment_model) && !open_bottom
         @warn "You have specified a sediment model but not `open_bottom` which will not work as the tracer will settle in the bottom cell"
