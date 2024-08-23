@@ -11,9 +11,9 @@
 # *Ocean* *Bio*geochemical *M*odelling *E*nvironment
 
 ## Description
-OceanBioME was developed with generous support from the Cambridge Centre for Climate Repair [CCRC](https://www.climaterepair.cam.ac.uk) and the Gordon and Betty Moore Foundation as a tool to study the effectiveness and impacts of ocean carbon dioxide removal (CDR) strategies.
+OceanBioME is a flexible biogeochemical modelling environment written in Julia for modelling the coupled interactions between ocean biology, carbonate chemistry, and physics. OceanBioME can be run as a stand-alone box model, or coupled with [Oceananigans.jl](https://github.com/cliMA/oceananigans.jl/) to run as a 1D column model or with 2 and 3D physics. 
 
-OceanBioME is a flexible modelling environment written in Julia for modelling the coupled interactions between ocean biogeochemistry, carbonate chemistry, and physics. OceanBioME can be run as a stand-alone box model, or coupled with [Oceananigans.jl](https://github.com/cliMA/oceananigans.jl/) to run as a 1D column model or with 2 and 3D physics. 
+OceanBioME was developed with generous support from the Centre for Climate Repair [CCR](https://www.climaterepair.cam.ac.uk) and the Gordon and Betty Moore Foundation as a tool to study the effectiveness and impacts of ocean carbon dioxide removal (CDR) strategies.
 
 ## Installation:
 
@@ -130,8 +130,7 @@ grid = RectilinearGrid(GPU(), size = (256, 32), extent = (500meters, 100meters),
 
 ## Documentation
 
-See the [documentation](https://oceanbiome.github.io/OceanBioME.jl) for full description of the software
-package and more examples.
+See the [documentation](https://oceanbiome.github.io/OceanBioME.jl) for full description of the software package and more examples, as well as full descriptions of the included models and parametrisations.
 
 ## Contributing
 If you're interested in contributing to the development of OceanBioME we would appreciate your help!

@@ -47,7 +47,7 @@ end
                forcing = NamedTuple(),
                timestepper = :RungeKutta3,
                clock = Clock(; time = 0.0),
-               prescribed_tracers = (:T, ))
+               prescribed_tracers::PT = (T = (t) -> 0, ))
 
 Constructs a box model of a `biogeochemistry` model. Once this has been constructed you can set initial condiitons by `set!(model, X=1.0...)`.
 
@@ -58,7 +58,7 @@ Keyword Arguments
 - `forcing`: NamedTuple of additional forcing functions for the biogeochemical tracers to be integrated
 - `timestepper`: Timestepper to integrate model
 - `clock`: Oceananigans clock to keep track of time
-- `prescribed_tracers`: Tuple of fields names (Symbols) which are not integrated but provided in `forcing` as a function of time with signature `f(t)`
+- `prescribed_tracers`: named tuple of tracer names and function (`f(t)`) prescribing tracer values
 """
 function BoxModel(; biogeochemistry::B,
                     grid = BoxModelGrid(),
@@ -85,9 +85,9 @@ end
 function update_state!(model::BoxModel, callbacks=[]; compute_tendencies = true)
     t = model.clock.time
 
-    for field in model.prescribed_tracers 
-        if field in keys(model.fields)
-            @inbounds model.fields[field][1, 1, 1] = @inbounds model.forcing[field](t)
+    for (name, forcing) in pairs(model.prescribed_tracers)
+        if name in keys(model.fields)
+            @inbounds model.fields[name][1, 1, 1] = @inbounds forcing(t)
         end
     end
 

@@ -25,18 +25,16 @@ using Oceananigans.Fields: ZeroField
 using OceanBioME.Light: TwoBandPhotosyntheticallyActiveRadiation, default_surface_PAR
 using OceanBioME: setup_velocity_fields, show_sinking_velocities
 using OceanBioME.BoxModels: BoxModel
-using OceanBioME.Boundaries.Sediments: sinking_flux
+using OceanBioME.Models.Sediments: sinking_flux
 
-import OceanBioME: redfield, conserved_tracers
 import Base: show, summary
 
 import Oceananigans.Biogeochemistry: required_biogeochemical_tracers,
                                      required_biogeochemical_auxiliary_fields,
                                      biogeochemical_drift_velocity
 
-import OceanBioME: maximum_sinking_velocity
-
-import OceanBioME.Boundaries.Sediments: nitrogen_flux, carbon_flux, remineralisation_receiver, sinking_tracers
+import OceanBioME: redfield, conserved_tracers, maximum_sinking_velocity, chlorophyll
+import OceanBioME.Models.Sediments: nitrogen_flux, carbon_flux, remineralisation_receiver, sinking_tracers
 
 import Adapt: adapt_structure, adapt
 
@@ -330,4 +328,7 @@ adapt_structure(to, npzd::NPZD) =
 
 @inline conserved_tracers(::NPZD) = (:N, :P, :Z, :D)
 @inline sinking_tracers(bgc::NPZD) = keys(bgc.sinking_velocities)
+
+@inline chlorophyll(bgc::NPZD, model) = 1.31 * model.tracers.P
+
 end # module

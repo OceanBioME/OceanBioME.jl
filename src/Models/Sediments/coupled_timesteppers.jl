@@ -1,5 +1,5 @@
 using Oceananigans: NonhydrostaticModel, prognostic_fields, HydrostaticFreeSurfaceModel
-using OceanBioME.Boundaries.Sediments: AbstractSediment
+using OceanBioME.Models.Sediments: AbstractSediment
 using Oceananigans.TimeSteppers: ab2_step_field!, rk3_substep_field!, stage_Δt
 using Oceananigans.Utils: work_layout, launch!
 using Oceananigans.TurbulenceClosures: implicit_step!

@@ -83,7 +83,7 @@ end
                                                chlorophyll_blue_exponent::FT = 0.674,
                                                pigment_ratio::FT = 0.7,
                                                phytoplankton_chlorophyll_ratio::FT = 1.31,
-                                               surface_PAR::SPAR = (x, y, t) -> 100 * max(0.0, cos(t * π / 12hours)))
+                                               surface_PAR::SPAR = default_surface_PAR)
 
 Keyword Arguments
 ==================
@@ -103,7 +103,7 @@ function TwoBandPhotosyntheticallyActiveRadiation(; grid,
                                                     chlorophyll_blue_exponent::FT = 0.674,
                                                     pigment_ratio::FT = 0.7,
                                                     phytoplankton_chlorophyll_ratio::FT = 1.31,
-                                                    surface_PAR::SPAR = (x, y, t) -> 100 * max(0.0, cos(t * π / 12hours))) where {FT, SPAR} # mgChl/mol N
+                                                    surface_PAR::SPAR = default_surface_PAR) where {FT, SPAR} # mgChl/mol N
 
     field = CenterField(grid; boundary_conditions = 
                             regularize_field_boundary_conditions(

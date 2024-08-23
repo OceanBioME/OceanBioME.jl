@@ -17,10 +17,18 @@ export BoxModel, BoxModelGrid, SpeedyOutput, load_output
 export Particles
 
 # Light models
-export TwoBandPhotosyntheticallyActiveRadiation, PrescribedPhotosyntheticallyActiveRadiation
+export TwoBandPhotosyntheticallyActiveRadiation, 
+       PrescribedPhotosyntheticallyActiveRadiation,
+       MultiBandPhotosyntheticallyActiveRadiation
 
-# Boundaries
-export Boundaries, Sediments, GasExchange, FlatSediment
+# airsea flux
+export GasExchange, CarbonDioxideGasExchangeBoundaryCondition, OxygenGasExchangeBoundaryCondition, GasExchangeBoundaryCondition
+
+# carbon chemistry
+export CarbonChemistry
+
+# sediment
+export Sediments, FlatSediment
 
 # Utilities
 export column_advection_timescale, sinking_advection_timescale, Budget
@@ -106,6 +114,8 @@ biogeochemical_drift_velocity(bgc::Biogeochemistry, val_name) = biogeochemical_d
 biogeochemical_auxiliary_fields(bgc::Biogeochemistry) = merge(biogeochemical_auxiliary_fields(bgc.underlying_biogeochemistry),
                                                               biogeochemical_auxiliary_fields(bgc.light_attenuation))
 
+@inline chlorophyll(bgc::Biogeochemistry, model) = chlorophyll(bgc.underlying_biogeochemistry, model)
+
 @inline adapt_structure(to, bgc::Biogeochemistry) = adapt(to, bgc.underlying_biogeochemistry)
 
 function update_tendencies!(bgc::Biogeochemistry, model)
@@ -175,18 +185,13 @@ show(io::IO, model::Biogeochemistry) =
 summary(modifiers::Tuple) = tuple([summary(modifier) for modifier in modifiers])
 
 include("Utils/Utils.jl")
-include("Boundaries/Boundaries.jl")
 include("Light/Light.jl")
 include("Particles/Particles.jl")
 include("BoxModel/boxmodel.jl")
 include("Models/Models.jl")
 
-using .Boundaries
 using .Light
 using .BoxModels
-using .LOBSTERModel
-using .NPZDModel
-using .PISCESModel
-import .SLatissimaModel.SLatissima
+using .Models
 
 end #module
