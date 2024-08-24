@@ -52,20 +52,20 @@ end
 @inline nutrient_half_saturation_const(Kᵢᴶᵐⁱⁿ, J₁, J₂, Sᵣₐₜᴶ) = Kᵢᴶᵐⁱⁿ* (J₁ + Sᵣₐₜᴶ* J₂)/(J₁ + J₂ + eps(0.0)) #eq 7c
 
 #Light absorption by phytoplankton. Visible light split into 3 wavebands, where light absorption of each waveband controlled by coefficient.
-@inline function P_PAR(PAR¹, PAR², PAR³, bgc)
+@inline function P_PAR(PAR₁, PAR₂, PAR₃, bgc)
     β₁ᴾ = bgc.absorption_in_the_blue_part_of_light.P
     β₂ᴾ = bgc.absorption_in_the_green_part_of_light.P
     β₃ᴾ = bgc.absorption_in_the_red_part_of_light.P
 
-    return β₁ᴾ*PAR¹ + β₂ᴾ*PAR² + β₃ᴾ*PAR³
+    return β₁ᴾ*PAR₁ + β₂ᴾ*PAR₂ + β₃ᴾ*PAR₃
 end
 
-@inline function D_PAR(PAR¹, PAR², PAR³, bgc)
+@inline function D_PAR(PAR₁, PAR₂, PAR₃, bgc)
     β₁ᴰ = bgc.absorption_in_the_blue_part_of_light.D
     β₂ᴰ = bgc.absorption_in_the_green_part_of_light.D
     β₃ᴰ = bgc.absorption_in_the_red_part_of_light.D
 
-    return β₁ᴰ*PAR¹ + β₂ᴰ*PAR² + β₃ᴰ*PAR³
+    return β₁ᴰ*PAR₁ + β₂ᴰ*PAR₂ + β₃ᴰ*PAR₃
 end
 
 #The growth rate of the iron biomass of phytoplankton.
@@ -194,7 +194,7 @@ end
 end
 
 #Phytoplankton forcing
-@inline function (bgc::PISCES)(::Val{:P}, x, y, z, t, P, D, Z, M, Pᶜʰˡ, Dᶜʰˡ, Pᶠᵉ, Dᶠᵉ, Dˢⁱ, DOC, POC, GOC, SFe, BFe, PSi, NO₃, NH₄, PO₄, Fe, Si, CaCO₃, DIC, Alk, O₂, T, zₘₓₗ, zₑᵤ, Si̅, D_dust, Ω, PAR, PAR¹, PAR², PAR³)
+@inline function (bgc::PISCES)(::Val{:P}, x, y, z, t, P, D, Z, M, Pᶜʰˡ, Dᶜʰˡ, Pᶠᵉ, Dᶠᵉ, Dˢⁱ, DOC, POC, GOC, SFe, BFe, PSi, NO₃, NH₄, PO₄, Fe, Si, CaCO₃, DIC, Alk, O₂, T, zₘₓₗ, zₑᵤ, Si̅, D_dust, Ω, PAR, PAR₁, PAR₂, PAR₃)
     #Parameters
     δᴾ = bgc.exudation_of_DOC.P
     mᴾ = bgc.phytoplankton_mortality_rate.P
@@ -217,14 +217,14 @@ end
     #Phytoplankton growth
     Lₗᵢₘᴾ = P_nutrient_limitation(P, PO₄, NO₃, NH₄, Pᶜʰˡ, Pᶠᵉ, bgc)[1]
     t_darkᴾ = bgc.mean_residence_time_of_phytoplankton_in_unlit_mixed_layer.P
-    PARᴾ = P_PAR(PAR¹, PAR², PAR³, bgc)
+    PARᴾ = P_PAR(PAR₁, PAR₂, PAR₃, bgc)
     μᴾ = phytoplankton_growth_rate(P, Pᶜʰˡ, PARᴾ, L_day, T, αᴾ, Lₗᵢₘᴾ, zₘₓₗ, zₑᵤ, t_darkᴾ, bgc)
 
     return (1-δᴾ)*μᴾ*P - mᴾ*concentration_limitation(P, Kₘ)*P - sh*wᴾ*P^2 - gₚᶻ*Z - gₚᴹ*M #eq 1
 end
 
 #Diatom forcing
-@inline function (bgc::PISCES)(::Val{:D}, x, y, z, t, P, D, Z, M, Pᶜʰˡ, Dᶜʰˡ, Pᶠᵉ, Dᶠᵉ, Dˢⁱ, DOC, POC, GOC, SFe, BFe, PSi, NO₃, NH₄, PO₄, Fe, Si, CaCO₃, DIC, Alk, O₂, T, zₘₓₗ, zₑᵤ, Si̅, D_dust, Ω, PAR, PAR¹, PAR², PAR³)
+@inline function (bgc::PISCES)(::Val{:D}, x, y, z, t, P, D, Z, M, Pᶜʰˡ, Dᶜʰˡ, Pᶠᵉ, Dᶠᵉ, Dˢⁱ, DOC, POC, GOC, SFe, BFe, PSi, NO₃, NH₄, PO₄, Fe, Si, CaCO₃, DIC, Alk, O₂, T, zₘₓₗ, zₑᵤ, Si̅, D_dust, Ω, PAR, PAR₁, PAR₂, PAR₃)
     #Parameters
     δᴰ = bgc.exudation_of_DOC.D
     mᴰ = bgc.phytoplankton_mortality_rate.D
@@ -247,7 +247,7 @@ end
     Lₗᵢₘᴰ = D_nutrient_limitation(D, PO₄, NO₃, NH₄, Si, Dᶜʰˡ, Dᶠᵉ, Si̅, bgc)[1]
 
     #Also required
-    PARᴰ = D_PAR(PAR¹, PAR², PAR³, bgc)
+    PARᴰ = D_PAR(PAR₁, PAR₂, PAR₃, bgc)
     t_darkᴰ = bgc.mean_residence_time_of_phytoplankton_in_unlit_mixed_layer.D
     μᴰ = phytoplankton_growth_rate(D, Dᶜʰˡ, PARᴰ, L_day, T, αᴰ, Lₗᵢₘᴰ, zₘₓₗ, zₑᵤ, t_darkᴰ, bgc)
     wᴰ = D_quadratic_mortality(D, PO₄, NO₃, NH₄, Si, Dᶜʰˡ, Dᶠᵉ, Si̅, bgc) #13
@@ -256,7 +256,7 @@ end
 end
 
 #Forcing for chlorophyll biomass of nanophytoplankton
-@inline function (bgc::PISCES)(::Val{:Pᶜʰˡ}, x, y, z, t, P, D, Z, M, Pᶜʰˡ, Dᶜʰˡ, Pᶠᵉ, Dᶠᵉ, Dˢⁱ, DOC, POC, GOC, SFe, BFe, PSi, NO₃, NH₄, PO₄, Fe, Si, CaCO₃, DIC, Alk, O₂, T, zₘₓₗ, zₑᵤ, Si̅, D_dust, Ω, PAR, PAR¹, PAR², PAR³)
+@inline function (bgc::PISCES)(::Val{:Pᶜʰˡ}, x, y, z, t, P, D, Z, M, Pᶜʰˡ, Dᶜʰˡ, Pᶠᵉ, Dᶠᵉ, Dˢⁱ, DOC, POC, GOC, SFe, BFe, PSi, NO₃, NH₄, PO₄, Fe, Si, CaCO₃, DIC, Alk, O₂, T, zₘₓₗ, zₑᵤ, Si̅, D_dust, Ω, PAR, PAR₁, PAR₂, PAR₃)
    #Parameters
     δᴾ = bgc.exudation_of_DOC.P
     αᴾ = bgc.initial_slope_of_PI_curve.P
@@ -281,7 +281,7 @@ end
     #Phytoplankton growth
     t_darkᴾ = bgc.mean_residence_time_of_phytoplankton_in_unlit_mixed_layer.P
     Lₗᵢₘᴾ= P_nutrient_limitation(P, PO₄, NO₃, NH₄, Pᶜʰˡ, Pᶠᵉ, bgc)[1]
-    PARᴾ = P_PAR(PAR¹, PAR², PAR³, bgc)
+    PARᴾ = P_PAR(PAR₁, PAR₂, PAR₃, bgc)
     μᴾ = phytoplankton_growth_rate(P, Pᶜʰˡ, PARᴾ, L_day, T, αᴾ, Lₗᵢₘᴾ, zₘₓₗ, zₑᵤ, t_darkᴾ, bgc)
 
     μ̌ᴾ = μᴾ / day_dependent_growth_rate(L_day) #15b
@@ -292,7 +292,7 @@ end
 end
 
 #Forcing for chlorophyll biomass of diatoms
-@inline function (bgc::PISCES)(::Val{:Dᶜʰˡ}, x, y, z, t, P, D, Z, M, Pᶜʰˡ, Dᶜʰˡ, Pᶠᵉ, Dᶠᵉ, Dˢⁱ, DOC, POC, GOC, SFe, BFe, PSi, NO₃, NH₄, PO₄, Fe, Si, CaCO₃, DIC, Alk, O₂, T, zₘₓₗ, zₑᵤ, Si̅, D_dust, Ω, PAR, PAR¹, PAR², PAR³)
+@inline function (bgc::PISCES)(::Val{:Dᶜʰˡ}, x, y, z, t, P, D, Z, M, Pᶜʰˡ, Dᶜʰˡ, Pᶠᵉ, Dᶠᵉ, Dˢⁱ, DOC, POC, GOC, SFe, BFe, PSi, NO₃, NH₄, PO₄, Fe, Si, CaCO₃, DIC, Alk, O₂, T, zₘₓₗ, zₑᵤ, Si̅, D_dust, Ω, PAR, PAR₁, PAR₂, PAR₃)
     #Parameters
     δᴰ = bgc.exudation_of_DOC.D
     αᴰ = bgc.initial_slope_of_PI_curve.D
@@ -317,7 +317,7 @@ end
 
     #Diatom growth
     Lₗᵢₘᴰ = D_nutrient_limitation(D, PO₄, NO₃, NH₄, Si, Dᶜʰˡ, Dᶠᵉ, Si̅, bgc)[1]
-    PARᴰ = D_PAR(PAR¹, PAR², PAR³, bgc)
+    PARᴰ = D_PAR(PAR₁, PAR₂, PAR₃, bgc)
     t_darkᴰ = bgc.mean_residence_time_of_phytoplankton_in_unlit_mixed_layer.D
     μᴰ = phytoplankton_growth_rate(D, Dᶜʰˡ, PARᴰ, L_day, T, αᴰ, Lₗᵢₘᴰ, zₘₓₗ, zₑᵤ, t_darkᴰ, bgc)
 
@@ -332,7 +332,7 @@ end
 end
 
 #Forcing for iron biomass of nanophytoplankton
-@inline function (bgc::PISCES)(::Val{:Pᶠᵉ}, x, y, z, t, P, D, Z, M, Pᶜʰˡ, Dᶜʰˡ, Pᶠᵉ, Dᶠᵉ, Dˢⁱ, DOC, POC, GOC, SFe, BFe, PSi, NO₃, NH₄, PO₄, Fe, Si, CaCO₃, DIC, Alk, O₂, T, zₘₓₗ, zₑᵤ, Si̅, D_dust, Ω, PAR, PAR¹, PAR², PAR³)
+@inline function (bgc::PISCES)(::Val{:Pᶠᵉ}, x, y, z, t, P, D, Z, M, Pᶜʰˡ, Dᶜʰˡ, Pᶠᵉ, Dᶠᵉ, Dˢⁱ, DOC, POC, GOC, SFe, BFe, PSi, NO₃, NH₄, PO₄, Fe, Si, CaCO₃, DIC, Alk, O₂, T, zₘₓₗ, zₑᵤ, Si̅, D_dust, Ω, PAR, PAR₁, PAR₂, PAR₃)
     #Parameters
     δᴾ = bgc.exudation_of_DOC.P
     θₘₐₓᶠᵉᵖ = bgc.max_iron_quota.P
@@ -359,7 +359,7 @@ end
 end
 
 #Forcing for chlorophyll biomass of diatoms
-@inline function (bgc::PISCES)(::Val{:Dᶠᵉ}, x, y, z, t, P, D, Z, M, Pᶜʰˡ, Dᶜʰˡ, Pᶠᵉ, Dᶠᵉ, Dˢⁱ, DOC, POC, GOC, SFe, BFe, PSi, NO₃, NH₄, PO₄, Fe, Si, CaCO₃, DIC, Alk, O₂, T, zₘₓₗ, zₑᵤ, Si̅, D_dust, Ω, PAR, PAR¹, PAR², PAR³)
+@inline function (bgc::PISCES)(::Val{:Dᶠᵉ}, x, y, z, t, P, D, Z, M, Pᶜʰˡ, Dᶜʰˡ, Pᶠᵉ, Dᶠᵉ, Dˢⁱ, DOC, POC, GOC, SFe, BFe, PSi, NO₃, NH₄, PO₄, Fe, Si, CaCO₃, DIC, Alk, O₂, T, zₘₓₗ, zₑᵤ, Si̅, D_dust, Ω, PAR, PAR₁, PAR₂, PAR₃)
     #Parameters
     δᴰ = bgc.exudation_of_DOC.D
     θₘₐₓᶠᵉᴰ = bgc.max_iron_quota.D
@@ -391,7 +391,7 @@ end
 end
 
 #Forcing equations for silicon biomass of diatoms
-@inline function (bgc::PISCES)(::Val{:Dˢⁱ}, x, y, z, t, P, D, Z, M, Pᶜʰˡ, Dᶜʰˡ, Pᶠᵉ, Dᶠᵉ, Dˢⁱ, DOC, POC, GOC, SFe, BFe, PSi, NO₃, NH₄, PO₄, Fe, Si, CaCO₃, DIC, Alk, O₂, T, zₘₓₗ, zₑᵤ, Si̅, D_dust, Ω, PAR, PAR¹, PAR², PAR³)    #ϕ is latitude
+@inline function (bgc::PISCES)(::Val{:Dˢⁱ}, x, y, z, t, P, D, Z, M, Pᶜʰˡ, Dᶜʰˡ, Pᶠᵉ, Dᶠᵉ, Dˢⁱ, DOC, POC, GOC, SFe, BFe, PSi, NO₃, NH₄, PO₄, Fe, Si, CaCO₃, DIC, Alk, O₂, T, zₘₓₗ, zₑᵤ, Si̅, D_dust, Ω, PAR, PAR₁, PAR₂, PAR₃)    #ϕ is latitude
     #Parameters
     δᴰ = bgc.exudation_of_DOC.D
     mᴰ = bgc.phytoplankton_mortality_rate.D
@@ -412,7 +412,7 @@ end
 
     #Diatom growth
     Lₗᵢₘᴰ = D_nutrient_limitation(D, PO₄, NO₃, NH₄, Si, Dᶜʰˡ, Dᶠᵉ, Si̅, bgc)[1]
-    PARᴰ = D_PAR(PAR¹, PAR², PAR³, bgc)
+    PARᴰ = D_PAR(PAR₁, PAR₂, PAR₃, bgc)
     μᴰ = phytoplankton_growth_rate(D, Dᶜʰˡ, PARᴰ, L_day, T, αᴰ, Lₗᵢₘᴰ, zₘₓₗ, zₑᵤ, t_darkᴰ, bgc)
 
     #Also required

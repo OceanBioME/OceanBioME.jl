@@ -47,11 +47,13 @@ using Oceananigans.Fields: Field, TracerFields, CenterField, ZeroField, Constant
 using OceanBioME.Light: TwoBandPhotosyntheticallyActiveRadiation, default_surface_PAR
 using OceanBioME: setup_velocity_fields, show_sinking_velocities, Biogeochemistry, ScaleNegativeTracers
 using OceanBioME.BoxModels: BoxModel
-using OceanBioME.Boundaries.Sediments: sinking_flux
 
 using Oceananigans.Biogeochemistry: AbstractContinuousFormBiogeochemistry
 
-import OceanBioME: redfield, conserved_tracers
+
+
+import OceanBioME: redfield, conserved_tracers, maximum_sinking_velocity, chlorophyll
+
 
 import Oceananigans.Biogeochemistry: required_biogeochemical_tracers,
                                      required_biogeochemical_auxiliary_fields,
@@ -63,9 +65,10 @@ import OceanBioME: maximum_sinking_velocity
 import Adapt: adapt_structure, adapt
 import Base: show, summary
 
-import OceanBioME.Boundaries.Sediments: nitrogen_flux, carbon_flux, remineralisation_receiver, sinking_tracers
+import OceanBioME.Models.Sediments: nitrogen_flux, carbon_flux, remineralisation_receiver, sinking_tracers
 
 struct PISCES{FT, PD, ZM, OT, W, CF, ZF, FFMLD, FFEU} <: AbstractContinuousFormBiogeochemistry
+
 
     growth_rate_at_zero :: FT # add list of parameters here, assuming theyre all just numbers FT will be fine for advect_particles_kernel
     growth_rate_reference_for_light_limitation :: FT
@@ -894,7 +897,7 @@ end
 
 @inline required_biogeochemical_tracers(::PISCES) = (:P, :D, :Z, :M, :Pᶜʰˡ, :Dᶜʰˡ, :Pᶠᵉ, :Dᶠᵉ, :Dˢⁱ, :DOC, :POC, :GOC, :SFe, :BFe, :PSi, :NO₃, :NH₄, :PO₄, :Fe, :Si, :CaCO₃, :DIC, :Alk, :O₂, :T) # list all the parameters here, also if you need T and S put them here too
 
-@inline required_biogeochemical_auxiliary_fields(::PISCES) = (:zₘₓₗ, :zₑᵤ, :Si̅, :D_dust, :Ω, :PAR, :PAR¹, :PAR², :PAR³, )
+@inline required_biogeochemical_auxiliary_fields(::PISCES) = (:zₘₓₗ, :zₑᵤ, :Si̅, :D_dust, :Ω, :PAR, :PAR₁, :PAR₂, :PAR₃, )
 
 # for sinking things like POM this is how we tell oceananigans ther sinking speed
 @inline function biogeochemical_drift_velocity(bgc::PISCES, ::Val{tracer_name}) where tracer_name
@@ -915,7 +918,7 @@ adapt_structure(to, pisces::PISCES) =
 # you can updatye these if you want it to have a pretty way of showing uyou its a pisces model
 summary(::PISCES{FT}) where {FT} = string("PISCES{$FT}") 
 
-show(io::IO, model::PISCES) where {FT, B, W, PD, ZM, OT}  = print(io, string("Pelagic Interactions Scheme for Carbon and Ecosystem Studies (PISCES) model")) # maybe add some more info here
+show(io::IO, model::PISCES) = print(io, string("Pelagic Interactions Scheme for Carbon and Ecosystem Studies (PISCES) model")) # maybe add some more info here
 
 @inline maximum_sinking_velocity(bgc::PISCES) = maximum(abs, bgc.sinking_velocities.bPOM.w) # might need ot update this for wghatever the fastest sinking pareticles are
 
@@ -947,4 +950,5 @@ include("zooplankton.jl")
 
 @inline sinking_tracers(::PISCES) = (:POC, :GOC, :SFe, :BFe, :PSi, :CaCO₃) # please list them here
 
+@inline chlorophyll(model) = model.tracers.Pᶜʰˡ + model.tracers.Dᶜʰˡ
 end # module
