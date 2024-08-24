@@ -14,7 +14,6 @@
 # ## Model setup
 # We load the packages and choose the default LOBSTER parameter set
 using OceanBioME, Oceananigans, Printf
-using OceanBioME.SLatissimaModel: SLatissima
 using Oceananigans.Fields: FunctionField, ConstantField
 using Oceananigans.Units
 
@@ -24,8 +23,7 @@ nothing #hide
 # ## Surface PAR and turbulent vertical diffusivity based on idealised mixed layer depth 
 # Setting up idealised functions for PAR and diffusivity (details here can be ignored but these are typical of the North Atlantic)
 
-@inline PAR⁰(x, y, t) = 60 * (1 - cos((t + 15days) * 2π / year)) * (1 / (1 + 0.2 * exp(-((mod(t, year) - 200days) / 50days)^2))) + 2
-#@inline PAR⁰(x,y,t) = 60.0
+@inline PAR⁰(t) = 60 * (1 - cos((t + 15days) * 2π / year)) * (1 / (1 + 0.2 * exp(-((mod(t, year) - 200days) / 50days)^2))) + 2
 
 @inline H(t, t₀, t₁) = ifelse(t₀ < t < t₁, 1.0, 0.0)
 
@@ -59,11 +57,13 @@ grid = RectilinearGrid(size = (1, 1, 100), extent = (20meters, 20meters, 400mete
 clock = Clock(; time = 0.0)
 
 PAR = FunctionField{Center, Center, Center}(PAR_func, grid; clock)
-PAR¹ = FunctionField{Center, Center, Center}(PAR_func1, grid; clock)
-PAR² = FunctionField{Center, Center, Center}(PAR_func2, grid; clock)
-PAR³ = FunctionField{Center, Center, Center}(PAR_func3, grid; clock)
+
+PAR₁ = FunctionField{Center, Center, Center}(PAR_func1, grid; clock)
+PAR₂ = FunctionField{Center, Center, Center}(PAR_func2, grid; clock)
+PAR₃ = FunctionField{Center, Center, Center}(PAR_func3, grid; clock)
 zₘₓₗ = FunctionField{Center, Center, Center}(MLD, grid; clock)
 zₑᵤ = FunctionField{Center, Center, Center}(euphotic, grid; clock)
+
 #ff = FunctionField{Nothing, Nothing, Face}(w_GOC, grid)
 # ## Grid
 # Define the grid.
@@ -75,10 +75,11 @@ zₑᵤ = FunctionField{Center, Center, Center}(euphotic, grid; clock)
 # and then setup the Oceananigans model with the boundary condition for the DIC based on the air-sea CO₂ flux.
 
 biogeochemistry = PISCES(; grid,
-                           light_attenuation_model = PrescribedPhotosyntheticallyActiveRadiation((; PAR, PAR¹, PAR², PAR³)), sinking_speeds = (; POC = w_POC, SFe = w_POC, GOC = w_GOC, BFe = w_GOC, PSi = w_GOC, CaCO₃ = w_GOC), mixed_layer_depth = zₘₓₗ, euphotic_layer_depth = zₑᵤ)
+                           light_attenuation_model = MultiBandPhotosyntheticallyActiveRadiation(; grid, surface_PAR = PAR⁰), 
+                           sinking_speeds = (; POC = w_POC, SFe = w_POC, GOC = w_GOC, BFe = w_GOC, PSi = w_GOC, CaCO₃ = w_GOC),
+                            mixed_layer_depth = zₘₓₗ, euphotic_layer_depth = zₑᵤ)
 
-
-CO₂_flux = GasExchange(; gas = :CO₂)
+CO₂_flux = CarbonDioxideGasExchangeBoundaryCondition()
 
 funT = FunctionField{Center, Center, Center}(temp, grid; clock)
 S = ConstantField(35)
@@ -88,9 +89,9 @@ model = NonhydrostaticModel(; grid,
                               clock,
                               closure = ScalarDiffusivity(VerticallyImplicitTimeDiscretization(), κ = κₜ),
                               biogeochemistry,
-                              boundary_conditions = (DIC = FieldBoundaryConditions(top = CO₂_flux), ),
-                              auxiliary_fields = (; S, zₘₓₗ, zₑᵤ, Si̅ = yearly_maximum_silicate, D_dust = dust_deposition, Ω = carbonate_sat_ratio, PAR, PAR¹, PAR², PAR³)
-                              )
+                              boundary_conditions = (DIC = FieldBoundaryConditions(top = CO₂_flux), ))
+
+
 @info "Setting initial values..."
 set!(model, P = 6.95, D = 6.95, Z = 0.695,  M = 0.695, Pᶜʰˡ = 1.671,  Dᶜʰˡ = 1.671, Pᶠᵉ =7e-6 * 1e9 / 1e6 * 6.95, Dᶠᵉ = 7e-6 * 1e9 / 1e6 * 6.95, Dˢⁱ = 1.162767, DOC = 0.0, POC = 0.0, GOC = 0.0, SFe = 7e-6 * 1e9 / 1e6 *1.256, BFe =7e-6 * 1e9 / 1e6 *1.256, NO₃ = 6.202e-2, NH₄ = 0.25*6.202e-2, PO₄ = 0.8722, Fe = 1.256, Si = 7.313, CaCO₃ = 0.29679635764590534, DIC = 2139.0, Alk = 2366.0, O₂ = 237.0, T = funT) #Using Copernicus Data (26.665, 14.)
 # ## Simulation
