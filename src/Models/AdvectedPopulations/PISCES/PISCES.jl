@@ -50,8 +50,10 @@ using OceanBioME.BoxModels: BoxModel
 
 using Oceananigans.Biogeochemistry: AbstractContinuousFormBiogeochemistry
 
+
+
 import OceanBioME: redfield, conserved_tracers, maximum_sinking_velocity, chlorophyll
-import OceanBioME.Models.Sediments: nitrogen_flux, carbon_flux, remineralisation_receiver, sinking_tracers # these need to be defined for PISCES
+
 
 import Oceananigans.Biogeochemistry: required_biogeochemical_tracers,
                                      required_biogeochemical_auxiliary_fields,
@@ -63,7 +65,10 @@ import OceanBioME: maximum_sinking_velocity
 import Adapt: adapt_structure, adapt
 import Base: show, summary
 
-struct PISCES{FT, PD, ZM, OT, W, CF, ZF} <: AbstractContinuousFormBiogeochemistry
+import OceanBioME.Models.Sediments: nitrogen_flux, carbon_flux, remineralisation_receiver, sinking_tracers
+
+struct PISCES{FT, PD, ZM, OT, W, CF, ZF, FFMLD, FFEU} <: AbstractContinuousFormBiogeochemistry
+
 
     growth_rate_at_zero :: FT # add list of parameters here, assuming theyre all just numbers FT will be fine for advect_particles_kernel
     growth_rate_reference_for_light_limitation :: FT
@@ -176,8 +181,8 @@ struct PISCES{FT, PD, ZM, OT, W, CF, ZF} <: AbstractContinuousFormBiogeochemistr
     max_FeC_ratio_of_bacteria :: FT
     Fe_half_saturation_const_for_Bacteria :: FT    #not sure what this should be called
 
-    mixed_layer_depth :: CF
-    euphotic_layer_depth :: CF
+    mixed_layer_depth :: FFMLD
+    euphotic_layer_depth :: FFEU
     yearly_maximum_silicate :: CF
     dust_deposition :: ZF
 
@@ -297,17 +302,17 @@ struct PISCES{FT, PD, ZM, OT, W, CF, ZF} <: AbstractContinuousFormBiogeochemistr
                     max_FeC_ratio_of_bacteria :: FT,
                     Fe_half_saturation_const_for_Bacteria :: FT,    #not sure what this should be called
                     
-                    mixed_layer_depth :: CF,
-                    euphotic_layer_depth :: CF,
+                    mixed_layer_depth :: FFMLD,
+                    euphotic_layer_depth :: FFEU,
                     yearly_maximum_silicate :: CF,
                     dust_deposition :: ZF,
                     vertical_diffusivity :: CF, 
                     carbonate_sat_ratio :: ZF,
 
-                    sinking_velocities :: W,) where {FT, PD, ZM, OT, W, CF, ZF} # then do the same here (this is all just annoying boiler plate but we need it to make the next function work)
+                    sinking_velocities :: W,) where {FT, PD, ZM, OT, W, CF, ZF, FFMLD, FFEU} # then do the same here (this is all just annoying boiler plate but we need it to make the next function work)
 
 
-        return new{FT, PD, ZM, OT, W, CF, ZF}(growth_rate_at_zero,
+        return new{FT, PD, ZM, OT, W, CF, ZF, FFMLD, FFEU}(growth_rate_at_zero,
                             growth_rate_reference_for_light_limitation,
                             basal_respiration_rate,
                             temperature_sensitivity_of_growth,
@@ -543,8 +548,8 @@ end
                    max_FeC_ratio_of_bacteria :: FT = 10.0e-3,     #or 6
                    Fe_half_saturation_const_for_Bacteria :: FT = 0.03, #or 2.5e-10  
 
-                   mixed_layer_depth :: CF = ConstantField(-100),
-                   euphotic_layer_depth :: CF = ConstantField(-50),
+                   mixed_layer_depth :: FFMLD = FunctionField{Center, Center, Center}(-100.0, grid),
+                   euphotic_layer_depth :: FFEU =  FunctionField{Center, Center, Center}(-50.0, grid),
                    vertical_diffusivity :: CF  = ConstantField(1),
                    yearly_maximum_silicate :: CF = ConstantField(1),
                    dust_deposition :: ZF = ZeroField(),
@@ -559,7 +564,7 @@ end
                   sediment_model::S = nothing,
 
                 
-                  sinking_speeds = (POC = 0.0, GOC = 0.0, SFe = 0.0, BFe = 0.0, PSi = 0.0, CaCO₃ = 0.0),  #change all 1.0s to w_GOC
+                  sinking_speeds = (POC = 0.0, GOC = 0.0, SFe = 0.0, BFe = 0.0, PSi = 0.0, CaCO₃ = 0.0),
                   
                   carbonate_sat_ratio :: ZF = ZeroField(),
                   open_bottom::Bool = true,
@@ -715,8 +720,8 @@ function PISCES(; grid,
                    max_FeC_ratio_of_bacteria :: FT = 10.0e-3,     #or 6
                    Fe_half_saturation_const_for_Bacteria :: FT = 0.03, #or 2.5e-10  
 
-                   mixed_layer_depth :: CF = ConstantField(-100),
-                   euphotic_layer_depth :: CF = ConstantField(-50),
+                   mixed_layer_depth :: FFMLD = FunctionField{Center, Center, Center}(-100.0, grid),
+                   euphotic_layer_depth :: FFEU =  FunctionField{Center, Center, Center}(-50.0, grid),
                    vertical_diffusivity :: CF  = ConstantField(1),
                    yearly_maximum_silicate :: CF = ConstantField(1),
                    dust_deposition :: ZF = ZeroField(),
@@ -731,7 +736,7 @@ function PISCES(; grid,
                   sediment_model::S = nothing,
 
                 
-                  sinking_speeds = (POC = 0.0, GOC = 0.0, SFe = 0.0, BFe = 0.0, PSi = 0.0, CaCO₃ = 0.0),  #change all 1.0s to w_GOC
+                  sinking_speeds = (POC = 0.0, GOC = 0.0, SFe = 0.0, BFe = 0.0, PSi = 0.0, CaCO₃ = 0.0),
                   
                   carbonate_sat_ratio :: ZF = ZeroField(),
                   open_bottom::Bool = true,
@@ -739,7 +744,7 @@ function PISCES(; grid,
                   scale_negatives = false,
 
                   particles::P = nothing,
-                  modifiers::M = nothing) where {FT, PD, ZM, OT, LA, S, P, M, CF, ZF}
+                  modifiers::M = nothing) where {FT, PD, ZM, OT, LA, S, P, M, CF, ZF, FFMLD, FFEU}
 
     if !isnothing(sediment_model) && !open_bottom
         @warn "You have specified a sediment model but not `open_bottom` which will not work as the tracer will settle in the bottom cell"
@@ -945,4 +950,5 @@ include("zooplankton.jl")
 
 @inline sinking_tracers(::PISCES) = (:POC, :GOC, :SFe, :BFe, :PSi, :CaCO₃) # please list them here
 
+@inline chlorophyll(model) = model.tracers.Pᶜʰˡ + model.tracers.Dᶜʰˡ
 end # module

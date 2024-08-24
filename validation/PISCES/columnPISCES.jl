@@ -29,12 +29,14 @@ nothing #hide
 
 @inline fmld1(t) = H(t, 50days, year) * (1 / (1 + exp(-(t - 100days) / 5days))) * (1 / (1 + exp((t - 330days) / 25days)))
 
-@inline MLD(t) = - (10 + 340 * (1 - fmld1(year - eps(year)) * exp(-mod(t, year) / 25days) - fmld1(mod(t, year))))
+@inline MLD(x, y, z, t) = - (10 + 340 * (1 - fmld1(year - eps(year)) * exp(-mod(t, year) / 25days) - fmld1(mod(t, year))))
 
-@inline κₜ(x, y, z, t) = 0.1*(1e-2 * (1 + tanh((z - MLD(t)) / 10)) / 2 + 1e-4)
+@inline κₜ(x, y, z, t) = (1e-2 * (1 + tanh((z - MLD(x, y, z, t)) / 10)) / 2 + 1e-4)
 
-@inline temp(x, y, z, t) = (2.4 * cos(t * 2π / year + 50days) + 10)*exp(z/10)
-#@inline temp(x, y, z, t) = 14*exp(z/100)
+#@inline temp(x, y, z, t) = (2.4 * cos(t * 2π / year + 50days) + 10)*exp(z/50)
+@inline temp(x, y, z, t) = 14*exp(z/10)
+
+@inline euphotic(x, y, z, t) = - 50.0
 nothing #hide
 
 PAR_func(x, y, z, t) = PAR⁰(x,y,t)*exp(z/10) # Modify the PAR based on the nominal depth and exponential decay
@@ -43,8 +45,6 @@ PAR_func1(x, y, z, t) = 1/3*PAR⁰(x,y,t)*exp(z/10)
 PAR_func2(x, y, z, t) = 1/3*PAR⁰(x,y,t)*exp(z/10)
 PAR_func3(x, y, z, t) = 1/3*PAR⁰(x,y,t)*exp(z/10)
 
-mixed_layer_depth = ConstantField(-100)
-euphotic_layer_depth = ConstantField(-50)
 yearly_maximum_silicate = ConstantField(1) 
 dust_deposition = ConstantField(0)
 carbonate_sat_ratio = ConstantField(0)
@@ -52,14 +52,17 @@ carbonate_sat_ratio = ConstantField(0)
 #w_GOC(z) = 30/day + (200/day - 30/day)*(max(0, abs(z)-100))/(5000)
 w_GOC = 30/day
 w_POC = 2.0/day
-grid = RectilinearGrid(size = (1, 1, 50), extent = (20meters, 20meters, 200meters))
+grid = RectilinearGrid(size = (1, 1, 100), extent = (20meters, 20meters, 400meters))
 
 clock = Clock(; time = 0.0)
 
 PAR = FunctionField{Center, Center, Center}(PAR_func, grid; clock)
+
 PAR₁ = FunctionField{Center, Center, Center}(PAR_func1, grid; clock)
 PAR₂ = FunctionField{Center, Center, Center}(PAR_func2, grid; clock)
 PAR₃ = FunctionField{Center, Center, Center}(PAR_func3, grid; clock)
+zₘₓₗ = FunctionField{Center, Center, Center}(MLD, grid; clock)
+zₑᵤ = FunctionField{Center, Center, Center}(euphotic, grid; clock)
 
 #ff = FunctionField{Nothing, Nothing, Face}(w_GOC, grid)
 # ## Grid
@@ -73,7 +76,8 @@ PAR₃ = FunctionField{Center, Center, Center}(PAR_func3, grid; clock)
 
 biogeochemistry = PISCES(; grid,
                            light_attenuation_model = MultiBandPhotosyntheticallyActiveRadiation(; grid, surface_PAR = PAR⁰), 
-                           sinking_speeds = (; POC = w_POC, SFe = w_POC, GOC = w_GOC, BFe = w_GOC, PSi = w_GOC, CaCO₃ = w_GOC))
+                           sinking_speeds = (; POC = w_POC, SFe = w_POC, GOC = w_GOC, BFe = w_GOC, PSi = w_GOC, CaCO₃ = w_GOC),
+                            mixed_layer_depth = zₘₓₗ, euphotic_layer_depth = zₑᵤ)
 
 CO₂_flux = CarbonDioxideGasExchangeBoundaryCondition()
 
@@ -83,19 +87,19 @@ S = ConstantField(35)
 @info "Setting up the model..."
 model = NonhydrostaticModel(; grid,
                               clock,
-                              closure = ScalarDiffusivity(ν = κₜ, κ = κₜ),
+                              closure = ScalarDiffusivity(VerticallyImplicitTimeDiscretization(), κ = κₜ),
                               biogeochemistry,
                               boundary_conditions = (DIC = FieldBoundaryConditions(top = CO₂_flux), ))
 
-@info "Setting initial values..."
-set!(model, NO₃ = 4.0, NH₄ = 0.1, P = 4.26, D = 4.26, Z = .426, M = .426,  Pᶠᵉ = 7e-6 * 1e9 / 1e6 * 4.26, Dᶠᵉ = 7e-6 * 1e9 / 1e6 * 4.26, Pᶜʰˡ = 1.0, Dᶜʰˡ = 1.0, Dˢⁱ = 0.67734, SFe = 7e-6 * 1e9 / 1e6 * 0.8, BFe = 7e-6 * 1e9 / 1e6 * 0.8, Fe = 0.8, O₂ = 264.0, Si = 4.557, Alk = 2360.0, PO₄ = 1.8114, DIC = 2000.0, CaCO₃ = 0.0001, T = funT)
 
+@info "Setting initial values..."
+set!(model, P = 6.95, D = 6.95, Z = 0.695,  M = 0.695, Pᶜʰˡ = 1.671,  Dᶜʰˡ = 1.671, Pᶠᵉ =7e-6 * 1e9 / 1e6 * 6.95, Dᶠᵉ = 7e-6 * 1e9 / 1e6 * 6.95, Dˢⁱ = 1.162767, DOC = 0.0, POC = 0.0, GOC = 0.0, SFe = 7e-6 * 1e9 / 1e6 *1.256, BFe =7e-6 * 1e9 / 1e6 *1.256, NO₃ = 6.202e-2, NH₄ = 0.25*6.202e-2, PO₄ = 0.8722, Fe = 1.256, Si = 7.313, CaCO₃ = 0.29679635764590534, DIC = 2139.0, Alk = 2366.0, O₂ = 237.0, T = funT) #Using Copernicus Data (26.665, 14.)
 # ## Simulation
 # Next we setup a simulation and add some callbacks that:
 # - Show the progress of the simulation
 # - Store the model and particles output
 
-simulation = Simulation(model, Δt = 10minutes, stop_time = 365days)
+simulation = Simulation(model, Δt = 90minutes, stop_time = 2years)
 
 progress_message(sim) = @printf("Iteration: %04d, time: %s, Δt: %s, wall time: %s\n",
                                 iteration(sim),
@@ -189,7 +193,7 @@ using CairoMakie
 
 fig = Figure(size = (4000, 2100), fontsize = 20)
 
-axis_kwargs = (xlabel = "Time (days)", ylabel = "z (m)", limits = ((0, times[end] / days), (-150meters, 0)))
+axis_kwargs = (xlabel = "Time (days)", ylabel = "z (m)", limits = ((0, times[end] / days), (-400meters, 0)))
 
 axP = Axis(fig[1, 1]; title = "Nanophytoplankton concentration (μmolC/L)", axis_kwargs...)
 hmP = heatmap!(times / days, z, interior(P, 1, 1, :, :)', colormap = :batlow)
