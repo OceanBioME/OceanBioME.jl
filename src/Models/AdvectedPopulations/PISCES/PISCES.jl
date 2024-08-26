@@ -950,5 +950,5 @@ include("zooplankton.jl")
 
 @inline sinking_tracers(::PISCES) = (:POC, :GOC, :SFe, :BFe, :PSi, :CaCO₃) # please list them here
 
-@inline chlorophyll(model) = model.tracers.Pᶜʰˡ + model.tracers.Dᶜʰˡ
+@inline chlorophyll(bgc::PISCES, model) = model.tracers.Pᶜʰˡ + model.tracers.Dᶜʰˡ
 end # module

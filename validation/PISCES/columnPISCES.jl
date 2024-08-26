@@ -23,7 +23,7 @@ nothing #hide
 # ## Surface PAR and turbulent vertical diffusivity based on idealised mixed layer depth 
 # Setting up idealised functions for PAR and diffusivity (details here can be ignored but these are typical of the North Atlantic)
 
-@inline PAR⁰(t) = 60 * (1 - cos((t + 15days) * 2π / year)) * (1 / (1 + 0.2 * exp(-((mod(t, year) - 200days) / 50days)^2))) + 2
+@inline PAR⁰(x,y,t) = 60 * (1 - cos((t + 15days) * 2π / year)) * (1 / (1 + 0.2 * exp(-((mod(t, year) - 200days) / 50days)^2))) + 2
 
 @inline H(t, t₀, t₁) = ifelse(t₀ < t < t₁, 1.0, 0.0)
 
@@ -39,28 +39,14 @@ nothing #hide
 @inline euphotic(x, y, z, t) = - 50.0
 nothing #hide
 
-PAR_func(x, y, z, t) = PAR⁰(x,y,t)*exp(z/10) # Modify the PAR based on the nominal depth and exponential decay
 
-PAR_func1(x, y, z, t) = 1/3*PAR⁰(x,y,t)*exp(z/10)
-PAR_func2(x, y, z, t) = 1/3*PAR⁰(x,y,t)*exp(z/10)
-PAR_func3(x, y, z, t) = 1/3*PAR⁰(x,y,t)*exp(z/10)
-
-yearly_maximum_silicate = ConstantField(1) 
-dust_deposition = ConstantField(0)
-carbonate_sat_ratio = ConstantField(0)
-
-#w_GOC(z) = 30/day + (200/day - 30/day)*(max(0, abs(z)-100))/(5000)
+#w_GOC(z) = 30/day + (200/day - 30/day)*(max(0, abs(z)-abs(zₘₓₗ)))/(5000)
 w_GOC = 30/day
 w_POC = 2.0/day
 grid = RectilinearGrid(size = (1, 1, 100), extent = (20meters, 20meters, 400meters))
 
 clock = Clock(; time = 0.0)
 
-PAR = FunctionField{Center, Center, Center}(PAR_func, grid; clock)
-
-PAR₁ = FunctionField{Center, Center, Center}(PAR_func1, grid; clock)
-PAR₂ = FunctionField{Center, Center, Center}(PAR_func2, grid; clock)
-PAR₃ = FunctionField{Center, Center, Center}(PAR_func3, grid; clock)
 zₘₓₗ = FunctionField{Center, Center, Center}(MLD, grid; clock)
 zₑᵤ = FunctionField{Center, Center, Center}(euphotic, grid; clock)
 
@@ -77,7 +63,7 @@ zₑᵤ = FunctionField{Center, Center, Center}(euphotic, grid; clock)
 biogeochemistry = PISCES(; grid,
                            light_attenuation_model = MultiBandPhotosyntheticallyActiveRadiation(; grid, surface_PAR = PAR⁰), 
                            sinking_speeds = (; POC = w_POC, SFe = w_POC, GOC = w_GOC, BFe = w_GOC, PSi = w_GOC, CaCO₃ = w_GOC),
-                            mixed_layer_depth = zₘₓₗ, euphotic_layer_depth = zₑᵤ)
+                           mixed_layer_depth = zₘₓₗ, euphotic_layer_depth = zₑᵤ)
 
 CO₂_flux = CarbonDioxideGasExchangeBoundaryCondition()
 
@@ -89,17 +75,19 @@ model = NonhydrostaticModel(; grid,
                               clock,
                               closure = ScalarDiffusivity(VerticallyImplicitTimeDiscretization(), κ = κₜ),
                               biogeochemistry,
-                              boundary_conditions = (DIC = FieldBoundaryConditions(top = CO₂_flux), ))
-
+                              boundary_conditions = (DIC = FieldBoundaryConditions(top = CO₂_flux), ),
+                              auxiliary_fields = (; S)
+                              )
+                              
 
 @info "Setting initial values..."
-set!(model, P = 6.95, D = 6.95, Z = 0.695,  M = 0.695, Pᶜʰˡ = 1.671,  Dᶜʰˡ = 1.671, Pᶠᵉ =7e-6 * 1e9 / 1e6 * 6.95, Dᶠᵉ = 7e-6 * 1e9 / 1e6 * 6.95, Dˢⁱ = 1.162767, DOC = 0.0, POC = 0.0, GOC = 0.0, SFe = 7e-6 * 1e9 / 1e6 *1.256, BFe =7e-6 * 1e9 / 1e6 *1.256, NO₃ = 6.202e-2, NH₄ = 0.25*6.202e-2, PO₄ = 0.8722, Fe = 1.256, Si = 7.313, CaCO₃ = 0.29679635764590534, DIC = 2139.0, Alk = 2366.0, O₂ = 237.0, T = funT) #Using Copernicus Data (26.665, 14.)
+set!(model, P = 6.95, D = 6.95, Z = 0.695,  M = 0.695, Pᶜʰˡ = 1.671,  Dᶜʰˡ = 1.671, Pᶠᵉ =7e-6 * 1e9 / 1e6 * 6.95, Dᶠᵉ = 7e-6 * 1e9 / 1e6 * 6.95, Dˢⁱ = 1.162767, DOC = 0.0, POC = 0.0, GOC = 0.0, SFe = 7e-6 * 1e9 / 1e6 *1.256, BFe =7e-6 * 1e9 / 1e6 *1.256, NO₃ = 6.202, NH₄ = 0.25*6.202, PO₄ = 0.8722, Fe = 1.256, Si = 7.313, CaCO₃ = 0.001, DIC = 2139.0, Alk = 2366.0, O₂ = 237.0, T = funT) #Using Copernicus Data (26.665, 14.)
 # ## Simulation
 # Next we setup a simulation and add some callbacks that:
 # - Show the progress of the simulation
 # - Store the model and particles output
 
-simulation = Simulation(model, Δt = 90minutes, stop_time = 2years)
+simulation = Simulation(model, Δt = 50minutes, stop_time = 2years)
 
 progress_message(sim) = @printf("Iteration: %04d, time: %s, Δt: %s, wall time: %s\n",
                                 iteration(sim),
@@ -179,7 +167,7 @@ carbon_export = zeros(length(times))
 using Oceananigans.Biogeochemistry: biogeochemical_drift_velocity
 
 for (i, t) in enumerate(times)
-    air_sea_CO₂_flux[i] = CO₂_flux.condition.func(0.0, 0.0, t, DIC[1, 1, grid.Nz, i], Alk[1, 1, grid.Nz, i], temp(1, 1, 0, t), 35)
+    #air_sea_CO₂_flux[i] = CO₂_flux.condition.func(0.0, 0.0, t, DIC[1, 1, grid.Nz, i], Alk[1, 1, grid.Nz, i], temp(1, 1, 0, t), 35)
     carbon_export[i] = (POC[1, 1, grid.Nz-20, i] * biogeochemical_drift_velocity(model.biogeochemistry, Val(:POC)).w[1, 1, grid.Nz-20] +
                         GOC[1, 1, grid.Nz-20, i] * biogeochemical_drift_velocity(model.biogeochemistry, Val(:GOC)).w[1, 1, grid.Nz-20]) * redfield(Val(:GOC), model.biogeochemistry)
 end
@@ -299,4 +287,7 @@ lines!(axfDIC, times / days, air_sea_CO₂_flux / 1e3 * CO₂_molar_mass * year,
 lines!(axfDIC, times / days, carbon_export / 1e3    * CO₂_molar_mass * year, linewidth = 3, label = "Sinking export")
 Legend(fig[7, 2], axfDIC, framevisible = false)
 
+axs = []
+push!(axs, Axis(fig[7,3], xlabel = "Time (days)", title = "Mixed Layer Depth (m)"))
+lines!(axs[end], (0:1day:2years)/days, x ->  MLD(0, 0, 0, x*days), linewidth = 3)
 fig
