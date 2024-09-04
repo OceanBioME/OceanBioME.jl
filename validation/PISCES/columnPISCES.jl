@@ -94,6 +94,7 @@ progress_message(sim) = @printf("Iteration: %04d, time: %s, Δt: %s, wall time: 
 simulation.callbacks[:progress] = Callback(progress_message, TimeInterval(10day)
 )
 
+#NaN Checker function. Could be removed to improve speed, if confident of model stability
 function non_zero_fields!(model) 
     @inbounds for (idx, tracer) in enumerate(model.tracers)
         for i in 1:50
