@@ -21,7 +21,7 @@ const year = years = 365days
 nothing #hide
 
 # ## Surface PAR and turbulent vertical diffusivity based on idealised mixed layer depth 
-# Setting up idealised functions for PAR and diffusivity (details here can be ignored but these are typical of the North Atlantic)
+# Setting up idealised functions for PAR and diffusivity (details here can be ignored but these are typical of the North Atlantic), temperaeture and euphotic layer
 
 @inline PAR⁰(x,y,t) = 60 * (1 - cos((t + 15days) * 2π / year)) * (1 / (1 + 0.2 * exp(-((mod(t, year) - 200days) / 50days)^2))) + 2
 
@@ -33,13 +33,12 @@ nothing #hide
 
 @inline κₜ(x, y, z, t) = (1e-2 * (1 + tanh((z - MLD(x, y, z, t)) / 10)) / 2 + 1e-4)
 
-#@inline temp(x, y, z, t) = (2.4 * cos(t * 2π / year + 50days) + 10)*exp(z/50)
-@inline temp(x, y, z, t) = 14*exp(z/10)
+@inline temp(x, y, z, t) = (2.4 * cos(t * 2π / year + 50days) + 10)*exp(z/10)
 
 @inline euphotic(x, y, z, t) = - 50.0
 nothing #hide
 
-
+#The commented equation is the correct form of w_GOC, but have not figured out how to implement this
 #w_GOC(z) = 30/day + (200/day - 30/day)*(max(0, abs(z)-abs(zₘₓₗ)))/(5000)
 w_GOC = 30/day
 w_POC = 2.0/day
@@ -51,9 +50,6 @@ zₘₓₗ = FunctionField{Center, Center, Center}(MLD, grid; clock)
 zₑᵤ = FunctionField{Center, Center, Center}(euphotic, grid; clock)
 
 #ff = FunctionField{Nothing, Nothing, Face}(w_GOC, grid)
-# ## Grid
-# Define the grid.
-
 
 # ## Model
 # First we define the biogeochemical model including carbonate chemistry (for which we also define temperature (``T``) and salinity (``S``) fields)
@@ -287,6 +283,7 @@ lines!(axfDIC, times / days, air_sea_CO₂_flux / 1e3 * CO₂_molar_mass * year,
 lines!(axfDIC, times / days, carbon_export / 1e3    * CO₂_molar_mass * year, linewidth = 3, label = "Sinking export")
 Legend(fig[7, 2], axfDIC, framevisible = false)
 
+#Plotting a graph of Mixed Layer Depth
 axs = []
 push!(axs, Axis(fig[7,3], xlabel = "Time (days)", title = "Mixed Layer Depth (m)"))
 lines!(axs[end], (0:1day:2years)/days, x ->  MLD(0, 0, 0, x*days), linewidth = 3)
