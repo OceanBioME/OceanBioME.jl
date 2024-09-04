@@ -77,7 +77,7 @@ model = NonhydrostaticModel(; grid,
                               
 
 @info "Setting initial values..."
-set!(model, P = 6.95, D = 6.95, Z = 0.695,  M = 0.695, Pᶜʰˡ = 1.671,  Dᶜʰˡ = 1.671, Pᶠᵉ =7e-6 * 1e9 / 1e6 * 6.95, Dᶠᵉ = 7e-6 * 1e9 / 1e6 * 6.95, Dˢⁱ = 1.162767, DOC = 0.0, POC = 0.0, GOC = 0.0, SFe = 7e-6 * 1e9 / 1e6 *1.256, BFe =7e-6 * 1e9 / 1e6 *1.256, NO₃ = 6.202, NH₄ = 0.25*6.202, PO₄ = 0.8722, Fe = 1.256, Si = 7.313, CaCO₃ = 0.001, DIC = 2139.0, Alk = 2366.0, O₂ = 237.0, T = funT) #Using Copernicus Data (26.665, 14.)
+set!(model, P = 6.95, D = 6.95, Z = 0.695,  M = 0.695, Pᶜʰˡ = 1.671,  Dᶜʰˡ = 1.671, Pᶠᵉ =7e-6 * 1e9 / 1e6 * 6.95, Dᶠᵉ = 7e-6 * 1e9 / 1e6 * 6.95, Dˢⁱ = 1.162767, DOC = 0.0, POC = 0.0, GOC = 0.0, SFe = 7e-6 * 1e9 / 1e6 *1.256, BFe =7e-6 * 1e9 / 1e6 *1.256, NO₃ = 6.202, NH₄ = 0.25*6.202, PO₄ = 0.8722, Fe = 1.256, Si = 7.313, CaCO₃ = 0.001, DIC = 2139.0, Alk = 2366.0, O₂ = 237.0, T = funT) #Using Copernicus Data (26.665, 14.), Calcite is not correct, but this is to see it on the graphs
 # ## Simulation
 # Next we setup a simulation and add some callbacks that:
 # - Show the progress of the simulation
