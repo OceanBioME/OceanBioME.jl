@@ -4,7 +4,7 @@
 
 #DIC is significant as required by phytoplankton for photosynthesis, and by calcifying organisms for calcite shells.
 
-@inline function (bgc::PISCES)(::Val{:DIC}, x, y, z, t, P, D, Z, M, Pᶜʰˡ, Dᶜʰˡ, Pᶠᵉ, Dᶠᵉ, Dˢⁱ, DOC, POC, GOC, SFe, BFe, PSi, NO₃, NH₄, PO₄, Fe, Si, CaCO₃, DIC, Alk, O₂, T, zₘₓₗ, zₑᵤ, Si̅, D_dust, Ω, PAR, PAR₁, PAR₂, PAR₃)
+@inline function (bgc::PISCES)(::Val{:DIC}, x, y, z, t, P, D, Z, M, Pᶜʰˡ, Dᶜʰˡ, Pᶠᵉ, Dᶠᵉ, Dˢⁱ, DOC, POC, GOC, SFe, BFe, PSi, NO₃, NH₄, PO₄, Fe, Si, CaCO₃, DIC, Alk, O₂, T, zₘₓₗ, zₑᵤ, Si̅, D_dust, Ω, PAR, PAR₁, PAR², PAR³)
     #Parameters
     γᶻ, γᴹ = bgc.excretion_as_DOM
     σᶻ, σᴹ = bgc.non_assimilated_fraction
@@ -23,15 +23,15 @@
     eᴹ =  growth_efficiency(eₘₐₓᴹ, σᴹ, gₚᴹ, g_Dᴹ, gₚₒᴹ, g_Zᴹ,Pᶠᵉ, Dᶠᵉ, SFe, P, D, POC, bgc)
 
     #Growth rates for phytoplankton
-    ϕ₀ = bgc.latitude
-    L_day_param = bgc.length_of_day
-    ϕ = latitude(ϕ₀, y)
-    L_day = day_length(ϕ, t, L_day_param)
+    φ = bgc.latitude
+    φ = latitude(φ, y)
 
+
+    L_day = day_length(ϕ, t)
     t_darkᴾ = bgc.mean_residence_time_of_phytoplankton_in_unlit_mixed_layer.P
     t_darkᴰ = bgc.mean_residence_time_of_phytoplankton_in_unlit_mixed_layer.D
-    PARᴾ = P_PAR(PAR₁, PAR₂, PAR₃, bgc)
-    PARᴰ = D_PAR(PAR₁, PAR₂, PAR₃, bgc)
+    PARᴾ = P_PAR(PAR₁, PAR², PAR³, bgc)
+    PARᴰ = D_PAR(PAR₁, PAR², PAR³, bgc)
 
     Lₗᵢₘᴾ = P_nutrient_limitation(P, PO₄, NO₃, NH₄, Pᶜʰˡ, Pᶠᵉ, bgc)[1]
     Lₗᵢₘᴰ = D_nutrient_limitation(D, PO₄, NO₃, NH₄, Si, Dᶜʰˡ, Dᶠᵉ, Si̅, bgc)[1]
@@ -51,7 +51,7 @@
     μᴰ*D - μᴾ*P) #eq59
 end
 
-@inline function (bgc::PISCES)(::Val{:Alk}, x, y, z, t, P, D, Z, M, Pᶜʰˡ, Dᶜʰˡ, Pᶠᵉ, Dᶠᵉ, Dˢⁱ, DOC, POC, GOC, SFe, BFe, PSi, NO₃, NH₄, PO₄, Fe, Si, CaCO₃, DIC, Alk, O₂, T, zₘₓₗ, zₑᵤ, Si̅, D_dust, Ω, PAR, PAR₁, PAR₂, PAR₃) # eq59
+@inline function (bgc::PISCES)(::Val{:Alk}, x, y, z, t, P, D, Z, M, Pᶜʰˡ, Dᶜʰˡ, Pᶠᵉ, Dᶠᵉ, Dˢⁱ, DOC, POC, GOC, SFe, BFe, PSi, NO₃, NH₄, PO₄, Fe, Si, CaCO₃, DIC, Alk, O₂, T, zₘₓₗ, zₑᵤ, Si̅, D_dust, Ω, PAR, PAR₁, PAR², PAR³) # eq59
     #Parameters
     θᴺᶜ = bgc.NC_redfield_ratio
     rₙₒ₃¹ = bgc. CN_ratio_of_denitrification
@@ -72,15 +72,15 @@ end
     eᶻ = growth_efficiency(eₘₐₓᶻ, σᶻ, gₚᶻ, g_Dᶻ, gₚₒᶻ, 0, Pᶠᵉ, Dᶠᵉ, SFe, P, D, POC, bgc) 
     eᴹ =  growth_efficiency(eₘₐₓᴹ, σᴹ, gₚᴹ, g_Dᴹ, gₚₒᴹ, g_Zᴹ,Pᶠᵉ, Dᶠᵉ, SFe, P, D, POC, bgc)
     #Uptake rates of nitrogen and ammonium
-    ϕ₀ = bgc.latitude
-    L_day_param = bgc.length_of_day
-    ϕ = latitude(ϕ₀, y)
-    L_day = day_length(ϕ, t, L_day_param)
+    φ = bgc.latitude
+    φ = latitude(φ, y)
 
+
+    L_day = day_length(ϕ, t)
     t_darkᴾ = bgc.mean_residence_time_of_phytoplankton_in_unlit_mixed_layer.P
     t_darkᴰ = bgc.mean_residence_time_of_phytoplankton_in_unlit_mixed_layer.D
-    PARᴾ = P_PAR(PAR₁, PAR₂, PAR₃, bgc)
-    PARᴰ = D_PAR(PAR₁, PAR₂, PAR₃, bgc)
+    PARᴾ = P_PAR(PAR₁, PAR², PAR³, bgc)
+    PARᴰ = D_PAR(PAR₁, PAR², PAR³, bgc)
 
     μₙₒ₃ᴾ = uptake_rate_nitrate_P(P, PO₄, NO₃, NH₄, Pᶜʰˡ, Pᶠᵉ, T, zₘₓₗ, zₑᵤ, L_day, PARᴾ, t_darkᴾ, Si̅, bgc)
     μₙₒ₃ᴰ = uptake_rate_nitrate_D(D, PO₄, NO₃, NH₄, Si, Dᶜʰˡ, Dᶠᵉ, T, zₘₓₗ, zₑᵤ, L_day, PARᴰ, t_darkᴰ, Si̅, bgc)

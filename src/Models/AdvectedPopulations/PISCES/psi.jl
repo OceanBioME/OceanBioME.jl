@@ -35,7 +35,10 @@ end
     mᴰ = bgc.phytoplankton_mortality_rate.D
 
     #Also required
-    sh = shear_rate(z, zₘₓₗ)
+    τ₀ = bgc.background_shear
+    τₘₓₗ = bgc.mixed_layer_shear
+
+    sh = shear(z, zₘₓₗ, τ₀, τₘₓₗ)
     wᴰ = D_quadratic_mortality(D, PO₄, NO₃, NH₄, Si, Dᶜʰˡ, Dᶠᵉ, Si̅, bgc)
     θˢⁱᴰ = nutrient_quota(Dˢⁱ, D)
 

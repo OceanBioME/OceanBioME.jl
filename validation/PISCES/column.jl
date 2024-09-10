@@ -47,9 +47,9 @@ PAR_func1(z, t) = PAR⁰(t) / 3 * exp(z/10)
 PAR_func2(z, t) = PAR⁰(t) / 3 * exp(z/10)
 PAR_func3(z, t) = PAR⁰(t) / 3 * exp(z/10)
 
-#w_GOC(z) = 30/day + (200/day - 30/day)*(max(0, abs(z)-100))/(5000)
+large_particle_sinking_speed(z) = -(30/day + (200/day - 30/day)*(max(0, abs(z)-100))/(5000))
 
-w_GOC = 30/day
+#large_particle_sinking_speed = 30/day
 w_POC = 2.0/day
 grid = RectilinearGrid(topology = (Flat, Flat, Bounded), size = (100, ), extent = (400, ))
 
@@ -58,7 +58,7 @@ clock = Clock(; time = 0.0)
 zₘₓₗ = FunctionField{Center, Center, Nothing}(MLD, grid; clock)
 zₑᵤ = FunctionField{Center, Center, Nothing}(euphotic, grid; clock)
 
-#ff = FunctionField{Nothing, Nothing, Face}(w_GOC, grid)
+w_GOC = FunctionField{Nothing, Nothing, Face}(large_particle_sinking_speed, grid)
 
 # ## Model
 # First we define the biogeochemical model including carbonate chemistry (for which we also define temperature (``T``) and salinity (``S``) fields)

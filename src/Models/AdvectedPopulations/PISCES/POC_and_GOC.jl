@@ -37,7 +37,10 @@ end
     gₚₒ_FFᴹ = g_FF*(bₘ^T)*wₚₒ*POC #29a
     
     #Aggregation
-    sh = shear_rate(z, zₘₓₗ)
+    τ₀ = bgc.background_shear
+    τₘₓₗ = bgc.mixed_layer_shear
+
+    sh = shear(z, zₘₓₗ, τ₀, τₘₓₗ)
     Φ₁ᴰᴼᶜ = aggregation_process_for_DOC(DOC, POC, GOC, sh, bgc)[1]
     Φ₃ᴰᴼᶜ = aggregation_process_for_DOC(DOC, POC, GOC, sh, bgc)[3]
     Φ = POC_aggregation(POC, GOC, sh, bgc)
@@ -70,7 +73,10 @@ end
     ∑g_FFᴹ, gₚₒ_FFᴹ, g_GOC_FFᴹ = flux_feeding(z, zₑᵤ, zₘₓₗ, T, POC, GOC, bgc)
     
     #Aggregation
-    sh = shear_rate(z, zₘₓₗ)
+    τ₀ = bgc.background_shear
+    τₘₓₗ = bgc.mixed_layer_shear
+
+    sh = shear(z, zₘₓₗ, τ₀, τₘₓₗ)
     Φ = POC_aggregation(POC, GOC, sh, bgc)
     Φ₂ᴰᴼᶜ = aggregation_process_for_DOC(DOC, POC, GOC, sh, bgc)[2]
 

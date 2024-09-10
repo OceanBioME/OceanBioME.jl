@@ -23,13 +23,9 @@
     #D_quadratic_mortality
     #Forcing equations
 
-@inline nutrient_quota(I,J) = ifelse(J != 0, I/(J + eps(0.0)), 0)
+@inline nutrient_quota(I, J) = ifelse(J == 0, 0, I/(J + eps(0.0))) # this shouldn't be needed as I should be zero if J is zero
+
 @inline concentration_limitation(I, J) = I/(I + J + eps(0.0))
-
-@inline shear_rate(z, zₘₓₗ) = ifelse(z <= zₘₓₗ, 1, 0.01) #Given as 1 in Aumont paper
-
-@inline latitude(ϕ₀, y) = ϕ₀     #need to fix
-@inline day_length(ϕ, t, L_day) = L_day  #temporary
 
 #Expresses growth rate with dependency on day length
 @inline day_dependent_growth_rate(L_day) = 1.5*concentration_limitation(L_day, 0.5)  #eq 3a
@@ -202,14 +198,17 @@ end
     wᴾ = bgc.min_quadratic_mortality_of_phytoplankton
     αᴾ = bgc.initial_slope_of_PI_curve.P
 
-    sh = shear_rate(z, zₘₓₗ)
+    τ₀ = bgc.background_shear
+    τₘₓₗ = bgc.mixed_layer_shear
+
+    sh = shear(z, zₘₓₗ, τ₀, τₘₓₗ)
 
     #L_day
-    ϕ₀ = bgc.latitude
-    L_day_param = bgc.length_of_day
-    ϕ = latitude(ϕ₀, y)
-    L_day = day_length(ϕ, t, L_day_param)
+    φ = bgc.latitude
+    φ = latitude(φ, y)
 
+
+    L_day = day_length(ϕ, t)
     #Grazing
     gₚᶻ = grazing_Z(P, D, POC, T, bgc)[2]     
     gₚᴹ =  grazing_M(P, D, Z, POC, T, bgc)[2]
@@ -231,14 +230,17 @@ end
     Kₘ = bgc.half_saturation_const_for_mortality
     αᴰ = bgc.initial_slope_of_PI_curve.D
 
-    sh = shear_rate(z, zₘₓₗ)
+    τ₀ = bgc.background_shear
+    τₘₓₗ = bgc.mixed_layer_shear
+
+    sh = shear(z, zₘₓₗ, τ₀, τₘₓₗ)
 
     #L_day
-    ϕ₀ = bgc.latitude
-    L_day_param = bgc.length_of_day
-    ϕ = latitude(ϕ₀, y)
-    L_day = day_length(ϕ, t, L_day_param)
+    φ = bgc.latitude
+    φ = latitude(φ, y)
 
+
+    L_day = day_length(ϕ, t)
     #Grazing
     g_Dᶻ = grazing_Z(P, D, POC, T, bgc)[3]
     g_Dᴹ = grazing_M(P, D, Z, POC, T, bgc)[3]
@@ -266,14 +268,17 @@ end
     Kₘ = bgc.half_saturation_const_for_mortality
     wᴾ = bgc.min_quadratic_mortality_of_phytoplankton
 
-    sh = shear_rate(z, zₘₓₗ)
+    τ₀ = bgc.background_shear
+    τₘₓₗ = bgc.mixed_layer_shear
+
+    sh = shear(z, zₘₓₗ, τ₀, τₘₓₗ)
 
     #L_day
-    ϕ₀ = bgc.latitude
-    L_day_param = bgc.length_of_day
-    ϕ = latitude(ϕ₀, y)
-    L_day = day_length(ϕ, t, L_day_param)
+    φ = bgc.latitude
+    φ = latitude(φ, y)
 
+
+    L_day = day_length(ϕ, t)
     #Grazing
     gₚᶻ = grazing_Z(P, D, POC, T, bgc)[2]    
     gₚᴹ = grazing_M(P, D, Z, POC, T, bgc)[2]
@@ -304,12 +309,15 @@ end
     wₘₐₓᴰ = bgc.max_quadratic_mortality_of_diatoms
 
     #L_day
-    ϕ₀ = bgc.latitude
-    L_day_param = bgc.length_of_day
-    ϕ = latitude(ϕ₀, y)
-    L_day = day_length(ϕ, t, L_day_param)
+    φ = bgc.latitude
+    φ = latitude(φ, y)
 
-    sh = shear_rate(z, zₘₓₗ)
+
+    L_day = day_length(ϕ, t)
+    τ₀ = bgc.background_shear
+    τₘₓₗ = bgc.mixed_layer_shear
+
+    sh = shear(z, zₘₓₗ, τ₀, τₘₓₗ)
     
     #Grazing
     g_Dᶻ = grazing_Z(P, D, POC, T, bgc)[3]
@@ -343,7 +351,10 @@ end
     K_Feᴾᶠᵉᵐⁱⁿ = bgc.min_half_saturation_const_for_iron_uptake.P # this seems wrong as doesn't quite match parameter list
     Pₘₐₓ = bgc.threshold_concentration_for_size_dependency.P
 
-    sh = shear_rate(z, zₘₓₗ)
+    τ₀ = bgc.background_shear
+    τₘₓₗ = bgc.mixed_layer_shear
+
+    sh = shear(z, zₘₓₗ, τ₀, τₘₓₗ)
 
     #Grazing
     gₚᶻ = grazing_Z(P, D, POC, T, bgc)[2]    
@@ -371,7 +382,10 @@ end
 
     #Also required
     wᴰ = D_quadratic_mortality(D, PO₄, NO₃, NH₄, Si, Dᶜʰˡ, Dᶠᵉ, Si̅, bgc) #13
-    sh = shear_rate(z, zₘₓₗ)
+    τ₀ = bgc.background_shear
+    τₘₓₗ = bgc.mixed_layer_shear
+
+    sh = shear(z, zₘₓₗ, τ₀, τₘₓₗ)
     
     #Limiting nutrients
     L = D_nutrient_limitation(D, PO₄, NO₃, NH₄, Si, Dᶜʰˡ, Dᶠᵉ, Si̅, bgc)
@@ -399,11 +413,11 @@ end
     αᴰ = bgc.initial_slope_of_PI_curve.D
 
     #L_day
-    ϕ₀ = bgc.latitude
-    L_day_param = bgc.length_of_day
-    ϕ = latitude(ϕ₀, y)
-    L_day = day_length(ϕ, t, L_day_param)
+    φ = bgc.latitude
+    φ = latitude(φ, y)
 
+
+    L_day = day_length(ϕ, t)
     #Grazing
     g_Dᶻ = grazing_Z(P, D, POC, T, bgc)[3]
     g_Dᴹ = grazing_M(P, D, Z, POC, T, bgc)[3]
@@ -418,7 +432,10 @@ end
     #Also required
     θₒₚₜˢⁱᴰ = variation_in_SiC_ratio(D, PO₄, NO₃, NH₄, Si, Dᶜʰˡ, Dᶠᵉ, μᴰ, T, ϕ, Si̅, bgc)
     wᴰ = D_quadratic_mortality(D, PO₄, NO₃, NH₄, Si, Dᶜʰˡ, Dᶠᵉ, Si̅, bgc) #13
-    sh = shear_rate(z, zₘₓₗ)
+    τ₀ = bgc.background_shear
+    τₘₓₗ = bgc.mixed_layer_shear
+
+    sh = shear(z, zₘₓₗ, τ₀, τₘₓₗ)
     
     return (θₒₚₜˢⁱᴰ*(1-δᴰ)*μᴰ*D - nutrient_quota(Dˢⁱ, D)*g_Dᴹ*M -  nutrient_quota(Dˢⁱ, D)*g_Dᶻ*Z
            - mᴰ*concentration_limitation(D, Kₘ)*Dˢⁱ - sh*wᴰ*D*Dˢⁱ) #21

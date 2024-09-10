@@ -34,7 +34,10 @@ end
     θᶠᵉᶻ = bgc.FeC_ratio_of_zooplankton
 
     #Also required
-    sh = shear_rate(z, zₘₓₗ)
+    τ₀ = bgc.background_shear
+    τₘₓₗ = bgc.mixed_layer_shear
+
+    sh = shear(z, zₘₓₗ, τ₀, τₘₓₗ)
     Fe¹ = free_organic_iron(Fe, DOC, T) 
     λₚₒ¹ = particles_carbon_degradation_rate(T, O₂, bgc)
     bFe = Fe
@@ -85,7 +88,10 @@ end
     μₘₐₓ⁰ = bgc.growth_rate_at_zero
 
     #Other required terms
-    sh = shear_rate(z, zₘₓₗ)
+    τ₀ = bgc.background_shear
+    τₘₓₗ = bgc.mixed_layer_shear
+
+    sh = shear(z, zₘₓₗ, τ₀, τₘₓₗ)
     Fe¹ = free_organic_iron(Fe, DOC, T) 
     λₚₒ¹ = particles_carbon_degradation_rate(T, O₂, bgc)
     wᴰ = D_quadratic_mortality(D, PO₄, NO₃, NH₄, Si, Dᶜʰˡ, Dᶠᵉ, Si̅, bgc)

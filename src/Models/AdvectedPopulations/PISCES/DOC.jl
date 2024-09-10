@@ -105,11 +105,11 @@ end
     αᴰ = bgc.initial_slope_of_PI_curve.D
     wₚₒ = bgc.sinking_speed_of_POC
 
-    ϕ₀ = bgc.latitude
-    L_day_param = bgc.length_of_day
-    ϕ = latitude(ϕ₀, y)
-    L_day = day_length(ϕ, t, L_day_param)
+    φ = bgc.latitude
+    φ = latitude(φ, y)
 
+
+    L_day = day_length(ϕ, t)
 
     g_FF = bgc.flux_feeding_rate
     w_GOCᵐⁱⁿ = bgc.min_sinking_speed_of_GOC
@@ -142,7 +142,10 @@ end
     Bact = bacterial_biomass(zₘₐₓ, z, Z, M)
 
     bFe = Fe #defined in previous PISCES model
-    sh = shear_rate(z, zₘₓₗ)
+    τ₀ = bgc.background_shear
+    τₘₓₗ = bgc.mixed_layer_shear
+
+    sh = shear(z, zₘₓₗ, τ₀, τₘₓₗ)
   
     Remin = oxic_remineralization(O₂, NO₃, PO₄, NH₄, DOC, T, bFe, Bact, bgc)
     Denit = denitrification(NO₃, PO₄, NH₄, DOC, O₂, T, bFe, Bact, bgc)

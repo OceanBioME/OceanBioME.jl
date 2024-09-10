@@ -13,11 +13,11 @@
     bFe = Fe
     θᴺᶜ = bgc.NC_redfield_ratio
     #L_day
-    ϕ₀ = bgc.latitude
-    L_day_param = bgc.length_of_day
-    ϕ = latitude(ϕ₀, y)
-    L_day = day_length(ϕ, t, L_day_param)
+    φ = bgc.latitude
+    φ = latitude(φ, y)
 
+
+    L_day = day_length(ϕ, t)
     t_darkᴾ = bgc.mean_residence_time_of_phytoplankton_in_unlit_mixed_layer.P
     t_darkᴰ = bgc.mean_residence_time_of_phytoplankton_in_unlit_mixed_layer.D
     PARᴾ = P_PAR(PAR₁, PAR₂, PAR₃, bgc)

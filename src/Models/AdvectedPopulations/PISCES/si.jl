@@ -14,11 +14,11 @@
     λₚₛᵢ¹ = PSi_dissolution_rate(zₘₓₗ, zₑᵤ, z, T, Si, bgc)
     
     #L_day
-    ϕ₀ = bgc.latitude
-    L_day_param = bgc.length_of_day
-    ϕ = latitude(ϕ₀, y)
-    L_day = day_length(ϕ, t, L_day_param)
+    φ = bgc.latitude
+    φ = latitude(φ, y)
 
+
+    L_day = day_length(ϕ, t)
     #Diatom growth
     Lₗᵢₘᴰ = D_nutrient_limitation(D, PO₄, NO₃, NH₄, Si, Dᶜʰˡ, Dᶠᵉ, Si̅, bgc)[1]
     PARᴰ = D_PAR(PAR₁, PAR₂, PAR₃, bgc)
