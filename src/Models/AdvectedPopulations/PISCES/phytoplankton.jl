@@ -23,9 +23,9 @@
     #D_quadratic_mortality
     #Forcing equations
 
-@inline nutrient_quota(I, J) = ifelse(J == 0, 0, I/(J + eps(0.0))) # this shouldn't be needed as I should be zero if J is zero
+@inline nutrient_quota(a, b) = ifelse(b == 0, 0, a/(b + eps(0.0))) # this shouldn't be needed as I should be zero if J is zero
 
-@inline concentration_limitation(I, J) = I/(I + J + eps(0.0))
+@inline concentration_limitation(a, b) = a/(a + b)
 
 #Expresses growth rate with dependency on day length
 @inline day_dependent_growth_rate(L_day) = 1.5*concentration_limitation(L_day, 0.5)  #eq 3a
@@ -33,7 +33,7 @@
 @inline function depth_dependent_growth_rate(κ, zₘₓₗ, zₑᵤ, t_darkᴵ) 
     t_dark = (max(0, zₑᵤ - zₘₓₗ)) ^ 2 / κ
 
-    return 1 - t_dark / (t_dark - t_darkᴵ) #eq 3d
+    return 1 - t_dark / (t_dark + t_darkᴵ) #eq 3d
 end
 
 #The minimum iron quota is the sum of the three demands for iron in phytoplankton (photosynthesis, respiration, nitrate reduction)
@@ -47,6 +47,7 @@ end
 @inline nutrient_half_saturation_const(Kᵢᴶᵐⁱⁿ, J₁, J₂, Sᵣₐₜᴶ) = Kᵢᴶᵐⁱⁿ* (J₁ + Sᵣₐₜᴶ* J₂)/(J₁ + J₂ + eps(0.0)) #eq 7c
 
 #Light absorption by phytoplankton. Visible light split into 3 wavebands, where light absorption of each waveband controlled by coefficient.
+# I don't think this adds up to match the chlorophyll absorption assumed by the light model
 @inline function P_PAR(PAR₁, PAR₂, PAR₃, bgc)
     β₁ᴾ = bgc.absorption_in_the_blue_part_of_light.P
     β₂ᴾ = bgc.absorption_in_the_green_part_of_light.P
