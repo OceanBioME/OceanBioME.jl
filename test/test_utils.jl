@@ -64,7 +64,7 @@ sinking_speeds = merge(scalar_sinking_speeds, field_sinking_speeds)
 
     @test all([isa(w, AbstractField) & (location(w) in valid_sinking_velocity_locations) for w in values(sinking_velocities)])
 
-    @test all(map(w -> Array(interior(w, 1, 1, 1)) == 0, sinking_velocities[(:A, :B)]))
+    @test all(map(w -> Array(interior(w, 1, 1, 1)) .== 0, sinking_velocities[(:A, :B)]))
 
     @test_warn "The location of the sinking velocity field provided for X is incorrect, it should be (Center, Center, Face)" setup_velocity_fields((X = CenterField(grid), ), grid, true)
 end
