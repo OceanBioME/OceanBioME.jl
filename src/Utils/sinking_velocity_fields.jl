@@ -1,23 +1,32 @@
-using Oceananigans.Fields: ZFaceField, AbstractField
+using Oceananigans.Fields: ZFaceField, AbstractField, location, Center, Face
 using Oceananigans.Forcings: maybe_constant_field
 using Oceananigans.Grids: AbstractGrid
 
 import Adapt: adapt_structure, adapt
 
+const valid_sinking_velocity_locations = ((Center, Center, Face), (Nothing, Nothing, Nothing)) # nothings for constant fields 
+
 function setup_velocity_fields(drift_speeds, grid::AbstractGrid, open_bottom; smoothing_distance = 2)
     drift_velocities = []
-    for w in values(drift_speeds)
-        if isa(values(w), Number)
+    for (name, w) in pairs(drift_speeds)
+        if isa(w, Number)
             w_field = ZFaceField(grid)
             for k=1:grid.Nz 
                 @inbounds w_field[:, :, k] .= - w * ifelse(open_bottom, 1.0, (1 - exp((1-k) / smoothing_distance)))
             end
-            w = w_field
-        elseif !isa(values(w), Tuple{AbstractField, AbstractField, AbstractField})
-            error("Provided sinking speeds are an unsuitable value, must be a `NamedTuple` of scalar values (positive = sinking) with keys of tracer names, or `NamedTuple` of `VelocityFields`")
+        elseif isa(w, AbstractField)
+            location(w) in valid_sinking_velocity_locations ||
+                @warn "The location of the sinking velocity field provided for $name is incorrect, it should be (Center, Center, Face)" 
+
+            open_bottom || @warn "The sinking velocity provided for $name is a field and therefore `open_bottom=false` can't be enforced automatically"
+
+            w_field = w
+        else
+            @warn "Sinking speed provided for $name was not a number or field so may be unsiutable"
+            w_field = w
         end
 
-        push!(drift_velocities, w)
+        push!(drift_velocities, w_field)
     end
 
     return NamedTuple{keys(drift_speeds)}(drift_velocities)
