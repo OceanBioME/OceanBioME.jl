@@ -161,7 +161,7 @@ end
 end
 
 
-@inline function variation_in_SiC_ratio(D, PO₄, NO₃, NH₄, Si, Dᶜʰˡ, Dᶠᵉ, μᴰ, T, ϕ, Si̅, bgc)
+@inline function variation_in_SiC_ratio(D, PO₄, NO₃, NH₄, Si, Dᶜʰˡ, Dᶠᵉ, μᴰ, T, φ, Si̅, bgc)
     θₘˢⁱᴰ = bgc.optimal_SiC_uptake_ratio_of_diatoms
     μ⁰ₘₐₓ = bgc.growth_rate_at_zero
     Kₛᵢ¹ = bgc.parameter_for_SiC.one
@@ -173,7 +173,7 @@ end
     μₚ = μ⁰ₘₐₓ*(bₚ^T)
     
     Lₗᵢₘ₁ᴰˢⁱ = concentration_limitation(Si, Kₛᵢ¹)    #23c
-    Lₗᵢₘ₂ᴰˢⁱ = ifelse(ϕ < 0, (concentration_limitation((Si)^3, (Kₛᵢ²)^3)), 0)   #23d
+    Lₗᵢₘ₂ᴰˢⁱ = ifelse(φ < 0, (concentration_limitation((Si)^3, (Kₛᵢ²)^3)), 0)   #23d
     
     Fₗᵢₘ₁ᴰˢⁱ = min((μᴰ)/(μₚ*Lₗᵢₘᴰ + eps(0.0)), Lₚₒ₄ᴰ, Lₙᴰ, L_Feᴰ)  #23a
     Fₗᵢₘ₂ᴰˢⁱ = min(1, 2.2*max(0, Lₗᵢₘ₁ᴰˢⁱ - 0.5)) #23b
@@ -405,7 +405,7 @@ end
 end
 
 #Forcing equations for silicon biomass of diatoms
-@inline function (bgc::PISCES)(::Val{:Dˢⁱ}, x, y, z, t, P, D, Z, M, Pᶜʰˡ, Dᶜʰˡ, Pᶠᵉ, Dᶠᵉ, Dˢⁱ, DOC, POC, GOC, SFe, BFe, PSi, NO₃, NH₄, PO₄, Fe, Si, CaCO₃, DIC, Alk, O₂, T, zₘₓₗ, zₑᵤ, Si̅, D_dust, Ω, PAR, PAR₁, PAR₂, PAR₃)    #ϕ is latitude
+@inline function (bgc::PISCES)(::Val{:Dˢⁱ}, x, y, z, t, P, D, Z, M, Pᶜʰˡ, Dᶜʰˡ, Pᶠᵉ, Dᶠᵉ, Dˢⁱ, DOC, POC, GOC, SFe, BFe, PSi, NO₃, NH₄, PO₄, Fe, Si, CaCO₃, DIC, Alk, O₂, T, zₘₓₗ, zₑᵤ, Si̅, D_dust, Ω, PAR, PAR₁, PAR₂, PAR₃)    #φ is latitude
     #Parameters
     δᴰ = bgc.exudation_of_DOC.D
     mᴰ = bgc.phytoplankton_mortality_rate.D
@@ -430,7 +430,7 @@ end
     μᴰ = phytoplankton_growth_rate(D, Dᶜʰˡ, PARᴰ, L_day, T, αᴰ, Lₗᵢₘᴰ, zₘₓₗ, zₑᵤ, t_darkᴰ, bgc)
 
     #Also required
-    θₒₚₜˢⁱᴰ = variation_in_SiC_ratio(D, PO₄, NO₃, NH₄, Si, Dᶜʰˡ, Dᶠᵉ, μᴰ, T, ϕ, Si̅, bgc)
+    θₒₚₜˢⁱᴰ = variation_in_SiC_ratio(D, PO₄, NO₃, NH₄, Si, Dᶜʰˡ, Dᶠᵉ, μᴰ, T, φ, Si̅, bgc)
     wᴰ = D_quadratic_mortality(D, PO₄, NO₃, NH₄, Si, Dᶜʰˡ, Dᶠᵉ, Si̅, bgc) #13
     τ₀ = bgc.background_shear
     τₘₓₗ = bgc.mixed_layer_shear
