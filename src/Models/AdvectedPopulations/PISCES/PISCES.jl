@@ -72,8 +72,8 @@ import OceanBioME.Models.Sediments: nitrogen_flux, carbon_flux, remineralisation
 
 include("common.jl")
 
-struct PISCES{FT, PD, ZM, OT, W, CF, ZF, LA, FFMLD, FFEU} <: AbstractContinuousFormBiogeochemistry
-    growth_rate_at_zero :: FT # add list of parameters here, assuming theyre all just numbers FT will be fine for advect_particles_kernel
+struct PISCES{FT, PD, ZM, OT, W, CF, ZF, LA, FFMLD, FFEU, K} <: AbstractContinuousFormBiogeochemistry
+    growth_rate_at_zero :: FT 
     growth_rate_reference_for_light_limitation :: FT 
     basal_respiration_rate :: FT 
     temperature_sensitivity_of_growth :: FT 
@@ -154,7 +154,6 @@ struct PISCES{FT, PD, ZM, OT, W, CF, ZF, LA, FFMLD, FFEU} <: AbstractContinuousF
     slow_dissolution_rate_of_PSi :: FT
     fast_dissolution_rate_of_PSi :: FT
 
-
     max_nitrification_rate :: FT
     half_sat_const_for_denitrification1 :: FT
     half_sat_const_for_denitrification2 :: FT
@@ -190,7 +189,7 @@ struct PISCES{FT, PD, ZM, OT, W, CF, ZF, LA, FFMLD, FFEU} <: AbstractContinuousF
     yearly_maximum_silicate :: CF
     dust_deposition :: ZF
 
-    vertical_diffusivity :: CF 
+    mean_mixed_layer_vertical_diffusivity :: K
     carbonate_sat_ratio :: ZF
 
     sinking_velocities :: W
@@ -350,7 +349,7 @@ function PISCES(; grid,
 
                    mixed_layer_depth = FunctionField{Center, Center, Center}(-100.0, grid),
                    euphotic_depth = Field{Center, Center, Nothing}(grid),
-                   vertical_diffusivity  = ConstantField(1),
+                   mean_mixed_layer_vertical_diffusivity = Field{Center, Center, Nothing}(grid),
                    yearly_maximum_silicate = ConstantField(1),
                    dust_deposition = ZeroField(),
 
@@ -391,6 +390,13 @@ function PISCES(; grid,
         latitude = nothing 
     elseif isnothing(latitude) & (grid isa RectilinearGrid)
         throw(ArgumentError("You must prescribe a latitude when using a `RectilinearGrid`"))
+    end
+
+    # just incase we're in the default state with no closure model
+    # this highlights that the darkness term for phytoplankton growth is obviously wrong because not all phytoplankon
+    # cells spend an infinite amount of time in the dark if the diffusivity is zero, it should depend on where they are...
+    if !(mean_mixed_layer_vertical_diffusivity isa ConstantField)
+        set!(mean_mixed_layer_vertical_diffusivity, 1)
     end
 
     underlying_biogeochemistry = PISCES(growth_rate_at_zero,
@@ -511,8 +517,7 @@ function PISCES(; grid,
                                         yearly_maximum_silicate,
                                         dust_deposition,
 
-
-                                        vertical_diffusivity,
+                                        mean_mixed_layer_vertical_diffusivity,
                                         carbonate_sat_ratio,
 
                                         sinking_velocities)
@@ -540,7 +545,8 @@ end
      zₑᵤ = bgc.euphotic_depth, 
      Si̅ = bgc.yearly_maximum_silicate, 
      D_dust = bgc.dust_deposition, 
-     Ω = bgc.carbonate_sat_ratio)
+     Ω = bgc.carbonate_sat_ratio,
+     κ = bgc.mean_mixed_layer_vertical_diffusivity)
 
 @inline required_biogeochemical_tracers(::PISCES) = 
     (:P, :D, :Z, :M, 
@@ -557,7 +563,7 @@ end
      :T)
 
 @inline required_biogeochemical_auxiliary_fields(::PISCES) =
-    (:zₘₓₗ, :zₑᵤ, :Si̅, :D_dust, :Ω, :PAR, :PAR₁, :PAR₂, :PAR₃)
+    (:zₘₓₗ, :zₑᵤ, :Si̅, :D_dust, :Ω, :κ, :PAR, :PAR₁, :PAR₂, :PAR₃)
 
 # for sinking things like POM this is how we tell oceananigans ther sinking speed
 @inline function biogeochemical_drift_velocity(bgc::PISCES, ::Val{tracer_name}) where tracer_name
@@ -608,6 +614,8 @@ function update_biogeochemical_state!(model, bgc::PISCES)
     PAR = biogeochemical_auxiliary_fields(model.biogeochemistry.light_attenuation).PAR
 
     compute_euphotic_depth!(bgc.euphotic_depth, PAR)
+
+    compute_mean_mixed_layer_vertical_diffusivity!(bgc.mean_mixed_layer_vertical_diffusivity, bgc.mixed_layer_depth, model)
 
     # these should be model specific since they're not useful elsewhere
     #update_darkness_residence_time!(bgc, model)

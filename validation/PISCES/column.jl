@@ -46,6 +46,7 @@ clock = Clock(; time = 0.0)
 # we can keep this in the column version where we are compleltly divorced from the physics but it be the default to compute it
 # JSW will implement somewhere else and it can be pulled in and made the default at some point before merge
 zₘₓₗ = FunctionField{Center, Center, Nothing}(MLD, grid; clock)
+κ_field = FunctionField{Center, Center, Center}(κₜ, grid; clock)
 
 # ## Model
 # First we define the biogeochemical model including carbonate chemistry (for which we also define temperature (``T``) and salinity (``S``) fields)
@@ -54,6 +55,7 @@ zₘₓₗ = FunctionField{Center, Center, Nothing}(MLD, grid; clock)
 
 biogeochemistry = PISCES(; grid,
                            mixed_layer_depth = zₘₓₗ,
+                           mean_mixed_layer_vertical_diffusivity = ConstantField(1),
                            surface_photosynthetically_active_radiation = PAR⁰)
 
 CO₂_flux = CarbonDioxideGasExchangeBoundaryCondition()
@@ -65,7 +67,7 @@ S = ConstantField(35)
 @info "Setting up the model..."
 model = NonhydrostaticModel(; grid,
                               clock,
-                              closure = ScalarDiffusivity(VerticallyImplicitTimeDiscretization(), κ = κₜ),
+                              closure = ScalarDiffusivity(VerticallyImplicitTimeDiscretization(), κ = κ_field),
                               biogeochemistry,
                               boundary_conditions = (DIC = FieldBoundaryConditions(top = CO₂_flux), O₂ = FieldBoundaryConditions(top = O₂_flux)),
                               auxiliary_fields = (; S))
