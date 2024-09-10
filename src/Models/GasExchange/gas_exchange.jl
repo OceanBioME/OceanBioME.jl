@@ -30,7 +30,7 @@ end
 
     k = g.transfer_velocity(u₁₀, T)
 
-    air_concentration = surface_value(g.air_concentration, i, j, grid, clock)
+    air_concentration = surface_value(g.air_concentration, i, j, grid, clock, model_fields)
 
     water_concentration = surface_value(g.water_concentration, i, j, grid, clock, model_fields)
 

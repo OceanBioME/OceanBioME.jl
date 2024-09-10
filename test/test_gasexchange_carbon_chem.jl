@@ -132,6 +132,9 @@ end
     S = ConstantField(35)
     DIC = ConstantField(2136.242890518708)
     Alk = ConstantField(2500)
+
     # value from Dickson et. al, 2007
     @test ≈(surface_value(CO₂_exchange.water_concentration, 1, 1, BoxModelGrid(), Clock(; time = 0), (; T, S, DIC, Alk)), 350, atol = 0.1)
+
+    @test ≈(surface_value(O₂_exchange.air_concentration, 1, 1, BoxModelGrid(), Clock(; time = 0), (; T, S)), 200, atol = 100) # ball park correct
 end
