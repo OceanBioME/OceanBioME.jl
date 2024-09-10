@@ -26,8 +26,7 @@
     φ = bgc.latitude
     φ = latitude(φ, y)
 
-
-    L_day = day_length(ϕ, t)
+    L_day = day_length(φ, t)
     t_darkᴾ = bgc.mean_residence_time_of_phytoplankton_in_unlit_mixed_layer.P
     t_darkᴰ = bgc.mean_residence_time_of_phytoplankton_in_unlit_mixed_layer.D
     PARᴾ = P_PAR(PAR₁, PAR², PAR³, bgc)
@@ -76,7 +75,7 @@ end
     φ = latitude(φ, y)
 
 
-    L_day = day_length(ϕ, t)
+    L_day = day_length(φ, t)
     t_darkᴾ = bgc.mean_residence_time_of_phytoplankton_in_unlit_mixed_layer.P
     t_darkᴰ = bgc.mean_residence_time_of_phytoplankton_in_unlit_mixed_layer.D
     PARᴾ = P_PAR(PAR₁, PAR², PAR³, bgc)

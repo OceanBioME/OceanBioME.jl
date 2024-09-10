@@ -208,7 +208,7 @@ end
     φ = latitude(φ, y)
 
 
-    L_day = day_length(ϕ, t)
+    L_day = day_length(φ, t)
     #Grazing
     gₚᶻ = grazing_Z(P, D, POC, T, bgc)[2]     
     gₚᴹ =  grazing_M(P, D, Z, POC, T, bgc)[2]
@@ -240,7 +240,7 @@ end
     φ = latitude(φ, y)
 
 
-    L_day = day_length(ϕ, t)
+    L_day = day_length(φ, t)
     #Grazing
     g_Dᶻ = grazing_Z(P, D, POC, T, bgc)[3]
     g_Dᴹ = grazing_M(P, D, Z, POC, T, bgc)[3]
@@ -278,7 +278,7 @@ end
     φ = latitude(φ, y)
 
 
-    L_day = day_length(ϕ, t)
+    L_day = day_length(φ, t)
     #Grazing
     gₚᶻ = grazing_Z(P, D, POC, T, bgc)[2]    
     gₚᴹ = grazing_M(P, D, Z, POC, T, bgc)[2]
@@ -313,7 +313,7 @@ end
     φ = latitude(φ, y)
 
 
-    L_day = day_length(ϕ, t)
+    L_day = day_length(φ, t)
     τ₀ = bgc.background_shear
     τₘₓₗ = bgc.mixed_layer_shear
 
@@ -417,7 +417,7 @@ end
     φ = latitude(φ, y)
 
 
-    L_day = day_length(ϕ, t)
+    L_day = day_length(φ, t)
     #Grazing
     g_Dᶻ = grazing_Z(P, D, POC, T, bgc)[3]
     g_Dᴹ = grazing_M(P, D, Z, POC, T, bgc)[3]
