@@ -52,7 +52,7 @@ field_sinking_speeds = (C = ConstantField(1), D = FunctionField{Center, Center, 
 
 sinking_speeds = merge(scalar_sinking_speeds, field_sinking_speeds)
 
-@testset "Test sinking velocity setup"
+@testset "Test sinking velocity setup" begin
     sinking_velocities = @test_nowarn setup_velocity_fields(sinking_speeds, grid, true)
 
     @test all(map(w -> isa(w, AbstractField) & (location(w) in valid_sinking_velocity_locations), values(sinking_velocities)))
