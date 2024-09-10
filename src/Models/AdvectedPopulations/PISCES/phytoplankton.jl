@@ -30,12 +30,7 @@
 #Expresses growth rate with dependency on day length
 @inline day_dependent_growth_rate(L_day) = 1.5*concentration_limitation(L_day, 0.5)  #eq 3a
 
-#Mean time phytoplankton can spend in unlit part of mixed layer.
-@inline function t_dark(zₘₓₗ, zₑᵤ, bgc)
-    κᵥₑᵣₜ = bgc.vertical_diffusivity  
-    return (max(0, abs(zₘₓₗ)-abs(zₑᵤ))^2)/(κᵥₑᵣₜ[0,0,0] + eps(0.0)) #eq 3b,c, do not divide by 86400. Vertical diffusivity 
-end
-@inline depth_dependent_growth_rate(zₘₓₗ, zₑᵤ, t_darkᴵ, bgc) = 1 - concentration_limitation(t_dark(zₘₓₗ, zₑᵤ, bgc), t_darkᴵ) #eq 3d
+@inline depth_dependent_growth_rate(zₘₓₗ, zₑᵤ, t_darkᴵ) = 1 - concentration_limitation(t_dark, t_darkᴵ) #eq 3d
 
 #The minimum iron quota is the sum of the three demands for iron in phytoplankton (photosynthesis, respiration, nitrate reduction)
 @inline minimum_iron_quota(I, Iᶜʰˡ, Lₙᴵ, Lₙₒ₃ᴵ) = 0.0016/(55.85) * nutrient_quota(Iᶜʰˡ, I) + 1.21e-5*14*Lₙᴵ/(55.85*7.625)*1.5+1.15e-4*14*Lₙₒ₃ᴵ/(55.85*7.625) #eq 20 -> Lₙ could be meant to be L_NH₄?
@@ -90,7 +85,7 @@ end
 
     μₚ = μ⁰ₘₐₓ*(bₚ^T)    #eq 4b      
 
-    return μₚ * day_dependent_growth_rate(L_day) * depth_dependent_growth_rate(zₘₓₗ, zₑᵤ, t_darkᴵ, bgc) * (1-exp(-αᴵ*(nutrient_quota(Iᶜʰˡ,I))*PARᴵ/(L_day*μₚ*Lₗᵢₘᴵ + eps(0.0)))) * Lₗᵢₘᴵ #eq2b 
+    return μₚ * day_dependent_growth_rate(L_day) * depth_dependent_growth_rate(bgc, zₘₓₗ, zₑᵤ, t_darkᴵ) * (1-exp(-αᴵ*(nutrient_quota(Iᶜʰˡ,I))*PARᴵ/(L_day*μₚ*Lₗᵢₘᴵ + eps(0.0)))) * Lₗᵢₘᴵ #eq2b 
 end
 
 

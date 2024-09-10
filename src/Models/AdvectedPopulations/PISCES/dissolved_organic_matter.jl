@@ -45,7 +45,8 @@ end
 end
 
 #Bacteria are responsible for carrying out biological remineralisation processes. They are represent in the following formulation, with biomass decreasing at depth.
-@inline bacterial_biomass(zₘₐₓ, z, Z, M) = ifelse(abs(z) <= zₘₐₓ, min(0.7*(Z + 2*M), 4), min(0.7*(Z + 2*M), 4)*(abs(zₘₐₓ/(z + eps(0.0)))^0.683))  #35b
+@inline bacterial_biomass(zₘₐₓ, z, Z, M) = 
+    ifelse(abs(z) <= zₘₐₓ, min(0.7 * (Z + 2M), 4), min(0.7 * (Z + 2M), 4) * (abs(zₘₐₓ/(z + eps(0.0))) ^ 0.683))  #35b
 
 #Bacterial activity parameterises remineralisation of DOC. It is dependent on nutrient availability, and remineraisation half saturation constant.
 @inline function bacterial_activity(DOC, PO₄, NO₃, NH₄, bFe, bgc)
@@ -107,7 +108,6 @@ end
 
     φ = bgc.latitude
     φ = latitude(φ, y)
-
 
     L_day = day_length(φ, t)
 

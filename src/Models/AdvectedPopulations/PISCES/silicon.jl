@@ -17,12 +17,11 @@
     φ = bgc.latitude
     φ = latitude(φ, y)
 
-
     L_day = day_length(φ, t)
     #Diatom growth
     Lₗᵢₘᴰ = D_nutrient_limitation(D, PO₄, NO₃, NH₄, Si, Dᶜʰˡ, Dᶠᵉ, Si̅, bgc)[1]
     PARᴰ = D_PAR(PAR₁, PAR₂, PAR₃, bgc)
     μᴰ = phytoplankton_growth_rate(D, Dᶜʰˡ, PARᴰ, L_day, T, αᴰ, Lₗᵢₘᴰ, zₘₓₗ, zₑᵤ, t_darkᴰ, bgc)
     
-    return λₚₛᵢ¹*Dissₛᵢ*PSi - variation_in_SiC_ratio(D, PO₄, NO₃, NH₄, Si, Dᶜʰˡ, Dᶠᵉ, μᴰ, T, ϕ, Si̅, bgc)*(1-δᴰ)*μᴰ*D #eq74
+    return λₚₛᵢ¹*Dissₛᵢ*PSi - variation_in_SiC_ratio(D, PO₄, NO₃, NH₄, Si, Dᶜʰˡ, Dᶠᵉ, μᴰ, T, φ, Si̅, bgc)*(1-δᴰ)*μᴰ*D #eq74
 end
