@@ -40,6 +40,20 @@ nothing #hide
 
 #The commented equation is the correct form of w_GOC, but have not figured out how to implement this
 #w_GOC(z) = 30/day + (200/day - 30/day)*(max(0, abs(z)-abs(zₘₓₗ)))/(5000)
+PAR_func(x, y, z, t) = PAR⁰(t)*exp(z/10) # Modify the PAR based on the nominal depth and exponential decay
+
+PAR_func1(x, y, z, t) = 1/3*PAR⁰(t)*exp(z/10)
+PAR_func2(x, y, z, t) = 1/3*PAR⁰(t)*exp(z/10)
+PAR_func3(x, y, z, t) = 1/3*PAR⁰(t)*exp(z/10)
+
+mixed_layer_depth = ConstantField(-100)
+euphotic_layer_depth = ConstantField(-50)
+yearly_maximum_silicate = ConstantField(1) 
+dust_deposition = ConstantField(0)
+carbonate_sat_ratio = ConstantField(0)
+
+#w_GOC(z) = 30/day + (200/day - 30/day)*(max(0, abs(z)-100))/(5000)
+
 w_GOC = 30/day
 w_POC = 2.0/day
 grid = RectilinearGrid(size = (1, 1, 100), extent = (20meters, 20meters, 400meters))

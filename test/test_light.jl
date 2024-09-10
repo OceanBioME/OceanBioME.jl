@@ -91,10 +91,10 @@ function test_multi_band(grid, bgc, model_type)
     expected_PAR1 = on_architecture(CPU(), exp.(znodes(grid, Center()) * (0.01 + 0.1 * 2 ^ 2)) / 2)
     expected_PAR2 = on_architecture(CPU(), exp.(znodes(grid, Center()) * (0.02 + 0.2 * 2 ^ 1.5)) / 2)
 
-    PAR, PAR¹, PAR² = map(v-> on_architecture(CPU(), v), values(biogeochemical_auxiliary_fields(light_attenuation_model)))
+    PAR, PAR₁, PAR₂ = map(v-> on_architecture(CPU(), v), values(biogeochemical_auxiliary_fields(light_attenuation_model)))
 
-    @test all(interior(PAR¹, 1, 1, :) .≈ expected_PAR1)
-    @test all(interior(PAR², 1, 1, :) .≈ expected_PAR2)
+    @test all(interior(PAR₁, 1, 1, :) .≈ expected_PAR1)
+    @test all(interior(PAR₂, 1, 1, :) .≈ expected_PAR2)
     @test all(PAR[1, 1, 1:grid.Nz]  .≈ expected_PAR1 .+ expected_PAR2) # binary operation so we can't `interior` it
 
     # check all the models work as expected
