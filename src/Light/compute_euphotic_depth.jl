@@ -6,8 +6,18 @@
     @inbounds euphotic_depth[i, j] = -Inf
 
     for k in grid.Nz-1:-1:1
-        if (PAR[i, j, k] < surface_PAR * cutoff) && isinf(euphotic_depth[i, j])
-            euphotic_depth[i, j] = znode(i, j, k, grid, Center(), Center(), Center())
+        PARₖ = PAR[i, j, k]
+
+        # BRANCH!
+        if (PARₖ <= surface_PAR * cutoff) && isinf(euphotic_depth[i, j])
+            # interpolate to find depth
+            PARₖ₊₁ = PAR[i, j, k + 1]
+
+            zₖ = znode(i, j, k, grid, Center(), Center(), Center())
+
+            zₖ₊₁ = znode(i, j, k, grid, Center(), Center(), Center())
+
+            euphotic_depth[i, j] = zₖ₊₁ + (surface_PAR * cutoff - PARₖ₊₁) * (zₖ - zₖ₊₁)/ (PARₖ - PARₖ₊₁)
         end
     end
 end
