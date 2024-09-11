@@ -52,17 +52,17 @@ function carbonate_concentration(cc::CarbonChemistry;
     return DIC * K1 * K2 / denom1 / denom2
 end
 
-function carbonate_saturation(cc::CarbonChemistry;
-                              DIC, T, S, Alk = 0, pH = nothing,
-                              P = nothing,
-                              boron = 0.000232 / 10.811 * S / 1.80655,
-                              sulfate = 0.14 / 96.06 * S / 1.80655,
-                              fluoride = 0.000067 / 18.9984 * S / 1.80655,
-                              calcium_ion_concentration = 0.0103 * S / 35,
-                              silicate = 0,
-                              phosphate = 0,
-                              upper_pH_bound = 14,
-                              lower_pH_bound = 0)
+function calcite_saturation(cc::CarbonChemistry;
+                            DIC, T, S, Alk = 0, pH = nothing,
+                            P = nothing,
+                            boron = 0.000232 / 10.811 * S / 1.80655,
+                            sulfate = 0.14 / 96.06 * S / 1.80655,
+                            fluoride = 0.000067 / 18.9984 * S / 1.80655,
+                            calcium_ion_concentration = 0.0103 * S / 35,
+                            silicate = 0,
+                            phosphate = 0,
+                            upper_pH_bound = 14,
+                            lower_pH_bound = 0)
 
     CO₃²⁻ = carbonate_concentration(cc;
                                     DIC, Alk, T, S, pH,
@@ -77,5 +77,6 @@ function carbonate_saturation(cc::CarbonChemistry;
 
     KSP = cc.calcite_solubility(T, S; P)
 
+    # not confident these all have the right units
     return calcium_ion_concentration * CO₃²⁻ / KSP
 end

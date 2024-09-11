@@ -72,7 +72,7 @@ import OceanBioME.Models.Sediments: nitrogen_flux, carbon_flux, remineralisation
 
 include("common.jl")
 
-struct PISCES{FT, PD, ZM, OT, W, CF, ZF, LA, FFMLD, FFEU, K} <: AbstractContinuousFormBiogeochemistry
+struct PISCES{FT, PD, ZM, OT, W, CF, ZF, LA, FFMLD, FFEU, K, CC, CS} <: AbstractContinuousFormBiogeochemistry
     growth_rate_at_zero :: FT 
     growth_rate_reference_for_light_limitation :: FT 
     basal_respiration_rate :: FT 
@@ -190,7 +190,9 @@ struct PISCES{FT, PD, ZM, OT, W, CF, ZF, LA, FFMLD, FFEU, K} <: AbstractContinuo
     dust_deposition :: ZF
 
     mean_mixed_layer_vertical_diffusivity :: K
-    carbonate_sat_ratio :: ZF
+
+    carbon_chemistry :: CC
+    calcite_saturation :: CS
 
     sinking_velocities :: W
 end
@@ -350,7 +352,7 @@ function PISCES(; grid,
                    mixed_layer_depth = FunctionField{Center, Center, Center}(-100.0, grid),
                    euphotic_depth = Field{Center, Center, Nothing}(grid),
                    mean_mixed_layer_vertical_diffusivity = Field{Center, Center, Nothing}(grid),
-                   yearly_maximum_silicate = ConstantField(1),
+                   yearly_maximum_silicate = ConstantField(7.5),
                    dust_deposition = ZeroField(),
 
                   surface_photosynthetically_active_radiation = default_surface_PAR,
@@ -359,7 +361,6 @@ function PISCES(; grid,
                     MultiBandPhotosyntheticallyActiveRadiation(; grid, 
                                                                  surface_PAR = surface_photosynthetically_active_radiation),
 
-                  # just keep all this stuff for now but you can ignore it
                   sediment_model = nothing,
 
                   sinking_speeds = (POC = 2/day, 
@@ -368,7 +369,9 @@ function PISCES(; grid,
                                                                                         mixed_layer_depth, 
                                                                                         euphotic_depth)),
                   
-                  carbonate_sat_ratio = ZeroField(),
+                  carbon_chemistry = CarbonChemistry(),
+                  calcite_saturation = CenterField(grid),
+
                   open_bottom = true,
 
                   scale_negatives = false,
@@ -518,7 +521,9 @@ function PISCES(; grid,
                                         dust_deposition,
 
                                         mean_mixed_layer_vertical_diffusivity,
-                                        carbonate_sat_ratio,
+
+                                        carbon_chemistry,
+                                        calcite_saturation,
 
                                         sinking_velocities)
 
@@ -545,7 +550,7 @@ end
      zₑᵤ = bgc.euphotic_depth, 
      Si̅ = bgc.yearly_maximum_silicate, 
      D_dust = bgc.dust_deposition, 
-     Ω = bgc.carbonate_sat_ratio,
+     Ω = bgc.calcite_saturation,
      κ = bgc.mean_mixed_layer_vertical_diffusivity)
 
 @inline required_biogeochemical_tracers(::PISCES) = 
@@ -606,6 +611,8 @@ include("particulate_organic_matter.jl")
 include("silicon_in_particles.jl")
 include("silicon.jl")
 include("zooplankton.jl")
+include("mean_mixed_layer_vertical_diffusivity.jl")
+include("compute_calcite_saturation.jl")
 
 function update_biogeochemical_state!(model, bgc::PISCES)
     # this should come from utils
@@ -617,8 +624,8 @@ function update_biogeochemical_state!(model, bgc::PISCES)
 
     compute_mean_mixed_layer_vertical_diffusivity!(bgc.mean_mixed_layer_vertical_diffusivity, bgc.mixed_layer_depth, model)
 
-    # these should be model specific since they're not useful elsewhere
-    #update_darkness_residence_time!(bgc, model)
+    compute_calcite_saturation!(bgc.carbon_chemistry, bgc.calcite_saturation, model)
+
     #update_yearly_maximum_silicate!(bgc, model)
 
     return nothing
