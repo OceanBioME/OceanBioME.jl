@@ -4,8 +4,14 @@ using Oceananigans.Grids: znode, zspacing
 
 @inline shear(z, zₘₓₗ, background_shear, mixed_layer_shear) = ifelse(z <= zₘₓₗ, background_shear, mixed_layer_shear) # Given as 1 in Aumont paper
 
-@inline latitude(φ, y) = φ
-@inline latitude(::Nothing, y) = y
+struct ModelLatitude end
+
+struct PrescribedLatitude{FT}
+    latitude :: FT
+end
+
+@inline (pl::PrescribedLatitude)(y) = pl.latitude
+@inline (::ModelLatitude)(y) = y
 
 # we should probably extend this to use DateTime dates at some point
 @inline function day_length(φ, t)
