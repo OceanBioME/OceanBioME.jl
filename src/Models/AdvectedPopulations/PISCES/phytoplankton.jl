@@ -44,11 +44,6 @@ end
                                         zₘₓₗ, zₑᵤ, Si′, dust, Ω, κ, PAR, PAR₁, PAR₂, PAR₃)
     # production
     δ  = phyto.exudated_fracton
-    β₁ = phyto.blue_light_absorption
-    β₂ = phyto.green_light_absorption
-    β₃ = phyto.red_light_absorption
-
-    PARᵢ = β₁ * PAR₁ + β₂ * PAR₂ + β₃ * PAR₃
 
     I    = phytoplankton_concentration(val_name, P, D)
     IChl = phytoplankton_concentration(val_name, PChl, DChl)
@@ -56,7 +51,7 @@ end
 
     L, = phyto.nutrient_limitation(bgc, I, IChl, IFe, NO₃, NH₄, PO₄, Fe, Si, Si′)
 
-    μ = phyto.growth_rate(bgc, I, IChl, T, zₘₓₗ, zₑᵤ, κ, PARᵢ, L)
+    μ = phyto.growth_rate(bgc, I, IChl, T, zₘₓₗ, zₑᵤ, κ, PAR₁, PAR₂, PAR₃, L)
 
     production = (1 - δ) * μ * I 
 
@@ -104,9 +99,6 @@ end
 
     # production
     δ  = phyto.exudated_fracton
-    β₁ = phyto.blue_light_absorption
-    β₂ = phyto.green_light_absorption
-    β₃ = phyto.red_light_absorption
 
     θ₀ = phyto.minimum_chlorophyll_ratio
     θ₁ = phyto.maximum_chlorophyll_ratio
@@ -114,7 +106,7 @@ end
     PARᵢ = β₁ * PAR₁ + β₂ * PAR₂ + β₃ * PAR₃
     L = phyto.nutrient_limitation(bgc, I, IChl, IFe, NO₃, NH₄, PO₄, Fe, Si, Si′)
 
-    μ, ρ = production_and_energy_assimilation_absorption_ratio(phyto.growth_rate, bgc, I, IChl, T, zₘₓₗ, zₑᵤ, κ, PARᵢ, L)
+    μ, ρ = production_and_energy_assimilation_absorption_ratio(phyto.growth_rate, bgc, I, IChl, T, zₘₓₗ, zₑᵤ, κ, PAR₁, PAR₂, PAR₃, L)
 
     production = (1 - δ) * (12 * θ₀ + (θ₁ - θ₀) * ρ) * μ * I 
 
@@ -171,7 +163,7 @@ end
 
     L, LFe = phyto.nutrient_limitation(bgc, I, IChl, IFe, NO₃, NH₄, PO₄, Fe, Si, Si′)
 
-    μᵢ = base_production_rate(phyto.growth_rate, bgc, T)
+    μᵢ = base_production_rate(phyto.growth_rate, T)
 
     L₁ = iron_uptake_limitation(phyto.growth_rate, I, Fe) # assuming bFe = Fe
 
@@ -234,7 +226,7 @@ end
     L, LFe, LPO₄ = phyto.nutrient_limitation(bgc, D, DChl, DFe, NO₃, NH₄, PO₄, Fe, Si, Si′)
 
     μ = phyto.growth_rate(bgc, D, DChl, T, zₘₓₗ, zₑᵤ, κ, PARᵢ, L)
-    μᵢ = base_production_rate(phyto.growth_rate, bgc, T)
+    μᵢ = base_production_rate(phyto.growth_rate, T)
 
     L₁ = Si / (Si + K₁)
 
@@ -274,4 +266,12 @@ end
     grazing = (gZ * Z + gM * M) * θFe
 
     return production - linear_mortality - quadratic_mortality - grazing
+end
+
+@inline function dissolved_exudate(phyto::Phytoplankton, bgc, I, IChl, IFe, NO₃, NH₄, PO₄, Fe, Si, Si′, T, zₘₓₗ, zₑᵤ, κ, PAR₁, PAR₂, PAR₃)
+    δ = phyto.exudated_fracton
+
+    μ = phyto.growth_rate(bgc, I, IChl, IFe, NO₃, NH₄, PO₄, Fe, Si, Si′, T, zₘₓₗ, zₑᵤ, κ, PAR₁, PAR₂, PAR₃)
+
+    return δ * μ * I
 end
