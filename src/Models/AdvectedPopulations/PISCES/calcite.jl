@@ -1,3 +1,21 @@
+@inline function rain_ratio(calcite::Calcite, bgc, P, PChl, PFe, NO₃, NH₄, PO₄, Fe, Si, Si′, T, zₘₓₗ, PAR)
+    r = calcite.base_rain_ratio
+
+    # assuming this is a type in Aumont 2015 based on Aumont 2005
+    L, = bgc.nanophytoplankton.nutrient_limitation(bgc, P, PChl, PFe, NO₃, NH₄, PO₄, Fe, Si, Si′)
+
+    L_CaCO₃ = L # maybe this is wrong, can't find the reference, others had it as min(Lₙᴾ, concentration_limitation(Fe, 6e-11), concentration_limitation(PO₄, Kₙₕ₄ᴾ))
+
+    phytoplankton_concentration_factor = max(1, P / 2)
+
+    low_light_factor = max(0, PAR - 1) / (4 + PAR)
+    high_light_factor = 30 / (30 + PAR)
+
+    low_temperature_factor = max(0, T / (T + 0.1)) # modified from origional as it goes negative and does not achieve goal otherwise
+    high_temperature_factor = 1 + exp(-(T - 10)^2 / 25)
+
+    return r * L_CaCO₃ * phytoplankton_concentration_factor * low_light_factor * high_light_factor * low_temperature_factor * high_temperature_factor
+end
 
 #Calcium carbonate is assumed only to exist in the form of calcite.
 
@@ -15,20 +33,6 @@
     nca = bgc.exponent_in_the_dissolution_rate_of_calcite
     ΔCO₃²⁻ = max(0, 1 - Ω)
     return λ_CaCO₃*(ΔCO₃²⁻)^nca #79
-end
-
-#The rain ratio is a ratio of coccolithophores calcite to particles of organic carbon. Increases proportional to coccolithophores, and parametrised based on simple assumptions on coccolithophores growth.
-@inline function rain_ratio(P, PO₄, NO₃, NH₄, Pᶜʰˡ, Pᶠᵉ, Fe, T, PAR, zₘₓₗ, bgc) 
-    r_CaCO₃ = bgc.rain_ratio_parameter
-    Kₙₕ₄ᴾᵐⁱⁿ = bgc.min_half_saturation_const_for_ammonium.P
-    Sᵣₐₜᴾ = bgc.size_ratio_of_phytoplankton.P
-    Pₘₐₓ = bgc.threshold_concentration_for_size_dependency.P
-    P₁ =  I₁(P, Pₘₐₓ)
-    P₂ = I₂(P, Pₘₐₓ)
-    Lₙᴾ = P_nutrient_limitation(P, PO₄, NO₃, NH₄, Pᶜʰˡ, Pᶠᵉ, bgc)[5]
-    Kₙₕ₄ᴾ = nutrient_half_saturation_const(Kₙₕ₄ᴾᵐⁱⁿ, P₁, P₂, Sᵣₐₜᴾ)
-    Lₗᵢₘᶜᵃᶜᵒ³ = min(Lₙᴾ, concentration_limitation(Fe, 6e-11), concentration_limitation(PO₄, Kₙₕ₄ᴾ))
-    return (r_CaCO₃*Lₗᵢₘᶜᵃᶜᵒ³*T*max(1, P/2)*max(0, PAR - 1)*30*(1 + exp((-(T-10)^2)/25))*min(1, 50/(abs(zₘₓₗ) + eps(0.0)))/((0.1 + T)*(4 + PAR)*(30 + PAR))) #eq77
 end
 
 #Defined the production of sinking calcite. This is calculated as a ratio to carbon. 

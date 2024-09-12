@@ -1,14 +1,13 @@
-# for code clarity I am going to always compute silicate limitation, then throw it away for nanophytoplankton
-struct NitrogenIronPhosphateSilicateLimitation{FT, BT}
+@kwdef struct NitrogenIronPhosphateSilicateLimitation{FT, BT}
     minimum_ammonium_half_saturation :: FT
      minimum_nitrate_half_saturation :: FT
    minimum_phosphate_half_saturation :: FT
-       threshold_for_size_dependency :: FT
-                          size_ratio :: FT
-                  optimal_iron_quota :: FT
+       threshold_for_size_dependency :: FT = 1.0
+                          size_ratio :: FT = 3.0
+                  optimal_iron_quota :: FT = 7.0
                     silicate_limited :: BT
-    minimum_silicate_half_saturation :: FT
-  silicate_half_saturation_parameter :: FT
+    minimum_silicate_half_saturation :: FT = 1.0
+  silicate_half_saturation_parameter :: FT = 16.6
      half_saturation_for_iron_uptake :: FT
 end
 

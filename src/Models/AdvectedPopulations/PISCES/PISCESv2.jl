@@ -88,8 +88,12 @@ include("zooplankton.jl")
 
 
 function PISCES(; grid,
-
                   nanophytoplankton = Phytoplankton(growth_rate = GrowthRespirationLimitedProduction(dark_tollerance = 3days),
+                                                    nutrient_limitation = NitrogenIronPhosphateSilicateLimitation(minimum_ammonium_half_saturation = 0.013,
+                                                                                                                  minimum_nitrate_half_saturation = 0.13, 
+                                                                                                                  minimum_phosphate_half_saturation = 0.8,
+                                                                                                                  half_saturation_for_iron_uptake = 1.0,
+                                                                                                                  silicate_limited = false),
                                                     blue_light_absorption = 2.1, 
                                                     green_light_absorption = 0.42, 
                                                     red_light_absorption = 0.4,
@@ -97,6 +101,11 @@ function PISCES(; grid,
                                                     maximum_chlorophyll_ratio = 0.033),
 
                   diatoms = Phytoplankton(growth_rate = GrowthRespirationLimitedProduction(dark_tollerance = 4days),
+                                          nutrient_limitation = NitrogenIronPhosphateSilicateLimitation(minimum_ammonium_half_saturation = 0.039,
+                                                                                                        minimum_nitrate_half_saturation = 0.39, 
+                                                                                                        minimum_phosphate_half_saturation = 2.4,
+                                                                                                        half_saturation_for_iron_uptake = 3.0,
+                                                                                                        silicate_limited = true),
                                           blue_light_absorption = 1.6, 
                                           green_light_absorption = 0.69, 
                                           red_light_absorption = 0.7,
@@ -123,8 +132,8 @@ function PISCES(; grid,
                                                 maximum_growth_efficiency = 0.35,
                                                 maximum_flux_feeding_rate = 2.0e-3),
                   
-                  dissolved_organic_matter,
-                  particulate_organic_matter,
+                  dissolved_organic_matter = DissolvedOrganicMatter(),
+                  particulate_organic_matter = TwoCompartementParticulateOrganicMatter(),
                   
                   nitrogen,
                   iron,

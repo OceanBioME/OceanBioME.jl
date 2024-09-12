@@ -1,92 +1,130 @@
-
-#Particles of carbon are significant as sink and export carbon to the deep ocean.
-#GOC are faster sinking particles with variable sinking speed.
-
-# This documeent contains functions for:
-    # Φ (eq39)
-    # POC, GOC (eqs37, 40)
-
-#Aggregation of POC due to turbulence and differential settling
-@inline function POC_aggregation(POC, GOC, sh, bgc)
-    a₆ = bgc.aggregation_rate_of_POC_to_GOC_6
-    a₇ = bgc.aggregation_rate_of_POC_to_GOC_7
-    a₈ = bgc.aggregation_rate_of_POC_to_GOC_8
-    a₉ = bgc.aggregation_rate_of_POC_to_GOC_9
-
-    return sh*a₆*POC^2 + sh*a₇*POC*GOC + a₈*POC*GOC + a₉*POC^2 #eq39
+struct TwoCompartementParticulateOrganicMatter{FT, AP}
+    temperature_sensetivity :: FT = 1.066
+    base_breakdown_rate :: FT = 0.025/day
+    aggregation_parameters :: AP = (25.9, 4452, 3.3, 47.1) .* 10^-6 / day
 end
 
-#Forcing for POC
-@inline function (bgc::PISCES)(::Val{:POC}, x, y, z, t, P, D, Z, M, Pᶜʰˡ, Dᶜʰˡ, Pᶠᵉ, Dᶠᵉ, Dˢⁱ, DOC, POC, GOC, SFe, BFe, PSi, NO₃, NH₄, PO₄, Fe, Si, CaCO₃, DIC, Alk, O₂, T, zₘₓₗ, zₑᵤ, Si̅, D_dust, Ω, κ, PAR, PAR₁, PAR₂, PAR₃)
-    #Parameters
-    σᶻ = bgc.non_assimilated_fraction.Z
-    mᴾ, mᴰ = bgc.phytoplankton_mortality_rate
-    mᶻ = bgc.zooplankton_quadratic_mortality.Z
-    wᴾ = bgc.min_quadratic_mortality_of_phytoplankton
-    wₚₒ = bgc.sinking_speed_of_POC
-    rᶻ = bgc.zooplankton_linear_mortality.Z
-    Kₘ = bgc.half_saturation_const_for_mortality
-    b_Z, bₘ = bgc.temperature_sensitivity_term
-    g_FF = bgc.flux_feeding_rate
+@inline function (doc::TwoCompartementParticulateOrganicMatter)(bgc, ::Val{:POC}, 
+                                                                x, y, z, t,
+                                                                P, D, Z, M, 
+                                                                PChl, DChl, PFe, DFe, DSi,
+                                                                DOC, POC, GOC, 
+                                                                SFe, BFe, PSi, 
+                                                                NO₃, NH₄, PO₄, Fe, Si, 
+                                                                CaCO₃, DIC, Alk, 
+                                                                O₂, T, 
+                                                                zₘₓₗ, zₑᵤ, Si′, dust, Ω, κ, PAR, PAR₁, PAR₂, PAR₃)
 
-    #Grazing
-    grazing = grazing_Z(P, D, POC, T, bgc)
-    ∑gᶻ = grazing[1]
-    gₚₒᶻ = grazing[4]
-    gₚₒᴹ = grazing_M(P, D, Z, POC, T, bgc)[4]
-    gₚₒ_FFᴹ = g_FF*(bₘ^T)*wₚₒ*POC #29a
+    grazing_waste = specific_non_assimilated_waste(bgc.microzooplankton, P, D, Z, POC) * Z
+
+    # mortality terms
+    R_CaCO₃ = rain_ratio(bgc.calcite, bgc, I, IChl, IFe, NO₃, NH₄, PO₄, Fe, Si, Si′, T, zₘₓₗ, PAR)
+
+    nanophytoplankton_linear_mortality, nanophytoplankton_quadratic_mortality = mortality(bgc.nanophytoplankton, bgc, z, D, zₘₓₗ)
+
+    nanophytoplankton_mortality = (1 - 0.5 * R_CaCO₃) * (nanophytoplankton_linear_mortality + nanophytoplankton_quadratic_mortality)
+
+    diatom_linear_mortality, = mortality(bgc.diatoms, bgc, z, D, zₘₓₗ)
+
+    diatom_mortality = 0.5 * diatom_linear_mortality
+
+    microzooplankton_mortality = mortality(bgc.microzooplankton, bgc, I, O₂, T)
+
+    # degredation
+    λ = specific_degredation_rate(doc, bgc, O₂, T)
+
+    large_particle_degredation = λ * GOC
+    degredation = λ * POC
+
+    # grazing
+    _, _, _, microzooplankton_grazing = specific_grazing(bgc.microzooplankton, P, D, Z, POC)
+    _, _, _, mesozooplankton_grazing = specific_grazing(bgc.mesozooplankton, P, D, Z, POC)
+    small_flux_feeding = specific_flux_feeding(bgc.mesozooplankton, POC, bgc.sinking_velocities.POC.w, grid)
+
+    grazing = microzooplankton_grazing * Z + (mesozooplankton_grazing + small_flux_feeding) * M
+
+    # aggregation
+    _, Φ₁, _, Φ₃ = aggregation(bgc.dissolved_organic_matter, bgc, z, DOC, POC, GOC, zₘₓₗ)
+    dissolved_aggregation = Φ₁ + Φ₃
     
-    #Aggregation
-    τ₀ = bgc.background_shear
-    τₘₓₗ = bgc.mixed_layer_shear
+    aggregation_to_large = aggregation(doc, bgc, z, POC, GOC, zₘₓₗ)
 
-    sh = shear(z, zₘₓₗ, τ₀, τₘₓₗ)
-    Φ₁ᴰᴼᶜ = aggregation_process_for_DOC(DOC, POC, GOC, sh, bgc)[1]
-    Φ₃ᴰᴼᶜ = aggregation_process_for_DOC(DOC, POC, GOC, sh, bgc)[3]
-    Φ = POC_aggregation(POC, GOC, sh, bgc)
+    aggregation = dissolved_aggregation - aggregation_to_large
 
-    R_CaCO₃ = rain_ratio(P, PO₄, NO₃, NH₄, Pᶜʰˡ, Pᶠᵉ, Fe, T, PAR, zₘₓₗ, bgc) 
-    λₚₒ¹ = particles_carbon_degradation_rate(T, O₂, bgc)
-
-    return (σᶻ*∑gᶻ*Z + 0.5*mᴰ*concentration_limitation(D, Kₘ)*D + rᶻ*(b_Z^T)*(concentration_limitation(Z, Kₘ)
-            + 3*oxygen_conditions(O₂, bgc))*Z + mᶻ*(b_Z^T)*Z^2 
-            + (1 - 0.5*R_CaCO₃)*(mᴾ*concentration_limitation(P, Kₘ)*P + sh*wᴾ*P^2) 
-            + λₚₒ¹*GOC + Φ₁ᴰᴼᶜ + Φ₃ᴰᴼᶜ - (gₚₒᴹ + gₚₒ_FFᴹ)*M - gₚₒᶻ*Z - λₚₒ¹*POC - Φ)  #eq37, partial derivative ommitted as included elsewhere in OceanBioME
+    return (grazing_waste 
+            + nanophytoplankton_mortality + diatom_mortality + microzooplankton_mortality 
+            + large_particle_degredation + aggregation 
+            - grazing - degredation)
 end
 
-#Forcing for GOC
-@inline function (bgc::PISCES)(::Val{:GOC}, x, y, z, t, P, D, Z, M, Pᶜʰˡ, Dᶜʰˡ, Pᶠᵉ, Dᶠᵉ, Dˢⁱ, DOC, POC, GOC, SFe, BFe, PSi, NO₃, NH₄, PO₄, Fe, Si, CaCO₃, DIC, Alk, O₂, T, zₘₓₗ, zₑᵤ, Si̅, D_dust, Ω, κ, PAR, PAR₁, PAR₂, PAR₃)
-    #Parameters
-    σᴹ = bgc.non_assimilated_fraction.M
-    mᴾ, mᴰ = bgc.phytoplankton_mortality_rate
-    wᴾ = bgc.min_quadratic_mortality_of_phytoplankton
-    rᴹ = bgc.zooplankton_linear_mortality.M
-    Kₘ = bgc.half_saturation_const_for_mortality
-    bₘ = bgc.temperature_sensitivity_term.M
-    g_FF = bgc.flux_feeding_rate
-    wₘₐₓᴰ = bgc.max_quadratic_mortality_of_diatoms
-    wₚₒ = bgc.sinking_speed_of_POC
 
-    #Grazing
-    w_GOC = sinking_speed_of_GOC(z, zₑᵤ, zₘₓₗ, bgc)
-    ∑gᴹ = grazing_M(P, D, Z, POC, T, bgc)[1] 
-    ∑g_FFᴹ, gₚₒ_FFᴹ, g_GOC_FFᴹ = flux_feeding(z, zₑᵤ, zₘₓₗ, T, POC, GOC, bgc)
+@inline function (doc::TwoCompartementParticulateOrganicMatter)(bgc, ::Val{:GOC}, 
+                                                                x, y, z, t,
+                                                                P, D, Z, M, 
+                                                                PChl, DChl, PFe, DFe, DSi,
+                                                                DOC, POC, GOC, 
+                                                                SFe, BFe, PSi, 
+                                                                NO₃, NH₄, PO₄, Fe, Si, 
+                                                                CaCO₃, DIC, Alk, 
+                                                                O₂, T, 
+                                                                zₘₓₗ, zₑᵤ, Si′, dust, Ω, κ, PAR, PAR₁, PAR₂, PAR₃)
+
+    grazing_waste = specific_non_assimilated_waste(bgc.mesozooplankton, P, D, Z, POC) * M
+
+    # mortality terms
+    R_CaCO₃ = rain_ratio(bgc.calcite, bgc, I, IChl, IFe, NO₃, NH₄, PO₄, Fe, Si, Si′, T, zₘₓₗ, PAR)
+
+    nanophytoplankton_linear_mortality, nanophytoplankton_quadratic_mortality = mortality(bgc.nanophytoplankton, bgc, z, D, zₘₓₗ)
+
+    nanophytoplankton_mortality = 0.5 * R_CaCO₃ * (nanophytoplankton_linear_mortality + nanophytoplankton_quadratic_mortality)
+
+    diatom_linear_mortality, diatom_quadratic_mortality = mortality(bgc.diatoms, bgc, z, D, zₘₓₗ)
+
+    diatom_mortality = 0.5 * diatom_linear_mortality + diatom_quadratic_mortality
+
+    mesozooplankton_mortality = mortality(bgc.mesozooplankton, bgc, I, O₂, T)
+
+    # degredation
+    λ = specific_degredation_rate(doc, bgc, O₂, T)
+
+    degredation = λ * GOC
+
+    # grazing
+    grazing = specific_flux_feeding(bgc.mesozooplankton, GOC, bgc.sinking_velocities.GOC.w, grid) * M
+
+    # aggregation
+    _, _, dissolved_aggregation = aggregation(bgc.dissolved_organic_matter, bgc, z, DOC, POC, GOC, zₘₓₗ)
     
-    #Aggregation
-    τ₀ = bgc.background_shear
-    τₘₓₗ = bgc.mixed_layer_shear
+    small_particle_aggregation = aggregation(doc, bgc, z, POC, GOC, zₘₓₗ)
 
-    sh = shear(z, zₘₓₗ, τ₀, τₘₓₗ)
-    Φ = POC_aggregation(POC, GOC, sh, bgc)
-    Φ₂ᴰᴼᶜ = aggregation_process_for_DOC(DOC, POC, GOC, sh, bgc)[2]
+    aggregation = dissolved_aggregation + small_particle_aggregation
 
-    Pᵤₚᴹ = production_of_fecal_pellets(M, T, bgc)
-    R_CaCO₃ = rain_ratio(P, PO₄, NO₃, NH₄, Pᶜʰˡ, Pᶠᵉ, Fe, T, PAR, zₘₓₗ, bgc)
-    λₚₒ¹ = particles_carbon_degradation_rate(T, O₂, bgc)
-    Lₗᵢₘᴰ = D_nutrient_limitation(D, PO₄, NO₃, NH₄, Si, Dᶜʰˡ, Dᶠᵉ, Si̅, bgc)[1]
-    wᴰ =  D_quadratic_mortality(D, PO₄, NO₃, NH₄, Si, Dᶜʰˡ, Dᶠᵉ, Si̅, bgc)
+    # fecal pelet prodiction
+    fecal_pelet_production = upper_trophic_fecal_product(bgc.mesozooplankton, M, T)
 
-    return (σᴹ*(∑gᴹ + ∑g_FFᴹ)*M + rᴹ*(bₘ^T)*(concentration_limitation(M, Kₘ) + 3*oxygen_conditions(O₂, bgc))*M 
-            + Pᵤₚᴹ + 0.5*R_CaCO₃*(mᴾ*concentration_limitation(P, Kₘ)*P + sh*wᴾ*P^2) + 0.5*mᴰ*concentration_limitation(D, Kₘ)*D
-            + sh*D^2*wᴰ + Φ + Φ₂ᴰᴼᶜ - g_GOC_FFᴹ*M - λₚₒ¹*GOC) #eq40, partial derivative ommitted as included elsewhere in OceanBioME
+    return (grazing_waste 
+            + nanophytoplankton_mortality + diatom_mortality + mesozooplankton_mortality 
+            + aggregation + fecal_pelet_production
+            - grazing 
+            - degredation)
+end
+
+@inline function specific_degredation_rate(doc::TwoCompartementParticulateOrganicMatter, bgc, O₂, T)
+    λ₀ = doc.base_breakdown_rate
+    b  = doc.temperature_sensetivity
+
+    ΔO₂ = anoxia_factor(bgc, O₂)
+
+    return λ₀ * b^T * (1 - 0.45 * ΔO₂)
+end
+
+@inline function aggregation(doc::TwoCompartementParticulateOrganicMatter, bgc, z, POC, GOC, zₘₓₗ)
+    a₁, a₂, a₃, a₄ = doc.aggregation_parameters
+
+    backgroound_shear = bgc.background_shear
+    mixed_layer_shear = bgc.mixed_layer_shear
+    
+    shear = ifelse(z < zₘₓₗ, backgroound_shear, mixed_layer_shear)
+
+    return shear * (a₁ * POC^2 + a₂ * POC * GOC) + a₃ * POC * GOC + a₄ * POC^2
 end

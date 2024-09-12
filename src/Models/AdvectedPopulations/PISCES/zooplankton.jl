@@ -103,20 +103,11 @@ end
     grazing_mortality = specific_grazing_mortality * M
 
     # mortality
-    b  = zoo.temperature_sensetivity
-    m₀ = zoo.quadratic_mortality
-    Kₘ = zoo.mortality_half_saturation
-    r  = zoo.linear_mortality
-
-    temperature_factor = b^T
-
-    concentration_factor = Z / (Z + Kₘ)
-
-    mortality = temperature_factor * Z * (m₀ * Z + r * (concentration_factor + 3 * anoxia_factor(bgc, O₂)))
+    total_mortality = mortality(zoo, bgc, I, O₂, T)
 
     growth_efficiency = grazing_growth_efficiency(zoo, P, D, PFe, DFe, POC, SFe, gP, gD, gPOC, gZ)
 
-    return growth_efficiency * (grazing + flux_feeding) - grazing_mortality - mortality
+    return growth_efficiency * (grazing + flux_feeding) - grazing_mortality - total_mortality
 end
 
 @inline function nanophytoplankton_grazing(zoo::Zooplankton, P, D, Z, POC) 
@@ -160,16 +151,21 @@ end
     return (1 - γ) * R
 end
 
-@inline function upper_trophic_respiration_product(zoo, M, T)
+@inline function upper_trophic_waste(zoo, M, T)
     e₀ = zoo.maximum_growth_efficiency
-    σ  = zoo.non_assililated_fraction
     b  = zoo.temperature_sensetivity
     m₀ = zoo.quadratic_mortality
 
     temperature_factor = b^T
 
-    return (1 - σ - e₀) * 1 / (1 - e₀) * m₀ * temperature_factor * M^2
+    return 1 / (1 - e₀) * m₀ * temperature_factor * M^2
 end
+
+@inline upper_trophic_respiration_product(zoo, M, T) = 
+    (1 - zoo.maximum_growth_efficiency - zoo.non_assililated_fraction) * upper_trophic_waste(zoo, M, T)
+
+@inline upper_trophic_fecal_product(zoo, M, T)
+    zoo.non_assililated_fraction * upper_trophic_waste(zoo, M, T)
 
 @inline function grazing_growth_efficiency(zoo, P, D, PFe, DFe, POC, SFe, gP, gD, gPOC, gZ)
     θFe = zoo.iron_ratio
@@ -185,9 +181,8 @@ end
     return food_quality * min(e₀, (1 - σ) * iron_grazing_ratio)
 end
 
-@inline function specific_grazing_waste(zoo, bgc, P, D, PFe, DFe, Z, POC, SFe)
-    γ = zoo.dissolved_excretion_fraction
-    σ  = zoo.non_assililated_fraction
+@inline function specific_excretion(zoo, bgc, P, D, PFe, DFe, Z, POC, SFe)
+    σ = zoo.non_assililated_fraction
 
     total_specific_grazing, gP, gD, gPOC, gZ = specific_grazing(zoo, P, D, Z, POC)
 
@@ -200,5 +195,25 @@ end
 
     e = grazing_growth_efficiency(zoo, P, D, PFe, DFe, POC, SFe, gP, gD, gPOC, gZ)
 
-    return (1 - γ) * (1 - e - σ) * (total_specific_grazing + specific_flux_feeding)
+    return (1 - e - σ) * (total_specific_grazing + specific_flux_feeding)
 end
+
+@inline specific_dissolved_grazing_waste(zoo, bgc, P, D, PFe, DFe, Z, POC, SFe) = 
+    (1 - zoo.dissolved_excretion_fraction) * specific_excretion(zoo, bgc, P, D, PFe, DFe, Z, POC, SFe)
+
+@inline specific_non_assimilated_waste(zoo, P, D, Z, POC) =
+    zoo.non_assililated_fraction * specific_grazing(zoo, P, D, Z, POC)
+
+@inline function mortality(zoo::Zooplankton, bgc, I, O₂, T)
+    b  = zoo.temperature_sensetivity
+    m₀ = zoo.quadratic_mortality
+    Kₘ = zoo.mortality_half_saturation
+    r  = zoo.linear_mortality
+
+    temperature_factor = b^T
+
+    concentration_factor = I / (I + Kₘ)
+
+    return temperature_factor * I * (m₀ * I + r * (concentration_factor + 3 * anoxia_factor(bgc, O₂)))
+end
+

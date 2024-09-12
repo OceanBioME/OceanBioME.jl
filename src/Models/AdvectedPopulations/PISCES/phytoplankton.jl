@@ -1,8 +1,9 @@
 include("base_production.jl")
 include("nutrient_limitation.jl")
 
-@kwdef struct Phytoplankton{GR, FT}
+@kwdef struct Phytoplankton{GR, NL, FT}
                         growth_rate :: GR
+                nutrient_limitation :: NL
                         
                    exudated_fracton :: FT = 0.05
 
@@ -56,22 +57,7 @@ end
     production = (1 - δ) * μ * I 
 
     # mortality
-    K = phyto.mortality_half_saturation
-    m = phyto.linear_mortality_rate
-
-    backgroound_shear = bgc.background_shear
-    mixed_layer_shear = bgc.mixed_layer_shear
-
-    linear_mortality = m * I / (I + K) * I
-
-    w₀ = phyto.base_quadratic_mortality
-    w₁ = phyto.maximum_quadratic_mortality
-
-    w = w₀ + w₁ * (1 - L)
-    
-    shear = ifelse(z < zₘₓₗ, backgroound_shear, mixed_layer_shear)
-
-    quadratic_mortality = shear * w * I^2
+    linear_mortality, quadratic_mortality = mortality(phyto, bgc, z, I, zₘₓₗ,  L)
 
     # grazing
     gZ = phytoplankton_grazing(val_name, bgc.zooplankton, P, D, Z, POC)
@@ -111,23 +97,11 @@ end
     production = (1 - δ) * (12 * θ₀ + (θ₁ - θ₀) * ρ) * μ * I 
 
     # mortality
-    K = phyto.mortality_half_saturation
-    m = phyto.linear_mortality_rate
+    linear_mortality, quadratic_mortality = mortality(phyto, bgc, z, I, zₘₓₗ, L)
 
-    backgroound_shear = bgc.background_shear
-    mixed_layer_shear = bgc.mixed_layer_shear
-
-    linear_mortality = m * I / (I + K) * IChl
-
-    w₀ = phyto.base_quadratic_mortality
-    w₁ = phyto.maximum_quadratic_mortality
-
-    w = w₀ + w₁ * (1 - L)
+    linear_mortality *= IChl / I
+    quadratic_mortality *= IChl / I
     
-    shear = ifelse(z < zₘₓₗ, backgroound_shear, mixed_layer_shear)
-
-    quadratic_mortality = shear * w * I * IChl
-
     # grazing
     θChl = IChl / I
 
@@ -172,23 +146,11 @@ end
     production = (1 - δ) * θFeₘ * L₁ * L₂ * (1 - θFe / θFeₘ) / (1.05 - θFe / θFeₘ) * μᵢ * I 
 
     # mortality
-    K = phyto.mortality_half_saturation
-    m = phyto.linear_mortality_rate
+    linear_mortality, quadratic_mortality = mortality(phyto, bgc, z, I, zₘₓₗ, L)
 
-    backgroound_shear = bgc.background_shear
-    mixed_layer_shear = bgc.mixed_layer_shear
-
-    linear_mortality = m * I / (I + K) * IFe
-
-    w₀ = phyto.base_quadratic_mortality
-    w₁ = phyto.maximum_quadratic_mortality
-
-    w = w₀ + w₁ * (1 - L)
+    linear_mortality *= IFe / I
+    quadratic_mortality *= IFe / I
     
-    shear = ifelse(z < zₘₓₗ, backgroound_shear, mixed_layer_shear)
-
-    quadratic_mortality = shear * w * I * IFe
-
     # grazing
     gZ = phytoplankton_grazing(val_name, bgc.zooplankton, P, D, Z, POC)
     gM = phytoplankton_grazing(val_name, bgc.mesozooplankton, P, D, Z, POC)
@@ -242,22 +204,10 @@ end
     production = (1 - δ) * θ₁ * μ * D
 
     # mortality
-    K = phyto.mortality_half_saturation
-    m = phyto.linear_mortality_rate
+    linear_mortality, quadratic_mortality = mortality(phyto, bgc, z, D, zₘₓₗ, L)
 
-    backgroound_shear = bgc.background_shear
-    mixed_layer_shear = bgc.mixed_layer_shear
-
-    linear_mortality = m * D / (D + K) * IFe
-
-    w₀ = phyto.base_quadratic_mortality
-    w₁ = phyto.maximum_quadratic_mortality
-
-    w = w₀ + w₁ * (1 - L)
-    
-    shear = ifelse(z < zₘₓₗ, backgroound_shear, mixed_layer_shear)
-
-    quadratic_mortality = shear * w * D * IFe
+    linear_mortality *= DSi / D
+    quadratic_mortality *= DSi / D
 
     # grazing
     gZ = diatom_grazing(bgc.zooplankton, P, D, Z, POC)
@@ -274,4 +224,31 @@ end
     μ = phyto.growth_rate(bgc, I, IChl, IFe, NO₃, NH₄, PO₄, Fe, Si, Si′, T, zₘₓₗ, zₑᵤ, κ, PAR₁, PAR₂, PAR₃)
 
     return δ * μ * I
+end
+
+@inline function mortality(phyto::Phytoplankton, bgc, z, I, zₘₓₗ)
+    L, = phyto.nutrient_limitation(bgc, I, IChl, IFe, NO₃, NH₄, PO₄, Fe, Si, Si′)
+
+    return mortality(phyto, bgc, z, I, zₘₓₗ, L)
+end
+
+@inline function mortality(phyto::Phytoplankton, bgc, z, I, zₘₓₗ, L)
+    K = phyto.mortality_half_saturation
+    m = phyto.linear_mortality_rate
+
+    backgroound_shear = bgc.background_shear
+    mixed_layer_shear = bgc.mixed_layer_shear
+
+    linear_mortality = m * I / (I + K) * I
+
+    w₀ = phyto.base_quadratic_mortality
+    w₁ = phyto.maximum_quadratic_mortality
+
+    w = w₀ + w₁ * (1 - L)
+    
+    shear = ifelse(z < zₘₓₗ, backgroound_shear, mixed_layer_shear)
+
+    quadratic_mortality = shear * w * I^2
+
+    return linear_mortality, quadratic_mortality
 end

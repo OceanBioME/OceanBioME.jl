@@ -34,14 +34,14 @@ end
 
     respiration_product = dissolved_upper_trophic_respiration_product(bgc.mesozooplankton, M, T)
 
-    microzooplankton_grazing_waste = specific_grazing_waste(bgc.microzooplankton, bgc, P, D, PFe, DFe, Z, POC, SFe) * Z
-    mesozooplankton_grazing_waste  = specific_grazing_waste(bgc.mesozooplankton, bgc, P, D, PFe, DFe, Z, POC, SFe) * M
+    microzooplankton_grazing_waste = specific_dissolved_grazing_waste(bgc.microzooplankton, bgc, P, D, PFe, DFe, Z, POC, SFe) * Z
+    mesozooplankton_grazing_waste  = specific_dissolved_grazing_waste(bgc.mesozooplankton, bgc, P, D, PFe, DFe, Z, POC, SFe) * M
 
     grazing_waste = microzooplankton_grazing_waste + mesozooplankton_grazing_waste
 
     degredation = bacterial_degradation(dom, z, Z, M, DOM, NO₃, NH₄, PO₄, Fe, T, zₘₓₗ, zₑᵤ)
 
-    aggregation_to_particles = aggregation(dom::DissolvedOrganicMatter, bgc, DOC, POC, GOC)
+    aggregation_to_particles = aggregation(dom, bgc, z, DOC, POC, GOC, zₘₓₗ)
 
     return phytoplankton_exudation + particulate_degredation + respiration_product + grazing_waste - degredation - aggregation_to_particles
 end
@@ -92,7 +92,7 @@ end
 
     LBact = bacteria_activity(dom, DOC, NO₃, NH₄, PO₄, Fe)
 
-    return λ * f * (1 - ΔO₂) * LBact * Bact / Bact_ref * DOM # differes from Aumont 2015 since the dimensions don't make sense 
+    return λ * f * LBact * Bact / Bact_ref * DOM # differes from Aumont 2015 since the dimensions don't make sense 
 end
 
 @inline function oxic_remineralisation(dom::DissolvedOrganicMatter, z, Z, M, DOM, NO₃, NH₄, PO₄, Fe, T, zₘₓₗ, zₑᵤ)
@@ -111,7 +111,7 @@ end
     return ΔO₂ * degredation
 end
 
-@inline function aggregation(dom::DissolvedOrganicMatter, bgc, DOC, POC, GOC)
+@inline function aggregation(dom::DissolvedOrganicMatter, bgc, z, DOC, POC, GOC, zₘₓₗ)
     a₁, a₂, a₃, a₄, a₅ = dom.aggregation_parameters
 
     backgroound_shear = bgc.background_shear
