@@ -61,7 +61,7 @@ end
     LSi = ifelse(L.silicate_limited, LSi, Inf)
 
     # don't always need the other arguments but they can be got like μ, = ... or _, LFe = ..
-    return min(LN, LPO₄, LFe, LSi), LFe, LPO₄, LN
+    return min(LN, LPO₄, LFe, LSi), LFe, LPO₄, LN, L_NO₃, L_NH₄
 end
 
 @inline nitrogen_limitation(N₁, N₂, K₁, K₂) = (K₂ * N₁) / (K₁ * K₂ + K₁ * N₂ + K₂ * N₁)

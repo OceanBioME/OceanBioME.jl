@@ -7,7 +7,7 @@
                                                                 NO₃, NH₄, PO₄, Fe, Si, 
                                                                 CaCO₃, DIC, Alk, 
                                                                 O₂, T, 
-                                                                zₘₓₗ, zₑᵤ, Si′, dust, Ω, κ, PAR, PAR₁, PAR₂, PAR₃)
+                                                                zₘₓₗ, zₑᵤ, Si′, dust, Ω, κ, mixed_layer_PAR, PAR, PAR₁, PAR₂, PAR₃)
 
     grazing_waste = specific_non_assimilated_waste(bgc.microzooplankton, bgc, P, D, Z, POC, GOC) * Z
 
@@ -51,7 +51,6 @@
             - grazing - degredation)
 end
 
-
 @inline function (poc::TwoCompartementParticulateOrganicMatter)(bgc, ::Val{:GOC}, 
                                                                 x, y, z, t,
                                                                 P, D, Z, M, 
@@ -61,7 +60,7 @@ end
                                                                 NO₃, NH₄, PO₄, Fe, Si, 
                                                                 CaCO₃, DIC, Alk, 
                                                                 O₂, T, 
-                                                                zₘₓₗ, zₑᵤ, Si′, dust, Ω, κ, PAR, PAR₁, PAR₂, PAR₃)
+                                                                zₘₓₗ, zₑᵤ, Si′, dust, Ω, κ, mixed_layer_PAR, PAR, PAR₁, PAR₂, PAR₃)
 
     grazing_waste = specific_non_assimilated_waste(bgc.mesozooplankton, bgc, P, D, Z, POC, GOC) * M
 

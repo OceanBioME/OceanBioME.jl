@@ -14,7 +14,9 @@
     low_temperature_factor = max(0, T / (T + 0.1)) # modified from origional as it goes negative and does not achieve goal otherwise
     high_temperature_factor = 1 + exp(-(T - 10)^2 / 25)
 
-    return r * L_CaCO₃ * phytoplankton_concentration_factor * low_light_factor * high_light_factor * low_temperature_factor * high_temperature_factor
+    depth_factor = min(1, -50/zₘₓₗ)
+
+    return r * L_CaCO₃ * phytoplankton_concentration_factor * low_light_factor * high_light_factor * low_temperature_factor * high_temperature_factor * depth_factor
 end
 
 #Calcium carbonate is assumed only to exist in the form of calcite.

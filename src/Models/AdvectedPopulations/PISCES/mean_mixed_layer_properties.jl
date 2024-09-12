@@ -1,27 +1,29 @@
-
+#####
+##### Mean mixed layer diffusivity
+#####
 compute_mean_mixed_layer_vertical_diffusivity!(κ::ConstantField, mixed_layer_depth, model) = nothing
 
 compute_mean_mixed_layer_vertical_diffusivity!(κ, mixed_layer_depth, model) =
-    compute_mean_mixed_layer_vertical_diffusivity!(model.closure, κ, mixed_layer_depth, model.diffusivity_fields)
+    compute_mean_mixed_layer_vertical_diffusivity!(model.closure, κ, mixed_layer_depth, model.diffusivity_fields, grid)
 
 # if no closure is defined we just assume its pre-set 
 compute_mean_mixed_layer_vertical_diffusivity!(closure::Nothing, 
                                                mean_mixed_layer_vertical_diffusivity, 
                                                mixed_layer_depth, 
-                                               diffusivity_fields) = nothing
+                                               diffusivity_fields, grid) = nothing
 
-function compute_mean_mixed_layer_vertical_diffusivity!(closure, mean_mixed_layer_vertical_diffusivity, mixed_layer_depth, diffusivity_fields)
+function compute_mean_mixed_layer_vertical_diffusivity!(closure, mean_mixed_layer_vertical_diffusivity, mixed_layer_depth, diffusivity_fields, grid)
     # this is going to get messy
     κ = phytoplankton_diffusivity(closure, diffusivity_fields)
 
-    launch!(arch, grid, :xy, _compute_mean_mixed_layer_vertical_diffusivity!, mean_mixed_layer_vertical_diffusivity, mixed_layer_depth, κ)
+    launch!(arch, grid, :xy, _compute_mean_mixed_layer_vertical_diffusivity!, mean_mixed_layer_vertical_diffusivity, mixed_layer_depth, κ, grid)
 
     fill_halo_regions!(mean_mixed_layer_vertical_diffusivity)
 
     return nothing
 end
 
-@kernel function _compute_mean_mixed_layer_vertical_diffusivity!(κₘₓₗ, mixed_layer_depth, κ)
+@kernel function _compute_mean_mixed_layer_vertical_diffusivity!(κₘₓₗ, mixed_layer_depth, κ, grid)
     i, j = @index(Global, NTuple)
 
     zₘₓₗ = @inbounds mixed_layer_depth[i, j]
@@ -40,6 +42,44 @@ end
 
     κₘₓₗ[i, j] /= integration_depth
 end
+
+#####
+##### Mean mixed layer light
+#####
+
+function compute_mean_mixed_layer_light!(mean_PAR, mixed_layer_depth, PAR, model)
+    grid = model.grid
+    
+    launch!(arch, grid, :xy, _compute_mean_mixed_layer_light!, mean_PAR, mixed_layer_depth, PAR, grid)
+
+    fill_halo_regions!(mean_PAR)
+
+    return nothing
+end
+
+@kernel function _compute_mean_mixed_layer_light!(mean_PAR, mixed_layer_depth, PAR, grid)
+    i, j = @index(Global, NTuple)
+
+    zₘₓₗ = @inbounds mixed_layer_depth[i, j]
+
+    @inbounds mean_PAR[i, j] = 0
+
+    integration_depth = 0
+
+    for k in grid.Nz:-1:1
+        if znode(i, j, k, grid, Center(), Center(), Center()) > zₘₓₗ
+            Δz = zspacing(i, j, k, grid, Center(), Center(), Center())
+            mean_PAR[i, j] += PAR[i, j, k] * Δz 
+            integration_depth += Δz
+        end
+    end
+
+    mean_PAR[i, j] /= integration_depth
+end
+
+#####
+##### Informaiton about diffusivity fields
+#####
 
 # this does not belong here - lets add them when a particular closure is needed
 using Oceananigans.TurbulenceClosures: ScalarDiffusivity, ScalarBiharmonicDiffusivity, VerticalFormulation, ThreeDimensionalFormulation, formulation

@@ -551,7 +551,8 @@ end
      Si̅ = bgc.yearly_maximum_silicate, 
      D_dust = bgc.dust_deposition, 
      Ω = bgc.calcite_saturation,
-     κ = bgc.mean_mixed_layer_vertical_diffusivity)
+     κ = bgc.mean_mixed_layer_vertical_diffusivity,
+     mixed_layer_PAR = bgc.mean_mixed_layer_light)
 
 @inline required_biogeochemical_tracers(::PISCES) = 
     (:P, :D, :Z, :M, 
@@ -568,7 +569,7 @@ end
      :T)
 
 @inline required_biogeochemical_auxiliary_fields(::PISCES) =
-    (:zₘₓₗ, :zₑᵤ, :Si̅, :D_dust, :Ω, :κ, :PAR, :PAR₁, :PAR₂, :PAR₃)
+    (:zₘₓₗ, :zₑᵤ, :Si̅, :D_dust, :Ω, :κ, :mixed_layer_PAR, :PAR, :PAR₁, :PAR₂, :PAR₃)
 
 # for sinking things like POM this is how we tell oceananigans ther sinking speed
 @inline function biogeochemical_drift_velocity(bgc::PISCES, ::Val{tracer_name}) where tracer_name
@@ -622,7 +623,7 @@ function update_biogeochemical_state!(model, bgc::PISCES)
 
     compute_euphotic_depth!(bgc.euphotic_depth, PAR)
 
-    compute_mean_mixed_layer_vertical_diffusivity!(bgc.mean_mixed_layer_vertical_diffusivity, bgc.mixed_layer_depth, model)
+    compute_mixed_layer_mean_properties!(bgc.mean_mixed_layer_vertical_diffusivity, bgc.mean_mixed_layer_light, bgc.mixed_layer_depth, PAR, model)
 
     compute_calcite_saturation!(bgc.carbon_chemistry, bgc.calcite_saturation, model)
 

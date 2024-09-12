@@ -80,7 +80,7 @@ end
                                     NO₃, NH₄, PO₄, Fe, Si, 
                                     CaCO₃, DIC, Alk, 
                                     O₂, T, 
-                                    zₘₓₗ, zₑᵤ, Si′, dust, Ω, κ, PAR, PAR₁, PAR₂, PAR₃)
+                                    zₘₓₗ, zₑᵤ, Si′, dust, Ω, κ, mixed_layer_PAR, PAR, PAR₁, PAR₂, PAR₃)
 
     I = zooplankton_concentration(val_name, Z, M)
 
@@ -151,6 +151,14 @@ end
     return (1 - γ) * R
 end
 
+@inline function inorganic_upper_trophic_respiration_product(zoo, M, T)
+    γ = zoo.dissolved_excretion_fraction
+
+    R = upper_trophic_respiration_product(zoo, M, T)
+
+    return γ * R
+end
+
 @inline function upper_trophic_waste(zoo, M, T)
     e₀ = zoo.maximum_growth_efficiency
     b  = zoo.temperature_sensetivity
@@ -200,6 +208,9 @@ end
 
 @inline specific_dissolved_grazing_waste(zoo, bgc, P, D, PFe, DFe, Z, POC, SFe) = 
     (1 - zoo.dissolved_excretion_fraction) * specific_excretion(zoo, bgc, P, D, PFe, DFe, Z, POC, SFe)
+
+@inline specific_inorganic_grazing_waste(zoo, bgc, P, D, PFe, DFe, Z, POC, SFe) = 
+    zoo.dissolved_excretion_fraction * specific_excretion(zoo, bgc, P, D, PFe, DFe, Z, POC, SFe)
 
 @inline function specific_non_assimilated_waste(zoo, bgc, P, D, Z, POC, GOC)
     g, = specific_grazing(zoo, P, D, Z, POC)

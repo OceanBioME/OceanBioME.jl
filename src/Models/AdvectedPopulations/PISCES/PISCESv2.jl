@@ -1,4 +1,4 @@
-struct PISCES{NP, DP, SZ, BZ, DM, PM, NI, FE, SI, OX, PO, CA, CE, FT, LA, DL, ML, EU, MS, DD, VD, CC, CS, SS} <: AbstractContinuousFormBiogeochemistry
+struct PISCES{NP, DP, SZ, BZ, DM, PM, NI, FE, SI, OX, PO, CA, CE, FT, LA, DL, ML, EU, MS, DD, VD, MP, CC, CS, SS} <: AbstractContinuousFormBiogeochemistry
                         nanophytoplankton :: NP
                                   diatoms :: DP
 
@@ -20,6 +20,9 @@ struct PISCES{NP, DP, SZ, BZ, DM, PM, NI, FE, SI, OX, PO, CA, CE, FT, LA, DL, ML
                    first_anoxia_threshold :: FT
                   second_anoxia_threshold :: FT
 
+                  nitrogen_redfield_ratio :: FT
+                phosphate_redfield_ratio :: FT
+
                         mixed_layer_shear :: FT
                          background_shear :: FT
 
@@ -32,6 +35,7 @@ struct PISCES{NP, DP, SZ, BZ, DM, PM, NI, FE, SI, OX, PO, CA, CE, FT, LA, DL, ML
                           dust_deposition :: DD
 
     mean_mixed_layer_vertical_diffusivity :: VD
+                   mean_mixed_layer_light :: MP
 
                          carbon_chemistry :: CC
                        calcite_saturation :: CS
@@ -135,7 +139,7 @@ function PISCES(; grid,
                   dissolved_organic_matter = DissolvedOrganicMatter(),
                   particulate_organic_matter = TwoCompartementParticulateOrganicMatter(),
                   
-                  nitrogen,
+                  nitrogen = NitrateAmmonia(),
                   iron,
                   silicate,
                   oxygen,
@@ -144,8 +148,12 @@ function PISCES(; grid,
                   calcite,
                   carbon_system,
 
-                  first_anoxia_thresehold = 1.0,
-                  second_anoxia_thresehold = 6.0,
+                  # from Aumount 2005 rather than 2015 since it doesn't work the other way around
+                  first_anoxia_thresehold = 6.0,
+                  second_anoxia_thresehold = 1.0,
+
+                  nitrogen_redfield_ratio = 16/122,
+                  phosphate_redfield_ratio = 1/122,
                   
                   mixed_layer_shear = 1.0,
                   background_shear = 0.01, 
@@ -160,6 +168,7 @@ function PISCES(; grid,
                   dust_deposition = ZeroField(),
 
                   mean_mixed_layer_vertical_diffusivity = Field{Center, Center, Nothing}(grid),
+                  mean_mixed_layer_light = Field{Center, Center, Nothing}(grid),
 
                   carbon_chemistry = CarbonChemistry(),
                   calcite_saturation = CenterField(grid),
@@ -215,11 +224,13 @@ function PISCES(; grid,
                                         nitrogen, iron, silicate, oxygen, phosphate,
                                         calcite, carbon_system, 
                                         first_anoxia_thresehold, second_anoxia_thresehold,
+                                        nitrogen_redfield_ratio, phosphate_redfield_ratio,
                                         mixed_layer_shear, background_shear,
                                         latitude, day_length,
                                         mixed_layer_depth, euphotic_depth,
                                         yearly_maximum_silicate, dust_deposition,
                                         mean_mixed_layer_vertical_diffusivity, 
+                                        mean_mixed_layer_light,
                                         carbon_chemistry, calcite_saturation,
                                         sinking_velocities)
 

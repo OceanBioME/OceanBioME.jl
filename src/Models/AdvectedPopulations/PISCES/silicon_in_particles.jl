@@ -7,7 +7,7 @@
                                                                 NO₃, NH₄, PO₄, Fe, Si, 
                                                                 CaCO₃, DIC, Alk, 
                                                                 O₂, T, 
-                                                                zₘₓₗ, zₑᵤ, Si′, dust, Ω, κ, PAR, PAR₁, PAR₂, PAR₃)
+                                                                zₘₓₗ, zₑᵤ, Si′, dust, Ω, κ, mixed_layer_PAR, PAR, PAR₁, PAR₂, PAR₃)
 
     # diatom grazing
     _, _, microzooplankton_grazing = specific_grazing(bgc.microzooplankton, P, D, Z, POC)

@@ -7,7 +7,7 @@
                                                                 NO₃, NH₄, PO₄, Fe, Si, 
                                                                 CaCO₃, DIC, Alk, 
                                                                 O₂, T, 
-                                                                zₘₓₗ, zₑᵤ, Si′, dust, Ω, κ, PAR, PAR₁, PAR₂, PAR₃)
+                                                                zₘₓₗ, zₑᵤ, Si′, dust, Ω, κ, mixed_layer_PAR, PAR, PAR₁, PAR₂, PAR₃)
 
     grazing_waste = specific_non_assimilated_iron_waste(bgc.microzooplankton, P, D, PFe, DFe, Z, POC, GOC, SFe, BFe) * Z
 
@@ -81,7 +81,7 @@ end
                                                                 NO₃, NH₄, PO₄, Fe, Si, 
                                                                 CaCO₃, DIC, Alk, 
                                                                 O₂, T, 
-                                                                zₘₓₗ, zₑᵤ, Si′, dust, Ω, κ, PAR, PAR₁, PAR₂, PAR₃)
+                                                                zₘₓₗ, zₑᵤ, Si′, dust, Ω, κ, mixed_layer_PAR, PAR, PAR₁, PAR₂, PAR₃)
 
     grazing_waste = specific_non_assimilated_iron_waste(bgc.mesozooplankton, P, D, PFe, DFe, Z, POC, GOC, SFe, BFe) * M
 

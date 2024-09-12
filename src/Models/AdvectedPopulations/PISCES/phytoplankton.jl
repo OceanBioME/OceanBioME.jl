@@ -42,7 +42,7 @@ end
                                         NO₃, NH₄, PO₄, Fe, Si, 
                                         CaCO₃, DIC, Alk, 
                                         O₂, T, 
-                                        zₘₓₗ, zₑᵤ, Si′, dust, Ω, κ, PAR, PAR₁, PAR₂, PAR₃)
+                                        zₘₓₗ, zₑᵤ, Si′, dust, Ω, κ, mixed_layer_PAR, PAR, PAR₁, PAR₂, PAR₃)
     # production
     δ  = phyto.exudated_fracton
 
@@ -77,7 +77,7 @@ end
                                         NO₃, NH₄, PO₄, Fe, Si, 
                                         CaCO₃, DIC, Alk, 
                                         O₂, T, 
-                                        zₘₓₗ, zₑᵤ, Si′, dust, Ω, κ, PAR, PAR₁, PAR₂, PAR₃)
+                                        zₘₓₗ, zₑᵤ, Si′, dust, Ω, κ, mixed_layer_PAR, PAR, PAR₁, PAR₂, PAR₃)
 
     I    = phytoplankton_concentration(val_name, P, D)
     IChl = phytoplankton_concentration(val_name, PChl, DChl)
@@ -122,7 +122,7 @@ end
                                         NO₃, NH₄, PO₄, Fe, Si, 
                                         CaCO₃, DIC, Alk, 
                                         O₂, T, 
-                                        zₘₓₗ, zₑᵤ, Si′, dust, Ω, κ, PAR, PAR₁, PAR₂, PAR₃)
+                                        zₘₓₗ, zₑᵤ, Si′, dust, Ω, κ, mixed_layer_PAR, PAR, PAR₁, PAR₂, PAR₃)
 
     I    = phytoplankton_concentration(val_name, P, D)
     IChl = phytoplankton_concentration(val_name, PChl, DChl)
@@ -169,7 +169,7 @@ end
                                         NO₃, NH₄, PO₄, Fe, Si, 
                                         CaCO₃, DIC, Alk, 
                                         O₂, T, 
-                                        zₘₓₗ, zₑᵤ, Si′, dust, Ω, κ, PAR, PAR₁, PAR₂, PAR₃)
+                                        zₘₓₗ, zₑᵤ, Si′, dust, Ω, κ, mixed_layer_PAR, PAR, PAR₁, PAR₂, PAR₃)
 
     # production
     δ  = phyto.exudated_fracton
@@ -251,4 +251,20 @@ end
     quadratic_mortality = shear * w * I^2
 
     return linear_mortality, quadratic_mortality
+end
+
+@inline function nitrate_uptake(phyto::Phytoplankton, I, IChl, IFe, NO₃, NH₄, PO₄, Fe, Si, Si′, zₘₓₗ, zₑᵤ, κ, PAR₁, PAR₂, PAR₃)
+    L, _, _, LN, L_NO₃ = phyto.nutrient_limitation(bgc, I, IChl, IFe, NO₃, NH₄, PO₄, Fe, Si, Si′)
+
+    μ = phyto.growth_rate(bgc, I, IChl, T, zₘₓₗ, zₑᵤ, κ, PAR₁, PAR₂, PAR₃, L) * I
+
+    return μ * L_NO₃ / LN
+end
+
+@inline function ammonia_uptake(phyto::Phytoplankton, I, IChl, IFe, NO₃, NH₄, PO₄, Fe, Si, Si′, zₘₓₗ, zₑᵤ, κ, PAR₁, PAR₂, PAR₃)
+    L, _, _, LN, _, L_NH₄ = phyto.nutrient_limitation(bgc, I, IChl, IFe, NO₃, NH₄, PO₄, Fe, Si, Si′)
+
+    μ = phyto.growth_rate(bgc, I, IChl, T, zₘₓₗ, zₑᵤ, κ, PAR₁, PAR₂, PAR₃, L) * I
+
+    return μ * L_NH₄ / LN
 end
