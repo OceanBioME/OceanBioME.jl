@@ -54,13 +54,13 @@ end
     bM = dom.mesozooplankton_bacteria_concentration
     a  = dom.bacteria_concentration_depth_exponent
 
-    zₘ = max(zₘₓₗ, zₑᵤ)
+    zₘ = min(zₘₓₗ, zₑᵤ)
 
     surface_bacteria = min(4, bZ * Z + bM * M)
 
     depth_factor = (zₘ / z) ^ a
 
-    return ifelse(z <= zₘ, 1, depth_factor) * surface_bacteria
+    return ifelse(z >= zₘ, 1, depth_factor) * surface_bacteria
 end
 
 @inline function bacteria_activity(dom::DissolvedOrganicMatter, DOC, NO₃, NH₄, PO₄, Fe)
