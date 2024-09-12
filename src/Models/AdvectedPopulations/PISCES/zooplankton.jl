@@ -201,8 +201,24 @@ end
 @inline specific_dissolved_grazing_waste(zoo, bgc, P, D, PFe, DFe, Z, POC, SFe) = 
     (1 - zoo.dissolved_excretion_fraction) * specific_excretion(zoo, bgc, P, D, PFe, DFe, Z, POC, SFe)
 
-@inline specific_non_assimilated_waste(zoo, P, D, Z, POC) =
-    zoo.non_assililated_fraction * specific_grazing(zoo, P, D, Z, POC)
+@inline function specific_non_assimilated_waste(zoo, bgc, P, D, Z, POC, GOC)
+    g, = specific_grazing(zoo, P, D, Z, POC)
+
+    small_flux_feeding = specific_flux_feeding(zoo, POC, bgc.sinking_velocities.POC.w, grid)
+    large_flux_feeding = specific_flux_feeding(zoo, GOC, bgc.sinking_velocities.GOC.w, grid)
+    
+    return zoo.non_assililated_fraction * (g + small_flux_feeding + large_flux_feeding)
+end
+
+@inline function specific_non_assimilated_iron_waste(zoo, P, D, PFe, DFe, Z, POC, GOC, SFe, BFe)
+    _, gP, gD, gPOC, gZ = specific_grazing(zoo, P, D, Z, POC)
+
+    small_flux_feeding = specific_flux_feeding(zoo, POC, bgc.sinking_velocities.POC.w, grid)
+    large_flux_feeding = specific_flux_feeding(zoo, GOC, bgc.sinking_velocities.GOC.w, grid)
+
+    return zoo.non_assililated_fraction * (gP * PFe / P + gD * DFe / D + gPOC * SFe / Fe + gZ * zoo.iron_ratio 
+                                           + small_flux_feeding * SFe / POC + large_flux_feeding * BFe / GOC)
+end
 
 @inline function mortality(zoo::Zooplankton, bgc, I, O₂, T)
     b  = zoo.temperature_sensetivity

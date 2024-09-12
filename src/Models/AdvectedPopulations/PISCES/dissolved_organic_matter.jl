@@ -12,6 +12,9 @@
     phosphate_half_saturation_for_bacterial_activity :: FT = 0.003
     iron_half_saturation_for_bacterial_activity :: FT = 0.01
     aggregation_parameters :: AP = (0.37, 102, 3530, 5095, 114) .* 10^-6 / day #(μmolCL⁻¹)⁻¹s⁻¹
+    maximum_iron_ratio_in_bacteria :: FT = 10^-3
+    iron_half_saturation_for_bacteria :: FT = 0.03
+    maximum_bacterial_growth_rate :: FT = 0.6 / day
 end
 
 @inline function (dom::DissolvedOrganicMatter)(bgc, ::Val{:DOC}, 
@@ -124,4 +127,19 @@ end
     Φ₃ = (a₄ * POC + a₅ * DOC) * DOC
 
     return Φ₁ + Φ₂ + Φ₃, Φ₁, Φ₂, Φ₃
+end
+
+@inline function bacterial_iron_uptake(dom::DissolvedOrganicMatter, z, Z, M, DOC, NO₃, NH₄, PO₄, Fe, T, zₘₓₗ, zₑᵤ)
+    μ₀ = dom.maximum_bacterial_growth_rate
+    b  = dom.temperature_sensetivity
+    θ  = dom.iron_half_saturation_for_bacteria
+    K  = dom.iron_half_saturation_for_bacteria
+
+    μ = μ₀ * b^T
+
+    Bact = bacteria_concentration(dom, z, Z, M, zₘₓₗ, zₑᵤ)
+
+    L = bacteria_activity(dom, DOC, NO₃, NH₄, PO₄, Fe)
+
+    return μ * L * θ * Fe / (Fe + K) * Bact
 end

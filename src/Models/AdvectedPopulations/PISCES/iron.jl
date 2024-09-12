@@ -1,5 +1,28 @@
+@inline function free_iron(::SimpleIron, Fe, DOC, T)
+    # maybe some of these numbers should be parameters
+    ligands = max(0.6, 0.09 * (DOC + 40) - 3)
+    K = exp(16.27 - 1565.7 / max(T + 273.15, 5))
+    Δ = 1 + K * ligands - K * Fe
+
+    return (-Δ + √(Δ^2 + 4K * Fe)) / 2K
+end
+
+# this should be dispatched on an abstract type if we implement complex chemistry
+@inline function aggregation_of_colloidal_iron(iron::SimpleIron, dom, bgc, z, DOC, POC, GOC, Fe, T, zₘₓₗ)
+    _, Φ₁, Φ₂, Φ₃ = aggregation(dom, bgc, z, DOC, POC, GOC, zₘₓₗ)
+
+    Fe′ = free_iron(iron, Fe, DOC, T)
+    ligand_iron = Fe - Fe′
+    colloidal_iron = 0.5 * ligand_iron
+
+    CgFe1 = (Φ₁ + Φ₃) * colloidal_iron / DOC
+    CgFe2 = Φ₂ * colloidal_iron / DOC
+
+    return CgFe1 + CgFe2, CgFe1, CgFe2
+end
+
 # This document contains functions for the following:
-    # free_organic_iron(eq65), dissolved free inorganic iron
+    # free_iron(eq65), dissolved free inorganic iron
     # iron_colloid_aggregation_1, iron_colloid_aggregation_2, enhanced_scavenging, bacterial_uptake_Fe (eqs 61, 62, 63)
     # Forcing for Fe (eq60)
 
@@ -9,7 +32,7 @@
 #Iron is lost through Scav and enhanced_scavenging terms. Aside from this, iron is conserved, accounting for all other explicit and implicit compartments of iron
 
 #Determine concentration of free organic iron. This is the only form of iron assumed susceptible to scavenging.
-@inline function free_organic_iron(Fe, DOC, T)
+@inline function free_iron(Fe, DOC, T)
     Lₜ = max(0.09*(DOC + 40) - 3, 0.6) # This may also be taken to be a constant parameter, total_concentration_of_iron_ligands
     K_eqᶠᵉ = exp(16.27 - 1565.7/max(T + 273.15, 5)) #check this value
     Δ = 1 +  K_eqᶠᵉ*Lₜ -  K_eqᶠᵉ*Fe
@@ -24,7 +47,7 @@ end
     a₄ = bgc.aggregation_rate_of_DOC_to_POC_4
     a₅ = bgc.aggregation_rate_of_DOC_to_POC_5
    
-    FeL = Fe - free_organic_iron(Fe, DOC, T) #eq64
+    FeL = Fe - free_iron(Fe, DOC, T) #eq64
     Fe_coll = 0.5*FeL
     return ((a₁*DOC + a₂*POC)*sh+a₄*POC + a₅*DOC)*Fe_coll #eq61a
 end
@@ -32,7 +55,7 @@ end
 #iron_colloid_aggregation_2 is aggregation of colloids with GOC. Routed to BFe.
 @inline function iron_colloid_aggregation_2(sh, Fe, T, DOC, GOC, bgc)
     a₃ = bgc.aggregation_rate_of_DOC_to_GOC_3
-    FeL = Fe - free_organic_iron(Fe, DOC, T)
+    FeL = Fe - free_iron(Fe, DOC, T)
     Fe_coll = 0.5*FeL
     return a₃*GOC*sh*Fe_coll #eq61b
 end
@@ -41,7 +64,7 @@ end
 @inline function enhanced_scavenging(Fe, DOC, T, bgc)
     λᶠᵉ = 1e-3 * bgc.slope_of_scavenging_rate_of_iron #parameter not defined in parameter list. Assumed scaled version λ_Fe to fit dimensions of Fe¹.
     Lₜ = max(0.09*(DOC + 40) - 3, 0.6)
-    return λᶠᵉ*max(0, Fe - Lₜ)*free_organic_iron(Fe, DOC, T) #eq62
+    return λᶠᵉ*max(0, Fe - Lₜ)*free_iron(Fe, DOC, T) #eq62
 end
 
 #Formulation for bacterial uptake of iron.
