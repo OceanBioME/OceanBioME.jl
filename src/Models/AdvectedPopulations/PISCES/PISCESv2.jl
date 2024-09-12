@@ -17,6 +17,9 @@ struct PISCES{NP, DP, SZ, BZ, DM, PM, NI, FE, SI, OX, PO, CA, CE, FT, LA, DL, ML
                                   calcite :: CA
                             carbon_system :: CE
 
+                   first_anoxia_threshold :: FT
+                  second_anoxia_threshold :: FT
+
                         mixed_layer_shear :: FT
                          background_shear :: FT
 
@@ -81,6 +84,7 @@ const CARBON_SYSTEM = Union{Val{:DIC}, Val{:Alk}}
     (:zₘₓₗ, :zₑᵤ, :Si̅, :dust, :Ω, :κ, :PAR, :PAR₁, :PAR₂, :PAR₃)
 
 include("phytoplankton/phytoplankton.jl")
+include("zooplankton.jl")
 
 
 function PISCES(; grid,
@@ -91,15 +95,31 @@ function PISCES(; grid,
                                                     red_light_absorption = 0.4,
                                                     maximum_quadratic_mortality = 0.0,
                                                     maximum_chlorophyll_ratio = 0.033),
-                  diatoms           = Phytoplankton(growth_rate = GrowthRespirationLimitedProduction(dark_tollerance = 4days),
-                                                    blue_light_absorption = 1.6, 
-                                                    green_light_absorption = 0.69, 
-                                                    red_light_absorption = 0.7,
-                                                    maximum_quadratic_mortality = 0.03,
-                                                    maximum_chlorophyll_ratio = 0.05),
+
+                  diatoms = Phytoplankton(growth_rate = GrowthRespirationLimitedProduction(dark_tollerance = 4days),
+                                          blue_light_absorption = 1.6, 
+                                          green_light_absorption = 0.69, 
+                                          red_light_absorption = 0.7,
+                                          maximum_quadratic_mortality = 0.03,
+                                          maximum_chlorophyll_ratio = 0.05),
                   
-                  microzooplankton,
-                  mesozooplankton,
+                  microzooplankton = Zooplankton(maximum_grazing_rate = 3/day,
+                                                 preference_for_nanophytoplankton = 1.0,
+                                                 preference_for_diatoms = 0.5,
+                                                 preference_for_particulates = 0.1,
+                                                 preference_for_microzooplankton = 0.0
+                                                 quadratic_mortality = 0.004,
+                                                 linear_mortality = 0.03,
+                                                 maximum_growth_efficiency = 0.3),
+
+                  mesozooplankton = Zooplankton(maximum_grazing_rate = 0.75/day,
+                                                preference_for_nanophytoplankton = 0.3,
+                                                preference_for_diatoms = 1.0,
+                                                preference_for_particulates = 0.3,
+                                                preference_for_microzooplankton = 1.0,
+                                                quadratic_mortality = 0.03,
+                                                linear_mortality = 0.005,
+                                                maximum_growth_efficiency = 0.35),
                   
                   dissolved_organic_matter,
                   particulate_organic_matter,
@@ -112,6 +132,9 @@ function PISCES(; grid,
                   
                   calcite,
                   carbon_system,
+
+                  first_anoxia_thresehold = 1.0,
+                  second_anoxia_thresehold = 6.0,
                   
                   mixed_layer_shear = 1.0,
                   background_shear = 0.01, 
@@ -119,7 +142,7 @@ function PISCES(; grid,
                   latitude = PrescribedLatitude(45),
                   day_length,
                   
-                  mixed_layer_depth = FunctionField{Center, Center, Center}(-100.0, grid),
+                  mixed_layer_depth = Field{Center, Center, Nothing}(grid),
                   euphotic_depth = Field{Center, Center, Nothing}(grid),
 
                   yearly_maximum_silicate = ConstantField(7.5),
@@ -156,6 +179,8 @@ function PISCES(; grid,
 
     sinking_velocities = setup_velocity_fields(sinking_speeds, grid, open_bottom)
 
+    sinking_velocities = merge(sinking_velocities, (; grid)) # we need to interpolate the fields so we need this for flux feeding inside a kernel - this might cause problems...
+
     if (latitude isa PrescribedLatitude) & !(grid isa RectilinearGrid)
         φ = φnodes(grid, Center(), Center(), Center())
 
@@ -178,6 +203,7 @@ function PISCES(; grid,
                                         dissolved_organic_matter, particulate_organic_matter,
                                         nitrogen, iron, silicate, oxygen, phosphate,
                                         calcite, carbon_system, 
+                                        first_anoxia_thresehold, second_anoxia_thresehold,
                                         mixed_layer_shear, background_shear,
                                         latitude, day_length,
                                         mixed_layer_depth, euphotic_depth,

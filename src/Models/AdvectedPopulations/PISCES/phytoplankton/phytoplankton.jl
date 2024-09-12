@@ -3,6 +3,8 @@ include("nutrient_limitation.jl")
 
 @kwdef struct Phytoplankton{GR, FT}
                         growth_rate :: GR
+                        
+                   exudated_fracton :: FT = 0.05
 
               blue_light_absorption :: FT
              green_light_absorption :: FT

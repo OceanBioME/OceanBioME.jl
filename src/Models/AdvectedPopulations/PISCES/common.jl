@@ -1,5 +1,6 @@
 using KernelAbstractions: @kernel, @index
 
+using Oceananigans.Fields: interpolate
 using Oceananigans.Grids: znode, zspacing
 
 @inline shear(z, zₘₓₗ, background_shear, mixed_layer_shear) = ifelse(z <= zₘₓₗ, background_shear, mixed_layer_shear) # Given as 1 in Aumont paper
@@ -28,11 +29,20 @@ end
 end
 
 # I can't find any explanation as to why this might depend on the euphotic depth
-function (p::DepthDependantSinkingSpeed)(i, j, k, grid, mixed_layer_depth, euphotic_depth)
+@inline function (p::DepthDependantSinkingSpeed)(i, j, k, grid, mixed_layer_depth, euphotic_depth)
     zₘₓₗ = @inbounds mixed_layer_depth[i, j, k]
     zₑᵤ  = @inbounds euphotic_depth[i, j, k]
 
     z = znode(i, j, k, grid, Center(), Center(), Center())
 
     return - p.minimum_speed + (p.maximum_speed - p.minimum_speed) * min(0, z - min(zₘₓₗ, zₑᵤ)) / 5000
+end
+
+@inline particle_sinking_speed(x, y, z, grid, w) = interpolate((x, y, z), w, (Center(), Center(), Face()), grid)
+
+@inline function anoxia_factor(bgc, O₂)
+    min_1 = bgc.first_anoxia_thresehold
+    min_2 = bgc.second_anoxia_thresehold
+
+    return min(1, max(0, 0.4 * (min_1 - O₂) / (min_2 + O₂)))
 end
