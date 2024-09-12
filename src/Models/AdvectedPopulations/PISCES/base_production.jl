@@ -37,8 +37,8 @@ end
   temperature_sensetivity :: FT = 1.066
           dark_tollerance :: FT
 initial_slope_of_PI_curve :: FT = 2.0
-   basal_respiration_rate :: FT
-    reference_growth_rate :: FT
+   basal_respiration_rate :: FT = 0.033
+    reference_growth_rate :: FT = 1.0
 end
 
 @inline function (μ::GrowthRespirationLimitedProduction)(bgc, I, IChl, T, zₘₓₗ, zₑᵤ, κ, PAR, L)

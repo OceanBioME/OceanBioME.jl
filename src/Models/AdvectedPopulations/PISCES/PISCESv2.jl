@@ -83,7 +83,7 @@ const CARBON_SYSTEM = Union{Val{:DIC}, Val{:Alk}}
 @inline required_biogeochemical_auxiliary_fields(::PISCES) = 
     (:zₘₓₗ, :zₑᵤ, :Si̅, :dust, :Ω, :κ, :PAR, :PAR₁, :PAR₂, :PAR₃)
 
-include("phytoplankton/phytoplankton.jl")
+include("phytoplankton.jl")
 include("zooplankton.jl")
 
 
