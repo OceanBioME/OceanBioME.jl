@@ -13,6 +13,7 @@ using Oceananigans.Biogeochemistry:
         update_biogeochemical_state!
 
 using Oceananigans.Fields: CenterField
+using Oceananigans.Grids: RectilinearGrid, Flat
 using Oceananigans.TimeSteppers: tick!, TimeStepper
 using Oceananigans: UpdateStateCallsite, TendencyCallsite
 
@@ -20,8 +21,8 @@ using OceanBioME: BoxModelGrid
 using StructArrays, JLD2
 
 import Oceananigans.Simulations: run!
-import Oceananigans: set!
-import Oceananigans.Fields: regularize_field_boundary_conditions, TracerFields
+import Oceananigans: set!, fields
+import Oceananigans.Fields: regularize_field_boundary_conditions, TracerFields, interpolate
 import Oceananigans.Architectures: architecture
 import Oceananigans.Models: default_nan_checker, iteration, AbstractModel, prognostic_fields
 import Oceananigans.TimeSteppers: update_state!
@@ -107,7 +108,9 @@ architecture(model::BoxModel) = architecture(model.grid) # this might be the def
 default_nan_checker(::BoxModel) = nothing
 iteration(model::BoxModel) = model.clock.iteration
 prognostic_fields(model::BoxModel) = @inbounds model.fields[required_biogeochemical_tracers(model.biogeochemistry)]
+fields(model::BoxModel) = model.fields
 
+interpolate(at_node, from_field, from_loc, from_grid::RectilinearGrid{<:Any, Flat, Flat, Flat}) = @inbounds from_field[1, 1, 1]
 
 """
     set!(model::BoxModel; kwargs...)
