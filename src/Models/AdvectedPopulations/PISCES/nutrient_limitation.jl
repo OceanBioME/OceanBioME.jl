@@ -21,7 +21,7 @@ end
     return (I₁ + S * I₂) / (I₁ + I₂)
 end
 
-@inline function (L::NitrogenIronPhosphateLimitation)(bgc, I, IChl, IFe, NO₃, NH₄, PO₄, Fe, Si, Si′)
+@inline function (L::NitrogenIronPhosphateSilicateLimitation)(bgc, I, IChl, IFe, NO₃, NH₄, PO₄, Fe, Si, Si′)
     kₙₒ = L.minimum_nitrate_half_saturation
     kₙₕ = L.minimum_ammonium_half_saturation
     kₚ  = L.minimum_phosphate_half_saturation

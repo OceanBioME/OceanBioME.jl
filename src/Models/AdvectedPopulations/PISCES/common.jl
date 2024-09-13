@@ -15,7 +15,7 @@ end
 @inline (::ModelLatitude)(y) = y
 
 # we should probably extend this to use DateTime dates at some point
-@inline function day_length(φ, t)
+@inline function day_length_function(φ, t)
     # as per Forsythe et al., 1995 (https://doi.org/10.1016/0304-3800(94)00034-F)
     p = asind(0.39795 * cos(0.2163108 + 2 * atan(0.9671396 * tan(0.00860 * (floor(Int, t / day) - 186)))))
 

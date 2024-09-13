@@ -20,15 +20,15 @@
     non_assililated_fraction :: FT = 0.3
 
     mortality_half_saturation :: FT = 0.2
-    quadration_mortality :: FT
+    quadratic_mortality :: FT
     linear_mortality :: FT
 
     dissolved_excretion_fraction :: FT = 0.6
     undissolved_calcite_fraction :: FT 
 end
 
-@inline zooplankton_concentration(::Val{Z}, Z, M) = Z
-@inline zooplankton_concentration(::Val{M}, Z, M) = M
+@inline zooplankton_concentration(::Val{:Z}, Z, M) = Z
+@inline zooplankton_concentration(::Val{:M}, Z, M) = M
 
 @inline function specific_grazing(zoo::Zooplankton, P, D, Z, POC)
     g₀   = zoo.maximum_grazing_rate
@@ -173,7 +173,7 @@ end
 @inline upper_trophic_respiration_product(zoo, M, T) = 
     (1 - zoo.maximum_growth_efficiency - zoo.non_assililated_fraction) * upper_trophic_waste(zoo, M, T)
 
-@inline upper_trophic_fecal_product(zoo, M, T)
+@inline upper_trophic_fecal_product(zoo, M, T) =
     zoo.non_assililated_fraction * upper_trophic_waste(zoo, M, T)
 
 @inline function grazing_growth_efficiency(zoo, P, D, PFe, DFe, POC, SFe, gP, gD, gPOC, gZ)

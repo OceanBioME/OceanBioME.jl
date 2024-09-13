@@ -27,11 +27,11 @@ include("nutrient_limitation.jl")
              optimal_silicate_ratio :: FT = 0.159
 end
 
-@inline phytoplankton_concentration(::Val{P}, P, D) = P
-@inline phytoplankton_concentration(::Val{D}, P, D) = D
+@inline phytoplankton_concentration(::Val{:P}, P, D) = P
+@inline phytoplankton_concentration(::Val{:D}, P, D) = D
 
-@inline phytoplankton_grazing(::Val{P}, args...) = nanophytoplankton_grazing(args...)
-@inline phytoplankton_grazing(::Val{D}, args...) = diatom_grazing(args...)
+@inline phytoplankton_grazing(::Val{:P}, args...) = nanophytoplankton_grazing(args...)
+@inline phytoplankton_grazing(::Val{:D}, args...) = diatom_grazing(args...)
 
 @inline function (phyto::Phytoplankton)(bgc, val_name::Union{Val{:P}, Val{:D}}, 
                                         x, y, z, t,

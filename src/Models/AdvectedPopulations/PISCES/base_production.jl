@@ -35,7 +35,7 @@ end
     return μ(bgc, I, IChl, T, zₘₓₗ, zₑᵤ, κ, PAR₁, PAR₂, PAR₃, L)
 end
 
-struct NutrientLimitedProduction{FT} <: BaseProduction
+@kwdef struct NutrientLimitedProduction{FT} <: BaseProduction
          base_growth_rate :: FT = 0.6 / day
   temperature_sensetivity :: FT = 1.066
       darkness_tollerance :: FT

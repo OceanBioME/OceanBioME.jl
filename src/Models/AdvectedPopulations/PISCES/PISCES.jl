@@ -43,19 +43,19 @@ export PISCES
 
 using Oceananigans.Units
 
-
 using Oceananigans: KernelFunctionOperation
 using Oceananigans.Fields: Field, TracerFields, CenterField, ZeroField, ConstantField, Center, Face
 
 using OceanBioME.Light: MultiBandPhotosyntheticallyActiveRadiation, default_surface_PAR, compute_euphotic_depth!
 using OceanBioME: setup_velocity_fields, show_sinking_velocities, Biogeochemistry, ScaleNegativeTracers
 using OceanBioME.BoxModels: BoxModel
+using OceanBioME.Models: CarbonChemistry
 
 using Oceananigans.Biogeochemistry: AbstractContinuousFormBiogeochemistry
+using Oceananigans.Fields: set!
 using Oceananigans.Grids: φnodes, RectilinearGrid
 
 import OceanBioME: redfield, conserved_tracers, maximum_sinking_velocity, chlorophyll
-
 
 import Oceananigans.Biogeochemistry: required_biogeochemical_tracers,
                                      required_biogeochemical_auxiliary_fields,
@@ -132,7 +132,7 @@ const CARBON_SYSTEM = Union{Val{:DIC}, Val{:Alk}}
 (bgc::PISCES)(val_name::Val{:CaCO₃}, args...)   = bgc.calcite(val_name, bgc, args...)
 (bgc::PISCES)(val_name::Val{:O₂}, args...)      = bgc.oxygen(val_name, bgc, args...)
 (bgc::PISCES)(val_name::Val{:PO₄}, args...)     = bgc.phosphate(val_name, bgc, args...)
-(bgc::PISCES)(val_name::carbon_system, args...) = bgc.carbon_system(val_name, bgc, args...)
+(bgc::PISCES)(val_name::CARBON_SYSTEM, args...) = bgc.carbon_system(val_name, bgc, args...)
 
 
 @inline biogeochemical_auxiliary_fields(bgc::PISCES) = 
@@ -210,7 +210,7 @@ function PISCES(; grid,
                                                  preference_for_nanophytoplankton = 1.0,
                                                  preference_for_diatoms = 0.5,
                                                  preference_for_particulates = 0.1,
-                                                 preference_for_microzooplankton = 0.0
+                                                 preference_for_zooplankton = 0.0,
                                                  quadratic_mortality = 0.004,
                                                  linear_mortality = 0.03,
                                                  maximum_growth_efficiency = 0.3,
@@ -221,7 +221,7 @@ function PISCES(; grid,
                                                 preference_for_nanophytoplankton = 0.3,
                                                 preference_for_diatoms = 1.0,
                                                 preference_for_particulates = 0.3,
-                                                preference_for_microzooplankton = 1.0,
+                                                preference_for_zooplankton = 1.0,
                                                 quadratic_mortality = 0.03,
                                                 linear_mortality = 0.005,
                                                 maximum_growth_efficiency = 0.35,
@@ -251,7 +251,7 @@ function PISCES(; grid,
                   background_shear = 0.01, 
                   
                   latitude = PrescribedLatitude(45),
-                  day_length,
+                  day_length = day_length_function,
                   
                   mixed_layer_depth = Field{Center, Center, Nothing}(grid),
                   euphotic_depth = Field{Center, Center, Nothing}(grid),
