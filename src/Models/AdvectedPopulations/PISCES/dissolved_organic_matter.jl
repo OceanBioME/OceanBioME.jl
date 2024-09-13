@@ -1,20 +1,20 @@
 @kwdef struct DissolvedOrganicMatter{FT, AP}
-    remineralisation_rate :: FT = 0.3/day
-    microzooplankton_bacteria_concentration :: FT = 0.7
-    mesozooplankton_bacteria_concentration :: FT = 1.4
-    maximum_bacteria_concentration :: FT = 4.0
-    bacteria_concentration_depth_exponent :: FT = 0.684
-    reference_bacteria_concentration :: FT = 1.0
-    temperature_sensetivity :: FT = 1.066
-    doc_half_saturation_for_bacterial_activity :: FT = 417.0
+                             remineralisation_rate :: FT = 0.3/day
+           microzooplankton_bacteria_concentration :: FT = 0.7
+            mesozooplankton_bacteria_concentration :: FT = 1.4
+                    maximum_bacteria_concentration :: FT = 4.0
+             bacteria_concentration_depth_exponent :: FT = 0.684
+                  reference_bacteria_concentration :: FT = 1.0
+                           temperature_sensetivity :: FT = 1.066
+        doc_half_saturation_for_bacterial_activity :: FT = 417.0
     nitrate_half_saturation_for_bacterial_activity :: FT = 0.03
     ammonia_half_saturation_for_bacterial_activity :: FT = 0.003
-    phosphate_half_saturation_for_bacterial_activity :: FT = 0.003
-    iron_half_saturation_for_bacterial_activity :: FT = 0.01
-    aggregation_parameters :: AP = (0.37, 102, 3530, 5095, 114) .* 10^-6 / day #(μmolCL⁻¹)⁻¹s⁻¹
-    maximum_iron_ratio_in_bacteria :: FT = 10^-3
-    iron_half_saturation_for_bacteria :: FT = 0.03
-    maximum_bacterial_growth_rate :: FT = 0.6 / day
+  phosphate_half_saturation_for_bacterial_activity :: FT = 0.003
+       iron_half_saturation_for_bacterial_activity :: FT = 0.01
+                            aggregation_parameters :: AP = (0.37, 102, 3530, 5095, 114) .* 10^-6 / day #(μmolCL⁻¹)⁻¹s⁻¹
+                    maximum_iron_ratio_in_bacteria :: FT = 10^-3
+                 iron_half_saturation_for_bacteria :: FT = 0.03
+                     maximum_bacterial_growth_rate :: FT = 0.6 / day
 end
 
 @inline function (dom::DissolvedOrganicMatter)(bgc, ::Val{:DOC}, 

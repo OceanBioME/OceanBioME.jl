@@ -1,3 +1,6 @@
+struct Iron{FT}
+end
+
 @inline function free_iron(::SimpleIron, Fe, DOC, T)
     # maybe some of these numbers should be parameters
     ligands = max(0.6, 0.09 * (DOC + 40) - 3)
@@ -19,45 +22,6 @@ end
     CgFe2 = Φ₂ * colloidal_iron / DOC
 
     return CgFe1 + CgFe2, CgFe1, CgFe2
-end
-
-# This document contains functions for the following:
-    # free_iron(eq65), dissolved free inorganic iron
-    # iron_colloid_aggregation_1, iron_colloid_aggregation_2, enhanced_scavenging, bacterial_uptake_Fe (eqs 61, 62, 63)
-    # Forcing for Fe (eq60)
-
-
-#Iron is modelled in PISCES using simple chemistry model. Iron is assumed to be in the form of free organic iron Fe', and complexed iron FeL.
-#Iron is explictly modelled in the following compartments of the model, Pᶠᵉ, Dᶠᵉ, SFe, BFe, Fe. In zooplankton a fixed iron carbon ratio is assumed, and iron implictly modelled in zooplankton in this way. Iron in bacteria is formulated through Bactfe.
-#Iron is lost through Scav and enhanced_scavenging terms. Aside from this, iron is conserved, accounting for all other explicit and implicit compartments of iron
-
-#Determine concentration of free organic iron. This is the only form of iron assumed susceptible to scavenging.
-@inline function free_iron(Fe, DOC, T)
-    Lₜ = max(0.09*(DOC + 40) - 3, 0.6) # This may also be taken to be a constant parameter, total_concentration_of_iron_ligands
-    K_eqᶠᵉ = exp(16.27 - 1565.7/max(T + 273.15, 5)) #check this value
-    Δ = 1 +  K_eqᶠᵉ*Lₜ -  K_eqᶠᵉ*Fe
-    return (-Δ + sqrt(Δ^2 + 4*K_eqᶠᵉ*Fe))/(2*K_eqᶠᵉ + eps(0.0)) #eq65
-end
-
-#Colloids of iron may aggregate with DOM and be transferred to particulate pool
-#iron_colloid_aggregation_1 is aggregation of colloids with DOC and POC. Routed to SFe.
-@inline function iron_colloid_aggregation_1(sh, Fe, POC, DOC, T, bgc)
-    a₁ = bgc.aggregation_rate_of_DOC_to_POC_1
-    a₂ = bgc.aggregation_rate_of_DOC_to_POC_2
-    a₄ = bgc.aggregation_rate_of_DOC_to_POC_4
-    a₅ = bgc.aggregation_rate_of_DOC_to_POC_5
-   
-    FeL = Fe - free_iron(Fe, DOC, T) #eq64
-    Fe_coll = 0.5*FeL
-    return ((a₁*DOC + a₂*POC)*sh+a₄*POC + a₅*DOC)*Fe_coll #eq61a
-end
-
-#iron_colloid_aggregation_2 is aggregation of colloids with GOC. Routed to BFe.
-@inline function iron_colloid_aggregation_2(sh, Fe, T, DOC, GOC, bgc)
-    a₃ = bgc.aggregation_rate_of_DOC_to_GOC_3
-    FeL = Fe - free_iron(Fe, DOC, T)
-    Fe_coll = 0.5*FeL
-    return a₃*GOC*sh*Fe_coll #eq61b
 end
 
 #When dissolved iron concentrations exceed total ligand concentrations scavenging is enhanced.

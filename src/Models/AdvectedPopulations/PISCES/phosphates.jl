@@ -1,51 +1,34 @@
-#This document contains functions for:
-    #PO₄ forcing (eq59), multiplied by redfield ratio to return in μmolP/L
+struct Phosphate end
 
-@inline function (bgc::PISCES)(::Val{:PO₄}, x, y, z, t, P, D, Z, M, Pᶜʰˡ, Dᶜʰˡ, Pᶠᵉ, Dᶠᵉ, Dˢⁱ, DOC, POC, GOC, SFe, BFe, PSi, NO₃, NH₄, PO₄, Fe, Si, CaCO₃, DIC, Alk, O₂, T, zₘₓₗ, zₑᵤ, Si̅, D_dust, Ω, κ, PAR, PAR₁, PAR₂, PAR₃) 
-    #Parameters
-    γᶻ = bgc.excretion_as_DOM.Z
-    σᶻ = bgc.non_assimilated_fraction.Z
-    γᴹ = bgc.excretion_as_DOM.M
-    σᴹ = bgc.non_assimilated_fraction.M
-    αᴾ = bgc.initial_slope_of_PI_curve.P
-    αᴰ = bgc.initial_slope_of_PI_curve.D
-    eₘₐₓᶻ = bgc.max_growth_efficiency_of_zooplankton.Z
-    eₘₐₓᴹ = bgc.max_growth_efficiency_of_zooplankton.M
-    θᴾᶜ = bgc.PC_redfield_ratio
+@inline function (nitrogen::Phosphate)(bgc, ::Val{:PO₄}, 
+                                       x, y, z, t,
+                                       P, D, Z, M, 
+                                       PChl, DChl, PFe, DFe, DSi,
+                                       DOC, POC, GOC, 
+                                       SFe, BFe, PSi, 
+                                       NO₃, NH₄, PO₄, Fe, Si, 
+                                       CaCO₃, DIC, Alk, 
+                                       O₂, T, 
+                                       zₘₓₗ, zₑᵤ, Si′, dust, Ω, κ, mixed_layer_PAR, PAR, PAR₁, PAR₂, PAR₃)
 
-    bFe = Fe
-    
-    #Grazing
-    ∑gᶻ, gₚᶻ, g_Dᶻ, gₚₒᶻ = grazing_Z(P, D, POC, T, bgc) 
-    ∑gᴹ, gₚᴹ, g_Dᴹ, gₚₒᴹ, g_Zᴹ  = grazing_M(P, D, Z, POC, T, bgc) 
-    ∑g_FFᴹ = flux_feeding(z, zₑᵤ, zₘₓₗ, T, POC, GOC, bgc)[1]
+    θ = bgc.phosphate_redfield_ratio
 
-    #Gross growth efficiency
-    eᶻ = growth_efficiency(eₘₐₓᶻ, σᶻ, gₚᶻ, g_Dᶻ, gₚₒᶻ, 0, Pᶠᵉ, Dᶠᵉ, SFe, P, D, POC, bgc)
-    eᴹ =  growth_efficiency(eₘₐₓᴹ, σᴹ, gₚᴹ, g_Dᴹ, gₚₒᴹ, g_Zᴹ,Pᶠᵉ, Dᶠᵉ, SFe, P, D, POC, bgc)
+    microzooplankton_grazing_waste = specific_inorganic_grazing_waste(bgc.microzooplankton, bgc, P, D, PFe, DFe, Z, POC, SFe) * Z
+    mesozooplankton_grazing_waste  = specific_inorganic_grazing_waste(bgc.mesozooplankton, bgc, P, D, PFe, DFe, Z, POC, SFe) * M
 
-    #Bacteria
-    zₘₐₓ = max(abs(zₑᵤ), abs(zₘₓₗ)) #35a
-    Bact = bacterial_biomass(zₘₐₓ, z, Z, M)
+    grazing_waste = microzooplankton_grazing_waste + mesozooplankton_grazing_waste
 
-    #Growth rates for phytoplankton
-    φ = bgc.latitude
-    φ = latitude(φ, y)
+    respiration_product = inorganic_upper_trophic_respiration_product(bgc.mesozooplankton, M, T)
 
+    remineralisation = oxic_remineralisation(bgc.dissolved_organic_matter, z, Z, M, DOM, NO₃, NH₄, PO₄, Fe, T, zₘₓₗ, zₑᵤ)
 
-    L_day = day_length(φ, t)    
-    
-    t_darkᴾ = bgc.mean_residence_time_of_phytoplankton_in_unlit_mixed_layer.P
-    t_darkᴰ = bgc.mean_residence_time_of_phytoplankton_in_unlit_mixed_layer.D
-    PARᴾ = P_PAR(PAR₁, PAR₂, PAR₃, bgc)
-    PARᴰ = D_PAR(PAR₁, PAR₂, PAR₃, bgc)
+    denit = denitrifcation(bgc.dissolved_organic_matter, z, Z, M, DOM, NO₃, NH₄, PO₄, Fe, T, zₘₓₗ, zₑᵤ)
 
-    Lₗᵢₘᴾ = P_nutrient_limitation(P, PO₄, NO₃, NH₄, Pᶜʰˡ, Pᶠᵉ, bgc)[1]
-    Lₗᵢₘᴰ = D_nutrient_limitation(D, PO₄, NO₃, NH₄, Si, Dᶜʰˡ, Dᶠᵉ, Si̅, bgc)[1]
-    μᴾ = phytoplankton_growth_rate(P, Pᶜʰˡ, PARᴾ, L_day, T, αᴾ, Lₗᵢₘᴾ, zₘₓₗ, zₑᵤ, κ, t_darkᴾ, bgc)
-    μᴰ = phytoplankton_growth_rate(D, Dᶜʰˡ, PARᴰ, L_day, T, αᴰ, Lₗᵢₘᴰ, zₘₓₗ, zₑᵤ, κ, t_darkᴰ, bgc)
+    nanophytoplankton_consumption = total_growth(bgc.nanophytoplankton, P, PChl, PFe, NO₃, NH₄, PO₄, Fe, Si, Si′, zₘₓₗ, zₑᵤ, κ, PAR₁, PAR₂, PAR₃)
 
-    return (θᴾᶜ*(γᶻ*(1-eᶻ-σᶻ)*∑gᶻ*Z + γᴹ*(1 - eᴹ - σᴹ)*(∑gᴹ + ∑g_FFᴹ)*M + γᴹ*upper_respiration(M, T, bgc) 
-            + oxic_remineralization(O₂, NO₃, PO₄, NH₄, DOC, T, bFe, Bact, bgc) + denitrification(NO₃, PO₄, NH₄, DOC, O₂, T, bFe, Bact, bgc) 
-            - μᴾ*P  - μᴰ*D)) #eq59
+    diatom_consumption = total_growth(bgc.diatoms, D, DChl, DsFe, NO₃, NH₄, PO₄, Fe, Si, Si′, zₘₓₗ, zₑᵤ, κ, PAR₁, PAR₂, PAR₃)
+
+    consumption = (nanophytoplankton_consumption + diatom_consumption)
+
+    return θ * (grazing_waste + respiration_product + remineralisation + denit - consumption)
 end

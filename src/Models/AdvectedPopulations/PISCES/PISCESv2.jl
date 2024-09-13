@@ -89,7 +89,9 @@ const CARBON_SYSTEM = Union{Val{:DIC}, Val{:Alk}}
 
 include("phytoplankton.jl")
 include("zooplankton.jl")
-
+include("dissolved_organic_matter.jl")
+include("particulate_organic_matter.jl")
+include("nitrate_ammonia.jl")
 
 function PISCES(; grid,
                   nanophytoplankton = Phytoplankton(growth_rate = GrowthRespirationLimitedProduction(dark_tollerance = 3days),
@@ -143,7 +145,7 @@ function PISCES(; grid,
                   iron,
                   silicate,
                   oxygen,
-                  phosphate,
+                  phosphate = Phosphate(),
                   
                   calcite,
                   carbon_system,

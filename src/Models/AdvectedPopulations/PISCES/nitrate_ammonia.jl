@@ -1,10 +1,10 @@
 struct NitrateAmmonia{FT}
-    maximum_nitrifcation_rate :: FT = 0.05 / day
+               maximum_nitrifcation_rate :: FT = 0.05 / day
     anoxic_denitrifcation_nitrogen_ratio :: FT = 0.86
-    maximum_fixation_rate :: FT = 0.013 / day
-    iron_half_saturation_for_fixation :: FT = 0.1
-    phosphate_half_saturation_for_fixation :: FT = 0.8
-    light_saturation_for_fixation :: FT = 50.0
+                   maximum_fixation_rate :: FT = 0.013 / day
+       iron_half_saturation_for_fixation :: FT = 0.1
+  phosphate_half_saturation_for_fixation :: FT = 0.8
+           light_saturation_for_fixation :: FT = 50.0
 end
 
 @inline function (nitrogen::NitrateAmmonia)(bgc, val_name::Val{:NO₃}, 
