@@ -24,6 +24,7 @@
     linear_mortality :: FT
 
     dissolved_excretion_fraction :: FT = 0.6
+    undissolved_calcite_fraction :: FT 
 end
 
 @inline zooplankton_concentration(::Val{Z}, Z, M) = Z
@@ -251,6 +252,14 @@ end
     non_assimilated_iron_ratio = max(0, grazing_iron_ratio - growth_efficiency)
 
     return non_assimilated_iron_ratio * g
+end
+
+@inline function specific_calcite_grazing_loss(zoo, P, D, Z, POC)
+    η = zoo.undissolved_calcite_fraction
+
+    _, gP = specific_grazing(zoo, P, D, Z, POC)
+
+    return η * gP
 end
 
 @inline function mortality(zoo::Zooplankton, bgc, I, O₂, T)
