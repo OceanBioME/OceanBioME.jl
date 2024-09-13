@@ -129,21 +129,7 @@ end
     IFe  = phytoplankton_concentration(val_name, PFe, DFe)
 
     # production
-    δ  = phyto.exudated_fracton
-
-    θFeₘ = phyto.maximum_iron_ratio
-
-    θFe = IFe / I
-
-    L, LFe = phyto.nutrient_limitation(bgc, I, IChl, IFe, NO₃, NH₄, PO₄, Fe, Si, Si′)
-
-    μᵢ = base_production_rate(phyto.growth_rate, T)
-
-    L₁ = iron_uptake_limitation(phyto.growth_rate, I, Fe) # assuming bFe = Fe
-
-    L₂ = (4 - 2 * LFe) / (LFe + 1) # Formulation in paper does not vary between 1 and 4 as claimed, this does
-
-    production = (1 - δ) * θFeₘ * L₁ * L₂ * (1 - θFe / θFeₘ) / (1.05 - θFe / θFeₘ) * μᵢ * I 
+    production = iron_uptake(phyto, I, IChl, IFe, NO₃, NH₄, PO₄, Fe, Si, Si′, T)
 
     # mortality
     linear_mortality, quadratic_mortality = mortality(phyto, bgc, z, I, zₘₓₗ, L)
@@ -216,6 +202,23 @@ end
     grazing = (gZ * Z + gM * M) * θFe
 
     return production - linear_mortality - quadratic_mortality - grazing
+end
+
+@inline function iron_uptake(phyto::Phytoplankton, I, IChl, IFe, NO₃, NH₄, PO₄, Fe, Si, Si′, T)
+    δ  = phyto.exudated_fracton
+    θFeₘ = phyto.maximum_iron_ratio
+
+    θFe = IFe / I
+
+    L, LFe = phyto.nutrient_limitation(bgc, I, IChl, IFe, NO₃, NH₄, PO₄, Fe, Si, Si′)
+
+    μᵢ = base_production_rate(phyto.growth_rate, T)
+
+    L₁ = iron_uptake_limitation(phyto.growth_rate, I, Fe) # assuming bFe = Fe
+
+    L₂ = (4 - 2 * LFe) / (LFe + 1) # Formulation in paper does not vary between 1 and 4 as claimed, this does
+
+    return (1 - δ) * θFeₘ * L₁ * L₂ * (1 - θFe / θFeₘ) / (1.05 - θFe / θFeₘ) * μᵢ * I 
 end
 
 @inline function dissolved_exudate(phyto::Phytoplankton, bgc, I, IChl, IFe, NO₃, NH₄, PO₄, Fe, Si, Si′, T, zₘₓₗ, zₑᵤ, κ, PAR₁, PAR₂, PAR₃)

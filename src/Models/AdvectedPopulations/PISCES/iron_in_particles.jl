@@ -48,7 +48,7 @@
     λ₁ = doc.load_specific_iron_scavenging_rate
     λ₂ = doc.dust_specific_iron_scavenging_rate
 
-    λFe = λ₀ + λ₁ * (POC + GOC + CaCO₃ + PSi) + λ₂ * dust
+    λFe = iron_scavenging_rate(doc, POC, GOC, CaCO₃, PSi, dust)
     
     Fe′ = free_iron(bgc.iron, Fe, DOC, T)
 
@@ -139,4 +139,12 @@ end
             + nanophytoplankton_mortality + diatom_mortality + mesozooplankton_mortality 
             + aggregation + fecal_pelet_production + scavenging + bacterial_assimilation + colloidal_aggregation
             - grazing - degredation)
+end
+
+@inline function iron_scavenging_rate(doc, POC, GOC, CaCO₃, PSi, dust)
+    λ₀ = doc.minimum_iron_scavenging_rate
+    λ₁ = doc.load_specific_iron_scavenging_rate
+    λ₂ = doc.dust_specific_iron_scavenging_rate
+
+    return λ₀ + λ₁ * (POC + GOC + CaCO₃ + PSi) + λ₂ * dust
 end

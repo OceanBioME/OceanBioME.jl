@@ -231,6 +231,28 @@ end
                                            + small_flux_feeding * SFe / POC + large_flux_feeding * BFe / GOC)
 end
 
+@inline function specific_non_assimilated_iron(zoo, P, D, PFe, DFe, Z, POC, GOC, SFe, BFe)
+    θ = zoo.iron_ratio
+    σ = zoo.non_assililated_fraction
+
+    g, gP, gD, gPOC, gZ = specific_grazing(zoo, P, D, Z, POC)
+
+    small_flux_feeding = specific_flux_feeding(zoo, POC, bgc.sinking_velocities.POC.w, grid)
+    large_flux_feeding = specific_flux_feeding(zoo, GOC, bgc.sinking_velocities.GOC.w, grid)
+
+    total_iron_consumed = (gP * PFe / P + gD * DFe / D + gZ * θ 
+                           + (gPOC + small_flux_feeding) * SFe / POC 
+                           + large_flux_feeding * BFe / GOC)
+
+    grazing_iron_ratio = (1 - σ) * total_iron_consumed / (g + small_flux_feeding + large_flux_feeding)
+
+    growth_efficiency = grazing_growth_efficiency(zoo, P, D, PFe, DFe, POC, SFe, gP, gD, gPOC, gZ) * θ
+
+    non_assimilated_iron_ratio = max(0, grazing_iron_ratio - growth_efficiency)
+
+    return non_assimilated_iron_ratio * g
+end
+
 @inline function mortality(zoo::Zooplankton, bgc, I, O₂, T)
     b  = zoo.temperature_sensetivity
     m₀ = zoo.quadratic_mortality

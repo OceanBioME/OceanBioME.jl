@@ -1,15 +1,15 @@
 struct Phosphate end
 
-@inline function (nitrogen::Phosphate)(bgc, ::Val{:PO₄}, 
-                                       x, y, z, t,
-                                       P, D, Z, M, 
-                                       PChl, DChl, PFe, DFe, DSi,
-                                       DOC, POC, GOC, 
-                                       SFe, BFe, PSi, 
-                                       NO₃, NH₄, PO₄, Fe, Si, 
-                                       CaCO₃, DIC, Alk, 
-                                       O₂, T, 
-                                       zₘₓₗ, zₑᵤ, Si′, dust, Ω, κ, mixed_layer_PAR, PAR, PAR₁, PAR₂, PAR₃)
+@inline function (phosphate::Phosphate)(bgc, ::Val{:PO₄}, 
+                                        x, y, z, t,
+                                        P, D, Z, M, 
+                                        PChl, DChl, PFe, DFe, DSi,
+                                        DOC, POC, GOC, 
+                                        SFe, BFe, PSi, 
+                                        NO₃, NH₄, PO₄, Fe, Si, 
+                                        CaCO₃, DIC, Alk, 
+                                        O₂, T, 
+                                        zₘₓₗ, zₑᵤ, Si′, dust, Ω, κ, mixed_layer_PAR, PAR, PAR₁, PAR₂, PAR₃)
 
     θ = bgc.phosphate_redfield_ratio
 

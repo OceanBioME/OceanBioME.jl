@@ -1,4 +1,4 @@
-struct NitrateAmmonia{FT}
+@kwdef struct NitrateAmmonia{FT}
                maximum_nitrifcation_rate :: FT = 0.05 / day
     anoxic_denitrifcation_nitrogen_ratio :: FT = 0.86
                    maximum_fixation_rate :: FT = 0.013 / day

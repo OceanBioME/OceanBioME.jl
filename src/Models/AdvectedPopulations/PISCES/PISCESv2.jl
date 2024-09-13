@@ -142,7 +142,7 @@ function PISCES(; grid,
                   particulate_organic_matter = TwoCompartementParticulateOrganicMatter(),
                   
                   nitrogen = NitrateAmmonia(),
-                  iron,
+                  iron = SimpleIron(),
                   silicate,
                   oxygen,
                   phosphate = Phosphate(),
