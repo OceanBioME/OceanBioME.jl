@@ -1,6 +1,6 @@
 abstract type BaseProduction end
 
-@inline function (μ::BaseProduction)(bgc, I, IChl, T, zₘₓₗ, zₑᵤ, κ, PAR₁, PAR₂, PAR₃, L)
+@inline function (μ::BaseProduction)(phyto, bgc, y, t, I, IChl, T, zₘₓₗ, zₑᵤ, κ, PAR₁, PAR₂, PAR₃, L)
     bₜ = μ.temperature_sensetivity
     μ₀ = μ.base_growth_rate
     α  = μ.initial_slope_of_PI_curve
@@ -29,16 +29,16 @@ abstract type BaseProduction end
     return μᵢ * f₁ * f₂ * light_limitation(μ, I, IChl, T, PAR, day_length, L) * L
 end
 
-@inline function (μ::BaseProduction)(bgc, I, IChl, IFe, NO₃, NH₄, PO₄, Fe, Si, Si′, T, zₘₓₗ, zₑᵤ, κ, PAR₁, PAR₂, PAR₃)
+@inline function (μ::BaseProduction)(phyto, bgc, y, t, I, IChl, IFe, NO₃, NH₄, PO₄, Fe, Si, Si′, T, zₘₓₗ, zₑᵤ, κ, PAR₁, PAR₂, PAR₃)
     L, = phyto.nutrient_limitation(bgc, I, IChl, IFe, NO₃, NH₄, PO₄, Fe, Si, Si′)
 
-    return μ(bgc, I, IChl, T, zₘₓₗ, zₑᵤ, κ, PAR₁, PAR₂, PAR₃, L)
+    return μ(phyto, bgc, y, t, I, IChl, T, zₘₓₗ, zₑᵤ, κ, PAR₁, PAR₂, PAR₃, L)
 end
 
 @kwdef struct NutrientLimitedProduction{FT} <: BaseProduction
          base_growth_rate :: FT = 0.6 / day
   temperature_sensetivity :: FT = 1.066
-      darkness_tollerance :: FT
+          dark_tollerance :: FT
 initial_slope_of_PI_curve :: FT = 2.0
 end
 
@@ -47,9 +47,9 @@ end
 
     μᵢ = base_production_rate(μ, T)
 
-    θ = IChl / I
+    θ = IChl / (I + eps(0.0))
 
-    return 1 - exp(-α * θ * PAR / (day_length * μᵢ * L))
+    return 1 - exp(-α * θ * PAR / (day_length * μᵢ * L + eps(0.0)))
 end
 
 # "new production"
@@ -67,13 +67,13 @@ end
     bᵣ = μ.basal_respiration_rate
     μᵣ = μ.reference_growth_rate
 
-    θ = IChl / I
+    θ = IChl / (I + eps(0.0))
 
     return 1 - exp(-α * θ * PAR / (day_length * (bᵣ + μᵣ) * L))
 end
 
 # new method for this if this isn't how you define μ̌
-@inline function production_and_energy_assimilation_absorption_ratio(growth_rate, bgc, I, IChl, T, zₘₓₗ, zₑᵤ, κ, PAR₁, PAR₂, PAR₃, L)
+@inline function production_and_energy_assimilation_absorption_ratio(growth_rate, phyto, bgc, y, t, I, IChl, T, zₘₓₗ, zₑᵤ, κ, PAR, PAR₁, PAR₂, PAR₃, L)
     α = growth_rate.initial_slope_of_PI_curve
 
     φ = bgc.latitude(y)
@@ -81,11 +81,10 @@ end
 
     f₁ = 1.5 * day_length / (day_length + 0.5)
 
-    μ = growth_rate(bgc, I, IChl, T, zₘₓₗ, zₑᵤ, κ, PAR₁, PAR₂, PAR₃, L)
-    
+    μ = growth_rate(phyto, bgc, y, t, I, IChl, T, zₘₓₗ, zₑᵤ, κ, PAR₁, PAR₂, PAR₃, L)
     μ̌ = μ / f₁
 
-    return μ, 144 * μ̌ * I / (α * IChl * PAR) * day_length
+    return μ, 144 * μ̌ * I / (α * IChl * PAR + eps(0.0)) * day_length
 end
 
 @inline function base_production_rate(growth_rate, T)

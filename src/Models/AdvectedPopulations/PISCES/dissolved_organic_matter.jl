@@ -25,26 +25,26 @@ end
                                                SFe, BFe, PSi, 
                                                NO₃, NH₄, PO₄, Fe, Si, 
                                                CaCO₃, DIC, Alk, 
-                                               O₂, T, 
-                                               zₘₓₗ, zₑᵤ, Si′, dust, Ω, κ, PAR, PAR₁, PAR₂, PAR₃)
+                                               O₂, T, S,
+                                               zₘₓₗ, zₑᵤ, Si′, dust, Ω, κ, mixed_layer_PAR, PAR, PAR₁, PAR₂, PAR₃)
 
-    nanophytoplankton_exudation = dissolved_exudate(bgc.nanophytoplankton, bgc, P, PChl, PFe, NO₃, NH₄, PO₄, Fe, Si, Si′, T, zₘₓₗ, zₑᵤ, κ, PAR₁, PAR₂, PAR₃)
-    diatom_exudation = dissolved_exudate(bgc.nanophytoplankton, bgc, P, PChl, PFe, NO₃, NH₄, PO₄, Fe, Si, Si′, T, zₘₓₗ, zₑᵤ, κ, PAR₁, PAR₂, PAR₃)
+    nanophytoplankton_exudation = dissolved_exudate(bgc.nanophytoplankton, bgc, y, t, P, PChl, PFe, NO₃, NH₄, PO₄, Fe, Si, Si′, T, zₘₓₗ, zₑᵤ, κ, PAR₁, PAR₂, PAR₃)
+    diatom_exudation = dissolved_exudate(bgc.nanophytoplankton, bgc, y, t, P, PChl, PFe, NO₃, NH₄, PO₄, Fe, Si, Si′, T, zₘₓₗ, zₑᵤ, κ, PAR₁, PAR₂, PAR₃)
 
     phytoplankton_exudation = nanophytoplankton_exudation + diatom_exudation
 
-    particulate_degredation = dissolved_degredation_product(bgc.particulate_organic_matter, POC, GOC, O₂, T)
+    particulate_degredation = specific_degredation_rate(bgc.particulate_organic_matter, bgc, O₂, T) * POC
 
     respiration_product = dissolved_upper_trophic_respiration_product(bgc.mesozooplankton, M, T)
 
-    microzooplankton_grazing_waste = specific_dissolved_grazing_waste(bgc.microzooplankton, bgc, P, D, PFe, DFe, Z, POC, SFe) * Z
-    mesozooplankton_grazing_waste  = specific_dissolved_grazing_waste(bgc.mesozooplankton, bgc, P, D, PFe, DFe, Z, POC, SFe) * M
+    microzooplankton_grazing_waste = specific_dissolved_grazing_waste(bgc.microzooplankton, bgc, x, y, z, P, D, PFe, DFe, Z, POC, GOC, SFe, T) * Z
+    mesozooplankton_grazing_waste  = specific_dissolved_grazing_waste(bgc.mesozooplankton, bgc, x, y, z, P, D, PFe, DFe, Z, POC, GOC, SFe, T) * M
 
     grazing_waste = microzooplankton_grazing_waste + mesozooplankton_grazing_waste
 
-    degredation = bacterial_degradation(dom, z, Z, M, DOM, NO₃, NH₄, PO₄, Fe, T, zₘₓₗ, zₑᵤ)
+    degredation = bacterial_degradation(dom, z, Z, M, DOC, NO₃, NH₄, PO₄, Fe, T, zₘₓₗ, zₑᵤ)
 
-    aggregation_to_particles = aggregation(dom, bgc, z, DOC, POC, GOC, zₘₓₗ)
+    aggregation_to_particles, = aggregation(dom, bgc, z, DOC, POC, GOC, zₘₓₗ)
 
     return phytoplankton_exudation + particulate_degredation + respiration_product + grazing_waste - degredation - aggregation_to_particles
 end
@@ -66,9 +66,9 @@ end
 @inline function bacteria_activity(dom::DissolvedOrganicMatter, DOC, NO₃, NH₄, PO₄, Fe)
     K_DOC = dom.doc_half_saturation_for_bacterial_activity
     K_NO₃ = dom.nitrate_half_saturation_for_bacterial_activity
-    K_NH₄ = ammonia_half_saturation_for_bacterial_activity
-    K_PO₄ = phosphate_half_saturation_for_bacterial_activity
-    K_Fe  = iron_half_saturation_for_bacterial_activity
+    K_NH₄ = dom.ammonia_half_saturation_for_bacterial_activity
+    K_PO₄ = dom.phosphate_half_saturation_for_bacterial_activity
+    K_Fe  = dom.iron_half_saturation_for_bacterial_activity
 
     DOC_limit = DOC / (DOC + K_DOC)
 
@@ -84,7 +84,7 @@ end
     return limiting_quota * DOC_limit
 end
 
-@inline function bacterial_degradation(dom::DissolvedOrganicMatter, z, Z, M, DOM, NO₃, NH₄, PO₄, Fe, T, zₘₓₗ, zₑᵤ)
+@inline function bacterial_degradation(dom::DissolvedOrganicMatter, z, Z, M, DOC, NO₃, NH₄, PO₄, Fe, T, zₘₓₗ, zₑᵤ)
     Bact_ref = dom.reference_bacteria_concentration
     b = dom.temperature_sensetivity
     λ = dom.remineralisation_rate
@@ -95,21 +95,21 @@ end
 
     LBact = bacteria_activity(dom, DOC, NO₃, NH₄, PO₄, Fe)
 
-    return λ * f * LBact * Bact / Bact_ref * DOM # differes from Aumont 2015 since the dimensions don't make sense 
+    return λ * f * LBact * Bact / Bact_ref * DOC # differes from Aumont 2015 since the dimensions don't make sense 
 end
 
-@inline function oxic_remineralisation(dom::DissolvedOrganicMatter, z, Z, M, DOM, NO₃, NH₄, PO₄, Fe, T, zₘₓₗ, zₑᵤ)
+@inline function oxic_remineralisation(dom::DissolvedOrganicMatter, bgc, z, Z, M, DOC, NO₃, NH₄, PO₄, Fe, O₂, T, zₘₓₗ, zₑᵤ)
     ΔO₂ = anoxia_factor(bgc, O₂)
 
-    degredation = bacterial_degradation(dom, z, Z, M, DOM, NO₃, NH₄, PO₄, Fe, T, zₘₓₗ, zₑᵤ)
+    degredation = bacterial_degradation(dom, z, Z, M, DOC, NO₃, NH₄, PO₄, Fe, T, zₘₓₗ, zₑᵤ)
 
     return (1 - ΔO₂) * degredation
 end
 
-@inline function denitrifcation(dom::DissolvedOrganicMatter, z, Z, M, DOM, NO₃, NH₄, PO₄, Fe, T, zₘₓₗ, zₑᵤ)
+@inline function denitrifcation(dom::DissolvedOrganicMatter, bgc, z, Z, M, DOC, NO₃, NH₄, PO₄, Fe, O₂, T, zₘₓₗ, zₑᵤ)
     ΔO₂ = anoxia_factor(bgc, O₂)
 
-    degredation = bacterial_degradation(dom, z, Z, M, DOM, NO₃, NH₄, PO₄, Fe, T, zₘₓₗ, zₑᵤ)
+    degredation = bacterial_degradation(dom, z, Z, M, DOC, NO₃, NH₄, PO₄, Fe, T, zₘₓₗ, zₑᵤ)
 
     return ΔO₂ * degredation
 end

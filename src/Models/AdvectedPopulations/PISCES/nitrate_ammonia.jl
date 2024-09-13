@@ -14,17 +14,17 @@ end
                                             SFe, BFe, PSi, 
                                             NO₃, NH₄, PO₄, Fe, Si, 
                                             CaCO₃, DIC, Alk, 
-                                            O₂, T, 
+                                            O₂, T, S,
                                             zₘₓₗ, zₑᵤ, Si′, dust, Ω, κ, mixed_layer_PAR, PAR, PAR₁, PAR₂, PAR₃)
     θ = bgc.nitrogen_redfield_ratio
 
-    nitrif = nitrification(nitrogen, NH₄, O₂, mixed_layer_PAR) * θ
+    nitrif = nitrification(nitrogen, bgc, NH₄, O₂, mixed_layer_PAR) * θ
 
-    remin = oxic_remineralisation(bgc.dissolved_organic_matter, z, Z, M, DOM, NO₃, NH₄, PO₄, Fe, T, zₘₓₗ, zₑᵤ) * θ
+    remin = oxic_remineralisation(bgc.dissolved_organic_matter, bgc, z, Z, M, DOC, NO₃, NH₄, PO₄, Fe, O₂, T, zₘₓₗ, zₑᵤ) * θ
 
-    nanophytoplankton_consumption = nitrate_uptake(bgc.nanophytoplankton, P, PChl, PFe, NO₃, NH₄, PO₄, Fe, Si, Si′, zₘₓₗ, zₑᵤ, κ, PAR₁, PAR₂, PAR₃)
+    nanophytoplankton_consumption = nitrate_uptake(bgc.nanophytoplankton, bgc, y, t, P, PChl, PFe, NO₃, NH₄, PO₄, Fe, Si, T, Si′, zₘₓₗ, zₑᵤ, κ, PAR₁, PAR₂, PAR₃)
 
-    diatom_consumption = nitrate_uptake(bgc.diatoms, D, DChl, DFe, NO₃, NH₄, PO₄, Fe, Si, Si′, zₘₓₗ, zₑᵤ, κ, PAR₁, PAR₂, PAR₃)
+    diatom_consumption = nitrate_uptake(bgc.diatoms, bgc, y, t, D, DChl, DFe, NO₃, NH₄, PO₄, Fe, Si, T, Si′, zₘₓₗ, zₑᵤ, κ, PAR₁, PAR₂, PAR₃)
 
     consumption = (nanophytoplankton_consumption + diatom_consumption) * θ
 
@@ -41,34 +41,34 @@ end
                                             SFe, BFe, PSi, 
                                             NO₃, NH₄, PO₄, Fe, Si, 
                                             CaCO₃, DIC, Alk, 
-                                            O₂, T, 
+                                            O₂, T, S,
                                             zₘₓₗ, zₑᵤ, Si′, dust, Ω, κ, mixed_layer_PAR, PAR, PAR₁, PAR₂, PAR₃)
     θ = bgc.nitrogen_redfield_ratio
 
-    nitrif = nitrification(nitrogen, NH₄, O₂, mixed_layer_PAR) * θ
+    nitrif = nitrification(nitrogen, bgc, NH₄, O₂, mixed_layer_PAR) * θ
 
     respiration_product = inorganic_upper_trophic_respiration_product(bgc.mesozooplankton, M, T) * θ
 
-    microzooplankton_grazing_waste = specific_inorganic_grazing_waste(bgc.microzooplankton, bgc, P, D, PFe, DFe, Z, POC, SFe) * Z
-    mesozooplankton_grazing_waste  = specific_inorganic_grazing_waste(bgc.mesozooplankton, bgc, P, D, PFe, DFe, Z, POC, SFe) * M
+    microzooplankton_grazing_waste = specific_inorganic_grazing_waste(bgc.microzooplankton, bgc, x, y, z, P, D, PFe, DFe, Z, POC, GOC, SFe, T) * Z
+    mesozooplankton_grazing_waste  = specific_inorganic_grazing_waste(bgc.mesozooplankton, bgc, x, y, z, P, D, PFe, DFe, Z, POC, GOC, SFe, T) * M
 
     grazing_waste = (microzooplankton_grazing_waste + mesozooplankton_grazing_waste) * θ
 
-    denit = denitrifcation(bgc.dissolved_organic_matter, z, Z, M, DOM, NO₃, NH₄, PO₄, Fe, T, zₘₓₗ, zₑᵤ) * θ
+    denit = denitrifcation(bgc.dissolved_organic_matter, bgc, z, Z, M, DOC, NO₃, NH₄, PO₄, Fe, O₂, T, zₘₓₗ, zₑᵤ) * θ
 
-    nanophytoplankton_consumption = ammonia_uptake(bgc.nanophytoplankton, P, PChl, PFe, NO₃, NH₄, PO₄, Fe, Si, Si′, zₘₓₗ, zₑᵤ, κ, PAR₁, PAR₂, PAR₃)
+    nanophytoplankton_consumption = ammonia_uptake(bgc.nanophytoplankton, bgc, y, t, P, PChl, PFe, NO₃, NH₄, PO₄, Fe, Si, T, Si′, zₘₓₗ, zₑᵤ, κ, PAR₁, PAR₂, PAR₃)
 
-    diatom_consumption = ammonia_uptake(bgc.diatoms, D, DChl, DsFe, NO₃, NH₄, PO₄, Fe, Si, Si′, zₘₓₗ, zₑᵤ, κ, PAR₁, PAR₂, PAR₃)
+    diatom_consumption = ammonia_uptake(bgc.diatoms, bgc, y, t, D, DChl, DFe, NO₃, NH₄, PO₄, Fe, Si, T, Si′, zₘₓₗ, zₑᵤ, κ, PAR₁, PAR₂, PAR₃)
 
     consumption = (nanophytoplankton_consumption + diatom_consumption) * θ
 
-    fixation = nitrogen_fixation(nitrogen, bgc, NO₃, NH₄, PO₄, Fe, Si, Si′, PAR)
+    fixation = nitrogen_fixation(nitrogen, bgc, P, PChl, PFe, NO₃, NH₄, PO₄, Fe, Si, T, Si′, PAR)
 
     # again an extra term is present in Aumount 2015 but I suspect it is a typo
     return fixation + respiration_product + grazing_waste + denit - consumption - nitrif
 end
 
-@inline function nitrification(nitrogen, NH₄, O₂, PAR)
+@inline function nitrification(nitrogen, bgc, NH₄, O₂, PAR)
     λ = nitrogen.maximum_nitrifcation_rate
 
     ΔO₂ = anoxia_factor(bgc, O₂)
@@ -76,15 +76,15 @@ end
     return λ * NH₄ / (1 + PAR) * (1 - ΔO₂)
 end
 
-@inline function nitrogen_fixation(nitrogen, bgc, NO₃, NH₄, PO₄, Fe, Si, Si′, PAR)
-    Nₘ    = nitogen.maximum_fixation_rate
+@inline function nitrogen_fixation(nitrogen, bgc, P, PChl, PFe, NO₃, NH₄, PO₄, Fe, Si, T, Si′, PAR)
+    Nₘ    = nitrogen.maximum_fixation_rate
     K_Fe  = nitrogen.iron_half_saturation_for_fixation
     K_PO₄ = nitrogen.phosphate_half_saturation_for_fixation
     E     = nitrogen.light_saturation_for_fixation
 
     phyto = bgc.nanophytoplankton
 
-    _, _, _, LN, _, _ = phyto.nutrient_limitation(bgc, I, IChl, IFe, NO₃, NH₄, PO₄, Fe, Si, Si′)
+    _, _, _, LN, _, _ = phyto.nutrient_limitation(bgc, P, PChl, PFe, NO₃, NH₄, PO₄, Fe, Si, Si′)
 
     fixation_limit = ifelse(LN >= 0.8, 0.01, 1 - LN)
 

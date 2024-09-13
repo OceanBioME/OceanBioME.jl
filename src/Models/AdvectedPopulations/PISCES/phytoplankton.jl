@@ -27,11 +27,11 @@ include("nutrient_limitation.jl")
              optimal_silicate_ratio :: FT = 0.159
 end
 
-@inline phytoplankton_concentration(::Val{:P}, P, D) = P
-@inline phytoplankton_concentration(::Val{:D}, P, D) = D
+@inline phytoplankton_concentration(::NANO_PHYTO, P, D) = P
+@inline phytoplankton_concentration(::DIATOMS, P, D) = D
 
-@inline phytoplankton_grazing(::Val{:P}, args...) = nanophytoplankton_grazing(args...)
-@inline phytoplankton_grazing(::Val{:D}, args...) = diatom_grazing(args...)
+@inline phytoplankton_grazing(::NANO_PHYTO, args...) = nanophytoplankton_grazing(args...)
+@inline phytoplankton_grazing(::DIATOMS, args...) = diatom_grazing(args...)
 
 @inline function (phyto::Phytoplankton)(val_name::Union{Val{:P}, Val{:D}}, bgc,
                                         x, y, z, t,
@@ -41,7 +41,7 @@ end
                                         SFe, BFe, PSi, 
                                         NO₃, NH₄, PO₄, Fe, Si, 
                                         CaCO₃, DIC, Alk, 
-                                        O₂, T, 
+                                        O₂, T, S,
                                         zₘₓₗ, zₑᵤ, Si′, dust, Ω, κ, mixed_layer_PAR, PAR, PAR₁, PAR₂, PAR₃)
     # production
     δ  = phyto.exudated_fracton
@@ -52,16 +52,16 @@ end
 
     L, = phyto.nutrient_limitation(bgc, I, IChl, IFe, NO₃, NH₄, PO₄, Fe, Si, Si′)
 
-    μ = phyto.growth_rate(bgc, I, IChl, T, zₘₓₗ, zₑᵤ, κ, PAR₁, PAR₂, PAR₃, L)
+    μ = phyto.growth_rate(phyto, bgc, y, t, I, IChl, T, zₘₓₗ, zₑᵤ, κ, PAR₁, PAR₂, PAR₃, L)
 
     production = (1 - δ) * μ * I 
 
     # mortality
-    linear_mortality, quadratic_mortality = mortality(phyto, bgc, z, I, zₘₓₗ,  L)
+    linear_mortality, quadratic_mortality = mortality(phyto, bgc, z, I, zₘₓₗ, L)
 
     # grazing
-    gZ = phytoplankton_grazing(val_name, bgc.zooplankton, P, D, Z, POC)
-    gM = phytoplankton_grazing(val_name, bgc.mesozooplankton, P, D, Z, POC)
+    gZ = phytoplankton_grazing(val_name, bgc.microzooplankton, P, D, Z, POC, T)
+    gM = phytoplankton_grazing(val_name, bgc.mesozooplankton, P, D, Z, POC, T)
 
     grazing = gZ * Z + gM * M
 
@@ -76,7 +76,7 @@ end
                                         SFe, BFe, PSi, 
                                         NO₃, NH₄, PO₄, Fe, Si, 
                                         CaCO₃, DIC, Alk, 
-                                        O₂, T, 
+                                        O₂, T, S,
                                         zₘₓₗ, zₑᵤ, Si′, dust, Ω, κ, mixed_layer_PAR, PAR, PAR₁, PAR₂, PAR₃)
 
     I    = phytoplankton_concentration(val_name, P, D)
@@ -89,23 +89,23 @@ end
     θ₀ = phyto.minimum_chlorophyll_ratio
     θ₁ = phyto.maximum_chlorophyll_ratio
 
-    L = phyto.nutrient_limitation(bgc, I, IChl, IFe, NO₃, NH₄, PO₄, Fe, Si, Si′)
+    L, = phyto.nutrient_limitation(bgc, I, IChl, IFe, NO₃, NH₄, PO₄, Fe, Si, Si′)
 
-    μ, ρ = production_and_energy_assimilation_absorption_ratio(phyto.growth_rate, bgc, I, IChl, T, zₘₓₗ, zₑᵤ, κ, PAR₁, PAR₂, PAR₃, L)
+    μ, ρ = production_and_energy_assimilation_absorption_ratio(phyto.growth_rate, phyto, bgc, y, t, I, IChl, T, zₘₓₗ, zₑᵤ, κ, PAR, PAR₁, PAR₂, PAR₃, L)
 
     production = (1 - δ) * (12 * θ₀ + (θ₁ - θ₀) * ρ) * μ * I 
 
     # mortality
     linear_mortality, quadratic_mortality = mortality(phyto, bgc, z, I, zₘₓₗ, L)
 
-    linear_mortality *= IChl / I
-    quadratic_mortality *= IChl / I
+    linear_mortality *= IChl / (I + eps(0.0))
+    quadratic_mortality *= IChl / (I + eps(0.0))
     
     # grazing
-    θChl = IChl / I
+    θChl = IChl / (I + eps(0.0))
 
-    gZ = phytoplankton_grazing(val_name, bgc.zooplankton, P, D, Z, POC)
-    gM = phytoplankton_grazing(val_name, bgc.mesozooplankton, P, D, Z, POC)
+    gZ = phytoplankton_grazing(val_name, bgc.microzooplankton, P, D, Z, POC, T)
+    gM = phytoplankton_grazing(val_name, bgc.mesozooplankton, P, D, Z, POC, T)
 
     grazing = (gZ * Z + gM * M) * θChl
 
@@ -120,7 +120,7 @@ end
                                         SFe, BFe, PSi, 
                                         NO₃, NH₄, PO₄, Fe, Si, 
                                         CaCO₃, DIC, Alk, 
-                                        O₂, T, 
+                                        O₂, T, S,
                                         zₘₓₗ, zₑᵤ, Si′, dust, Ω, κ, mixed_layer_PAR, PAR, PAR₁, PAR₂, PAR₃)
 
     I    = phytoplankton_concentration(val_name, P, D)
@@ -128,38 +128,38 @@ end
     IFe  = phytoplankton_concentration(val_name, PFe, DFe)
 
     # production
-    production = iron_uptake(phyto, I, IChl, IFe, NO₃, NH₄, PO₄, Fe, Si, Si′, T)
+    production, L = iron_uptake(phyto, bgc, I, IChl, IFe, NO₃, NH₄, PO₄, Fe, Si, Si′, T)
 
     # mortality
     linear_mortality, quadratic_mortality = mortality(phyto, bgc, z, I, zₘₓₗ, L)
 
-    linear_mortality *= IFe / I
-    quadratic_mortality *= IFe / I
+    linear_mortality *= IFe / (I + eps(0.0))
+    quadratic_mortality *= IFe / (I + eps(0.0))
     
     # grazing
-    gZ = phytoplankton_grazing(val_name, bgc.zooplankton, P, D, Z, POC)
-    gM = phytoplankton_grazing(val_name, bgc.mesozooplankton, P, D, Z, POC)
+    gZ = phytoplankton_grazing(val_name, bgc.microzooplankton, P, D, Z, POC, T)
+    gM = phytoplankton_grazing(val_name, bgc.mesozooplankton, P, D, Z, POC, T)
 
-    grazing = (gZ * Z + gM * M) * θFe
+    grazing = (gZ * Z + gM * M) * IFe / (I + eps(0.0))
 
     return production - linear_mortality - quadratic_mortality - grazing
 end
 
-@inline function iron_uptake(phyto::Phytoplankton, I, IChl, IFe, NO₃, NH₄, PO₄, Fe, Si, Si′, T)
+@inline function iron_uptake(phyto::Phytoplankton, bgc, I, IChl, IFe, NO₃, NH₄, PO₄, Fe, Si, Si′, T)
     δ  = phyto.exudated_fracton
     θFeₘ = phyto.maximum_iron_ratio
 
-    θFe = IFe / I
+    θFe = IFe / (I + eps(0.0))
 
     L, LFe = phyto.nutrient_limitation(bgc, I, IChl, IFe, NO₃, NH₄, PO₄, Fe, Si, Si′)
 
     μᵢ = base_production_rate(phyto.growth_rate, T)
 
-    L₁ = iron_uptake_limitation(phyto.growth_rate, I, Fe) # assuming bFe = Fe
+    L₁ = iron_uptake_limitation(phyto.nutrient_limitation, I, Fe) # assuming bFe = Fe
 
     L₂ = (4 - 2 * LFe) / (LFe + 1) # Formulation in paper does not vary between 1 and 4 as claimed, this does
 
-    return (1 - δ) * θFeₘ * L₁ * L₂ * (1 - θFe / θFeₘ) / (1.05 - θFe / θFeₘ) * μᵢ * I 
+    return (1 - δ) * θFeₘ * L₁ * L₂ * (1 - θFe / θFeₘ) / (1.05 - θFe / θFeₘ) * μᵢ * I, L
 end
 
 @inline function (phyto::Phytoplankton)(::Val{:DSi}, bgc,
@@ -170,63 +170,64 @@ end
                                         SFe, BFe, PSi, 
                                         NO₃, NH₄, PO₄, Fe, Si, 
                                         CaCO₃, DIC, Alk, 
-                                        O₂, T, 
+                                        O₂, T, S,
                                         zₘₓₗ, zₑᵤ, Si′, dust, Ω, κ, mixed_layer_PAR, PAR, PAR₁, PAR₂, PAR₃)
 
     # production
-    production = silicate_uptake(phyto, D, DChl, DFe, NO₃, NH₄, PO₄, Fe, Si, Si′, T, zₘₓₗ, zₑᵤ, κ, PAR₁, PAR₂, PAR₃)
+    production, L = silicate_uptake(phyto, bgc, y, t, D, DChl, DFe, NO₃, NH₄, PO₄, Fe, Si, Si′, T, zₘₓₗ, zₑᵤ, κ, PAR₁, PAR₂, PAR₃)
 
     # mortality
     linear_mortality, quadratic_mortality = mortality(phyto, bgc, z, D, zₘₓₗ, L)
 
-    linear_mortality *= DSi / D
-    quadratic_mortality *= DSi / D
+    linear_mortality *= DSi / (D + eps(0.0))
+    quadratic_mortality *= DSi / (D + eps(0.0))
 
     # grazing
-    gZ = diatom_grazing(bgc.zooplankton, P, D, Z, POC)
-    gM = diatom_grazing(bgc.mesozooplankton, P, D, Z, POC)
+    gZ = diatom_grazing(bgc.microzooplankton, P, D, Z, POC, T)
+    gM = diatom_grazing(bgc.mesozooplankton, P, D, Z, POC, T)
 
-    grazing = (gZ * Z + gM * M) * θFe
+    grazing = (gZ * Z + gM * M) * DSi / (D + eps(0.0))
 
     return production - linear_mortality - quadratic_mortality - grazing
 end
 
-@inline function silicate_uptake(phyto::Phytoplankton, D, DChl, DFe, NO₃, NH₄, PO₄, Fe, Si, Si′, T, zₘₓₗ, zₑᵤ, κ, PAR₁, PAR₂, PAR₃)
+@inline function silicate_uptake(phyto::Phytoplankton, bgc, y, t, D, DChl, DFe, NO₃, NH₄, PO₄, Fe, Si, Si′, T, zₘₓₗ, zₑᵤ, κ, PAR₁, PAR₂, PAR₃)
     δ  = phyto.exudated_fracton
 
     K₁ = phyto.silicate_half_saturation
     K₂ = phyto.enhanced_silicate_half_saturation
     θ₀ = phyto.optimal_silicate_ratio
     
-    L, LFe, LPO₄ = phyto.nutrient_limitation(bgc, D, DChl, DFe, NO₃, NH₄, PO₄, Fe, Si, Si′)
+    L, LFe, LPO₄, LN = phyto.nutrient_limitation(bgc, D, DChl, DFe, NO₃, NH₄, PO₄, Fe, Si, Si′)
 
-    μ = phyto.growth_rate(bgc, D, DChl, T, zₘₓₗ, zₑᵤ, κ, PAR₁, PAR₂, PAR₃, L)
+    μ = phyto.growth_rate(phyto, bgc, y, t, D, DChl, T, zₘₓₗ, zₑᵤ, κ, PAR₁, PAR₂, PAR₃, L)
 
     μᵢ = base_production_rate(phyto.growth_rate, T)
 
-    L₁ = Si / (Si + K₁)
+    L₁ = Si / (Si + K₁ + eps(0.0))
 
     # enhanced silication in southern ocean
+    φ = bgc.latitude(y)
     L₂ = ifelse(φ < 0, Si^3 / (Si^3 + K₂^3), 0)
 
-    F₁ = min(μ / (μᵢ * L), LFe, LPO₄, LN)
+    F₁ = min(μ / (μᵢ * L + eps(0.0)), LFe, LPO₄, LN)
 
     F₂ = min(1, 2.2 * max(0, L₁ - 0.5))
 
     θ₁ = θ₀ * L₁ * min(5.4, (4.4 * exp(-4.23 * F₁) * F₂ + 1) * (1 + 2 * L₂))
 
-    return (1 - δ) * θ₁ * μ * D
+    return (1 - δ) * θ₁ * μ * D, L
 end
 
-@inline function dissolved_exudate(phyto::Phytoplankton, bgc, I, IChl, IFe, NO₃, NH₄, PO₄, Fe, Si, Si′, T, zₘₓₗ, zₑᵤ, κ, PAR₁, PAR₂, PAR₃)
+@inline function dissolved_exudate(phyto::Phytoplankton, bgc, y, t, I, IChl, IFe, NO₃, NH₄, PO₄, Fe, Si, Si′, T, zₘₓₗ, zₑᵤ, κ, PAR₁, PAR₂, PAR₃)
     δ = phyto.exudated_fracton
 
-    μ = phyto.growth_rate(bgc, I, IChl, IFe, NO₃, NH₄, PO₄, Fe, Si, Si′, T, zₘₓₗ, zₑᵤ, κ, PAR₁, PAR₂, PAR₃)
+    μ = phyto.growth_rate(phyto, bgc, y, t, I, IChl, IFe, NO₃, NH₄, PO₄, Fe, Si, Si′, T, zₘₓₗ, zₑᵤ, κ, PAR₁, PAR₂, PAR₃)
 
     return δ * μ * I
 end
 
-@inline function mortality(phyto::Phytoplankton, bgc, z, I, zₘₓₗ)
+@inline function mortality(phyto::Phytoplankton, bgc, z, I, IChl, IFe, NO₃, NH₄, PO₄, Fe, Si, Si′, zₘₓₗ)
     L, = phyto.nutrient_limitation(bgc, I, IChl, IFe, NO₃, NH₄, PO₄, Fe, Si, Si′)
 
     return mortality(phyto, bgc, z, I, zₘₓₗ, L)
@@ -253,31 +254,31 @@ end
     return linear_mortality, quadratic_mortality
 end
 
-@inline function nitrate_uptake(phyto::Phytoplankton, I, IChl, IFe, NO₃, NH₄, PO₄, Fe, Si, Si′, zₘₓₗ, zₑᵤ, κ, PAR₁, PAR₂, PAR₃)
+@inline function nitrate_uptake(phyto::Phytoplankton, bgc, y, t, I, IChl, IFe, NO₃, NH₄, PO₄, Fe, Si, T, Si′, zₘₓₗ, zₑᵤ, κ, PAR₁, PAR₂, PAR₃)
     L, _, _, LN, L_NO₃ = phyto.nutrient_limitation(bgc, I, IChl, IFe, NO₃, NH₄, PO₄, Fe, Si, Si′)
 
-    μ = phyto.growth_rate(bgc, I, IChl, T, zₘₓₗ, zₑᵤ, κ, PAR₁, PAR₂, PAR₃, L) * I
+    μ = phyto.growth_rate(phyto, bgc, y, t, I, IChl, T, zₘₓₗ, zₑᵤ, κ, PAR₁, PAR₂, PAR₃, L) * I
 
-    return μ * L_NO₃ / LN
+    return μ * L_NO₃ / (LN + eps(0.0))
 end
 
-@inline function ammonia_uptake(phyto::Phytoplankton, I, IChl, IFe, NO₃, NH₄, PO₄, Fe, Si, Si′, zₘₓₗ, zₑᵤ, κ, PAR₁, PAR₂, PAR₃)
+@inline function ammonia_uptake(phyto::Phytoplankton, bgc, y, t, I, IChl, IFe, NO₃, NH₄, PO₄, Fe, Si, T, Si′, zₘₓₗ, zₑᵤ, κ, PAR₁, PAR₂, PAR₃)
     L, _, _, LN, _, L_NH₄ = phyto.nutrient_limitation(bgc, I, IChl, IFe, NO₃, NH₄, PO₄, Fe, Si, Si′)
 
-    μ = phyto.growth_rate(bgc, I, IChl, T, zₘₓₗ, zₑᵤ, κ, PAR₁, PAR₂, PAR₃, L) * I
+    μ = phyto.growth_rate(phyto, bgc, y, t, I, IChl, T, zₘₓₗ, zₑᵤ, κ, PAR₁, PAR₂, PAR₃, L) * I
 
-    return μ * L_NH₄ / LN
+    return μ * L_NH₄ / (LN + eps(0.0))
 end
 
 # maybe this function exists elsehwere
-@inline function total_growth(phyto::Phytoplankton, I, IChl, IFe, NO₃, NH₄, PO₄, Fe, Si, Si′, zₘₓₗ, zₑᵤ, κ, PAR₁, PAR₂, PAR₃)
+@inline function total_growth(phyto::Phytoplankton, bgc, y, t, I, IChl, IFe, NO₃, NH₄, PO₄, Fe, Si, T, Si′, zₘₓₗ, zₑᵤ, κ, PAR₁, PAR₂, PAR₃)
     L, = phyto.nutrient_limitation(bgc, I, IChl, IFe, NO₃, NH₄, PO₄, Fe, Si, Si′)
 
-    return phyto.growth_rate(bgc, I, IChl, T, zₘₓₗ, zₑᵤ, κ, PAR₁, PAR₂, PAR₃, L) * I
+    return phyto.growth_rate(phyto, bgc, y, t, I, IChl, T, zₘₓₗ, zₑᵤ, κ, PAR₁, PAR₂, PAR₃, L) * I
 end
 
-@inline function total_production(phyto::Phytoplankton, I, IChl, IFe, NO₃, NH₄, PO₄, Fe, Si, Si′, zₘₓₗ, zₑᵤ, κ, PAR₁, PAR₂, PAR₃)
+@inline function total_production(phyto::Phytoplankton, bgc, y, t, I, IChl, IFe, NO₃, NH₄, PO₄, Fe, Si, T, Si′, zₘₓₗ, zₑᵤ, κ, PAR₁, PAR₂, PAR₃)
     L, = phyto.nutrient_limitation(bgc, I, IChl, IFe, NO₃, NH₄, PO₄, Fe, Si, Si′)
 
-    return phyto.growth_rate(bgc, I, IChl, T, zₘₓₗ, zₑᵤ, κ, PAR₁, PAR₂, PAR₃, L) * I
+    return phyto.growth_rate(phyto, bgc, y, t, I, IChl, T, zₘₓₗ, zₑᵤ, κ, PAR₁, PAR₂, PAR₃, L) * I
 end

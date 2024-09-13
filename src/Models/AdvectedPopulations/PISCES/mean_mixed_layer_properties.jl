@@ -6,6 +6,7 @@ using Oceananigans.Utils: launch!
 ##### Mean mixed layer diffusivity
 #####
 compute_mean_mixed_layer_vertical_diffusivity!(κ::ConstantField, mixed_layer_depth, model) = nothing
+compute_mean_mixed_layer_vertical_diffusivity!(κ::ZeroField, mixed_layer_depth, model) = nothing
 
 compute_mean_mixed_layer_vertical_diffusivity!(κ, mixed_layer_depth, model) =
     compute_mean_mixed_layer_vertical_diffusivity!(model.closure, κ, mixed_layer_depth, model.diffusivity_fields, grid)
@@ -62,6 +63,9 @@ function compute_mean_mixed_layer_light!(mean_PAR, mixed_layer_depth, PAR, model
 
     return nothing
 end
+
+compute_mean_mixed_layer_light!(::ConstantField, args...) = nothing
+compute_mean_mixed_layer_light!(::ZeroField, args...) = nothing
 
 @kernel function _compute_mean_mixed_layer_light!(mean_PAR, mixed_layer_depth, PAR, grid)
     i, j = @index(Global, NTuple)

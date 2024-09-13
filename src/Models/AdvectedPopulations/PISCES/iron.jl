@@ -8,11 +8,11 @@ struct SimpleIron end
                                     SFe, BFe, PSi, 
                                     NO₃, NH₄, PO₄, Fe, Si, 
                                     CaCO₃, DIC, Alk, 
-                                    O₂, T, 
+                                    O₂, T, S,
                                     zₘₓₗ, zₑᵤ, Si′, dust, Ω, κ, mixed_layer_PAR, PAR, PAR₁, PAR₂, PAR₃)
 
     # terminal loss 
-    λFe = iron_scavenging_rate(bgc.dissolved_organic_matter, POC, GOC, CaCO₃, PSi, dust)
+    λFe = iron_scavenging_rate(bgc.particulate_organic_matter, POC, GOC, CaCO₃, PSi, dust)
 
     Fe′ = free_iron(iron, Fe, DOC, T)
     total_ligand_concentration = max(0.6, 0.09 * (DOC + 40) - 3)
@@ -28,22 +28,24 @@ struct SimpleIron end
 
     BactFe = bacterial_iron_uptake(bgc.dissolved_organic_matter, z, Z, M, DOC, NO₃, NH₄, PO₄, Fe, T, zₘₓₗ, zₑᵤ)
 
-    λPOC = specific_degredation_rate(bgc.dissolved_organic_matter, bgc, O₂, T)
+    λPOC = specific_degredation_rate(bgc.particulate_organic_matter, bgc, O₂, T)
 
     # particle breakdown
     particulate_degredation = λPOC * SFe
 
     # consumption
-    nanophytoplankton_consumption = iron_uptake(bgc.nanophytoplankton, P, PChl, PFe, NO₃, NH₄, PO₄, Fe, Si, Si′, T)
-    diatom_consumption = iron_uptake(bgc.diatoms, D, DChl, DFe, NO₃, NH₄, PO₄, Fe, Si, Si′, T)
+    nanophytoplankton_consumption, = iron_uptake(bgc.nanophytoplankton, bgc, P, PChl, PFe, NO₃, NH₄, PO₄, Fe, Si, Si′, T)
+    diatom_consumption, = iron_uptake(bgc.diatoms, bgc, D, DChl, DFe, NO₃, NH₄, PO₄, Fe, Si, Si′, T)
 
     consumption = nanophytoplankton_consumption + diatom_consumption
 
     # grazing waste - this is the excess non assimilated into zooplankton when they consume iron rich phytoplankton
-    microzooplankton_waste = specific_non_assimilated_iron(bgc.microzooplankton, P, D, PFe, DFe, Z, POC, GOC, SFe, BFe) * Z
-    mesozooplankton_waste  = specific_non_assimilated_iron(bgc.mesozooplankton, P, D, PFe, DFe, Z, POC, GOC, SFe, BFe) * M
+    microzooplankton_waste = specific_non_assimilated_iron(bgc.microzooplankton, bgc, x, y, z, P, D, PFe, DFe, Z, POC, GOC, SFe, BFe, T) * Z
+    mesozooplankton_waste  = specific_non_assimilated_iron(bgc.mesozooplankton, bgc, x, y, z, P, D, PFe, DFe, Z, POC, GOC, SFe, BFe, T) * M
 
     zooplankton_waste = microzooplankton_waste + mesozooplankton_waste
+
+    respiration_product = inorganic_upper_trophic_respiration_product(bgc.mesozooplankton, M, T) * bgc.mesozooplankton.iron_ratio
 
     return zooplankton_waste + respiration_product + particulate_degredation - consumption - scav - aggregation - BactFe
 end
@@ -65,8 +67,8 @@ end
     ligand_iron = Fe - Fe′
     colloidal_iron = 0.5 * ligand_iron
 
-    CgFe1 = (Φ₁ + Φ₃) * colloidal_iron / DOC
-    CgFe2 = Φ₂ * colloidal_iron / DOC
+    CgFe1 = (Φ₁ + Φ₃) * colloidal_iron / (DOC + eps(0.0))
+    CgFe2 = Φ₂ * colloidal_iron / (DOC + eps(0.0))
 
     return CgFe1 + CgFe2, CgFe1, CgFe2
 end

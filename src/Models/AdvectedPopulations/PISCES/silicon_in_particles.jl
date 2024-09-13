@@ -6,24 +6,24 @@
                                                                 SFe, BFe, PSi, 
                                                                 NO₃, NH₄, PO₄, Fe, Si, 
                                                                 CaCO₃, DIC, Alk, 
-                                                                O₂, T, 
+                                                                O₂, T, S,
                                                                 zₘₓₗ, zₑᵤ, Si′, dust, Ω, κ, mixed_layer_PAR, PAR, PAR₁, PAR₂, PAR₃)
 
     # diatom grazing
-    _, _, microzooplankton_grazing = specific_grazing(bgc.microzooplankton, P, D, Z, POC)
-    _, _, mesozooplankton_grazing  = specific_grazing(bgc.mesozooplankton , P, D, Z, POC)
+    _, _, microzooplankton_grazing = specific_grazing(bgc.microzooplankton, P, D, Z, POC, T)
+    _, _, mesozooplankton_grazing  = specific_grazing(bgc.mesozooplankton , P, D, Z, POC, T)
 
-    diatom_grazing = (microzooplankton_grazing * Z + mesozooplankton_grazing * M) * DSi / D
+    diatom_grazing = (microzooplankton_grazing * Z + mesozooplankton_grazing * M) * DSi / (D + eps(0.0))
 
     # diatom mortality
-    diatom_linear_mortality, diatom_quadratic_mortality = mortality(bgc.diatoms, bgc, z, D, zₘₓₗ)
+    diatom_linear_mortality, diatom_quadratic_mortality = mortality(bgc.diatoms, bgc, z, D, DChl, DFe, NO₃, NH₄, PO₄, Fe, Si, Si′, zₘₓₗ)
 
-    diatom_mortality = (diatom_linear_mortality + diatom_quadratic_mortality) * DSi / D
+    diatom_mortality = (diatom_linear_mortality + diatom_quadratic_mortality) * DSi / (D + eps(0.0))
 
     # dissolution
     dissolution = particulate_silicate_dissolution(poc, bgc, x, y, z, PSi, Si, T, zₘₓₗ, zₑᵤ)
-
-    return (diatom_grazing + diatom_mortality - dissolution)
+    
+    return diatom_grazing + diatom_mortality - dissolution
 end
 
 @inline function particulate_silicate_dissolution(poc, bgc, x, y, z, PSi, Si, T, zₘₓₗ, zₑᵤ)
@@ -35,7 +35,7 @@ end
     λ₀ = χ * λₗ + (1 - χ) * λᵣ
 
     equilibrium_silicate = 10^(6.44 - 968 / (T + 273.15))
-    silicate_saturation  = (equilibrium_silicate - Si) / Si
+    silicate_saturation  = (equilibrium_silicate - Si) / equilibrium_silicate
 
     λ = λ₀ * (0.225 * (1 + T/15) * silicate_saturation + 0.775 * ((1 + T/400)^4 * silicate_saturation)^9)
 
@@ -48,7 +48,7 @@ end
     λᵣ = poc.slow_dissolution_rate_of_silicate
     grid = bgc.sinking_velocities.grid
 
-    w = particle_sinking_speed(x, y, z, grid,  bgc.sinking_velocities.GOC.w)
+    w = particle_sinking_speed(x, y, z, grid,  bgc.sinking_velocities.GOC)
 
     zₘ = min(zₘₓₗ, zₑᵤ)
 

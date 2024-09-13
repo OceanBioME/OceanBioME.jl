@@ -18,7 +18,7 @@ end
     I₁ = min(I, Iₘ)
     I₂ = max(0, I - Iₘ)
 
-    return (I₁ + S * I₂) / (I₁ + I₂)
+    return (I₁ + S * I₂) / (I₁ + I₂ + eps(0.0))
 end
 
 @inline function (L::NitrogenIronPhosphateSilicateLimitation)(bgc, I, IChl, IFe, NO₃, NH₄, PO₄, Fe, Si, Si′)
@@ -31,8 +31,8 @@ end
     θₒ  = L.optimal_iron_quota
 
     # quotas
-    θFe  = ifelse(I == 0, 0, IFe / I)
-    θChl = ifelse(I == 0, 0, IChl / I)
+    θFe  = ifelse(I == 0, 0, IFe / (I + eps(0.0)))
+    θChl = ifelse(I == 0, 0, IChl / (I + eps(0.0)))
 
     K̄ = size_factor(L, I)
 
@@ -47,7 +47,7 @@ end
     LN = LNO₃ + LNH₄
 
     # phosphate limitation
-    LPO₄ = PO₄ / (PO₄ + Kₚ)
+    LPO₄ = PO₄ / (PO₄ + Kₚ + eps(0.0))
 
     # iron limitation
     # Flynn and Hipkin (1999) - photosphotosyntheis, respiration (?), nitrate reduction 
@@ -61,15 +61,15 @@ end
     LSi = ifelse(L.silicate_limited, LSi, Inf)
 
     # don't always need the other arguments but they can be got like μ, = ... or _, LFe = ..
-    return min(LN, LPO₄, LFe, LSi), LFe, LPO₄, LN, L_NO₃, L_NH₄
+    return min(LN, LPO₄, LFe, LSi), LFe, LPO₄, LN, LNO₃, LNH₄
 end
 
-@inline nitrogen_limitation(N₁, N₂, K₁, K₂) = (K₂ * N₁) / (K₁ * K₂ + K₁ * N₂ + K₂ * N₁)
+@inline nitrogen_limitation(N₁, N₂, K₁, K₂) = (K₂ * N₁) / (K₁ * K₂ + K₁ * N₂ + K₂ * N₁ + eps(0.0))
 
 @inline function iron_uptake_limitation(L, I, Fe)
     k = L.half_saturation_for_iron_uptake
 
     K = k * size_factor(L, I)
 
-    return Fe / (Fe + K)
+    return Fe / (Fe + K + eps(0.0))
 end

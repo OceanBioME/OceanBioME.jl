@@ -30,7 +30,7 @@ end
 @inline zooplankton_concentration(::Val{:Z}, Z, M) = Z
 @inline zooplankton_concentration(::Val{:M}, Z, M) = M
 
-@inline function specific_grazing(zoo::Zooplankton, P, D, Z, POC)
+@inline function specific_grazing(zoo::Zooplankton, P, D, Z, POC, T)
     g₀   = zoo.maximum_grazing_rate
     b    = zoo.temperature_sensetivity
     pP   = zoo.preference_for_nanophytoplankton
@@ -52,15 +52,15 @@ end
 
     total_specific_grazing = base_grazing_rate * concentration_limited_grazing / (K + food_availability) 
 
-    phytoplankton_grazing = pP * max(0, P - J)     * total_specific_grazing / weighted_food_availability
-    diatom_grazing        = pD * max(0, D - J)     * total_specific_grazing / weighted_food_availability
-    particulate_grazing   = pPOC * max(0, POC - J) * total_specific_grazing / weighted_food_availability
-    zooplankton_grazing   = pZ * max(0, Z - J)     * total_specific_grazing / weighted_food_availability
+    phytoplankton_grazing = pP * max(0, P - J)     * total_specific_grazing / (weighted_food_availability + eps(0.0))
+    diatom_grazing        = pD * max(0, D - J)     * total_specific_grazing / (weighted_food_availability + eps(0.0))
+    particulate_grazing   = pPOC * max(0, POC - J) * total_specific_grazing / (weighted_food_availability + eps(0.0))
+    zooplankton_grazing   = pZ * max(0, Z - J)     * total_specific_grazing / (weighted_food_availability + eps(0.0))
 
     return total_specific_grazing, phytoplankton_grazing, diatom_grazing, particulate_grazing, zooplankton_grazing
 end
 
-@inline function specific_flux_feeding(zoo::Zooplankton, POC, w_field, grid)
+@inline function specific_flux_feeding(zoo::Zooplankton, x, y, z, POC, T, w_field, grid)
     g₀ = zoo.maximum_flux_feeding_rate
     b  = zoo.temperature_sensetivity
 
@@ -80,69 +80,57 @@ end
                                     SFe, BFe, PSi, 
                                     NO₃, NH₄, PO₄, Fe, Si, 
                                     CaCO₃, DIC, Alk, 
-                                    O₂, T, 
+                                    O₂, T, S,
                                     zₘₓₗ, zₑᵤ, Si′, dust, Ω, κ, mixed_layer_PAR, PAR, PAR₁, PAR₂, PAR₃)
 
     I = zooplankton_concentration(val_name, Z, M)
 
     # grazing
-    total_specific_grazing, gP, gD, gPOC, gZ = specific_grazing(zoo, P, D, Z, POC)
+    total_specific_grazing, gP, gD, gPOC, gZ = specific_grazing(zoo, P, D, Z, POC, T)
 
     grazing = total_specific_grazing * I
 
     # flux feeding
     grid = bgc.sinking_velocities.grid
 
-    small_flux_feeding = specific_flux_feeding(zoo, POC, bgc.sinking_velocities.POC.w, grid)
-    large_flux_feeding = specific_flux_feeding(zoo, GOC, bgc.sinking_velocities.GOC.w, grid)
+    small_flux_feeding = specific_flux_feeding(zoo, x, y, z, POC, T, bgc.sinking_velocities.POC, grid)
+    large_flux_feeding = specific_flux_feeding(zoo, x, y, z, GOC, T, bgc.sinking_velocities.GOC, grid)
 
     flux_feeding = (small_flux_feeding + large_flux_feeding) * I
 
     # grazing mortality
-    specific_grazing_mortality = grazing_mortality(val_name, bgc.mesozooplankton, P, D, Z, POC)
+    specific_grazing_mortality = zooplankton_grazing_mortality(val_name, bgc.mesozooplankton, P, D, Z, POC, T)
 
     grazing_mortality = specific_grazing_mortality * M
 
     # mortality
     total_mortality = mortality(zoo, bgc, I, O₂, T)
 
-    growth_efficiency = grazing_growth_efficiency(zoo, P, D, PFe, DFe, POC, SFe, gP, gD, gPOC, gZ)
+    growth_efficiency = grazing_growth_efficiency(zoo, P, D, PFe, DFe, POC, SFe, total_specific_grazing, gP, gD, gPOC, gZ)
 
     return growth_efficiency * (grazing + flux_feeding) - grazing_mortality - total_mortality
 end
 
-@inline function nanophytoplankton_grazing(zoo::Zooplankton, P, D, Z, POC) 
-    _, g = specific_grazing(zoo, P, D, Z, POC)
+@inline function nanophytoplankton_grazing(zoo::Zooplankton, P, D, Z, POC, T) 
+    _, g = specific_grazing(zoo, P, D, Z, POC, T)
 
     return g
 end
 
-@inline function diatom_grazing(zoo::Zooplankton, P, D, Z, POC) 
-    _, _, g = specific_grazing(zoo, P, D, Z, POC)
+@inline function diatom_grazing(zoo::Zooplankton, P, D, Z, POC, T) 
+    _, _, g = specific_grazing(zoo, P, D, Z, POC, T)
 
     return g
 end
 
-@inline function particulate_grazing(zoo::Zooplankton, P, D, Z, POC) 
-    _, _, _, g = specific_grazing(zoo, P, D, Z, POC)
+@inline function zooplankton_grazing(zoo::Zooplankton, P, D, Z, POC, T) 
+    _, _, _, _, g = specific_grazing(zoo, P, D, Z, POC, T)
 
     return g
 end
 
-@inline function zooplankton_grazing(zoo::Zooplankton, P, D, Z, POC) 
-    _, _, _, _, g = specific_grazing(zoo, P, D, Z, POC)
-
-    return g
-end
-
-@inline specific_small_flux_feeding(zoo::Zooplankton, bgc, POC, GOC) =
-    specific_flux_feeding(zoo, POC, bgc.sinking_velocities.POC.w, grid)
-
-@inline specific_large_flux_feeding(zoo::Zooplankton, bgc, POC, GOC) =
-    specific_flux_feeding(zoo, POC, bgc.sinking_velocities.POC.w, grid)
-
-@inline grazing_mortality(val_name, zoo, P, D, Z, POC) = 0
-@inline grazing_mortality(::Val{:Z}, zoo, P, D, Z, POC) = zooplankton_grazing(zoo, P, D, Z, POC)
+@inline zooplankton_grazing_mortality(val_name, zoo, P, D, Z, POC, T) = 0
+@inline zooplankton_grazing_mortality(::Val{:Z}, zoo, P, D, Z, POC, T) = zooplankton_grazing(zoo, P, D, Z, POC, T)
 
 @inline function dissolved_upper_trophic_respiration_product(zoo, M, T)
     γ = zoo.dissolved_excretion_fraction
@@ -176,88 +164,92 @@ end
 @inline upper_trophic_fecal_product(zoo, M, T) =
     zoo.non_assililated_fraction * upper_trophic_waste(zoo, M, T)
 
-@inline function grazing_growth_efficiency(zoo, P, D, PFe, DFe, POC, SFe, gP, gD, gPOC, gZ)
+@inline function grazing_growth_efficiency(zoo, P, D, PFe, DFe, POC, SFe, g, gP, gD, gPOC, gZ)
     θFe = zoo.iron_ratio
     e₀  = zoo.maximum_growth_efficiency
     σ   = zoo.non_assililated_fraction
 
-    iron_grazing = PFe / P * gP + DFe / D * gD + SFe / POC * gPOC + θFe * gZ
+    iron_grazing = PFe / (P + eps(0.0)) * gP + DFe / (D + eps(0.0)) * gD + SFe / (POC + eps(0.0)) * gPOC + θFe * gZ
 
-    iron_grazing_ratio = iron_grazing / (θFe * total_specific_grazing)
+    iron_grazing_ratio = iron_grazing / (θFe * g + eps(0.0))
 
     food_quality = min(1, iron_grazing_ratio)
 
     return food_quality * min(e₀, (1 - σ) * iron_grazing_ratio)
 end
 
-@inline function specific_excretion(zoo, bgc, P, D, PFe, DFe, Z, POC, SFe)
+@inline function specific_excretion(zoo, bgc, x, y, z, P, D, PFe, DFe, Z, POC, GOC, SFe, T)
     σ = zoo.non_assililated_fraction
 
-    total_specific_grazing, gP, gD, gPOC, gZ = specific_grazing(zoo, P, D, Z, POC)
+    total_specific_grazing, gP, gD, gPOC, gZ = specific_grazing(zoo, P, D, Z, POC, T)
 
     grid = bgc.sinking_velocities.grid
 
-    small_flux_feeding = specific_flux_feeding(zoo, POC, bgc.sinking_velocities.POC.w, grid)
-    large_flux_feeding = specific_flux_feeding(zoo, GOC, bgc.sinking_velocities.GOC.w, grid)
+    small_flux_feeding = specific_flux_feeding(zoo, x, y, z, POC, T, bgc.sinking_velocities.POC, grid)
+    large_flux_feeding = specific_flux_feeding(zoo, x, y, z, GOC, T, bgc.sinking_velocities.GOC, grid)
 
-    specific_flux_feeding = small_flux_feeding + large_flux_feeding
+    total_specific_flux_feeding = small_flux_feeding + large_flux_feeding
 
-    e = grazing_growth_efficiency(zoo, P, D, PFe, DFe, POC, SFe, gP, gD, gPOC, gZ)
+    e = grazing_growth_efficiency(zoo, P, D, PFe, DFe, POC, SFe, total_specific_grazing, gP, gD, gPOC, gZ)
 
-    return (1 - e - σ) * (total_specific_grazing + specific_flux_feeding)
+    return (1 - e - σ) * (total_specific_grazing + total_specific_flux_feeding)
 end
 
-@inline specific_dissolved_grazing_waste(zoo, bgc, P, D, PFe, DFe, Z, POC, SFe) = 
-    (1 - zoo.dissolved_excretion_fraction) * specific_excretion(zoo, bgc, P, D, PFe, DFe, Z, POC, SFe)
+@inline specific_dissolved_grazing_waste(zoo, bgc, x, y, z, P, D, PFe, DFe, Z, POC, GOC, SFe, T) = 
+    (1 - zoo.dissolved_excretion_fraction) * specific_excretion(zoo, bgc, x, y, z, P, D, PFe, DFe, Z, POC, GOC, SFe, T)
 
-@inline specific_inorganic_grazing_waste(zoo, bgc, P, D, PFe, DFe, Z, POC, SFe) = 
-    zoo.dissolved_excretion_fraction * specific_excretion(zoo, bgc, P, D, PFe, DFe, Z, POC, SFe)
+@inline specific_inorganic_grazing_waste(zoo, bgc, x, y, z, P, D, PFe, DFe, Z, POC, GOC, SFe, T) = 
+    zoo.dissolved_excretion_fraction * specific_excretion(zoo, bgc, x, y, z, P, D, PFe, DFe, Z, POC, GOC, SFe, T)
 
-@inline function specific_non_assimilated_waste(zoo, bgc, P, D, Z, POC, GOC)
-    g, = specific_grazing(zoo, P, D, Z, POC)
+@inline function specific_non_assimilated_waste(zoo, bgc, x, y, z, P, D, Z, POC, GOC, T)
+    grid = bgc.sinking_velocities.grid
 
-    small_flux_feeding = specific_flux_feeding(zoo, POC, bgc.sinking_velocities.POC.w, grid)
-    large_flux_feeding = specific_flux_feeding(zoo, GOC, bgc.sinking_velocities.GOC.w, grid)
+    g, = specific_grazing(zoo, P, D, Z, POC, T)
+
+    small_flux_feeding = specific_flux_feeding(zoo, x, y, z, POC, T, bgc.sinking_velocities.POC, grid)
+    large_flux_feeding = specific_flux_feeding(zoo, x, y, z, GOC, T, bgc.sinking_velocities.GOC, grid)
     
     return zoo.non_assililated_fraction * (g + small_flux_feeding + large_flux_feeding)
 end
 
-@inline function specific_non_assimilated_iron_waste(zoo, P, D, PFe, DFe, Z, POC, GOC, SFe, BFe)
-    _, gP, gD, gPOC, gZ = specific_grazing(zoo, P, D, Z, POC)
+@inline function specific_non_assimilated_iron_waste(zoo, bgc, x, y, z, P, D, PFe, DFe, Z, POC, GOC, SFe, BFe, T)
+    _, gP, gD, gPOC, gZ = specific_grazing(zoo, P, D, Z, POC, T)
 
-    small_flux_feeding = specific_flux_feeding(zoo, POC, bgc.sinking_velocities.POC.w, grid)
-    large_flux_feeding = specific_flux_feeding(zoo, GOC, bgc.sinking_velocities.GOC.w, grid)
+    grid = bgc.sinking_velocities.grid
+    small_flux_feeding = specific_flux_feeding(zoo, x, y, z, POC, T, bgc.sinking_velocities.POC, grid)
+    large_flux_feeding = specific_flux_feeding(zoo, x, y, z, GOC, T, bgc.sinking_velocities.GOC, grid)
 
-    return zoo.non_assililated_fraction * (gP * PFe / P + gD * DFe / D + gPOC * SFe / Fe + gZ * zoo.iron_ratio 
-                                           + small_flux_feeding * SFe / POC + large_flux_feeding * BFe / GOC)
+    return zoo.non_assililated_fraction * (gP * PFe / (P + eps(0.0)) + gD * DFe / (D + eps(0.0)) + gPOC * SFe / (POC + eps(0.0)) + gZ * zoo.iron_ratio 
+                                           + small_flux_feeding * SFe / (POC + eps(0.0)) + large_flux_feeding * BFe / (GOC + eps(0.0)))
 end
 
-@inline function specific_non_assimilated_iron(zoo, P, D, PFe, DFe, Z, POC, GOC, SFe, BFe)
+@inline function specific_non_assimilated_iron(zoo, bgc, x, y, z, P, D, PFe, DFe, Z, POC, GOC, SFe, BFe, T)
     θ = zoo.iron_ratio
     σ = zoo.non_assililated_fraction
 
-    g, gP, gD, gPOC, gZ = specific_grazing(zoo, P, D, Z, POC)
+    g, gP, gD, gPOC, gZ = specific_grazing(zoo, P, D, Z, POC, T)
 
-    small_flux_feeding = specific_flux_feeding(zoo, POC, bgc.sinking_velocities.POC.w, grid)
-    large_flux_feeding = specific_flux_feeding(zoo, GOC, bgc.sinking_velocities.GOC.w, grid)
+    grid = bgc.sinking_velocities.grid
+    small_flux_feeding = specific_flux_feeding(zoo, x, y, z, POC, T, bgc.sinking_velocities.POC, grid)
+    large_flux_feeding = specific_flux_feeding(zoo, x, y, z, GOC, T, bgc.sinking_velocities.GOC, grid)
 
-    total_iron_consumed = (gP * PFe / P + gD * DFe / D + gZ * θ 
-                           + (gPOC + small_flux_feeding) * SFe / POC 
-                           + large_flux_feeding * BFe / GOC)
+    total_iron_consumed = (gP * PFe / (P + eps(0.0)) + gD * DFe / (D + eps(0.0)) + gZ * θ 
+                           + (gPOC + small_flux_feeding) * SFe / (POC + eps(0.0)) 
+                           + large_flux_feeding * BFe / (GOC + eps(0.0)))
 
-    grazing_iron_ratio = (1 - σ) * total_iron_consumed / (g + small_flux_feeding + large_flux_feeding)
+    grazing_iron_ratio = (1 - σ) * total_iron_consumed / (g + small_flux_feeding + large_flux_feeding + eps(0.0))
 
-    growth_efficiency = grazing_growth_efficiency(zoo, P, D, PFe, DFe, POC, SFe, gP, gD, gPOC, gZ) * θ
+    growth_efficiency = grazing_growth_efficiency(zoo, P, D, PFe, DFe, POC, SFe, g, gP, gD, gPOC, gZ) * θ
 
     non_assimilated_iron_ratio = max(0, grazing_iron_ratio - growth_efficiency)
 
     return non_assimilated_iron_ratio * g
 end
 
-@inline function specific_calcite_grazing_loss(zoo, P, D, Z, POC)
+@inline function specific_calcite_grazing_loss(zoo, P, D, Z, POC, T)
     η = zoo.undissolved_calcite_fraction
 
-    _, gP = specific_grazing(zoo, P, D, Z, POC)
+    _, gP = specific_grazing(zoo, P, D, Z, POC, T)
 
     return η * gP
 end

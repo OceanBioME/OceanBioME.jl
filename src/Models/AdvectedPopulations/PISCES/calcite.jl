@@ -12,27 +12,27 @@ end
                                     SFe, BFe, PSi, 
                                     NO₃, NH₄, PO₄, Fe, Si, 
                                     CaCO₃, DIC, Alk, 
-                                    O₂, T, 
+                                    O₂, T, S,
                                     zₘₓₗ, zₑᵤ, Si′, dust, Ω, κ, mixed_layer_PAR, PAR, PAR₁, PAR₂, PAR₃)
 
-    production = calcite_production(calacite, bgc, P, D, PChl, PFe, Z, M, NO₃, NH₄, PO₄, Fe, Si, Si′, T, zₘₓₗ, PAR)
+    production = calcite_production(calcite, bgc, z, P, D, PChl, PFe, Z, M, POC, NO₃, NH₄, PO₄, Fe, Si, Si′, T, zₘₓₗ, PAR)
 
     dissolution = calcite_dissolution(calcite, CaCO₃, Ω)
     
     return production - dissolution
 end
 
-@inline function calcite_production(calcite, bgc, P, D, PChl, PFe, Z, M, NO₃, NH₄, PO₄, Fe, Si, Si′, T, zₘₓₗ, PAR)
+@inline function calcite_production(calcite, bgc, z, P, D, PChl, PFe, Z, M, POC, NO₃, NH₄, PO₄, Fe, Si, Si′, T, zₘₓₗ, PAR)
     R = rain_ratio(calcite, bgc, P, PChl, PFe, NO₃, NH₄, PO₄, Fe, Si, Si′, T, zₘₓₗ, PAR)
 
-    microzooplankton = specific_calcite_grazing_loss(bgc.microzooplankton, P, D, Z, POC) * Z
-    mesozooplankton  = specific_calcite_grazing_loss(bgc.mesozooplankton, P, D, Z, POC) * M
+    microzooplankton = specific_calcite_grazing_loss(bgc.microzooplankton, P, D, Z, POC, T) * Z
+    mesozooplankton  = specific_calcite_grazing_loss(bgc.mesozooplankton, P, D, Z, POC, T) * M
 
-    linear_mortality, quadratic_mortality = mortality(bgc.nanophytoplankton, bgc, z, I, zₘₓₗ)
+    linear_mortality, quadratic_mortality = mortality(bgc.nanophytoplankton, bgc, z, P, PChl, PFe, NO₃, NH₄, PO₄, Fe, Si, Si′, zₘₓₗ)
 
-    mortality = 0.5 * (linear_mortality + quadratic_mortality)
+    total_mortality = 0.5 * (linear_mortality + quadratic_mortality)
 
-    return R * (microzooplankton + mesozooplankton + mortality)
+    return R * (microzooplankton + mesozooplankton + total_mortality)
 end
 
 # should this be in the particles thing?

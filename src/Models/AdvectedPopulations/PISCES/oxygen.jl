@@ -11,37 +11,37 @@ end
                                SFe, BFe, PSi, 
                                NO₃, NH₄, PO₄, Fe, Si, 
                                CaCO₃, DIC, Alk, 
-                               O₂, T, 
+                               O₂, T, S,
                                zₘₓₗ, zₑᵤ, Si′, dust, Ω, κ, mixed_layer_PAR, PAR, PAR₁, PAR₂, PAR₃)
 
     θ_resp = oxy.ratio_for_respiration
     θ_nitrif  = oxy.ratio_for_nitrifcation
 
-    microzooplankton_respiration = specific_inorganic_grazing_waste(bgc.microzooplankton, bgc, P, D, PFe, DFe, Z, POC, SFe) * Z
-    mesozooplankton_respiration  = specific_inorganic_grazing_waste(bgc.mesozooplankton, bgc, P, D, PFe, DFe, Z, POC, SFe) * M
+    microzooplankton_respiration = specific_inorganic_grazing_waste(bgc.microzooplankton, bgc, x, y, z, P, D, PFe, DFe, Z, POC, GOC, SFe, T) * Z
+    mesozooplankton_respiration  = specific_inorganic_grazing_waste(bgc.mesozooplankton, bgc, x, y, z, P, D, PFe, DFe, Z, POC, GOC, SFe, T) * M
 
     zooplankton_respiration = θ_resp * (microzooplankton_respiration + mesozooplankton_respiration)
 
     upper_trophic_respiration = θ_resp * inorganic_upper_trophic_respiration_product(bgc.mesozooplankton, M, T)
 
     # not sure I've got this right
-    remin = θ_resp * oxic_remineralisation(bgc.dissolved_organic_matter, z, Z, M, DOM, NO₃, NH₄, PO₄, Fe, T, zₘₓₗ, zₑᵤ)
+    remin = θ_resp * oxic_remineralisation(bgc.dissolved_organic_matter, bgc, z, Z, M, DOC, NO₃, NH₄, PO₄, Fe, O₂, T, zₘₓₗ, zₑᵤ)
 
-    nitrif = θ_nitrif * nitrification(nitrogen, NH₄, O₂, mixed_layer_PAR) 
+    nitrif = θ_nitrif * nitrification(bgc.nitrogen, bgc, NH₄, O₂, mixed_layer_PAR) 
     
-    nanophytoplankton_nitrate_consumption = nitrate_uptake(bgc.nanophytoplankton, P, PChl, PFe, NO₃, NH₄, PO₄, Fe, Si, Si′, zₘₓₗ, zₑᵤ, κ, PAR₁, PAR₂, PAR₃)
+    nanophytoplankton_nitrate_consumption = nitrate_uptake(bgc.nanophytoplankton, bgc, y, t, P, PChl, PFe, NO₃, NH₄, PO₄, Fe, Si, T, Si′, zₘₓₗ, zₑᵤ, κ, PAR₁, PAR₂, PAR₃)
 
-    diatom_nitrate_consumption = nitrate_uptake(bgc.diatoms, D, DChl, DFe, NO₃, NH₄, PO₄, Fe, Si, Si′, zₘₓₗ, zₑᵤ, κ, PAR₁, PAR₂, PAR₃)
+    diatom_nitrate_consumption = nitrate_uptake(bgc.diatoms, bgc, y, t, D, DChl, DFe, NO₃, NH₄, PO₄, Fe, Si, T, Si′, zₘₓₗ, zₑᵤ, κ, PAR₁, PAR₂, PAR₃)
 
-    nitrate_uptake = (θ_resp + θ_nitrif) * (nanophytoplankton_nitrate_consumption + diatom_nitrate_consumption)
+    nitrate_oxidation = (θ_resp + θ_nitrif) * (nanophytoplankton_nitrate_consumption + diatom_nitrate_consumption)
 
-    nanophytoplankton_ammonia_consumption = ammonia_uptake(bgc.nanophytoplankton, P, PChl, PFe, NO₃, NH₄, PO₄, Fe, Si, Si′, zₘₓₗ, zₑᵤ, κ, PAR₁, PAR₂, PAR₃)
+    nanophytoplankton_ammonia_consumption = ammonia_uptake(bgc.nanophytoplankton, bgc, y, t, P, PChl, PFe, NO₃, NH₄, PO₄, Fe, Si, T, Si′, zₘₓₗ, zₑᵤ, κ, PAR₁, PAR₂, PAR₃)
 
-    diatom_ammonia_consumption = ammonia_uptake(bgc.diatoms, D, DChl, DFe, NO₃, NH₄, PO₄, Fe, Si, Si′, zₘₓₗ, zₑᵤ, κ, PAR₁, PAR₂, PAR₃)
+    diatom_ammonia_consumption = ammonia_uptake(bgc.diatoms, bgc, y, t, D, DChl, DFe, NO₃, NH₄, PO₄, Fe, Si, T, Si′, zₘₓₗ, zₑᵤ, κ, PAR₁, PAR₂, PAR₃)
 
-    ammonia_uptake = θ_resp * (nanophytoplankton_ammonia_consumption + diatom_ammonia_consumption)
+    ammonia_oxidation = θ_resp * (nanophytoplankton_ammonia_consumption + diatom_ammonia_consumption)
 
-    photosynthesis = nitrate_uptake + ammonia_uptake
+    photosynthesis = nitrate_oxidation + ammonia_oxidation
 
     return photosynthesis - zooplankton_respiration - upper_trophic_respiration - nitrif - remin
 end

@@ -49,7 +49,7 @@ using Oceananigans.Fields: Field, TracerFields, CenterField, ZeroField, Constant
 using OceanBioME.Light: MultiBandPhotosyntheticallyActiveRadiation, default_surface_PAR, compute_euphotic_depth!
 using OceanBioME: setup_velocity_fields, show_sinking_velocities, Biogeochemistry, ScaleNegativeTracers
 using OceanBioME.BoxModels: BoxModel
-using OceanBioME.Models: CarbonChemistry
+using OceanBioME.Models.CarbonChemistryModel: CarbonChemistry
 
 using Oceananigans.Biogeochemistry: AbstractContinuousFormBiogeochemistry
 using Oceananigans.Fields: set!
@@ -92,7 +92,8 @@ struct PISCES{NP, DP, SZ, BZ, DM, PM, NI, FE, SI, OX, PO, CA, CE, FT, LA, DL, ML
                   second_anoxia_threshold :: FT
 
                   nitrogen_redfield_ratio :: FT
-                phosphate_redfield_ratio :: FT
+                 phosphate_redfield_ratio :: FT
+                      iron_redfield_ratio :: FT
 
                         mixed_layer_shear :: FT
                          background_shear :: FT
@@ -146,9 +147,9 @@ const CARBON_SYSTEM = Union{Val{:DIC}, Val{:Alk}}
 
 @inline required_biogeochemical_tracers(::PISCES) = 
     (:P, :D, :Z, :M, :PChl, :DChl, :PFe, :DFe, :DSi, 
-     :DOC, :POC, :GOC, :SFe, :BFe, :PSi, 
+     :DOC, :POC, :GOC, :SFe, :BFe, :PSi, # its really silly that this is called PSi when DSi also exists
      :NO₃, :NH₄, :PO₄, :Fe, :Si, 
-     :CaCO₃, :DIC, :Alk, :O₂, :T)
+     :CaCO₃, :DIC, :Alk, :O₂, :T, :S)
 
 @inline required_biogeochemical_auxiliary_fields(::PISCES) =
     (:zₘₓₗ, :zₑᵤ, :Si̅, :D_dust, :Ω, :κ, :mixed_layer_PAR, :PAR, :PAR₁, :PAR₂, :PAR₃)
@@ -180,9 +181,10 @@ include("compute_calcite_saturation.jl")
 include("update_state.jl")
 include("coupling_utils.jl")
 
+# to change to new production change `NutrientLimitedProduction` for `GrowthRespirationLimitedProduction`
 function PISCES(; grid,
                   nanophytoplankton = 
-                    Phytoplankton(growth_rate = GrowthRespirationLimitedProduction(dark_tollerance = 3days),
+                    Phytoplankton(growth_rate = NutrientLimitedProduction(dark_tollerance = 3days),
                                   nutrient_limitation = 
                                     NitrogenIronPhosphateSilicateLimitation(minimum_ammonium_half_saturation = 0.013,
                                                                             minimum_nitrate_half_saturation = 0.13, 
@@ -196,7 +198,7 @@ function PISCES(; grid,
                                   maximum_chlorophyll_ratio = 0.033),
 
                   diatoms = 
-                    Phytoplankton(growth_rate = GrowthRespirationLimitedProduction(dark_tollerance = 4days),
+                    Phytoplankton(growth_rate = NutrientLimitedProduction(dark_tollerance = 4days),
                                   nutrient_limitation = 
                                     NitrogenIronPhosphateSilicateLimitation(minimum_ammonium_half_saturation = 0.039,
                                                                             minimum_nitrate_half_saturation = 0.39, 
@@ -249,6 +251,7 @@ function PISCES(; grid,
 
                   nitrogen_redfield_ratio = 16/122,
                   phosphate_redfield_ratio = 1/122,
+                  iron_redfield_ratio = 10^-3,
                   
                   mixed_layer_shear = 1.0,
                   background_shear = 0.01, 
@@ -288,6 +291,8 @@ function PISCES(; grid,
                   particles = nothing,
                   modifiers = nothing)
 
+    @warn "This implementation of PISCES is in early development and has not yet been fully validated"
+
     if !isnothing(sediment) && !open_bottom
         @warn "You have specified a sediment model but not `open_bottom` which will not work as the tracer will settle in the bottom cell"
     end
@@ -319,7 +324,7 @@ function PISCES(; grid,
                                         nitrogen, iron, silicate, oxygen, phosphate,
                                         calcite, carbon_system, 
                                         first_anoxia_thresehold, second_anoxia_thresehold,
-                                        nitrogen_redfield_ratio, phosphate_redfield_ratio,
+                                        nitrogen_redfield_ratio, phosphate_redfield_ratio, iron_redfield_ratio,
                                         mixed_layer_shear, background_shear,
                                         latitude, day_length,
                                         mixed_layer_depth, euphotic_depth,
