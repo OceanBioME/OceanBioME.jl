@@ -1,3 +1,5 @@
+using Oceananigans.Fields: ConstantField, ZeroField
+
 @kernel function _compute_euphotic_depth!(euphotic_depth, PAR, grid, cutoff)
     i, j = @index(Global, NTuple)
 
@@ -32,3 +34,7 @@ function compute_euphotic_depth!(euphotic_depth, PAR, cutoff = 1/1000)
 
     return nothing
 end
+
+# fallback for box models
+compute_euphotic_depth!(::ConstantField, args...) = nothing
+compute_euphotic_depth!(::ZeroField, args...) = nothing
