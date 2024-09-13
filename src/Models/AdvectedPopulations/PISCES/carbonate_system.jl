@@ -18,9 +18,7 @@ struct CarbonateSystem end
 
     upper_trophic_respiration = inorganic_upper_trophic_respiration_product(bgc.mesozooplankton, M, T)
 
-    denit = denitrifcation(bgc.dissolved_organic_matter, z, Z, M, DOM, NO₃, NH₄, PO₄, Fe, T, zₘₓₗ, zₑᵤ)
-
-    remin = inorganic_upper_trophic_respiration_product(bgc.mesozooplankton, M, T)
+    dissolved_degredation = bacterial_degradation(bgc.dissolved_organic_matter, z, Z, M, DOM, NO₃, NH₄, PO₄, Fe, T, zₘₓₗ, zₑᵤ)
 
     calcite_diss = calcite_dissolution(bgc.calcite, CaCO₃, Ω)
 
@@ -33,7 +31,7 @@ struct CarbonateSystem end
 
     consumption = nanophytoplankton_consumption + diatom_consumption
 
-    return zooplankton_respiration + upper_trophic_respiration + denit + remin + calcite - consumption
+    return zooplankton_respiration + upper_trophic_respiration + dissolved_degredation + calcite - consumption
 end
 
 @inline function (carbonates::CarbonateSystem)(bgc, ::Val{:Alk}, args...)

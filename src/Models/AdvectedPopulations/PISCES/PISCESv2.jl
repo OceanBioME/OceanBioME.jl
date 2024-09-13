@@ -97,6 +97,7 @@ include("iron.jl")
 include("silicon.jl")
 include("calcite.jl")
 include("carbonate_system.jl")
+include("oxygen.jl")
 
 function PISCES(; grid,
                   nanophytoplankton = 
@@ -155,11 +156,11 @@ function PISCES(; grid,
                   nitrogen = NitrateAmmonia(),
                   iron = SimpleIron(),
                   silicate = Silicate(),
-                  oxygen,
+                  oxygen = Oxygen(),
                   phosphate = Phosphate(),
                   
-                  calcite,
-                  carbon_system,
+                  calcite = Calcite(),
+                  carbon_system = CarbonateSystem(),
 
                   # from Aumount 2005 rather than 2015 since it doesn't work the other way around
                   first_anoxia_thresehold = 6.0,

@@ -20,7 +20,7 @@ end
 
     nitrif = nitrification(nitrogen, NH₄, O₂, mixed_layer_PAR) * θ
 
-    denit = denitrifcation(bgc.dissolved_organic_matter, z, Z, M, DOM, NO₃, NH₄, PO₄, Fe, T, zₘₓₗ, zₑᵤ) * θ
+    remineralisation = oxic_remineralisation(bgc.dissolved_organic_matter, z, Z, M, DOM, NO₃, NH₄, PO₄, Fe, T, zₘₓₗ, zₑᵤ) * θ
 
     nanophytoplankton_consumption = nitrate_uptake(bgc.nanophytoplankton, P, PChl, PFe, NO₃, NH₄, PO₄, Fe, Si, Si′, zₘₓₗ, zₑᵤ, κ, PAR₁, PAR₂, PAR₃)
 
@@ -28,7 +28,7 @@ end
 
     consumption = (nanophytoplankton_consumption + diatom_consumption) * θ
 
-    return nitrif + denit - consumption # an extra term is present in Aumount 2015 but I suspect it is a typo
+    return nitrif + remin - consumption # an extra term is present in Aumount 2015 but I suspect it is a typo
     # to conserve nitrogen I've dropped some ratios for denit etc, and now have bacterial_degregation go to denit in NO3 and remineralisation in NH4_half_saturation_const_for_DOC_remin
     # need to check...
 end
@@ -54,7 +54,7 @@ end
 
     grazing_waste = (microzooplankton_grazing_waste + mesozooplankton_grazing_waste) * θ
 
-    remineralisation = oxic_remineralisation(bgc.dissolved_organic_matter, z, Z, M, DOM, NO₃, NH₄, PO₄, Fe, T, zₘₓₗ, zₑᵤ) * θ
+    denit = denitrifcation(bgc.dissolved_organic_matter, z, Z, M, DOM, NO₃, NH₄, PO₄, Fe, T, zₘₓₗ, zₑᵤ) * θ
 
     nanophytoplankton_consumption = ammonia_uptake(bgc.nanophytoplankton, P, PChl, PFe, NO₃, NH₄, PO₄, Fe, Si, Si′, zₘₓₗ, zₑᵤ, κ, PAR₁, PAR₂, PAR₃)
 
@@ -65,7 +65,7 @@ end
     fixation = nitrogen_fixation(nitrogen, bgc, NO₃, NH₄, PO₄, Fe, Si, Si′, PAR)
 
     # again an extra term is present in Aumount 2015 but I suspect it is a typo
-    return fixation + respiration_product + grazing_waste + remineralisation - consumption - nitrif
+    return fixation + respiration_product + grazing_waste + denit - consumption - nitrif
 end
 
 @inline function nitrification(nitrogen, NH₄, O₂, PAR)
