@@ -146,6 +146,23 @@ end
     return production - linear_mortality - quadratic_mortality - grazing
 end
 
+@inline function iron_uptake(phyto::Phytoplankton, I, IChl, IFe, NO₃, NH₄, PO₄, Fe, Si, Si′, T)
+    δ  = phyto.exudated_fracton
+    θFeₘ = phyto.maximum_iron_ratio
+
+    θFe = IFe / I
+
+    L, LFe = phyto.nutrient_limitation(bgc, I, IChl, IFe, NO₃, NH₄, PO₄, Fe, Si, Si′)
+
+    μᵢ = base_production_rate(phyto.growth_rate, T)
+
+    L₁ = iron_uptake_limitation(phyto.growth_rate, I, Fe) # assuming bFe = Fe
+
+    L₂ = (4 - 2 * LFe) / (LFe + 1) # Formulation in paper does not vary between 1 and 4 as claimed, this does
+
+    return (1 - δ) * θFeₘ * L₁ * L₂ * (1 - θFe / θFeₘ) / (1.05 - θFe / θFeₘ) * μᵢ * I 
+end
+
 @inline function (phyto::Phytoplankton)(bgc, ::Val{:DSi}, 
                                         x, y, z, t,
                                         P, D, Z, M, 
@@ -158,36 +175,7 @@ end
                                         zₘₓₗ, zₑᵤ, Si′, dust, Ω, κ, mixed_layer_PAR, PAR, PAR₁, PAR₂, PAR₃)
 
     # production
-    δ  = phyto.exudated_fracton
-    β₁ = phyto.blue_light_absorption
-    β₂ = phyto.green_light_absorption
-    β₃ = phyto.red_light_absorption
-
-    K₁ = phyto.silicate_half_saturation
-    K₂ = phyto.enhanced_silicate_half_saturation
-    θ₀ = phyto.optimal_silicate_ratio
-
-    PARᵢ = β₁ * PAR₁ + β₂ * PAR₂ + β₃ * PAR₃
-
-    φ = bgc.latitude(y)
-
-    L, LFe, LPO₄ = phyto.nutrient_limitation(bgc, D, DChl, DFe, NO₃, NH₄, PO₄, Fe, Si, Si′)
-
-    μ = phyto.growth_rate(bgc, D, DChl, T, zₘₓₗ, zₑᵤ, κ, PARᵢ, L)
-    μᵢ = base_production_rate(phyto.growth_rate, T)
-
-    L₁ = Si / (Si + K₁)
-
-    # enhanced silication in southern ocean
-    L₂ = ifelse(φ < 0, Si^3 / (Si^3 + K₂^3), 0)
-
-    F₁ = min(μ / (μᵢ * L), LFe, LPO₄, LN)
-
-    F₂ = min(1, 2.2 * max(0, L₁ - 0.5))
-
-    θ₁ = θ₀ * L₁ * min(5.4, (4.4 * exp(-4.23 * F₁) * F₂ + 1) * (1 + 2 * L₂))
-
-    production = (1 - δ) * θ₁ * μ * D
+    production = silicate_uptake(phyto, D, DChl, DFe, NO₃, NH₄, PO₄, Fe, Si, Si′, T, zₘₓₗ, zₑᵤ, κ, PAR₁, PAR₂, PAR₃)
 
     # mortality
     linear_mortality, quadratic_mortality = mortality(phyto, bgc, z, D, zₘₓₗ, L)
@@ -204,21 +192,31 @@ end
     return production - linear_mortality - quadratic_mortality - grazing
 end
 
-@inline function iron_uptake(phyto::Phytoplankton, I, IChl, IFe, NO₃, NH₄, PO₄, Fe, Si, Si′, T)
+@inline function silicate_uptake(phyto::Phytoplankton, D, DChl, DFe, NO₃, NH₄, PO₄, Fe, Si, Si′, T, zₘₓₗ, zₑᵤ, κ, PAR₁, PAR₂, PAR₃)
     δ  = phyto.exudated_fracton
-    θFeₘ = phyto.maximum_iron_ratio
 
-    θFe = IFe / I
+    K₁ = phyto.silicate_half_saturation
+    K₂ = phyto.enhanced_silicate_half_saturation
+    θ₀ = phyto.optimal_silicate_ratio
+    
+    L, LFe, LPO₄ = phyto.nutrient_limitation(bgc, D, DChl, DFe, NO₃, NH₄, PO₄, Fe, Si, Si′)
 
-    L, LFe = phyto.nutrient_limitation(bgc, I, IChl, IFe, NO₃, NH₄, PO₄, Fe, Si, Si′)
+    μ = phyto.growth_rate(bgc, D, DChl, T, zₘₓₗ, zₑᵤ, κ, PAR₁, PAR₂, PAR₃, L)
 
     μᵢ = base_production_rate(phyto.growth_rate, T)
 
-    L₁ = iron_uptake_limitation(phyto.growth_rate, I, Fe) # assuming bFe = Fe
+    L₁ = Si / (Si + K₁)
 
-    L₂ = (4 - 2 * LFe) / (LFe + 1) # Formulation in paper does not vary between 1 and 4 as claimed, this does
+    # enhanced silication in southern ocean
+    L₂ = ifelse(φ < 0, Si^3 / (Si^3 + K₂^3), 0)
 
-    return (1 - δ) * θFeₘ * L₁ * L₂ * (1 - θFe / θFeₘ) / (1.05 - θFe / θFeₘ) * μᵢ * I 
+    F₁ = min(μ / (μᵢ * L), LFe, LPO₄, LN)
+
+    F₂ = min(1, 2.2 * max(0, L₁ - 0.5))
+
+    θ₁ = θ₀ * L₁ * min(5.4, (4.4 * exp(-4.23 * F₁) * F₂ + 1) * (1 + 2 * L₂))
+
+    return (1 - δ) * θ₁ * μ * D
 end
 
 @inline function dissolved_exudate(phyto::Phytoplankton, bgc, I, IChl, IFe, NO₃, NH₄, PO₄, Fe, Si, Si′, T, zₘₓₗ, zₑᵤ, κ, PAR₁, PAR₂, PAR₃)
