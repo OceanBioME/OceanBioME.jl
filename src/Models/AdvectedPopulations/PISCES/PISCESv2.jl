@@ -92,6 +92,11 @@ include("zooplankton.jl")
 include("dissolved_organic_matter.jl")
 include("particulate_organic_matter.jl")
 include("nitrate_ammonia.jl")
+include("phosphates.jl")
+include("iron.jl")
+include("silicon.jl")
+include("calcite.jl")
+include("carbonate_system.jl")
 
 function PISCES(; grid,
                   nanophytoplankton = 

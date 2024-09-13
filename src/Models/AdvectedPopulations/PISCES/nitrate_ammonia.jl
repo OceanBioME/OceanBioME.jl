@@ -1,13 +1,12 @@
 @kwdef struct NitrateAmmonia{FT}
                maximum_nitrifcation_rate :: FT = 0.05 / day
-    anoxic_denitrifcation_nitrogen_ratio :: FT = 0.86
                    maximum_fixation_rate :: FT = 0.013 / day
        iron_half_saturation_for_fixation :: FT = 0.1
   phosphate_half_saturation_for_fixation :: FT = 0.8
            light_saturation_for_fixation :: FT = 50.0
 end
 
-@inline function (nitrogen::NitrateAmmonia)(bgc, val_name::Val{:NO₃}, 
+@inline function (nitrogen::NitrateAmmonia)(bgc, ::Val{:NO₃}, 
                                             x, y, z, t,
                                             P, D, Z, M, 
                                             PChl, DChl, PFe, DFe, DSi,
@@ -17,12 +16,11 @@ end
                                             CaCO₃, DIC, Alk, 
                                             O₂, T, 
                                             zₘₓₗ, zₑᵤ, Si′, dust, Ω, κ, mixed_layer_PAR, PAR, PAR₁, PAR₂, PAR₃)
-    R = nitrogen.anoxic_denitrifcation_nitrogen_ratio
     θ = bgc.nitrogen_redfield_ratio
 
     nitrif = nitrification(nitrogen, NH₄, O₂, mixed_layer_PAR) * θ
 
-    denit = R * denitrifcation(bgc.dissolved_organic_matter, z, Z, M, DOM, NO₃, NH₄, PO₄, Fe, T, zₘₓₗ, zₑᵤ)
+    denit = denitrifcation(bgc.dissolved_organic_matter, z, Z, M, DOM, NO₃, NH₄, PO₄, Fe, T, zₘₓₗ, zₑᵤ) * θ
 
     nanophytoplankton_consumption = nitrate_uptake(bgc.nanophytoplankton, P, PChl, PFe, NO₃, NH₄, PO₄, Fe, Si, Si′, zₘₓₗ, zₑᵤ, κ, PAR₁, PAR₂, PAR₃)
 
@@ -30,7 +28,9 @@ end
 
     consumption = (nanophytoplankton_consumption + diatom_consumption) * θ
 
-    return nitrif - denit - consumption # an extra term is present in Aumount 2015 but I suspect it is a typo
+    return nitrif + denit - consumption # an extra term is present in Aumount 2015 but I suspect it is a typo
+    # to conserve nitrogen I've dropped some ratios for denit etc, and now have bacterial_degregation go to denit in NO3 and remineralisation in NH4_half_saturation_const_for_DOC_remin
+    # need to check...
 end
 
 @inline function (nitrogen::NitrateAmmonia)(bgc, val_name::Val{:NH₄}, 
@@ -43,12 +43,9 @@ end
                                             CaCO₃, DIC, Alk, 
                                             O₂, T, 
                                             zₘₓₗ, zₑᵤ, Si′, dust, Ω, κ, mixed_layer_PAR, PAR, PAR₁, PAR₂, PAR₃)
-    R = nitrogen.anoxic_denitrifcation_nitrogen_ratio
     θ = bgc.nitrogen_redfield_ratio
 
     nitrif = nitrification(nitrogen, NH₄, O₂, mixed_layer_PAR) * θ
-
-    denit = R * denitrifcation(bgc.dissolved_organic_matter, z, Z, M, DOM, NO₃, NH₄, PO₄, Fe, T, zₘₓₗ, zₑᵤ)
 
     respiration_product = inorganic_upper_trophic_respiration_product(bgc.mesozooplankton, M, T) * θ
 
@@ -68,7 +65,7 @@ end
     fixation = nitrogen_fixation(nitrogen, bgc, NO₃, NH₄, PO₄, Fe, Si, Si′, PAR)
 
     # again an extra term is present in Aumount 2015 but I suspect it is a typo
-    return fixation + respiration_product + grazing_waste + denit + remineralisation - consumption - nitrif
+    return fixation + respiration_product + grazing_waste + remineralisation - consumption - nitrif
 end
 
 @inline function nitrification(nitrogen, NH₄, O₂, PAR)
