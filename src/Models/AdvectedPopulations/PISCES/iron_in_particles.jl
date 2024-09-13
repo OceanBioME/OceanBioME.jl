@@ -1,4 +1,4 @@
-@inline function (doc::TwoCompartementParticulateOrganicMatter)(bgc, ::Val{:SFe}, 
+@inline function (doc::TwoCompartementParticulateOrganicMatter)(::Val{:SFe}, bgc,
                                                                 x, y, z, t,
                                                                 P, D, Z, M, 
                                                                 PChl, DChl, PFe, DFe, DSi,
@@ -72,7 +72,7 @@
 end
 
 
-@inline function (poc::TwoCompartementParticulateOrganicMatter)(bgc, ::Val{:BFe}, 
+@inline function (poc::TwoCompartementParticulateOrganicMatter)(::Val{:BFe}, bgc,
                                                                 x, y, z, t,
                                                                 P, D, Z, M, 
                                                                 PChl, DChl, PFe, DFe, DSi,

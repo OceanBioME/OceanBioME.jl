@@ -1,6 +1,6 @@
 struct Silicate end
 
-@inline function (silicate::Silicate)(bgc, ::Val{:Si}, 
+@inline function (silicate::Silicate)(::Val{:Si}, bgc,
                                       x, y, z, t,
                                       P, D, Z, M, 
                                       PChl, DChl, PFe, DFe, DSi,

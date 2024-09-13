@@ -1,4 +1,4 @@
-@inline function (poc::TwoCompartementParticulateOrganicMatter)(bgc, ::Val{:POC}, 
+@inline function (poc::TwoCompartementParticulateOrganicMatter)(::Val{:POC}, bgc,
                                                                 x, y, z, t,
                                                                 P, D, Z, M, 
                                                                 PChl, DChl, PFe, DFe, DSi,
@@ -51,7 +51,7 @@
             - grazing - degredation)
 end
 
-@inline function (poc::TwoCompartementParticulateOrganicMatter)(bgc, ::Val{:GOC}, 
+@inline function (poc::TwoCompartementParticulateOrganicMatter)(::Val{:GOC}, bgc,
                                                                 x, y, z, t,
                                                                 P, D, Z, M, 
                                                                 PChl, DChl, PFe, DFe, DSi,

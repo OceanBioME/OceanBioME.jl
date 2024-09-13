@@ -4,7 +4,7 @@
      dissolution_exponent :: FT = 1.0
 end
 
-@inline function (calcite::Calcite)(bgc, ::Val{:CaCO₃}, 
+@inline function (calcite::Calcite)(::Val{:CaCO₃}, bgc,
                                     x, y, z, t,
                                     P, D, Z, M, 
                                     PChl, DChl, PFe, DFe, DSi,

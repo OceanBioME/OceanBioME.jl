@@ -33,7 +33,7 @@ end
 @inline phytoplankton_grazing(::Val{:P}, args...) = nanophytoplankton_grazing(args...)
 @inline phytoplankton_grazing(::Val{:D}, args...) = diatom_grazing(args...)
 
-@inline function (phyto::Phytoplankton)(bgc, val_name::Union{Val{:P}, Val{:D}}, 
+@inline function (phyto::Phytoplankton)(val_name::Union{Val{:P}, Val{:D}}, bgc,
                                         x, y, z, t,
                                         P, D, Z, M, 
                                         PChl, DChl, PFe, DFe, DSi, # we should get rid of DSi and the rest of the Si since it doesn't do anything...
@@ -68,7 +68,7 @@ end
     return production - linear_mortality - quadratic_mortality - grazing
 end
 
-@inline function (phyto::Phytoplankton)(bgc, val_name::Union{Val{:PChl}, Val{:DChl}}, 
+@inline function (phyto::Phytoplankton)(val_name::Union{Val{:PChl}, Val{:DChl}}, bgc,
                                         x, y, z, t,
                                         P, D, Z, M, 
                                         PChl, DChl, PFe, DFe, DSi, # we should get rid of DSi and the rest of the Si since it doesn't do anything...
@@ -89,7 +89,6 @@ end
     θ₀ = phyto.minimum_chlorophyll_ratio
     θ₁ = phyto.maximum_chlorophyll_ratio
 
-    PARᵢ = β₁ * PAR₁ + β₂ * PAR₂ + β₃ * PAR₃
     L = phyto.nutrient_limitation(bgc, I, IChl, IFe, NO₃, NH₄, PO₄, Fe, Si, Si′)
 
     μ, ρ = production_and_energy_assimilation_absorption_ratio(phyto.growth_rate, bgc, I, IChl, T, zₘₓₗ, zₑᵤ, κ, PAR₁, PAR₂, PAR₃, L)
@@ -113,7 +112,7 @@ end
     return production - linear_mortality - quadratic_mortality - grazing
 end
 
-@inline function (phyto::Phytoplankton)(bgc, val_name::Union{Val{:PFe}, Val{:DFe}}, 
+@inline function (phyto::Phytoplankton)(val_name::Union{Val{:PFe}, Val{:DFe}}, bgc,
                                         x, y, z, t,
                                         P, D, Z, M, 
                                         PChl, DChl, PFe, DFe, DSi, # we should get rid of DSi and the rest of the Si since it doesn't do anything...
@@ -163,7 +162,7 @@ end
     return (1 - δ) * θFeₘ * L₁ * L₂ * (1 - θFe / θFeₘ) / (1.05 - θFe / θFeₘ) * μᵢ * I 
 end
 
-@inline function (phyto::Phytoplankton)(bgc, ::Val{:DSi}, 
+@inline function (phyto::Phytoplankton)(::Val{:DSi}, bgc,
                                         x, y, z, t,
                                         P, D, Z, M, 
                                         PChl, DChl, PFe, DFe, DSi, # we should get rid of DSi and the rest of the Si since it doesn't do anything...

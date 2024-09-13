@@ -3,7 +3,7 @@
     ratio_for_nitrifcation :: FT = 32/122
 end
 
-@inline function (oxy::Oxygen)(bgc, ::Val{:O₂}, 
+@inline function (oxy::Oxygen)(::Val{:O₂}, bgc,
                                x, y, z, t,
                                P, D, Z, M, 
                                PChl, DChl, PFe, DFe, DSi,

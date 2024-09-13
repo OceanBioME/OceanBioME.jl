@@ -145,7 +145,7 @@ const CARBON_SYSTEM = Union{Val{:DIC}, Val{:Alk}}
      mixed_layer_PAR = bgc.mean_mixed_layer_light)
 
 @inline required_biogeochemical_tracers(::PISCES) = 
-    (:P, :D, :Z, :M, :Pᶜʰˡ, :Dᶜʰˡ, :Pᶠᵉ, :Dᶠᵉ, :Dˢⁱ, 
+    (:P, :D, :Z, :M, :PChl, :DChl, :PFe, :DFe, :DSi, 
      :DOC, :POC, :GOC, :SFe, :BFe, :PSi, 
      :NO₃, :NH₄, :PO₄, :Fe, :Si, 
      :CaCO₃, :DIC, :Alk, :O₂, :T)
@@ -175,7 +175,10 @@ include("silicon.jl")
 include("calcite.jl")
 include("carbonate_system.jl")
 include("oxygen.jl")
+include("mean_mixed_layer_properties.jl")
+include("compute_calcite_saturation.jl")
 include("update_state.jl")
+include("coupling_utils.jl")
 
 function PISCES(; grid,
                   nanophytoplankton = 

@@ -1,6 +1,6 @@
 struct Phosphate end
 
-@inline function (phosphate::Phosphate)(bgc, ::Val{:PO₄}, 
+@inline function (phosphate::Phosphate)(::Val{:PO₄}, bgc,
                                         x, y, z, t,
                                         P, D, Z, M, 
                                         PChl, DChl, PFe, DFe, DSi,

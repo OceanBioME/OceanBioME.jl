@@ -17,7 +17,7 @@
                      maximum_bacterial_growth_rate :: FT = 0.6 / day
 end
 
-@inline function (dom::DissolvedOrganicMatter)(bgc, ::Val{:DOC}, 
+@inline function (dom::DissolvedOrganicMatter)(::Val{:DOC}, bgc,
                                                x, y, z, t,
                                                P, D, Z, M, 
                                                PChl, DChl, PFe, DFe, DSi,

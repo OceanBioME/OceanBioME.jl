@@ -1,4 +1,4 @@
-@inline function (poc::TwoCompartementParticulateOrganicMatter)(bgc, ::Val{:PSi}, 
+@inline function (poc::TwoCompartementParticulateOrganicMatter)(::Val{:PSi}, bgc,
                                                                 x, y, z, t,
                                                                 P, D, Z, M, 
                                                                 PChl, DChl, PFe, DFe, DSi,

@@ -1,3 +1,7 @@
+using Oceananigans.Architectures: architecture
+using Oceananigans.BoundaryConditions: fill_halo_regions!
+using Oceananigans.Utils: launch!
+
 #####
 ##### Mean mixed layer diffusivity
 #####
@@ -49,6 +53,8 @@ end
 
 function compute_mean_mixed_layer_light!(mean_PAR, mixed_layer_depth, PAR, model)
     grid = model.grid
+
+    arch = architecture(grid)
     
     launch!(arch, grid, :xy, _compute_mean_mixed_layer_light!, mean_PAR, mixed_layer_depth, PAR, grid)
 

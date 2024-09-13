@@ -6,7 +6,7 @@
            light_saturation_for_fixation :: FT = 50.0
 end
 
-@inline function (nitrogen::NitrateAmmonia)(bgc, ::Val{:NO₃}, 
+@inline function (nitrogen::NitrateAmmonia)(::Val{:NO₃}, bgc,
                                             x, y, z, t,
                                             P, D, Z, M, 
                                             PChl, DChl, PFe, DFe, DSi,
@@ -20,7 +20,7 @@ end
 
     nitrif = nitrification(nitrogen, NH₄, O₂, mixed_layer_PAR) * θ
 
-    remineralisation = oxic_remineralisation(bgc.dissolved_organic_matter, z, Z, M, DOM, NO₃, NH₄, PO₄, Fe, T, zₘₓₗ, zₑᵤ) * θ
+    remin = oxic_remineralisation(bgc.dissolved_organic_matter, z, Z, M, DOM, NO₃, NH₄, PO₄, Fe, T, zₘₓₗ, zₑᵤ) * θ
 
     nanophytoplankton_consumption = nitrate_uptake(bgc.nanophytoplankton, P, PChl, PFe, NO₃, NH₄, PO₄, Fe, Si, Si′, zₘₓₗ, zₑᵤ, κ, PAR₁, PAR₂, PAR₃)
 
@@ -33,7 +33,7 @@ end
     # need to check...
 end
 
-@inline function (nitrogen::NitrateAmmonia)(bgc, val_name::Val{:NH₄}, 
+@inline function (nitrogen::NitrateAmmonia)(::Val{:NH₄}, bgc,
                                             x, y, z, t,
                                             P, D, Z, M, 
                                             PChl, DChl, PFe, DFe, DSi,

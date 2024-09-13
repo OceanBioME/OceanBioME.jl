@@ -72,7 +72,7 @@ end
     return base_flux_feeding_rate * w * POC
 end
 
-@inline function (zoo::Zooplankton)(bgc, val_name::Union{Val{:Z}, Val{:M}}, 
+@inline function (zoo::Zooplankton)(val_name::Union{Val{:Z}, Val{:M}}, bgc,
                                     x, y, z, t,
                                     P, D, Z, M, 
                                     PChl, DChl, PFe, DFe, DSi, 

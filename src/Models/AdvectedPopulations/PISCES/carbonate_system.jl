@@ -1,6 +1,6 @@
 struct CarbonateSystem end
 
-@inline function (carbonates::CarbonateSystem)(bgc, ::Val{:DIC}, 
+@inline function (carbonates::CarbonateSystem)(::Val{:DIC}, bgc,
                                                x, y, z, t,
                                                P, D, Z, M, 
                                                PChl, DChl, PFe, DFe, DSi,
@@ -34,10 +34,10 @@ struct CarbonateSystem end
     return zooplankton_respiration + upper_trophic_respiration + dissolved_degredation + calcite - consumption
 end
 
-@inline function (carbonates::CarbonateSystem)(bgc, ::Val{:Alk}, args...)
-    nitrate_production = bgc.nitrogen(bgc, Val(:NO₃), args...)
-    ammonia_production = bgc.nitrogen(bgc, Val(:NO₃), args...)
-    calcite_production = bgc.calcite(bgc, Val(:CaCO₃), args...)
+@inline function (carbonates::CarbonateSystem)(::Val{:Alk}, bgc, args...)
+    nitrate_production = bgc.nitrogen(Val(:NO₃), bgc, args...)
+    ammonia_production = bgc.nitrogen(Val(:NO₃), bgc, args...)
+    calcite_production = bgc.calcite(Val(:CaCO₃), bgc, args...)
 
     # I think there are typos in Aumount 2015 but this is what it should be
     return ammonia_production - nitrate_production - 2 * calcite_production
