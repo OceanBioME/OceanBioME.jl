@@ -12,15 +12,15 @@ include("nutrient_limitation.jl")
                red_light_absorption :: FT
 
           mortality_half_saturation :: FT = 0.2
-              linear_mortality_rate :: FT = 0.01
+              linear_mortality_rate :: FT = 0.01 / day
 
-           base_quadratic_mortality :: FT = 0.01
+           base_quadratic_mortality :: FT = 0.01 / day
         maximum_quadratic_mortality :: FT # zero for nanophytoplankton
 
           minimum_chlorophyll_ratio :: FT = 0.0033
           maximum_chlorophyll_ratio :: FT
 
-                 maximum_iron_ratio :: FT = 40.0
+                 maximum_iron_ratio :: FT = 40.0e-3
 
            silicate_half_saturation :: FT = 2.0
   enhanced_silicate_half_saturation :: FT = 20.9

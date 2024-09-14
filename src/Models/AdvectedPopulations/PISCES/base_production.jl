@@ -39,11 +39,11 @@ end
          base_growth_rate :: FT = 0.6 / day
   temperature_sensetivity :: FT = 1.066
           dark_tollerance :: FT
-initial_slope_of_PI_curve :: FT = 2.0
+initial_slope_of_PI_curve :: FT = 2.0 / day
 end
 
 @inline function light_limitation(μ::NutrientLimitedProduction, I, IChl, T, PAR, day_length, L)
-    α  = μ.initial_slope_of_PI_curve
+    α = μ.initial_slope_of_PI_curve
 
     μᵢ = base_production_rate(μ, T)
 
@@ -57,9 +57,9 @@ end
          base_growth_rate :: FT = 0.6 / day
   temperature_sensetivity :: FT = 1.066
           dark_tollerance :: FT
-initial_slope_of_PI_curve :: FT = 2.0
-   basal_respiration_rate :: FT = 0.033
-    reference_growth_rate :: FT = 1.0
+initial_slope_of_PI_curve :: FT = 2.0/day
+   basal_respiration_rate :: FT = 0.033/day
+    reference_growth_rate :: FT = 1.0/day
 end
 
 @inline function light_limitation(μ::GrowthRespirationLimitedProduction, I, IChl, T, PAR, day_length, L)

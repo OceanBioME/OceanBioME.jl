@@ -4,7 +4,7 @@
    minimum_phosphate_half_saturation :: FT
        threshold_for_size_dependency :: FT = 1.0
                           size_ratio :: FT = 3.0
-                  optimal_iron_quota :: FT = 7.0
+                  optimal_iron_quota :: FT = 7.0e-3
                     silicate_limited :: BT
     minimum_silicate_half_saturation :: FT = 1.0
   silicate_half_saturation_parameter :: FT = 16.6

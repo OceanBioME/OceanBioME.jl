@@ -36,7 +36,7 @@ end
 
 @inline function (carbonates::CarbonateSystem)(::Val{:Alk}, bgc, args...)
     nitrate_production = bgc.nitrogen(Val(:NO₃), bgc, args...)
-    ammonia_production = bgc.nitrogen(Val(:NO₃), bgc, args...)
+    ammonia_production = bgc.nitrogen(Val(:NH₄), bgc, args...)
     calcite_production = bgc.calcite(Val(:CaCO₃), bgc, args...)
 
     # I think there are typos in Aumount 2015 but this is what it should be
