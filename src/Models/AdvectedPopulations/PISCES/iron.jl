@@ -11,7 +11,6 @@ struct SimpleIron end
                                     O₂, T, S,
                                     zₘₓₗ, zₑᵤ, Si′, dust, Ω, κ, mixed_layer_PAR, PAR, PAR₁, PAR₂, PAR₃)
 
-    # terminal loss 
     λFe = iron_scavenging_rate(bgc.particulate_organic_matter, POC, GOC, CaCO₃, PSi, dust)
 
     Fe′ = free_iron(iron, Fe, DOC, T)
@@ -45,7 +44,8 @@ struct SimpleIron end
 
     zooplankton_waste = microzooplankton_waste + mesozooplankton_waste
 
-    respiration_product = inorganic_upper_trophic_respiration_product(bgc.mesozooplankton, M, T) * bgc.mesozooplankton.iron_ratio
+    # type in Aumount 2015, γ should not be present since DOC doesn't contain iron/there is no DOFe pool
+    respiration_product = upper_trophic_respiration_product(bgc.mesozooplankton, M, T) * bgc.mesozooplankton.iron_ratio
 
     return zooplankton_waste + respiration_product + particulate_degredation - consumption - scav - aggregation - BactFe
 end

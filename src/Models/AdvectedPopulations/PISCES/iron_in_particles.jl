@@ -31,13 +31,13 @@
     degredation = λ * SFe
 
     # grazing
-    _, _, _, microzooplankton_grazing = specific_grazing(bgc.microzooplankton, P, D, Z, POC, T)
-    _, _, _, mesozooplankton_grazing = specific_grazing(bgc.mesozooplankton, P, D, Z, POC, T)
+    microzooplankton_grazing = particulate_grazing(bgc.microzooplankton, P, D, Z, POC, T) * Z
+    mesozooplankton_grazing  = particulate_grazing(bgc.mesozooplankton, P, D, Z, POC, T) * M
 
     grid = bgc.sinking_velocities.grid
-    small_flux_feeding = specific_flux_feeding(bgc.mesozooplankton, x, y, z, POC, T, bgc.sinking_velocities.POC, grid)
+    small_flux_feeding = specific_flux_feeding(bgc.mesozooplankton, x, y, z, POC, T, bgc.sinking_velocities.POC, grid) * M
 
-    grazing = (microzooplankton_grazing * Z + (mesozooplankton_grazing + small_flux_feeding) * M) * SFe / (POC + eps(0.0))
+    grazing = (microzooplankton_grazing + mesozooplankton_grazing + small_flux_feeding) * SFe / (POC + eps(0.0))
 
     # aggregation
     
@@ -94,7 +94,7 @@ end
 
     diatom_mortality = (0.5 * diatom_linear_mortality + diatom_quadratic_mortality) * DFe / (D + eps(0.0))
 
-    mesozooplankton_mortality = mortality(bgc.mesozooplankton, bgc, M, O₂, T) * bgc.mesozooplankton.iron_ratio
+    mesozooplankton_mortality = linear_mortality(bgc.mesozooplankton, bgc, M, O₂, T) * bgc.mesozooplankton.iron_ratio
 
     # degredation
     λ = specific_degredation_rate(poc, bgc, O₂, T)
@@ -103,7 +103,7 @@ end
 
     # grazing
     grid = bgc.sinking_velocities.grid
-    grazing = specific_flux_feeding(bgc.mesozooplankton, x, y, z, GOC, T, bgc.sinking_velocities.GOC, grid) * M * SFe / (POC + eps(0.0))
+    grazing = specific_flux_feeding(bgc.mesozooplankton, x, y, z, GOC, T, bgc.sinking_velocities.GOC, grid) * M * BFe / (GOC + eps(0.0))
 
     # aggregation    
     small_particle_aggregation = aggregation(poc, bgc, z, POC, GOC, zₘₓₗ) 

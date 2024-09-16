@@ -29,9 +29,9 @@ end
 
     z = znode(i, j, k, grid, Center(), Center(), Center())
 
-    P = abs(z) * g_Earth * 1026 / 100000 # very rough - don't think we should bother integrating the actual density
+    P = abs(z) * g_Earth * 1026 / 100000 # rough but I don't think we should bother integrating the actual density
 
     # TODO: query how carbon chemistry stuff is meant to work at all when T < 0°C 
     @inbounds calcite_saturation[i, j, k] = CarbonChemistryModel.calcite_saturation(carbon_chemistry; DIC, T = max(eps(0.0), T), S, Alk, P, silicate)
-    
+
 end

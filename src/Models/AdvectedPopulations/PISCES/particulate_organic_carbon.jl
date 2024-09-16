@@ -31,7 +31,7 @@
     degredation = λ * POC
 
     # grazing
-    microzooplankton_grazing = particulate_grazing(bgc.microzooplankton, P, D, Z, POC, T) * z
+    microzooplankton_grazing = particulate_grazing(bgc.microzooplankton, P, D, Z, POC, T) * Z
     mesozooplankton_grazing  = particulate_grazing(bgc.mesozooplankton, P, D, Z, POC, T) * M
 
     grid = bgc.sinking_velocities.grid
