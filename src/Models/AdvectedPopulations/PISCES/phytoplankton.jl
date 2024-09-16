@@ -63,7 +63,7 @@ end
     gZ = phytoplankton_grazing(val_name, bgc.microzooplankton, P, D, Z, POC, T)
     gM = phytoplankton_grazing(val_name, bgc.mesozooplankton, P, D, Z, POC, T)
 
-    grazing = gZ * Z + gM * M
+    grazing = gZ * Z + gM * M   
 
     return production - linear_mortality - quadratic_mortality - grazing
 end
@@ -219,10 +219,10 @@ end
     return (1 - δ) * θ₁ * μ * D, L
 end
 
-@inline function dissolved_exudate(phyto::Phytoplankton, bgc, y, t, I, IChl, IFe, NO₃, NH₄, PO₄, Fe, Si, Si′, T, zₘₓₗ, zₑᵤ, κ, PAR₁, PAR₂, PAR₃)
+@inline function dissolved_exudate(phyto::Phytoplankton, bgc, y, t, I, IChl, IFe, NO₃, NH₄, PO₄, Fe, Si, T, Si′, zₘₓₗ, zₑᵤ, κ, PAR₁, PAR₂, PAR₃)
     δ = phyto.exudated_fracton
 
-    μ = phyto.growth_rate(phyto, bgc, y, t, I, IChl, IFe, NO₃, NH₄, PO₄, Fe, Si, Si′, T, zₘₓₗ, zₑᵤ, κ, PAR₁, PAR₂, PAR₃)
+    μ = phyto.growth_rate(phyto, bgc, y, t, I, IChl, IFe, NO₃, NH₄, PO₄, Fe, Si, T, Si′, zₘₓₗ, zₑᵤ, κ, PAR₁, PAR₂, PAR₃)
 
     return δ * μ * I
 end
@@ -270,7 +270,7 @@ end
     return μ * L_NH₄ / (LN + eps(0.0))
 end
 
-# maybe this function exists elsehwere
+# maybe this function exists elsehwere - litterally just underneith
 @inline function total_growth(phyto::Phytoplankton, bgc, y, t, I, IChl, IFe, NO₃, NH₄, PO₄, Fe, Si, T, Si′, zₘₓₗ, zₑᵤ, κ, PAR₁, PAR₂, PAR₃)
     L, = phyto.nutrient_limitation(bgc, I, IChl, IFe, NO₃, NH₄, PO₄, Fe, Si, Si′)
 

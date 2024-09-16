@@ -31,14 +31,14 @@
     degredation = λ * POC
 
     # grazing
-    _, _, _, microzooplankton_grazing = specific_grazing(bgc.microzooplankton, P, D, Z, POC, T)
-    _, _, _, mesozooplankton_grazing = specific_grazing(bgc.mesozooplankton, P, D, Z, POC, T)
+    microzooplankton_grazing = particulate_grazing(bgc.microzooplankton, P, D, Z, POC, T) * z
+    mesozooplankton_grazing  = particulate_grazing(bgc.mesozooplankton, P, D, Z, POC, T) * M
 
     grid = bgc.sinking_velocities.grid
 
-    small_flux_feeding = specific_flux_feeding(bgc.mesozooplankton, x, y, z, POC, T, bgc.sinking_velocities.POC, grid)
+    small_flux_feeding = specific_flux_feeding(bgc.mesozooplankton, x, y, z, POC, T, bgc.sinking_velocities.POC, grid) * M
 
-    grazing = microzooplankton_grazing * Z + (mesozooplankton_grazing + small_flux_feeding) * M
+    grazing = microzooplankton_grazing + mesozooplankton_grazing + small_flux_feeding
 
     # aggregation
     _, Φ₁, _, Φ₃ = aggregation(bgc.dissolved_organic_matter, bgc, z, DOC, POC, GOC, zₘₓₗ)
@@ -78,8 +78,8 @@ end
 
     diatom_mortality = 0.5 * diatom_linear_mortality + diatom_quadratic_mortality
 
-    mesozooplankton_mortality = mortality(bgc.mesozooplankton, bgc, M, O₂, T)
-
+    mesozooplankton_mortality = linear_mortality(bgc.mesozooplankton, bgc, M, O₂, T)
+    
     # degredation
     λ = specific_degredation_rate(poc, bgc, O₂, T)
 
@@ -100,7 +100,7 @@ end
     fecal_pelet_production = upper_trophic_fecal_product(bgc.mesozooplankton, M, T)
 
     return (grazing_waste 
-            + nanophytoplankton_mortality + diatom_mortality + mesozooplankton_mortality 
+            + nanophytoplankton_mortality + diatom_mortality + mesozooplankton_mortality
             + total_aggregation + fecal_pelet_production
             - grazing 
             - degredation)

@@ -19,12 +19,14 @@
     carbon = (:P, :D, :Z, :M, :DOC, :POC, :GOC, :DIC, :CaCO₃)
 
     # iron ratio for DOC might be wrong
-    iron = (tracers = (:PFe, :DFe, :Z, :M, DOC, :SFe, :BFe, :Fe), 
+    iron = (tracers = (:PFe, :DFe, :Z, :M, :DOC, :SFe, :BFe, :Fe), 
             scalefactors = (1, 1, bgc.microzooplankton.iron_ratio, bgc.mesozooplankton.iron_ratio, bgc.iron_redfield_ratio, 1, 1, 1))
     
     θ_PO₄ = bgc.phosphate_redfield_ratio
     phosphate = (tracers = (:P, :D, :Z, :M, :DOC, :POC, :GOC, :PO₄),
                  scalefactors = (θ_PO₄, θ_PO₄, θ_PO₄, θ_PO₄, θ_PO₄, θ_PO₄, θ_PO₄, 1))
 
-    return (; carbon, iron, phosphate)
+    silicon = (:DSi, :Si, :PSi)
+
+    return (; carbon, iron, phosphate, silicon)
 end

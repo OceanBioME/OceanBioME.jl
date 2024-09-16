@@ -1,6 +1,6 @@
 @kwdef struct Calcite{FT}
           base_rain_ratio :: FT = 0.3
-    base_dissolution_rate :: FT = 0.197/day
+    base_dissolution_rate :: FT = 0.197 / day
      dissolution_exponent :: FT = 1.0
 end
 
@@ -16,7 +16,7 @@ end
                                     zₘₓₗ, zₑᵤ, Si′, dust, Ω, κ, mixed_layer_PAR, PAR, PAR₁, PAR₂, PAR₃)
 
     production = calcite_production(calcite, bgc, z, P, D, PChl, PFe, Z, M, POC, NO₃, NH₄, PO₄, Fe, Si, Si′, T, zₘₓₗ, PAR)
-
+    
     dissolution = calcite_dissolution(calcite, CaCO₃, Ω)
     
     return production - dissolution

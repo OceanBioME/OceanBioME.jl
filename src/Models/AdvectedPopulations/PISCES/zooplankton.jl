@@ -16,7 +16,7 @@
 
     iron_ratio :: FT = 10^-3 # units?
 
-    maximum_growth_efficiency :: FT
+    minimum_growth_efficiency :: FT
     non_assililated_fraction :: FT = 0.3
 
     mortality_half_saturation :: FT = 0.2
@@ -52,10 +52,10 @@ end
 
     total_specific_grazing = base_grazing_rate * concentration_limited_grazing / (K + food_availability) 
 
-    phytoplankton_grazing = pP * max(0, P - J)     * total_specific_grazing / (weighted_food_availability + eps(0.0))
-    diatom_grazing        = pD * max(0, D - J)     * total_specific_grazing / (weighted_food_availability + eps(0.0))
-    particulate_grazing   = pPOC * max(0, POC - J) * total_specific_grazing / (weighted_food_availability + eps(0.0))
-    zooplankton_grazing   = pZ * max(0, Z - J)     * total_specific_grazing / (weighted_food_availability + eps(0.0))
+    phytoplankton_grazing = pP   * max(0, P - J)     * total_specific_grazing / (weighted_food_availability + eps(0.0))
+    diatom_grazing        = pD   * max(0, D - J)     * total_specific_grazing / (weighted_food_availability + eps(0.0))
+    particulate_grazing   = pPOC * max(0, POC - J)   * total_specific_grazing / (weighted_food_availability + eps(0.0))
+    zooplankton_grazing   = pZ   * max(0, Z - J)     * total_specific_grazing / (weighted_food_availability + eps(0.0))
 
     return total_specific_grazing, phytoplankton_grazing, diatom_grazing, particulate_grazing, zooplankton_grazing
 end
@@ -67,7 +67,7 @@ end
     base_flux_feeding_rate = g₀ * b ^ T
 
     # hopeflly this works on GPU
-    w = particle_sinking_speed(x, y, z, grid, w_field)
+    w = abs(particle_sinking_speed(x, y, z, grid, w_field))
 
     return base_flux_feeding_rate * w * POC
 end
@@ -123,6 +123,12 @@ end
     return g
 end
 
+@inline function particulate_grazing(zoo::Zooplankton, P, D, Z, POC, T) 
+    _, _, _, g = specific_grazing(zoo, P, D, Z, POC, T)
+
+    return g
+end
+
 @inline function zooplankton_grazing(zoo::Zooplankton, P, D, Z, POC, T) 
     _, _, _, _, g = specific_grazing(zoo, P, D, Z, POC, T)
 
@@ -149,7 +155,7 @@ end
 end
 
 @inline function upper_trophic_waste(zoo, M, T)
-    e₀ = zoo.maximum_growth_efficiency
+    e₀ = zoo.minimum_growth_efficiency
     b  = zoo.temperature_sensetivity
     m₀ = zoo.quadratic_mortality
 
@@ -159,14 +165,14 @@ end
 end
 
 @inline upper_trophic_respiration_product(zoo, M, T) = 
-    (1 - zoo.maximum_growth_efficiency - zoo.non_assililated_fraction) * upper_trophic_waste(zoo, M, T)
+    (1 - zoo.minimum_growth_efficiency - zoo.non_assililated_fraction) * upper_trophic_waste(zoo, M, T)
 
 @inline upper_trophic_fecal_product(zoo, M, T) =
     zoo.non_assililated_fraction * upper_trophic_waste(zoo, M, T)
 
 @inline function grazing_growth_efficiency(zoo, P, D, PFe, DFe, POC, SFe, g, gP, gD, gPOC, gZ)
     θFe = zoo.iron_ratio
-    e₀  = zoo.maximum_growth_efficiency
+    e₀  = zoo.minimum_growth_efficiency
     σ   = zoo.non_assililated_fraction
 
     iron_grazing = PFe / (P + eps(0.0)) * gP + DFe / (D + eps(0.0)) * gD + SFe / (POC + eps(0.0)) * gPOC + θFe * gZ
@@ -204,12 +210,14 @@ end
 @inline function specific_non_assimilated_waste(zoo, bgc, x, y, z, P, D, Z, POC, GOC, T)
     grid = bgc.sinking_velocities.grid
 
+    σ = zoo.non_assililated_fraction
+
     g, = specific_grazing(zoo, P, D, Z, POC, T)
 
     small_flux_feeding = specific_flux_feeding(zoo, x, y, z, POC, T, bgc.sinking_velocities.POC, grid)
     large_flux_feeding = specific_flux_feeding(zoo, x, y, z, GOC, T, bgc.sinking_velocities.GOC, grid)
     
-    return zoo.non_assililated_fraction * (g + small_flux_feeding + large_flux_feeding)
+    return σ * (g + small_flux_feeding + large_flux_feeding)
 end
 
 @inline function specific_non_assimilated_iron_waste(zoo, bgc, x, y, z, P, D, PFe, DFe, Z, POC, GOC, SFe, BFe, T)
@@ -267,3 +275,14 @@ end
     return temperature_factor * I * (m₀ * I + r * (concentration_factor + 3 * anoxia_factor(bgc, O₂)))
 end
 
+@inline function linear_mortality(zoo::Zooplankton, bgc, I, O₂, T)
+    b  = zoo.temperature_sensetivity
+    Kₘ = zoo.mortality_half_saturation
+    r  = zoo.linear_mortality
+
+    temperature_factor = b^T
+
+    concentration_factor = I / (I + Kₘ)
+
+    return temperature_factor * I * r * (concentration_factor + 3 * anoxia_factor(bgc, O₂))
+end

@@ -218,7 +218,7 @@ function PISCES(; grid,
                                                  preference_for_zooplankton = 0.0,
                                                  quadratic_mortality = 0.004/day,
                                                  linear_mortality = 0.03/day,
-                                                 maximum_growth_efficiency = 0.3,
+                                                 minimum_growth_efficiency = 0.3,
                                                  maximum_flux_feeding_rate = 0.0,
                                                  undissolved_calcite_fraction = 0.5),
 
@@ -229,8 +229,10 @@ function PISCES(; grid,
                                                 preference_for_zooplankton = 1.0,
                                                 quadratic_mortality = 0.03/day,
                                                 linear_mortality = 0.005/day,
-                                                maximum_growth_efficiency = 0.35,
-                                                maximum_flux_feeding_rate = 2.0e-3,
+                                                minimum_growth_efficiency = 0.35,
+                                                # not documented but the below must implicitly contain a factor of second/day
+                                                # to be consistent in the NEMO namelist to go from this * mol / L * m/s to mol / L / day
+                                                maximum_flux_feeding_rate = 2e3 / 1e6 / day, # (day * meter/s * mol/L)^-1 to (meter * μ mol/L)^-1
                                                 undissolved_calcite_fraction = 0.75),
                   
                   dissolved_organic_matter = DissolvedOrganicMatter(),
@@ -253,8 +255,8 @@ function PISCES(; grid,
                   phosphate_redfield_ratio = 1/122,
                   iron_redfield_ratio = 10^-3,
                   
-                  mixed_layer_shear = 1.0,
-                  background_shear = 0.01, 
+                  mixed_layer_shear = 1.0/day,
+                  background_shear = 0.01/day, 
                   
                   latitude = PrescribedLatitude(45),
                   day_length = day_length_function,
@@ -352,5 +354,306 @@ function PISCES(; grid,
                            particles,
                            modifiers)
 end
+
+
+function total_carbon_tendency(bgc, x, y, z, t,
+                               P, D, Z, M, 
+                               PChl, DChl, PFe, DFe, DSi,
+                               DOC, POC, GOC, 
+                               SFe, BFe, PSi, 
+                               NO₃, NH₄, PO₄, Fe, Si, 
+                               CaCO₃, DIC, Alk, 
+                               O₂, T, S,
+                               zₘₓₗ, zₑᵤ, Si′, dust, Ω, κ, mixed_layer_PAR, PAR, PAR₁, PAR₂, PAR₃)
+
+    # nano phyto
+    phyto = bgc.nanophytoplankton
+    val_name = Val(:P)
+
+    # mortality
+    linear_mortality, quadratic_mortality = mortality(phyto, bgc, z, I, zₘₓₗ, L)
+
+    # grazing
+    gZ = phytoplankton_grazing(val_name, bgc.microzooplankton, P, D, Z, POC, T)
+    gM = phytoplankton_grazing(val_name, bgc.mesozooplankton, P, D, Z, POC, T)
+
+    grazing = gZ * Z + gM * M
+
+    @info production, linear_mortality, quadratic_mortality, grazing#production - linear_mortality - quadratic_mortality - grazing
+
+    # diatoms 
+    phyto = bgc.diatoms
+    val_name = Val(:D)
+
+    # mortality
+    linear_mortality, quadratic_mortality = mortality(phyto, bgc, z, I, zₘₓₗ, L)
+
+    # grazing
+    gZ = phytoplankton_grazing(val_name, bgc.microzooplankton, P, D, Z, POC, T)
+    gM = phytoplankton_grazing(val_name, bgc.mesozooplankton, P, D, Z, POC, T)
+
+    grazing = gZ * Z + gM * M
+
+    @info production, linear_mortality, quadratic_mortality, grazing#production - linear_mortality - quadratic_mortality - grazing
+
+    # micro zoo
+    zoo = bgc.microzooplankton
+    val_name = Val(:Z)
+
+    I = zooplankton_concentration(val_name, Z, M)
+
+    # grazing
+    total_specific_grazing, gP, gD, gPOC, gZ = specific_grazing(zoo, P, D, Z, POC, T)
+
+    grazing = total_specific_grazing * I
+
+    # flux feeding
+    grid = bgc.sinking_velocities.grid
+
+    small_flux_feeding = specific_flux_feeding(zoo, x, y, z, POC, T, bgc.sinking_velocities.POC, grid)
+    large_flux_feeding = specific_flux_feeding(zoo, x, y, z, GOC, T, bgc.sinking_velocities.GOC, grid)
+
+    flux_feeding = (small_flux_feeding + large_flux_feeding) * I
+
+    # grazing mortality
+    specific_grazing_mortality = zooplankton_grazing_mortality(val_name, bgc.mesozooplankton, P, D, Z, POC, T)
+
+    grazing_mortality = specific_grazing_mortality * M
+
+    # mortality
+    total_mortality = mortality(zoo, bgc, I, O₂, T)
+
+    growth_efficiency = grazing_growth_efficiency(zoo, P, D, PFe, DFe, POC, SFe, total_specific_grazing, gP, gD, gPOC, gZ)
+
+    @info  growth_efficiency .* (grazing, flux_feeding), grazing_mortality, total_mortality#growth_efficiency * (grazing + flux_feeding) - grazing_mortality - total_mortality
+
+    # mesozoo
+    # micro zoo
+    zoo = bgc.microzooplankton
+    val_name = Val(:Z)
+
+    I = zooplankton_concentration(val_name, Z, M)
+
+    # grazing
+    total_specific_grazing, gP, gD, gPOC, gZ = specific_grazing(zoo, P, D, Z, POC, T)
+
+    grazing = total_specific_grazing * I
+
+    # flux feeding
+    grid = bgc.sinking_velocities.grid
+
+    small_flux_feeding = specific_flux_feeding(zoo, x, y, z, POC, T, bgc.sinking_velocities.POC, grid)
+    large_flux_feeding = specific_flux_feeding(zoo, x, y, z, GOC, T, bgc.sinking_velocities.GOC, grid)
+
+    flux_feeding = (small_flux_feeding + large_flux_feeding) * I
+
+    # grazing mortality
+    specific_grazing_mortality = zooplankton_grazing_mortality(val_name, bgc.mesozooplankton, P, D, Z, POC, T)
+
+    grazing_mortality = specific_grazing_mortality * M
+
+    # mortality
+    total_mortality = mortality(zoo, bgc, I, O₂, T)
+
+    growth_efficiency = grazing_growth_efficiency(zoo, P, D, PFe, DFe, POC, SFe, total_specific_grazing, gP, gD, gPOC, gZ)
+
+    @info  growth_efficiency .* (grazing, flux_feeding), grazing_mortality, total_mortality#growth_efficiency * (grazing + flux_feeding) - grazing_mortality - total_mortality
+
+    # DOC
+    dom = bgc.dissolved_organic_matter
+    val_name = Val(DOC)
+
+    nanophytoplankton_exudation = dissolved_exudate(bgc.nanophytoplankton, bgc, y, t, P, PChl, PFe, NO₃, NH₄, PO₄, Fe, Si, Si′, T, zₘₓₗ, zₑᵤ, κ, PAR₁, PAR₂, PAR₃)
+    diatom_exudation = dissolved_exudate(bgc.nanophytoplankton, bgc, y, t, P, PChl, PFe, NO₃, NH₄, PO₄, Fe, Si, Si′, T, zₘₓₗ, zₑᵤ, κ, PAR₁, PAR₂, PAR₃)
+
+    phytoplankton_exudation = nanophytoplankton_exudation + diatom_exudation
+
+    particulate_degredation = specific_degredation_rate(bgc.particulate_organic_matter, bgc, O₂, T) * POC
+
+    respiration_product = dissolved_upper_trophic_respiration_product(bgc.mesozooplankton, M, T)
+
+    microzooplankton_grazing_waste = specific_dissolved_grazing_waste(bgc.microzooplankton, bgc, x, y, z, P, D, PFe, DFe, Z, POC, GOC, SFe, T) * Z
+    mesozooplankton_grazing_waste  = specific_dissolved_grazing_waste(bgc.mesozooplankton, bgc, x, y, z, P, D, PFe, DFe, Z, POC, GOC, SFe, T) * M
+
+    grazing_waste = microzooplankton_grazing_waste + mesozooplankton_grazing_waste
+
+    degredation = bacterial_degradation(dom, z, Z, M, DOC, NO₃, NH₄, PO₄, Fe, T, zₘₓₗ, zₑᵤ)
+
+    aggregation_to_particles, = aggregation(dom, bgc, z, DOC, POC, GOC, zₘₓₗ)
+
+    @info phytoplankton_exudation, particulate_degredation, respiration_product, grazing_waste, degredation, aggregation_to_particles# phytoplankton_exudation + particulate_degredation + respiration_product + grazing_waste - degredation - aggregation_to_particles
+
+    # poc
+    poc = bgc.particulate_organic_matter
+    val_name = Val(:POC)
+    grazing_waste = specific_non_assimilated_waste(bgc.microzooplankton, bgc, x, y, z, P, D, Z, POC, GOC, T) * Z
+
+    # mortality terms
+    R_CaCO₃ = rain_ratio(bgc.calcite, bgc, P, PChl, PFe, NO₃, NH₄, PO₄, Fe, Si, Si′, T, zₘₓₗ, PAR)
+
+    nanophytoplankton_linear_mortality, nanophytoplankton_quadratic_mortality = mortality(bgc.nanophytoplankton, bgc, z, P, PChl, PFe, NO₃, NH₄, PO₄, Fe, Si, Si′, zₘₓₗ)
+
+    nanophytoplankton_mortality = (1 - 0.5 * R_CaCO₃) * (nanophytoplankton_linear_mortality + nanophytoplankton_quadratic_mortality)
+
+    diatom_linear_mortality, = mortality(bgc.diatoms, bgc, z, D, DChl, DFe, NO₃, NH₄, PO₄, Fe, Si, Si′, zₘₓₗ)
+
+    diatom_mortality = 0.5 * diatom_linear_mortality
+
+    microzooplankton_mortality = mortality(bgc.microzooplankton, bgc, Z, O₂, T)
+
+    # degredation
+    λ = specific_degredation_rate(poc, bgc, O₂, T)
+
+    large_particle_degredation = λ * GOC
+    degredation = λ * POC
+
+    # grazing
+    _, _, _, microzooplankton_grazing = specific_grazing(bgc.microzooplankton, P, D, Z, POC, T)
+    _, _, _, mesozooplankton_grazing = specific_grazing(bgc.mesozooplankton, P, D, Z, POC, T)
+
+    grid = bgc.sinking_velocities.grid
+
+    small_flux_feeding = specific_flux_feeding(bgc.mesozooplankton, x, y, z, POC, T, bgc.sinking_velocities.POC, grid)
+
+    grazing = microzooplankton_grazing * Z + (mesozooplankton_grazing + small_flux_feeding) * M
+
+    # aggregation
+    _, Φ₁, _, Φ₃ = aggregation(bgc.dissolved_organic_matter, bgc, z, DOC, POC, GOC, zₘₓₗ)
+    dissolved_aggregation = Φ₁ + Φ₃
+    
+    aggregation_to_large = aggregation(poc, bgc, z, POC, GOC, zₘₓₗ)
+
+    total_aggregation = dissolved_aggregation - aggregation_to_large
+
+    @info (grazing_waste 
+            ,nanophytoplankton_mortality ,diatom_mortality ,microzooplankton_mortality 
+            ,large_particle_degredation ,total_aggregation 
+        , grazing, degredation)
+
+    # goc
+    poc = bgc.particulate_organic_matter
+    val_name = Val(:GOC)
+    grazing_waste = specific_non_assimilated_waste(bgc.mesozooplankton, bgc, x, y, z, P, D, Z, POC, GOC, T) * M
+
+    # mortality terms
+    R_CaCO₃ = rain_ratio(bgc.calcite, bgc, P, PChl, PFe, NO₃, NH₄, PO₄, Fe, Si, Si′, T, zₘₓₗ, PAR)
+
+    nanophytoplankton_linear_mortality, nanophytoplankton_quadratic_mortality = mortality(bgc.nanophytoplankton, bgc, z, P, PChl, PFe, NO₃, NH₄, PO₄, Fe, Si, Si′, zₘₓₗ)
+
+    nanophytoplankton_mortality = 0.5 * R_CaCO₃ * (nanophytoplankton_linear_mortality + nanophytoplankton_quadratic_mortality)
+
+    diatom_linear_mortality, diatom_quadratic_mortality = mortality(bgc.diatoms, bgc, z, D, DChl, DFe, NO₃, NH₄, PO₄, Fe, Si, Si′, zₘₓₗ)
+
+    diatom_mortality = 0.5 * diatom_linear_mortality + diatom_quadratic_mortality
+
+    mesozooplankton_mortality = mortality(bgc.mesozooplankton, bgc, M, O₂, T)
+
+    # degredation
+    λ = specific_degredation_rate(poc, bgc, O₂, T)
+
+    degredation = λ * GOC
+
+    # grazing
+    grid = bgc.sinking_velocities.grid
+    grazing = specific_flux_feeding(bgc.mesozooplankton, x, y, z, GOC, T, bgc.sinking_velocities.GOC, grid) * M
+
+    # aggregation
+    _, _, dissolved_aggregation = aggregation(bgc.dissolved_organic_matter, bgc, z, DOC, POC, GOC, zₘₓₗ)
+    
+    small_particle_aggregation = aggregation(poc, bgc, z, POC, GOC, zₘₓₗ)
+
+    total_aggregation = dissolved_aggregation + small_particle_aggregation
+
+    # fecal pelet prodiction
+    fecal_pelet_production = upper_trophic_fecal_product(bgc.mesozooplankton, M, T)
+
+    #@info grazing_waste, nanophytoplankton_mortality , diatom_mortality , mesozooplankton_mortality, total_aggregation , fecal_pelet_production, grazing , degredation
+    @info (grazing_waste 
+    ,nanophytoplankton_mortality ,diatom_mortality ,mesozooplankton_mortality 
+    ,total_aggregation ,fecal_pelet_production
+    ,grazing 
+    ,degredation)
+    #=return (grazing_waste 
+            + nanophytoplankton_mortality + diatom_mortality + mesozooplankton_mortality 
+            + total_aggregation + fecal_pelet_production
+            - grazing 
+            - degredation)=#
+
+    # DIC
+
+    microzooplankton_respiration = specific_inorganic_grazing_waste(bgc.microzooplankton, bgc, x, y, z, P, D, PFe, DFe, Z, POC, GOC, SFe, T) * Z
+    mesozooplankton_respiration  = specific_inorganic_grazing_waste(bgc.mesozooplankton, bgc, x, y, z, P, D, PFe, DFe, Z, POC, GOC, SFe, T) * M
+
+    zooplankton_respiration = microzooplankton_respiration + mesozooplankton_respiration
+
+    upper_trophic_respiration = inorganic_upper_trophic_respiration_product(bgc.mesozooplankton, M, T)
+
+    dissolved_degredation = bacterial_degradation(bgc.dissolved_organic_matter, z, Z, M, DOC, NO₃, NH₄, PO₄, Fe, T, zₘₓₗ, zₑᵤ)
+
+    calcite_diss = calcite_dissolution(bgc.calcite, CaCO₃, Ω)
+
+    calcite_prod = calcite_production(bgc.calcite, bgc, z, P, D, PChl, PFe, Z, M, POC, NO₃, NH₄, PO₄, Fe, Si, Si′, T, zₘₓₗ, PAR)
+
+    calcite = calcite_diss - calcite_prod
+
+    nanophytoplankton_consumption = total_production(bgc.nanophytoplankton, bgc, y, t, P, PChl, PFe, NO₃, NH₄, PO₄, Fe, Si, T, Si′, zₘₓₗ, zₑᵤ, κ, PAR₁, PAR₂, PAR₃)
+    diatom_consumption            = total_production(bgc.diatoms, bgc, y, t, D, DChl, DFe, NO₃, NH₄, PO₄, Fe, Si, T, Si′, zₘₓₗ, zₑᵤ, κ, PAR₁, PAR₂, PAR₃)
+
+    consumption = nanophytoplankton_consumption + diatom_consumption
+    
+    @info zooplankton_respiration, upper_trophic_respiration, dissolved_degredation, calcite, consumption#zooplankton_respiration + upper_trophic_respiration + dissolved_degredation + calcite - consumption
+
+    # CaCO\_3   
+    calcite = bgc.calcite
+    production = calcite_production(calcite, bgc, z, P, D, PChl, PFe, Z, M, POC, NO₃, NH₄, PO₄, Fe, Si, Si′, T, zₘₓₗ, PAR)
+
+    dissolution = calcite_dissolution(calcite, CaCO₃, Ω)
+    
+    @info production, dissolution, production - dissolution#production - dissolution
+end
+
+
+function zooplankton_mortality_terms(bgc, x, y, z, t,
+                               P, D, Z, M, 
+                               PChl, DChl, PFe, DFe, DSi,
+                               DOC, POC, GOC, 
+                               SFe, BFe, PSi, 
+                               NO₃, NH₄, PO₄, Fe, Si, 
+                               CaCO₃, DIC, Alk, 
+                               O₂, T, S,
+                               zₘₓₗ, zₑᵤ, Si′, dust, Ω, κ, mixed_layer_PAR, PAR, PAR₁, PAR₂, PAR₃)
+
+    val_name = Val(:Z)
+    zoo = bgc.microzooplankton
+    I = zooplankton_concentration(val_name, Z, M)
+
+    # mortality
+    Z_mortality = mortality(zoo, bgc, I, O₂, T)
+
+    val_name = Val(:M)
+    zoo = bgc.mesozooplankton
+    I = zooplankton_concentration(val_name, Z, M)
+
+    # mortality
+    M_mortality = mortality(zoo, bgc, I, O₂, T)
+
+    # DOC
+
+    DOC_respiration_product = dissolved_upper_trophic_respiration_product(bgc.mesozooplankton, M, T)
+
+    # DIC
+    DIC_respiration_product = inorganic_upper_trophic_respiration_product(bgc.mesozooplankton, M, T)
+
+    # POC
+    POC_microzooplankton_mortality = mortality(bgc.microzooplankton, bgc, Z, O₂, T)
+
+    # GOC
+    GOC_mesozooplankton_mortality = linear_mortality(bgc.mesozooplankton, bgc, M, O₂, T)
+
+    GOC_fecal_pelet_production = upper_trophic_fecal_product(bgc.mesozooplankton, M, T)
+
+    return DOC_respiration_product + DIC_respiration_product + POC_microzooplankton_mortality + GOC_mesozooplankton_mortality + GOC_fecal_pelet_production - Z_mortality - M_mortality
+end
+    
 
 end # module

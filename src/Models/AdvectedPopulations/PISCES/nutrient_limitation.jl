@@ -60,7 +60,7 @@ end
     LSi = Si / (Si + KSi)
     LSi = ifelse(L.silicate_limited, LSi, Inf)
 
-    # don't always need the other arguments but they can be got like μ, = ... or _, LFe = ..
+    # don't always need the other arguments but they can be got like L, = ... or _, LFe = ..
     return min(LN, LPO₄, LFe, LSi), LFe, LPO₄, LN, LNO₃, LNH₄
 end
 

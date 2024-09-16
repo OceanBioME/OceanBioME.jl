@@ -28,7 +28,7 @@ end
 end
 
 @kwdef struct DepthDependantSinkingSpeed{FT}
-    minimum_speed :: FT = 2/day
+    minimum_speed :: FT = 30/day # in NEMO the min and max speeds are both 50m/day
     maximum_speed :: FT = 200/day
     maximum_depth :: FT = 5000.0
 end

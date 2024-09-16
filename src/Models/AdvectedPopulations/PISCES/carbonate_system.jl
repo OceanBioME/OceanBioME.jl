@@ -24,19 +24,19 @@ struct CarbonateSystem end
 
     calcite_prod = calcite_production(bgc.calcite, bgc, z, P, D, PChl, PFe, Z, M, POC, NO₃, NH₄, PO₄, Fe, Si, Si′, T, zₘₓₗ, PAR)
 
-    calcite = calcite_diss - calcite_prod
-
-    nanophytoplankton_consumption = total_production(bgc.nanophytoplankton, bgc, y, t, P, PChl, PFe, NO₃, NH₄, PO₄, Fe, T, Si, Si′, zₘₓₗ, zₑᵤ, κ, PAR₁, PAR₂, PAR₃)
-    diatom_consumption            = total_production(bgc.diatoms, bgc, y, t, D, DChl, DFe, NO₃, NH₄, PO₄, Fe, T, Si, Si′, zₘₓₗ, zₑᵤ, κ, PAR₁, PAR₂, PAR₃)
+    nanophytoplankton_consumption = total_production(bgc.nanophytoplankton, bgc, y, t, P, PChl, PFe, NO₃, NH₄, PO₄, Fe, Si, T, Si′, zₘₓₗ, zₑᵤ, κ, PAR₁, PAR₂, PAR₃)
+    diatom_consumption            = total_production(bgc.diatoms, bgc, y, t, D, DChl, DFe, NO₃, NH₄, PO₄, Fe, Si, T, Si′, zₘₓₗ, zₑᵤ, κ, PAR₁, PAR₂, PAR₃)
 
     consumption = nanophytoplankton_consumption + diatom_consumption
 
-    return zooplankton_respiration + upper_trophic_respiration + dissolved_degredation + calcite - consumption
+    return zooplankton_respiration + upper_trophic_respiration + dissolved_degredation + calcite_diss - calcite_prod - consumption
 end
 
 @inline function (carbonates::CarbonateSystem)(::Val{:Alk}, bgc, args...)
-    nitrate_production = bgc.nitrogen(Val(:NO₃), bgc, args...)
-    ammonia_production = bgc.nitrogen(Val(:NH₄), bgc, args...)
+    θ = bgc.nitrogen_redfield_ratio
+
+    nitrate_production = bgc.nitrogen(Val(:NO₃), bgc, args...) * θ
+    ammonia_production = bgc.nitrogen(Val(:NH₄), bgc, args...) * θ
     calcite_production = bgc.calcite(Val(:CaCO₃), bgc, args...)
 
     # I think there are typos in Aumount 2015 but this is what it should be
