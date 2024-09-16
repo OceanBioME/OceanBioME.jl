@@ -24,9 +24,9 @@ struct Phosphate end
 
     denit = denitrifcation(bgc.dissolved_organic_matter, bgc, z, Z, M, DOC, NO₃, NH₄, PO₄, Fe, O₂, T, zₘₓₗ, zₑᵤ)
 
-    nanophytoplankton_consumption = total_growth(bgc.nanophytoplankton, bgc, y, t, P, PChl, PFe, NO₃, NH₄, PO₄, Fe, Si, T, Si′, zₘₓₗ, zₑᵤ, κ, PAR₁, PAR₂, PAR₃)
+    nanophytoplankton_consumption, = total_production(bgc.nanophytoplankton, bgc, y, t, P, PChl, PFe, NO₃, NH₄, PO₄, Fe, Si, T, Si′, zₘₓₗ, zₑᵤ, κ, PAR₁, PAR₂, PAR₃)
 
-    diatom_consumption = total_growth(bgc.diatoms, bgc, y, t, D, DChl, DFe, NO₃, NH₄, PO₄, Fe, Si, T, Si′, zₘₓₗ, zₑᵤ, κ, PAR₁, PAR₂, PAR₃)
+    diatom_consumption, = total_production(bgc.diatoms, bgc, y, t, D, DChl, DFe, NO₃, NH₄, PO₄, Fe, Si, T, Si′, zₘₓₗ, zₑᵤ, κ, PAR₁, PAR₂, PAR₃)
 
     consumption = (nanophytoplankton_consumption + diatom_consumption)
 

@@ -7,9 +7,10 @@ using Oceananigans.Utils: launch!
 #####
 compute_mean_mixed_layer_vertical_diffusivity!(κ::ConstantField, mixed_layer_depth, model) = nothing
 compute_mean_mixed_layer_vertical_diffusivity!(κ::ZeroField, mixed_layer_depth, model) = nothing
+compute_mean_mixed_layer_vertical_diffusivity!(κ::Nothing, mixed_layer_depth, model) = nothing
 
 compute_mean_mixed_layer_vertical_diffusivity!(κ, mixed_layer_depth, model) =
-    compute_mean_mixed_layer_vertical_diffusivity!(model.closure, κ, mixed_layer_depth, model.diffusivity_fields, grid)
+    compute_mean_mixed_layer_vertical_diffusivity!(model.closure, κ, mixed_layer_depth, model.diffusivity_fields, model.grid)
 
 # if no closure is defined we just assume its pre-set 
 compute_mean_mixed_layer_vertical_diffusivity!(closure::Nothing, 
@@ -18,6 +19,7 @@ compute_mean_mixed_layer_vertical_diffusivity!(closure::Nothing,
                                                diffusivity_fields, grid) = nothing
 
 function compute_mean_mixed_layer_vertical_diffusivity!(closure, mean_mixed_layer_vertical_diffusivity, mixed_layer_depth, diffusivity_fields, grid)
+    arch = architecture(grid)
     # this is going to get messy
     κ = phytoplankton_diffusivity(closure, diffusivity_fields)
 
@@ -38,7 +40,7 @@ end
     integration_depth = 0
 
     for k in grid.Nz:-1:1
-        if znode(i, j, k, grid, Center(), Center(), Center()) > zₘₓₗ
+        if znode(i, j, k, grid, Center(), Center(), Center()) >= zₘₓₗ
             Δz = zspacing(i, j, k, grid, Center(), Center(), Center())
             κₘₓₗ[i, j] += κ[i, j, k] * Δz # I think sometimes vertical diffusivity is face located?
             integration_depth += Δz
@@ -77,7 +79,7 @@ compute_mean_mixed_layer_light!(::ZeroField, args...) = nothing
     integration_depth = 0
 
     for k in grid.Nz:-1:1
-        if znode(i, j, k, grid, Center(), Center(), Center()) > zₘₓₗ
+        if znode(i, j, k, grid, Center(), Center(), Center()) >= zₘₓₗ
             Δz = zspacing(i, j, k, grid, Center(), Center(), Center())
             mean_PAR[i, j] += PAR[i, j, k] * Δz 
             integration_depth += Δz

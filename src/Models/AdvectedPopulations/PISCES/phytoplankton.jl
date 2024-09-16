@@ -50,11 +50,9 @@ end
     IChl = phytoplankton_concentration(val_name, PChl, DChl)
     IFe  = phytoplankton_concentration(val_name, PFe, DFe)
 
-    L, = phyto.nutrient_limitation(bgc, I, IChl, IFe, NO₃, NH₄, PO₄, Fe, Si, Si′)
-
-    μ = phyto.growth_rate(phyto, bgc, y, t, I, IChl, T, zₘₓₗ, zₑᵤ, κ, PAR₁, PAR₂, PAR₃, L)
-
-    production = (1 - δ) * μ * I 
+    μI, L = total_production(phyto, bgc, y, t, I, IChl, IFe, NO₃, NH₄, PO₄, Fe, Si, T, Si′, zₘₓₗ, zₑᵤ, κ, PAR₁, PAR₂, PAR₃)
+    
+    production = (1 - δ) * μI 
 
     # mortality
     linear_mortality, quadratic_mortality = mortality(phyto, bgc, z, I, zₘₓₗ, L)
@@ -222,9 +220,8 @@ end
 @inline function dissolved_exudate(phyto::Phytoplankton, bgc, y, t, I, IChl, IFe, NO₃, NH₄, PO₄, Fe, Si, T, Si′, zₘₓₗ, zₑᵤ, κ, PAR₁, PAR₂, PAR₃)
     δ = phyto.exudated_fracton
 
-    μ = phyto.growth_rate(phyto, bgc, y, t, I, IChl, IFe, NO₃, NH₄, PO₄, Fe, Si, T, Si′, zₘₓₗ, zₑᵤ, κ, PAR₁, PAR₂, PAR₃)
-
-    return δ * μ * I
+    μI, = total_production(phyto, bgc, y, t, I, IChl, IFe, NO₃, NH₄, PO₄, Fe, Si, T, Si′, zₘₓₗ, zₑᵤ, κ, PAR₁, PAR₂, PAR₃)
+    return δ * μI
 end
 
 @inline function mortality(phyto::Phytoplankton, bgc, z, I, IChl, IFe, NO₃, NH₄, PO₄, Fe, Si, Si′, zₘₓₗ)
@@ -270,15 +267,8 @@ end
     return μ * L_NH₄ / (LN + eps(0.0))
 end
 
-# maybe this function exists elsehwere - litterally just underneith
-@inline function total_growth(phyto::Phytoplankton, bgc, y, t, I, IChl, IFe, NO₃, NH₄, PO₄, Fe, Si, T, Si′, zₘₓₗ, zₑᵤ, κ, PAR₁, PAR₂, PAR₃)
-    L, = phyto.nutrient_limitation(bgc, I, IChl, IFe, NO₃, NH₄, PO₄, Fe, Si, Si′)
-
-    return phyto.growth_rate(phyto, bgc, y, t, I, IChl, T, zₘₓₗ, zₑᵤ, κ, PAR₁, PAR₂, PAR₃, L) * I
-end
-
 @inline function total_production(phyto::Phytoplankton, bgc, y, t, I, IChl, IFe, NO₃, NH₄, PO₄, Fe, Si, T, Si′, zₘₓₗ, zₑᵤ, κ, PAR₁, PAR₂, PAR₃)
     L, = phyto.nutrient_limitation(bgc, I, IChl, IFe, NO₃, NH₄, PO₄, Fe, Si, Si′)
 
-    return phyto.growth_rate(phyto, bgc, y, t, I, IChl, T, zₘₓₗ, zₑᵤ, κ, PAR₁, PAR₂, PAR₃, L) * I
+    return phyto.growth_rate(phyto, bgc, y, t, I, IChl, T, zₘₓₗ, zₑᵤ, κ, PAR₁, PAR₂, PAR₃, L) * I, L
 end

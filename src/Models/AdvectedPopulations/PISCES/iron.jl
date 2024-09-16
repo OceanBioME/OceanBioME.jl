@@ -1,4 +1,6 @@
-struct SimpleIron end
+@kwdef struct SimpleIron{FT}
+    excess_scavenging_enhancement :: FT = 1000
+end
 
 @inline function (iron::SimpleIron)(::Val{:Fe}, bgc,
                                     x, y, z, t,
@@ -11,11 +13,15 @@ struct SimpleIron end
                                     O₂, T, S,
                                     zₘₓₗ, zₑᵤ, Si′, dust, Ω, κ, mixed_layer_PAR, PAR, PAR₁, PAR₂, PAR₃)
 
+    λ̄ = iron.excess_scavenging_enhancement
+
     λFe = iron_scavenging_rate(bgc.particulate_organic_matter, POC, GOC, CaCO₃, PSi, dust)
 
     Fe′ = free_iron(iron, Fe, DOC, T)
     total_ligand_concentration = max(0.6, 0.09 * (DOC + 40) - 3)
-    ligand_aggregation = 1000 * λFe * max(0, Fe - total_ligand_concentration) * Fe′
+
+    # terminal process which removes iron from the ocean
+    ligand_aggregation = λ̄ * λFe * max(0, Fe - total_ligand_concentration) * Fe′
 
     # other aggregation
     colloidal_aggregation, = aggregation_of_colloidal_iron(iron, bgc.dissolved_organic_matter, bgc, z, DOC, POC, GOC, Fe, T, zₘₓₗ)

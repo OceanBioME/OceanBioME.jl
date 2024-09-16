@@ -24,8 +24,8 @@ struct CarbonateSystem end
 
     calcite_prod = calcite_production(bgc.calcite, bgc, z, P, D, PChl, PFe, Z, M, POC, NO₃, NH₄, PO₄, Fe, Si, Si′, T, zₘₓₗ, PAR)
 
-    nanophytoplankton_consumption = total_production(bgc.nanophytoplankton, bgc, y, t, P, PChl, PFe, NO₃, NH₄, PO₄, Fe, Si, T, Si′, zₘₓₗ, zₑᵤ, κ, PAR₁, PAR₂, PAR₃)
-    diatom_consumption            = total_production(bgc.diatoms, bgc, y, t, D, DChl, DFe, NO₃, NH₄, PO₄, Fe, Si, T, Si′, zₘₓₗ, zₑᵤ, κ, PAR₁, PAR₂, PAR₃)
+    nanophytoplankton_consumption, = total_production(bgc.nanophytoplankton, bgc, y, t, P, PChl, PFe, NO₃, NH₄, PO₄, Fe, Si, T, Si′, zₘₓₗ, zₑᵤ, κ, PAR₁, PAR₂, PAR₃)
+    diatom_consumption,            = total_production(bgc.diatoms, bgc, y, t, D, DChl, DFe, NO₃, NH₄, PO₄, Fe, Si, T, Si′, zₘₓₗ, zₑᵤ, κ, PAR₁, PAR₂, PAR₃)
 
     consumption = nanophytoplankton_consumption + diatom_consumption
 

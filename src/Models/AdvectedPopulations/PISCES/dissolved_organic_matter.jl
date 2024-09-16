@@ -11,7 +11,7 @@
     ammonia_half_saturation_for_bacterial_activity :: FT = 0.003
   phosphate_half_saturation_for_bacterial_activity :: FT = 0.003
        iron_half_saturation_for_bacterial_activity :: FT = 0.01
-                            aggregation_parameters :: AP = (0, 0, 0, 0, 0)#(0.37, 102, 3530, 5095, 114) .* (10^-6 / day) #(μmolCL⁻¹)⁻¹s⁻¹
+                            aggregation_parameters :: AP = (0.37, 102, 3530, 5095, 114) .* (10^-6 / day) #(μmolCL⁻¹)⁻¹s⁻¹
                     maximum_iron_ratio_in_bacteria :: FT = 10^-3
                  iron_half_saturation_for_bacteria :: FT = 0.03
                      maximum_bacterial_growth_rate :: FT = 0.6 / day
