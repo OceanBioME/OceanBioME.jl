@@ -15,7 +15,7 @@ end
                                             NO₃, NH₄, PO₄, Fe, Si, 
                                             CaCO₃, DIC, Alk, 
                                             O₂, T, S,
-                                            zₘₓₗ, zₑᵤ, Si′, dust, Ω, κ, mixed_layer_PAR, PAR, PAR₁, PAR₂, PAR₃)
+                                            zₘₓₗ, zₑᵤ, Si′, Ω, κ, mixed_layer_PAR, PAR, PAR₁, PAR₂, PAR₃)
     θ = bgc.nitrogen_redfield_ratio
 
     nitrif = nitrification(nitrogen, bgc, NH₄, O₂, mixed_layer_PAR) * θ
@@ -42,7 +42,7 @@ end
                                             NO₃, NH₄, PO₄, Fe, Si, 
                                             CaCO₃, DIC, Alk, 
                                             O₂, T, S,
-                                            zₘₓₗ, zₑᵤ, Si′, dust, Ω, κ, mixed_layer_PAR, PAR, PAR₁, PAR₂, PAR₃)
+                                            zₘₓₗ, zₑᵤ, Si′, Ω, κ, mixed_layer_PAR, PAR, PAR₁, PAR₂, PAR₃)
     θ = bgc.nitrogen_redfield_ratio
 
     nitrif = nitrification(nitrogen, bgc, NH₄, O₂, mixed_layer_PAR) * θ

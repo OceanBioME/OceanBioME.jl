@@ -9,7 +9,7 @@ struct Phosphate end
                                         NO₃, NH₄, PO₄, Fe, Si, 
                                         CaCO₃, DIC, Alk, 
                                         O₂, T, S,
-                                        zₘₓₗ, zₑᵤ, Si′, dust, Ω, κ, mixed_layer_PAR, PAR, PAR₁, PAR₂, PAR₃)
+                                        zₘₓₗ, zₑᵤ, Si′, Ω, κ, mixed_layer_PAR, PAR, PAR₁, PAR₂, PAR₃)
 
     θ = bgc.phosphate_redfield_ratio
 

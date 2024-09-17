@@ -3,6 +3,34 @@ using Oceananigans.BoundaryConditions: fill_halo_regions!
 using Oceananigans.Utils: launch!
 
 #####
+##### generic integration
+#####
+
+@kernel function _compute_mixed_layer_mean!(Cₘₓₗ, mixed_layer_depth, C, grid)
+    i, j = @index(Global, NTuple)
+
+    zₘₓₗ = @inbounds mixed_layer_depth[i, j]
+
+    @inbounds Cₘₓₗ[i, j] = 0
+
+    integration_depth = 0
+
+    for k in grid.Nz:-1:1
+        if znode(i, j, k, grid, Center(), Center(), Face()) >= zₘₓₗ
+            Δz = znode(i, j, k + 1, grid, Center(), Center(), Face()) - znode(i, j, k, grid, Center(), Center(), Face())
+        elseif znode(i, j, k + 1, grid, Center(), Center(), Face()) > zₘₓₗ
+            Δz = znode(i, j, k + 1, grid, Center(), Center(), Face()) - zₘₓₗ
+        else
+            Δz = 0
+        end
+        Cₘₓₗ[i, j] += C[i, j, k] * Δz
+        integration_depth += Δz
+    end
+
+    Cₘₓₗ[i, j] /= integration_depth
+end
+
+#####
 ##### Mean mixed layer diffusivity
 #####
 compute_mean_mixed_layer_vertical_diffusivity!(κ::ConstantField, mixed_layer_depth, model) = nothing
@@ -23,31 +51,11 @@ function compute_mean_mixed_layer_vertical_diffusivity!(closure, mean_mixed_laye
     # this is going to get messy
     κ = phytoplankton_diffusivity(closure, diffusivity_fields)
 
-    launch!(arch, grid, :xy, _compute_mean_mixed_layer_vertical_diffusivity!, mean_mixed_layer_vertical_diffusivity, mixed_layer_depth, κ, grid)
+    launch!(arch, grid, :xy, _compute_mixed_layer_mean!, mean_mixed_layer_vertical_diffusivity, mixed_layer_depth, κ, grid)
 
     fill_halo_regions!(mean_mixed_layer_vertical_diffusivity)
 
     return nothing
-end
-
-@kernel function _compute_mean_mixed_layer_vertical_diffusivity!(κₘₓₗ, mixed_layer_depth, κ, grid)
-    i, j = @index(Global, NTuple)
-
-    zₘₓₗ = @inbounds mixed_layer_depth[i, j]
-
-    @inbounds κₘₓₗ[i, j] = 0
-
-    integration_depth = 0
-
-    for k in grid.Nz:-1:1
-        if znode(i, j, k, grid, Center(), Center(), Center()) >= zₘₓₗ
-            Δz = zspacing(i, j, k, grid, Center(), Center(), Center())
-            κₘₓₗ[i, j] += κ[i, j, k] * Δz # I think sometimes vertical diffusivity is face located?
-            integration_depth += Δz
-        end
-    end
-
-    κₘₓₗ[i, j] /= integration_depth
 end
 
 #####
@@ -59,7 +67,7 @@ function compute_mean_mixed_layer_light!(mean_PAR, mixed_layer_depth, PAR, model
 
     arch = architecture(grid)
     
-    launch!(arch, grid, :xy, _compute_mean_mixed_layer_light!, mean_PAR, mixed_layer_depth, PAR, grid)
+#    launch!(arch, grid, :xy, _compute_mixed_layer_mean!, mean_PAR, mixed_layer_depth, PAR, grid)
 
     fill_halo_regions!(mean_PAR)
 
@@ -68,26 +76,6 @@ end
 
 compute_mean_mixed_layer_light!(::ConstantField, args...) = nothing
 compute_mean_mixed_layer_light!(::ZeroField, args...) = nothing
-
-@kernel function _compute_mean_mixed_layer_light!(mean_PAR, mixed_layer_depth, PAR, grid)
-    i, j = @index(Global, NTuple)
-
-    zₘₓₗ = @inbounds mixed_layer_depth[i, j]
-
-    @inbounds mean_PAR[i, j] = 0
-
-    integration_depth = 0
-
-    for k in grid.Nz:-1:1
-        if znode(i, j, k, grid, Center(), Center(), Center()) >= zₘₓₗ
-            Δz = zspacing(i, j, k, grid, Center(), Center(), Center())
-            mean_PAR[i, j] += PAR[i, j, k] * Δz 
-            integration_depth += Δz
-        end
-    end
-
-    mean_PAR[i, j] /= integration_depth
-end
 
 #####
 ##### Informaiton about diffusivity fields

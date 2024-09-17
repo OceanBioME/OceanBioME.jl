@@ -9,7 +9,7 @@ struct Silicate end
                                       NO₃, NH₄, PO₄, Fe, Si, 
                                       CaCO₃, DIC, Alk, 
                                       O₂, T, S,
-                                      zₘₓₗ, zₑᵤ, Si′, dust, Ω, κ, mixed_layer_PAR, PAR, PAR₁, PAR₂, PAR₃)
+                                      zₘₓₗ, zₑᵤ, Si′, Ω, κ, mixed_layer_PAR, PAR, PAR₁, PAR₂, PAR₃)
 
     consumption, = silicate_uptake(bgc.diatoms, bgc, y, t, D, DChl, DFe, NO₃, NH₄, PO₄, Fe, Si, Si′, T, zₘₓₗ, zₑᵤ, κ, PAR₁, PAR₂, PAR₃)
 

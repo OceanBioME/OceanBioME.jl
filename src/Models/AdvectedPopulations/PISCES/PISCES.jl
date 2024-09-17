@@ -104,7 +104,6 @@ struct PISCES{NP, DP, SZ, BZ, DM, PM, NI, FE, SI, OX, PO, CA, CE, FT, LA, DL, ML
                         mixed_layer_depth :: ML
                            euphotic_depth :: EU
                   yearly_maximum_silicate :: MS
-                          dust_deposition :: DD
 
     mean_mixed_layer_vertical_diffusivity :: VD
                    mean_mixed_layer_light :: MP
@@ -140,7 +139,6 @@ const CARBON_SYSTEM = Union{Val{:DIC}, Val{:Alk}}
     (zₘₓₗ = bgc.mixed_layer_depth, 
      zₑᵤ = bgc.euphotic_depth, 
      Si′ = bgc.yearly_maximum_silicate, 
-     D_dust = bgc.dust_deposition, 
      Ω = bgc.calcite_saturation,
      κ = bgc.mean_mixed_layer_vertical_diffusivity,
      mixed_layer_PAR = bgc.mean_mixed_layer_light)
@@ -152,7 +150,7 @@ const CARBON_SYSTEM = Union{Val{:DIC}, Val{:Alk}}
      :CaCO₃, :DIC, :Alk, :O₂, :T, :S)
 
 @inline required_biogeochemical_auxiliary_fields(::PISCES) =
-    (:zₘₓₗ, :zₑᵤ, :Si′, :D_dust, :Ω, :κ, :mixed_layer_PAR, :PAR, :PAR₁, :PAR₂, :PAR₃)
+    (:zₘₓₗ, :zₑᵤ, :Si′, :Ω, :κ, :mixed_layer_PAR, :PAR, :PAR₁, :PAR₂, :PAR₃)
 
 const small_particle_components = Union{Val{:POC}, Val{:SFe}}
 const large_particle_components = Union{Val{:GOC}, Val{:BFe}, Val{:PSi}, Val{:CaCO₃}} 
@@ -265,7 +263,6 @@ function PISCES(; grid,
                   euphotic_depth = Field{Center, Center, Nothing}(grid),
 
                   yearly_maximum_silicate = ConstantField(7.5),
-                  dust_deposition = ZeroField(),
 
                   mean_mixed_layer_vertical_diffusivity = Field{Center, Center, Nothing}(grid),
                   mean_mixed_layer_light = Field{Center, Center, Nothing}(grid),
@@ -331,7 +328,7 @@ function PISCES(; grid,
                                         mixed_layer_shear, background_shear,
                                         latitude, day_length,
                                         mixed_layer_depth, euphotic_depth,
-                                        yearly_maximum_silicate, dust_deposition,
+                                        yearly_maximum_silicate,
                                         mean_mixed_layer_vertical_diffusivity, 
                                         mean_mixed_layer_light,
                                         carbon_chemistry, calcite_saturation,

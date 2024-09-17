@@ -7,13 +7,13 @@
                                                                 NO₃, NH₄, PO₄, Fe, Si, 
                                                                 CaCO₃, DIC, Alk, 
                                                                 O₂, T, S,
-                                                                zₘₓₗ, zₑᵤ, Si′, dust, Ω, κ, mixed_layer_PAR, PAR, PAR₁, PAR₂, PAR₃)
-
+                                                                zₘₓₗ, zₑᵤ, Si′, Ω, κ, mixed_layer_PAR, PAR, PAR₁, PAR₂, PAR₃)
+# THIS SHOULD BE GRAZED AND SHOULD BE MINUS
     # diatom grazing
-    _, _, microzooplankton_grazing = specific_grazing(bgc.microzooplankton, P, D, Z, POC, T)
-    _, _, mesozooplankton_grazing  = specific_grazing(bgc.mesozooplankton , P, D, Z, POC, T)
+    gZ = diatom_grazing(bgc.microzooplankton, P, D, Z, POC, T)
+    gM = diatom_grazing(bgc.mesozooplankton, P, D, Z, POC, T)
 
-    diatom_grazing = (microzooplankton_grazing * Z + mesozooplankton_grazing * M) * DSi / (D + eps(0.0))
+    grazing = (gZ * Z + gM * M) * DSi / (D + eps(0.0))
 
     # diatom mortality
     diatom_linear_mortality, diatom_quadratic_mortality = mortality(bgc.diatoms, bgc, z, D, DChl, DFe, NO₃, NH₄, PO₄, Fe, Si, Si′, zₘₓₗ)
@@ -22,8 +22,8 @@
 
     # dissolution
     dissolution = particulate_silicate_dissolution(poc, bgc, x, y, z, PSi, Si, T, zₘₓₗ, zₑᵤ)
-    
-    return diatom_grazing + diatom_mortality - dissolution
+
+    return grazing + diatom_mortality - dissolution
 end
 
 @inline function particulate_silicate_dissolution(poc, bgc, x, y, z, PSi, Si, T, zₘₓₗ, zₑᵤ)

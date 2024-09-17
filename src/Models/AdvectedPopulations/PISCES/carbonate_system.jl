@@ -9,7 +9,7 @@ struct CarbonateSystem end
                                                NO₃, NH₄, PO₄, Fe, Si, 
                                                CaCO₃, DIC, Alk, 
                                                O₂, T, S,
-                                               zₘₓₗ, zₑᵤ, Si′, dust, Ω, κ, mixed_layer_PAR, PAR, PAR₁, PAR₂, PAR₃)
+                                               zₘₓₗ, zₑᵤ, Si′, Ω, κ, mixed_layer_PAR, PAR, PAR₁, PAR₂, PAR₃)
 
     microzooplankton_respiration = specific_inorganic_grazing_waste(bgc.microzooplankton, bgc, x, y, z, P, D, PFe, DFe, Z, POC, GOC, SFe, T) * Z
     mesozooplankton_respiration  = specific_inorganic_grazing_waste(bgc.mesozooplankton, bgc, x, y, z, P, D, PFe, DFe, Z, POC, GOC, SFe, T) * M
@@ -40,5 +40,6 @@ end
     calcite_production = bgc.calcite(Val(:CaCO₃), bgc, args...)
 
     # I think there are typos in Aumount 2015 but this is what it should be
+
     return ammonia_production - nitrate_production - 2 * calcite_production
 end

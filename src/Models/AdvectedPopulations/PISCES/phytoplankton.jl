@@ -42,7 +42,7 @@ end
                                         NO₃, NH₄, PO₄, Fe, Si, 
                                         CaCO₃, DIC, Alk, 
                                         O₂, T, S,
-                                        zₘₓₗ, zₑᵤ, Si′, dust, Ω, κ, mixed_layer_PAR, PAR, PAR₁, PAR₂, PAR₃)
+                                        zₘₓₗ, zₑᵤ, Si′, Ω, κ, mixed_layer_PAR, PAR, PAR₁, PAR₂, PAR₃)
     # production
     δ  = phyto.exudated_fracton
 
@@ -51,7 +51,7 @@ end
     IFe  = phytoplankton_concentration(val_name, PFe, DFe)
 
     μI, L = total_production(phyto, bgc, y, t, I, IChl, IFe, NO₃, NH₄, PO₄, Fe, Si, T, Si′, zₘₓₗ, zₑᵤ, κ, PAR₁, PAR₂, PAR₃)
-    
+
     production = (1 - δ) * μI 
 
     # mortality
@@ -75,7 +75,7 @@ end
                                         NO₃, NH₄, PO₄, Fe, Si, 
                                         CaCO₃, DIC, Alk, 
                                         O₂, T, S,
-                                        zₘₓₗ, zₑᵤ, Si′, dust, Ω, κ, mixed_layer_PAR, PAR, PAR₁, PAR₂, PAR₃)
+                                        zₘₓₗ, zₑᵤ, Si′, Ω, κ, mixed_layer_PAR, PAR, PAR₁, PAR₂, PAR₃)
 
     I    = phytoplankton_concentration(val_name, P, D)
     IChl = phytoplankton_concentration(val_name, PChl, DChl)
@@ -119,7 +119,7 @@ end
                                         NO₃, NH₄, PO₄, Fe, Si, 
                                         CaCO₃, DIC, Alk, 
                                         O₂, T, S,
-                                        zₘₓₗ, zₑᵤ, Si′, dust, Ω, κ, mixed_layer_PAR, PAR, PAR₁, PAR₂, PAR₃)
+                                        zₘₓₗ, zₑᵤ, Si′, Ω, κ, mixed_layer_PAR, PAR, PAR₁, PAR₂, PAR₃)
 
     I    = phytoplankton_concentration(val_name, P, D)
     IChl = phytoplankton_concentration(val_name, PChl, DChl)
@@ -163,13 +163,13 @@ end
 @inline function (phyto::Phytoplankton)(::Val{:DSi}, bgc,
                                         x, y, z, t,
                                         P, D, Z, M, 
-                                        PChl, DChl, PFe, DFe, DSi, # we should get rid of DSi and the rest of the Si since it doesn't do anything...
+                                        PChl, DChl, PFe, DFe, DSi,
                                         DOC, POC, GOC, 
                                         SFe, BFe, PSi, 
                                         NO₃, NH₄, PO₄, Fe, Si, 
                                         CaCO₃, DIC, Alk, 
                                         O₂, T, S,
-                                        zₘₓₗ, zₑᵤ, Si′, dust, Ω, κ, mixed_layer_PAR, PAR, PAR₁, PAR₂, PAR₃)
+                                        zₘₓₗ, zₑᵤ, Si′, Ω, κ, mixed_layer_PAR, PAR, PAR₁, PAR₂, PAR₃)
 
     # production
     production, L = silicate_uptake(phyto, bgc, y, t, D, DChl, DFe, NO₃, NH₄, PO₄, Fe, Si, Si′, T, zₘₓₗ, zₑᵤ, κ, PAR₁, PAR₂, PAR₃)

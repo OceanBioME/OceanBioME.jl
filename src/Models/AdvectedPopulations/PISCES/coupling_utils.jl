@@ -28,5 +28,9 @@
 
     silicon = (:DSi, :Si, :PSi)
 
-    return (; carbon, iron, phosphate, silicon)
+    θN = bgc.nitrogen_redfield_ratio
+    nitrogen = (tracers = (:NH₄, :NO₃, :P, :D, :Z, :M, :DOC, :POC, :GOC),
+                scalefactors = (1, 1, θN, θN, θN, θN, θN, θN, θN))
+
+    return (; carbon, iron, phosphate, silicon, nitrogen)
 end

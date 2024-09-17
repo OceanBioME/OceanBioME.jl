@@ -40,7 +40,9 @@ end
 
     z = znode(i, j, k, grid, Center(), Center(), Center())
 
-    return - p.minimum_speed + (p.maximum_speed - p.minimum_speed) * min(0, z - min(zₘₓₗ, zₑᵤ)) / 5000
+    w = - p.minimum_speed + (p.maximum_speed - p.minimum_speed) * min(0, z - min(zₘₓₗ, zₑᵤ)) / 5000
+
+    return ifelse(k == grid.Nz + 1, 0, w)
 end
 
 @inline particle_sinking_speed(x, y, z, grid, w) = interpolate(flatten_node(x, y, z), w, (Center(), Center(), Face()), grid)

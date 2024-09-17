@@ -7,7 +7,7 @@
                                                                 NO₃, NH₄, PO₄, Fe, Si, 
                                                                 CaCO₃, DIC, Alk, 
                                                                 O₂, T, S,
-                                                                zₘₓₗ, zₑᵤ, Si′, dust, Ω, κ, mixed_layer_PAR, PAR, PAR₁, PAR₂, PAR₃)
+                                                                zₘₓₗ, zₑᵤ, Si′, Ω, κ, mixed_layer_PAR, PAR, PAR₁, PAR₂, PAR₃)
 
     grazing_waste = specific_non_assimilated_iron_waste(bgc.microzooplankton, bgc, x, y, z, P, D, PFe, DFe, Z, POC, GOC, SFe, BFe, T) * Z
 
@@ -79,7 +79,7 @@ end
                                                                 NO₃, NH₄, PO₄, Fe, Si, 
                                                                 CaCO₃, DIC, Alk, 
                                                                 O₂, T, S,
-                                                                zₘₓₗ, zₑᵤ, Si′, dust, Ω, κ, mixed_layer_PAR, PAR, PAR₁, PAR₂, PAR₃)
+                                                                zₘₓₗ, zₑᵤ, Si′, Ω, κ, mixed_layer_PAR, PAR, PAR₁, PAR₂, PAR₃)
 
     grazing_waste = specific_non_assimilated_iron_waste(bgc.mesozooplankton, bgc, x, y, z, P, D, PFe, DFe, Z, POC, GOC, SFe, BFe, T) * M
 
@@ -136,10 +136,9 @@ end
             - grazing - degredation)
 end
 
-@inline function iron_scavenging_rate(pom, POC, GOC, CaCO₃, PSi, dust)
+@inline function iron_scavenging_rate(pom, POC, GOC, CaCO₃, PSi)
     λ₀ = pom.minimum_iron_scavenging_rate
     λ₁ = pom.load_specific_iron_scavenging_rate
-    λ₂ = pom.dust_specific_iron_scavenging_rate
 
-    return λ₀ + λ₁ * (POC + GOC + CaCO₃ + PSi) + λ₂ * dust
+    return λ₀ + λ₁ * (POC + GOC + CaCO₃ + PSi)
 end
