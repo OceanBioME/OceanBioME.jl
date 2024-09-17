@@ -18,13 +18,15 @@ using OceanBioME, Oceananigans, Printf
 using Oceananigans.Fields: FunctionField, ConstantField
 using Oceananigans.Units
 
+using OceanBioME.Sediments: sinking_flux
+
 const year = years = 365days
 nothing #hide
 
 # ## Surface PAR and turbulent vertical diffusivity based on idealised mixed layer depth 
 # Setting up idealised functions for PAR and diffusivity (details here can be ignored but these are typical of the North Atlantic), temperaeture and euphotic layer
 
-@inline PAR⁰(t) = 60 * (1 - cos((t + 15days) * 2π / year)) * (1 / (1 + 0.2 * exp(-((mod(t, year) - 200days) / 50days)^2))) + 2
+@inline PAR⁰(t) = 300 * (1 - cos((t + 15days) * 2π / year)) * (1 / (1 + 0.2 * exp(-((mod(t, year) - 200days) / 50days)^2))) + 10
 
 @inline H(t, t₀, t₁) = ifelse(t₀ < t < t₁, 1.0, 0.0)
 
@@ -56,42 +58,40 @@ biogeochemistry = PISCES(; grid,
                            mixed_layer_depth = zₘₓₗ,
                            mean_mixed_layer_vertical_diffusivity = ConstantField(1e-2), # this is by default computed now
                            surface_photosynthetically_active_radiation = PAR⁰,
-                           carbon_chemistry)
+                           carbon_chemistry)#,
+                           #sinking_speeds = (POC = 2/day, GOC = 50/day))
 
 CO₂_flux = CarbonDioxideGasExchangeBoundaryCondition(; carbon_chemistry)
 O₂_flux = OxygenGasExchangeBoundaryCondition()
 
-T = FunctionField{Center, Center, Center}(temp, grid; clock)
-S = ConstantField(35)
-
 @info "Setting up the model..."
-model = NonhydrostaticModel(; grid,
-                              clock,
-                              closure = ScalarDiffusivity(VerticallyImplicitTimeDiscretization(), κ = κ_field),
-                              biogeochemistry,
-                              boundary_conditions = (DIC = FieldBoundaryConditions(top = CO₂_flux), O₂ = FieldBoundaryConditions(top = O₂_flux)),
-                              auxiliary_fields = (; S))
+model = HydrostaticFreeSurfaceModel(; grid,
+                                      velocities = PrescribedVelocityFields(),
+                                      tracer_advection = TracerAdvection(nothing, nothing, WENOFifthOrder(grid)),
+                                      buoyancy = nothing,
+                                      clock,
+                                      closure = ScalarDiffusivity(VerticallyImplicitTimeDiscretization(), κ = κ_field),
+                                      biogeochemistry,
+                                      boundary_conditions = (DIC = FieldBoundaryConditions(top = CO₂_flux), O₂ = FieldBoundaryConditions(top = O₂_flux)))
                               
 
 @info "Setting initial values..."
 set!(model, P = 6.95, D = 6.95, Z = 0.695,  M = 0.695, 
-            Pᶜʰˡ = 1.671,  Dᶜʰˡ = 1.671, 
-            Pᶠᵉ =7e-6 * 1e9 / 1e6 * 6.95, Dᶠᵉ = 7e-6 * 1e9 / 1e6 * 6.95, 
-            Dˢⁱ = 1.162767, 
-            DOC = 0.0, POC = 0.0, GOC = 0.0, 
-            SFe = 7e-6 * 1e9 / 1e6 *1.256, BFe =7e-6 * 1e9 / 1e6 *1.256, 
+            PChl = 1.671,  DChl = 1.671, 
+            PFe =7e-6 * 1e9 / 1e6 * 6.95, DFe = 7e-6 * 1e9 / 1e6 * 6.95, 
+            DSi = 1.162767, 
             NO₃ = 6.202, NH₄ = 0.25*6.202, 
             PO₄ = 0.8722, Fe = 1.256, Si = 7.313, 
             CaCO₃ = 0.001,
             DIC = 2139.0, Alk = 2366.0, 
-            O₂ = 237.0) #Using Copernicus Data (26.665, 14.), Calcite is not correct, but this is to see it on the graphs
+            O₂ = 237.0, S = 35, T = (z) -> temp(z, 0)) #Using Copernicus Data (26.665, 14.), Calcite is not correct, but this is to see it on the graphs
 
 # ## Simulation
 # Next we setup a simulation and add some callbacks that:
 # - Show the progress of the simulation
 # - Store the model and particles output
 
-simulation = Simulation(model, Δt = 50minutes, stop_time = 2years)
+simulation = Simulation(model, Δt = 1hours, stop_time = 2years)
 
 progress_message(sim) = @printf("Iteration: %04d, time: %s, Δt: %s, wall time: %s\n",
                                 iteration(sim),
@@ -136,8 +136,11 @@ simulation.output_writers[:tracers] = JLD2OutputWriter(model, model.tracers,
                                                        schedule = TimeInterval(1day),
                                                        overwrite_existing = true)
 
+PAR = Field(Oceananigans.Biogeochemistry.biogeochemical_auxiliary_fields(biogeochemistry.light_attenuation).PAR)
+
 internal_fields = (; biogeochemistry.underlying_biogeochemistry.calcite_saturation, 
                      biogeochemistry.underlying_biogeochemistry.euphotic_depth, 
+                     PAR
                      )#biogeochemistry.underlying_biogeochemistry.mean_mixed_layer_vertical_diffusivity)
 
 simulation.output_writers[:internals] = JLD2OutputWriter(model, internal_fields,
@@ -164,51 +167,67 @@ times = tracers["P"].times
 air_sea_CO₂_flux = zeros(length(times))
 carbon_export = zeros(length(times))
 
+S = ConstantField(35)
+
 using Oceananigans.Biogeochemistry: biogeochemical_drift_velocity
 
+k_export = floor(Int, grid.Nz - 200/minimum_zspacing(grid))
+
 for (n, t) in enumerate(times)
-
     clock.time = t
-    compute!(T)
+
+    k_export = floor(Int, grid.Nz + MLD(t)/minimum_zspacing(grid))
     
-    air_sea_CO₂_flux[n] = CO₂_flux.condition.func(1, 1, grid, clock, (; DIC = tracers["DIC"][n], Alk = tracers["Alk"][n], T, S))
+    air_sea_CO₂_flux[n] = CO₂_flux.condition.func(1, 1, grid, clock, (; DIC = tracers["DIC"][n], Alk = tracers["Alk"][n], T = tracers["T"][n], S))
 
-    POC = interior(tracers["POC"][n], 1, 1, grid.Nz-20)[1]
-    wPOC = biogeochemical_drift_velocity(model.biogeochemistry, Val(:POC)).w[1, 1, grid.Nz-20]
+    POC_export = -sinking_flux(1, 1, k_export, grid, model.advection.POC.z, Val(:POC), biogeochemistry, (; POC = tracers["POC"][n]))
+    GOC_export = -sinking_flux(1, 1, k_export, grid, model.advection.GOC.z, Val(:GOC), biogeochemistry, (; GOC = tracers["GOC"][n]))
 
-    GOC = interior(tracers["GOC"][n], 1, 1, grid.Nz-20)[1]
-    wGOC = biogeochemical_drift_velocity(model.biogeochemistry, Val(:GOC)).w[1, 1, grid.Nz-20]
-
-    carbon_export[n] = (POC * wPOC + GOC * wGOC)
+    carbon_export[n] = POC_export + GOC_export
 end
 
 using CairoMakie
 
 fig = Figure(size = (4000, 2100), fontsize = 20);
 
-axis_kwargs = (xlabel = "Time (days)", ylabel = "z (m)", limits = ((180, times[end] / days), (-400, 0)))
+start_day = 1
+end_day   = 5594
+
+axis_kwargs = (xlabel = "Time (days)", ylabel = "z (m)", limits = ((start_day, times[end_day] / days), (-200, 0)))
 
 for (n, name) in enumerate(keys(model.tracers))
-    i = floor(Int, (n-1)/4) + 1
-    j = mod(2 * (n-1), 8) + 1
-    ax = Axis(fig[i, j]; title = "$name", axis_kwargs...)
-    hm = heatmap!(ax, times[180:end]./days, z, interior(tracers["$name"], 1, 1, :, 180:731)')
-    Colorbar(fig[i, j+1], hm)
-    lines!(ax, times[180:end]./days, t->MLD(t*day), linewidth = 2, color = :black, linestyle = :dash)
-    lines!(ax, times[180:end]./days, interior(internal_fields["euphotic_depth"], 1, 1, 1, 180:731), linewidth = 2, color = :white, linestyle = :dash)
+    if !(name == :S)
+        i = floor(Int, (n-1)/4) + 1
+        j = mod(2 * (n-1), 8) + 1
+        ax = Axis(fig[i, j]; title = "$name", axis_kwargs...)
+        hm = heatmap!(ax, times[start_day:end]./days, z, interior(tracers["$name"], 1, 1, :, start_day:end_day)')
+        Colorbar(fig[i, j+1], hm)
+        lines!(ax, times[start_day:end_day]./days, t->MLD(t*day), linewidth = 2, color = :black, linestyle = :dash)
+        lines!(ax, times[start_day:end_day]./days, interior(internal_fields["euphotic_depth"], 1, 1, 1, start_day:end_day), linewidth = 2, color = :white, linestyle = :dash)
+    end
 end
 
 ax = Axis(fig[7, 3]; title = "log10(Calcite saturation), looks temperature dominated", axis_kwargs...)
-hm = heatmap!(ax, times[180:end]./days, z, log10.(interior(internal_fields["calcite_saturation"], 1, 1, :, 180:731)'), colorrange = (-173, -95))
+hm = heatmap!(ax, times[start_day:end_day]./days, z, log10.(interior(internal_fields["calcite_saturation"], 1, 1, :, start_day:end_day)'), colorrange = (-173, -95))
 Colorbar(fig[7, 4], hm)
+
+ax = Axis(fig[7, 5]; title = "PAR", axis_kwargs...)
+hm = heatmap!(ax, times[start_day:end_day]./days, z, log10.(interior(internal_fields["PAR"], 1, 1, :, start_day:end_day)'))
+Colorbar(fig[7, 6], hm)
 
 CO₂_molar_mass = (12 + 2 * 16) * 1e-3 # kg / mol
 
-axDIC = Axis(fig[7, 5], xlabel = "Time (days)", ylabel = "Flux (kgCO₂/m²/year)",
+axDIC = Axis(fig[7, 7], xlabel = "Time (days)", ylabel = "Flux (kgCO₂/m²/year)",
                          title = "Air-sea CO₂ flux and Sinking", limits = ((0, times[end] / days), nothing))
 
-lines!(axDIC, times[180:731] / days, air_sea_CO₂_flux[180:731] / 1e3 * CO₂_molar_mass * year, linewidth = 3, label = "Air-sea flux")
-lines!(axDIC, times[180:731] / days, carbon_export[180:731] / 1e3    * CO₂_molar_mass * year, linewidth = 3, label = "Sinking export")
-Legend(fig[7, 6], axDIC, framevisible = false)
+lines!(axDIC, times[start_day:end_day] / days, air_sea_CO₂_flux[start_day:end_day] / 1e3 * CO₂_molar_mass * year, linewidth = 3, label = "Air-sea flux")
+lines!(axDIC, times[start_day:end_day] / days, carbon_export[start_day:end_day] / 1e3    * CO₂_molar_mass * year, linewidth = 3, label = "Sinking below mixed layer")
+Legend(fig[7, 8], axDIC, framevisible = false)
 
 fig
+
+
+# TODO:
+# - aggregation
+# - check flux feeding
+# - Si looks like its erroniously growing
