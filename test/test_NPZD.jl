@@ -4,16 +4,13 @@ using OceanBioME: NutrientPhytoplanktonZooplanktonDetritus
 using Oceananigans
 
 function test_NPZD(grid, sinking, open_bottom)
-    PAR = CenterField(grid)
-
+    
     if sinking
         model = NonhydrostaticModel(;grid,
-                                     biogeochemistry = NutrientPhytoplanktonZooplanktonDetritus(;grid, open_bottom),
-                                     auxiliary_fields = (; PAR))
+                                     biogeochemistry = NutrientPhytoplanktonZooplanktonDetritus(;grid, open_bottom))
     else
         model = NonhydrostaticModel(;grid,
-                                     biogeochemistry = NutrientPhytoplanktonZooplanktonDetritus(;grid, sinking_speeds = NamedTuple()),
-                                     auxiliary_fields = (; PAR))
+                                     biogeochemistry = NutrientPhytoplanktonZooplanktonDetritus(;grid, sinking_speeds = NamedTuple()))
     end
 
     # correct tracers and auxiliary fields have been setup, and order has not changed
@@ -21,7 +18,7 @@ function test_NPZD(grid, sinking, open_bottom)
 
     @test Oceananigans.Biogeochemistry.required_biogeochemical_tracers(model.biogeochemistry) == required_tracers
     @test all(tracer ∈ keys(model.tracers) for tracer in required_tracers)
-    @test :PAR ∈ keys(model.auxiliary_fields)
+    @test :PAR ∈ keys(Oceananigans.Biogeochemistry.biogeochemical_auxiliary_fields(model.biogeochemistry))
 
     # checks model works with zero values
     time_step!(model, 1.0)
