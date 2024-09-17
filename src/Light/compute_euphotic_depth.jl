@@ -3,7 +3,7 @@ using Oceananigans.Fields: ConstantField, ZeroField
 @kernel function _compute_euphotic_depth!(euphotic_depth, PAR, grid, cutoff)
     i, j = @index(Global, NTuple)
 
-    surface_PAR = @inbounds PAR[i, j, grid.Nz]
+    surface_PAR = @inbounds (PAR[i, j, grid.Nz] + PAR[i, j, grid.Nz + 1])/2
 
     @inbounds euphotic_depth[i, j] = -Inf
 
@@ -19,7 +19,7 @@ using Oceananigans.Fields: ConstantField, ZeroField
 
             zₖ₊₁ = znode(i, j, k + 1, grid, Center(), Center(), Center())
 
-            euphotic_depth[i, j] = zₖ₊₁ + (surface_PAR * cutoff - PARₖ₊₁) * (zₖ - zₖ₊₁)/ (PARₖ - PARₖ₊₁)
+            euphotic_depth[i, j] = zₖ + (log(surface_PAR * cutoff) - log(PARₖ)) * (zₖ - zₖ₊₁) / (log(PARₖ) - log(PARₖ₊₁))
         end
     end
 end
