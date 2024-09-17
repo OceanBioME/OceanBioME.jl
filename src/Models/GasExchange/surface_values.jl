@@ -13,7 +13,7 @@ end
     x = xnode(i, j, grid.Nz, grid, Center(), Center(), Center())
     y = ynode(i, j, grid.Nz, grid, Center(), Center(), Center())
 
-    return f.func(x, y, t, args...)
+    return f.func(x, y, t)
 end
 
 struct DiscreteSurfaceFuncton{F}
