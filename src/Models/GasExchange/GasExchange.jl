@@ -40,6 +40,7 @@ include("gas_exchange.jl")
 include("carbon_dioxide_concentration.jl")
 include("schmidt_number.jl")
 include("gas_transfer_velocity.jl")
+include("gas_solubility.jl")
 
 using .ScaledGasTransferVelocity
 
@@ -130,7 +131,7 @@ specified by the the `OxygenConcentration` in the base model, and `air_concentra
 """
 OxygenGasExchangeBoundaryCondition(; transfer_velocity = SchmidtScaledTransferVelocity(; schmidt_number = OxygenPolynomialSchmidtNumber()),
                                      water_concentration = OxygenConcentration(),
-                                     air_concentration = 9352.7, # mmolO₂/m³
+                                     air_concentration = PartiallySolubleGas(9352.7, OxygenSolubility()), # mmolO₂/m³
                                      wind_speed = 2,
                                      kwargs...) = 
     GasExchangeBoundaryCondition(; water_concentration, air_concentration, transfer_velocity, wind_speed, kwargs...)
