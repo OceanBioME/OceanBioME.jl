@@ -43,7 +43,7 @@ end
 
     photosynthesis = nitrate_consumption + ammonia_consumption
 
-    fixation = θ_nitrif * nitrogen_fixation(nitrogen, bgc, P, PChl, PFe, NO₃, NH₄, PO₄, Fe, Si, T, Si′, PAR)
+    fixation = θ_nitrif * nitrogen_fixation(bgc.nitrogen, bgc, P, PChl, PFe, NO₃, NH₄, PO₄, Fe, Si, T, Si′, PAR)
 
     return photosynthesis + fixation - zooplankton_respiration - upper_trophic_respiration - nitrif - remin - denit
 end
