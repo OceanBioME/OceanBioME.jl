@@ -6,6 +6,10 @@ using Oceananigans.Utils: launch!
 ##### generic integration
 #####
 
+_compute_mixed_layer_mean!(Cₘₓₗ::ConstantField, mixed_layer_depth, C, grid) = nothing
+_compute_mixed_layer_mean!(Cₘₓₗ::ZeroField, mixed_layer_depth, C, grid) = nothing
+_compute_mixed_layer_mean!(Cₘₓₗ::Nothing, mixed_layer_depth, C, grid) = nothing
+
 @kernel function _compute_mixed_layer_mean!(Cₘₓₗ, mixed_layer_depth, C, grid)
     i, j = @index(Global, NTuple)
 
@@ -33,10 +37,6 @@ end
 #####
 ##### Mean mixed layer diffusivity
 #####
-compute_mean_mixed_layer_vertical_diffusivity!(κ::ConstantField, mixed_layer_depth, model) = nothing
-compute_mean_mixed_layer_vertical_diffusivity!(κ::ZeroField, mixed_layer_depth, model) = nothing
-compute_mean_mixed_layer_vertical_diffusivity!(κ::Nothing, mixed_layer_depth, model) = nothing
-
 compute_mean_mixed_layer_vertical_diffusivity!(κ, mixed_layer_depth, model) =
     compute_mean_mixed_layer_vertical_diffusivity!(model.closure, κ, mixed_layer_depth, model.diffusivity_fields, model.grid)
 
