@@ -48,7 +48,7 @@ end
                forcing = NamedTuple(),
                timestepper = :RungeKutta3,
                clock = Clock(; time = 0.0),
-               prescribed_tracers::PT = (T = (t) -> 0, ))
+               prescribed_tracers::PT = NamedTuple())
 
 Constructs a box model of a `biogeochemistry` model. Once this has been constructed you can set initial condiitons by `set!(model, X=1.0...)`.
 
@@ -66,7 +66,7 @@ function BoxModel(; biogeochemistry::B,
                     forcing = NamedTuple(),
                     timestepper = :RungeKutta3,
                     clock::C = Clock(; time = 0.0),
-                    prescribed_tracers::PT = (T = (t) -> 0, )) where {B, C, PT}
+                    prescribed_tracers::PT = NamedTuple()) where {B, C, PT}
 
     variables = required_biogeochemical_tracers(biogeochemistry)
     fields = NamedTuple{variables}([CenterField(grid) for var in eachindex(variables)])
