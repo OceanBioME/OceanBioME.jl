@@ -12,7 +12,7 @@ function update_biogeochemical_state!(model, bgc::PISCES)
     
     compute_calcite_saturation!(bgc.carbon_chemistry, bgc.calcite_saturation, model)
 
-    #update_yearly_maximum_silicate!(bgc, model)
+    #update_silicate_climatology!(bgc, model)
 
     return nothing
 end

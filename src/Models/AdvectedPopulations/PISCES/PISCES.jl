@@ -102,7 +102,7 @@ struct PISCES{NP, DP, SZ, BZ, DM, PM, NI, FE, SI, OX, PO, CA, CE, FT, LA, DL, ML
 
                         mixed_layer_depth :: ML
                            euphotic_depth :: EU
-                  yearly_maximum_silicate :: MS
+                     silicate_climatology :: MS
 
     mean_mixed_layer_vertical_diffusivity :: VD
                    mean_mixed_layer_light :: MP
@@ -137,7 +137,7 @@ const CARBON_SYSTEM = Union{Val{:DIC}, Val{:Alk}}
 @inline biogeochemical_auxiliary_fields(bgc::PISCES) = 
     (zₘₓₗ = bgc.mixed_layer_depth, 
      zₑᵤ = bgc.euphotic_depth, 
-     Si′ = bgc.yearly_maximum_silicate, 
+     Si′ = bgc.silicate_climatology, 
      Ω = bgc.calcite_saturation,
      κ = bgc.mean_mixed_layer_vertical_diffusivity,
      mixed_layer_PAR = bgc.mean_mixed_layer_light)
@@ -261,7 +261,7 @@ function PISCES(; grid,
                   mixed_layer_depth = Field{Center, Center, Nothing}(grid),
                   euphotic_depth = Field{Center, Center, Nothing}(grid),
 
-                  yearly_maximum_silicate = ConstantField(7.5),
+                  silicate_climatology = ConstantField(7.5),
 
                   mean_mixed_layer_vertical_diffusivity = Field{Center, Center, Nothing}(grid),
                   mean_mixed_layer_light = Field{Center, Center, Nothing}(grid),
@@ -327,7 +327,7 @@ function PISCES(; grid,
                                         mixed_layer_shear, background_shear,
                                         latitude, day_length,
                                         mixed_layer_depth, euphotic_depth,
-                                        yearly_maximum_silicate,
+                                        silicate_climatology,
                                         mean_mixed_layer_vertical_diffusivity, 
                                         mean_mixed_layer_light,
                                         carbon_chemistry, calcite_saturation,
