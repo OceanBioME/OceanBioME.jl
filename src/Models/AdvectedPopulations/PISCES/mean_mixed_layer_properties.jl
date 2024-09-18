@@ -1,4 +1,5 @@
 using Oceananigans.Architectures: architecture
+using Oceananigans.AbstractOperations: AbstractOperation
 using Oceananigans.BoundaryConditions: fill_halo_regions!
 using Oceananigans.Utils: launch!
 
@@ -6,9 +7,20 @@ using Oceananigans.Utils: launch!
 ##### generic integration
 #####
 
-_compute_mixed_layer_mean!(Cₘₓₗ::ConstantField, mixed_layer_depth, C, grid) = nothing
-_compute_mixed_layer_mean!(Cₘₓₗ::ZeroField, mixed_layer_depth, C, grid) = nothing
-_compute_mixed_layer_mean!(Cₘₓₗ::Nothing, mixed_layer_depth, C, grid) = nothing
+function compute_mixed_layer_mean!(Cₘₓₗ, mixed_layer_depth, C, grid)
+    arch = architecture(grid)
+    
+    launch!(arch, grid, :xy, _compute_mixed_layer_mean!, Cₘₓₗ, mixed_layer_depth, C, grid)
+
+    fill_halo_regions!(mean_PAR)
+
+    return nothing
+end
+
+compute_mixed_layer_mean!(Cₘₓₗ::AbstractOperation, mixed_layer_depth, C, grid) = nothing
+compute_mixed_layer_mean!(Cₘₓₗ::ConstantField, mixed_layer_depth, C, grid) = nothing
+compute_mixed_layer_mean!(Cₘₓₗ::ZeroField, mixed_layer_depth, C, grid) = nothing
+compute_mixed_layer_mean!(Cₘₓₗ::Nothing, mixed_layer_depth, C, grid) = nothing
 
 @kernel function _compute_mixed_layer_mean!(Cₘₓₗ, mixed_layer_depth, C, grid)
     i, j = @index(Global, NTuple)
@@ -37,12 +49,15 @@ end
 #####
 ##### Mean mixed layer diffusivity
 #####
-compute_mean_mixed_layer_vertical_diffusivity!(κ::ConstantField, mixed_layer_depth, model) = nothing
-compute_mean_mixed_layer_vertical_diffusivity!(κ::ZeroField, mixed_layer_depth, model) = nothing
-compute_mean_mixed_layer_vertical_diffusivity!(κ::Nothing, mixed_layer_depth, model) = nothing
+
 
 compute_mean_mixed_layer_vertical_diffusivity!(κ, mixed_layer_depth, model) =
     compute_mean_mixed_layer_vertical_diffusivity!(model.closure, κ, mixed_layer_depth, model.diffusivity_fields, model.grid)
+
+# need these to catch when model doesn't have closure (i.e. box model)
+compute_mean_mixed_layer_vertical_diffusivity!(κ::ConstantField, mixed_layer_depth, model) = nothing
+compute_mean_mixed_layer_vertical_diffusivity!(κ::ZeroField, mixed_layer_depth, model) = nothing
+compute_mean_mixed_layer_vertical_diffusivity!(κ::Nothing, mixed_layer_depth, model) = nothing
 
 # if no closure is defined we just assume its pre-set 
 compute_mean_mixed_layer_vertical_diffusivity!(closure::Nothing, 
@@ -51,13 +66,10 @@ compute_mean_mixed_layer_vertical_diffusivity!(closure::Nothing,
                                                diffusivity_fields, grid) = nothing
 
 function compute_mean_mixed_layer_vertical_diffusivity!(closure, mean_mixed_layer_vertical_diffusivity, mixed_layer_depth, diffusivity_fields, grid)
-    arch = architecture(grid)
     # this is going to get messy
     κ = phytoplankton_diffusivity(closure, diffusivity_fields)
 
-    launch!(arch, grid, :xy, _compute_mixed_layer_mean!, mean_mixed_layer_vertical_diffusivity, mixed_layer_depth, κ, grid)
-
-    fill_halo_regions!(mean_mixed_layer_vertical_diffusivity)
+    compute_mixed_layer_mean!(mean_mixed_layer_vertical_diffusivity, mixed_layer_depth, κ, grid)
 
     return nothing
 end
@@ -66,20 +78,8 @@ end
 ##### Mean mixed layer light
 #####
 
-function compute_mean_mixed_layer_light!(mean_PAR, mixed_layer_depth, PAR, model)
-    grid = model.grid
-
-    arch = architecture(grid)
-    
-    launch!(arch, grid, :xy, _compute_mixed_layer_mean!, mean_PAR, mixed_layer_depth, PAR, grid)
-
-    fill_halo_regions!(mean_PAR)
-
-    return nothing
-end
-
-compute_mean_mixed_layer_light!(::ConstantField, args...) = nothing
-compute_mean_mixed_layer_light!(::ZeroField, args...) = nothing
+compute_mean_mixed_layer_light!(mean_PAR, mixed_layer_depth, PAR, model) =
+    compute_mixed_layer_mean!(mean_PAR, mixed_layer_depth, PAR, model.grid)
 
 #####
 ##### Informaiton about diffusivity fields
