@@ -97,26 +97,28 @@ simulation.callbacks[:progress] = Callback(prog, TimeInterval(182days))
 @info "Running the model..."
 run!(simulation)
 
-# ## Load the output
+# load and plot results
 timeseries = FieldDataset("box.jld2")
 
 times = timeseries.fields["P"].times
 
 PAR_timeseries = FieldTimeSeries("box_light.jld2", "PAR")
-# ## And plot
+
 using CairoMakie
 
 fig = Figure(size = (2400, 3600), fontsize = 24)
 
 axs = []
+
+n_start = 1#731
+
 for name in Oceananigans.Biogeochemistry.required_biogeochemical_tracers(biogeochemistry)
     idx = (length(axs))
     push!(axs, Axis(fig[floor(Int, idx/4), Int(idx%4)], ylabel = "$name", xlabel = "years", xticks=(0:40)))
-    lines!(axs[end], times[731:end] / year, timeseries["$name"][731:end], linewidth = 3)
+    lines!(axs[end], times[n_start:end] / year, timeseries["$name"][n_start:end], linewidth = 3)
 end
 
-#Plotting the function of PAR
 push!(axs, Axis(fig[6, 2], ylabel = "PAR", xlabel = "years", xticks=(0:40)))
-lines!(axs[end], times[731:end]/year, PAR_timeseries[731:end], linewidth = 3)
+lines!(axs[end], times[n_start:end]/year, PAR_timeseries[n_start:end], linewidth = 3)
 
 fig

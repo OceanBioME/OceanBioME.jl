@@ -24,8 +24,8 @@ end
 
     upper_trophic_respiration = θ_resp * inorganic_upper_trophic_respiration_product(bgc.mesozooplankton, M, T)
 
-    # not sure I've got this right
-    remin = θ_resp * oxic_remineralisation(bgc.dissolved_organic_matter, bgc, z, Z, M, DOC, NO₃, NH₄, PO₄, Fe, O₂, T, zₘₓₗ, zₑᵤ)
+    remin = (θ_resp + θ_nitrif) * oxic_remineralisation(bgc.dissolved_organic_matter, bgc, z, Z, M, DOC, NO₃, NH₄, PO₄, Fe, O₂, T, zₘₓₗ, zₑᵤ)
+    denit = θ_resp * denitrifcation(bgc.dissolved_organic_matter, bgc, z, Z, M, DOC, NO₃, NH₄, PO₄, Fe, O₂, T, zₘₓₗ, zₑᵤ)
 
     nitrif = θ_nitrif * nitrification(bgc.nitrogen, bgc, NH₄, O₂, mixed_layer_PAR) 
     
@@ -33,15 +33,17 @@ end
 
     diatom_nitrate_consumption = nitrate_uptake(bgc.diatoms, bgc, y, t, D, DChl, DFe, NO₃, NH₄, PO₄, Fe, Si, T, Si′, zₘₓₗ, zₑᵤ, κ, PAR₁, PAR₂, PAR₃)
 
-    nitrate_oxidation = (θ_resp + θ_nitrif) * (nanophytoplankton_nitrate_consumption + diatom_nitrate_consumption)
+    nitrate_consumption = (θ_resp + θ_nitrif) * (nanophytoplankton_nitrate_consumption + diatom_nitrate_consumption)
 
     nanophytoplankton_ammonia_consumption = ammonia_uptake(bgc.nanophytoplankton, bgc, y, t, P, PChl, PFe, NO₃, NH₄, PO₄, Fe, Si, T, Si′, zₘₓₗ, zₑᵤ, κ, PAR₁, PAR₂, PAR₃)
 
     diatom_ammonia_consumption = ammonia_uptake(bgc.diatoms, bgc, y, t, D, DChl, DFe, NO₃, NH₄, PO₄, Fe, Si, T, Si′, zₘₓₗ, zₑᵤ, κ, PAR₁, PAR₂, PAR₃)
 
-    ammonia_oxidation = θ_resp * (nanophytoplankton_ammonia_consumption + diatom_ammonia_consumption)
+    ammonia_consumption = θ_resp * (nanophytoplankton_ammonia_consumption + diatom_ammonia_consumption)
 
-    photosynthesis = nitrate_oxidation + ammonia_oxidation
+    photosynthesis = nitrate_consumption + ammonia_consumption
 
-    return photosynthesis - zooplankton_respiration - upper_trophic_respiration - nitrif - remin
+    fixation = θ_nitrif * nitrogen_fixation(nitrogen, bgc, P, PChl, PFe, NO₃, NH₄, PO₄, Fe, Si, T, Si′, PAR)
+
+    return photosynthesis + fixation - zooplankton_respiration - upper_trophic_respiration - nitrif - remin - denit
 end
