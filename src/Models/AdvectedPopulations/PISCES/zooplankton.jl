@@ -14,7 +14,7 @@
 
     maximum_flux_feeding_rate :: FT
 
-    iron_ratio :: FT = 10^-3 # units?
+    iron_ratio :: FT = 10^-3/122
 
     minimum_growth_efficiency :: FT
     non_assililated_fraction :: FT = 0.3
