@@ -41,14 +41,14 @@ mixed_layer_depth = ConstantField(-100)
 euphotic_depth = ConstantField(-100)
 mean_mixed_layer_vertical_diffusivity = ConstantField(1e-2)
 mean_mixed_layer_light = PAR
-yearly_maximum_silicate = ConstantField(0) # turn off the contribution from enhanced requirments
+silicate_climatology = ConstantField(0) # turn off the contribution from enhanced requirments
 
 biogeochemistry = PISCES(; grid, 
                            sinking_speeds = (POC = 0, GOC = 0), 
                            light_attenuation, 
                            mixed_layer_depth, 
                            euphotic_depth,
-                           yearly_maximum_silicate,
+                           silicate_climatology,
                            mean_mixed_layer_light,
                            mean_mixed_layer_vertical_diffusivity,
                            iron = SimpleIron(0),
@@ -110,7 +110,7 @@ fig = Figure(size = (2400, 3600), fontsize = 24)
 
 axs = []
 
-n_start = 1#731
+n_start = 731
 
 for name in Oceananigans.Biogeochemistry.required_biogeochemical_tracers(biogeochemistry)
     idx = (length(axs))
