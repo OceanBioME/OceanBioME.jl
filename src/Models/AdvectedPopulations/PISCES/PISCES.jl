@@ -68,8 +68,7 @@ import OceanBioME: maximum_sinking_velocity
 import Adapt: adapt_structure, adapt
 import Base: show, summary
 
-import OceanBioME.Models.Sediments: nitrogen_flux, carbon_flux, remineralisation_receiver, sinking_tracers
-struct PISCES{NP, DP, SZ, BZ, DM, PM, NI, FE, SI, OX, PO, CA, CE, FT, LA, DL, ML, EU, MS, DD, VD, MP, CC, CS, SS} <: AbstractContinuousFormBiogeochemistry
+struct PISCES{NP, DP, SZ, BZ, DM, PM, NI, FE, SI, OX, PO, CA, CE, FT, LA, DL, ML, EU, MS, VD, MP, CC, CS, SS} <: AbstractContinuousFormBiogeochemistry
                         nanophytoplankton :: NP
                                   diatoms :: DP
 
@@ -253,8 +252,8 @@ function PISCES(; grid,
                   phosphate_redfield_ratio = 1/122,
                   iron_redfield_ratio = 10^-3,
                   
-                  mixed_layer_shear = 1.0/day,
-                  background_shear = 0.01/day, 
+                  mixed_layer_shear = 1.0,
+                  background_shear = 0.01, 
                   
                   latitude = PrescribedLatitude(45),
                   day_length = day_length_function,
@@ -291,7 +290,7 @@ function PISCES(; grid,
                   particles = nothing,
                   modifiers = nothing)
 
-    @warn "This implementation of PISCES is in early development and has not yet been fully validated"
+    @warn "This implementation of PISCES is in early development and has not yet been validated"
 
     if !isnothing(sediment) && !open_bottom
         @warn "You have specified a sediment model but not `open_bottom` which will not work as the tracer will settle in the bottom cell"

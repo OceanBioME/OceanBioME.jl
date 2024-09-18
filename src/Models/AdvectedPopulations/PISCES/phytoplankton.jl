@@ -94,13 +94,14 @@ end
     production = (1 - δ) * (12 * θ₀ + (θ₁ - θ₀) * ρ) * μ * I 
 
     # mortality
+    θChl = IChl / (12 * I + eps(0.0))
+
     linear_mortality, quadratic_mortality = mortality(phyto, bgc, z, I, zₘₓₗ, L)
 
-    linear_mortality *= IChl / (I + eps(0.0))
-    quadratic_mortality *= IChl / (I + eps(0.0))
+    linear_mortality *= θChl
+    quadratic_mortality *= θChl
     
     # grazing
-    θChl = IChl / (I + eps(0.0))
 
     gZ = phytoplankton_grazing(val_name, bgc.microzooplankton, P, D, Z, POC, T)
     gM = phytoplankton_grazing(val_name, bgc.mesozooplankton, P, D, Z, POC, T)
@@ -206,6 +207,7 @@ end
 
     # enhanced silication in southern ocean
     φ = bgc.latitude(y)
+    
     L₂ = ifelse(φ < 0, Si^3 / (Si^3 + K₂^3), 0)
 
     F₁ = min(μ / (μᵢ * L + eps(0.0)), LFe, LPO₄, LN)
@@ -234,7 +236,7 @@ end
     K = phyto.mortality_half_saturation
     m = phyto.linear_mortality_rate
 
-    backgroound_shear = bgc.background_shear
+    background_shear = bgc.background_shear
     mixed_layer_shear = bgc.mixed_layer_shear
 
     linear_mortality = m * I / (I + K) * I
@@ -242,9 +244,10 @@ end
     w₀ = phyto.base_quadratic_mortality
     w₁ = phyto.maximum_quadratic_mortality
 
-    w = w₀ + w₁ * (1 - L)
+    # this enhanced mortality is parameterised as per NEMO but differs from Aumount 2015 (w₁ * (1 - L))
+    w = w₀ + w₁ * 0.25 * (1 - L^2) / (0.25 + L^2)
     
-    shear = ifelse(z < zₘₓₗ, backgroound_shear, mixed_layer_shear)
+    shear = ifelse(z < zₘₓₗ, background_shear, mixed_layer_shear)
 
     quadratic_mortality = shear * w * I^2
 

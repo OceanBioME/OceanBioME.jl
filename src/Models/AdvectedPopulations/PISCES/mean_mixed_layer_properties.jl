@@ -67,7 +67,7 @@ function compute_mean_mixed_layer_light!(mean_PAR, mixed_layer_depth, PAR, model
 
     arch = architecture(grid)
     
-#    launch!(arch, grid, :xy, _compute_mixed_layer_mean!, mean_PAR, mixed_layer_depth, PAR, grid)
+    launch!(arch, grid, :xy, _compute_mixed_layer_mean!, mean_PAR, mixed_layer_depth, PAR, grid)
 
     fill_halo_regions!(mean_PAR)
 

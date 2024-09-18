@@ -32,7 +32,7 @@ end
 
     # quotas
     θFe  = ifelse(I == 0, 0, IFe / (I + eps(0.0)))
-    θChl = ifelse(I == 0, 0, IChl / (I + eps(0.0)))
+    θChl = ifelse(I == 0, 0, IChl / (12 * I + eps(0.0)))
 
     K̄ = size_factor(L, I)
 

@@ -15,7 +15,7 @@ end
 
     λ̄ = iron.excess_scavenging_enhancement
 
-    λFe = iron_scavenging_rate(bgc.particulate_organic_matter, POC, GOC, CaCO₃, PSi, dust)
+    λFe = iron_scavenging_rate(bgc.particulate_organic_matter, POC, GOC, CaCO₃, PSi)
 
     Fe′ = free_iron(iron, Fe, DOC, T)
     total_ligand_concentration = max(0.6, 0.09 * (DOC + 40) - 3)

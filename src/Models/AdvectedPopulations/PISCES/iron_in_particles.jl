@@ -46,7 +46,7 @@
     total_aggregation = aggregation_to_large * SFe / (POC + eps(0.0))
 
     # scavenging
-    λFe = iron_scavenging_rate(poc, POC, GOC, CaCO₃, PSi, dust)
+    λFe = iron_scavenging_rate(poc, POC, GOC, CaCO₃, PSi)
     
     Fe′ = free_iron(bgc.iron, Fe, DOC, T)
 
@@ -114,7 +114,7 @@ end
     fecal_pelet_production = upper_trophic_fecal_product(bgc.mesozooplankton, M, T) * bgc.mesozooplankton.iron_ratio
 
     # scavenging
-    λFe = iron_scavenging_rate(poc, POC, GOC, CaCO₃, PSi, dust)
+    λFe = iron_scavenging_rate(poc, POC, GOC, CaCO₃, PSi)
     
     Fe′ = free_iron(bgc.iron, Fe, DOC, T)
 

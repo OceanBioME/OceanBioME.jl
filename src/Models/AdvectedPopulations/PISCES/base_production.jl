@@ -3,7 +3,6 @@ abstract type BaseProduction end
 @inline function (μ::BaseProduction)(phyto, bgc, y, t, I, IChl, T, zₘₓₗ, zₑᵤ, κ, PAR₁, PAR₂, PAR₃, L)
     bₜ = μ.temperature_sensetivity
     μ₀ = μ.base_growth_rate
-    α  = μ.initial_slope_of_PI_curve
 
     dark_tollerance = μ.dark_tollerance
 
@@ -16,20 +15,20 @@ abstract type BaseProduction end
     φ = bgc.latitude(y)
     day_length = bgc.day_length(φ, t)
 
-    dark_residence_time = (max(0, zₑᵤ - zₘₓₗ)) ^ 2 / κ
+    dark_residence_time = max(0, zₑᵤ - zₘₓₗ) ^ 2 / κ
 
     fₜ = bₜ ^ T
 
     μᵢ = μ₀ * fₜ
 
-    f₁ = 1.5 * day_length / (day_length + 0.5)
+    f₁ = 1.5 * day_length / (day_length + 0.5day)
 
     f₂ = 1 - dark_residence_time / (dark_residence_time + dark_tollerance)
 
     return μᵢ * f₁ * f₂ * light_limitation(μ, I, IChl, T, PAR, day_length, L) * L
 end
 
-@inline function (μ::BaseProduction)(phyto, bgc, y, t, I, IChl, IFe, NO₃, NH₄, PO₄, Fe, Si, T, Si′, zₘₓₗ, zₑᵤ, κ, PAR₁, PAR₂, PAR₃)
+@inline function (μ::BaseProduction)(phyto, bgc, y, t, I, IChl, IFe, NO₃, NH₄, PO₄, Fe, Si, Si′, T, zₘₓₗ, zₑᵤ, κ, PAR₁, PAR₂, PAR₃)
     L, = phyto.nutrient_limitation(bgc, I, IChl, IFe, NO₃, NH₄, PO₄, Fe, Si, Si′)
 
     return μ(phyto, bgc, y, t, I, IChl, T, zₘₓₗ, zₑᵤ, κ, PAR₁, PAR₂, PAR₃, L)
@@ -39,7 +38,7 @@ end
          base_growth_rate :: FT = 0.6 / day
   temperature_sensetivity :: FT = 1.066
           dark_tollerance :: FT
-initial_slope_of_PI_curve :: FT = 2.0 / day
+initial_slope_of_PI_curve :: FT = 2.0
 end
 
 @inline function light_limitation(μ::NutrientLimitedProduction, I, IChl, T, PAR, day_length, L)
@@ -47,8 +46,8 @@ end
 
     μᵢ = base_production_rate(μ, T)
 
-    θ = IChl / (I + eps(0.0))
-
+    θ = IChl / (12 * I + eps(0.0))
+    # P-I slope etc. is computed compleltly differently in NEMO PISCES!!!!!
     return 1 - exp(-α * θ * PAR / (day_length * μᵢ * L + eps(0.0)))
 end
 
@@ -57,7 +56,7 @@ end
          base_growth_rate :: FT = 0.6 / day
   temperature_sensetivity :: FT = 1.066
           dark_tollerance :: FT
-initial_slope_of_PI_curve :: FT = 2.0/day
+initial_slope_of_PI_curve :: FT = 2.0
    basal_respiration_rate :: FT = 0.033/day
     reference_growth_rate :: FT = 1.0/day
 end
@@ -67,7 +66,7 @@ end
     bᵣ = μ.basal_respiration_rate
     μᵣ = μ.reference_growth_rate
 
-    θ = IChl / (I + eps(0.0))
+    θ = IChl / (12 * I + eps(0.0))
 
     return 1 - exp(-α * θ * PAR / (day_length * (bᵣ + μᵣ) * L))
 end
@@ -79,7 +78,7 @@ end
     φ = bgc.latitude(y)
     day_length = bgc.day_length(φ, t)
 
-    f₁ = 1.5 * day_length / (day_length + 0.5)
+    f₁ = 1.5 * day_length / (day_length + 0.5day)
 
     μ = growth_rate(phyto, bgc, y, t, I, IChl, T, zₘₓₗ, zₑᵤ, κ, PAR₁, PAR₂, PAR₃, L)
     μ̌ = μ / f₁
