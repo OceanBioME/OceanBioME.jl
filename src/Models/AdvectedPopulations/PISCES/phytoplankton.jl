@@ -244,7 +244,6 @@ end
     w₀ = phyto.base_quadratic_mortality
     w₁ = phyto.maximum_quadratic_mortality
 
-    # this enhanced mortality is parameterised as per NEMO but differs from Aumount 2015 (w₁ * (1 - L))
     w = w₀ + w₁ * 0.25 * (1 - L^2) / (0.25 + L^2)
     
     shear = ifelse(z < zₘₓₗ, background_shear, mixed_layer_shear)
