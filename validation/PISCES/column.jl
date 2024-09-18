@@ -78,11 +78,11 @@ model = HydrostaticFreeSurfaceModel(; grid,
 @info "Setting initial values..."
 set!(model, P = 6.95, D = 6.95, Z = 0.695,  M = 0.695, 
             PChl = 1.671,  DChl = 1.671, 
-            PFe =7e-6 * 1e9 / 1e6 * 6.95, DFe = 7e-6 * 1e9 / 1e6 * 6.95, 
+            PFe = 7e-6 * 1e9 / 1e6 * 6.95, DFe = 7e-6 * 1e9 / 1e6 * 6.95, 
             DSi = 1.162767, 
             NO₃ = 6.202, NH₄ = 0.25*6.202, 
             PO₄ = 0.8722, Fe = 1.256, Si = 7.313, 
-            CaCO₃ = 0.001,
+            CaCO₃ = 100,
             DIC = 2139.0, Alk = 2366.0, 
             O₂ = 237.0, S = 35, T = (z) -> temp(z, 0)) #Using Copernicus Data (26.665, 14.), Calcite is not correct, but this is to see it on the graphs
 
@@ -91,7 +91,7 @@ set!(model, P = 6.95, D = 6.95, Z = 0.695,  M = 0.695,
 # - Show the progress of the simulation
 # - Store the model and particles output
 
-simulation = Simulation(model, Δt = 1hours, stop_time = 2years)
+simulation = Simulation(model, Δt = 0.5hours, stop_time = 2years)
 
 progress_message(sim) = @printf("Iteration: %04d, time: %s, Δt: %s, wall time: %s\n",
                                 iteration(sim),
@@ -171,8 +171,6 @@ S = ConstantField(35)
 
 using Oceananigans.Biogeochemistry: biogeochemical_drift_velocity
 
-k_export = floor(Int, grid.Nz - 200/minimum_zspacing(grid))
-
 for (n, t) in enumerate(times)
     clock.time = t
 
@@ -190,8 +188,8 @@ using CairoMakie
 
 fig = Figure(size = (4000, 2100), fontsize = 20);
 
-start_day = 1
-end_day   = 5594
+start_day = 30
+end_day   = 731
 
 axis_kwargs = (xlabel = "Time (days)", ylabel = "z (m)", limits = ((start_day, times[end_day] / days), (-200, 0)))
 
@@ -207,11 +205,11 @@ for (n, name) in enumerate(keys(model.tracers))
     end
 end
 
-ax = Axis(fig[7, 3]; title = "log10(Calcite saturation), looks temperature dominated", axis_kwargs...)
+ax = Axis(fig[7, 3]; title = "log₁₀((Calcite saturation)", axis_kwargs...)
 hm = heatmap!(ax, times[start_day:end_day]./days, z, log10.(interior(internal_fields["calcite_saturation"], 1, 1, :, start_day:end_day)'), colorrange = (-173, -95))
 Colorbar(fig[7, 4], hm)
 
-ax = Axis(fig[7, 5]; title = "PAR", axis_kwargs...)
+ax = Axis(fig[7, 5]; title = "log₁₀(PAR)", axis_kwargs...)
 hm = heatmap!(ax, times[start_day:end_day]./days, z, log10.(interior(internal_fields["PAR"], 1, 1, :, start_day:end_day)'))
 Colorbar(fig[7, 6], hm)
 
