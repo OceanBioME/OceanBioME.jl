@@ -1,40 +1,23 @@
 """
 Pelagic Interactions Scheme for Carbon and Ecosystem Studies (PISCES) model.
 
-Tracers
-=======
+This is *not* currently an official version supported by the PISCES community
+and is not yet verified to be capable of producing results mathcing that of the 
+operational PISCES configuration. This is a work in progress, please open an 
+issue or discusison if you'd like to know more.
 
-* Nano-phytoplankton: P (μmolC/L)
-* Diatoms: D (μmolC/L)
-* Zooplankton: Z (μmolC/L)
-* Mesozooplankton: M (μmolC/L)
-* Chlorophyll in nano-phytoplankton: Pᶜʰˡ (μgChl/L)
-* Chlorophyll in diatoms: Dᶜʰˡ (μgChl/L)
-* Iron in nano-phytoplanktons: Pᶠᵉ (nmolFe/L) 
-* Iron in diatoms: Dᶠᵉ (nmolFe/L) 
-* Silicon in diatoms: Dˢⁱ (μmolSi/L)
-
-* Dissolved organic carbon: DOC (μmolC/L)
-* Small sinking particles : POC (μmolC/L)
-* Large sinking particles: GOC (μmolC/L)
-* Iron in small particles: SFe (nmolFe/L) 
-* Iron in large particles: BFe (nmolFe/L) 
-* Silicate in large particles : PSi (μmolSi/L)
-* Nitrates: NO₃ (μmolN/L)
-* Ammonium: NH₄ (μmolN/L)
-* Phosphate: PO₄ (μmolP/L)
-* Dissolved iron: Fe (nmolFe/L)
-* Silicate: Si (μmolSi/L)
-* Calcite: CaCO₃ (μmolC/L)
-* Dissolved oxygen: O₂ (μmolO₂/L)
-* Dissolved inorganic carbon: DIC (μmolC/L)
-* Total alkalinity: Alk (μmolN/L)
-
-
-Required submodels
-==================
-# you will need something like this, they use a different PAR model but I wouldn't worry about that for now, you might also need temperatre and salinity (not sure)
-* Photosynthetically available radiation: PAR (W/m²)
+Notes to developers
+===================
+Part of the vision for this implementation of PISCES is to harness the features
+of Julia that would allow it to be fully modular. An obvious step to improve the
+ease of this would be to do some minor refactoring to group the phytoplankton 
+classes, and zooplankton classes together, and for the other groups to generically 
+call the whole lot. This may cause some issues with argument passing, and although
+it may not be the best way todo it my first thought is to pass them round as named
+tuples built from something like,
+```
+phytoplankton_tracers = phytoplankton_arguments(bgc.phytoplankton, args...)
+```
 
 """
 module PISCESModel
@@ -92,7 +75,6 @@ struct PISCES{NP, DP, SZ, BZ, DM, PM, NI, FE, SI, OX, PO, CA, CE, FT, LA, DL, ML
 
                   nitrogen_redfield_ratio :: FT
                  phosphate_redfield_ratio :: FT
-                      iron_redfield_ratio :: FT
 
                         mixed_layer_shear :: FT
                          background_shear :: FT
@@ -179,34 +161,201 @@ include("update_state.jl")
 include("coupling_utils.jl")
 
 # to change to new production change `NutrientLimitedProduction` for `GrowthRespirationLimitedProduction`
+"""
+    PISCES(; grid,
+             nanophytoplankton = 
+                MixedMondoPhytoplankton(
+                    growth_rate = NutrientLimitedProduction(dark_tollerance = 3days),
+                    nutrient_limitation = 
+                        NitrogenIronPhosphateSilicateLimitation(minimum_ammonium_half_saturation = 0.013,
+                                                                minimum_nitrate_half_saturation = 0.13, 
+                                                                minimum_phosphate_half_saturation = 0.8,
+                                                                half_saturation_for_iron_uptake = 1.0,
+                                                                silicate_limited = false),
+                    blue_light_absorption = 2.1, 
+                    green_light_absorption = 0.42, 
+                    red_light_absorption = 0.4,
+                    maximum_quadratic_mortality = 0.0,
+                    maximum_chlorophyll_ratio = 0.033),
+
+             diatoms = 
+                MixedMondoPhytoplankton(
+                    growth_rate = NutrientLimitedProduction(dark_tollerance = 4days),
+                    nutrient_limitation = 
+                        NitrogenIronPhosphateSilicateLimitation(minimum_ammonium_half_saturation = 0.039,
+                                                                minimum_nitrate_half_saturation = 0.39, 
+                                                                minimum_phosphate_half_saturation = 2.4,
+                                                                half_saturation_for_iron_uptake = 3.0,
+                                                                silicate_limited = true),
+                    blue_light_absorption = 1.6, 
+                    green_light_absorption = 0.69, 
+                    red_light_absorption = 0.7,
+                    maximum_quadratic_mortality = 0.03/day,
+                    maximum_chlorophyll_ratio = 0.05),
+             
+             microzooplankton = Zooplankton(maximum_grazing_rate = 3/day,
+                                            preference_for_nanophytoplankton = 1.0,
+                                            preference_for_diatoms = 0.5,
+                                            preference_for_particulates = 0.1,
+                                            preference_for_zooplankton = 0.0,
+                                            quadratic_mortality = 0.004/day,
+                                            linear_mortality = 0.03/day,
+                                            minimum_growth_efficiency = 0.3,
+                                            maximum_flux_feeding_rate = 0.0,
+                                            undissolved_calcite_fraction = 0.5),
+
+             mesozooplankton = Zooplankton(maximum_grazing_rate = 0.75/day,
+                                           preference_for_nanophytoplankton = 0.3,
+                                           preference_for_diatoms = 1.0,
+                                           preference_for_particulates = 0.3,
+                                           preference_for_zooplankton = 1.0,
+                                           quadratic_mortality = 0.03/day,
+                                           linear_mortality = 0.005/day,
+                                           minimum_growth_efficiency = 0.35,
+                                           maximum_flux_feeding_rate = 2e3 / 1e6 / day,
+                                           undissolved_calcite_fraction = 0.75),
+             
+             dissolved_organic_matter = DissolvedOrganicMatter(),
+             particulate_organic_matter = TwoCompartementParticulateOrganicMatter(),
+             
+             nitrogen = NitrateAmmonia(),
+             iron = SimpleIron(),
+             silicate = Silicate(),
+             oxygen = Oxygen(),
+             phosphate = Phosphate(),
+             
+             calcite = Calcite(),
+             carbon_system = CarbonateSystem(),
+
+             # from Aumount 2005 rather than 2015 since it doesn't work the other way around
+             first_anoxia_thresehold = 6.0,
+             second_anoxia_thresehold = 1.0,
+
+             nitrogen_redfield_ratio = 16/122,
+             phosphate_redfield_ratio = 1/122,
+             
+             mixed_layer_shear = 1.0,
+             background_shear = 0.01, 
+             
+             latitude = PrescribedLatitude(45),
+             day_length = day_length_function,
+             
+             mixed_layer_depth = Field{Center, Center, Nothing}(grid),
+             euphotic_depth = Field{Center, Center, Nothing}(grid),
+
+             silicate_climatology = ConstantField(7.5),
+
+             mean_mixed_layer_vertical_diffusivity = Field{Center, Center, Nothing}(grid),
+             mean_mixed_layer_light = Field{Center, Center, Nothing}(grid),
+
+             carbon_chemistry = CarbonChemistry(),
+             calcite_saturation = CenterField(grid),
+
+             surface_photosynthetically_active_radiation = default_surface_PAR,
+
+             light_attenuation =
+               MultiBandPhotosyntheticallyActiveRadiation(; grid, 
+                                                            surface_PAR = surface_photosynthetically_active_radiation),
+
+             sinking_speeds = (POC = 2/day, 
+                               # might be more efficient to just precompute this
+                               GOC = KernelFunctionOperation{Center, Center, Face}(DepthDependantSinkingSpeed(), 
+                                                                                   grid, 
+                                                                                   mixed_layer_depth, 
+                                                                                   euphotic_depth)),
+             open_bottom = true,
+
+             scale_negatives = false,
+             invalid_fill_value = NaN,
+             
+             sediment = nothing,
+             particles = nothing,
+             modifiers = nothing)
+
+Constructs an instance of the PISCES biogeochemical model.
+
+
+Keyword Arguments
+=================
+
+- `grid`: (required) the geometry to build the model on
+- `nanophytoplankton`: nanophytoplankton (`P`, `PChl`, `PFe``) evolution parameterisation such as `MixedMondoPhytoplankton`
+- `diatoms`: diatom (`D`, `DChl`, `DFe`, `DSi`) evolution parameterisation such as `MixedMondoPhytoplankton`
+- `microzooplankton`: microzooplankton (`Z`) evolution parameterisation
+- `mesozooplankton`: mesozooplankton (`M`) evolution parameterisation
+- `dissolved_organic_matter`: parameterisaion for the evolution of dissolved organic matter (`DOC`)
+- `particulate_organic_matter`: parameterisation for the evolution of particulate organic matter (`POC`, `GOC`, `SFe`, `BFe`, `PSi`)
+- `nitrogen`: parameterisation for the nitrogen compartements (`NH₄` and `NO₃`)
+- `iron`: parameterisation for iron (`Fe`), currently the "complex chemistry" of Aumount 2015 is not implemented
+- `silicate`: parameterisaion for silicate (`Si`)
+- `oxygen`: parameterisaion for oxygen (`O₂`)
+- `phosphate`: parameterisaion for phosphate (`PO₄`)
+- `calcite`: parameterisaion for calcite (`CaCO₃`)
+- `carbon_system`: parameterisation for the evolution of the carbon system (`DIC` and `Alk`alinity)
+- `first_anoxia_thresehold` and `second_anoxia_thresehold`: thresholds in anoxia parameterisation
+- `nitrogen_redfield_ratio` and `phosphate_redfield_ratio`: the assumed element ratios N/C and P/C 
+- `mixed_layer_shear` and `background_shear`: the mixed layer and background shear rates, TODO: move this to a computed field
+- `latitude`: model latitude, should be `PrescribedLatitude` for `RectilinearGrid`s and `ModelLatitude` for grids providing their own latitude
+- `day_length`: parameterisation for day length based on time of year and latitude, you may wish to change this to (φ, t) -> 1day if you
+   want to ignore the effect of day length, or something else if you're modelling a differen planet
+- `mixed_layer_depth`: an `AbstractField` containing the mixed layer depth (to be computed during update state)
+- `euphotic`: an `AbstractField` containing the euphotic depth, the depth where light reduces to 1/1000 of 
+   the surface value (computed during update state)
+- `silicate_climatology`: an `AbstractField` containing the silicate climatology which effects the diatoms silicate
+   half saturation constant
+- `mean_mixed_layer_vertical_diffusivity`: an `AbstractField` containing the mean mixed layer vertical diffusivity 
+   (to be computed during update state)
+- `mean_mixed_layer_light`: an `AbstractField` containing the mean mixed layer light (computed during update state)
+- `carbon_chemistry`: the `CarbonChemistry` model used to compute the calicte saturation
+- `calcite_saturation`: an `AbstractField` containing the calcite saturation  (computed during update state)
+- `surface_photosynthetically_active_radiation`: funciton for the photosynthetically available radiation at the surface
+- `light_attenuation_model`: light attenuation model which integrated the attenuation of available light
+- `sinking_speed`: named tuple of constant sinking speeds, or fields (i.e. `ZFaceField(...)`) for any tracers which sink 
+  (convention is that a sinking speed is positive, but a field will need to follow the usual down being negative)
+- `open_bottom`: should the sinking velocity be smoothly brought to zero at the bottom to prevent the tracers leaving the domain
+- `scale_negatives`: scale negative tracers?
+- `particles`: slot for `BiogeochemicalParticles`
+- `modifiers`: slot for components which modify the biogeochemistry when the tendencies have been calculated or when the state is updated
+
+All parameterisations default to the operaitonal version of PISCES as close as possible.
+
+Notes
+=====
+Currently only `MixedMondoPhytoplankton` are implemented, and some work should be done to generalise
+the classes to a single `phytoplankton` if more classes are required (see 
+`OceanBioME.Models.PISCESModel` docstring). Similarly, if a more generic `particulate_organic_matter`
+was desired a way to specify arbitary tracers for arguments would be required.
+"""
 function PISCES(; grid,
                   nanophytoplankton = 
-                    Phytoplankton(growth_rate = NutrientLimitedProduction(dark_tollerance = 3days),
-                                  nutrient_limitation = 
-                                    NitrogenIronPhosphateSilicateLimitation(minimum_ammonium_half_saturation = 0.013,
-                                                                            minimum_nitrate_half_saturation = 0.13, 
-                                                                            minimum_phosphate_half_saturation = 0.8,
-                                                                            half_saturation_for_iron_uptake = 1.0,
-                                                                            silicate_limited = false),
-                                  blue_light_absorption = 2.1, 
-                                  green_light_absorption = 0.42, 
-                                  red_light_absorption = 0.4,
-                                  maximum_quadratic_mortality = 0.0,
-                                  maximum_chlorophyll_ratio = 0.033),
+                    MixedMondoPhytoplankton(
+                        growth_rate = NutrientLimitedProduction(dark_tollerance = 3days),
+                        nutrient_limitation = 
+                          NitrogenIronPhosphateSilicateLimitation(minimum_ammonium_half_saturation = 0.013,
+                                                                  minimum_nitrate_half_saturation = 0.13, 
+                                                                  minimum_phosphate_half_saturation = 0.8,
+                                                                  half_saturation_for_iron_uptake = 1.0,
+                                                                  silicate_limited = false),
+                        blue_light_absorption = 2.1, 
+                        green_light_absorption = 0.42, 
+                        red_light_absorption = 0.4,
+                        maximum_quadratic_mortality = 0.0,
+                        maximum_chlorophyll_ratio = 0.033),
 
                   diatoms = 
-                    Phytoplankton(growth_rate = NutrientLimitedProduction(dark_tollerance = 4days),
-                                  nutrient_limitation = 
-                                    NitrogenIronPhosphateSilicateLimitation(minimum_ammonium_half_saturation = 0.039,
-                                                                            minimum_nitrate_half_saturation = 0.39, 
-                                                                            minimum_phosphate_half_saturation = 2.4,
-                                                                            half_saturation_for_iron_uptake = 3.0,
-                                                                            silicate_limited = true),
-                                  blue_light_absorption = 1.6, 
-                                  green_light_absorption = 0.69, 
-                                  red_light_absorption = 0.7,
-                                  maximum_quadratic_mortality = 0.03/day,
-                                  maximum_chlorophyll_ratio = 0.05),
+                    MixedMondoPhytoplankton(
+                        growth_rate = NutrientLimitedProduction(dark_tollerance = 4days),
+                        nutrient_limitation = 
+                          NitrogenIronPhosphateSilicateLimitation(minimum_ammonium_half_saturation = 0.039,
+                                                                  minimum_nitrate_half_saturation = 0.39, 
+                                                                  minimum_phosphate_half_saturation = 2.4,
+                                                                  half_saturation_for_iron_uptake = 3.0,
+                                                                  silicate_limited = true),
+                        blue_light_absorption = 1.6, 
+                        green_light_absorption = 0.69, 
+                        red_light_absorption = 0.7,
+                        maximum_quadratic_mortality = 0.03/day,
+                        maximum_chlorophyll_ratio = 0.05),
                   
                   microzooplankton = Zooplankton(maximum_grazing_rate = 3/day,
                                                  preference_for_nanophytoplankton = 1.0,
@@ -250,7 +399,6 @@ function PISCES(; grid,
 
                   nitrogen_redfield_ratio = 16/122,
                   phosphate_redfield_ratio = 1/122,
-                  iron_redfield_ratio = 10^-3,
                   
                   mixed_layer_shear = 1.0,
                   background_shear = 0.01, 
@@ -323,7 +471,7 @@ function PISCES(; grid,
                                         nitrogen, iron, silicate, oxygen, phosphate,
                                         calcite, carbon_system, 
                                         first_anoxia_thresehold, second_anoxia_thresehold,
-                                        nitrogen_redfield_ratio, phosphate_redfield_ratio, iron_redfield_ratio,
+                                        nitrogen_redfield_ratio, phosphate_redfield_ratio,
                                         mixed_layer_shear, background_shear,
                                         latitude, day_length,
                                         mixed_layer_depth, euphotic_depth,

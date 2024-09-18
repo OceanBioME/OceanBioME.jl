@@ -1,7 +1,7 @@
 include("base_production.jl")
 include("nutrient_limitation.jl")
 
-@kwdef struct Phytoplankton{GR, NL, FT}
+@kwdef struct MixedMondoPhytoplankton{GR, NL, FT}
                         growth_rate :: GR
                 nutrient_limitation :: NL
                         
@@ -33,7 +33,7 @@ end
 @inline phytoplankton_grazing(::NANO_PHYTO, args...) = nanophytoplankton_grazing(args...)
 @inline phytoplankton_grazing(::DIATOMS, args...) = diatom_grazing(args...)
 
-@inline function (phyto::Phytoplankton)(val_name::Union{Val{:P}, Val{:D}}, bgc,
+@inline function (phyto::MixedMondoPhytoplankton)(val_name::Union{Val{:P}, Val{:D}}, bgc,
                                         x, y, z, t,
                                         P, D, Z, M, 
                                         PChl, DChl, PFe, DFe, DSi, # we should get rid of DSi and the rest of the Si since it doesn't do anything...
@@ -66,7 +66,7 @@ end
     return production - linear_mortality - quadratic_mortality - grazing
 end
 
-@inline function (phyto::Phytoplankton)(val_name::Union{Val{:PChl}, Val{:DChl}}, bgc,
+@inline function (phyto::MixedMondoPhytoplankton)(val_name::Union{Val{:PChl}, Val{:DChl}}, bgc,
                                         x, y, z, t,
                                         P, D, Z, M, 
                                         PChl, DChl, PFe, DFe, DSi, # we should get rid of DSi and the rest of the Si since it doesn't do anything...
@@ -111,7 +111,7 @@ end
     return production - linear_mortality - quadratic_mortality - grazing
 end
 
-@inline function (phyto::Phytoplankton)(val_name::Union{Val{:PFe}, Val{:DFe}}, bgc,
+@inline function (phyto::MixedMondoPhytoplankton)(val_name::Union{Val{:PFe}, Val{:DFe}}, bgc,
                                         x, y, z, t,
                                         P, D, Z, M, 
                                         PChl, DChl, PFe, DFe, DSi, # we should get rid of DSi and the rest of the Si since it doesn't do anything...
@@ -144,7 +144,7 @@ end
     return production - linear_mortality - quadratic_mortality - grazing
 end
 
-@inline function iron_uptake(phyto::Phytoplankton, bgc, I, IChl, IFe, NO₃, NH₄, PO₄, Fe, Si, Si′, T)
+@inline function iron_uptake(phyto::MixedMondoPhytoplankton, bgc, I, IChl, IFe, NO₃, NH₄, PO₄, Fe, Si, Si′, T)
     δ  = phyto.exudated_fracton
     θFeₘ = phyto.maximum_iron_ratio
 
@@ -161,7 +161,7 @@ end
     return (1 - δ) * θFeₘ * L₁ * L₂ * (1 - θFe / θFeₘ) / (1.05 - θFe / θFeₘ) * μᵢ * I, L
 end
 
-@inline function (phyto::Phytoplankton)(::Val{:DSi}, bgc,
+@inline function (phyto::MixedMondoPhytoplankton)(::Val{:DSi}, bgc,
                                         x, y, z, t,
                                         P, D, Z, M, 
                                         PChl, DChl, PFe, DFe, DSi,
@@ -190,7 +190,7 @@ end
     return production - linear_mortality - quadratic_mortality - grazing
 end
 
-@inline function silicate_uptake(phyto::Phytoplankton, bgc, y, t, D, DChl, DFe, NO₃, NH₄, PO₄, Fe, Si, Si′, T, zₘₓₗ, zₑᵤ, κ, PAR₁, PAR₂, PAR₃)
+@inline function silicate_uptake(phyto::MixedMondoPhytoplankton, bgc, y, t, D, DChl, DFe, NO₃, NH₄, PO₄, Fe, Si, Si′, T, zₘₓₗ, zₑᵤ, κ, PAR₁, PAR₂, PAR₃)
     δ  = phyto.exudated_fracton
 
     K₁ = phyto.silicate_half_saturation
@@ -219,20 +219,20 @@ end
     return (1 - δ) * θ₁ * μ * D, L
 end
 
-@inline function dissolved_exudate(phyto::Phytoplankton, bgc, y, t, I, IChl, IFe, NO₃, NH₄, PO₄, Fe, Si, T, Si′, zₘₓₗ, zₑᵤ, κ, PAR₁, PAR₂, PAR₃)
+@inline function dissolved_exudate(phyto::MixedMondoPhytoplankton, bgc, y, t, I, IChl, IFe, NO₃, NH₄, PO₄, Fe, Si, T, Si′, zₘₓₗ, zₑᵤ, κ, PAR₁, PAR₂, PAR₃)
     δ = phyto.exudated_fracton
 
     μI, = total_production(phyto, bgc, y, t, I, IChl, IFe, NO₃, NH₄, PO₄, Fe, Si, T, Si′, zₘₓₗ, zₑᵤ, κ, PAR₁, PAR₂, PAR₃)
     return δ * μI
 end
 
-@inline function mortality(phyto::Phytoplankton, bgc, z, I, IChl, IFe, NO₃, NH₄, PO₄, Fe, Si, Si′, zₘₓₗ)
+@inline function mortality(phyto::MixedMondoPhytoplankton, bgc, z, I, IChl, IFe, NO₃, NH₄, PO₄, Fe, Si, Si′, zₘₓₗ)
     L, = phyto.nutrient_limitation(bgc, I, IChl, IFe, NO₃, NH₄, PO₄, Fe, Si, Si′)
 
     return mortality(phyto, bgc, z, I, zₘₓₗ, L)
 end
 
-@inline function mortality(phyto::Phytoplankton, bgc, z, I, zₘₓₗ, L)
+@inline function mortality(phyto::MixedMondoPhytoplankton, bgc, z, I, zₘₓₗ, L)
     K = phyto.mortality_half_saturation
     m = phyto.linear_mortality_rate
 
@@ -253,7 +253,7 @@ end
     return linear_mortality, quadratic_mortality
 end
 
-@inline function nitrate_uptake(phyto::Phytoplankton, bgc, y, t, I, IChl, IFe, NO₃, NH₄, PO₄, Fe, Si, T, Si′, zₘₓₗ, zₑᵤ, κ, PAR₁, PAR₂, PAR₃)
+@inline function nitrate_uptake(phyto::MixedMondoPhytoplankton, bgc, y, t, I, IChl, IFe, NO₃, NH₄, PO₄, Fe, Si, T, Si′, zₘₓₗ, zₑᵤ, κ, PAR₁, PAR₂, PAR₃)
     L, _, _, LN, L_NO₃ = phyto.nutrient_limitation(bgc, I, IChl, IFe, NO₃, NH₄, PO₄, Fe, Si, Si′)
 
     μ = phyto.growth_rate(phyto, bgc, y, t, I, IChl, T, zₘₓₗ, zₑᵤ, κ, PAR₁, PAR₂, PAR₃, L) * I
@@ -261,7 +261,7 @@ end
     return μ * L_NO₃ / (LN + eps(0.0))
 end
 
-@inline function ammonia_uptake(phyto::Phytoplankton, bgc, y, t, I, IChl, IFe, NO₃, NH₄, PO₄, Fe, Si, T, Si′, zₘₓₗ, zₑᵤ, κ, PAR₁, PAR₂, PAR₃)
+@inline function ammonia_uptake(phyto::MixedMondoPhytoplankton, bgc, y, t, I, IChl, IFe, NO₃, NH₄, PO₄, Fe, Si, T, Si′, zₘₓₗ, zₑᵤ, κ, PAR₁, PAR₂, PAR₃)
     L, _, _, LN, _, L_NH₄ = phyto.nutrient_limitation(bgc, I, IChl, IFe, NO₃, NH₄, PO₄, Fe, Si, Si′)
 
     μ = phyto.growth_rate(phyto, bgc, y, t, I, IChl, T, zₘₓₗ, zₑᵤ, κ, PAR₁, PAR₂, PAR₃, L) * I
@@ -269,7 +269,7 @@ end
     return μ * L_NH₄ / (LN + eps(0.0))
 end
 
-@inline function total_production(phyto::Phytoplankton, bgc, y, t, I, IChl, IFe, NO₃, NH₄, PO₄, Fe, Si, T, Si′, zₘₓₗ, zₑᵤ, κ, PAR₁, PAR₂, PAR₃)
+@inline function total_production(phyto::MixedMondoPhytoplankton, bgc, y, t, I, IChl, IFe, NO₃, NH₄, PO₄, Fe, Si, T, Si′, zₘₓₗ, zₑᵤ, κ, PAR₁, PAR₂, PAR₃)
     L, = phyto.nutrient_limitation(bgc, I, IChl, IFe, NO₃, NH₄, PO₄, Fe, Si, Si′)
 
     return phyto.growth_rate(phyto, bgc, y, t, I, IChl, T, zₘₓₗ, zₑᵤ, κ, PAR₁, PAR₂, PAR₃, L) * I, L

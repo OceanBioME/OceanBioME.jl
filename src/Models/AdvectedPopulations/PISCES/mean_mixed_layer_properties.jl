@@ -12,7 +12,7 @@ function compute_mixed_layer_mean!(Cₘₓₗ, mixed_layer_depth, C, grid)
     
     launch!(arch, grid, :xy, _compute_mixed_layer_mean!, Cₘₓₗ, mixed_layer_depth, C, grid)
 
-    fill_halo_regions!(mean_PAR)
+    fill_halo_regions!(Cₘₓₗ)
 
     return nothing
 end
