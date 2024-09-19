@@ -5,7 +5,7 @@ export Sediments
 export NPZD, 
        NutrientPhytoplanktonZooplanktonDetritus, 
        LOBSTER,
-       PISCES
+       PISCES, DepthDependantSinkingSpeed, PrescribedLatitude, ModelLatitude
 
 export SLatissima
 
