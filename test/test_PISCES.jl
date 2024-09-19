@@ -66,7 +66,7 @@ function test_PISCES_conservation() # only on CPU please
 
     time_step!(model, 1.0)
 
-    conserved_tracers = OceanBioME.conserved_tracers(biogeochemistry)
+    conserved_tracers = OceanBioME.conserved_tracers(biogeochemistry; ntuple = true)
 
     total_carbon_tendencies = sum(map(f -> value(f), model.timestepper.Gⁿ[conserved_tracers.carbon]))
     total_iron_tendencies = sum([value(model.timestepper.Gⁿ[n]) * sf for (n, sf) in zip(conserved_tracers.iron.tracers, conserved_tracers.iron.scalefactors)])
@@ -115,6 +115,51 @@ function test_PISCES_update_state(arch)
     @test biogeochemistry.underlying_biogeochemistry.euphotic_depth[1, 1, 1] ≈ -10 * log(1000)
 end
 
+
+function test_PISCES_update_state(arch)
+    # TODO: implement and test mixed layer depth computaiton elsewhere
+
+    grid = RectilinearGrid(arch, topology = (Flat, Flat, Bounded), size = (10, ), extent = (100, ))
+
+    PAR₁ = PAR₂ = PAR₃ = FunctionField{Center, Center, Center}(light, grid)
+    PAR  = FunctionField{Center, Center, Center}(total_light, grid)
+
+    mixed_layer_depth = ConstantField(-25)
+
+    light_attenuation = PrescribedPhotosyntheticallyActiveRadiation((; PAR, PAR₁, PAR₂, PAR₃))
+
+    biogeochemistry = PISCES(; grid, 
+                               light_attenuation,
+                               mixed_layer_depth,
+                               scale_negatives = true)
+
+    model = NonhydrostaticModel(; grid, biogeochemistry)
+
+    set!(model, 
+        P = -1, D = 1, Z = 1, M = 1, DOC = 1, POC = 1, GOC = 1, DIC = 1, CaCO₃ = 1, PO₄ = 1)
+
+    # got rid of the negative
+    @test on_architecture(CPU(), interior(model.tracers.P, 1, 1, 1))[1] == 0
+
+    # correctly conserved mass
+    @test all(map(t -> on_architecture(CPU(), interior(t, 1, 1, 1))[1] == 7/8, model.tracers[(:D, :Z, :M, :DOC, :POC, :GOC, :DIC, :CaCO₃)]))
+
+    # didn't touch the others
+    @test on_architecture(CPU(), interior(model.tracers.PO₄, 1, 1, 1))[1] == 1
+
+    # failed to scale silcate since nothing else in its group was available
+    set!(model, Si = -1, DSi = 0.1)
+    
+    # for some reason filling with the invalid value just doesn't work yet filling with the right one (above) does
+    @test isnan(on_architecture(CPU(), interior(model.tracers.DSi, 1, 1, 1))[1])
+
+    # this is actually going to cause failures in conserving other groups because now we'll have less carbon etc from the M and Z...
+    set!(model, Fe = -1, Z = 1000)
+
+    @test on_architecture(CPU(), interior(model.tracers.Fe, 1, 1, 1))[1] == 0
+    @test on_architecture(CPU(), interior(model.tracers.Z, 1, 1, 1))[1] == 900
+end
+
 @testset "PISCES" begin
     if architecture isa CPU
         @info "Testing PISCES element conservation (C, Fe, P, Si)"
@@ -124,6 +169,7 @@ end
     @info "Testing PISCES auxiliary field computation"
     test_PISCES_update_state(architecture)
 
+    test_PISCES_negativity_protection(architecture)
     
     #test_PISCES_setup(grid)
 end
