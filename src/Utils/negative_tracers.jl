@@ -113,7 +113,7 @@ end
 
 # multiple conserved groups
 ScaleNegativeTracers(tracers::Tuple, grid;invalid_fill_value = NaN, warn = false) =
-    map(tn -> ScaleNegativeTracers(tn, grid; invalid_fill_value, warn), tracers)
+    tuple(map(tn -> ScaleNegativeTracers(tn, grid; invalid_fill_value, warn), tracers)...)
 
 function ScaleNegativeTracers(tracers::NamedTuple, grid; invalid_fill_value = NaN, warn = false)
     scalefactors = on_architecture(architecture(grid), tracers.scalefactors)
@@ -133,7 +133,7 @@ function update_biogeochemical_state!(model, scale::ScaleNegativeTracers)
 
     scale_for_negs_kernel! = scale_for_negs!(dev, workgroup, worksize)
 
-    tracers_to_scale = Tuple(model.tracers[tracer_name] for tracer_name in keys(scale.tracers))
+    tracers_to_scale = Tuple(model.tracers[tracer_name] for tracer_name in scale.tracers)
 
     scale_for_negs_kernel!(tracers_to_scale, scale.scalefactors, scale.invalid_fill_value)
 end
