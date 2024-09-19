@@ -16,9 +16,8 @@ import OceanBioME.Models.Sediments: nitrogen_flux, carbon_flux, remineralisation
 @inline chlorophyll(::PISCES, model) = model.tracers.PChl + model.tracers.DChl
 
 # negative tracer scaling
-# TODO: make this work in scale negatives (i.e. return multiple functions for each group)
-# TODO: deal with remaining (DSi, Si, PChl, DChl, O₂, Alk) - latter two should never be near zero
-@inline function conserved_tracers(bgc::PISCES)
+# TODO: deal with remaining (PChl, DChl, O₂, Alk) - latter two should never be near zero
+@inline function conserved_tracers(bgc::PISCES; ntuple = false)
     carbon = (:P, :D, :Z, :M, :DOC, :POC, :GOC, :DIC, :CaCO₃)
 
     # iron ratio for DOC might be wrong
@@ -35,5 +34,9 @@ import OceanBioME.Models.Sediments: nitrogen_flux, carbon_flux, remineralisation
     nitrogen = (tracers = (:NH₄, :NO₃, :P, :D, :Z, :M, :DOC, :POC, :GOC),
                 scalefactors = (1, 1, θN, θN, θN, θN, θN, θN, θN))
 
-    return (; carbon, iron, phosphate, silicon, nitrogen)
+    if ntuple
+        return (; carbon, iron, phosphate, silicon, nitrogen)
+    else
+        return (carbon, iron, phosphate, silicon, nitrogen)
+    end
 end

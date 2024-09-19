@@ -86,17 +86,40 @@ function ScaleNegativeTracers(tracers; scalefactors = ones(length(tracers)), inv
 end
 
 """
-    ScaleNegativeTracers(model::UnderlyingBiogeochemicalModel; warn = false)
+    ScaleNegativeTracers(bgc::AbstractBiogeochemistry; warn = false)
 
-Construct a modifier to scale the conserved tracers in `model`.
+Construct a modifier to scale the conserved tracers in `bgc` biogeochemistry.
 
 If `warn` is true then scaling will raise a warning.
 """
 function ScaleNegativeTracers(bgc::AbstractBiogeochemistry, grid; invalid_fill_value = NaN, warn = false)
     tracers = conserved_tracers(bgc)
+
+    return ScaleNegativeTracers(tracers, grid; invalid_fill_value, warn)
+end
+
+# for when `conserved_tracers` just returns a tuple of symbols
+function ScaleNegativeTracers(tracers, grid; invalid_fill_value = NaN, warn = false)
     scalefactors = on_architecture(architecture(grid), ones(length(tracers)))
 
     return ScaleNegativeTracers(tracers, scalefactors, invalid_fill_value, warn)
+end
+
+function ScaleNegativeTracers(tracers::NTuple{<:Any, Symbol}, grid; invalid_fill_value = NaN, warn = false)
+    scalefactors = on_architecture(architecture(grid), ones(length(tracers)))
+
+    return ScaleNegativeTracers(tracers, scalefactors, invalid_fill_value, warn)
+end
+
+# multiple conserved groups
+ScaleNegativeTracers(tracers::Tuple, grid;invalid_fill_value = NaN, warn = false) =
+    map(tn -> ScaleNegativeTracers(tn, grid; invalid_fill_value, warn), tracers)
+
+function ScaleNegativeTracers(tracers::NamedTuple, grid; invalid_fill_value = NaN, warn = false)
+    scalefactors = on_architecture(architecture(grid), tracers.scalefactors)
+    tracer_names = tracers.tracers
+
+    return ScaleNegativeTracers(tracer_names, scalefactors, invalid_fill_value, warn)
 end
 
 summary(scaler::ScaleNegativeTracers) = string("Mass conserving negative scaling of $(scaler.tracers)")
