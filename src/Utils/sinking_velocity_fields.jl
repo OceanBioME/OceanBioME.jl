@@ -4,7 +4,8 @@ using Oceananigans.Grids: AbstractGrid
 
 import Adapt: adapt_structure, adapt
 
-const valid_sinking_velocity_locations = ((Center, Center, Face), (Nothing, Nothing, Face)) # nothings for constant fields 
+# nothings for constant fields 
+const valid_sinking_velocity_locations = ((Center, Center, Face), (Nothing, Nothing, Face), (Nothing, Nothing, Nothing)) 
 
 function setup_velocity_fields(drift_speeds, grid::AbstractGrid, open_bottom; smoothing_distance = 2)
     drift_velocities = []
