@@ -139,10 +139,6 @@ const large_particle_components = Union{Val{:GOC}, Val{:BFe}, Val{:PSi}, Val{:Ca
 biogeochemical_drift_velocity(bgc::PISCES, ::small_particle_components) = (u = ZeroField(), v = ZeroField(), w = bgc.sinking_velocities.POC)
 biogeochemical_drift_velocity(bgc::PISCES, ::large_particle_components) = (u = ZeroField(), v = ZeroField(), w = bgc.sinking_velocities.GOC)
 
-summary(::PISCES{FT}) where {FT} = string("PISCES{$FT}") 
-
-show(io::IO, model::PISCES) = print(io, string("Pelagic Interactions Scheme for Carbon and Ecosystem Studies (PISCES) model")) # maybe add some more info here
-
 include("common.jl")
 include("phytoplankton.jl")
 include("zooplankton.jl")
@@ -159,6 +155,7 @@ include("mean_mixed_layer_properties.jl")
 include("compute_calcite_saturation.jl")
 include("update_state.jl")
 include("coupling_utils.jl")
+include("show_methods.jl")
 
 # to change to new production change `NutrientLimitedProduction` for `GrowthRespirationLimitedProduction`
 """

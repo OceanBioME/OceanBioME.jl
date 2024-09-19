@@ -4,7 +4,7 @@
    minimum_phosphate_half_saturation :: FT          # mmol P / m³
        threshold_for_size_dependency :: FT = 1.0    # mmol C / m³
                           size_ratio :: FT = 3.0    # 
-                  optimal_iron_quota :: FT = 7.0    # μmol Fe / mmol C
+                  optimal_iron_quota :: FT = 0.007  # μmol Fe / mmol C
                     silicate_limited :: BT          # Bool
     minimum_silicate_half_saturation :: FT = 1.0    # mmol Si / m³
   silicate_half_saturation_parameter :: FT = 16.6   # mmol Si / m³
@@ -51,8 +51,8 @@ end
 
     # iron limitation
     # Flynn and Hipkin (1999) - photosphotosyntheis, respiration (?), nitrate reduction 
-    θₘ = 0.0016 / 55.85 * θChl + 1.5 * 1.21e-5 * 14 / (55.85 * 7.625) * LN + 1.15e-4 * 14 / (55.85 * 7.625) * LNO₃
-
+    θₘ = 10^3 * (0.0016 / 55.85 * 12 * θChl + 1.5 * 1.21e-5 * 14 / (55.85 * 7.625) * LN + 1.15e-4 * 14 / (55.85 * 7.625) * LNO₃)
+    
     LFe = min(1, max(0, (θFe - θₘ) / θₒ))
 
     # silicate limitation

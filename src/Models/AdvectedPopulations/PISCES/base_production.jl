@@ -76,7 +76,10 @@ end
 
 # new method for this if this isn't how you define μ̌
 @inline function production_and_energy_assimilation_absorption_ratio(growth_rate, phyto, bgc, y, t, I, IChl, T, zₘₓₗ, zₑᵤ, κ, PAR, PAR₁, PAR₂, PAR₃, L)
-    α = growth_rate.initial_slope_of_PI_curve
+    α₀ = growth_rate.initial_slope_of_PI_curve
+    β  = growth_rate.low_light_adaptation
+
+    α = α₀ * (1 + β * exp(-PAR))
 
     φ = bgc.latitude(y)
     day_length = bgc.day_length(φ, t)
@@ -84,9 +87,9 @@ end
     f₁ = 1.5 * day_length / (day_length + 0.5day)
 
     μ = growth_rate(phyto, bgc, y, t, I, IChl, T, zₘₓₗ, zₑᵤ, κ, PAR₁, PAR₂, PAR₃, L)
-    μ̌ = μ / f₁
+    μ̌ = μ / f₁ * day_length 
 
-    return μ, 144 * μ̌ * I / (α * IChl * PAR + eps(0.0)) * day_length
+    return μ, 12 * μ̌ * I / (α * IChl * PAR + eps(0.0)) * L # (1 / s, unitless)
 end
 
 @inline function base_production_rate(growth_rate, T)

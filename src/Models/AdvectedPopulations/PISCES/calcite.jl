@@ -1,8 +1,8 @@
 # all parameters unitless
 @kwdef struct Calcite{FT}
-          base_rain_ratio :: FT = 0.3
-    base_dissolution_rate :: FT = 0.197 / day
-     dissolution_exponent :: FT = 1.0
+          base_rain_ratio :: FT = 0.3         # 
+    base_dissolution_rate :: FT = 0.197 / day # 1 / s
+     dissolution_exponent :: FT = 1.0         # 
 end
 
 @inline function (calcite::Calcite)(::Val{:CaCO₃}, bgc,

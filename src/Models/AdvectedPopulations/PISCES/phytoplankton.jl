@@ -91,22 +91,22 @@ end
 
     μ, ρ = production_and_energy_assimilation_absorption_ratio(phyto.growth_rate, phyto, bgc, y, t, I, IChl, T, zₘₓₗ, zₑᵤ, κ, PAR, PAR₁, PAR₂, PAR₃, L)
 
-    production = (1 - δ) * (12 * θ₀ + (θ₁ - θ₀) * ρ) * μ * I 
+    production = (1 - δ) * 12 * (θ₀ + (θ₁ - θ₀) * ρ) * μ * I 
 
     # mortality
     θChl = IChl / (12 * I + eps(0.0))
 
     linear_mortality, quadratic_mortality = mortality(phyto, bgc, z, I, zₘₓₗ, L)
 
-    linear_mortality *= θChl
-    quadratic_mortality *= θChl
+    linear_mortality *= θChl * 12
+    quadratic_mortality *= θChl * 12
     
     # grazing
 
     gZ = phytoplankton_grazing(val_name, bgc.microzooplankton, P, D, Z, POC, T)
     gM = phytoplankton_grazing(val_name, bgc.mesozooplankton, P, D, Z, POC, T)
 
-    grazing = (gZ * Z + gM * M) * θChl
+    grazing = (gZ * Z + gM * M) * θChl * 12
 
     return production - linear_mortality - quadratic_mortality - grazing
 end
