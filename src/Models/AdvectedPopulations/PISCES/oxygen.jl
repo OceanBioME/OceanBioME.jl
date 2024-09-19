@@ -1,3 +1,9 @@
+"""
+    Oxygen
+
+Parameterisation for oxygen which is supplied by phyotsynthesis and denitrifcation,
+and removed by various respiration terms and nitrifcation.
+"""
 @kwdef struct Oxygen{FT}
      ratio_for_respiration :: FT = 133/122 # mol O₂ / mol C
     ratio_for_nitrifcation :: FT = 32/122  # mol O₂ / mol C

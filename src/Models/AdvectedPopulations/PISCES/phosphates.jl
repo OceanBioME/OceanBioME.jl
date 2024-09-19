@@ -1,3 +1,8 @@
+"""
+    Phosphate
+
+Evolution of phosphate (PO₄).
+"""
 struct Phosphate end
 
 @inline function (phosphate::Phosphate)(::Val{:PO₄}, bgc,

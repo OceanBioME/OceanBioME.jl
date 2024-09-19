@@ -1,3 +1,12 @@
+"""
+    NitrogenIronPhosphateSilicateLimitation
+
+Holds the parameters for growth limitation by nitrogen (NO₃ and NH₄),
+iron (Fe), phosphate PO₄, and (optionally) silicate (Si) availability.
+
+Silicate limitation may be turned off (e.g. for nanophytoplankton) by
+setting `silicate_limited=false`.
+"""
 @kwdef struct NitrogenIronPhosphateSilicateLimitation{FT, BT}
     minimum_ammonium_half_saturation :: FT          # mmol N / m³
      minimum_nitrate_half_saturation :: FT          # mmol N / m³

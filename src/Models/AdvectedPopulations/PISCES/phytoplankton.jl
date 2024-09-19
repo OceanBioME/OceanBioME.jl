@@ -1,6 +1,26 @@
 include("base_production.jl")
 include("nutrient_limitation.jl")
 
+"""
+    MixedMondoPhytoplankton
+
+Holds the parameters for the PISCES mixed mondo phytoplankton 
+parameterisation where nutrient limitation is modelled using the
+mondo approach for nitrate (NO₃), ammonia (NH₄), phosphate (PO₄),
+and silicate (Si), but the quota approach is used for iron (Fe) 
+and light (PAR).
+
+Therefore each class has a carbon compartement (generically `I`),
+chlorophyll (`IChl`), and iron (`IFe`), and may also have silicate
+(`ISi`) if the `nutrient_limitation` specifies that the growth is
+silicate limited, despite the fact that the silicate still limits 
+the growth in a mondo fashion.
+
+The `growth_rate` may be different parameterisations, currently 
+either `NutrientLimitedProduction` or 
+`GrowthRespirationLimitedProduction`, which represent the typical
+and `newprod` versions of PISCES.
+"""
 @kwdef struct MixedMondoPhytoplankton{GR, NL, FT}
                         growth_rate :: GR
                 nutrient_limitation :: NL

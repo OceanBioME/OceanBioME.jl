@@ -1,3 +1,15 @@
+"""
+    TwoCompartementParticulateOrganicMatter
+
+A quota parameterisation for particulate organic matter with two size classes,
+each with carbon and iron compartements, and a silicate compartement for the
+large size class.
+
+Confusingly we decided to name these compartmenets `POC` and `GOC` for the small
+and large carbon classes, `SFe` and `BFe` for the small and  ̶l̶a̶r̶g̶e̶ big iron 
+compartements, and `PSi` for the  ̶l̶a̶r̶g̶e̶ particulate silicon (*not* the 
+phytoplankton silicon).
+"""
 @kwdef struct TwoCompartementParticulateOrganicMatter{FT, AP}
                       temperature_sensetivity :: FT = 1.066        #
                           base_breakdown_rate :: FT = 0.025 / day  # 1 / s

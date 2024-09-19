@@ -1,4 +1,15 @@
-# all parameters unitless
+"""
+    Calcite
+
+Stores the parameter values for calcite (`CaCO₃`) evolution.
+
+Keyword Arguments
+=================
+- `base_rain_ratio`: the base fraction of Coccolithophores
+- `base_dissolution_rate`: base rate of calcite dissolution (1/s)
+- `dissolution_exponent`: exponent of calcite excess for dissolution rate 
+
+"""
 @kwdef struct Calcite{FT}
           base_rain_ratio :: FT = 0.3         # 
     base_dissolution_rate :: FT = 0.197 / day # 1 / s

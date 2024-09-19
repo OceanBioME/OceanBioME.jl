@@ -22,7 +22,7 @@ phytoplankton_tracers = phytoplankton_arguments(bgc.phytoplankton, args...)
 """
 module PISCESModel
 
-export PISCES
+export PISCES, DepthDependantSinkingSpeed, PrescribedLatitude, ModelLatitude
 
 using Oceananigans.Units
 
@@ -157,12 +157,11 @@ include("update_state.jl")
 include("coupling_utils.jl")
 include("show_methods.jl")
 
-# to change to new production change `NutrientLimitedProduction` for `GrowthRespirationLimitedProduction`
 """
     PISCES(; grid,
              nanophytoplankton = 
                 MixedMondoPhytoplankton(
-                    growth_rate = NutrientLimitedProduction(dark_tollerance = 3days),
+                    growth_rate = GrowthRespirationLimitedProduction(dark_tollerance = 3days),
                     nutrient_limitation = 
                         NitrogenIronPhosphateSilicateLimitation(minimum_ammonium_half_saturation = 0.013,
                                                                 minimum_nitrate_half_saturation = 0.13, 
@@ -177,7 +176,7 @@ include("show_methods.jl")
 
              diatoms = 
                 MixedMondoPhytoplankton(
-                    growth_rate = NutrientLimitedProduction(dark_tollerance = 4days),
+                    growth_rate = GrowthRespirationLimitedProduction(dark_tollerance = 4days),
                     nutrient_limitation = 
                         NitrogenIronPhosphateSilicateLimitation(minimum_ammonium_half_saturation = 0.039,
                                                                 minimum_nitrate_half_saturation = 0.39, 
@@ -326,7 +325,7 @@ was desired a way to specify arbitary tracers for arguments would be required.
 function PISCES(; grid,
                   nanophytoplankton = 
                     MixedMondoPhytoplankton(
-                        growth_rate = NutrientLimitedProduction(dark_tollerance = 3days),
+                        growth_rate = GrowthRespirationLimitedProduction(dark_tollerance = 3days),
                         nutrient_limitation = 
                           NitrogenIronPhosphateSilicateLimitation(minimum_ammonium_half_saturation = 0.013,
                                                                   minimum_nitrate_half_saturation = 0.13, 
@@ -341,7 +340,7 @@ function PISCES(; grid,
 
                   diatoms = 
                     MixedMondoPhytoplankton(
-                        growth_rate = NutrientLimitedProduction(dark_tollerance = 4days),
+                        growth_rate = GrowthRespirationLimitedProduction(dark_tollerance = 4days),
                         nutrient_limitation = 
                           NitrogenIronPhosphateSilicateLimitation(minimum_ammonium_half_saturation = 0.039,
                                                                   minimum_nitrate_half_saturation = 0.39, 

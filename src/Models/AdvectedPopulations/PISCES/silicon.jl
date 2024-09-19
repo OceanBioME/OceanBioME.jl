@@ -1,3 +1,9 @@
+"""
+    Silicate
+
+Parameterisation for silicate (Si) which is consumed by diatoms
+and dissolutioned from particles.
+"""
 struct Silicate end
 
 @inline function (silicate::Silicate)(::Val{:Si}, bgc,

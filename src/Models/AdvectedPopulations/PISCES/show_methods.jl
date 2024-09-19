@@ -96,3 +96,5 @@ summary(::CarbonateSystem) = string("CarbonateSystem - DIC (mmol C / m³), Alk (
 
 summary(::ModelLatitude) = string("ModelLatitude")
 summary(lat::PrescribedLatitude{FT}) where FT = string("PrescribedLatitude $(lat.latitude)° {FT}")
+
+# TODO: add show methods

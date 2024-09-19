@@ -1,3 +1,13 @@
+"""
+    Zooplankton
+
+The PISCES zooplankton growth model where each class has preferences
+for grazing on nanophytoplankton (P), diatoms (D), microzooplankton (Z),
+and particulate organic matter (POC), and can flux feed on sinking 
+particulates (POC and GOC).
+
+This model assumes a fixed ratio for all other elements (i.e. N, P, Fe).
+"""
 @kwdef struct Zooplankton{FT}
     temperature_sensetivity :: FT = 1.079                  #
     maximum_grazing_rate :: FT                             # 1 / s

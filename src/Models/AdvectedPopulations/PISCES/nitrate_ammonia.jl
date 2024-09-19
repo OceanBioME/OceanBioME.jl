@@ -1,3 +1,12 @@
+"""
+    NitrateAmmonia
+
+A parameterisation for the evolution of nitrate (`NO₃`) and ammonia (`NH₄`)
+where ammonia can be `nitrif`ied into nitrate, nitrate and ammonia are supplied
+by the bacterial degredation of dissolved organic matter, and consumed by 
+phytoplankton. Additionally waste produces ammonia through various means.
+
+"""
 @kwdef struct NitrateAmmonia{FT}
                maximum_nitrifcation_rate :: FT = 0.05 / day  # 1 / s
                    maximum_fixation_rate :: FT = 0.013 / day # mmol N / m³ (maybe shouldn't be a rate)

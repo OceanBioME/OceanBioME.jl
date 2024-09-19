@@ -1,3 +1,8 @@
+"""
+    CarbonateSystem
+
+Default parameterisation for `DIC`` and `Alk`alinity evolution. 
+"""
 struct CarbonateSystem end
 
 @inline function (carbonates::CarbonateSystem)(::Val{:DIC}, bgc,

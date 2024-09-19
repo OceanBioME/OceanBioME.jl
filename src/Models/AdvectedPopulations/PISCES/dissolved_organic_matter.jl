@@ -1,3 +1,9 @@
+"""
+    DissolvedOrganicMatter
+
+Parameterisation of dissolved organic matter which depends on a bacterial 
+concentration derived from the concentration of zooplankton.
+"""
 @kwdef struct DissolvedOrganicMatter{FT, AP}
                              remineralisation_rate :: FT = 0.3/day   # 1 / s
            microzooplankton_bacteria_concentration :: FT = 0.7       #

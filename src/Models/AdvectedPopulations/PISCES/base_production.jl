@@ -38,6 +38,26 @@ end
     return μ(phyto, bgc, y, t, I, IChl, T, zₘₓₗ, zₑᵤ, κ, PAR₁, PAR₂, PAR₃, L)
 end
 
+"""
+    NutrientLimitedProduction
+
+`BaseProduction` with light limitation moderated by nutrient availability. This is
+the "origional" PISCES phytoplankton growth rate model. Growth rate is of the form:
+
+```math
+μ = μ₁f₁(τᵈ)f₂(zₘₓₗ)(1-exp(-α θᶜʰˡ PAR / τ μ₀ L)) L.
+```
+
+Keyword Arguments
+=================
+- `base_growth_rate`: the base growth rate, μ₀, in (1/s)
+- `temperatrue_sensetivity`: temperature sensetivity parameter, b, giving μ₁ = μ₀ bᵀ where T is temperature
+- `dark_tollerance`: the time that the phytoplankton survives in darkness below the euphotic layer, τᵈ (s)
+- `initial_slope_of_PI_curve`: the relationship between photosynthesis and irradiance, α₀ (1/W/m²)
+- `low_light_adaptation`: factor increasing the sensetivity of photosynthesis to irradiance, β,
+   giving α = α₀(1 + exp(-PAR)), typically set to zero
+
+"""
 @kwdef struct NutrientLimitedProduction{FT} <: BaseProduction
          base_growth_rate :: FT = 0.6 / day # 1 / s
   temperature_sensetivity :: FT = 1.066     # 
@@ -54,7 +74,28 @@ end
     return 1 - exp(-α * θ * PAR / (day_length * μᵢ * L + eps(0.0)))
 end
 
-# "new production"
+"""
+    NutrientLimitedProduction
+
+`BaseProduction` with light limitation moderated by nutrient availability. This is
+the "new production" PISCES phytoplankton growth rate model. Growth rate is of the form:
+
+```math
+μ = μ₁f₁(τ)f₂(zₘₓₗ)(1-exp(-α θᶜʰˡ PAR / τ (bᵣ + μᵣ))) L.
+```
+
+Keyword Arguments
+=================
+- `base_growth_rate`: the base growth rate, μ₀, in (1/s)
+- `temperatrue_sensetivity`: temperature sensetivity parameter, b, giving μ₁ = μ₀ bᵀ where T is temperature
+- `dark_tollerance`: the time that the phytoplankton survives in darkness below the euphotic layer, τᵈ (s)
+- `initial_slope_of_PI_curve`: the relationship between photosynthesis and irradiance, α₀ (1/W/m²)
+- `low_light_adaptation`: factor increasing the sensetivity of photosynthesis to irradiance, β,
+   giving α = α₀(1 + exp(-PAR)), typically set to zero
+- `basal_respiration_rate`: reference respiration rate, bᵣ (1/s)
+- `reference_growth_rate`: reference growth rate, μᵣ (1/s)
+   
+"""
 @kwdef struct GrowthRespirationLimitedProduction{FT} <: BaseProduction
          base_growth_rate :: FT = 0.6 / day # 1 / s
   temperature_sensetivity :: FT = 1.066     #
@@ -71,10 +112,9 @@ end
 
     θ = IChl / (12 * I + eps(0.0))
 
-    return 1 - exp(-α * θ * PAR / (day_length * (bᵣ + μᵣ) * L))
+    return 1 - exp(-α * θ * PAR / (day_length * (bᵣ + μᵣ)))
 end
 
-# new method for this if this isn't how you define μ̌
 @inline function production_and_energy_assimilation_absorption_ratio(growth_rate, phyto, bgc, y, t, I, IChl, T, zₘₓₗ, zₑᵤ, κ, PAR, PAR₁, PAR₂, PAR₃, L)
     α₀ = growth_rate.initial_slope_of_PI_curve
     β  = growth_rate.low_light_adaptation
