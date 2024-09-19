@@ -116,9 +116,7 @@ function test_PISCES_update_state(arch)
 end
 
 
-function test_PISCES_update_state(arch)
-    # TODO: implement and test mixed layer depth computaiton elsewhere
-
+function test_PISCES_negativity_protection(arch)
     grid = RectilinearGrid(arch, topology = (Flat, Flat, Bounded), size = (10, ), extent = (100, ))
 
     PAR₁ = PAR₂ = PAR₃ = FunctionField{Center, Center, Center}(light, grid)
