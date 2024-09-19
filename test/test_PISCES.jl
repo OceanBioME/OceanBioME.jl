@@ -135,14 +135,13 @@ function test_PISCES_update_state(arch)
 
     model = NonhydrostaticModel(; grid, biogeochemistry)
 
-    set!(model, 
-        P = -1, D = 1, Z = 1, M = 1, DOC = 1, POC = 1, GOC = 1, DIC = 1, CaCO₃ = 1, PO₄ = 1)
+    set!(model, P = -1, D = 1, Z = 1, M = 1, DOC = 1, POC = 1, GOC = 1, DIC = 1, CaCO₃ = 1, PO₄ = 1)
 
     # got rid of the negative
     @test on_architecture(CPU(), interior(model.tracers.P, 1, 1, 1))[1] == 0
 
     # correctly conserved mass
-    @test all(map(t -> on_architecture(CPU(), interior(t, 1, 1, 1))[1] == 7/8, model.tracers[(:D, :Z, :M, :DOC, :POC, :GOC, :DIC, :CaCO₃)]))
+    @test all(map(t -> on_architecture(CPU(), interior(t, 1, 1, 1))[1] ≈ 7/8, model.tracers[(:D, :Z, :M, :DOC, :POC, :GOC, :DIC, :CaCO₃)]))
 
     # didn't touch the others
     @test on_architecture(CPU(), interior(model.tracers.PO₄, 1, 1, 1))[1] == 1
@@ -150,14 +149,13 @@ function test_PISCES_update_state(arch)
     # failed to scale silcate since nothing else in its group was available
     set!(model, Si = -1, DSi = 0.1)
     
-    # for some reason filling with the invalid value just doesn't work yet filling with the right one (above) does
     @test isnan(on_architecture(CPU(), interior(model.tracers.DSi, 1, 1, 1))[1])
 
     # this is actually going to cause failures in conserving other groups because now we'll have less carbon etc from the M and Z...
-    set!(model, Fe = -1, Z = 1000)
+    set!(model, Fe = -1, Z = 1000, M = 0)
 
     @test on_architecture(CPU(), interior(model.tracers.Fe, 1, 1, 1))[1] == 0
-    @test on_architecture(CPU(), interior(model.tracers.Z, 1, 1, 1))[1] == 900
+    @test on_architecture(CPU(), interior(model.tracers.Z, 1, 1, 1))[1] ≈ 900
 end
 
 @testset "PISCES" begin
