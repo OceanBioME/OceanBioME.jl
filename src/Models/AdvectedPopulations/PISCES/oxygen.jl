@@ -1,6 +1,6 @@
 @kwdef struct Oxygen{FT}
-     ratio_for_respiration :: FT = 133/122 # I think this is a more accurate name
-    ratio_for_nitrifcation :: FT = 32/122
+     ratio_for_respiration :: FT = 133/122 # mol O₂ / mol C
+    ratio_for_nitrifcation :: FT = 32/122  # mol O₂ / mol C
 end
 
 @inline function (oxy::Oxygen)(::Val{:O₂}, bgc,

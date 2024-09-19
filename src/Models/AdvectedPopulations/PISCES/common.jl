@@ -13,7 +13,7 @@ import Oceananigans.Fields: flatten_node
 struct ModelLatitude end
 
 struct PrescribedLatitude{FT}
-    latitude :: FT
+    latitude :: FT # °
 end
 
 @inline (pl::PrescribedLatitude)(y) = pl.latitude
@@ -28,9 +28,9 @@ end
 end
 
 @kwdef struct DepthDependantSinkingSpeed{FT}
-    minimum_speed :: FT = 30/day # in NEMO the min and max speeds are both 50m/day
-    maximum_speed :: FT = 200/day
-    maximum_depth :: FT = 5000.0
+    minimum_speed :: FT = 30/day # m/s - in NEMO the min and max speeds are both 50m/day
+    maximum_speed :: FT = 200/day # m/s
+    maximum_depth :: FT = 5000.0 # m
 end
 
 # I can't find any explanation as to why this might depend on the euphotic depth

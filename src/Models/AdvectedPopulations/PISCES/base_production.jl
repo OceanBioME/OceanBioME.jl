@@ -39,11 +39,11 @@ end
 end
 
 @kwdef struct NutrientLimitedProduction{FT} <: BaseProduction
-         base_growth_rate :: FT = 0.6 / day
-  temperature_sensetivity :: FT = 1.066
-          dark_tollerance :: FT
-initial_slope_of_PI_curve :: FT = 2.0
-     low_light_adaptation :: FT = 0.0
+         base_growth_rate :: FT = 0.6 / day # 1 / s
+  temperature_sensetivity :: FT = 1.066     # 
+          dark_tollerance :: FT             # s 
+initial_slope_of_PI_curve :: FT = 2.0       # 
+     low_light_adaptation :: FT = 0.0       # 
 end
 
 @inline function light_limitation(μ::NutrientLimitedProduction, I, IChl, T, PAR, day_length, L, α)
@@ -56,13 +56,13 @@ end
 
 # "new production"
 @kwdef struct GrowthRespirationLimitedProduction{FT} <: BaseProduction
-         base_growth_rate :: FT = 0.6 / day
-  temperature_sensetivity :: FT = 1.066
-          dark_tollerance :: FT
-initial_slope_of_PI_curve :: FT = 2.0
-     low_light_adaptation :: FT = 0.0
-   basal_respiration_rate :: FT = 0.033/day
-    reference_growth_rate :: FT = 1.0/day
+         base_growth_rate :: FT = 0.6 / day # 1 / s
+  temperature_sensetivity :: FT = 1.066     #
+          dark_tollerance :: FT             # s
+initial_slope_of_PI_curve :: FT = 2.0       # 
+     low_light_adaptation :: FT = 0.0       #
+   basal_respiration_rate :: FT = 0.033/day # 1 / s
+    reference_growth_rate :: FT = 1.0/day   # 1 / s
 end
 
 @inline function light_limitation(μ::GrowthRespirationLimitedProduction, I, IChl, T, PAR, day_length, L, α)

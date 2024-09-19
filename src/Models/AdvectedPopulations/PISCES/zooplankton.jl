@@ -1,30 +1,30 @@
 @kwdef struct Zooplankton{FT}
-    temperature_sensetivity :: FT = 1.079
-    maximum_grazing_rate :: FT
+    temperature_sensetivity :: FT = 1.079                  #
+    maximum_grazing_rate :: FT                             # 1 / s
 
-    preference_for_nanophytoplankton :: FT
-    preference_for_diatoms :: FT
-    preference_for_particulates :: FT
-    preference_for_zooplankton :: FT
+    preference_for_nanophytoplankton :: FT                 #
+    preference_for_diatoms :: FT                           #
+    preference_for_particulates :: FT                      #
+    preference_for_zooplankton :: FT                       #
 
-    food_threshold_concentration :: FT = 0.3
-    specific_food_thresehold_concentration :: FT = 0.001
+    food_threshold_concentration :: FT = 0.3               # mmol C / m³
+    specific_food_thresehold_concentration :: FT = 0.001   # mmol C / m³
 
-    grazing_half_saturation :: FT = 20.0
+    grazing_half_saturation :: FT = 20.0                   # mmol C / m³
 
-    maximum_flux_feeding_rate :: FT
+    maximum_flux_feeding_rate :: FT                        # m / (mmol C / m³)
 
-    iron_ratio :: FT = 10^-3/122
+    iron_ratio :: FT                                       # μmol Fe / mmol C
 
-    minimum_growth_efficiency :: FT
-    non_assililated_fraction :: FT = 0.3
+    minimum_growth_efficiency :: FT                        #
+    non_assililated_fraction :: FT = 0.3                   #
 
-    mortality_half_saturation :: FT = 0.2
-    quadratic_mortality :: FT
-    linear_mortality :: FT
+    mortality_half_saturation :: FT = 0.2                  # mmol C / m³
+    quadratic_mortality :: FT                              # 1 / (mmol C / m³) / s
+    linear_mortality :: FT                                 # 1 / s
 
-    dissolved_excretion_fraction :: FT = 0.6
-    undissolved_calcite_fraction :: FT 
+    dissolved_excretion_fraction :: FT = 0.6               #
+    undissolved_calcite_fraction :: FT                     #
 end
 
 @inline zooplankton_concentration(::Val{:Z}, Z, M) = Z

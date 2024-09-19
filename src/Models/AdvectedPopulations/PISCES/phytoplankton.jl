@@ -5,26 +5,26 @@ include("nutrient_limitation.jl")
                         growth_rate :: GR
                 nutrient_limitation :: NL
                         
-                   exudated_fracton :: FT = 0.05
+                   exudated_fracton :: FT = 0.05        # 
 
-              blue_light_absorption :: FT
-             green_light_absorption :: FT
-               red_light_absorption :: FT
+              blue_light_absorption :: FT               #
+             green_light_absorption :: FT               #
+               red_light_absorption :: FT               #
 
-          mortality_half_saturation :: FT = 0.2
-              linear_mortality_rate :: FT = 0.01 / day
+          mortality_half_saturation :: FT = 0.2         # mmol C / m³
+              linear_mortality_rate :: FT = 0.01 / day  # 1 / s
 
-           base_quadratic_mortality :: FT = 0.01 / day
-        maximum_quadratic_mortality :: FT # zero for nanophytoplankton
+           base_quadratic_mortality :: FT = 0.01 / day  # 1 / s / (mmol C / m³)
+        maximum_quadratic_mortality :: FT               # 1 / s / (mmol C / m³) - zero for nanophytoplankton
 
-          minimum_chlorophyll_ratio :: FT = 0.0033
-          maximum_chlorophyll_ratio :: FT
+          minimum_chlorophyll_ratio :: FT = 0.0033      # mg Chl / mg C
+          maximum_chlorophyll_ratio :: FT               # mg Chl / mg C
 
-                 maximum_iron_ratio :: FT = 40.0e-3
+                 maximum_iron_ratio :: FT = 0.06        # μmol Fe / mmol C
 
-           silicate_half_saturation :: FT = 2.0
-  enhanced_silicate_half_saturation :: FT = 20.9
-             optimal_silicate_ratio :: FT = 0.159
+           silicate_half_saturation :: FT = 2.0         # mmol Si / m³
+  enhanced_silicate_half_saturation :: FT = 20.9        # mmol Si / m³
+             optimal_silicate_ratio :: FT = 0.159       # mmol Si / mmol C
 end
 
 @inline phytoplankton_concentration(::NANO_PHYTO, P, D) = P
@@ -114,7 +114,7 @@ end
 @inline function (phyto::MixedMondoPhytoplankton)(val_name::Union{Val{:PFe}, Val{:DFe}}, bgc,
                                         x, y, z, t,
                                         P, D, Z, M, 
-                                        PChl, DChl, PFe, DFe, DSi, # we should get rid of DSi and the rest of the Si since it doesn't do anything...
+                                        PChl, DChl, PFe, DFe, DSi, 
                                         DOC, POC, GOC, 
                                         SFe, BFe, PSi, 
                                         NO₃, NH₄, PO₄, Fe, Si, 
@@ -148,7 +148,7 @@ end
     δ  = phyto.exudated_fracton
     θFeₘ = phyto.maximum_iron_ratio
 
-    θFe = IFe / (I + eps(0.0))
+    θFe = IFe / (I + eps(0.0)) # μmol Fe / mmol C
 
     L, LFe = phyto.nutrient_limitation(bgc, I, IChl, IFe, NO₃, NH₄, PO₄, Fe, Si, Si′)
 
@@ -156,9 +156,9 @@ end
 
     L₁ = iron_uptake_limitation(phyto.nutrient_limitation, I, Fe) # assuming bFe = Fe
 
-    L₂ = (4 - 2 * LFe) / (LFe + 1) # Formulation in paper does not vary between 1 and 4 as claimed, this does
+    L₂ = 4 - 4.5 * LFe / (LFe + 1) # typo in Aumount 2015
 
-    return (1 - δ) * θFeₘ * L₁ * L₂ * (1 - θFe / θFeₘ) / (1.05 - θFe / θFeₘ) * μᵢ * I, L
+    return (1 - δ) * θFeₘ * L₁ * L₂ * max(0, (1 - θFe / θFeₘ) / (1.05 - θFe / θFeₘ)) * μᵢ * I, L
 end
 
 @inline function (phyto::MixedMondoPhytoplankton)(::Val{:DSi}, bgc,

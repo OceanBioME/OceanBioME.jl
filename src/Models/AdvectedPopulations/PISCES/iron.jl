@@ -1,5 +1,5 @@
 @kwdef struct SimpleIron{FT}
-    excess_scavenging_enhancement :: FT = 1000
+    excess_scavenging_enhancement :: FT = 1000 # unitless
 end
 
 @inline function (iron::SimpleIron)(::Val{:Fe}, bgc,

@@ -1,9 +1,9 @@
 @kwdef struct NitrateAmmonia{FT}
-               maximum_nitrifcation_rate :: FT = 0.05 / day
-                   maximum_fixation_rate :: FT = 0.013 / day
-       iron_half_saturation_for_fixation :: FT = 0.1
-  phosphate_half_saturation_for_fixation :: FT = 0.8
-           light_saturation_for_fixation :: FT = 50.0
+               maximum_nitrifcation_rate :: FT = 0.05 / day  # 1 / s
+                   maximum_fixation_rate :: FT = 0.013 / day # mmol N / m³ (maybe shouldn't be a rate)
+       iron_half_saturation_for_fixation :: FT = 0.1         # μmol Fe / m³
+  phosphate_half_saturation_for_fixation :: FT = 0.8         # mmol P / m³
+           light_saturation_for_fixation :: FT = 50.0        # W / m²
 end
 
 @inline function (nitrogen::NitrateAmmonia)(::Val{:NO₃}, bgc,

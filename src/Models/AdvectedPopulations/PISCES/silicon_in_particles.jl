@@ -8,7 +8,6 @@
                                                                 CaCO₃, DIC, Alk, 
                                                                 O₂, T, S,
                                                                 zₘₓₗ, zₑᵤ, Si′, Ω, κ, mixed_layer_PAR, PAR, PAR₁, PAR₂, PAR₃)
-# THIS SHOULD BE GRAZED AND SHOULD BE MINUS
     # diatom grazing
     gZ = diatom_grazing(bgc.microzooplankton, P, D, Z, POC, T)
     gM = diatom_grazing(bgc.mesozooplankton, P, D, Z, POC, T)

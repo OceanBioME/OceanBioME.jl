@@ -1,14 +1,14 @@
 @kwdef struct NitrogenIronPhosphateSilicateLimitation{FT, BT}
-    minimum_ammonium_half_saturation :: FT
-     minimum_nitrate_half_saturation :: FT
-   minimum_phosphate_half_saturation :: FT
-       threshold_for_size_dependency :: FT = 1.0
-                          size_ratio :: FT = 3.0
-                  optimal_iron_quota :: FT = 7.0e-3
-                    silicate_limited :: BT
-    minimum_silicate_half_saturation :: FT = 1.0
-  silicate_half_saturation_parameter :: FT = 16.6
-     half_saturation_for_iron_uptake :: FT
+    minimum_ammonium_half_saturation :: FT          # mmol N / m³
+     minimum_nitrate_half_saturation :: FT          # mmol N / m³
+   minimum_phosphate_half_saturation :: FT          # mmol P / m³
+       threshold_for_size_dependency :: FT = 1.0    # mmol C / m³
+                          size_ratio :: FT = 3.0    # 
+                  optimal_iron_quota :: FT = 7.0    # μmol Fe / mmol C
+                    silicate_limited :: BT          # Bool
+    minimum_silicate_half_saturation :: FT = 1.0    # mmol Si / m³
+  silicate_half_saturation_parameter :: FT = 16.6   # mmol Si / m³
+     half_saturation_for_iron_uptake :: FT          # μmol Fe / m³
 end
 
 @inline function size_factor(L, I)

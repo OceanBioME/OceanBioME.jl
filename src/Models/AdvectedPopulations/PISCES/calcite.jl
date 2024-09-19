@@ -1,3 +1,4 @@
+# all parameters unitless
 @kwdef struct Calcite{FT}
           base_rain_ratio :: FT = 0.3
     base_dissolution_rate :: FT = 0.197 / day
