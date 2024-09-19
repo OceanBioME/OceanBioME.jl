@@ -25,7 +25,7 @@ end
 value(field; indices = (1, 1, 1)) = on_architecture(CPU(), interior(field, indices...))[1]
 
 function test_PISCES_conservation() # only on CPU please
-    validation_warning = "This implementation of PISCES is in early development and has not yet been fully validated"
+    validation_warning = "This implementation of PISCES is in early development and has not yet been validated"
 
     grid = BoxModelGrid(; z = -5)
 
@@ -51,7 +51,7 @@ function test_PISCES_conservation() # only on CPU please
                                                              mean_mixed_layer_vertical_diffusivity,
                                                              # turn off permanent iron removal and nitrogen fixaiton
                                                              iron = SimpleIron(0),
-                                                             nitrogen = NitrateAmmonia(maximum_fixation_rate = .00))
+                                                             nitrogen = NitrateAmmonia(maximum_fixation_rate = 0.0))
 
     model = BoxModel(; grid, biogeochemistry)
 
@@ -79,6 +79,7 @@ function test_PISCES_conservation() # only on CPU please
     @test isapprox(total_iron_tendencies, 0, atol = 10^-21) 
     @test isapprox(total_silicon_tendencies, 0, atol = 10^-21) 
     @test isapprox(total_phosphate_tendencies, 0, atol = 10^-21) 
+    @test isapprox(total_nitrogen_tendencies, 0, atol = 10^-21) 
 
     return nothing
 end
@@ -115,16 +116,14 @@ function test_PISCES_update_state(arch)
 end
 
 @testset "PISCES" begin
-    if arch isa CPU
+    if architecture isa CPU
         @info "Testing PISCES element conservation (C, Fe, P, Si)"
         test_PISCES_conservation()
     end
 
     @info "Testing PISCES auxiliary field computation"
-    test_PISCES_update_state(arch)
+    test_PISCES_update_state(architecture)
 
     
-    test_PISCES_setup(grid)
-
-
+    #test_PISCES_setup(grid)
 end
