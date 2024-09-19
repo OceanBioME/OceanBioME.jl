@@ -21,6 +21,12 @@ Modules = [OceanBioME.Models.NPZDModel]
 Modules = [OceanBioME.Models.LOBSTERModel]
 ```
 
+### Pelagic Interactions Scheme for Carbon and Ecosystem Studies (PISCES)
+
+```@autodocs
+Modules = [OceanBioME.Models.PISCESModel]
+```
+
 ### Sugar kelp (Saccharina latissima)
 
 ```@autodocs
