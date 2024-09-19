@@ -183,9 +183,10 @@ show(io::IO, model::Biogeochemistry) =
                 " Light attenuation: ", summary(model.light_attenuation), "\n",
                 " Sediment: ", summary(model.sediment), "\n",
                 " Particles: ", summary(model.particles), "\n",
-                " Modifiers: ", summary(model.modifiers))
+                " Modifiers: ", modifier_summary(model.modifiers))
 
-summary(modifiers::Tuple) = tuple([summary(modifier) for modifier in modifiers])
+modifier_summary(modifier) = summary(modifier)
+modifier_summary(modifiers::Tuple) = tuple([summary(modifier) for modifier in modifiers]...)
 
 include("Utils/Utils.jl")
 include("Light/Light.jl")

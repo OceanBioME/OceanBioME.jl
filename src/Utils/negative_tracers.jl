@@ -129,13 +129,15 @@ show(io::IO, scaler::ScaleNegativeTracers) = print(io, string(summary(scaler), "
 function update_biogeochemical_state!(model, scale::ScaleNegativeTracers)
     workgroup, worksize = work_layout(model.grid, :xyz)
 
-    dev = device(model.grid.architecture)
+    dev = device(architecture(model))
 
     scale_for_negs_kernel! = scale_for_negs!(dev, workgroup, worksize)
 
     tracers_to_scale = Tuple(model.tracers[tracer_name] for tracer_name in scale.tracers)
 
     scale_for_negs_kernel!(tracers_to_scale, scale.scalefactors, scale.invalid_fill_value)
+
+    return nothing
 end
 
 @kernel function scale_for_negs!(tracers, scalefactors, invalid_fill_value)
@@ -153,17 +155,13 @@ end
         end
     end 
 
-    t < 0 && (t = invalid_fill_value)
+    t = ifelse(t < 0, invalid_fill_value, t)
 
     for tracer in tracers
         value = @inbounds tracer[i, j, k]
-        
-        if value > 0
-            value *= t / p
-        else
-            value = 0
-        end
 
-        @inbounds tracer[i, j, k] = value
+        new_value = ifelse(!isfinite(value) | (value > 0), value * t / p, 0)
+
+        @inbounds tracer[i, j, k] = new_value
     end
 end
