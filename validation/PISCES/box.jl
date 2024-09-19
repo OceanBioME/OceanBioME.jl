@@ -59,7 +59,7 @@ model = BoxModel(; grid, biogeochemistry, clock, prescribed_tracers = (; T = tem
 
 set!(model, P = 6.95, D = 6.95, Z = 0.695,  M = 0.695, 
             PChl = 1.671,  DChl = 1.671, 
-            PFe = 7e-6 * 1e9 / 1e6 * 6.95, DFe = 7e-6 * 1e9 / 1e6 * 6.95, 
+            PFe = 6.95/7, DFe = 6.95/7, 
             DSi = 1.162767, 
             NO₃ = 6.202, NH₄ = 0.25*6.202, 
             PO₄ = 0.8722, Fe = 1.256, Si = 7.313, 

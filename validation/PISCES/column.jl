@@ -76,22 +76,20 @@ model = HydrostaticFreeSurfaceModel(; grid,
                               
 
 @info "Setting initial values..."
+
+
 set!(model, P = 6.95, D = 6.95, Z = 0.695,  M = 0.695, 
-            PChl = 1.671,  DChl = 1.671, 
-            PFe = 7e-6 * 1e9 / 1e6 * 6.95, DFe = 7e-6 * 1e9 / 1e6 * 6.95, 
-            DSi = 1.162767, 
+            PChl = 0.35,  DChl = 0.35, 
+            PFe = 6.95*50e-3, DFe = 6.95*50e-3, 
+            DSi = 0.159*6.95, 
             NO₃ = 6.202, NH₄ = 0.25*6.202, 
-            PO₄ = 0.8722, Fe = 1.256, Si = 7.313, 
-            CaCO₃ = 100,
+            PO₄ = 0.8722, Fe = 0.2, Si = 2, 
+            CaCO₃ = 0.001,
             DIC = 2139.0, Alk = 2366.0, 
-            O₂ = 237.0, S = 35, T = (z) -> temp(z, 0)) #Using Copernicus Data (26.665, 14.), Calcite is not correct, but this is to see it on the graphs
+            O₂ = 237.0, S = 35, T = 10) 
 
-# ## Simulation
-# Next we setup a simulation and add some callbacks that:
-# - Show the progress of the simulation
-# - Store the model and particles output
-
-simulation = Simulation(model, Δt = 0.5hours, stop_time = 2years)
+# maybe get to 1.5hours after initial stuff
+simulation = Simulation(model, Δt = 1.5hours, stop_time = 10years)
 
 progress_message(sim) = @printf("Iteration: %04d, time: %s, Δt: %s, wall time: %s\n",
                                 iteration(sim),
@@ -188,8 +186,8 @@ using CairoMakie
 
 fig = Figure(size = (4000, 2100), fontsize = 20);
 
-start_day = 30
-end_day   = 731
+start_day = 366
+end_day   = 3651
 
 axis_kwargs = (xlabel = "Time (days)", ylabel = "z (m)", limits = ((start_day, times[end_day] / days), (-200, 0)))
 
