@@ -9,7 +9,7 @@ Modules = [OceanBioME]
 
 ## Biogeochemical Models
 
-### Nutrient Phytoplankton Zooplankton Detritus
+### Nutrient Phytoplankton Zooplankton Detritus (NPZD)
 
 ```@autodocs
 Modules = [OceanBioME.Models.NPZDModel]
