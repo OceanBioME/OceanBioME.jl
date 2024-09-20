@@ -100,19 +100,7 @@ const PARTICLES = Union{Val{:POC}, Val{:SFe}, Val{:GOC}, Val{:BFe}, Val{:PSi}}
 const NITROGEN = Union{Val{:NO₃}, Val{:NH₄}}
 const CARBON_SYSTEM = Union{Val{:DIC}, Val{:Alk}}
 
-(bgc::PISCES)(val_name::NANO_PHYTO, args...)    = bgc.nanophytoplankton(val_name, bgc, args...)
-(bgc::PISCES)(val_name::DIATOMS, args...)       = bgc.diatoms(val_name, bgc, args...)
-(bgc::PISCES)(val_name::Val{:Z}, args...)       = bgc.microzooplankton(val_name, bgc, args...)
-(bgc::PISCES)(val_name::Val{:M}, args...)       = bgc.mesozooplankton(val_name, bgc, args...)
-(bgc::PISCES)(val_name::Val{:DOC}, args...)     = bgc.dissolved_organic_matter(val_name, bgc, args...)
-(bgc::PISCES)(val_name::PARTICLES, args...)     = bgc.particulate_organic_matter(val_name, bgc, args...)
-(bgc::PISCES)(val_name::NITROGEN, args...)      = bgc.nitrogen(val_name, bgc, args...)
-(bgc::PISCES)(val_name::Val{:Fe}, args...)      = bgc.iron(val_name, bgc, args...)
-(bgc::PISCES)(val_name::Val{:Si}, args...)      = bgc.silicate(val_name, bgc, args...)
-(bgc::PISCES)(val_name::Val{:CaCO₃}, args...)   = bgc.calcite(val_name, bgc, args...)
-(bgc::PISCES)(val_name::Val{:O₂}, args...)      = bgc.oxygen(val_name, bgc, args...)
-(bgc::PISCES)(val_name::Val{:PO₄}, args...)     = bgc.phosphate(val_name, bgc, args...)
-(bgc::PISCES)(val_name::CARBON_SYSTEM, args...) = bgc.carbon_system(val_name, bgc, args...)
+include("group_methods.jl")
 
 @inline biogeochemical_auxiliary_fields(bgc::PISCES) = 
     (zₘₓₗ = bgc.mixed_layer_depth, 
@@ -157,6 +145,7 @@ include("update_state.jl")
 include("coupling_utils.jl")
 include("show_methods.jl")
 include("adapts.jl")
+include("hack.jl")
 
 """
     PISCES(; grid,
@@ -256,10 +245,10 @@ include("adapts.jl")
 
              sinking_speeds = (POC = 2/day, 
                                # might be more efficient to just precompute this
-                               GOC = KernelFunctionOperation{Center, Center, Face}(DepthDependantSinkingSpeed(), 
-                                                                                   grid, 
-                                                                                   mixed_layer_depth, 
-                                                                                   euphotic_depth)),
+                               GOC = Field(KernelFunctionOperation{Center, Center, Face}(DepthDependantSinkingSpeed(), 
+                                                                                         grid, 
+                                                                                         mixed_layer_depth, 
+                                                                                         euphotic_depth)),
              open_bottom = true,
 
              scale_negatives = false,
@@ -424,10 +413,10 @@ function PISCES(; grid,
 
                   sinking_speeds = (POC = 2/day, 
                                     # might be more efficient to just precompute this
-                                    GOC = KernelFunctionOperation{Center, Center, Face}(DepthDependantSinkingSpeed(), 
-                                                                                        grid, 
-                                                                                        mixed_layer_depth, 
-                                                                                        euphotic_depth)),
+                                    GOC = Field(KernelFunctionOperation{Center, Center, Face}(DepthDependantSinkingSpeed(), 
+                                                                                              grid, 
+                                                                                              mixed_layer_depth, 
+                                                                                              euphotic_depth))),
                   open_bottom = true,
 
                   scale_negatives = false,

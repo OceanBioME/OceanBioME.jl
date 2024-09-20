@@ -87,15 +87,15 @@ end
 end
 
 @inline function (phyto::MixedMondoPhytoplankton)(val_name::Union{Val{:PChl}, Val{:DChl}}, bgc,
-                                        x, y, z, t,
-                                        P, D, Z, M, 
-                                        PChl, DChl, PFe, DFe, DSi, # we should get rid of DSi and the rest of the Si since it doesn't do anything...
-                                        DOC, POC, GOC, 
-                                        SFe, BFe, PSi, 
-                                        NO₃, NH₄, PO₄, Fe, Si, 
-                                        CaCO₃, DIC, Alk, 
-                                        O₂, T, S,
-                                        zₘₓₗ, zₑᵤ, Si′, Ω, κ, mixed_layer_PAR, wPOC, wGOC, PAR, PAR₁, PAR₂, PAR₃)
+                                                  x, y, z, t,
+                                                  P, D, Z, M, 
+                                                  PChl, DChl, PFe, DFe, DSi, # we should get rid of DSi and the rest of the Si since it doesn't do anything...
+                                                  DOC, POC, GOC, 
+                                                  SFe, BFe, PSi, 
+                                                  NO₃, NH₄, PO₄, Fe, Si, 
+                                                  CaCO₃, DIC, Alk, 
+                                                  O₂, T, S,
+                                                  zₘₓₗ, zₑᵤ, Si′, Ω, κ, mixed_layer_PAR, wPOC, wGOC, PAR, PAR₁, PAR₂, PAR₃)
 
     I    = phytoplankton_concentration(val_name, P, D)
     IChl = phytoplankton_concentration(val_name, PChl, DChl)
@@ -132,15 +132,15 @@ end
 end
 
 @inline function (phyto::MixedMondoPhytoplankton)(val_name::Union{Val{:PFe}, Val{:DFe}}, bgc,
-                                        x, y, z, t,
-                                        P, D, Z, M, 
-                                        PChl, DChl, PFe, DFe, DSi, 
-                                        DOC, POC, GOC, 
-                                        SFe, BFe, PSi, 
-                                        NO₃, NH₄, PO₄, Fe, Si, 
-                                        CaCO₃, DIC, Alk, 
-                                        O₂, T, S,
-                                        zₘₓₗ, zₑᵤ, Si′, Ω, κ, mixed_layer_PAR, wPOC, wGOC, PAR, PAR₁, PAR₂, PAR₃)
+                                                  x, y, z, t,
+                                                  P, D, Z, M, 
+                                                  PChl, DChl, PFe, DFe, DSi, 
+                                                  DOC, POC, GOC, 
+                                                  SFe, BFe, PSi, 
+                                                  NO₃, NH₄, PO₄, Fe, Si, 
+                                                  CaCO₃, DIC, Alk, 
+                                                  O₂, T, S,
+                                                  zₘₓₗ, zₑᵤ, Si′, Ω, κ, mixed_layer_PAR, wPOC, wGOC, PAR, PAR₁, PAR₂, PAR₃)
 
     I    = phytoplankton_concentration(val_name, P, D)
     IChl = phytoplankton_concentration(val_name, PChl, DChl)
@@ -182,15 +182,15 @@ end
 end
 
 @inline function (phyto::MixedMondoPhytoplankton)(::Val{:DSi}, bgc,
-                                        x, y, z, t,
-                                        P, D, Z, M, 
-                                        PChl, DChl, PFe, DFe, DSi,
-                                        DOC, POC, GOC, 
-                                        SFe, BFe, PSi, 
-                                        NO₃, NH₄, PO₄, Fe, Si, 
-                                        CaCO₃, DIC, Alk, 
-                                        O₂, T, S,
-                                        zₘₓₗ, zₑᵤ, Si′, Ω, κ, mixed_layer_PAR, wPOC, wGOC, PAR, PAR₁, PAR₂, PAR₃)
+                                                  x, y, z, t,
+                                                  P, D, Z, M, 
+                                                  PChl, DChl, PFe, DFe, DSi,
+                                                  DOC, POC, GOC, 
+                                                  SFe, BFe, PSi, 
+                                                  NO₃, NH₄, PO₄, Fe, Si, 
+                                                  CaCO₃, DIC, Alk, 
+                                                  O₂, T, S,
+                                                  zₘₓₗ, zₑᵤ, Si′, Ω, κ, mixed_layer_PAR, wPOC, wGOC, PAR, PAR₁, PAR₂, PAR₃)
 
     # production
     production, L = silicate_uptake(phyto, bgc, y, t, D, DChl, DFe, NO₃, NH₄, PO₄, Fe, Si, Si′, T, zₘₓₗ, zₑᵤ, κ, PAR₁, PAR₂, PAR₃)

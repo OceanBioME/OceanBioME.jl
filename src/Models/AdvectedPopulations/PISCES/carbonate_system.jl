@@ -37,12 +37,50 @@ struct CarbonateSystem end
     return zooplankton_respiration + upper_trophic_respiration + dissolved_degredation + calcite_diss - calcite_prod - consumption
 end
 
-@inline function (carbonates::CarbonateSystem)(::Val{:Alk}, bgc, args...)
+@inline function (carbonates::CarbonateSystem)(::Val{:Alk}, bgc, 
+                                               x, y, z, t,
+                                               P, D, Z, M, 
+                                               PChl, DChl, PFe, DFe, DSi,
+                                               DOC, POC, GOC, 
+                                               SFe, BFe, PSi, 
+                                               NO₃, NH₄, PO₄, Fe, Si, 
+                                               CaCO₃, DIC, Alk, 
+                                               O₂, T, S,
+                                               zₘₓₗ, zₑᵤ, Si′, Ω, κ, mixed_layer_PAR, wPOC, wGOC, PAR, PAR₁, PAR₂, PAR₃)
     θ = bgc.nitrogen_redfield_ratio
 
-    nitrate_production = bgc.nitrogen(Val(:NO₃), bgc, args...) * θ
-    ammonia_production = bgc.nitrogen(Val(:NH₄), bgc, args...) * θ
-    calcite_production = bgc.calcite(Val(:CaCO₃), bgc, args...)
+    nitrate_production = bgc.nitrogen(Val(:NO₃), bgc,
+                                      x, y, z, t,
+                                      P, D, Z, M, 
+                                      PChl, DChl, PFe, DFe, DSi,
+                                      DOC, POC, GOC, 
+                                      SFe, BFe, PSi, 
+                                      NO₃, NH₄, PO₄, Fe, Si, 
+                                      CaCO₃, DIC, Alk, 
+                                      O₂, T, S,
+                                      zₘₓₗ, zₑᵤ, Si′, Ω, κ, mixed_layer_PAR, wPOC, wGOC, PAR, PAR₁, PAR₂, PAR₃) * θ
+
+    ammonia_production = bgc.nitrogen(Val(:NH₄), bgc,
+                                      x, y, z, t,
+                                      P, D, Z, M, 
+                                      PChl, DChl, PFe, DFe, DSi,
+                                      DOC, POC, GOC, 
+                                      SFe, BFe, PSi, 
+                                      NO₃, NH₄, PO₄, Fe, Si, 
+                                      CaCO₃, DIC, Alk, 
+                                      O₂, T, S,
+                                      zₘₓₗ, zₑᵤ, Si′, Ω, κ, mixed_layer_PAR, wPOC, wGOC, PAR, PAR₁, PAR₂, PAR₃) * θ
+                                      
+    calcite_production = bgc.calcite(Val(:CaCO₃), bgc,
+                                     x, y, z, t,
+                                     P, D, Z, M, 
+                                     PChl, DChl, PFe, DFe, DSi,
+                                     DOC, POC, GOC, 
+                                     SFe, BFe, PSi, 
+                                     NO₃, NH₄, PO₄, Fe, Si, 
+                                     CaCO₃, DIC, Alk, 
+                                     O₂, T, S,
+                                     zₘₓₗ, zₑᵤ, Si′, Ω, κ, mixed_layer_PAR, wPOC, wGOC, PAR, PAR₁, PAR₂, PAR₃)
 
     # I think there are typos in Aumount 2015 but this is what it should be
 

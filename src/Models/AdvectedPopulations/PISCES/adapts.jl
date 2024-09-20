@@ -1,9 +1,9 @@
 using Adapt
 
-import Adapt: adapt_structure, adapt
+import Adapt: adapt_structure
 
 # we can throw away all of the fields since they're delt with outside of the kernels
-adapt_structure(to, bgc::PISCES) =
+Adapt.adapt_structure(to, bgc::PISCES) =
     PISCES(adapt(to, bgc.nanophytoplankton),
            adapt(to, bgc.diatoms),
            adapt(to, bgc.microzooplankton),
@@ -22,26 +22,14 @@ adapt_structure(to, bgc::PISCES) =
            adapt(to, bgc.nitrogen_redfield_ratio),
            adapt(to, bgc.phosphate_redfield_ratio),
            adapt(to, bgc.mixed_layer_shear),
-           adapt(to, bgc.background),
-           nothing, nothing, nothing, nothing, nothing,
+           adapt(to, bgc.background_shear),
+           adapt(to, bgc.latitude),
+           adapt(to, bgc.day_length),
+           adapt(to, bgc.mixed_layer_depth),
+           adapt(to, bgc.euphotic_depth), 
+           adapt(to, bgc.silicate_climatology),
+           adapt(to, bgc.mean_mixed_layer_vertical_diffusivity),
+           adapt(to, bgc.mean_mixed_layer_light),
            adapt(to, bgc.carbon_chemistry),
-           nothing, nothing)
-
-# adapting a bunch of numbers but maybe someone will want something else in there in the future
-adapt_structure(to, phyto::MixedMondoPhytoplankton) = 
-    Phytoplankton(adapt(to, phyto.growth_rate),
-                  adapt(to, phyto.nutrient_limitation),
-                  adapt(to, phyto.exudated_fracton).
-                  adapt(to, phyto.blue_light_absorption),
-                  adapt(to, phyto.green_light_absorption),
-                  adapt(to, phyto.red_light_absorption),
-                  adapt(to, phyto.mortality_half_saturation),
-                  adapt(to, phyto.linear_mortality_rate),
-                  adapt(to, phyto.base_quadratic_mortality),
-                  adapt(to, phyto.maximum_quadratic_mortality),
-                  adapt(to, phyto.minimum_chlorophyll_ratio),
-                  adapt(to, phyto.maximum_chlorophyll_ratio),
-                  adapt(to, phyto.maximum_iron_ratio),
-                  adapt(to, phyto.silicate_half_saturation),
-                  adapt(to, phyto.enhanced_silicate_half_saturation),
-                  adapt(to, phyto.optimal_silicate_ratio))
+           adapt(to, bgc.silicate_climatology), 
+           adapt(to, bgc.sinking_velocities))
