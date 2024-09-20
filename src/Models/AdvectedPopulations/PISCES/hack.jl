@@ -3,7 +3,7 @@ using Oceananigans.Grids: xnode, ynode, znode
 
 import Oceananigans.Biogeochemistry: biogeochemical_transition
 
-@inline function biogeochemical_transition(i, j, k, grid, bgc::AbstractContinuousFormBiogeochemistry, val_tracer_name, clock, fields)
+@inline function biogeochemical_transition(i, j, k, grid, bgc::PISCES, val_tracer_name, clock, fields)
     tracer_names_to_extract = required_biogeochemical_tracers(bgc)
     auxiliary_names_to_extract = required_biogeochemical_auxiliary_fields(bgc)
 
