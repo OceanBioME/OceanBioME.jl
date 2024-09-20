@@ -22,6 +22,10 @@ using Oceananigans.Fields: ConstantField, ZeroField
             @inbounds euphotic_depth[i, j, 1] = zₖ + (log(surface_PAR * cutoff) - log(PARₖ)) * (zₖ - zₖ₊₁) / (log(PARₖ) - log(PARₖ₊₁))
         end
     end
+
+    zₑᵤ = @inbounds euphotic_depth[i, j, 1]
+
+    @inbounds euphotic_depth[i, j, 1] = ifelse(isfinite(zₑᵤ), zₑᵤ, znode(i, j, 0, grid, Center(), Center(), Center()))
 end
 
 function compute_euphotic_depth!(euphotic_depth, PAR, cutoff = 1/1000)
