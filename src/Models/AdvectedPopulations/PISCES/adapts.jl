@@ -28,7 +28,7 @@ adapt_structure(to, bgc::PISCES) =
            nothing, nothing)
 
 # adapting a bunch of numbers but maybe someone will want something else in there in the future
-adapt_structure(to, phyto::Phytoplankton) = 
+adapt_structure(to, phyto::MixedMondoPhytoplankton) = 
     Phytoplankton(adapt(to, phyto.growth_rate),
                   adapt(to, phyto.nutrient_limitation),
                   adapt(to, phyto.exudated_fracton).
