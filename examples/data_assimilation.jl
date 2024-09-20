@@ -34,22 +34,26 @@ rng = Random.MersenneTwister(rng_seed)
 @inline PAR⁰(t) = 60 * (1 - cos((t + 15days) * 2π / year)) * (1 / (1 + 0.2 * exp(-((mod(t, year) - 200days) / 50days)^2))) + 2
 
 z = -10 # nominal depth of the box for the PAR profile
-@inline PAR(t) = PAR⁰(t) * exp(0.2z) # Modify the PAR based on the nominal depth and exponential decay 
+@inline PAR_func(t) = PAR⁰(t) * exp(0.2z) # Modify the PAR based on the nominal depth and exponential decay 
 
 function run_box_simulation(initial_photosynthetic_slope,
                             base_maximum_growth,
                             nutrient_half_saturation,
                             phyto_base_mortality_rate,
                             j)
+    grid = BoxModelGrid()
+    clock = Clock(; time = zero(grid))
 
-    biogeochemistry = NutrientPhytoplanktonZooplanktonDetritus(; grid = BoxModelGrid(),
+    PAR = FunctionField{Center, Center, Center}(PAR_func, grid; clock)
+  
+    biogeochemistry = NutrientPhytoplanktonZooplanktonDetritus(; grid,
                                                                  initial_photosynthetic_slope,
                                                                  base_maximum_growth,
                                                                  nutrient_half_saturation,
                                                                  phyto_base_mortality_rate,
-                                                                 light_attenuation_model = nothing)
+                                                                 light_attenuation_model = PrescribedPhotosyntheticallyActiveRadiation(PAR))
 
-    model = BoxModel(; biogeochemistry, forcing = (; PAR))
+    model = BoxModel(; biogeochemistry)
 
     set!(model, N = 10.0, P = 0.1, Z = 0.01)
 
