@@ -24,6 +24,8 @@ using Distributions
 using EnsembleKalmanProcesses
 using EnsembleKalmanProcesses.ParameterDistributions
 
+using Oceananigans.Fields: FuncitonField
+
 const year = years = 365day
 
 rng_seed = 41
