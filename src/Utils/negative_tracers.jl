@@ -116,7 +116,7 @@ ScaleNegativeTracers(tracers::Tuple, grid;invalid_fill_value = NaN, warn = false
     tuple(map(tn -> ScaleNegativeTracers(tn, grid; invalid_fill_value, warn), tracers)...)
 
 function ScaleNegativeTracers(tracers::NamedTuple, grid; invalid_fill_value = NaN, warn = false)
-    scalefactors = on_architecture(architecture(grid), tracers.scalefactors)
+    scalefactors = on_architecture(architecture(grid), [tracers.scalefactors...])
     tracer_names = tracers.tracers
 
     return ScaleNegativeTracers(tracer_names, scalefactors, invalid_fill_value, warn)
