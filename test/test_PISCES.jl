@@ -84,8 +84,9 @@ function test_PISCES_conservation() # only on CPU please
     return nothing
 end
 
-total_light(z) = 3light(z)
-light(z) = ifelse(z <= 0, exp(z/10), 2-exp(-z/10)) # so we get a value boundary condition like normal PAR fields
+@inline total_light(z) = 3light(z)
+@inline light(z) = ifelse(z <= 0, exp(z/10), 2-exp(-z/10)) # so we get a value boundary condition like normal PAR fields
+@inline κ_func(z) = ifelse(z > -25, 2, 1)
 
 function test_PISCES_update_state(arch)
     # TODO: implement and test mixed layer depth computaiton elsewhere
@@ -103,7 +104,7 @@ function test_PISCES_update_state(arch)
                                light_attenuation,
                                mixed_layer_depth)
 
-    closure = ScalarDiffusivity(ν = nothing, κ = FunctionField{Center, Center, Center}((z) -> ifelse(z > -25, 2, 1), grid))
+    closure = ScalarDiffusivity(ν = 1e-5, κ = FunctionField{Center, Center, Center}(κ_func, grid))
 
     model = NonhydrostaticModel(; grid, biogeochemistry, closure) # this updates the biogeochemical state
 
@@ -113,6 +114,8 @@ function test_PISCES_update_state(arch)
 
     # test should be elsewhere
     @test on_architecture(CPU(), biogeochemistry.underlying_biogeochemistry.euphotic_depth)[1, 1, 1] ≈ -10 * log(1000)
+
+    @test_nowarn time_step!(model, 1)
 end
 
 function test_PISCES_negativity_protection(arch)
@@ -162,7 +165,7 @@ end
         #test_PISCES_box_model() #TODO
     end
 
-    @info "Testing PISCES auxiliary field computation"
+    @info "Testing PISCES auxiliary field computation and timestepping"
     test_PISCES_update_state(architecture)
 
     test_PISCES_negativity_protection(architecture)
