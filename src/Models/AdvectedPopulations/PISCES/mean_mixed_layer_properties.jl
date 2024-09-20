@@ -32,14 +32,16 @@ compute_mixed_layer_mean!(Cₘₓₗ::Nothing, mixed_layer_depth, C, grid) = not
     integration_depth = 0
 
     for k in grid.Nz:-1:1
-        if znode(i, j, k, grid, Center(), Center(), Face()) >= zₘₓₗ
-            Δz = znode(i, j, k + 1, grid, Center(), Center(), Face()) - znode(i, j, k, grid, Center(), Center(), Face())
-        elseif znode(i, j, k + 1, grid, Center(), Center(), Face()) > zₘₓₗ
-            Δz = znode(i, j, k + 1, grid, Center(), Center(), Face()) - zₘₓₗ
-        else
-            Δz = 0
-        end
+        zₖ   = znode(i, j, k, grid, Center(), Center(), Face())
+        zₖ₊₁ = znode(i, j, k + 1, grid, Center(), Center(), Face())
+
+        Δzₖ   = zₖ₊₁ - zₖ
+        Δzₖ₊₁ = ifelse(zₖ₊₁ > zₘₓₗ, zₖ₊₁ - zₘₓₗ, 0)
+
+        Δz = ifelse(zₖ >= zₘₓₗ, Δzₖ, Δzₖ₊₁)
+
         Cₘₓₗ[i, j, 1] += C[i, j, k] * Δz
+        
         integration_depth += Δz
     end
 

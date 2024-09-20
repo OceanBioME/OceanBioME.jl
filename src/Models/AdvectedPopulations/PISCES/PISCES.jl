@@ -156,6 +156,7 @@ include("compute_calcite_saturation.jl")
 include("update_state.jl")
 include("coupling_utils.jl")
 include("show_methods.jl")
+include("adapts.jl")
 
 """
     PISCES(; grid,
