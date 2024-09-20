@@ -62,7 +62,7 @@ end
                                         NO₃, NH₄, PO₄, Fe, Si, 
                                         CaCO₃, DIC, Alk, 
                                         O₂, T, S,
-                                        zₘₓₗ, zₑᵤ, Si′, Ω, κ, mixed_layer_PAR, PAR, PAR₁, PAR₂, PAR₃)
+                                        zₘₓₗ, zₑᵤ, Si′, Ω, κ, mixed_layer_PAR, wPOC, wGOC, PAR, PAR₁, PAR₂, PAR₃)
     # production
     δ  = phyto.exudated_fracton
 
@@ -95,7 +95,7 @@ end
                                         NO₃, NH₄, PO₄, Fe, Si, 
                                         CaCO₃, DIC, Alk, 
                                         O₂, T, S,
-                                        zₘₓₗ, zₑᵤ, Si′, Ω, κ, mixed_layer_PAR, PAR, PAR₁, PAR₂, PAR₃)
+                                        zₘₓₗ, zₑᵤ, Si′, Ω, κ, mixed_layer_PAR, wPOC, wGOC, PAR, PAR₁, PAR₂, PAR₃)
 
     I    = phytoplankton_concentration(val_name, P, D)
     IChl = phytoplankton_concentration(val_name, PChl, DChl)
@@ -140,7 +140,7 @@ end
                                         NO₃, NH₄, PO₄, Fe, Si, 
                                         CaCO₃, DIC, Alk, 
                                         O₂, T, S,
-                                        zₘₓₗ, zₑᵤ, Si′, Ω, κ, mixed_layer_PAR, PAR, PAR₁, PAR₂, PAR₃)
+                                        zₘₓₗ, zₑᵤ, Si′, Ω, κ, mixed_layer_PAR, wPOC, wGOC, PAR, PAR₁, PAR₂, PAR₃)
 
     I    = phytoplankton_concentration(val_name, P, D)
     IChl = phytoplankton_concentration(val_name, PChl, DChl)
@@ -190,7 +190,7 @@ end
                                         NO₃, NH₄, PO₄, Fe, Si, 
                                         CaCO₃, DIC, Alk, 
                                         O₂, T, S,
-                                        zₘₓₗ, zₑᵤ, Si′, Ω, κ, mixed_layer_PAR, PAR, PAR₁, PAR₂, PAR₃)
+                                        zₘₓₗ, zₑᵤ, Si′, Ω, κ, mixed_layer_PAR, wPOC, wGOC, PAR, PAR₁, PAR₂, PAR₃)
 
     # production
     production, L = silicate_uptake(phyto, bgc, y, t, D, DChl, DFe, NO₃, NH₄, PO₄, Fe, Si, Si′, T, zₘₓₗ, zₑᵤ, κ, PAR₁, PAR₂, PAR₃)

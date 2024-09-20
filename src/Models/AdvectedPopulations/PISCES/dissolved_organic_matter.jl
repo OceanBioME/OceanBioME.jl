@@ -33,7 +33,7 @@ end
                                                NO₃, NH₄, PO₄, Fe, Si, 
                                                CaCO₃, DIC, Alk, 
                                                O₂, T, S,
-                                               zₘₓₗ, zₑᵤ, Si′, Ω, κ, mixed_layer_PAR, PAR, PAR₁, PAR₂, PAR₃)
+                                               zₘₓₗ, zₑᵤ, Si′, Ω, κ, mixed_layer_PAR, wPOC, wGOC, PAR, PAR₁, PAR₂, PAR₃)
 
     nanophytoplankton_exudation = dissolved_exudate(bgc.nanophytoplankton, bgc, y, t, P, PChl, PFe, NO₃, NH₄, PO₄, Fe, Si, T, Si′, zₘₓₗ, zₑᵤ, κ, PAR₁, PAR₂, PAR₃)
     diatom_exudation = dissolved_exudate(bgc.diatoms, bgc, y, t, D, DChl, DFe, NO₃, NH₄, PO₄, Fe, Si, T, Si′, zₘₓₗ, zₑᵤ, κ, PAR₁, PAR₂, PAR₃)
@@ -44,8 +44,8 @@ end
 
     respiration_product = dissolved_upper_trophic_respiration_product(bgc.mesozooplankton, M, T)
 
-    microzooplankton_grazing_waste = specific_dissolved_grazing_waste(bgc.microzooplankton, bgc, x, y, z, P, D, PFe, DFe, Z, POC, GOC, SFe, T) * Z
-    mesozooplankton_grazing_waste  = specific_dissolved_grazing_waste(bgc.mesozooplankton, bgc, x, y, z, P, D, PFe, DFe, Z, POC, GOC, SFe, T) * M
+    microzooplankton_grazing_waste = specific_dissolved_grazing_waste(bgc.microzooplankton, P, D, PFe, DFe, Z, POC, GOC, SFe, T, wPOC, wGOC) * Z
+    mesozooplankton_grazing_waste  = specific_dissolved_grazing_waste(bgc.mesozooplankton, P, D, PFe, DFe, Z, POC, GOC, SFe, T, wPOC, wGOC) * M
 
     grazing_waste = microzooplankton_grazing_waste + mesozooplankton_grazing_waste
 
