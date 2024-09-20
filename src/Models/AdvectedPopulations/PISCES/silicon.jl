@@ -15,11 +15,11 @@ struct Silicate end
                                       NO₃, NH₄, PO₄, Fe, Si, 
                                       CaCO₃, DIC, Alk, 
                                       O₂, T, S,
-                                      zₘₓₗ, zₑᵤ, Si′, Ω, κ, mixed_layer_PAR, PAR, PAR₁, PAR₂, PAR₃)
+                                      zₘₓₗ, zₑᵤ, Si′, Ω, κ, mixed_layer_PAR, wPOC, wGOC, PAR, PAR₁, PAR₂, PAR₃)
 
     consumption, = silicate_uptake(bgc.diatoms, bgc, y, t, D, DChl, DFe, NO₃, NH₄, PO₄, Fe, Si, Si′, T, zₘₓₗ, zₑᵤ, κ, PAR₁, PAR₂, PAR₃)
 
-    dissolution = particulate_silicate_dissolution(bgc.particulate_organic_matter, bgc, x, y, z, PSi, Si, T, zₘₓₗ, zₑᵤ)
+    dissolution = particulate_silicate_dissolution(bgc.particulate_organic_matter, z, PSi, Si, T, zₘₓₗ, zₑᵤ, wGOC)
 
     return dissolution - consumption
 end

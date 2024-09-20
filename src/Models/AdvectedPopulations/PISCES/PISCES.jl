@@ -48,7 +48,6 @@ import Oceananigans.Biogeochemistry: required_biogeochemical_tracers,
 
 import OceanBioME: maximum_sinking_velocity
 
-import Adapt: adapt_structure, adapt
 import Base: show, summary
 
 struct PISCES{NP, DP, SZ, BZ, DM, PM, NI, FE, SI, OX, PO, CA, CE, FT, LA, DL, ML, EU, MS, VD, MP, CC, CS, SS} <: AbstractContinuousFormBiogeochemistry
@@ -115,14 +114,15 @@ const CARBON_SYSTEM = Union{Val{:DIC}, Val{:Alk}}
 (bgc::PISCES)(val_name::Val{:PO₄}, args...)     = bgc.phosphate(val_name, bgc, args...)
 (bgc::PISCES)(val_name::CARBON_SYSTEM, args...) = bgc.carbon_system(val_name, bgc, args...)
 
-
 @inline biogeochemical_auxiliary_fields(bgc::PISCES) = 
     (zₘₓₗ = bgc.mixed_layer_depth, 
      zₑᵤ = bgc.euphotic_depth, 
      Si′ = bgc.silicate_climatology, 
      Ω = bgc.calcite_saturation,
      κ = bgc.mean_mixed_layer_vertical_diffusivity,
-     mixed_layer_PAR = bgc.mean_mixed_layer_light)
+     mixed_layer_PAR = bgc.mean_mixed_layer_light,
+     wPOC = bgc.sinking_velocities.POC,
+     wGOC = bgc.sinking_velocities.GOC)
 
 @inline required_biogeochemical_tracers(::PISCES) = 
     (:P, :D, :Z, :M, :PChl, :DChl, :PFe, :DFe, :DSi, 
@@ -131,7 +131,7 @@ const CARBON_SYSTEM = Union{Val{:DIC}, Val{:Alk}}
      :CaCO₃, :DIC, :Alk, :O₂, :T, :S)
 
 @inline required_biogeochemical_auxiliary_fields(::PISCES) =
-    (:zₘₓₗ, :zₑᵤ, :Si′, :Ω, :κ, :mixed_layer_PAR, :PAR, :PAR₁, :PAR₂, :PAR₃)
+    (:zₘₓₗ, :zₑᵤ, :Si′, :Ω, :κ, :mixed_layer_PAR, :wPOC, :wGOC, :PAR, :PAR₁, :PAR₂, :PAR₃)
 
 const small_particle_components = Union{Val{:POC}, Val{:SFe}}
 const large_particle_components = Union{Val{:GOC}, Val{:BFe}, Val{:PSi}, Val{:CaCO₃}} 
@@ -156,6 +156,7 @@ include("compute_calcite_saturation.jl")
 include("update_state.jl")
 include("coupling_utils.jl")
 include("show_methods.jl")
+include("adapts.jl")
 
 """
     PISCES(; grid,

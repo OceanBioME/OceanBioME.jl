@@ -7,7 +7,7 @@
                                                                 NO₃, NH₄, PO₄, Fe, Si, 
                                                                 CaCO₃, DIC, Alk, 
                                                                 O₂, T, S,
-                                                                zₘₓₗ, zₑᵤ, Si′, Ω, κ, mixed_layer_PAR, PAR, PAR₁, PAR₂, PAR₃)
+                                                                zₘₓₗ, zₑᵤ, Si′, Ω, κ, mixed_layer_PAR, wPOC, wGOC, PAR, PAR₁, PAR₂, PAR₃)
     # diatom grazing
     gZ = diatom_grazing(bgc.microzooplankton, P, D, Z, POC, T)
     gM = diatom_grazing(bgc.mesozooplankton, P, D, Z, POC, T)
@@ -20,16 +20,16 @@
     diatom_mortality = (diatom_linear_mortality + diatom_quadratic_mortality) * DSi / (D + eps(0.0))
 
     # dissolution
-    dissolution = particulate_silicate_dissolution(poc, bgc, x, y, z, PSi, Si, T, zₘₓₗ, zₑᵤ)
+    dissolution = particulate_silicate_dissolution(poc, z, PSi, Si, T, zₘₓₗ, zₑᵤ, wGOC)
 
     return grazing + diatom_mortality - dissolution
 end
 
-@inline function particulate_silicate_dissolution(poc, bgc, x, y, z, PSi, Si, T, zₘₓₗ, zₑᵤ)
+@inline function particulate_silicate_dissolution(poc, z, PSi, Si, T, zₘₓₗ, zₑᵤ, wGOC)
     λₗ = poc.fast_dissolution_rate_of_silicate
     λᵣ = poc.slow_dissolution_rate_of_silicate
 
-    χ = particulate_silicate_liable_fraction(poc, bgc, x, y, z, zₘₓₗ, zₑᵤ)
+    χ = particulate_silicate_liable_fraction(poc, z, zₘₓₗ, zₑᵤ, wGOC)
 
     λ₀ = χ * λₗ + (1 - χ) * λᵣ
 
@@ -41,15 +41,12 @@ end
     return λ * PSi # assuming the Diss_Si is typo in Aumont 2015, consistent with Aumont 2005
 end
 
-@inline function particulate_silicate_liable_fraction(poc, bgc, x, y, z, zₘₓₗ, zₑᵤ)
+@inline function particulate_silicate_liable_fraction(poc, z, zₘₓₗ, zₑᵤ, wGOC)
     χ₀ = poc.base_liable_silicate_fraction
     λₗ = poc.fast_dissolution_rate_of_silicate
     λᵣ = poc.slow_dissolution_rate_of_silicate
-    grid = bgc.sinking_velocities.grid
-
-    w = particle_sinking_speed(x, y, z, grid,  bgc.sinking_velocities.GOC)
 
     zₘ = min(zₘₓₗ, zₑᵤ)
 
-    return χ₀ * ifelse(z >= zₘ, 1, exp((λₗ - λᵣ) * (zₘ - z) / w))
+    return χ₀ * ifelse(z >= zₘ, 1, exp((λₗ - λᵣ) * (zₘ - z) / wGOC))
 end

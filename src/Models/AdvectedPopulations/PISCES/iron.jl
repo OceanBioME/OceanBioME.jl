@@ -19,7 +19,7 @@ end
                                     NO₃, NH₄, PO₄, Fe, Si, 
                                     CaCO₃, DIC, Alk, 
                                     O₂, T, S,
-                                    zₘₓₗ, zₑᵤ, Si′, Ω, κ, mixed_layer_PAR, PAR, PAR₁, PAR₂, PAR₃)
+                                    zₘₓₗ, zₑᵤ, Si′, Ω, κ, mixed_layer_PAR, wPOC, wGOC, PAR, PAR₁, PAR₂, PAR₃)
 
     λ̄ = iron.excess_scavenging_enhancement
 
@@ -53,8 +53,8 @@ end
     consumption = nanophytoplankton_consumption + diatom_consumption
 
     # grazing waste - this is the excess non assimilated into zooplankton when they consume iron rich phytoplankton
-    microzooplankton_waste = specific_non_assimilated_iron(bgc.microzooplankton, bgc, x, y, z, P, D, PFe, DFe, Z, POC, GOC, SFe, BFe, T) * Z
-    mesozooplankton_waste  = specific_non_assimilated_iron(bgc.mesozooplankton, bgc, x, y, z, P, D, PFe, DFe, Z, POC, GOC, SFe, BFe, T) * M
+    microzooplankton_waste = specific_non_assimilated_iron(bgc.microzooplankton, bgc, P, D, PFe, DFe, Z, POC, GOC, SFe, BFe, T, wPOC, wGOC) * Z
+    mesozooplankton_waste  = specific_non_assimilated_iron(bgc.mesozooplankton, bgc, P, D, PFe, DFe, Z, POC, GOC, SFe, BFe, T, wPOC, wGOC) * M
 
     zooplankton_waste = microzooplankton_waste + mesozooplankton_waste
 

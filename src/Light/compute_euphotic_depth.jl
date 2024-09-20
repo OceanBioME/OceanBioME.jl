@@ -5,21 +5,21 @@ using Oceananigans.Fields: ConstantField, ZeroField
 
     surface_PAR = @inbounds (PAR[i, j, grid.Nz] + PAR[i, j, grid.Nz + 1])/2
 
-    @inbounds euphotic_depth[i, j] = -Inf
+    @inbounds euphotic_depth[i, j, 1] = -Inf
 
     for k in grid.Nz-1:-1:1
-        PARₖ = PAR[i, j, k]
+        PARₖ = @inbounds PAR[i, j, k]
 
         # BRANCHING!
         if (PARₖ <= surface_PAR * cutoff) && isinf(euphotic_depth[i, j])
             # interpolate to find depth
-            PARₖ₊₁ = PAR[i, j, k + 1]
+            PARₖ₊₁ = @inbounds PAR[i, j, k + 1]
 
             zₖ = znode(i, j, k, grid, Center(), Center(), Center())
 
             zₖ₊₁ = znode(i, j, k + 1, grid, Center(), Center(), Center())
 
-            euphotic_depth[i, j] = zₖ + (log(surface_PAR * cutoff) - log(PARₖ)) * (zₖ - zₖ₊₁) / (log(PARₖ) - log(PARₖ₊₁))
+            @inbounds euphotic_depth[i, j, 1] = zₖ + (log(surface_PAR * cutoff) - log(PARₖ)) * (zₖ - zₖ₊₁) / (log(PARₖ) - log(PARₖ₊₁))
         end
     end
 end

@@ -108,13 +108,12 @@ function test_PISCES_update_state(arch)
     model = NonhydrostaticModel(; grid, biogeochemistry, closure) # this updates the biogeochemical state
 
     # checked and at very high resolution this converges to higher tollerance
-    @test isapprox(biogeochemistry.underlying_biogeochemistry.mean_mixed_layer_light[1, 1, 1], 3 * 10 / 25 * (1 - exp(-25/10)), rtol = 0.1)
-    @test isapprox(biogeochemistry.underlying_biogeochemistry.mean_mixed_layer_vertical_diffusivity[1, 1, 1], 2, rtol = 0.1)
+    @test isapprox(on_architecture(CPU(), biogeochemistry.underlying_biogeochemistry.mean_mixed_layer_light)[1, 1, 1], 3 * 10 / 25 * (1 - exp(-25/10)), rtol = 0.1)
+    @test isapprox(on_architecture(CPU(), biogeochemistry.underlying_biogeochemistry.mean_mixed_layer_vertical_diffusivity)[1, 1, 1], 2, rtol = 0.1)
 
     # test should be elsewhere
-    @test biogeochemistry.underlying_biogeochemistry.euphotic_depth[1, 1, 1] ≈ -10 * log(1000)
+    @test on_architecture(CPU(), biogeochemistry.underlying_biogeochemistry.euphotic_depth)[1, 1, 1] ≈ -10 * log(1000)
 end
-
 
 function test_PISCES_negativity_protection(arch)
     grid = RectilinearGrid(arch, topology = (Flat, Flat, Bounded), size = (10, ), extent = (100, ))
@@ -160,12 +159,13 @@ end
     if architecture isa CPU
         @info "Testing PISCES element conservation (C, Fe, P, Si)"
         test_PISCES_conservation()
+        #test_PISCES_box_model() #TODO
     end
 
     @info "Testing PISCES auxiliary field computation"
     test_PISCES_update_state(architecture)
 
     test_PISCES_negativity_protection(architecture)
-    
-    #test_PISCES_setup(grid)
+
+    #test_PISCES_setup(grid) # maybe should test everything works with all the different bits???
 end

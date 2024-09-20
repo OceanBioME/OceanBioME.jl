@@ -1,6 +1,6 @@
 using KernelAbstractions: @kernel, @index
 
-using Oceananigans.Fields: interpolate, flatten_node
+using Oceananigans.Fields: flatten_node
 using Oceananigans.Grids: znode, zspacing
 
 import Oceananigans.Fields: flatten_node
@@ -68,7 +68,9 @@ end
     return ifelse(k == grid.Nz + 1, 0, w)
 end
 
-@inline particle_sinking_speed(x, y, z, grid, w) = interpolate(flatten_node(x, y, z), w, (Center(), Center(), Face()), grid)
+# don't actually use this version but might be useful since we can do it
+@inline (p::DepthDependantSinkingSpeed)(z, zₘₓₗ, zₑᵤ) = 
+    ifelse(z < 0, - p.minimum_speed + (p.maximum_speed - p.minimum_speed) * min(0, z - min(zₘₓₗ, zₑᵤ)) / 5000, 0)
 
 @inline function anoxia_factor(bgc, O₂)
     min_1 = bgc.first_anoxia_threshold

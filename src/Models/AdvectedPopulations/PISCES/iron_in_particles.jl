@@ -7,9 +7,9 @@
                                                                 NO₃, NH₄, PO₄, Fe, Si, 
                                                                 CaCO₃, DIC, Alk, 
                                                                 O₂, T, S,
-                                                                zₘₓₗ, zₑᵤ, Si′, Ω, κ, mixed_layer_PAR, PAR, PAR₁, PAR₂, PAR₃)
+                                                                zₘₓₗ, zₑᵤ, Si′, Ω, κ, mixed_layer_PAR, wPOC, wGOC, PAR, PAR₁, PAR₂, PAR₃)
 
-    grazing_waste = specific_non_assimilated_iron_waste(bgc.microzooplankton, bgc, x, y, z, P, D, PFe, DFe, Z, POC, GOC, SFe, BFe, T) * Z
+    grazing_waste = specific_non_assimilated_iron_waste(bgc.microzooplankton, bgc, P, D, PFe, DFe, Z, POC, GOC, SFe, BFe, T, wPOC, wGOC) * Z
 
     # mortality terms
     R_CaCO₃ = rain_ratio(bgc.calcite, bgc, P, PChl, PFe, NO₃, NH₄, PO₄, Fe, Si, Si′, T, zₘₓₗ, PAR)
@@ -34,8 +34,7 @@
     microzooplankton_grazing = particulate_grazing(bgc.microzooplankton, P, D, Z, POC, T) * Z
     mesozooplankton_grazing  = particulate_grazing(bgc.mesozooplankton, P, D, Z, POC, T) * M
 
-    grid = bgc.sinking_velocities.grid
-    small_flux_feeding = specific_flux_feeding(bgc.mesozooplankton, x, y, z, POC, T, bgc.sinking_velocities.POC, grid) * M
+    small_flux_feeding = specific_flux_feeding(bgc.mesozooplankton, POC, T, wPOC) * M
 
     grazing = (microzooplankton_grazing + mesozooplankton_grazing + small_flux_feeding) * SFe / (POC + eps(0.0))
 
@@ -79,9 +78,9 @@ end
                                                                 NO₃, NH₄, PO₄, Fe, Si, 
                                                                 CaCO₃, DIC, Alk, 
                                                                 O₂, T, S,
-                                                                zₘₓₗ, zₑᵤ, Si′, Ω, κ, mixed_layer_PAR, PAR, PAR₁, PAR₂, PAR₃)
+                                                                zₘₓₗ, zₑᵤ, Si′, Ω, κ, mixed_layer_PAR, wPOC, wGOC, PAR, PAR₁, PAR₂, PAR₃)
 
-    grazing_waste = specific_non_assimilated_iron_waste(bgc.mesozooplankton, bgc, x, y, z, P, D, PFe, DFe, Z, POC, GOC, SFe, BFe, T) * M
+    grazing_waste = specific_non_assimilated_iron_waste(bgc.mesozooplankton, bgc, P, D, PFe, DFe, Z, POC, GOC, SFe, BFe, T, wPOC, wGOC) * M
 
     # mortality terms
     R_CaCO₃ = rain_ratio(bgc.calcite, bgc, P, PChl, PFe, NO₃, NH₄, PO₄, Fe, Si, Si′, T, zₘₓₗ, PAR)
@@ -102,8 +101,7 @@ end
     degredation = λ * BFe
 
     # grazing
-    grid = bgc.sinking_velocities.grid
-    grazing = specific_flux_feeding(bgc.mesozooplankton, x, y, z, GOC, T, bgc.sinking_velocities.GOC, grid) * M * BFe / (GOC + eps(0.0))
+    grazing = specific_flux_feeding(bgc.mesozooplankton, GOC, T,wGOC) * M * BFe / (GOC + eps(0.0))
 
     # aggregation    
     small_particle_aggregation = aggregation(poc, bgc, z, POC, GOC, zₘₓₗ) 
