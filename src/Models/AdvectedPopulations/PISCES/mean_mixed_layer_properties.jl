@@ -25,7 +25,7 @@ compute_mixed_layer_mean!(Cₘₓₗ::Nothing, mixed_layer_depth, C, grid) = not
 @kernel function _compute_mixed_layer_mean!(Cₘₓₗ, mixed_layer_depth, C, grid)
     i, j = @index(Global, NTuple)
 
-    zₘₓₗ = @inbounds mixed_layer_depth[i, j]
+    zₘₓₗ = @inbounds mixed_layer_depth[i, j, 1]
 
     @inbounds Cₘₓₗ[i, j, 1] = 0
 
@@ -41,7 +41,7 @@ compute_mixed_layer_mean!(Cₘₓₗ::Nothing, mixed_layer_depth, C, grid) = not
         Δz = ifelse(zₖ >= zₘₓₗ, Δzₖ, Δzₖ₊₁)
 
         Cₘₓₗ[i, j, 1] += C[i, j, k] * Δz
-        
+
         integration_depth += Δz
     end
 
