@@ -27,7 +27,7 @@ compute_mixed_layer_mean!(Cₘₓₗ::Nothing, mixed_layer_depth, C, grid) = not
 
     zₘₓₗ = @inbounds mixed_layer_depth[i, j]
 
-    @inbounds Cₘₓₗ[i, j] = 0
+    @inbounds Cₘₓₗ[i, j, 1] = 0
 
     integration_depth = 0
 
@@ -39,11 +39,11 @@ compute_mixed_layer_mean!(Cₘₓₗ::Nothing, mixed_layer_depth, C, grid) = not
         else
             Δz = 0
         end
-        Cₘₓₗ[i, j] += C[i, j, k] * Δz
+        Cₘₓₗ[i, j, 1] += C[i, j, k] * Δz
         integration_depth += Δz
     end
 
-    Cₘₓₗ[i, j] /= integration_depth
+    Cₘₓₗ[i, j, 1] /= integration_depth
 end
 
 #####
