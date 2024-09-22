@@ -86,17 +86,40 @@ function ScaleNegativeTracers(tracers; scalefactors = ones(length(tracers)), inv
 end
 
 """
-    ScaleNegativeTracers(model::UnderlyingBiogeochemicalModel; warn = false)
+    ScaleNegativeTracers(bgc::AbstractBiogeochemistry; warn = false)
 
-Construct a modifier to scale the conserved tracers in `model`.
+Construct a modifier to scale the conserved tracers in `bgc` biogeochemistry.
 
 If `warn` is true then scaling will raise a warning.
 """
 function ScaleNegativeTracers(bgc::AbstractBiogeochemistry, grid; invalid_fill_value = NaN, warn = false)
     tracers = conserved_tracers(bgc)
+
+    return ScaleNegativeTracers(tracers, grid; invalid_fill_value, warn)
+end
+
+# for when `conserved_tracers` just returns a tuple of symbols
+function ScaleNegativeTracers(tracers, grid; invalid_fill_value = NaN, warn = false)
     scalefactors = on_architecture(architecture(grid), ones(length(tracers)))
 
     return ScaleNegativeTracers(tracers, scalefactors, invalid_fill_value, warn)
+end
+
+function ScaleNegativeTracers(tracers::NTuple{<:Any, Symbol}, grid; invalid_fill_value = NaN, warn = false)
+    scalefactors = on_architecture(architecture(grid), ones(length(tracers)))
+
+    return ScaleNegativeTracers(tracers, scalefactors, invalid_fill_value, warn)
+end
+
+# multiple conserved groups
+ScaleNegativeTracers(tracers::Tuple, grid;invalid_fill_value = NaN, warn = false) =
+    tuple(map(tn -> ScaleNegativeTracers(tn, grid; invalid_fill_value, warn), tracers)...)
+
+function ScaleNegativeTracers(tracers::NamedTuple, grid; invalid_fill_value = NaN, warn = false)
+    scalefactors = on_architecture(architecture(grid), [tracers.scalefactors...])
+    tracer_names = tracers.tracers
+
+    return ScaleNegativeTracers(tracer_names, scalefactors, invalid_fill_value, warn)
 end
 
 summary(scaler::ScaleNegativeTracers) = string("Mass conserving negative scaling of $(scaler.tracers)")
@@ -106,13 +129,15 @@ show(io::IO, scaler::ScaleNegativeTracers) = print(io, string(summary(scaler), "
 function update_biogeochemical_state!(model, scale::ScaleNegativeTracers)
     workgroup, worksize = work_layout(model.grid, :xyz)
 
-    dev = device(model.grid.architecture)
+    dev = device(architecture(model))
 
     scale_for_negs_kernel! = scale_for_negs!(dev, workgroup, worksize)
 
-    tracers_to_scale = Tuple(model.tracers[tracer_name] for tracer_name in keys(scale.tracers))
+    tracers_to_scale = Tuple(model.tracers[tracer_name] for tracer_name in scale.tracers)
 
     scale_for_negs_kernel!(tracers_to_scale, scale.scalefactors, scale.invalid_fill_value)
+
+    return nothing
 end
 
 @kernel function scale_for_negs!(tracers, scalefactors, invalid_fill_value)
@@ -130,17 +155,13 @@ end
         end
     end 
 
-    t < 0 && (t = invalid_fill_value)
+    t = ifelse(t < 0, invalid_fill_value, t)
 
     for tracer in tracers
         value = @inbounds tracer[i, j, k]
-        
-        if value > 0
-            value *= t / p
-        else
-            value = 0
-        end
 
-        @inbounds tracer[i, j, k] = value
+        new_value = ifelse(!isfinite(value) | (value > 0), value * t / p, 0)
+
+        @inbounds tracer[i, j, k] = new_value
     end
 end

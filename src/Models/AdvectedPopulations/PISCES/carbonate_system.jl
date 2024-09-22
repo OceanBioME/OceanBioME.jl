@@ -1,101 +1,88 @@
-#This document contains functions for:
-    #Forcing for DIC.
-    #Forcing for Alk.
+"""
+    CarbonateSystem
 
-#DIC is significant as required by phytoplankton for photosynthesis, and by calcifying organisms for calcite shells.
+Default parameterisation for `DIC`` and `Alk`alinity evolution. 
+"""
+struct CarbonateSystem end
 
-@inline function (bgc::PISCES)(::Val{:DIC}, x, y, z, t, P, D, Z, M, Pᶜʰˡ, Dᶜʰˡ, Pᶠᵉ, Dᶠᵉ, Dˢⁱ, DOC, POC, GOC, SFe, BFe, PSi, NO₃, NH₄, PO₄, Fe, Si, CaCO₃, DIC, Alk, O₂, T, zₘₓₗ, zₑᵤ, Si̅, D_dust, Ω, κ, PAR, PAR₁, PAR², PAR³)
-    #Parameters
-    γᶻ, γᴹ = bgc.excretion_as_DOM
-    σᶻ, σᴹ = bgc.non_assimilated_fraction
-    eₘₐₓᶻ, eₘₐₓᴹ = bgc. max_growth_efficiency_of_zooplankton
-    αᴾ, αᴰ = bgc.initial_slope_of_PI_curve
+@inline function (carbonates::CarbonateSystem)(::Val{:DIC}, bgc,
+                                               x, y, z, t,
+                                               P, D, Z, M, 
+                                               PChl, DChl, PFe, DFe, DSi,
+                                               DOC, POC, GOC, 
+                                               SFe, BFe, PSi, 
+                                               NO₃, NH₄, PO₄, Fe, Si, 
+                                               CaCO₃, DIC, Alk, 
+                                               O₂, T, S,
+                                               zₘₓₗ, zₑᵤ, Si′, Ω, κ, mixed_layer_PAR, wPOC, wGOC, PAR, PAR₁, PAR₂, PAR₃)
 
-    bFe = Fe
-    
-    #Grazing
-    ∑gᶻ, gₚᶻ, g_Dᶻ, gₚₒᶻ = grazing_Z(P, D, POC, T, bgc)
-    ∑gᴹ, gₚᴹ, g_Dᴹ, gₚₒᴹ, g_Zᴹ = grazing_M(P, D, Z, POC, T, bgc)
-    ∑g_FFᴹ = flux_feeding(z, zₑᵤ, zₘₓₗ, T, POC, GOC, bgc)[1]
+    microzooplankton_respiration = specific_inorganic_grazing_waste(bgc.microzooplankton, P, D, PFe, DFe, Z, POC, GOC, SFe, T, wPOC, wGOC) * Z
+    mesozooplankton_respiration  = specific_inorganic_grazing_waste(bgc.mesozooplankton, P, D, PFe, DFe, Z, POC, GOC, SFe, T, wPOC, wGOC) * M
 
-    #Gross growth efficiency
-    eᶻ = growth_efficiency(eₘₐₓᶻ, σᶻ, gₚᶻ, g_Dᶻ, gₚₒᶻ, 0, Pᶠᵉ, Dᶠᵉ, SFe, P, D, POC, bgc)
-    eᴹ =  growth_efficiency(eₘₐₓᴹ, σᴹ, gₚᴹ, g_Dᴹ, gₚₒᴹ, g_Zᴹ,Pᶠᵉ, Dᶠᵉ, SFe, P, D, POC, bgc)
+    zooplankton_respiration = microzooplankton_respiration + mesozooplankton_respiration
 
-    #Growth rates for phytoplankton
-    φ = bgc.latitude
-    φ = latitude(φ, y)
+    upper_trophic_respiration = inorganic_upper_trophic_respiration_product(bgc.mesozooplankton, M, T)
 
-    L_day = day_length(φ, t)
-    t_darkᴾ = bgc.mean_residence_time_of_phytoplankton_in_unlit_mixed_layer.P
-    t_darkᴰ = bgc.mean_residence_time_of_phytoplankton_in_unlit_mixed_layer.D
-    PARᴾ = P_PAR(PAR₁, PAR², PAR³, bgc)
-    PARᴰ = D_PAR(PAR₁, PAR², PAR³, bgc)
+    dissolved_degredation = bacterial_degradation(bgc.dissolved_organic_matter, z, Z, M, DOC, NO₃, NH₄, PO₄, Fe, T, zₘₓₗ, zₑᵤ)
 
-    Lₗᵢₘᴾ = P_nutrient_limitation(P, PO₄, NO₃, NH₄, Pᶜʰˡ, Pᶠᵉ, bgc)[1]
-    Lₗᵢₘᴰ = D_nutrient_limitation(D, PO₄, NO₃, NH₄, Si, Dᶜʰˡ, Dᶠᵉ, Si̅, bgc)[1]
-    μᴾ = phytoplankton_growth_rate(P, Pᶜʰˡ, PARᴾ, L_day, T, αᴾ, Lₗᵢₘᴾ, zₘₓₗ, zₑᵤ, κ, t_darkᴾ, bgc)
-    μᴰ = phytoplankton_growth_rate(D, Dᶜʰˡ, PARᴰ, L_day, T, αᴰ, Lₗᵢₘᴰ, zₘₓₗ, zₑᵤ, κ, t_darkᴰ, bgc)
+    calcite_diss = calcite_dissolution(bgc.calcite, CaCO₃, Ω)
 
-    #Bacteria
-    zₘₐₓ = max(abs(zₘₓₗ), abs(zₑᵤ))
-    Bact = bacterial_biomass(zₘₐₓ, z, Z, M)
+    calcite_prod = calcite_production(bgc.calcite, bgc, z, P, D, PChl, PFe, Z, M, POC, NO₃, NH₄, PO₄, Fe, Si, Si′, T, zₘₓₗ, PAR)
 
-    return (γᶻ*(1 - eᶻ - σᶻ)*∑gᶻ*Z + γᴹ*(1 - eᴹ - σᴹ)*(∑gᴹ + ∑g_FFᴹ)*M + 
-    γᴹ*upper_respiration(M, T, bgc) + 
-    oxic_remineralization(O₂, NO₃, PO₄, NH₄, DOC, T, bFe, Bact, bgc) + 
-    denitrification(NO₃, PO₄, NH₄, DOC, O₂, T, bFe, Bact, bgc) + 
-    dissolution_of_calcite(CaCO₃, bgc, Ω)*CaCO₃ - 
-    production_of_sinking_calcite(P, PO₄, NO₃, NH₄, Pᶜʰˡ, Pᶠᵉ, Fe, D, Z, M, POC, T, PAR, zₘₓₗ, z, bgc) - 
-    μᴰ*D - μᴾ*P) #eq59
+    nanophytoplankton_consumption, = total_production(bgc.nanophytoplankton, bgc, y, t, P, PChl, PFe, NO₃, NH₄, PO₄, Fe, Si, T, Si′, zₘₓₗ, zₑᵤ, κ, PAR₁, PAR₂, PAR₃)
+    diatom_consumption,            = total_production(bgc.diatoms, bgc, y, t, D, DChl, DFe, NO₃, NH₄, PO₄, Fe, Si, T, Si′, zₘₓₗ, zₑᵤ, κ, PAR₁, PAR₂, PAR₃)
+
+    consumption = nanophytoplankton_consumption + diatom_consumption
+
+    return zooplankton_respiration + upper_trophic_respiration + dissolved_degredation + calcite_diss - calcite_prod - consumption
 end
 
-@inline function (bgc::PISCES)(::Val{:Alk}, x, y, z, t, P, D, Z, M, Pᶜʰˡ, Dᶜʰˡ, Pᶠᵉ, Dᶠᵉ, Dˢⁱ, DOC, POC, GOC, SFe, BFe, PSi, NO₃, NH₄, PO₄, Fe, Si, CaCO₃, DIC, Alk, O₂, T, zₘₓₗ, zₑᵤ, Si̅, D_dust, Ω, κ, PAR, PAR₁, PAR², PAR³) # eq59
-    #Parameters
-    θᴺᶜ = bgc.NC_redfield_ratio
-    rₙₒ₃¹ = bgc. CN_ratio_of_denitrification
-    rₙₕ₄¹ = bgc.CN_ratio_of_ammonification
-    γᶻ, γᴹ = bgc.excretion_as_DOM
-    σᶻ, σᴹ = bgc.non_assimilated_fraction
-    eₘₐₓᶻ, eₘₐₓᴹ = bgc. max_growth_efficiency_of_zooplankton
-    λₙₕ₄ = bgc.max_nitrification_rate
+@inline function (carbonates::CarbonateSystem)(::Val{:Alk}, bgc, 
+                                               x, y, z, t,
+                                               P, D, Z, M, 
+                                               PChl, DChl, PFe, DFe, DSi,
+                                               DOC, POC, GOC, 
+                                               SFe, BFe, PSi, 
+                                               NO₃, NH₄, PO₄, Fe, Si, 
+                                               CaCO₃, DIC, Alk, 
+                                               O₂, T, S,
+                                               zₘₓₗ, zₑᵤ, Si′, Ω, κ, mixed_layer_PAR, wPOC, wGOC, PAR, PAR₁, PAR₂, PAR₃)
+    θ = bgc.nitrogen_redfield_ratio
 
-    bFe = Fe
+    nitrate_production = bgc.nitrogen(Val(:NO₃), bgc,
+                                      x, y, z, t,
+                                      P, D, Z, M, 
+                                      PChl, DChl, PFe, DFe, DSi,
+                                      DOC, POC, GOC, 
+                                      SFe, BFe, PSi, 
+                                      NO₃, NH₄, PO₄, Fe, Si, 
+                                      CaCO₃, DIC, Alk, 
+                                      O₂, T, S,
+                                      zₘₓₗ, zₑᵤ, Si′, Ω, κ, mixed_layer_PAR, wPOC, wGOC, PAR, PAR₁, PAR₂, PAR₃) * θ
 
-    #Grazing
-    ∑gᶻ, gₚᶻ, g_Dᶻ, gₚₒᶻ = grazing_Z(P, D, POC, T, bgc)
-    ∑gᴹ, gₚᴹ, g_Dᴹ, gₚₒᴹ, g_Zᴹ = grazing_M(P, D, Z, POC, T, bgc)
-    ∑g_FFᴹ = flux_feeding(z, zₑᵤ, zₘₓₗ, T, POC, GOC, bgc)[1]
+    ammonia_production = bgc.nitrogen(Val(:NH₄), bgc,
+                                      x, y, z, t,
+                                      P, D, Z, M, 
+                                      PChl, DChl, PFe, DFe, DSi,
+                                      DOC, POC, GOC, 
+                                      SFe, BFe, PSi, 
+                                      NO₃, NH₄, PO₄, Fe, Si, 
+                                      CaCO₃, DIC, Alk, 
+                                      O₂, T, S,
+                                      zₘₓₗ, zₑᵤ, Si′, Ω, κ, mixed_layer_PAR, wPOC, wGOC, PAR, PAR₁, PAR₂, PAR₃) * θ
+                                      
+    calcite_production = bgc.calcite(Val(:CaCO₃), bgc,
+                                     x, y, z, t,
+                                     P, D, Z, M, 
+                                     PChl, DChl, PFe, DFe, DSi,
+                                     DOC, POC, GOC, 
+                                     SFe, BFe, PSi, 
+                                     NO₃, NH₄, PO₄, Fe, Si, 
+                                     CaCO₃, DIC, Alk, 
+                                     O₂, T, S,
+                                     zₘₓₗ, zₑᵤ, Si′, Ω, κ, mixed_layer_PAR, wPOC, wGOC, PAR, PAR₁, PAR₂, PAR₃)
 
-    #Gross growth efficiency
-    eᶻ = growth_efficiency(eₘₐₓᶻ, σᶻ, gₚᶻ, g_Dᶻ, gₚₒᶻ, 0, Pᶠᵉ, Dᶠᵉ, SFe, P, D, POC, bgc) 
-    eᴹ =  growth_efficiency(eₘₐₓᴹ, σᴹ, gₚᴹ, g_Dᴹ, gₚₒᴹ, g_Zᴹ,Pᶠᵉ, Dᶠᵉ, SFe, P, D, POC, bgc)
-    #Uptake rates of nitrogen and ammonium
-    φ = bgc.latitude
-    φ = latitude(φ, y)
+    # I think there are typos in Aumount 2015 but this is what it should be
 
-
-    L_day = day_length(φ, t)
-    t_darkᴾ = bgc.mean_residence_time_of_phytoplankton_in_unlit_mixed_layer.P
-    t_darkᴰ = bgc.mean_residence_time_of_phytoplankton_in_unlit_mixed_layer.D
-    PARᴾ = P_PAR(PAR₁, PAR², PAR³, bgc)
-    PARᴰ = D_PAR(PAR₁, PAR², PAR³, bgc)
-
-    μₙₒ₃ᴾ = uptake_rate_nitrate_P(P, PO₄, NO₃, NH₄, Pᶜʰˡ, Pᶠᵉ, T, zₘₓₗ, zₑᵤ, κ, L_day, PARᴾ, t_darkᴾ, Si̅, bgc)
-    μₙₒ₃ᴰ = uptake_rate_nitrate_D(D, PO₄, NO₃, NH₄, Si, Dᶜʰˡ, Dᶠᵉ, T, zₘₓₗ, zₑᵤ, κ, L_day, PARᴰ, t_darkᴰ, Si̅, bgc)
-    μₙₕ₄ᴾ = uptake_rate_ammonium_P(P, PO₄, NO₃, NH₄, Pᶜʰˡ, Pᶠᵉ, T, zₘₓₗ, zₑᵤ, κ, L_day, PARᴾ, t_darkᴾ, Si̅, bgc)
-    μₙₕ₄ᴰ = uptake_rate_ammonium_D(D, PO₄, NO₃, NH₄, Si, Dᶜʰˡ, Dᶠᵉ, T, zₘₓₗ, zₑᵤ, κ, L_day, PARᴰ, t_darkᴰ, Si̅, bgc)
-
-    #Bacteria
-    zₘₐₓ = max(abs(zₘₓₗ), abs(zₑᵤ))
-    Bact = bacterial_biomass(zₘₐₓ, z, Z, M)
-
-    return (θᴺᶜ*oxic_remineralization(O₂, NO₃, PO₄, NH₄, DOC, T, bFe, Bact, bgc)
-          + θᴺᶜ*(rₙₒ₃¹ + 1)*denitrification(NO₃, PO₄, NH₄, DOC, O₂, T, bFe, Bact, bgc)
-          + θᴺᶜ*γᶻ*(1 - eᶻ - σᶻ)*∑gᶻ*Z + θᴺᶜ*γᴹ*(1 - eᴹ - σᴹ)*(∑gᴹ + ∑g_FFᴹ 
-          + θᴺᶜ*γᴹ*upper_respiration(M, T, bgc))*M + θᴺᶜ*μₙₒ₃ᴾ*P + θᴺᶜ*μₙₒ₃ᴰ*D 
-          + N_fixation(bFe, PO₄, T, P, NO₃, NH₄, Pᶜʰˡ, Pᶠᵉ, PAR, bgc)
-          + 2*dissolution_of_calcite(CaCO₃, bgc, Ω)*CaCO₃ + θᴺᶜ*oxygen_conditions(O₂, bgc)*(rₙₕ₄¹ - 1)*λₙₕ₄*NH₄
-          - θᴺᶜ*μₙₕ₄ᴾ*P - θᴺᶜ*μₙₕ₄ᴰ*D- 2*θᴺᶜ*nitrification(NH₄, O₂, λₙₕ₄, PAR, bgc) 
-          - 2*production_of_sinking_calcite(P, PO₄, NO₃, NH₄, Pᶜʰˡ, Pᶠᵉ, Fe, D, Z, M, POC, T, PAR, zₘₓₗ, z, bgc)) #eq81
+    return ammonia_production - nitrate_production - 2 * calcite_production
 end

@@ -29,7 +29,7 @@ end
 
     z = znode(i, j, k, grid, Center(), Center(), Center())
 
-    P = abs(z) * g_Earth * 1026 / 100000 # very rough - don't think we should bother integrating the actual density
+    P = abs(z) * g_Earth * 1026 / 100000 # rough but I don't think we should bother integrating the actual density
 
     @inbounds calcite_saturation[i, j, k] = CarbonChemistryModel.calcite_saturation(carbon_chemistry; DIC, T, S, Alk, P, silicate)
 end

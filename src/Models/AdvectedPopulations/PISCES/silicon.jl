@@ -1,27 +1,25 @@
-#The silicon compartment of the model is composed of Dˢⁱ, Si, PSi. Silicon is a limiting nutrient for diatoms, but not phytoplankton.
-#Silicon is conserved in the model.
+"""
+    Silicate
 
-# This documentation contains functions for:
-    #Si (eq74)
+Parameterisation for silicate (Si) which is consumed by diatoms
+and dissolutioned from particles.
+"""
+struct Silicate end
 
-@inline function (bgc::PISCES)(::Val{:Si}, x, y, z, t, P, D, Z, M, Pᶜʰˡ, Dᶜʰˡ, Pᶠᵉ, Dᶠᵉ, Dˢⁱ, DOC, POC, GOC, SFe, BFe, PSi, NO₃, NH₄, PO₄, Fe, Si, CaCO₃, DIC, Alk, O₂, T, zₘₓₗ, zₑᵤ, Si̅, D_dust, Ω, κ, PAR, PAR₁, PAR₂, PAR₃) #eq74
-    #Parameters
-    δᴰ = bgc.exudation_of_DOC.D
-    αᴰ = bgc.initial_slope_of_PI_curve.D
-    t_darkᴰ = bgc.mean_residence_time_of_phytoplankton_in_unlit_mixed_layer.D
-    Dissₛᵢ = bgc.dissolution_rate_of_silicon
+@inline function (silicate::Silicate)(::Val{:Si}, bgc,
+                                      x, y, z, t,
+                                      P, D, Z, M, 
+                                      PChl, DChl, PFe, DFe, DSi,
+                                      DOC, POC, GOC, 
+                                      SFe, BFe, PSi, 
+                                      NO₃, NH₄, PO₄, Fe, Si, 
+                                      CaCO₃, DIC, Alk, 
+                                      O₂, T, S,
+                                      zₘₓₗ, zₑᵤ, Si′, Ω, κ, mixed_layer_PAR, wPOC, wGOC, PAR, PAR₁, PAR₂, PAR₃)
 
-    λₚₛᵢ¹ = PSi_dissolution_rate(zₘₓₗ, zₑᵤ, z, T, Si, bgc)
-    
-    #L_day
-    φ = bgc.latitude
-    φ = latitude(φ, y)
+    consumption, = silicate_uptake(bgc.diatoms, bgc, y, t, D, DChl, DFe, NO₃, NH₄, PO₄, Fe, Si, Si′, T, zₘₓₗ, zₑᵤ, κ, PAR₁, PAR₂, PAR₃)
 
-    L_day = day_length(φ, t)
-    #Diatom growth
-    Lₗᵢₘᴰ = D_nutrient_limitation(D, PO₄, NO₃, NH₄, Si, Dᶜʰˡ, Dᶠᵉ, Si̅, bgc)[1]
-    PARᴰ = D_PAR(PAR₁, PAR₂, PAR₃, bgc)
-    μᴰ = phytoplankton_growth_rate(D, Dᶜʰˡ, PARᴰ, L_day, T, αᴰ, Lₗᵢₘᴰ, zₘₓₗ, zₑᵤ, κ, t_darkᴰ, bgc)
-    
-    return λₚₛᵢ¹*Dissₛᵢ*PSi - variation_in_SiC_ratio(D, PO₄, NO₃, NH₄, Si, Dᶜʰˡ, Dᶠᵉ, μᴰ, T, φ, Si̅, bgc)*(1-δᴰ)*μᴰ*D #eq74
+    dissolution = particulate_silicate_dissolution(bgc.particulate_organic_matter, z, PSi, Si, T, zₘₓₗ, zₑᵤ, wGOC)
+
+    return dissolution - consumption
 end

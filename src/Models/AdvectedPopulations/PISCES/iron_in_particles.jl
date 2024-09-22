@@ -1,124 +1,142 @@
-#This document contains functions for the following:
-    #Scav (eq50)
-    #Forcing equations for SFe and BFe. (eqs 48 and 49)
-#We use the 2 compartment version of the model, with iron comparments for small and big particles.
+@inline function (poc::TwoCompartementParticulateOrganicMatter)(::Val{:SFe}, bgc,
+                                                                x, y, z, t,
+                                                                P, D, Z, M, 
+                                                                PChl, DChl, PFe, DFe, DSi,
+                                                                DOC, POC, GOC, 
+                                                                SFe, BFe, PSi, 
+                                                                NO₃, NH₄, PO₄, Fe, Si, 
+                                                                CaCO₃, DIC, Alk, 
+                                                                O₂, T, S,
+                                                                zₘₓₗ, zₑᵤ, Si′, Ω, κ, mixed_layer_PAR, wPOC, wGOC, PAR, PAR₁, PAR₂, PAR₃)
 
-#Free form of iron is the only form susceptible to scavenging. We formulate the scavenging rate.
-#Iron is scavenged by lithogenic and biogenic particles. Iron scavenged by POC and GOC routed to SFe and BFe, al other scavenging lost from the system.
-@inline function Fe_scavenging_rate(POC, GOC, CaCO₃, PSi, D_dust, bgc) 
-    λ_Feᵐⁱⁿ = bgc.min_scavenging_rate_of_iron
-    λ_Fe = bgc.slope_of_scavenging_rate_of_iron
-    λ_Feᵈᵘˢᵗ = bgc.scavenging_rate_of_iron_by_dust
-    w_dust = bgc.sinking_speed_of_dust
-    Dust = D_dust/(w_dust+ eps(0.0)) #eq84
-    return λ_Feᵐⁱⁿ + λ_Fe*(POC + GOC + CaCO₃ + PSi) + λ_Feᵈᵘˢᵗ*Dust #eq50
+    grazing_waste = specific_non_assimilated_iron_waste(bgc.microzooplankton, bgc, P, D, PFe, DFe, Z, POC, GOC, SFe, BFe, T, wPOC, wGOC) * Z
+
+    # mortality terms
+    R_CaCO₃ = rain_ratio(bgc.calcite, bgc, P, PChl, PFe, NO₃, NH₄, PO₄, Fe, Si, Si′, T, zₘₓₗ, PAR)
+
+    nanophytoplankton_linear_mortality, nanophytoplankton_quadratic_mortality = mortality(bgc.nanophytoplankton, bgc, z, P, PChl, PFe, NO₃, NH₄, PO₄, Fe, Si, Si′, zₘₓₗ)
+
+    nanophytoplankton_mortality = (1 - 0.5 * R_CaCO₃) * (nanophytoplankton_linear_mortality + nanophytoplankton_quadratic_mortality) * PFe / (P + eps(0.0))
+
+    diatom_linear_mortality, = mortality(bgc.diatoms, bgc, z, D, DChl, DFe, NO₃, NH₄, PO₄, Fe, Si, Si′, zₘₓₗ)
+
+    diatom_mortality = 0.5 * diatom_linear_mortality * DFe / (D + eps(0.0))
+
+    microzooplankton_mortality = mortality(bgc.microzooplankton, bgc, Z, O₂, T) * bgc.microzooplankton.iron_ratio
+
+    # degredation
+    λ = specific_degredation_rate(poc, bgc, O₂, T)
+
+    large_particle_degredation = λ * BFe
+    degredation = λ * SFe
+
+    # grazing
+    microzooplankton_grazing = particulate_grazing(bgc.microzooplankton, P, D, Z, POC, T) * Z
+    mesozooplankton_grazing  = particulate_grazing(bgc.mesozooplankton, P, D, Z, POC, T) * M
+
+    small_flux_feeding = specific_flux_feeding(bgc.mesozooplankton, POC, T, wPOC) * M
+
+    grazing = (microzooplankton_grazing + mesozooplankton_grazing + small_flux_feeding) * SFe / (POC + eps(0.0))
+
+    # aggregation
+    
+    aggregation_to_large = aggregation(poc, bgc, z, POC, GOC, zₘₓₗ)
+
+    total_aggregation = aggregation_to_large * SFe / (POC + eps(0.0))
+
+    # scavenging
+    λFe = iron_scavenging_rate(poc, POC, GOC, CaCO₃, PSi)
+    
+    Fe′ = free_iron(bgc.iron, Fe, DOC, T)
+
+    scavenging = λFe * POC * Fe′
+
+    # bacterial uptake of dissolved iron
+    κ = poc.small_fraction_of_bacterially_consumed_iron
+
+    BactFe = bacterial_iron_uptake(bgc.dissolved_organic_matter, z, Z, M, DOC, NO₃, NH₄, PO₄, Fe, T, zₘₓₗ, zₑᵤ)
+
+    bacterial_assimilation = κ * BactFe
+
+    # colloidal iron aggregation
+    _, colloidal_aggregation = aggregation_of_colloidal_iron(bgc.iron, bgc.dissolved_organic_matter, bgc, z, DOC, POC, GOC, Fe, T, zₘₓₗ)
+
+    return (grazing_waste 
+            + nanophytoplankton_mortality + diatom_mortality + microzooplankton_mortality 
+            + large_particle_degredation + scavenging + bacterial_assimilation + colloidal_aggregation
+            - total_aggregation 
+            - grazing - degredation)
 end
 
-#Scavenging of free form of dissolved iron.
-@inline Fe_scavenging(POC, GOC, CaCO₃, PSi, D_dust, DOC, T, Fe, bgc) = Fe_scavenging_rate(POC, GOC, CaCO₃, PSi, D_dust, bgc)*free_organic_iron(Fe, DOC, T)
 
-@inline function (bgc::PISCES)(::Val{:SFe}, x, y, z, t, P, D, Z, M, Pᶜʰˡ, Dᶜʰˡ, Pᶠᵉ, Dᶠᵉ, Dˢⁱ, DOC, POC, GOC, SFe, BFe, PSi, NO₃, NH₄, PO₄, Fe, Si, CaCO₃, DIC, Alk, O₂, T, zₘₓₗ, zₑᵤ, Si̅, D_dust, Ω, κ, PAR, PAR₁, PAR₂, PAR₃) 
-    #Parameters
-    σᶻ = bgc.non_assimilated_fraction.Z
-    rᶻ = bgc.zooplankton_linear_mortality.Z
-    Kₘ = bgc.half_saturation_const_for_mortality
-    mᴾ, mᴰ = bgc.phytoplankton_mortality_rate
-    wᴾ = bgc.min_quadratic_mortality_of_phytoplankton
-    mᶻ = bgc.zooplankton_quadratic_mortality.Z
-    λ_Fe = bgc.slope_of_scavenging_rate_of_iron
-    κ_Bactˢᶠᵉ = bgc.coefficient_of_bacterial_uptake_of_iron_in_POC
-    wₚₒ = bgc.sinking_speed_of_POC
-    g_FF = bgc.flux_feeding_rate
-    b_Z, bₘ = bgc.temperature_sensitivity_term
-    μₘₐₓ⁰ = bgc.growth_rate_at_zero
-    θᶠᵉᶻ = bgc.FeC_ratio_of_zooplankton
+@inline function (poc::TwoCompartementParticulateOrganicMatter)(::Val{:BFe}, bgc,
+                                                                x, y, z, t,
+                                                                P, D, Z, M, 
+                                                                PChl, DChl, PFe, DFe, DSi,
+                                                                DOC, POC, GOC, 
+                                                                SFe, BFe, PSi, 
+                                                                NO₃, NH₄, PO₄, Fe, Si, 
+                                                                CaCO₃, DIC, Alk, 
+                                                                O₂, T, S,
+                                                                zₘₓₗ, zₑᵤ, Si′, Ω, κ, mixed_layer_PAR, wPOC, wGOC, PAR, PAR₁, PAR₂, PAR₃)
 
-    #Also required
-    τ₀ = bgc.background_shear
-    τₘₓₗ = bgc.mixed_layer_shear
+    grazing_waste = specific_non_assimilated_iron_waste(bgc.mesozooplankton, bgc, P, D, PFe, DFe, Z, POC, GOC, SFe, BFe, T, wPOC, wGOC) * M
 
-    sh = shear(z, zₘₓₗ, τ₀, τₘₓₗ)
-    Fe¹ = free_organic_iron(Fe, DOC, T) 
-    λₚₒ¹ = particles_carbon_degradation_rate(T, O₂, bgc)
-    bFe = Fe
+    # mortality terms
+    R_CaCO₃ = rain_ratio(bgc.calcite, bgc, P, PChl, PFe, NO₃, NH₄, PO₄, Fe, Si, Si′, T, zₘₓₗ, PAR)
+
+    nanophytoplankton_linear_mortality, nanophytoplankton_quadratic_mortality = mortality(bgc.nanophytoplankton, bgc, z, P, PChl, PFe, NO₃, NH₄, PO₄, Fe, Si, Si′, zₘₓₗ)
+
+    nanophytoplankton_mortality = 0.5 * R_CaCO₃ * (nanophytoplankton_linear_mortality + nanophytoplankton_quadratic_mortality) * PFe / (P + eps(0.0))
+
+    diatom_linear_mortality, diatom_quadratic_mortality = mortality(bgc.diatoms, bgc, z, D, DChl, DFe, NO₃, NH₄, PO₄, Fe, Si, Si′, zₘₓₗ)
+
+    diatom_mortality = (0.5 * diatom_linear_mortality + diatom_quadratic_mortality) * DFe / (D + eps(0.0))
+
+    mesozooplankton_mortality = linear_mortality(bgc.mesozooplankton, bgc, M, O₂, T) * bgc.mesozooplankton.iron_ratio
+
+    # degredation
+    λ = specific_degredation_rate(poc, bgc, O₂, T)
+
+    degredation = λ * BFe
+
+    # grazing
+    grazing = specific_flux_feeding(bgc.mesozooplankton, GOC, T,wGOC) * M * BFe / (GOC + eps(0.0))
+
+    # aggregation    
+    small_particle_aggregation = aggregation(poc, bgc, z, POC, GOC, zₘₓₗ) 
+
+    total_aggregation = small_particle_aggregation * SFe / (POC + eps(0.0))
+
+    # fecal pelet prodiction
+    fecal_pelet_production = upper_trophic_fecal_product(bgc.mesozooplankton, M, T) * bgc.mesozooplankton.iron_ratio
+
+    # scavenging
+    λFe = iron_scavenging_rate(poc, POC, GOC, CaCO₃, PSi)
     
-    #Iron quotas
-    θᶠᵉᴾ = nutrient_quota(Pᶠᵉ, P)
-    θᶠᵉᴰ = nutrient_quota(Dᶠᵉ, D)
-    θᶠᵉᴾᴼᶜ = nutrient_quota(SFe, POC)
-    
-    #Grazing
-    grazingᶻ = grazing_Z(P, D, POC, T, bgc)
-    grazingᴹ = grazing_M(P, D, Z, POC, T, bgc)
-    ∑θᶠᵉⁱgᵢᶻ = θᶠᵉᴾ*grazingᶻ[2] + θᶠᵉᴰ*grazingᶻ[3] + θᶠᵉᴾᴼᶜ*grazingᶻ[4] #over P, D, POC
-    gₚₒ_FFᴹ = g_FF*(bₘ^T)*wₚₒ*POC
-    
-    #Bacteria iron
-    zₘₐₓ = max(abs(zₑᵤ), abs(zₘₓₗ))
-    Bactfe = bacterial_uptake_Fe(μₘₐₓ⁰, z, Z, M, Fe, DOC, PO₄, NO₃, NH₄, bFe, T, zₘₐₓ, bgc)
+    Fe′ = free_iron(bgc.iron, Fe, DOC, T)
 
-    return (σᶻ*∑θᶠᵉⁱgᵢᶻ*Z 
-            + θᶠᵉᶻ*(rᶻ*(b_Z^T)*(concentration_limitation(Z, Kₘ) + 3*oxygen_conditions(O₂, bgc))*Z + mᶻ*(b_Z^T)*(Z^2)) 
-            + λₚₒ¹*BFe 
-            + θᶠᵉᴾ*(1 - 0.5*rain_ratio(P, PO₄, NO₃, NH₄, Pᶜʰˡ, Pᶠᵉ, Fe, T, PAR, zₘₓₗ, bgc))*(mᴾ*concentration_limitation(P, Kₘ)*P + sh*wᴾ*P^2) 
-            + θᶠᵉᴰ*0.5*mᴰ*concentration_limitation(D, Kₘ)*D + λ_Fe*POC*Fe¹ 
-            + iron_colloid_aggregation_1(sh, Fe, POC, DOC, T, bgc) - λₚₒ¹*SFe - θᶠᵉᴾᴼᶜ*POC_aggregation(POC, GOC, sh, bgc) 
-            - θᶠᵉᴾᴼᶜ*(grazingᴹ[4] + gₚₒ_FFᴹ)*M 
-            + κ_Bactˢᶠᵉ*Bactfe - θᶠᵉᴾᴼᶜ*grazingᶻ[4]*Z) #eq48, partial derivative ommitted
+    scavenging = λFe * GOC * Fe′
 
-    #Changes made from paper:
-        #3*oxygen_conditions added to zooplankton linear mortality terms.
-        #Z factor missing from final term.
+    # bacterial uptake of dissolved iron
+    κ = poc.large_fraction_of_bacterially_consumed_iron
 
-end 
+    BactFe = bacterial_iron_uptake(bgc.dissolved_organic_matter, z, Z, M, DOC, NO₃, NH₄, PO₄, Fe, T, zₘₓₗ, zₑᵤ)
 
-@inline function (bgc::PISCES)(::Val{:BFe}, x, y, z, t, P, D, Z, M, Pᶜʰˡ, Dᶜʰˡ, Pᶠᵉ, Dᶠᵉ, Dˢⁱ, DOC, POC, GOC, SFe, BFe, PSi, NO₃, NH₄, PO₄, Fe, Si, CaCO₃, DIC, Alk, O₂, T, zₘₓₗ, zₑᵤ, Si̅, D_dust, Ω, κ, PAR, PAR₁, PAR₂, PAR₃)
-    #Parameters
-    σᴹ = bgc.non_assimilated_fraction.M
-    rᴹ = bgc.zooplankton_linear_mortality.M
-    mᴾ, mᴰ = bgc.phytoplankton_mortality_rate
-    Kₘ = bgc.half_saturation_const_for_mortality
-    wᴾ = bgc.min_quadratic_mortality_of_phytoplankton
-    λ_Fe = bgc.slope_of_scavenging_rate_of_iron
-    g_FF = bgc.flux_feeding_rate
-    wₚₒ = bgc.sinking_speed_of_POC
-    bₘ = bgc.temperature_sensitivity_term.M
-    κ_Bactᴮᶠᵉ = bgc.coefficient_of_bacterial_uptake_of_iron_in_GOC
-    θᶠᵉᶻ = bgc.FeC_ratio_of_zooplankton
-    μₘₐₓ⁰ = bgc.growth_rate_at_zero
+    bacterial_assimilation = κ * BactFe
 
-    #Other required terms
-    τ₀ = bgc.background_shear
-    τₘₓₗ = bgc.mixed_layer_shear
+    # colloidal iron aggregation
+    _, _, colloidal_aggregation = aggregation_of_colloidal_iron(bgc.iron, bgc.dissolved_organic_matter, bgc, z, DOC, POC, GOC, Fe, T, zₘₓₗ)
 
-    sh = shear(z, zₘₓₗ, τ₀, τₘₓₗ)
-    Fe¹ = free_organic_iron(Fe, DOC, T) 
-    λₚₒ¹ = particles_carbon_degradation_rate(T, O₂, bgc)
-    wᴰ = D_quadratic_mortality(D, PO₄, NO₃, NH₄, Si, Dᶜʰˡ, Dᶠᵉ, Si̅, bgc)
-    bFe = Fe
-    
-    #Iron quotas
-    θᶠᵉᴾ = nutrient_quota(Pᶠᵉ, P)
-    θᶠᵉᴰ = nutrient_quota(Dᶠᵉ, D)
-    θᶠᵉᴾᴼᶜ = nutrient_quota(SFe, POC)
-    θᶠᵉᴳᴼᶜ = nutrient_quota(BFe, GOC)
+    return (grazing_waste
+            + nanophytoplankton_mortality + diatom_mortality + mesozooplankton_mortality 
+            + total_aggregation + fecal_pelet_production + scavenging + bacterial_assimilation + colloidal_aggregation
+            - grazing - degredation)
+end
 
-    #Grazing
-    grazingᴹ = grazing_M(P, D, Z, POC, T, bgc)
-    ∑θᶠᵉⁱgᵢᴹ = θᶠᵉᴾ*grazingᴹ[2] + θᶠᵉᴰ*grazingᴹ[3] + θᶠᵉᴾᴼᶜ*grazingᴹ[4] + θᶠᵉᶻ*grazingᴹ[5] #graze on P, D, POC, Z 
-    gₚₒ_FFᴹ = g_FF*bₘ^T*wₚₒ*POC 
-    zₘₐₓ = max(abs(zₑᵤ), abs(zₘₓₗ))   #41a
-    w_GOC = sinking_speed_of_GOC(z, zₑᵤ, zₘₓₗ, bgc)
-    g_GOC_FFᴹ = g_FF*bₘ^T*w_GOC*GOC 
+@inline function iron_scavenging_rate(pom, POC, GOC, CaCO₃, PSi)
+    λ₀ = pom.minimum_iron_scavenging_rate
+    λ₁ = pom.load_specific_iron_scavenging_rate
 
-    return (σᴹ*(∑θᶠᵉⁱgᵢᴹ + θᶠᵉᴾᴼᶜ*gₚₒ_FFᴹ + θᶠᵉᴳᴼᶜ*g_GOC_FFᴹ)*M 
-            + θᶠᵉᶻ*(rᴹ*(bₘ^T)*(concentration_limitation(M, Kₘ) + 3*oxygen_conditions(O₂, bgc))*M + production_of_fecal_pellets(M, T, bgc)) 
-            + θᶠᵉᴾ*0.5*rain_ratio(P, PO₄, NO₃, NH₄, Pᶜʰˡ, Pᶠᵉ, Fe, T, PAR, zₘₓₗ, bgc)*(mᴾ*concentration_limitation(P, Kₘ)*P + sh*wᴾ*P^2) 
-            + θᶠᵉᴰ*(0.5*mᴰ*concentration_limitation(D, Kₘ)*D + sh*wᴰ*D^2) 
-            + κ_Bactᴮᶠᵉ*bacterial_uptake_Fe(μₘₐₓ⁰, z, Z, M, Fe, DOC, PO₄, NO₃, NH₄, bFe, T, zₘₐₓ, bgc) 
-            + λ_Fe*GOC*Fe¹ + θᶠᵉᴾᴼᶜ*POC_aggregation(POC, GOC, sh, bgc) + iron_colloid_aggregation_2(sh, Fe, T, DOC, GOC, bgc) 
-            - θᶠᵉᴳᴼᶜ* g_GOC_FFᴹ*M - λₚₒ¹*BFe) #eq49, partial derivative omitted
-
-    #Changes made from paper:
-        #3*oxygen_conditions added to zooplankton linear mortality terms.
+    return λ₀ + λ₁ * (POC + GOC + CaCO₃ + PSi)
 end

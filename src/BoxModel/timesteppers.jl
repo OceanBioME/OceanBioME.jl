@@ -60,8 +60,6 @@ end
 @inline tracer_tendency(val_name, biogeochemistry, forcing, time, model_fields, grid) =
     biogeochemistry(val_name, boxmodel_xyz(nodes(grid, Center(), Center(), Center()), grid)..., time, model_fields...) + forcing(time, model_fields...)
 
-@inline tracer_tendency(::Val{:T}, biogeochemistry, forcing, time, model_fields, grid) = 0
-
 function rk3_substep!(model::BoxModel, Δt, γⁿ, ζⁿ)
     model_fields = prognostic_fields(model)
 

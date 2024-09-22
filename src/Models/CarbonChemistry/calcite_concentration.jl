@@ -75,7 +75,7 @@ function calcite_saturation(cc::CarbonChemistry;
                                     upper_pH_bound,
                                     lower_pH_bound)
 
-    KSP = cc.calcite_solubility(T, S; P)
+    KSP = cc.calcite_solubility(T+273.15, S; P)
 
     # not confident these all have the right units
     return calcium_ion_concentration * CO₃²⁻ / KSP

@@ -1,164 +1,293 @@
-# This document contains functions for:
+"""
+    Zooplankton
+
+The PISCES zooplankton growth model where each class has preferences
+for grazing on nanophytoplankton (P), diatoms (D), microzooplankton (Z),
+and particulate organic matter (POC), and can flux feed on sinking 
+particulates (POC and GOC).
+
+This model assumes a fixed ratio for all other elements (i.e. N, P, Fe).
+"""
+@kwdef struct Zooplankton{FT}
+    temperature_sensetivity :: FT = 1.079                  #
+    maximum_grazing_rate :: FT                             # 1 / s
+
+    preference_for_nanophytoplankton :: FT                 #
+    preference_for_diatoms :: FT                           #
+    preference_for_particulates :: FT                      #
+    preference_for_zooplankton :: FT                       #
+
+    food_threshold_concentration :: FT = 0.3               # mmol C / m³
+    specific_food_thresehold_concentration :: FT = 0.001   # mmol C / m³
+
+    grazing_half_saturation :: FT = 20.0                   # mmol C / m³
+
+    maximum_flux_feeding_rate :: FT                        # m / (mmol C / m³)
+
+    iron_ratio :: FT                                       # μmol Fe / mmol C
+
+    minimum_growth_efficiency :: FT                        #
+    non_assililated_fraction :: FT = 0.3                   #
+
+    mortality_half_saturation :: FT = 0.2                  # mmol C / m³
+    quadratic_mortality :: FT                              # 1 / (mmol C / m³) / s
+    linear_mortality :: FT                                 # 1 / s
+
+    dissolved_excretion_fraction :: FT = 0.6               #
+    undissolved_calcite_fraction :: FT                     #
+end
+
+@inline zooplankton_concentration(::Val{:Z}, Z, M) = Z
+@inline zooplankton_concentration(::Val{:M}, Z, M) = M
+
+@inline function specific_grazing(zoo::Zooplankton, P, D, Z, POC, T)
+    g₀   = zoo.maximum_grazing_rate
+    b    = zoo.temperature_sensetivity
+    pP   = zoo.preference_for_nanophytoplankton
+    pD   = zoo.preference_for_diatoms
+    pPOC = zoo.preference_for_particulates
+    pZ   = zoo.preference_for_zooplankton
+    J    = zoo.specific_food_thresehold_concentration
+    K    = zoo.grazing_half_saturation
+
+    food_threshold_concentration = zoo.food_threshold_concentration
+
+    base_grazing_rate = g₀ * b ^ T
+
+    food_availability = pP * P + pD * D + pPOC * POC + pZ * Z
+
+    weighted_food_availability = pP * max(0, P - J) + pD * max(0, D - J) + pPOC * max(0, POC - J) + pZ * max(0, Z - J)
+
+    concentration_limited_grazing = max(0, weighted_food_availability - min(weighted_food_availability / 2, food_threshold_concentration))
+
+    total_specific_grazing = base_grazing_rate * concentration_limited_grazing / (K + food_availability) 
+
+    phytoplankton_grazing = pP   * max(0, P - J)     * total_specific_grazing / (weighted_food_availability + eps(0.0))
+    diatom_grazing        = pD   * max(0, D - J)     * total_specific_grazing / (weighted_food_availability + eps(0.0))
+    particulate_grazing   = pPOC * max(0, POC - J)   * total_specific_grazing / (weighted_food_availability + eps(0.0))
+    zooplankton_grazing   = pZ   * max(0, Z - J)     * total_specific_grazing / (weighted_food_availability + eps(0.0))
+
+    return total_specific_grazing, phytoplankton_grazing, diatom_grazing, particulate_grazing, zooplankton_grazing
+end
+
+@inline function specific_flux_feeding(zoo::Zooplankton, POC, T, w)
+    g₀ = zoo.maximum_flux_feeding_rate
+    b  = zoo.temperature_sensetivity
+
+    base_flux_feeding_rate = g₀ * b ^ T
+
+    return base_flux_feeding_rate * w * POC
+end
+
+@inline function (zoo::Zooplankton)(val_name::Union{Val{:Z}, Val{:M}}, bgc,
+                                    x, y, z, t,
+                                    P, D, Z, M, 
+                                    PChl, DChl, PFe, DFe, DSi, 
+                                    DOC, POC, GOC, 
+                                    SFe, BFe, PSi, 
+                                    NO₃, NH₄, PO₄, Fe, Si, 
+                                    CaCO₃, DIC, Alk, 
+                                    O₂, T, S,
+                                    zₘₓₗ, zₑᵤ, Si′, Ω, κ, mixed_layer_PAR, wPOC, wGOC, PAR, PAR₁, PAR₂, PAR₃)
+
+    I = zooplankton_concentration(val_name, Z, M)
+
     # grazing
-    # gross growth efficiency
-    # Z and M forcing
+    total_specific_grazing, gP, gD, gPOC, gZ = specific_grazing(zoo, P, D, Z, POC, T)
 
-    # Checked all eqns
-    # Simplifications possible
-    # Could simplify eₙᴶ functions
+    grazing = total_specific_grazing * I
 
-#Mesozooplankton are grazed by upper trophic levels. Carbon is returned to the system through fecal pellets and respiration.
-#Respiration and excretion from upper trophic levels.
-@inline function upper_respiration(M, T, bgc) #third term has small magnitude, as mᴹ per day
-    σᴹ = bgc.non_assimilated_fraction.M
-    eₘₐₓᴹ = bgc.max_growth_efficiency_of_zooplankton.M
-    mᴹ = bgc.zooplankton_quadratic_mortality.M
-    bₘ = bgc.temperature_sensitivity_term.M
-    return (1 - σᴹ - eₘₐₓᴹ)*(1/(1-eₘₐₓᴹ))*mᴹ*(bₘ^T)*M^2  #30b
+    # flux feeding
+    small_flux_feeding = specific_flux_feeding(zoo, POC, T, wPOC)
+    large_flux_feeding = specific_flux_feeding(zoo, GOC, T, wGOC)
+
+    flux_feeding = (small_flux_feeding + large_flux_feeding) * I
+
+    # grazing mortality
+    specific_grazing_mortality = zooplankton_grazing_mortality(val_name, bgc.mesozooplankton, P, D, Z, POC, T)
+
+    grazing_mortality = specific_grazing_mortality * M
+
+    # mortality
+    total_mortality = mortality(zoo, bgc, I, O₂, T)
+
+    growth_efficiency = grazing_growth_efficiency(zoo, P, D, PFe, DFe, POC, SFe, total_specific_grazing, gP, gD, gPOC, gZ)
+
+    return growth_efficiency * (grazing + flux_feeding) - grazing_mortality - total_mortality
 end
 
-#Fecal pellets from upper trophic levels
-@inline function production_of_fecal_pellets(M, T, bgc)
-    σᴹ = bgc.non_assimilated_fraction.M
-    eₘₐₓᴹ = bgc.max_growth_efficiency_of_zooplankton.M
-    mᴹ = bgc.zooplankton_quadratic_mortality.M
-    bₘ = bgc.temperature_sensitivity_term.M
-    return σᴹ*mᴹ*(1/(1-eₘₐₓᴹ))*(bₘ^T)*M^2      #30a
+@inline function nanophytoplankton_grazing(zoo::Zooplankton, P, D, Z, POC, T) 
+    _, g = specific_grazing(zoo, P, D, Z, POC, T)
+
+    return g
 end
 
-#Zooplankton graze on P, D, POC. We return a list of grazing of Z on each prey and a sum of grazing terms.
-@inline function grazing_Z(P, D, POC, T, bgc) 
-    pₚᶻ = bgc.preference_for_nanophytoplankton.Z
-    p_Dᶻ = bgc.preference_for_diatoms.Z
-    pₚₒᶻ = bgc.preference_for_POC.Z
-    Jₜₕᵣₑₛₕᶻ = bgc.specific_food_thresholds_for_microzooplankton
-    Fₜₕᵣₑₛₕᶻ = bgc.food_threshold_for_zooplankton.Z
-    gₘₐₓᶻ = bgc.max_grazing_rate.Z
-    K_Gᶻ = bgc.half_saturation_const_for_grazing.Z
-    b_Z = bgc.temperature_sensitivity_term.Z
+@inline function diatom_grazing(zoo::Zooplankton, P, D, Z, POC, T) 
+    _, _, g = specific_grazing(zoo, P, D, Z, POC, T)
 
-    F = pₚᶻ*max(0, P - Jₜₕᵣₑₛₕᶻ) + p_Dᶻ*max(0, D - Jₜₕᵣₑₛₕᶻ) + pₚₒᶻ*max(0, POC - Jₜₕᵣₑₛₕᶻ)
-    Fₗᵢₘ = max(0, F - min(0.5*F, Fₜₕᵣₑₛₕᶻ))
-
-    grazing_arg = gₘₐₓᶻ*(b_Z^T)*(Fₗᵢₘ)/((F + eps(0.0))*(K_Gᶻ + pₚᶻ*P + p_Dᶻ*D + pₚₒᶻ*POC + eps(0.0)))
-
-    gₚᶻ = (pₚᶻ*max(0, P - Jₜₕᵣₑₛₕᶻ))*grazing_arg #26a
-    g_Dᶻ = (p_Dᶻ*max(0, D - Jₜₕᵣₑₛₕᶻ))*grazing_arg #26a
-    gₚₒᶻ = (pₚₒᶻ*max(0, POC - Jₜₕᵣₑₛₕᶻ))*grazing_arg #26a
-    ∑gᶻ= gₚᶻ + g_Dᶻ + gₚₒᶻ  #Sum grazing rates on each prey species for microzooplankton
-
-    return ∑gᶻ, gₚᶻ, g_Dᶻ, gₚₒᶻ #eq 26a
+    return g
 end
 
-#Mesozooplankton graze on P, D, POC, Z. We return a list of grazing of M on each prey and a sum of grazing terms.
-@inline function grazing_M(P, D, Z, POC, T, bgc) #eq 26a
-    pₚᴹ = bgc.preference_for_nanophytoplankton.M
-    p_Dᴹ = bgc.preference_for_diatoms.M
-    pₚₒᴹ = bgc.preference_for_POC.M
-    p_Zᴹ = bgc.preference_for_microzooplankton
-    Jₜₕᵣₑₛₕᴹ = bgc.specific_food_thresholds_for_mesozooplankton
-    Fₜₕᵣₑₛₕᴹ = bgc.food_threshold_for_zooplankton.M
-    gₘₐₓᴹ = bgc.max_grazing_rate.M
-    K_Gᴹ = bgc.half_saturation_const_for_grazing.M
-    bₘ = bgc.temperature_sensitivity_term.M
+@inline function particulate_grazing(zoo::Zooplankton, P, D, Z, POC, T) 
+    _, _, _, g = specific_grazing(zoo, P, D, Z, POC, T)
+
+    return g
+end
+
+@inline function zooplankton_grazing(zoo::Zooplankton, P, D, Z, POC, T) 
+    _, _, _, _, g = specific_grazing(zoo, P, D, Z, POC, T)
+
+    return g
+end
+
+@inline zooplankton_grazing_mortality(val_name, zoo, P, D, Z, POC, T) = 0
+@inline zooplankton_grazing_mortality(::Val{:Z}, zoo, P, D, Z, POC, T) = zooplankton_grazing(zoo, P, D, Z, POC, T)
+
+@inline function dissolved_upper_trophic_respiration_product(zoo, M, T)
+    γ = zoo.dissolved_excretion_fraction
+
+    R = upper_trophic_respiration_product(zoo, M, T)
+
+    return (1 - γ) * R
+end
+
+@inline function inorganic_upper_trophic_respiration_product(zoo, M, T)
+    γ = zoo.dissolved_excretion_fraction
+
+    R = upper_trophic_respiration_product(zoo, M, T)
+
+    return γ * R
+end
+
+@inline function upper_trophic_waste(zoo, M, T)
+    e₀ = zoo.minimum_growth_efficiency
+    b  = zoo.temperature_sensetivity
+    m₀ = zoo.quadratic_mortality
+
+    temperature_factor = b^T
+
+    return 1 / (1 - e₀) * m₀ * temperature_factor * M^2
+end
+
+@inline upper_trophic_respiration_product(zoo, M, T) = 
+    (1 - zoo.minimum_growth_efficiency - zoo.non_assililated_fraction) * upper_trophic_waste(zoo, M, T)
+
+@inline upper_trophic_fecal_product(zoo, M, T) =
+    zoo.non_assililated_fraction * upper_trophic_waste(zoo, M, T)
+
+@inline function grazing_growth_efficiency(zoo, P, D, PFe, DFe, POC, SFe, g, gP, gD, gPOC, gZ)
+    θFe = zoo.iron_ratio
+    e₀  = zoo.minimum_growth_efficiency
+    σ   = zoo.non_assililated_fraction
+
+    iron_grazing = PFe / (P + eps(0.0)) * gP + DFe / (D + eps(0.0)) * gD + SFe / (POC + eps(0.0)) * gPOC + θFe * gZ
+
+    iron_grazing_ratio = iron_grazing / (θFe * g + eps(0.0))
+
+    food_quality = min(1, iron_grazing_ratio)
+
+    return food_quality * min(e₀, (1 - σ) * iron_grazing_ratio)
+end
+
+@inline function specific_excretion(zoo, P, D, PFe, DFe, Z, POC, GOC, SFe, T, wPOC, wGOC)
+    σ = zoo.non_assililated_fraction
+
+    total_specific_grazing, gP, gD, gPOC, gZ = specific_grazing(zoo, P, D, Z, POC, T)
+
+    small_flux_feeding = specific_flux_feeding(zoo, POC, T, wPOC)
+    large_flux_feeding = specific_flux_feeding(zoo, GOC, T, wGOC)
+
+    total_specific_flux_feeding = small_flux_feeding + large_flux_feeding
+
+    e = grazing_growth_efficiency(zoo, P, D, PFe, DFe, POC, SFe, total_specific_grazing, gP, gD, gPOC, gZ)
+
+    return (1 - e - σ) * (total_specific_grazing + total_specific_flux_feeding)
+end
+
+@inline specific_dissolved_grazing_waste(zoo, P, D, PFe, DFe, Z, POC, GOC, SFe, T, wPOC, wGOC) = 
+    (1 - zoo.dissolved_excretion_fraction) * specific_excretion(zoo, P, D, PFe, DFe, Z, POC, GOC, SFe, T, wPOC, wGOC)
+
+@inline specific_inorganic_grazing_waste(zoo, P, D, PFe, DFe, Z, POC, GOC, SFe, T, wPOC, wGOC) = 
+    zoo.dissolved_excretion_fraction * specific_excretion(zoo, P, D, PFe, DFe, Z, POC, GOC, SFe, T, wPOC, wGOC)
+
+@inline function specific_non_assimilated_waste(zoo, P, D, Z, POC, GOC, T, wPOC, wGOC)
+    σ = zoo.non_assililated_fraction
+
+    g, = specific_grazing(zoo, P, D, Z, POC, T)
+
+    small_flux_feeding = specific_flux_feeding(zoo, POC, T, wPOC)
+    large_flux_feeding = specific_flux_feeding(zoo, GOC, T, wGOC)
     
-    F = pₚᴹ*max(0, P - Jₜₕᵣₑₛₕᴹ) + p_Dᴹ*max(0, D - Jₜₕᵣₑₛₕᴹ) + pₚₒᴹ*max(0, POC - Jₜₕᵣₑₛₕᴹ) + p_Zᴹ*max(0, Z - Jₜₕᵣₑₛₕᴹ)
-    Fₗᵢₘ = max(0, F - min(0.5*F, Fₜₕᵣₑₛₕᴹ))
-
-    grazing_arg =  gₘₐₓᴹ*(bₘ^T)*(Fₗᵢₘ)/((F + eps(0.0))*(K_Gᴹ + pₚᴹ*P + p_Dᴹ*D + pₚₒᴹ*POC + p_Zᴹ*Z + eps(0.0)))
-
-    gₚᴹ = (pₚᴹ*max(0, P - Jₜₕᵣₑₛₕᴹ))*grazing_arg #26a
-    g_Dᴹ = (p_Dᴹ*max(0, D - Jₜₕᵣₑₛₕᴹ))*grazing_arg #26a
-    gₚₒᴹ = (pₚₒᴹ*max(0, POC - Jₜₕᵣₑₛₕᴹ))*grazing_arg #26a
-    g_Zᴹ = (p_Zᴹ*max(0, Z - Jₜₕᵣₑₛₕᴹ))*grazing_arg #26a
-    ∑gᴹ = gₚᴹ +  g_Dᴹ + gₚₒᴹ + g_Zᴹ #Sum grazing rates on each prey species for mesozooplankton
-    
-    return  ∑gᴹ, gₚᴹ, g_Dᴹ, gₚₒᴹ, g_Zᴹ 
+    return σ * (g + small_flux_feeding + large_flux_feeding)
 end
 
-#GOC has variable sinking speed.
-@inline function sinking_speed_of_GOC(z, zₑᵤ, zₘₓₗ, bgc)
-    zₘₐₓ = max(abs(zₑᵤ), abs(zₘₓₗ)) 
-    w_GOCᵐⁱⁿ = bgc.min_sinking_speed_of_GOC
-    return w_GOCᵐⁱⁿ + (200/day - w_GOCᵐⁱⁿ)*(max(0, abs(z)-abs(zₘₐₓ)))/(5000) #41b
+@inline function specific_non_assimilated_iron_waste(zoo, bgc, P, D, PFe, DFe, Z, POC, GOC, SFe, BFe, T, wPOC, wGOC)
+    _, gP, gD, gPOC, gZ = specific_grazing(zoo, P, D, Z, POC, T)
+
+    θᶻ = bgc.microzooplankton.iron_ratio
+    σ = zoo.non_assililated_fraction
+
+    small_flux_feeding = specific_flux_feeding(zoo, POC, T, wPOC)
+    large_flux_feeding = specific_flux_feeding(zoo, GOC, T, wGOC)
+
+    return σ * (gP * PFe / (P + eps(0.0)) + gD * DFe / (D + eps(0.0)) + gPOC * SFe / (POC + eps(0.0)) + gZ * θᶻ
+                + small_flux_feeding * SFe / (POC + eps(0.0)) + large_flux_feeding * BFe / (GOC + eps(0.0)))
 end
 
-#Return flux feeding of mesozooplankton on POC and GOC, as well as a sum of flux feeding.
-@inline function flux_feeding(z, zₑᵤ, zₘₓₗ, T, POC, GOC, bgc) #eq29
-    wₚₒ = bgc.sinking_speed_of_POC
-    g_FF = bgc.flux_feeding_rate
-    bₘ = bgc.temperature_sensitivity_term.M
+@inline function specific_non_assimilated_iron(zoo, bgc, P, D, PFe, DFe, Z, POC, GOC, SFe, BFe, T, wPOC, wGOC)
+    θ = zoo.iron_ratio
+    θᶻ = bgc.microzooplankton.iron_ratio
 
-    w_GOC = sinking_speed_of_GOC(z, zₑᵤ, zₘₓₗ, bgc)
+    σ = zoo.non_assililated_fraction
 
-    gₚₒ_FFᴹ = g_FF*(bₘ^T)*wₚₒ*POC #29a
-    g_GOC_FFᴹ = g_FF*(bₘ^T)*w_GOC*GOC #29b
-    ∑g_FFᴹ = g_GOC_FFᴹ + gₚₒ_FFᴹ
-    return ∑g_FFᴹ, gₚₒ_FFᴹ, g_GOC_FFᴹ
+    g, gP, gD, gPOC, gZ = specific_grazing(zoo, P, D, Z, POC, T)
+
+    small_flux_feeding = specific_flux_feeding(zoo, POC, T, wPOC)
+    large_flux_feeding = specific_flux_feeding(zoo, GOC, T, wGOC)
+
+    total_iron_consumed = (gP * PFe / (P + eps(0.0)) + gD * DFe / (D + eps(0.0)) + gZ * θᶻ 
+                           + (gPOC + small_flux_feeding) * SFe / (POC + eps(0.0)) 
+                           + large_flux_feeding * BFe / (GOC + eps(0.0)))
+                           
+
+    grazing_iron_ratio = (1 - σ) * total_iron_consumed / (g + small_flux_feeding + large_flux_feeding + eps(0.0))
+
+    growth_efficiency = grazing_growth_efficiency(zoo, P, D, PFe, DFe, POC, SFe, g, gP, gD, gPOC, gZ) * θ
+
+    non_assimilated_iron_ratio = max(0, grazing_iron_ratio - growth_efficiency)
+
+    return non_assimilated_iron_ratio * g
 end
 
-#Gross growth efficiency is formulated to be called with either Z or M. However grazing on Z is only relevant for M, so pass zero when computing gross growth efficiency for Z.
-@inline function nutrient_quality(gₚᴶ, g_Dᴶ, gₚₒᴶ, g_Zᴹ, Pᶠᵉ, Dᶠᵉ, SFe, P, D, POC, bgc)
-    θᴺᶜ = bgc.NC_redfield_ratio
-    θᶠᵉᶻ = bgc.FeC_ratio_of_zooplankton  #Assumed the same for both types of zooplankton
+@inline function specific_calcite_grazing_loss(zoo, P, D, Z, POC, T)
+    η = zoo.undissolved_calcite_fraction
 
-    ∑ᵢθᴺᴵgᵢᴶ = θᴺᶜ*gₚᴶ + θᴺᶜ*g_Dᴶ + θᴺᶜ*gₚₒᴶ + θᴺᶜ*g_Zᴹ
-    ∑ᵢθᶠᵉᴵgᵢᴶ = nutrient_quota(Pᶠᵉ, P)*gₚᴶ + nutrient_quota(Dᶠᵉ, D)*g_Dᴶ + nutrient_quota(SFe, POC)*gₚₒᴶ + θᶠᵉᶻ*g_Zᴹ
-    ∑ᵢgᵢᴶ = gₚᴶ + g_Dᴶ + gₚₒᴶ + g_Zᴹ
-    
-    return min(1, (∑ᵢθᴺᴵgᵢᴶ)/(θᴺᶜ*∑ᵢgᵢᴶ + eps(0.0)), (∑ᵢθᶠᵉᴵgᵢᴶ)/(θᶠᵉᶻ*∑ᵢgᵢᴶ + eps(0.0)))   #27a
+    _, gP = specific_grazing(zoo, P, D, Z, POC, T)
+
+    return η * gP
 end
 
+@inline function mortality(zoo::Zooplankton, bgc, I, O₂, T)
+    b  = zoo.temperature_sensetivity
+    m₀ = zoo.quadratic_mortality
+    Kₘ = zoo.mortality_half_saturation
+    r  = zoo.linear_mortality
 
-@inline function growth_efficiency(eₘₐₓᴶ, σᴶ, gₚᴶ, g_Dᴶ, gₚₒᴶ, g_Zᴹ, Pᶠᵉ, Dᶠᵉ, SFe, P, D, POC, bgc)
+    temperature_factor = b^T
 
-    θᶠᵉᶻ = bgc.FeC_ratio_of_zooplankton  #Assumed the same for both types of zooplankton
+    concentration_factor = I / (I + Kₘ)
 
-    ∑ᵢθᶠᵉᴵgᵢᴶ = nutrient_quota(Pᶠᵉ, P)*gₚᴶ + nutrient_quota(Dᶠᵉ, D)*g_Dᴶ + nutrient_quota(SFe, POC)*gₚₒᴶ + θᶠᵉᶻ*g_Zᴹ
-    ∑ᵢgᵢᴶ = gₚᴶ + g_Dᴶ + gₚₒᴶ + g_Zᴹ
-
-    eₙᴶ = nutrient_quality(gₚᴶ, g_Dᴶ, gₚₒᴶ, g_Zᴹ, Pᶠᵉ, Dᶠᵉ, SFe, P, D, POC, bgc) #27a
-
-    return eₙᴶ*min(eₘₐₓᴶ, (1 - σᴶ)* (∑ᵢθᶠᵉᴵgᵢᴶ)/(θᶠᵉᶻ*∑ᵢgᵢᴶ + eps(0.0))) #27b
+    return temperature_factor * I * (m₀ * I + r * (concentration_factor + 3 * anoxia_factor(bgc, O₂)))
 end
 
+@inline function linear_mortality(zoo::Zooplankton, bgc, I, O₂, T)
+    b  = zoo.temperature_sensetivity
+    Kₘ = zoo.mortality_half_saturation
+    r  = zoo.linear_mortality
 
-@inline function (bgc::PISCES)(::Val{:Z}, x, y, z, t, P, D, Z, M, Pᶜʰˡ, Dᶜʰˡ, Pᶠᵉ, Dᶠᵉ, Dˢⁱ, DOC, POC, GOC, SFe, BFe, PSi, NO₃, NH₄, PO₄, Fe, Si, CaCO₃, DIC, Alk, O₂, T, zₘₓₗ, zₑᵤ, Si̅, D_dust, Ω, κ, PAR, PAR₁, PAR₂, PAR₃)    #args not correct
-    #Parameters
-    mᶻ = bgc.zooplankton_quadratic_mortality.Z
-    b_Z = bgc.temperature_sensitivity_term.Z
-    Kₘ = bgc.half_saturation_const_for_mortality
-    rᶻ = bgc.zooplankton_linear_mortality.Z
-    eₘₐₓᶻ = bgc.max_growth_efficiency_of_zooplankton.Z
-    σᶻ = bgc.non_assimilated_fraction.Z
+    temperature_factor = b^T
 
-    #Grazing
-    ∑gᶻ, gₚᶻ, g_Dᶻ, gₚₒᶻ = grazing_Z(P, D, POC, T, bgc) 
-    g_Zᴹ = grazing_M(P, D, Z, POC, T, bgc)[5]
+    concentration_factor = I / (I + Kₘ)
 
-    #Gross growth efficiency
-    eᶻ = growth_efficiency(eₘₐₓᶻ, σᶻ, gₚᶻ, g_Dᶻ, gₚₒᶻ, 0, Pᶠᵉ, Dᶠᵉ, SFe, P, D, POC, bgc)
-
-    return (eᶻ*(gₚᶻ + g_Dᶻ + gₚₒᶻ)*Z - g_Zᴹ*M - mᶻ*(b_Z^T)*Z^2
-        - rᶻ*(b_Z^T)*(concentration_limitation(Z, Kₘ) + 3*oxygen_conditions(O₂, bgc))*Z)   #24
-end
-
-@inline function (bgc::PISCES)(::Val{:M}, x, y, z, t, P, D, Z, M, Pᶜʰˡ, Dᶜʰˡ, Pᶠᵉ, Dᶠᵉ, Dˢⁱ, DOC, POC, GOC, SFe, BFe, PSi, NO₃, NH₄, PO₄, Fe, Si, CaCO₃, DIC, Alk, O₂, T, zₘₓₗ, zₑᵤ, Si̅, D_dust, Ω, κ, PAR, PAR₁, PAR₂, PAR₃)
-    #Parameters
-    mᴹ = bgc.zooplankton_quadratic_mortality.M
-    bₘ = bgc.temperature_sensitivity_term.M
-    rᴹ = bgc.zooplankton_linear_mortality.M
-    Kₘ = bgc.half_saturation_const_for_mortality
-    eₘₐₓᴹ = bgc.max_growth_efficiency_of_zooplankton.M
-    σᴹ = bgc.non_assimilated_fraction.M
-
-    #Grazing
-    ∑gᴹ, gₚᴹ, g_Dᴹ, gₚₒᴹ, g_Zᴹ  = grazing_M(P, D, Z, POC, T, bgc) 
-    ∑g_FFᴹ = flux_feeding(z, zₑᵤ, zₘₓₗ, T, POC, GOC, bgc)[1]
-
-    #Gross growth efficiency
-    eᴹ =  growth_efficiency(eₘₐₓᴹ, σᴹ, gₚᴹ, g_Dᴹ, gₚₒᴹ, g_Zᴹ,Pᶠᵉ, Dᶠᵉ, SFe, P, D, POC, bgc)
-
-    return (eᴹ*(gₚᴹ + g_Dᴹ + gₚₒᴹ + ∑g_FFᴹ + g_Zᴹ)*M - mᴹ*(bₘ^T)*M^2 
-        - rᴹ*(bₘ^T)*(concentration_limitation(M, Kₘ) + 3*oxygen_conditions(O₂, bgc))*M)   #28
+    return temperature_factor * I * r * (concentration_factor + 3 * anoxia_factor(bgc, O₂))
 end

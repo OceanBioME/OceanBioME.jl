@@ -1,25 +1,31 @@
+using Oceananigans.Fields: ConstantField, ZeroField
+
 @kernel function _compute_euphotic_depth!(euphotic_depth, PAR, grid, cutoff)
     i, j = @index(Global, NTuple)
 
-    surface_PAR = @inbounds PAR[i, j, grid.Nz]
+    surface_PAR = @inbounds (PAR[i, j, grid.Nz] + PAR[i, j, grid.Nz + 1])/2
 
-    @inbounds euphotic_depth[i, j] = -Inf
+    @inbounds euphotic_depth[i, j, 1] = -Inf
 
     for k in grid.Nz-1:-1:1
-        PARₖ = PAR[i, j, k]
+        PARₖ = @inbounds PAR[i, j, k]
 
         # BRANCHING!
         if (PARₖ <= surface_PAR * cutoff) && isinf(euphotic_depth[i, j])
             # interpolate to find depth
-            PARₖ₊₁ = PAR[i, j, k + 1]
+            PARₖ₊₁ = @inbounds PAR[i, j, k + 1]
 
             zₖ = znode(i, j, k, grid, Center(), Center(), Center())
 
             zₖ₊₁ = znode(i, j, k + 1, grid, Center(), Center(), Center())
 
-            euphotic_depth[i, j] = zₖ₊₁ + (surface_PAR * cutoff - PARₖ₊₁) * (zₖ - zₖ₊₁)/ (PARₖ - PARₖ₊₁)
+            @inbounds euphotic_depth[i, j, 1] = zₖ + (log(surface_PAR * cutoff) - log(PARₖ)) * (zₖ - zₖ₊₁) / (log(PARₖ) - log(PARₖ₊₁))
         end
     end
+
+    zₑᵤ = @inbounds euphotic_depth[i, j, 1]
+
+    @inbounds euphotic_depth[i, j, 1] = ifelse(isfinite(zₑᵤ), zₑᵤ, znode(i, j, 0, grid, Center(), Center(), Center()))
 end
 
 function compute_euphotic_depth!(euphotic_depth, PAR, cutoff = 1/1000)
@@ -32,3 +38,7 @@ function compute_euphotic_depth!(euphotic_depth, PAR, cutoff = 1/1000)
 
     return nothing
 end
+
+# fallback for box models
+compute_euphotic_depth!(::ConstantField, args...) = nothing
+compute_euphotic_depth!(::ZeroField, args...) = nothing

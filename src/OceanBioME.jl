@@ -4,8 +4,9 @@ between ocean biogeochemistry, carbonate chemistry, and physics.
 """
 module OceanBioME
 
-# Biogeochemistry models
+# Biogeochemistry models and useful things
 export Biogeochemistry, LOBSTER, PISCES, NutrientPhytoplanktonZooplanktonDetritus, NPZD, redfield
+export DepthDependantSinkingSpeed, PrescribedLatitude, ModelLatitude
 
 # Macroalgae models
 export SLatissima
@@ -170,11 +171,11 @@ Returns the redfield ratio of `tracer_name` from `bgc` when it is constant acros
 @inline redfield(val_tracer_name, bgc, tracers) = redfield(val_tracer_name, bgc) 
 
 """
-    conserved_tracers(model::UnderlyingBiogeochemicalModel)
+    conserved_tracers(model::UnderlyingBiogeochemicalModel, args...; kwargs...)
 
 Returns the names of tracers which together are conserved in `model`
 """
-conserved_tracers(model::Biogeochemistry) = conserved_tracers(model.underlying_biogeochemistry)
+conserved_tracers(model::Biogeochemistry, args...; kwargs...) = conserved_tracers(model.underlying_biogeochemistry, args...; kwargs...)
 
 summary(bgc::Biogeochemistry) = string("Biogeochemical model based on $(summary(bgc.underlying_biogeochemistry))")
 show(io::IO, model::Biogeochemistry) =
@@ -182,9 +183,10 @@ show(io::IO, model::Biogeochemistry) =
                 " Light attenuation: ", summary(model.light_attenuation), "\n",
                 " Sediment: ", summary(model.sediment), "\n",
                 " Particles: ", summary(model.particles), "\n",
-                " Modifiers: ", summary(model.modifiers))
+                " Modifiers: ", modifier_summary(model.modifiers))
 
-summary(modifiers::Tuple) = tuple([summary(modifier) for modifier in modifiers])
+modifier_summary(modifier) = summary(modifier)
+modifier_summary(modifiers::Tuple) = tuple([summary(modifier) for modifier in modifiers]...)
 
 include("Utils/Utils.jl")
 include("Light/Light.jl")
