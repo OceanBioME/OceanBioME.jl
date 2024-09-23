@@ -139,7 +139,7 @@ end
 @inline function bacterial_iron_uptake(dom::DissolvedOrganicMatter, z, Z, M, DOC, NO₃, NH₄, PO₄, Fe, T, zₘₓₗ, zₑᵤ)
     μ₀ = dom.maximum_bacterial_growth_rate
     b  = dom.temperature_sensetivity
-    θ  = dom.iron_half_saturation_for_bacteria
+    θ  = dom.maximum_iron_ratio_in_bacteria
     K  = dom.iron_half_saturation_for_bacteria
 
     μ = μ₀ * b^T
