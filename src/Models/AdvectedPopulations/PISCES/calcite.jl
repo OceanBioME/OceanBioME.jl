@@ -52,10 +52,13 @@ end
     r = calcite.base_rain_ratio
 
     # assuming this is a type in Aumont 2015 based on Aumont 2005
-    L, = bgc.nanophytoplankton.nutrient_limitation(bgc, P, PChl, PFe, NO₃, NH₄, PO₄, Fe, Si, Si′)
+    _, _, LPO₄, LN = bgc.nanophytoplankton.nutrient_limitation(bgc, P, PChl, PFe, NO₃, NH₄, PO₄, Fe, Si, Si′)
 
-    L_CaCO₃ = L # maybe this is wrong, can't find the reference, others had it as min(Lₙᴾ, concentration_limitation(Fe, 6e-11), concentration_limitation(PO₄, Kₙₕ₄ᴾ))
+    LFe = Fe / (Fe + 0.05)
 
+    # from NEMO source code +/- presumably a typo replacing kPO4 with kNH4 which aren't even same units
+    L_CaCO₃ = min(LN, LPO₄, LFe)
+    
     phytoplankton_concentration_factor = max(1, P / 2)
 
     low_light_factor = max(0, PAR - 1) / (4 + PAR)
