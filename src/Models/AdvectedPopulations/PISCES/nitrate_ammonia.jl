@@ -27,7 +27,7 @@ end
                                             zₘₓₗ, zₑᵤ, Si′, Ω, κ, mixed_layer_PAR, wPOC, wGOC, PAR, PAR₁, PAR₂, PAR₃)
     θ = bgc.nitrogen_redfield_ratio
 
-    nitrif = nitrification(nitrogen, bgc, NH₄, O₂, mixed_layer_PAR) * θ
+    nitrif = nitrification(nitrogen, bgc, NH₄, O₂, mixed_layer_PAR)
 
     remin = oxic_remineralisation(bgc.dissolved_organic_matter, bgc, z, Z, M, DOC, NO₃, NH₄, PO₄, Fe, O₂, T, zₘₓₗ, zₑᵤ) * θ
 
@@ -54,7 +54,7 @@ end
                                             zₘₓₗ, zₑᵤ, Si′, Ω, κ, mixed_layer_PAR, wPOC, wGOC, PAR, PAR₁, PAR₂, PAR₃)
     θ = bgc.nitrogen_redfield_ratio
 
-    nitrif = nitrification(nitrogen, bgc, NH₄, O₂, mixed_layer_PAR) * θ
+    nitrif = nitrification(nitrogen, bgc, NH₄, O₂, mixed_layer_PAR)
 
     respiration_product = inorganic_upper_trophic_respiration_product(bgc.mesozooplankton, M, T) * θ
 
