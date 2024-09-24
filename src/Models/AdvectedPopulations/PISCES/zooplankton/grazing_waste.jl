@@ -49,16 +49,17 @@ end
     gI, growth_efficiency = grazing(zoo, val_name, i, j, k, grid, bgc, clock, fields, auxiliary_fields) 
     gfI = flux_feeding(zoo, val_name, i, j, k, grid, bgc, clock, fields, auxiliary_fields) 
 
-    total_carbon = gI + gfI
+    zoo_assimilated_iron = θ * growth_efficiency * (gI + gfI)
 
-    total_iron = (iron_grazing(zoo, val_name, i, j, k, grid, bgc, clock, fields, auxiliary_fields) 
-                  + iron_flux_feeding(zoo, val_name, i, j, k, grid, bgc, clock, fields, auxiliary_fields))
+    gIFe = iron_grazing(zoo, val_name, i, j, k, grid, bgc, clock, fields, auxiliary_fields) 
 
-    grazing_iron_ratio = (1 - σ) * total_iron / (total_carbon + eps(0.0))
+    gfIFe = iron_flux_feeding(zoo, val_name, i, j, k, grid, bgc, clock, fields, auxiliary_fields) 
 
-    non_assimilated_iron_ratio = max(0, grazing_iron_ratio - growth_efficiency * θ)
+    lost_to_particles = σ * (gIFe + gfIFe)
 
-    return σ * gI
+    total_iron_grazed = gIFe + gfIFe
+
+    return total_iron_grazed - lost_to_particles - zoo_assimilated_iron # feels like a more straight forward way to write it
 end
 
 @inline function calcite_loss(zoo::QualityDependantZooplankton, val_name, val_prey_name, i, j, k, grid, bgc, clock, fields, auxiliary_fields)

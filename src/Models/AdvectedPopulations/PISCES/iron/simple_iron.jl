@@ -46,7 +46,7 @@ const SimpleIronPISCES = PISCES{<:Any, <:Any, <:Any, <:Any, <:Any, <:SimpleIron}
     # waste
     grazing_waste = non_assimilated_iron(bgc.zooplankton, i, j, k, grid, bgc, clock, fields, auxiliary_fields)
 
-    upper_trophic_waste = upper_trophic_iron_waste(bgc.zooplankton, i, j, k, grid, bgc, clock, fields, auxiliary_fields)
+    upper_trophic_waste = upper_trophic_dissolved_iron(bgc.zooplankton, i, j, k, grid, bgc, clock, fields, auxiliary_fields)
 
     return (small_particles + grazing_waste + upper_trophic_waste
             - consumption - ligand_aggregation - colloidal_aggregation - scavenging - BactFe)

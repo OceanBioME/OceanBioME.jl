@@ -73,6 +73,9 @@ end
 @inline upper_trophic_respiration(zoo::MicroAndMeso, i, j, k, grid, bgc, clock, fields, auxiliary_fields) =
     upper_trophic_respiration(zoo.meso, Val(:M), i, j, k, grid, bgc, clock, fields, auxiliary_fields)
      
+@inline upper_trophic_dissolved_iron(zoo::MicroAndMeso, i, j, k, grid, bgc, clock, fields, auxiliary_fields) =
+    upper_trophic_dissolved_iron(zoo.meso, Val(:M), i, j, k, grid, bgc, clock, fields, auxiliary_fields)
+    
 @inline upper_trophic_fecal_production(zoo::MicroAndMeso, i, j, k, grid, bgc, clock, fields, auxiliary_fields) =
     upper_trophic_fecal_production(zoo.meso, Val(:M), i, j, k, grid, bgc, clock, fields, auxiliary_fields)
 
@@ -131,6 +134,3 @@ end
 @inline calcite_loss(zoo::MicroAndMeso, val_prey_name, i, j, k, grid, bgc, clock, fields, auxiliary_fields) =
     (calcite_loss(zoo.micro, Val(:Z), val_prey_name, i, j, k, grid, bgc, clock, fields, auxiliary_fields)
      + calcite_loss(zoo.meso, Val(:M), val_prey_name, i, j, k, grid, bgc, clock, fields, auxiliary_fields))
-
-@inline upper_trophic_iron_waste(zoo::MicroAndMeso, i, j, k, grid, bgc, clock, fields, auxiliary_fields) =
-    upper_trophic_respiration(zoo.meso, Val(:M), i, j, k, grid, bgc, clock, fields, auxiliary_fields) * zoo.meso.iron_ratio

@@ -15,6 +15,9 @@ end
     return γ * R
 end
 
+@inline upper_trophic_dissolved_iron(zoo, val_name, i, j, k, grid, bgc, clock, fields, auxiliary_fields) =
+    zoo.iron_ratio * upper_trophic_respiration_product(zoo, val_name, i, j, k, grid, bgc, clock, fields, auxiliary_fields)
+
 @inline upper_trophic_respiration_product(zoo::QualityDependantZooplankton, val_name, i, j, k, grid, bgc, clock, fields, auxiliary_fields) = 
     (1 - zoo.minimum_growth_efficiency - zoo.non_assililated_fraction) * upper_trophic_waste(zoo, val_name, i, j, k, grid, bgc, clock, fields, auxiliary_fields)
 

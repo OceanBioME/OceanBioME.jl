@@ -28,5 +28,5 @@ using OceanBioME.Models.PISCESModel.Zooplankton: non_assimilated_waste
     (grazing(zoo, val_prey_name, i, j, k, grid, bgc, clock, fields, auxiliary_fields)
      + flux_feeding(zoo, val_prey_name, i, j, k, grid, bgc, clock, fields, auxiliary_fields))
 
-@inline total_grazing(zoo::MicroAndMeso, val_prey_name::Val{:GOC}, i, j, k, grid, bgc, clock, fields, auxiliary_fields) =
+@inline total_grazing(zoo::MicroAndMeso, val_prey_name::LARGE_PARTICLE_COMPONENTS, i, j, k, grid, bgc, clock, fields, auxiliary_fields) =
     flux_feeding(zoo, val_prey_name, i, j, k, grid, bgc, clock, fields, auxiliary_fields)

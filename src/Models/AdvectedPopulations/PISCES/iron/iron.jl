@@ -15,7 +15,7 @@ using OceanBioME.Models.PISCESModel.ParticulateOrganicMatter:
 using OceanBioME.Models.PISCESModel.Phytoplankton: uptake
 
 using OceanBioME.Models.PISCESModel.Zooplankton: 
-    non_assimilated_iron, upper_trophic_iron_waste
+    non_assimilated_iron, upper_trophic_dissolved_iron
 
 import Oceananigans.Biogeochemistry: required_biogeochemical_tracers
 import OceanBioME.Models.PISCESModel: free_iron

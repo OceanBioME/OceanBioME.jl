@@ -104,7 +104,7 @@ function test_PISCES_update_state(arch)
                                light_attenuation,
                                mixed_layer_depth)
 
-    closure = ScalarDiffusivity(ν = 1e-5, κ = FunctionField{Center, Center, Center}(κ_func, grid))
+    closure = ScalarDiffusivity(ν = 1e-2, κ = FunctionField{Center, Center, Center}((z) -> ifelse(z > -25, 2, 1), grid))
 
     model = NonhydrostaticModel(; grid, biogeochemistry, closure) # this updates the biogeochemical state
 

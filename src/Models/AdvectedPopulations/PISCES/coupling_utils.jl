@@ -22,7 +22,7 @@ import OceanBioME.Models.Sediments: nitrogen_flux, carbon_flux, remineralisation
 
     # iron ratio for DOC might be wrong
     iron = (tracers = (:PFe, :DFe, :Z, :M, :SFe, :BFe, :Fe), 
-            scalefactors = (1, 1, bgc.zooplankton.micro.iron_ratio, bgc.zooplankton.micro.iron_ratio, 1, 1, 1))
+            scalefactors = (1, 1, bgc.zooplankton.micro.iron_ratio, bgc.zooplankton.meso.iron_ratio, 1, 1, 1))
     
     θ_PO₄ = bgc.phosphate_redfield_ratio
     phosphate = (tracers = (:P, :D, :Z, :M, :DOC, :POC, :GOC, :PO₄),

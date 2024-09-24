@@ -50,13 +50,13 @@ required_biogeochemical_tracers(::TwoCompartementCarbonIronParticles) = (:POC, :
 @inline flux_rate(::Val{:SFe}, i, j, k, grid, fields, auxiliary_fields) = @inbounds fields.SFe[i, j, k] * ℑzᵃᵃᶜ(i, j, k, grid, auxiliary_fields.wPOC)
 @inline flux_rate(::Val{:BFe}, i, j, k, grid, fields, auxiliary_fields) = @inbounds fields.BFe[i, j, k] * ℑzᵃᵃᶜ(i, j, k, grid, auxiliary_fields.wGOC)
 
-const small_particle_components = Union{Val{:POC}, Val{:SFe}}
-const large_particle_components = Union{Val{:GOC}, Val{:BFe}, Val{:PSi}, Val{:CaCO₃}} 
+const SMALL_PARTICLE_COMPONENTS = Union{Val{:POC}, Val{:SFe}}
+const LARGE_PARTICLE_COMPONENTS = Union{Val{:GOC}, Val{:BFe}, Val{:PSi}, Val{:CaCO₃}} 
 
-biogeochemical_drift_velocity(bgc::TwoCompartementCarbonIronParticles, ::small_particle_components) = 
+biogeochemical_drift_velocity(bgc::TwoCompartementCarbonIronParticles, ::SMALL_PARTICLE_COMPONENTS) = 
     (u = ZeroField(), v = ZeroField(), w = bgc.sinking_velocities.POC)
 
-biogeochemical_drift_velocity(bgc::TwoCompartementCarbonIronParticles, ::large_particle_components) = 
+biogeochemical_drift_velocity(bgc::TwoCompartementCarbonIronParticles, ::LARGE_PARTICLE_COMPONENTS) = 
     (u = ZeroField(), v = ZeroField(), w = bgc.sinking_velocities.GOC)
 
 @inline function aggregation(poc::TwoCompartementCarbonIronParticles, i, j, k, grid, bgc, clock, fields, auxiliary_fields)

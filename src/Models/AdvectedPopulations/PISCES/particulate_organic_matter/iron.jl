@@ -84,7 +84,7 @@ end
     large_breakdown = degredation(bgc.particulate_organic_matter, val_name, i, j, k, grid, bgc, clock, fields, auxiliary_fields)
 
     return (grazing_waste + phytoplankton_mortality + zooplankton_mortality + upper_trophic_feces
-            + scavenging + bacterial_assimilation + colloidal_aggregation
+            + scavenging + bacterial_assimilation + colloidal_aggregation + aggregation_to_large
             - grazing  - large_breakdown)
 end
 

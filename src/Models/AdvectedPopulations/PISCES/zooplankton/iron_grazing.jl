@@ -29,13 +29,13 @@
 
     iron_ratios = extract_iron_availability(i, j, k, bgc, fields, food)
 
-    total_specific_iron_grazing = sum(ntuple(n->max(zero(grid), (food_availability[n] - J)) * p[n] * iron_ratios[n], Val(N))) * total_specific_grazing / available_total_food
+    total_specific_iron_grazing = sum(ntuple(n->max(zero(grid), (food_availability[n] - J)) * p[n] * iron_ratios[n], Val(N))) * total_specific_grazing / (available_total_food + eps(0.0))
 
-    return total_specific_grazing * I
+    return total_specific_iron_grazing * I
 end
 
 @inline function iron_flux_feeding(zoo::QualityDependantZooplankton, val_name, i, j, k, grid, bgc, clock, fields, auxiliary_fields)
-    g₀ =  zoo.maximum_flux_feeding_rate
+    g₀ = zoo.maximum_flux_feeding_rate
     b  = zoo.temperature_sensetivity
 
     I = zooplankton_concentration(val_name, i, j, k, fields)

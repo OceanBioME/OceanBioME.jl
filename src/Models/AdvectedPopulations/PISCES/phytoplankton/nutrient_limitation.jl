@@ -56,7 +56,7 @@ end
 
     # iron limitation
     # Flynn and Hipkin (1999) - photosphotosyntheis, respiration (?), nitrate reduction 
-    θₘ = 0.0016 / 55.85 * 12 * θChl + 1.5 * 1.21e-5 * 14 / (55.85 * 7.625) * LN + 1.15e-4 * 14 / (55.85 * 7.625) * LNO₃
+    θₘ = 10^3 * (0.0016 / 55.85 * 12 * θChl + 1.5 * 1.21e-5 * 14 / (55.85 * 7.625) * LN + 1.15e-4 * 14 / (55.85 * 7.625) * LNO₃) # 1 / 1 to 10^-3 / 1
     
     LFe = min(1, max(0, (θFe - θₘ) / θₒ))
 

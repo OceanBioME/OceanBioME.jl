@@ -29,7 +29,7 @@ end
 
 @inline iron_ratio(::Val{:P},   i, j, k, bgc, fields) = @inbounds fields.PFe[i, j, k] / (fields.P[i, j, k] + eps(0.0))
 @inline iron_ratio(::Val{:D},   i, j, k, bgc, fields) = @inbounds fields.DFe[i, j, k] / (fields.D[i, j, k] + eps(0.0))
-@inline iron_ratio(::Val{:Z},   i, j, k, bgc, fields) = @inbounds   fields.Z[i, j, k] * bgc.zooplankton.micro.iron_ratio
+@inline iron_ratio(::Val{:Z},   i, j, k, bgc, fields) = @inbounds bgc.zooplankton.micro.iron_ratio
 @inline iron_ratio(::Val{:POC}, i, j, k, bgc, fields) = @inbounds fields.SFe[i, j, k] / (fields.POC[i, j, k] + eps(0.0))
 
 @inline grazing_preference(val_prey_name, preferences) = 0
