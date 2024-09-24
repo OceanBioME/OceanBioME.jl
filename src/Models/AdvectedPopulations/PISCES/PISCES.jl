@@ -42,7 +42,6 @@ import OceanBioME: redfield, conserved_tracers, maximum_sinking_velocity, chloro
 
 import Oceananigans.Biogeochemistry: required_biogeochemical_tracers,
                                      required_biogeochemical_auxiliary_fields,
-                                     biogeochemical_drift_velocity,
                                      biogeochemical_auxiliary_fields,
                                      update_biogeochemical_state!
 
@@ -117,9 +116,6 @@ end
      wPOC = bgc.sinking_velocities.POC,
      wGOC = bgc.sinking_velocities.GOC)
 
-biogeochemical_drift_velocity(bgc::PISCES, val_name) = 
-    biogeochemical_drift_velocity(bgc.particulate_organic_matter, val_name)
-
 (bgc::PISCES)(i, j, k, grid, val_name, clock, fields, auxiliary_fields) = zero(grid)
 
 (bgc::DiscreteBiogeochemistry{<:PISCES})(i, j, k, grid, val_name, clock, fields) =
@@ -127,6 +123,9 @@ biogeochemical_drift_velocity(bgc::PISCES, val_name) =
 
 include("common.jl")
 include("generic_functions.jl")
+include("mean_mixed_layer_properties.jl")
+include("compute_calcite_saturation.jl")
+include("update_state.jl")
 
 include("zooplankton/zooplankton.jl")
 

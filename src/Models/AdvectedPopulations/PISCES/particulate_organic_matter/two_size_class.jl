@@ -1,3 +1,4 @@
+using Oceananigans.Fields: ZeroField
 using Oceananigans.Grids: znode, Center
 using Oceananigans.Operators: ℑzᵃᵃᶜ
 
@@ -53,10 +54,10 @@ required_biogeochemical_tracers(::TwoCompartementCarbonIronParticles) = (:POC, :
 const SMALL_PARTICLE_COMPONENTS = Union{Val{:POC}, Val{:SFe}}
 const LARGE_PARTICLE_COMPONENTS = Union{Val{:GOC}, Val{:BFe}, Val{:PSi}, Val{:CaCO₃}} 
 
-biogeochemical_drift_velocity(bgc::TwoCompartementCarbonIronParticles, ::SMALL_PARTICLE_COMPONENTS) = 
+biogeochemical_drift_velocity(bgc::TwoCompartementPOCPISCES, ::SMALL_PARTICLE_COMPONENTS) = 
     (u = ZeroField(), v = ZeroField(), w = bgc.sinking_velocities.POC)
 
-biogeochemical_drift_velocity(bgc::TwoCompartementCarbonIronParticles, ::LARGE_PARTICLE_COMPONENTS) = 
+biogeochemical_drift_velocity(bgc::TwoCompartementPOCPISCES, ::LARGE_PARTICLE_COMPONENTS) = 
     (u = ZeroField(), v = ZeroField(), w = bgc.sinking_velocities.GOC)
 
 @inline function aggregation(poc::TwoCompartementCarbonIronParticles, i, j, k, grid, bgc, clock, fields, auxiliary_fields)
