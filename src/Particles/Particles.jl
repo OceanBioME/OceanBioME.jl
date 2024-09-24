@@ -16,14 +16,11 @@ const BGC_WITH_PARTICLES = Union{<:DiscreteBiogeochemistry{<:Any, <:Any, <:Any, 
                                  <:ContinuousBiogeochemistry{<:Any, <:Any, <:Any, <:BiogeochemicalParticles}}
 
 @inline step_lagrangian_particles!(::Nothing, 
-    model::NonhydrostaticModel{<:Any, <:Any, <:Any, <:Any, <:Any, <:Any, <:Any, <:Any, <:Any, <:Any, <:Any, <:Any, <:Any, <:Any, <:Any, <:Any, <:Any, 
-                               BGC_WITH_PARTICLES}, 
+    model::NonhydrostaticModel{<:Any, <:Any, <:Any, <:Any, <:Any, <:Any, <:Any, <:Any, <:Any, <:Any, <:Any, <:Any, <:Any, <:Any, <:Any, <:Any, <:Any, <:BGC_WITH_PARTICLES}, 
     Δt) = update_lagrangian_particle_properties!(model, model.biogeochemistry, Δt)
 
 @inline step_lagrangian_particles!(::Nothing,
-    model::HydrostaticFreeSurfaceModel{<:Any, <:Any, <:Any, <:Any, <:Any, <:Any, <:Any, <:Any, <:Any, <:Any, <:Any, 
-                                       BGC_WITH_PARTICLES, 
-                                       <:Any, <:Any, <:Any, <:Any, <:Any,}, 
+    model::HydrostaticFreeSurfaceModel{<:Any, <:Any, <:Any, <:Any, <:Any, <:Any, <:Any, <:Any, <:Any, <:Any, <:Any, <:BGC_WITH_PARTICLES}, 
     Δt) = update_lagrangian_particle_properties!(model, model.biogeochemistry, Δt)
 
 @inline update_lagrangian_particle_properties!(model, bgc::BGC_WITH_PARTICLES, Δt) = 
