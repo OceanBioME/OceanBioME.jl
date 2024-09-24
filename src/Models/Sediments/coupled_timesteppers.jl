@@ -8,7 +8,7 @@ using Oceananigans.Architectures: AbstractArchitecture
 
 import Oceananigans.TimeSteppers: ab2_step!, rk3_substep!
 
-const <:BGC_WITH_FLAT_SEDIMENT = Union{<:DiscreteBiogeochemistry{<:Any, <:Any, <:FlatSediment},
+const BGC_WITH_FLAT_SEDIMENT = Union{<:DiscreteBiogeochemistry{<:Any, <:Any, <:FlatSediment},
                                      <:ContinuousBiogeochemistry{<:Any, <:Any, <:FlatSediment}}
 
 # This is definitly type piracy
