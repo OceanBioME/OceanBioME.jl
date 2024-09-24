@@ -50,12 +50,10 @@ import OceanBioME: maximum_sinking_velocity
 
 import Base: show, summary
 
-struct PISCES{NP, DP, SZ, BZ, DM, PM, NI, FE, SI, OX, PO, CA, CE, FT, LA, DL, ML, EU, MS, VD, MP, CC, CS, SS} <: AbstractContinuousFormBiogeochemistry
-                        nanophytoplankton :: NP
-                                  diatoms :: DP
+struct PISCES{PP, ZP, DM, PM, NI, FE, SI, OX, PO, CA, CE, FT, LA, DL, ML, EU, MS, VD, MP, CC, CS, SS} <: AbstractBiogeochemistry
+                            phytoplankton :: PP
 
-                         microzooplankton :: SZ
-                          mesozooplankton :: BZ
+                              zooplankton :: ZP
 
                  dissolved_organic_matter :: DM
                particulate_organic_matter :: PM
@@ -94,13 +92,21 @@ struct PISCES{NP, DP, SZ, BZ, DM, PM, NI, FE, SI, OX, PO, CA, CE, FT, LA, DL, ML
                        sinking_velocities :: SS
 end
 
-const NANO_PHYTO = Union{Val{:P}, Val{:PChl}, Val{:PFe}}
-const DIATOMS    = Union{Val{:D}, Val{:DChl}, Val{:DFe}, Val{:DSi}}
-const PARTICLES = Union{Val{:POC}, Val{:SFe}, Val{:GOC}, Val{:BFe}, Val{:PSi}}
-const NITROGEN = Union{Val{:NO₃}, Val{:NH₄}}
-const CARBON_SYSTEM = Union{Val{:DIC}, Val{:Alk}}
+@inline required_biogeochemical_tracers(bgc::PISCES) = 
+    (required_biogeochemical_tracers(bgc.zooplankton)...,
+     required_biogeochemical_tracers(bgc.phytoplankon)...,
+     required_biogeochemical_tracers(bgc.dissolved_organic_matter)...,
+     required_biogeochemical_tracers(bgc.particulate_organic_matter)...,
+     required_biogeochemical_tracers(bgc.nitrogen)...,
+     required_biogeochemical_tracers(bgc.phosphate)...,
+     required_biogeochemical_tracers(bgc.iron)...,
+     required_biogeochemical_tracers(bgc.silicate),
+     required_biogeochemical_tracers(bgc.carbon_system)...
+     required_biogeochemical_tracers(bgc.oxygen)...,
+     :T, :S)
 
-include("group_methods.jl")
+@inline required_biogeochemical_auxiliary_fields(::PISCES) =
+    (:zₘₓₗ, :zₑᵤ, :Si′, :Ω, :κ, :mixed_layer_PAR, :wPOC, :wGOC, :PAR, :PAR₁, :PAR₂, :PAR₃)
 
 @inline biogeochemical_auxiliary_fields(bgc::PISCES) = 
     (zₘₓₗ = bgc.mixed_layer_depth, 
@@ -112,106 +118,52 @@ include("group_methods.jl")
      wPOC = bgc.sinking_velocities.POC,
      wGOC = bgc.sinking_velocities.GOC)
 
-@inline required_biogeochemical_tracers(::PISCES) = 
-    (:P, :D, :Z, :M, :PChl, :DChl, :PFe, :DFe, :DSi, 
-     :DOC, :POC, :GOC, :SFe, :BFe, :PSi, # its really silly that this is called PSi when DSi also exists
-     :NO₃, :NH₄, :PO₄, :Fe, :Si, 
-     :CaCO₃, :DIC, :Alk, :O₂, :T, :S)
+biogeochemical_drift_velocity(bgc::PISCES, val_name) = 
+    biogeochemical_drift_velocity(bgc.particulate_organic_matter, val_name)
 
-@inline required_biogeochemical_auxiliary_fields(::PISCES) =
-    (:zₘₓₗ, :zₑᵤ, :Si′, :Ω, :κ, :mixed_layer_PAR, :wPOC, :wGOC, :PAR, :PAR₁, :PAR₂, :PAR₃)
+include("zooplankton/zooplankton.jl")
 
-const small_particle_components = Union{Val{:POC}, Val{:SFe}}
-const large_particle_components = Union{Val{:GOC}, Val{:BFe}, Val{:PSi}, Val{:CaCO₃}} 
+using .Zooplankton
 
-biogeochemical_drift_velocity(bgc::PISCES, ::small_particle_components) = (u = ZeroField(), v = ZeroField(), w = bgc.sinking_velocities.POC)
-biogeochemical_drift_velocity(bgc::PISCES, ::large_particle_components) = (u = ZeroField(), v = ZeroField(), w = bgc.sinking_velocities.GOC)
+include("phytoplankton/phytoplankton.jl")
 
-include("common.jl")
-include("phytoplankton.jl")
-include("zooplankton.jl")
-include("dissolved_organic_matter.jl")
-include("particulate_organic_matter.jl")
-include("nitrate_ammonia.jl")
-include("phosphates.jl")
-include("iron.jl")
-include("silicon.jl")
-include("calcite.jl")
-include("carbonate_system.jl")
+using .Phytoplankton
+
+include("dissolved_organic_matter/dissolved_organic_matter.jl")
+
+using .DissolvedOrganicMatter
+
+include("particulate_organic_matter/particulate_organic_matter.jl")
+
+using .ParticulateOrganicMatter
+
+include("nitrogen/nitrogen.jl")
+
+using .Nitrogen
+
+include("iron/iron.jl")
+
+using .Iron
+
+include("silicate.jl")
+
+using .Silicates
+
 include("oxygen.jl")
-include("mean_mixed_layer_properties.jl")
-include("compute_calcite_saturation.jl")
-include("update_state.jl")
-include("coupling_utils.jl")
-include("show_methods.jl")
-include("adapts.jl")
-include("hack.jl")
+
+using .OxygenModels
+
+include("phosphate.jl")
+
+using .Phosphates
+
+include("inorganic_carbon.jl")
+
+using .InorganicCarbons
 
 """
     PISCES(; grid,
-             nanophytoplankton = 
-                MixedMondoPhytoplankton(
-                    growth_rate = GrowthRespirationLimitedProduction(dark_tollerance = 3days),
-                    nutrient_limitation = 
-                        NitrogenIronPhosphateSilicateLimitation(minimum_ammonium_half_saturation = 0.013,
-                                                                minimum_nitrate_half_saturation = 0.13, 
-                                                                minimum_phosphate_half_saturation = 0.8,
-                                                                half_saturation_for_iron_uptake = 1.0,
-                                                                silicate_limited = false),
-                    blue_light_absorption = 2.1, 
-                    green_light_absorption = 0.42, 
-                    red_light_absorption = 0.4,
-                    maximum_quadratic_mortality = 0.0,
-                    maximum_chlorophyll_ratio = 0.033),
-
-             diatoms = 
-                MixedMondoPhytoplankton(
-                    growth_rate = GrowthRespirationLimitedProduction(dark_tollerance = 4days),
-                    nutrient_limitation = 
-                        NitrogenIronPhosphateSilicateLimitation(minimum_ammonium_half_saturation = 0.039,
-                                                                minimum_nitrate_half_saturation = 0.39, 
-                                                                minimum_phosphate_half_saturation = 2.4,
-                                                                half_saturation_for_iron_uptake = 3.0,
-                                                                silicate_limited = true),
-                    blue_light_absorption = 1.6, 
-                    green_light_absorption = 0.69, 
-                    red_light_absorption = 0.7,
-                    maximum_quadratic_mortality = 0.03/day,
-                    maximum_chlorophyll_ratio = 0.05),
              
-             microzooplankton = Zooplankton(maximum_grazing_rate = 3/day,
-                                            preference_for_nanophytoplankton = 1.0,
-                                            preference_for_diatoms = 0.5,
-                                            preference_for_particulates = 0.1,
-                                            preference_for_zooplankton = 0.0,
-                                            quadratic_mortality = 0.004/day,
-                                            linear_mortality = 0.03/day,
-                                            minimum_growth_efficiency = 0.3,
-                                            maximum_flux_feeding_rate = 0.0,
-                                            undissolved_calcite_fraction = 0.5),
-
-             mesozooplankton = Zooplankton(maximum_grazing_rate = 0.75/day,
-                                           preference_for_nanophytoplankton = 0.3,
-                                           preference_for_diatoms = 1.0,
-                                           preference_for_particulates = 0.3,
-                                           preference_for_zooplankton = 1.0,
-                                           quadratic_mortality = 0.03/day,
-                                           linear_mortality = 0.005/day,
-                                           minimum_growth_efficiency = 0.35,
-                                           maximum_flux_feeding_rate = 2e3 / 1e6 / day,
-                                           undissolved_calcite_fraction = 0.75),
-             
-             dissolved_organic_matter = DissolvedOrganicMatter(),
-             particulate_organic_matter = TwoCompartementParticulateOrganicMatter(),
-             
-             nitrogen = NitrateAmmonia(),
-             iron = SimpleIron(),
-             silicate = Silicate(),
-             oxygen = Oxygen(),
-             phosphate = Phosphate(),
-             
-             calcite = Calcite(),
-             carbon_system = CarbonateSystem(),
 
              # from Aumount 2005 rather than 2015 since it doesn't work the other way around
              first_anoxia_thresehold = 6.0,
@@ -313,64 +265,10 @@ the classes to a single `phytoplankton` if more classes are required (see
 was desired a way to specify arbitary tracers for arguments would be required.
 """
 function PISCES(; grid,
-                  nanophytoplankton = 
-                    MixedMondoPhytoplankton(
-                        growth_rate = GrowthRespirationLimitedProduction(dark_tollerance = 3days),
-                        nutrient_limitation = 
-                          NitrogenIronPhosphateSilicateLimitation(minimum_ammonium_half_saturation = 0.013,
-                                                                  minimum_nitrate_half_saturation = 0.13, 
-                                                                  minimum_phosphate_half_saturation = 0.8,
-                                                                  half_saturation_for_iron_uptake = 1.0,
-                                                                  silicate_limited = false),
-                        blue_light_absorption = 2.1, 
-                        green_light_absorption = 0.42, 
-                        red_light_absorption = 0.4,
-                        maximum_quadratic_mortality = 0.0,
-                        maximum_chlorophyll_ratio = 0.033),
-
-                  diatoms = 
-                    MixedMondoPhytoplankton(
-                        growth_rate = GrowthRespirationLimitedProduction(dark_tollerance = 4days),
-                        nutrient_limitation = 
-                          NitrogenIronPhosphateSilicateLimitation(minimum_ammonium_half_saturation = 0.039,
-                                                                  minimum_nitrate_half_saturation = 0.39, 
-                                                                  minimum_phosphate_half_saturation = 2.4,
-                                                                  half_saturation_for_iron_uptake = 3.0,
-                                                                  silicate_limited = true),
-                        blue_light_absorption = 1.6, 
-                        green_light_absorption = 0.69, 
-                        red_light_absorption = 0.7,
-                        maximum_quadratic_mortality = 0.03/day,
-                        maximum_chlorophyll_ratio = 0.05),
-                  
-                  microzooplankton = Zooplankton(maximum_grazing_rate = 3/day,
-                                                 preference_for_nanophytoplankton = 1.0,
-                                                 preference_for_diatoms = 0.5,
-                                                 preference_for_particulates = 0.1,
-                                                 preference_for_zooplankton = 0.0,
-                                                 quadratic_mortality = 0.004/day,
-                                                 linear_mortality = 0.03/day,
-                                                 minimum_growth_efficiency = 0.3,
-                                                 maximum_flux_feeding_rate = 0.0,
-                                                 undissolved_calcite_fraction = 0.5,
-                                                 iron_ratio = 0.01),
-
-                  mesozooplankton = Zooplankton(maximum_grazing_rate = 0.75/day,
-                                                preference_for_nanophytoplankton = 0.3,
-                                                preference_for_diatoms = 1.0,
-                                                preference_for_particulates = 0.3,
-                                                preference_for_zooplankton = 1.0,
-                                                quadratic_mortality = 0.03/day,
-                                                linear_mortality = 0.005/day,
-                                                minimum_growth_efficiency = 0.35,
-                                                # not documented but the below must implicitly contain a factor of second/day
-                                                # to be consistent in the NEMO namelist to go from this * mol / L * m/s to mol / L / day
-                                                maximum_flux_feeding_rate = 2e3 / 1e6 / day, # (day * meter/s * mol/L)^-1 to (meter * μ mol/L)^-1
-                                                undissolved_calcite_fraction = 0.75,
-                                                iron_ratio = 0.015),
-                  
-                  dissolved_organic_matter = DissolvedOrganicMatter(),
-                  particulate_organic_matter = TwoCompartementParticulateOrganicMatter(),
+                  phytoplankton = MixedMondoNanoAndDiatoms(),
+                  zooplankton = MicroAndMezoZooplankton(),
+                  dissolved_organic_matter = DissolvedOrganicCarbon(),
+                  particulate_organic_matter = TwoCompartementCarbonIronParticles(),
                   
                   nitrogen = NitrateAmmonia(),
                   iron = SimpleIron(),
@@ -378,8 +276,7 @@ function PISCES(; grid,
                   oxygen = Oxygen(),
                   phosphate = Phosphate(),
                   
-                  calcite = Calcite(),
-                  carbon_system = CarbonateSystem(),
+                  carbon_system = InorganicCarbon(),
 
                   # from Aumount 2005 rather than 2015 since it doesn't work the other way around
                   first_anoxia_thresehold = 6.0,

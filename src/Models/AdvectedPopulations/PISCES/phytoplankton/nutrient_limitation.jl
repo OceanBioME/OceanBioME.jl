@@ -11,26 +11,13 @@ setting `silicate_limited=false`.
     minimum_ammonium_half_saturation :: FT          # mmol N / m³
      minimum_nitrate_half_saturation :: FT          # mmol N / m³
    minimum_phosphate_half_saturation :: FT          # mmol P / m³
-       threshold_for_size_dependency :: FT = 1.0    # mmol C / m³
-                          size_ratio :: FT = 3.0    # 
                   optimal_iron_quota :: FT = 0.007  # μmol Fe / mmol C
                     silicate_limited :: BT          # Bool
     minimum_silicate_half_saturation :: FT = 1.0    # mmol Si / m³
   silicate_half_saturation_parameter :: FT = 16.6   # mmol Si / m³
-     half_saturation_for_iron_uptake :: FT          # μmol Fe / m³
 end
 
-@inline function size_factor(L, I)
-    Iₘ  = L.threshold_for_size_dependency
-    S   = L.size_ratio
-
-    I₁ = min(I, Iₘ)
-    I₂ = max(0, I - Iₘ)
-
-    return (I₁ + S * I₂) / (I₁ + I₂ + eps(0.0))
-end
-
-@inline function (L::NitrogenIronPhosphateSilicateLimitation)(bgc, I, IChl, IFe, NO₃, NH₄, PO₄, Fe, Si, Si′)
+@inline function (L::NitrogenIronPhosphateSilicateLimitation)(val_name, phyto, i, j, k, grid, bgc, clock, fields)
     kₙₒ = L.minimum_nitrate_half_saturation
     kₙₕ = L.minimum_ammonium_half_saturation
     kₚ  = L.minimum_phosphate_half_saturation
@@ -39,11 +26,18 @@ end
 
     θₒ  = L.optimal_iron_quota
 
+    I, IChl, IFe = phytoplankton_concentrations(val_name, fields)
+
+    NO₃ = @inbounds fields.NO₃[i, j, k]
+    NH₄ = @inbounds fields.NH₄[i, j, k]
+    PO₄ = @inbounds fields.PO₄[i, j, k]
+    Si  = @inbounds  fields.Si[i, j, k]
+
     # quotas
     θFe  = ifelse(I == 0, 0, IFe / (I + eps(0.0)))
     θChl = ifelse(I == 0, 0, IChl / (12 * I + eps(0.0)))
 
-    K̄ = size_factor(L, I)
+    K̄ = size_factor(phyto, I)
 
     Kₙₒ = kₙₒ * K̄
     Kₙₕ = kₙₕ * K̄
@@ -74,11 +68,3 @@ end
 end
 
 @inline nitrogen_limitation(N₁, N₂, K₁, K₂) = (K₂ * N₁) / (K₁ * K₂ + K₁ * N₂ + K₂ * N₁ + eps(0.0))
-
-@inline function iron_uptake_limitation(L, I, Fe)
-    k = L.half_saturation_for_iron_uptake
-
-    K = k * size_factor(L, I)
-
-    return Fe / (Fe + K + eps(0.0))
-end

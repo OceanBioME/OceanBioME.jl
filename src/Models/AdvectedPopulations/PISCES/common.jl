@@ -1,7 +1,7 @@
 using KernelAbstractions: @kernel, @index
 
 using Oceananigans.Fields: flatten_node
-using Oceananigans.Grids: znode, zspacing
+using Oceananigans.Grids: znode, zspacing, φnode
 
 import Oceananigans.Fields: flatten_node
 
@@ -27,7 +27,9 @@ struct PrescribedLatitude{FT}
 end
 
 @inline (pl::PrescribedLatitude)(y) = pl.latitude
-@inline (::ModelLatitude)(y) = y
+
+@inline (::ModelLatitude)(φ) = φ
+@inline (::ModelLatitude)(i, j, k, grid) = φnode(i, j, k, grid, Center(), Center(), Center())
 
 """
     day_length_function(φ, t)
