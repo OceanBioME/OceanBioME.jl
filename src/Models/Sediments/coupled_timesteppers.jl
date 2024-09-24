@@ -8,11 +8,11 @@ using Oceananigans.Architectures: AbstractArchitecture
 
 import Oceananigans.TimeSteppers: ab2_step!, rk3_substep!
 
-const BGC_WITH_FLAT_SEDIMENT = Union{<:DiscreteBiogeochemistry{<:Any, <:Any, <:FlatSediment},
+const <:BGC_WITH_FLAT_SEDIMENT = Union{<:DiscreteBiogeochemistry{<:Any, <:Any, <:FlatSediment},
                                      <:ContinuousBiogeochemistry{<:Any, <:Any, <:FlatSediment}}
 
 # This is definitly type piracy
-@inline function ab2_step!(model::NonhydrostaticModel{<:Any, <:Any, <:Any, <:Any, <:Any, <:Any, <:Any, <:Any, <:Any, <:Any, <:Any, <:Any, <:Any, <:Any, <:Any, <:Any, <:Any, BGC_WITH_FLAT_SEDIMENT}, Δt)
+@inline function ab2_step!(model::NonhydrostaticModel{<:Any, <:Any, <:Any, <:Any, <:Any, <:Any, <:Any, <:Any, <:Any, <:Any, <:Any, <:Any, <:Any, <:Any, <:Any, <:Any, <:Any, <:BGC_WITH_FLAT_SEDIMENT}, Δt)
     workgroup, worksize = work_layout(model.grid, :xyz)
     arch = model.architecture
     step_field_kernel! = ab2_step_field!(device(arch), workgroup, worksize)
@@ -50,7 +50,7 @@ const BGC_WITH_FLAT_SEDIMENT = Union{<:DiscreteBiogeochemistry{<:Any, <:Any, <:F
     return nothing
 end
 
-@inline function ab2_step!(model::HydrostaticFreeSurfaceModel{<:Any, <:Any, <:AbstractArchitecture, <:Any, <:Any, <:Any, <:Any, <:Any, <:Any, <:Any, <:Any, BGC_WITH_FLAT_SEDIMENT}, Δt)
+@inline function ab2_step!(model::HydrostaticFreeSurfaceModel{<:Any, <:Any, <:AbstractArchitecture, <:Any, <:Any, <:Any, <:Any, <:Any, <:Any, <:Any, <:Any, <:BGC_WITH_FLAT_SEDIMENT}, Δt)
     χ = model.timestepper.χ
 
     # Step locally velocity and tracers
@@ -82,7 +82,7 @@ end
     @inbounds u[i, j, 1] += Δt * ((one_point_five + χ) * Gⁿ[i, j, 1] - (oh_point_five + χ) * G⁻[i, j, 1])
 end
 
-function rk3_substep!(model::NonhydrostaticModel{<:Any, <:Any, <:Any, <:Any, <:Any, <:Any, <:Any, <:Any, <:Any, <:Any, <:Any, <:Any, <:Any, <:Any, <:Any, <:Any, <:Any, BGC_WITH_FLAT_SEDIMENT}, Δt, γⁿ, ζⁿ)
+function rk3_substep!(model::NonhydrostaticModel{<:Any, <:Any, <:Any, <:Any, <:Any, <:Any, <:Any, <:Any, <:Any, <:Any, <:Any, <:Any, <:Any, <:Any, <:Any, <:Any, <:Any, <:BGC_WITH_FLAT_SEDIMENT}, Δt, γⁿ, ζⁿ)
     workgroup, worksize = work_layout(model.grid, :xyz)
     arch = model.architecture
     substep_field_kernel! = rk3_substep_field!(device(arch), workgroup, worksize)
