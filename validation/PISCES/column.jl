@@ -38,7 +38,7 @@ nothing #hide
 
 @inline temp(z, t) = 2.4 * (1 + cos(t * 2π / year + 50days)) * ifelse(z > MLD(t), 1, exp((z - MLD(t))/20)) + 8
 
-grid = RectilinearGrid(topology = (Flat, Flat, Bounded), size = (100, ), extent = (400, ))
+grid = RectilinearGrid(GPU(), topology = (Flat, Flat, Bounded), size = (100, ), extent = (400, ))
 
 clock = Clock(; time = 0.0)
 
@@ -58,8 +58,7 @@ biogeochemistry = PISCES(; grid,
                            mixed_layer_depth = zₘₓₗ,
                            mean_mixed_layer_vertical_diffusivity = ConstantField(1e-2), # this is by default computed now
                            surface_photosynthetically_active_radiation = PAR⁰,
-                           carbon_chemistry)#,
-                           #sinking_speeds = (POC = 2/day, GOC = 50/day))
+                           carbon_chemistry)
 
 CO₂_flux = CarbonDioxideGasExchangeBoundaryCondition(; carbon_chemistry)
 O₂_flux = OxygenGasExchangeBoundaryCondition()
@@ -112,22 +111,6 @@ end
 
 add_callback!(simulation, update_temperature!, IterationInterval(1))
 
-#NaN Checker function. Could be removed to improve speed, if confident of model stability
-function non_zero_fields!(model) 
-    @inbounds for (idx, tracer) in enumerate(model.tracers)
-        for i in 1:50
-            if isnan(tracer[1,1,i])
-                throw("$(keys(model.tracers)[idx]) has gone NaN")
-            else
-                tracer[1, 1, i] = max(0, tracer[1, 1, i])
-            end
-        end
-        
-    end
-    return nothing
-end
-
-simulation.callbacks[:non_zero_fields] = Callback(non_zero_fields!, callsite = UpdateStateCallsite())
 filename = "column"
 simulation.output_writers[:tracers] = JLD2OutputWriter(model, model.tracers,
                                                        filename = "$filename.jld2",
@@ -168,8 +151,9 @@ carbon_export = zeros(length(times))
 S = ConstantField(35)
 
 using Oceananigans.Biogeochemistry: biogeochemical_drift_velocity
+using CUDA
 
-for (n, t) in enumerate(times)
+CUDA.@allowscalar for (n, t) in enumerate(times)
     clock.time = t
 
     k_export = floor(Int, grid.Nz + MLD(t)/minimum_zspacing(grid))
@@ -203,8 +187,8 @@ for (n, name) in enumerate(keys(model.tracers))
     end
 end
 
-ax = Axis(fig[7, 3]; title = "log₁₀((Calcite saturation)", axis_kwargs...)
-hm = heatmap!(ax, times[start_day:end_day]./days, z, log10.(interior(internal_fields["calcite_saturation"], 1, 1, :, start_day:end_day)'), colorrange = (-173, -95))
+ax = Axis(fig[7, 3]; title = "log₁₀(Calcite saturation)", axis_kwargs...)
+hm = heatmap!(ax, times[start_day:end_day]./days, z, log10.(interior(internal_fields["calcite_saturation"], 1, 1, :, start_day:end_day)'))
 Colorbar(fig[7, 4], hm)
 
 ax = Axis(fig[7, 5]; title = "log₁₀(PAR)", axis_kwargs...)
@@ -221,6 +205,7 @@ lines!(axDIC, times[start_day:end_day] / days, carbon_export[start_day:end_day] 
 Legend(fig[7, 8], axDIC, framevisible = false)
 
 fig
+save("gpu_column.png", fig)
 
 
 # TODO:
