@@ -24,7 +24,7 @@ using Distributions
 using EnsembleKalmanProcesses
 using EnsembleKalmanProcesses.ParameterDistributions
 
-using Oceananigans.Fields: FuncitonField
+using Oceananigans.Fields: FunctionField
 
 const year = years = 365day
 
