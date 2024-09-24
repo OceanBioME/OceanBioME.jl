@@ -25,6 +25,8 @@ end
 value(field; indices = (1, 1, 1)) = on_architecture(CPU(), interior(field, indices...))[1]
 
 function test_PISCES_conservation() # only on CPU please
+    @info "Testing PISCES element conservation (C, Fe, P, Si)"
+
     validation_warning = "This implementation of PISCES is in early development and has not yet been validated"
 
     grid = BoxModelGrid(; z = -5)
@@ -50,7 +52,7 @@ function test_PISCES_conservation() # only on CPU please
                                                              mean_mixed_layer_light,
                                                              mean_mixed_layer_vertical_diffusivity,
                                                              # turn off permanent iron removal and nitrogen fixaiton
-                                                             iron = SimpleIron(0),
+                                                             iron = SimpleIron(excess_scavenging_enhancement = 0.0),
                                                              nitrogen = NitrateAmmonia(maximum_fixation_rate = 0.0))
 
     model = BoxModel(; grid, biogeochemistry)
@@ -74,12 +76,12 @@ function test_PISCES_conservation() # only on CPU please
     total_phosphate_tendencies = sum([value(model.timestepper.Gⁿ[n]) * sf for (n, sf) in zip(conserved_tracers.phosphate.tracers, conserved_tracers.phosphate.scalefactors)])
     total_nitrogen_tendencies = sum([value(model.timestepper.Gⁿ[n]) * sf for (n, sf) in zip(conserved_tracers.nitrogen.tracers, conserved_tracers.nitrogen.scalefactors)])
 
-    # should these be exactly zero?
-    @test isapprox(total_carbon_tendencies, 0, atol = 10^-20) 
-    @test isapprox(total_iron_tendencies, 0, atol = 10^-21) 
-    @test isapprox(total_silicon_tendencies, 0, atol = 10^-21) 
-    @test isapprox(total_phosphate_tendencies, 0, atol = 10^-21) 
-    @test isapprox(total_nitrogen_tendencies, 0, atol = 10^-21) 
+    # should these be exactly zero? - I would expect actual errors to be O(10^-9) to O(10^-6) from experiance
+    @test isapprox(total_carbon_tendencies, 0, atol = 2*10^-18) # I think this is okay ... it seems to reduce when I remove a load of 1/(x + eps(0.0)) but that would make it crash sometimes
+    @test isapprox(total_iron_tendencies, 0, atol = 10^-21) # this has lower tollerance because its about 100x smaller 
+    @test isapprox(total_silicon_tendencies, 0, atol = 10^-21) # and this has lower tollerance because its simpler
+    @test isapprox(total_phosphate_tendencies, 0, atol = 2*10^-20) # I think ...
+    @test isapprox(total_nitrogen_tendencies, 0, atol = 2*10^-19) 
 
     return nothing
 end
@@ -89,6 +91,7 @@ end
 @inline κ_func(z) = ifelse(z > -25, 2, 1)
 
 function test_PISCES_update_state(arch)
+    @info "Testing PISCES auxiliary field computation and timestepping"
     # TODO: implement and test mixed layer depth computaiton elsewhere
 
     grid = RectilinearGrid(arch, topology = (Flat, Flat, Bounded), size = (10, ), extent = (100, ))
@@ -119,6 +122,7 @@ function test_PISCES_update_state(arch)
 end
 
 function test_PISCES_negativity_protection(arch)
+    @info "Testing PISCES negativity protection"
     grid = RectilinearGrid(arch, topology = (Flat, Flat, Bounded), size = (10, ), extent = (100, ))
 
     PAR₁ = PAR₂ = PAR₃ = FunctionField{Center, Center, Center}(light, grid)
@@ -160,12 +164,10 @@ end
 
 @testset "PISCES" begin
     if architecture isa CPU
-        @info "Testing PISCES element conservation (C, Fe, P, Si)"
         test_PISCES_conservation()
         #test_PISCES_box_model() #TODO
     end
 
-    @info "Testing PISCES auxiliary field computation and timestepping"
     test_PISCES_update_state(architecture)
 
     test_PISCES_negativity_protection(architecture)
