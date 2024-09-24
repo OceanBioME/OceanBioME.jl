@@ -9,14 +9,18 @@ using OceanBioME.Models.PISCESModel.ParticulateOrganicMatter:
 
 using OceanBioME.Models.PISCESModel.Phytoplankton: silicate_uptake
 
+import Oceananigans.Biogeochemistry: required_biogeochemical_tracers
+
 struct Silicate end
 
-const PISCESSilicate = PISCES{<:Any, <:Any, <:Any, <:Any, <:Any, <:Any, Silicate}
+required_biogeochemical_tracers(::Silicate) = tuple(:Si)
 
-@inline function (bgc::PISCESSilicate)(i, j, k, grid, val_name::Val{:Si}, clock, fields)
-    consumption = silicate_uptake(bgc.phytoplankton, i, j, k, grid, bgc, clock, fields)
+const PISCESSilicate = PISCES{<:Any, <:Any, <:Any, <:Any, <:Any, <:Any, <:Silicate}
 
-    dissolution = particulate_silicate_dissolution(bgc.particulate_organic_matter, i, j, k, grid, bgc, clock, fields)
+@inline function (bgc::PISCESSilicate)(i, j, k, grid, val_name::Val{:Si}, clock, fields, auxiliary_fields)
+    consumption = silicate_uptake(bgc.phytoplankton, i, j, k, grid, bgc, clock, fields, auxiliary_fields)
+
+    dissolution = particulate_silicate_dissolution(bgc.particulate_organic_matter, i, j, k, grid, bgc, clock, fields, auxiliary_fields)
 
     return dissolution - consumption
 end

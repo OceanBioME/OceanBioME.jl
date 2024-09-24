@@ -1,8 +1,10 @@
 module Zooplankton
 
-export MicroAndMezoZooplankton, QualityDependantZooplankton, MicroAndMeso
+export MicroAndMesoZooplankton, QualityDependantZooplankton, MicroAndMeso
 
-using OceanBioME.Models.PISCESModel: anoxia_factor, PISCES
+using Oceananigans.Units
+
+using OceanBioME.Models.PISCESModel: anoxia_factor, PISCES, flux_rate
 
 import Oceananigans.Biogeochemistry: required_biogeochemical_tracers
 import OceanBioME.Models.PISCESModel: mortality

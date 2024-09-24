@@ -30,11 +30,11 @@ using Oceananigans: KernelFunctionOperation
 using Oceananigans.Fields: Field, TracerFields, CenterField, ZeroField, ConstantField, Center, Face
 
 using OceanBioME.Light: MultiBandPhotosyntheticallyActiveRadiation, default_surface_PAR, compute_euphotic_depth!
-using OceanBioME: setup_velocity_fields, show_sinking_velocities, Biogeochemistry, ScaleNegativeTracers
+using OceanBioME: setup_velocity_fields, show_sinking_velocities, Biogeochemistry, DiscreteBiogeochemistry, ScaleNegativeTracers
 using OceanBioME.BoxModels: BoxModel
 using OceanBioME.Models.CarbonChemistryModel: CarbonChemistry
 
-using Oceananigans.Biogeochemistry: AbstractContinuousFormBiogeochemistry
+using Oceananigans.Biogeochemistry: AbstractBiogeochemistry
 using Oceananigans.Fields: set!
 using Oceananigans.Grids: φnodes, RectilinearGrid
 
@@ -50,7 +50,7 @@ import OceanBioME: maximum_sinking_velocity
 
 import Base: show, summary
 
-struct PISCES{PP, ZP, DM, PM, NI, FE, SI, OX, PO, CA, CE, FT, LA, DL, ML, EU, MS, VD, MP, CC, CS, SS} <: AbstractBiogeochemistry
+struct PISCES{PP, ZP, DM, PM, NI, FE, SI, OX, PO, IC, FT, LA, DL, ML, EU, MS, VD, MP, CC, CS, SS} <: AbstractBiogeochemistry
                             phytoplankton :: PP
 
                               zooplankton :: ZP
@@ -64,8 +64,7 @@ struct PISCES{PP, ZP, DM, PM, NI, FE, SI, OX, PO, CA, CE, FT, LA, DL, ML, EU, MS
                                    oxygen :: OX
                                 phosphate :: PO
 
-                                  calcite :: CA
-                            carbon_system :: CE
+                         inorganic_carbon :: IC
 
                    first_anoxia_threshold :: FT
                   second_anoxia_threshold :: FT
@@ -93,15 +92,15 @@ struct PISCES{PP, ZP, DM, PM, NI, FE, SI, OX, PO, CA, CE, FT, LA, DL, ML, EU, MS
 end
 
 @inline required_biogeochemical_tracers(bgc::PISCES) = 
-    (required_biogeochemical_tracers(bgc.zooplankton)...,
-     required_biogeochemical_tracers(bgc.phytoplankon)...,
+    (required_biogeochemical_tracers(bgc.phytoplankton)...,
+     required_biogeochemical_tracers(bgc.zooplankton)...,
      required_biogeochemical_tracers(bgc.dissolved_organic_matter)...,
      required_biogeochemical_tracers(bgc.particulate_organic_matter)...,
      required_biogeochemical_tracers(bgc.nitrogen)...,
      required_biogeochemical_tracers(bgc.phosphate)...,
      required_biogeochemical_tracers(bgc.iron)...,
-     required_biogeochemical_tracers(bgc.silicate),
-     required_biogeochemical_tracers(bgc.carbon_system)...
+     required_biogeochemical_tracers(bgc.silicate)...,
+     required_biogeochemical_tracers(bgc.inorganic_carbon)...,
      required_biogeochemical_tracers(bgc.oxygen)...,
      :T, :S)
 
@@ -120,6 +119,14 @@ end
 
 biogeochemical_drift_velocity(bgc::PISCES, val_name) = 
     biogeochemical_drift_velocity(bgc.particulate_organic_matter, val_name)
+
+(bgc::PISCES)(i, j, k, grid, val_name, clock, fields, auxiliary_fields) = zero(grid)
+
+(bgc::DiscreteBiogeochemistry{<:PISCES})(i, j, k, grid, val_name, clock, fields) =
+    bgc.underlying_biogeochemistry(i, j, k, grid, val_name, clock, fields, biogeochemical_auxiliary_fields(bgc))
+
+include("common.jl")
+include("generic_functions.jl")
 
 include("zooplankton/zooplankton.jl")
 
@@ -160,6 +167,8 @@ using .Phosphates
 include("inorganic_carbon.jl")
 
 using .InorganicCarbons
+
+include("coupling_utils.jl")
 
 """
     PISCES(; grid,
@@ -266,7 +275,7 @@ was desired a way to specify arbitary tracers for arguments would be required.
 """
 function PISCES(; grid,
                   phytoplankton = MixedMondoNanoAndDiatoms(),
-                  zooplankton = MicroAndMezoZooplankton(),
+                  zooplankton = MicroAndMesoZooplankton(),
                   dissolved_organic_matter = DissolvedOrganicCarbon(),
                   particulate_organic_matter = TwoCompartementCarbonIronParticles(),
                   
@@ -276,7 +285,7 @@ function PISCES(; grid,
                   oxygen = Oxygen(),
                   phosphate = Phosphate(),
                   
-                  carbon_system = InorganicCarbon(),
+                  inorganic_carbon = InorganicCarbon(),
 
                   # from Aumount 2005 rather than 2015 since it doesn't work the other way around
                   first_anoxia_thresehold = 6.0,
@@ -344,17 +353,16 @@ function PISCES(; grid,
     end
 
     # just incase we're in the default state with no closure model
-    # this highlights that the darkness term for phytoplankton growth is obviously wrong because not all phytoplankon
+    # this highlights that the darkness term for phytoplankton growth is obviously wrong because not all phytoplankton
     # cells spend an infinite amount of time in the dark if the diffusivity is zero, it should depend on where they are...
     if !(mean_mixed_layer_vertical_diffusivity isa ConstantField)
         set!(mean_mixed_layer_vertical_diffusivity, 1)
     end
 
-    underlying_biogeochemistry = PISCES(nanophytoplankton, diatoms,
-                                        microzooplankton, mesozooplankton,
+    underlying_biogeochemistry = PISCES(phytoplankton, zooplankton,
                                         dissolved_organic_matter, particulate_organic_matter,
                                         nitrogen, iron, silicate, oxygen, phosphate,
-                                        calcite, carbon_system, 
+                                        inorganic_carbon, 
                                         first_anoxia_thresehold, second_anoxia_thresehold,
                                         nitrogen_redfield_ratio, phosphate_redfield_ratio,
                                         mixed_layer_shear, background_shear,

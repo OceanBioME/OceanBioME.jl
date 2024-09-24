@@ -1,8 +1,10 @@
 abstract type BaseProduction end
 
-@inline function (μ::BaseProduction)(val_name, i, j, k, grid, bgc, clock, fields, L)
+@inline function (μ::BaseProduction)(val_name, i, j, k, grid, bgc, phyto, clock, fields, auxiliary_fields, L)
     bₜ = μ.temperature_sensetivity
     μ₀ = μ.base_growth_rate
+    α₀ = μ.initial_slope_of_PI_curve
+    β  = μ.low_light_adaptation
 
     dark_tollerance = μ.dark_tollerance
 
@@ -10,21 +12,22 @@ abstract type BaseProduction end
     β₂ = phyto.green_light_absorption
     β₃ = phyto.red_light_absorption
     
-    PAR₁ = @inbounds fields.PAR₁[i, j, k]
-    PAR₂ = @inbounds fields.PAR₂[i, j, k]
-    PAR₃ = @inbounds fields.PAR₃[i, j, k]
+    PAR₁ = @inbounds auxiliary_fields.PAR₁[i, j, k]
+    PAR₂ = @inbounds auxiliary_fields.PAR₂[i, j, k]
+    PAR₃ = @inbounds auxiliary_fields.PAR₃[i, j, k]
 
-    zₑᵤ = @inbounds fields.zₑᵤ[i, j, k]
-    zₘₓₗ = @inbounds fields.zₘₓₗ[i, j, k]
+    zₑᵤ = @inbounds auxiliary_fields.zₑᵤ[i, j, k]
+    zₘₓₗ = @inbounds auxiliary_fields.zₘₓₗ[i, j, k]
+    κ = @inbounds auxiliary_fields.κ[i, j, k]
 
-    I, IChl, IFe = phytoplankton_concentration(val_name, i, j, k, fields)
+    I, IChl, IFe = phytoplankton_concentrations(val_name, i, j, k, fields)
 
     T = @inbounds fields.T[i, j, k]
 
     PAR = β₁ * PAR₁ + β₂ * PAR₂ + β₃ * PAR₃
 
     φ = bgc.latitude(i, j, k, grid)
-    day_length = bgc.day_length(φ, t)
+    day_length = bgc.day_length(φ, clock.time)
 
     dark_residence_time = max(0, zₑᵤ - zₘₓₗ) ^ 2 / κ
 
@@ -120,27 +123,29 @@ end
     return 1 - exp(-α * θ * PAR / (day_length * (bᵣ + μᵣ)))
 end
 
-@inline function production_and_energy_assimilation_absorption_ratio(phyto, val_name, bgc, i, j, k, grid, bgc, clock, fields)
+@inline function production_and_energy_assimilation_absorption_ratio(growth_rate, val_name, i, j, k, grid, bgc, phyto, clock, fields, auxiliary_fields)
     α₀ = growth_rate.initial_slope_of_PI_curve
     β  = growth_rate.low_light_adaptation
     β₁ = phyto.blue_light_absorption
     β₂ = phyto.green_light_absorption
     β₃ = phyto.red_light_absorption
     
-    I, IChl, IFe = phytoplankton_concentration(val_name, i, j, k, fields)
+    I, IChl, IFe = phytoplankton_concentrations(val_name, i, j, k, fields)
     
-    PAR₁ = @inbounds fields.PAR₁[i, j, k]
-    PAR₂ = @inbounds fields.PAR₂[i, j, k]
-    PAR₃ = @inbounds fields.PAR₃[i, j, k]
+    PAR₁ = @inbounds auxiliary_fields.PAR₁[i, j, k]
+    PAR₂ = @inbounds auxiliary_fields.PAR₂[i, j, k]
+    PAR₃ = @inbounds auxiliary_fields.PAR₃[i, j, k]
 
     PAR = β₁ * PAR₁ + β₂ * PAR₂ + β₃ * PAR₃
 
     φ = bgc.latitude(i, j, k, grid)
-    day_length = bgc.day_length(φ, t)
+    day_length = bgc.day_length(φ, clock.time)
 
     f₁ = 1.5 * day_length / (day_length + 0.5day)
 
-    μ = growth_rate(val_name, i, j, k, grid, bgc, clock, fields, L)
+    L, = phyto.nutrient_limitation(val_name, i, j, k, grid, bgc, phyto, clock, fields, auxiliary_fields)
+
+    μ = growth_rate(val_name, i, j, k, grid, bgc, phyto, clock, fields, auxiliary_fields, L)
 
     μ̌ = μ / f₁ * day_length 
 

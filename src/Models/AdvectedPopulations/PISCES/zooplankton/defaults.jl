@@ -1,24 +1,25 @@
 # this file sets up the default configuration of Z and M which graze on P, D, (Z, ) and POC
-function MicroAndMesoZooplankton(; micro = Zooplankton(maximum_grazing_rate = 3/day,
-                                                       food_preferences = (P = 1.0, D = 0.5, POC = 0.1, Z = 0),
-                                                       quadratic_mortality = 0.004/day,
-                                                       linear_mortality = 0.03/day,
-                                                       minimum_growth_efficiency = 0.3,
-                                                       maximum_flux_feeding_rate = 0.0,
-                                                       undissolved_calcite_fraction = 0.5,
-                                                       iron_ratio = 0.01),
-                                   meso = Zooplankton(maximum_grazing_rate = 0.75/day,
-                                                      food_preferences = (P = 0.3, D = 1.0, POC = 0.3, Z = 1.0),
-                                                      quadratic_mortality = 0.03/day,
-                                                      linear_mortality = 0.005/day,
-                                                      minimum_growth_efficiency = 0.35,
-                                                      # not documented but the below must implicitly contain a factor of second/day
-                                                      # to be consistent in the NEMO namelist to go from this * mol / L * m/s to mol / L / day
-                                                      maximum_flux_feeding_rate = 2e3 / 1e6 / day, # (day * meter/s * mol/L)^-1 to (meter * μ mol/L)^-1
-                                                      undissolved_calcite_fraction = 0.75,
-                                                      iron_ratio = 0.015))
+function MicroAndMesoZooplankton(; 
+    micro = QualityDependantZooplankton(maximum_grazing_rate = 3/day,
+                                        food_preferences = (P = 1.0, D = 0.5, POC = 0.1, Z = 0),
+                                        quadratic_mortality = 0.004/day,
+                                        linear_mortality = 0.03/day,
+                                        minimum_growth_efficiency = 0.3,
+                                        maximum_flux_feeding_rate = 0.0,
+                                        undissolved_calcite_fraction = 0.5,
+                                        iron_ratio = 0.01),
+    meso = QualityDependantZooplankton(maximum_grazing_rate = 0.75/day,
+                                       food_preferences = (P = 0.3, D = 1.0, POC = 0.3, Z = 1.0),
+                                       quadratic_mortality = 0.03/day,
+                                       linear_mortality = 0.005/day,
+                                       minimum_growth_efficiency = 0.35,
+                                       # not documented but the below must implicitly contain a factor of second/day
+                                       # to be consistent in the NEMO namelist to go from this * mol / L * m/s to mol / L / day
+                                       maximum_flux_feeding_rate = 2e3 / 1e6 / day, # (day * meter/s * mol/L)^-1 to (meter * μ mol/L)^-1
+                                       undissolved_calcite_fraction = 0.75,
+                                       iron_ratio = 0.015))
 
-    return MicroAndMesoZooplankton(micro, meso)
+    return MicroAndMeso(; micro, meso)
 end
 
 @inline concentration(::Val{:P},   i, j, k, fields) = @inbounds   fields.P[i, j, k]

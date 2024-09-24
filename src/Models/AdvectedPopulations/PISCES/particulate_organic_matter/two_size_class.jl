@@ -1,3 +1,4 @@
+using Oceananigans.Grids: znode, Center
 using Oceananigans.Operators: ℑzᵃᵃᶜ
 
 """
@@ -26,7 +27,6 @@ phytoplankton silicon).
             slow_dissolution_rate_of_silicate :: FT = 0.003/day    # 1 / s
 
             # calcite
-                              base_rain_ratio :: FT = 0.3         # 
                 base_calcite_dissolution_rate :: FT = 0.197 / day # 1 / s
                  calcite_dissolution_exponent :: FT = 1.0         # 
 
@@ -36,17 +36,19 @@ phytoplankton silicon).
                 maximum_bacterial_growth_rate :: FT = 0.6 / day # 1 / s
 end
 
-const TwoCompartementPOCPISCES = PISCES{<:Any, <:Any, <:Any, TwoCompartementCarbonIronParticles}
+const TwoCompartementPOCPISCES = PISCES{<:Any, <:Any, <:Any, <:TwoCompartementCarbonIronParticles}
 
 required_biogeochemical_tracers(::TwoCompartementCarbonIronParticles) = (:POC, :GOC, :SFe, :BFe, :PSi, :CaCO₃)
 
-@inline edible_flux_rate(poc, i, j, k, grid, fields) = flux_rate(Val(:POC), i, j, k, grid, fields) + flux_rate(Val(:GOC), i, j, k, grid, fields)
-@inline edible_iron_flux_rate(poc, i, j, k, grid, fields) = flux_rate(Val(:SFe), i, j, k, grid, fields) + flux_rate(Val(:BFe), i, j, k, grid, fields)
+@inline edible_flux_rate(poc, i, j, k, grid, fields, auxiliary_fields) = 
+    flux_rate(Val(:POC), i, j, k, grid, fields, auxiliary_fields) + flux_rate(Val(:GOC), i, j, k, grid, fields, auxiliary_fields)
+@inline edible_iron_flux_rate(poc, i, j, k, grid, fields, auxiliary_fields) = 
+    flux_rate(Val(:SFe), i, j, k, grid, fields, auxiliary_fields) + flux_rate(Val(:BFe), i, j, k, grid, fields, auxiliary_fields)
 
-@inline flux_rate(::Val{:POC}, i, j, k, grid, fields) = @inbounds fields.POC[i, j, k] * ℑzᵃᵃᶜ(i, j, k, grid, fields.wPOC)
-@inline flux_rate(::Val{:GOC}, i, j, k, grid, fields) = @inbounds fields.GOC[i, j, k] * ℑzᵃᵃᶜ(i, j, k, grid, fields.wGOC)
-@inline flux_rate(::Val{:SFe}, i, j, k, grid, fields) = @inbounds fields.SFe[i, j, k] * ℑzᵃᵃᶜ(i, j, k, grid, fields.wPOC)
-@inline flux_rate(::Val{:BFe}, i, j, k, grid, fields) = @inbounds fields.BFe[i, j, k] * ℑzᵃᵃᶜ(i, j, k, grid, fields.wGOC)
+@inline flux_rate(::Val{:POC}, i, j, k, grid, fields, auxiliary_fields) = @inbounds fields.POC[i, j, k] * ℑzᵃᵃᶜ(i, j, k, grid, auxiliary_fields.wPOC)
+@inline flux_rate(::Val{:GOC}, i, j, k, grid, fields, auxiliary_fields) = @inbounds fields.GOC[i, j, k] * ℑzᵃᵃᶜ(i, j, k, grid, auxiliary_fields.wGOC)
+@inline flux_rate(::Val{:SFe}, i, j, k, grid, fields, auxiliary_fields) = @inbounds fields.SFe[i, j, k] * ℑzᵃᵃᶜ(i, j, k, grid, auxiliary_fields.wPOC)
+@inline flux_rate(::Val{:BFe}, i, j, k, grid, fields, auxiliary_fields) = @inbounds fields.BFe[i, j, k] * ℑzᵃᵃᶜ(i, j, k, grid, auxiliary_fields.wGOC)
 
 const small_particle_components = Union{Val{:POC}, Val{:SFe}}
 const large_particle_components = Union{Val{:GOC}, Val{:BFe}, Val{:PSi}, Val{:CaCO₃}} 
@@ -57,16 +59,15 @@ biogeochemical_drift_velocity(bgc::TwoCompartementCarbonIronParticles, ::small_p
 biogeochemical_drift_velocity(bgc::TwoCompartementCarbonIronParticles, ::large_particle_components) = 
     (u = ZeroField(), v = ZeroField(), w = bgc.sinking_velocities.GOC)
 
-@inline function aggregation(poc::TwoCompartementCarbonIronParticles, i, j, k, grid, bgc, clock, fields)
+@inline function aggregation(poc::TwoCompartementCarbonIronParticles, i, j, k, grid, bgc, clock, fields, auxiliary_fields)
     a₁, a₂, a₃, a₄ = poc.aggregation_parameters
 
     backgroound_shear = bgc.background_shear
     mixed_layer_shear = bgc.mixed_layer_shear
 
-
     z = znode(i, j, k, grid, Center(), Center(), Center())
 
-    zₘₓₗ = @inbounds fields.zₘₓₗ[i, j, k]
+    zₘₓₗ = @inbounds auxiliary_fields.zₘₓₗ[i, j, k]
     
     POC = @inbounds fields.POC[i, j, k]
     GOC = @inbounds fields.GOC[i, j, k]
@@ -76,11 +77,12 @@ biogeochemical_drift_velocity(bgc::TwoCompartementCarbonIronParticles, ::large_p
     return shear * (a₁ * POC^2 + a₂ * POC * GOC) + a₃ * POC * GOC + a₄ * POC^2
 end
 
-@inline function specific_degredation_rate(poc::TwoCompartementParticulateOrganicMatter, i, j, k, grid, bgc, clock, fields)
+@inline function specific_degredation_rate(poc::TwoCompartementCarbonIronParticles, i, j, k, grid, bgc, clock, fields, auxiliary_fields)
     λ₀ = poc.base_breakdown_rate
     b  = poc.temperature_sensetivity
 
     O₂ = @inbounds fields.O₂[i, j, k]
+    T  = @inbounds  fields.T[i, k, k]
 
     ΔO₂ = anoxia_factor(bgc, O₂)
 

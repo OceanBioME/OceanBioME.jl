@@ -8,40 +8,40 @@ particulates (POC and GOC).
 
 This model assumes a fixed ratio for all other elements (i.e. N, P, Fe).
 """
-@kwdef struct QualityDependantZooplankton{FT, FP}
-    temperature_sensetivity :: FT = 1.079                  #
-    maximum_grazing_rate :: FT                             # 1 / s
+@kwdef struct QualityDependantZooplankton{FT, FP, FN}
+                   temperature_sensetivity :: FT = 1.079 #
+                      maximum_grazing_rate :: FT         # 1 / s
 
-    food_preferences :: FP 
-    food_names :: FN = keys(food_preferences)
+                          food_preferences :: FP 
+                                food_names :: FN = keys(food_preferences)
 
-    food_threshold_concentration :: FT = 0.3               # mmol C / m³
-    specific_food_thresehold_concentration :: FT = 0.001   # mmol C / m³
+              food_threshold_concentration :: FT = 0.3   # mmol C / m³
+    specific_food_thresehold_concentration :: FT = 0.001 # mmol C / m³
 
-    grazing_half_saturation :: FT = 20.0                   # mmol C / m³
+                   grazing_half_saturation :: FT = 20.0  # mmol C / m³
 
-    maximum_flux_feeding_rate :: FT                        # m / (mmol C / m³)
+                 maximum_flux_feeding_rate :: FT         # m / (mmol C / m³)
 
-    iron_ratio :: FT                                       # μmol Fe / mmol C
+                                iron_ratio :: FT         # μmol Fe / mmol C
 
-    minimum_growth_efficiency :: FT                        #
-    non_assililated_fraction :: FT = 0.3                   #
+                 minimum_growth_efficiency :: FT         #
+                  non_assililated_fraction :: FT = 0.3   #
 
-    mortality_half_saturation :: FT = 0.2                  # mmol C / m³
-    quadratic_mortality :: FT                              # 1 / (mmol C / m³) / s
-    linear_mortality :: FT                                 # 1 / s
+                 mortality_half_saturation :: FT = 0.2   # mmol C / m³
+                       quadratic_mortality :: FT         # 1 / (mmol C / m³) / s
+                          linear_mortality :: FT         # 1 / s
 
     # this should be called inorganic excretion factor
-    dissolved_excretion_fraction :: FT = 0.6               #
-    undissolved_calcite_fraction :: FT                     #
+              dissolved_excretion_fraction :: FT = 0.6   #
+              undissolved_calcite_fraction :: FT         #
 end
 
-required_biogeochemical_tracers(::QualityDependantZooplankton, name_base) = name_base
+required_biogeochemical_tracers(::QualityDependantZooplankton, name_base) = tuple(name_base)
 
-@inline function growth_death(zoo::QualityDependantZooplankton, val_name, i, j, k, grid, bgc, clock, fields)
-    gI, e = grazing(zoo, val_name, i, j, k, grid, bgc, clock, fields) 
-    gfI = flux_feeding(zoo, val_name, i, j, k, grid, bgc, clock, fields) 
-    mI = mortality(zoo, val_name, i, j, k, grid, bgc, clock, fields)
+@inline function growth_death(zoo::QualityDependantZooplankton, val_name, i, j, k, grid, bgc, clock, fields, auxiliary_fields)
+    gI, e = grazing(zoo, val_name, i, j, k, grid, bgc, clock, fields, auxiliary_fields) 
+    gfI = flux_feeding(zoo, val_name, i, j, k, grid, bgc, clock, fields, auxiliary_fields) 
+    mI = mortality(zoo, val_name, i, j, k, grid, bgc, clock, fields, auxiliary_fields)
 
     return e * (gI + gfI) - mI
 end
@@ -52,7 +52,7 @@ end
 @inline extract_iron_availability(i, j, k, bgc, fields, names::NTuple{N}) where N =
     ntuple(n -> iron_ratio(Val(names[n]), i, j, k, bgc, fields), Val(N))
 
-@inline function grazing(zoo::QualityDependantZooplankton, val_name, i, j, k, grid, bgc, clock, fields)
+@inline function grazing(zoo::QualityDependantZooplankton, val_name, i, j, k, grid, bgc, clock, fields, auxiliary_fields)
     # food quantity
     g₀   = zoo.maximum_grazing_rate
     b    = zoo.temperature_sensetivity
@@ -65,6 +65,7 @@ end
     N = length(food)
 
     I = zooplankton_concentration(val_name, i, j, k, fields)
+    T = @inbounds fields.T[i, j, k]
 
     base_grazing_rate = g₀ * b ^ T
 
@@ -87,7 +88,7 @@ end
 
     total_iron = sum(ntuple(n->iron_availabillity[n] * p[n], Val(N)))
 
-    iron_grazing_ratio = iron_grazing / (θFe * total_specific_grazing + eps(0.0))
+    iron_grazing_ratio = total_iron / (θFe * total_specific_grazing + eps(0.0))
 
     food_quality = min(1, iron_grazing_ratio)
 
@@ -96,7 +97,7 @@ end
     return total_specific_grazing * I, growth_efficiency
 end
 
-@inline function flux_feeding(zoo::QualityDependantZooplankton, val_name, i, j, k, grid, bgc, clock, fields)
+@inline function flux_feeding(zoo::QualityDependantZooplankton, val_name, i, j, k, grid, bgc, clock, fields, auxiliary_fields)
     g₀ =  zoo.maximum_flux_feeding_rate
     b  = zoo.temperature_sensetivity
 
@@ -104,42 +105,43 @@ end
 
     T = @inbounds fields.T[i, j, k]
 
-    sinking_flux = edible_flux_rate(bgc.particulate_organic_matter, i, j, k, grid, fields)
+    sinking_flux = edible_flux_rate(bgc.particulate_organic_matter, i, j, k, grid, fields, auxiliary_fields)
 
-    base_flux_feeding_rate = g₁ * b ^ T
+    base_flux_feeding_rate = g₀ * b ^ T
 
     total_specific_flux_feeding = base_flux_feeding_rate * sinking_flux 
 
     return total_specific_flux_feeding * I
 end
 
-@inline function mortality(zoo::QualityDependantZooplankton, val_name, i, j, k, grid, bgc, clock, fields)
+@inline function mortality(zoo::QualityDependantZooplankton, val_name, i, j, k, grid, bgc, clock, fields, auxiliary_fields)
     b  = zoo.temperature_sensetivity
     m₀ = zoo.quadratic_mortality
     Kₘ = zoo.mortality_half_saturation
     r  = zoo.linear_mortality
 
-    temperature_factor = b^T
-
     I = zooplankton_concentration(val_name, i, j, k, fields)
+    T = @inbounds fields.T[i, j, k]
 
     O₂ = @inbounds fields.O₂[i, j, k]
+
+    temperature_factor = b^T
 
     concentration_factor = I / (I + Kₘ)
 
     return temperature_factor * I * (m₀ * I + r * (concentration_factor + 3 * anoxia_factor(bgc, O₂)))
 end
 
-@inline function linear_mortality(zoo::QualityDependantZooplankton, val_name, i, j, k, grid, bgc, clock, fields)
+@inline function linear_mortality(zoo::QualityDependantZooplankton, val_name, i, j, k, grid, bgc, clock, fields, auxiliary_fields)
     b  = zoo.temperature_sensetivity
     Kₘ = zoo.mortality_half_saturation
     r  = zoo.linear_mortality
-
-    temperature_factor = b^T
-
+    
+    T = @inbounds fields.T[i, j, k]
+    O₂ = @inbounds fields.O₂[i, j, k]
     I = zooplankton_concentration(val_name, i, j, k, fields)
 
-    O₂ = @inbounds fields.O₂[i, j, k]
+    temperature_factor = b^T
 
     concentration_factor = I / (I + Kₘ)
 
@@ -150,7 +152,7 @@ end
 ##### Effect on other compartements
 #####
 
-@inline function grazing(zoo::QualityDependantZooplankton, val_name, val_prey_name, i, j, k, grid, bgc, clock, fields)
+@inline function grazing(zoo::QualityDependantZooplankton, val_name, val_prey_name, i, j, k, grid, bgc, clock, fields, auxiliary_fields)
     g₀   = zoo.maximum_grazing_rate
     b    = zoo.temperature_sensetivity
     p    = zoo.food_preferences
@@ -162,10 +164,11 @@ end
     N = length(food)
 
     I = zooplankton_concentration(val_name, i, j, k, fields)
+    T = @inbounds fields.T[i, j, k]
 
     base_grazing_rate = g₀ * b ^ T
 
-    food_availability = extract_food_availability(i, j, k, fields, food, p)
+    food_availability = extract_food_availability(i, j, k, fields, food)
 
     total_food = sum(ntuple(n->food_availability[n] * p[n], Val(N)))
 
@@ -180,7 +183,7 @@ end
     return grazing_preference(val_prey_name, p) * max(0, P - J) * total_specific_grazing / (available_total_food + eps(0.0)) * I
 end
 
-@inline function flux_feeding(zoo::QualityDependantZooplankton, val_name, val_prey_name, i, j, k, grid, bgc, clock, fields)
+@inline function flux_feeding(zoo::QualityDependantZooplankton, val_name, val_prey_name, i, j, k, grid, bgc, clock, fields, auxiliary_fields)
     g₀ =  zoo.maximum_flux_feeding_rate
     b  = zoo.temperature_sensetivity
 
@@ -188,9 +191,9 @@ end
 
     T = @inbounds fields.T[i, j, k]
 
-    sinking_flux = flux_rate(val_prey_name, i, j, k, grid, fields)
+    sinking_flux = flux_rate(val_prey_name, i, j, k, grid, fields, auxiliary_fields)
 
-    base_flux_feeding_rate = g₁ * b ^ T
+    base_flux_feeding_rate = g₀ * b ^ T
 
     total_specific_flux_feeding = base_flux_feeding_rate * sinking_flux 
 

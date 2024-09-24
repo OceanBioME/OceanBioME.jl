@@ -27,6 +27,7 @@ struct PrescribedLatitude{FT}
 end
 
 @inline (pl::PrescribedLatitude)(y) = pl.latitude
+@inline (pl::PrescribedLatitude)(i, j, k, grid) = pl.latitude
 
 @inline (::ModelLatitude)(φ) = φ
 @inline (::ModelLatitude)(i, j, k, grid) = φnode(i, j, k, grid, Center(), Center(), Center())

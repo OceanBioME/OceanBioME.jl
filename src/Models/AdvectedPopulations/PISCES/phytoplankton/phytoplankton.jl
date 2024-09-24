@@ -2,6 +2,8 @@ module Phytoplankton
 
 export NanoAndDiatoms, MixedMondoPhytoplankton, MixedMondoNanoAndDiatoms
 
+using Oceananigans.Units
+
 using OceanBioME.Models.PISCESModel: PISCES
 
 using OceanBioME.Models.PISCESModel.Zooplankton: grazing
@@ -13,6 +15,6 @@ include("nano_and_diatoms.jl")
 include("mixed_mondo.jl")
 include("growth_rate.jl")
 include("nutrient_limitation.jl")
-include("mixed_mono_nano_diatoms.jl")
+include("mixed_mondo_nano_diatoms.jl")
 
 end # module

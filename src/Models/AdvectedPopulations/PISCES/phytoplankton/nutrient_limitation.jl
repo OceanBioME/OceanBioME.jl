@@ -17,7 +17,7 @@ setting `silicate_limited=false`.
   silicate_half_saturation_parameter :: FT = 16.6   # mmol Si / m³
 end
 
-@inline function (L::NitrogenIronPhosphateSilicateLimitation)(val_name, phyto, i, j, k, grid, bgc, clock, fields)
+@inline function (L::NitrogenIronPhosphateSilicateLimitation)(val_name, i, j, k, grid, bgc, phyto, clock, fields, auxiliary_fields)
     kₙₒ = L.minimum_nitrate_half_saturation
     kₙₕ = L.minimum_ammonium_half_saturation
     kₚ  = L.minimum_phosphate_half_saturation
@@ -26,12 +26,14 @@ end
 
     θₒ  = L.optimal_iron_quota
 
-    I, IChl, IFe = phytoplankton_concentrations(val_name, fields)
+    I, IChl, IFe = phytoplankton_concentrations(val_name, i, j, k, fields)
 
     NO₃ = @inbounds fields.NO₃[i, j, k]
     NH₄ = @inbounds fields.NH₄[i, j, k]
     PO₄ = @inbounds fields.PO₄[i, j, k]
     Si  = @inbounds  fields.Si[i, j, k]
+
+    Si′ = @inbounds bgc.silicate_climatology[i, j, k]
 
     # quotas
     θFe  = ifelse(I == 0, 0, IFe / (I + eps(0.0)))
@@ -54,7 +56,7 @@ end
 
     # iron limitation
     # Flynn and Hipkin (1999) - photosphotosyntheis, respiration (?), nitrate reduction 
-    θₘ = 10^3 * (0.0016 / 55.85 * 12 * θChl + 1.5 * 1.21e-5 * 14 / (55.85 * 7.625) * LN + 1.15e-4 * 14 / (55.85 * 7.625) * LNO₃)
+    θₘ = 0.0016 / 55.85 * 12 * θChl + 1.5 * 1.21e-5 * 14 / (55.85 * 7.625) * LN + 1.15e-4 * 14 / (55.85 * 7.625) * LNO₃
     
     LFe = min(1, max(0, (θFe - θₘ) / θₒ))
 

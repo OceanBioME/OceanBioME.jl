@@ -1,10 +1,13 @@
-struct MicroAndMeso{μ, M, FT}
+using Oceananigans.Grids: znode, Center
+
+@kwdef struct MicroAndMeso{μ, M, FT}
                                              micro :: μ
                                               meso :: M
 
            microzooplankton_bacteria_concentration :: FT = 0.7
             mesozooplankton_bacteria_concentration :: FT = 1.4    
                     maximum_bacteria_concentration :: FT = 4.0       # mmol C / m³
+             bacteria_concentration_depth_exponent :: FT = 0.684     # 
 
         doc_half_saturation_for_bacterial_activity :: FT = 417.0     # mmol C / m³
     nitrate_half_saturation_for_bacterial_activity :: FT = 0.03      # mmol N / m³
@@ -28,60 +31,63 @@ required_biogeochemical_tracers(zoo::MicroAndMeso) = (required_biogeochemical_tr
 @inline predator_name(val_name, zoo) = nothing
 @inline predator_name(::Val{:Z}, zoo::MicroAndMeso) = Val(:M)
 
-@inline grazing(zoo, ::Val{:M}, ::Val{:Z}, i, j, k, grid, args...) = zero(grid)
+@inline grazing(::Nothing, ::Nothing, val_prey_name, i, j, k, grid, args...) = zero(grid)
 
-@inline function (bgc::PISCES{<:Any, MicroAndMeso})(i, j, k, grid, val_name{Val{:Z}, Val{:M}}, clock, fields)
-    zoo = parameterisaion(bgc.zooplankton)
+@inline function (bgc::PISCES{<:Any, <:MicroAndMeso})(i, j, k, grid, val_name::Union{Val{:Z}, Val{:M}}, clock, fields, auxiliary_fields)
+    zoo = parameterisation(val_name, bgc.zooplankton)
 
-    growth_death = growth_death(zoo, val_name, i, j, k, grid, bgc, clock, fields)
+    net_production = growth_death(zoo, val_name, i, j, k, grid, bgc, clock, fields, auxiliary_fields)
 
     # M preying on Z
     predator_zoo = predator_parameterisation(val_name, bgc.zooplankton)
     val_predator_name = predator_name(val_name, bgc.zooplankton)
 
-    grazing = grazing(predator_zoo, val_predator_name, val_name, i, j, k, grid, bgc, clock, fields)
+    predatory_grazing = grazing(predator_zoo, val_predator_name, val_name, i, j, k, grid, bgc, clock, fields, auxiliary_fields)
 
-    return growth_death - grazing
+    return net_production - predatory_grazing
 end
 
-@inline grazing(zoo::MicroAndMeso, val_prey_name, i, j, k, grid, bgc, clock, fields) =
-    (grazing(zoo.micro, Val(:Z), val_prey_name, i, j, k, grid, bgc, clock, fields)
-     + grazing(zoo.meso, Val(:M), val_prey_name, i, j, k, grid, bgc, clock, fields))
+@inline grazing(zoo::MicroAndMeso, val_prey_name, i, j, k, grid, bgc, clock, fields, auxiliary_fields) =
+    (grazing(zoo.micro, Val(:Z), val_prey_name, i, j, k, grid, bgc, clock, fields, auxiliary_fields)
+     + grazing(zoo.meso, Val(:M), val_prey_name, i, j, k, grid, bgc, clock, fields, auxiliary_fields))
 
-@inline flux_feeding(zoo::MicroAndMeso, val_prey_name, i, j, k, grid, bgc, clock, fields) =
-     (flux_feeding(zoo.micro, Val(:Z), val_prey_name, i, j, k, grid, bgc, clock, fields)
-      + flux_feeding(zoo.meso, Val(:M), val_prey_name, i, j, k, grid, bgc, clock, fields))
+@inline flux_feeding(zoo::MicroAndMeso, val_prey_name, i, j, k, grid, bgc, clock, fields, auxiliary_fields) =
+     (flux_feeding(zoo.micro, Val(:Z), val_prey_name, i, j, k, grid, bgc, clock, fields, auxiliary_fields)
+      + flux_feeding(zoo.meso, Val(:M), val_prey_name, i, j, k, grid, bgc, clock, fields, auxiliary_fields))
  
-@inline inorganic_excretion(zoo::MicroAndMeso, i, j, k, grid, bgc, clock, fields) =
-    (inorganic_excretion(zoo.micro, Val(:Z), i, j, k, grid, bgc, clock, fields)
-     + inorganic_excretion(zoo.meso, Val(:M), i, j, k, grid, bgc, clock, fields))
+@inline inorganic_excretion(zoo::MicroAndMeso, i, j, k, grid, bgc, clock, fields, auxiliary_fields) =
+    (inorganic_excretion(zoo.micro, Val(:Z), i, j, k, grid, bgc, clock, fields, auxiliary_fields)
+     + inorganic_excretion(zoo.meso, Val(:M), i, j, k, grid, bgc, clock, fields, auxiliary_fields))
 
-@inline organic_excretion(zoo::MicroAndMeso, i, j, k, grid, bgc, clock, fields) =
-    (organic_excretion(zoo.micro, Val(:Z), i, j, k, grid, bgc, clock, fields)
-     + organic_excretion(zoo.meso, Val(:M), i, j, k, grid, bgc, clock, fields))
+@inline organic_excretion(zoo::MicroAndMeso, i, j, k, grid, bgc, clock, fields, auxiliary_fields) =
+    (organic_excretion(zoo.micro, Val(:Z), i, j, k, grid, bgc, clock, fields, auxiliary_fields)
+     + organic_excretion(zoo.meso, Val(:M), i, j, k, grid, bgc, clock, fields, auxiliary_fields))
 
-@inline non_assimilated_iron(zoo::MicroAndMeso, i, j, k, grid, bgc, clock, fields) =
-    (non_assimilated_iron(zoo.micro, Val(:Z), i, j, k, grid, bgc, clock, fields)
-     + non_assimilated_iron(zoo.meso, Val(:M), i, j, k, grid, bgc, clock, fields))
+@inline non_assimilated_iron(zoo::MicroAndMeso, i, j, k, grid, bgc, clock, fields, auxiliary_fields) =
+    (non_assimilated_iron(zoo.micro, Val(:Z), i, j, k, grid, bgc, clock, fields, auxiliary_fields)
+     + non_assimilated_iron(zoo.meso, Val(:M), i, j, k, grid, bgc, clock, fields, auxiliary_fields))
 
-@inline upper_trophic_excretion(zoo::MicroAndMeso, i, j, k, grid, bgc, clock, fields) =
-    upper_trophic_excretion(zoo.meso, Val(:M), i, j, k, grid, bgc, clock, fields)
+@inline upper_trophic_excretion(zoo::MicroAndMeso, i, j, k, grid, bgc, clock, fields, auxiliary_fields) =
+    upper_trophic_excretion(zoo.meso, Val(:M), i, j, k, grid, bgc, clock, fields, auxiliary_fields)
 
-@inline upper_trophic_respiration(zoo::MicroAndMeso, i, j, k, grid, bgc, clock, fields) =
-    upper_trophic_respiration(zoo.meso, Val(:M), i, j, k, grid, bgc, clock, fields)
+@inline upper_trophic_respiration(zoo::MicroAndMeso, i, j, k, grid, bgc, clock, fields, auxiliary_fields) =
+    upper_trophic_respiration(zoo.meso, Val(:M), i, j, k, grid, bgc, clock, fields, auxiliary_fields)
      
-@inline upper_trophic_fecal_production(zoo::MicroAndMeso, i, j, k, grid, bgc, clock, fields) =
-    upper_trophic_fecal_production(zoo.meso, Val(:M), i, j, k, grid, bgc, clock, fields)
+@inline upper_trophic_fecal_production(zoo::MicroAndMeso, i, j, k, grid, bgc, clock, fields, auxiliary_fields) =
+    upper_trophic_fecal_production(zoo.meso, Val(:M), i, j, k, grid, bgc, clock, fields, auxiliary_fields)
 
-@inline function bacteria_concentration(zoo::MicroAndMeso, i, j, k, grid, bgc, clock, fields)
+@inline upper_trophic_fecal_iron_production(zoo::MicroAndMeso, i, j, k, grid, bgc, clock, fields, auxiliary_fields) =
+    upper_trophic_fecal_iron_production(zoo.meso, Val(:M), i, j, k, grid, bgc, clock, fields, auxiliary_fields)
+
+@inline function bacteria_concentration(zoo::MicroAndMeso, i, j, k, grid, bgc, clock, fields, auxiliary_fields)
     bZ = zoo.microzooplankton_bacteria_concentration
     bM = zoo.mesozooplankton_bacteria_concentration
     a  = zoo.bacteria_concentration_depth_exponent
 
     z = znode(i, j, k, grid, Center(), Center(), Center())
 
-    zₘₓₗ = @inbounds fields.zₘₓₗ[i, j, k]
-    zₑᵤ  = @inbounds  fields.zₑᵤ[i, j, k]
+    zₘₓₗ = @inbounds auxiliary_fields.zₘₓₗ[i, j, k]
+    zₑᵤ  = @inbounds  auxiliary_fields.zₑᵤ[i, j, k]
 
     Z = @inbounds fields.Z[i, j, k]
     M = @inbounds fields.M[i, j, k]
@@ -95,7 +101,7 @@ end
     return ifelse(z >= zₘ, 1, depth_factor) * surface_bacteria
 end
 
-@inline function bacteria_activity(zoo::MicroAndMeso, i, j, k, grid, bgc, clock, fields)
+@inline function bacteria_activity(zoo::MicroAndMeso, i, j, k, grid, bgc, clock, fields, auxiliary_fields)
     K_DOC = zoo.doc_half_saturation_for_bacterial_activity
     K_NO₃ = zoo.nitrate_half_saturation_for_bacterial_activity
     K_NH₄ = zoo.ammonia_half_saturation_for_bacterial_activity
@@ -122,9 +128,9 @@ end
     return limiting_quota * DOC_limit
 end
 
-@inline calcite_loss(zoo::MicroAndMeso, val_prey_name, i, j, k, grid, bgc, clock, fields) =
-    (calcite_loss(zoo.micro, Val(:Z), val_prey_name, i, j, k, grid, bgc, clock, fields)
-     + calcite_loss(zoo.meso, Val(:M), val_prey_name, i, j, k, grid, bgc, clock, fields))
+@inline calcite_loss(zoo::MicroAndMeso, val_prey_name, i, j, k, grid, bgc, clock, fields, auxiliary_fields) =
+    (calcite_loss(zoo.micro, Val(:Z), val_prey_name, i, j, k, grid, bgc, clock, fields, auxiliary_fields)
+     + calcite_loss(zoo.meso, Val(:M), val_prey_name, i, j, k, grid, bgc, clock, fields, auxiliary_fields))
 
-@inline upper_trophic_iron_waste(zoo::MicroAndMeso, i, j, k, grid, bgc, clock, fields) =
-    upper_trophic_respiration(zoo.meso, Val(:M), i, j, k, grid, bgc, clock, fields) * zoo.meso.iron_ratio
+@inline upper_trophic_iron_waste(zoo::MicroAndMeso, i, j, k, grid, bgc, clock, fields, auxiliary_fields) =
+    upper_trophic_respiration(zoo.meso, Val(:M), i, j, k, grid, bgc, clock, fields, auxiliary_fields) * zoo.meso.iron_ratio

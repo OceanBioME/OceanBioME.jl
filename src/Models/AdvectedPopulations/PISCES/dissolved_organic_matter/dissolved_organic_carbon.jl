@@ -1,3 +1,5 @@
+using Oceananigans.Grids: znode, Center
+
 """
     DissolvedOrganicCarbon
 
@@ -15,19 +17,24 @@ end
 
 required_biogeochemical_tracers(::DissolvedOrganicCarbon) = tuple(:DOC)
 
-@inline function (bgc::PISCES{<:Any, <:Any, DissolvedOrganicCarbon})(i, j, k, grid, ::Val{:DOC}, clock, fields)
-    phytoplankton_exudate = dissolved_exudate(bgc.phytoplankton, bgc, i, j, k, grid, bgc, clock, fields)
-    upper_trophic_exudate = upper_trophic_excretion(bgc.zooplankton, i, j, k, grid, bgc, clock, fields)
-    grazing_waste = organic_excretion(bgc.zooplankton, i, j, k, grid, bgc, clock, fields)
-    particulate_breakdown = degredation(bgc.particulate_organic_matter, i, j, k, grid, bgc, clock, fields)
-    dissolved_breakdown = degredation(bgc.dissolved_organic_matter, i, j, k, grid, bgc, clock, fields)
-    aggrgation_to_particles, = aggregation(bgc.dissolved_organic_matter, i, j, k, grid, bgc, clock, fields)
+@inline function (bgc::PISCES{<:Any, <:Any, <:DissolvedOrganicCarbon})(i, j, k, grid, ::Val{:DOC}, clock, fields, auxiliary_fields)
+    phytoplankton_exudate = dissolved_exudate(bgc.phytoplankton, i, j, k, grid, bgc, clock, fields, auxiliary_fields)
+    
+    upper_trophic_exudate = upper_trophic_excretion(bgc.zooplankton, i, j, k, grid, bgc, clock, fields, auxiliary_fields)
+    
+    grazing_waste = organic_excretion(bgc.zooplankton, i, j, k, grid, bgc, clock, fields, auxiliary_fields)
+    
+    particulate_breakdown = degredation(bgc.particulate_organic_matter, i, j, k, grid, bgc, clock, fields, auxiliary_fields)
+    
+    dissolved_breakdown = degredation(bgc.dissolved_organic_matter, i, j, k, grid, bgc, clock, fields, auxiliary_fields)
+    
+    aggregation_to_particles, = aggregation(bgc.dissolved_organic_matter, i, j, k, grid, bgc, clock, fields, auxiliary_fields)
 
     return (phytoplankton_exudate + upper_trophic_exudate + grazing_waste + particulate_breakdown 
             - dissolved_breakdown - aggregation_to_particles)
 end
 
-@inline function degredation(dom::DissolvedOrganicCarbon, i, j, k, grid, bgc, clock, fields)
+@inline function degredation(dom::DissolvedOrganicCarbon, i, j, k, grid, bgc, clock, fields, auxiliary_fields)
     Bact_ref = dom.reference_bacteria_concentration
     b = dom.temperature_sensetivity
     λ = dom.remineralisation_rate
@@ -37,14 +44,14 @@ end
 
     f = b^T
 
-    Bact = bacteria_concentration(bgc.zooplankton, i, j, k, grid, bgc, clock, fields)
+    Bact = bacteria_concentration(bgc.zooplankton, i, j, k, grid, bgc, clock, fields, auxiliary_fields)
 
-    LBact = bacteria_activity(bgc.zooplankton, i, j, k, grid, bgc, clock, fields)
+    LBact = bacteria_activity(bgc.zooplankton, i, j, k, grid, bgc, clock, fields, auxiliary_fields)
 
     return λ * f * LBact * Bact / Bact_ref * DOC # differes from Aumont 2015 since the dimensions don't make sense 
 end
 
-@inline function aggregation(dom::DissolvedOrganicCarbon, i, j, k, grid, bgc, clock, fields)
+@inline function aggregation(dom::DissolvedOrganicCarbon, i, j, k, grid, bgc, clock, fields, auxiliary_fields)
     a₁, a₂, a₃, a₄, a₅ = dom.aggregation_parameters
 
     backgroound_shear = bgc.background_shear
@@ -52,7 +59,7 @@ end
 
     z = znode(i, j, k, grid, Center(), Center(), Center())
 
-    zₘₓₗ = @inbounds fields.zₘₓₗ[i, j, k]
+    zₘₓₗ = @inbounds auxiliary_fields.zₘₓₗ[i, j, k]
     
     DOC = @inbounds fields.DOC[i, j, k]
     POC = @inbounds fields.POC[i, j, k]
@@ -67,10 +74,13 @@ end
     return Φ₁ + Φ₂ + Φ₃, Φ₁, Φ₂, Φ₃
 end
 
-@inline function aggregation_of_colloidal_iron(dom::DissolvedOrganicCarbon, i, j, k, grid, bgc, clock, fields)
-    _, Φ₁, Φ₂, Φ₃ = aggregation(dom, i, j, k, grid, bgc, clock, fields)
+@inline function aggregation_of_colloidal_iron(dom::DissolvedOrganicCarbon, i, j, k, grid, bgc, clock, fields, auxiliary_fields)
+    _, Φ₁, Φ₂, Φ₃ = aggregation(dom, i, j, k, grid, bgc, clock, fields, auxiliary_fields)
 
-    Fe′ = free_iron(bgc.iron, i, j, k, grid, bgc, clock, fields)
+    Fe = @inbounds fields.Fe[i, j, k]
+    DOC = @inbounds fields.DOC[i, j, k]
+
+    Fe′ = free_iron(bgc.iron, i, j, k, grid, bgc, clock, fields, auxiliary_fields)
     ligand_iron = Fe - Fe′
     colloidal_iron = 0.5 * ligand_iron
 
@@ -80,22 +90,22 @@ end
     return CgFe1 + CgFe2, CgFe1, CgFe2
 end
 
-@inline function oxic_remineralisation(dom::DissolvedOrganicCarbon, i, j, k, grid, bgc, clock, fields)
+@inline function oxic_remineralisation(dom::DissolvedOrganicCarbon, i, j, k, grid, bgc, clock, fields, auxiliary_fields)
     O₂ = @inbounds fields.O₂[i, j, k]
 
     ΔO₂ = anoxia_factor(bgc, O₂)
 
-    degredation = degredation(dom, i, j, k, grid, bgc, clock, fields)
+    total_degredation = degredation(dom, i, j, k, grid, bgc, clock, fields, auxiliary_fields)
 
-    return (1 - ΔO₂) * degredation
+    return (1 - ΔO₂) * total_degredation
 end
 
-@inline function anoxic_remineralisation(dom::DissolvedOrganicCarbon, i, j, k, grid, bgc, clock, fields)
+@inline function anoxic_remineralisation(dom::DissolvedOrganicCarbon, i, j, k, grid, bgc, clock, fields, auxiliary_fields)
     O₂ = @inbounds fields.O₂[i, j, k]
 
     ΔO₂ = anoxia_factor(bgc, O₂)
 
-    degredation = degredation(dom, i, j, k, grid, bgc, clock, fields)
+    total_degredation = degredation(dom, i, j, k, grid, bgc, clock, fields, auxiliary_fields)
 
-    return ΔO₂ * degredation
+    return ΔO₂ * total_degredation
 end

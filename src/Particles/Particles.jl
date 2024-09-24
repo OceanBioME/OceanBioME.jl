@@ -1,7 +1,7 @@
 module Particles 
 
 using Oceananigans: NonhydrostaticModel, HydrostaticFreeSurfaceModel
-using OceanBioME: Biogeochemistry
+using OceanBioME: DiscreteBiogeochemistry, ContinuousBiogeochemistry
 
 import Oceananigans.Biogeochemistry: update_tendencies!
 import Oceananigans.Models.LagrangianParticleTracking: update_lagrangian_particle_properties!, step_lagrangian_particles!
@@ -12,18 +12,21 @@ abstract type BiogeochemicalParticles end
 
 # TODO: add model.particles passing
 
+const BGC_WITH_PARTICLES = Union{<:DiscreteBiogeochemistry{<:Any, <:Any, <:Any, <:BiogeochemicalParticles},
+                                 <:ContinuousBiogeochemistry{<:Any, <:Any, <:Any, <:BiogeochemicalParticles}}
+
 @inline step_lagrangian_particles!(::Nothing, 
     model::NonhydrostaticModel{<:Any, <:Any, <:Any, <:Any, <:Any, <:Any, <:Any, <:Any, <:Any, <:Any, <:Any, <:Any, <:Any, <:Any, <:Any, <:Any, <:Any, 
-                               <:Biogeochemistry{<:Any, <:Any, <:Any, <:BiogeochemicalParticles}}, 
+                               BGC_WITH_PARTICLES}, 
     Δt) = update_lagrangian_particle_properties!(model, model.biogeochemistry, Δt)
 
 @inline step_lagrangian_particles!(::Nothing,
     model::HydrostaticFreeSurfaceModel{<:Any, <:Any, <:Any, <:Any, <:Any, <:Any, <:Any, <:Any, <:Any, <:Any, <:Any, 
-                                       <:Biogeochemistry{<:Any, <:Any, <:Any, <:BiogeochemicalParticles}, 
+                                       BGC_WITH_PARTICLES, 
                                        <:Any, <:Any, <:Any, <:Any, <:Any,}, 
     Δt) = update_lagrangian_particle_properties!(model, model.biogeochemistry, Δt)
 
-@inline update_lagrangian_particle_properties!(model, bgc::Biogeochemistry{<:Any, <:Any, <:Any, <:BiogeochemicalParticles}, Δt) = 
+@inline update_lagrangian_particle_properties!(model, bgc::BGC_WITH_PARTICLES, Δt) = 
     update_lagrangian_particle_properties!(bgc.particles, model, bgc, Δt)
 
 @inline update_lagrangian_particle_properties!(::BiogeochemicalParticles, model, bgc, Δt) = nothing

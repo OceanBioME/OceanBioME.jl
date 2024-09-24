@@ -4,7 +4,7 @@ export SimpleMultiG, InstantRemineralisation
 
 using KernelAbstractions
 
-using OceanBioME: Biogeochemistry, BoxModelGrid
+using OceanBioME: DiscreteBiogeochemistry, ContinuousBiogeochemistry, BoxModelGrid
 
 using Oceananigans
 using Oceananigans.Architectures: device, architecture, on_architecture

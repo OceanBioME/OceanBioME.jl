@@ -1,5 +1,5 @@
 
-@inline function iron_grazing(zoo::QualityDependantZooplankton, val_name, i, j, k, grid, bgc, clock, fields)
+@inline function iron_grazing(zoo::QualityDependantZooplankton, val_name, i, j, k, grid, bgc, clock, fields, auxiliary_fields)
     # food quantity
     g₀   = zoo.maximum_grazing_rate
     b    = zoo.temperature_sensetivity
@@ -12,6 +12,8 @@
     N = length(food)
 
     I = zooplankton_concentration(val_name, i, j, k, fields)
+
+    T = @inbounds fields.T[i, j, k]
 
     base_grazing_rate = g₀ * b ^ T
 
@@ -27,12 +29,12 @@
 
     iron_ratios = extract_iron_availability(i, j, k, bgc, fields, food)
 
-    total_specific_iron_grazing = sum(ntuple(n->max(zero(grid), (food_availability[n] - J)) * p[n] iron_ratios[n], Val(N))) * total_specific_grazing / available_total_food
+    total_specific_iron_grazing = sum(ntuple(n->max(zero(grid), (food_availability[n] - J)) * p[n] * iron_ratios[n], Val(N))) * total_specific_grazing / available_total_food
 
     return total_specific_grazing * I
 end
 
-@inline function iron_flux_feeding(zoo::QualityDependantZooplankton, val_name, i, j, k, grid, bgc, clock, fields)
+@inline function iron_flux_feeding(zoo::QualityDependantZooplankton, val_name, i, j, k, grid, bgc, clock, fields, auxiliary_fields)
     g₀ =  zoo.maximum_flux_feeding_rate
     b  = zoo.temperature_sensetivity
 
@@ -40,9 +42,9 @@ end
 
     T = @inbounds fields.T[i, j, k]
 
-    sinking_flux = edible_iron_flux_rate(bgc.particulate_organic_matter, i, j, k, grid, fields)
+    sinking_flux = edible_iron_flux_rate(bgc.particulate_organic_matter, i, j, k, grid, fields, auxiliary_fields)
 
-    base_flux_feeding_rate = g₁ * b ^ T
+    base_flux_feeding_rate = g₀ * b ^ T
 
     total_specific_flux_feeding = base_flux_feeding_rate * sinking_flux 
 
