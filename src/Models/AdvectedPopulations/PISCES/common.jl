@@ -38,7 +38,7 @@ Returns the length of day in seconds at the latitude `φ`, `t`seconds after the 
     # as per Forsythe et al., 1995 (https://doi.org/10.1016/0304-3800(94)00034-F)
     p = asind(0.39795 * cos(0.2163108 + 2 * atan(0.9671396 * tan(0.00860 * (floor(Int, t / day) - 186)))))
 
-    return (24 - 24 / 180 * acosd((sind(0.8333) + sind(φ) * sind(p)) / (cosd(φ) * cosd(p)))) * day
+    return (24 - 24 / 180 * acosd((sind(0.8333) + sind(φ) * sind(p)) / (cosd(φ) * cosd(p)))) * day / hour
 end
 
 """
