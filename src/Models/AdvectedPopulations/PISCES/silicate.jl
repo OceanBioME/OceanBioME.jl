@@ -17,7 +17,7 @@ required_biogeochemical_tracers(::Silicate) = tuple(:Si)
 
 const PISCESSilicate = PISCES{<:Any, <:Any, <:Any, <:Any, <:Any, <:Any, <:Silicate}
 
-@inline function (bgc::PISCESSilicate)(i, j, k, grid, val_name::Val{:Si}, clock, fields, auxiliary_fields)
+@inline function (bgc::PISCESSilicate)(i, j, k, grid, ::Val{:Si}, clock, fields, auxiliary_fields)
     consumption = silicate_uptake(bgc.phytoplankton, i, j, k, grid, bgc, clock, fields, auxiliary_fields)
 
     dissolution = particulate_silicate_dissolution(bgc.particulate_organic_matter, i, j, k, grid, bgc, clock, fields, auxiliary_fields)

@@ -45,10 +45,10 @@ and `newprod` versions of PISCES.
   enhanced_silicate_half_saturation :: FT = 20.9        # mmol Si / m³
              optimal_silicate_ratio :: FT = 0.159       # mmol Si / mmol C
 
-    half_saturation_for_iron_uptake :: FT          # μmol Fe / m³
+    half_saturation_for_iron_uptake :: FT               # μmol Fe / m³
 
-      threshold_for_size_dependency :: FT = 1.0    # mmol C / m³
-                         size_ratio :: FT = 3.0    # 
+      threshold_for_size_dependency :: FT = 1.0         # mmol C / m³
+                         size_ratio :: FT = 3.0         # 
 end
 
 required_biogeochemical_tracers(phyto::MixedMondo, base) =
@@ -60,8 +60,6 @@ required_biogeochemical_tracers(phyto::MixedMondo, base) =
 #####
 
 @inline function carbon_growth(phyto::MixedMondo, val_name, i, j, k, grid, bgc, clock, fields, auxiliary_fields)
-    I, IChl, IFe = phytoplankton_concentrations(val_name, i, j, k, fields)
-    
     # production
     δ  = phyto.exudated_fracton
 
@@ -154,7 +152,7 @@ end
 
     L₂ = 4 - 4.5 * LFe / (LFe + 1) # typo in Aumount 2015
 
-    return θFeₘ * L₁ * L₂ * max(0, (1 - θFe / θFeₘ) / (1.05 - θFe / θFeₘ)) * μᵢ * I
+    return (1 - δ) * θFeₘ * L₁ * L₂ * max(0, (1 - θFe / θFeₘ) / (1.05 - θFe / θFeₘ)) * μᵢ * I
 end
 
 @inline function iron_uptake_limitation(phyto, I, Fe)
@@ -183,7 +181,7 @@ end
 
     I, IChl, IFe = phytoplankton_concentrations(val_name, i, j, k, fields)
 
-    T = @inbounds fields.T[i, j, k]
+    T =  @inbounds fields.T[i, j, k]
     Si = @inbounds fields.Si[i, j, k]
 
     L, LFe, LPO₄, LN = phyto.nutrient_limitation(val_name, i, j, k, grid, bgc, phyto, clock, fields, auxiliary_fields)
@@ -205,7 +203,6 @@ end
 
     θ₁ = θ₀ * L₁ * min(5.4, (4.4 * exp(-4.23 * F₁) * F₂ + 1) * (1 + 2 * L₂))
 
-    # δ * ... is immediatly returned to Fe pool
     return (1 - δ) * θ₁ * μ * I
 end
 

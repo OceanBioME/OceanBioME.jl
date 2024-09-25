@@ -37,12 +37,15 @@ end
 
     upper_trophic_feces = upper_trophic_fecal_production(bgc.zooplankton, i, j, k, grid, bgc, clock, fields, auxiliary_fields)
 
+    _, _, dissolved_aggregation = aggregation(bgc.dissolved_organic_matter, i, j, k, grid, bgc, clock, fields, auxiliary_fields)
+
     # losses
     grazing = total_grazing(bgc.zooplankton, val_name, i, j, k, grid, bgc, clock, fields, auxiliary_fields)
 
     large_breakdown = degredation(bgc.particulate_organic_matter, val_name, i, j, k, grid, bgc, clock, fields, auxiliary_fields)
 
-    return (grazing_waste + phytoplankton_mortality + zooplankton_mortality + upper_trophic_feces + aggregation_to_large
+    return (grazing_waste + phytoplankton_mortality + zooplankton_mortality + upper_trophic_feces 
+            + aggregation_to_large + dissolved_aggregation
             - grazing  - large_breakdown)
 end
 

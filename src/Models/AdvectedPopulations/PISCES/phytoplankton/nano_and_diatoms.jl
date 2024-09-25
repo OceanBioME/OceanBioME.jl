@@ -25,8 +25,7 @@ end
     @inbounds base_production_rate(phyto.nano.growth_rate, fields.T[i, j, k])
 
 @inline silicate_uptake(phyto::NanoAndDiatoms, i, j, k, grid, bgc, clock, fields, auxiliary_fields) =
-    (silicate_uptake(phyto.nano, Val(:P), i, j, k, grid, bgc, clock, fields, auxiliary_fields)
-     + silicate_uptake(phyto.diatoms, Val(:D), i, j, k, grid, bgc, clock, fields, auxiliary_fields))
+    silicate_uptake(phyto.diatoms, Val(:D), i, j, k, grid, bgc, clock, fields, auxiliary_fields)
 
 @inline total_production(phyto::NanoAndDiatoms, i, j, k, grid, bgc, clock, fields, auxiliary_fields) =
     (total_production(phyto.nano, Val(:P), i, j, k, grid, bgc, clock, fields, auxiliary_fields)

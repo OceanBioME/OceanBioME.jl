@@ -5,10 +5,15 @@ using Oceananigans.Fields: ConstantField, FunctionField
 
 using OceanBioME.Models.PISCESModel: SimpleIron, NitrateAmmonia
 
-const PISCES_INITIAL_VALUES = (P = 7, D = 7, Z = 0.5, M = 0.5, PChl = 1.5, DChl = 1.5, PFe = 35e-3, DFe = 35e-3, DSi = 1,
-                               NO₃ = 6, NH₄ = 1, PO₄ = 1, Fe = 1, Si = 7, CaCO₃ = 10^-3,
-                               DIC = 2200, Alk = 2400, O₂ = 240, T = 10, S = 35)
-
+const PISCES_INITIAL_VALUES = (P = 0.5, PChl = 0.02, PFe = 0.005,
+                               D = 0.1, DChl = 0.004, DFe = 0.001, DSi = 0.01,
+                               Z = 0.1, M = 0.7,
+                               DOC = 2.1, 
+                               POC = 7.8, SFe = 0.206, 
+                               GOC = 38, BFe = 1.1, PSi = 0.1, CaCO₃ = 10^-10,
+                               NO₃ = 2.3, NH₄ = 0.9, PO₄ = 0.6, Fe = 0.13, Si = 8.5,
+                               DIC = 2205, Alk = 2566, O₂ = 317,
+                               T = 10, S = 35)
 
 function set_PISCES_initial_values!(tracers; values = PISCES_INITIAL_VALUES)
     for (name, field) in pairs(tracers)
@@ -77,11 +82,11 @@ function test_PISCES_conservation() # only on CPU please
     total_nitrogen_tendencies = sum([value(model.timestepper.Gⁿ[n]) * sf for (n, sf) in zip(conserved_tracers.nitrogen.tracers, conserved_tracers.nitrogen.scalefactors)])
 
     # should these be exactly zero? - I would expect actual errors to be O(10^-9) to O(10^-6) from experiance
-    @test isapprox(total_carbon_tendencies, 0, atol = 2*10^-18) # I think this is okay ... it seems to reduce when I remove a load of 1/(x + eps(0.0)) but that would make it crash sometimes
-    @test isapprox(total_iron_tendencies, 0, atol = 10^-21) # this has lower tollerance because its about 100x smaller 
-    @test isapprox(total_silicon_tendencies, 0, atol = 10^-21) # and this has lower tollerance because its simpler
-    @test isapprox(total_phosphate_tendencies, 0, atol = 2*10^-20) # I think ...
-    @test isapprox(total_nitrogen_tendencies, 0, atol = 2*10^-19) 
+    @test isapprox(total_carbon_tendencies, 0, atol = 10^-20) 
+    @test isapprox(total_iron_tendencies, 0, atol = 10^-21) 
+    @test isapprox(total_silicon_tendencies, 0, atol = 10^-30) 
+    @test isapprox(total_phosphate_tendencies, 0, atol = 10^-22) 
+    @test isapprox(total_nitrogen_tendencies, 0, atol = 10^-21) 
 
     return nothing
 end

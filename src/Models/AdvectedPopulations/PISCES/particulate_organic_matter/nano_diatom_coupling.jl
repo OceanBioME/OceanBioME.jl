@@ -67,7 +67,7 @@ end
     return min(LN, L_Fe, L_PO₄)
 end
 
-@inline coccolithophore_phytoplankton_factor(phyto::NanoAndDiatoms, i, j, k, grid, bgc, clock, fields, auxiliary_fields) =
+@inline coccolithophore_phytoplankton_factor(::NanoAndDiatoms, i, j, k, grid, bgc, clock, fields, auxiliary_fields) =
     @inbounds max(one(grid), fields.P[i, j, k] / 2)
 
 @inline function particulate_silicate_production(phyto::NanoAndDiatoms, i, j, k, grid, bgc, clock, fields, auxiliary_fields)

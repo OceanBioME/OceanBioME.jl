@@ -94,7 +94,7 @@ end
 @inline function (bgc::PISCES{<:NanoAndDiatoms})(i, j, k, grid, val_name::Val{:DSi}, clock, fields, auxiliary_fields)
     phyto = parameterisation(val_name, bgc.phytoplankton)
     
-    growth = chlorophyll_growth(phyto, val_name, i, j, k, grid, bgc, clock, fields, auxiliary_fields)
+    growth = silicate_growth(phyto, val_name, i, j, k, grid, bgc, clock, fields, auxiliary_fields)
 
     D = @inbounds fields.D[i, j, k]
     DSi = @inbounds fields.DSi[i, j, k]
