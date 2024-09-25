@@ -1,5 +1,5 @@
 using Oceananigans.Architectures: architecture, GPU
-using Oceananigans.Fields: compute!, AbstractField
+using Oceananigans.Fields: compute!, AbstractField, ConstantField
 
 function maybe_named_fields(field)
 
@@ -9,6 +9,9 @@ function maybe_named_fields(field)
 end
 
 maybe_named_fields(fields::NamedTuple) = (keys(fields), values(fields))
+
+is_on_gpu(field) = isa(architecture(field), GPU)
+is_on_gpu(::ConstantField) = false
 
 """
     PrescribedPhotosyntheticallyActiveRadiation(fields)
@@ -21,7 +24,6 @@ fields which are user specified, e.g. they may be `FunctionField`s or
 fields which will be returned in `biogeochemical_auxiliary_fields`, if only
 one field is present the field will be named `PAR`.
 """
-
 struct PrescribedPhotosyntheticallyActiveRadiation{F, FN}
          fields :: F
     field_names :: FN
@@ -32,7 +34,7 @@ struct PrescribedPhotosyntheticallyActiveRadiation{F, FN}
     function PrescribedPhotosyntheticallyActiveRadiation(fields)
         names, values = maybe_named_fields(fields)
 
-        isa(architecture(values[1]), GPU) || 
+        is_on_gpu(values[1]) || 
             @warn "On `GPU` prescribed fields will be renamed to `PAR`, `PAR₁`, etc., as symbols can not be passed to the GPU. 
 Please make sure they are in this order.
 (We're assuming that you're only using this for testing purposes.)"
