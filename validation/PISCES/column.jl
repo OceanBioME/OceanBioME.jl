@@ -76,16 +76,14 @@ model = HydrostaticFreeSurfaceModel(; grid,
 
 @info "Setting initial values..."
 
-
-set!(model, P = 6.95, D = 6.95, Z = 0.695,  M = 0.695, 
-            PChl = 0.35,  DChl = 0.35, 
-            PFe = 6.95*50e-3, DFe = 6.95*50e-3, 
-            DSi = 0.159*6.95, 
-            NO₃ = 6.202, NH₄ = 0.25*6.202, 
-            PO₄ = 0.8722, Fe = 0.2, Si = 2, 
-            CaCO₃ = 0.001,
-            DIC = 2139.0, Alk = 2366.0, 
-            O₂ = 237.0, S = 35, T = 10) 
+set!(model, P = 0.1, PChl = 0.025, PFe = 0.005,
+            D = 0.01, DChl = 0.003, DFe = 0.0006, DSi = 0.004,
+            Z = 0.06, M = 0.5,
+            DOC = 4, 
+            POC = 5.4, SFe = 0.34, 
+            GOC = 8.2, BFe = 0.5, PSi = 0.04, CaCO₃ = 10^-10,
+            NO₃ = 10, NH₄ = 0.1, PO₄ = 5.0, Fe = 0.6, Si = 8.6,
+            DIC = 2205, Alk = 2560, O₂ = 317, S = 35)
 
 # maybe get to 1.5hours after initial stuff
 simulation = Simulation(model, Δt = 1.5hours, stop_time = 10years)
