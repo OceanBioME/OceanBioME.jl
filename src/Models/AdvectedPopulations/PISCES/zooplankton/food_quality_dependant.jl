@@ -8,12 +8,11 @@ particulates (POC and GOC).
 
 This model assumes a fixed ratio for all other elements (i.e. N, P, Fe).
 """
-@kwdef struct QualityDependantZooplankton{FT, FP, FN}
+@kwdef struct QualityDependantZooplankton{FT, FP}
                    temperature_sensetivity :: FT = 1.079 #
                       maximum_grazing_rate :: FT         # 1 / s
 
                           food_preferences :: FP 
-                                food_names :: FN = keys(food_preferences)
 
               food_threshold_concentration :: FT = 0.3   # mmol C / m³
     specific_food_thresehold_concentration :: FT = 0.001 # mmol C / m³
@@ -57,7 +56,7 @@ end
     g₀   = zoo.maximum_grazing_rate
     b    = zoo.temperature_sensetivity
     p    = zoo.food_preferences
-    food = zoo.food_names
+    food = prey_names(bgc, val_name)
     J    = zoo.specific_food_thresehold_concentration
     K    = zoo.grazing_half_saturation
     food_threshold_concentration = zoo.food_threshold_concentration

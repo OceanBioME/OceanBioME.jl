@@ -37,3 +37,8 @@ end
 @inline grazing_preference(::Val{:D},     preferences) = preferences.D
 @inline grazing_preference(::Val{:Z},     preferences) = preferences.Z
 @inline grazing_preference(::Val{:POC},   preferences) = preferences.POC
+
+# TODO: this should dispatch on PISCES{<:NanoAndDiatoms, <:MicroAndMeso, <:Any, <:Two...} but the phyto and POC
+# classes are not yet defined
+@inline prey_names(::PISCES{<:Any, <:MicroAndMeso}, ::Val{:Z}) = (:P, :D, :POC)
+@inline prey_names(::PISCES{<:Any, <:MicroAndMeso}, ::Val{:M}) = (:P, :D, :Z, :POC)

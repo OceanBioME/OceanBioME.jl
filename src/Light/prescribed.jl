@@ -1,3 +1,4 @@
+using Oceananigans.Architectures: architecture, GPU
 using Oceananigans.Fields: compute!, AbstractField
 
 function maybe_named_fields(field)
@@ -22,7 +23,7 @@ one field is present the field will be named `PAR`.
 """
 
 struct PrescribedPhotosyntheticallyActiveRadiation{F, FN}
-    fields :: F
+         fields :: F
     field_names :: FN
 
     PrescribedPhotosyntheticallyActiveRadiation(fields::F, names::FN) where {F, FN} =
@@ -30,6 +31,11 @@ struct PrescribedPhotosyntheticallyActiveRadiation{F, FN}
 
     function PrescribedPhotosyntheticallyActiveRadiation(fields)
         names, values = maybe_named_fields(fields)
+
+        isa(architecture(values[1]), GPU) || 
+            @warn "On `GPU` prescribed fields will be renamed to `PAR`, `PAR₁`, etc., as symbols can not be passed to the GPU. 
+Please make sure they are in this order.
+(We're assuming that you're only using this for testing purposes.)"
 
         F  = typeof(values)
         FN = typeof(names)
@@ -51,7 +57,11 @@ show(io::IO, model::PrescribedPhotosyntheticallyActiveRadiation{F}) where {F} = 
                                                                                             "  Fields:", "\n",
                                                                                             "    └── $(model.field_names)")
 
-biogeochemical_auxiliary_fields(par::PrescribedPhotosyntheticallyActiveRadiation) = NamedTuple{par.field_names}(par.fields)
+biogeochemical_auxiliary_fields(par::PrescribedPhotosyntheticallyActiveRadiation) = 
+    NamedTuple{prescribed_field_names(par.field_names, par.fields)}(par.fields)
 
-adapt_structure(to, par::PrescribedPhotosyntheticallyActiveRadiation) = PrescribedPhotosyntheticallyActiveRadiation(adapt(to, par.fields), 
-                                                                                                                    adapt(to, par.field_names))
+@inline prescribed_field_names(field_names, fields) = field_names
+@inline prescribed_field_names(::Nothing, fields::NTuple{N}) where N = tuple(:PAR, ntuple(n -> par_symbol(n), Val(N-1))...)
+
+adapt_structure(to, par::PrescribedPhotosyntheticallyActiveRadiation) = 
+    PrescribedPhotosyntheticallyActiveRadiation(adapt(to, par.fields), nothing)

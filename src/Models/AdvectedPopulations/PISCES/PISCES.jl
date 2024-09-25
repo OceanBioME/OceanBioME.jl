@@ -169,6 +169,8 @@ using .InorganicCarbons
 
 include("coupling_utils.jl")
 
+include("adapts.jl")
+
 """
     PISCES(; grid,
              phytoplankton = MixedMondoNanoAndDiatoms(),

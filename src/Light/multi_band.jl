@@ -115,14 +115,10 @@ function numerical_mean(λ, C, idx1, idx2)
     return ∫Cdλ / ∫dλ
 end
 
-function par_symbol(n)
-    subscripts = Symbol[]
-    for digit in reverse(digits(n))
-        push!(subscripts, Symbol(Char('\xe2\x82\x80'+digit)))
-    end
+par_symbol(n) = Symbol(:PAR, number_subscript(tuple(reverse(digits(n))...))...)
 
-    return Symbol(:PAR, subscripts...)
-end
+number_subscript(digits::NTuple{N}) where N =
+    ntuple(n->Symbol(Char('\xe2\x82\x80'+digits[n])), Val(N))
 
 @kernel function update_MultiBandPhotosyntheticallyActiveRadiation!(grid, field, kʷ, e, χ,
                                                                     _surface_PAR, surface_PAR_division, 
@@ -145,7 +141,6 @@ end
         @inbounds field[i, j, k] = @inbounds field[i, j, k + 1] * exp(Δz * (kʷ + χ * Chl[i, j, k] ^ e))
     end
 end
-
 
 function update_biogeochemical_state!(model, PAR::MultiBandPhotosyntheticallyActiveRadiation)
     grid = model.grid
@@ -179,7 +174,18 @@ summary(par::MultiBandPhotosyntheticallyActiveRadiation) =
 show(io::IO, model::MultiBandPhotosyntheticallyActiveRadiation) = print(io, summary(model))
 
 biogeochemical_auxiliary_fields(par::MultiBandPhotosyntheticallyActiveRadiation) = 
-    merge((PAR = par.total, ), NamedTuple{par.field_names}(par.fields))
+    merge((PAR = par.total, ), NamedTuple{field_names(par.field_names, par.fields)}(par.fields))
+
+@inline field_names(field_names, fields) = field_names
+@inline field_names(::Nothing, fields::NTuple{N}) where N = ntuple(n -> par_symbol(n), Val(N))
 
 # avoid passing this into kernels
-Adapt.adapt_structure(to, par::MultiBandPhotosyntheticallyActiveRadiation) = nothing
+Adapt.adapt_structure(to, par::MultiBandPhotosyntheticallyActiveRadiation) = 
+    MultiBandPhotosyntheticallyActiveRadiation(adapt(to, par.total),
+                                               adapt(to, par.fields),
+                                               nothing,
+                                               nothing, 
+                                               nothing,
+                                               nothing,
+                                               nothing)
+
