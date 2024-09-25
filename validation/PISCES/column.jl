@@ -86,7 +86,7 @@ set!(model, P = 0.1, PChl = 0.025, PFe = 0.005,
             DIC = 2205, Alk = 2560, O₂ = 317, S = 35)
 
 # maybe get to 1.5hours after initial stuff
-simulation = Simulation(model, Δt = 1.5hours, stop_time = 10years)
+simulation = Simulation(model, Δt = 20minutes, stop_time = 5years)
 
 progress_message(sim) = @printf("Iteration: %04d, time: %s, Δt: %s, wall time: %s\n",
                                 iteration(sim),
