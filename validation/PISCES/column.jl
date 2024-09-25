@@ -38,7 +38,7 @@ nothing #hide
 
 @inline temp(z, t) = 2.4 * (1 + cos(t * 2π / year + 50days)) * ifelse(z > MLD(t), 1, exp((z - MLD(t))/20)) + 8
 
-grid = RectilinearGrid(GPU(), topology = (Flat, Flat, Bounded), size = (100, ), extent = (400, ))
+grid = RectilinearGrid(topology = (Flat, Flat, Bounded), size = (100, ), extent = (400, ))
 
 clock = Clock(; time = 0.0)
 

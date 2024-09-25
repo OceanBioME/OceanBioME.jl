@@ -44,6 +44,7 @@ end
     Kₙₒ = kₙₒ * K̄
     Kₙₕ = kₙₕ * K̄
     Kₚ  = kₚ  * K̄
+    Kₛᵢ = kₛᵢ * K̄
 
     # nitrogen limitation
     LNO₃ = nitrogen_limitation(NO₃, NH₄, Kₙₒ, Kₙₕ)
@@ -61,7 +62,7 @@ end
     LFe = min(1, max(0, (θFe - θₘ) / θₒ))
 
     # silicate limitation
-    KSi = kₛᵢ + 7 * Si′^2 / (pk^2 + Si′^2)
+    KSi = Kₛᵢ + 7 * Si′^2 / (pk^2 + Si′^2)
     LSi = Si / (Si + KSi)
     LSi = ifelse(L.silicate_limited, LSi, Inf)
 

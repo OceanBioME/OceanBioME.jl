@@ -171,7 +171,18 @@ include("coupling_utils.jl")
 
 """
     PISCES(; grid,
+             phytoplankton = MixedMondoNanoAndDiatoms(),
+             zooplankton = MicroAndMesoZooplankton(),
+             dissolved_organic_matter = DissolvedOrganicCarbon(),
+             particulate_organic_matter = TwoCompartementCarbonIronParticles(),
              
+             nitrogen = NitrateAmmonia(),
+             iron = SimpleIron(),
+             silicate = Silicate(),
+             oxygen = Oxygen(),
+             phosphate = Phosphate(),
+             
+             inorganic_carbon = InorganicCarbon(),
 
              # from Aumount 2005 rather than 2015 since it doesn't work the other way around
              first_anoxia_thresehold = 6.0,
@@ -208,7 +219,7 @@ include("coupling_utils.jl")
                                GOC = Field(KernelFunctionOperation{Center, Center, Face}(DepthDependantSinkingSpeed(), 
                                                                                          grid, 
                                                                                          mixed_layer_depth, 
-                                                                                         euphotic_depth)),
+                                                                                         euphotic_depth))),
              open_bottom = true,
 
              scale_negatives = false,
@@ -225,19 +236,16 @@ Keyword Arguments
 =================
 
 - `grid`: (required) the geometry to build the model on
-- `nanophytoplankton`: nanophytoplankton (`P`, `PChl`, `PFe``) evolution parameterisation such as `MixedMondoPhytoplankton`
-- `diatoms`: diatom (`D`, `DChl`, `DFe`, `DSi`) evolution parameterisation such as `MixedMondoPhytoplankton`
-- `microzooplankton`: microzooplankton (`Z`) evolution parameterisation
-- `mesozooplankton`: mesozooplankton (`M`) evolution parameterisation
+- `phytoplankton`: phytoplankton evolution parameterisation, defaults to nanophyto and diatom size classes with `MixedMondo` growth
+- `zooplankton`: zooplankton evolution parameterisation, defaults to two class `Z` and `M`
 - `dissolved_organic_matter`: parameterisaion for the evolution of dissolved organic matter (`DOC`)
-- `particulate_organic_matter`: parameterisation for the evolution of particulate organic matter (`POC`, `GOC`, `SFe`, `BFe`, `PSi`)
+- `particulate_organic_matter`: parameterisation for the evolution of particulate organic matter (`POC`, `GOC`, `SFe`, `BFe`, `PSi`, `CaCO₃`)
 - `nitrogen`: parameterisation for the nitrogen compartements (`NH₄` and `NO₃`)
 - `iron`: parameterisation for iron (`Fe`), currently the "complex chemistry" of Aumount 2015 is not implemented
 - `silicate`: parameterisaion for silicate (`Si`)
 - `oxygen`: parameterisaion for oxygen (`O₂`)
 - `phosphate`: parameterisaion for phosphate (`PO₄`)
-- `calcite`: parameterisaion for calcite (`CaCO₃`)
-- `carbon_system`: parameterisation for the evolution of the carbon system (`DIC` and `Alk`alinity)
+- `inorganic_carbon`: parameterisation for the evolution of the inorganic carbon system (`DIC` and `Alk`alinity)
 - `first_anoxia_thresehold` and `second_anoxia_thresehold`: thresholds in anoxia parameterisation
 - `nitrogen_redfield_ratio` and `phosphate_redfield_ratio`: the assumed element ratios N/C and P/C 
 - `mixed_layer_shear` and `background_shear`: the mixed layer and background shear rates, TODO: move this to a computed field
@@ -331,7 +339,7 @@ function PISCES(; grid,
                   particles = nothing,
                   modifiers = nothing)
 
-    @warn "This implementation of PISCES is in early development and has not yet been validated"
+    @warn "This implementation of PISCES is in early development and has not yet been validated against the operational version"
 
     if !isnothing(sediment) && !open_bottom
         @warn "You have specified a sediment model but not `open_bottom` which will not work as the tracer will settle in the bottom cell"
