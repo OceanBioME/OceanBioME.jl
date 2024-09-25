@@ -155,7 +155,7 @@ end
     g₀   = zoo.maximum_grazing_rate
     b    = zoo.temperature_sensetivity
     p    = zoo.food_preferences
-    food = zoo.food_names
+    food = prey_names(bgc, val_name)
     J    = zoo.specific_food_thresehold_concentration
     K    = zoo.grazing_half_saturation
     food_threshold_concentration = zoo.food_threshold_concentration
