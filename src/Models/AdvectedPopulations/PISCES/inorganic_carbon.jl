@@ -29,7 +29,7 @@ required_biogeochemical_tracers(::InorganicCarbon) = (:DIC, :Alk)
 
 const PISCESCarbon = PISCES{<:Any, <:Any, <:Any, <:Any, <:Any, <:Any, <:Any, <:Any, <:Any, <:InorganicCarbon}
 
-@inline function (bgc::PISCESCarbon)(i, j, k, grid, val_name::Val{:DIC}, clock, fields, auxiliary_fields)
+@inline function (bgc::PISCESCarbon)(i, j, k, grid, ::Val{:DIC}, clock, fields, auxiliary_fields)
     zooplankton_respiration = inorganic_excretion(bgc.zooplankton, i, j, k, grid, bgc, clock, fields, auxiliary_fields)
 
     upper_trophic = upper_trophic_respiration(bgc.zooplankton, i, j, k, grid, bgc, clock, fields, auxiliary_fields)
