@@ -147,11 +147,7 @@ end
 update_tendencies!(bgc, modifier, model) = nothing
 update_tendencies!(bgc, modifiers::Tuple, model) = [update_tendencies!(bgc, modifier, model) for modifier in modifiers]
 
-# do we still need this for CPU kernels???
-@inline biogeochemical_transition(i, j, k, grid, bgc::CompleteBiogeochemistry, val_tracer_name, clock, fields) =
-    biogeochemical_transition(i, j, k, grid, bgc.underlying_biogeochemistry, val_tracer_name, clock, fields) 
-
-@inline (bgc::CompleteBiogeochemistry)(args...) = bgc.underlying_biogeochemistry(args...)
+@inline (bgc::ContinuousBiogeochemistry)(args...) = bgc.underlying_biogeochemistry(args...)
 
 function update_biogeochemical_state!(bgc::CompleteBiogeochemistry, model)
     # TODO: change the order of arguments here since they should definitly be the other way around

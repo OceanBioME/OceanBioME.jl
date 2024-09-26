@@ -32,7 +32,7 @@ value(field; indices = (1, 1, 1)) = on_architecture(CPU(), interior(field, indic
 function test_PISCES_conservation() # only on CPU please
     @info "Testing PISCES element conservation (C, Fe, P, Si)"
 
-    validation_warning = "This implementation of PISCES is in early development and has not yet been validated"
+    validation_warning = "This implementation of PISCES is in early development and has not yet been validated against the operational version"
 
     grid = BoxModelGrid(; z = -5)
 
@@ -81,7 +81,7 @@ function test_PISCES_conservation() # only on CPU please
     total_phosphate_tendencies = sum([value(model.timestepper.Gⁿ[n]) * sf for (n, sf) in zip(conserved_tracers.phosphate.tracers, conserved_tracers.phosphate.scalefactors)])
     total_nitrogen_tendencies = sum([value(model.timestepper.Gⁿ[n]) * sf for (n, sf) in zip(conserved_tracers.nitrogen.tracers, conserved_tracers.nitrogen.scalefactors)])
 
-    # should these be exactly zero? - I would expect actual errors to be O(10^-9) to O(10^-6) from experiance
+    # double precision floats are only valid to 17 bits so this tollerance is actually good
     @test isapprox(total_carbon_tendencies, 0, atol = 10^-20) 
     @test isapprox(total_iron_tendencies, 0, atol = 10^-21) 
     @test isapprox(total_silicon_tendencies, 0, atol = 10^-30) 

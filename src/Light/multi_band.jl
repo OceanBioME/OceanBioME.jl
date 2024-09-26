@@ -163,9 +163,9 @@ function update_biogeochemical_state!(model, PAR::MultiBandPhotosyntheticallyAct
                 k′)
     end
 
-    for field in PAR.fields
-        fill_halo_regions!(field, model.clock, fields(model))
-    end
+    #for field in PAR.fields
+    #    fill_halo_regions!(field, model.clock, fields(model))
+    #end
 end
 
 summary(par::MultiBandPhotosyntheticallyActiveRadiation) = 

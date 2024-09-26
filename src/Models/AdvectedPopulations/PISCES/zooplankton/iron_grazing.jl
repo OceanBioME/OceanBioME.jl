@@ -17,7 +17,7 @@
 
     base_grazing_rate = g₀ * b ^ T
 
-    food_availability = extract_food_availability(i, j, k, fields, food)
+    food_availability = extract_food_availability(bgc, i, j, k, fields, food)
 
     total_food = sum(ntuple(n->food_availability[n] * p[n], Val(N)))
 
@@ -27,7 +27,7 @@
 
     total_specific_grazing = base_grazing_rate * concentration_limited_grazing / (K + total_food)
 
-    iron_ratios = extract_iron_availability(i, j, k, bgc, fields, food)
+    iron_ratios = extract_iron_availability(bgc, i, j, k, fields, food)
 
     total_specific_iron_grazing = sum(ntuple(n->max(zero(grid), (food_availability[n] - J)) * p[n] * iron_ratios[n], Val(N))) * total_specific_grazing / (available_total_food + eps(0.0))
 

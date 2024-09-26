@@ -42,3 +42,22 @@ end
 # classes are not yet defined
 @inline prey_names(::PISCES{<:Any, <:MicroAndMeso}, ::Val{:Z}) = (:P, :D, :POC)
 @inline prey_names(::PISCES{<:Any, <:MicroAndMeso}, ::Val{:M}) = (:P, :D, :Z, :POC)
+
+# TODO: move these somewhere else so they can be dispatched on ::PISCES{<:NanoAndDiatoms, <:MicroAndMeso, <:Any, <:TwoCompartementCarbonIronParticles}
+@inline function extract_food_availability(::PISCES, i, j, k, fields, ::NTuple{N}) where N
+    P = @inbounds fields.P[i, j, k]
+    D = @inbounds fields.D[i, j, k]
+    Z = @inbounds fields.Z[i, j, k]
+    POC = @inbounds fields.POC[i, j, k]
+
+    return (; P, D, Z, POC)
+end
+
+@inline function extract_iron_availability(bgc::PISCES, i, j, k, fields, ::NTuple{N}) where N
+    P = @inbounds fields.PFe[i, j, k] / fields.P[i, j, k]
+    D = @inbounds fields.DFe[i, j, k] / fields.D[i, j, k]
+    Z = bgc.zooplankton.micro.iron_ratio
+    POC = @inbounds fields.POC[i, j, k] / fields.SFe[i, j, k]
+
+    return (; P, D, Z, POC)
+end

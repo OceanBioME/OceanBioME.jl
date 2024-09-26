@@ -45,10 +45,11 @@ required_biogeochemical_tracers(::QualityDependantZooplankton, name_base) = tupl
     return e * (gI + gfI) - mI
 end
 
-@inline extract_food_availability(i, j, k, fields, names::NTuple{N}) where N =
+# fallback
+@inline extract_food_availability(bgc, i, j, k, fields, names::NTuple{N}) where N =
     ntuple(n -> concentration(Val(names[n]), i, j, k, fields), Val(N))
 
-@inline extract_iron_availability(i, j, k, bgc, fields, names::NTuple{N}) where N =
+@inline extract_iron_availability(bgc, i, j, k, fields, names::NTuple{N}) where N =
     ntuple(n -> iron_ratio(Val(names[n]), i, j, k, bgc, fields), Val(N))
 
 @inline function grazing(zoo::QualityDependantZooplankton, val_name, i, j, k, grid, bgc, clock, fields, auxiliary_fields)
@@ -68,7 +69,7 @@ end
 
     base_grazing_rate = g₀ * b ^ T
 
-    food_availability = extract_food_availability(i, j, k, fields, food)
+    food_availability = extract_food_availability(bgc, i, j, k, fields, food)
 
     total_food = sum(ntuple(n->food_availability[n] * p[n], Val(N)))
 
@@ -83,7 +84,7 @@ end
     e₀  = zoo.minimum_growth_efficiency
     σ   = zoo.non_assililated_fraction
 
-    iron_availabillity = extract_iron_availability(i, j, k, bgc, fields, food)
+    iron_availabillity = extract_iron_availability(bgc, i, j, k, fields, food)
 
     total_iron = sum(ntuple(n->iron_availabillity[n] * p[n], Val(N)))
 
@@ -167,7 +168,7 @@ end
 
     base_grazing_rate = g₀ * b ^ T
 
-    food_availability = extract_food_availability(i, j, k, fields, food)
+    food_availability = extract_food_availability(bgc, i, j, k, fields, food)
 
     total_food = sum(ntuple(n->food_availability[n] * p[n], Val(N)))
 
