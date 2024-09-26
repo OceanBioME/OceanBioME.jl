@@ -33,7 +33,6 @@ Adapt.adapt_structure(to, bgc::PISCES) =
 Adapt.adapt_structure(to, zoo::MicroAndMeso) =
     MicroAndMeso(adapt(to, zoo.micro),
                  adapt(to, zoo.meso),
-                 
                  adapt(to, zoo.microzooplankton_bacteria_concentration),
                  adapt(to, zoo.mesozooplankton_bacteria_concentration),
                  adapt(to, zoo.maximum_bacteria_concentration),

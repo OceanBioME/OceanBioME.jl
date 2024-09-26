@@ -91,11 +91,17 @@ function MultiBandPhotosyntheticallyActiveRadiation(; grid,
 
     sum(surface_PAR_division) == 1 || throw(ArgumentError("surface_PAR_division does not sum to 1"))
     
-    fields = [CenterField(grid; 
-                boundary_conditions = 
-                    regularize_field_boundary_conditions(
-                        FieldBoundaryConditions(top = ValueBoundaryCondition(ScaledSurfaceFunction(surface_PAR, surface_PAR_division[n]))), grid, name)) 
-              for (n, name) in enumerate(field_names)]
+    n_fields = length(field_names)
+
+    surface_boundary_conditions = 
+        ntuple(n-> ValueBoundaryCondition(ScaledSurfaceFunction(surface_PAR, surface_PAR_division[n])), Val(n_fields))
+
+    field_boundary_conditions =
+        ntuple(n -> regularize_field_boundary_conditions(FieldBoundaryConditions(top = surface_boundary_conditions[n]),
+                                                         grid, field_names[n]),
+               Val(n_fields))
+
+    fields = ntuple(n -> CenterField(grid; boundary_conditions = field_boundary_conditions[n]), Val(n_fields))
 
     total_PAR = sum(fields)
 
@@ -185,6 +191,7 @@ Adapt.adapt_structure(to, par::MultiBandPhotosyntheticallyActiveRadiation) =
                                                adapt(to, par.fields),
                                                nothing,
                                                nothing, 
+                                               nothing,
                                                nothing,
                                                nothing,
                                                nothing)
