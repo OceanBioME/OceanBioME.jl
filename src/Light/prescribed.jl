@@ -34,7 +34,7 @@ struct PrescribedPhotosyntheticallyActiveRadiation{F, FN}
     function PrescribedPhotosyntheticallyActiveRadiation(fields)
         names, values = maybe_named_fields(fields)
 
-        is_on_gpu(values[1]) || 
+        is_on_gpu(values[1]) &&
             @warn "On `GPU` prescribed fields will be renamed to `PAR`, `PAR₁`, etc., as symbols can not be passed to the GPU. 
 Please make sure they are in this order.
 (We're assuming that you're only using this for testing purposes.)"

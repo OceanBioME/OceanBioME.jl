@@ -54,10 +54,10 @@ end
 end
 
 @inline function extract_iron_availability(bgc::PISCES, i, j, k, fields, ::NTuple{N}) where N
-    P = @inbounds fields.PFe[i, j, k] / fields.P[i, j, k]
-    D = @inbounds fields.DFe[i, j, k] / fields.D[i, j, k]
+    P = @inbounds fields.PFe[i, j, k] / (fields.P[i, j, k] + eps(0.0))
+    D = @inbounds fields.DFe[i, j, k] / (fields.D[i, j, k] + eps(0.0))
     Z = bgc.zooplankton.micro.iron_ratio
-    POC = @inbounds fields.POC[i, j, k] / fields.SFe[i, j, k]
+    POC = @inbounds fields.POC[i, j, k] / (fields.SFe[i, j, k] + eps(0.0))
 
     return (; P, D, Z, POC)
 end
