@@ -38,7 +38,7 @@ nothing #hide
 
 @inline temp(z, t) = 2.4 * (1 + cos(t * 2π / year + 50days)) * ifelse(z > MLD(t), 1, exp((z - MLD(t))/20)) + 8
 
-grid = RectilinearGrid(topology = (Flat, Flat, Bounded), size = (100, ), extent = (400, ))
+grid = RectilinearGrid(GPU(), topology = (Flat, Flat, Bounded), size = (100, ), extent = (400, ))
 
 clock = Clock(; time = 0.0)
 
@@ -67,6 +67,7 @@ O₂_flux = OxygenGasExchangeBoundaryCondition()
 model = HydrostaticFreeSurfaceModel(; grid,
                                       velocities = PrescribedVelocityFields(),
                                       tracer_advection = TracerAdvection(nothing, nothing, WENOFifthOrder(grid)),
+                                      momentum_advection = nothing,
                                       buoyancy = nothing,
                                       clock,
                                       closure = ScalarDiffusivity(VerticallyImplicitTimeDiscretization(), κ = κ_field),
@@ -86,7 +87,7 @@ set!(model, P = 0.1, PChl = 0.025, PFe = 0.005,
             DIC = 2205, Alk = 2560, O₂ = 317, S = 35)
 
 # maybe get to 1.5hours after initial stuff
-simulation = Simulation(model, Δt = 20minutes, stop_time = 5years)
+simulation = Simulation(model, Δt = 30minutes, stop_time = 5years)
 
 progress_message(sim) = @printf("Iteration: %04d, time: %s, Δt: %s, wall time: %s\n",
                                 iteration(sim),
@@ -97,12 +98,23 @@ progress_message(sim) = @printf("Iteration: %04d, time: %s, Δt: %s, wall time: 
 add_callback!(simulation, progress_message, TimeInterval(10day))
 
 # prescribe the temperature
+using KernelAbstractions: @index, @kernel
+using Oceananigans.Architectures: architecture
+using Oceananigans.Grids: znode, Center
+using Oceananigans.Utils: launch!
+
+@kernel function fill_T!(T, grid, temp, t)
+    i, j, k = @index(Global, NTuple)
+
+    z = znode(i, j, k, grid, Center(), Center(), Center())
+
+    @inbounds T[i, j, k] = temp(z, t)
+
+end
 function update_temperature!(simulation)
     t = time(simulation)
 
-    T = reshape(map(z -> temp(z, t), znodes(simulation.model.grid, Center())), (1, 1, size(grid, 3)))
-
-    set!(simulation.model.tracers.T, T)
+    launch!(architecture(grid), grid, :xyz, fill_T!, model.tracers.T, grid, temp, t)
 
     return nothing
 end
@@ -112,7 +124,7 @@ add_callback!(simulation, update_temperature!, IterationInterval(1))
 filename = "column"
 simulation.output_writers[:tracers] = JLD2OutputWriter(model, model.tracers,
                                                        filename = "$filename.jld2",
-                                                       schedule = TimeInterval(1day),
+                                                       schedule = TimeInterval(3day),
                                                        overwrite_existing = true)
 
 PAR = Field(Oceananigans.Biogeochemistry.biogeochemical_auxiliary_fields(biogeochemistry.light_attenuation).PAR)
@@ -124,7 +136,7 @@ internal_fields = (; biogeochemistry.underlying_biogeochemistry.calcite_saturati
 
 simulation.output_writers[:internals] = JLD2OutputWriter(model, internal_fields,
                                                        filename = "$(filename)_internal_fields.jld2",
-                                                       schedule = TimeInterval(1day),
+                                                       schedule = TimeInterval(3day),
                                                        overwrite_existing = true)
 # ## Run!
 # We are ready to run the simulation

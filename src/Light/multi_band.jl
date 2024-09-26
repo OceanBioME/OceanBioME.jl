@@ -71,7 +71,7 @@ function MultiBandPhotosyntheticallyActiveRadiation(; grid,
                                                       base_water_attenuation_coefficient = MOREL_kʷ,
                                                       base_chlorophyll_exponent = MOREL_e,
                                                       base_chlorophyll_attenuation_coefficient = MOREL_χ,
-                                                      field_names = [par_symbol(n) for n in 1:length(bands)],
+                                                      field_names = ntuple(n->par_symbol(n), Val(length(bands))),
                                                       surface_PAR = default_surface_PAR,
                                                       surface_PAR_division = fill(1 / length(bands), length(bands)))
     Nbands = length(bands)
@@ -101,7 +101,7 @@ function MultiBandPhotosyntheticallyActiveRadiation(; grid,
                                                          grid, field_names[n]),
                Val(n_fields))
 
-    fields = ntuple(n -> CenterField(grid; boundary_conditions = field_boundary_conditions[n]), Val(n_fields))
+    fields = NamedTuple{field_names}(ntuple(n -> CenterField(grid; boundary_conditions = field_boundary_conditions[n]), Val(n_fields)))
 
     total_PAR = sum(fields)
 
@@ -121,9 +121,9 @@ function numerical_mean(λ, C, idx1, idx2)
     return ∫Cdλ / ∫dλ
 end
 
-par_symbol(n) = Symbol(:PAR, number_subscript(tuple(reverse(digits(n))...))...)
+@inline par_symbol(n) = Symbol(:PAR, Char('\xe2\x82\x80'+n)) #Symbol(:PAR, number_subscript(tuple(reverse(digits(n))...))...)
 
-number_subscript(digits::NTuple{N}) where N =
+@inline number_subscript(digits::NTuple{N}) where N =
     ntuple(n->Symbol(Char('\xe2\x82\x80'+digits[n])), Val(N))
 
 @kernel function update_MultiBandPhotosyntheticallyActiveRadiation!(grid, field, kʷ, e, χ,
@@ -180,7 +180,7 @@ summary(par::MultiBandPhotosyntheticallyActiveRadiation) =
 show(io::IO, model::MultiBandPhotosyntheticallyActiveRadiation) = print(io, summary(model))
 
 biogeochemical_auxiliary_fields(par::MultiBandPhotosyntheticallyActiveRadiation) = 
-    merge((PAR = par.total, ), NamedTuple{field_names(par.field_names, par.fields)}(par.fields))
+    merge((PAR = par.total, ), par.fields)#NamedTuple{field_names(par.field_names, par.fields)}(par.fields))
 
 @inline field_names(field_names, fields) = field_names
 @inline field_names(::Nothing, fields::NTuple{N}) where N = ntuple(n -> par_symbol(n), Val(N))
