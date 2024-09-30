@@ -7,7 +7,7 @@ An overview of the model structure is available from the [PISCES community websi
 
 ![PISCES model structure](https://www.pisces-community.org/wp-content/uploads/2021/12/PISCES_Operational-1.png)
 
-More documentation to follow..., for now see our list of key differences from [Aumont2015](@citet) and queries we have about the parameterisations on the [notable differences](@ref PISCES_queries).
+More documentation to follow..., for now see our list of key differences from [Aumont2015](@citet) and queries we have about the parametrisations on the [notable differences](@ref PISCES_queries).
 
 ## Model conservation
 When the permanent scavenging of iron, and nitrogen fixation are turned off, PISCES conserves:

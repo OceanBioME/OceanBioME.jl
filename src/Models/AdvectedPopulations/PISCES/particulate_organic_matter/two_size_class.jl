@@ -83,7 +83,7 @@ end
     b  = poc.temperature_sensetivity
 
     O₂ = @inbounds fields.O₂[i, j, k]
-    T  = @inbounds  fields.T[i, k, k]
+    T  = @inbounds  fields.T[i, j, k]
 
     ΔO₂ = anoxia_factor(bgc, O₂)
 
