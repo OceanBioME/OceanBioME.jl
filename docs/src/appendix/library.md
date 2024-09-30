@@ -27,6 +27,30 @@ Modules = [OceanBioME.Models.LOBSTERModel]
 Modules = [OceanBioME.Models.PISCESModel]
 ```
 
+```@autodocs
+Modules = [OceanBioME.Models.PISCESModel.DissolvedOrganicCarbon]
+```
+
+```@autodocs
+Modules = [OceanBioME.Models.PISCESModel.TwoCompartementCarbonIronParticles]
+```
+
+```@autodocs
+Modules = [OceanBioME.Models.PISCESModel.SimpleIron]
+```
+
+```@autodocs
+Modules = [OceanBioME.Models.PISCESModel.InorganicCarbon]
+```
+
+```@autodocs
+Modules = [OceanBioME.Models.PISCESModel.QualityDependantZooplankton]
+```
+
+```@autodocs
+Modules = [OceanBioME.Models.PISCESModel.NitrateAmmonia]
+```
+
 ### Sugar kelp (Saccharina latissima)
 
 ```@autodocs
