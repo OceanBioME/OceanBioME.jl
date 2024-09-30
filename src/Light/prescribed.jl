@@ -8,10 +8,8 @@ function maybe_named_fields(field)
     return NamedTuple{(:PAR, )}((field, ))
 end
 
-maybe_named_fields(fields::NamedTuple) = (keys(fields), values(fields))
+maybe_named_fields(fields::NamedTuple) = fields
 
-is_on_gpu(field) = isa(architecture(field), GPU)
-is_on_gpu(::ConstantField) = false
 
 """
     PrescribedPhotosyntheticallyActiveRadiation(fields)
@@ -47,7 +45,7 @@ end
 summary(::PrescribedPhotosyntheticallyActiveRadiation) = string("Prescribed PAR")
 show(io::IO, model::PrescribedPhotosyntheticallyActiveRadiation{F}) where {F} = print(io, summary(model), "\n",
                                                                                             "  Fields:", "\n",
-                                                                                            "    └── $(model.field_names)")
+                                                                                            "    └── $(keys(model.fields))")
 
 biogeochemical_auxiliary_fields(par::PrescribedPhotosyntheticallyActiveRadiation) = par.fields
 
