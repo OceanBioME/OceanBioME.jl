@@ -123,7 +123,7 @@ required_biogeochemical_auxiliary_fields(bgc::CompleteBiogeochemistry) = require
 biogeochemical_drift_velocity(bgc::CompleteBiogeochemistry, val_name) = biogeochemical_drift_velocity(bgc.underlying_biogeochemistry, val_name)
 
 biogeochemical_auxiliary_fields(bgc::CompleteBiogeochemistry) = merge(biogeochemical_auxiliary_fields(bgc.underlying_biogeochemistry),
-                                                              biogeochemical_auxiliary_fields(bgc.light_attenuation))
+                                                                      biogeochemical_auxiliary_fields(bgc.light_attenuation))
 
 @inline chlorophyll(bgc::CompleteBiogeochemistry, model) = chlorophyll(bgc.underlying_biogeochemistry, model)
 

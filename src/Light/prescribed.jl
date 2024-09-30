@@ -5,7 +5,7 @@ function maybe_named_fields(field)
 
     isa(field, AbstractField) || @warn "fields: $field is not an `AbstractField"
     
-    return ((:PAR, ), (field, ))
+    return NamedTuple{(:PAR, )}((field, ))
 end
 
 maybe_named_fields(fields::NamedTuple) = (keys(fields), values(fields))
@@ -26,6 +26,14 @@ one field is present the field will be named `PAR`.
 """
 struct PrescribedPhotosyntheticallyActiveRadiation{F}
     fields :: F
+
+    function PrescribedPhotosyntheticallyActiveRadiation(fields)
+        fields = maybe_named_fields(fields)
+
+        F = typeof(fields)
+
+        return new{F}(fields)
+    end
 end
 
 function update_biogeochemical_state!(model, PAR::PrescribedPhotosyntheticallyActiveRadiation)
