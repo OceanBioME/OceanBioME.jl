@@ -55,7 +55,7 @@ function run_box_simulation(initial_photosynthetic_slope,
                                                                  phyto_base_mortality_rate,
                                                                  light_attenuation_model = PrescribedPhotosyntheticallyActiveRadiation(PAR))
 
-    model = BoxModel(; biogeochemistry)
+    model = BoxModel(; biogeochemistry, clock)
 
     set!(model, N = 10.0, P = 0.1, Z = 0.01)
 
