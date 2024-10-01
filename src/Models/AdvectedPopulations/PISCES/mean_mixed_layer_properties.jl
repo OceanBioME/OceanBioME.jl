@@ -4,12 +4,12 @@ using Oceananigans.BoundaryConditions: fill_halo_regions!
 using Oceananigans.Utils: launch!
 
 #####
-##### generic integration
+##### generic integration
 #####
 
 function compute_mixed_layer_mean!(Cₘₓₗ, mixed_layer_depth, C, grid)
     arch = architecture(grid)
-    
+
     launch!(arch, grid, :xy, _compute_mixed_layer_mean!, Cₘₓₗ, mixed_layer_depth, C, grid)
 
     fill_halo_regions!(Cₘₓₗ)
@@ -113,5 +113,3 @@ phytoplankton_diffusivity(diffusivity_field::Number) = ConstantField(diffusivity
 phytoplankton_diffusivity(diffusivity_fields::NamedTuple) = phytoplankton_diffusivity(diffusivity_fields.P)
 phytoplankton_diffusivity(::Function) = 
     throw(ErrorException("Can not compute mean mixed layer vertical diffusivity for `Function` type diffusivity, changing to a `FunctionField` would work"))
-
-

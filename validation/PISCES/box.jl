@@ -51,24 +51,23 @@ biogeochemistry = PISCES(; grid,
                            silicate_climatology,
                            mean_mixed_layer_light,
                            mean_mixed_layer_vertical_diffusivity,
-                           iron = SimpleIron(0),
+                           iron = SimpleIron(excess_scavenging_enhancement = 0.0),
                            nitrogen = NitrateAmmonia(maximum_fixation_rate = 0.0))
 
 # Set up the model. Here, first specify the biogeochemical model, followed by initial conditions and the start and end times
 model = BoxModel(; grid, biogeochemistry, clock, prescribed_tracers = (; T = temp))
 
-set!(model, P = 6.95, D = 6.95, Z = 0.695,  M = 0.695, 
-            PChl = 1.671,  DChl = 1.671, 
-            PFe = 6.95/7, DFe = 6.95/7, 
-            DSi = 1.162767, 
-            NO₃ = 6.202, NH₄ = 0.25*6.202, 
-            PO₄ = 0.8722, Fe = 1.256, Si = 7.313, 
-            CaCO₃ = 100,
-            DIC = 2139.0, Alk = 2366.0, 
-            O₂ = 237.0, S = 35, T = 10) 
+set!(model, P = 0.1, PChl = 0.025, PFe = 0.005,
+            D = 0.01, DChl = 0.003, DFe = 0.0006, DSi = 0.004,
+            Z = 0.06, M = 0.5,
+            DOC = 4, 
+            POC = 5.4, SFe = 0.34, 
+            GOC = 8.2, BFe = 0.5, PSi = 0.04, CaCO₃ = 10^-10,
+            NO₃ = 10, NH₄ = 0.1, PO₄ = 5.0, Fe = 0.6, Si = 8.6,
+            DIC = 2205, Alk = 2560, O₂ = 317, S = 35)
 
             
-simulation = Simulation(model; Δt = 20minutes, stop_time = 4years)
+simulation = Simulation(model; Δt = 40minutes, stop_time = 4years)
 
 simulation.output_writers[:fields] = JLD2OutputWriter(model, model.fields; filename = "box.jld2", schedule = TimeInterval(0.5day), overwrite_existing = true)
 
@@ -78,21 +77,7 @@ simulation.output_writers[:par] = JLD2OutputWriter(model, (; PAR = PAR_field); f
 
 prog(sim) = @info "$(prettytime(time(sim))) in $(prettytime(simulation.run_wall_time))"
 
-#NaN checker function, could be removed if confident of model stability
-function non_zero_fields!(model) 
-    @inbounds for (idx, field) in enumerate(model.fields)
-        if isnan(field[1,1,1])
-            throw("$(keys(model.fields)[idx]) has gone NaN")
-        else
-            field[1, 1, 1] = max(0, field[1, 1, 1])
-        end
-        
-    end
-    return nothing
-end
-
 simulation.callbacks[:progress] = Callback(prog, TimeInterval(182days))
-#simulation.callbacks[:non_zero_fields] = Callback(non_zero_fields!, callsite = UpdateStateCallsite())
 
 @info "Running the model..."
 run!(simulation)
@@ -110,7 +95,7 @@ fig = Figure(size = (2400, 3600), fontsize = 24)
 
 axs = []
 
-n_start = 731
+n_start = 1
 
 for name in Oceananigans.Biogeochemistry.required_biogeochemical_tracers(biogeochemistry)
     idx = (length(axs))

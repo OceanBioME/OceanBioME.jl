@@ -1,55 +1,53 @@
-"""
-    Oxygen
+module OxygenModels
 
-Parameterisation for oxygen which is supplied by phyotsynthesis and denitrifcation,
-and removed by various respiration terms and nitrifcation.
-"""
+export Oxygen
+
+using Oceananigans.Units
+
+using OceanBioME.Models.PISCESModel: PISCES
+
+using OceanBioME.Models.PISCESModel.DissolvedOrganicMatter: 
+    oxic_remineralisation, anoxic_remineralisation
+
+using OceanBioME.Models.PISCESModel.Nitrogen: nitrification, nitrogen_fixation
+
+using OceanBioME.Models.PISCESModel.Phytoplankton: uptake
+
+using OceanBioME.Models.PISCESModel.Zooplankton:
+    inorganic_excretion, upper_trophic_respiration
+
+import Oceananigans.Biogeochemistry: required_biogeochemical_tracers
+
 @kwdef struct Oxygen{FT}
      ratio_for_respiration :: FT = 133/122 # mol O₂ / mol C
-    ratio_for_nitrifcation :: FT = 32/122  # mol O₂ / mol C
+   ratio_for_nitrification :: FT =  32/122 # mol O₂ / mol C
 end
 
-@inline function (oxy::Oxygen)(::Val{:O₂}, bgc,
-                               x, y, z, t,
-                               P, D, Z, M, 
-                               PChl, DChl, PFe, DFe, DSi,
-                               DOC, POC, GOC, 
-                               SFe, BFe, PSi, 
-                               NO₃, NH₄, PO₄, Fe, Si, 
-                               CaCO₃, DIC, Alk, 
-                               O₂, T, S,
-                               zₘₓₗ, zₑᵤ, Si′, Ω, κ, mixed_layer_PAR, wPOC, wGOC, PAR, PAR₁, PAR₂, PAR₃)
+required_biogeochemical_tracers(::Oxygen) = tuple(:O₂)
 
-    θ_resp = oxy.ratio_for_respiration
-    θ_nitrif  = oxy.ratio_for_nitrifcation
+const PISCESOxygen = PISCES{<:Any, <:Any, <:Any, <:Any, <:Any, <:Any, <:Any, <:Oxygen}
 
-    microzooplankton_respiration = specific_inorganic_grazing_waste(bgc.microzooplankton, P, D, PFe, DFe, Z, POC, GOC, SFe, T, wPOC, wGOC) * Z
-    mesozooplankton_respiration  = specific_inorganic_grazing_waste(bgc.mesozooplankton, P, D, PFe, DFe, Z, POC, GOC, SFe, T, wPOC, wGOC) * M
+@inline function (bgc::PISCESOxygen)(i, j, k, grid, ::Val{:O₂}, clock, fields, auxiliary_fields)
+    θ_resp   = bgc.oxygen.ratio_for_respiration
+    θ_nitrif = bgc.oxygen.ratio_for_nitrification
 
-    zooplankton_respiration = θ_resp * (microzooplankton_respiration + mesozooplankton_respiration)
+    zooplankton = θ_resp * inorganic_excretion(bgc.zooplankton, i, j, k, grid, bgc, clock, fields, auxiliary_fields)
 
-    upper_trophic_respiration = θ_resp * inorganic_upper_trophic_respiration_product(bgc.mesozooplankton, M, T)
+    upper_trophic = θ_resp * upper_trophic_respiration(bgc.zooplankton, i, j, k, grid, bgc, clock, fields, auxiliary_fields)
 
-    remin = (θ_resp + θ_nitrif) * oxic_remineralisation(bgc.dissolved_organic_matter, bgc, z, Z, M, DOC, NO₃, NH₄, PO₄, Fe, O₂, T, zₘₓₗ, zₑᵤ)
-    denit = θ_resp * denitrifcation(bgc.dissolved_organic_matter, bgc, z, Z, M, DOC, NO₃, NH₄, PO₄, Fe, O₂, T, zₘₓₗ, zₑᵤ)
+    remineralisation = ((θ_resp + θ_nitrif) * oxic_remineralisation(bgc.dissolved_organic_matter, i, j, k, grid, bgc, clock, fields, auxiliary_fields)
+                        + θ_resp * anoxic_remineralisation(bgc.dissolved_organic_matter, i, j, k, grid, bgc, clock, fields, auxiliary_fields))
 
-    nitrif = θ_nitrif * nitrification(bgc.nitrogen, bgc, NH₄, O₂, mixed_layer_PAR) 
-    
-    nanophytoplankton_nitrate_consumption = nitrate_uptake(bgc.nanophytoplankton, bgc, y, t, P, PChl, PFe, NO₃, NH₄, PO₄, Fe, Si, T, Si′, zₘₓₗ, zₑᵤ, κ, PAR₁, PAR₂, PAR₃)
+    ammonia_photosynthesis = θ_resp * uptake(bgc.phytoplankton, Val(:NH₄), i, j, k, grid, bgc, clock, fields, auxiliary_fields)
+    nitrate_photosynthesis = (θ_resp + θ_nitrif) * uptake(bgc.phytoplankton, Val(:NO₃), i, j, k, grid, bgc, clock, fields, auxiliary_fields)
 
-    diatom_nitrate_consumption = nitrate_uptake(bgc.diatoms, bgc, y, t, D, DChl, DFe, NO₃, NH₄, PO₄, Fe, Si, T, Si′, zₘₓₗ, zₑᵤ, κ, PAR₁, PAR₂, PAR₃)
+    # I think (?) that we need the redfield raito here since θ_nitrif is oxygen per carbon
+    nitrif = θ_nitrif * nitrification(bgc.nitrogen, i, j, k, grid, bgc, clock, fields, auxiliary_fields) / bgc.nitrogen_redfield_ratio
 
-    nitrate_consumption = (θ_resp + θ_nitrif) * (nanophytoplankton_nitrate_consumption + diatom_nitrate_consumption)
+    fixation = θ_nitrif * nitrogen_fixation(bgc.nitrogen, i, j, k, grid, bgc, clock, fields, auxiliary_fields) / bgc.nitrogen_redfield_ratio
 
-    nanophytoplankton_ammonia_consumption = ammonia_uptake(bgc.nanophytoplankton, bgc, y, t, P, PChl, PFe, NO₃, NH₄, PO₄, Fe, Si, T, Si′, zₘₓₗ, zₑᵤ, κ, PAR₁, PAR₂, PAR₃)
-
-    diatom_ammonia_consumption = ammonia_uptake(bgc.diatoms, bgc, y, t, D, DChl, DFe, NO₃, NH₄, PO₄, Fe, Si, T, Si′, zₘₓₗ, zₑᵤ, κ, PAR₁, PAR₂, PAR₃)
-
-    ammonia_consumption = θ_resp * (nanophytoplankton_ammonia_consumption + diatom_ammonia_consumption)
-
-    photosynthesis = nitrate_consumption + ammonia_consumption
-
-    fixation = θ_nitrif * nitrogen_fixation(bgc.nitrogen, bgc, P, PChl, PFe, NO₃, NH₄, PO₄, Fe, Si, T, Si′, PAR)
-
-    return photosynthesis + fixation - zooplankton_respiration - upper_trophic_respiration - nitrif - remin - denit
+    return (ammonia_photosynthesis + nitrate_photosynthesis + fixation
+            - remineralisation - zooplankton - upper_trophic - nitrif)
 end
+
+end # module

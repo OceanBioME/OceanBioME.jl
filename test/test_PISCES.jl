@@ -5,10 +5,15 @@ using Oceananigans.Fields: ConstantField, FunctionField
 
 using OceanBioME.Models.PISCESModel: SimpleIron, NitrateAmmonia
 
-const PISCES_INITIAL_VALUES = (P = 7, D = 7, Z = 0.5, M = 0.5, PChl = 1.5, DChl = 1.5, PFe = 35e-3, DFe = 35e-3, DSi = 1,
-                               NO₃ = 6, NH₄ = 1, PO₄ = 1, Fe = 1, Si = 7, CaCO₃ = 10^-3,
-                               DIC = 2200, Alk = 2400, O₂ = 240, T = 10, S = 35)
-
+const PISCES_INITIAL_VALUES = (P = 0.5, PChl = 0.02, PFe = 0.005,
+                               D = 0.1, DChl = 0.004, DFe = 0.001, DSi = 0.01,
+                               Z = 0.1, M = 0.7,
+                               DOC = 2.1, 
+                               POC = 7.8, SFe = 0.206, 
+                               GOC = 38, BFe = 1.1, PSi = 0.1, CaCO₃ = 10^-10,
+                               NO₃ = 2.3, NH₄ = 0.9, PO₄ = 0.6, Fe = 0.13, Si = 8.5,
+                               DIC = 2205, Alk = 2566, O₂ = 317,
+                               T = 10, S = 35)
 
 function set_PISCES_initial_values!(tracers; values = PISCES_INITIAL_VALUES)
     for (name, field) in pairs(tracers)
@@ -25,7 +30,9 @@ end
 value(field; indices = (1, 1, 1)) = on_architecture(CPU(), interior(field, indices...))[1]
 
 function test_PISCES_conservation() # only on CPU please
-    validation_warning = "This implementation of PISCES is in early development and has not yet been validated"
+    @info "Testing PISCES element conservation (C, Fe, P, Si, N)"
+
+    validation_warning = "This implementation of PISCES is in early development and has not yet been validated against the operational version"
 
     grid = BoxModelGrid(; z = -5)
 
@@ -50,7 +57,7 @@ function test_PISCES_conservation() # only on CPU please
                                                              mean_mixed_layer_light,
                                                              mean_mixed_layer_vertical_diffusivity,
                                                              # turn off permanent iron removal and nitrogen fixaiton
-                                                             iron = SimpleIron(0),
+                                                             iron = SimpleIron(excess_scavenging_enhancement = 0.0),
                                                              nitrogen = NitrateAmmonia(maximum_fixation_rate = 0.0))
 
     model = BoxModel(; grid, biogeochemistry)
@@ -74,11 +81,11 @@ function test_PISCES_conservation() # only on CPU please
     total_phosphate_tendencies = sum([value(model.timestepper.Gⁿ[n]) * sf for (n, sf) in zip(conserved_tracers.phosphate.tracers, conserved_tracers.phosphate.scalefactors)])
     total_nitrogen_tendencies = sum([value(model.timestepper.Gⁿ[n]) * sf for (n, sf) in zip(conserved_tracers.nitrogen.tracers, conserved_tracers.nitrogen.scalefactors)])
 
-    # should these be exactly zero?
+    # double precision floats are only valid to 17 bits so this tollerance is actually good
     @test isapprox(total_carbon_tendencies, 0, atol = 10^-20) 
     @test isapprox(total_iron_tendencies, 0, atol = 10^-21) 
-    @test isapprox(total_silicon_tendencies, 0, atol = 10^-21) 
-    @test isapprox(total_phosphate_tendencies, 0, atol = 10^-21) 
+    @test isapprox(total_silicon_tendencies, 0, atol = 10^-30) 
+    @test isapprox(total_phosphate_tendencies, 0, atol = 10^-22) 
     @test isapprox(total_nitrogen_tendencies, 0, atol = 10^-21) 
 
     return nothing
@@ -89,6 +96,7 @@ end
 @inline κ_func(z) = ifelse(z > -25, 2, 1)
 
 function test_PISCES_update_state(arch)
+    @info "Testing PISCES auxiliary field computation and timestepping"
     # TODO: implement and test mixed layer depth computaiton elsewhere
 
     grid = RectilinearGrid(arch, topology = (Flat, Flat, Bounded), size = (10, ), extent = (100, ))
@@ -104,7 +112,7 @@ function test_PISCES_update_state(arch)
                                light_attenuation,
                                mixed_layer_depth)
 
-    closure = ScalarDiffusivity(ν = 1e-5, κ = FunctionField{Center, Center, Center}(κ_func, grid))
+    closure = ScalarDiffusivity(ν = 1e-2, κ = FunctionField{Center, Center, Center}((z) -> ifelse(z > -25, 2, 1), grid))
 
     model = NonhydrostaticModel(; grid, biogeochemistry, closure) # this updates the biogeochemical state
 
@@ -119,6 +127,7 @@ function test_PISCES_update_state(arch)
 end
 
 function test_PISCES_negativity_protection(arch)
+    @info "Testing PISCES negativity protection"
     grid = RectilinearGrid(arch, topology = (Flat, Flat, Bounded), size = (10, ), extent = (100, ))
 
     PAR₁ = PAR₂ = PAR₃ = FunctionField{Center, Center, Center}(light, grid)
@@ -160,12 +169,10 @@ end
 
 @testset "PISCES" begin
     if architecture isa CPU
-        @info "Testing PISCES element conservation (C, Fe, P, Si)"
         test_PISCES_conservation()
         #test_PISCES_box_model() #TODO
     end
 
-    @info "Testing PISCES auxiliary field computation and timestepping"
     test_PISCES_update_state(architecture)
 
     test_PISCES_negativity_protection(architecture)

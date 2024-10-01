@@ -1,7 +1,7 @@
 using KernelAbstractions: @kernel, @index
 
 using Oceananigans.Fields: flatten_node
-using Oceananigans.Grids: znode, zspacing
+using Oceananigans.Grids: znode, zspacing, φnode
 
 import Oceananigans.Fields: flatten_node
 
@@ -27,7 +27,10 @@ struct PrescribedLatitude{FT}
 end
 
 @inline (pl::PrescribedLatitude)(y) = pl.latitude
-@inline (::ModelLatitude)(y) = y
+@inline (pl::PrescribedLatitude)(i, j, k, grid) = pl.latitude
+
+@inline (::ModelLatitude)(φ) = φ
+@inline (::ModelLatitude)(i, j, k, grid) = φnode(i, j, k, grid, Center(), Center(), Center())
 
 """
     day_length_function(φ, t)
@@ -38,7 +41,7 @@ Returns the length of day in seconds at the latitude `φ`, `t`seconds after the 
     # as per Forsythe et al., 1995 (https://doi.org/10.1016/0304-3800(94)00034-F)
     p = asind(0.39795 * cos(0.2163108 + 2 * atan(0.9671396 * tan(0.00860 * (floor(Int, t / day) - 186)))))
 
-    return (24 - 24 / 180 * acosd((sind(0.8333) + sind(φ) * sind(p)) / (cosd(φ) * cosd(p)))) * hour
+    return (24 - 24 / 180 * acosd(max(-1, min(1, (sind(0.8333) + sind(φ) * sind(p)) / (cosd(φ) * cosd(p)))))) * hour
 end
 
 """
