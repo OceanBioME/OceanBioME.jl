@@ -30,7 +30,7 @@ end
 value(field; indices = (1, 1, 1)) = on_architecture(CPU(), interior(field, indices...))[1]
 
 function test_PISCES_conservation() # only on CPU please
-    @info "Testing PISCES element conservation (C, Fe, P, Si)"
+    @info "Testing PISCES element conservation (C, Fe, P, Si, N)"
 
     validation_warning = "This implementation of PISCES is in early development and has not yet been validated against the operational version"
 
