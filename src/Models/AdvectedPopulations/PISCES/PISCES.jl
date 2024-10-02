@@ -171,6 +171,8 @@ include("coupling_utils.jl")
 
 include("adapts.jl")
 
+include("show_methods.jl")
+
 """
     PISCES(; grid,
              phytoplankton = MixedMondoNanoAndDiatoms(),
