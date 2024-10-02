@@ -21,8 +21,9 @@ phytoplankton silicon).
                        aggregation_parameters :: AP = (25.9, 4452, 3.3, 47.1) .* (10^-6 / day)
                  minimum_iron_scavenging_rate :: FT = 3e-5/day     # 1 / s
            load_specific_iron_scavenging_rate :: FT = 0.005/day    # 1 / (mmol C / m³) / s
-  small_fraction_of_bacterially_consumed_iron :: FT = 0.5          #
-  large_fraction_of_bacterially_consumed_iron :: FT = 0.5          #
+             bacterial_iron_uptake_efficiency :: FT = 0.16         #
+  small_fraction_of_bacterially_consumed_iron :: FT = 0.12 / bacterial_iron_uptake_efficiency 
+  large_fraction_of_bacterially_consumed_iron :: FT = 0.04 / bacterial_iron_uptake_efficiency 
                 base_liable_silicate_fraction :: FT = 0.5          #
             fast_dissolution_rate_of_silicate :: FT = 0.025/day    # 1 / s
             slow_dissolution_rate_of_silicate :: FT = 0.003/day    # 1 / s

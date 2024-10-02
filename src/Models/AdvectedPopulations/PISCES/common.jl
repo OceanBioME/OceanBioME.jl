@@ -54,7 +54,7 @@ surface ocean (the deepest of the mixed and euphotic layers), and accelerate
 to `maximum_speed` below that depth and `maximum_depth`.
 """
 @kwdef struct DepthDependantSinkingSpeed{FT}
-    minimum_speed :: FT = 30/day  # m/s - in NEMO the min and max speeds are both 50m/day
+    minimum_speed :: FT = 30/day  # m/s
     maximum_speed :: FT = 200/day # m/s
     maximum_depth :: FT = 5000.0  # m
 end

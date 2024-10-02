@@ -38,7 +38,7 @@ nothing #hide
 
 @inline temp(z, t) = 2.4 * (1 + cos(t * 2π / year + 50days)) * ifelse(z > MLD(t), 1, exp((z - MLD(t))/20)) + 8
 
-grid = RectilinearGrid(GPU(), topology = (Flat, Flat, Bounded), size = (100, ), extent = (400, ))
+grid = RectilinearGrid(topology = (Flat, Flat, Bounded), size = (100, ), extent = (400, ))
 
 clock = Clock(; time = 0.0)
 
@@ -181,9 +181,9 @@ using CairoMakie
 fig = Figure(size = (4000, 2100), fontsize = 20);
 
 start_day = 366
-end_day   = 3651
+end_day   = length(times)
 
-axis_kwargs = (xlabel = "Time (days)", ylabel = "z (m)", limits = ((start_day, times[end_day] / days), (-200, 0)))
+axis_kwargs = (xlabel = "Time (days)", ylabel = "z (m)", limits = ((times[start_day], times[end_day]) ./ days, (-200, 0)))
 
 for (n, name) in enumerate(keys(model.tracers))
     if !(name == :S)
@@ -208,17 +208,10 @@ Colorbar(fig[7, 6], hm)
 CO₂_molar_mass = (12 + 2 * 16) * 1e-3 # kg / mol
 
 axDIC = Axis(fig[7, 7], xlabel = "Time (days)", ylabel = "Flux (kgCO₂/m²/year)",
-                         title = "Air-sea CO₂ flux and Sinking", limits = ((0, times[end] / days), nothing))
+                         title = "Air-sea CO₂ flux and Sinking", limits = ((times[start_day], times[end_day]) ./ days, nothing))
 
 lines!(axDIC, times[start_day:end_day] / days, air_sea_CO₂_flux[start_day:end_day] / 1e3 * CO₂_molar_mass * year, linewidth = 3, label = "Air-sea flux")
 lines!(axDIC, times[start_day:end_day] / days, carbon_export[start_day:end_day] / 1e3    * CO₂_molar_mass * year, linewidth = 3, label = "Sinking below mixed layer")
 Legend(fig[7, 8], axDIC, framevisible = false)
 
 fig
-save("gpu_column.png", fig)
-
-
-# TODO:
-# - aggregation
-# - check flux feeding
-# - Si looks like its erroniously growing

@@ -7,10 +7,33 @@ An overview of the model structure is available from the [PISCES community websi
 
 ![PISCES model structure](https://www.pisces-community.org/wp-content/uploads/2021/12/PISCES_Operational-1.png)
 
-More documentation to follow..., for now see our list of key differences from [Aumont2015](@citet) and queries we have about the parametrisations on the [notable differences](@ref PISCES_queries).
+The default configuration of PISCES in OceanBioME is the operational/standard version with 24 tracers and can be set up by writing:
+
+```jldoctest; filter = r".*@ OceanBioME.Models.PISCESModel.*"
+julia> using OceanBioME, Oceananigans
+
+julia> grid = RectilinearGrid(size=(1, 1, 1), extent=(1, 1, 1));
+
+julia> biogeochemistry = PISCES(; grid)
+┌ Warning: This implementation of PISCES is in early development and has not yet been validated against the operational version
+└ @ OceanBioME.Models.PISCESModel ~/Documents/Projects/OceanBioME.jl/src/Models/AdvectedPopulations/PISCES/PISCES.jl:344
+PISCES biogeochemical model (24 tracers) 
+ Light attenuation: Multi band light attenuation model with 3 bands (:PAR₁, :PAR₂, :PAR₃)
+ Sediment: Nothing
+ Particles: Nothing
+ Modifiers: Nothing
+
+julia> Oceananigans.Biogeochemistry.required_biogeochemical_tracers(biogeochemistry)
+(:P, :PChl, :PFe, :D, :DChl, :DFe, :DSi, :Z, :M, :DOC, :POC, :GOC, :SFe, :BFe, :PSi, :CaCO₃, :NO₃, :NH₄, :PO₄, :Fe, :Si, :DIC, :Alk, :O₂, :T, :S)
+
+```
+
+The parametrisations can easily be switched out when the `biogeochemistry` is constructed by setting the key word parameter, see the [API documentation](@ref library_api), although we currently do not have any of the other configurations implemented. Note that `PISCES-simple` is very similar to [`LOBSTER`](@ref LOBSTER) if that is what you are looking for.
+
+More documentation will follow but for now the equations can be found in [Aumont2015](@citet) read along side our notes [here](@ref PISCES_queries).
 
 ## Model conservation
-When the permanent scavenging of iron, and nitrogen fixation are turned off, PISCES conserves:
+When the permanent scavenging of iron, nitrogen fixation, and particle sinking are turned off, PISCES conserves:
 
 - Carbon: ``\partial_tP + \partial_tD + \partial_tZ + \partial_tM + \partial_tDOC + \partial_tPOC + \partial_tGOC + \partial_tDIC + \partial_tCaCO_3=0``
 - Iron: ``\partial_tPFe + \partial_tDFe + \theta^{Fe}\left(\partial_tZ + \partial_tM + \partial_tDOC\right) + \partial_tSFe + \partial_tBFe + \partial_tFe=0``

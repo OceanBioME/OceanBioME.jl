@@ -111,6 +111,7 @@ end
     b  = poc.temperature_sensetivity
     θ  = poc.maximum_iron_ratio_in_bacteria
     K  = poc.iron_half_saturation_for_bacteria
+    κ  = poc.bacterial_iron_uptake_efficiency
 
     T = @inbounds fields.T[i, j, k]
     Fe = @inbounds fields.Fe[i, j, k]
@@ -121,7 +122,7 @@ end
 
     LBact = bacteria_activity(bgc.zooplankton, i, j, k, grid, bgc, clock, fields, auxiliary_fields)
 
-    return μ * LBact * θ * Fe / (Fe + K) * Bact
+    return μ * LBact * θ * Fe / (Fe + K) * Bact * κ
 end
 
 @inline function iron_scavenging(poc::TwoCompartementCarbonIronParticles, i, j, k, grid, bgc, clock, fields, auxiliary_fields)

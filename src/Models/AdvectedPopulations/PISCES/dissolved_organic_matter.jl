@@ -135,18 +135,3 @@ end
 
     return Φ₁ + Φ₂ + Φ₃, Φ₁, Φ₂, Φ₃
 end
-
-@inline function bacterial_iron_uptake(dom::DissolvedOrganicMatter, z, Z, M, DOC, NO₃, NH₄, PO₄, Fe, T, zₘₓₗ, zₑᵤ)
-    μ₀ = dom.maximum_bacterial_growth_rate
-    b  = dom.temperature_sensetivity
-    θ  = dom.maximum_iron_ratio_in_bacteria
-    K  = dom.iron_half_saturation_for_bacteria
-
-    μ = μ₀ * b^T
-
-    Bact = bacteria_concentration(dom, z, Z, M, zₘₓₗ, zₑᵤ)
-
-    L = bacteria_activity(dom, DOC, NO₃, NH₄, PO₄, Fe)
-
-    return μ * L * θ * Fe / (Fe + K) * Bact
-end

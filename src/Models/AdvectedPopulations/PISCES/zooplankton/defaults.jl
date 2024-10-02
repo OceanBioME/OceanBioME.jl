@@ -13,9 +13,7 @@ function MicroAndMesoZooplankton(;
                                        quadratic_mortality = 0.03/day,
                                        linear_mortality = 0.005/day,
                                        minimum_growth_efficiency = 0.35,
-                                       # not documented but the below must implicitly contain a factor of second/day
-                                       # to be consistent in the NEMO namelist to go from this * mol / L * m/s to mol / L / day
-                                       maximum_flux_feeding_rate = 2e3 / 1e6 / day, # (day * meter/s * mol/L)^-1 to (meter * μ mol/L)^-1
+                                       maximum_flux_feeding_rate = 2e3 / 1e6, 
                                        undissolved_calcite_fraction = 0.75,
                                        iron_ratio = 0.015))
 
