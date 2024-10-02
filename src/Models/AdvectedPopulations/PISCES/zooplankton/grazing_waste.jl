@@ -59,7 +59,7 @@ end
 
     total_iron_grazed = gIFe + gfIFe
 
-    return max(0, total_iron_grazed - lost_to_particles - zoo_assimilated_iron) # feels like a more straight forward way to write it
+    return total_iron_grazed - lost_to_particles - zoo_assimilated_iron # feels like a more straight forward way to write it
 end
 
 @inline function calcite_loss(zoo::QualityDependantZooplankton, val_name, val_prey_name, i, j, k, grid, bgc, clock, fields, auxiliary_fields)
