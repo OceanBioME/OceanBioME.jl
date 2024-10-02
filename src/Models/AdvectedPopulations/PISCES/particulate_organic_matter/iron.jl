@@ -70,7 +70,7 @@ end
 
     scavenging = λFe * GOC * Fe′
 
-    κ = bgc.particulate_organic_matter.small_fraction_of_bacterially_consumed_iron
+    κ = bgc.particulate_organic_matter.large_fraction_of_bacterially_consumed_iron
 
     BactFe = bacterial_iron_uptake(bgc.particulate_organic_matter, i, j, k, grid, bgc, clock, fields, auxiliary_fields)
 
