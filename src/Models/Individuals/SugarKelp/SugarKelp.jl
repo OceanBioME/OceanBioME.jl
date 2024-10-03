@@ -1,5 +1,7 @@
 module SugarKelpModel
 
+export SugarKelp
+
 using Roots
 
 using Oceananigans.Units
