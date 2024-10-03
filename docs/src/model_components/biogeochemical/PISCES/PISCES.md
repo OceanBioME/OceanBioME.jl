@@ -9,7 +9,7 @@ An overview of the model structure is available from the [PISCES community websi
 
 The default configuration of PISCES in OceanBioME is the operational/standard version with 24 tracers and can be set up by writing:
 
-```jldoctest; filter = [r".*@ OceanBioME.Models.PISCESModel*", r".*warning:"]
+```jldoctest; filter = [r"^.*@ OceanBioME.Models.PISCESModel.*$", r"^.*warning:.*$"]
 julia> using OceanBioME, Oceananigans
 
 julia> grid = RectilinearGrid(size=(1, 1, 1), extent=(1, 1, 1));
