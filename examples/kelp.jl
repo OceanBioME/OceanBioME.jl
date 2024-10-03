@@ -206,10 +206,10 @@ axis_kwargs = (xlabel = "Time (days)", limits = ((0, times[end] / days), nothing
 ax1 = Axis(fig[1, 1]; ylabel = "Frond area (dm²)", axis_kwargs...)
 [lines!(ax1, times / day, A[n, :], linewidth = 3) for n in 1:5]
 
-ax2 = Axis(fig[2, 1]; ylabel = "Total Carbon (gC)", axis_kwargs...)
+ax2 = Axis(fig[2, 1]; ylabel = "Total Nitrogen (gN)", axis_kwargs...)
 [lines!(ax2, times / day, (@. A * (N + Nₛ) * kₐ)[n, :], linewidth = 3) for n in 1:5]
 
-ax3 = Axis(fig[3, 1]; ylabel = "Total Nitrogen (gN)", axis_kwargs...)
+ax3 = Axis(fig[3, 1]; ylabel = "Total Carbon (gC)", axis_kwargs...)
 [lines!(ax3, times / day, (@. A * (C + Cₛ) * kₐ)[n, :], linewidth = 3) for n in 1:5]
 
 fig
