@@ -6,7 +6,7 @@ export NPZD,
        NutrientPhytoplanktonZooplanktonDetritus, 
        LOBSTER
 
-export SLatissima
+export SugarKelp
 
 export CarbonChemistry
 
@@ -22,7 +22,8 @@ export GasExchange,
 include("Sediments/Sediments.jl")
 include("AdvectedPopulations/LOBSTER/LOBSTER.jl")
 include("AdvectedPopulations/NPZD.jl")
-include("Individuals/SLatissima.jl")
+#include("Individuals/SLatissima.jl")
+include("Individuals/SugarKelp.jl")
 include("seawater_density.jl")
 include("CarbonChemistry/CarbonChemistry.jl")
 include("GasExchange/GasExchange.jl")
@@ -30,7 +31,7 @@ include("GasExchange/GasExchange.jl")
 using .Sediments
 using .LOBSTERModel
 using .NPZDModel
-using .SLatissimaModel
+using .SugarKelpModel
 using .CarbonChemistryModel
 using .GasExchangeModel
 

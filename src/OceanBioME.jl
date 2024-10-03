@@ -8,7 +8,7 @@ module OceanBioME
 export Biogeochemistry, LOBSTER, NutrientPhytoplanktonZooplanktonDetritus, NPZD, redfield
 
 # Macroalgae models
-export SLatissima
+export SugarKelp
 
 # Box model
 export BoxModel, BoxModelGrid, SpeedyOutput, load_output
