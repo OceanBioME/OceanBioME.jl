@@ -6,6 +6,8 @@ using Roots
 
 using Oceananigans.Units
 
+using OceanBioME.Particles: BiogeochemicalParticles
+
 import OceanBioME.Particles: required_particle_fields, required_tracers, coupled_tracers
 
 # disgsuting number of parameters
@@ -58,6 +60,10 @@ import OceanBioME.Particles: required_particle_fields, required_tracers, coupled
     exudation_redfield_ratio :: FT = Inf
     adapted_latitude :: FT = 57.5
 end 
+
+# convenience constructor that sets up with default parameters
+SugarKelp(number; grid, kelp_parameters = NamedTuple(), kwargs...) = 
+    BiogeochemicalParticles(number; grid, biogeochemistry = SugarKelp(; kelp_parameters...), kwargs...)
 
 @inline required_particle_fields(::SugarKelp) = (:A, :N, :C)
 @inline required_tracers(::SugarKelp) = (:u, :v, :w, :T, :NO₃, :NH₄, :PAR)

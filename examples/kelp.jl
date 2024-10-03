@@ -57,22 +57,21 @@ S = ConstantField(35)
 # ## Kelp Particle setup
 @info "Setting up kelp particles"
 
-n = 5 # number of kelp fronds
+n = 5 # number of kelp bundles
 z₀ = [-21:5:-1;] * 1.0 # depth of kelp fronds
 
-particles = SLatissima(; architecture, 
-                         x = on_architecture(architecture, ones(n) * Lx / 2),
-                         y = on_architecture(architecture, ones(n) * Ly / 2),
-                         z = on_architecture(architecture, z₀),
-                         A = on_architecture(architecture, ones(n) * 10.0),
-                         latitude = 57.5,
-                         scalefactor = 500.0)
+particles = SugarKelp(n; grid, 
+                         advection = nothing, # we don't want them to move around
+                         scalefactors = fill(2000, n)) # and we want them to look like there are 500 in each bundle
+
+set!(particles, A = 10, N = 0.01, C = 0.1, z = z₀, x = Lx / 2, y = Ly / 2)
 
 # ## Setup BGC model
 biogeochemistry = LOBSTER(; grid,
                             surface_photosynthetically_active_radiation = PAR⁰,
                             carbonates = true,
                             variable_redfield = true,
+                            oxygen = true,
                             scale_negatives = true,
                             particles)
 
@@ -90,7 +89,7 @@ set!(model, P = 0.03, Z = 0.03, NO₃ = 4.0, NH₄ = 0.05, DIC = 2239.8, Alk = 2
 # - Store the model and particles output
 # - Prevent the tracers from going negative from numerical error (see discussion of this in the [positivity preservation](@ref pos-preservation) implementation page)
 
-simulation = Simulation(model, Δt = 3minutes, stop_time = 100days) 
+simulation = Simulation(model, Δt = 4minutes, stop_time = 150days) 
 
 progress_message(sim) = @printf("Iteration: %04d, time: %s, Δt: %s, wall time: %s\n",
                                 iteration(sim),
@@ -119,16 +118,10 @@ run!(simulation)
 
 # Now we can visualise the results with some post processing to diagnose the air-sea CO₂ flux - hopefully this looks different to the example without kelp!
 
-   P = FieldTimeSeries("$filename.jld2", "P")
- NO₃ = FieldTimeSeries("$filename.jld2", "NO₃")
-   Z = FieldTimeSeries("$filename.jld2", "Z")
-sPOC = FieldTimeSeries("$filename.jld2", "sPOC") 
-bPOC = FieldTimeSeries("$filename.jld2", "bPOC")
- DIC = FieldTimeSeries("$filename.jld2", "DIC")
- Alk = FieldTimeSeries("$filename.jld2", "Alk")
+tracers = FieldDataset("$filename.jld2")
 
-x, y, z = nodes(P)
-times = P.times
+x, y, z = nodes(tracers["P"])
+times = tracers["P"].times
 nothing #hide
 
 # We compute the  air-sea CO₂ flux at the surface (corresponding to vertical index `k = grid.Nz`) and
@@ -142,34 +135,34 @@ using Oceananigans.Biogeochemistry: biogeochemical_drift_velocity
 for (n, t) in enumerate(times)
     clock.time = t
 
-    air_sea_CO₂_flux[n] = CO₂_flux.condition.func(1, 1, grid, clock, (; DIC = DIC[n], Alk = Alk[n], T, S))
+    air_sea_CO₂_flux[n] = CO₂_flux.condition.func(1, 1, grid, clock, (; DIC = tracers["DIC"][n], Alk = tracers["Alk"][n], T, S))
 
-    carbon_export[n] = sPOC[n][1, 1, grid.Nz-20] * biogeochemical_drift_velocity(biogeochemistry, Val(:sPOC)).w[1, 1, grid.Nz-20] +
-                       bPOC[n][1, 1, grid.Nz-20] * biogeochemical_drift_velocity(biogeochemistry, Val(:bPOC)).w[1, 1, grid.Nz-20]
+    carbon_export[n] = tracers["sPOC"][n][1, 1, grid.Nz-20] * biogeochemical_drift_velocity(biogeochemistry, Val(:sPOC)).w[1, 1, grid.Nz-20] +
+                       tracers["bPOC"][n][1, 1, grid.Nz-20] * biogeochemical_drift_velocity(biogeochemistry, Val(:bPOC)).w[1, 1, grid.Nz-20]
 end
 
 # Both `air_sea_CO₂_flux` and `carbon_export` are in units `mmol CO₂ / (m² s)`.
 
 using CairoMakie
 
-fig = Figure(size = (1000, 1500), fontsize = 20)
+fig = Figure(size = (1000, 1200), fontsize = 20)
 
 axis_kwargs = (xlabel = "Time (days)", ylabel = "z (m)", limits = ((0, times[end] / days), (-85meters, 0)))
 
 axP = Axis(fig[1, 1]; title = "Phytoplankton concentration (mmol N/m³)", axis_kwargs...)
-hmP = heatmap!(times / days, z, interior(P, 1, 1, :, :)', colormap = :batlow)
+hmP = heatmap!(times / days, z, interior(tracers["P"], 1, 1, :, :)', colormap = :batlow)
 Colorbar(fig[1, 2], hmP)
 
 axNO₃ = Axis(fig[2, 1]; title = "Nitrate concentration (mmol N/m³)", axis_kwargs...)
-hmNO₃ = heatmap!(times / days, z, interior(NO₃, 1, 1, :, :)', colormap = :batlow)
+hmNO₃ = heatmap!(times / days, z, interior(tracers["NO₃"], 1, 1, :, :)', colormap = :batlow)
 Colorbar(fig[2, 2], hmNO₃)
 
 axZ = Axis(fig[3, 1]; title = "Zooplankton concentration (mmol N/m³)", axis_kwargs...)
-hmZ = heatmap!(times / days, z, interior(Z, 1, 1, :, :)', colormap = :batlow)
+hmZ = heatmap!(times / days, z, interior(tracers["Z"], 1, 1, :, :)', colormap = :batlow)
 Colorbar(fig[3, 2], hmZ)
 
 axD = Axis(fig[4, 1]; title = "Detritus concentration (mmol C/m³)", axis_kwargs...)
-hmD = heatmap!(times / days, z, interior(sPOC, 1, 1, :, :)' .+ interior(bPOC, 1, 1, :, :)', colormap = :batlow)
+hmD = heatmap!(times / days, z, interior(tracers["sPOC"], 1, 1, :, :)' .+ interior(tracers["bPOC"], 1, 1, :, :)', colormap = :batlow)
 Colorbar(fig[4, 2], hmD)
 
 CO₂_molar_mass = (12 + 2 * 16) * 1e-3 # kg / mol
@@ -194,13 +187,17 @@ A, N, C = ntuple(n -> zeros(5, length(iterations)), 3)
 times = zeros(length(iterations))
 
 for (i, iter) in enumerate(iterations)
-    particles = file["timeseries/particles/$iter"]
-    A[:, i] = particles.A
-    N[:, i] = particles.N
-    C[:, i] = particles.C
+    particles_values = file["timeseries/particles/$iter"]
+    A[:, i] = particles_values.A
+    N[:, i] = particles_values.N
+    C[:, i] = particles_values.C
 
     times[i] = file["timeseries/t/$iter"]
 end
+
+Nₛ = particles.biogeochemistry.structural_nitrogen
+Cₛ = particles.biogeochemistry.structural_carbon
+kₐ = particles.biogeochemistry.structural_dry_weight_per_area
 
 fig = Figure(size = (1000, 800), fontsize = 20)
 
@@ -210,9 +207,9 @@ ax1 = Axis(fig[1, 1]; ylabel = "Frond area (dm²)", axis_kwargs...)
 [lines!(ax1, times / day, A[n, :], linewidth = 3) for n in 1:5]
 
 ax2 = Axis(fig[2, 1]; ylabel = "Total Carbon (gC)", axis_kwargs...)
-[lines!(ax2, times / day, (@. A * (N + particles.structural_nitrogen) * particles.structural_dry_weight_per_area)[n, :], linewidth = 3) for n in 1:5]
+[lines!(ax2, times / day, (@. A * (N + Nₛ) * kₐ)[n, :], linewidth = 3) for n in 1:5]
 
 ax3 = Axis(fig[3, 1]; ylabel = "Total Nitrogen (gN)", axis_kwargs...)
-[lines!(ax3, times / day, (@. A * (C + particles.structural_carbon) * particles.structural_dry_weight_per_area)[n, :], linewidth = 3) for n in 1:5]
+[lines!(ax3, times / day, (@. A * (C + Cₛ) * kₐ)[n, :], linewidth = 3) for n in 1:5]
 
 fig

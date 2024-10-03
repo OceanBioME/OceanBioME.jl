@@ -12,6 +12,7 @@ using OceanBioME: Biogeochemistry
 
 using Oceananigans.Architectures: architecture, on_architecture
 
+import Oceananigans.Architectures: architecture
 import Oceananigans.Biogeochemistry: update_tendencies!
 import Oceananigans.Fields: set!
 import Oceananigans.Models.LagrangianParticleTracking: update_lagrangian_particle_properties!, step_lagrangian_particles!
@@ -31,6 +32,8 @@ struct BiogeochemicalParticles{N, B, A, F, T, I, S, X, Y, Z}
                     z :: Z
 end
 
+architecture(p::BiogeochemicalParticles) = architecture(p.x)
+
 function required_particle_fields end
 function required_tracers end
 function coupled_tracers end
@@ -45,6 +48,7 @@ include("tracer_interpolation.jl")
 include("tendencies.jl")
 include("time_stepping.jl")
 include("update_tracer_tendencies.jl")
+include("set.jl")
 
 function BiogeochemicalParticles(number; 
                                  grid,
@@ -133,9 +137,8 @@ end
 
 # User may want to overload this to not output parameters over and over again
 function fetch_output(particles::BiogeochemicalParticles, model)
-    names = propertynames(particles)
-    return NamedTuple{names}([getproperty(particles, name) for name in names])
+    names = propertynames(particles.fields)
+    return NamedTuple{names}([getproperty(particles.fields, name) for name in names])
 end
 
-# TODO: implement set!
 end #module

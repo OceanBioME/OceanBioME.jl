@@ -3,13 +3,13 @@
 @inline function (kelp::SugarKelp)(::Val{:NO₃}, t, A, N, C, u, v, w, T, NO₃, NH₄, PAR)
     J = nitrate_uptake(kelp, N, NO₃, u, v, w)
 
-    return J * A / (day * 14 * 0.001) # gN/dm^2/hr to mmol N/s
+    return -J * A / (day * 14 * 0.001) # gN/dm^2/hr to mmol N/s
 end
 
 @inline function (kelp::SugarKelp)(::Val{:NH₄}, t, A, N, C, u, v, w, T, NO₃, NH₄, PAR)
     J = ammonia_uptake(kelp, t, A, N, C, T, NH₄, u, v, w)
     
-    return J * A / (day * 14 * 0.001) # gN/dm^2/hr to mmol N/s
+    return -J * A / (day * 14 * 0.001) # gN/dm^2/hr to mmol N/s
 end
 
 @inline function (kelp::SugarKelp)(::Val{:DIC}, t, A, N, C, u, v, w, T, NO₃, NH₄, PAR)
@@ -19,7 +19,7 @@ end
 
     R = respiration(kelp, t, A, N, C, T, NO₃, NH₄, u, v, w, μ)
     
-    return (P - R) * A / (day * 12 * 0.001)  # gC/dm^2/hr to mmol C/s
+    return -(P - R) * A / (day * 12 * 0.001)  # gC/dm^2/hr to mmol C/s
 end 
 
 # I now know that this may not be correct..., it probably should vary by where the nitrogen comes from
@@ -53,5 +53,5 @@ end
 
     ν = erosion(kelp, t, A, N, C, T)
 
-    return ν * kₐ * A * (C + Cₛ) / (day * 14 * 0.001)  # gC/dm^2/hr to mmol C/s
+    return ν * kₐ * A * (C + Cₛ) / (day * 12 * 0.001)  # gC/dm^2/hr to mmol C/s
 end 

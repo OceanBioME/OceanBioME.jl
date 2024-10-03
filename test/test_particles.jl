@@ -31,6 +31,10 @@ grid = RectilinearGrid(architecture; size = (3, 3, 3), extent = (3, 3, 3))
     time_step!(model, 1)
 
     @test all(particles.fields.A .== 1)
+
+    set!(particles, x = 1, A = fill(5, 3))
+
+    @test all(particles.fields.A .== 5) & all(particles.x .== 1)
 end
 
 @inline required_tracers(::SimpleParticleBiogeochemistry) = (:B, )
