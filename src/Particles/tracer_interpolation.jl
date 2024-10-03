@@ -50,7 +50,7 @@ end
 
     node_volume = volume(i, j, k, grid, Center(), Center(), Center())
 
-    @inbounds tendency[i, j, k] += particle_tendency / node_volume
+    atomic_add!(tendency, i, j, k, particle_tendency / node_volume)
 
     return nothing
 end

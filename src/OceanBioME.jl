@@ -8,7 +8,7 @@ module OceanBioME
 export Biogeochemistry, LOBSTER, NutrientPhytoplanktonZooplanktonDetritus, NPZD, redfield
 
 # Macroalgae models
-export SugarKelp
+export BiogeochemicalParticles, SugarKelp
 
 # Box model
 export BoxModel, BoxModelGrid, SpeedyOutput, load_output
@@ -191,6 +191,7 @@ include("BoxModel/boxmodel.jl")
 include("Models/Models.jl")
 
 using .Light
+using .Particles
 using .BoxModels
 using .Models
 

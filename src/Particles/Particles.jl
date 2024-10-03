@@ -1,5 +1,7 @@
 module Particles 
 
+export BiogeochemicalParticles
+
 using Adapt
 
 using KernelAbstractions: @kernel, @index
@@ -37,6 +39,7 @@ function coupled_tracers end
 @inline required_tracers(p::BiogeochemicalParticles) = required_tracers(p.biogeochemistry)
 @inline coupled_tracers(p::BiogeochemicalParticles) = coupled_tracers(p.biogeochemistry)
 
+include("atomic_operations.jl")
 include("advection.jl")
 include("tracer_interpolation.jl")
 include("tendencies.jl")
@@ -116,17 +119,16 @@ size(particles::BiogeochemicalParticles) = (length(particles), )
 length(::BiogeochemicalParticles{N}) where N = N
 
 # todo, fix below
-Base.summary(particles::BiogeochemicalParticles) =
-    string(length(particles), " BiogeochemicalParticles with eltype ", nameof(eltype(particles)),
-           " and properties ", propertynames(particles))
+Base.summary(particles::BiogeochemicalParticles{N}) where N =
+    string(N, " BiogeochemicalParticles with ", summary(particles.biogeochemistry))
 
 function Base.show(io::IO, particles::BiogeochemicalParticles)
-    Tparticle = nameof(eltype(particles))
-    properties = propertynames(particles)
-    Nparticles = length(particles)
+    properties = required_particle_fields(particles)
+    tracers = coupled_tracers(particles)
 
-    print(io, Nparticles, " BiogeochemicalParticles with eltype ", Tparticle, ":", "\n",
-        "└── ", length(properties), " properties: ", properties, "\n")
+    print(io, summary(particles), ":", "\n",
+        "├── fields: ", properties, "\n",
+        "└── coupled tracers: ", tracers, "\n")
 end
 
 # User may want to overload this to not output parameters over and over again

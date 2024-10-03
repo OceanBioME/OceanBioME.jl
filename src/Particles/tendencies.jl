@@ -25,9 +25,9 @@ end
     t = clock.time
 
     field_names = required_particle_fields(particles)
-    nf = length(field_names)
+    Nf = length(field_names)
 
-    field_values = ntuple(n->particles.fields[n], Val(nf))
+    field_values = ntuple(nf->particles.fields[nf][n], Val(Nf))
 
     tracer_values = extract_tracer_values(particles.field_interpolation, particles, grid, fields, n)
 
