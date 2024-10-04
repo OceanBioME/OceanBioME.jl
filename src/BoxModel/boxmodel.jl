@@ -18,7 +18,7 @@ using Oceananigans.TimeSteppers: tick!, TimeStepper
 using Oceananigans: UpdateStateCallsite, TendencyCallsite
 
 using OceanBioME: BoxModelGrid
-using StructArrays, JLD2
+using JLD2
 
 import Oceananigans.Simulations: run!
 import Oceananigans: set!, fields
