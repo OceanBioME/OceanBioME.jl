@@ -1,3 +1,20 @@
+"""
+Sugar kelp model of [Broch2012](@citet) and updated by [Broch2013](@citet), [Fossberg2018](@citet), and [Broch2019](@citet).
+
+Prognostic properties
+=====================
+* Area: A (dm²)
+* Nitrogen reserve: N (gN/gSW)
+* Carbon reserve: C (gC/gSW)
+
+Tracer dependencies
+===================
+* Nitrates: NO₃ (mmol N/m³)
+* Ammonia: NH₄ (mmol N/m³)
+* Photosynthetically available radiation: PAR (einstein/m²/day)
+* Temperature: T (°C)
+
+""" 
 module SugarKelpModel
 
 export SugarKelp, SugarKelpParticles
@@ -11,6 +28,11 @@ using OceanBioME.Particles: BiogeochemicalParticles
 import OceanBioME.Particles: required_particle_fields, required_tracers, coupled_tracers
 
 # disgsuting number of parameters
+"""
+    SugarKelp
+
+Defines the parameters for `SugarKelp` biogeochemistry.
+"""
 @kwdef struct SugarKelp{FT, TL}
     temperature_limit :: TL = LinearOptimalTemperatureRange() # TODO: split up more parameterisations like this
     growth_rate_adjustment :: FT = 4.5
@@ -61,9 +83,14 @@ import OceanBioME.Particles: required_particle_fields, required_tracers, coupled
     adapted_latitude :: FT = 57.5
 end 
 
-# convenience constructor that sets up with default parameters
-SugarKelpParticles(number; grid, kelp_parameters = NamedTuple(), kwargs...) = 
-    BiogeochemicalParticles(number; grid, biogeochemistry = SugarKelp(; kelp_parameters...), kwargs...)
+"""
+    SugarKelpParticles(n; grid, kelp_parameters = NamedTuple(), kwargs...)
+
+Sets up `n` sugar kelp `BiogeochemicalParticles` with default parameters except
+those specified in `kelp_parameters`. `kwagrs` are passed onto `BiogeochemicalParticles`.
+"""
+SugarKelpParticles(n; grid, kelp_parameters = NamedTuple(), kwargs...) = 
+    BiogeochemicalParticles(n; grid, biogeochemistry = SugarKelp(; kelp_parameters...), kwargs...)
 
 @inline required_particle_fields(::SugarKelp) = (:A, :N, :C)
 @inline required_tracers(::SugarKelp) = (:u, :v, :w, :T, :NO₃, :NH₄, :PAR)

@@ -1,3 +1,9 @@
+"""
+    ForwardEuler
+
+Step particle biogeochemistry with a `ForwardEuler` methods with `Δt` from
+the physical model substep.
+"""
 struct ForwardEuler{T}
     tendencies :: T
 

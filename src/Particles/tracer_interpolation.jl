@@ -5,6 +5,11 @@ using Oceananigans.Grids: AbstractGrid, Flat, Bounded, Periodic
 @inline get_node(::Bounded,  i, N) = min(max(i, 1), N)
 @inline get_node(::Periodic, i, N) = ifelse(i < 1, N, ifelse(i > N, 1, i))
 
+"""
+    NearestPoint
+
+Specifies that tracer values should be taken from the nearst center point.
+"""
 struct NearestPoint end
 
 @inline function extract_tracer_values(::NearestPoint, particles, grid, fields, n)

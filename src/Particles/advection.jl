@@ -5,6 +5,11 @@ using Oceananigans.Models.LagrangianParticleTracking: _advect_particles!, total_
 # put nothing to do nothing
 advect_particles!(advection, particles, model, Δt) = nothing
 
+"""
+    LagrangianAdvection
+
+Specifies that particles should move in a purley lagrangian mannor.
+"""
 struct LagrangianAdvection end
 
 function advect_particles!(::LagrangianAdvection, particles, model, Δt)
