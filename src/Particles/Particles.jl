@@ -59,11 +59,11 @@ include("set.jl")
 
 function BiogeochemicalParticles(number; 
                                  grid,
-                                 biogeochemistry::B,
-                                 advection::A = LagrangianAdvection(),
+                                 biogeochemistry,
+                                 advection = LagrangianAdvection(),
                                  timestepper = ForwardEuler,
-                                 field_interpolation::I = NearestPoint(),
-                                 scalefactors = ones(number)) where {B, A, I}
+                                 field_interpolation = NearestPoint(),
+                                 scalefactors = ones(number))
 
     arch = architecture(grid)
 
@@ -79,20 +79,14 @@ function BiogeochemicalParticles(number;
 
     scalefactors = on_architecture(arch, scalefactors)
 
-    F = typeof(fields)
-    T = typeof(timestepper)
-    S = typeof(scalefactors)
-    X = typeof(x)
-    Y = typeof(y)
-    Z = typeof(z)
-
-    return BiogeochemicalParticles{number, B, A, F, T, I, S, X, Y, Z}(biogeochemistry, 
-                                                                      advection, 
-                                                                      fields, 
-                                                                      timestepper, 
-                                                                      field_interpolation, 
-                                                                      scalefactors,
-                                                                      x, y, z)
+    return BiogeochemicalParticles(number, 
+                                   biogeochemistry, 
+                                   advection, 
+                                   fields, 
+                                   timestepper, 
+                                   field_interpolation, 
+                                   scalefactors,
+                                   x, y, z)
 end
 
 Adapt.adapt_structure(to, p::BiogeochemicalParticles{N}) where N = 
