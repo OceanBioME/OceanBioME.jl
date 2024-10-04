@@ -30,6 +30,13 @@ struct BiogeochemicalParticles{N, B, A, F, T, I, S, X, Y, Z}
                     x :: X # to maintain compatability with lagrangian particle advection from Oceananigans
                     y :: Y
                     z :: Z
+
+    BiogeochemicalParticles(number, biogeochemistry::B, advection::A,
+                                    fields::F, timestepper::T, 
+                                    field_interpolation::I, scalefactors::S,
+                                    x::X, y::Y, z::Z) where {B, A, F, T, I, S, X, Y, Z} =
+        new{number, B, A, F, T, I, S, X, Y, Z}(biogeochemistry, advection, fields, timestepper,
+                                               field_interpolation, scalefactors, x, y, z)     
 end
 
 architecture(p::BiogeochemicalParticles) = architecture(p.x)
@@ -88,16 +95,16 @@ function BiogeochemicalParticles(number;
                                                                       x, y, z)
 end
 
-Adapt.adapt_structure(to, p::BiogeochemicalParticles) = 
-    BiogeochemicalParticles(adapt(to, p.biogeochemistry),
-                            nothing,
-                            nothing,
-                            nothing,
-                            adapt(to, p.field_interpolation),
-                            nothing,
-                            adapt(to, p.x),
-                            adapt(to, p.y),
-                            adapt(to, p.z))
+Adapt.adapt_structure(to, p::BiogeochemicalParticles{N}) where N = 
+    BiogeochemicalParticles(N, adapt(to, p.biogeochemistry),
+                               nothing,
+                               adapt(to, p.fields),
+                               nothing,
+                               adapt(to, p.field_interpolation),
+                               adapt(to, p.scalefactors),
+                               adapt(to, p.x),
+                               adapt(to, p.y),
+                               adapt(to, p.z))
 
 # Type piracy...oops
 @inline step_lagrangian_particles!(::Nothing, 
