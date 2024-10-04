@@ -1,92 +1,50 @@
 # [Individuals](@id individuals)
 
-The effects of individuals can be modelled in OceanBioME. We have implemented this through custom dynamics in the [Lagrangian Particle tracking feature of Oceananigans](https://clima.github.io/OceananigansDocumentation/stable/model_setup/lagrangian_particles/). We have extended these functionalities to make it easier to implement "active" particles which interact with the tracers. We have then implemented a model of [sugar kelp](@ref SLatissima) which can be followed as an example of using this functionality.
+The effects of individuals can be modelled in OceanBioME. We have implemented this through custom dynamics in the [Lagrangian Particle tracking feature of Oceananigans](https://clima.github.io/OceananigansDocumentation/stable/model_setup/lagrangian_particles/). We have extended these functionalities to make it easier to implement "active" particles which interact with the tracers. We have then implemented a model of [sugar kelp](@ref sugar-kelp) which can be followed as an example of using this functionality.
 
-To setup particles first create a particle type with the desired properties, e.g.:
+To setup particles first create a particle biogeochemistry, e.g.:
 
 ```@example particles
-using OceanBioME.Particles: BiogeochemicalParticles
 
-struct GrowingParticles{FT, VT} <: BiogeochemicalParticles 
+struct GrowingParticles{FT}
     nutrients_half_saturation :: FT
-
-    size :: VT
-    nitrate_uptake :: VT
-
-    x :: VT
-    y :: VT
-    z :: VT
 end
 ```
 
-You then need to overload particular functions to integrate the growth, so they need to first be `import`ed:
+We then need to add some methods to tell `OceanBioME` what properties this particle has, and what tracers it interacts with:
 
 ```@example particles
-import Oceananigans.Biogeochemistry: update_tendencies!
-import Oceananigans.Models.LagrangianParticleTracking: update_lagrangian_particle_properties!
+
+import OceanBioME.Particles: required_particle_fields, required_tracers, coupled_tracers
+
+required_particle_fields(::GrowingParticles) = (:S, )
+required_tracers(::GrowingParticles) = (:N, )
+coupled_tracers(::GrowingParticles) = (:N, )
+
 ```
 
-First, to integrate the particles properties we overload `update_lagrangian_particle_properties!`;
-in this fictitious case we will have a Mondo-quota nutrient uptake and growth:
-
+So our model is going to track the `S`ize of the particles and take up `N`utrients. 
+Now we need to how this growth happens. 
+The forcing functions should be of the form `(particles::ParticleBiogeochemistry)(::Val{:PROPERTY}, t, required_particle_fields..., required_tracers...)`, so in this example:
 ```@example particles
-using Oceananigans.Fields: interpolate
-
-function update_lagrangian_particle_properties!(particles::GrowingParticles, model, bgc, Δt)
-    @inbounds for p in 1:length(particles)
-        nutrients = @inbounds interpolate(model.tracers.NO₃, particle.x[p], particle.y[p], particle.z[p])
-
-        uptake = nutrients / (particle.nutrients_half_saturation + nutrients)
-
-        particles.size[p] += uptake * Δt
-        particles.nitrate_uptake[p] = uptake
-    end
-    return nothing
-end
-
-nothing #hide
+(p::GrowingParticles)(::Val{:S}, t, S, N) = N / (N + p.nutrient_half_saturation)
+(p::GrowingParticles)(::Val{:N}, t, S, N) = - N / (N + p.nutrient_half_saturation)
 ```
 
-In this example the particles will not move around, and are only integrated on a single thread. For a more comprehensive example see the [Sugar Kelp](@ref SLatissima) implementation. We then need to update the tracer tendencies to match the nutrients' uptake:
-
+We can then create an instance of this particle model using `BiogeochemicalParticles`, and set their initial position and size:
 ```@example particles
-using OceanBioME.Particles: get_node
+using OceanBioME
 
-function update_tendencies!(bgc, particles::GrowingParticles, model)
-    @inbounds for p in 1:length(particles)
-        i, j, k = fractional_indices((x, y, z), grid, Center(), Center(), Center())
+Lx, Ly, Lz = 100, 100, 100
+grid = RectilinearGrid(; size = (8, 8, 8), extent = (Lx, Ly, Lz))
 
-        # Convert fractional indices to unit cell coordinates 0 ≤ (ξ, η, ζ) ≤ 1
-        # and integer indices (with 0-based indexing).
-        ξ, i = modf(i)
-        η, j = modf(j)
-        ζ, k = modf(k)
+particles = BiogeochemicalParticles(10; grid, biogeochemistry = GrowingParticles())
 
-        # Round to nearest node and enforce boundary conditions
-        i, j, k = (get_node(TX(), Int(ifelse(ξ < 0.5, i + 1, i + 2)), grid.Nx),
-                   get_node(TY(), Int(ifelse(η < 0.5, j + 1, j + 2)), grid.Ny),
-                   get_node(TZ(), Int(ifelse(ζ < 0.5, k + 1, k + 2)), grid.Nz))
-
-        node_volume = volume(i, j, k, grid, Center(), Center(), Center())
-
-        model.timestepper.Gⁿ.NO₃[i, j, k] += particles.nitrate_uptake[p] / (d * node_volume)
-    end
-    return nothing
-end
-
-nothing #hide
+set!(particles, S = 0.1, x = rand(10) * Lx, y = rand(10) * Ly, z = rand(10) * Lz)
 ```
 
-Now we can just plug this into any biogeochemical model setup to have particles (currently [NPZD](@ref NPZD) and [LOBSTER](@ref LOBSTER)):
-
+We can then put these into a compatible biogeochemical model, for example:
 ```@example particles
-using OceanBioME, Oceananigans
 
-Lx, Ly, Lz = 1000, 1000, 100
-grid = RectilinearGrid(; size = (64, 64, 16), extent = (Lx, Ly, Lz))
-
-# Start the particles randomly distributed, floating on the surface
-particles = GrowingParticles(0.5, zeros(3), zeros(3), rand(3) * Lx, rand(3) * Ly, zeros(3))
-
-biogeochemistry = LOBSTER(; grid, particles)
+biogeochemistry = NPZD(; grid, particles)
 ```

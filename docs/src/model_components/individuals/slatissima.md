@@ -1,4 +1,4 @@
-# [Sugar kelp (Saccharina latissima) individuals](@id SLatissima)
+# [Sugar kelp (Saccharina latissima) individuals](@id sugar-kelp)
 
 We have implemented a model of sugar kelp growth within this spatially infinitesimal Lagrangian particles framework originally based on the model of [Broch2012](@citet) and updated by [Broch2013](@citet), [Fossberg2018](@citet), and [Broch2019](@citet). This is the same model passively forced by [StrongWright2022](@citet).
 
@@ -6,6 +6,29 @@ The model tracks three variables, the frond area, A (dm²), carbon reserve, C (g
 
 Results could look something like this (from [StrongWright2022](@citet)):
 ![Example A, N, and C profiles from [StrongWright2022](@citet)](https://www.frontiersin.org/files/Articles/793977/fmars-08-793977-HTML/image_m/fmars-08-793977-g002.jpg)
+
+You can access the model biogeochemistry by setting up `SugarKelp`, i.e.:
+```jldoctest
+using OceanBioME
+
+kelp_bgc = SugarKelp()
+
+# output
+SugarKelp{FT} biogeochemistry (Broch & Slagstad, 2012) tracking the `N`itrogen and `C`arbon in a frond of `A`rea
+```
+which can be put into `BiogeochemicalParticles`, or you can directly manifest particles:
+```jldoctest
+using OceanBioME, Oceananigans
+
+grid = RectilinearGrid(size = (1, 1, 1), extent = (1, 1, 1));
+particles = SugarKelpParticles(10; grid)
+
+# output
+10 BiogeochemicalParticles with SugarKelp{FT} biogeochemistry:
+├── fields: (:A, :N, :C)
+└── coupled tracers: (:NO₃, :NH₄, :DIC, :O₂, :DOC, :DON, :bPOC, :bPON)
+
+```
 
 ## Model equations
 
