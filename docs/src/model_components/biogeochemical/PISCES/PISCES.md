@@ -9,15 +9,15 @@ An overview of the model structure is available from the [PISCES community websi
 
 The default configuration of PISCES in OceanBioME is the operational/standard version with 24 tracers and can be set up by writing:
 
-```jldoctest; filter = [r"^.*@ OceanBioME.Models.PISCESModel.*$", r"^.*warning:.*$"]
+```jldoctest; filter = [r"^.*\/PISCES\.jl:\d+$", r".*\bwarning\b.*"]
 julia> using OceanBioME, Oceananigans
 
 julia> grid = RectilinearGrid(size=(1, 1, 1), extent=(1, 1, 1));
 
 julia> biogeochemistry = PISCES(; grid)
 ┌ Warning: This implementation of PISCES is in early development and has not yet been validated against the operational version
-└ @ OceanBioME.Models.PISCESModel ~/Documents/Projects/OceanBioME.jl/src/Models/AdvectedPopulations/PISCES/PISCES.jl:344
-PISCES biogeochemical model (24 tracers) 
+└ @ OceanBioME.Models.PISCESModel ~/Documents/Projects/OceanBioME.jl/src/Models/AdvectedPopulations/PISCES/PISCES.jl:346
+PISCES biogeochemical model (24 tracers)
  Light attenuation: Multi band light attenuation model with 3 bands (:PAR₁, :PAR₂, :PAR₃)
  Sediment: Nothing
  Particles: Nothing
