@@ -60,9 +60,9 @@ S = ConstantField(35)
 n = 5 # number of kelp bundles
 z₀ = [-21:5:-1;] * 1.0 # depth of kelp fronds
 
-particles = SugarKelp(n; grid, 
-                         advection = nothing, # we don't want them to move around
-                         scalefactors = fill(2000, n)) # and we want them to look like there are 500 in each bundle
+particles = SugarKelpParticles(n; grid, 
+                               advection = nothing, # we don't want them to move around
+                               scalefactors = fill(2000, n)) # and we want them to look like there are 500 in each bundle
 
 set!(particles, A = 10, N = 0.01, C = 0.1, z = z₀, x = Lx / 2, y = Ly / 2)
 
