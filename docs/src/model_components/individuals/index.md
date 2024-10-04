@@ -33,7 +33,7 @@ The forcing functions should be of the form `(particles::ParticleBiogeochemistry
 
 We can then create an instance of this particle model using `BiogeochemicalParticles`, and set their initial position and size:
 ```@example particles
-using OceanBioME
+using OceanBioME, Oceananigans
 
 Lx, Ly, Lz = 100, 100, 100
 grid = RectilinearGrid(; size = (8, 8, 8), extent = (Lx, Ly, Lz))

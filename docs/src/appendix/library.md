@@ -56,3 +56,9 @@ Modules = [OceanBioME.Models.GasExchangeModel, OceanBioME.Models.GasExchangeMode
 ```@autodocs
 Modules = [OceanBioME.BoxModels]
 ```
+
+## Particles
+
+```@autodocs
+Modules = [OceanBioME.Particles]
+```
