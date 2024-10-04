@@ -1,4 +1,4 @@
-#include("dependencies_for_runtests.jl")
+include("dependencies_for_runtests.jl")
 
 using OceanBioME.Particles: BiogeochemicalParticles
 
@@ -94,9 +94,8 @@ coupled_tracers(::SimpleParticleBiogeochemistry) = (:B, )
     set!(model, B = 1)
 
     # since the 0, 0, 0 point is ambigously closest to both 3, 3, 3 and 1, 1, 3 (and the logic makes it go to 3, 3, 3)
-    particles.x .= 0.5 
-    particles.y .= 0.5
-    
+    set!(particles, x = 0.5, y = 0.5)
+
     time_step!(model, 1)
 
     @test all(particles.fields.A .== 0.1)
@@ -120,8 +119,7 @@ end
     set!(model, B = 1)
 
     # since the 0, 0, 0 point is ambigously closest to both 3, 3, 3 and 1, 1, 3 (and the logic makes it go to 3, 3, 3)
-    particles.x .= 0.5 
-    particles.y .= 0.5
+    set!(particles, x = 0.5, y = 0.5)
     
     time_step!(model, 1)
 
