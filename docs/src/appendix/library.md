@@ -24,7 +24,7 @@ Modules = [OceanBioME.Models.LOBSTERModel]
 ### Sugar kelp (Saccharina latissima)
 
 ```@autodocs
-Modules = [OceanBioME.Models.SLatissimaModel]
+Modules = [OceanBioME.Models.SugarKelpModel]
 ```
 
 ### Carbon Chemistry 
