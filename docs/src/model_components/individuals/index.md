@@ -38,7 +38,7 @@ using OceanBioME, Oceananigans
 Lx, Ly, Lz = 100, 100, 100
 grid = RectilinearGrid(; size = (8, 8, 8), extent = (Lx, Ly, Lz))
 
-particles = BiogeochemicalParticles(10; grid, biogeochemistry = GrowingParticles())
+particles = BiogeochemicalParticles(10; grid, biogeochemistry = GrowingParticles(0.5))
 
 set!(particles, S = 0.1, x = rand(10) * Lx, y = rand(10) * Ly, z = rand(10) * Lz)
 ```
