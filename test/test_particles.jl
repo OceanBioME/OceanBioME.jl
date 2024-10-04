@@ -6,7 +6,7 @@ import OceanBioME.Particles: required_particle_fields, required_tracers, coupled
 
 struct SimpleParticleBiogeochemistry end
 
-@inline (::SimpleParticleBiogeochemistry)(val_name, t, A) = one(t)
+@inline (::SimpleParticleBiogeochemistry)(::Val{:A}, t, A) = one(t)
 
 @inline required_particle_fields(::SimpleParticleBiogeochemistry) = (:A, )
 
@@ -39,7 +39,7 @@ end
 
 @inline required_tracers(::SimpleParticleBiogeochemistry) = (:B, )
 
-@inline (::SimpleParticleBiogeochemistry)(val_name, t, A, B) = 0.1 * B
+@inline (::SimpleParticleBiogeochemistry)(::Val{:A}, t, A, B) = 0.1 * B
 
 @testset "Testing particle tracer detection" begin
     particle_biogeochemistry = SimpleParticleBiogeochemistry()
