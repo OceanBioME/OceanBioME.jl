@@ -6,7 +6,7 @@ export NPZD,
        NutrientPhytoplanktonZooplanktonDetritus, 
        LOBSTER
 
-export SugarKelp
+export SugarKelp, SugarKelpParticles
 
 export CarbonChemistry
 

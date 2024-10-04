@@ -198,6 +198,7 @@ end
 Nₛ = particles.biogeochemistry.structural_nitrogen
 Cₛ = particles.biogeochemistry.structural_carbon
 kₐ = particles.biogeochemistry.structural_dry_weight_per_area
+sf = particles.scalefactors[1]
 
 fig = Figure(size = (1000, 800), fontsize = 20)
 
@@ -207,9 +208,9 @@ ax1 = Axis(fig[1, 1]; ylabel = "Frond area (dm²)", axis_kwargs...)
 [lines!(ax1, times / day, A[n, :], linewidth = 3) for n in 1:5]
 
 ax2 = Axis(fig[2, 1]; ylabel = "Total Nitrogen (gN)", axis_kwargs...)
-[lines!(ax2, times / day, (@. A * (N + Nₛ) * kₐ)[n, :], linewidth = 3) for n in 1:5]
+[lines!(ax2, times / day, (@. A * (N + Nₛ) * kₐ * sf)[n, :], linewidth = 3) for n in 1:5]
 
 ax3 = Axis(fig[3, 1]; ylabel = "Total Carbon (gC)", axis_kwargs...)
-[lines!(ax3, times / day, (@. A * (C + Cₛ) * kₐ)[n, :], linewidth = 3) for n in 1:5]
+[lines!(ax3, times / day, (@. A * (C + Cₛ) * kₐ * sf)[n, :], linewidth = 3) for n in 1:5]
 
 fig

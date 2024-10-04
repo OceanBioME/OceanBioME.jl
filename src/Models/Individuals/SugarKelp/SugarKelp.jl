@@ -1,6 +1,6 @@
 module SugarKelpModel
 
-export SugarKelp
+export SugarKelp, SugarKelpParticles
 
 using Roots
 
@@ -62,7 +62,7 @@ import OceanBioME.Particles: required_particle_fields, required_tracers, coupled
 end 
 
 # convenience constructor that sets up with default parameters
-SugarKelp(number; grid, kelp_parameters = NamedTuple(), kwargs...) = 
+SugarKelpParticles(number; grid, kelp_parameters = NamedTuple(), kwargs...) = 
     BiogeochemicalParticles(number; grid, biogeochemistry = SugarKelp(; kelp_parameters...), kwargs...)
 
 @inline required_particle_fields(::SugarKelp) = (:A, :N, :C)

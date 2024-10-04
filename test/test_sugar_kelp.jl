@@ -1,3 +1,5 @@
+include("dependencies_for_runtests.jl")
+
 using Oceananigans.Architectures: on_architecture
 
 sum_tracer_nitrogen(tracers) = sum(on_architecture(CPU(), interior(tracers.NO₃))) + 
@@ -18,11 +20,11 @@ sum_tracer_carbon(tracers, redfield, organic_carbon_calcate_ratio) =
 @testset "SLatissima particle setup and conservations" begin
     grid = RectilinearGrid(architecture; size=(1, 1, 1), extent=(1, 1, 1))
 
-    particle_biogeochemistry = OceanBioME.Models.SugarKelpModel.SugarKelp()
+    particle = SugarKelpParticles(2; grid, advection = nothing)
 
-    particles = BiogeochemicalParticles(2; grid, 
-                                        biogeochemistry = particle_biogeochemistry, 
-                                        advection = nothing)
+    @test particles isa BiogeochemicalParticles
+    @test particles.biogeochemistry isa SugarKelp
+    @test length(particles) == 2
 
     biogeochemistry = LOBSTER(; grid, 
                                 particles, 
@@ -80,7 +82,7 @@ sum_tracer_carbon(tracers, redfield, organic_carbon_calcate_ratio) =
 
     # conservaitons
     # (GPU eps is much larger (~10⁻⁷) than on CPU), is this true??? And is this conservation good enough???
-    # this is definitly too high since I didn't catch a sign error in the nitrogen uptakes
+    # this is definitly too high since I didn't catch a sign error of an uptake was the wrong way around
     rtol = ifelse(isa(architecture, CPU), max(√eps(initial_tracer_N + initial_kelp_N), √eps(final_tracer_N + final_kelp_N)), 2e-7)
     @test isapprox(initial_tracer_N + initial_kelp_N, final_tracer_N + final_kelp_N; rtol) 
 
