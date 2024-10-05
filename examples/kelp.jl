@@ -169,7 +169,9 @@ lines!(axfDIC, times / days, air_sea_CO₂_flux / 1e3 * CO₂_molar_mass * year,
 lines!(axfDIC, times / days, carbon_export / 1e3    * CO₂_molar_mass * year, linewidth = 3, label = "Sinking export")
 Legend(fig[5, 2], axfDIC, framevisible = false)
 
-fig
+save("kelp.png", fig)
+
+# ![](kelp.png)
 
 # We can also have a look at how the kelp particles evolve
 using JLD2
