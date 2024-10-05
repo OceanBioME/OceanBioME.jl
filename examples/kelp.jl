@@ -208,7 +208,7 @@ ax1 = Axis(fig[1, 1]; ylabel = "Frond area (dm²)", axis_kwargs...)
 ax2 = Axis(fig[2, 1]; ylabel = "Total Nitrogen (gN)", axis_kwargs...)
 [lines!(ax2, times / day, (@. A * (N + Nₛ) * kₐ * sf)[n, :], linewidth = 3) for n in 1:5]
 
-ax3 = Axis(fig[3, 1]; ylabel = "Total Carbon (gC)", axis_kwargs...)
-[lines!(ax3, times / day, (@. A * (C + Cₛ) * kₐ * sf)[n, :], linewidth = 3) for n in 1:5]
+ax3 = Axis(fig[3, 1]; ylabel = "Total Carbon (kgCO₂(eq))", axis_kwargs...)
+[lines!(ax3, times / day, (@. A * (C + Cₛ) * kₐ * sf)[n, :] / 1000 * 44 / 12, linewidth = 3) for n in 1:5]
 
 fig
