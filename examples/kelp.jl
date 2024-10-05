@@ -157,17 +157,17 @@ axNO₃ = Axis(fig[2, 1]; title = "Nitrate concentration (mmol N/m³)", axis_kwa
 hmNO₃ = heatmap!(times / days, z, interior(tracers["NO₃"], 1, 1, :, :)', colormap = :batlow)
 Colorbar(fig[2, 2], hmNO₃)
 
-axD = Axis(fig[4, 1]; title = "Detritus concentration (mmol C/m³)", axis_kwargs...)
+axD = Axis(fig[3, 1]; title = "Detritus concentration (mmol C/m³)", axis_kwargs...)
 hmD = heatmap!(times / days, z, interior(tracers["sPOC"], 1, 1, :, :)' .+ interior(tracers["bPOC"], 1, 1, :, :)', colormap = :batlow)
-Colorbar(fig[4, 2], hmD)
+Colorbar(fig[3, 2], hmD)
 
 CO₂_molar_mass = (12 + 2 * 16) * 1e-3 # kg / mol
 
-axfDIC = Axis(fig[5, 1], xlabel = "Time (days)", ylabel = "Flux (kgCO₂/m²/year)",
+axfDIC = Axis(fig[4, 1], xlabel = "Time (days)", ylabel = "Flux (kgCO₂/m²/year)",
                          title = "Air-sea CO₂ flux and Sinking", limits = ((0, times[end] / days), nothing))
 lines!(axfDIC, times / days, air_sea_CO₂_flux / 1e3 * CO₂_molar_mass * year, linewidth = 3, label = "Air-sea flux")
 lines!(axfDIC, times / days, carbon_export / 1e3    * CO₂_molar_mass * year, linewidth = 3, label = "Sinking export")
-Legend(fig[5, 2], axfDIC, framevisible = false)
+Legend(fig[4, 2], axfDIC, framevisible = false)
 
 save("kelp.png", fig)
 
