@@ -145,7 +145,7 @@ end
 
 using CairoMakie
 
-fig = Figure(size = (1000, 1200), fontsize = 20)
+fig = Figure(size = (1000, 900), fontsize = 20)
 
 axis_kwargs = (xlabel = "Time (days)", ylabel = "z (m)", limits = ((0, times[end] / days), (-85meters, 0)))
 
@@ -156,10 +156,6 @@ Colorbar(fig[1, 2], hmP)
 axNO₃ = Axis(fig[2, 1]; title = "Nitrate concentration (mmol N/m³)", axis_kwargs...)
 hmNO₃ = heatmap!(times / days, z, interior(tracers["NO₃"], 1, 1, :, :)', colormap = :batlow)
 Colorbar(fig[2, 2], hmNO₃)
-
-axZ = Axis(fig[3, 1]; title = "Zooplankton concentration (mmol N/m³)", axis_kwargs...)
-hmZ = heatmap!(times / days, z, interior(tracers["Z"], 1, 1, :, :)', colormap = :batlow)
-Colorbar(fig[3, 2], hmZ)
 
 axD = Axis(fig[4, 1]; title = "Detritus concentration (mmol C/m³)", axis_kwargs...)
 hmD = heatmap!(times / days, z, interior(tracers["sPOC"], 1, 1, :, :)' .+ interior(tracers["bPOC"], 1, 1, :, :)', colormap = :batlow)

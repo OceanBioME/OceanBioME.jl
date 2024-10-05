@@ -4,7 +4,7 @@ OceanBioME.jl is a fast and flexible ocean biogeochemical modelling environment.
 
 OceanBioME.jl currently provides a core of several biogeochemical models Nutrient--Phytoplankton--Zooplankton--Detritus (NPZD) and [LOBSTER](https://doi.org/10.1029/2004JC002588), a medium complexity model, air-sea gas exchange models to provide appropriate top boundary conditions, and sediment models to for the benthic boundary. [PISCES](https://doi.org/10.5194/gmd-8-2465-2015) and other higher complexity models are in our future development plans.
 
-OceanBioME.jl includes a framework for integrating the growth of biological/active Lagrangian particles which move around and can interact with the (Eulerian) tracer fields - for example, consuming nutrients and carbon dioxide while releasing dissolved organic material. A growth model for sugar kelp is currently implemented using active particles, and this model can be used in a variety of dynamical scenarios including free-floating or bottom-attached particles.
+OceanBioME.jl includes a framework for integrating the growth of [biological/active particles](@ref individuals) which move around and can interact with the (Eulerian) tracer fields - for example, consuming nutrients and carbon dioxide while releasing dissolved organic material. A growth model for sugar kelp is currently implemented using active particles, and this model can be used in a variety of dynamical scenarios including free-floating or bottom-attached particles.
 
 ## Quick install
 
