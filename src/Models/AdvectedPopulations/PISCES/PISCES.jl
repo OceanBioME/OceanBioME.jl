@@ -30,7 +30,7 @@ using Oceananigans: KernelFunctionOperation
 using Oceananigans.Fields: Field, TracerFields, CenterField, ZeroField, ConstantField, Center, Face
 
 using OceanBioME.Light: MultiBandPhotosyntheticallyActiveRadiation, default_surface_PAR, compute_euphotic_depth!
-using OceanBioME: setup_velocity_fields, show_sinking_velocities, Biogeochemistry, DiscreteBiogeochemistry, ScaleNegativeTracers
+using OceanBioME: setup_velocity_fields, show_sinking_velocities, Biogeochemistry, DiscreteBiogeochemistry, ScaleNegativeTracers, CBMDayLength
 using OceanBioME.BoxModels: BoxModel
 using OceanBioME.Models.CarbonChemistryModel: CarbonChemistry
 
@@ -309,7 +309,7 @@ function PISCES(; grid,
                   background_shear = 0.01, 
                   
                   latitude = PrescribedLatitude(45),
-                  day_length = day_length_function,
+                  day_length = CBMDayLength(),
                   
                   mixed_layer_depth = Field{Center, Center, Nothing}(grid),
                   euphotic_depth = Field{Center, Center, Nothing}(grid),

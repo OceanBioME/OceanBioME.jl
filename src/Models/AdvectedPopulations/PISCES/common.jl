@@ -33,18 +33,6 @@ end
 @inline (::ModelLatitude)(i, j, k, grid) = φnode(i, j, k, grid, Center(), Center(), Center())
 
 """
-    day_length_function(φ, t)
-
-Returns the length of day in seconds at the latitude `φ`, `t`seconds after the start of the year.
-"""
-@inline function day_length_function(φ, t)
-    # as per Forsythe et al., 1995 (https://doi.org/10.1016/0304-3800(94)00034-F)
-    p = asind(0.39795 * cos(0.2163108 + 2 * atan(0.9671396 * tan(0.00860 * (floor(Int, t / day) - 186)))))
-
-    return (24 - 24 / 180 * acosd(max(-1, min(1, (sind(0.8333) + sind(φ) * sind(p)) / (cosd(φ) * cosd(p)))))) * hour
-end
-
-"""
     DepthDependantSinkingSpeed(; minimum_speed = 30/day,
                                  maximum_speed = 200/day,
                                  maximum_depth = 500)
