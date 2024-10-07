@@ -1,4 +1,3 @@
-
 @inline function (kelp::SugarKelp)(::Val{:A}, t, A, N, C, u, v, w, T, NO₃, NH₄, PAR)
     μ = growth(kelp, t, A, N, C, T, NH₄, u, v, w)
 
@@ -26,7 +25,7 @@ end
     Cₛ = kelp.structural_carbon
 
     P = photosynthesis(kelp, T, PAR)
-    
+
     μ = growth(kelp, t, A, N, C, T, NH₄, u, v, w)
 
     R = respiration(kelp, t, A, N, C, T, NO₃, NH₄, u, v, w, μ)
@@ -185,6 +184,8 @@ end
     fₜ = kelp.temperature_limit(T)
     fₐ = area_limitation(kelp, A)
     fₚ = seasonal_limitation(kelp, t)
+
+    return fₜ * fₐ * fₚ
 end
 
 @inline function area_limitation(kelp, A)
@@ -200,7 +201,7 @@ end
      upper_optimal :: FT = 15.0
     lower_gradient :: FT = 1/(lower_optimal + 1.8) #0.08 - I think its important that the minimum cut off (-1.8) is observed, 
     # because the literature doesn't say anything about it growing okay and then suddenly dying off 
-    #at low temperature as the origional form suggests, although for higher temperature...
+    # at low temperature as the origional form suggests, although for higher temperature...
     upper_gradient :: FT = -0.25
 end
 
