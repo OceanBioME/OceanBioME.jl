@@ -19,7 +19,7 @@ end
     p = day_length.day_length_coefficient
 
     # day of year
-    J = floor(Int, mod(t, 364days)/day)
+    J = floor(Int, mod(t, 365days)/day)
 
     # revolution angle
     θ = 0.216310 + 2 * atan(0.9671396 * tan(0.00860 * (J - 186)))
