@@ -90,6 +90,8 @@ end
 end
 
 @inline function photosynthesis(kelp, T, PAR)
+    PAR *= day / (3.99e-10 * 545e12) # W / m² / s to einstein / m² / day
+
     Tk = T + 273.15
 
     P₁ = kelp.photosynthesis_at_ref_temp_1
