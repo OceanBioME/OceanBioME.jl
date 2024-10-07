@@ -95,7 +95,7 @@ When the carbonate chemistry is activated additional tracers ``DIC`` and ``Alk``
 
 ### Oxygen chemistry
 
-When the oxygen chemistry is activated additional tracer ``O_2`` evolve like:
+When the oxygen chemistry is activated, additional tracer ``O_2`` evolve like:
 
 ```math
 \frac{\partial O_2}{\partial t} = \mu_P L_{PAR}\left(L_{NO_3} + L_{NH_4}\right)R_{O_2}P - (R_{O_2} - R_{nit})\frac{\partial NH_4}{\partial t} - R_{O_2}\mu_nNH_4.

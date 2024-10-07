@@ -6,7 +6,7 @@ export NPZD,
        NutrientPhytoplanktonZooplanktonDetritus, 
        LOBSTER
 
-export SugarKelp, SugarKelpParticles
+export SugarKelp, SugarKelpParticles, GiantKelp
 
 export CarbonChemistry
 
@@ -22,7 +22,6 @@ export GasExchange,
 include("Sediments/Sediments.jl")
 include("AdvectedPopulations/LOBSTER/LOBSTER.jl")
 include("AdvectedPopulations/NPZD.jl")
-#include("Individuals/SLatissima.jl")
 include("Individuals/SugarKelp/SugarKelp.jl")
 include("seawater_density.jl")
 include("CarbonChemistry/CarbonChemistry.jl")
