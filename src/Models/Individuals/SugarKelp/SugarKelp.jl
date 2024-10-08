@@ -72,8 +72,8 @@ Defines the parameters for `SugarKelp` biogeochemistry.
     current_speed_for_0p65_uptake :: FT = 0.03
     nitrate_half_saturation :: FT = 4.0
     ammonia_half_saturation :: FT = 1.3
-    maximum_nitrate_uptake :: FT = 10 * structural_dry_weight_per_area * 24 * 14 / (10^6)
-    maximum_ammonia_uptake :: FT = 12 * structural_dry_weight_per_area * 24 * 14 / (10^6)
+    maximum_nitrate_uptake :: FT = 10 / structural_dry_weight_per_area * 24 * 14 / (10^6) #  / dm^2 / h to 
+    maximum_ammonia_uptake :: FT = 12 / structural_dry_weight_per_area * 24 * 14 / (10^6)
     current_1 :: FT = 0.72
     current_2 :: FT = 0.28
     current_3 :: FT = 0.045
