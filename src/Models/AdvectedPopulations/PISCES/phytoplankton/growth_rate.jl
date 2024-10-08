@@ -139,7 +139,8 @@ end
     PAR = β₁ * PAR₁ + β₂ * PAR₂ + β₃ * PAR₃
 
     φ = bgc.latitude(i, j, k, grid)
-    day_length = bgc.day_length(φ, clock.time)
+
+    day_length = bgc.day_length(clock.time, φ)
 
     f₁ = 1.5 * day_length / (day_length + 0.5day)
 
