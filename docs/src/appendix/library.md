@@ -9,7 +9,7 @@ Modules = [OceanBioME]
 
 ## Biogeochemical Models
 
-### Nutrient Phytoplankton Zooplankton Detritus
+### Nutrient Phytoplankton Zooplankton Detritus (NPZD)
 
 ```@autodocs
 Modules = [OceanBioME.Models.NPZDModel]
@@ -19,6 +19,48 @@ Modules = [OceanBioME.Models.NPZDModel]
 
 ```@autodocs
 Modules = [OceanBioME.Models.LOBSTERModel]
+```
+
+### Pelagic Interactions Scheme for Carbon and Ecosystem Studies (PISCES)
+
+```@autodocs
+Modules = [OceanBioME.Models.PISCESModel]
+```
+
+```@autodocs
+Modules = [OceanBioME.Models.PISCESModel.DissolvedOrganicMatter]
+```
+
+```@autodocs
+Modules = [OceanBioME.Models.PISCESModel.ParticulateOrganicMatter]
+```
+
+```@autodocs
+Modules = [OceanBioME.Models.PISCESModel.Iron]
+```
+
+```@autodocs
+Modules = [OceanBioME.Models.PISCESModel.InorganicCarbons]
+```
+
+```@autodocs
+Modules = [OceanBioME.Models.PISCESModel.Zooplankton]
+```
+
+```@autodocs
+Modules = [OceanBioME.Models.PISCESModel.Phytoplankton]
+```
+
+```@autodocs
+Modules = [OceanBioME.Models.PISCESModel.Phosphates]
+```
+
+```@autodocs
+Modules = [OceanBioME.Models.PISCESModel.Silicates]
+```
+
+```@autodocs
+Modules = [OceanBioME.Models.PISCESModel.Nitrogen]
 ```
 
 ### Sugar kelp (Saccharina latissima)

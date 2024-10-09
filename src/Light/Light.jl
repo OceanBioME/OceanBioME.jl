@@ -13,7 +13,7 @@ using KernelAbstractions, Oceananigans.Units
 using Oceananigans.Architectures: device, architecture, on_architecture
 using Oceananigans.Utils: launch!
 using Oceananigans: Center, Face, fields
-using Oceananigans.Grids: node, znodes
+using Oceananigans.Grids: node, znodes, znode
 using Oceananigans.Fields: CenterField, TracerFields, location
 using Oceananigans.BoundaryConditions: fill_halo_regions!, 
                                        ValueBoundaryCondition, 
@@ -35,6 +35,8 @@ import Oceananigans.BoundaryConditions: _fill_top_halo!
 include("2band.jl")
 include("multi_band.jl")
 include("prescribed.jl")
+
+include("compute_euphotic_depth.jl")
 
 default_surface_PAR(x, y, t) = default_surface_PAR(t)
 default_surface_PAR(x_or_y, t) = default_surface_PAR(t)

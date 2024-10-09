@@ -4,7 +4,8 @@ export Sediments
 
 export NPZD, 
        NutrientPhytoplanktonZooplanktonDetritus, 
-       LOBSTER
+       LOBSTER,
+       PISCES, DepthDependantSinkingSpeed, PrescribedLatitude, ModelLatitude, PISCESModel
 
 export SLatissima
 
@@ -26,10 +27,12 @@ include("Individuals/SLatissima.jl")
 include("seawater_density.jl")
 include("CarbonChemistry/CarbonChemistry.jl")
 include("GasExchange/GasExchange.jl")
+include("AdvectedPopulations/PISCES/PISCES.jl")
 
 using .Sediments
 using .LOBSTERModel
 using .NPZDModel
+using .PISCESModel
 using .SLatissimaModel
 using .CarbonChemistryModel
 using .GasExchangeModel

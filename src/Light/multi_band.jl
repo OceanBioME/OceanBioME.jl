@@ -71,7 +71,7 @@ function MultiBandPhotosyntheticallyActiveRadiation(; grid,
                                                       base_water_attenuation_coefficient = MOREL_kʷ,
                                                       base_chlorophyll_exponent = MOREL_e,
                                                       base_chlorophyll_attenuation_coefficient = MOREL_χ,
-                                                      field_names = [par_symbol(n) for n in 1:length(bands)],
+                                                      field_names = ntuple(n->par_symbol(n), Val(length(bands))),
                                                       surface_PAR = default_surface_PAR,
                                                       surface_PAR_division = fill(1 / length(bands), length(bands)))
     Nbands = length(bands)
@@ -91,11 +91,17 @@ function MultiBandPhotosyntheticallyActiveRadiation(; grid,
 
     sum(surface_PAR_division) == 1 || throw(ArgumentError("surface_PAR_division does not sum to 1"))
     
-    fields = [CenterField(grid; 
-                boundary_conditions = 
-                    regularize_field_boundary_conditions(
-                        FieldBoundaryConditions(top = ValueBoundaryCondition(ScaledSurfaceFunction(surface_PAR, surface_PAR_division[n]))), grid, name)) 
-              for (n, name) in enumerate(field_names)]
+    n_fields = length(field_names)
+
+    surface_boundary_conditions = 
+        ntuple(n-> ValueBoundaryCondition(ScaledSurfaceFunction(surface_PAR, surface_PAR_division[n])), Val(n_fields))
+
+    field_boundary_conditions =
+        ntuple(n -> regularize_field_boundary_conditions(FieldBoundaryConditions(top = surface_boundary_conditions[n]),
+                                                         grid, field_names[n]),
+               Val(n_fields))
+
+    fields = NamedTuple{field_names}(ntuple(n -> CenterField(grid; boundary_conditions = field_boundary_conditions[n]), Val(n_fields)))
 
     total_PAR = sum(fields)
 
@@ -115,14 +121,10 @@ function numerical_mean(λ, C, idx1, idx2)
     return ∫Cdλ / ∫dλ
 end
 
-function par_symbol(n)
-    subscripts = Symbol[]
-    for digit in reverse(digits(n))
-        push!(subscripts, Symbol(Char('\xe2\x82\x80'+digit)))
-    end
+@inline par_symbol(n) = Symbol(:PAR, Char('\xe2\x82\x80'+n)) #Symbol(:PAR, number_subscript(tuple(reverse(digits(n))...))...)
 
-    return Symbol(:PAR, subscripts...)
-end
+@inline number_subscript(digits::NTuple{N}) where N =
+    ntuple(n->Symbol(Char('\xe2\x82\x80'+digits[n])), Val(N))
 
 @kernel function update_MultiBandPhotosyntheticallyActiveRadiation!(grid, field, kʷ, e, χ,
                                                                     _surface_PAR, surface_PAR_division, 
@@ -146,7 +148,6 @@ end
     end
 end
 
-
 function update_biogeochemical_state!(model, PAR::MultiBandPhotosyntheticallyActiveRadiation)
     grid = model.grid
 
@@ -168,9 +169,9 @@ function update_biogeochemical_state!(model, PAR::MultiBandPhotosyntheticallyAct
                 k′)
     end
 
-    for field in PAR.fields
-        fill_halo_regions!(field, model.clock, fields(model))
-    end
+    #for field in PAR.fields
+    #    fill_halo_regions!(field, model.clock, fields(model))
+    #end
 end
 
 summary(par::MultiBandPhotosyntheticallyActiveRadiation) = 
@@ -179,7 +180,19 @@ summary(par::MultiBandPhotosyntheticallyActiveRadiation) =
 show(io::IO, model::MultiBandPhotosyntheticallyActiveRadiation) = print(io, summary(model))
 
 biogeochemical_auxiliary_fields(par::MultiBandPhotosyntheticallyActiveRadiation) = 
-    merge((PAR = par.total, ), NamedTuple{par.field_names}(par.fields))
+    merge((PAR = par.total, ), par.fields)#NamedTuple{field_names(par.field_names, par.fields)}(par.fields))
+
+@inline field_names(field_names, fields) = field_names
+@inline field_names(::Nothing, fields::NTuple{N}) where N = ntuple(n -> par_symbol(n), Val(N))
 
 # avoid passing this into kernels
-Adapt.adapt_structure(to, par::MultiBandPhotosyntheticallyActiveRadiation) = nothing
+Adapt.adapt_structure(to, par::MultiBandPhotosyntheticallyActiveRadiation) = 
+    MultiBandPhotosyntheticallyActiveRadiation(adapt(to, par.total),
+                                               adapt(to, par.fields),
+                                               nothing,
+                                               nothing, 
+                                               nothing,
+                                               nothing,
+                                               nothing,
+                                               nothing)
+
