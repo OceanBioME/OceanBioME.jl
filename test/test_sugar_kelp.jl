@@ -20,7 +20,7 @@ sum_tracer_carbon(tracers, redfield, organic_carbon_calcate_ratio) =
 @testset "SLatissima particle setup and conservations" begin
     grid = RectilinearGrid(architecture; size=(1, 1, 1), extent=(1, 1, 1))
 
-    particle = SugarKelpParticles(2; grid, advection = nothing)
+    particles = SugarKelpParticles(2; grid, advection = nothing)
 
     @test particles isa BiogeochemicalParticles
     @test particles.biogeochemistry isa SugarKelp

@@ -6,6 +6,7 @@ include("test_particles.jl")
 #include("test_slatissima.jl")
 include("test_LOBSTER.jl")
 include("test_NPZD.jl")
+include("test_PISCES.jl")
 include("test_gasexchange_carbon_chem.jl")
 include("test_sediments.jl")
 

@@ -4,6 +4,11 @@ include("timestep.jl")
 include("negative_tracers.jl")
 include("sinking_velocity_fields.jl")
 
+"""
+    (day_length::CBMDayLength)(t, φ)
+
+Returns the length of day in seconds at the latitude `φ`, `t` seconds after the start of the year.
+"""
 @kwdef struct CBMDayLength{FT}
     day_length_coefficient :: FT = 0.833
 end

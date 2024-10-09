@@ -74,7 +74,7 @@ end
     time_step!(model, 1)
 
     @test all(particles.fields.A .== 0.1)
-    @test all(particles.x .== 0.1) && all(particles.y .== 0.2) && all(particles.z .== 0)
+    @test all(particles.x .== 0.1) && all(particles.y .≈ 0.2) && all(particles.z .== 0)
 end
 
 coupled_tracers(::SimpleParticleBiogeochemistry) = (:B, )

@@ -63,11 +63,11 @@ carbon_chemistry(; DIC, Alk, T, S, lon = -31.52, lat = 33.75)
 The default uses the polynomial approximation described in [roquet2015](@citet) as provided by [`SeawaterPolynomials.jl`](https://github.com/CliMA/SeawaterPolynomials.jl/).
 
 ### Computing the carbonate concentration
-So that this model can be used in calcite dissolution models it can also return the carbonate saturation by calling the function `carbonate_saturation`
+So that this model can be used in calcite dissolution models it can also return the carbonate saturation by calling the function `calcite_saturation`
 ```@example carbon-chem
-using OceanBioME.Models.CarbonChemistryModel: carbonate_saturation
+using OceanBioME.Models.CarbonChemistryModel: calcite_saturation
 
-carbonate_saturation(carbon_chemistry; DIC, Alk, T, S)
+calcite_saturation(carbon_chemistry; DIC, Alk, T, S)
 ```
 This function takes all of the same arguments (e.g. `boron`) as `carbon_chemistry` above.
 

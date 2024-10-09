@@ -4,12 +4,12 @@ export SimpleMultiG, InstantRemineralisation
 
 using KernelAbstractions
 
-using OceanBioME: Biogeochemistry, BoxModelGrid
+using OceanBioME: DiscreteBiogeochemistry, ContinuousBiogeochemistry, BoxModelGrid
 
 using Oceananigans
 using Oceananigans.Architectures: device, architecture, on_architecture
 using Oceananigans.Utils: launch!
-using Oceananigans.Advection: advective_tracer_flux_z
+using Oceananigans.Advection: advective_tracer_flux_z, TracerAdvection
 using Oceananigans.Units: day
 using Oceananigans.Fields: ConstantField
 using Oceananigans.Biogeochemistry: biogeochemical_drift_velocity
@@ -71,7 +71,8 @@ end
 @inline sinking_advection(bgc, advection::NamedTuple) = advection[sinking_tracers(bgc)]
 
 @inline advection_scheme(advection, val_tracer) = advection
-@inline advection_scheme(advection::NamedTuple, val_tracer::Val{T}) where T = advection[T]
+@inline advection_scheme(advection::NamedTuple, val_tracer::Val{T}) where T = advection_scheme(advection[T], val_tracer)
+@inline advection_scheme(advection::TracerAdvection, val_tracer) = advection.z
 
 @inline function sinking_flux(i, j, k, grid, advection, val_tracer::Val{T}, bgc, tracers) where T 
     return - advective_tracer_flux_z(i, j, k, grid, advection_scheme(advection, val_tracer), biogeochemical_drift_velocity(bgc, val_tracer).w, tracers[T]) /
