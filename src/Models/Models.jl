@@ -7,7 +7,7 @@ export NPZD,
        LOBSTER,
        PISCES, DepthDependantSinkingSpeed, PrescribedLatitude, ModelLatitude, PISCESModel
 
-export SLatissima
+export SugarKelp, SugarKelpParticles, GiantKelp
 
 export CarbonChemistry
 
@@ -23,7 +23,7 @@ export GasExchange,
 include("Sediments/Sediments.jl")
 include("AdvectedPopulations/LOBSTER/LOBSTER.jl")
 include("AdvectedPopulations/NPZD.jl")
-include("Individuals/SLatissima.jl")
+include("Individuals/SugarKelp/SugarKelp.jl")
 include("seawater_density.jl")
 include("CarbonChemistry/CarbonChemistry.jl")
 include("GasExchange/GasExchange.jl")
@@ -32,8 +32,8 @@ include("AdvectedPopulations/PISCES/PISCES.jl")
 using .Sediments
 using .LOBSTERModel
 using .NPZDModel
+using .SugarKelpModel
 using .PISCESModel
-using .SLatissimaModel
 using .CarbonChemistryModel
 using .GasExchangeModel
 
