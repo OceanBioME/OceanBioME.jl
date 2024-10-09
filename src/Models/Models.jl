@@ -23,6 +23,7 @@ include("Sediments/Sediments.jl")
 include("AdvectedPopulations/LOBSTER/LOBSTER.jl")
 include("AdvectedPopulations/NPZD.jl")
 include("Individuals/SugarKelp/SugarKelp.jl")
+include("Individuals/GiantKelp/GiantKelp.jl")
 include("seawater_density.jl")
 include("CarbonChemistry/CarbonChemistry.jl")
 include("GasExchange/GasExchange.jl")
@@ -31,6 +32,7 @@ using .Sediments
 using .LOBSTERModel
 using .NPZDModel
 using .SugarKelpModel
+using .GiantKelpModel
 using .CarbonChemistryModel
 using .GasExchangeModel
 
