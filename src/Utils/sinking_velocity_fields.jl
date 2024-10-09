@@ -1,10 +1,11 @@
-using Oceananigans.Fields: ZFaceField, AbstractField, location, Center, Face
+using Oceananigans.Fields: ZFaceField, AbstractField, location, Center, Face, compute!
 using Oceananigans.Forcings: maybe_constant_field
 using Oceananigans.Grids: AbstractGrid
 
 import Adapt: adapt_structure, adapt
 
-const valid_sinking_velocity_locations = ((Center, Center, Face), (Nothing, Nothing, Face), (Nothing, Nothing, Nothing)) # nothings for constant fields 
+# nothings for constant fields 
+const valid_sinking_velocity_locations = ((Center, Center, Face), (Nothing, Nothing, Face), (Nothing, Nothing, Nothing)) 
 
 function setup_velocity_fields(drift_speeds, grid::AbstractGrid, open_bottom; smoothing_distance = 2)
     drift_velocities = []
@@ -20,6 +21,7 @@ function setup_velocity_fields(drift_speeds, grid::AbstractGrid, open_bottom; sm
 
             open_bottom || @warn "The sinking velocity provided for $name is a field and therefore `open_bottom=false` can't be enforced automatically"
 
+            compute!(w)
             w_field = w
         else
             @warn "Sinking speed provided for $name was not a number or field so may be unsiutable"

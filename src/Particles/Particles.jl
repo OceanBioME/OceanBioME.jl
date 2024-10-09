@@ -7,8 +7,7 @@ using Adapt
 using KernelAbstractions: @kernel, @index
 
 using Oceananigans: NonhydrostaticModel, HydrostaticFreeSurfaceModel
-
-using OceanBioME: Biogeochemistry
+using OceanBioME: DiscreteBiogeochemistry, ContinuousBiogeochemistry
 
 using Oceananigans.Architectures: architecture, on_architecture
 
@@ -119,18 +118,18 @@ Adapt.adapt_structure(to, p::BiogeochemicalParticles{N}) where N =
                                adapt(to, p.z))
 
 # Type piracy...oops
+const BGC_WITH_PARTICLES = Union{<:DiscreteBiogeochemistry{<:Any, <:Any, <:Any, <:BiogeochemicalParticles},
+                                 <:ContinuousBiogeochemistry{<:Any, <:Any, <:Any, <:BiogeochemicalParticles}}
+
 @inline step_lagrangian_particles!(::Nothing, 
-    model::NonhydrostaticModel{<:Any, <:Any, <:Any, <:Any, <:Any, <:Any, <:Any, <:Any, <:Any, <:Any, <:Any, <:Any, <:Any, <:Any, <:Any, <:Any, <:Any, 
-                               <:Biogeochemistry{<:Any, <:Any, <:Any, <:BiogeochemicalParticles}}, 
+    model::NonhydrostaticModel{<:Any, <:Any, <:Any, <:Any, <:Any, <:Any, <:Any, <:Any, <:Any, <:Any, <:Any, <:Any, <:Any, <:Any, <:Any, <:Any, <:Any, <:BGC_WITH_PARTICLES}, 
     Δt) = update_lagrangian_particle_properties!(model, model.biogeochemistry, Δt)
 
 @inline step_lagrangian_particles!(::Nothing,
-    model::HydrostaticFreeSurfaceModel{<:Any, <:Any, <:Any, <:Any, <:Any, <:Any, <:Any, <:Any, <:Any, <:Any, <:Any, 
-                                       <:Biogeochemistry{<:Any, <:Any, <:Any, <:BiogeochemicalParticles}, 
-                                       <:Any, <:Any, <:Any, <:Any, <:Any,}, 
+    model::HydrostaticFreeSurfaceModel{<:Any, <:Any, <:Any, <:Any, <:Any, <:Any, <:Any, <:Any, <:Any, <:Any, <:Any, <:BGC_WITH_PARTICLES}, 
     Δt) = update_lagrangian_particle_properties!(model, model.biogeochemistry, Δt)
 
-@inline update_lagrangian_particle_properties!(model, bgc::Biogeochemistry{<:Any, <:Any, <:Any, <:BiogeochemicalParticles}, Δt) = 
+@inline update_lagrangian_particle_properties!(model, bgc::BGC_WITH_PARTICLES, Δt) = 
     update_lagrangian_particle_properties!(bgc.particles, model, bgc, Δt)
 
 @inline function update_lagrangian_particle_properties!(particles::BiogeochemicalParticles, model, bgc, Δt)

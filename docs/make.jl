@@ -77,10 +77,14 @@ end
 
 parameter_pages = ["$name" => "generated/$(name)_parameters.md" for name in model_names]
 
+pisces_pages = ["PISCES" => "model_components/biogeochemical/PISCES/PISCES.md",
+                "Queries" => "model_components/biogeochemical/PISCES/notable_differences.md"]
+
 bgc_pages = [
     "Overview" => "model_components/biogeochemical/index.md",
     "LOBSTER" => "model_components/biogeochemical/LOBSTER.md",
-    "NPZD" => "model_components/biogeochemical/NPZ.md"
+    "NPZD" => "model_components/biogeochemical/NPZ.md",
+    "PISCES" => pisces_pages
 ]
 
 sediments_pages = [
