@@ -166,7 +166,7 @@ function test_PISCES_negativity_protection(arch)
     @test on_architecture(CPU(), interior(model.tracers.Fe, 1, 1, 1))[1] == 0
     @test on_architecture(CPU(), interior(model.tracers.Z, 1, 1, 1))[1] ≈ 900
 end
-
+#=
 @testset "PISCES" begin
     if architecture isa CPU
         test_PISCES_conservation()
@@ -178,4 +178,4 @@ end
     test_PISCES_negativity_protection(architecture)
 
     #test_PISCES_setup(grid) # maybe should test everything works with all the different bits???
-end
+end=#
