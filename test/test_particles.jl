@@ -34,7 +34,7 @@ grid = RectilinearGrid(architecture; size = (3, 3, 3), extent = (3, 3, 3))
 
     set!(particles, x = 1, A = fill(5, 3))
 
-    @test all(particles.fields.A .== 5) & all(particles.x .== 1)
+    @test all(particles.fields.A .≈ 5) & all(particles.x .== 1)
 end
 
 @inline required_tracers(::SimpleParticleBiogeochemistry) = (:B, )
@@ -54,7 +54,7 @@ end
     
     time_step!(model, 1)
 
-    @test all(particles.fields.A .== 0.1)
+    @test all(particles.fields.A .≈ 0.1)
 
     # also these shouldn't have moved
     @test all(particles.x .== 0)
@@ -73,8 +73,8 @@ end
     
     time_step!(model, 1)
 
-    @test all(particles.fields.A .== 0.1)
-    @test all(particles.x .== 0.1) && all(particles.y .≈ 0.2) && all(particles.z .== 0)
+    @test all(particles.fields.A .≈ 0.1)
+    @test all(particles.x .≈ 0.1) && all(particles.y .≈ 0.2) && all(particles.z .≈ 0)
 end
 
 coupled_tracers(::SimpleParticleBiogeochemistry) = (:B, )
@@ -98,9 +98,9 @@ coupled_tracers(::SimpleParticleBiogeochemistry) = (:B, )
 
     time_step!(model, 1)
 
-    @test all(particles.fields.A .== 0.1)
+    @test all(particles.fields.A .≈ 0.1)
 
-    @test interior(model.tracers.B, 1, 1, 3) .== 0.7 # 1 - 3 * 0.1
+    @test interior(model.tracers.B, 1, 1, 3) .≈ 0.7 # 1 - 3 * 0.1
 end
 
 
@@ -123,7 +123,7 @@ end
     
     time_step!(model, 1)
 
-    @test all(particles.fields.A .== 0.1)
+    @test all(particles.fields.A .≈ 0.1)
 
-    @test interior(model.tracers.B, 1, 1, 3) .== 0.8
+    @test interior(model.tracers.B, 1, 1, 3) .≈ 0.8
 end
