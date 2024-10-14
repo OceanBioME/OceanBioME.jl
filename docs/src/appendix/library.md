@@ -66,7 +66,7 @@ Modules = [OceanBioME.Models.PISCESModel.Nitrogen]
 ### Sugar kelp (Saccharina latissima)
 
 ```@autodocs
-Modules = [OceanBioME.Models.SLatissimaModel]
+Modules = [OceanBioME.Models.SugarKelpModel]
 ```
 
 ### Carbon Chemistry 
@@ -97,4 +97,10 @@ Modules = [OceanBioME.Models.GasExchangeModel, OceanBioME.Models.GasExchangeMode
 
 ```@autodocs
 Modules = [OceanBioME.BoxModels]
+```
+
+## Particles
+
+```@autodocs
+Modules = [OceanBioME.Particles]
 ```

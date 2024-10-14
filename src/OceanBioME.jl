@@ -9,7 +9,7 @@ export Biogeochemistry, LOBSTER, PISCES, NutrientPhytoplanktonZooplanktonDetritu
 export DepthDependantSinkingSpeed, PrescribedLatitude, ModelLatitude, PISCESModel
 
 # Macroalgae models
-export SLatissima
+export BiogeochemicalParticles, SugarKelp, SugarKelpParticles
 
 # Box model
 export BoxModel, BoxModelGrid, SpeedyOutput, load_output
@@ -208,6 +208,7 @@ include("BoxModel/boxmodel.jl")
 include("Models/Models.jl")
 
 using .Light
+using .Particles
 using .BoxModels
 using .Models
 
