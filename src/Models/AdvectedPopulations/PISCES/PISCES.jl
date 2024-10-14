@@ -36,7 +36,7 @@ using OceanBioME.Models.CarbonChemistryModel: CarbonChemistry
 
 using Oceananigans.Biogeochemistry: AbstractBiogeochemistry
 using Oceananigans.Fields: set!
-using Oceananigans.Grids: φnodes, RectilinearGrid
+using Oceananigans.Grids: φnodes, RectilinearGrid, AbstractGrid
 
 import OceanBioME: redfield, conserved_tracers, maximum_sinking_velocity, chlorophyll
 
@@ -174,7 +174,7 @@ include("adapts.jl")
 include("show_methods.jl")
 
 """
-    PISCES(; grid,
+    PISCES(; grid::AbstractGrid{FT},
              phytoplankton = MixedMondoNanoAndDiatoms(),
              zooplankton = MicroAndMesoZooplankton(),
              dissolved_organic_matter = DissolvedOrganicCarbon(),
@@ -284,66 +284,69 @@ the classes to a single `phytoplankton` if more classes are required (see
 `OceanBioME.Models.PISCESModel` docstring). Similarly, if a more generic `particulate_organic_matter`
 was desired a way to specify arbitary tracers for arguments would be required.
 """
-function PISCES(; grid,
-                  phytoplankton = MixedMondoNanoAndDiatoms(),
-                  zooplankton = MicroAndMesoZooplankton(),
-                  dissolved_organic_matter = DissolvedOrganicCarbon(),
-                  particulate_organic_matter = TwoCompartementCarbonIronParticles(),
-                  
-                  nitrogen = NitrateAmmonia(),
-                  iron = SimpleIron(),
-                  silicate = Silicate(),
-                  oxygen = Oxygen(),
-                  phosphate = Phosphate(),
-                  
-                  inorganic_carbon = InorganicCarbon(),
+function PISCES(FT = Float64;
+                grid,
+                phytoplankton = MixedMondoNanoAndDiatoms(FT),
+                zooplankton = MicroAndMesoZooplankton(FT),
+                dissolved_organic_matter = DissolvedOrganicCarbon(FT),
+                particulate_organic_matter = TwoCompartementCarbonIronParticles(FT),
+                
+                nitrogen = NitrateAmmonia{FT}(),
+                iron = SimpleIron{FT}(),
+                silicate = Silicate(),
+                oxygen = Oxygen{FT}(),
+                phosphate = Phosphate(),
+                
+                inorganic_carbon = InorganicCarbon(),
 
-                  # from Aumount 2005 rather than 2015 since it doesn't work the other way around
-                  first_anoxia_thresehold = 6.0,
-                  second_anoxia_thresehold = 1.0,
+                # from Aumount 2005 rather than 2015 since it doesn't work the other way around
+                first_anoxia_thresehold = convert(FT, 6.0),
+                second_anoxia_thresehold = convert(FT, 1.0),
 
-                  nitrogen_redfield_ratio = 16/122,
-                  phosphate_redfield_ratio = 1/122,
-                  
-                  mixed_layer_shear = 1.0,
-                  background_shear = 0.01, 
-                  
-                  latitude = PrescribedLatitude(45),
-                  day_length = CBMDayLength(),
-                  
-                  mixed_layer_depth = Field{Center, Center, Nothing}(grid),
-                  euphotic_depth = Field{Center, Center, Nothing}(grid),
+                nitrogen_redfield_ratio = convert(FT, 16/122),
+                phosphate_redfield_ratio = convert(FT, 1/122),
+                
+                mixed_layer_shear = convert(FT, 1.0),
+                background_shear = convert(FT, 0.01), 
+                
+                latitude = PrescribedLatitude{FT}(45),
+                day_length = CBMDayLength(),
+                
+                mixed_layer_depth = Field{Center, Center, Nothing}(grid),
+                euphotic_depth = Field{Center, Center, Nothing}(grid),
 
-                  silicate_climatology = ConstantField(7.5),
+                silicate_climatology = ConstantField(convert(FT, 7.5)),
 
-                  mean_mixed_layer_vertical_diffusivity = Field{Center, Center, Nothing}(grid),
-                  mean_mixed_layer_light = Field{Center, Center, Nothing}(grid),
+                mean_mixed_layer_vertical_diffusivity = Field{Center, Center, Nothing}(grid),
+                mean_mixed_layer_light = Field{Center, Center, Nothing}(grid),
 
-                  carbon_chemistry = CarbonChemistry(),
-                  calcite_saturation = CenterField(grid),
+                carbon_chemistry = CarbonChemistry(FT),
+                calcite_saturation = CenterField(grid),
 
-                  surface_photosynthetically_active_radiation = default_surface_PAR,
+                surface_photosynthetically_active_radiation = default_surface_PAR,
 
-                  light_attenuation =
-                    MultiBandPhotosyntheticallyActiveRadiation(; grid, 
-                                                                 surface_PAR = surface_photosynthetically_active_radiation),
+                light_attenuation =
+                  MultiBandPhotosyntheticallyActiveRadiation(; grid, 
+                                                               surface_PAR = surface_photosynthetically_active_radiation),
 
-                  sinking_speeds = (POC = 2/day, 
-                                    # might be more efficient to just precompute this
-                                    GOC = Field(KernelFunctionOperation{Center, Center, Face}(DepthDependantSinkingSpeed(), 
-                                                                                              grid, 
-                                                                                              mixed_layer_depth, 
-                                                                                              euphotic_depth))),
-                  open_bottom = true,
+                sinking_speeds = (POC = convert(FT, 2/day), 
+                                  # might be more efficient to just precompute this
+                                  GOC = Field(KernelFunctionOperation{Center, Center, Face}(DepthDependantSinkingSpeed{FT}(), 
+                                                                                            grid, 
+                                                                                            mixed_layer_depth, 
+                                                                                            euphotic_depth))),
+                open_bottom = true,
 
-                  scale_negatives = false,
-                  invalid_fill_value = NaN,
-                  
-                  sediment = nothing,
-                  particles = nothing,
-                  modifiers = nothing)
+                scale_negatives = false,
+                invalid_fill_value = NaN,
+                
+                sediment = nothing,
+                particles = nothing,
+                modifiers = nothing)
 
     @warn "This implementation of PISCES is in early development and has not yet been validated against the operational version"
+
+    eltype(grid) == FT || @warn "The float type for parameters ($FT) does not match the grids float type ($(eltype(grid))). This will cause type instability."
 
     if !isnothing(sediment) && !open_bottom
         @warn "You have specified a sediment model but not `open_bottom` which will not work as the tracer will settle in the bottom cell"

@@ -37,7 +37,7 @@ struct MultiBandPhotosyntheticallyActiveRadiation{T, F, FN, K, E, C, SPAR, SPARD
 end
 
 """
-    MultiBandPhotosyntheticallyActiveRadiation(; grid, 
+    MultiBandPhotosyntheticallyActiveRadiation(; grid::AbstractGrid{FT}, 
                                                  bands = ((400, 500), (500, 600), (600, 700)), #nm
                                                  base_bands = MOREL_λ,
                                                  base_water_attenuation_coefficient = MOREL_kʷ,
@@ -65,7 +65,7 @@ Keyword Arguments
    and latitude/longitude as appropriate)
 
 """
-function MultiBandPhotosyntheticallyActiveRadiation(; grid, 
+function MultiBandPhotosyntheticallyActiveRadiation(; grid::AbstractGrid{FT}, 
                                                       bands = ((400, 500), (500, 600), (600, 700)), #nm
                                                       base_bands = MOREL_λ,
                                                       base_water_attenuation_coefficient = MOREL_kʷ,
@@ -73,7 +73,7 @@ function MultiBandPhotosyntheticallyActiveRadiation(; grid,
                                                       base_chlorophyll_attenuation_coefficient = MOREL_χ,
                                                       field_names = ntuple(n->par_symbol(n), Val(length(bands))),
                                                       surface_PAR = default_surface_PAR,
-                                                      surface_PAR_division = fill(1 / length(bands), length(bands)))
+                                                      surface_PAR_division = fill(1 / length(bands), length(bands))) where FT
     Nbands = length(bands)
 
     kʷ = zeros(eltype(grid), Nbands)
@@ -108,9 +108,9 @@ function MultiBandPhotosyntheticallyActiveRadiation(; grid,
     return MultiBandPhotosyntheticallyActiveRadiation(total_PAR,
                                                       fields, 
                                                       tuple(field_names...), 
-                                                      kʷ, 
-                                                      e, 
-                                                      χ, 
+                                                      convert.(FT, kʷ), 
+                                                      convert.(FT, e), 
+                                                      convert.(FT, χ), 
                                                       surface_PAR, 
                                                       surface_PAR_division)
 end
