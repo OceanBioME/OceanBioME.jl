@@ -31,4 +31,4 @@ normalise_surface_function(f; kwargs...) = f
 
 normalise_surface_function(f::Number; FT, kwargs...) = convert(FT, f)
 
-normalise_surface_function(f::Function; discrete_form = false) = discrete_form ? DiscreteSurfaceFuncton(f) : ContinuousSurfaceFunction(f)
+normalise_surface_function(f::Function; discrete_form = false, kwargs...) = discrete_form ? DiscreteSurfaceFuncton(f) : ContinuousSurfaceFunction(f)
