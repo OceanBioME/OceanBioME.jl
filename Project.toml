@@ -15,9 +15,9 @@ OffsetArrays = "6fe1bfb0-de20-5000-8ca7-80f57d26f881"
 Roots = "f2b01f46-fcfa-551c-844a-d8ac1e96c665"
 SeawaterPolynomials = "d496a93d-167e-4197-9f49-d3af4ff8fe40"
 
-
 [compat]
 Adapt = "3, 4"
+Atomix = "0.1"
 CUDA = "5"
 Documenter = "1"
 EnsembleKalmanProcesses = "1"
@@ -25,6 +25,7 @@ GibbsSeaWater = "0.1"
 JLD2 = "0.4, 0.5"
 KernelAbstractions = "0.9"
 Oceananigans = "0.91.9, 0.92"
+OffsetArrays = "1.14"
 Roots = "2"
 SeawaterPolynomials = "0.3"
 StructArrays = "0.4, 0.5, 0.6"
