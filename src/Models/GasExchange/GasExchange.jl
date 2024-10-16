@@ -65,14 +65,15 @@ or a `CarbonDioxideConcentration` which diagnoses the partial pressure of CO₂ 
 
 `transfer_velocity` should be a function of the form `k(u₁₀, T)`.
 """
-function GasExchangeBoundaryCondition(; water_concentration,
-                                        air_concentration,
-                                        transfer_velocity,
-                                        wind_speed,
-                                        discrete_form = false)
+function GasExchangeBoundaryCondition(FT = Float64; 
+                                      water_concentration,
+                                      air_concentration,
+                                      transfer_velocity,
+                                      wind_speed,
+                                      discrete_form = false)
 
-    wind_speed = normalise_surface_function(wind_speed; discrete_form)
-    air_concentration = normalise_surface_function(air_concentration; discrete_form)
+    wind_speed = normalise_surface_function(wind_speed; discrete_form, FT)
+    air_concentration = normalise_surface_function(air_concentration; discrete_form, FT)
 
     exchange_function = GasExchange(wind_speed, transfer_velocity, water_concentration, air_concentration)
 
@@ -80,13 +81,14 @@ function GasExchangeBoundaryCondition(; water_concentration,
 end
 
 """
-    CarbonDioxideGasExchangeBoundaryCondition(; carbon_chemistry = CarbonChemistry(),
-                                                transfer_velocity = SchmidtScaledTransferVelocity(; schmidt_number = CarbonDioxidePolynomialSchmidtNumber()),
-                                                air_concentration = 413, # ppmv
-                                                wind_speed = 2,
-                                                water_concentration = nothing,
-                                                silicate_and_phosphate_names = nothing,
-                                                kwargs...)
+    CarbonDioxideGasExchangeBoundaryCondition(FT = Float64; 
+                                              carbon_chemistry = CarbonChemistry(FT),
+                                              transfer_velocity = SchmidtScaledTransferVelocity(schmidt_number = CarbonDioxidePolynomialSchmidtNumber(FT)),
+                                              air_concentration = 413, # ppmv
+                                              wind_speed = 2,
+                                              water_concentration = nothing,
+                                              silicate_and_phosphate_names = nothing,
+                                              kwargs...)
 
 Returns a `FluxBoundaryCondition` for the gas exchange between carbon dioxide dissolved in the water
 specified by the `carbon_chemisty` model, and `air_concentration` with `transfer_velocity` (see 
@@ -99,13 +101,14 @@ and phosphate tracers, or a `NamedTuple`  of values for the `carbon_chemistry` m
 
 Note: The model always requires `T`, `S`, `DIC`, and `Alk` to be present in the model.
 """
-function CarbonDioxideGasExchangeBoundaryCondition(; carbon_chemistry = CarbonChemistry(),
-                                                     transfer_velocity = SchmidtScaledTransferVelocity(; schmidt_number = CarbonDioxidePolynomialSchmidtNumber()),
-                                                     air_concentration = 413, # ppmv
-                                                     wind_speed = 2,
-                                                     water_concentration = nothing,
-                                                     silicate_and_phosphate_names = nothing,
-                                                     kwargs...)
+function CarbonDioxideGasExchangeBoundaryCondition(FT = Float64; 
+                                                   carbon_chemistry = CarbonChemistry(FT),
+                                                   transfer_velocity = SchmidtScaledTransferVelocity(schmidt_number = CarbonDioxidePolynomialSchmidtNumber(FT)),
+                                                   air_concentration = 413, # ppmv
+                                                   wind_speed = 2,
+                                                   water_concentration = nothing,
+                                                   silicate_and_phosphate_names = nothing,
+                                                   kwargs...)
 
     if isnothing(water_concentration)
         water_concentration = CarbonDioxideConcentration(; carbon_chemistry, silicate_and_phosphate_names)
@@ -113,15 +116,16 @@ function CarbonDioxideGasExchangeBoundaryCondition(; carbon_chemistry = CarbonCh
         @warn "Make sure that the `carbon_chemistry` $(carbon_chemistry) is the same as that in `water_concentration` $(water_concentration) (or set it to `nothing`)"
     end
 
-    return GasExchangeBoundaryCondition(; water_concentration, air_concentration, transfer_velocity, wind_speed, kwargs...)
+    return GasExchangeBoundaryCondition(FT; water_concentration, air_concentration, transfer_velocity, wind_speed, kwargs...)
 end
 
 """
-    OxygenGasExchangeBoundaryCondition(; transfer_velocity = SchmidtScaledTransferVelocity(; schmidt_number = OxygenPolynomialSchmidtNumber()),
-                                         water_concentration = OxygenConcentration(),
-                                         air_concentration = 9352.7, # mmolO₂/m³
-                                         wind_speed = 2,
-                                         kwagrs...)
+    OxygenGasExchangeBoundaryCondition(FT = Float64; 
+                                       transfer_velocity = SchmidtScaledTransferVelocity(schmidt_number = OxygenPolynomialSchmidtNumber(FT)),
+                                       water_concentration = OxygenConcentration(),
+                                       air_concentration = 9352.7, # mmolO₂/m³
+                                       wind_speed = 2,
+                                       kwagrs...)
 
 Returns a `FluxBoundaryCondition` for the gas exchange between oxygen dissolved in the water
 specified by the the `OxygenConcentration` in the base model, and `air_concentration` with `transfer_velocity`
@@ -129,11 +133,12 @@ specified by the the `OxygenConcentration` in the base model, and `air_concentra
 
 `kwargs` are passed on to `GasExchangeBoundaryCondition`.
 """
-OxygenGasExchangeBoundaryCondition(; transfer_velocity = SchmidtScaledTransferVelocity(; schmidt_number = OxygenPolynomialSchmidtNumber()),
-                                     water_concentration = OxygenConcentration(),
-                                     air_concentration = PartiallySolubleGas(9352.7, OxygenSolubility()), # mmolO₂/m³
-                                     wind_speed = 2,
-                                     kwargs...) = 
-    GasExchangeBoundaryCondition(; water_concentration, air_concentration, transfer_velocity, wind_speed, kwargs...)
+OxygenGasExchangeBoundaryCondition(FT = Float64;
+                                   transfer_velocity = SchmidtScaledTransferVelocity(schmidt_number = OxygenPolynomialSchmidtNumber(FT)),
+                                   water_concentration = OxygenConcentration(),
+                                   air_concentration = PartiallySolubleGas(FT; air_concentration = 9352.7, solubility = OxygenSolubility(FT)), # mmolO₂/m³
+                                   wind_speed = 2,
+                                   kwargs...) = 
+    GasExchangeBoundaryCondition(FT; water_concentration, air_concentration, transfer_velocity, wind_speed, kwargs...)
 
 end # module

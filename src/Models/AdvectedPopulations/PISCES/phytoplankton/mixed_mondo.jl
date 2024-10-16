@@ -20,35 +20,76 @@ either `NutrientLimitedProduction` or
 `GrowthRespirationLimitedProduction`, which represent the typical
 and `newprod` versions of PISCES.
 """
-@kwdef struct MixedMondo{GR, NL, FT}
+struct MixedMondo{GR, NL, FT}
                         growth_rate :: GR
                 nutrient_limitation :: NL
                         
-                   exudated_fracton :: FT = 0.05        # 
+                   exudated_fracton :: FT # 
 
-              blue_light_absorption :: FT               #
-             green_light_absorption :: FT               #
-               red_light_absorption :: FT               #
+              blue_light_absorption :: FT #
+             green_light_absorption :: FT #
+               red_light_absorption :: FT #
 
-          mortality_half_saturation :: FT = 0.2         # mmol C / m³
-              linear_mortality_rate :: FT = 0.01 / day  # 1 / s
+          mortality_half_saturation :: FT # mmol C / m³
+              linear_mortality_rate :: FT # 1 / s
 
-           base_quadratic_mortality :: FT = 0.01 / day  # 1 / s / (mmol C / m³)
-        maximum_quadratic_mortality :: FT               # 1 / s / (mmol C / m³) - zero for nanophytoplankton
+           base_quadratic_mortality :: FT # 1 / s / (mmol C / m³)
+        maximum_quadratic_mortality :: FT # 1 / s / (mmol C / m³) - zero for nanophytoplankton
 
-          minimum_chlorophyll_ratio :: FT = 0.0033      # mg Chl / mg C
-          maximum_chlorophyll_ratio :: FT               # mg Chl / mg C
+          minimum_chlorophyll_ratio :: FT # mg Chl / mg C
+          maximum_chlorophyll_ratio :: FT # mg Chl / mg C
 
-                 maximum_iron_ratio :: FT = 0.06        # μmol Fe / mmol C
+                 maximum_iron_ratio :: FT # μmol Fe / mmol C
 
-           silicate_half_saturation :: FT = 2.0         # mmol Si / m³
-  enhanced_silicate_half_saturation :: FT = 20.9        # mmol Si / m³
-             optimal_silicate_ratio :: FT = 0.159       # mmol Si / mmol C
+           silicate_half_saturation :: FT # mmol Si / m³
+  enhanced_silicate_half_saturation :: FT # mmol Si / m³
+             optimal_silicate_ratio :: FT # mmol Si / mmol C
 
-    half_saturation_for_iron_uptake :: FT               # μmol Fe / m³
+    half_saturation_for_iron_uptake :: FT # μmol Fe / m³
 
-      threshold_for_size_dependency :: FT = 1.0         # mmol C / m³
-                         size_ratio :: FT = 3.0         # 
+      threshold_for_size_dependency :: FT # mmol C / m³
+                         size_ratio :: FT # 
+
+    function MixedMondo(FT = Float64;
+                        growth_rate::GR,
+                        nutrient_limitation::NL,
+                        exudated_fracton = 0.05, # 
+
+                        blue_light_absorption, #
+                        green_light_absorption, #
+                        red_light_absorption, #
+          
+                        mortality_half_saturation = 0.2, # mmol C / m³
+                        linear_mortality_rate = 0.01 / day, # 1 / s
+          
+                        base_quadratic_mortality = 0.01 / day, # 1 / s / (mmol C / m³)
+                        maximum_quadratic_mortality, # 1 / s / (mmol C / m³) - zero for nanophytoplankton
+          
+                        minimum_chlorophyll_ratio = 0.0033, # mg Chl / mg C
+                        maximum_chlorophyll_ratio, # mg Chl / mg C
+          
+                        maximum_iron_ratio = 0.06, # μmol Fe / mmol C
+          
+                        silicate_half_saturation = 2.0, # mmol Si / m³
+                        enhanced_silicate_half_saturation = 20.9, # mmol Si / m³
+                        optimal_silicate_ratio = 0.159, # mmol Si / mmol C
+          
+                        half_saturation_for_iron_uptake,  # μmol Fe / m³
+          
+                        threshold_for_size_dependency = 1.0,  # mmol C / m³
+                        size_ratio = 3.0) where {GR, NL} #
+
+        return new{GR, NL, FT}(growth_rate, nutrient_limitation, 
+                               exudated_fracton, 
+                               blue_light_absorption, green_light_absorption, red_light_absorption,
+                               mortality_half_saturation, linear_mortality_rate,
+                               base_quadratic_mortality, maximum_quadratic_mortality,
+                               minimum_chlorophyll_ratio, maximum_chlorophyll_ratio,
+                               maximum_iron_ratio, 
+                               silicate_half_saturation, enhanced_silicate_half_saturation, optimal_silicate_ratio,
+                               half_saturation_for_iron_uptake, 
+                               threshold_for_size_dependency, size_ratio)
+    end
 end
 
 required_biogeochemical_tracers(phyto::MixedMondo, base) =

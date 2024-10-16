@@ -1,11 +1,11 @@
 using Oceananigans.Fields: ConstantField, ZeroField
 
-@kernel function _compute_euphotic_depth!(euphotic_depth, PAR, grid, cutoff)
+@kernel function _compute_euphotic_depth!(euphotic_depth, PAR, grid::AbstractGrid{FT}, cutoff) where FT
     i, j = @index(Global, NTuple)
 
     surface_PAR = @inbounds (PAR[i, j, grid.Nz] + PAR[i, j, grid.Nz + 1])/2
 
-    @inbounds euphotic_depth[i, j, 1] = -Inf
+    @inbounds euphotic_depth[i, j, 1] = convert(FT, -Inf)
 
     for k in grid.Nz-1:-1:1
         PARₖ = @inbounds PAR[i, j, k]

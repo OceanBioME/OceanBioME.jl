@@ -7,12 +7,12 @@ iron (Fe), phosphate PO₄, and (optionally) silicate (Si) availability.
 Silicate limitation may be turned off (e.g. for nanophytoplankton) by
 setting `silicate_limited=false`.
 """
-@kwdef struct NitrogenIronPhosphateSilicateLimitation{FT, BT}
+@kwdef struct NitrogenIronPhosphateSilicateLimitation{FT}
     minimum_ammonium_half_saturation :: FT          # mmol N / m³
      minimum_nitrate_half_saturation :: FT          # mmol N / m³
    minimum_phosphate_half_saturation :: FT          # mmol P / m³
                   optimal_iron_quota :: FT = 0.007  # μmol Fe / mmol C
-                    silicate_limited :: BT          # Bool
+                    silicate_limited :: Bool        # Bool
     minimum_silicate_half_saturation :: FT = 1.0    # mmol Si / m³
   silicate_half_saturation_parameter :: FT = 16.6   # mmol Si / m³
 end

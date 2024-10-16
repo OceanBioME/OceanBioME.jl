@@ -32,6 +32,9 @@ import OceanBioME.Particles: required_particle_fields, required_tracers, coupled
     SugarKelp
 
 Defines the parameters for `SugarKelp` biogeochemistry.
+
+TODO: make a function to make it so this can be automatically converted into different float types as that wouldn't work at the moment
+but there is too many parameters 
 """
 @kwdef struct SugarKelp{FT, TL}
     temperature_limit :: TL = LinearOptimalTemperatureRange() # TODO: split up more parameterisations like this
