@@ -29,7 +29,7 @@ end
 
     field_values = ntuple(nf->particles.fields[nf][n], Val(Nf))
 
-    tracer_values = extract_tracer_values(particles.field_interpolation, particles, grid, fields, n)
+    tracer_values = extract_tracer_values(val_field_name, particles.field_interpolation, particles, grid, fields, n)
 
     tendencies[field_name][n] = particles.biogeochemistry(val_field_name, t, field_values..., tracer_values...)
 end
