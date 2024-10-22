@@ -18,7 +18,7 @@ end
     e = nitrogen_exudate(kelp.photosynthesis, kelp, C, T, PAR)
 
     consumption = nitrogen_consumption(kelp.growth, kelp, t, A, N, C, T, NH₄, u, v, w)
-    
+
     return (J - e - consumption) / kₐ / day 
 end
 

@@ -1,6 +1,8 @@
-using CairoMakie, Oceananigans.Units, OceanBioME, NetCDF
+using CairoMakie, Oceananigans.Units, OceanBioME
 
 model = GiantKelp()
+
+const year = years = 365days
 
 @inline PAR(t) = 60 * (1 - cos((t + 15days) * 2π / year)) * (1 / (1 + 0.2 * exp(-((mod(t, year) - 200days) / 50days)^2))) + 2
 

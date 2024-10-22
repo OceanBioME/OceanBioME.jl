@@ -20,35 +20,37 @@ function (growth::ReserveAmmoniaGrowth)(kelp, t, A, N, C, T, NH₄, u, v, w)
 
     Cₘᵢ = kelp.minimum_carbon_reserve
 
-    μ = (μ₀ + μₑ * exp(-(A / A₀)^2)) # todo verify that Nₘᵢ / Nₘₐ is the correct way up
-
+    μ = (μ₀ + μₑ * exp(-(A / A₀)^2))
+    
     fₜ = growth.temperature_response(T)
     fₛ = growth.seasonal_response(t)
 
     j̃_NH₄ = potential_ammonia_uptake(kelp.nitrogen_uptake, NH₄, u, v, w)
     
-    fNH₄ = j̃_NH₄ / kₐ / (N + Nₛ)
+    μNH₄ = j̃_NH₄ / kₐ / (N + Nₛ) 
 
-    fN = 1 - Nₘᵢ / N
-    fC = 1 - Cₘᵢ / C
-    
-    return μ * fₜ * fₛ * min(fC, max(fN, fNH₄))
+    fN = max(0, 1 - Nₘᵢ / N)
+    fC = max(0, 1 - Cₘᵢ / C)
+
+    return fₜ * fₛ * min(μ * fC, max(μ * fN, μNH₄))
 end
 
 function carbon_consumption(growth::ReserveAmmoniaGrowth, kelp, t, A, N, C, T, NH₄, u, v, w)
+    kₐ = kelp.structural_dry_weight_per_area
     Cₛ = kelp.structural_carbon
 
     μ = growth(kelp, t, A, N, C, T, NH₄, u, v, w)
 
-    return μ * (C + Cₛ)
+    return μ * (C + Cₛ) * kₐ
 end
 
 function nitrogen_consumption(growth::ReserveAmmoniaGrowth, kelp, t, A, N, C, T, NH₄, u, v, w)
     Nₛ = kelp.structural_nitrogen
+    kₐ = kelp.structural_dry_weight_per_area
 
     μ = growth(kelp, t, A, N, C, T, NH₄, u, v, w)
 
-    consumption = μ * (N + Nₛ)
+    consumption = μ * (N + Nₛ) * kₐ
 
     jNH₄ = potential_ammonia_uptake(kelp.nitrogen_uptake, NH₄, u, v, w)
 

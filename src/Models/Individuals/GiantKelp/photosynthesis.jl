@@ -17,7 +17,7 @@ using Roots: find_zero, Bisection
 end
 
 @inline function (photo::ArrheniusPhotosynthesis)(T, PAR)
-    PAR *= day / (3.99e-10 * 545e12) # W / m² / s to einstein / m² / day
+    PAR *= day / (3.99e-10 * 545e12) # W / m² to einstein / m² / day
 
     Tk = T + 273.15
 
@@ -40,7 +40,7 @@ end
 
     pₛ = α * Iₛ / log(1 + α / β)
 
-    return pₛ * (1 - exp(- α * PAR / pₛ)) * exp(-β * PAR / pₛ) 
+    return pₛ * (1 - exp(- α * PAR / pₛ)) * exp(- β * PAR / pₛ) #maximum_photosynthesis * PAR / (200*day/10^6 + PAR)
 end
 
 @inline solve_for_light_inhibition(photo, maximum_photosynthesis) =
@@ -70,3 +70,12 @@ end
 
     return P * e * 14 / 12 / CN
 end
+
+struct JassbyAndPlatt{FT}
+       maximum :: FT
+    efficiency :: FT
+    exudation_parameter :: FT
+    excess_exudate_redfield :: FT
+end
+# TODO: fix units!!!
+(photo::JassbyAndPlatt)(T, PAR) = photo.maximum * tanh(photo.efficiency * (PAR) / photo.maximum)
