@@ -69,12 +69,12 @@ Future plans include implement a positivity-preserving timestepping scheme as th
 `NaN` this scheme no longer conserves mass. While this may be useful to prevent spurious numerics leading
 to crashing care should be taken that the mass doesn't deviate too much.
 
-This scheme is similar to that used by [NEMO-PISCES](https://www.nemo-ocean.eu/), although they scale the 
-tendency rather than the value, while other Earth system models simply set negative tracers to zero, for 
+This scheme is similar to that used by [NEMO-PISCES](https://www.nemo-ocean.eu/), although they scale the
+tendency rather than the value, while other Earth system models simply set negative tracers to zero, for
 example [NCAR's MARBL](https://marbl-ecosys.github.io/versions/latest_release/index.html) and
-[NEMO-TOPAZ2](https://zenodo.org/records/2648099), which does not conserve mass. More complicated schemes 
-exist, for example [ROMS-BECS](https://zenodo.org/records/3988618) uses an implicite-itterative 
-approach where each component is updated in sequence to garantee mass conservation, possibly at the 
+[NEMO-TOPAZ2](https://zenodo.org/records/2648099), which does not conserve mass. More complicated schemes
+exist, for example [ROMS-BECS](https://zenodo.org/records/3988618) uses an implicite-itterative
+approach where each component is updated in sequence to garantee mass conservation, possibly at the
 expense of numerical precision.
 """
 function ScaleNegativeTracers(tracers; scalefactors = ones(length(tracers)), invalid_fill_value = NaN, warn = false)
@@ -127,7 +127,7 @@ show(io::IO, scaler::ScaleNegativeTracers) = print(io, string(summary(scaler), "
                                                           "└── Scalefactors: $(scaler.scalefactors)"))
 
 function update_biogeochemical_state!(model, scale::ScaleNegativeTracers)
-    workgroup, worksize = work_layout(model.grid, :xyz)
+    workgroup, worksize = work_layout(model.grid, :xyz, (Center, Center, Center))
 
     dev = device(architecture(model))
 
@@ -153,7 +153,7 @@ end
         if value > 0
             p += value * scalefactor
         end
-    end 
+    end
 
     t = ifelse(t < 0, invalid_fill_value, t)
 
