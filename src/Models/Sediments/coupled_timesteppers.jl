@@ -13,13 +13,14 @@ const BGC_WITH_FLAT_SEDIMENT = Union{<:DiscreteBiogeochemistry{<:Any, <:Any, <:F
 
 # This is definitly type piracy
 @inline function ab2_step!(model::NonhydrostaticModel{<:Any, <:Any, <:Any, <:Any, <:Any, <:Any, <:Any, <:Any, <:Any, <:Any, <:Any, <:Any, <:Any, <:Any, <:Any, <:Any, <:Any, <:BGC_WITH_FLAT_SEDIMENT}, Δt)
-    workgroup, worksize = work_layout(model.grid, :xyz)
     arch = model.architecture
-    step_field_kernel! = ab2_step_field!(device(arch), workgroup, worksize)
     model_fields = prognostic_fields(model)
     χ = model.timestepper.χ
 
     for (i, field) in enumerate(model_fields)
+
+        workgroup, worksize = work_layout(model.grid, :xyz, location(field))
+        step_field_kernel! = ab2_step_field!(device(arch), workgroup, worksize)
 
         step_field_kernel!(field, Δt, χ,
                            model.timestepper.Gⁿ[i],
@@ -40,9 +41,9 @@ const BGC_WITH_FLAT_SEDIMENT = Union{<:DiscreteBiogeochemistry{<:Any, <:Any, <:F
     sediment = model.biogeochemistry.sediment
 
     for (i, field) in enumerate(sediment_fields(sediment))
-        launch!(arch, model.grid, :xy, ab2_step_flat_field!, 
-                field, Δt, χ, 
-                sediment.tendencies.Gⁿ[i], 
+        launch!(arch, model.grid, :xy, ab2_step_flat_field!,
+                field, Δt, χ,
+                sediment.tendencies.Gⁿ[i],
                 sediment.tendencies.G⁻[i])
 
     end
@@ -61,12 +62,12 @@ end
 
     sediment = model.biogeochemistry.sediment
     arch = model.architecture
-    
+
 
     for (i, field) in enumerate(sediment_fields(sediment))
-        launch!(arch, model.grid, :xy, ab2_step_flat_field!, 
-                field, Δt, χ, 
-                sediment.tendencies.Gⁿ[i], 
+        launch!(arch, model.grid, :xy, ab2_step_flat_field!,
+                field, Δt, χ,
+                sediment.tendencies.Gⁿ[i],
                 sediment.tendencies.G⁻[i])
 
     end
@@ -83,12 +84,13 @@ end
 end
 
 function rk3_substep!(model::NonhydrostaticModel{<:Any, <:Any, <:Any, <:Any, <:Any, <:Any, <:Any, <:Any, <:Any, <:Any, <:Any, <:Any, <:Any, <:Any, <:Any, <:Any, <:Any, <:BGC_WITH_FLAT_SEDIMENT}, Δt, γⁿ, ζⁿ)
-    workgroup, worksize = work_layout(model.grid, :xyz)
     arch = model.architecture
-    substep_field_kernel! = rk3_substep_field!(device(arch), workgroup, worksize)
     model_fields = prognostic_fields(model)
 
     for (i, field) in enumerate(model_fields)
+        workgroup, worksize = work_layout(model.grid, :xyz, location(field))
+        substep_field_kernel! = rk3_substep_field!(device(arch), workgroup, worksize)
+
         substep_field_kernel!(field, Δt, γⁿ, ζⁿ,
                               model.timestepper.Gⁿ[i],
                               model.timestepper.G⁻[i])
@@ -108,9 +110,9 @@ function rk3_substep!(model::NonhydrostaticModel{<:Any, <:Any, <:Any, <:Any, <:A
     sediment = model.biogeochemistry.sediment
 
     for (i, field) in enumerate(sediment_fields(sediment))
-        launch!(arch, model.grid, :xy, rk3_step_flat_field!, 
+        launch!(arch, model.grid, :xy, rk3_step_flat_field!,
                 field, Δt, γⁿ, ζⁿ,
-                sediment.tendencies.Gⁿ[i], 
+                sediment.tendencies.Gⁿ[i],
                 sediment.tendencies.G⁻[i])
     end
 
