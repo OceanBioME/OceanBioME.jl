@@ -1,27 +1,28 @@
-function MixedMondoNanoAndDiatoms(; nano = MixedMondo(growth_rate = GrowthRespirationLimitedProduction(dark_tollerance = 3days),
-                                                      nutrient_limitation = 
-                                                        NitrogenIronPhosphateSilicateLimitation(minimum_ammonium_half_saturation = 0.013,
-                                                                                                minimum_nitrate_half_saturation = 0.13, 
-                                                                                                minimum_phosphate_half_saturation = 0.8,
-                                                                                                silicate_limited = false),
-                                                      blue_light_absorption = 2.1, 
-                                                      green_light_absorption = 0.42, 
-                                                      red_light_absorption = 0.4,
-                                                      maximum_quadratic_mortality = 0.0,
-                                                      maximum_chlorophyll_ratio = 0.033,
-                                                      half_saturation_for_iron_uptake = 1.0),
-                                    diatoms = MixedMondo(growth_rate = GrowthRespirationLimitedProduction(dark_tollerance = 4days),
-                                                         nutrient_limitation = 
-                                                           NitrogenIronPhosphateSilicateLimitation(minimum_ammonium_half_saturation = 0.039,
-                                                                                                   minimum_nitrate_half_saturation = 0.39, 
-                                                                                                   minimum_phosphate_half_saturation = 2.4,
-                                                                                                   silicate_limited = true),
-                                                         blue_light_absorption = 1.6, 
-                                                         green_light_absorption = 0.69, 
-                                                         red_light_absorption = 0.7,
-                                                         maximum_quadratic_mortality = 0.03/day,
-                                                         maximum_chlorophyll_ratio = 0.05,
-                                                         half_saturation_for_iron_uptake = 3.0))
+function MixedMondoNanoAndDiatoms(FT = Float64; 
+                                  nano = MixedMondo(FT; growth_rate = GrowthRespirationLimitedProduction{FT}(dark_tollerance = 3days),
+                                                    nutrient_limitation = 
+                                                        NitrogenIronPhosphateSilicateLimitation{FT}(minimum_ammonium_half_saturation = 0.013,
+                                                                                                    minimum_nitrate_half_saturation = 0.13, 
+                                                                                                    minimum_phosphate_half_saturation = 0.8,
+                                                                                                    silicate_limited = false),
+                                                    blue_light_absorption = convert(FT, 2.1), 
+                                                    green_light_absorption = convert(FT, 0.42), 
+                                                    red_light_absorption = convert(FT, 0.4),
+                                                    maximum_quadratic_mortality = convert(FT, 0.0),
+                                                    maximum_chlorophyll_ratio = convert(FT, 0.033),
+                                                    half_saturation_for_iron_uptake = convert(FT, 1.0)),
+                                  diatoms = MixedMondo(FT; growth_rate = GrowthRespirationLimitedProduction{FT}(dark_tollerance = 4days),
+                                                       nutrient_limitation = 
+                                                           NitrogenIronPhosphateSilicateLimitation{FT}(minimum_ammonium_half_saturation = 0.039,
+                                                                                                       minimum_nitrate_half_saturation = 0.39, 
+                                                                                                       minimum_phosphate_half_saturation = 2.4,
+                                                                                                       silicate_limited = true),
+                                                       blue_light_absorption = convert(FT, 1.6), 
+                                                       green_light_absorption = convert(FT, 0.69), 
+                                                       red_light_absorption = convert(FT, 0.7),
+                                                       maximum_quadratic_mortality = convert(FT, 0.03/day),
+                                                       maximum_chlorophyll_ratio = convert(FT, 0.05),
+                                                       half_saturation_for_iron_uptake = convert(FT, 3.0)))
  
     return NanoAndDiatoms(; nano, diatoms)
 end

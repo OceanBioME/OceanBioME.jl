@@ -8,31 +8,71 @@ particulates (POC and GOC).
 
 This model assumes a fixed ratio for all other elements (i.e. N, P, Fe).
 """
-@kwdef struct QualityDependantZooplankton{FT, FP}
-                   temperature_sensetivity :: FT = 1.079 #
-                      maximum_grazing_rate :: FT         # 1 / s
+struct QualityDependantZooplankton{FT, FP}
+                   temperature_sensetivity :: FT #
+                      maximum_grazing_rate :: FT # 1 / s
 
                           food_preferences :: FP 
 
-              food_threshold_concentration :: FT = 0.3   # mmol C / m³
-    specific_food_thresehold_concentration :: FT = 0.001 # mmol C / m³
+              food_threshold_concentration :: FT # mmol C / m³
+    specific_food_thresehold_concentration :: FT # mmol C / m³
 
-                   grazing_half_saturation :: FT = 20.0  # mmol C / m³
+                   grazing_half_saturation :: FT # mmol C / m³
 
-                 maximum_flux_feeding_rate :: FT         # m / (mmol C / m³)
+                 maximum_flux_feeding_rate :: FT # m / (mmol C / m³)
 
-                                iron_ratio :: FT         # μmol Fe / mmol C
+                                iron_ratio :: FT # μmol Fe / mmol C
 
-                 minimum_growth_efficiency :: FT         #
-                  non_assililated_fraction :: FT = 0.3   #
+                 minimum_growth_efficiency :: FT #
+                  non_assililated_fraction :: FT #
 
-                 mortality_half_saturation :: FT = 0.2   # mmol C / m³
-                       quadratic_mortality :: FT         # 1 / (mmol C / m³) / s
-                          linear_mortality :: FT         # 1 / s
+                 mortality_half_saturation :: FT # mmol C / m³
+                       quadratic_mortality :: FT # 1 / (mmol C / m³) / s
+                          linear_mortality :: FT # 1 / s
 
     # this should be called inorganic excretion factor
-              dissolved_excretion_fraction :: FT = 0.6   #
-              undissolved_calcite_fraction :: FT         #
+              dissolved_excretion_fraction :: FT #
+              undissolved_calcite_fraction :: FT #
+
+    function QualityDependantZooplankton(FT = Float64;
+                                         temperature_sensetivity = 1.079, #
+                                         maximum_grazing_rate, # 1 / s
+
+                                         food_preferences, 
+
+                                         food_threshold_concentration = 0.3, # mmol C / m³
+                                         specific_food_thresehold_concentration = 0.001, # mmol C / m³
+
+                                         grazing_half_saturation = 20.0, # mmol C / m³
+
+                                         maximum_flux_feeding_rate, # m / (mmol C / m³)
+
+                                         iron_ratio, # μmol Fe / mmol C
+
+                                         minimum_growth_efficiency, #
+                                         non_assililated_fraction = 0.3, #
+
+                                         mortality_half_saturation = 0.2, # mmol C / m³
+                                         quadratic_mortality, # 1 / (mmol C / m³) / s
+                                         linear_mortality, # 1 / s
+
+                                         # this should be called inorganic excretion factor
+                                         dissolved_excretion_fraction = 0.6, #
+                                         undissolved_calcite_fraction) #
+        
+        food_preferences = NamedTuple{keys(food_preferences)}(map(fp -> convert(FT, fp), food_preferences))
+
+        FP = typeof(food_preferences)
+
+        return new{FT, FP}(temperature_sensetivity, maximum_grazing_rate,
+                           food_preferences,
+                           food_threshold_concentration, specific_food_thresehold_concentration,
+                           grazing_half_saturation, maximum_flux_feeding_rate,
+                           iron_ratio, 
+                           minimum_growth_efficiency, non_assililated_fraction,
+                           mortality_half_saturation, quadratic_mortality, linear_mortality,
+                           dissolved_excretion_fraction, undissolved_calcite_fraction)
+    end
 end
 
 required_biogeochemical_tracers(::QualityDependantZooplankton, name_base) = tuple(name_base)

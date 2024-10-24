@@ -6,13 +6,32 @@ using Oceananigans.Grids: znode, Center
 Parameterisation of dissolved organic matter which depends on a bacterial 
 concentration.
 """
-@kwdef struct DissolvedOrganicCarbon{FT, AP}
-                             remineralisation_rate :: FT = 0.3/day   # 1 / s
-             bacteria_concentration_depth_exponent :: FT = 0.684     # 
-                  reference_bacteria_concentration :: FT = 1.0       # mmol C / m³
-                           temperature_sensetivity :: FT = 1.066     #
+struct DissolvedOrganicCarbon{FT, AP}
+                             remineralisation_rate :: FT # 1 / s
+             bacteria_concentration_depth_exponent :: FT # 
+                  reference_bacteria_concentration :: FT # mmol C / m³
+                           temperature_sensetivity :: FT #
 # (1 / (mmol C / m³),  1 / (mmol C / m³),  1 / (mmol C / m³),  1 / (mmol C / m³) / s,  1 / (mmol C / m³) / s)
-                            aggregation_parameters :: AP = (0.37, 102, 3530, 5095, 114) .* (10^-6 / day) 
+                            aggregation_parameters :: AP 
+
+    function DissolvedOrganicCarbon(FT = Float64; 
+                                    remineralisation_rate = 0.3/day, # 1 / s
+                                    bacteria_concentration_depth_exponent = 0.684, # 
+                                    reference_bacteria_concentration = 1.0, # mmol C / m³
+                                    temperature_sensetivity = 1.066, #
+# (1 / (mmol C / m³),  1 / (mmol C / m³),  1 / (mmol C / m³),  1 / (mmol C / m³) / s,  1 / (mmol C / m³) / s)
+                                    aggregation_parameters = (0.37, 102, 3530, 5095, 114) .* (10^-6 / day))
+
+        aggregation_parameters = convert.(FT, aggregation_parameters)
+
+        AP = typeof(aggregation_parameters)
+
+        return new{FT, AP}(convert(FT, remineralisation_rate), 
+                           convert(FT, bacteria_concentration_depth_exponent),
+                           convert(FT, reference_bacteria_concentration), 
+                           convert(FT, temperature_sensetivity), 
+                           aggregation_parameters)
+    end
 end
 
 required_biogeochemical_tracers(::DissolvedOrganicCarbon) = tuple(:DOC)
