@@ -36,7 +36,7 @@ possible_tuple_value(::Tuple, field_name) = field_name
 
     field_values = ntuple(nf->particles.fields[nf][n], Val(Nf))
 
-    tracer_values = extract_tracer_values(particles.field_interpolation, particles, grid, fields, n)
+    tracer_values = extract_tracer_values(val_field_name, particles.field_interpolation, particles, grid, fields, n)
 
     particle_tendency = particles.biogeochemistry(val_field_name, t, field_values..., tracer_values...) 
 

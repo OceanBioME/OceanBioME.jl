@@ -12,7 +12,7 @@ Specifies that tracer values should be taken from the nearst center point.
 """
 struct NearestPoint end
 
-@inline function extract_tracer_values(::NearestPoint, particles, grid, fields, n)
+@inline function extract_tracer_values(val_field_name, ::NearestPoint, particles, grid, fields, n)
     x = @inbounds particles.x[n]
     y = @inbounds particles.y[n]
     z = @inbounds particles.z[n]
