@@ -23,7 +23,7 @@ using OceanBioME.Sediments: sinking_flux
 const year = years = 365days
 nothing #hide
 
-# ## Surface PAR and turbulent vertical diffusivity based on idealised mixed layer depth 
+# ## Surface PAR and turbulent vertical diffusivity based on idealised mixed layer depth
 # Setting up idealised functions for PAR and diffusivity (details here can be ignored but these are typical of the North Atlantic), temperaeture and euphotic layer
 
 @inline PAR⁰(t) = 300 * (1 - cos((t + 15days) * 2π / year)) * (1 / (1 + 0.2 * exp(-((mod(t, year) - 200days) / 50days)^2))) + 10
@@ -66,22 +66,22 @@ O₂_flux = OxygenGasExchangeBoundaryCondition()
 @info "Setting up the model..."
 model = HydrostaticFreeSurfaceModel(; grid,
                                       velocities = PrescribedVelocityFields(),
-                                      tracer_advection = TracerAdvection(nothing, nothing, WENOFifthOrder(grid)),
+                                      tracer_advection = FluxFormAdvection(nothing, nothing, WENOFifthOrder(grid)),
                                       momentum_advection = nothing,
                                       buoyancy = nothing,
                                       clock,
                                       closure = ScalarDiffusivity(VerticallyImplicitTimeDiscretization(), κ = κ_field),
                                       biogeochemistry,
                                       boundary_conditions = (DIC = FieldBoundaryConditions(top = CO₂_flux), O₂ = FieldBoundaryConditions(top = O₂_flux)))
-                              
+
 
 @info "Setting initial values..."
 
 set!(model, P = 0.1, PChl = 0.025, PFe = 0.005,
             D = 0.01, DChl = 0.003, DFe = 0.0006, DSi = 0.004,
             Z = 0.06, M = 0.5,
-            DOC = 4, 
-            POC = 5.4, SFe = 0.34, 
+            DOC = 4,
+            POC = 5.4, SFe = 0.34,
             GOC = 8.2, BFe = 0.5, PSi = 0.04, CaCO₃ = 10^-10,
             NO₃ = 10, NH₄ = 0.1, PO₄ = 5.0, Fe = 0.6, Si = 8.6,
             DIC = 2205, Alk = 2560, O₂ = 317, S = 35)
@@ -129,8 +129,8 @@ simulation.output_writers[:tracers] = JLD2OutputWriter(model, model.tracers,
 
 PAR = Field(Oceananigans.Biogeochemistry.biogeochemical_auxiliary_fields(biogeochemistry.light_attenuation).PAR)
 
-internal_fields = (; biogeochemistry.underlying_biogeochemistry.calcite_saturation, 
-                     biogeochemistry.underlying_biogeochemistry.euphotic_depth, 
+internal_fields = (; biogeochemistry.underlying_biogeochemistry.calcite_saturation,
+                     biogeochemistry.underlying_biogeochemistry.euphotic_depth,
                      PAR
                      )#biogeochemistry.underlying_biogeochemistry.mean_mixed_layer_vertical_diffusivity)
 
@@ -153,7 +153,7 @@ x, y, z = nodes(tracers["P"])
 times = tracers["P"].times
 
 # We compute the  air-sea CO₂ flux at the surface (corresponding to vertical index `k = grid.Nz`) and
-# the carbon export by computing how much carbon sinks below some arbirtrary depth; here we use depth 
+# the carbon export by computing how much carbon sinks below some arbirtrary depth; here we use depth
 # that corresponds to `k = grid.Nz - 20`.
 air_sea_CO₂_flux = zeros(length(times))
 carbon_export = zeros(length(times))
@@ -167,7 +167,7 @@ CUDA.@allowscalar for (n, t) in enumerate(times)
     clock.time = t
 
     k_export = floor(Int, grid.Nz + MLD(t)/minimum_zspacing(grid))
-    
+
     air_sea_CO₂_flux[n] = CO₂_flux.condition.func(1, 1, grid, clock, (; DIC = tracers["DIC"][n], Alk = tracers["Alk"][n], T = tracers["T"][n], S))
 
     POC_export = -sinking_flux(1, 1, k_export, grid, model.advection.POC.z, Val(:POC), biogeochemistry, (; POC = tracers["POC"][n]))

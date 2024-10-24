@@ -9,7 +9,7 @@ using OceanBioME: DiscreteBiogeochemistry, ContinuousBiogeochemistry, BoxModelGr
 using Oceananigans
 using Oceananigans.Architectures: device, architecture, on_architecture
 using Oceananigans.Utils: launch!
-using Oceananigans.Advection: advective_tracer_flux_z, TracerAdvection
+using Oceananigans.Advection: advective_tracer_flux_z, FluxFormAdvection
 using Oceananigans.Units: day
 using Oceananigans.Fields: ConstantField
 using Oceananigans.Biogeochemistry: biogeochemical_drift_velocity
@@ -38,13 +38,13 @@ function update_tendencies!(bgc, sediment::FlatSediment, model)
 
     launch!(arch, model.grid, :xy,
             calculate_sediment_tendencies!,
-            sediment, biogeochemistry, model.grid, 
-            sinking_advection(biogeochemistry, model.advection), 
-            required_tracers(sediment, biogeochemistry, model.tracers), 
-            required_tendencies(sediment, biogeochemistry, model.timestepper.Gⁿ), 
+            sediment, biogeochemistry, model.grid,
+            sinking_advection(biogeochemistry, model.advection),
+            required_tracers(sediment, biogeochemistry, model.tracers),
+            required_tendencies(sediment, biogeochemistry, model.timestepper.Gⁿ),
             sediment.tendencies.Gⁿ,
             model.clock.time)
-            
+
     return nothing
 end
 
@@ -72,9 +72,9 @@ end
 
 @inline advection_scheme(advection, val_tracer) = advection
 @inline advection_scheme(advection::NamedTuple, val_tracer::Val{T}) where T = advection_scheme(advection[T], val_tracer)
-@inline advection_scheme(advection::TracerAdvection, val_tracer) = advection.z
+@inline advection_scheme(advection::FluxFormAdvection, val_tracer) = advection.z
 
-@inline function sinking_flux(i, j, k, grid, advection, val_tracer::Val{T}, bgc, tracers) where T 
+@inline function sinking_flux(i, j, k, grid, advection, val_tracer::Val{T}, bgc, tracers) where T
     return - advective_tracer_flux_z(i, j, k, grid, advection_scheme(advection, val_tracer), biogeochemical_drift_velocity(bgc, val_tracer).w, tracers[T]) /
       volume(i, j, k, grid, Center(), Center(), Center())
 end
