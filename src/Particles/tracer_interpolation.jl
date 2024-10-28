@@ -2,6 +2,7 @@ using Oceananigans.Operators: volume
 using Oceananigans.Fields: fractional_indices, _interpolate, interpolator, Center
 using Oceananigans.Grids: AbstractGrid, Flat, Bounded, Periodic
 
+@inline get_node(::Flat, i, N) = one(i)
 @inline get_node(::Bounded,  i, N) = min(max(i, 1), N)
 @inline get_node(::Periodic, i, N) = ifelse(i < 1, N, ifelse(i > N, 1, i))
 
