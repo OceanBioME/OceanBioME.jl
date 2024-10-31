@@ -30,11 +30,21 @@ struct NearestPoint end
     return field_values
 end
 
+# feels like fractional_indices could work more intuativly
+@inline collapse_position(x, y, z, ℓx, ℓy, ℓz) = (x, y, z)
+@inline collapse_position(x, y, z, ::Nothing, ℓy, ℓz) = (y, z)
+@inline collapse_position(x, y, z, ℓx, ::Nothing, ℓz) = (x, z)
+@inline collapse_position(x, y, z, ℓx, ℓy, ::Nothing) = (x, y, ::Nothing)
+@inline collapse_position(x, y, z, ℓx, ::Nothing, ::Nothing) = (x, )
+@inline collapse_position(x, y, z, ::Nothing, ℓy, ::Nothing) = (y, )
+@inline collapse_position(x, y, z, ::Nothing, ::Nothing, ℓz) = (z, )
+
 @inline function nearest_node(x, y, z, grid::AbstractGrid{FT, TX, TY, TZ}) where {FT, TX, TY, TZ}
     # messy
-    ii, jj, kk = fractional_indices((x, y, z), grid, ifelse(isa(TX(), Flat), nothing, Center()),
-                                                     ifelse(isa(TY(), Flat), nothing, Center()),
-                                                     ifelse(isa(TZ(), Flat), nothing, Center()))
+    ℓx = ifelse(isa(TX(), Flat), nothing, Center())
+    ℓy = ifelse(isa(TY(), Flat), nothing, Center())
+    ℓz = ifelse(isa(TZ(), Flat), nothing, Center())
+    ii, jj, kk = fractional_indices(collapse_position(x, y, z, ℓx, ℓy, ℓz), grid, ℓx, ℓy, ℓz)
 
     ix = interpolator(ii)
     iy = interpolator(jj)
