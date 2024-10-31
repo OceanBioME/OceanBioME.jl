@@ -34,7 +34,7 @@ end
 @inline collapse_position(x, y, z, ℓx, ℓy, ℓz) = (x, y, z)
 @inline collapse_position(x, y, z, ::Nothing, ℓy, ℓz) = (y, z)
 @inline collapse_position(x, y, z, ℓx, ::Nothing, ℓz) = (x, z)
-@inline collapse_position(x, y, z, ℓx, ℓy, ::Nothing) = (x, y, ::Nothing)
+@inline collapse_position(x, y, z, ℓx, ℓy, ::Nothing) = (x, y)
 @inline collapse_position(x, y, z, ℓx, ::Nothing, ::Nothing) = (x, )
 @inline collapse_position(x, y, z, ::Nothing, ℓy, ::Nothing) = (y, )
 @inline collapse_position(x, y, z, ::Nothing, ::Nothing, ℓz) = (z, )
