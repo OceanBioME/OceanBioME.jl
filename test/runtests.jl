@@ -1,4 +1,4 @@
-run(`ifconfig`)
+run(`ip addr`)
 
 include("dependencies_for_runtests.jl")
 
