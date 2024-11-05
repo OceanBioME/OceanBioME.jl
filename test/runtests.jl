@@ -1,3 +1,5 @@
+run(`ifconfig`)
+
 include("dependencies_for_runtests.jl")
 
 include("test_utils.jl")
