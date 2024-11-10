@@ -43,8 +43,8 @@ biogeochemistry = NutrientPhytoplanktonZooplanktonDetritus(; grid)
 
 model = NonhydrostaticModel(; grid, biogeochemistry,
                               advection = WENO(; grid),
-			                  closure = AnisotropicMinimumDissipation(),
-			                  buoyancy = SeawaterBuoyancy(constant_salinity = true))
+			      closure = AnisotropicMinimumDissipation(),
+                              buoyancy = SeawaterBuoyancy(constant_salinity = true))
 
 @inline front(x, z, μ, δ) = μ + δ * tanh((x - 7000 + 4 * z) / 500)
 
@@ -157,7 +157,6 @@ If you use OceanBioME as part of your research, teaching, or other activities, w
   journal = {Journal of Open Source Software}
 }
 ```
-
 
 ## Funding
 
