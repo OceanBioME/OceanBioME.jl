@@ -5,6 +5,7 @@ using Oceananigans.Utils: work_layout, launch!
 using Oceananigans.TurbulenceClosures: implicit_step!
 using Oceananigans.Models.HydrostaticFreeSurfaceModels: local_ab2_step!, ab2_step_free_surface!
 using Oceananigans.Architectures: AbstractArchitecture
+using Oceananigans.Utils: @apply_regionally
 
 import Oceananigans.TimeSteppers: ab2_step!, rk3_substep!
 
