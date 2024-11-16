@@ -129,30 +129,82 @@ display_name(::ImmersedBoundaryGrid) = "Immersed boundary grid"
 bottom_height(x, y) = -1000 + 500 * exp(- (x^2 + y^2) / 250) # a perfect hill
 
 @testset "Sediment integration" begin
-    grids = [RectilinearGrid(architecture; size=(3, 3, 50), extent=(10, 10, 500)),
-             LatitudeLongitudeGrid(architecture; size = (3, 3, 16), latitude = (0, 10), longitude = (0, 10), z = (-500, 0)),
-             ImmersedBoundaryGrid(
-                LatitudeLongitudeGrid(architecture; size = (3, 3, 16), latitude = (0, 10), longitude = (0, 10), z = (-500, 0)),
-                GridFittedBottom(bottom_height))]
-    for grid in grids
-        for timestepper in (:QuasiAdamsBashforth2, :RungeKutta3),
-            sediment_model in (InstantRemineralisation(; grid), SimpleMultiG(; grid)),
-            model in (NonhydrostaticModel, HydrostaticFreeSurfaceModel)
-            for biogeochemistry in (NutrientPhytoplanktonZooplanktonDetritus(; grid, sediment_model),
-                                    LOBSTER(; grid,
-                                              carbonates = ifelse(isa(sediment_model, SimpleMultiG), true, false),
-                                              oxygen = ifelse(isa(sediment_model, SimpleMultiG), true, false),
-                                              variable_redfield = ifelse(isa(sediment_model, SimpleMultiG), true, false),
-                                              sediment_model))
-                # get rid of incompatible combinations
-                run = ifelse((model == NonhydrostaticModel && (isa(grid, ImmersedBoundaryGrid) || isa(grid, LatitudeLongitudeGrid))) ||
-                             (model == HydrostaticFreeSurfaceModel && timestepper == :RungeKutta3) ||
-                             (isa(sediment_model, SimpleMultiG) && isa(biogeochemistry.underlying_biogeochemistry, NutrientPhytoplanktonZooplanktonDetritus)), false, true)
+    rectilinear_grid = RectilinearGrid(
+        architecture;
+        size = (3, 3, 50),
+        extent = (10, 10, 500)
+    )
 
-                if run
-                    @info "Testing sediment on $(typeof(architecture)) with $timestepper and $(display_name(sediment_model)) on $(display_name(biogeochemistry.underlying_biogeochemistry)) with $(display_name(grid))"
-                    @testset "$architecture, $timestepper, $(display_name(sediment_model)), $(display_name(biogeochemistry.underlying_biogeochemistry)), $(display_name(grid))" test_flat_sediment(grid, biogeochemistry, model; timestepper)
-                end
+    latlon_grid = LatitudeLongitudeGrid(
+        architecture;
+        size = (3, 3, 16),
+        latitude = (0, 10),
+        longitude = (0, 10),
+        z = (-500, 0)
+    )
+
+    underlying_latlon_grid = LatitudeLongitudeGrid(
+        architecture;
+        size = (3, 3, 16),
+        latitude = (0, 10),
+        longitude = (0, 10),
+        z = (-500, 0)
+    )
+
+    immersed_latlon_grid = ImmersedBoundaryGrid(
+        underlying_latlon_grid,
+        GridFittedBottom(bottom_height)
+    )
+
+    grids = (rectilinear_grid, latlon_grid, underlying_latlon_grid)
+    timesteppers = (:QuasiAdamsBashforth2, :RungeKutta3)
+    sediment_models = (InstantRemineralisation(; grid), SimpleMultiG(; grid))
+    models = (NonhydrostaticModel, HydrostaticFreeSurfaceModel)
+
+    for grid in grids, timestepper in timesteppers, sediment_model in sediment_models, model in models
+        npzd_bgc_model = NutrientPhytoplanktonZooplanktonDetritus(; grid, sediment_model)
+
+        using_simple_multi_g = sediment_model isa SimpleMultiG
+
+        lobster_bgc_model = LOBSTER(;
+            grid,
+            sediment_model,
+            carbonates = using_simple_multi_g,
+            oxygen = using_simple_multi_g,
+            variable_redfield = using_simple_multi_g,
+        )
+
+        bgc_models = [npzd_bgc_model, lobster_bgc_model]
+
+        for biogeochemistry in bgc_models
+            nonhydrostatic = (model == NonhydrostaticModel)
+            hydrostatic = (model == HydrostaticFreeSurfaceModel)
+
+            grid_is_immersed = grid isa ImmersedBoundaryGrid
+            grid_is_latlon = grid isa LatitudeLongitudeGrid
+
+            rk3 = (timestepper == :RungeKutta3)
+            simple_multi_g = sediment_model isa SimpleMultiG
+            bgc_is_npzd = biogeochemistry.underlying_biogeochemistry isa NutrientPhytoplanktonZooplanktonDetritus
+
+            # Skip incompatible combinations
+            skip1 = nonhydrostatic && (grid_is_immersed || grid_is_latlon)
+            skip2 = hydrostatic && rk3
+            skip3 = simple_multi_g && bgc_is_npzd
+
+            if skip1 || skip2 || skip3
+                continue
+            end
+
+            arch_name = typeof(architecture)
+            sediment_name = display_name(sediment_model)
+            bgc_name = display_name(biogeochemistry.underlying_biogeochemistry)
+            grid_name = display_name(grid)
+
+            @info "Testing sediment on $arch_name with $timestepper and $sediment_name on $bgc_name with $grid_name"
+
+            @testset "$architecture, $timestepper, $sediment_name, $bgc_name, $grid_name" begin
+                @test test_flat_sediment(grid, biogeochemistry, model; timestepper)
             end
         end
     end
