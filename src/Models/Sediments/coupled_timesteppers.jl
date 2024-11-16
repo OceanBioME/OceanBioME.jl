@@ -1,11 +1,11 @@
-using Oceananigans: NonhydrostaticModel, prognostic_fields, HydrostaticFreeSurfaceModel
-using OceanBioME.Models.Sediments: AbstractSediment
+using Oceananigans: NonhydrostaticModel, HydrostaticFreeSurfaceModel, prognostic_fields, location
 using Oceananigans.TimeSteppers: ab2_step_field!, rk3_substep_field!, stage_Δt
 using Oceananigans.Utils: work_layout, launch!
 using Oceananigans.TurbulenceClosures: implicit_step!
 using Oceananigans.Models.HydrostaticFreeSurfaceModels: local_ab2_step!, ab2_step_free_surface!
 using Oceananigans.Architectures: AbstractArchitecture
 using Oceananigans.Utils: @apply_regionally
+using OceanBioME.Models.Sediments: AbstractSediment
 
 import Oceananigans.TimeSteppers: ab2_step!, rk3_substep!
 
