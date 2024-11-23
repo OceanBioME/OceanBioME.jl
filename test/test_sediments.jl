@@ -204,7 +204,7 @@ bottom_height(x, y) = -1000 + 500 * exp(- (x^2 + y^2) / 250) # a perfect hill
             @info "Testing sediment on $arch_name with $timestepper and $sediment_name on $bgc_name with $grid_name"
 
             @testset "$architecture, $timestepper, $sediment_name, $bgc_name, $grid_name" begin
-                @test_skip test_flat_sediment(grid, biogeochemistry, model; timestepper)
+                @test test_flat_sediment(grid, biogeochemistry, model; timestepper)
             end
         end
     end
