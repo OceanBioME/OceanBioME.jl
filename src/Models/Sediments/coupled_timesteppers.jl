@@ -2,7 +2,7 @@ using Oceananigans: NonhydrostaticModel, HydrostaticFreeSurfaceModel, prognostic
 using Oceananigans.TimeSteppers: ab2_step_field!, rk3_substep_field!, stage_Δt
 using Oceananigans.Utils: work_layout, launch!
 using Oceananigans.TurbulenceClosures: implicit_step!
-using Oceananigans.Models.HydrostaticFreeSurfaceModels: local_ab2_step!, ab2_step_free_surface!
+using Oceananigans.Models.HydrostaticFreeSurfaceModels: step_free_surface!, local_ab2_step!
 using Oceananigans.Architectures: AbstractArchitecture
 using Oceananigans.Utils: @apply_regionally
 using OceanBioME.Models.Sediments: AbstractSediment
@@ -59,7 +59,7 @@ end
     @apply_regionally local_ab2_step!(model, Δt, χ)
 
     # blocking step for implicit free surface, non blocking for explicit
-    ab2_step_free_surface!(model.free_surface, model, Δt, χ)
+    step_free_surface!(model.free_surface, model, Δt, χ)
 
     sediment = model.biogeochemistry.sediment
     arch = model.architecture
