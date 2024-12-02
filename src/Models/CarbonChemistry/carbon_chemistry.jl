@@ -1,18 +1,33 @@
 using Roots
 using OceanBioME.Models: teos10_polynomial_approximation
 
+struct CarbonChemistry{P0, PC, PB, PS, PF, PP, PSi, PW, IS, PKS, PRho}
+          ionic_strength :: IS
+              solubility :: P0
+           carbonic_acid :: PC
+              boric_acid :: PB
+                   water :: PW
+                 sulfate :: PS
+                fluoride :: PF
+         phosphoric_acid :: PP
+            silicic_acid :: PSi
+      calcite_solubility :: PKS
+        density_function :: PRho            
+end
+
 """
-    CarbonChemistry(; ionic_strength = IonicStrength(),
-                      solubility = K0(),
-                      carbonic_acid = (K1 = K1(), K2 = K2()),
-                      boric_acid = KB(),
-                      water = KW(),
-                      sulfate = KS(; ionic_strength),
-                      fluoride = KF(; ionic_strength),
-                      phosphoric_acid = (KP1 = KP1(), KP2 = KP2(), KP3 = KP3()),
-                      silicic_acid = KSi(; ionic_strength),
-                      calcite_solubility = KSP_calcite(),
-                      density_function = teos10_polynomial_approximation)
+    CarbonChemistry(FT = Float64; 
+                    ionic_strength = IonicStrength(),
+                    solubility = K0(),
+                    carbonic_acid = (K1 = K1(), K2 = K2()),
+                    boric_acid = KB(),
+                    water = KW(),
+                    sulfate = KS(; ionic_strength),
+                    fluoride = KF(; ionic_strength),
+                    phosphoric_acid = (KP1 = KP1(), KP2 = KP2(), KP3 = KP3()),
+                    silicic_acid = KSi(; ionic_strength),
+                    calcite_solubility = KSP_calcite(),
+                    density_function = teos10_polynomial_approximation)
 
 Carbon chemistry model capable of solving for sea water pCO₂ from DIC and 
 total alkalinity or DIC and pH. 
@@ -42,19 +57,26 @@ julia> pCO₂_higher_pH = carbon_chemistry(; DIC = 2000, T = 10, S = 35, pH = 7.
 
 ```
 """
-@kwdef struct CarbonChemistry{P0, PC, PB, PS, PF, PP, PSi, PW, IS, PKS, PRho}
-          ionic_strength :: IS   = IonicStrength()
-              solubility :: P0   = K0()
-           carbonic_acid :: PC   = (K1 = K1(), K2 = K2())
-              boric_acid :: PB   = KB()
-                   water :: PW   = KW()
-                 sulfate :: PS   = KS(; ionic_strength)
-                fluoride :: PF   = KF(; ionic_strength, sulfate_constant = sulfate)
-         phosphoric_acid :: PP   = (KP1 = KP1(), KP2 = KP2(), KP3 = KP3())
-            silicic_acid :: PSi  = KSi(; ionic_strength)
-      calcite_solubility :: PKS  = KSP_calcite()
-        density_function :: PRho = teos10_polynomial_approximation
+
+
+
+function CarbonChemistry(FT = Float64; 
+                         ionic_strength = IonicStrength{FT}(),
+                         solubility = K0{FT}(),
+                         carbonic_acid = (K1 = K1(FT), K2 = K2(FT)),
+                         boric_acid = KB(FT),
+                         water = KW(FT),
+                         sulfate = KS(FT; ionic_strength),
+                         fluoride = KF(FT; ionic_strength),
+                         phosphoric_acid = (KP1 = KP1(FT), KP2 = KP2(FT), KP3 = KP3(FT)),
+                         silicic_acid = KSi(FT; ionic_strength),
+                         calcite_solubility = KSP_calcite(FT),
+                         density_function = teos10_polynomial_approximation) # the denisity function *is* going to cause type instability but I can't see a way to fix it
+
+    return CarbonChemistry(ionic_strength, solubility, carbonic_acid, boric_acid, water,
+                           sulfate, fluoride, phosphoric_acid, silicic_acid, calcite_solubility, density_function)
 end
+
 
 """
     alkalinity_residual(H, p)

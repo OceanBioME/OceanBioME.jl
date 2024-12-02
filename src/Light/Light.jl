@@ -13,7 +13,7 @@ using KernelAbstractions, Oceananigans.Units
 using Oceananigans.Architectures: device, architecture, on_architecture
 using Oceananigans.Utils: launch!
 using Oceananigans: Center, Face, fields
-using Oceananigans.Grids: node, znodes, znode
+using Oceananigans.Grids: node, znodes, znode, AbstractGrid
 using Oceananigans.Fields: CenterField, TracerFields, location
 using Oceananigans.BoundaryConditions: fill_halo_regions!, 
                                        ValueBoundaryCondition, 

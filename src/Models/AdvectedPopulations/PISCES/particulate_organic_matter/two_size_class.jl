@@ -14,28 +14,73 @@ and large carbon classes, `SFe` and `BFe` for the small and  ̶l̶a̶r̶g̶e̶ b
 compartements, and `PSi` for the  ̶l̶a̶r̶g̶e̶ particulate silicon (*not* the 
 phytoplankton silicon).
 """
-@kwdef struct TwoCompartementCarbonIronParticles{FT, AP}
-                      temperature_sensetivity :: FT = 1.066        #
-                          base_breakdown_rate :: FT = 0.025 / day  # 1 / s
+struct TwoCompartementCarbonIronParticles{FT, AP}
+                      temperature_sensetivity :: FT #
+                          base_breakdown_rate :: FT # 1 / s
 # (1 / (mmol C / m³),  1 / (mmol C / m³),  1 / (mmol C / m³) / s,  1 / (mmol C / m³) / s)
-                       aggregation_parameters :: AP = (25.9, 4452, 3.3, 47.1) .* (10^-6 / day)
-                 minimum_iron_scavenging_rate :: FT = 3e-5/day     # 1 / s
-           load_specific_iron_scavenging_rate :: FT = 0.005/day    # 1 / (mmol C / m³) / s
-             bacterial_iron_uptake_efficiency :: FT = 0.16         #
-  small_fraction_of_bacterially_consumed_iron :: FT = 0.12 / bacterial_iron_uptake_efficiency 
-  large_fraction_of_bacterially_consumed_iron :: FT = 0.04 / bacterial_iron_uptake_efficiency 
-                base_liable_silicate_fraction :: FT = 0.5          #
-            fast_dissolution_rate_of_silicate :: FT = 0.025/day    # 1 / s
-            slow_dissolution_rate_of_silicate :: FT = 0.003/day    # 1 / s
+                       aggregation_parameters :: AP
+                 minimum_iron_scavenging_rate :: FT # 1 / s
+           load_specific_iron_scavenging_rate :: FT # 1 / (mmol C / m³) / s
+             bacterial_iron_uptake_efficiency :: FT #
+  small_fraction_of_bacterially_consumed_iron :: FT 
+  large_fraction_of_bacterially_consumed_iron :: FT 
+                base_liable_silicate_fraction :: FT #
+            fast_dissolution_rate_of_silicate :: FT # 1 / s
+            slow_dissolution_rate_of_silicate :: FT # 1 / s
 
             # calcite
-                base_calcite_dissolution_rate :: FT = 0.197 / day # 1 / s
-                 calcite_dissolution_exponent :: FT = 1.0         # 
+                base_calcite_dissolution_rate :: FT # 1 / s
+                 calcite_dissolution_exponent :: FT # 
 
             # iron in particles
-               maximum_iron_ratio_in_bacteria :: FT = 0.06      # μmol Fe / mmol C
-            iron_half_saturation_for_bacteria :: FT = 0.3       # μmol Fe / m³
-                maximum_bacterial_growth_rate :: FT = 0.6 / day # 1 / s
+               maximum_iron_ratio_in_bacteria :: FT # μmol Fe / mmol C
+            iron_half_saturation_for_bacteria :: FT # μmol Fe / m³
+                maximum_bacterial_growth_rate :: FT # 1 / s
+
+    function TwoCompartementCarbonIronParticles(FT = Float64;
+                                                temperature_sensetivity = 1.066, #
+                                                base_breakdown_rate = 0.025 / day, # 1 / s
+# (1 / (mmol C / m³),  1 / (mmol C / m³),  1 / (mmol C / m³) / s,  1 / (mmol C / m³) / s)
+                                                aggregation_parameters = (25.9, 4452, 3.3, 47.1) .* (10^-6 / day),
+                                                minimum_iron_scavenging_rate = 3e-5/day, # 1 / s
+                                                load_specific_iron_scavenging_rate = 0.005/day, # 1 / (mmol C / m³) / s
+                                                bacterial_iron_uptake_efficiency = 0.16, #
+                                                small_fraction_of_bacterially_consumed_iron = 0.12 / bacterial_iron_uptake_efficiency,
+                                                large_fraction_of_bacterially_consumed_iron = 0.04 / bacterial_iron_uptake_efficiency,
+                                                base_liable_silicate_fraction = 0.5, #
+                                                fast_dissolution_rate_of_silicate = 0.025/day, # 1 / s
+                                                slow_dissolution_rate_of_silicate = 0.003/day, # 1 / s
+
+                                                # calcite
+                                                base_calcite_dissolution_rate = 0.197 / day, # 1 / s
+                                                calcite_dissolution_exponent = 1.0, # 
+
+                                                # iron in particles
+                                                maximum_iron_ratio_in_bacteria = 0.06, # μmol Fe / mmol C
+                                                iron_half_saturation_for_bacteria = 0.3, # μmol Fe / m³
+                                                maximum_bacterial_growth_rate = 0.6 / day) # 1 / s
+
+        aggregation_parameters = convert.(FT, aggregation_parameters)
+
+        AP = typeof(aggregation_parameters)
+
+        return new{FT, AP}(convert(FT, temperature_sensetivity),
+                           convert(FT, base_breakdown_rate),
+                           aggregation_parameters,
+                           convert(FT, minimum_iron_scavenging_rate),
+                           convert(FT, load_specific_iron_scavenging_rate),
+                           convert(FT, bacterial_iron_uptake_efficiency),
+                           convert(FT, small_fraction_of_bacterially_consumed_iron),
+                           convert(FT, large_fraction_of_bacterially_consumed_iron),
+                           convert(FT, base_liable_silicate_fraction),
+                           convert(FT, fast_dissolution_rate_of_silicate),
+                           convert(FT, slow_dissolution_rate_of_silicate),
+                           convert(FT, base_calcite_dissolution_rate),
+                           convert(FT, calcite_dissolution_exponent),
+                           convert(FT, maximum_iron_ratio_in_bacteria),
+                           convert(FT, iron_half_saturation_for_bacteria),
+                           convert(FT, maximum_bacterial_growth_rate))
+    end
 end
 
 const TwoCompartementPOCPISCES = PISCES{<:Any, <:Any, <:Any, <:TwoCompartementCarbonIronParticles}

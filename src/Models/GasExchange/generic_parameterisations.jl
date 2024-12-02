@@ -2,10 +2,12 @@ struct PolynomialParameterisation{N, C}
     coefficients :: C
 end
 
-function PolynomialParameterisation{N}(coefficients) where N
+function PolynomialParameterisation{N}(FT = Float64; coefficients) where N
     length(coefficients) == N + 1 || 
         throw(ArgumentError("You must provide N+1 coefficients for an order N polynomial"))
 
+    coefficients = convert.(FT, coefficients)
+    
     return PolynomialParameterisation{N, typeof(coefficients)}(coefficients)
 end
 
