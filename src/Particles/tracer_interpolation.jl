@@ -2,6 +2,7 @@ using Oceananigans.Operators: volume
 using Oceananigans.Fields: fractional_indices, _interpolate, interpolator, Center
 using Oceananigans.Grids: AbstractGrid, Flat, Bounded, Periodic
 
+@inline get_node(::Flat, i, N) = one(i)
 @inline get_node(::Bounded,  i, N) = min(max(i, 1), N)
 @inline get_node(::Periodic, i, N) = ifelse(i < 1, N, ifelse(i > N, 1, i))
 
@@ -12,7 +13,7 @@ Specifies that tracer values should be taken from the nearst center point.
 """
 struct NearestPoint end
 
-@inline function extract_tracer_values(::NearestPoint, particles, grid, fields, n)
+@inline function extract_tracer_values(val_field_name, ::NearestPoint, particles, grid, fields, n)
     x = @inbounds particles.x[n]
     y = @inbounds particles.y[n]
     z = @inbounds particles.z[n]
@@ -29,11 +30,21 @@ struct NearestPoint end
     return field_values
 end
 
+# feels like fractional_indices could work more intuativly
+@inline collapse_position(x, y, z, ℓx, ℓy, ℓz) = (x, y, z)
+@inline collapse_position(x, y, z, ::Nothing, ℓy, ℓz) = (y, z)
+@inline collapse_position(x, y, z, ℓx, ::Nothing, ℓz) = (x, z)
+@inline collapse_position(x, y, z, ℓx, ℓy, ::Nothing) = (x, y)
+@inline collapse_position(x, y, z, ℓx, ::Nothing, ::Nothing) = (x, )
+@inline collapse_position(x, y, z, ::Nothing, ℓy, ::Nothing) = (y, )
+@inline collapse_position(x, y, z, ::Nothing, ::Nothing, ℓz) = (z, )
+
 @inline function nearest_node(x, y, z, grid::AbstractGrid{FT, TX, TY, TZ}) where {FT, TX, TY, TZ}
     # messy
-    ii, jj, kk = fractional_indices((x, y, z), grid, ifelse(isa(TX(), Flat), nothing, Center()),
-                                                     ifelse(isa(TY(), Flat), nothing, Center()),
-                                                     ifelse(isa(TZ(), Flat), nothing, Center()))
+    ℓx = ifelse(isa(TX(), Flat), nothing, Center())
+    ℓy = ifelse(isa(TY(), Flat), nothing, Center())
+    ℓz = ifelse(isa(TZ(), Flat), nothing, Center())
+    ii, jj, kk = fractional_indices(collapse_position(x, y, z, ℓx, ℓy, ℓz), grid, ℓx, ℓy, ℓz)
 
     ix = interpolator(ii)
     iy = interpolator(jj)

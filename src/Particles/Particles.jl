@@ -135,7 +135,10 @@ const MODEL_WITH_BGC_PARTICLES =
 @inline function update_lagrangian_particle_properties!(particles::BiogeochemicalParticles, model, bgc, Δt)
     advect_particles!(particles.advection, particles, model, Δt)
     time_step_particle_fields!(particles.timestepper, particles, model, Δt)
+    update_particle_state!(particles, model, Δt)
 end
+
+@inline update_particle_state!(particles, model, Δt) = nothing
 
 size(particles::BiogeochemicalParticles) = (length(particles), )
 length(::BiogeochemicalParticles{N}) where N = N
