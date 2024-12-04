@@ -1,6 +1,6 @@
 import Base: summary, show
 
-summary(::SugarKelp{FT}) where FT = "SugarKelp{FT} biogeochemistry"
+summary(::SugarKelp{FT}) where FT = "SugarKelp{$FT} biogeochemistry"
 
 show(io::IO, kelp::SugarKelp) = 
     print(io, summary(kelp), 

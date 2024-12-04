@@ -10,6 +10,7 @@ using Oceananigans: NonhydrostaticModel, HydrostaticFreeSurfaceModel
 using OceanBioME: DiscreteBiogeochemistry, ContinuousBiogeochemistry
 
 using Oceananigans.Architectures: architecture, on_architecture
+using Oceananigans.Grids: AbstractGrid
 
 import Oceananigans.Architectures: architecture
 import Oceananigans.Biogeochemistry: update_tendencies!
@@ -75,22 +76,22 @@ Particles can also have a `scalefactor` which scales their tracer interaction
 (e.g. to mimic the particle representing multiple particles).
 """
 function BiogeochemicalParticles(number; 
-                                 grid,
+                                 grid::AbstractGrid{FT},
                                  biogeochemistry,
                                  advection = LagrangianAdvection(),
                                  timestepper = ForwardEuler,
                                  field_interpolation = NearestPoint(),
-                                 scalefactors = ones(number))
+                                 scalefactors = ones(number)) where FT
 
     arch = architecture(grid)
 
     particle_fields = required_particle_fields(biogeochemistry)
 
-    fields = NamedTuple{particle_fields}(ntuple(n->on_architecture(arch, zeros(number)), Val(length(particle_fields))))
+    fields = NamedTuple{particle_fields}(ntuple(n->on_architecture(arch, zeros(FT, number)), Val(length(particle_fields))))
 
-    x = on_architecture(arch, zeros(number))
-    y = on_architecture(arch, zeros(number))
-    z = on_architecture(arch, zeros(number))
+    x = on_architecture(arch, zeros(FT, number))
+    y = on_architecture(arch, zeros(FT, number))
+    z = on_architecture(arch, zeros(FT, number))
 
     timestepper = timestepper(particle_fields, number, arch)
 
@@ -134,7 +135,10 @@ const MODEL_WITH_BGC_PARTICLES =
 @inline function update_lagrangian_particle_properties!(particles::BiogeochemicalParticles, model, bgc, Δt)
     advect_particles!(particles.advection, particles, model, Δt)
     time_step_particle_fields!(particles.timestepper, particles, model, Δt)
+    update_particle_state!(particles, model, Δt)
 end
+
+@inline update_particle_state!(particles, model, Δt) = nothing
 
 size(particles::BiogeochemicalParticles) = (length(particles), )
 length(::BiogeochemicalParticles{N}) where N = N

@@ -1,23 +1,23 @@
 # this file sets up the default configuration of Z and M which graze on P, D, (Z, ) and POC
-function MicroAndMesoZooplankton(; 
-    micro = QualityDependantZooplankton(maximum_grazing_rate = 3/day,
-                                        food_preferences = (P = 1.0, D = 0.5, POC = 0.1, Z = 0),
-                                        quadratic_mortality = 0.004/day,
-                                        linear_mortality = 0.03/day,
-                                        minimum_growth_efficiency = 0.3,
-                                        maximum_flux_feeding_rate = 0.0,
-                                        undissolved_calcite_fraction = 0.5,
-                                        iron_ratio = 0.01),
-    meso = QualityDependantZooplankton(maximum_grazing_rate = 0.75/day,
-                                       food_preferences = (P = 0.3, D = 1.0, POC = 0.3, Z = 1.0),
-                                       quadratic_mortality = 0.03/day,
-                                       linear_mortality = 0.005/day,
-                                       minimum_growth_efficiency = 0.35,
-                                       maximum_flux_feeding_rate = 2e3 / 1e6, 
-                                       undissolved_calcite_fraction = 0.75,
-                                       iron_ratio = 0.015))
+function MicroAndMesoZooplankton(FT = Float64; 
+    micro::MU = QualityDependantZooplankton(FT; maximum_grazing_rate = 3/day,
+                                            food_preferences = (P = 1.0, D = 0.5, POC = 0.1, Z = 0),
+                                            quadratic_mortality = 0.004/day,
+                                            linear_mortality = 0.03/day,
+                                            minimum_growth_efficiency = 0.3,
+                                            maximum_flux_feeding_rate = 0.0,
+                                            undissolved_calcite_fraction = 0.5,
+                                            iron_ratio = 0.01),
+    meso::ME = QualityDependantZooplankton(FT; maximum_grazing_rate = 0.75/day,
+                                           food_preferences = (P = 0.3, D = 1.0, POC = 0.3, Z = 1.0),
+                                           quadratic_mortality = 0.03/day,
+                                           linear_mortality = 0.005/day,
+                                           minimum_growth_efficiency = 0.35,
+                                           maximum_flux_feeding_rate = 2e3 / 1e6, 
+                                           undissolved_calcite_fraction = 0.75,
+                                           iron_ratio = 0.015)) where {MU, ME}
 
-    return MicroAndMeso(; micro, meso)
+    return MicroAndMeso{MU, ME, FT}(; micro, meso)
 end
 
 @inline concentration(::Val{:P},   i, j, k, fields) = @inbounds   fields.P[i, j, k]

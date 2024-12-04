@@ -74,7 +74,7 @@ struct TwoBandPhotosyntheticallyActiveRadiation{FT, F, SPAR}
 end
 
 """
-    TwoBandPhotosyntheticallyActiveRadiation(; grid, 
+    TwoBandPhotosyntheticallyActiveRadiation(; grid::AbstractGrid{FT}, 
                                                water_red_attenuation::FT = 0.225, # 1/m
                                                water_blue_attenuation::FT = 0.0232, # 1/m
                                                chlorophyll_red_attenuation::FT = 0.037, # 1/(m * (mgChl/m³) ^ eʳ)
@@ -94,7 +94,7 @@ Keyword Arguments
    which should be `f(x, y, t)` where `x` and `y` are the native coordinates (i.e. meters for rectilinear grids
    and latitude/longitude as appropriate)
 """
-function TwoBandPhotosyntheticallyActiveRadiation(; grid, 
+function TwoBandPhotosyntheticallyActiveRadiation(; grid::AbstractGrid{FT}, 
                                                     water_red_attenuation::FT = 0.225, # 1/m
                                                     water_blue_attenuation::FT = 0.0232, # 1/m
                                                     chlorophyll_red_attenuation::FT = 0.037, # 1/(m * (mgChl/m³) ^ eʳ)

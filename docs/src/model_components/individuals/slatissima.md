@@ -14,7 +14,7 @@ using OceanBioME
 kelp_bgc = SugarKelp()
 
 # output
-SugarKelp{FT} biogeochemistry (Broch & Slagstad, 2012) tracking the `N`itrogen and `C`arbon in a frond of `A`rea
+SugarKelp{Float64} biogeochemistry (Broch & Slagstad, 2012) tracking the `N`itrogen and `C`arbon in a frond of `A`rea
 ```
 which can be put into `BiogeochemicalParticles`, or you can directly manifest particles:
 ```jldoctest
@@ -24,7 +24,7 @@ grid = RectilinearGrid(size = (1, 1, 1), extent = (1, 1, 1));
 particles = SugarKelpParticles(10; grid)
 
 # output
-10 BiogeochemicalParticles with SugarKelp{FT} biogeochemistry:
+10 BiogeochemicalParticles with SugarKelp{Float64} biogeochemistry:
 ├── fields: (:A, :N, :C)
 └── coupled tracers: (:NO₃, :NH₄, :DIC, :O₂, :DOC, :DON, :bPOC, :bPON)
 

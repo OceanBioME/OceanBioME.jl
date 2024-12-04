@@ -45,6 +45,7 @@ export LOBSTER
 
 using Oceananigans.Units
 using Oceananigans.Fields: Field, TracerFields, CenterField, ZeroField
+using Oceananigans.Grids: AbstractGrid
 
 using OceanBioME.Light: TwoBandPhotosyntheticallyActiveRadiation, default_surface_PAR
 using OceanBioME: setup_velocity_fields, show_sinking_velocities, Biogeochemistry, ScaleNegativeTracers
@@ -169,7 +170,7 @@ struct LOBSTER{FT, B, W} <: AbstractContinuousFormBiogeochemistry
 end
 
 """
-    LOBSTER(; grid,
+    LOBSTER(; grid::AbstractGrid{FT},
               phytoplankton_preference::FT = 0.5,
               maximum_grazing_rate::FT = 9.26e-6, # 1/s
               grazing_half_saturation::FT = 1.0, # mmol N/m³
@@ -254,7 +255,7 @@ LOBSTER{Float64} with carbonates ❌, oxygen ❌, variable Redfield ratio ❌ an
  Modifiers: Nothing
 ```
 """
-function LOBSTER(; grid,
+function LOBSTER(; grid::AbstractGrid{FT},
                    phytoplankton_preference::FT = 0.5,
                    maximum_grazing_rate::FT = 9.26e-6, # 1/s
                    grazing_half_saturation::FT = 1.0, # mmol N/m³
@@ -457,9 +458,9 @@ const VariableRedfieldLobster = Union{LOBSTER{<:Any, <:Val{(false, false, true)}
 
 @inline redfield(::Val{:P}, bgc::LOBSTER) = (1 + bgc.organic_carbon_calcate_ratio) * bgc.phytoplankton_redfield
 @inline redfield(::Val{:Z}, bgc::LOBSTER) = bgc.phytoplankton_redfield
-@inline redfield(::Union{Val{:NO₃}, Val{:NH₄}, Val{:Alk}, Val{:O₂}}, bgc::LOBSTER) = 0
+@inline redfield(::Union{Val{:NO₃}, Val{:NH₄}, Val{:Alk}, Val{:O₂}}, bgc::LOBSTER{FT}) where FT = convert(FT, 0)
 @inline redfield(::Union{Val{:sPOM}, Val{:bPOM}, Val{:DOM}}, bgc::LOBSTER) = bgc.organic_redfield
-@inline redfield(::Union{Val{:sPOC}, Val{:bPOC}, Val{:DOC}, Val{:DIC}}, bgc::LOBSTER) = 1
+@inline redfield(::Union{Val{:sPOC}, Val{:bPOC}, Val{:DOC}, Val{:DIC}}, bgc::LOBSTER{FT}) where FT = convert(FT, 1)
 
 @inline redfield(i, j, k, ::Val{:sPON}, bgc::VariableRedfieldLobster, tracers) = @inbounds tracers.sPOC[i, j, k] / tracers.sPON[i, j, k]
 @inline redfield(i, j, k, ::Val{:bPON}, bgc::VariableRedfieldLobster, tracers) = @inbounds tracers.bPOC[i, j, k] / tracers.bPON[i, j, k]

@@ -7,8 +7,18 @@ where ``\alpha`` is the Ostwald solubility coeffieient and ``C_a`` is the concen
 struct PartiallySolubleGas{AC, S}
     air_concentration :: AC
            solubility :: S
-end
 
+    function PartiallySolubleGas(FT = Float64;
+                                 air_concentration,
+                                 solubility :: S) where S
+        
+        air_concentration = normalise_surface_function(air_concentration; FT)
+        
+        AC = typeof(air_concentration)
+
+        return new{AC, S}(air_concentration, solubility)
+    end
+end
 
 @inline surface_value(gs::PartiallySolubleGas, i, j, grid, clock, model_fields) = 
     surface_value(gs.air_concentration, i, j, grid, clock) * surface_value(gs.solubility, i, j, grid, clock, model_fields)
@@ -38,5 +48,5 @@ function surface_value(sol::Wanninkhof92Solubility, i, j, grid, clock, model_fie
     return β / Tk
 end
 
-OxygenSolubility(; A1 = -58.3877, A2 = 85.8079, A3 = 23.8439, B1 = -0.034892, B2 = 0.015578, B3 = -0.0019387) =
-    Wanninkhof92Solubility(A1, A2, A3, B1, B2, B3)
+OxygenSolubility(FT = Float64; A1 = -58.3877, A2 = 85.8079, A3 = 23.8439, B1 = -0.034892, B2 = 0.015578, B3 = -0.0019387) =
+    Wanninkhof92Solubility{FT}(A1, A2, A3, B1, B2, B3)
