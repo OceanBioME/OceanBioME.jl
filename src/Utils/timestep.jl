@@ -1,5 +1,6 @@
 using Oceananigans.Advection: cell_advection_timescale
-using Oceananigans.Grids: Center, znodes, zspacing, minimum_zspacing
+using Oceananigans.Grids: Center, znodes, minimum_zspacing
+using Oceananigans.Operators: zspacing
 
 @inline column_advection_timescale(model) = minimum_zspacing(model.grid) / maximum_sinking_velocity(model.biogeochemistry)
 

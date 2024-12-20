@@ -1,6 +1,7 @@
 using KernelAbstractions: @kernel, @index
 
-using Oceananigans.Grids: znode, zspacing, φnode
+using Oceananigans.Grids: znode, φnode
+using Oceananigans.Operators: zspacing
 
 @inline shear(z, zₘₓₗ, background_shear, mixed_layer_shear) = ifelse(z <= zₘₓₗ, background_shear, mixed_layer_shear) # Given as 1 in Aumont paper
 
