@@ -643,11 +643,9 @@ version = "1.2.0"
 
 [[deps.Oceananigans]]
 deps = ["Adapt", "CUDA", "Crayons", "CubedSphere", "Dates", "Distances", "DocStringExtensions", "FFTW", "Glob", "IncompleteLU", "InteractiveUtils", "IterativeSolvers", "JLD2", "KernelAbstractions", "LinearAlgebra", "Logging", "MPI", "NCDatasets", "OffsetArrays", "OrderedCollections", "Pkg", "Printf", "Random", "Rotations", "SeawaterPolynomials", "SparseArrays", "Statistics", "StructArrays"]
-git-tree-sha1 = "9aebf4b205722518c9158f5e2a3b3009dd5853b3"
-repo-rev = "ss/correct-continuous-boundary-functions"
-repo-url = "https://github.com/CliMA/Oceananigans.jl.git"
+git-tree-sha1 = "6ea1bd01adf2ae95d96a049711b9db4e24959767"
 uuid = "9e8cae18-63c1-5223-a75c-80ca9d6e9a09"
-version = "0.95.6"
+version = "0.95.5"
 
     [deps.Oceananigans.extensions]
     OceananigansEnzymeExt = "Enzyme"
