@@ -26,7 +26,6 @@ using Oceananigans.Grids: AbstractGrid
 using OceanBioME.Light: TwoBandPhotosyntheticallyActiveRadiation, default_surface_PAR
 using OceanBioME: setup_velocity_fields, show_sinking_velocities
 using OceanBioME.BoxModels: BoxModel
-using OceanBioME.Models.Sediments: sinking_flux
 
 import Base: show, summary
 
@@ -35,7 +34,6 @@ import Oceananigans.Biogeochemistry: required_biogeochemical_tracers,
                                      biogeochemical_drift_velocity
 
 import OceanBioME: redfield, conserved_tracers, maximum_sinking_velocity, chlorophyll
-import OceanBioME.Models.Sediments: nitrogen_flux, carbon_flux, remineralisation_receiver, sinking_tracers
 
 import Adapt: adapt_structure, adapt
 
@@ -130,7 +128,7 @@ Keyword Arguments
 - `initial_photosynthetic_slope`, ..., `remineralization_rate`: NPZD parameter values
 - `surface_photosynthetically_active_radiation`: function (or array in the future) for the photosynthetically available radiation at the surface, should be shape `f(x, y, t)`
 - `light_attenuation_model`: light attenuation model which integrated the attenuation of available light
-- `sediment_model`: slot for `AbstractSediment`
+- `sediment_model`: slot for `BiogeochemicalSediment`
 - `sinking_speed`: named tuple of constant sinking, of fields (i.e. `ZFaceField(...)`) for any tracers which sink (convention is that a sinking speed is positive, but a field will need to follow the usual down being negative)
 - `open_bottom`: should the sinking velocity be smoothly brought to zero at the bottom to prevent the tracers leaving the domain
 - `scale_negatives`: scale negative tracers?
@@ -319,13 +317,6 @@ adapt_structure(to, npzd::NPZD) =
 @inline redfield(i, j, k, val_tracer_name, bgc::NPZD, tracers) = redfield(val_tracer_name, bgc)
 @inline redfield(::Union{Val{:N}}, bgc::NPZD{FT}) where FT = convert(FT, 0)
 @inline redfield(::Union{Val{:P}, Val{:Z}, Val{:D}}, bgc::NPZD{FT}) where FT = convert(FT, 6.56)
-
-@inline nitrogen_flux(i, j, k, grid, advection, bgc::NPZD, tracers) = sinking_flux(i, j, k, grid, advection, Val(:D), bgc, tracers) +
-                                                                      sinking_flux(i, j, k, grid, advection, Val(:P), bgc, tracers)
-
-@inline carbon_flux(i, j, k, grid, advection, bgc::NPZD, tracers) = nitrogen_flux(i, j, k, grid, advection, bgc, tracers) * redfield(Val(:P), bgc)
-
-@inline remineralisation_receiver(::NPZD) = :N
 
 @inline conserved_tracers(::NPZD) = (:N, :P, :Z, :D)
 @inline sinking_tracers(bgc::NPZD) = keys(bgc.sinking_velocities)

@@ -151,9 +151,9 @@ update_tendencies!(bgc, modifiers::Tuple, model) = [update_tendencies!(bgc, modi
 function update_biogeochemical_state!(bgc::CompleteBiogeochemistry, model)
     # TODO: change the order of arguments here since they should definitly be the other way around
     update_biogeochemical_state!(model, bgc.modifiers)
-    #synchronize(device(architecture(model)))
     update_biogeochemical_state!(model, bgc.light_attenuation)
     update_biogeochemical_state!(model, bgc.underlying_biogeochemistry)
+    update_biogeochemical_state!(model, bgc.sediment)
 end
 
 update_biogeochemical_state!(model, modifiers::Tuple) = [update_biogeochemical_state!(model, modifier) for modifier in modifiers]
@@ -204,6 +204,7 @@ modifier_summary(modifiers::Tuple) = tuple([summary(modifier) for modifier in mo
 include("Utils/Utils.jl")
 include("Light/Light.jl")
 include("Particles/Particles.jl")
+include("Sediments/Sediments.jl")
 include("BoxModel/boxmodel.jl")
 include("Models/Models.jl")
 
