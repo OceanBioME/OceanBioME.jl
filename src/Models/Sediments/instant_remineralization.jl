@@ -2,7 +2,7 @@
     struct InstantRemineralisation
 
 Hold the parameters and fields the simplest benthic boundary layer where
-organic carbon is assumed to remineralise instantly with some portion 
+organic carbon is assumed to remineralise instantly with some portion
 becoming N, and a fraction being permanently buried.
 
 Burial efficiency from [RemineralisationFraction](@citet).
@@ -54,7 +54,8 @@ function InstantRemineralisation(; grid,
             burial_efficiency_constant2 = 0.53,
             burial_efficiency_half_saturation = 7.0)
 
-    @warn "Sediment models are an experimental feature and have not yet been validated"
+    @warn "Sediment models are an experimental feature and have not yet been validated."
+    @warn "Sediment models currently do not pass tests and are probably broken!"
 
     tracer_names = (:N_storage, )
 
@@ -73,14 +74,14 @@ function InstantRemineralisation(; grid,
                                    bottom_indices)
 end
 
-adapt_structure(to, sediment::InstantRemineralisation) = 
+adapt_structure(to, sediment::InstantRemineralisation) =
     InstantRemineralisation(adapt(to, sediment.burial_efficiency_constant1),
                             adapt(to, sediment.burial_efficiency_constant2),
                             adapt(to, sediment.burial_efficiency_half_saturation),
                             adapt(to, sediment.fields),
                             nothing,
                             adapt(to, sediment.bottom_indices))
-                  
+
 sediment_tracers(::InstantRemineralisation) = (:N_storage, )
 sediment_fields(model::InstantRemineralisation) = (N_storage = model.fields.N_storage, )
 
