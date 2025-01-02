@@ -14,16 +14,18 @@ sediment_model = SimpleMultiG(; grid)
 # output
 ┌ Warning: Sediment models are an experimental feature and have not yet been validated.
 └ @ OceanBioME.Models.Sediments ~/Documents/Projects/OceanBioME.jl/src/Models/Sediments/simple_multi_G.jl:104
-[ Info: This sediment model is currently only compatible with models providing NH₄, NO₃, O₂, and DIC.
+┌ Warning: Sediment models currently do not pass tests and are probably broken!
+└ @ OceanBioME.Models.Sediments ~/Documents/Projects/OceanBioME.jl/src/Models/Sediments/simple_multi_G.jl:105
+[ Info: The SimpleMultiG sediment model is currently only compatible with models providing NH₄, NO₃, O₂, and DIC.
 Single-layer multi-G sediment model (Float64)
 ```
 
 You may optionally specify the model parameters. This can then be passed in the setup of a BGC model:
 
 ```julia
-biogeochemistry = LOBSTER(; grid, 
-                            carbonates = true, oxygen = true, variable_redfield = true, 
-                            open_bottom = true, 
+biogeochemistry = LOBSTER(; grid,
+                            carbonates = true, oxygen = true, variable_redfield = true,
+                            open_bottom = true,
                             sediment_model)
 ```
 
@@ -87,7 +89,7 @@ The original model of [Soetaert2000](@citet) also includes denitrification terms
 | Symbol                  | Variable name              | Units |
 |-------------------------|----------------------------|-------|
 | ``\lambda_\text{fast}`` | `fast_decay_rate`          | 1 / s |
-| ``\lambda_\text{slow}`` | `slow_decay_rate`          | 1 / s | 
+| ``\lambda_\text{slow}`` | `slow_decay_rate`          | 1 / s |
 | ``f_\text{fast}``       | `fast_fraction`            | -     |
 | ``f_\text{slow}``       | `slow_fraction`            | -     |
 | ``f_\text{ref}``        | `refactory_fraction`       | -     |
@@ -95,7 +97,7 @@ The original model of [Soetaert2000](@citet) also includes denitrification terms
 | ``a_i``                 | `anoxic_param`             | -     |
 | ``s_i``                 | `solid_dep_params`         | -     |
 
-All parameters are given in [Parameters](@ref parameters). 
+All parameters are given in [Parameters](@ref parameters).
 
 ## Model conservations
 
