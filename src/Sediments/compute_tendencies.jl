@@ -3,7 +3,9 @@ using Oceananigans.Fields: Center
 using Oceananigans.Grids: xnode, ynode
 
 function compute_sediment_tendencies!(model)
-    fields = prognostic_fields(model)
+    field_names = required_sediment_fields(model)
+
+    sediment_fields = model.fields
     tracked_fields = model.tracked_fields
 
     grid = model.grid
@@ -15,10 +17,10 @@ function compute_sediment_tendencies!(model)
 
     arch = architecture(grid)
 
-    for (field_name, field) in pairs(fields)
+    for field_name in field_names
         G = Gⁿ[field_name]
 
-        args = (Val(field_name), biogeochemistry, fields, tracked_fields, clock)
+        args = (Val(field_name), biogeochemistry, sediment_fields, tracked_fields, clock)
 
         launch!(arch, grid, :xy, compute_sediment_tendency!, G, grid, args)
     end

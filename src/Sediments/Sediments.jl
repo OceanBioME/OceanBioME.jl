@@ -32,11 +32,15 @@ end
 @inline sinking_fluxs(s::BiogeochemicalSediment) = sinking_fluxs(s.biogeochemistry)
 @inline coupled_tracers(s::BiogeochemicalSediment) = coupled_tracers(s.biogeochemistry)
 
+abstract type AbstractSedimentBiogeochemistry end
+abstract type AbstractContinuousFormSedimentBiogeochemistry <: AbstractSedimentBiogeochemistry end
+
+const ACFSBGC = AbstractContinuousFormSedimentBiogeochemistry
+
 include("timesteppers.jl")
 include("bottom_indices.jl")
 include("tracked_fields.jl")
 include("update_state.jl")
-include("sediment_biogeochemistries.jl")
 include("compute_tendencies.jl")
 include("tracer_coupling.jl")
 

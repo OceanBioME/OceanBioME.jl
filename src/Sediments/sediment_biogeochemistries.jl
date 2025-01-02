@@ -1,4 +1,0 @@
-abstract type AbstractSedimentBiogeochemistry end
-abstract type AbstractContinuousFormSedimentBiogeochemistry <: AbstractSedimentBiogeochemistry end
-
-const ACFSBGC = AbstractContinuousFormSedimentBiogeochemistry

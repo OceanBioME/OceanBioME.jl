@@ -9,7 +9,7 @@ function update_biogeochemical_state!(model, sediment_model::BiogeochemicalSedim
     update_tracked_fields!(sediment_model, model)
 
     if isfinite(Δt)
-        time_step!(sediment_model, Δt)
+        time_step!(sediment_model, Δt;)
     end
 
     return nothing

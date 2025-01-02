@@ -47,18 +47,18 @@ sediment_model = InstantRemineralisation(grid)
 ```
 """
 InstantRemineralisationSediment(grid;
-                                sinking_tracers = :D, 
+                                sinking_tracers = (:P, :D), 
                                 remineralisation_reciever = :N,
                                 burial_efficiency_constant1 = 0.013,
                                 burial_efficiency_constant2 = 0.53,
-                                burial_efficiency_half_saturation = 7.0,
+                                burial_efficiency_half_saturation = 7.0 / 6.56,
                                 kwargs...) =
     BiogeochemicalSediment(grid, 
                            InstantRemineralisation(burial_efficiency_constant1, 
                                                    burial_efficiency_constant2, 
                                                    burial_efficiency_half_saturation,
                                                    tracernames(sinking_tracers),
-                                                   remineralisation_reciever), 
+                                                   remineralisation_reciever);
                            kwargs...)
                   
 @inline required_sediment_fields(::InstantRemineralisation) = (:storage, )
@@ -71,13 +71,11 @@ InstantRemineralisationSediment(grid;
     b = s.burial_efficiency_constant2
     k = s.burial_efficiency_half_saturation
 
-    total_sinking_flux = sum(args)
+    flux = @inbounds sum(args[2:end])
 
-    carbon_flux = total_sinking_flux * 6.56
-
-    burial_efficiency = a + b * (carbon_flux / (k + carbon_flux)) ^ 2
-
-    return burial_efficiency * total_sinking_flux
+    burial_efficiency = a + b * (flux / (k + flux)) ^ 2
+    
+    return burial_efficiency * flux
 end
 
 @inline function remineralisation(s::InstantRemineralisation, x, y, t, args...)
@@ -85,13 +83,11 @@ end
     b = s.burial_efficiency_constant2
     k = s.burial_efficiency_half_saturation
 
-    total_sinking_flux = sum(args)
+    flux = @inbounds sum(args[2:end])
 
-    carbon_flux = total_sinking_flux * 6.56
+    burial_efficiency = a + b * (flux / (k + flux)) ^ 2
 
-    burial_efficiency = a + b * (carbon_flux / (k + carbon_flux)) ^ 2
-
-    return (1 - burial_efficiency) * total_sinking_flux
+    return (1 - burial_efficiency) * flux
 end
 
 function add_remineralisation_methods!(remineralisation_reciever; fname = remineralisation)
