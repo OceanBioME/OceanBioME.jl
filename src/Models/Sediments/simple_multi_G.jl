@@ -86,7 +86,7 @@ julia> sediment_model = SimpleMultiG(; grid)
 └ @ OceanBioME.Models.Sediments ~/Documents/Projects/OceanBioME.jl/src/Models/Sediments/simple_multi_G.jl:104
 ┌ Warning: Sediment models currently do not pass tests and are probably broken!
 └ @ OceanBioME.Models.Sediments ~/Documents/Projects/OceanBioME.jl/src/Models/Sediments/simple_multi_G.jl:105
-[ Info: This sediment model is currently only compatible with models providing NH₄, NO₃, O₂, and DIC.
+[ Info: The SimpleMultiG sediment model is currently only compatible with models providing NH₄, NO₃, O₂, and DIC.
 Single-layer multi-G sediment model (Float64)
 ```
 """
