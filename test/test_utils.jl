@@ -2,7 +2,7 @@ include("dependencies_for_runtests.jl")
 
 using OceanBioME: setup_velocity_fields, valid_sinking_velocity_locations
 
-using Oceananigans.Fields: AbstractField, CenterField, ConstantField, FunctionField, ZFaceField
+using Oceananigans.Fields: AbstractField, CenterField, ConstantField, FunctionField, ZFaceField, location
 
 function test_negative_scaling(arch)
     grid = RectilinearGrid(arch, size = (1, 1, 1), extent = (1, 1, 1))
@@ -57,7 +57,7 @@ sinking_speeds = merge(scalar_sinking_speeds, field_sinking_speeds)
 
     @test all(map(w -> isa(w, AbstractField) & (location(w) in valid_sinking_velocity_locations), values(sinking_velocities)))
 
-    sinking_velocities = 
+    sinking_velocities =
         @test_warn ("The sinking velocity provided for C is a field and therefore `open_bottom=false` can't be enforced automatically",
                     "The sinking velocity provided for D is a field and therefore `open_bottom=false` can't be enforced automatically",
                     "The sinking velocity provided for E is a field and therefore `open_bottom=false` can't be enforced automatically") setup_velocity_fields(sinking_speeds, grid, false)

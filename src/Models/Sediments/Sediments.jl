@@ -13,8 +13,7 @@ using Oceananigans.Advection: advective_tracer_flux_z, FluxFormAdvection
 using Oceananigans.Units: day
 using Oceananigans.Fields: ConstantField
 using Oceananigans.Biogeochemistry: biogeochemical_drift_velocity
-using Oceananigans.Grids: zspacing
-using Oceananigans.Operators: volume
+using Oceananigans.Operators: volume, zspacing
 using Oceananigans.ImmersedBoundaries: ImmersedBoundaryGrid, immersed_cell
 
 import Adapt: adapt_structure, adapt

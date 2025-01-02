@@ -25,11 +25,11 @@ struct SimpleMultiG{FT, P1, P2, P3, P4, F, TE, B} <: FlatSediment
                       fields :: F
                   tendencies :: TE
               bottom_indices :: B
-    
+
     SimpleMultiG(fast_decay_rate::FT, slow_decay_rate::FT,
                  fast_redfield::FT,   slow_redfield::FT,
                  fast_fraction::FT,   slow_fraction::FT, refactory_fraction::FT,
-                 nitrate_oxidation_params::P1, 
+                 nitrate_oxidation_params::P1,
                  denitrification_params::P2,
                  anoxic_params::P3,
                  solid_dep_params::P4,
@@ -38,7 +38,7 @@ struct SimpleMultiG{FT, P1, P2, P3, P4, F, TE, B} <: FlatSediment
         new{FT, P1, P2, P3, P4, F, TE, B}(fast_decay_rate, slow_decay_rate,
                                           fast_redfield,   slow_redfield,
                                           fast_fraction,   slow_fraction, refactory_fraction,
-                                          nitrate_oxidation_params, 
+                                          nitrate_oxidation_params,
                                           denitrification_params,
                                           anoxic_params,
                                           solid_dep_params,
@@ -84,7 +84,9 @@ julia> grid = RectilinearGrid(size=(3, 3, 30), extent=(10, 10, 200));
 julia> sediment_model = SimpleMultiG(; grid)
 ┌ Warning: Sediment models are an experimental feature and have not yet been validated.
 └ @ OceanBioME.Models.Sediments ~/Documents/Projects/OceanBioME.jl/src/Models/Sediments/simple_multi_G.jl:104
-[ Info: This sediment model is currently only compatible with models providing NH₄, NO₃, O₂, and DIC.
+┌ Warning: Sediment models currently do not pass tests and are probably broken!
+└ @ OceanBioME.Models.Sediments ~/Documents/Projects/OceanBioME.jl/src/Models/Sediments/simple_multi_G.jl:105
+[ Info: The SimpleMultiG sediment model is currently only compatible with models providing NH₄, NO₃, O₂, and DIC.
 Single-layer multi-G sediment model (Float64)
 ```
 """
@@ -102,7 +104,8 @@ function SimpleMultiG(; grid,
                         solid_dep_params = on_architecture(architecture(grid), [0.233, 0.336, 982.0, - 1.548]))
 
     @warn "Sediment models are an experimental feature and have not yet been validated."
-    @info "This sediment model is currently only compatible with models providing NH₄, NO₃, O₂, and DIC."
+    @warn "Sediment models currently do not pass tests and are probably broken!"
+    @info "The SimpleMultiG sediment model is currently only compatible with models providing NH₄, NO₃, O₂, and DIC."
 
     tracer_names = (:C_slow, :C_fast, :N_slow, :N_fast, :C_ref, :N_ref)
 
@@ -125,7 +128,7 @@ function SimpleMultiG(; grid,
                         bottom_indices)
 end
 
-adapt_structure(to, sediment::SimpleMultiG) = 
+adapt_structure(to, sediment::SimpleMultiG) =
     SimpleMultiG(adapt(to, sediment.fast_decay_rate),
                  adapt(to, sediment.slow_decay_rate),
                  adapt(to, sediment.fast_redfield),
@@ -140,7 +143,7 @@ adapt_structure(to, sediment::SimpleMultiG) =
                  adapt(to, sediment.fields),
                  nothing,
                  adapt(to, sediment.bottom_indices))
-                  
+
 sediment_tracers(::SimpleMultiG) = (:C_slow, :C_fast, :C_ref, :N_slow, :N_fast, :N_ref)
 sediment_fields(model::SimpleMultiG) = (C_slow = model.fields.C_slow,
                                         C_fast = model.fields.C_fast,
@@ -162,7 +165,7 @@ function _calculate_sediment_tendencies!(i, j, sediment::SimpleMultiG, bgc, grid
 
     @inbounds begin
         carbon_deposition = carbon_flux(i, j, k, grid, advection, bgc, tracers) * Δz
-                        
+
         nitrogen_deposition = nitrogen_flux(i, j, k, grid, advection, bgc, tracers) * Δz
 
         # rates
@@ -174,7 +177,7 @@ function _calculate_sediment_tendencies!(i, j, sediment::SimpleMultiG, bgc, grid
 
         Cᵐⁱⁿ = C_min_slow + C_min_fast
         Nᵐⁱⁿ = N_min_slow + N_min_fast
-        
+
         reactivity = Cᵐⁱⁿ * day / (sediment.fields.C_slow[i, j, 1] + sediment.fields.C_fast[i, j, 1])
 
         # sediment evolution
@@ -190,7 +193,7 @@ function _calculate_sediment_tendencies!(i, j, sediment::SimpleMultiG, bgc, grid
         O₂  = tracers.O₂[i, j, k]
         NO₃ = tracers.NO₃[i, j, k]
         NH₄ = tracers.NH₄[i, j, k]
-        
+
         A, B, C, D, E, F = sediment.nitrate_oxidation_params
 
         pₙᵢₜ = exp(A +
@@ -208,9 +211,9 @@ function _calculate_sediment_tendencies!(i, j, sediment::SimpleMultiG, bgc, grid
                      sediment.denitrification_params.E * log(reactivity) ^ 2 +
                      sediment.denitrification_params.F * log(O₂) * log(reactivity)) / (Cᵐⁱⁿ * day)
         =#
-        
+
         A, B, C, D, E, F = sediment.anoxic_params
-        
+
         pₐₙₒₓ = exp(A +
                     B * log(Cᵐⁱⁿ * day) +
                     C * log(Cᵐⁱⁿ * day) ^ 2 +
