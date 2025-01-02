@@ -84,6 +84,8 @@ julia> grid = RectilinearGrid(size=(3, 3, 30), extent=(10, 10, 200));
 julia> sediment_model = SimpleMultiG(; grid)
 ┌ Warning: Sediment models are an experimental feature and have not yet been validated.
 └ @ OceanBioME.Models.Sediments ~/Documents/Projects/OceanBioME.jl/src/Models/Sediments/simple_multi_G.jl:104
+┌ Warning: Sediment models currently do not pass tests and are probably broken!
+└ @ OceanBioME.Models.Sediments ~/Documents/Projects/OceanBioME.jl/src/Models/Sediments/simple_multi_G.jl:105
 [ Info: This sediment model is currently only compatible with models providing NH₄, NO₃, O₂, and DIC.
 Single-layer multi-G sediment model (Float64)
 ```
