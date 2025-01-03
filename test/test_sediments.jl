@@ -1,11 +1,11 @@
 include("dependencies_for_runtests.jl")
 
-using OceanBioME.Models: InstantRemineralisation
+using OceanBioME.Models: InstantRemineralisation, SimpleMultiG
 using OceanBioME.Sediments: BiogeochemicalSediment
 
 display_name(::LOBSTER) = "LOBSTER"
 display_name(::NutrientPhytoplanktonZooplanktonDetritus) = "NPZD"
-#display_name(::SimpleMultiG) = "Multi-G"
+display_name(::BiogeochemicalSediment{<:SimpleMultiG}) = "Multi-G"
 display_name(::BiogeochemicalSediment{<:InstantRemineralisation}) = "Instant remineralisation"
 display_name(::RectilinearGrid) = "Rectilinear grid"
 display_name(::LatitudeLongitudeGrid) = "Latitude longitude grid"
@@ -24,10 +24,18 @@ end
 
 set_sinkers!(::NPZD, model) = set!(model, D = 1)
 set_sinkers!(::LOBSTER, model) = set!(model, sPOM = 1, bPOM = 1)
+set_sinkers!(::LOBSTER{<:Any, Val{(true, true, true)}}, model) = 
+    set!(model, sPON = 1, bPON = 1, sPOC = 6.56, bPOC = 6.56)
 
-sum_of_integrals(tracers) = sum(map(f -> Field(Integral(f)), values(tracers)))
+sum_of_volume_integrals(biogeochemistry, tracers) = sum(map(f -> Field(Integral(f)), values(tracers)))
+sum_of_volume_integrals(::LOBSTER{<:Any, Val{(true, true, true)}}, tracers) = 
+    sum([Field(Integral(f)) for (n, f) in pairs(tracers) if n in (:NO₃, :NH₄, :P, :Z, :sPON, :bPON, :DON)])
 
-function test_sediment(grid, biogeochemistry, model_name, advection = WENO(order = 5, bounds = (0, 1)))
+sum_of_area_integrals(sediment, fields) = sum(map(f -> Field(Integral(f, dims = (1, 2))), values(fields)))
+sum_of_area_integrals(::SimpleMultiG{Nothing}, fields) = 
+    sum([Field(Integral(f, dims = (1, 2))) for (n, f) in pairs(fields) if n in (:Nf, :Ns, :Nr)])
+
+function test_sediment(grid, biogeochemistry, model_name, advection = WENO(order = 3, bounds = (0, 1)))
     method = quote
         return $(model_name)(; grid = $(grid), 
                                biogeochemistry = $(biogeochemistry), 
@@ -42,9 +50,13 @@ function test_sediment(grid, biogeochemistry, model_name, advection = WENO(order
 
     set_sinkers!(biogeochemistry.underlying_biogeochemistry, model)
 
-    tracer_nitrogen = sum_of_integrals(model.tracers)
+    if isa(biogeochemistry.sediment.biogeochemistry, SimpleMultiG)
+        set!(model, NO₃ = 10, NH₄ = 1, O₂ = 1000)
+    end
 
-    sediment_nitrogen = Field(Integral(sediment_model.fields.storage, dims = (1, 2)))
+    tracer_nitrogen = sum_of_volume_integrals(biogeochemistry.underlying_biogeochemistry, model.tracers)
+
+    sediment_nitrogen = sum_of_area_integrals(biogeochemistry.sediment.biogeochemistry, sediment_model.fields)
 
     total_nitrogen = Field(tracer_nitrogen + sediment_nitrogen)
 
@@ -60,7 +72,8 @@ function test_sediment(grid, biogeochemistry, model_name, advection = WENO(order
 
     final_total_nitrogen = CUDA.@allowscalar total_nitrogen[1, 1, 1]
 
-    @test initial_total_nitrogen ≈ final_total_nitrogen
+     # simple multi-G is only good to this precision, IR is fine to default
+    @test isapprox(initial_total_nitrogen, final_total_nitrogen,rtol = 0.2e-6)
 
     @test all(interior(sediment_nitrogen) .!= 0)
 
@@ -88,9 +101,9 @@ immersed_latlon_grid = ImmersedBoundaryGrid(
     GridFittedBottom(bottom_height)
 )
 
-grids = (rectilinear_grid,)# latlon_grid, underlying_latlon_grid)
-sediment_timesteppers = (:QuasiAdamsBashforth2, )#:RungeKutta3)
-models = (NonhydrostaticModel,)# HydrostaticFreeSurfaceModel) # I don't think we need to test on both models anymore
+grids = (rectilinear_grid, latlon_grid, underlying_latlon_grid)
+sediment_timesteppers = (:QuasiAdamsBashforth2, :RungeKutta3)
+models = (NonhydrostaticModel, HydrostaticFreeSurfaceModel) # I don't think we need to test on both models anymore
 
 @testset "Sediment integration" begin
     for grid in grids, timestepper in sediment_timesteppers
@@ -108,8 +121,26 @@ models = (NonhydrostaticModel,)# HydrostaticFreeSurfaceModel) # I don't think we
                 timestepper
             )
         )
+
+        simple_lobster_multi_g = LOBSTER(;
+            grid,
+            sediment_model = SimpleMultiGSediment(grid),
+            oxygen = true
+        )
+
+        full_lobster_multi_g = LOBSTER(;
+            grid,
+            sediment_model = SimpleMultiGSediment(
+                grid;
+                sinking_nitrogen = (:sPON, :bPON),
+                sinking_carbon = (:sPOC, :bPOC)
+            ),
+            oxygen = true,
+            carbonates = true,
+            variable_redfield = true
+        )
         
-        bgcs = [npzd_ir, lobster_ir]
+        bgcs = [npzd_ir, lobster_ir, simple_lobster_multi_g, full_lobster_multi_g]
 
         for model in models, biogeochemistry in bgcs
             nonhydrostatic = (model == NonhydrostaticModel)

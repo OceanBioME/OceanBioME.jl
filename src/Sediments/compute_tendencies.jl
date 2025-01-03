@@ -31,6 +31,7 @@ end
 @kernel function compute_sediment_tendency!(G, grid, args)
     i, j = @index(Global, NTuple)
 
+    # tendencies in X/m²/s
     @inbounds G[i, j] = sediment_tendencies(i, j, grid, args...)
 end
 

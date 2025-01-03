@@ -66,24 +66,24 @@ InstantRemineralisationSediment(grid;
 @inline sinking_fluxs(s::InstantRemineralisation) = s.sinking_tracers
 @inline coupled_tracers(s::InstantRemineralisation) = tuple(s.remineralisation_reciever)
 
-@inline function (s::InstantRemineralisation)(::Val{:storage}, x, y, t, args...)
+@inline function (s::InstantRemineralisation)(::Val{:storage}, x, y, t, storage, fluxs...)
     a = s.burial_efficiency_constant1
     b = s.burial_efficiency_constant2
     k = s.burial_efficiency_half_saturation
 
-    flux = @inbounds sum(args[2:end])
+    flux = sum(fluxs)
 
     burial_efficiency = a + b * (flux / (k + flux)) ^ 2
     
     return burial_efficiency * flux
 end
 
-@inline function remineralisation(s::InstantRemineralisation, x, y, t, args...)
+@inline function remineralisation(s::InstantRemineralisation, x, y, t, storage, fluxs...)
     a = s.burial_efficiency_constant1
     b = s.burial_efficiency_constant2
     k = s.burial_efficiency_half_saturation
 
-    flux = @inbounds sum(args[2:end])
+    flux = sum(fluxs)
 
     burial_efficiency = a + b * (flux / (k + flux)) ^ 2
 

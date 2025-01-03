@@ -1,6 +1,6 @@
 module Models
 
-export InstantRemineralisationSediment
+export InstantRemineralisationSediment, SimpleMultiGSediment
 
 export NPZD, 
        NutrientPhytoplanktonZooplanktonDetritus, 

@@ -41,7 +41,7 @@ end
 # tracer fields
 
 @kernel function copy_to_sediment!(source, destination, bottom_indices)
-    i, j = @index(Global, Ntuple)
+    i, j = @index(Global, NTuple)
 
     @inbounds begin
         k = bottom_indices[i, j]
