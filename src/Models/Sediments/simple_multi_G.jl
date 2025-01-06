@@ -37,7 +37,7 @@ struct SimpleMultiG{SR, FT, P1, P2, P3, P4, SN, SC} <: AbstractContinuousFormSed
               sinking_carbon :: SC
 end
 
-@inline required_sediment_fields(::SimpleMultiG{Nothing}) = (:Cs, :Cf, :Cr, :Ns, :Nf, :Nr)
+@inline required_sediment_fields(::SimpleMultiG{Nothing}) = (:Ns, :Nf, :Nr, :Cs, :Cf, :Cr)
 @inline required_sediment_fields(::SimpleMultiG) = (:Ns, :Nf, :Nr)
 @inline required_tracers(::SimpleMultiG) = (:NO₃, :NH₄, :O₂)
 @inline sinking_fluxs(s::SimpleMultiG{Nothing}) = (s.sinking_nitrogen..., s.sinking_carbon...)
