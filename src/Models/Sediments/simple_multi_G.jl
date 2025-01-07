@@ -47,7 +47,23 @@ end
 
 """
     SimpleMultiGSediment(grid;
-                          ...)
+                         fast_decay_rate = 2/day,
+                         slow_decay_rate = 0.2/day,
+                         fast_redfield = 0.1509,
+                         slow_redfield = 0.13,
+                         fast_fraction = 0.74,
+                         slow_fraction = 0.26,
+                         refactory_fraction = 0.1,
+                         sedimentation_rate = 982 * abs(znode(1, 1, 1, grid, Center(), Center(), Center())) ^ (-1.548), # cm/year, incorrect for D < 100m
+                         anoxia_half_saturation = 1.0, # mmol/m³ (arbitarily low)
+                         nitrate_oxidation_params = on_architecture(architecture(grid), (- 1.9785, 0.2261, -0.0615, -0.0289, - 0.36109, - 0.0232)),
+                         denitrification_params = on_architecture(architecture(grid), (- 3.0790, 1.7509, 0.0593, - 0.1923, 0.0604, 0.0662)),
+                         anoxic_params = on_architecture(architecture(grid), (- 3.9476, 2.6269, - 0.2426, -1.3349, 0.1826, - 0.0143)),
+                         solid_dep_params = on_architecture(architecture(grid), (0.233, 0.336, 982.0, - 1.548)),
+                         sinking_nitrogen = (:sPOM, :bPOM),
+                         sinking_carbon = nothing,
+                         sinking_redfield = ifelse(isnothing(sinking_carbon), convert(eltype(grid), 6.56), nothing),
+                         kwargs...)
 
 Return a single-layer "multi G" sediment model (`SimpleMultiG`) on `grid`, where parameters
 can be optionally specified.
@@ -66,12 +82,14 @@ Example
 =======
 
 ```jldoctest simplemultig; filter = r".*@ OceanBioME.Models.Sediments.*"
-julia> using OceanBioME, Oceananigans, OceanBioME.Sediments
+julia> using OceanBioME, Oceananigans
 
 julia> grid = RectilinearGrid(size=(3, 3, 30), extent=(10, 10, 200));
 
-julia> sediment_model = SimpleMultiG(grid)
-...
+julia> sediment_model = SimpleMultiGSediment(grid)
+
+julia> biogeochemistry = LOBSTER(; grid, sediment_model)
+
 ```
 """
 SimpleMultiGSediment(grid;
@@ -227,7 +245,7 @@ end
     fr = s.refactory_fraction
     fs = s.slow_fraction
 
-    fN, fC = sinking_nitrogen_carbon(sinking_tracers...)
+    fN, _ = sinking_nitrogen_carbon(sinking_tracers...)
 
     return (1 - fr) * fs * fN - λ * Ns
 end
@@ -237,7 +255,7 @@ end
     fr = s.refactory_fraction
     ff = s.fast_fraction
 
-    fN, fC = sinking_nitrogen_carbon(sinking_tracers...)
+    fN, _ = sinking_nitrogen_carbon(sinking_tracers...)
 
     return (1 - fr) * ff * fN - λ * Nf
 end
@@ -245,7 +263,7 @@ end
 @inline function (s::SimpleMultiG{Nothing})(::Val{:Nr}, x, y, t, Ns, Nf, Nr, Cs, Cf, Cr, NO₃, NH₄, O₂, sinking_tracers...)
     fr = s.refactory_fraction
 
-    fN, fC = sinking_nitrogen_carbon(sinking_tracers...)
+    fN, _ = sinking_nitrogen_carbon(sinking_tracers...)
 
     return fr * fN
 end
@@ -255,7 +273,7 @@ end
     fr = s.refactory_fraction
     fs = s.slow_fraction
 
-    fN, fC = sinking_nitrogen_carbon(sinking_tracers...)
+    _, fC = sinking_nitrogen_carbon(sinking_tracers...)
 
     return (1 - fr) * fs * fC - λ * Cs
 end
@@ -265,7 +283,7 @@ end
     fr = s.refactory_fraction
     ff = s.fast_fraction
 
-    fN, fC = sinking_nitrogen_carbon(sinking_tracers...)
+    _, fC = sinking_nitrogen_carbon(sinking_tracers...)
 
     return (1 - fr) * ff * fC - λ * Cf
 end
@@ -273,7 +291,7 @@ end
 @inline function (s::SimpleMultiG{Nothing})(::Val{:Cr}, x, y, t, Ns, Nf, Nr, Cs, Cf, Cr, NO₃, NH₄, O₂, sinking_tracers...)
     fr = s.refactory_fraction
 
-    fN, fC = sinking_nitrogen_carbon(sinking_tracers...)
+    _, fC = sinking_nitrogen_carbon(sinking_tracers...)
 
     return fr * fC
 end
