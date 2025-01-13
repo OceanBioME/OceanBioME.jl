@@ -13,6 +13,6 @@ import OceanBioME.Sediments: required_sediment_fields,
 
 
 include("simple_multi_G.jl")
-include("instant_remineralization.jl")
+include("instant_remineralisation.jl")
 
 end # module
