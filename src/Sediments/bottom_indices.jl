@@ -20,7 +20,7 @@ end
 
 function calculate_bottom_indices(grid::ImmersedBoundaryGrid)
     arch = architecture(grid)
-    indices = Field{Center, Center, Nothing}(grid)
+    indices = Field{Center, Center, Nothing}(grid, Int)
 
     launch!(arch, grid, :xy, find_bottom_cell, grid, indices)
 
