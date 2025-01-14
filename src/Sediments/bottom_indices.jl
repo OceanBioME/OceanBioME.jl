@@ -13,7 +13,7 @@ calculate_bottom_indices(grid) = OneField()
         k_bottom += 1
     end
 
-    @inbounds bottom_indices[i, j] = k_bottom
+    @inbounds bottom_indices[i, j, 1] = k_bottom
 end
 
 function calculate_bottom_indices(grid::ImmersedBoundaryGrid)
