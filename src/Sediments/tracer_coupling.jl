@@ -31,7 +31,7 @@ end
     i, j = @index(Global, NTuple)
 
     @inbounds begin
-        k = bottom_indices[i, j]
+        k = bottom_indices[i, j, 1]
 
         # eflux in X/m²/s
         @inbounds G[i, j, k] += sediment_tendencies(i, j, grid, args...) / Δzᶜᶜᶠ(i, j, k, grid) 

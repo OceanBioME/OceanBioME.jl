@@ -44,9 +44,9 @@ end
     i, j = @index(Global, NTuple)
 
     @inbounds begin
-        k = bottom_indices[i, j]
+        k = bottom_indices[i, j, 1]
 
-        destination[i, j] = source[i, j, k]
+        destination[i, j, 1] = source[i, j, k]
     end
 end
 
@@ -64,8 +64,8 @@ end
     i, j = @index(Global, NTuple)
 
     @inbounds begin
-        k = bottom_indices[i, j]
+        k = bottom_indices[i, j, 1]
 
-        destination[i, j] = sinking_flux(i, j, k, grid, advection, w, source)
+        destination[i, j, 1] = sinking_flux(i, j, k, grid, advection, w, source)
     end
 end

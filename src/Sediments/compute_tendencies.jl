@@ -32,7 +32,7 @@ end
     i, j = @index(Global, NTuple)
 
     # tendencies in X/m²/s
-    @inbounds G[i, j] = sediment_tendencies(i, j, grid, args...)
+    @inbounds G[i, j, 1] = sediment_tendencies(i, j, grid, args...)
 end
 
 @inline sediment_tendencies(i, j, grid, val_name, biogeochemistry, fields, tracked_fields, clock) =

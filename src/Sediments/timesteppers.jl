@@ -37,7 +37,7 @@ end
 
     @inbounds begin
         Gu = (one_point_five + χ) * Gⁿ[i, j] - (oh_point_five + χ) * G⁻[i, j] * not_euler
-        u[i, j] += Δt * Gu
+        u[i, j, 1] += Δt * Gu
     end
 end
 
@@ -60,7 +60,7 @@ end
     i, j = @index(Global, NTuple)
 
     @inbounds begin
-        U[i, j] += convert(FT, Δt) * (γⁿ * Gⁿ[i, j] + ζⁿ * G⁻[i, j])
+        U[i, j, 1] += convert(FT, Δt) * (γⁿ * Gⁿ[i, j] + ζⁿ * G⁻[i, j])
     end
 end
 
@@ -68,7 +68,7 @@ end
     i, j = @index(Global, NTuple)
 
     @inbounds begin
-        U[i, j] += convert(FT, Δt) * γ¹ * G¹[i, j]
+        U[i, j, 1] += convert(FT, Δt) * γ¹ * G¹[i, j]
     end
 end
 
@@ -77,7 +77,7 @@ end
 """ Store source terms for `u`, `v`, and `w`. """
 @kernel function store_flat_field_tendencies!(G⁻, G⁰)
     i, j = @index(Global, NTuple)
-    @inbounds G⁻[i, j] = G⁰[i, j]
+    @inbounds G⁻[i, j, 1] = G⁰[i, j, 1]
 end
 
 """ Store previous source terms before updating them. """
