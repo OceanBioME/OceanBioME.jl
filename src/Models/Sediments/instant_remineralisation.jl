@@ -27,6 +27,13 @@ struct InstantRemineralisation{FT, ST, RR} <: AbstractContinuousFormSedimentBiog
     end
 end
 
+Adapt.adapt_structure(to, ir::InstantRemineralisation) = 
+    InstantRemineralisation(adapt(to, ir.burial_efficiency_constant1),
+                            adapt(to, ir.burial_efficiency_constant2),
+                            adapt(to, ir.burial_efficiency_half_saturation),
+                            nothing,
+                            nothing)
+
 """
     InstantRemineralisationSediment(grid;
                                     sinking_tracers = (:P, :D), 

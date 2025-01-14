@@ -137,8 +137,7 @@ adapt_structure(to, sediment::SimpleMultiG) =
                  adapt(to, sediment.denitrification_params),
                  adapt(to, sediment.anoxic_params),
                  adapt(to, sediment.solid_dep_params),
-                 adapt(to, sediment.sinking_nitrogen),
-                 adapt(to, sediment.sinking_carbon))
+                 nothing, nothing)
 
 @inline sinking_nitrogen_carbon(PON, POC) = PON, POC
 @inline sinking_nitrogen_carbon(sPON, bPON, sPOC, bPOC) = sPON+bPON, sPOC+bPOC
