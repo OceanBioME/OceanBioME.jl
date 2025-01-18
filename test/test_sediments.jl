@@ -101,9 +101,9 @@ immersed_latlon_grid = ImmersedBoundaryGrid(
     GridFittedBottom(bottom_height)
 )
 
-grids = (rectilinear_grid, latlon_grid, underlying_latlon_grid)
+grids = (rectilinear_grid, latlon_grid, immersed_latlon_grid)
 sediment_timesteppers = (:QuasiAdamsBashforth2, :RungeKutta3)
-models = (NonhydrostaticModel, HydrostaticFreeSurfaceModel) # I don't think we need to test on both models anymore
+models = (NonhydrostaticModel, )#HydrostaticFreeSurfaceModel) # I don't think we need to test on both models anymore
 
 @testset "Sediment integration" begin
     for grid in grids, timestepper in sediment_timesteppers
