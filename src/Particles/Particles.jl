@@ -20,7 +20,9 @@ import Oceananigans.OutputWriters: fetch_output
 import Base: length, size, show, summary
 import Adapt: adapt_structure
 
-struct BiogeochemicalParticles{N, B, A, F, T, I, S, X, Y, Z}
+abstract type AbstractBiogeochemicalParticles end
+
+struct BiogeochemicalParticles{N, B, A, F, T, I, S, X, Y, Z} <: AbstractBiogeochemicalParticles
       biogeochemistry :: B
             advection :: A
                fields :: F 
@@ -119,8 +121,8 @@ Adapt.adapt_structure(to, p::BiogeochemicalParticles{N}) where N =
                                adapt(to, p.z))
 
 # Type piracy...oops
-const BGC_WITH_PARTICLES = Union{<:DiscreteBiogeochemistry{<:Any, <:Any, <:Any, <:BiogeochemicalParticles},
-                                 <:ContinuousBiogeochemistry{<:Any, <:Any, <:Any, <:BiogeochemicalParticles}}
+const BGC_WITH_PARTICLES = Union{<:DiscreteBiogeochemistry{<:Any, <:Any, <:Any, <:AbstractBiogeochemicalParticles},
+                                 <:ContinuousBiogeochemistry{<:Any, <:Any, <:Any, <:AbstractBiogeochemicalParticles}}
 
 const MODEL_WITH_BGC_PARTICLES = 
     Union{<:NonhydrostaticModel{<:Any, <:Any, <:Any, <:Any, <:Any, <:Any, <:Any, <:Any, <:Any, <:Any, <:Any, <:Any, <:Any, <:Any, <:Any, <:Any, <:Any, <:BGC_WITH_PARTICLES},
