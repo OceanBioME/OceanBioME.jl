@@ -87,8 +87,17 @@ julia> using OceanBioME, Oceananigans
 julia> grid = RectilinearGrid(size=(3, 3, 30), extent=(10, 10, 200));
 
 julia> sediment_model = SimpleMultiGSediment(grid)
+`BiogeochemicalSediment` with `Single-layer multi-G sediment model (Float64)` biogeochemsitry
+    Prognostic fields: (:Ns, :Nf, :Nr)
+    Tracked fields: (:NO₃, :NH₄, :O₂, :sPOM, :bPOM)
+    Coupled fields: (:NO₃, :NH₄, :O₂)
 
 julia> biogeochemistry = LOBSTER(; grid, sediment_model)
+LOBSTER{Float64} with carbonates ❌, oxygen ❌, variable Redfield ratio ❌ and (:sPOM, :bPOM) sinking
+ Light attenuation: Two-band light attenuation model (Float64)
+ Sediment: `BiogeochemicalSediment` with `Single-layer multi-G sediment model (Float64)` biogeochemsitry
+ Particles: Nothing
+ Modifiers: Nothing
 
 ```
 """

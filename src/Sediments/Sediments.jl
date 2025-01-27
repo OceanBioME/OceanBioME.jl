@@ -43,6 +43,7 @@ include("tracked_fields.jl")
 include("update_state.jl")
 include("compute_tendencies.jl")
 include("tracer_coupling.jl")
+include("show.jl")
 
 function BiogeochemicalSediment(grid, biogeochemistry;
                                 clock = Clock(time = zero(grid)),
