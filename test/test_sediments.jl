@@ -75,7 +75,7 @@ function test_sediment(grid, biogeochemistry, model_name, advection = WENO(order
      # simple multi-G is only good to this precision, IR is fine to default
     @test isapprox(initial_total_nitrogen, final_total_nitrogen,rtol = 0.2e-6)
 
-    @test all(Array(interior(sediment_nitrogen)) .!= 0)
+    @test all(interior(Field(sediment_nitrogen)) .!= 0)
 
     return model
 end
