@@ -1,8 +1,7 @@
 using Documenter, DocumenterCitations, Literate
 
 using OceanBioME
-using OceanBioME: SugarKelp, LOBSTER, NutrientPhytoplanktonZooplanktonDetritus
-using OceanBioME.Sediments: SimpleMultiGSediment, InstantRemineralisationSediemnt
+using OceanBioME: SugarKelp, LOBSTER, NutrientPhytoplanktonZooplanktonDetritus, SimpleMultiGSediment, InstantRemineralisationSediment
 using OceanBioME: CarbonChemistry, GasExchange
 
 using Oceananigans.Grids: RectilinearGrid
