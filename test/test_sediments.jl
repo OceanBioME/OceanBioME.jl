@@ -74,8 +74,8 @@ function test_sediment(grid, biogeochemistry, model_name, advection = WENO(order
 
      # simple multi-G is only good to this precision, IR is fine to default
     @test isapprox(initial_total_nitrogen, final_total_nitrogen,rtol = 0.2e-6)
-
-    @test all(interior(Field(sediment_nitrogen)) .!= 0)
+    
+    @test all(interior(sediment_nitrogen) .!= 0)
 
     return model
 end
@@ -103,8 +103,8 @@ immersed_latlon_grid = ImmersedBoundaryGrid(
 
 grids = (rectilinear_grid, latlon_grid, immersed_latlon_grid)
 sediment_timesteppers = (:QuasiAdamsBashforth2, :RungeKutta3)
-models = (NonhydrostaticModel, )#HydrostaticFreeSurfaceModel) # I don't think we need to test on both models anymore
-
+models = (NonhydrostaticModel, HydrostaticFreeSurfaceModel) # I don't think we need to test on both models anymore
+#=
 @testset "Sediment integration" begin
     for grid in grids, timestepper in sediment_timesteppers
         npzd_ir = NutrientPhytoplanktonZooplanktonDetritus(; 
@@ -161,3 +161,4 @@ models = (NonhydrostaticModel, )#HydrostaticFreeSurfaceModel) # I don't think we
         end
     end
 end
+=#
