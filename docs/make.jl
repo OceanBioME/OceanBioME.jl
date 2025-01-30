@@ -50,12 +50,14 @@ example_pages = [ title => "generated/$(filename).md" for (title, filename) in e
 
 if !isdir(OUTPUT_DIR) mkdir(OUTPUT_DIR) end
 
+small_grid = RectilinearGrid(size=(1, 1, 1), extent=(1, 1, 1)
+
 model_parameters = (LOBSTER(; grid = BoxModelGrid(), light_attenuation_model = nothing).underlying_biogeochemistry,
                     NutrientPhytoplanktonZooplanktonDetritus(; grid = BoxModelGrid(), light_attenuation_model = nothing).underlying_biogeochemistry,
                     SugarKelp(),
-                    TwoBandPhotosyntheticallyActiveRadiation(; grid = RectilinearGrid(size=(1, 1, 1), extent=(1, 1, 1))),
-                    SimpleMultiGSediment(BoxModelGrid()).biogeochemistry,
-                    InstantRemineralisationSediment(BoxModelGrid()).biogeochemistry,
+                    TwoBandPhotosyntheticallyActiveRadiation(; grid = small_grid)),
+                    SimpleMultiGSediment(small_grid).biogeochemistry,
+                    InstantRemineralisationSediment(small_grid).biogeochemistry,
                     CarbonChemistry(),
                     CarbonDioxideGasExchangeBoundaryCondition().condition.func,
                     OxygenGasExchangeBoundaryCondition().condition.func)
