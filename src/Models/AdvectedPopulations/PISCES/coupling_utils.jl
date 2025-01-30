@@ -1,14 +1,5 @@
-import OceanBioME.Models.Sediments: nitrogen_flux, carbon_flux, remineralisation_receiver, sinking_tracers
-
 # sediment models
 @inline redfield(val_name, bgc::PISCES, tracers) = bgc.nitrogen_redfield_ratio
-
-@inline nitrogen_flux(i, j, k, grid, advection, bgc::PISCES, tracers) = bgc.nitrogen_redfield_ratio * carbon_flux(i, j, k, grid, advection, bgc, tracers)
-
-@inline carbon_flux(i, j, k, grid, advection, bgc::PISCES, tracers) = sinking_flux(i, j, k, grid, adveciton, bgc, Val(:POC), tracers) +
-                                                                      sinking_flux(i, j, k, grid, adveciton, bgc, Val(:GOC), tracers)
-
-@inline remineralisation_receiver(::PISCES) = :NH₄
 
 @inline sinking_tracers(::PISCES) = (:POC, :GOC, :SFe, :BFe, :PSi, :CaCO₃) # please list them here
 
