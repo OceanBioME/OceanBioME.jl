@@ -284,7 +284,7 @@ We can then visualise this:
 N = FieldTimeSeries("column_np.jld2", "N")
 P = FieldTimeSeries("column_np.jld2", "P")
 
-sed = FieldTimeSeries("column_np_sediment.jld2", "N_storage")
+sed = FieldTimeSeries("column_np_sediment.jld2", "storage")
 
 fig = Figure()
 
