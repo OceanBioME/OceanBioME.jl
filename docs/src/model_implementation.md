@@ -232,7 +232,7 @@ grid = RectilinearGrid(topology = (Flat, Flat, Bounded), size = (32, ), x = 1, y
 
 light_attenuation = TwoBandPhotosyntheticallyActiveRadiation(; grid, surface_PAR)
 
-sediment = InstantRemineralisationSediment(grid)
+sediment = InstantRemineralisationSediment(grid; sinking_tracers = :P)
 
 sinking_velocity = ZFaceField(grid)
 
