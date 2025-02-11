@@ -17,18 +17,16 @@ SeawaterPolynomials = "d496a93d-167e-4197-9f49-d3af4ff8fe40"
 
 [compat]
 Adapt = "3, 4"
-Atomix = "0.1"
+Atomix = "1.0"
 CUDA = "5"
 Documenter = "1"
 EnsembleKalmanProcesses = "1"
 GibbsSeaWater = "0.1"
 JLD2 = "0.4, 0.5"
-KernelAbstractions = "0.9"
 Oceananigans = "^0.95"
 OffsetArrays = "1.14"
 Roots = "2"
 SeawaterPolynomials = "0.3"
-StructArrays = "0.4, 0.5, 0.6"
 julia = "1.10"
 
 [extras]
