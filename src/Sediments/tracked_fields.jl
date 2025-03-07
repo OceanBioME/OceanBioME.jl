@@ -24,7 +24,7 @@ function update_tracked_fields!(sediment, model)
     end
 
     # tracked fluxs
-    field_names = sinking_fluxs(sediment)
+    field_names = sinking_fluxes(sediment)
 
     for field_name in field_names
         source = model_fields[field_name]

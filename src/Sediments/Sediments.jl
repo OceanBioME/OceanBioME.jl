@@ -29,7 +29,7 @@ end
 
 @inline required_sediment_fields(s::BiogeochemicalSediment) = required_sediment_fields(s.biogeochemistry)
 @inline required_tracers(s::BiogeochemicalSediment) = required_tracers(s.biogeochemistry)
-@inline sinking_fluxs(s::BiogeochemicalSediment) = sinking_fluxs(s.biogeochemistry)
+@inline sinking_fluxes(s::BiogeochemicalSediment) = sinking_fluxes(s.biogeochemistry)
 @inline coupled_tracers(s::BiogeochemicalSediment) = coupled_tracers(s.biogeochemistry)
 
 abstract type AbstractSedimentBiogeochemistry end
@@ -52,7 +52,7 @@ function BiogeochemicalSediment(grid, biogeochemistry;
     bottom_indices = calculate_bottom_indices(grid)
 
     sediment_field_names = required_sediment_fields(biogeochemistry)
-    tracked_field_names = (required_tracers(biogeochemistry)..., sinking_fluxs(biogeochemistry)...)
+    tracked_field_names = (required_tracers(biogeochemistry)..., sinking_fluxes(biogeochemistry)...)
 
     prognostic_fields = NamedTuple{sediment_field_names}(map(n -> Field{Center, Center, Nothing}(grid), 1:length(sediment_field_names)))
     tracked_fields = NamedTuple{tracked_field_names}(map(n -> Field{Center, Center, Nothing}(grid), 1:length(tracked_field_names)))

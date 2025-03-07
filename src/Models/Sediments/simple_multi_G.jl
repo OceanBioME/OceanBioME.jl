@@ -40,8 +40,8 @@ end
 @inline required_sediment_fields(::SimpleMultiG{Nothing}) = (:Ns, :Nf, :Nr, :Cs, :Cf, :Cr)
 @inline required_sediment_fields(::SimpleMultiG) = (:Ns, :Nf, :Nr)
 @inline required_tracers(::SimpleMultiG) = (:NO₃, :NH₄, :O₂)
-@inline sinking_fluxs(s::SimpleMultiG{Nothing}) = (s.sinking_nitrogen..., s.sinking_carbon...)
-@inline sinking_fluxs(s::SimpleMultiG) = s.sinking_nitrogen
+@inline sinking_fluxes(s::SimpleMultiG{Nothing}) = (s.sinking_nitrogen..., s.sinking_carbon...)
+@inline sinking_fluxes(s::SimpleMultiG) = s.sinking_nitrogen
 @inline coupled_tracers(::SimpleMultiG) =  (:NO₃, :NH₄, :O₂)
 @inline coupled_tracers(::SimpleMultiG{Nothing}) =  (:NO₃, :NH₄, :O₂, :DIC)
 

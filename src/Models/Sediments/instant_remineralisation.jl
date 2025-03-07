@@ -96,7 +96,7 @@ InstantRemineralisationSediment(grid;
                   
 @inline required_sediment_fields(::InstantRemineralisation) = (:storage, )
 @inline required_tracers(::InstantRemineralisation) = tuple()
-@inline sinking_fluxs(s::InstantRemineralisation) = s.sinking_tracers
+@inline sinking_fluxes(s::InstantRemineralisation) = s.sinking_tracers
 @inline coupled_tracers(s::InstantRemineralisation) = tuple(s.remineralisation_reciever)
 
 @inline function (s::InstantRemineralisation)(::Val{:storage}, x, y, t, storage, fluxs...)

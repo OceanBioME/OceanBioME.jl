@@ -10,7 +10,7 @@ using OceanBioME.Sediments: AbstractContinuousFormSedimentBiogeochemistry,
 
 import OceanBioME.Sediments: required_sediment_fields,
                              required_tracers,
-                             sinking_fluxs,
+                             sinking_fluxes,
                              coupled_tracers
 
 import Adapt: adapt_structure
