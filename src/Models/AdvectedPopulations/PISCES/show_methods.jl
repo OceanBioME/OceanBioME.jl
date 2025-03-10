@@ -31,7 +31,7 @@ function show(io::IO, bgc::PISCES)
 
     output *= "\n Latitude: $(summary(bgc.latitude))"
 
-    output *= "\n Day length: $(nameof(bgc.day_length))"
+    output *= "\n Day length: $(summary(bgc.day_length))"
 
     output *= "\n Mixed layer depth: $(summary(bgc.mixed_layer_depth))"
 
