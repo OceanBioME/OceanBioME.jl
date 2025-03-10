@@ -83,7 +83,7 @@ function BoxModel(; biogeochemistry::B,
     FO = typeof(forcing)
     TS = typeof(timestepper)
 
-    return BoxModel{A, G, B, F, FV, FO, TS, C, PT}(arch, grid, biogeochemistry, fields, field_values, forcing, timestepper, clock, prescribed_tracers)
+    return BoxModel{typeof(arch), G, B, F, FV, FO, TS, C, PT}(arch, grid, biogeochemistry, fields, field_values, forcing, timestepper, clock, prescribed_tracers)
 end
 
 function update_state!(model::BoxModel, callbacks=[]; compute_tendencies = true)
