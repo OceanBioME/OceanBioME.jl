@@ -1,5 +1,5 @@
 using Oceananigans.Operators: volume
-using Oceananigans.Fields: fractional_indices, _interpolate, interpolator, Center
+using Oceananigans.Fields: _fractional_indices, _interpolate, interpolator, Center
 using Oceananigans.Grids: AbstractGrid, Flat, Bounded, Periodic
 
 @inline get_node(::Flat, i, N) = one(i)
@@ -30,7 +30,7 @@ struct NearestPoint end
     return field_values
 end
 
-# feels like fractional_indices could work more intuativly
+# feels like _fractional_indices could work more intuativly
 @inline collapse_position(x, y, z, ℓx, ℓy, ℓz) = (x, y, z)
 @inline collapse_position(x, y, z, ::Nothing, ℓy, ℓz) = (y, z)
 @inline collapse_position(x, y, z, ℓx, ::Nothing, ℓz) = (x, z)
@@ -44,7 +44,7 @@ end
     ℓx = ifelse(isa(TX(), Flat), nothing, Center())
     ℓy = ifelse(isa(TY(), Flat), nothing, Center())
     ℓz = ifelse(isa(TZ(), Flat), nothing, Center())
-    ii, jj, kk = fractional_indices(collapse_position(x, y, z, ℓx, ℓy, ℓz), grid, ℓx, ℓy, ℓz)
+    ii, jj, kk = _fractional_indices(collapse_position(x, y, z, ℓx, ℓy, ℓz), grid, ℓx, ℓy, ℓz)
 
     ix = interpolator(ii)
     iy = interpolator(jj)
