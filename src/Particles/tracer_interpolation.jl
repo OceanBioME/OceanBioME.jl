@@ -44,11 +44,12 @@ end
     ℓx = ifelse(isa(TX(), Flat), nothing, Center())
     ℓy = ifelse(isa(TY(), Flat), nothing, Center())
     ℓz = ifelse(isa(TZ(), Flat), nothing, Center())
-    ii, jj, kk = _fractional_indices(collapse_position(x, y, z, ℓx, ℓy, ℓz), grid, ℓx, ℓy, ℓz)
+    
+    fidx = _fractional_indices(collapse_position(x, y, z, ℓx, ℓy, ℓz), grid, ℓx, ℓy, ℓz)
 
-    ix = interpolator(ii)
-    iy = interpolator(jj)
-    iz = interpolator(kk)
+    ix = interpolator(fidx.i)
+    iy = interpolator(fidx.j)
+    iz = interpolator(fidx.k)
 
     i, j, k = (get_node(TX(), Int(ifelse(ix[3] < 0.5, ix[1], ix[2])), grid.Nx),
                get_node(TY(), Int(ifelse(iy[3] < 0.5, iy[1], iy[2])), grid.Ny),
