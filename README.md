@@ -29,11 +29,10 @@ julia> Pkg.add("OceanBioME")
 As a simple example lets run a Nutrient-Phytoplankton-Zooplankton-Detritus (NPZD) model in a two-dimensional simulation of a buoyancy front. This example requires Oceananigans, so we install that first:
 
 ```julia
-using Pkg; Pkg.add("Oceananigans"); Pkg.add("CairoMakie")
+using Pkg; Pkg.add("Oceananigans");
 
 using OceanBioME, Oceananigans
 using Oceananigans.Units
-using CairoMakie
 
 grid = RectilinearGrid(CPU(), size = (160, 32), extent = (10000meters, 500meters), topology = (Bounded, Flat, Bounded))
 
@@ -66,6 +65,9 @@ run!(simulation)
 <summary>We can then visualise this:</summary>
 
 ```julia
+Pkg.add("CairoMakie")
+using CairoMakie
+
 T = FieldTimeSeries("buoyancy_front.jld2", "T")
 N = FieldTimeSeries("buoyancy_front.jld2", "N")
 P = FieldTimeSeries("buoyancy_front.jld2", "P")
