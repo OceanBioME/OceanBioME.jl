@@ -50,7 +50,6 @@ using Oceananigans.Grids: AbstractGrid
 using OceanBioME.Light: TwoBandPhotosyntheticallyActiveRadiation, default_surface_PAR
 using OceanBioME: setup_velocity_fields, show_sinking_velocities, Biogeochemistry, ScaleNegativeTracers
 using OceanBioME.BoxModels: BoxModel
-using OceanBioME.Models.Sediments: sinking_flux
 
 import Oceananigans.Biogeochemistry: AbstractContinuousFormBiogeochemistry, 
                                      required_biogeochemical_tracers,
@@ -61,8 +60,6 @@ import OceanBioME: redfield, conserved_tracers, maximum_sinking_velocity, chloro
 
 import Adapt: adapt_structure, adapt
 import Base: show, summary
-
-import OceanBioME.Models.Sediments: nitrogen_flux, carbon_flux, remineralisation_receiver, sinking_tracers
 
 struct LOBSTER{FT, B, W} <: AbstractContinuousFormBiogeochemistry
     phytoplankton_preference :: FT
@@ -229,7 +226,7 @@ Keyword Arguments
 - `phytoplankton_preference`, ..., `dissolved_organic_breakdown_rate`: LOBSTER parameter values
 - `surface_photosynthetically_active_radiation`: funciton (or array in the future) for the photosynthetically available radiation at the surface, should be shape `f(x, y, t)`
 - `light_attenuation_model`: light attenuation model which integrated the attenuation of available light
-- `sediment_model`: slot for `AbstractSediment`
+- `sediment_model`: slot for `BiogeochemicalSediment`
 - `carbonates`, `oxygen`, and `variable_redfield`: include models for carbonate chemistry and/or oxygen chemistry and/or variable redfield ratio dissolved and particulate organic matter
 - `sinking_speed`: named tuple of constant sinking, of fields (i.e. `ZFaceField(...)`) for any tracers which sink (convention is that a sinking speed is positive, but a field will need to follow the usual down being negative)
 - `open_bottom`: should the sinking velocity be smoothly brought to zero at the bottom to prevent the tracers leaving the domain
@@ -450,9 +447,9 @@ include("oxygen_chemistry.jl")
 include("variable_redfield.jl")
 
 const VariableRedfieldLobster = Union{LOBSTER{<:Any, <:Val{(false, false, true)}, <:Any},
-                                        LOBSTER{<:Any, <:Val{(true, false, true)}, <:Any},
-                                        LOBSTER{<:Any, <:Val{(false, true, true)}, <:Any},
-                                        LOBSTER{<:Any, <:Val{(true, true, true)}, <:Any}}
+                                      LOBSTER{<:Any, <:Val{(true, false, true)}, <:Any},
+                                      LOBSTER{<:Any, <:Val{(false, true, true)}, <:Any},
+                                      LOBSTER{<:Any, <:Val{(true, true, true)}, <:Any}}
 
 @inline redfield(i, j, k, val_tracer_name, bgc::LOBSTER, tracers) = redfield(val_tracer_name, bgc)
 
@@ -469,22 +466,6 @@ const VariableRedfieldLobster = Union{LOBSTER{<:Any, <:Val{(false, false, true)}
 @inline redfield(::Val{:sPON}, bgc::VariableRedfieldLobster, tracers) = tracers.sPOC / tracers.sPON
 @inline redfield(::Val{:bPON}, bgc::VariableRedfieldLobster, tracers) = tracers.bPOC / tracers.bPON
 @inline redfield(::Val{:DON}, bgc::VariableRedfieldLobster, tracers) = tracers.DOC / tracers.DON
-
-@inline nitrogen_flux(i, j, k, grid, advection, bgc::LOBSTER, tracers) = 
-    sinking_flux(i, j, k, grid, advection, Val(:sPOM), bgc, tracers) +
-    sinking_flux(i, j, k, grid, advection, Val(:bPOM), bgc, tracers)
-
-@inline carbon_flux(i, j, k, grid, advection, bgc::LOBSTER, tracers) = nitrogen_flux(i, j, k, grid, advection, bgc, tracers) * redfield(Val(:sPOM), bgc)
-
-@inline nitrogen_flux(i, j, k, grid, advection, bgc::VariableRedfieldLobster, tracers) = 
-    sinking_flux(i, j, k, grid, advection, Val(:sPON), bgc, tracers) +
-    sinking_flux(i, j, k, grid, advection, Val(:bPON), bgc, tracers)
-
-@inline carbon_flux(i, j, k, grid, advection, bgc::VariableRedfieldLobster, tracers) =  
-    sinking_flux(i, j, k, grid, advection, Val(:sPOC), bgc, tracers) +
-    sinking_flux(i, j, k, grid, advection, Val(:bPOC), bgc, tracers)
-
-@inline remineralisation_receiver(::LOBSTER) = :NH₄
 
 @inline conserved_tracers(::LOBSTER) = (:NO₃, :NH₄, :P, :Z, :sPOM, :bPOM, :DOM)
 @inline conserved_tracers(::VariableRedfieldLobster) = (:NO₃, :NH₄, :P, :Z, :sPON, :bPON, :DON)
