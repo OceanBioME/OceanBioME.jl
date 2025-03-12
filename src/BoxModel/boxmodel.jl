@@ -32,7 +32,8 @@ import Base: show, summary
 
 @inline no_func(args...) = 0.0
 
-mutable struct BoxModel{G, B, F, FV, FO, TS, C, PT} <: AbstractModel{TS}
+mutable struct BoxModel{A, G, B, F, FV, FO, TS, C, PT} <: AbstractModel{TS, A}
+       architecture :: A
                grid :: G # here so that simualtion can be built
     biogeochemistry :: B
              fields :: F
@@ -40,7 +41,7 @@ mutable struct BoxModel{G, B, F, FV, FO, TS, C, PT} <: AbstractModel{TS}
             forcing :: FO
         timestepper :: TS
               clock :: C
-  prescribed_tracers :: PT
+ prescribed_tracers :: PT
 end
 
 """
@@ -62,11 +63,13 @@ Keyword Arguments
 - `prescribed_tracers`: named tuple of tracer names and function (`f(t)`) prescribing tracer values
 """
 function BoxModel(; biogeochemistry::B,
-                    grid = BoxModelGrid(),
+                    grid::G = BoxModelGrid(),
                     forcing = NamedTuple(),
                     timestepper = :RungeKutta3,
                     clock::C = Clock(; time = 0.0),
-                    prescribed_tracers::PT = NamedTuple()) where {B, C, PT}
+                    prescribed_tracers::PT = NamedTuple()) where {B, G, C, PT}
+
+    arch = architecture(grid)
 
     variables = required_biogeochemical_tracers(biogeochemistry)
     fields = NamedTuple{variables}([CenterField(grid) for var in eachindex(variables)])
@@ -80,7 +83,7 @@ function BoxModel(; biogeochemistry::B,
     FO = typeof(forcing)
     TS = typeof(timestepper)
 
-    return BoxModel{typeof(grid), B, F, FV, FO, TS, C, PT}(grid, biogeochemistry, fields, field_values, forcing, timestepper, clock, prescribed_tracers)
+    return BoxModel{typeof(arch), G, B, F, FV, FO, TS, C, PT}(arch, grid, biogeochemistry, fields, field_values, forcing, timestepper, clock, prescribed_tracers)
 end
 
 function update_state!(model::BoxModel, callbacks=[]; compute_tendencies = true)
