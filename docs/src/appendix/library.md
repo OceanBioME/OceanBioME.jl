@@ -84,7 +84,7 @@ Modules = [OceanBioME.Light]
 ## Sediments
 
 ```@autodocs
-Modules = [OceanBioME.Models.Sediments]
+Modules = [OceanBioME.Models.SedimentModels]
 ```
 
 ## Gas exchange boundary conditions

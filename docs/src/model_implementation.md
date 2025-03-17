@@ -215,7 +215,6 @@ import OceanBioME.Sediments: nitrogen_flux, carbon_flux, remineralisation_receiv
 Now that we have added these elements we can put it together into another simple example:
 ```@example implementing
 using Oceananigans, OceanBioME
-using OceanBioME.Sediments: InstantRemineralisation
 
 # define some simple forcing
 
@@ -233,7 +232,7 @@ grid = RectilinearGrid(topology = (Flat, Flat, Bounded), size = (32, ), x = 1, y
 
 light_attenuation = TwoBandPhotosyntheticallyActiveRadiation(; grid, surface_PAR)
 
-sediment = InstantRemineralisation(; grid)
+sediment = InstantRemineralisationSediment(grid; sinking_tracers = :P)
 
 sinking_velocity = ZFaceField(grid)
 
@@ -285,7 +284,7 @@ We can then visualise this:
 N = FieldTimeSeries("column_np.jld2", "N")
 P = FieldTimeSeries("column_np.jld2", "P")
 
-sed = FieldTimeSeries("column_np_sediment.jld2", "N_storage")
+sed = FieldTimeSeries("column_np_sediment.jld2", "storage")
 
 fig = Figure()
 
