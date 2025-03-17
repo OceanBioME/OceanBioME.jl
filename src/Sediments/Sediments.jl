@@ -14,7 +14,8 @@ import Oceananigans.Models: fields, prognostic_fields
 import Oceananigans.Biogeochemistry: update_biogeochemical_state!, 
                                      update_tendencies!
 
-struct BiogeochemicalSediment{BC, TS, CL, GR, SF, TF, BI} <: AbstractModel{TS}
+struct BiogeochemicalSediment{A, BC, TS, CL, GR, SF, TF, BI} <: AbstractModel{TS, A}
+       architecture :: A
     biogeochemistry :: BC
         timestepper :: TS
               clock :: CL
@@ -59,7 +60,7 @@ function BiogeochemicalSediment(grid, biogeochemistry;
 
     timestepper = TimeStepper(timestepper, grid, prognostic_fields)
 
-    return BiogeochemicalSediment(biogeochemistry, timestepper, clock, grid, prognostic_fields, tracked_fields, bottom_indices)
+    return BiogeochemicalSediment(architecture(grid), biogeochemistry, timestepper, clock, grid, prognostic_fields, tracked_fields, bottom_indices)
 end
 
 end # module
