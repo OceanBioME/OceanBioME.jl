@@ -3,11 +3,12 @@ using Oceananigans.Fields: tracernames
 """
     InstantRemineralisation
 
-Hold the parameters and fields the simplest benthic boundary layer where
-organic carbon is assumed to remineralise instantly with some portion 
-becoming N, and a fraction being permanently buried.
+Hold the parameters and fields a simple sediment model where sinking organic
+carbon is "instantly remineralised" and either returned to the domain as 
+`remineralisation_reciever` (typically NH₄), or permanently stored in the sediment.
 
-Burial efficiency from [RemineralisationFraction](@citet).
+The "burial efficiency" (the fraction permanently stored) is from 
+[RemineralisationFraction](@citet), and varies with the sinking flux.
 """
 struct InstantRemineralisation{FT, ST, RR} <: AbstractContinuousFormSedimentBiogeochemistry
           burial_efficiency_constant1 :: FT
@@ -43,9 +44,9 @@ Adapt.adapt_structure(to, ir::InstantRemineralisation) =
                                     burial_efficiency_half_saturation = 7.0 / 6.56,
                                     kwargs...)
 
-Return a single-layer instant remineralisaiton sediment model where the `sinking_tracers`
+Return a single-layer instant remineralisation sediment model where the `sinking_tracers`
 are instantly remineralised and returned to `remineralisation_reciever` with a small
-fraction perminantly buried with efficiency:
+fraction permanently buried with efficiency:
 
 e = a + b * f / (k + f)²
 
@@ -133,5 +134,5 @@ function add_remineralisation_methods!(remineralisation_reciever; fname = remine
     eval(method)
 end
 
-summary(::InstantRemineralisation{FT}) where {FT} = string("Single-layer instant remineralisaiton ($FT)")
+summary(::InstantRemineralisation{FT}) where {FT} = string("Single-layer instant remineralisation ($FT)")
 show(io::IO, model::InstantRemineralisation) = print(io, summary(model))

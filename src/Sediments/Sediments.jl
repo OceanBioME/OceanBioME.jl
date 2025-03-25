@@ -1,8 +1,5 @@
 module Sediments
 
-
-#### !!! This should all be a set of boundary conditions !!!
-
 using KernelAbstractions: @kernel, @index
 
 using Oceananigans: Clock
