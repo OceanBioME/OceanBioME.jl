@@ -5,7 +5,8 @@ export Sediments
 export NPZD, 
        NutrientPhytoplanktonZooplanktonDetritus, 
        LOBSTER,
-       PISCES, DepthDependantSinkingSpeed, PrescribedLatitude, ModelLatitude, PISCESModel
+       PISCES, DepthDependantSinkingSpeed, PrescribedLatitude, ModelLatitude, PISCESModel,
+       MARBL
 
 export SugarKelp, SugarKelpParticles, GiantKelp
 
@@ -28,12 +29,14 @@ include("seawater_density.jl")
 include("CarbonChemistry/CarbonChemistry.jl")
 include("GasExchange/GasExchange.jl")
 include("AdvectedPopulations/PISCES/PISCES.jl")
+include("AdvectedPopulations/MARBL/MARBL.jl")
 
 using .Sediments
 using .LOBSTERModel
 using .NPZDModel
 using .SugarKelpModel
 using .PISCESModel
+using .MARBLModel
 using .CarbonChemistryModel
 using .GasExchangeModel
 
