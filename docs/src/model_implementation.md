@@ -1,4 +1,4 @@
-# [Implementing a new models](@id model_implementation)
+# [Implementing new models](@id model_implementation)
 
 Here we describe how OceanBioME defines biogeochemical (BGC) models, how this varies from Oceananigans, and how to implement your own model.
 
