@@ -312,5 +312,31 @@ fig
 
 We can see in this that some phytoplankton sink to the bottom, and are both remineralized back into nutrients and stored in the sediment.
 
+### Running on a GPU
+
+In order to run a BGC model on a GPU, the BGC model must first be `adapted`. After the definition of the BGC `struct`, we need to write:
+
+```
+using Adapt
+
+import Adapt: adapt_structure
+
+Adapt.adapt_structure(to, bgc::NutrientPhytoplankton) = NutrientPhytoplankton(adapt(to, bgc.base_growth_rate),
+                                                                              adapt(to, bgc.nutrient_half_saturation),
+                                                                              adapt(to, bgc.light_half_saturation),
+                                                                              adapt(to, bgc.temperature_exponent),
+                                                                              adapt(to, bgc.temperature_coefficient),
+                                                                              adapt(to, bgc.optimal_temperature),
+                                                                              adapt(to, bgc.mortality_rate),
+                                                                              adapt(to, bgc.crowding_mortality_rate),
+                                                                              adapt(to, bgc.sinking_velocity))
+```
+
+Also, in order for `ScaleNegativeTracers` to work on a GPU, we must add `grid` as one of the input arguments. We replace the definition of `negative_tracer_scaling` with:
+```
+negative_tracer_scaling = ScaleNegativeTracers((:N, :P), grid)
+```
+We can then add `GPU()` to the definition of `grid` in the usual way, and the column model above will be able to run on a GPU. 
+
 ### Final notes
 When implementing a new model we recommend following a testing process as we have here, starting with a box model, then a column, and finally using it in a realistic physics scenarios. We have found this very helpful for spotting bugs that were proving difficult to decipher in other situations. You can also add `Individuals`, light attenuation models, and sediment models in a similar fashion.
