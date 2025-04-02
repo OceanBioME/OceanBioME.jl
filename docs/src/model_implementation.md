@@ -43,7 +43,9 @@ We then define our `struct` with the model parameters, as well as slots for the 
 end
 ```
 
-Here, we use descriptive names for the parameters. Below, each of these parameters correspond to a symbol (or letter) which is more convenient mathematically and when defining the BGC model functions. In the above code we used `@kwdef` to set default values for the models so that we don't have to set all of these parameters each time we use the model. The default parameter values can optionally be over-ridden by the user when running the model. We have also included a `sinking_velocity` field in the parameter set to demonstrate how we can get tracers (e.g. detritus) to sink. We also need to define some functions so that OceanBioME and Oceananigans know what tracers and auxiliary fields (e.g. light intensity) we use:
+Here, we use descriptive names for the parameters. Below, each of these parameters correspond to a symbol (or letter) which is more convenient mathematically and when defining the BGC model functions. In the above code we used `@kwdef` to set default values for the models so that we don't have to set all of these parameters each time we use the model. The default parameter values can optionally be over-ridden by the user when running the model. We have also included a `sinking_velocity` field in the parameter set to demonstrate how we can get tracers (e.g. detritus) to sink.
+
+We also need to define some functions so that OceanBioME and Oceananigans know what tracers and auxiliary fields (e.g. light intensity) we use:
 
 ```@example implementing
 required_biogeochemical_tracers(::NutrientPhytoplankton) = (:N, :P, :T)
@@ -106,7 +108,7 @@ The first parameter `::Val{:P}` is a special [value type](http://www.jlhub.com/j
 
 For this model, the nutrient evolution can be inferred from the rate of change of phytoplankton. Since this is a simple two variable model and the total concentration is conserved, 
 ```math
-\frac{\partial N}{\partial t} = - \frac{\partial P}{\partial t}
+\frac{\partial N}{\partial t} = - \frac{\partial P}{\partial t}.
 ```
 Hence, we define the nutrient forcing using as the negative of the phytoplankton forcing
 ```@example implementing
@@ -316,7 +318,7 @@ We can see in this that some phytoplankton sink to the bottom, and are both remi
 
 In order to run a BGC model on a GPU, the BGC model must first be `adapted`. After the definition of the BGC `struct`, we need to write:
 
-```
+```@example implementing
 using Adapt
 
 import Adapt: adapt_structure
@@ -333,9 +335,11 @@ Adapt.adapt_structure(to, bgc::NutrientPhytoplankton) = NutrientPhytoplankton(ad
 ```
 
 Also, in order for `ScaleNegativeTracers` to work on a GPU, we must add `grid` as one of the input arguments. We replace the definition of `negative_tracer_scaling` with:
-```
+
+```@example implementing
 negative_tracer_scaling = ScaleNegativeTracers((:N, :P), grid)
 ```
+
 We can then add `GPU()` to the definition of `grid` in the usual way, and the column model above will be able to run on a GPU. 
 
 ### Final notes
