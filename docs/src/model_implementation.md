@@ -316,7 +316,7 @@ We can see in this that some phytoplankton sink to the bottom, and are both remi
 
 ### Running on a GPU
 
-In order to run a BGC model on a GPU, the BGC model must first be `adapted`. After the definition of the BGC `struct`, we need to write:
+In order to run a BGC model on a GPU, the BGC model must first be `adapted` (see [here](https://clima.github.io/OceananigansDocumentation/stable/simulation_tips/#Arrays-in-GPUs-are-usually-different-from-arrays-in-CPUs) for more information). After the definition of the BGC `struct`, we need to write:
 
 ```@example implementing
 using Adapt
@@ -334,13 +334,11 @@ Adapt.adapt_structure(to, bgc::NutrientPhytoplankton) = NutrientPhytoplankton(ad
                                                                               adapt(to, bgc.sinking_velocity))
 ```
 
-Also, in order for `ScaleNegativeTracers` to work on a GPU, we must add `grid` as one of the input arguments. We replace the definition of `negative_tracer_scaling` with:
+We can add `grid` as the second argument for `ScaleNegativeTracers` so that it automatically works on a GPU. We replace the definition of `negative_tracer_scaling` with:
 
 ```@example implementing
 negative_tracer_scaling = ScaleNegativeTracers((:N, :P), grid)
 ```
-
-We can then add `GPU()` to the definition of `grid` in the usual way, and the column model above will be able to run on a GPU. 
 
 ### Final notes
 When implementing a new model we recommend following a testing process as we have here, starting with a box model, then a column, and finally using it in a realistic physics scenarios. We have found this very helpful for spotting bugs that were proving difficult to decipher in other situations. You can also add `Individuals`, light attenuation models, and sediment models in a similar fashion.
