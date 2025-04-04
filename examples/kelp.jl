@@ -52,7 +52,7 @@ CO₂_flux = CarbonDioxideGasExchangeBoundaryCondition()
 
 clock = Clock(; time = 0.0)
 T = FunctionField{Center, Center, Center}(temp, grid; clock)
-S = ConstantField(35)
+S = ConstantField(35.0)
 
 # ## Kelp Particle setup
 @info "Setting up kelp particles"
