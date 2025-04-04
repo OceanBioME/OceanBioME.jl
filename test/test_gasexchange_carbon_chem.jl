@@ -114,10 +114,12 @@ end
 end
 
 @testset "Gas exchange constants defaults" begin
+    FT = Float64
+
     CO₂_exchange = CarbonDioxideGasExchangeBoundaryCondition().condition.func
     O₂_exchange = OxygenGasExchangeBoundaryCondition().condition.func
 
-    T = 20
+    T = FT(20)
 
     # values from Wanninkhof, 2014
     @test ≈(CO₂_exchange.transfer_velocity.schmidt_number(T), 668, atol = 1)
@@ -128,10 +130,10 @@ end
     @test ≈(CO₂_exchange.water_concentration.first_virial_coefficient(Tk), -123.2 * 10^-6, atol=10^-8)
     @test ≈(CO₂_exchange.water_concentration.cross_virial_coefficient(Tk), 22.5 * 10^-6, atol=10^-7)
 
-    T = ConstantField(25)
-    S = ConstantField(35)
+    T = ConstantField(FT(25))
+    S = ConstantField(FT(35))
     DIC = ConstantField(2136.242890518708)
-    Alk = ConstantField(2500)
+    Alk = ConstantField(FT(2500))
 
     # value from Dickson et. al, 2007
     @test ≈(surface_value(CO₂_exchange.water_concentration, 1, 1, BoxModelGrid(), Clock(; time = 0), (; T, S, DIC, Alk)), 350, atol = 0.1)
