@@ -1,6 +1,6 @@
 module Models
 
-export Sediments
+export InstantRemineralisationSediment, SimpleMultiGSediment
 
 export NPZD, 
        NutrientPhytoplanktonZooplanktonDetritus, 
@@ -29,7 +29,7 @@ include("CarbonChemistry/CarbonChemistry.jl")
 include("GasExchange/GasExchange.jl")
 include("AdvectedPopulations/PISCES/PISCES.jl")
 
-using .Sediments
+using .SedimentModels
 using .LOBSTERModel
 using .NPZDModel
 using .SugarKelpModel
