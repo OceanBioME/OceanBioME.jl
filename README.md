@@ -65,6 +65,9 @@ run!(simulation)
 <summary>We can then visualise this:</summary>
 
 ```julia
+Pkg.add("CairoMakie")
+using CairoMakie
+
 T = FieldTimeSeries("buoyancy_front.jld2", "T")
 N = FieldTimeSeries("buoyancy_front.jld2", "N")
 P = FieldTimeSeries("buoyancy_front.jld2", "P")
