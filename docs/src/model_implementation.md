@@ -315,9 +315,10 @@ We can see in this that some phytoplankton sink to the bottom, and are both remi
 
 ### Running on a GPU
 
-In order to run a BGC model on a GPU, the BGC model must first be `adapted` (see [here](https://clima.github.io/OceananigansDocumentation/stable/simulation_tips/#Arrays-in-GPUs-are-usually-different-from-arrays-in-CPUs) for more information). After the definition of the BGC `struct`, we need to write:
+In order to run a BGC model on a GPU we need to tell the compiler how to `adapt` the `NutrientPhytoplankton` struct for GPU kernels (see [here](https://clima.github.io/OceananigansDocumentation/stable/simulation_tips/#Arrays-in-GPUs-are-usually-different-from-arrays-in-CPUs) for more information). After the definition of the BGC `struct`, we write:
 
 ```@example implementing
+using Pkg; Pkg.add("Adapt")
 using Adapt
 
 import Adapt: adapt_structure
