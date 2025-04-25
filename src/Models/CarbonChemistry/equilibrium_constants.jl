@@ -72,12 +72,12 @@ Default values from Weiss, R.F. (1974, Mar. Chem., 2, 203–215).
           ST² :: FT =  0.0047036 / 100^2
 end
 
-@inline (c::K0)(T, S; P = nothing) = 
+@inline (c::K0)(T::FT, S; P = nothing) where FT = 
     exp(c.constant 
         + c.inverse_T / T
-        + c.log_T * (log(T) - log(100))
-        + c.T² * T^2
-        + (c.S + c.ST * T + c.ST² * T^2) * S)
+        + c.log_T * (log(T) - log(convert(FT, 100)))
+        + c.T² * T^convert(FT, 2)
+        + (c.S + c.ST * T + c.ST² * T^convert(FT, 2)) * S)
 
 summary(::IO, ::K0) = string("Solubility constant")
 show(io::IO, k0::K0) = print(io, "Solubility constant\n",
@@ -240,10 +240,10 @@ struct KB{FT, PC}
     end
 end
 
-@inline (c::KB)(T, S; P = nothing) = 
+@inline (c::KB)(T::FT, S; P = nothing) where FT = 
     c.pressure_correction(T, P) *
     exp(c.constant 
-        + (c.inverse_T + c.inverse_T_sqrt_S * √S + c.inverse_T_S * S + c.inverse_T_sqrt_S³ * S^1.5 + c.inverse_T_S² * S^2) / T
+        + (c.inverse_T + c.inverse_T_sqrt_S * √S + c.inverse_T_S * S + c.inverse_T_sqrt_S³ * S^convert(FT, 1.5) + c.inverse_T_S² * S^convert(FT, 2)) / T
         + c.sqrt_S * √S
         + c.S * S
         + (c.log_T + c.log_T_sqrt_S * √S + c.S_log_T * S ) * log(T)
@@ -407,14 +407,14 @@ struct KS{IS, FT, PC}
     end
 end
 
-@inline (c::KS)(T, S, Is = c.ionic_strength(S); P = nothing) = 
+@inline (c::KS)(T::FT, S, Is = c.ionic_strength(S); P = nothing) where FT = 
     c.pressure_correction(T, P) *
     exp(c.constant
         + c.inverse_T / T
         + c.log_T * log(T)
         + (c.sqrt_Is + c.inverse_T_sqrt_Is / T + c.log_T_sqrt_Is * log(T)) * √Is
         + (c.Is + c.inverse_T_Is / T + c.log_T_Is * log(T)) * Is
-        + c.inverse_T_sqrt_Is³ * Is^1.5 / T
+        + c.inverse_T_sqrt_Is³ * Is^convert(FT, 1.5) / T
         + c.inverse_T_Is² * Is^2 / T
         + log(1 + c.log_S * S))
 
