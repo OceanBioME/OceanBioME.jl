@@ -42,7 +42,6 @@ julia> pCO₂_higher_pH = carbon_chemistry(; DIC = 2000, T = 10, S = 35, pH = 7.
 
 ```
 """
-<<<<<<< Updated upstream
 @kwdef struct CarbonChemistry{P0, PC, PB, PS, PF, PP, PSi, PW, IS, PKS, PRho}
           ionic_strength :: IS   = IonicStrength()
               solubility :: P0   = K0()
@@ -55,23 +54,6 @@ julia> pCO₂_higher_pH = carbon_chemistry(; DIC = 2000, T = 10, S = 35, pH = 7.
             silicic_acid :: PSi  = KSi(; ionic_strength)
       calcite_solubility :: PKS  = KSP_calcite()
         density_function :: PRho = teos10_polynomial_approximation
-=======
-function CarbonChemistry(FT = Float64; 
-                         ionic_strength = IonicStrength{FT}(),
-                         solubility = K0{FT}(),
-                         carbonic_acid = (K1 = K1(FT), K2 = K2(FT)),
-                         boric_acid = KB(FT),
-                         water = KW(FT),
-                         sulfate = KS(FT; ionic_strength),
-                         fluoride = KF(FT; ionic_strength),
-                         phosphoric_acid = (KP1 = KP1(FT), KP2 = KP2(FT), KP3 = KP3(FT)),
-                         silicic_acid = KSi(FT; ionic_strength),
-                         calcite_solubility = KSP_calcite(FT),
-                         density_function = teos10_polynomial_approximation) # the denisity function *is* going to cause type instability but I can't see a way to fix it
-
-    return CarbonChemistry(ionic_strength, solubility, carbonic_acid, boric_acid, water,
-                           sulfate, fluoride, phosphoric_acid, silicic_acid, calcite_solubility, density_function)
->>>>>>> Stashed changes
 end
 
 """
@@ -138,33 +120,32 @@ unless `pH` is specified, in which case intermediate computation of `pH` is skip
 
 Alternativly, `pH` is returned if `return_pH` is `true`.
 """
-@inline function (p::CarbonChemistry)(; DIC::FT, T::FT, S::FT, Alk::FT = zero(eltype(DIC)), pH = nothing,
+@inline function (p::CarbonChemistry)(; DIC, T, S, Alk = 0, pH = nothing,
                                         P = nothing,
-                                        lon = zero(eltype(DIC)),
-                                        lat = zero(eltype(DIC)),
+                                        lon = 0,
+                                        lat = 0,
                                         return_pH = false,
                                         boron = 0.000232 / 10.811 * S / 1.80655,
                                         sulfate = 0.14 / 96.06 * S / 1.80655,
                                         fluoride = 0.000067 / 18.9984 * S / 1.80655,
                                         silicate = 0,
                                         phosphate = 0,
-                                        upper_pH_bound = convert(eltype(DIC), 14),
-                                        lower_pH_bound = zero(eltype(DIC)),
-                                        atol = convert(eltype(DIC), 1e-10)) where FT
+                                        upper_pH_bound = 14,
+                                        lower_pH_bound = 0)
 
-    ρₒ = convert(FT, p.density_function(T, S, ifelse(isnothing(P), 0, P), lon, lat))
+    ρₒ = p.density_function(T, S, ifelse(isnothing(P), 0, P), lon, lat)
 
     # Centigrade to kelvin
-    T += convert(FT, 273.15)
+    T += 273.15
 
     # mili-equivalents / m³ to equivalents / kg
-    Alk *= 1 / (1000 * ρₒ)
+    Alk *= 1e-3 / ρₒ
 
     # mmol / m³ to mol / kg
-    DIC       *= 1 / (1000 * ρₒ)
-    phosphate *= 1 / (1000 * ρₒ)
-    silicate  *= 1 / (1000 * ρₒ)
-
+    DIC       *= 1e-3 / ρₒ
+    phosphate *= 1e-3 / ρₒ
+    silicate  *= 1e-3 / ρₒ
+    
     # ionic strength
     Is = p.ionic_strength(S)
 
@@ -184,7 +165,7 @@ Alternativly, `pH` is returned if `return_pH` is `true`.
                 K1, K2, KB, KW, KS, KF, KP1, KP2, KP3, KSi)
 
     # solve equilibrium for hydrogen ion concentration
-    H = solve_for_H(pH, params, upper_pH_bound, lower_pH_bound, atol)
+    H = solve_for_H(pH, params, upper_pH_bound, lower_pH_bound)
 
     # compute solubility equilibrium constant
     K0 = p.solubility(T, S)
@@ -202,8 +183,8 @@ end
 # solves `alkalinity_residual` for pH
 solve_for_H(pH, args...) = 10.0 ^ - pH
 
-solve_for_H(::Nothing, params, upper_pH_bound::FT, lower_pH_bound::FT, atol) where FT =
-    find_zero(alkalinity_residual, (FT(10.0) ^ - upper_pH_bound, FT(10.0) ^ - lower_pH_bound); atol, p = params)
+solve_for_H(::Nothing, params, upper_pH_bound, lower_pH_bound) =
+    find_zero(alkalinity_residual, (10.0 ^ - upper_pH_bound, 10.0 ^ - lower_pH_bound), Bisection(); atol = 1e-10, p = params)
 
 # display
 summary(::IO, ::CarbonChemistry) = string("`CarbonChemistry` model")
