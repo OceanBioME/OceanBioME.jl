@@ -128,7 +128,12 @@ biogeochemical_auxiliary_fields(bgc::CompleteBiogeochemistry) = merge(biogeochem
 
 @inline chlorophyll(bgc::CompleteBiogeochemistry, model) = chlorophyll(bgc.underlying_biogeochemistry, model)
 
-@inline adapt_structure(to, bgc::ContinuousBiogeochemistry) = adapt(to, bgc.underlying_biogeochemistry)
+@inline adapt_structure(to, bgc::ContinuousBiogeochemistry) = 
+    ContinuousBiogeochemistry(adapt(to, bgc.underlying_biogeochemistry),
+                              adapt(to, bgc.light_attenuation),
+                              nothing,
+                              nothing,
+                              nothing)
 
 @inline adapt_structure(to, bgc::DiscreteBiogeochemistry) = 
     DiscreteBiogeochemistry(adapt(to, bgc.underlying_biogeochemistry),
