@@ -63,10 +63,10 @@ Default values from Weiss, R.F. (1974, Mar. Chem., 2, 203–215).
           ST² :: FT =  0.0047036 / 100^2
 end
 
-@inline (c::K0)(T, S; P = nothing) = 
+@inline (c::K0)(T::FT, S::FT; P = nothing) where FT = 
     exp(c.constant 
         + c.inverse_T / T
-        + c.log_T * (log(T) - log(100))
+        + c.log_T * (log(T) - log(convert(FT, 100)))
         + c.T² * T^2
         + (c.S + c.ST * T + c.ST² * T^2) * S)
 
