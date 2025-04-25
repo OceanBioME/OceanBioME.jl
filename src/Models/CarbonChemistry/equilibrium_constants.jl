@@ -751,14 +751,14 @@ struct KSP{FT, PC}
     pressure_correction :: PC
 end
 
-@inline function (c::KSP)(T, S; P = nothing) 
+@inline function (c::KSP)(T::FT, S; P = nothing) where FT
 
     pressure_correction = c.pressure_correction(T, P)
 
     lnK_therm = c.therm_constant + c.therm_T * T + c.therm_inverse_T / T + c.therm_log_T * log10(T) # seems wrong
     lnK_sea = ((c.sea_sqrt_S + c.sea_T_sqrt_S * T + c.sea_inverse_T_sqrt_S / T) * √S 
                 + c.sea_S * S
-                + c.sea_S_sqrt_S³ * S^1.5)
+                + c.sea_S_sqrt_S³ * S^convert(FT, 1.5))
 
     return  pressure_correction * exp(lnK_therm + lnK_sea)
 end
@@ -796,18 +796,18 @@ KSP_calcite(FT = Float64;
             sea_inverse_T_sqrt_S = 178.34,
             sea_S = -0.07711,
             sea_S_sqrt_S³ = 0.0041249,
-            pressure_correction =
-                  PressureCorrection(FT; a₀=-48.76, a₁=0.5304, a₂=-0.0, b₀=-0.01176, b₁=0.0003692)) =
-    KSP(therm_constant,
-        therm_T,
-        therm_inverse_T,
-        therm_log_T,
-        sea_sqrt_S,
-        sea_T_sqrt_S,
-        sea_inverse_T_sqrt_S,
-        sea_S,
-        sea_S_sqrt_S³,
-        pressure_correction)
+            pressure_correction::PC =
+                  PressureCorrection(FT; a₀=-48.76, a₁=0.5304, a₂=-0.0, b₀=-0.01176, b₁=0.0003692)) where PC =
+    KSP{FT, PC}(therm_constant,
+                therm_T,
+                therm_inverse_T,
+                therm_log_T,
+                sea_sqrt_S,
+                sea_T_sqrt_S,
+                sea_inverse_T_sqrt_S,
+                sea_S,
+                sea_S_sqrt_S³,
+                pressure_correction)
 
 """
 KSP_aragonite(; therm_constant = -171.945,
@@ -836,15 +836,15 @@ KSP_aragonite(FT = Float64;
               sea_inverse_T_sqrt_S = 88.135,
               sea_S = -0.10018,
               sea_S_sqrt_S³ = 0.0059415,
-              pressure_correction =
-                    PressureCorrection(FT; a₀=-45.96, a₁=0.5304, a₂=-0.0, b₀=-0.01176, b₁=0.0003692)) =
-    KSP(therm_constant,
-        therm_T,
-        therm_inverse_T,
-        therm_log_T,
-        sea_sqrt_S,
-        sea_T_sqrt_S,
-        sea_inverse_T_sqrt_S,
-        sea_S,
-        sea_S_sqrt_S³,
-        pressure_correction)
+              pressure_correction::KP =
+                    PressureCorrection(FT; a₀=-45.96, a₁=0.5304, a₂=-0.0, b₀=-0.01176, b₁=0.0003692)) where KP =
+    KSP{FT, PC}(therm_constant,
+                therm_T,
+                therm_inverse_T,
+                therm_log_T,
+                sea_sqrt_S,
+                sea_T_sqrt_S,
+                sea_inverse_T_sqrt_S,
+                sea_S,
+                sea_S_sqrt_S³,
+                pressure_correction)

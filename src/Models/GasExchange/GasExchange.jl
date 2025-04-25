@@ -103,7 +103,7 @@ Note: The model always requires `T`, `S`, `DIC`, and `Alk` to be present in the 
 """
 function CarbonDioxideGasExchangeBoundaryCondition(FT = Float64; 
                                                    carbon_chemistry = CarbonChemistry(FT),
-                                                   transfer_velocity = SchmidtScaledTransferVelocity(schmidt_number = CarbonDioxidePolynomialSchmidtNumber(FT)),
+                                                   transfer_velocity = SchmidtScaledTransferVelocity(FT; schmidt_number = CarbonDioxidePolynomialSchmidtNumber(FT)),
                                                    air_concentration = 413, # ppmv
                                                    wind_speed = 2,
                                                    water_concentration = nothing,
@@ -111,7 +111,7 @@ function CarbonDioxideGasExchangeBoundaryCondition(FT = Float64;
                                                    kwargs...)
 
     if isnothing(water_concentration)
-        water_concentration = CarbonDioxideConcentration(; carbon_chemistry, silicate_and_phosphate_names)
+        water_concentration = CarbonDioxideConcentration(FT; carbon_chemistry, silicate_and_phosphate_names)
     elseif !isnothing(carbon_chemistry)
         @warn "Make sure that the `carbon_chemistry` $(carbon_chemistry) is the same as that in `water_concentration` $(water_concentration) (or set it to `nothing`)"
     end
@@ -134,7 +134,7 @@ specified by the the `OxygenConcentration` in the base model, and `air_concentra
 `kwargs` are passed on to `GasExchangeBoundaryCondition`.
 """
 OxygenGasExchangeBoundaryCondition(FT = Float64;
-                                   transfer_velocity = SchmidtScaledTransferVelocity(schmidt_number = OxygenPolynomialSchmidtNumber(FT)),
+                                   transfer_velocity = SchmidtScaledTransferVelocity(FT; schmidt_number = OxygenPolynomialSchmidtNumber(FT)),
                                    water_concentration = OxygenConcentration(),
                                    air_concentration = PartiallySolubleGas(FT; air_concentration = 9352.7, solubility = OxygenSolubility(FT)), # mmolO₂/m³
                                    wind_speed = 2,

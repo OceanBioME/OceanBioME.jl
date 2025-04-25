@@ -159,7 +159,7 @@ end
 
 update_biogeochemical_state!(model, modifiers::Tuple) = [update_biogeochemical_state!(model, modifier) for modifier in modifiers]
 
-BoxModelGrid(; arch = CPU(), kwargs...) = RectilinearGrid(arch; topology = (Flat, Flat, Flat), size = (), kwargs...)
+BoxModelGrid(FT = Float64; arch = CPU(), kwargs...) = RectilinearGrid(arch, FT; topology = (Flat, Flat, Flat), size = (), kwargs...)
 
 @inline maximum_sinking_velocity(bgc) = 0.0
 
