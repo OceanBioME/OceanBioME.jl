@@ -836,8 +836,8 @@ KSP_aragonite(FT = Float64;
               sea_inverse_T_sqrt_S = 88.135,
               sea_S = -0.10018,
               sea_S_sqrt_S³ = 0.0059415,
-              pressure_correction::KP =
-                    PressureCorrection(FT; a₀=-45.96, a₁=0.5304, a₂=-0.0, b₀=-0.01176, b₁=0.0003692)) where KP =
+              pressure_correction::PC =
+                    PressureCorrection(FT; a₀=-45.96, a₁=0.5304, a₂=-0.0, b₀=-0.01176, b₁=0.0003692)) where PC =
     KSP{FT, PC}(therm_constant,
                 therm_T,
                 therm_inverse_T,
