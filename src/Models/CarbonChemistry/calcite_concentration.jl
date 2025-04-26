@@ -9,7 +9,7 @@ function carbonate_concentration(cc::CarbonChemistry;
                                  silicate = zero(DIC),
                                  phosphate = zero(DIC),
                                  upper_pH_bound = convert(typeof(DIC), 14),
-                                 lower_pH_bound = convert(typeof(DIC), 0))
+                                 lower_pH_bound = convert(typeof(DIC), 0)) where FT
 
     ρₒ = cc.density_function(T, S, ifelse(isnothing(P), zero(DIC), P), lon, lat)
 
