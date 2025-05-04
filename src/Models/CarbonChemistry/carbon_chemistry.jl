@@ -206,7 +206,7 @@ end
 solve_for_H(pH::FT, args...) where FT = convert(FT, 10.0) ^ - pH
 
 solve_for_H(::Nothing, params, upper_pH_bound::FT, lower_pH_bound) where FT =
-    find_zero(alkalinity_residual, (convert(FT, 10.0) ^ - upper_pH_bound, convert(FT, 10.0) ^ - lower_pH_bound), Bisection(); atol = convert(FT, 1e-10), p = params)
+    find_zero(alkalinity_residual, (convert(FT, 10.0) ^ - upper_pH_bound, convert(FT, 10.0) ^ - lower_pH_bound); atol = convert(FT, 1e-10), p = params)
 
 # display
 summary(::IO, ::CarbonChemistry) = string("`CarbonChemistry` model")
