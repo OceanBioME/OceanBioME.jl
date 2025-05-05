@@ -114,29 +114,41 @@ end
 end
 
 @testset "Gas exchange constants defaults" begin
-    FT = Float64
+    for FT in [Float64, Float32]
+        CO₂_exchange = CarbonDioxideGasExchangeBoundaryCondition(FT).condition.func
+        O₂_exchange = OxygenGasExchangeBoundaryCondition(FT).condition.func
 
-    CO₂_exchange = CarbonDioxideGasExchangeBoundaryCondition().condition.func
-    O₂_exchange = OxygenGasExchangeBoundaryCondition().condition.func
+        T = FT(20)
 
-    T = FT(20)
+        # values from Wanninkhof, 2014
+        @test ≈(CO₂_exchange.transfer_velocity.schmidt_number(T), 668, atol = 1)
+        @test ≈(O₂_exchange.transfer_velocity.schmidt_number(T), 568, atol = 1)
 
-    # values from Wanninkhof, 2014
-    @test ≈(CO₂_exchange.transfer_velocity.schmidt_number(T), 668, atol = 1)
-    @test ≈(O₂_exchange.transfer_velocity.schmidt_number(T), 568, atol = 1)
+        Tk = 25+273.15
+        # values from Dickson et. al, 2007
+        @test ≈(CO₂_exchange.water_concentration.first_virial_coefficient(Tk), -123.2 * 10^-6, atol=10^-8)
+        @test ≈(CO₂_exchange.water_concentration.cross_virial_coefficient(Tk), 22.5 * 10^-6, atol=10^-7)
 
-    Tk = 25+273.15
-    # values from Dickson et. al, 2007
-    @test ≈(CO₂_exchange.water_concentration.first_virial_coefficient(Tk), -123.2 * 10^-6, atol=10^-8)
-    @test ≈(CO₂_exchange.water_concentration.cross_virial_coefficient(Tk), 22.5 * 10^-6, atol=10^-7)
+        T = ConstantField(FT(25))
+        S = ConstantField(FT(35))
+        DIC = ConstantField(FT(2136.242890518708))
+        Alk = ConstantField(FT(2500))
+        O₂ = ConstantField(FT(100))
 
-    T = ConstantField(FT(25))
-    S = ConstantField(FT(35))
-    DIC = ConstantField(2136.242890518708)
-    Alk = ConstantField(FT(2500))
+        # value from Dickson et. al, 2007
+        pCO₂ = surface_value(CO₂_exchange.water_concentration, 1, 1, BoxModelGrid(FT), Clock(; time = 0), (; T, S, DIC, Alk))
+        @test ≈(pCO₂, 350, atol = 0.1)
+        @test typeof(pCO₂) == FT
 
-    # value from Dickson et. al, 2007
-    @test ≈(surface_value(CO₂_exchange.water_concentration, 1, 1, BoxModelGrid(), Clock(; time = 0), (; T, S, DIC, Alk)), 350, atol = 0.1)
+        pO₂ = surface_value(O₂_exchange.air_concentration, 1, 1, BoxModelGrid(FT), Clock(; time = 0), (; T, S))
+        @test ≈(pO₂, 200, atol = 50) # ball park correct
+        @test typeof(pO₂) == FT
 
-    @test ≈(surface_value(O₂_exchange.air_concentration, 1, 1, BoxModelGrid(), Clock(; time = 0), (; T, S)), 200, atol = 50) # ball park correct
+        # check flux is correct type
+        DIC_flux = CO₂_exchange(1, 1, BoxModelGrid(FT), Clock(; time = zero(FT)), (; T, S, DIC, Alk))
+        @test typeof(DIC_flux) == FT
+
+        O₂_flux = O₂_exchange(1, 1, BoxModelGrid(FT), Clock(; time = 0), (; T, S, O₂))
+        @test typeof(O₂_flux) == FT
+    end
 end

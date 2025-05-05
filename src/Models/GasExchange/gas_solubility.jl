@@ -38,12 +38,14 @@ struct Wanninkhof92Solubility{FT}
 end
 
 function surface_value(sol::Wanninkhof92Solubility, i, j, grid, clock, model_fields)
-    Tk = @inbounds model_fields.T[i, j, grid.Nz] + 273.15
+    FT = eltype(grid)
+
+    Tk = @inbounds model_fields.T[i, j, grid.Nz] + convert(FT, 273.15)
     S = @inbounds model_fields.S[i, j, grid.Nz]
 
-    Tk_100 = Tk / 100
+    Tk_100 = Tk / convert(FT, 100)
 
-    β = exp(sol.A1 + sol.A2  /Tk_100 + sol.A3 * log(Tk_100) + S * (sol.B1 + sol.B2 * Tk_100 + sol.B2 * Tk_100^2))
+    β = exp(sol.A1 + sol.A2 / Tk_100 + sol.A3 * log(Tk_100) + S * (sol.B1 + sol.B2 * Tk_100 + sol.B2 * Tk_100^convert(FT, 2)))
 
     return β / Tk
 end

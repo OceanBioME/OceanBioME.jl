@@ -128,7 +128,12 @@ biogeochemical_auxiliary_fields(bgc::CompleteBiogeochemistry) = merge(biogeochem
 
 @inline chlorophyll(bgc::CompleteBiogeochemistry, model) = chlorophyll(bgc.underlying_biogeochemistry, model)
 
-@inline adapt_structure(to, bgc::ContinuousBiogeochemistry) = adapt(to, bgc.underlying_biogeochemistry)
+@inline adapt_structure(to, bgc::ContinuousBiogeochemistry) = 
+    ContinuousBiogeochemistry(adapt(to, bgc.underlying_biogeochemistry),
+                              adapt(to, bgc.light_attenuation),
+                              nothing,
+                              nothing,
+                              nothing)
 
 @inline adapt_structure(to, bgc::DiscreteBiogeochemistry) = 
     DiscreteBiogeochemistry(adapt(to, bgc.underlying_biogeochemistry),
@@ -159,7 +164,7 @@ end
 
 update_biogeochemical_state!(model, modifiers::Tuple) = [update_biogeochemical_state!(model, modifier) for modifier in modifiers]
 
-BoxModelGrid(; arch = CPU(), kwargs...) = RectilinearGrid(arch; topology = (Flat, Flat, Flat), size = (), kwargs...)
+BoxModelGrid(FT = Float64; arch = CPU(), kwargs...) = RectilinearGrid(arch, FT; topology = (Flat, Flat, Flat), size = (), kwargs...)
 
 @inline maximum_sinking_velocity(bgc) = 0.0
 
