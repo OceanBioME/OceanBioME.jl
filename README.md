@@ -66,7 +66,7 @@ run!(simulation)
 
 ```julia
 # Before running the visualization code below, make sure CairoMakie is installed:
-# using Pkg; Pkg.add("CairoMakie")
+using Pkg; Pkg.add("CairoMakie")
 
 T = FieldTimeSeries("buoyancy_front.jld2", "T")
 N = FieldTimeSeries("buoyancy_front.jld2", "N")
