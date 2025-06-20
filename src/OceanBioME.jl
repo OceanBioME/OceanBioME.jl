@@ -10,7 +10,7 @@ export InstantRemineralisationSediment, SimpleMultiGSediment
 export DepthDependantSinkingSpeed, PrescribedLatitude, ModelLatitude, PISCESModel
 
 # Macroalgae models
-export BiogeochemicalParticles, SugarKelp, SugarKelpParticles
+export BiogeochemicalParticles, SugarKelp, SugarKelpParticles, DroguedBuoyDynamics
 
 # Box model
 export BoxModel, BoxModelGrid, SpeedyOutput, load_output
