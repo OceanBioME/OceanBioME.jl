@@ -8,7 +8,6 @@ steps:
   - label: ":building_construction: initialize environment"
     key: "init"
     commands: 
-     - "ip -a"
      - "ifconfig"
      - "wget -N -P $JULIA_PATH https://julialang-s3.julialang.org/bin/linux/x64/$JULIA_MINOR_VERSION/julia-$JULIA_VERSION-linux-x86_64.tar.gz"
      - "tar xf $JULIA_PATH/julia-$JULIA_VERSION-linux-x86_64.tar.gz -C $JULIA_PATH"
