@@ -4,6 +4,9 @@ env:
   JULIA_PATH: /var/lib/buildkite-agent/julia
   DATADEPS_ALWAYS_ACCEPT: true
 
+agents:
+  queue: "priority"
+
 steps:
   - label: ":building_construction: initialize environment"
     key: "init"
