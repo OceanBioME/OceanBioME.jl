@@ -28,15 +28,15 @@ simulation = Simulation(model, Δt = 2minutes, stop_time = 4days)
 
 @info total_nitrogen[1, 1, 1]
 
-simulation.output_writers[:tracers] = JLD2OutputWriter(model, model.tracers,
-                                                       overwrite_existing = true, 
-                                                       filename = "sediment_tracers.jld2", 
-                                                       schedule = TimeInterval(30minutes))
+simulation.output_writers[:tracers] = JLD2Writer(model, model.tracers,
+                                                 overwrite_existing = true,
+                                                 filename = "sediment_tracers.jld2",
+                                                 schedule = TimeInterval(30minutes))
 
-simulation.output_writers[:sediment] = JLD2OutputWriter(model, sediment_model.fields,
-                                                        overwrite_existing = true, 
-                                                        filename = "sediment.jld2", 
-                                                        schedule = TimeInterval(30minutes))
+simulation.output_writers[:sediment] = JLD2Writer(model, sediment_model.fields,
+                                                  overwrite_existing = true,
+                                                  filename = "sediment.jld2",
+                                                  schedule = TimeInterval(30minutes))
 
 prog(sim) = @info "$(prettytime(sim)) in $(prettytime(sim.run_wall_time))"
 

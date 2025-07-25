@@ -122,10 +122,10 @@ end
 add_callback!(simulation, update_temperature!, IterationInterval(1))
 
 filename = "column"
-simulation.output_writers[:tracers] = JLD2OutputWriter(model, model.tracers,
-                                                       filename = "$filename.jld2",
-                                                       schedule = TimeInterval(3day),
-                                                       overwrite_existing = true)
+simulation.output_writers[:tracers] = JLD2Writer(model, model.tracers,
+                                                 filename = "$filename.jld2",
+                                                 schedule = TimeInterval(3day),
+                                                 overwrite_existing = true)
 
 PAR = Field(Oceananigans.Biogeochemistry.biogeochemical_auxiliary_fields(biogeochemistry.light_attenuation).PAR)
 
@@ -134,10 +134,10 @@ internal_fields = (; biogeochemistry.underlying_biogeochemistry.calcite_saturati
                      PAR
                      )#biogeochemistry.underlying_biogeochemistry.mean_mixed_layer_vertical_diffusivity)
 
-simulation.output_writers[:internals] = JLD2OutputWriter(model, internal_fields,
-                                                       filename = "$(filename)_internal_fields.jld2",
-                                                       schedule = TimeInterval(3day),
-                                                       overwrite_existing = true)
+simulation.output_writers[:internals] = JLD2Writer(model, internal_fields,
+                                                   filename = "$(filename)_internal_fields.jld2",
+                                                   schedule = TimeInterval(3day),
+                                                   overwrite_existing = true)
 # ## Run!
 # We are ready to run the simulation
 run!(simulation)

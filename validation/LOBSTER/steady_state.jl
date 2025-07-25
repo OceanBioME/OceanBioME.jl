@@ -32,18 +32,18 @@ model = NonhydrostaticModel(; grid,
 
 set!(model, P = 0.03, Z = 0.03, NO₃ = 4.0, NH₄ = 0.05, DIC = 2200.0, Alk = 2400.0)
 
-simulation = Simulation(model, Δt=5minutes, stop_time=10year) 
+simulation = Simulation(model, Δt=5minutes, stop_time=10year)
 
 progress_message(sim) = @printf("Iteration: %04d, time: %s, Δt: %s, wall time: %s\n",
                                 iteration(sim),
                                 prettytime(sim),
                                 prettytime(sim.Δt),
-                                prettytime(sim.run_wall_time))      
-                                                                  
+                                prettytime(sim.run_wall_time))
+
 simulation.callbacks[:progress] = Callback(progress_message, IterationInterval(100))
 
 filename = "steady_state"
-simulation.output_writers[:profiles] = JLD2OutputWriter(model, model.tracers, filename = "$filename.jld2", schedule = TimeInterval(1day), overwrite_existing=true)
+simulation.output_writers[:profiles] = JLD2Writer(model, model.tracers, filename = "$filename.jld2", schedule = TimeInterval(1day), overwrite_existing=true)
 
 scale_negative_tracers = ScaleNegativeTracers(; model, tracers = (:NO₃, :NH₄, :P, :Z, :sPOM, :bPOM, :DOM))
 simulation.callbacks[:neg] = Callback(scale_negative_tracers; callsite = UpdateStateCallsite())
