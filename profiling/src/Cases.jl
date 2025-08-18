@@ -108,16 +108,21 @@ This script is intended as a profiling example for the LOBSTER biogeochemical mo
 and how it can be used with active particles to model the growth of sugar kelp.
 It is intended as a typical use example for the OceanBioME.jl package.
 """
-function big_LOBSTER(; backend = CPU(), fast_kill = false)
+function big_LOBSTER(;
+    backend = CPU(),
+    grid_size :: Tuple{Int, Int, Int} = (32, 32, 8),
+    n_particles :: Int = 5,
+    fast_kill :: Bool = false,
+    enable_io :: Bool = true,
+    runlength_scale :: Float64 = 1.0,
+    )
 
-    duration = fast_kill ? 0.1day : 10days # Duration of the simulation
+    duration = fast_kill ? 0.1day : 10days * runlength_scale # Duration of the simulation
 
     filename = "LOBSTER" # Base filename for output files
 
     # set the number of gridpoints in each direction
-    Nx = 32
-    Ny = 32
-    Nz = 8
+    Nx, Ny, Nz = grid_size
 
     # set the domain size
     Lx = 1kilometer
@@ -157,7 +162,7 @@ function big_LOBSTER(; backend = CPU(), fast_kill = false)
 
 
     # ## Kelp Particle setup
-    n = 5 # number of kelp bundles
+    n = n_particles # number of kelp bundles
     z₀ = [-21:5:-1;] * 1.0 # depth of kelp fronds
     particles = SugarKelpParticles(n; grid, scalefactors = fill(2000, n)) # and we want them to look like there are 500 in each bundle
     # Initial conditions for the kelp particles.
@@ -245,32 +250,34 @@ function big_LOBSTER(; backend = CPU(), fast_kill = false)
 
     simulation.callbacks[:progress] = Callback(progress, IterationInterval(20))
 
-    # Here, we add some diagnostics to calculate and output.
-    u, v, w = model.velocities # unpack velocity `Field`s
+    if enable_io
+        # Here, we add some diagnostics to calculate and output.
+        u, v, w = model.velocities # unpack velocity `Field`s
 
-    # and also calculate the vertical vorticity.
-    ζ = Field(∂x(v) - ∂y(u))
+        # and also calculate the vertical vorticity.
+        ζ = Field(∂x(v) - ∂y(u))
 
-    # Periodically save the velocities and vorticity to a file.
-    simulation.output_writers[:fields] = JLD2Writer(
-        model,
-        merge(model.tracers, (; u, v, w, ζ));
-        schedule = TimeInterval(2hours),
-        filename = "$(filename)_bgc.jld2",
-        overwrite_existing = true,
-    )
+        # Periodically save the velocities and vorticity to a file.
+        simulation.output_writers[:fields] = JLD2Writer(
+            model,
+            merge(model.tracers, (; u, v, w, ζ));
+            schedule = TimeInterval(2hours),
+            filename = "$(filename)_bgc.jld2",
+            overwrite_existing = true,
+        )
 
-    function fetch_output(particles::BiogeochemicalParticles, model)
-        return particles
+        function fetch_output(particles::BiogeochemicalParticles, model)
+            return particles
+        end
+
+        simulation.output_writers[:particles] = JLD2Writer(
+            model,
+            (; model.biogeochemistry.particles),
+            filename = "$(filename)_particles.jld2",
+            schedule = TimeInterval(2hours),
+            overwrite_existing = true,
+        )
     end
-
-    simulation.output_writers[:particles] = JLD2Writer(
-        model,
-        (; model.biogeochemistry.particles),
-        filename = "$(filename)_particles.jld2",
-        schedule = TimeInterval(2hours),
-        overwrite_existing = true,
-    )
 
     # Run the simulation
     run!(simulation)
