@@ -1,4 +1,4 @@
-@inline function (bgc::LOBSTER)(::Val{:sPOC}, x, y, z, t, NO₃, NH₄, P, Z, sPON, bPON, DON, sPOC, bPOC, DOC, PAR)
+@inline function (bgc::LOBSTER)(::Val{:sPOC}, x, y, z, t, NO₃, NH₄, Fe, P, Z, sPON, bPON, DON, sPOC, bPOC, DOC, PAR)
     aᶻ = bgc.zooplankton_assimilation_fraction
     gᶻ = bgc.maximum_grazing_rate
     p̃ = bgc.phytoplankton_preference
@@ -17,7 +17,7 @@
             - μᵈ * sPOC)
 end
 
-@inline function (bgc::LOBSTER)(::Val{:bPOC}, x, y, z, t, NO₃, NH₄, P, Z, sPON, bPON, DON, sPOC, bPOC, DOC, PAR)
+@inline function (bgc::LOBSTER)(::Val{:bPOC}, x, y, z, t, NO₃, NH₄, Fe, P, Z, sPON, bPON, DON, sPOC, bPOC, DOC, PAR)
     aᶻ = bgc.zooplankton_assimilation_fraction
     gᶻ = bgc.maximum_grazing_rate
     p̃ = bgc.phytoplankton_preference

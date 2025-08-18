@@ -69,6 +69,7 @@ struct LOBSTER{FT, B, W} <: AbstractContinuousFormBiogeochemistry
     nitrate_ammonia_inhibition :: FT
     nitrate_half_saturation :: FT
     ammonia_half_saturation :: FT
+    iron_half_saturation :: FT
     maximum_phytoplankton_growthrate :: FT
     zooplankton_assimilation_fraction :: FT
     zooplankton_mortality :: FT
@@ -103,6 +104,7 @@ struct LOBSTER{FT, B, W} <: AbstractContinuousFormBiogeochemistry
                      nitrate_ammonia_inhibition::FT,
                      nitrate_half_saturation::FT,
                      ammonia_half_saturation::FT,
+                     iron_half_saturation::FT,
                      maximum_phytoplankton_growthrate::FT,
                      zooplankton_assimilation_fraction::FT,
                      zooplankton_mortality::FT,
@@ -137,6 +139,7 @@ struct LOBSTER{FT, B, W} <: AbstractContinuousFormBiogeochemistry
                              nitrate_ammonia_inhibition,
                              nitrate_half_saturation,
                              ammonia_half_saturation,
+                             iron_half_saturation,
                              maximum_phytoplankton_growthrate,
                              zooplankton_assimilation_fraction,
                              zooplankton_mortality,
@@ -260,6 +263,7 @@ function LOBSTER(; grid::AbstractGrid{FT},
                    nitrate_ammonia_inhibition::FT = 3.0,
                    nitrate_half_saturation::FT = 0.7, # mmol N/m³
                    ammonia_half_saturation::FT = 0.001, # mmol N/m³
+                   iron_half_saturation::FT = 2e-4, # mmol Fe/m³ - estimated from fitting OSP 
                    maximum_phytoplankton_growthrate::FT = 1.21e-5, # 1/s
                    zooplankton_assimilation_fraction::FT = 0.7,
                    zooplankton_mortality::FT = 2.31e-6, # 1/s/mmol N/m³
@@ -318,6 +322,7 @@ function LOBSTER(; grid::AbstractGrid{FT},
                                          nitrate_ammonia_inhibition,
                                          nitrate_half_saturation,
                                          ammonia_half_saturation,
+                                         iron_half_saturation,
                                          maximum_phytoplankton_growthrate,
                                          zooplankton_assimilation_fraction,
                                          zooplankton_mortality,
@@ -341,7 +346,7 @@ function LOBSTER(; grid::AbstractGrid{FT},
                                          dissolved_organic_breakdown_rate,
                                          zooplankton_calcite_dissolution,
 
-                                         optionals,
+                                         optionals, 
 
                                          sinking_velocities)
 
@@ -364,14 +369,14 @@ function LOBSTER(; grid::AbstractGrid{FT},
 end
 
 # wrote this functionally and it took 2.5x longer so even though this is long going to use this way instead
-@inline required_biogeochemical_tracers(::LOBSTER{<:Any, <:Val{(false, false, false)}, <:Any}) = (:NO₃, :NH₄, :P, :Z, :sPOM, :bPOM, :DOM)
-@inline required_biogeochemical_tracers(::LOBSTER{<:Any, <:Val{(true, false, false)}, <:Any}) = (:NO₃, :NH₄, :P, :Z, :sPOM, :bPOM, :DOM, :DIC, :Alk)
-@inline required_biogeochemical_tracers(::LOBSTER{<:Any, <:Val{(false, true, false)}, <:Any}) = (:NO₃, :NH₄, :P, :Z, :sPOM, :bPOM, :DOM, :O₂)
-@inline required_biogeochemical_tracers(::LOBSTER{<:Any, <:Val{(false, false, true)}, <:Any}) = (:NO₃, :NH₄, :P, :Z, :sPON, :bPON, :DON, :sPOC, :bPOC, :DOC)
-@inline required_biogeochemical_tracers(::LOBSTER{<:Any, <:Val{(true, true, false)}, <:Any}) = (:NO₃, :NH₄, :P, :Z, :sPOM, :bPOM, :DOM, :DIC, :Alk, :O₂)
-@inline required_biogeochemical_tracers(::LOBSTER{<:Any, <:Val{(true, false, true)}, <:Any}) = (:NO₃, :NH₄, :P, :Z, :sPON, :bPON, :DON, :DIC, :Alk, :sPOC, :bPOC, :DOC)
-@inline required_biogeochemical_tracers(::LOBSTER{<:Any, <:Val{(false, true, true)}, <:Any}) = (:NO₃, :NH₄, :P, :Z, :sPON, :bPON, :DON, :O₂, :sPOC, :bPOC, :DOC)
-@inline required_biogeochemical_tracers(::LOBSTER{<:Any, <:Val{(true, true, true)}, <:Any}) = (:NO₃, :NH₄, :P, :Z, :sPON, :bPON, :DON, :DIC, :Alk, :O₂, :sPOC, :bPOC, :DOC)
+@inline required_biogeochemical_tracers(::LOBSTER{<:Any, <:Val{(false, false, false)}, <:Any}) = (:NO₃, :NH₄, :Fe, :P, :Z, :sPOM, :bPOM, :DOM)
+@inline required_biogeochemical_tracers(::LOBSTER{<:Any, <:Val{(true, false, false)}, <:Any}) = (:NO₃, :NH₄, :Fe, :P, :Z, :sPOM, :bPOM, :DOM, :DIC, :Alk)
+@inline required_biogeochemical_tracers(::LOBSTER{<:Any, <:Val{(false, true, false)}, <:Any}) = (:NO₃, :NH₄, :Fe, :P, :Z, :sPOM, :bPOM, :DOM, :O₂)
+@inline required_biogeochemical_tracers(::LOBSTER{<:Any, <:Val{(false, false, true)}, <:Any}) = (:NO₃, :NH₄, :Fe, :P, :Z, :sPON, :bPON, :DON, :sPOC, :bPOC, :DOC)
+@inline required_biogeochemical_tracers(::LOBSTER{<:Any, <:Val{(true, true, false)}, <:Any}) = (:NO₃, :NH₄, :Fe, :P, :Z, :sPOM, :bPOM, :DOM, :DIC, :Alk, :O₂)
+@inline required_biogeochemical_tracers(::LOBSTER{<:Any, <:Val{(true, false, true)}, <:Any}) = (:NO₃, :NH₄, :Fe, :P, :Z, :sPON, :bPON, :DON, :DIC, :Alk, :sPOC, :bPOC, :DOC)
+@inline required_biogeochemical_tracers(::LOBSTER{<:Any, <:Val{(false, true, true)}, <:Any}) = (:NO₃, :NH₄, :Fe, :P, :Z, :sPON, :bPON, :DON, :O₂, :sPOC, :bPOC, :DOC)
+@inline required_biogeochemical_tracers(::LOBSTER{<:Any, <:Val{(true, true, true)}, <:Any}) = (:NO₃, :NH₄, :Fe, :P, :Z, :sPON, :bPON, :DON, :DIC, :Alk, :O₂, :sPOC, :bPOC, :DOC)
 
 required_biogeochemical_auxiliary_fields(::LOBSTER) = (:PAR, )
 

@@ -1,5 +1,5 @@
 # there is a typo in https://agupubs.onlinelibrary.wiley.com/doi/10.1029/2010JC006446 so we are not sure the first term is correct, but this makes sense
-@inline function (bgc::LOBSTER)(::Val{:O₂}, x, y, z, t, NO₃, NH₄, P, Z, sPOM, bPOM, DOM, O₂, PAR)
+@inline function (bgc::LOBSTER)(::Val{:O₂}, x, y, z, t, NO₃, NH₄, Fe, P, Z, sPOM, bPOM, DOM, O₂, PAR)
     μₚ = bgc.maximum_phytoplankton_growthrate
     kₚₐᵣ = bgc.light_half_saturation
     ψ = bgc.nitrate_ammonia_inhibition
