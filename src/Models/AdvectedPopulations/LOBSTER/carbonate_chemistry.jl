@@ -1,4 +1,4 @@
-@inline function (bgc::LOBSTER)(::Val{:DIC}, x, y, z, t, NO₃, NH₄, P, Z, sPOM, bPOM, DOM, DIC, Alk, PAR)
+@inline function (bgc::LOBSTER)(::Val{:DIC}, x, y, z, t, NO₃, NH₄, Fe, P, Z, sPOM, bPOM, DOM, DIC, Alk, PAR)
     αᵖ = bgc.ammonia_fraction_of_exudate
     γ = bgc.phytoplankton_exudation_fraction
     μₚ = bgc.maximum_phytoplankton_growthrate
@@ -29,7 +29,7 @@
             + Gᵖ(P, Z, sPOM, gᶻ, p̃, kᶻ) * η * Rdᵖ * ρᶜᵃᶜᵒ³)
 end
 
-@inline function (bgc::LOBSTER)(::Val{:Alk}, x, y, z, t, NO₃, NH₄, P, Z, sPOM, bPOM, DOM, DIC, Alk, PAR)
+@inline function (bgc::LOBSTER)(::Val{:Alk}, x, y, z, t, NO₃, NH₄, Fe, P, Z, sPOM, bPOM, DOM, DIC, Alk, PAR)
     μₚ = bgc.maximum_phytoplankton_growthrate
     kₚₐᵣ = bgc.light_half_saturation
     ψ = bgc.nitrate_ammonia_inhibition
