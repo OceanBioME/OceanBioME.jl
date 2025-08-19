@@ -21,6 +21,7 @@ The first step is to import the abstract type from OceanBioME, some units from O
 using OceanBioME, Oceananigans
 using Oceananigans.Biogeochemistry: AbstractContinuousFormBiogeochemistry
 using Oceananigans.Units
+using Oceananigans.Fields: ConstantField
 
 import Oceananigans.Biogeochemistry: required_biogeochemical_tracers,
                                      required_biogeochemical_auxiliary_fields,
@@ -39,7 +40,7 @@ We then define our `struct` with the model parameters, as well as slots for the 
          optimal_temperature :: FT = 28.0                    # °C
               mortality_rate :: FT = 0.15 / day              # 1 / seconds
      crowding_mortality_rate :: FT = 0.004 / day / 1000 * 14 # 1 / seconds / mmol N / m³
-            sinking_velocity :: W  = 2 / day
+            sinking_velocity :: W  = ConstantField(2 / day)
 end
 ```
 
