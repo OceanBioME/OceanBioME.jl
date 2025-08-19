@@ -66,7 +66,7 @@ T = linear_interpolation(bgc_z, reverse(ncread(path*"temp_0707_2709.nc", "thetao
 S = linear_interpolation(bgc_z, reverse(ncread(path*"salinity_0707_2709.nc", "so")[1, 1, :, 1]))
 
 # model setup
-grid = RectilinearGrid(topology = (Oceananigans.Flat, Oceananigans.Flat, Oceananigans.Bounded), size = (64, ), extent = (256, ))
+grid = RectilinearGrid(topology = (Oceananigans.Flat, Oceananigans.Flat, Oceananigans.Bounded), size = (128, ), extent = (500, ))
 
 biogeochemistry = LOBSTER(; grid,
                             surface_photosynthetically_active_radiation = PAR_itp,
@@ -95,8 +95,6 @@ N_flux_in = Ref(0.0)
 
 Fe_flux_in = Ref(0.0)
 
-#NO₃_bcs = FieldBoundaryConditions(bottom = FluxBoundaryCondition((args...) -> args[end][], parameters = N_flux))
-
 model = NonhydrostaticModel(; grid,
                               biogeochemistry,
                               tracers = (:T, :S),
@@ -104,14 +102,12 @@ model = NonhydrostaticModel(; grid,
                               boundary_conditions = (; DIC = DIC_bcs, Fe_bcs),
                               closure = ScalarDiffusivity(κ = (z, t) -> 1e-5 + 1e-2 * (1 - min(1, max(0, -(z+6)/5)))))
 
-# TODO make deep κ 1e-4
-
 # simulation
 set!(model, P = (z)->P(z), Z = (z)->Z(z), NO₃ = (z)->NO₃(z), DIC = (z)->DIC(z), Alk = (z)->Alk(z), T= (z)->T(z) , S = (z)->S(z), Fe = (z)->Fe(z))
 
 N₀ = sum(model.tracers.P) + sum(model.tracers.Z) + sum(model.tracers.NO₃)
 
-simulation = Simulation(model, Δt = 3minutes, stop_time = 200days)
+simulation = Simulation(model, Δt = 3minutes, stop_time = 500days)
 
 prog(sim) = @info prettytime(sim)*" in "*prettytime(sim.run_wall_time)
 
@@ -132,8 +128,8 @@ function update_flux(sim)
 # mmol N / m^2 / s
         N_flux_out[] = -(sPOM_loss + bPOM_loss)
 
-        N_flux_in[] = sum([256 / 64 * (NO₃(z) - model.tracers.NO₃[1, 1, k]) / nudging_timescale for (k, z) in enumerate(znodes(model.tracers.NO₃))])
-        Fe_flux_in[] = sum([256 / 64 * (NO₃(z) - model.tracers.Fe[1, 1, k]) / nudging_timescale for (k, z) in enumerate(znodes(model.tracers.Fe))])
+        N_flux_in[] = sum([500 / 128 * (NO₃(z) - model.tracers.NO₃[1, 1, k]) / nudging_timescale for (k, z) in enumerate(znodes(model.tracers.NO₃))])
+        Fe_flux_in[] = sum([500 / 128 * (NO₃(z) - model.tracers.Fe[1, 1, k]) / nudging_timescale for (k, z) in enumerate(znodes(model.tracers.Fe))])
 
         push!(N_out_record, N_flux_out[])
         push!(N_in_record, N_flux_in[])
@@ -145,7 +141,6 @@ end
 
 add_callback!(simulation, update_flux, IterationInterval(10))
 
-#add_callback!(simulation, ((sim) -> (sim.Δt = 10minutes)), SpecifiedTimes(200days))
 
 run!(simulation)
 
@@ -176,21 +171,13 @@ fig2 = Figure()
 
 ax2 = Axis(fig2[1, 1])
 
-lines!(ax2, fds[:P][1], color = Makie.wong_colors()[1], linestyle = :dash)
+lines!(ax2, fds[:P][1], color = Makie.wong_colors()[1], linestyle = :dash, label = "P (mmol N /m³)")
 lines!(ax2, fds[:P][end], color = Makie.wong_colors()[1])
 
-lines!(ax2, fds[:NO₃][1], color = Makie.wong_colors()[2], linestyle = :dash)
+lines!(ax2, fds[:NO₃][1], color = Makie.wong_colors()[2], linestyle = :dash, label = "NO₃ (÷10 mmol N/m³)")
 lines!(ax2, fds[:NO₃][end], color = Makie.wong_colors()[2])
 
-lines!(ax2, fds[:Fe][1], color = Makie.wong_colors()[3], linestyle = :dash)
+lines!(ax2, fds[:Fe][1], color = Makie.wong_colors()[3], linestyle = :dash, label = "Fe (μmol Fe/m³)")
 lines!(ax2, fds[:Fe][end], color = Makie.wong_colors()[3])
-#=
-@inline nudging(x, y, z, t, T, p) = (p.T(z) - T) / p.τ
-T_average = mean(ncread("T_file.nc", "thetao")[1, 1, :, :], dims = 2)[:, 1]
-T_nudging = Forcing(nudging, field_dependencies=:T, parameters = (; τ = 2days, T = SimpleInterpolation(T_depths, T_average; arch)))
-
-model = NonhydrostaticModel(...,
-                            forcing = (; T = T_nudging))=#
 
 # TODO: compare to chlorophyll obs
-# TODO: findout limiting nutrients at OSP
