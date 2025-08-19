@@ -4,7 +4,7 @@
 @inline Gᵖ(P, Z, sPOM, gᶻ, p̃, kᶻ) = gᶻ * p(P, sPOM, p̃) * P * Z / (kᶻ + P * p(P, sPOM, p̃) + (1 - p(P, sPOM, p̃)) * sPOM)
 
 # Limiting equations
-@inline Lₚₐᵣ(PAR, kₚₐᵣ) = PAR / (PAR + kₚₐᵣ)#1 - exp(-PAR / kₚₐᵣ)
+@inline Lₚₐᵣ(PAR, kₚₐᵣ) = 1 - exp(-PAR / kₚₐᵣ)#PAR / (PAR + kₚₐᵣ)#1 - exp(-PAR / kₚₐᵣ)
 @inline Lₙₒ₃(NO₃, NH₄, ψ, kₙₒ₃) = NO₃ * exp(-ψ * NH₄) / (NO₃ + kₙₒ₃)
 @inline Lₙₕ₄(NH₄, kₙₕ₄) = max(0, NH₄ / (NH₄ + kₙₕ₄))
 
@@ -184,5 +184,5 @@ end
             #+ αᵈ * μᵈ * sPOM
             #+ αᵈ * μᵈᵈ * bPOM
             #+ μᵈᵒᵐ * DOM) 
-    )* 4.6375e-5 # from PISCES optimal
+    ) * 4.6375e-5 # from PISCES optimal
 end

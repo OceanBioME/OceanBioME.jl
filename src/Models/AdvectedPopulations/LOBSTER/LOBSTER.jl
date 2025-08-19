@@ -408,6 +408,7 @@ adapt_structure(to, lobster::LOBSTER) =
             adapt(to, lobster.nitrate_ammonia_inhibition),
             adapt(to, lobster.nitrate_half_saturation),
             adapt(to, lobster.ammonia_half_saturation),
+            adapt(to, lobster.iron_half_saturation),
             adapt(to, lobster.maximum_phytoplankton_growthrate),
             adapt(to, lobster.zooplankton_assimilation_fraction),
             adapt(to, lobster.zooplankton_mortality),
