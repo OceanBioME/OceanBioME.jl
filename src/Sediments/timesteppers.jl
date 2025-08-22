@@ -3,7 +3,7 @@ using Oceananigans.TimeSteppers: QuasiAdamsBashforth2TimeStepper, RungeKutta3Tim
 using Oceananigans.Utils: launch!
 
 import Oceananigans.TimeSteppers: ab2_step!, rk3_substep!,
-                                  cache_previous_tendencies!
+                                  cache_previous_tendencies!, compute_flux_bc_tendencies!
 
 const VALID_TIMESTEPPERS = Union{<:QuasiAdamsBashforth2TimeStepper, <:RungeKutta3TimeStepper}
 
@@ -92,3 +92,5 @@ function cache_previous_tendencies!(model::BiogeochemicalSediment)
 
     return nothing
 end
+
+compute_flux_bc_tendencies!(model::BiogeochemicalSediment) = nothing
