@@ -115,11 +115,10 @@ function big_LOBSTER(;
     fast_kill :: Bool = false,
     enable_io :: Bool = true,
     runlength_scale :: Float64 = 1.0,
+    filename :: AbstractString = "LOBSTER",
     )
 
     duration = fast_kill ? 0.1day : 10days * runlength_scale # Duration of the simulation
-
-    filename = "LOBSTER" # Base filename for output files
 
     # set the number of gridpoints in each direction
     Nx, Ny, Nz = grid_size
@@ -281,5 +280,6 @@ function big_LOBSTER(;
 
     # Run the simulation
     run!(simulation)
+
 end
 end
