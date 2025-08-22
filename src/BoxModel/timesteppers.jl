@@ -5,7 +5,7 @@ using Oceananigans.TimeSteppers: rk3_substep_field!, RungeKutta3TimeStepper, Qua
 using Oceananigans.Utils: work_layout, launch!
 using Oceananigans: TendencyCallsite
 
-import Oceananigans.TimeSteppers: rk3_substep!, cache_previous_tendencies!, compute_tendencies!
+import Oceananigans.TimeSteppers: rk3_substep!, cache_previous_tendencies!, compute_tendencies!, compute_flux_bc_tendencies!
 
 function BoxModelTimeStepper(name::Symbol, grid, tracers)
     fullname = Symbol(name, :TimeStepper)
@@ -91,3 +91,6 @@ function rk3_substep!(U, Δt, γ¹::FT, ::Nothing, G¹, G⁰) where FT
 
     return nothing
 end
+
+compute_flux_bc_tendencies!(model::BoxModel) = nothing
+
