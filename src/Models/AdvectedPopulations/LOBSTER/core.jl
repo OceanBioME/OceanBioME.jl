@@ -4,7 +4,7 @@
 @inline Gᵖ(P, Z, sPOM, gᶻ, p̃, kᶻ) = gᶻ * p(P, sPOM, p̃) * P * Z / (kᶻ + P * p(P, sPOM, p̃) + (1 - p(P, sPOM, p̃)) * sPOM)
 
 # Limiting equations
-@inline Lₚₐᵣ(PAR, kₚₐᵣ) = 1 - exp(-PAR / kₚₐᵣ)#PAR / (PAR + kₚₐᵣ)#1 - exp(-PAR / kₚₐᵣ)
+@inline Lₚₐᵣ(PAR, kₚₐᵣ) = PAR / (PAR + kₚₐᵣ)#1 - exp(-PAR / kₚₐᵣ)
 @inline Lₙₒ₃(NO₃, NH₄, ψ, kₙₒ₃) = NO₃ * exp(-ψ * NH₄) / (NO₃ + kₙₒ₃)
 @inline Lₙₕ₄(NH₄, kₙₕ₄) = max(0, NH₄ / (NH₄ + kₙₕ₄))
 
@@ -22,8 +22,8 @@
 
     phytoplankton_nutrient_limitation = 
         phytoplankton_nitrogen_limitation * Lₙₕ₄(Fe, kFe)
-
-    return μₙ*NH₄ - μₚ*Lₚₐᵣ(PAR, kₚₐᵣ)*Lₙₒ₃(NO₃, NH₄, ψ, kₙₒ₃) * phytoplankton_nutrient_limitation / phytoplankton_nitrogen_limitation * P
+        
+    return μₙ*NH₄ - μₚ*Lₚₐᵣ(PAR, kₚₐᵣ)*Lₙₒ₃(NO₃, NH₄, ψ, kₙₒ₃) * phytoplankton_nutrient_limitation / (phytoplankton_nitrogen_limitation + eps(0.0)) * P
 end
 
 @inline function (bgc::LOBSTER)(::Val{:NH₄}, x, y, z, t, NO₃, NH₄, Fe, P, Z, sPOM, bPOM, DOM, PAR)
@@ -49,7 +49,7 @@ end
         phytoplankton_nitrogen_limitation * Lₙₕ₄(Fe, kFe)
 
     return (αᵖ * γ * μₚ * Lₚₐᵣ(PAR, kₚₐᵣ) * phytoplankton_nutrient_limitation * P 
-            - μₚ * Lₚₐᵣ(PAR, kₚₐᵣ) * Lₙₕ₄(NH₄, kₙₕ₄) * phytoplankton_nutrient_limitation / phytoplankton_nitrogen_limitation * P
+            - μₚ * Lₚₐᵣ(PAR, kₚₐᵣ) * Lₙₕ₄(NH₄, kₙₕ₄) * phytoplankton_nutrient_limitation / (phytoplankton_nitrogen_limitation + eps(0.0)) * P
             - μₙ * NH₄
             + αᶻ * μᶻ * Z
             + αᵈ * μᵈ * sPOM
@@ -123,7 +123,7 @@ end
 @inline function (bgc::LOBSTER)(::Val{:sPOM}, x, y, z, t, NO₃, NH₄, Fe, P, Z, sPOM, bPOM, DOM, PAR)
     aᶻ = bgc.zooplankton_assimilation_fraction
     gᶻ = bgc.maximum_grazing_rate
-    p̃ = bgc.phytoplankton_preference
+    p̃  = bgc.phytoplankton_preference
     kᶻ = bgc.grazing_half_saturation
     mᶻ = bgc.zooplankton_mortality
     fᵈ = bgc.fast_sinking_mortality_fraction # really dumb definitions
@@ -139,14 +139,14 @@ end
 end
 
 @inline function (bgc::LOBSTER)(::Val{:bPOM}, x, y, z, t, NO₃, NH₄, Fe, P, Z, sPOM, bPOM, DOM, PAR)
-    aᶻ = bgc.zooplankton_assimilation_fraction
-    gᶻ = bgc.maximum_grazing_rate
-    p̃ = bgc.phytoplankton_preference
-    kᶻ = bgc.grazing_half_saturation
-    mᶻ = bgc.zooplankton_mortality
-    fᵈ = bgc.fast_sinking_mortality_fraction # really dumb definitions
-    fᶻ = bgc.slow_sinking_mortality_fraction
-    mᵖ = bgc.phytoplankton_mortality
+    aᶻ  = bgc.zooplankton_assimilation_fraction
+    gᶻ  = bgc.maximum_grazing_rate
+    p̃   = bgc.phytoplankton_preference
+    kᶻ  = bgc.grazing_half_saturation
+    mᶻ  = bgc.zooplankton_mortality
+    fᵈ  = bgc.fast_sinking_mortality_fraction # really dumb definitions
+    fᶻ  = bgc.slow_sinking_mortality_fraction
+    mᵖ  = bgc.phytoplankton_mortality
     μᵈᵈ = bgc.large_detritus_remineralisation_rate
 
     return (fᵈ * (1 - aᶻ) * (Gᵖ(P, Z, sPOM, gᶻ, p̃, kᶻ) + Gᵈ(P, Z, sPOM, gᶻ, p̃, kᶻ))
@@ -154,7 +154,6 @@ end
             + (1 - fᶻ) * mᶻ * Z^2 
             - μᵈᵈ * bPOM)
 end
-
 
 @inline function (bgc::LOBSTER)(::Val{:Fe}, x, y, z, t, NO₃, NH₄, Fe, P, Z, sPOM, bPOM, DOM, PAR)
     αᵖ = bgc.ammonia_fraction_of_exudate

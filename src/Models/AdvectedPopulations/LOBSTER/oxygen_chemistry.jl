@@ -10,6 +10,6 @@
     μₙ = bgc.nitrification_rate
 
     return (μₚ * Lₚₐᵣ(PAR, kₚₐᵣ) * (Lₙₒ₃(NO₃, NH₄, ψ, kₙₒ₃) + Lₙₕ₄(NH₄, kₙₕ₄)) * ROᵖ * P
-            - (ROᵖ - ROⁿ) * bgc(Val(:NH₄), x, y, z, t, NO₃, NH₄, P, Z, sPOM, bPOM, DOM, PAR)
+            - (ROᵖ - ROⁿ) * bgc(Val(:NH₄), x, y, z, t, NO₃, NH₄, Fe, P, Z, sPOM, bPOM, DOM, PAR)
             - ROᵖ * μₙ * NH₄)
 end

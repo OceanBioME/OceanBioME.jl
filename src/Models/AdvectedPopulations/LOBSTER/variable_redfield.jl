@@ -32,6 +32,7 @@ end
     ρᶜᵃᶜᵒ³ = bgc.organic_carbon_calcate_ratio
 
     Gₚ = Gᵖ(P, Z, sPON, gᶻ, p̃, kᶻ)
+    
     return ((fᵈ * (1 - aᶻ) * (Gₚ + Gᵈ(P, Z, sPON, gᶻ, p̃, kᶻ))
             + fᵈ * mᵖ * P^2
             + (1 - fᶻ) * mᶻ * Z^2
