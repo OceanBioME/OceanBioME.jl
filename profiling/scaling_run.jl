@@ -3,7 +3,7 @@ using Oceananigans
 using CUDA
 using DataFrames
 using CSV
-
+using Base.Filesystem
 
 function run_benchmark_case(
         backend;
@@ -13,19 +13,28 @@ function run_benchmark_case(
         runlength_scale::Float64,
     )
     @info "Running benchmark case with grid size: $grid_size and $n_particles particles end with IO: $enable_io"
+    filename = "SCALING_RUN_GPU"
+    @info "Using output name: $filename"
 
     @info "Precompiling benchmark case"
-    @time Profiling.Cases.big_LOBSTER(; backend, grid_size, n_particles, enable_io, fast_kill = true, runlength_scale)
+    @time Profiling.Cases.big_LOBSTER(; backend, grid_size, n_particles, enable_io, fast_kill = true, runlength_scale, filename)
 
     @info "Precompiling benchmark case again"
-    @time Profiling.Cases.big_LOBSTER(; backend, grid_size, n_particles, enable_io, fast_kill = true, runlength_scale)
+    @time Profiling.Cases.big_LOBSTER(; backend, grid_size, n_particles, enable_io, fast_kill = true, runlength_scale, filename)
 
     @info "Precompiling bemchmark case yet again!"
-    @time Profiling.Cases.big_LOBSTER(;backend, grid_size, n_particles, enable_io, fast_kill = true, runlength_scale)
+    @time Profiling.Cases.big_LOBSTER(;backend, grid_size, n_particles, enable_io, fast_kill = true, runlength_scale, filename)
 
 
     @info "Running the case"
-    run_data = @timed Profiling.Cases.big_LOBSTER(;backend, grid_size, n_particles, enable_io, fast_kill = false, runlength_scale)
+    run_data = @timed Profiling.Cases.big_LOBSTER(;backend, grid_size, n_particles, enable_io, fast_kill = false, runlength_scale, filename)
+
+    if enable_io
+        # Remove the output if it exists
+        rm("$(filename)_bgc.jld2")
+        rm("$(filename)_particles.jld2")
+    end
+
     return run_data # Could be removed but let's be explicit about returned value
 end
 
@@ -73,24 +82,30 @@ function repackge_run_data(run_data, run_parameters)
 end
 
 
-backend = CPU()
+backend = GPU()
 
 # Changes the grid size by the factors of 2
 cases_grid = [
-    (grid_size = (16, 16, 8), n_particles = 5, enable_io = false, runlength_scale = 1.0),
-    (grid_size = (16, 32, 8), n_particles = 5, enable_io = false, runlength_scale = 1.0),
-    (grid_size = (32, 32, 8), n_particles = 5, enable_io = false, runlength_scale = 1.0), # Nominal Case
-    (grid_size = (32, 32, 16), n_particles = 5, enable_io = false, runlength_scale = 1.0),
-    (grid_size = (64, 32, 16), n_particles = 5, enable_io = false, runlength_scale = 1.0),
-    (grid_size = (64, 64, 16), n_particles = 5, enable_io = false, runlength_scale = 1.0),
+    (grid_size = (16, 16, 8), n_particles = 5, enable_io = true, runlength_scale = 1.0),
+    (grid_size = (16, 32, 8), n_particles = 5, enable_io = true, runlength_scale = 1.0),
+    (grid_size = (32, 32, 8), n_particles = 5, enable_io = true, runlength_scale = 1.0), # Nominal Case
+    (grid_size = (32, 32, 16), n_particles = 5, enable_io = true, runlength_scale = 1.0),
+    (grid_size = (64, 32, 16), n_particles = 5, enable_io = true, runlength_scale = 1.0),
+    (grid_size = (64, 64, 16), n_particles = 5, enable_io = true, runlength_scale = 1.0),
+    (grid_size = (64, 64, 32), n_particles = 5, enable_io = true, runlength_scale = 1.0),
+    (grid_size = (128, 64, 32), n_particles = 5, enable_io = true, runlength_scale = 1.0),
+    (grid_size = (128, 128, 32), n_particles = 5, enable_io = true, runlength_scale = 1.0),
+    (grid_size = (128, 128, 64), n_particles = 5, enable_io = true, runlength_scale = 1.0),
+    (grid_size = (256, 128, 64), n_particles = 5, enable_io = true, runlength_scale = 1.0),
+    (grid_size = (256, 256, 64), n_particles = 5, enable_io = true, runlength_scale = 1.0),
+    (grid_size = (256, 256, 128), n_particles = 5, enable_io = true, runlength_scale = 1.0),
 ]
-
 
 df = DataFrame()
 for case in cases_grid
     run_data = run_benchmark_case(backend; case...)
     push!(df, repackge_run_data(run_data, case))
+    # Override each timestep to preserve the data in case of faliure !
+    CSV.write("scaling_run_gpu_withio.csv", df)
 end
 
-
-CSV.write("grid_scaling_run.csv", df)
