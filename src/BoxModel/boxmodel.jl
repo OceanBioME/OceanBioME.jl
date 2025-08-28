@@ -25,7 +25,7 @@ import Oceananigans: set!, fields
 import Oceananigans.Fields: regularize_field_boundary_conditions, TracerFields, interpolate
 import Oceananigans.Architectures: architecture
 import Oceananigans.Models: default_nan_checker, iteration, AbstractModel, prognostic_fields
-import Oceananigans.TimeSteppers: update_state!
+import Oceananigans.TimeSteppers: update_state!, compute_flux_bc_tendencies!
 import Oceananigans.OutputWriters: default_included_properties
 
 import Base: show, summary
@@ -143,6 +143,7 @@ function set!(model::BoxModel; kwargs...)
 end
 
 default_included_properties(::BoxModel) = [:grid]
+compute_flux_bc_tendencies!(::BoxModel) = nothing
 
 include("timesteppers.jl")
 include("output_writer.jl")
