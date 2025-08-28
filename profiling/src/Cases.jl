@@ -163,7 +163,7 @@ function big_LOBSTER(;
     # ## Kelp Particle setup
     n = n_particles # number of kelp bundles
     z₀ =  LinRange(-21, -1, n) # depth of kelp fronds
-    particles = SugarKelpParticles(n; grid, scalefactors = fill(2000, n)) # and we want them to look like there are 500 in each bundle
+    particles = SugarKelpParticles(n; grid, scalefactors = fill(2000/n, n)) # and we want them to look like there are 500 in each bundle
     # Initial conditions for the kelp particles.
     set!(particles, A = 10, N = 0.01, C = 0.1, z = z₀, x = Lx / 2, y = Ly / 2)
 
