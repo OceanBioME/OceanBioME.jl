@@ -3,10 +3,9 @@ using Oceananigans
 using OceanBioME
 using Random
 using Printf
-
-
 using Oceananigans.Units
 using Oceananigans.Fields: FunctionField, ConstantField
+using OceanBioME.Sediments: sinking_flux
 
 import OceanBioME.Particles: fetch_output
 
@@ -281,5 +280,240 @@ function big_LOBSTER(;
     # Run the simulation
     run!(simulation)
 
+end
+"""
+    simple_PISCES()
+
+Run a simple representative case of 3D  PISCES model
+"""
+function simple_PISCES(; backend = CPU(), fast_kill = false)
+    
+    # Parameters
+    @inline PAR⁰(x, y, t) = 20.0
+
+    MLD = -100.0
+
+    @inline κₜ(x, y, z, t) = (1e-2 * (1 + tanh((z - MLD) / 10)) / 2 + 1e-4)
+
+    clock = Clock(; time = 0.0)
+    
+    grid_size = (4, 4, 50)
+
+    grid = RectilinearGrid(;
+        size = grid_size,
+        extent = (20meters, 20meters, 200meters),
+        topology = (Periodic, Periodic, Bounded),
+    )
+
+    κ_field = FunctionField{Center, Center, Center}(κₜ, grid; clock)
+
+    biogeochemistry = PISCES(;
+        grid,
+        surface_photosynthetically_active_radiation = PAR⁰,
+        carbonates = true,
+        scale_negatives = true,
+    )
+    CO₂_flux = CarbonDioxideGasExchangeBoundaryCondition()
+
+    T = FunctionField{Center,Center,Center}(temp, grid; clock)
+    S = ConstantField(35.0)
+
+    model = NonhydrostaticModel(;
+        grid,
+        closure = ScalarDiffusivity(ν = κₜ, κ = κₜ),
+        biogeochemistry,
+        boundary_conditions = (DIC = FieldBoundaryConditions(top = CO₂_flux),),
+        auxiliary_fields = (; T, S),
+    )
+
+    set!(model, P = 0.1, PChl = 0.025, PFe = 0.005,
+            D = 0.01, DChl = 0.003, DFe = 0.0006, DSi = 0.004,
+            Z = 0.06, M = 0.5,
+            DOC = 0.5,
+            POC = 5.4, SFe = 0.34,
+            GOC = 8.2, BFe = 0.5, PSi = 0.04, CaCO₃ = 10^-10,
+            NO₃ = 10, NH₄ = 0.1, PO₄ = 5.0, Fe = 0.6, Si = 8.6,
+            DIC = 2205, Alk = 2560, O₂ = 317)
+
+    # Set up the simulation
+    stop_time = fast_kill ? 3minutes : 10days;
+    simulation = Simulation(model, Δt = 3minutes, stop_time)
+
+    progress_message(sim) = @printf(
+        "Iteration: %04d, time: %s, Δt: %s, wall time: %s\n",
+        iteration(sim),
+        prettytime(sim),
+        prettytime(sim.Δt),
+        prettytime(sim.run_wall_time)
+    )
+    add_callback!(simulation, progress_message, TimeInterval(1days))
+
+    # Run the simulation
+    run!(simulation)
+end
+"""
+    big_PISCES()
+
+A function version of the representative calculation script contributed in
+commit 616cf8a.
+
+Stripped of any plotting and with option for fast exit for pre-compilation.
+
+This script is intended as a profiling example for the PISCES biogeochemical model.
+It is intended as a typical use example for the OceanBioME.jl package.
+"""
+function big_PISCES(;
+    backend = CPU(),
+    grid_size :: Tuple{Int, Int, Int} = (32, 32, 8),
+    fast_kill :: Bool = false,
+    enable_io :: Bool = true,
+    runlength_scale :: Float64 = 1.0,
+    filename :: AbstractString = "PISCES",
+   )
+
+    duration = fast_kill ? 0.1day : 10days * runlength_scale # Duration of the simulation
+
+    # set the number of gridpoints in each direction
+    Nx, Ny, Nz = grid_size
+
+    # set the domain size
+    Lx = 1kilometer
+    Ly = 1kilometer
+    Lz = 100meters
+
+    # Construct a grid with uniform grid spacing.
+    grid = RectilinearGrid(backend, size = (Nx, Ny, Nz), extent = (Lx, Ly, Lz))
+
+    clock = Clock(; time = 0.0)
+
+    # Set the Coriolis and buoyancy models.
+    coriolis = FPlane(f = 1e-4) # [s⁻¹]
+    buoyancy = SeawaterBuoyancy()
+
+    # Specify parameters that are used to construct the background state.
+    background_state_parameters = (
+        M = 1e-4,       # s⁻¹, geostrophic shear
+        f = coriolis.f, # s⁻¹, Coriolis parameter
+        N = 1e-4,       # s⁻¹, buoyancy frequency
+        H = grid.Lz,
+        g = buoyancy.gravitational_acceleration,
+        α = buoyancy.equation_of_state.thermal_expansion,
+    )
+
+    # We assume a background buoyancy ``B`` with a constant stratification and also a constant lateral
+    # gradient (in the zonal direction). The background velocity components ``U`` and ``V`` are prescribed
+    # so that the thermal wind relationship is satisfied, that is, ``f \partial_z U = - \partial_y B`` and
+    # ``f \partial_z V = \partial_x B``.
+    T_func(x, y, z, t, p) = (p.M^2 * x + p.N^2 * (z + p.H)) / (p.g * p.α)
+    V_func(x, y, z, t, p) = p.M^2 / p.f * (z + p.H)
+
+    V_field = BackgroundField(V_func, parameters = background_state_parameters)
+    T_field = BackgroundField(T_func, parameters = background_state_parameters)
+
+    # Specify a vertical viscosity and diffusivity.
+    νᵥ = κᵥ = 1e-2 # [m² s⁻¹]
+    vertical_diffusivity = VerticalScalarDiffusivity(ν = νᵥ, κ = κᵥ)
+
+    # ## Surface PAR and turbulent vertical diffusivity based on idealised mixed layer depth
+    # Setting up idealised functions for PAR and diffusivity 
+
+    @inline PAR⁰(x, y, t) = 20.0
+
+    MLD = -100.0
+
+    @inline κₜ(x, y, z, t) = (1e-2 * (1 + tanh((z - MLD) / 10)) / 2 + 1e-4)
+
+    κ_field = FunctionField{Center, Center, Center}(κₜ, grid; clock)
+
+    # Model setup
+    carbon_chemistry = CarbonChemistry()
+
+    biogeochemistry = PISCES(; 
+        grid, 
+        mixed_layer_depth = -100.0,
+        mean_mixed_layer_vertical_diffusivity = ConstantField(1e-2), # this is by default computed now
+        surface_photosynthetically_active_radiation = PAR⁰,
+        carbon_chemistry,
+        )
+
+    CO₂_flux = CarbonDioxideGasExchangeBoundaryCondition(; carbon_chemistry)
+    O₂_flux = OxygenGasExchangeBoundaryCondition()
+
+    @info "Setting up the model..."
+    model = NonhydrostaticModel(; 
+        grid,
+        advection = WENO(),
+        buoyancy,
+        coriolis,
+        clock,
+        closure = ScalarDiffusivity(VerticallyImplicitTimeDiscretization(), κ = κ_field),
+        biogeochemistry,
+        background_fields = (T = T_field, v = V_field),
+        )
+        #boundary_conditions = (DIC = FieldBoundaryConditions(top = CO₂_flux), O₂ = FieldBoundaryConditions(top = O₂_flux)))
+
+    @info "Setting initial values..."
+
+    # Although not required, we also set the random seed to ensure reproducibility of the results.
+    Random.seed!(11)
+
+    Ξ(z) = randn() * z / grid.Lz * (z / grid.Lz + 1)
+
+    Ũ = 1e-3
+    uᵢ(x, y, z) = Ũ * Ξ(z)
+    vᵢ(x, y, z) = Ũ * Ξ(z)
+
+    set!(
+        model, u = uᵢ, v=vᵢ, P = 0.1, PChl = 0.025, PFe = 0.005,
+        D = 0.01, DChl = 0.003, DFe = 0.0006, DSi = 0.004,
+        Z = 0.06, M = 0.5,
+        DOC = 0.5,
+        POC = 5.4, SFe = 0.34,
+        GOC = 8.2, BFe = 0.5, PSi = 0.04, CaCO₃ = 10^-10,
+        NO₃ = 10, NH₄ = 0.1, PO₄ = 5.0, Fe = 0.6, Si = 8.6,
+        DIC = 2205, Alk = 2560, O₂ = 317, T=20, S = 35,
+    )
+
+    Δx = minimum_xspacing(grid, Center(), Center(), Center())
+    Δy = minimum_yspacing(grid, Center(), Center(), Center())
+    Δz = minimum_zspacing(grid, Center(), Center(), Center())
+
+    Δt₀ = 0.75 * min(Δx, Δy, Δz) / V_func(0, 0, 0, 0, background_state_parameters)
+
+    simulation = Simulation(model, Δt = Δt₀, stop_time = duration)
+
+    # Adapt the time step while keeping the CFL number fixed.
+    wizard = TimeStepWizard(cfl = 0.75, diffusive_cfl = 0.75, max_Δt = 30minutes)
+    simulation.callbacks[:wizard] = Callback(wizard, IterationInterval(5))
+
+    progress_message(sim) = @printf(
+        "Iteration: %04d, time: %s, Δt: %s, wall time: %s\n",
+        iteration(sim),
+        prettytime(sim),
+        prettytime(sim.Δt),
+        prettytime(sim.run_wall_time)
+    )
+
+    add_callback!(simulation, progress_message, IterationInterval(1))
+
+    if enable_io
+        # Here, we add some diagnostics to calculate and output.
+        u, v, w = model.velocities # unpack velocity `Field`s
+
+        # and also calculate the vertical vorticity.
+        ζ = Field(∂x(v) - ∂y(u))
+
+        #add_callback!(simulation, update_temperature!, IterationInterval(1))
+        # Periodically save the tracers, velocities and vorticity to a file.
+        simulation.output_writers[:fields] = JLD2Writer(
+            model, merge(model.tracers, (; u, v, w, ζ));
+            schedule = TimeInterval(1hour),
+            filename = "$(filename)_bgc.jld2",
+            overwrite_existing = true,
+        )
+    end
+    # ## Run!
+    # We are ready to run the simulation
+    run!(simulation)
 end
 end
