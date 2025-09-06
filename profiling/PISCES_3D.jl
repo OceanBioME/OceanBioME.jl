@@ -71,9 +71,9 @@ vertical_diffusivity = VerticalScalarDiffusivity(ν = νᵥ, κ = κᵥ)
 
 @inline PAR⁰(x, y, t) = 20.0
 
-MLD = -100.0
+const MLD = -100.0
 
-@inline κₜ(x, y, z, t) = (1e-2 * (1 + tanh((z - MLD) / 10)) / 2 + 1e-4)
+@inline κₜ(x, y, z, t) = (1e-2 * (1 + tanh((z - MLD) / 10.0)) / 2 + 1e-4)
 
 κ_field = FunctionField{Center, Center, Center}(κₜ, grid; clock)
 
