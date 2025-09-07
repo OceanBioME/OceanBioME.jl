@@ -43,22 +43,27 @@ Adapt.adapt_structure(to, zoo::MicroAndMeso) =
                  adapt(to, zoo.phosphate_half_saturation_for_bacterial_activity),
                  adapt(to, zoo.iron_half_saturation_for_bacterial_activity))
 
-Adapt.adapt_structure(to, zoo::QualityDependantZooplankton) = begin
-    FT = typeof(adapt(to, zoo.temperature_sensetivity))
-    QualityDependantZooplankton(FT;
-                                temperature_sensetivity = adapt(to, zoo.temperature_sensetivity),
-                                maximum_grazing_rate = adapt(to, zoo.maximum_grazing_rate),
-                                food_preferences = adapt(to, zoo.food_preferences), # the only one that isn't already bits
-                                food_threshold_concentration = adapt(to, zoo.food_threshold_concentration),
-                                specific_food_thresehold_concentration = adapt(to, zoo.specific_food_thresehold_concentration),
-                                grazing_half_saturation = adapt(to, zoo.grazing_half_saturation),
-                                maximum_flux_feeding_rate = adapt(to, zoo.maximum_flux_feeding_rate),
-                                iron_ratio = adapt(to, zoo.iron_ratio),
-                                minimum_growth_efficiency = adapt(to, zoo.minimum_growth_efficiency),
-                                non_assililated_fraction = adapt(to, zoo.non_assililated_fraction),
-                                mortality_half_saturation = adapt(to, zoo.mortality_half_saturation),
-                                quadratic_mortality = adapt(to, zoo.quadratic_mortality),
-                                linear_mortality = adapt(to, zoo.linear_mortality),
-                                dissolved_excretion_fraction = adapt(to, zoo.dissolved_excretion_fraction),
-                                undissolved_calcite_fraction = adapt(to, zoo.undissolved_calcite_fraction))
+function Adapt.adapt_structure(to, zoo::QualityDependantZooplankton{FT}) where FT
+    food_preferences = adapt(to, zoo.food_preferences)
+
+    FP = typeof(food_preferences)
+
+    return QualityDependantZooplankton{FT, FP}(
+               adapt(to, zoo.temperature_sensetivity),
+               adapt(to, zoo.maximum_grazing_rate),
+               food_preferences,                      
+               adapt(to, zoo.food_threshold_concentration),
+               adapt(to, zoo.specific_food_thresehold_concentration),
+               adapt(to, zoo.grazing_half_saturation),
+               adapt(to, zoo.maximum_flux_feeding_rate),
+               adapt(to, zoo.iron_ratio),
+               adapt(to, zoo.minimum_growth_efficiency),
+               adapt(to, zoo.non_assililated_fraction),
+               adapt(to, zoo.mortality_half_saturation),
+               adapt(to, zoo.quadratic_mortality),
+               adapt(to, zoo.linear_mortality),
+               adapt(to, zoo.dissolved_excretion_fraction),
+               adapt(to, zoo.undissolved_calcite_fraction)
+           )
 end
+
