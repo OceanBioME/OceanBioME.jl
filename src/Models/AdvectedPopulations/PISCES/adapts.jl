@@ -43,6 +43,7 @@ Adapt.adapt_structure(to, zoo::MicroAndMeso) =
                  adapt(to, zoo.phosphate_half_saturation_for_bacterial_activity),
                  adapt(to, zoo.iron_half_saturation_for_bacterial_activity))
 
+<<<<<<< HEAD
 Adapt.adapt_structure(to, zoo::QualityDependantZooplankton) =
     QualityDependantZooplankton(adapt(to, zoo.temperature_sensetivity),
                                 adapt(to, zoo.maximum_grazing_rate),
@@ -59,3 +60,29 @@ Adapt.adapt_structure(to, zoo::QualityDependantZooplankton) =
                                 adapt(to, zoo.linear_mortality),
                                 adapt(to, zoo.dissolved_excretion_fraction),
                                 adapt(to, zoo.undissolved_calcite_fraction))
+=======
+function Adapt.adapt_structure(to, zoo::QualityDependantZooplankton{FT}) where FT
+    food_preferences = adapt(to, zoo.food_preferences)
+
+    FP = typeof(food_preferences)
+
+    return QualityDependantZooplankton{FT, FP}(
+               adapt(to, zoo.temperature_sensetivity),
+               adapt(to, zoo.maximum_grazing_rate),
+               food_preferences,                      
+               adapt(to, zoo.food_threshold_concentration),
+               adapt(to, zoo.specific_food_thresehold_concentration),
+               adapt(to, zoo.grazing_half_saturation),
+               adapt(to, zoo.maximum_flux_feeding_rate),
+               adapt(to, zoo.iron_ratio),
+               adapt(to, zoo.minimum_growth_efficiency),
+               adapt(to, zoo.non_assililated_fraction),
+               adapt(to, zoo.mortality_half_saturation),
+               adapt(to, zoo.quadratic_mortality),
+               adapt(to, zoo.linear_mortality),
+               adapt(to, zoo.dissolved_excretion_fraction),
+               adapt(to, zoo.undissolved_calcite_fraction)
+           )
+end
+
+>>>>>>> a020f8e4 (refactor to avoid the `map` in zooplankton constructor)
