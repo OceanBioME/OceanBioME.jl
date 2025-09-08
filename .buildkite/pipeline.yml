@@ -46,7 +46,6 @@ steps:
     
   - label: ":docusaurus: Documentation"
     env:
-      CUDA_VISIBLE_DEVICES: "-1"
       JULIA_DEBUG: "Documenter"
     command: |
       cd "$OCEANBIOME_DIR"
