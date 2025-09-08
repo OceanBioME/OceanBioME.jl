@@ -6,18 +6,20 @@ env:
   JULIA_DEPOT_PATH: "$BUILDKITE_HOME/.julia-oceananigans"
   JULIA_PKG_SERVER_REGISTRY_PREFERENCE: eager
   OCEANBIOME_DIR: "$HOME/Oceananigans.jl-$BUILDKITE_BUILD_NUMBER"
+  JULIAUP: /var/lib/buildkite-agent/.juliaup/bin/juliaup
+  JULIA: /var/lib/buildkite-agent/.juliaup/bin/julia
 
 steps:
   - label: ":building_construction: initialize environment"
     key: "init"
     command: |
-      juliaup add $JULIA_VERSION
+      $JULIAUP add $JULIA_VERSION
 
       mkdir -p "$OCEANBIOME_DIR"
       rsync -a . "$OCEANBIOME_DIR/"
       cd "$OCEANBIOME_DIR"
 
-      julia +$JULIA_VERSION -O0 --color=yes --project -e 'using Pkg; Pkg.test()'
+      $JULIA +$JULIA_VERSION -O0 --color=yes --project -e 'using Pkg; Pkg.test()'
     notify:
       - github_commit_status:
           context: "Initialise environment"
@@ -25,7 +27,7 @@ steps:
   - label: ":speedboat: GPU unit tests"
     commands: |
       cd "$OCEANBIOME_DIR"
-      julia +$JULIA_VERSION -O0 --color=yes --project -e 'using Pkg; Pkg.test()'
+      $JULIA +$JULIA_VERSION -O0 --color=yes --project -e 'using Pkg; Pkg.test()'
     depends_on: "init"
     notify:
       - github_commit_status:
@@ -36,7 +38,7 @@ steps:
      CUDA_VISIBLE_DEVICES: "-1"
     commands: |
       cd "$OCEANBIOME_DIR"
-      julia +$JULIA_VERSION -O0 --color=yes --project -e 'using Pkg; Pkg.test()'
+      $JULIA +$JULIA_VERSION -O0 --color=yes --project -e 'using Pkg; Pkg.test()'
     depends_on: "init"
     notify:
       - github_commit_status:
@@ -48,9 +50,9 @@ steps:
       JULIA_DEBUG: "Documenter"
     command: |
       cd "$OCEANBIOME_DIR"
-      julia +$JULIA_VERSION --color=yes --project=docs/ -e \
+      $JULIA +$JULIA_VERSION --color=yes --project=docs/ -e \
         'using Pkg; Pkg.develop(PackageSpec(path=pwd())); Pkg.instantiate()'
-      julia +$JULIA_VERSION --color=yes --project=docs/ docs/make.jl
+      $JULIA +$JULIA_VERSION --color=yes --project=docs/ docs/make.jl
     depends_on: "init"
     notify:
       - github_commit_status:
