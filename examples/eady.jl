@@ -10,15 +10,13 @@
 # First we ensure we have the required dependencies installed
 # ```julia
 # using Pkg
-# pkg "add OceanBioME, Oceananigans, CairoMakie, CUDA"
+# pkg "add OceanBioME, Oceananigans, CairoMakie"
 # ```
-
-# We need to install CUDA to run the model on GPU
 
 # ## Model setup
 # We load the required packages. Although not required, we also set the random seed to ensure
 # reproducibility of the results.
-using OceanBioME, Oceananigans, Printf, CUDA
+using OceanBioME, Oceananigans, Printf
 using Oceananigans.Units
 
 using Random
