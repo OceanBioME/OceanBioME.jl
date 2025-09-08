@@ -19,7 +19,7 @@ steps:
       rsync -a . "$OCEANBIOME_DIR/"
       cd "$OCEANBIOME_DIR"
 
-      $JULIA +$JULIA_VERSION -O0 --color=yes --project -e 'using Pkg; Pkg.test()'
+      $JULIA +$JULIA_VERSION -O0 --color=yes --project -e 'using Pkg; Pkg.instantiate()'
     notify:
       - github_commit_status:
           context: "Initialise environment"
