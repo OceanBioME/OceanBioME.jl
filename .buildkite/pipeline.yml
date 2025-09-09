@@ -51,7 +51,7 @@ steps:
       cd "$OCEANBIOME_DIR"
       $JULIA +$JULIA_VERSION --color=yes --project=docs/ -e \
         'using Pkg; Pkg.develop(PackageSpec(path=pwd())); Pkg.instantiate()'
-      $JULIA +$JULIA_VERSION --color=yes --project=docs/ docs/make.jl
+      $JULIA +$JULIA_VERSION --color=yes --threads=4 --project=docs/ docs/make.jl
     depends_on: "init"
     notify:
       - github_commit_status:
