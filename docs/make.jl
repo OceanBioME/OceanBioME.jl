@@ -32,7 +32,7 @@ example_scripts = [ filename * ".jl" for (title, filename) in examples ]
 
 replace_silly_warning(content) = replace(content, r"┌ Warning:.*\s+└ @ JLD2 ~/\.julia/packages/JLD2/.*/reconstructing_datatypes\.jl.*\n" => "")
 
-for example in example_scripts
+Threads.@threads for example in example_scripts
     example_filepath = joinpath(EXAMPLES_DIR, example)
 
     withenv("JULIA_DEBUG" => "Literate") do
