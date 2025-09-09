@@ -7,11 +7,43 @@ using Base.Filesystem
 
 
 function timed_run(::GPU, case_func)
-    CUDA.@timed case_func
+    CUDA.@timed case_func()
 end
 
 function timed_run(::CPU, case_func)
-    @timed case_func
+    @timed case_func()
+end
+
+mutable struct GPUMemoryUsageStats
+    max_gpu_bytes::Union{Int,Nothing}
+    min_gpu_bytes::Union{Int,Nothing}
+end
+
+"""
+    map_or_else(opt::Union{T,Nothing}, mapf, else_value)
+
+If option coontains a value applies mapf and returns the result, otherwise
+returns else_value.
+"""
+function map_or_else(opt::Union{T,Nothing}, mapf, else_value) where {T}
+    isnothing(opt) ? else_value : mapf(opt)
+end
+
+function update!(stats::GPUMemoryUsageStats, ::GPU)
+    # Print info about GPU memory usage
+    used_mem = CUDA.used_memory()
+    cached_mem = CUDA.cached_memory()
+    println(
+        "GPU memory usage: $(Base.format_bytes(used_mem)) Pool size: $(Base.format_bytes(cached_mem))",
+    )
+
+    stats.max_gpu_bytes = map_or_else(stats.max_gpu_bytes, v -> max(v, used_mem), used_mem)
+    stats.min_gpu_bytes = map_or_else(stats.min_gpu_bytes, v -> min(v, used_mem), used_mem)
+
+end
+
+function update!(stats::GPUMemoryUsageStats, ::CPU)
+    # No-op for CPU
 end
 
 
@@ -22,6 +54,7 @@ function run_benchmark_case(
     n_particles::Int,
     runlength_scale::Float64,
 )
+
     @info "Running benchmark case with grid size: $grid_size and $n_particles particles end with IO: $enable_io"
     filename = "SCALING_RUN_GPU"
     @info "Using output name: $filename"
@@ -59,6 +92,17 @@ function run_benchmark_case(
         filename,
     )
 
+    gpu_mem_bounds = GPUMemoryUsageStats(nothing, nothing)
+
+    function hook()
+        update!(gpu_mem_bounds, backend)
+    end
+
+    GC.gc(true)
+    GC.gc(true)
+    GC.gc(true)
+    CUDA.reclaim()
+
     # The selection of the timing macro below is not pretty...
     # Refactor this to use proper dispatch
     @info "Running the case"
@@ -72,17 +116,9 @@ function run_benchmark_case(
             fast_kill = false,
             runlength_scale,
             filename,
+            progress_hook = hook,
         ),
     )
-
-
-    # run_data = if isa(backend, CPU)
-    #     @timed Profiling.Cases.big_LOBSTER(;backend, grid_size, n_particles, enable_io, fast_kill = false, runlength_scale, filename)
-    # elseif isa(backend, GPU)
-    #     CUDA.@timed Profiling.Cases.big_LOBSTER(;backend, grid_size, n_particles, enable_io, fast_kill = false, runlength_scale, filename)
-    # else
-    #     error("Unknown backend of type: $(typeof(backend))")
-    # end
 
     if enable_io
         # Remove the output if it exists
@@ -90,7 +126,11 @@ function run_benchmark_case(
         rm("$(filename)_particles.jld2")
     end
 
-    return run_data
+    return (;
+        run_data...,
+        gpu_max_bytes = gpu_mem_bounds.max_gpu_bytes,
+        gpu_min_bytes = gpu_mem_bounds.min_gpu_bytes,
+    )
 end
 
 
@@ -163,6 +203,10 @@ function repackge_run_data(::GPU, run_data)
         gpu_bytes_allocated = run_data.gpu_bytes,
         gpu_memtime = run_data.gpu_memtime,
 
+        # Data from the hook
+        gpu_max_bytes = run_data.gpu_max_bytes,
+        gpu_min_bytes = run_data.gpu_min_bytes,
+
         # CPU Garbage collector data
         gc_bytes_allocated = run_data.cpu_gcstats.allocd,
         gc_number_of_pauses = run_data.cpu_gcstats.pause,
@@ -213,33 +257,43 @@ function repackge_run_data(run_data, run_parameters)
 end
 
 
-backend = CPU()
+backend = GPU()
 
 # Changes the grid size by the factors of 2
 cases_grid = [
-# (grid_size = (16, 16, 8), n_particles = 5, enable_io = true, runlength_scale = 1.0),
-# (grid_size = (16, 32, 8), n_particles = 5, enable_io = true, runlength_scale = 1.0),
-    (grid_size = (32, 32, 8), n_particles = 5, enable_io = true, runlength_scale = 1.0), # Nominal Case
-# (grid_size = (32, 32, 16), n_particles = 5, enable_io = true, runlength_scale = 1.0),
-# (grid_size = (64, 32, 16), n_particles = 5, enable_io = true, runlength_scale = 1.0),
-# (grid_size = (64, 64, 16), n_particles = 5, enable_io = true, runlength_scale = 1.0),
-# (grid_size = (64, 64, 32), n_particles = 5, enable_io = true, runlength_scale = 1.0),
-# (grid_size = (128, 64, 32), n_particles = 5, enable_io = true, runlength_scale = 1.0),
-# (grid_size = (128, 128, 32), n_particles = 5, enable_io = true, runlength_scale = 1.0),
-# (grid_size = (128, 128, 64), n_particles = 5, enable_io = true, runlength_scale = 1.0),
-# (grid_size = (256, 128, 64), n_particles = 5, enable_io = true, runlength_scale = 1.0),
-# (grid_size = (256, 256, 64), n_particles = 5, enable_io = true, runlength_scale = 1.0),
-# (grid_size = (256, 256, 128), n_particles = 5, enable_io = true, runlength_scale = 1.0),
+    (grid_size = (16, 16, 8), n_particles = 5, enable_io = false, runlength_scale = 1.0),
+    (grid_size = (16, 32, 8), n_particles = 5, enable_io = false, runlength_scale = 1.0),
+    (grid_size = (32, 32, 8), n_particles = 5, enable_io = false, runlength_scale = 1.0), # Nominal Case
+    (grid_size = (32, 32, 16), n_particles = 5, enable_io = false, runlength_scale = 1.0),
+    (grid_size = (64, 32, 16), n_particles = 5, enable_io = false, runlength_scale = 1.0),
+    (grid_size = (64, 64, 16), n_particles = 5, enable_io = false, runlength_scale = 1.0),
+    (grid_size = (64, 64, 32), n_particles = 5, enable_io = false, runlength_scale = 1.0),
+    (grid_size = (128, 64, 32), n_particles = 5, enable_io = false, runlength_scale = 1.0),
+    (grid_size = (128, 128, 32), n_particles = 5, enable_io = false, runlength_scale = 1.0),
+    (grid_size = (128, 128, 64), n_particles = 5, enable_io = false, runlength_scale = 1.0),
+    (grid_size = (256, 128, 64), n_particles = 5, enable_io = false, runlength_scale = 1.0),
+    (grid_size = (256, 256, 64), n_particles = 5, enable_io = false, runlength_scale = 1.0),
+    (
+        grid_size = (256, 256, 128),
+        n_particles = 5,
+        enable_io = false,
+        runlength_scale = 1.0,
+    ),
 ]
 
 df = DataFrame()
 for case in cases_grid
     run_data = run_benchmark_case(backend; case...)
 
+    println("Run data: $run_data")
     data_to_save =
         (; repackage_run_parameters(case)..., repackge_run_data(backend, run_data)...)
 
     push!(df, data_to_save)
     # Override each timestep to preserve the data in case of faliure !
-    CSV.write("scaling_run_gpu_withio.csv", df)
+    CSV.write(
+        "scaling_run_gpu_withio.csv",
+        df;
+        transform = (col, val) -> something(val, missing),
+    )
 end

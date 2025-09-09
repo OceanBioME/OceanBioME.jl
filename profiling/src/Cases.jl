@@ -107,6 +107,18 @@ Stripped of any plotting and with option for fast exit for pre-compilation.
 This script is intended as a profiling example for the LOBSTER biogeochemical model
 and how it can be used with active particles to model the growth of sugar kelp.
 It is intended as a typical use example for the OceanBioME.jl package.
+
+# Arguments
+- `backend`: The computational backend to use (e.g., `CPU()` or `GPU()`).
+- `grid_size`: A tuple specifying the number of grid points in the x, y, and z directions.
+- `n_particles`: The number of kelp particle bundles to simulate.
+- `fast_kill`: If `true`, the simulation runs for a very short duration (0.1 day) for quick pre-compilation.
+- `enable_io`: If `true`, the simulation outputs data to JLD2 files.
+- `runlength_scale`: A scaling factor for the run length of the simulation.
+- `filename`: The base name for output files.
+- `progress_hook`: A function to call for progress updates during the simulation. (apparently
+  progress function is not 'typed' into symulation so we can change this without triggering
+    lengthy recompilation of the Oceananigans simulation)
 """
 function big_LOBSTER(;
     backend = CPU(),
@@ -116,6 +128,7 @@ function big_LOBSTER(;
     enable_io :: Bool = true,
     runlength_scale :: Float64 = 1.0,
     filename :: AbstractString = "LOBSTER",
+    progress_hook = () -> nothing
     )
 
     duration = fast_kill ? 0.1day : 10days * runlength_scale # Duration of the simulation
@@ -238,7 +251,8 @@ function big_LOBSTER(;
     nothing #hide
 
     # Create a progress message.
-    progress(sim) = @printf(
+    function progress(sim)
+        @printf(
         "i: % 6d, sim time: % 10s, wall time: % 10s, Δt: % 10s, CFL: %.2e\n",
         sim.model.clock.iteration,
         prettytime(sim.model.clock.time),
@@ -246,6 +260,8 @@ function big_LOBSTER(;
         prettytime(sim.Δt),
         AdvectiveCFL(sim.Δt)(sim.model)
     )
+    progress_hook()
+    end
 
     simulation.callbacks[:progress] = Callback(progress, IterationInterval(20))
 
