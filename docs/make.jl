@@ -1,4 +1,4 @@
-using Documenter, DocumenterCitations, Literate, Distributed
+using Documenter, DocumenterCitations, Literate
 
 using OceanBioME
 using OceanBioME: SugarKelp, LOBSTER, NutrientPhytoplanktonZooplanktonDetritus, SimpleMultiGSediment, InstantRemineralisationSediment
@@ -32,12 +32,10 @@ example_scripts = [ filename * ".jl" for (title, filename) in examples ]
 
 replace_silly_warning(content) = replace(content, r"┌ Warning:.*\s+└ @ JLD2 ~/\..*/packages/JLD2/.*/reconstructing_datatypes\.jl.*\n" => "")
 
-example_tasks = []
-
 for example in example_scripts
     example_filepath = joinpath(EXAMPLES_DIR, example)
 
-    task = @spawnat :any withenv("JULIA_DEBUG" => "Literate") do
+    withenv("JULIA_DEBUG" => "Literate") do
         Literate.markdown(example_filepath, OUTPUT_DIR; 
                           flavor = Literate.DocumenterFlavor(),
                           repo_root_url = "https://oceanbiome.github.io/OceanBioME.jl",
@@ -46,11 +44,7 @@ for example in example_scripts
 
         return true
     end
-
-    push!(example_tasks, task)
 end
-
-fetch.(example_tasks)
 
 example_pages = [ title => "generated/$(filename).md" for (title, filename) in examples ]
 
