@@ -52,7 +52,7 @@ steps:
       JULIA_DEBUG: "Literate"
     command: |
       cd "$OCEANBIOME_DIR"
-      $JULIA +$JULIA_VERSION --color=yes --project=docs/ docs/make_example.jl {{matrix.example_path}}
+      $JULIA +$JULIA_VERSION --color=yes --project=docs/ docs/make_examples.jl  {{matrix.example_path}}
     matrix:
       setup:
         example_path:
