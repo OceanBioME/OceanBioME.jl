@@ -1,4 +1,4 @@
-using Documenter, DocumenterCitations, Literate
+using Documenter, DocumenterCitations, Literate, Distributed
 
 using OceanBioME
 using OceanBioME: SugarKelp, LOBSTER, NutrientPhytoplanktonZooplanktonDetritus, SimpleMultiGSediment, InstantRemineralisationSediment
@@ -37,7 +37,7 @@ example_tasks = []
 for example in example_scripts
     example_filepath = joinpath(EXAMPLES_DIR, example)
 
-    task = @async withenv("JULIA_DEBUG" => "Literate") do
+    task = @spawnat :any withenv("JULIA_DEBUG" => "Literate") do
         Literate.markdown(example_filepath, OUTPUT_DIR; 
                           flavor = Literate.DocumenterFlavor(),
                           repo_root_url = "https://oceanbiome.github.io/OceanBioME.jl",
