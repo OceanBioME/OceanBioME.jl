@@ -72,7 +72,7 @@ end
 
 
 """
-    repackge_run_data(run_data, runlength_scale)
+    repackage_run_data(run_data, runlength_scale)
 
 Takes the row run_data collected via Base.@timed macro and flattens it into a
 single NamedTuple with more explicit names for each field. In addition it adds
@@ -82,7 +82,7 @@ extra information that we may want to preserve.
 - We ignore 'lock_conflicts' number in the run_data at the moment.
 - We use entries that were added in Julia 1.11!
 """
-function repackge_run_data(run_data, run_parameters)
+function repackage_run_data(run_data, run_parameters)
     (;
         # Run parameters
         grid_cells = prod(run_parameters.grid_size),
@@ -112,7 +112,7 @@ function repackge_run_data(run_data, run_parameters)
     )
 end
 
-function repackge_PISCES_run_data(run_data, run_parameters)
+function repackage_PISCES_run_data(run_data, run_parameters)
     (;
         # Run parameters
         grid_cells = prod(run_parameters.grid_size),
@@ -180,14 +180,14 @@ cases_PISCES_grid = [
 df = DataFrame()
 for case in cases_grid
     run_data = run_benchmark_case(backend; case...)
-    push!(df, repackge_run_data(run_data, case))
+    push!(df, repackage_run_data(run_data, case))
     # Override each timestep to preserve the data in case of faliure !
     CSV.write("scaling_run_gpu_withio.csv", df)
 end
 
 for case in cases_PISCES_grid
     run_data = run_PISCES_benchmark_case(backend; case...)
-    push!(df, repackge_PISCES_run_data(run_data, case))
+    push!(df, repackage_PISCES_run_data(run_data, case))
     # Override each timestep to preserve the data in case of faliure !
     CSV.write("scaling_PISCES_run_gpu_withio.csv", df)
 end
