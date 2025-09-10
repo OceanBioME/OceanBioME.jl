@@ -50,7 +50,7 @@ for example in example_scripts
     push!(example_tasks, task)
 end
 
-fetch!(example_tasks)
+fetch.(example_tasks)
 
 example_pages = [ title => "generated/$(filename).md" for (title, filename) in examples ]
 
