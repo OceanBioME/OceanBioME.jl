@@ -46,7 +46,7 @@ steps:
       - github_commit_status:
           context: "CPU tests"
 
-  - label: ":docusaurus: Building examples"
+  - label: ":books: Building examples"
     key: "examples"
     env:
       JULIA_DEBUG: "Literate"
@@ -83,7 +83,7 @@ steps:
   - label: ":skeleton-dance: clean up environment"
     command: 
       - "test -d $OCEANBIOME_DIR && du -hs $OCEANBIOME_DIR || true"
-      #- "test -d $OCEANBIOME_DIR && rm -rf $OCEANBIOME_DIR || true"
+      - "test -d $OCEANBIOME_DIR && rm -rf $OCEANBIOME_DIR || true"
     notify:
       - github_commit_status:
           context: "Clean up"

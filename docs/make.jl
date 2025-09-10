@@ -136,7 +136,9 @@ makedocs(sitename = "OceanBioME.jl",
          plugins = [bib],
          doctest = false,#true,
          clean = true,
-         checkdocs = :exports)
+         checkdocs = :exports,
+         size_threshold_warn = 200 * 2^10,
+         size_threshold = 800 * 2^10) 
 
 @info "Clean up temporary .jld2/.nc files created by doctests..."
 
