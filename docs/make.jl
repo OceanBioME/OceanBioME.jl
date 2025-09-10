@@ -28,24 +28,6 @@ examples = [
     "Data assimilation" => "data_assimilation"
 ]
 
-example_scripts = [ filename * ".jl" for (title, filename) in examples ]
-
-replace_silly_warning(content) = replace(content, r"┌ Warning:.*\s+└ @ JLD2 ~/\..*/packages/JLD2/.*/reconstructing_datatypes\.jl.*\n" => "")
-
-for example in example_scripts
-    example_filepath = joinpath(EXAMPLES_DIR, example)
-
-    withenv("JULIA_DEBUG" => "Literate") do
-        Literate.markdown(example_filepath, OUTPUT_DIR; 
-                          flavor = Literate.DocumenterFlavor(),
-                          repo_root_url = "https://oceanbiome.github.io/OceanBioME.jl",
-                          execute = true,
-                          postprocess = replace_silly_warning)
-
-        return true
-    end
-end
-
 example_pages = [ title => "generated/$(filename).md" for (title, filename) in examples ]
 
 # create parameter pages

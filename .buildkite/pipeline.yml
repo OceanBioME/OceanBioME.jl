@@ -20,6 +20,8 @@ steps:
       cd "$OCEANBIOME_DIR"
 
       $JULIA +$JULIA_VERSION -O0 --color=yes --project -e 'using Pkg; Pkg.instantiate()'
+      $JULIA +$JULIA_VERSION --color=yes --project=docs/ -e \
+        'using Pkg; Pkg.develop(PackageSpec(path=pwd())); Pkg.instantiate()'
     notify:
       - github_commit_status:
           context: "Initialise environment"
@@ -43,16 +45,34 @@ steps:
     notify:
       - github_commit_status:
           context: "CPU tests"
+
+  - label: ":docusaurus: Building examples"
+    key: "examples"
+    env:
+      JULIA_DEBUG: "Literate"
+    command: |
+      cd "$OCEANBIOME_DIR"
+      $JULIA +$JULIA_VERSION --color=yes --project=docs/ docs/make_example.jl {{matrix.example_path}}
+    matrix:
+      setup:
+        example_path:
+          - "box"
+          - "column"
+          - "eady"
+          - "data_forced"
+          - "kelp"
+          - "data_assimilation"
+    depends_on: "init"
     
   - label: ":docusaurus: Documentation"
     env:
       JULIA_DEBUG: "Documenter"
     command: |
       cd "$OCEANBIOME_DIR"
-      $JULIA +$JULIA_VERSION --color=yes --project=docs/ -e \
-        'using Pkg; Pkg.develop(PackageSpec(path=pwd())); Pkg.instantiate()'
       $JULIA +$JULIA_VERSION --color=yes --project=docs/ docs/make.jl
-    depends_on: "init"
+    depends_on: 
+      - "init"
+      - "examples"
     notify:
       - github_commit_status:
           context: "Documentation"
