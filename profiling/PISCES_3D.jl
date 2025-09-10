@@ -14,10 +14,10 @@ const year = years = 365days
 nothing #hide
 
 # Set the architecture to use.
-arch = CPU()
+#arch = CPU()
 # to use an NVIDIA GPU use the follwing lines:
-# using CUDA
-# arch = GPU()
+using CUDA
+arch = GPU()
 
 plot_results = true # Set to `false` to not plot the results at the end of the simulation.
 
