@@ -23,7 +23,6 @@ examples = [
     "Box model" => "box",
     "Simple column model" => "column",
     "Baroclinic instability" => "eady",
-    "Data forced column model" => "data_forced",
     "Model with particles (kelp) interacting with the biogeochemistry" => "kelp",
     "Data assimilation" => "data_assimilation"
 ]
@@ -125,7 +124,9 @@ format = Documenter.HTML(
     prettyurls = get(ENV, "CI", nothing) == "true",
     canonical = "https://OceanBioME.github.io/OceanBioME/stable/",
     mathengine = MathJax3(),
-    assets = String["assets/citations.css"]
+    assets = String["assets/citations.css"],
+    size_threshold_warn = 200 * 2^10,
+    size_threshold = 800 * 2^10
 )
 
 makedocs(sitename = "OceanBioME.jl",
@@ -136,9 +137,7 @@ makedocs(sitename = "OceanBioME.jl",
          plugins = [bib],
          doctest = false,#true,
          clean = true,
-         checkdocs = :exports,
-         size_threshold_warn = 200 * 2^10,
-         size_threshold = 800 * 2^10) 
+         checkdocs = :exports) 
 
 @info "Clean up temporary .jld2/.nc files created by doctests..."
 

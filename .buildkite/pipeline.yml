@@ -59,7 +59,6 @@ steps:
           - "box"
           - "column"
           - "eady"
-          - "data_forced"
           - "kelp"
           - "data_assimilation"
     depends_on: "init"
