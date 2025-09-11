@@ -34,6 +34,37 @@ struct QualityDependantZooplankton{FT, FP}
               dissolved_excretion_fraction :: FT #
               undissolved_calcite_fraction :: FT #
 
+    QualityDependantZooplankton{FT, FP}(temperature_sensetivity, 
+                                        maximum_grazing_rate,
+                                        food_preferences,
+                                        food_threshold_concentration, 
+                                        specific_food_thresehold_concentration,
+                                        grazing_half_saturation, 
+                                        maximum_flux_feeding_rate,
+                                        iron_ratio,
+                                        minimum_growth_efficiency, 
+                                        non_assililated_fraction,
+                                        mortality_half_saturation, 
+                                        quadratic_mortality, 
+                                        linear_mortality,
+                                        dissolved_excretion_fraction, 
+                                        undissolved_calcite_fraction) where {FT, FP} = 
+        new{FT, FP}(temperature_sensetivity, 
+                    maximum_grazing_rate,
+                    food_preferences,
+                    food_threshold_concentration, 
+                    specific_food_thresehold_concentration,
+                    grazing_half_saturation, 
+                    maximum_flux_feeding_rate,
+                    iron_ratio,
+                    minimum_growth_efficiency, 
+                    non_assililated_fraction,
+                    mortality_half_saturation, 
+                    quadratic_mortality, 
+                    linear_mortality,
+                    dissolved_excretion_fraction, 
+                    undissolved_calcite_fraction)
+
     function QualityDependantZooplankton(FT = Float64;
                                          temperature_sensetivity = 1.079, #
                                          maximum_grazing_rate, # 1 / s
