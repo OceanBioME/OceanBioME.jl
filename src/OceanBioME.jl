@@ -6,6 +6,7 @@ module OceanBioME
 
 # Biogeochemistry models and useful things
 export Biogeochemistry, LOBSTER, PISCES, NutrientPhytoplanktonZooplanktonDetritus, NPZD, redfield
+export CarbonateSystem, Oxygen, NitrateAmmoniaIron, VariableRedfieldDetritus
 export InstantRemineralisationSediment, SimpleMultiGSediment
 export DepthDependantSinkingSpeed, PrescribedLatitude, ModelLatitude, PISCESModel
 
