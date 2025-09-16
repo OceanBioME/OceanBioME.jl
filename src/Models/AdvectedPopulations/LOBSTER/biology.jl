@@ -1,3 +1,21 @@
+"""
+    PhytoZoo
+
+`PhytoZoo` defines the default living component for the `LOBSTER` biogeochemical model.
+It includes single `P`hytoplankton and `Z`ooplankton tracers which track the 
+nitrogen (mmol N / m³). 
+
+The phytoplankton evolve like `∂ₜP = (1-γ)μP - Gₚ - mP²` where μ is the growth rate (1/s)
+which is of the form `phytoplankton_maximum_growth_rate` × light limitation × nutrient 
+limitation. The `nutrient_limitation` term can be extended to account for different 
+`nutrient` formulations. The `(1-γ)` term is the assimilated fraction. `Gₚ` accounts for 
+grazing by the zooplankton, and `m` is the quadratic mortality rate (1/s/mmol N/m³).
+
+The zooplankton evolves like `∂ₜZ = αG - mZ² - μZ` where `G` is the total grazing of 
+phytoplankton and detritus with `α` the fraction assimilated, `m` is the quadratic 
+mortality rate, and `μ` is the linear mortality rate taken to represent the excretion 
+rate.
+""" 
 @kwdef struct PhytoZoo{FT}
             nitrate_half_saturation :: FT = 0.7       # mmol N/m³
             ammonia_half_saturation :: FT = 0.001     # mmol N/m³

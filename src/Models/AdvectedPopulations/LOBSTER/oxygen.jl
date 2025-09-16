@@ -1,3 +1,16 @@
+"""
+    Oxygen
+
+`Oxygen` defines the evolution of oxygen (`O₂`) concentration for the
+`LOBSTER` biogeochemical model. 
+
+Oxygen is produced by photosynthesis in phytoplankton, and removed by nitrate 
+production and oxidation of ammonia.
+
+Oxygen concentration is only one way coupled with the rest of the biogeochemistry
+and *does not* effect any other groups (e.g. low oxygen does *not* reduce
+zooplankton growth). To capture this effect a different `biology` could be defined.
+"""
 @kwdef struct Oxygen{FT}
     respiration_oxygen_nitrogen_ratio :: FT = 10.75  # mol O/molN
   nitrification_oxygen_nitrogen_ratio :: FT = 2.0    # mol O/molN

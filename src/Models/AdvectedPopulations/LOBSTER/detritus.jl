@@ -1,5 +1,27 @@
 using Oceananigans.Fields: ZeroField, ConstantField
 
+"""
+    TwoParticleAndDissolved
+
+`TwoParticleAndDissolved` defines the default living component for the `LOBSTER` 
+biogeochemical model. It includes small and large particulate organic matter 
+(`sPOM` and `bPOM`), and dissolved organic matter (`DOM`).
+
+`POM` is produced by "waste" from the biological system (e.g. excretion from
+zooplankton or phytoplankton death) and is portioned into `sPOM` and `bPOM` 
+as by the `small_solid_waste_fraction` parameter. `sPOM` is depleated by grazing
+by the `biology` (typically the zooplankton), and is remineralised. Calcite 
+produced by the `biology` (from phytoplankton mortality) is assumed to all end up
+in `bPOM`. 
+
+`DOM` is produced by the biological system (e.g. excretion) and the breakdown of 
+`POM`, and is broken down at a constant remineralisation rate. 
+
+Note: we refer to the particle classes as "small" and "large", but label them 
+`sPOM` and `bPOM` for "small" and "big" as using `lPOM` may be confused for
+labile `POM`. We agree that this is a clumsy solution and would be happy to find
+an alternative.
+""" 
 @kwdef struct TwoParticleAndDissolved{FT, SS, LS}
     remineralisation_inorganic_fraction :: FT = 0.0     # 
             small_reminerslisation_rate :: FT = 5.88e-7 # 1/s
@@ -23,7 +45,7 @@ required_biogeochemical_tracers(::TwoParticleAndDissolved) = (:sPOM, :bPOM, :DOM
     @inbounds fields.bPOM[i, j, k]
 
 @inline dissolved_organic_nitrogen(::TwoParticleAndDissolved, i, j, k, fields, auxiliary_fields) = 
-    @inbounds fields.DOM[i, k, k]
+    @inbounds fields.DOM[i, j, k]
 
 @inline small_particulate_carbon_concentration(detritus::TwoParticleAndDissolved, i, j, k, fields, auxiliary_fields) =
     @inbounds fields.sPOM[i, j, k] * detritus.redfield_ratio
@@ -34,8 +56,18 @@ required_biogeochemical_tracers(::TwoParticleAndDissolved) = (:sPOM, :bPOM, :DOM
 @inline dissolved_organic_carbon(detritus::TwoParticleAndDissolved, i, j, k, fields, auxiliary_fields) = 
     @inbounds fields.DOM[i, k, k] * detritus.redfield_ratio
 
-##### Variable redfield
+"""
+    VariableRedfieldDetritus
 
+`VariableRedfieldDetritus` defines builds on the default `TwoParticleAndDissolved`
+component for the `LOBSTER` biogeochemical model, splitting each component into 
+separate carbon and nitrogen compartements: `sPOC`, `bPOC`, `DOC`, `sPON`, `bPON`,
+and `DON`. 
+
+Standing alone this will produce identical behavior to the `TwoParticleAndDissolved`
+formulation, but if particles are injected with a different C:N ratio (for example)
+from the `SugarKelp` model, then the ratio will evolve differently.
+""" 
 @kwdef struct VariableRedfieldDetritus{FT, SS, LS}
     remineralisation_inorganic_fraction :: FT = 0.0     # 
             small_reminerslisation_rate :: FT = 5.88e-7 # 1/s
@@ -136,7 +168,7 @@ biogeochemical_drift_velocity(::LARGE_SINKING_OFF, ::LARGE_PARTICLES) = nothing
     bPOM = large_particulate_concentration(lobster.detritus, i, j, k, fields, auxiliary_fields)
     DOM  = dissolved_organic_nitrogen(lobster.detritus, i, j, k, fields, auxiliary_fields)
 
-    return α * (sμ * sPOM + bμ * bPOM) + dμ * DOM
+    return (α * (sμ * sPOM + bμ * bPOM) + dμ * DOM)
 end
 
 @inline function detritus_organic_nitrogen_waste(lobster::TWO_PARTICLE_SIZE_LOBSTER, i, j, k, fields, auxiliary_fields)
@@ -174,8 +206,18 @@ end
     return (1 - α) * (sμ * sPOC + bμ * bPOC)
 end
 
-##### convenience constructors
+"""
+    TwoParticleAndDissolved(grid; 
+                            small_particle_sinking_speed = 3.47e-5, # m/s
+                            large_particle_sinking_speed = 200/day, # m/s
+                            open_bottom = true,
+                            kwargs...)
 
+Construct an instance of `TwoParticleAndDissolved` specifying the 
+`small_particle_sinking_speed` and `large_particle_sinking_speed`. If `open_bottom`
+is true then particles sink out of the bottom, if false then the sinking velocity 
+smoothly goes to zero at the bottom to prevent the tracers leaving the domain.
+"""
 function TwoParticleAndDissolved(grid; 
                                  small_particle_sinking_speed = 3.47e-5, # m/s
                                  large_particle_sinking_speed = 200/day, # m/s
@@ -189,11 +231,23 @@ function TwoParticleAndDissolved(grid;
     return TwoParticleAndDissolved(;small_particle_sinking_velocity, large_particle_sinking_velocity, kwargs...)
 end
 
+"""
+    VariableRedfieldDetritus(grid; 
+                             small_particle_sinking_speed = 3.47e-5, # m/s
+                             large_particle_sinking_speed = 200/day, # m/s
+                             open_bottom = true,
+                             kwargs...)
+
+Construct an instance of `TwoParticleAndDissolved` specifying the 
+`small_particle_sinking_speed` and `large_particle_sinking_speed`. If `open_bottom`
+is true then particles sink out of the bottom, if false then the sinking velocity 
+smoothly goes to zero at the bottom to prevent the tracers leaving the domain.
+"""
 function VariableRedfieldDetritus(grid; 
-                          small_particle_sinking_speed = 3.47e-5, # m/s
-                          large_particle_sinking_speed = 200/day, # m/s
-                          open_bottom = true,
-                          kwargs...)
+                                  small_particle_sinking_speed = 3.47e-5, # m/s
+                                  large_particle_sinking_speed = 200/day, # m/s
+                                  open_bottom = true,
+                                  kwargs...)
 
 
     small_particle_sinking_velocity = setup_velocity_fields((; sPOM = small_particle_sinking_speed), grid, open_bottom; three_D = true).sPOM

@@ -26,13 +26,16 @@ export LOBSTER, CarbonateSystem, Oxygen, NitrateAmmoniaIron, VariableRedfieldDet
 
 using Oceananigans.Units
 
-using OceanBioME: setup_velocity_fields, Biogeochemistry
+using OceanBioME: setup_velocity_fields, Biogeochemistry, ScaleNegativeTracers
 using OceanBioME.Light: TwoBandPhotosyntheticallyActiveRadiation, default_surface_PAR
+
+import OceanBioME: conserved_tracers
 
 import Oceananigans.Biogeochemistry: AbstractBiogeochemistry, 
                                      required_biogeochemical_tracers,
                                      required_biogeochemical_auxiliary_fields,
                                      biogeochemical_drift_velocity
+                                     
 
 # default to "standard" LOBSTER
 @kwdef struct LOBSTER{NUT, BIO, DET, CAR, OXY} <: AbstractBiogeochemistry
@@ -134,7 +137,7 @@ function LOBSTER(grid;
     lobster = LOBSTER(; biology, nutrients, detritus, carbonate_system, oxygen)
 
     if scale_negatives
-        scaler = ScaleNegativeTracers(underlying_biogeochemistry, grid; invalid_fill_value)
+        scaler = ScaleNegativeTracers(lobster, grid; invalid_fill_value)
         if isnothing(modifiers)
             modifiers = scaler
         elseif modifiers isa Tuple
@@ -170,5 +173,6 @@ include("detritus.jl")
 include("carbonate_system.jl")
 include("oxygen.jl")
 include("show.jl")
+include("coupling_utils.jl")
 
 end # module
