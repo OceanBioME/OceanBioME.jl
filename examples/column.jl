@@ -46,10 +46,10 @@ grid = RectilinearGrid(size = (1, 1, 50), extent = (20meters, 20meters, 200meter
 # and scaling of negative tracers(see discussion in the [positivity preservation](@ref pos-preservation))
 # and then setup the Oceananigans model with the boundary condition for the DIC based on the air-sea CO₂ flux.
 
-biogeochemistry = LOBSTER(; grid,
-                            surface_photosynthetically_active_radiation = PAR⁰,
-                            carbonates = true,
-                            scale_negatives = true)
+biogeochemistry = LOBSTER(grid;
+                          surface_photosynthetically_active_radiation = PAR⁰,
+                          carbonates = true,
+                          scale_negatives = true)
 
 CO₂_flux = CarbonDioxideGasExchangeBoundaryCondition()
 
