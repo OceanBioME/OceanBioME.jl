@@ -116,10 +116,10 @@ u, v, w = model.velocities # unpack velocity `Field`s
 ζ = Field(∂x(v) - ∂y(u))
 
 # Periodically save the velocities and vorticity to a file.
-simulation.output_writers[:fields] = JLD2OutputWriter(model, merge(model.tracers, (; u, v, w, ζ));
-                                                      schedule = TimeInterval(2hours),
-                                                      filename = "eady_turbulence_bgc",
-                                                      overwrite_existing = true)
+simulation.output_writers[:fields] = JLD2Writer(model, merge(model.tracers, (; u, v, w, ζ));
+                                                schedule = TimeInterval(2hours),
+                                                filename = "eady_turbulence_bgc",
+                                                overwrite_existing = true)
 
 nothing #hide
 

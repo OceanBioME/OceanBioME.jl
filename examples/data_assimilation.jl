@@ -53,7 +53,7 @@ function run_box_simulation(initial_photosynthetic_slope,
                                                                  base_maximum_growth,
                                                                  nutrient_half_saturation,
                                                                  phyto_base_mortality_rate,
-                                                                 light_attenuation_model = PrescribedPhotosyntheticallyActiveRadiation(PAR))
+                                                                 light_attenuation = PrescribedPhotosyntheticallyActiveRadiation(PAR))
 
     model = BoxModel(; biogeochemistry, clock)
 
@@ -61,7 +61,7 @@ function run_box_simulation(initial_photosynthetic_slope,
 
     simulation = Simulation(model; Δt = 20minutes, stop_time = 3years, verbose = false)
 
-    simulation.output_writers[:fields] = JLD2OutputWriter(model, model.fields; filename = "box_calibration_$j.jld2", schedule = TimeInterval(8hours), overwrite_existing = true)
+    simulation.output_writers[:fields] = JLD2Writer(model, model.fields; filename = "box_calibration_$j.jld2", schedule = TimeInterval(8hours), overwrite_existing = true)
 
     @info "Running the model..."
     run!(simulation)

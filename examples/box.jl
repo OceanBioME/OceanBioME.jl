@@ -32,14 +32,14 @@ PAR = FunctionField{Center, Center, Center}(PAR_func, grid; clock)
 nothing #hide
 
 # Set up the model. Here, first specify the biogeochemical model, followed by initial conditions and the start and end times
-model = BoxModel(; biogeochemistry = LOBSTER(; grid, light_attenuation_model = PrescribedPhotosyntheticallyActiveRadiation(PAR)),
+model = BoxModel(; biogeochemistry = LOBSTER(; grid, light_attenuation = PrescribedPhotosyntheticallyActiveRadiation(PAR)),
                    clock)
 
 set!(model, NO₃ = 10.0, NH₄ = 0.1, P = 0.1, Z = 0.01)
 
 simulation = Simulation(model; Δt = 5minutes, stop_time = 5years)
 
-simulation.output_writers[:fields] = JLD2OutputWriter(model, model.fields; filename = "box.jld2", schedule = TimeInterval(10days), overwrite_existing = true)
+simulation.output_writers[:fields] = JLD2Writer(model, model.fields; filename = "box.jld2", schedule = TimeInterval(10days), overwrite_existing = true)
 
 prog(sim) = @info "$(prettytime(time(sim))) in $(prettytime(simulation.run_wall_time))"
 
