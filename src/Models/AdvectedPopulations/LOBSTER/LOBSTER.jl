@@ -38,12 +38,12 @@ import Oceananigans.Biogeochemistry: AbstractBiogeochemistry,
                                      
 
 # default to "standard" LOBSTER
-@kwdef struct LOBSTER{NUT, BIO, DET, CAR, OXY} <: AbstractBiogeochemistry
-         nutrients :: NUT = NitrateAmmonia() # NitrateAmmoniaIron()
-           biology :: BIO = PhytoZoo() # 
-          detritus :: DET = TwoParticleAndDissolved() # VariableRedfieldDetritus()
-  carbonate_system :: CAR = nothing # CarbonateSystem()
-            oxygen :: OXY = nothing
+struct LOBSTER{NUT, BIO, DET, CAR, OXY} <: AbstractBiogeochemistry
+         nutrients :: NUT # = NitrateAmmonia() # NitrateAmmoniaIron()
+           biology :: BIO # = PhytoZoo() # 
+          detritus :: DET # = TwoParticleAndDissolved() # VariableRedfieldDetritus()
+  carbonate_system :: CAR # = nothing # CarbonateSystem()
+            oxygen :: OXY # = nothing
 end
 
 """
@@ -134,7 +134,7 @@ function LOBSTER(; grid,
         @warn "You have specified a sediment model but not `open_bottom` which will not work as the tracer will settle in the bottom cell"
     end
 
-    lobster = LOBSTER(; biology, nutrients, detritus, carbonate_system, oxygen)
+    lobster = LOBSTER(nutrients, biology, detritus, carbonate_system, oxygen)
 
     if scale_negatives
         scaler = ScaleNegativeTracers(lobster, grid; invalid_fill_value)
