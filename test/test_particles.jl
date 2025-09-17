@@ -2,7 +2,12 @@ include("dependencies_for_runtests.jl")
 
 using OceanBioME.Particles: BiogeochemicalParticles
 
-import OceanBioME.Particles: required_particle_fields, required_tracers, coupled_tracers
+import OceanBioME.Particles: required_particle_fields, 
+                             required_tracers, 
+                             coupled_tracers
+                             
+import OceanBioME: required_biogeochemical_tracers,
+                   required_biogeochemical_auxiliary_fields
 
 struct SimpleParticleBiogeochemistry end
 
@@ -12,6 +17,11 @@ struct SimpleParticleBiogeochemistry end
 
 @inline required_tracers(::SimpleParticleBiogeochemistry) = tuple()
 @inline coupled_tracers(::SimpleParticleBiogeochemistry) = tuple()
+
+struct NothingBiogeochemistry end
+(::NothingBiogeochemistry)(args...) = nothing
+required_biogeochemical_tracers(::NothingBiogeochemistry) = ()
+required_biogeochemical_auxiliary_fields(::NothingBiogeochemistry) = ()
 
 grid = RectilinearGrid(architecture; size = (3, 3, 3), extent = (3, 3, 3))
 
@@ -24,7 +34,7 @@ grid = RectilinearGrid(architecture; size = (3, 3, 3), extent = (3, 3, 3))
 
     @test length(particles) == 3
 
-    biogeochemistry = Biogeochemistry(nothing; particles)
+    biogeochemistry = Biogeochemistry(NothingBiogeochemistry(); particles)
 
     model = NonhydrostaticModel(; grid, biogeochemistry)
     
@@ -46,7 +56,7 @@ end
 
     particles = BiogeochemicalParticles(3; grid, biogeochemistry = particle_biogeochemistry, advection = nothing)
 
-    biogeochemistry = Biogeochemistry(nothing; particles)
+    biogeochemistry = Biogeochemistry(NothingBiogeochemistry(); particles)
 
     model = NonhydrostaticModel(; grid, biogeochemistry, tracers = :B)
 
@@ -65,7 +75,7 @@ end
 
     particles = BiogeochemicalParticles(3; grid, biogeochemistry = particle_biogeochemistry)
 
-    biogeochemistry = Biogeochemistry(nothing; particles)
+    biogeochemistry = Biogeochemistry(NothingBiogeochemistry(); particles)
 
     model = NonhydrostaticModel(; grid, biogeochemistry, tracers = :B)
 
@@ -87,7 +97,7 @@ coupled_tracers(::SimpleParticleBiogeochemistry) = (:B, )
 
     particles = BiogeochemicalParticles(3; grid, biogeochemistry = particle_biogeochemistry, advection = nothing)
 
-    biogeochemistry = Biogeochemistry(nothing; particles)
+    biogeochemistry = Biogeochemistry(NothingBiogeochemistry(); particles)
 
     model = NonhydrostaticModel(; grid, biogeochemistry, tracers = :B)
 
@@ -112,7 +122,7 @@ end
                                            advection = nothing,
                                            scalefactors = [1, 0.5, 0.5])
 
-    biogeochemistry = Biogeochemistry(nothing; particles)
+    biogeochemistry = Biogeochemistry(NothingBiogeochemistry(); particles)
 
     model = NonhydrostaticModel(; grid, biogeochemistry, tracers = :B)
 
