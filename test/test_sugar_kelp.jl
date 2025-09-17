@@ -26,12 +26,12 @@ sum_tracer_carbon(tracers, redfield, organic_carbon_calcate_ratio) =
     @test particles.biogeochemistry isa SugarKelp
     @test length(particles) == 2
 
-    biogeochemistry = LOBSTER(; grid, 
-                                particles, 
-                                carbonates = true, 
-                                variable_redfield = true, 
-                                oxygen = true, 
-                                sinking_speeds = NamedTuple())
+    biogeochemistry = LOBSTER(grid; 
+                              particles, 
+                              carbonates = true, 
+                              variable_redfield = true, 
+                              oxygen = true, 
+                              sinking_speeds = NamedTuple())
 
     model = NonhydrostaticModel(; grid, biogeochemistry, advection = nothing, tracers = (:T, :S))
 
