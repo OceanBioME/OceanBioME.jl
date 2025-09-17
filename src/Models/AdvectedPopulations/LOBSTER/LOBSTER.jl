@@ -176,8 +176,8 @@ required_biogeochemical_auxiliary_fields(::LOBSTER) = (:PAR, )
 #@inline (::LOBSTER)(args...) = 0 # fallback for `Nothing` models
 
 include("nutrients.jl")
-include("biology.jl")
 include("detritus.jl")
+include("biology.jl")
 include("carbonate_system.jl")
 include("oxygen.jl")
 include("show.jl")
