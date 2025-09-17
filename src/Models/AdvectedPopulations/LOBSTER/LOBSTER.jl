@@ -29,7 +29,7 @@ using Oceananigans.Units
 using OceanBioME: setup_velocity_fields, Biogeochemistry, ScaleNegativeTracers
 using OceanBioME.Light: TwoBandPhotosyntheticallyActiveRadiation, default_surface_PAR
 
-import OceanBioME: conserved_tracers, chlorophyll_ratio
+import OceanBioME: conserved_tracers, chlorophyll
 
 import Oceananigans.Biogeochemistry: AbstractBiogeochemistry, 
                                      required_biogeochemical_tracers,
@@ -39,11 +39,11 @@ import Oceananigans.Biogeochemistry: AbstractBiogeochemistry,
 
 # default to "standard" LOBSTER
 struct LOBSTER{NUT, BIO, DET, CAR, OXY} <: AbstractBiogeochemistry
-         nutrients :: NUT # = NitrateAmmonia() # NitrateAmmoniaIron()
-           biology :: BIO # = PhytoZoo() # 
-          detritus :: DET # = TwoParticleAndDissolved() # VariableRedfieldDetritus()
-  carbonate_system :: CAR # = nothing # CarbonateSystem()
-            oxygen :: OXY # = nothing
+         nutrients :: NUT # NitrateAmmonia() or NitrateAmmoniaIron()
+           biology :: BIO # PhytoZoo() 
+          detritus :: DET # TwoParticleAndDissolved() or VariableRedfieldDetritus()
+  carbonate_system :: CAR # nothing or CarbonateSystem()
+            oxygen :: OXY # nothing or Oxygen()
 end
 
 """
