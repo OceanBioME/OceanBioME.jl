@@ -32,7 +32,7 @@ PAR = FunctionField{Center, Center, Center}(PAR_func, grid; clock)
 nothing #hide
 
 # Set up the model. Here, first specify the biogeochemical model, followed by initial conditions and the start and end times
-model = BoxModel(; biogeochemistry = LOBSTER(grid; light_attenuation_model = PrescribedPhotosyntheticallyActiveRadiation(PAR)),
+model = BoxModel(; biogeochemistry = LOBSTER(; grid, light_attenuation_model = PrescribedPhotosyntheticallyActiveRadiation(PAR)),
                    clock)
 
 set!(model, NO₃ = 10.0, NH₄ = 0.1, P = 0.1, Z = 0.01)

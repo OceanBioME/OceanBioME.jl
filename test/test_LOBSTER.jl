@@ -35,11 +35,11 @@ end
 
 function test_LOBSTER(grid, carbonates, oxygen, variable_redfield, sinking, open_bottom, n_timesteps)
     if sinking
-        model = NonhydrostaticModel(;grid,
-                                     biogeochemistry = LOBSTER(;grid, carbonates, oxygen, variable_redfield, open_bottom))
+        model = NonhydrostaticModel(; grid,
+                                      biogeochemistry = LOBSTER(; grid, carbonates, oxygen, variable_redfield, open_bottom))
     else
-        model = NonhydrostaticModel(;grid,
-                                     biogeochemistry = LOBSTER(;grid, carbonates, oxygen, variable_redfield, sinking_speeds = NamedTuple()))
+        model = NonhydrostaticModel(; grid,
+                                      biogeochemistry = LOBSTER(; grid, carbonates, oxygen, variable_redfield, sinking_speeds = NamedTuple()))
     end
 
     # correct tracers and auxiliary fields have been setup, and order has not changed

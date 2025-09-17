@@ -47,27 +47,27 @@ import Oceananigans.Biogeochemistry: AbstractBiogeochemistry,
 end
 
 """
-    LOBSTER(grid; 
+    LOBSTER(; grid
 
-            nutrients = NitrateAmmonia(),
-            biology = PhytoZoo(),
-            detritus = TwoParticleAndDissolved(grid),
-            carbonate_system = nothing,
-            oxygen = nothing,
+              nutrients = NitrateAmmonia(),
+              biology = PhytoZoo(),
+              detritus = TwoParticleAndDissolved(grid),
+              carbonate_system = nothing,
+              oxygen = nothing,
 
-            surface_photosynthetically_active_radiation = default_surface_PAR,
+              surface_photosynthetically_active_radiation = default_surface_PAR,
 
-            light_attenuation =
-                  TwoBandPhotosyntheticallyActiveRadiation(; grid, 
-                                                             surface_PAR = surface_photosynthetically_active_radiation),
-              
-            sediment = nothing,
+              light_attenuation =
+                    TwoBandPhotosyntheticallyActiveRadiation(; grid, 
+                                                               surface_PAR = surface_photosynthetically_active_radiation),
+                
+              sediment = nothing,
 
-            scale_negatives = false,
-            invalid_fill_value = NaN,
+              scale_negatives = false,
+              invalid_fill_value = NaN,
 
-            particles = nothing,
-            modifiers = nothing)
+              particles = nothing,
+              modifiers = nothing)
 
 Construct an instance of the [LOBSTER](@ref LOBSTER) biogeochemical model.
 
@@ -99,7 +99,7 @@ julia> using OceanBioME, Oceananigans
 
 julia> grid = RectilinearGrid(size=(3, 3, 30), extent=(10, 10, 200));
 
-julia> model = LOBSTER(grid)
+julia> model = LOBSTER(; grid)
 LOBSTER model (:NO₃, :NH₄, :P, :Z, :sPOM, :bPOM, :DOM) 
  Light attenuation: Two-band light attenuation model (Float64)
  Sediment: Nothing
@@ -108,27 +108,27 @@ LOBSTER model (:NO₃, :NH₄, :P, :Z, :sPOM, :bPOM, :DOM)
 
 ```
 """
-function LOBSTER(grid; 
+function LOBSTER(; grid, 
 
-                 nutrients = NitrateAmmonia(),
-                 biology = PhytoZoo(),
-                 detritus = TwoParticleAndDissolved(grid),
-                 carbonate_system = nothing,
-                 oxygen = nothing,
+                   nutrients = NitrateAmmonia(),
+                   biology = PhytoZoo(),
+                   detritus = TwoParticleAndDissolved(grid),
+                   carbonate_system = nothing,
+                   oxygen = nothing,
 
-                 surface_photosynthetically_active_radiation = default_surface_PAR,
+                   surface_photosynthetically_active_radiation = default_surface_PAR,
 
-                 light_attenuation =
-                       TwoBandPhotosyntheticallyActiveRadiation(; grid, 
-                                                                  surface_PAR = surface_photosynthetically_active_radiation),
-                   
-                 sediment = nothing,
+                   light_attenuation =
+                         TwoBandPhotosyntheticallyActiveRadiation(; grid, 
+                                                                    surface_PAR = surface_photosynthetically_active_radiation),
+                     
+                   sediment = nothing,
 
-                 scale_negatives = false,
-                 invalid_fill_value = NaN,
+                   scale_negatives = false,
+                   invalid_fill_value = NaN,
 
-                 particles = nothing,
-                 modifiers = nothing)
+                   particles = nothing,
+                   modifiers = nothing)
 
     if !isnothing(sediment) && !open_bottom
         @warn "You have specified a sediment model but not `open_bottom` which will not work as the tracer will settle in the bottom cell"
