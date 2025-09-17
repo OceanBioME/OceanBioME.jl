@@ -5,7 +5,7 @@ using OceanBioME.Particles: BiogeochemicalParticles
 import OceanBioME.Particles: required_particle_fields, 
                              required_tracers, 
                              coupled_tracers
-                             
+
 import OceanBioME: required_biogeochemical_tracers,
                    required_biogeochemical_auxiliary_fields
 
@@ -19,7 +19,7 @@ struct SimpleParticleBiogeochemistry end
 @inline coupled_tracers(::SimpleParticleBiogeochemistry) = tuple()
 
 struct NothingBiogeochemistry end
-(::NothingBiogeochemistry)(args...) = nothing
+(::NothingBiogeochemistry)(args...) = 0
 required_biogeochemical_tracers(::NothingBiogeochemistry) = ()
 required_biogeochemical_auxiliary_fields(::NothingBiogeochemistry) = ()
 
