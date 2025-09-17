@@ -47,4 +47,4 @@ Test = "8dfed614-e22c-5e08-85e1-65c5234f0b40"
 
 [targets]
 examples = ["CairoMakie", "NetCDF", "Interpolations", "Statistics", "Printf", "JLD2", "DataDeps", "EnsembleKalmanProcesses", "Distributions"]
-test = ["Test", "CUDA", "DataDeps", "Documenter", "Statistics", "JLD2"]
+test = ["Test", "CUDA", "DataDeps", "Documenter", "Statistics", "JLD2", "Random"]
