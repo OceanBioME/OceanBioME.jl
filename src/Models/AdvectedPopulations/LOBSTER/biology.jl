@@ -42,6 +42,8 @@ rate.
                      redfield_ratio :: FT = 6.56      # mol C/mol N
                carbon_calcate_ratio :: FT = 0.1       # mol CaCO₃/mol C
 zooplankton_gut_calcite_dissolution :: FT = 0.3
+
+    phytoplankton_chlorophyll_ratio :: FT = 1.31      # g Chl/mol N
 end
 
 const PHYTO_ZOO_LOBSTER = LOBSTER{<:Any, <:PhytoZoo}

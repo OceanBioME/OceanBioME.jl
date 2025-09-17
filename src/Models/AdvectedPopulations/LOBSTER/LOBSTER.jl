@@ -29,7 +29,7 @@ using Oceananigans.Units
 using OceanBioME: setup_velocity_fields, Biogeochemistry, ScaleNegativeTracers
 using OceanBioME.Light: TwoBandPhotosyntheticallyActiveRadiation, default_surface_PAR
 
-import OceanBioME: conserved_tracers
+import OceanBioME: conserved_tracers, chlorophyll_ratio
 
 import Oceananigans.Biogeochemistry: AbstractBiogeochemistry, 
                                      required_biogeochemical_tracers,

@@ -34,3 +34,4 @@ end
     return (nitrogen, carbon)
 end
     
+@inline chlorophyll(bgc::LOBSTER, model) = bgc.biology.phytoplankton_chlorophyll_ratio * model.tracers.P
