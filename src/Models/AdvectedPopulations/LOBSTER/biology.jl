@@ -205,7 +205,7 @@ end
 
     μP = phytoplankton_growth(lobster, i, j, k, fields, auxiliary_fields)
 
-    return ((1 + ρ) - γ * (α + ρ)) * μP * R
+    return (1 + ρ * (1 - γ) - α * γ) * μP * R
 end
 
 ##### mortality waste
@@ -218,15 +218,9 @@ end
     return α * μ * Z
 end
 
-@inline function biology_inorganic_carbon_waste(lobster::PHYTO_ZOO_LOBSTER, i, j, k, fields, auxiliary_fields)
-    α = lobster.biology.excretion_inorganic_fraction
-    μ = lobster.biology.zooplankton_excretion_rate
-    R = lobster.biology.redfield_ratio
+@inline biology_inorganic_carbon_waste(lobster::PHYTO_ZOO_LOBSTER, i, j, k, fields, auxiliary_fields) =
+    lobster.biology.redfield_ratio * biology_inorganic_nitrogen_waste(lobster, i, j, k, fields, auxiliary_fields)
 
-    Z = @inbounds fields.Z[i, j, k]
-
-    return α * μ * Z * R
-end
 
 @inline function biology_organic_nitrogen_waste(lobster::PHYTO_ZOO_LOBSTER, i, j, k, fields, auxiliary_fields)
     αZ = lobster.biology.excretion_inorganic_fraction
@@ -328,6 +322,23 @@ end
     G = grazing(lobster, i, j, k, Val(:P), fields, auxiliary_fields)
 
     return G * η * ρ * R
+end
+
+# when we have variable redfield particles the calcite production goes to bPOC, but this
+# isn't implicitly captured in the bPOM when we have a fixed redfield, so we have to 
+# assume instant dissolution and put it back in DIC (or we could choose to lose it),
+# maybe that would be better?
+# but when we don't this can't be implicitly captured so we put it all back in the DIC compartement
+@inline function calcite_dissolution(lobster::LOBSTER{<:Any, <:PhytoZoo, <:TwoParticleAndDissolved}, i, j, k, fields, auxiliary_fields)
+    R  = lobster.biology.redfield_ratio 
+    ρ  = lobster.biology.carbon_calcate_ratio
+    mᴾ = lobster.biology.phytoplankton_mortality_rate
+
+    P = @inbounds fields.P[i, j, k]
+
+    G = grazing(lobster, i, j, k, Val(:P), fields, auxiliary_fields)
+
+    return (G + mᴾ * P^2) * ρ * R
 end
 
 @inline function calcite_uptake(lobster::PHYTO_ZOO_LOBSTER, i, j, k, fields, auxiliary_fields)

@@ -22,7 +22,13 @@ When carbonate system is active:
 """
 module LOBSTERModel
 
-export LOBSTER, CarbonateSystem, Oxygen, NitrateAmmoniaIron, VariableRedfieldDetritus
+export LOBSTER, 
+       CarbonateSystem, 
+       Oxygen, 
+       NitrateAmmoniaIron, 
+       VariableRedfieldDetritus, 
+       TwoParticleAndDissolved, 
+       NitrateAmmonia
 
 using Oceananigans.Units
 

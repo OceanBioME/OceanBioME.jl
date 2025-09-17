@@ -5,6 +5,7 @@ export InstantRemineralisationSediment, SimpleMultiGSediment
 export NPZD, 
        NutrientPhytoplanktonZooplanktonDetritus, 
        LOBSTER, CarbonateSystem, Oxygen, NitrateAmmoniaIron, VariableRedfieldDetritus,
+       TwoParticleAndDissolved, NitrateAmmonia,
        PISCES, DepthDependantSinkingSpeed, PrescribedLatitude, ModelLatitude, PISCESModel
 
 export SugarKelp, SugarKelpParticles, GiantKelp
