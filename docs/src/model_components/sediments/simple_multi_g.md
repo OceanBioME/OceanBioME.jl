@@ -9,7 +9,7 @@ using OceanBioME, Oceananigans, OceanBioME.Sediments
 
 grid = RectilinearGrid(size=(3, 3, 30), extent=(10, 10, 200))
 
-sediment_model = SimpleMultiGSediment(grid)
+sediment = SimpleMultiGSediment(grid)
 
 # output
 `BiogeochemicalSediment` with `Single-layer multi-G sediment model (Float64)` biogeochemsitry
