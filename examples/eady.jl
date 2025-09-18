@@ -63,7 +63,7 @@ DIC_bcs = FieldBoundaryConditions(top = CarbonDioxideGasExchangeBoundaryConditio
 model = NonhydrostaticModel(; grid,
                               biogeochemistry,
                               boundary_conditions = (DIC = DIC_bcs, ),
-                              advection = WENO(grid),
+                              advection = WENO(),
                               timestepper = :RungeKutta3,
                               coriolis,
                               tracers = (:T, :S),
