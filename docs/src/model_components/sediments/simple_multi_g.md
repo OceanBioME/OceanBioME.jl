@@ -24,7 +24,7 @@ You may optionally specify the model parameters. This can then be passed in the 
 biogeochemistry = LOBSTER(; grid,
                             carbonate_system = CarbonateSystem(),
                             oxygen = Oxygen(), 
-                            detritus = VariableRedfieldDetritus(; open_bottom = true),
+                            detritus = VariableRedfieldDetritus(grid; open_bottom = true),
                             sediment)
 ```
 

@@ -136,10 +136,6 @@ function LOBSTER(; grid,
                    particles = nothing,
                    modifiers = nothing)
 
-    if !isnothing(sediment) && !open_bottom
-        @warn "You have specified a sediment model but not `open_bottom` which will not work as the tracer will settle in the bottom cell"
-    end
-
     lobster = LOBSTER(nutrients, biology, detritus, carbonate_system, oxygen)
 
     if scale_negatives
