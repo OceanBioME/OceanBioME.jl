@@ -115,7 +115,7 @@ progress_message(sim) = @printf("Iteration: %04d, time: %s, Δt: %s, wall time: 
 simulation.callbacks[:progress] = Callback(progress_message, IterationInterval(500))
 
 filename = "data_forced"
-simulation.output_writers[:profiles] = JLD2Writer(model, 
+simulation.output_writers[:profiles] = JLD2Writer(model,
                                                   model.tracers,
                                                   filename = "$filename.jld2",
                                                   schedule = TimeInterval(1day),

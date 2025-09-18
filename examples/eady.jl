@@ -22,8 +22,8 @@ using Oceananigans.Units
 using Random
 Random.seed!(11)
 
-# Construct a grid with uniform grid spacing.
-grid = RectilinearGrid(size = (32, 32, 8), extent = (1kilometer, 1kilometer, 100meters))
+# Construct a grid with uniform grid spacing on GPU (just remove `GPU()` to run on CPU)
+grid = RectilinearGrid(GPU(); size = (32, 32, 8), extent = (1kilometer, 1kilometer, 100meters))
 
 # Set the Coriolis and buoyancy models.
 coriolis = FPlane(f = 1e-4) # [s⁻¹]

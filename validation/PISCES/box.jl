@@ -69,10 +69,10 @@ set!(model, P = 0.1, PChl = 0.025, PFe = 0.005,
             
 simulation = Simulation(model; Δt = 40minutes, stop_time = 4years)
 
-simulation.output_writers[:fields] = JLD2OutputWriter(model, model.fields; filename = "box.jld2", schedule = TimeInterval(0.5day), overwrite_existing = true)
+simulation.output_writers[:fields] = JLD2Writer(model, model.fields; filename = "box.jld2", schedule = TimeInterval(0.5day), overwrite_existing = true)
 
 PAR_field = Field(biogeochemistry.light_attenuation.fields[1])
-simulation.output_writers[:par] = JLD2OutputWriter(model, (; PAR = PAR_field); filename = "box_light.jld2", schedule = TimeInterval(0.5day), overwrite_existing = true)
+simulation.output_writers[:par] = JLD2Writer(model, (; PAR = PAR_field); filename = "box_light.jld2", schedule = TimeInterval(0.5day), overwrite_existing = true)
 
 
 prog(sim) = @info "$(prettytime(time(sim))) in $(prettytime(simulation.run_wall_time))"

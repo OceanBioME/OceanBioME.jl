@@ -59,7 +59,7 @@ function run_box_simulation(initial_photosynthetic_slope,
 
     set!(model, N = 10.0, P = 0.1, Z = 0.01)
 
-    simulation = Simulation(model; Δt = 20minutes, stop_time = 3years, verbose = false)
+    simulation = Simulation(model; Δt = 20minutes, stop_time = 2years, verbose = false)
 
     simulation.output_writers[:fields] = JLD2Writer(model, model.fields; filename = "box_calibration_$j.jld2", schedule = TimeInterval(8hours), overwrite_existing = true)
 
