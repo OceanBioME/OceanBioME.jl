@@ -91,7 +91,7 @@ particles (`sPOM` and `bPOM`) and dissolved organic (`DOM`), alternativly can be
 can be `CarbonateSystem` which has dissolved inorganic carbon (`DIC`) and alkalinity (`Alk`)
 - `oxygen`: an optional model component for oxygen, defaults to `nothing` but can be `Oxygen` which has oxygen (`O₂`)
 - `surface_photosynthetically_active_radiation`: funciton for the photosynthetically available radiation at the surface, should be shape `f(x, y, t)`
-- `light_attenuation_model`: light attenuation model which integrated the attenuation of available light
+- `light_attenuation`: light attenuation model which integrated the attenuation of available light
 - `sediment_model`: slot for `BiogeochemicalSediment`
 - `scale_negatives`: scale negative tracers?
 - `particles`: slot for `BiogeochemicalParticles`

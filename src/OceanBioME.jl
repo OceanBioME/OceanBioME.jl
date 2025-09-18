@@ -91,7 +91,7 @@ a `light_attenuation` model, `sediment`, `particles`, and `modifiers`.
 Keyword Arguments
 =================
 
-- `light_attenuation_model`: light attenuation model which integrated the attenuation of available light
+- `light_attenuation`: light attenuation model which integrated the attenuation of available light
 - `sediment_model`: slot for `AbstractSediment`
 - `particles`: slot for `BiogeochemicalParticles`
 - `modifiers`: slot for components which modify the biogeochemistry when the tendencies have been calculated or when the state is updated
