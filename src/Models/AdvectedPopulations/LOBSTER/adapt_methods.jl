@@ -20,10 +20,10 @@ Adapt.adapt_structure(to, detritus::TwoParticleAndDissolved) =
                             adapt(to, detritus.large_particle_sinking_velocity))
 
 Adapt.adapt_structure(to, detritus::VariableRedfieldDetritus) =
-    TwoParticleAndDissolved(adapt(to, detritus.remineralisation_inorganic_fraction),
-                            adapt(to, detritus.small_reminerslisation_rate),
-                            adapt(to, detritus.large_reminerlisation_rate),
-                            adapt(to, detritus.dissolved_reminerlisation_rate),
-                            adapt(to, detritus.small_solid_waste_fraction),
-                            adapt(to, detritus.small_particle_sinking_velocity),
-                            adapt(to, detritus.large_particle_sinking_velocity))
+    VariableRedfieldDetritus(adapt(to, detritus.remineralisation_inorganic_fraction),
+                             adapt(to, detritus.small_reminerslisation_rate),
+                             adapt(to, detritus.large_reminerlisation_rate),
+                             adapt(to, detritus.dissolved_reminerlisation_rate),
+                             adapt(to, detritus.small_solid_waste_fraction),
+                             adapt(to, detritus.small_particle_sinking_velocity),
+                             adapt(to, detritus.large_particle_sinking_velocity))
