@@ -172,8 +172,8 @@ required_biogeochemical_tracers(::Nothing) = ()
 
 required_biogeochemical_auxiliary_fields(::LOBSTER) = (:PAR, )
 
-# we should never need this maybe
-#@inline (::LOBSTER)(args...) = 0 # fallback for `Nothing` models
+# fallback
+@inline (::LOBSTER)(i, j, k, grid, val_name, clock, fields, auxiliary_fields) = zero(grid)
 
 include("nutrients.jl")
 include("detritus.jl")
