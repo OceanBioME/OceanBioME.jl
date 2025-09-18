@@ -52,7 +52,7 @@ if !isdir(OUTPUT_DIR) mkdir(OUTPUT_DIR) end
 
 small_grid = RectilinearGrid(size=(1, 1, 1), extent=(1, 1, 1))
 
-model_parameters = (LOBSTER(BoxModelGrid(); light_attenuation = nothing).underlying_biogeochemistry,
+model_parameters = (LOBSTER(;grid = BoxModelGrid(), light_attenuation = nothing).underlying_biogeochemistry,
                     NutrientPhytoplanktonZooplanktonDetritus(; grid = BoxModelGrid(), light_attenuation = nothing).underlying_biogeochemistry,
                     SugarKelp(),
                     TwoBandPhotosyntheticallyActiveRadiation(; grid = small_grid),
