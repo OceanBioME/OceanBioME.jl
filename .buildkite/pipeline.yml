@@ -29,6 +29,8 @@ steps:
           notify:
             - github_commit_status:
                 context: "Initialise environment"
+          agents:
+            hostname: "$BUILDKITE_AGENT_META_DATA_HOSTNAME"
       
         - label: ":speedboat: GPU unit tests"
           commands: |
@@ -38,6 +40,8 @@ steps:
           notify:
             - github_commit_status:
                 context: "GPU tests"
+          agents:
+            hostname: "$BUILDKITE_AGENT_META_DATA_HOSTNAME"
           
         - label: ":rowboat: CPU unit tests"
           env:
@@ -49,6 +53,8 @@ steps:
           notify:
             - github_commit_status:
                 context: "CPU tests"
+          agents:
+            hostname: "$BUILDKITE_AGENT_META_DATA_HOSTNAME"
       
         - label: ":books: Building examples"
           key: "examples"
@@ -66,6 +72,8 @@ steps:
                 - "kelp"
                 - "data_assimilation"
           depends_on: "init"
+          agents:
+            hostname: "$BUILDKITE_AGENT_META_DATA_HOSTNAME"
           
         - label: ":docusaurus: Documentation"
           env:
@@ -79,6 +87,8 @@ steps:
           notify:
             - github_commit_status:
                 context: "Documentation"
+          agents:
+            hostname: "$BUILDKITE_AGENT_META_DATA_HOSTNAME"
       
         - wait: ~
           continue_on_failure: true
@@ -90,4 +100,6 @@ steps:
           notify:
             - github_commit_status:
                 context: "Clean up"
+          agents:
+            hostname: "$BUILDKITE_AGENT_META_DATA_HOSTNAME"
       EOF
