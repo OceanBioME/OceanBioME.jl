@@ -55,7 +55,7 @@ vertical_diffusivity = VerticalScalarDiffusivity(ν = νᵥ, κ = κᵥ)
 
 biogeochemistry = LOBSTER(; grid,
                             carbonate_system = CarbonateSystem(),
-                            open_bottom = true)
+                            detritus = TwoParticleAndDissolved(open_bottom = true))
 
 DIC_bcs = FieldBoundaryConditions(top = CarbonDioxideGasExchangeBoundaryCondition())
 
