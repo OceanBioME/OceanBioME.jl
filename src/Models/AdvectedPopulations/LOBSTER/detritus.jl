@@ -54,7 +54,7 @@ required_biogeochemical_tracers(::TwoParticleAndDissolved) = (:sPOM, :bPOM, :DOM
     @inbounds fields.bPOM[i, j, k] * detritus.redfield_ratio
 
 @inline dissolved_organic_carbon(detritus::TwoParticleAndDissolved, i, j, k, fields, auxiliary_fields) = 
-    @inbounds fields.DOM[i, k, k] * detritus.redfield_ratio
+    @inbounds fields.DOM[i, j, k] * detritus.redfield_ratio
 
 """
     VariableRedfieldDetritus
@@ -107,7 +107,7 @@ required_biogeochemical_tracers(::VariableRedfieldDetritus) = (:sPOC, :bPOC, :DO
     @inbounds fields.bPON[i, j, k]
 
 @inline dissolved_organic_nitrogen(::VariableRedfieldDetritus, i, j, k, fields, auxiliary_fields) = 
-    @inbounds fields.DON[i, k, k]
+    @inbounds fields.DON[i, j, k]
 
 @inline small_particulate_carbon_concentration(::VariableRedfieldDetritus, i, j, k, fields, auxiliary_fields) =
     @inbounds fields.sPOC[i, j, k]
@@ -116,7 +116,7 @@ required_biogeochemical_tracers(::VariableRedfieldDetritus) = (:sPOC, :bPOC, :DO
     @inbounds fields.bPOC[i, j, k]
 
 @inline dissolved_organic_carbon(::VariableRedfieldDetritus, i, j, k, fields, auxiliary_fields) = 
-    @inbounds fields.DOC[i, k, k]
+    @inbounds fields.DOC[i, j, k]
 
 ##### common
 
