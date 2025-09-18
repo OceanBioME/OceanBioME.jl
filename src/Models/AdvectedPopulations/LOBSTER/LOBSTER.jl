@@ -182,5 +182,6 @@ include("carbonate_system.jl")
 include("oxygen.jl")
 include("show.jl")
 include("coupling_utils.jl")
+include("adapt_methods.jl")
 
 end # module

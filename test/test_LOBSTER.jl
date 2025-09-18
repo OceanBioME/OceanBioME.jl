@@ -131,8 +131,7 @@ for open_bottom = (false, true),
                         open_bottom)
 
     if !(sinking && open_bottom) # no sinking is the same with and without open bottom
-        #@info "Testing on $(typeof(architecture)) with carbonates $(carbonates ? :✅ : :❌), oxygen $(oxygen ? :✅ : :❌), variable redfield $(variable_redfield ? :✅ : :❌), sinking $(sinking ? :✅ : :❌), open bottom $(open_bottom ? :✅ : :❌))"
-        @testset "LOBSTER $architecture, $(nameof(typeof(nutrients))), $(nameof(typeof(carbonate_system))), $(nameof(typeof(oxygen))), $(nameof(typeof(detritus))), $sinking, $open_bottom" begin
+        @testset "LOBSTER:\n-$(nameof(typeof(nutrients)))\n-$(nameof(typeof(carbonate_system)))\n-$(nameof(typeof(oxygen)))\n-$(nameof(typeof(detritus)))\n-Sinking:$sinking\n-Open bottom:$open_bottom" begin
             test_LOBSTER(grid, nutrients, carbonate_system, oxygen, detritus, sinking, open_bottom, n_timesteps)
         end
     end
