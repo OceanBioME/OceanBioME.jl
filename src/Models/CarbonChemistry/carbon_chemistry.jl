@@ -142,31 +142,31 @@ unless `pH` is specified, in which case intermediate computation of `pH` is skip
 
 Alternativly, `pH` is returned if `return_pH` is `true`.
 """
-@inline function (p::CarbonChemistry)(; DIC, T, S, Alk = 0, pH = nothing,
+@inline function (p::CarbonChemistry)(; DIC::FT, T, S, Alk = zero(DIC), pH = nothing,
                                         P = nothing,
-                                        lon = 0,
-                                        lat = 0,
+                                        lon = zero(DIC),
+                                        lat = zero(DIC),
                                         return_pH = false,
-                                        boron = 0.000232 / 10.811 * S / 1.80655,
-                                        sulfate = 0.14 / 96.06 * S / 1.80655,
-                                        fluoride = 0.000067 / 18.9984 * S / 1.80655,
-                                        silicate = 0,
-                                        phosphate = 0,
-                                        upper_pH_bound = 14,
-                                        lower_pH_bound = 0)
+                                        boron = convert(typeof(DIC), 0.000232 / 10.811 * S / 1.80655),
+                                        sulfate = convert(typeof(DIC), 0.14 / 96.06 * S / 1.80655),
+                                        fluoride = convert(typeof(DIC), 0.000067 / 18.9984 * S / 1.80655),
+                                        silicate = zero(DIC),
+                                        phosphate = zero(DIC),
+                                        upper_pH_bound = convert(typeof(DIC), 14),
+                                        lower_pH_bound = convert(typeof(DIC), 0)) where FT
 
-    ρₒ = p.density_function(T, S, ifelse(isnothing(P), 0, P), lon, lat)
+    ρₒ = p.density_function(T, S, ifelse(isnothing(P), zero(DIC), P), lon, lat)
 
     # Centigrade to kelvin
-    T += 273.15
+    T += convert(FT, 273.15)
 
     # mili-equivalents / m³ to equivalents / kg
-    Alk *= 1e-3 / ρₒ
+    Alk *= convert(FT, 1e-3) / ρₒ
 
     # mmol / m³ to mol / kg
-    DIC       *= 1e-3 / ρₒ
-    phosphate *= 1e-3 / ρₒ
-    silicate  *= 1e-3 / ρₒ
+    DIC       *= convert(FT, 1e-3) / ρₒ
+    phosphate *= convert(FT, 1e-3) / ρₒ
+    silicate  *= convert(FT, 1e-3) / ρₒ
     
     # ionic strength
     Is = p.ionic_strength(S)
@@ -194,7 +194,7 @@ Alternativly, `pH` is returned if `return_pH` is `true`.
 
     # compute pCO₂
     CO₂  = DIC * H ^ 2 / (H ^ 2 + K1 * H + K1 * K2) 
-    fCO₂ = (CO₂ / K0) * 10 ^ 6 # μatm
+    fCO₂ = (CO₂ / K0) * convert(FT, 10 ^ 6) # μatm
 
     # compute pH
     pH = -log10(H)
@@ -203,10 +203,10 @@ Alternativly, `pH` is returned if `return_pH` is `true`.
 end
 
 # solves `alkalinity_residual` for pH
-solve_for_H(pH, args...) = 10.0 ^ - pH
+solve_for_H(pH::FT, args...) where FT = convert(FT, 10.0) ^ - pH
 
-solve_for_H(::Nothing, params, upper_pH_bound, lower_pH_bound) =
-    find_zero(alkalinity_residual, (10.0 ^ - upper_pH_bound, 10.0 ^ - lower_pH_bound), Bisection(); atol = 1e-10, p = params)
+solve_for_H(::Nothing, params, upper_pH_bound::FT, lower_pH_bound) where FT =
+    find_zero(alkalinity_residual, (convert(FT, 10.0) ^ - upper_pH_bound, convert(FT, 10.0) ^ - lower_pH_bound); atol = convert(FT, 1e-10), p = params)
 
 # display
 summary(::IO, ::CarbonChemistry) = string("`CarbonChemistry` model")

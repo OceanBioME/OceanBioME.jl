@@ -1,7 +1,7 @@
 name = "OceanBioME"
 uuid = "a49af516-9db8-4be4-be45-1dad61c5a376"
 authors = ["Jago Strong-Wright <js2430@damtp.cam.ac.uk> and contributors"]
-version = "0.14.0"
+version = "0.14.5"
 
 [deps]
 Adapt = "79e6a3ab-5dfb-504d-930d-738a2a938a0e"
@@ -24,7 +24,7 @@ EnsembleKalmanProcesses = "1"
 GibbsSeaWater = "0.1"
 JLD2 = "0.4, 0.5"
 KernelAbstractions = "0.9"
-Oceananigans = "^0.95.20, 0.96"
+Oceananigans = "0.96, 0.97, 0.98"
 OffsetArrays = "1.14"
 Roots = "2"
 SeawaterPolynomials = "0.3"

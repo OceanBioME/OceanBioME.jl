@@ -17,8 +17,8 @@ carbon_chemistry = CarbonChemistry()
 ### Computing ``fCO_2`` and ``pH``
 To compute the fugacity of carbon dioxide (``fCO_2``) you call the model with the `DIC`, `Alk`alinity, `T`emperature, and `S`alinity:
 ```@example carbon-chem
-DIC = 2145
-Alk = 2448
+DIC = 2145.0
+Alk = 2448.0
 T = 25.4
 S = 36.45
 carbon_chemistry(; DIC, Alk, T, S)

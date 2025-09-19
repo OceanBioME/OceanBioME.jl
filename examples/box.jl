@@ -39,7 +39,7 @@ set!(model, NO₃ = 10.0, NH₄ = 0.1, P = 0.1, Z = 0.01)
 
 simulation = Simulation(model; Δt = 5minutes, stop_time = 5years)
 
-simulation.output_writers[:fields] = JLD2OutputWriter(model, model.fields; filename = "box.jld2", schedule = TimeInterval(10days), overwrite_existing = true)
+simulation.output_writers[:fields] = JLD2Writer(model, model.fields; filename = "box.jld2", schedule = TimeInterval(10days), overwrite_existing = true)
 
 prog(sim) = @info "$(prettytime(time(sim))) in $(prettytime(simulation.run_wall_time))"
 

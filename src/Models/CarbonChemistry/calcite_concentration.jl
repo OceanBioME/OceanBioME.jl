@@ -1,28 +1,28 @@
 function carbonate_concentration(cc::CarbonChemistry; 
-                                 DIC, T, S, Alk = 0, pH = nothing,
+                                 DIC::FT, T, S, Alk = zero(DIC), pH = nothing,
                                  P = nothing,
-                                 lon = 0,
-                                 lat = 0,
-                                 boron = 0.000232 / 10.811 * S / 1.80655,
-                                 sulfate = 0.14 / 96.06 * S / 1.80655,
-                                 fluoride = 0.000067 / 18.9984 * S / 1.80655,
-                                 silicate = 0,
-                                 phosphate = 0,
-                                 upper_pH_bound = 14,
-                                 lower_pH_bound = 0)
+                                 lon = zero(DIC),
+                                 lat = zero(DIC),
+                                 boron = convert(typeof(DIC), 0.000232 / 10.811 * S / 1.80655),
+                                 sulfate = convert(typeof(DIC), 0.14 / 96.06 * S / 1.80655),
+                                 fluoride = convert(typeof(DIC), 0.000067 / 18.9984 * S / 1.80655),
+                                 silicate = zero(DIC),
+                                 phosphate = zero(DIC),
+                                 upper_pH_bound = convert(typeof(DIC), 14),
+                                 lower_pH_bound = convert(typeof(DIC), 0)) where FT
 
-    ρₒ = cc.density_function(T, S, ifelse(isnothing(P), 0, P), lon, lat)
+    ρₒ = cc.density_function(T, S, ifelse(isnothing(P), zero(DIC), P), lon, lat)
 
     # Centigrade to kelvin
-    T += 273.15
+    T += convert(FT, 273.15)
 
     # mili-equivalents / m³ to equivalents / kg
-    Alk *= 1e-3 / ρₒ
+    Alk *= convert(FT, 1e-3) / ρₒ
 
     # mmol / m³ to mol / kg
-    DIC       *= 1e-3 / ρₒ
-    phosphate *= 1e-3 / ρₒ
-    silicate  *= 1e-3 / ρₒ
+    DIC       *= convert(FT, 1e-3) / ρₒ
+    phosphate *= convert(FT, 1e-3) / ρₒ
+    silicate  *= convert(FT, 1e-3) / ρₒ
     
     # ionic strength
     Is = cc.ionic_strength(S)
@@ -43,26 +43,27 @@ function carbonate_concentration(cc::CarbonChemistry;
                 K1, K2, KB, KW, KS, KF, KP1, KP2, KP3, KSi)
 
     # solve equilibrium for hydrogen ion concentration
+
     H = solve_for_H(pH, params, upper_pH_bound, lower_pH_bound)
 
     # compute the calcite concentration
     denom1 = (H * (H + K1))
-    denom2 = (1 + K1 * K2 / denom1)
+    denom2 = (one(DIC) + K1 * K2 / denom1)
 
     return DIC * K1 * K2 / denom1 / denom2
 end
 
 function calcite_saturation(cc::CarbonChemistry;
-                            DIC, T, S, Alk = 0, pH = nothing,
+                            DIC::FT, T, S, Alk = zero(DIC), pH = nothing,
                             P = nothing,
-                            boron = 0.000232 / 10.811 * S / 1.80655,
-                            sulfate = 0.14 / 96.06 * S / 1.80655,
-                            fluoride = 0.000067 / 18.9984 * S / 1.80655,
-                            calcium_ion_concentration = 0.0103 * S / 35,
-                            silicate = 0,
-                            phosphate = 0,
-                            upper_pH_bound = 14,
-                            lower_pH_bound = 0)
+                            boron = convert(typeof(DIC), 0.000232 / 10.811 * S / 1.80655),
+                            sulfate = convert(typeof(DIC), 0.14 / 96.06 * S / 1.80655),
+                            fluoride = convert(typeof(DIC), 0.000067 / 18.9984 * S / 1.80655),
+                            calcium_ion_concentration = convert(typeof(DIC), 0.0103 * S / 35),
+                            silicate = zero(DIC),
+                            phosphate = zero(DIC),
+                            upper_pH_bound = convert(typeof(DIC), 14),
+                            lower_pH_bound = convert(typeof(DIC), 0)) where FT
 
     CO₃²⁻ = carbonate_concentration(cc;
                                     DIC, Alk, T, S, pH,
@@ -75,7 +76,7 @@ function calcite_saturation(cc::CarbonChemistry;
                                     upper_pH_bound,
                                     lower_pH_bound)
 
-    KSP = cc.calcite_solubility(T+273.15, S; P)
+    KSP = cc.calcite_solubility(T+convert(FT, 273.15), S; P)
 
     # not confident these all have the right units
     return calcium_ion_concentration * CO₃²⁻ / KSP
