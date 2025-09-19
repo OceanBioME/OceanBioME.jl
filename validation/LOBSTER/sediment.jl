@@ -40,16 +40,16 @@ function test_flat_sediment(architecture; timestepper = :QuasiAdamsBashforth2)
 
     simulation = Simulation(model, Δt = 800.0, stop_time = 10years)
 
-    simulation.output_writers[:tracers] = JLD2OutputWriter(model, model.tracers,
-                                                           filename = "sediment_test_tracers_rk3.jld2",
-                                                           schedule = TimeInterval(10minutes),
-                                                           overwrite_existing = true)
+    simulation.output_writers[:tracers] = JLD2Writer(model, model.tracers,
+                                                     filename = "sediment_test_tracers_rk3.jld2",
+                                                     schedule = TimeInterval(10minutes),
+                                                     overwrite_existing = true)
 
-    simulation.output_writers[:sediment] = JLD2OutputWriter(model, model.biogeochemistry.sediment_model.fields,
-                                                            indices = (:, :, 1),
-                                                            filename = "sediment_test_sediment_rk3.jld2",
-                                                            schedule = TimeInterval(10minutes),
-                                                            overwrite_existing = true)
+    simulation.output_writers[:sediment] = JLD2Writer(model, model.biogeochemistry.sediment_model.fields,
+                                                      indices = (:, :, 1),
+                                                      filename = "sediment_test_sediment_rk3.jld2",
+                                                      schedule = TimeInterval(10minutes),
+                                                      overwrite_existing = true)
 
     @inline progress(simulation) = @info "Time: $(prettytime(simulation.model.clock.time)), Iteration: $(simulation.model.clock.iteration), Walltime: $(prettytime(simulation.run_wall_time))"
     

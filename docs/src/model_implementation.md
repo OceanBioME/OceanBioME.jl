@@ -145,7 +145,7 @@ set!(model, N = 15, P = 15)
 
 simulation = Simulation(model; Δt = 5minutes, stop_time = 5years)
 
-simulation.output_writers[:fields] = JLD2OutputWriter(model, model.fields; filename = "box_np.jld2", schedule = TimeInterval(10days), overwrite_existing = true)
+simulation.output_writers[:fields] = JLD2Writer(model, model.fields; filename = "box_np.jld2", schedule = TimeInterval(10days), overwrite_existing = true)
 
 # ## Run the model (should only take a few seconds)
 @info "Running the model..."
@@ -266,16 +266,16 @@ set!(model, P = 0.01, N = 15, T = 28)
 
 simulation = Simulation(model, Δt = 9minutes, stop_time = 1years)
 
-simulation.output_writers[:tracers] = JLD2OutputWriter(model, model.tracers,
-                                                       filename = "column_np.jld2",
-                                                       schedule = TimeInterval(1day),
-                                                       overwrite_existing = true)
+simulation.output_writers[:tracers] = JLD2Writer(model, model.tracers,
+                                                 filename = "column_np.jld2",
+                                                 schedule = TimeInterval(1day),
+                                                 overwrite_existing = true)
 
-simulation.output_writers[:sediment] = JLD2OutputWriter(model, model.biogeochemistry.sediment.fields,
-                                                        indices = (:, :, 1),
-                                                        filename = "column_np_sediment.jld2",
-                                                        schedule = TimeInterval(1day),
-                                                        overwrite_existing = true)
+simulation.output_writers[:sediment] = JLD2Writer(model, model.biogeochemistry.sediment.fields,
+                                                  indices = (:, :, 1),
+                                                  filename = "column_np_sediment.jld2",
+                                                  schedule = TimeInterval(1day),
+                                                  overwrite_existing = true)
 
 run!(simulation)
 ```
