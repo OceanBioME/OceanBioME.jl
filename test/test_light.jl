@@ -11,7 +11,7 @@ Pᵢ(x,y,z) = 2.5 + z
 
 function test_two_band(grid, bgc, model_type)
     biogeochemistry = bgc(; grid,
-                            light_attenuation_model = TwoBandPhotosyntheticallyActiveRadiation(; grid),
+                            light_attenuation = TwoBandPhotosyntheticallyActiveRadiation(; grid),
                             surface_photosynthetically_active_radiation = (x, y, t) -> 100.0)
 
     model = model_type(; grid, 
@@ -48,16 +48,16 @@ function test_two_band(grid, bgc, model_type)
 end
 
 function test_multi_band(grid, bgc, model_type)
-    light_attenuation_model = MultiBandPhotosyntheticallyActiveRadiation(; grid, 
-                                                                           bands = ((1, 2), ),
-                                                                           base_bands = [1, 2],
-                                                                           base_water_attenuation_coefficient = [0.01, 0.01],
-                                                                           base_chlorophyll_exponent = [2, 2],
-                                                                           base_chlorophyll_attenuation_coefficient = [0.1, 0.1],
-                                                                           surface_PAR = (args...) -> 1)
+    light_attenuation = MultiBandPhotosyntheticallyActiveRadiation(; grid, 
+                                                                     bands = ((1, 2), ),
+                                                                     base_bands = [1, 2],
+                                                                     base_water_attenuation_coefficient = [0.01, 0.01],
+                                                                     base_chlorophyll_exponent = [2, 2],
+                                                                     base_chlorophyll_attenuation_coefficient = [0.1, 0.1],
+                                                                     surface_PAR = (args...) -> 1)
 
     biogeochemistry = bgc(; grid,
-                            light_attenuation_model)
+                            light_attenuation)
 
     model = model_type(; grid, 
                          biogeochemistry,
@@ -68,18 +68,18 @@ function test_multi_band(grid, bgc, model_type)
 
     expected_PAR = on_architecture(CPU(), exp.(znodes(grid, Center()) * (0.01 + 0.1 * 2 ^ 2)))
 
-    @test (@allowscalar all(interior(on_architecture(CPU(), light_attenuation_model.fields[1]), 1, 1, :) .≈ expected_PAR))
+    @test (@allowscalar all(interior(on_architecture(CPU(), light_attenuation.fields[1]), 1, 1, :) .≈ expected_PAR))
 
-    light_attenuation_model = MultiBandPhotosyntheticallyActiveRadiation(; grid, 
-                                                                           bands = ((1, 2), (8, 9)),
-                                                                           base_bands = [1, 2, 8, 9],
-                                                                           base_water_attenuation_coefficient = [0.01, 0.01, 0.02, 0.02],
-                                                                           base_chlorophyll_exponent = [2, 2, 1.5, 1.5],
-                                                                           base_chlorophyll_attenuation_coefficient = [0.1, 0.1, 0.2, 0.2],
-                                                                           surface_PAR = (args...) -> 1)
+    light_attenuation = MultiBandPhotosyntheticallyActiveRadiation(; grid, 
+                                                                     bands = ((1, 2), (8, 9)),
+                                                                     base_bands = [1, 2, 8, 9],
+                                                                     base_water_attenuation_coefficient = [0.01, 0.01, 0.02, 0.02],
+                                                                     base_chlorophyll_exponent = [2, 2, 1.5, 1.5],
+                                                                     base_chlorophyll_attenuation_coefficient = [0.1, 0.1, 0.2, 0.2],
+                                                                     surface_PAR = (args...) -> 1)
 
     biogeochemistry = bgc(; grid,
-                            light_attenuation_model)
+                            light_attenuation)
 
     model = model_type(; grid, 
                          biogeochemistry,
@@ -91,7 +91,7 @@ function test_multi_band(grid, bgc, model_type)
     expected_PAR1 = on_architecture(CPU(), exp.(znodes(grid, Center()) * (0.01 + 0.1 * 2 ^ 2)) / 2)
     expected_PAR2 = on_architecture(CPU(), exp.(znodes(grid, Center()) * (0.02 + 0.2 * 2 ^ 1.5)) / 2)
 
-    PAR, PAR₁, PAR₂ = map(v-> on_architecture(CPU(), v), values(biogeochemical_auxiliary_fields(light_attenuation_model)))
+    PAR, PAR₁, PAR₂ = map(v-> on_architecture(CPU(), v), values(biogeochemical_auxiliary_fields(light_attenuation)))
 
     @test all(interior(PAR₁, 1, 1, :) .≈ expected_PAR1)
     @test all(interior(PAR₂, 1, 1, :) .≈ expected_PAR2)

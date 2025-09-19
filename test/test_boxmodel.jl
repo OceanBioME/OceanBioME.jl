@@ -15,9 +15,9 @@ function simple_box_model(; x = nothing, y = nothing, z = nothing)
 
     clock = Clock(time = zero(grid))
 
-    light_attenuation_model = PrescribedPhotosyntheticallyActiveRadiation(FunctionField{Center, Center, Center}(PAR, grid; clock))
+    light_attenuation = PrescribedPhotosyntheticallyActiveRadiation(FunctionField{Center, Center, Center}(PAR, grid; clock))
 
-    biogeochemistry = LOBSTER(; grid, light_attenuation_model)
+    biogeochemistry = LOBSTER(; grid, light_attenuation)
 
     model = BoxModel(; grid, biogeochemistry, clock)
 

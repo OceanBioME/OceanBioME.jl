@@ -6,6 +6,7 @@ module OceanBioME
 
 # Biogeochemistry models and useful things
 export Biogeochemistry, LOBSTER, PISCES, NutrientPhytoplanktonZooplanktonDetritus, NPZD, redfield
+export CarbonateSystem, Oxygen, NitrateAmmoniaIron, VariableRedfieldDetritus, TwoParticleAndDissolved, NitrateAmmonia
 export InstantRemineralisationSediment, SimpleMultiGSediment
 export DepthDependantSinkingSpeed, PrescribedLatitude, ModelLatitude, PISCESModel
 
@@ -90,7 +91,7 @@ a `light_attenuation` model, `sediment`, `particles`, and `modifiers`.
 Keyword Arguments
 =================
 
-- `light_attenuation_model`: light attenuation model which integrated the attenuation of available light
+- `light_attenuation`: light attenuation model which integrated the attenuation of available light
 - `sediment_model`: slot for `AbstractSediment`
 - `particles`: slot for `BiogeochemicalParticles`
 - `modifiers`: slot for components which modify the biogeochemistry when the tendencies have been calculated or when the state is updated
@@ -153,6 +154,8 @@ update_tendencies!(bgc, modifier, model) = nothing
 update_tendencies!(bgc, modifiers::Tuple, model) = [update_tendencies!(bgc, modifier, model) for modifier in modifiers]
 
 @inline (bgc::ContinuousBiogeochemistry)(args...) = bgc.underlying_biogeochemistry(args...)
+@inline (bgc::DiscreteBiogeochemistry)(args...) = 
+    bgc.underlying_biogeochemistry(args..., biogeochemical_auxiliary_fields(bgc))
 
 function update_biogeochemical_state!(bgc::CompleteBiogeochemistry, model)
     # TODO: change the order of arguments here since they should definitly be the other way around
