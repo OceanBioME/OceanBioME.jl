@@ -144,7 +144,7 @@ set!(model, N = 15, P = 15)
 
 simulation = Simulation(model; Δt = 5minutes, stop_time = 5years)
 
-simulation.output_writers[:fields] = JLD2OutputWriter(model, model.fields; filename = "box_np.jld2", schedule = TimeInterval(10days), overwrite_existing = true)
+simulation.output_writers[:fields] = JLD2Writer(model, model.fields; filename = "box_np.jld2", schedule = TimeInterval(10days), overwrite_existing = true)
 
 # ## Run the model (should only take a few seconds)
 @info "Running the model..."
@@ -216,7 +216,6 @@ import OceanBioME.Sediments: nitrogen_flux, carbon_flux, remineralisation_receiv
 Now that we have added these elements we can put it together into another simple example:
 ```@example implementing
 using Oceananigans, OceanBioME
-using OceanBioME.Sediments: InstantRemineralisation
 
 # define some simple forcing
 
@@ -234,7 +233,7 @@ grid = RectilinearGrid(topology = (Flat, Flat, Bounded), size = (32, ), x = 1, y
 
 light_attenuation = TwoBandPhotosyntheticallyActiveRadiation(; grid, surface_PAR)
 
-sediment = InstantRemineralisation(; grid)
+sediment = InstantRemineralisationSediment(grid; sinking_tracers = :P)
 
 sinking_velocity = ZFaceField(grid)
 
@@ -266,16 +265,16 @@ set!(model, P = 0.01, N = 15, T = 28)
 
 simulation = Simulation(model, Δt = 9minutes, stop_time = 1years)
 
-simulation.output_writers[:tracers] = JLD2OutputWriter(model, model.tracers,
-                                                       filename = "column_np.jld2",
-                                                       schedule = TimeInterval(1day),
-                                                       overwrite_existing = true)
+simulation.output_writers[:tracers] = JLD2Writer(model, model.tracers,
+                                                 filename = "column_np.jld2",
+                                                 schedule = TimeInterval(1day),
+                                                 overwrite_existing = true)
 
-simulation.output_writers[:sediment] = JLD2OutputWriter(model, model.biogeochemistry.sediment.fields,
-                                                        indices = (:, :, 1),
-                                                        filename = "column_np_sediment.jld2",
-                                                        schedule = TimeInterval(1day),
-                                                        overwrite_existing = true)
+simulation.output_writers[:sediment] = JLD2Writer(model, model.biogeochemistry.sediment.fields,
+                                                  indices = (:, :, 1),
+                                                  filename = "column_np_sediment.jld2",
+                                                  schedule = TimeInterval(1day),
+                                                  overwrite_existing = true)
 
 run!(simulation)
 ```
@@ -286,7 +285,7 @@ We can then visualise this:
 N = FieldTimeSeries("column_np.jld2", "N")
 P = FieldTimeSeries("column_np.jld2", "P")
 
-sed = FieldTimeSeries("column_np_sediment.jld2", "N_storage")
+sed = FieldTimeSeries("column_np_sediment.jld2", "storage")
 
 fig = Figure()
 

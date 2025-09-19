@@ -1,21 +1,21 @@
 # [Notes](@id PISCES_queries)
 
-While most of the function formula can be found in [Aumont2015](@citet), we have compiled the following list of minor errors in the paper, as well as changes that are present in the [NEMO](https://www.nemo-ocean.eu/) implementation.
+While most of the function formulae can be found in [Aumont2015](@citet), we have compiled the following list of minor errors in the paper, as well as changes that are present in the [NEMO](https://www.nemo-ocean.eu/) implementation.
 
 ## Preface
-This implementation of PISCES varies from NEMO and CROC in a few regards:
-- Our standard unit of concentration in mmol / m³ which is equivalent to μmol / L, so we have retained these units all the tracers except iron
+The OceanBioME implementation of PISCES varies from NEMO and CROCCO in a few regards:
+- Our standard unit of concentration is mmol / m³ which is equivalent to μmol / L, so we have retained these units all the tracers except iron
 - Iron is modelled in μmol / m³ which is equivalent to nmol / L
-- In other implementations of PISCES nitrogen is tracked in carbon units (i.e. the concentration of nitrogen divided by the Redfield ratio), we instead opted to track in nitrogen units and so multiply most terms by the Redfield ratio (TODO: check that constants are in the correct units)
-- [Aumont2015](@citet) refers to the concentrations in μmol / L and nmol / L the NEMO and CROC source code actually track everything in mol/L, therefore many units were converted, but some were missed (listed below)
-- [Aumont2015](@citet) includes the "yearly maximum silicate", `Si′` but it appears that the NEMO source code actually uses the surface silicate in this roll, so we have renamed it to `silicate_climatology`
-- Other implementations of PISCES compute the dark residence time (the time spent below the euphotic depth due to mixing within the mixed layer) assuming a constant diffusivity, we replace this with the actual diffusivity (or it can be set to a `ConstantField` to replicate other results)
-- We have removed dust from PISCES since it can be implemented as a more generic (and easily more sophisticated) model elsewhere, and doesn't actually appear in PISCES except in the iron scavenging term which would need to be added as a forcing if iron scavenging from dust was desired in a model
+- In other implementations of PISCES nitrogen is tracked in carbon units (i.e. the concentration of nitrogen divided by the Redfield ratio). We instead opted to track in nitrogen units and so multiply most terms by the Redfield ratio (TODO: check that constants are in the correct units)
+- [Aumont2015](@citet) refers to the concentrations in μmol / L and nmol / L. The NEMO and CROCCO source code track everything in mol/L, therefore many units were converted, but some were missed (listed below)
+- [Aumont2015](@citet) includes the "yearly maximum silicate", `Si′` but it appears that the NEMO source code uses the surface silicate, so we have renamed it to `silicate_climatology`
+- Other implementations of PISCES compute the dark residence time (the time spent below the euphotic depth due to mixing within the mixed layer) assuming a constant diffusivity. We replaced this with the actual diffusivity (or it can be set to a `ConstantField` to replicate other results)
+- We have removed dust from PISCES since it can be implemented as a more generic model elsewhere, and doesn't actually appear in PISCES except in the iron scavenging term which would need to be added as a forcing if iron scavenging from dust was desired in a model.
 - The bacterial remineralisation of DOC is split into the oxic and anoxic parts which are referred to as ``Remin`` and ``Denit``, but we have renamed these as `oxic_remineralisation` and `anoxic_remineralisation` for clarity
 - We would also like to note for future developers that ``\theta^{Chl}`` is mg Chl / mg C so needs to be computed as ``IChl / 12I``
 
 ## Constant disparities
-Constant units were sometimes incorrect in [Aumont2015](@citet), all units are now all noted in the code and may vary. 
+We believe that units of some constants were incorrect in [Aumont2015](@citet), all units are now all noted in the code and may vary. 
 The values vary for:
 - Aggregation factors (``a_1, a_2, ...``), found in `TwoCompartementCarbonIronParticles` and `DissolvedOrganicCarbon` `aggregation_parameters`: from the NEMO source code, all of these parameters need a factor of ``10^{-6}`` to convert them from units of 1 / (mol / L) to 1 / (μmol / L). Additionally, all the parameters require a factor of ``1 / 86400``, for the parameters not multiplied by shear this straight forwardly is because they have time units of 1 / day in the NEMO code, but for those multiplied by shear this is because they implicitly have a factor of seconds per day in them to result in an aggregation in mmol C / day
 - In a similar vein, the flux feeding rate for zooplankton ``g_{FF}^M`` is in 1 / (m mol / L) where that `m` in `m`eters, so we need to multiply by a factor of ``10^{-6}`` to get 1 / (m μmol / L)

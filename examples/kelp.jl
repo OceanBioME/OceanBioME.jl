@@ -52,7 +52,7 @@ CO₂_flux = CarbonDioxideGasExchangeBoundaryCondition()
 
 clock = Clock(; time = 0.0)
 T = FunctionField{Center, Center, Center}(temp, grid; clock)
-S = ConstantField(35)
+S = ConstantField(35.0)
 
 # ## Kelp Particle setup
 @info "Setting up kelp particles"
@@ -100,15 +100,15 @@ progress_message(sim) = @printf("Iteration: %04d, time: %s, Δt: %s, wall time: 
 simulation.callbacks[:progress] = Callback(progress_message, TimeInterval(10days))
 
 filename = "kelp"
-simulation.output_writers[:profiles] = JLD2OutputWriter(model, model.tracers,
-                                                        filename = "$filename.jld2",
-                                                        schedule = TimeInterval(1day),
-                                                        overwrite_existing = true)
+simulation.output_writers[:profiles] = JLD2Writer(model, model.tracers,
+                                                  filename = "$filename.jld2",
+                                                  schedule = TimeInterval(1day),
+                                                  overwrite_existing = true)
 
-simulation.output_writers[:particles] = JLD2OutputWriter(model, (; particles),
-                                                         filename = "$(filename)_particles.jld2",
-                                                         schedule = TimeInterval(1day),
-                                                         overwrite_existing = true)
+simulation.output_writers[:particles] = JLD2Writer(model, (; particles),
+                                                   filename = "$(filename)_particles.jld2",
+                                                   schedule = TimeInterval(1day),
+                                                   overwrite_existing = true)
 
 nothing #hide
 
