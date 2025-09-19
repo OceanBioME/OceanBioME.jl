@@ -55,7 +55,7 @@ CO₂_flux = CarbonDioxideGasExchangeBoundaryCondition()
 
 clock = Clock(; time = 0.0)
 T = FunctionField{Center, Center, Center}(temp, grid; clock)
-S = ConstantField(35)
+S = ConstantField(35.0)
 
 model = NonhydrostaticModel(; grid,
                               clock,
@@ -78,14 +78,14 @@ progress_message(sim) = @printf("Iteration: %04d, time: %s, Δt: %s, wall time: 
                                 prettytime(sim),
                                 prettytime(sim.Δt),
                                 prettytime(sim.run_wall_time))
-                                                                  
+
 simulation.callbacks[:progress] = Callback(progress_message, TimeInterval(10days))
 
 filename = "column"
-simulation.output_writers[:profiles] = JLD2OutputWriter(model, model.tracers,
-                                                        filename = "$filename.jld2",
-                                                        schedule = TimeInterval(1day),
-                                                        overwrite_existing = true)
+simulation.output_writers[:profiles] = JLD2Writer(model, model.tracers,
+                                                  filename = "$filename.jld2",
+                                                  schedule = TimeInterval(1day),
+                                                  overwrite_existing = true)
 nothing #hide
 
 # ## Run!

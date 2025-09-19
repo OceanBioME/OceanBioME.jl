@@ -37,6 +37,7 @@ using OceanBioME.Models.CarbonChemistryModel: CarbonChemistry
 using Oceananigans.Biogeochemistry: AbstractBiogeochemistry
 using Oceananigans.Fields: set!
 using Oceananigans.Grids: φnodes, RectilinearGrid, AbstractGrid
+using Oceananigans.ImmersedBoundaries: ImmersedBoundaryGrid
 
 import OceanBioME: redfield, conserved_tracers, maximum_sinking_velocity, chlorophyll
 
@@ -356,7 +357,7 @@ function PISCES(; grid,
 
     sinking_velocities = merge(sinking_velocities, (; grid)) # we need to interpolate the fields so we need this for flux feeding inside a kernel - this might cause problems...
 
-    if (latitude isa PrescribedLatitude) & !(grid isa RectilinearGrid)
+    if (latitude isa PrescribedLatitude) & !((grid isa RectilinearGrid) | (grid isa ImmersedBoundaryGrid))
         φ = φnodes(grid, Center(), Center(), Center())
 
         @warn "A latitude of $latitude was given but the grid has its own latitude ($(minimum(φ)), $(maximum(φ))) so the prescribed value is ignored"

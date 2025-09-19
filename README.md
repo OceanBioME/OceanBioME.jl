@@ -6,7 +6,7 @@
 
 [![Documentation](https://img.shields.io/badge/documentation-stable%20release-blue?style=flat-square)](https://oceanbiome.github.io/OceanBioME.jl/stable/)
 [![Documentation](https://img.shields.io/badge/documentation-dev%20release-orange?style=flat-square)](https://oceanbiome.github.io/OceanBioME.jl/dev/)
-[![Testing build status](https://badge.buildkite.com/3d79ccbf2cba42de1d4e54a2f31cc6f99d377198bf63334d0d.svg)](https://buildkite.com/oceanbiome-dot-jl/gpu-tests)
+[![Build status](https://badge.buildkite.com/3d79ccbf2cba42de1d4e54a2f31cc6f99d377198bf63334d0d.svg)](https://buildkite.com/oceanbiome/oceanbiome)
 [![codecov](https://codecov.io/gh/OceanBioME/OceanBioME.jl/branch/main/graph/badge.svg?token=3DIW4R7N3R)](https://codecov.io/gh/OceanBioME/OceanBioME.jl)
 # *Ocean* *Bio*geochemical *M*odelling *E*nvironment
 
@@ -39,7 +39,7 @@ grid = RectilinearGrid(CPU(), size = (160, 32), extent = (10000meters, 500meters
 biogeochemistry = NutrientPhytoplanktonZooplanktonDetritus(; grid) 
 
 model = NonhydrostaticModel(; grid, biogeochemistry,
-                              advection = WENO(; grid),
+                              advection = WENO(),
                               closure = AnisotropicMinimumDissipation(),
 			      buoyancy = SeawaterBuoyancy(constant_salinity = true))
 
@@ -53,10 +53,10 @@ set!(model, N = Nᵢ, P = Pᵢ, Z = Pᵢ, T = Tᵢ)
 
 simulation = Simulation(model; Δt = 50, stop_time = 4days)
 
-simulation.output_writers[:tracers] = JLD2OutputWriter(model, model.tracers,
-                                                       filename = "buoyancy_front.jld2",
-                                                       schedule = TimeInterval(24minute),
-                                                       overwrite_existing = true)
+simulation.output_writers[:tracers] = JLD2Writer(model, model.tracers,
+                                                 filename = "buoyancy_front.jld2",
+                                                 schedule = TimeInterval(24minute),
+                                                 overwrite_existing = true)
 
 run!(simulation)
 ```
@@ -65,6 +65,9 @@ run!(simulation)
 <summary>We can then visualise this:</summary>
 
 ```julia
+# Before running the visualization code below, make sure CairoMakie is installed:
+using Pkg; Pkg.add("CairoMakie")
+
 T = FieldTimeSeries("buoyancy_front.jld2", "T")
 N = FieldTimeSeries("buoyancy_front.jld2", "N")
 P = FieldTimeSeries("buoyancy_front.jld2", "P")

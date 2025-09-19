@@ -1,11 +1,11 @@
 using Oceananigans.Architectures: device
 using Oceananigans.Biogeochemistry: update_tendencies!, biogeochemical_auxiliary_fields, AbstractBiogeochemistry, AbstractContinuousFormBiogeochemistry
 using Oceananigans.Grids: nodes, Center
-using Oceananigans.TimeSteppers: rk3_substep_field!, store_field_tendencies!, RungeKutta3TimeStepper, QuasiAdamsBashforth2TimeStepper
+using Oceananigans.TimeSteppers: rk3_substep_field!, RungeKutta3TimeStepper, QuasiAdamsBashforth2TimeStepper
 using Oceananigans.Utils: work_layout, launch!
 using Oceananigans: TendencyCallsite
 
-import Oceananigans.TimeSteppers: rk3_substep!, store_tendencies!, compute_tendencies!
+import Oceananigans.TimeSteppers: rk3_substep!, cache_previous_tendencies!, compute_tendencies!, compute_flux_bc_tendencies!
 
 function BoxModelTimeStepper(name::Symbol, grid, tracers)
     fullname = Symbol(name, :TimeStepper)
@@ -17,7 +17,7 @@ function BoxModelTimeStepper(name::Symbol, grid, tracers)
 end
 
 """ Store previous source terms before updating them. """
-function store_tendencies!(model::BoxModel)
+function cache_previous_tendencies!(model::BoxModel)
     model_fields = prognostic_fields(model)
 
     @inbounds for field_name in keys(model_fields)
@@ -91,3 +91,6 @@ function rk3_substep!(U, Δt, γ¹::FT, ::Nothing, G¹, G⁰) where FT
 
     return nothing
 end
+
+compute_flux_bc_tendencies!(model::BoxModel) = nothing
+

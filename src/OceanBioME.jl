@@ -6,6 +6,7 @@ module OceanBioME
 
 # Biogeochemistry models and useful things
 export Biogeochemistry, LOBSTER, PISCES, NutrientPhytoplanktonZooplanktonDetritus, NPZD, redfield
+export InstantRemineralisationSediment, SimpleMultiGSediment
 export DepthDependantSinkingSpeed, PrescribedLatitude, ModelLatitude, PISCESModel
 
 # Macroalgae models
@@ -127,7 +128,12 @@ biogeochemical_auxiliary_fields(bgc::CompleteBiogeochemistry) = merge(biogeochem
 
 @inline chlorophyll(bgc::CompleteBiogeochemistry, model) = chlorophyll(bgc.underlying_biogeochemistry, model)
 
-@inline adapt_structure(to, bgc::ContinuousBiogeochemistry) = adapt(to, bgc.underlying_biogeochemistry)
+@inline adapt_structure(to, bgc::ContinuousBiogeochemistry) = 
+    ContinuousBiogeochemistry(adapt(to, bgc.underlying_biogeochemistry),
+                              adapt(to, bgc.light_attenuation),
+                              nothing,
+                              nothing,
+                              nothing)
 
 @inline adapt_structure(to, bgc::DiscreteBiogeochemistry) = 
     DiscreteBiogeochemistry(adapt(to, bgc.underlying_biogeochemistry),
@@ -151,14 +157,14 @@ update_tendencies!(bgc, modifiers::Tuple, model) = [update_tendencies!(bgc, modi
 function update_biogeochemical_state!(bgc::CompleteBiogeochemistry, model)
     # TODO: change the order of arguments here since they should definitly be the other way around
     update_biogeochemical_state!(model, bgc.modifiers)
-    #synchronize(device(architecture(model)))
     update_biogeochemical_state!(model, bgc.light_attenuation)
     update_biogeochemical_state!(model, bgc.underlying_biogeochemistry)
+    update_biogeochemical_state!(model, bgc.sediment)
 end
 
 update_biogeochemical_state!(model, modifiers::Tuple) = [update_biogeochemical_state!(model, modifier) for modifier in modifiers]
 
-BoxModelGrid(; arch = CPU(), kwargs...) = RectilinearGrid(arch; topology = (Flat, Flat, Flat), size = (), kwargs...)
+BoxModelGrid(FT = Float64; arch = CPU(), kwargs...) = RectilinearGrid(arch, FT; topology = (Flat, Flat, Flat), size = (), kwargs...)
 
 @inline maximum_sinking_velocity(bgc) = 0.0
 
@@ -204,6 +210,7 @@ modifier_summary(modifiers::Tuple) = tuple([summary(modifier) for modifier in mo
 include("Utils/Utils.jl")
 include("Light/Light.jl")
 include("Particles/Particles.jl")
+include("Sediments/Sediments.jl")
 include("BoxModel/boxmodel.jl")
 include("Models/Models.jl")
 

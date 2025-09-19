@@ -1,4 +1,4 @@
-# [Implementing a new models](@id model_implementation)
+# [Implementing new models](@id model_implementation)
 
 Here we describe how OceanBioME defines biogeochemical (BGC) models, how this varies from Oceananigans, and how to implement your own model.
 
@@ -21,6 +21,7 @@ The first step is to import the abstract type from OceanBioME, some units from O
 using OceanBioME, Oceananigans
 using Oceananigans.Biogeochemistry: AbstractContinuousFormBiogeochemistry
 using Oceananigans.Units
+using Oceananigans.Fields: ConstantField
 
 import Oceananigans.Biogeochemistry: required_biogeochemical_tracers,
                                      required_biogeochemical_auxiliary_fields,
@@ -39,11 +40,13 @@ We then define our `struct` with the model parameters, as well as slots for the 
          optimal_temperature :: FT = 28.0                    # °C
               mortality_rate :: FT = 0.15 / day              # 1 / seconds
      crowding_mortality_rate :: FT = 0.004 / day / 1000 * 14 # 1 / seconds / mmol N / m³
-            sinking_velocity :: W  = 2 / day
+            sinking_velocity :: W  = ConstantField(2 / day)
 end
 ```
 
-Here, we use descriptive names for the parameters. Below, each of these parameters correspond to a symbol (or letter) which is more convenient mathematically and when defining the BGC model functions. In the above code we used `@kwdef` to set default values for the models so that we don't have to set all of these parameters each time we use the model. The default parameter values can optionally be over-ridden by the user when running the model. We have also included a `sinking_velocity` field in the parameter set to demonstrate how we can get tracers (e.g. detritus) to sink. We also need to define some functions so that OceanBioME and Oceananigans know what tracers and auxiliary fields (e.g. light intensity) we use:
+Here, we use descriptive names for the parameters. Below, each of these parameters correspond to a symbol (or letter) which is more convenient mathematically and when defining the BGC model functions. In the above code we used `@kwdef` to set default values for the models so that we don't have to set all of these parameters each time we use the model. The default parameter values can optionally be over-ridden by the user when running the model. We have also included a `sinking_velocity` field in the parameter set to demonstrate how we can get tracers (e.g. detritus) to sink.
+
+We also need to define some functions so that OceanBioME and Oceananigans know what tracers and auxiliary fields (e.g. light intensity) we use:
 
 ```@example implementing
 required_biogeochemical_tracers(::NutrientPhytoplankton) = (:N, :P, :T)
@@ -106,7 +109,7 @@ The first parameter `::Val{:P}` is a special [value type](http://www.jlhub.com/j
 
 For this model, the nutrient evolution can be inferred from the rate of change of phytoplankton. Since this is a simple two variable model and the total concentration is conserved, 
 ```math
-\frac{\partial N}{\partial t} = - \frac{\partial P}{\partial t}
+\frac{\partial N}{\partial t} = - \frac{\partial P}{\partial t}.
 ```
 Hence, we define the nutrient forcing using as the negative of the phytoplankton forcing
 ```@example implementing
@@ -143,7 +146,7 @@ set!(model, N = 15, P = 15)
 
 simulation = Simulation(model; Δt = 5minutes, stop_time = 5years)
 
-simulation.output_writers[:fields] = JLD2OutputWriter(model, model.fields; filename = "box_np.jld2", schedule = TimeInterval(10days), overwrite_existing = true)
+simulation.output_writers[:fields] = JLD2Writer(model, model.fields; filename = "box_np.jld2", schedule = TimeInterval(10days), overwrite_existing = true)
 
 # ## Run the model (should only take a few seconds)
 @info "Running the model..."
@@ -215,7 +218,6 @@ import OceanBioME.Sediments: nitrogen_flux, carbon_flux, remineralisation_receiv
 Now that we have added these elements we can put it together into another simple example:
 ```@example implementing
 using Oceananigans, OceanBioME
-using OceanBioME.Sediments: InstantRemineralisation
 
 # define some simple forcing
 
@@ -233,7 +235,7 @@ grid = RectilinearGrid(topology = (Flat, Flat, Bounded), size = (32, ), x = 1, y
 
 light_attenuation = TwoBandPhotosyntheticallyActiveRadiation(; grid, surface_PAR)
 
-sediment = InstantRemineralisation(; grid)
+sediment = InstantRemineralisationSediment(grid; sinking_tracers = :P)
 
 sinking_velocity = ZFaceField(grid)
 
@@ -265,16 +267,16 @@ set!(model, P = 0.01, N = 15, T = 28)
 
 simulation = Simulation(model, Δt = 9minutes, stop_time = 1years)
 
-simulation.output_writers[:tracers] = JLD2OutputWriter(model, model.tracers,
-                                                       filename = "column_np.jld2",
-                                                       schedule = TimeInterval(1day),
-                                                       overwrite_existing = true)
+simulation.output_writers[:tracers] = JLD2Writer(model, model.tracers,
+                                                 filename = "column_np.jld2",
+                                                 schedule = TimeInterval(1day),
+                                                 overwrite_existing = true)
 
-simulation.output_writers[:sediment] = JLD2OutputWriter(model, model.biogeochemistry.sediment.fields,
-                                                        indices = (:, :, 1),
-                                                        filename = "column_np_sediment.jld2",
-                                                        schedule = TimeInterval(1day),
-                                                        overwrite_existing = true)
+simulation.output_writers[:sediment] = JLD2Writer(model, model.biogeochemistry.sediment.fields,
+                                                  indices = (:, :, 1),
+                                                  filename = "column_np_sediment.jld2",
+                                                  schedule = TimeInterval(1day),
+                                                  overwrite_existing = true)
 
 run!(simulation)
 ```
@@ -285,7 +287,7 @@ We can then visualise this:
 N = FieldTimeSeries("column_np.jld2", "N")
 P = FieldTimeSeries("column_np.jld2", "P")
 
-sed = FieldTimeSeries("column_np_sediment.jld2", "N_storage")
+sed = FieldTimeSeries("column_np_sediment.jld2", "storage")
 
 fig = Figure()
 
@@ -311,6 +313,33 @@ fig
 ```
 
 We can see in this that some phytoplankton sink to the bottom, and are both remineralized back into nutrients and stored in the sediment.
+
+### Running on a GPU
+
+In order to run a BGC model on a GPU we need to tell the compiler how to `adapt` the `NutrientPhytoplankton` struct for GPU kernels (see [here](https://clima.github.io/OceananigansDocumentation/stable/simulation_tips/#Arrays-in-GPUs-are-usually-different-from-arrays-in-CPUs) for more information). After the definition of the BGC `struct`, we write:
+
+```@example implementing
+using Pkg; Pkg.add("Adapt")
+using Adapt
+
+import Adapt: adapt_structure
+
+Adapt.adapt_structure(to, bgc::NutrientPhytoplankton) = NutrientPhytoplankton(adapt(to, bgc.base_growth_rate),
+                                                                              adapt(to, bgc.nutrient_half_saturation),
+                                                                              adapt(to, bgc.light_half_saturation),
+                                                                              adapt(to, bgc.temperature_exponent),
+                                                                              adapt(to, bgc.temperature_coefficient),
+                                                                              adapt(to, bgc.optimal_temperature),
+                                                                              adapt(to, bgc.mortality_rate),
+                                                                              adapt(to, bgc.crowding_mortality_rate),
+                                                                              adapt(to, bgc.sinking_velocity))
+```
+
+We can add `grid` as the second argument for `ScaleNegativeTracers` so that it automatically works on a GPU. We replace the definition of `negative_tracer_scaling` with:
+
+```@example implementing
+negative_tracer_scaling = ScaleNegativeTracers((:N, :P), grid)
+```
 
 ### Final notes
 When implementing a new model we recommend following a testing process as we have here, starting with a box model, then a column, and finally using it in a realistic physics scenarios. We have found this very helpful for spotting bugs that were proving difficult to decipher in other situations. You can also add `Individuals`, light attenuation models, and sediment models in a similar fashion.

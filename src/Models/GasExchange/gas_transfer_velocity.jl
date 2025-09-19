@@ -21,12 +21,15 @@ The `base_transfer_velocity` (k₆₆₀) is typically an empirically derived ga
 normalised by the Scmidt number for CO₂ at 20°C (660), and the `schmidt_number` (Sc) is a parameterisation
 of the gas specific Schmidt number.
 """
-@kwdef struct SchmidtScaledTransferVelocity{KB, SC} 
-  base_transfer_velocity :: KB = Ho06()
+struct SchmidtScaledTransferVelocity{KB, SC} 
+  base_transfer_velocity :: KB
           schmidt_number :: SC
 end
 
-(k::SchmidtScaledTransferVelocity)(u₁₀, T) = k.base_transfer_velocity(u₁₀) * (k.schmidt_number(T) / 660)^(-1/2)
+SchmidtScaledTransferVelocity(FT = Float64; base_transfer_velocity::KB = Ho06(FT), schmidt_number) where KB = 
+    SchmidtScaledTransferVelocity(base_transfer_velocity, schmidt_number)
+
+(k::SchmidtScaledTransferVelocity)(u₁₀::FT, T) where FT = k.base_transfer_velocity(u₁₀) / sqrt(k.schmidt_number(T) / convert(FT, 660))
 
 Adapt.adapt_structure(to, k::SchmidtScaledTransferVelocity) = SchmidtScaledTransferVelocity(adapt(to, k.base_transfer_velocity),
                                                                                             adapt(to, k.schmidt_number))
