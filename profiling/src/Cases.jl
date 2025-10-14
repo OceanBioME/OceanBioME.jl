@@ -369,6 +369,7 @@ function big_PISCES(;
     enable_io :: Bool = true,
     runlength_scale :: Float64 = 1.0,
     filename :: AbstractString = "PISCES",
+    progress_hook = () -> nothing
    )
 
     duration = fast_kill ? 0.1day : 10days * runlength_scale # Duration of the simulation
@@ -486,13 +487,17 @@ function big_PISCES(;
     wizard = TimeStepWizard(cfl = 0.75, diffusive_cfl = 0.75, max_Δt = 30minutes)
     simulation.callbacks[:wizard] = Callback(wizard, IterationInterval(5))
 
-    progress_message(sim) = @printf(
+
+    function progress_message(sim)
+        @printf(
         "Iteration: %04d, time: %s, Δt: %s, wall time: %s\n",
         iteration(sim),
         prettytime(sim),
         prettytime(sim.Δt),
         prettytime(sim.run_wall_time)
     )
+    progress_hook()
+    end
 
     add_callback!(simulation, progress_message, IterationInterval(1))
 
