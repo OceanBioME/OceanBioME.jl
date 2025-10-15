@@ -1,6 +1,5 @@
 using Oceananigans.Architectures: architecture
 using Oceananigans.BoundaryConditions: fill_halo_regions!
-using Oceananigans.BuoyancyFormulations: g_Earth
 using Oceananigans.Models: fields
 using Oceananigans.Utils: launch!
 
@@ -29,7 +28,8 @@ end
 
     z = znode(i, j, k, grid, Center(), Center(), Center())
 
-    P = abs(z) * g_Earth * 1026 / 100000 # very rough - don't think we should bother integrating the actual density
+    # very rough - don't think we should bother integrating the actual density
+    P = abs(z) * Oceananigans.defaults.gravitational_acceleration * 1026 / 100000
 
     @inbounds calcite_saturation[i, j, k] = CarbonChemistryModel.calcite_saturation(carbon_chemistry; DIC, T, S, Alk, P, silicate)
 end
