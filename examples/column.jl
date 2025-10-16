@@ -48,7 +48,7 @@ grid = RectilinearGrid(size = (1, 1, 50), extent = (20meters, 20meters, 200meter
 
 biogeochemistry = LOBSTER(; grid,
                             surface_photosynthetically_active_radiation = PAR⁰,
-                            carbonates = true,
+                            carbonate_system = CarbonateSystem(),
                             scale_negatives = true)
 
 CO₂_flux = CarbonDioxideGasExchangeBoundaryCondition()
