@@ -103,7 +103,9 @@ Note: The model always requires `T`, `S`, `DIC`, and `Alk` to be present in the 
 """
 function CarbonDioxideGasExchangeBoundaryCondition(FT = Float64; 
                                                    carbon_chemistry = CarbonChemistry(FT),
-                                                   transfer_velocity = SchmidtScaledTransferVelocity(FT; schmidt_number = CarbonDioxidePolynomialSchmidtNumber(FT)),
+                                                   transfer_velocity = SchmidtScaledTransferVelocity(FT; 
+                                                                                                     schmidt_number = CarbonDioxidePolynomialSchmidtNumber(FT),
+                                                                                                     solubility = carbon_chemistry.solubility),
                                                    air_concentration = 413, # ppmv
                                                    wind_speed = 2,
                                                    water_concentration = nothing,
