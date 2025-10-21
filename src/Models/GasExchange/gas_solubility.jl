@@ -58,4 +58,4 @@ struct MolPerKgPerAtmToMMolPerCubicMPerMicroAtm{SO, DE}
        density :: DE
 end
 
-@inline (dss::MolPerKgPerAtmToMMolPerCubicMPerMicroAtm)(T, S) = dss.solubility(T, S) * dss.density(T, S) / 10^3
+@inline (dss::MolPerKgPerAtmToMMolPerCubicMPerMicroAtm)(T, S) = dss.solubility(T + 273.15, S) * dss.density(T, S) / 10^3
