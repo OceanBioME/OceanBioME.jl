@@ -35,7 +35,7 @@ SchmidtScaledTransferVelocity(FT = Float64; base_transfer_velocity::KB = Ho06(FT
 
 Adapt.adapt_structure(to, k::SchmidtScaledTransferVelocity) = SchmidtScaledTransferVelocity(adapt(to, k.base_transfer_velocity),
                                                                                             adapt(to, k.schmidt_number).
-                                                                                            adapt(to, k.solubility)
+                                                                                            adapt(to, k.solubility))
 
 summary(::SchmidtScaledTransferVelocity{KB, SC}) where {KB, SC} = "SchmidtScaledTransferVelocity{$(nameof(KB)), $(nameof(SC))}"
 show(io::IO, k::SchmidtScaledTransferVelocity{KB, SC}) where {KB, SC} = 
