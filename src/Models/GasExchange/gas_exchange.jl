@@ -28,7 +28,7 @@ end
 
     u₁₀ = surface_value(g.wind_speed, i, j, grid, clock)
 
-    k = g.transfer_velocity(u₁₀, T)
+    k = g.transfer_velocity(u₁₀, T, S)
 
     air_concentration = surface_value(g.air_concentration, i, j, grid, clock, model_fields)
 
