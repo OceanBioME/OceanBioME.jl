@@ -25,6 +25,7 @@ end
 
 @inline function (g::GasExchange)(i, j, grid, clock, model_fields)
     T = @inbounds model_fields.T[i, j, grid.Nz]
+    S = @inbounds model_fields.S[i, j, grid.Nz]
 
     u₁₀ = surface_value(g.wind_speed, i, j, grid, clock)
 
