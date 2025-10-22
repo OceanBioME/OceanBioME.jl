@@ -58,4 +58,8 @@ struct MolPerKgPerAtmToMMolPerCubicMPerMicroAtm{SO, DE}
        density :: DE
 end
 
+Adapt.adapt_structure(to, k::SchmidtScaledMolPerKgPerAtmToMMolPerCubicMPerMicroAtmTransferVelocity) = 
+    MolPerKgPerAtmToMMolPerCubicMPerMicroAtm(adapt(to, k.solubility),
+                                             adapt(to, k.density))
+
 @inline (dss::MolPerKgPerAtmToMMolPerCubicMPerMicroAtm)(T::FT, S) where FT = dss.solubility(T + FT(273.15), S) * dss.density(T, S) / FT(10^3)
