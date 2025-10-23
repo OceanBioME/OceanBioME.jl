@@ -30,7 +30,7 @@ carbon_chemistry(; DIC, Alk, T, S, P = 100)
 
 We may also be interested in the pH so we can request that be outputted:
 ```@example carbon-chem
-carbon_chemistry(; DIC, Alk, T, S, return_pH = true)
+carbon_chemistry(; DIC, Alk, T, S, output=Val(:pH))
 ```
 
 These function calls assume a constant boron, sulfate, and fluoride ratio relative to the salinity (as described below), but can be specified instead:

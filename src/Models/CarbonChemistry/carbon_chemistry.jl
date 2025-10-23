@@ -53,7 +53,7 @@ julia> carbon_chemistry = CarbonChemistry()
 julia> pCO₂ = carbon_chemistry(; DIC = 2000, Alk = 2000, T = 10, S = 35)
 1308.0843992121615
 
-julia> pH = carbon_chemistry(; DIC = 2000, Alk = 2000, T = 10, S = 35, return_pH = true)
+julia> pH = carbon_chemistry(; DIC = 2000, Alk = 2000, T = 10, S = 35, output = Val(:pH))
 7.502534641304366
 
 julia> pCO₂_higher_pH = carbon_chemistry(; DIC = 2000, T = 10, S = 35, pH = 7.5)
@@ -167,7 +167,7 @@ Alternativly pCO₂ or pH may be returned by setting output to Val(:pCO₂) or V
     # mili-equivalents / m³ to equivalents / kg
     Alk *= convert(FT, 1e-3) / ρₒ
 
-    # mmol / m³ to mol / kg
+    # mmol / m³ to mol / kgg
     DIC       *= convert(FT, 1e-3) / ρₒ
     phosphate *= convert(FT, 1e-3) / ρₒ
     silicate  *= convert(FT, 1e-3) / ρₒ
