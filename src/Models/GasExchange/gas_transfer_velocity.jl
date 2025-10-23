@@ -21,18 +21,21 @@ The `base_transfer_velocity` (k₆₆₀) is typically an empirically derived ga
 normalised by the Scmidt number for CO₂ at 20°C (660), and the `schmidt_number` (Sc) is a parameterisation
 of the gas specific Schmidt number.
 """
-struct SchmidtScaledTransferVelocity{KB, SC} 
+struct SchmidtScaledTransferVelocity{KB, SC, SO} 
   base_transfer_velocity :: KB
           schmidt_number :: SC
+              solubility :: SO
 end
 
-SchmidtScaledTransferVelocity(FT = Float64; base_transfer_velocity::KB = Ho06(FT), schmidt_number) where KB = 
-    SchmidtScaledTransferVelocity(base_transfer_velocity, schmidt_number)
+SchmidtScaledTransferVelocity(FT = Float64; base_transfer_velocity::KB = Ho06(FT), schmidt_number, solubility = (T, S) -> one(FT)) where KB = 
+    SchmidtScaledTransferVelocity(base_transfer_velocity, schmidt_number, solubility)
 
-(k::SchmidtScaledTransferVelocity)(u₁₀::FT, T) where FT = k.base_transfer_velocity(u₁₀) / sqrt(k.schmidt_number(T) / convert(FT, 660))
+(k::SchmidtScaledTransferVelocity)(u₁₀::FT, T, S) where FT = 
+    k.base_transfer_velocity(u₁₀) / sqrt(k.schmidt_number(T) / convert(FT, 660)) * k.solubility(T, S)
 
 Adapt.adapt_structure(to, k::SchmidtScaledTransferVelocity) = SchmidtScaledTransferVelocity(adapt(to, k.base_transfer_velocity),
-                                                                                            adapt(to, k.schmidt_number))
+                                                                                            adapt(to, k.schmidt_number),
+                                                                                            adapt(to, k.solubility))
 
 summary(::SchmidtScaledTransferVelocity{KB, SC}) where {KB, SC} = "SchmidtScaledTransferVelocity{$(nameof(KB)), $(nameof(SC))}"
 show(io::IO, k::SchmidtScaledTransferVelocity{KB, SC}) where {KB, SC} = 
