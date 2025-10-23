@@ -53,7 +53,7 @@ julia> carbon_chemistry = CarbonChemistry()
 julia> pCO₂ = carbon_chemistry(; DIC = 2000, Alk = 2000, T = 10, S = 35)
 1308.0843992121615
 
-julia> pH = carbon_chemistry(; DIC = 2000, Alk = 2000, T = 10, S = 35, output = Val(:pH))
+julia> pH = carbon_chemistry(; DIC = 2000, Alk = 2000, T = 10, S = 35, output = Val(:pHᶠ))
 7.502534641304366
 
 julia> pCO₂_higher_pH = carbon_chemistry(; DIC = 2000, T = 10, S = 35, pH = 7.5)
@@ -144,6 +144,8 @@ Calculates `fCO₂` in sea water with `DIC`, `Alk`alinity, `T`emperature, and `S
 unless `pH` is specified, in which case intermediate computation of `pH` is skipped and
 `pCO₂` is calculated from the `DIC`, `T`, `S` and `pH`.
 
+When pH is specified the free pH (i.e. -log[H⁺]) is expected.
+
 Alternativly pCO₂ or pH may be returned by setting output to Val(:pCO₂) or Val(:pH).
 """
 @inline function (p::CarbonChemistry)(; DIC::FT, T, S, Alk = zero(DIC), pH = nothing,
@@ -201,15 +203,15 @@ Alternativly pCO₂ or pH may be returned by setting output to Val(:pCO₂) or V
     fCO₂ = (CO₂ / K0) * convert(FT, 10 ^ 6) # μatm
 
     # compute pH
-    pH = -log10(H)
+    pHᶠ = -log10(H)
 
-    return selected_output(output, fCO₂, pH, P, T, S, p)
+    return selected_output(output, fCO₂, pHᶠ, P, T, S, Is, sulfate, fluoride, p)
 end
 
-@inline selected_output(::Val{:fCO₂}, fCO₂, pH, P, T, S, p) = fCO₂ # ppm
-@inline selected_output(::Val{:pH}, fCO₂, pH, P, T, S, p) = pH # 
+@inline selected_output(::Val{:fCO₂}, fCO₂, pHᶠ, P, T, S, Is, sulfate, fluoride, p) = fCO₂ # ppm
+@inline selected_output(::Val{:pHᶠ}, fCO₂, pHᶠ, P, T, S, Is, sulfate, fluoride, p) = pHᶠ # 
 
-@inline function selected_output(::Val{:pCO₂}, fCO₂::FT, pH, P, Tk, S, p) where FT
+@inline function selected_output(::Val{:pCO₂}, fCO₂::FT, pHᶠ, P, T, S, Is, sulfate, fluoride, p) where FT
     P = ifelse(isnothing(P), one(fCO₂), P)
     P *= convert(FT, 101325) # pascals
 
@@ -232,6 +234,27 @@ end
     pCO₂ /= convert(FT, 0.09807) # μatm or ppmv
 
     return pCO₂ # ppmv
+end
+
+@inline function selected_output(::Val{:pHᵗ}, fCO₂::FT, pHᶠ, P, T, S, Is, sulfate, fluoride, p) where FT
+    H = convert(FT, 10) ^ -pHᶠ
+
+    KS  = p.sulfate(T, S, Is; P)
+    HSO₄⁻ = sulfate / (1 + KS / H)
+
+    return -log10(H + HSO₄⁻)
+end
+
+@inline function selected_output(::Val{:pHˢ}, fCO₂::FT, pHᶠ, P, T, S, Is, sulfate, fluoride, p) where FT
+    H = convert(FT, 10) ^ -pHᶠ
+
+    KS  = p.sulfate(T, S, Is; P)
+    HSO₄⁻ = sulfate / (1 + KS / H)
+
+    KF  = p.fluoride(T, S, Is, KS; P)
+    HF = fluoride / (1 + KF / H)
+
+    return -log10(H + HSO₄⁻ + HF)
 end
 
 # solves `alkalinity_residual` for pH
