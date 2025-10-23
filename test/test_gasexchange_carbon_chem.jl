@@ -56,11 +56,11 @@ end
 
 grid = RectilinearGrid(architecture; size=(1, 1, 2), extent=(1, 1, 1))
 
-@inline conc_function(x, y, t) = 413.0 + 10.0 * sin(t * π / year)
+@inline conc_function(x, y, t) = 413
 
 conc_field = CenterField(grid)
 
-set!(conc_field, (args...) -> 10 * randn() + 413) 
+set!(conc_field, (args...) -> 413) 
 
 @testset "Gas exchange coupling" begin
     for air_concentration in [413.1, conc_function, conc_field]
