@@ -44,7 +44,7 @@ end
 
     for (idx, DIC) in enumerate(DIC)
         fCO₂_results[idx] = fCO₂_model(; DIC, Alk = Alk[idx], T = T[idx], S = S[idx])
-        pH_results[idx] = fCO₂_model(; DIC, Alk = Alk[idx], T = T[idx], S = S[idx], output = Val(:pH))
+        pH_results[idx] = fCO₂_model(; DIC, Alk = Alk[idx], T = T[idx], S = S[idx], output = Val(:pHᶠ))
     end
 
     fCO₂_err = pCO₂ .- fCO₂_results
