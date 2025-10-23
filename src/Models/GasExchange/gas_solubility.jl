@@ -58,7 +58,7 @@ struct MolPerKgPerAtmToMMolPerCubicMPerMicroAtm{SO, DE}
        density :: DE
 end
 
-Adapt.adapt_structure(to, k::SchmidtScaledMolPerKgPerAtmToMMolPerCubicMPerMicroAtmTransferVelocity) = 
+Adapt.adapt_structure(to, k::MolPerKgPerAtmToMMolPerCubicMPerMicroAtm) = 
     MolPerKgPerAtmToMMolPerCubicMPerMicroAtm(adapt(to, k.solubility),
                                              adapt(to, k.density))
 
