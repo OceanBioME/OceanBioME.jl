@@ -1,6 +1,6 @@
 include("dependencies_for_runtests.jl")
 
-using Oceananigans, Oceananigans.Units, JLD2, Statistics
+using Oceananigans, Oceananigans.Units, DataDeps, JLD2, Statistics
 
 using Oceananigans.Fields: ConstantField
 
@@ -10,6 +10,14 @@ using OceanBioME.Models.GasExchangeModel: surface_value
 using OceanBioME.Models.CarbonChemistryModel: IonicStrength, K0, K1, K2, KB, KW, KS, KF, KP, KSi, KSP_aragonite, KSP_calcite
 
 const year = years = 365days # just for the idealised case below
+
+dd = DataDep(
+    "test_data",
+    "CODAP-NA (https://essd.copernicus.org/articles/13/2777/2021/) data for testing pCO₂ calculations", 
+    "https://github.com/OceanBioME/OceanBioME_example_data/raw/main/CODAP_data.jld2"
+)
+
+register(dd)
 
 function test_gas_exchange_model(grid, air_concentration)
     model = NonhydrostaticModel(; grid, 
