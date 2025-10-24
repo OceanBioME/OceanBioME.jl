@@ -35,27 +35,11 @@ summary(::CarbonDioxideConcentration{CC, FV, CV, AP}) where {CC, FV, CV, AP} =
     T = @inbounds model_fields.T[i, j, grid.Nz]
     S = @inbounds model_fields.S[i, j, grid.Nz]
 
-    FT = eltype(grid)
-
     silicate, phosphate = silicate_and_phosphate(cc.silicate_and_phosphate_names, model_fields)
 
-    fCO₂ = cc.carbon_chemistry(; DIC, Alk, T, S, silicate, phosphate)
+    pCO₂ = cc.carbon_chemistry(; DIC, Alk, T, S, silicate, phosphate, output = Val(:pCO₂))
 
-    P = surface_value(cc.air_pressure, i, j, grid, clock) * convert(FT, ATM)
-    Tk = T + convert(FT, 273.15)
-
-    B = cc.first_virial_coefficient(Tk)
-    δ = cc.cross_virial_coefficient(Tk)
-
-    xCO₂ = fCO₂ / P
-    
-    # Experimentally this converged xCO₂ to machine precision
-    for n = 1:3
-        φ = P * exp((B + convert(FT, 2) * (one(FT) - xCO₂)^convert(FT, 2) * δ) * P / (convert(FT, GAS_CONSTANT) * Tk))
-        xCO₂ = fCO₂ / φ
-    end
-
-    return xCO₂ * P # mol/mol to ppm
+    return pCO₂ # ppmv
 end
 
 @inline silicate_and_phosphate(::Nothing, args...) = (0, 0)
