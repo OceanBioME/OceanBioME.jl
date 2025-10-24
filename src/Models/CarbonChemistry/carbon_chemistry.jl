@@ -204,16 +204,13 @@ Alternativly pCO₂ or pH may be returned by setting output to Val(:pCO₂) or V
     CO₂  = DIC * H ^ 2 / (H ^ 2 + K1 * H + K1 * K2) 
     fCO₂ = (CO₂ / K0) * convert(FT, 10 ^ 6) # μatm
 
-    # compute pH
-    pHᶠ = -log10(H)
-
-    return selected_output(output, fCO₂, pHᶠ, P, T, S, Is, sulfate, fluoride, p)
+    return selected_output(output, fCO₂, H, P, T, S, Is, sulfate, fluoride, p)
 end
 
-@inline selected_output(::Val{:fCO₂}, fCO₂, pHᶠ, P, Tk, S, Is, sulfate, fluoride, p) = fCO₂ # ppm
-@inline selected_output(::Val{:pHᶠ}, fCO₂, pHᶠ, P, Tk, S, Is, sulfate, fluoride, p) = pHᶠ # 
+@inline selected_output(::Val{:fCO₂}, fCO₂, H, P, Tk, S, Is, sulfate, fluoride, p) = fCO₂ # ppm
+@inline selected_output(::Val{:pHᶠ}, fCO₂, H, P, Tk, S, Is, sulfate, fluoride, p) = -log10(H) # 
 
-@inline function selected_output(::Val{:pCO₂}, fCO₂::FT, pHᶠ, P, Tk, S, Is, sulfate, fluoride, p) where FT
+@inline function selected_output(::Val{:pCO₂}, fCO₂::FT, H, P, Tk, S, Is, sulfate, fluoride, p) where FT
     P = ifelse(isnothing(P), one(fCO₂), P)
     P *= convert(FT, 101325) # pascals
 
@@ -238,18 +235,14 @@ end
     return pCO₂ # ppmv
 end
 
-@inline function selected_output(::Val{:pHᵗ}, fCO₂::FT, pHᶠ, P, Tk, S, Is, sulfate, fluoride, p) where FT
-    H = convert(FT, 10) ^ -pHᶠ
-
+@inline function selected_output(::Val{:pHᵗ}, fCO₂::FT, H, P, Tk, S, Is, sulfate, fluoride, p) where FT
     KS  = p.sulfate(Tk, S, Is; P)
     HSO₄⁻ = sulfate / (1 + KS / H)
 
     return -log10(H + HSO₄⁻)
 end
 
-@inline function selected_output(::Val{:pHˢ}, fCO₂::FT, pHᶠ, P, Tk, S, Is, sulfate, fluoride, p) where FT
-    H = convert(FT, 10) ^ -pHᶠ
-
+@inline function selected_output(::Val{:pHˢ}, fCO₂::FT, H, P, Tk, S, Is, sulfate, fluoride, p) where FT
     KS  = p.sulfate(Tk, S, Is; P)
     HSO₄⁻ = sulfate / (1 + KS / H)
 
