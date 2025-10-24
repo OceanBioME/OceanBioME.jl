@@ -1,0 +1,118 @@
+<!DOCTYPE html>
+<html lang="en"><head><meta charset="UTF-8"/><meta name="viewport" content="width=device-width, initial-scale=1.0"/><title>Simple column model · OceanBioME.jl</title><meta name="title" content="Simple column model · OceanBioME.jl"/><meta property="og:title" content="Simple column model · OceanBioME.jl"/><meta property="twitter:title" content="Simple column model · OceanBioME.jl"/><meta name="description" content="Documentation for OceanBioME.jl."/><meta property="og:description" content="Documentation for OceanBioME.jl."/><meta property="twitter:description" content="Documentation for OceanBioME.jl."/><meta property="og:url" content="https://OceanBioME.github.io/OceanBioME/stable/generated/column/"/><meta property="twitter:url" content="https://OceanBioME.github.io/OceanBioME/stable/generated/column/"/><link rel="canonical" href="https://OceanBioME.github.io/OceanBioME/stable/generated/column/"/><script data-outdated-warner src="../../assets/warner.js"></script><link href="https://cdnjs.cloudflare.com/ajax/libs/lato-font/3.0.0/css/lato-font.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/juliamono/0.050/juliamono.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/fontawesome.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/solid.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/brands.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.16.8/katex.min.css" rel="stylesheet" type="text/css"/><script>documenterBaseURL="../.."</script><script src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.6/require.min.js" data-main="../../assets/documenter.js"></script><script src="../../search_index.js"></script><script src="../../siteinfo.js"></script><script src="../../../versions.js"></script><link class="docs-theme-link" rel="stylesheet" type="text/css" href="../../assets/themes/documenter-dark.css" data-theme-name="documenter-dark" data-theme-primary-dark/><link class="docs-theme-link" rel="stylesheet" type="text/css" href="../../assets/themes/documenter-light.css" data-theme-name="documenter-light" data-theme-primary/><script src="../../assets/themeswap.js"></script><link href="../../assets/citations.css" rel="stylesheet" type="text/css"/></head><body><div id="documenter"><nav class="docs-sidebar"><a class="docs-logo" href="../../"><img class="docs-light-only" src="../../assets/logo.png" alt="OceanBioME.jl logo"/><img class="docs-dark-only" src="../../assets/logo-dark.png" alt="OceanBioME.jl logo"/></a><div class="docs-package-name"><span class="docs-autofit"><a href="../../">OceanBioME.jl</a></span></div><button class="docs-search-query input is-rounded is-small is-clickable my-2 mx-auto py-1 px-2" id="documenter-search-query">Search docs (Ctrl + /)</button><ul class="docs-menu"><li><a class="tocitem" href="../../">Home</a></li><li><a class="tocitem" href="../../quick_start/">Quick start</a></li><li><input class="collapse-toggle" id="menuitem-3" type="checkbox" checked/><label class="tocitem" for="menuitem-3"><span class="docs-label">Examples</span><i class="docs-chevron"></i></label><ul class="collapsed"><li><a class="tocitem" href="../box/">Box model</a></li><li class="is-active"><a class="tocitem" href>Simple column model</a><ul class="internal"><li><a class="tocitem" href="#Install-dependencies"><span>Install dependencies</span></a></li><li><a class="tocitem" href="#Model-setup"><span>Model setup</span></a></li><li><a class="tocitem" href="#Surface-PAR-and-turbulent-vertical-diffusivity-based-on-idealised-mixed-layer-depth"><span>Surface PAR and turbulent vertical diffusivity based on idealised mixed layer depth</span></a></li><li><a class="tocitem" href="#Grid"><span>Grid</span></a></li><li><a class="tocitem" href="#Model"><span>Model</span></a></li><li><a class="tocitem" href="#Simulation"><span>Simulation</span></a></li><li><a class="tocitem" href="#Run!"><span>Run!</span></a></li><li><a class="tocitem" href="#Load-saved-output"><span>Load saved output</span></a></li><li><a class="tocitem" href="#Plot"><span>Plot</span></a></li></ul></li><li><a class="tocitem" href="../eady/">Baroclinic instability</a></li><li><a class="tocitem" href="../data_forced/">Data forced column model</a></li><li><a class="tocitem" href="../kelp/">Model with particles (kelp) interacting with the biogeochemistry</a></li><li><a class="tocitem" href="../data_assimilation/">Data assimilation</a></li></ul></li><li><input class="collapse-toggle" id="menuitem-4" type="checkbox"/><label class="tocitem" for="menuitem-4"><span class="docs-label">Model components and setup</span><i class="docs-chevron"></i></label><ul class="collapsed"><li><input class="collapse-toggle" id="menuitem-4-1" type="checkbox"/><label class="tocitem" for="menuitem-4-1"><span class="docs-label">Biogeochemical models</span><i class="docs-chevron"></i></label><ul class="collapsed"><li><a class="tocitem" href="../../model_components/biogeochemical/">Overview</a></li><li><a class="tocitem" href="../../model_components/biogeochemical/LOBSTER/">LOBSTER</a></li><li><a class="tocitem" href="../../model_components/biogeochemical/NPZ/">NPZD</a></li></ul></li><li><a class="tocitem" href="../../model_components/air-sea-gas/">Air-sea gas exchange</a></li><li><input class="collapse-toggle" id="menuitem-4-3" type="checkbox"/><label class="tocitem" for="menuitem-4-3"><span class="docs-label">Sediment models</span><i class="docs-chevron"></i></label><ul class="collapsed"><li><a class="tocitem" href="../../model_components/sediments/">Overview</a></li><li><a class="tocitem" href="../../model_components/sediments/simple_multi_g/">Simple Multi-G</a></li><li><a class="tocitem" href="../../model_components/sediments/instant_remineralisation/">Instant remineralisation</a></li></ul></li><li><a class="tocitem" href="../../model_components/light/">Light attenuation models</a></li><li><input class="collapse-toggle" id="menuitem-4-5" type="checkbox"/><label class="tocitem" for="menuitem-4-5"><span class="docs-label">Individuals</span><i class="docs-chevron"></i></label><ul class="collapsed"><li><a class="tocitem" href="../../model_components/individuals/">Overview</a></li><li><a class="tocitem" href="../../model_components/individuals/slatissima/">Sugar Kelp (Broch and Slagstad 2012 ++)</a></li></ul></li><li><a class="tocitem" href="../../model_components/utils/">Utilities</a></li></ul></li><li><a class="tocitem" href="../../model_implementation/">Implementing new models</a></li><li><input class="collapse-toggle" id="menuitem-6" type="checkbox"/><label class="tocitem" for="menuitem-6"><span class="docs-label">Numerical implementation</span><i class="docs-chevron"></i></label><ul class="collapsed"><li><a class="tocitem" href="../../numerical_implementation/positivity-preservation/">Positivity preservation</a></li></ul></li><li><a class="tocitem" href="../../visualization/">Visualization</a></li><li><a class="tocitem" href="../../contributing/">Contibutors guide</a></li><li><a class="tocitem" href="../../references/">References</a></li><li><input class="collapse-toggle" id="menuitem-10" type="checkbox"/><label class="tocitem" for="menuitem-10"><span class="docs-label">Appendix</span><i class="docs-chevron"></i></label><ul class="collapsed"><li><a class="tocitem" href="../../appendix/library/">Library</a></li><li><a class="tocitem" href="../../appendix/function_index/">Function index</a></li><li><input class="collapse-toggle" id="menuitem-10-3" type="checkbox"/><label class="tocitem" for="menuitem-10-3"><span class="docs-label">Parameters</span><i class="docs-chevron"></i></label><ul class="collapsed"><li><a class="tocitem" href="../LOBSTER_parameters/">LOBSTER</a></li><li><a class="tocitem" href="../NutrientPhytoplanktonZooplanktonDetritus_parameters/">NutrientPhytoplanktonZooplanktonDetritus</a></li><li><a class="tocitem" href="../SLatissima_parameters/">SLatissima</a></li><li><a class="tocitem" href="../TwoBandPhotosyntheticallyActiveRadiation_parameters/">TwoBandPhotosyntheticallyActiveRadiation</a></li><li><a class="tocitem" href="../SimpleMultiG_parameters/">SimpleMultiG</a></li><li><a class="tocitem" href="../InstantRemineralisation_parameters/">InstantRemineralisation</a></li><li><a class="tocitem" href="../OceanBioME.Boundaries.pCO₂_parameters/">OceanBioME.Boundaries.pCO₂</a></li><li><a class="tocitem" href="../CO₂ air-sea exchange_parameters/">CO₂ air-sea exchange</a></li><li><a class="tocitem" href="../O₂ air-sea exchange_parameters/">O₂ air-sea exchange</a></li></ul></li></ul></li></ul><div class="docs-version-selector field has-addons"><div class="control"><span class="docs-label button is-static is-size-7">Version</span></div><div class="docs-selector control is-expanded"><div class="select is-fullwidth is-size-7"><select id="documenter-version-selector"></select></div></div></div></nav><div class="docs-main"><header class="docs-navbar"><a class="docs-sidebar-button docs-navbar-link fa-solid fa-bars is-hidden-desktop" id="documenter-sidebar-button" href="#"></a><nav class="breadcrumb"><ul class="is-hidden-mobile"><li><a class="is-disabled">Examples</a></li><li class="is-active"><a href>Simple column model</a></li></ul><ul class="is-hidden-tablet"><li class="is-active"><a href>Simple column model</a></li></ul></nav><div class="docs-right"><a class="docs-navbar-link" href="https://github.com/OceanBioME/OceanBioME.jl" title="View the repository on GitHub"><span class="docs-icon fa-brands"></span><span class="docs-label is-hidden-touch">GitHub</span></a><a class="docs-navbar-link" href="https://github.com/OceanBioME/OceanBioME.jl/blob/main/examples/column.jl" title="Edit source on GitHub"><span class="docs-icon fa-solid"></span></a><a class="docs-settings-button docs-navbar-link fa-solid fa-gear" id="documenter-settings-button" href="#" title="Settings"></a><a class="docs-article-toggle-button fa-solid fa-chevron-up" id="documenter-article-toggle-button" href="javascript:;" title="Collapse all docstrings"></a></div></header><article class="content" id="documenter-page"><h1 id="OneD_column"><a class="docs-heading-anchor" href="#OneD_column">One-dimensional column example</a><a id="OneD_column-1"></a><a class="docs-heading-anchor-permalink" href="#OneD_column" title="Permalink"></a></h1><p>In this example we setup a simple 1D column with the <a href="../../model_components/biogeochemical/LOBSTER/#LOBSTER">LOBSTER</a> biogeochemical model and observe its evolution. The example demonstrates:</p><ul><li>How to setup OceanBioME&#39;s biogeochemical models</li><li>How to visualise results</li></ul><p>This is forced by idealised mixing layer depth and surface photosynthetically available radiation (PAR) which are setup first.</p><h2 id="Install-dependencies"><a class="docs-heading-anchor" href="#Install-dependencies">Install dependencies</a><a id="Install-dependencies-1"></a><a class="docs-heading-anchor-permalink" href="#Install-dependencies" title="Permalink"></a></h2><p>First we check we have the dependencies installed</p><pre><code class="language-julia hljs">using Pkg
+pkg&quot;add OceanBioME, Oceananigans, CairoMakie&quot;</code></pre><h2 id="Model-setup"><a class="docs-heading-anchor" href="#Model-setup">Model setup</a><a id="Model-setup-1"></a><a class="docs-heading-anchor-permalink" href="#Model-setup" title="Permalink"></a></h2><p>We load the packages and choose the default LOBSTER parameter set</p><pre><code class="language-julia hljs">using OceanBioME, Oceananigans, Printf
+using OceanBioME.SLatissimaModel: SLatissima
+using Oceananigans.Fields: FunctionField, ConstantField
+using Oceananigans.Units
+
+const year = years = 365days</code></pre><h2 id="Surface-PAR-and-turbulent-vertical-diffusivity-based-on-idealised-mixed-layer-depth"><a class="docs-heading-anchor" href="#Surface-PAR-and-turbulent-vertical-diffusivity-based-on-idealised-mixed-layer-depth">Surface PAR and turbulent vertical diffusivity based on idealised mixed layer depth</a><a id="Surface-PAR-and-turbulent-vertical-diffusivity-based-on-idealised-mixed-layer-depth-1"></a><a class="docs-heading-anchor-permalink" href="#Surface-PAR-and-turbulent-vertical-diffusivity-based-on-idealised-mixed-layer-depth" title="Permalink"></a></h2><p>Setting up idealised functions for PAR and diffusivity (details here can be ignored but these are typical of the North Atlantic)</p><pre><code class="language-julia hljs">@inline PAR⁰(x, y, t) = 60 * (1 - cos((t + 15days) * 2π / year)) * (1 / (1 + 0.2 * exp(-((mod(t, year) - 200days) / 50days)^2))) + 2
+
+@inline H(t, t₀, t₁) = ifelse(t₀ &lt; t &lt; t₁, 1.0, 0.0)
+
+@inline fmld1(t) = H(t, 50days, year) * (1 / (1 + exp(-(t - 100days) / 5days))) * (1 / (1 + exp((t - 330days) / 25days)))
+
+@inline MLD(t) = - (10 + 340 * (1 - fmld1(year - eps(year)) * exp(-mod(t, year) / 25days) - fmld1(mod(t, year))))
+
+@inline κₜ(x, y, z, t) = 1e-2 * (1 + tanh((z - MLD(t)) / 10)) / 2 + 1e-4
+
+@inline temp(x, y, z, t) = 2.4 * cos(t * 2π / year + 50days) + 10</code></pre><h2 id="Grid"><a class="docs-heading-anchor" href="#Grid">Grid</a><a id="Grid-1"></a><a class="docs-heading-anchor-permalink" href="#Grid" title="Permalink"></a></h2><p>Define the grid.</p><pre><code class="language-julia hljs">grid = RectilinearGrid(size = (1, 1, 50), extent = (20meters, 20meters, 200meters))</code></pre><pre><code class="nohighlight hljs">1×1×50 RectilinearGrid{Float64, Oceananigans.Grids.Periodic, Oceananigans.Grids.Periodic, Oceananigans.Grids.Bounded} on Oceananigans.Architectures.CPU with 3×3×3 halo
+├── Periodic x ∈ [0.0, 20.0)   regularly spaced with Δx=20.0
+├── Periodic y ∈ [0.0, 20.0)   regularly spaced with Δy=20.0
+└── Bounded  z ∈ [-200.0, 0.0] regularly spaced with Δz=4.0</code></pre><h2 id="Model"><a class="docs-heading-anchor" href="#Model">Model</a><a id="Model-1"></a><a class="docs-heading-anchor-permalink" href="#Model" title="Permalink"></a></h2><p>First we define the biogeochemical model including carbonate chemistry (for which we also define temperature (<span>$T$</span>) and salinity (<span>$S$</span>) fields) and scaling of negative tracers(see discussion in the <a href="../../numerical_implementation/positivity-preservation/#pos-preservation">positivity preservation</a>) and then setup the Oceananigans model with the boundary condition for the DIC based on the air-sea CO₂ flux.</p><pre><code class="language-julia hljs">biogeochemistry = LOBSTER(; grid,
+                            surface_photosynthetically_active_radiation = PAR⁰,
+                            carbonates = true,
+                            scale_negatives = true)
+
+CO₂_flux = GasExchange(; gas = :CO₂)
+
+clock = Clock(; time = 0.0)
+T = FunctionField{Center, Center, Center}(temp, grid; clock)
+S = ConstantField(35)
+
+model = NonhydrostaticModel(; grid,
+                              clock,
+                              closure = ScalarDiffusivity(ν = κₜ, κ = κₜ),
+                              biogeochemistry,
+                              boundary_conditions = (DIC = FieldBoundaryConditions(top = CO₂_flux), ),
+                              auxiliary_fields = (; T, S))
+
+set!(model, P = 0.03, Z = 0.03, NO₃ = 4.0, NH₄ = 0.05, DIC = 2239.8, Alk = 2409.0)</code></pre><h2 id="Simulation"><a class="docs-heading-anchor" href="#Simulation">Simulation</a><a id="Simulation-1"></a><a class="docs-heading-anchor-permalink" href="#Simulation" title="Permalink"></a></h2><p>Next we setup a simulation and add some callbacks that:</p><ul><li>Show the progress of the simulation</li><li>Store the model and particles output</li></ul><pre><code class="language-julia hljs">simulation = Simulation(model, Δt = 3minutes, stop_time = 100days)
+
+progress_message(sim) = @printf(&quot;Iteration: %04d, time: %s, Δt: %s, wall time: %s\n&quot;,
+                                iteration(sim),
+                                prettytime(sim),
+                                prettytime(sim.Δt),
+                                prettytime(sim.run_wall_time))
+
+simulation.callbacks[:progress] = Callback(progress_message, TimeInterval(10days))
+
+filename = &quot;column&quot;
+simulation.output_writers[:profiles] = JLD2OutputWriter(model, model.tracers,
+                                                        filename = &quot;$filename.jld2&quot;,
+                                                        schedule = TimeInterval(1day),
+                                                        overwrite_existing = true)</code></pre><pre><code class="nohighlight hljs"></code></pre><h2 id="Run!"><a class="docs-heading-anchor" href="#Run!">Run!</a><a id="Run!-1"></a><a class="docs-heading-anchor-permalink" href="#Run!" title="Permalink"></a></h2><p>We are ready to run the simulation</p><pre><code class="language-julia hljs">run!(simulation)</code></pre><pre><code class="nohighlight hljs">[ Info: Initializing simulation...
+Iteration: 0000, time: 0 seconds, Δt: 3 minutes, wall time: 0 seconds
+[ Info:     ... simulation initialization complete (1.926 seconds)
+[ Info: Executing initial time step...
+[ Info:     ... initial time step complete (6.483 seconds).
+Iteration: 4800, time: 10 days, Δt: 3 minutes, wall time: 15.281 seconds
+Iteration: 9600, time: 20 days, Δt: 3 minutes, wall time: 22.078 seconds
+Iteration: 14400, time: 30 days, Δt: 3 minutes, wall time: 28.791 seconds
+Iteration: 19200, time: 40 days, Δt: 3 minutes, wall time: 35.559 seconds
+Iteration: 24000, time: 50 days, Δt: 3 minutes, wall time: 42.237 seconds
+Iteration: 28800, time: 60 days, Δt: 3 minutes, wall time: 48.865 seconds
+Iteration: 33600, time: 70 days, Δt: 3 minutes, wall time: 55.613 seconds
+Iteration: 38400, time: 80 days, Δt: 3 minutes, wall time: 1.037 minutes
+Iteration: 43200, time: 90 days, Δt: 3 minutes, wall time: 1.149 minutes
+[ Info: Simulation is stopping after running for 1.262 minutes.
+[ Info: Simulation time 100 days equals or exceeds stop time 100 days.
+Iteration: 48000, time: 100 days, Δt: 3 minutes, wall time: 1.262 minutes
+</code></pre><h2 id="Load-saved-output"><a class="docs-heading-anchor" href="#Load-saved-output">Load saved output</a><a id="Load-saved-output-1"></a><a class="docs-heading-anchor-permalink" href="#Load-saved-output" title="Permalink"></a></h2><p>Now we can load the results and do some post processing to diagnose the air-sea CO₂ flux. Hopefully, this looks different to the example without kelp!</p><pre><code class="language-julia hljs">   P = FieldTimeSeries(&quot;$filename.jld2&quot;, &quot;P&quot;)
+ NO₃ = FieldTimeSeries(&quot;$filename.jld2&quot;, &quot;NO₃&quot;)
+   Z = FieldTimeSeries(&quot;$filename.jld2&quot;, &quot;Z&quot;)
+sPOM = FieldTimeSeries(&quot;$filename.jld2&quot;, &quot;sPOM&quot;)
+bPOM = FieldTimeSeries(&quot;$filename.jld2&quot;, &quot;bPOM&quot;)
+ DIC = FieldTimeSeries(&quot;$filename.jld2&quot;, &quot;DIC&quot;)
+ Alk = FieldTimeSeries(&quot;$filename.jld2&quot;, &quot;Alk&quot;)
+
+x, y, z = nodes(P)
+times = P.times</code></pre><p>We compute the  air-sea CO₂ flux at the surface (corresponding to vertical index <code>k = grid.Nz</code>) and the carbon export by computing how much carbon sinks below some arbirtrary depth; here we use depth that corresponds to <code>k = grid.Nz - 20</code>.</p><pre><code class="language-julia hljs">air_sea_CO₂_flux = zeros(length(times))
+carbon_export = zeros(length(times))
+
+using Oceananigans.Biogeochemistry: biogeochemical_drift_velocity
+
+for (i, t) in enumerate(times)
+    air_sea_CO₂_flux[i] = CO₂_flux.condition.func(0.0, 0.0, t, DIC[1, 1, grid.Nz, i], Alk[1, 1, grid.Nz, i], temp(1, 1, 0, t), 35)
+    carbon_export[i] = (sPOM[1, 1, grid.Nz-20, i] * biogeochemical_drift_velocity(model.biogeochemistry, Val(:sPOM)).w[1, 1, grid.Nz-20] +
+                        bPOM[1, 1, grid.Nz-20, i] * biogeochemical_drift_velocity(model.biogeochemistry, Val(:bPOM)).w[1, 1, grid.Nz-20]) * redfield(Val(:sPOM), model.biogeochemistry)
+end</code></pre><p>Both <code>air_sea_CO₂_flux</code> and <code>carbon_export</code> are in units <code>mmol CO₂ / (m² s)</code>.</p><h2 id="Plot"><a class="docs-heading-anchor" href="#Plot">Plot</a><a id="Plot-1"></a><a class="docs-heading-anchor-permalink" href="#Plot" title="Permalink"></a></h2><p>Finally, we plot!</p><pre><code class="language-julia hljs">using CairoMakie
+
+fig = Figure(size = (1000, 1500), fontsize = 20)
+
+axis_kwargs = (xlabel = &quot;Time (days)&quot;, ylabel = &quot;z (m)&quot;, limits = ((0, times[end] / days), (-150meters, 0)))
+
+axP = Axis(fig[1, 1]; title = &quot;Phytoplankton concentration (mmol N / m³)&quot;, axis_kwargs...)
+hmP = heatmap!(times / days, z, interior(P, 1, 1, :, :)&#39;, colormap = :batlow)
+Colorbar(fig[1, 2], hmP)
+
+axNO₃ = Axis(fig[2, 1]; title = &quot;Nitrate concentration (mmol N / m³)&quot;, axis_kwargs...)
+hmNO₃ = heatmap!(times / days, z, interior(NO₃, 1, 1, :, :)&#39;, colormap = :batlow)
+Colorbar(fig[2, 2], hmNO₃)
+
+axZ = Axis(fig[3, 1]; title = &quot;Zooplankton concentration (mmol N / m³)&quot;, axis_kwargs...)
+hmZ = heatmap!(times / days, z, interior(Z, 1, 1, :, :)&#39;, colormap = :batlow)
+Colorbar(fig[3, 2], hmZ)
+
+axD = Axis(fig[4, 1]; title = &quot;Detritus concentration (mmol N / m³)&quot;, axis_kwargs...)
+hmD = heatmap!(times / days, z, interior(sPOM, 1, 1, :, :)&#39; .+ interior(bPOM, 1, 1, :, :)&#39;, colormap = :batlow)
+Colorbar(fig[4, 2], hmD)
+
+CO₂_molar_mass = (12 + 2 * 16) * 1e-3 # kg / mol
+
+axfDIC = Axis(fig[5, 1], xlabel = &quot;Time (days)&quot;, ylabel = &quot;Flux (kgCO₂/m²/year)&quot;,
+                         title = &quot;Air-sea CO₂ flux and Sinking&quot;, limits = ((0, times[end] / days), nothing))
+lines!(axfDIC, times / days, air_sea_CO₂_flux / 1e3 * CO₂_molar_mass * year, linewidth = 3, label = &quot;Air-sea flux&quot;)
+lines!(axfDIC, times / days, carbon_export / 1e3    * CO₂_molar_mass * year, linewidth = 3, label = &quot;Sinking export&quot;)
+Legend(fig[5, 2], axfDIC, framevisible = false)
+
+fig</code></pre><p><img src="../column-22.svg" alt/></p><hr/><p><em>This page was generated using <a href="https://github.com/fredrikekre/Literate.jl">Literate.jl</a>.</em></p></article><nav class="docs-footer"><a class="docs-footer-prevpage" href="../box/">« Box model</a><a class="docs-footer-nextpage" href="../eady/">Baroclinic instability »</a><div class="flexbox-break"></div><p class="footer-message">Powered by <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> and the <a href="https://julialang.org/">Julia Programming Language</a>.</p></nav></div><div class="modal" id="documenter-settings"><div class="modal-background"></div><div class="modal-card"><header class="modal-card-head"><p class="modal-card-title">Settings</p><button class="delete"></button></header><section class="modal-card-body"><p><label class="label">Theme</label><div class="select"><select id="documenter-themepicker"><option value="auto">Automatic (OS)</option><option value="documenter-light">documenter-light</option><option value="documenter-dark">documenter-dark</option></select></div></p><hr/><p>This document was generated with <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> version 1.3.0 on <span class="colophon-date" title="Monday 25 March 2024 20:23">Monday 25 March 2024</span>. Using Julia version 1.10.2.</p></section><footer class="modal-card-foot"></footer></div></div></div></body></html>
