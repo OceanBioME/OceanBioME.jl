@@ -144,6 +144,8 @@ Calculates `fCO₂` in sea water with `DIC`, `Alk`alinity, `T`emperature, and `S
 unless `pH` is specified, in which case intermediate computation of `pH` is skipped and
 `pCO₂` is calculated from the `DIC`, `T`, `S` and `pH`.
 
+`DIC` is expected in mmol C/m³, `Alk` meq/m³, `T` in °C, and S in PSU.
+
 When pH is specified the free pH (i.e. -log[H⁺]) is expected.
 
 Alternativly pCO₂ or pH may be returned by setting output to Val(:pCO₂) or Val(:pH).
