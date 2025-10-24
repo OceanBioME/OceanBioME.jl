@@ -28,9 +28,9 @@ This is sufficient when computing ``fCO_2`` at the surface, but if we wanted to 
 carbon_chemistry(; DIC, Alk, T, S, P = 100)
 ```
 
-We may also be interested in the pH so we can request that be outputted:
+We may also be interested in the total pH so we can request that be outputted:
 ```@example carbon-chem
-carbon_chemistry(; DIC, Alk, T, S, output=Val(:pH))
+carbon_chemistry(; DIC, Alk, T, S, output=Val(:pHᵗ))
 ```
 
 These function calls assume a constant boron, sulfate, and fluoride ratio relative to the salinity (as described below), but can be specified instead:
@@ -43,7 +43,7 @@ And the silicate and phosphate concentrations are assumed to be zero but can sim
 carbon_chemistry(; DIC, Alk, T, S, silicate = 2, phosphate = 1)
 ```
 
-The same code can also be used to compute ``fCO_2`` when the pH is already known by passing it in the same way:
+The same code can also be used to compute ``fCO_2`` when the pH (free) is already known by passing it in the same way:
 ```@example carbon-chem
 carbon_chemistry(; DIC, pH = 8.1, T, S)
 ```

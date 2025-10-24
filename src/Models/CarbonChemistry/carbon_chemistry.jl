@@ -148,7 +148,8 @@ unless `pH` is specified, in which case intermediate computation of `pH` is skip
 
 When pH is specified the free pH (i.e. -log[H⁺]) is expected.
 
-Alternativly pCO₂ or pH may be returned by setting output to Val(:pCO₂) or Val(:pH).
+Alternativly pCO₂, and free, total, or sea water pH may be returned by setting output
+to Val(:pCO₂), Val(:pHᶠ), Val(:pHᵗ), or Val(:pHˢ).
 """
 @inline function (p::CarbonChemistry)(; DIC::FT, T, S, Alk = zero(DIC), pH = nothing,
                                         P = nothing, # bars (???)
