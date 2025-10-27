@@ -131,6 +131,8 @@ struct SugarKelp{FT, TL}
                        exudation_redfield_ratio = Inf,
                        adapted_latitude = 57.5) where TL
 
+        @warn "The sugar kelp model includes an inate seasonality which is formulated assuming that the model time starts at the start of the year"
+
         return new{FT, TL}(temperature_limit, 
                            growth_rate_adjustment, photosynthetic_efficiency,
                            minimum_carbon_reserve, structural_carbon,
