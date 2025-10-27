@@ -172,27 +172,27 @@ end
 @kernel function scale_for_negs!(invalid_fill_value, field_scale...)
     ijk = @index(Global, NTuple)
 
-    t, p = reduce_over_fields(0.0, 0.0, ijk, field_scale...)
+    t, p = calculate_total_and_positive_part(0.0, 0.0, ijk, field_scale...)
 
     t = ifelse(t < 0, invalid_fill_value, t)
 
-    update_fields!(t, p, ijk, field_scale...)
+    correct_negative_fields!(t, p, ijk, field_scale...)
     nothing
 end
 
 # Recursive step
-@inline function reduce_over_fields(t,
-                                    p,
-                                    ijk,
-                                    field::T,
-                                    scale::Real,
-                                    field_scale...) where {T}
-    t, p = reduce_over_fields(t, p, ijk, field, scale)
-    return reduce_over_fields(t, p, ijk, field_scale...)
+@inline function calculate_total_and_positive_part(t,
+                                                   p,
+                                                   ijk,
+                                                   field::T,
+                                                   scale::Real,
+                                                   field_scale...) where {T}
+    t, p = calculate_total_and_positive_part(t, p, ijk, field, scale)
+    return calculate_total_and_positive_part(t, p, ijk, field_scale...)
 end
 
 # Recursion terminal
-@inline function reduce_over_fields(t, p, ijk, field::T, scale::Real) where {T}
+@inline function calculate_total_and_positive_part(t, p, ijk, field::T, scale::Real) where {T}
     i, j, k = ijk
     value = @inbounds field[i, j, k]
     t += value * scale
@@ -203,15 +203,17 @@ end
 end
 
 # Recursive step
-@inline function update_fields!(t, p, ijk, field::T, scale::Real, field_scale...) where {T}
-    update_fields!(t, p, ijk, field, scale)
-    return update_fields!(t, p, ijk, field_scale...)
+@inline function correct_negative_fields!(t, p, ijk, field::T, scale::Real, field_scale...) where {T}
+    correct_negative_fields!(t, p, ijk, field, scale)
+    correct_negative_fields!(t, p, ijk, field_scale...)
+    return nothing
 end
 
 # Recursion terminal
-@inline function update_fields!(t, p, ijk, field::T, scale::Real) where {T}
+@inline function correct_negative_fields!(t, p, ijk, field::T, scale::Real) where {T}
     i, j, k = ijk
     value = @inbounds field[i, j, k]
     new_value = ifelse(!isfinite(value) | (value > 0), value * t / p, 0)
     @inbounds field[i, j, k] = new_value
+    return nothing
 end
