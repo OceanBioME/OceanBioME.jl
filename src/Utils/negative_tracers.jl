@@ -99,14 +99,16 @@ function ScaleNegativeTracers(bgc::AbstractBiogeochemistry, grid; invalid_fill_v
 end
 
 # for when `conserved_tracers` just returns a tuple of symbols
-function ScaleNegativeTracers(tracers, grid; invalid_fill_value = NaN, warn = false)
-    scalefactors = on_architecture(architecture(grid), ones(length(tracers)))
-
+function ScaleNegativeTracers(tracers, grid; invalid_fill_value=NaN, warn=false)
+    scalefactors = ones(length(tracers))
     return ScaleNegativeTracers(tracers, scalefactors, invalid_fill_value, warn)
 end
 
-function ScaleNegativeTracers(tracers::NTuple{<:Any, Symbol}, grid; invalid_fill_value = NaN, warn = false)
-    scalefactors = on_architecture(architecture(grid), ones(length(tracers)))
+function ScaleNegativeTracers(tracers::NTuple{<:Any,Symbol},
+                              grid;
+                              invalid_fill_value=NaN,
+                              warn=false,)
+    scalefactors = ones(length(tracers))
 
     return ScaleNegativeTracers(tracers, scalefactors, invalid_fill_value, warn)
 end
@@ -115,8 +117,11 @@ end
 ScaleNegativeTracers(tracers::Tuple, grid;invalid_fill_value = NaN, warn = false) =
     tuple(map(tn -> ScaleNegativeTracers(tn, grid; invalid_fill_value, warn), tracers)...)
 
-function ScaleNegativeTracers(tracers::NamedTuple, grid; invalid_fill_value = NaN, warn = false)
-    scalefactors = on_architecture(architecture(grid), [tracers.scalefactors...])
+function ScaleNegativeTracers(tracers::NamedTuple,
+                              grid;
+                              invalid_fill_value=NaN,
+                              warn=false,)
+    scalefactors = [tracers.scalefactors...]
     tracer_names = tracers.tracers
 
     return ScaleNegativeTracers(tracer_names, scalefactors, invalid_fill_value, warn)
@@ -125,6 +130,14 @@ end
 summary(scaler::ScaleNegativeTracers) = string("Mass conserving negative scaling of $(scaler.tracers)")
 show(io::IO, scaler::ScaleNegativeTracers) = print(io, string(summary(scaler), "\n",
                                                           "└── Scalefactors: $(scaler.scalefactors)"))
+
+# Helper function to create interleaved tuple from two lists
+# is not very robust and supports only lists of equal length!
+interleave(l_list, r_list) = interleave_step(r_list, l_list...)
+function interleave_step(l_list, r_start, r_tail...)
+    return (r_start, interleave_step(r_tail, l_list...)...)
+end
+interleave_step(r_start) = r_start
 
 function update_biogeochemical_state!(model, scale::ScaleNegativeTracers)
     workgroup, worksize = work_layout(model.grid, :xyz, (Center, Center, Center))
@@ -135,33 +148,70 @@ function update_biogeochemical_state!(model, scale::ScaleNegativeTracers)
 
     tracers_to_scale = Tuple(model.tracers[tracer_name] for tracer_name in scale.tracers)
 
-    scale_for_negs_kernel!(tracers_to_scale, scale.scalefactors, scale.invalid_fill_value)
+    field_scale = interleave([model.tracers[tracer_name] for tracer_name in scale.tracers],
+                             scale.scalefactors)
+
+    scale_for_negs_kernel!(scale.invalid_fill_value, field_scale...)
 
     return nothing
 end
 
-@kernel function scale_for_negs!(tracers, scalefactors, invalid_fill_value)
-    i, j, k = @index(Global, NTuple)
+# `CUDA.jl` has a tendency to make a local copy if we pass a list of tracer fields
+# as a tuple (despite it beeing immutable). See the related issue:
+# https://github.com/JuliaGPU/CUDA.jl/issues/1168
+#
+# This makes each thread use a large amout of 'Local' memory, which in turn 
+# introduces large amout of unoptimal memory traffic and slows the kernel
+# singnificantly.
+#
+# The easiest workaround to avoid the local copy is to pass each field (and
+# associated scalfactor) as a parameter to the kernel. But since we want to
+# support arbitrary number of fields we need to make the kernel variadic.
+#
+# We expect Julia to inline the recursive calls and, effectivly unroll the loops
+@kernel function scale_for_negs!(invalid_fill_value, field_scale...)
+    ijk = @index(Global, NTuple)
 
-    t, p = 0.0, 0.0
-
-    for (idx, tracer) in enumerate(tracers)
-        value = @inbounds tracer[i, j, k]
-        scalefactor = @inbounds scalefactors[idx]
-
-        t += value * scalefactor
-        if value > 0
-            p += value * scalefactor
-        end
-    end
+    t, p = reduce_over_fields(0.0, 0.0, ijk, field_scale...)
 
     t = ifelse(t < 0, invalid_fill_value, t)
 
-    for tracer in tracers
-        value = @inbounds tracer[i, j, k]
+    update_fields!(t, p, ijk, field_scale...)
+    nothing
+end
 
-        new_value = ifelse(!isfinite(value) | (value > 0), value * t / p, 0)
+# Recursive step
+@inline function reduce_over_fields(t,
+                                    p,
+                                    ijk,
+                                    field::T,
+                                    scale::Real,
+                                    field_scale...) where {T}
+    t, p = reduce_over_fields(t, p, ijk, field, scale)
+    return reduce_over_fields(t, p, ijk, field_scale...)
+end
 
-        @inbounds tracer[i, j, k] = new_value
+# Recursion terminal
+@inline function reduce_over_fields(t, p, ijk, field::T, scale::Real) where {T}
+    i, j, k = ijk
+    value = @inbounds field[i, j, k]
+    t += value * scale
+    if value > 0
+        p += value * scale
     end
+    return t, p
+end
+
+# Recursive step
+@inline function update_fields!(t, p, ijk, field::T, scale::Real, field_scale...) where {T}
+    update_fields!(t, p, ijk, field, scale)
+    return update_fields!(t, p, ijk, field_scale...)
+end
+
+# Recursion terminal
+@inline function update_fields!(t, p, ijk, field::T, scale::Real) where {T}
+    i, j, k = ijk
+    value = @inbounds field[i, j, k]
+    new_value = ifelse(!isfinite(value) | (value > 0), value * t / p, 0)
+    @inbounds field[i, j, k] = new_value
 end
