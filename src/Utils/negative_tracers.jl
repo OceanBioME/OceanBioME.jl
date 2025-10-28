@@ -184,15 +184,15 @@ end
 @inline function calculate_total_and_positive_part(t,
                                                    p,
                                                    ijk,
-                                                   field::T,
-                                                   scale::Real,
-                                                   field_scale...) where {T}
+                                                   field,
+                                                   scale,
+                                                   field_scale...)
     t, p = calculate_total_and_positive_part(t, p, ijk, field, scale)
     return calculate_total_and_positive_part(t, p, ijk, field_scale...)
 end
 
 # Recursion terminal
-@inline function calculate_total_and_positive_part(t, p, ijk, field::T, scale::Real) where {T}
+@inline function calculate_total_and_positive_part(t, p, ijk, field, scale)
     i, j, k = ijk
     value = @inbounds field[i, j, k]
     t += value * scale
@@ -203,14 +203,14 @@ end
 end
 
 # Recursive step
-@inline function correct_negative_fields!(t, p, ijk, field::T, scale::Real, field_scale...) where {T}
+@inline function correct_negative_fields!(t, p, ijk, field, scale, field_scale...)
     correct_negative_fields!(t, p, ijk, field, scale)
     correct_negative_fields!(t, p, ijk, field_scale...)
     return nothing
 end
 
 # Recursion terminal
-@inline function correct_negative_fields!(t, p, ijk, field::T, scale::Real) where {T}
+@inline function correct_negative_fields!(t, p, ijk, field, scale)
     i, j, k = ijk
     value = @inbounds field[i, j, k]
     new_value = ifelse(!isfinite(value) | (value > 0), value * t / p, 0)
