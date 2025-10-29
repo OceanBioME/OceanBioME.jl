@@ -89,7 +89,7 @@ end
     return J_max_NH₄ * fᶜ * NH₄ / (k_NH₄ + NH₄)
 end
 
-@inline function photosynthesis(kelp, T, PAR)
+@inline function photosynthesis(kelp, T, PAR; solve_steps = 10)
     PAR *= day / (3.99e-10 * 545e12) # W / m² / s to einstein / m² / day
 
     Tk = T + 273.15
@@ -107,19 +107,30 @@ end
     α = kelp.photosynthetic_efficiency
     Iₛ = kelp.saturation_irradiance
 
-    maximum_photosynthesis = P₁ * exp(Tₐ / Tₚ - Tₐ / Tk) / (1 + exp(Tₐₗ / Tk - Tₐₗ / Tₚₗ) + exp(Tₐₕ / Tₚₕ - Tₐₕ / Tk))
+    maximum_photosynthesis = @show P₁ * exp(Tₐ / Tₚ - Tₐ / Tk) / (1 + exp(Tₐₗ / Tk - Tₐₗ / Tₚₗ) + exp(Tₐₕ / Tₚₕ - Tₐₕ / Tk))
  
-    β = solve_for_light_inhibition(kelp, maximum_photosynthesis)
+    β = solve_for_light_inhibition(kelp, maximum_photosynthesis; solve_steps)
 
     pₛ = α * Iₛ / log(1 + α / β)
 
     return pₛ * (1 - exp(- α * PAR / pₛ)) * exp(-β * PAR / pₛ) 
 end
 
-# solves `alkalinity_residual` for pH
-@inline solve_for_light_inhibition(kelp, maximum_photosynthesis) =
-    find_zero(light_inhibition_residual, (0, 0.1), Bisection(); 
-              p = (; maximum_photosynthesis, kelp.photosynthetic_efficiency, kelp.saturation_irradiance))
+@inline function solve_for_light_inhibition(kelp, Pₘ; solve_steps = 10)
+    α = kelp.photosynthetic_efficiency
+    Iₛ = kelp.saturation_irradiance
+    
+    β = 1e-9
+
+    for _ in 1:solve_steps
+        β -= (maximum_photosynthesis(α, β) - Pₘ/Iₛ) / ∂β_maximum_photosynthesis(α, β)
+    end
+
+    return β
+end
+
+maximum_photosynthesis(α, β) = α / (log(1 + α/β)) * (α / (α + β)) * (β / (α + β)) ^ (β/α)
+∂β_maximum_photosynthesis(α, β) = (α * (β / (β + α))^(β / α) * ((log(α / β + 1) * β^2 + α * log(α / β + 1) * β) * log(β / (β + α)) + α^2)) / (log(α / β + 1)^2 * β * (β + α)^2)
 
 @inline function light_inhibition_residual(β, p)
     pₘ = p.maximum_photosynthesis
