@@ -19,8 +19,6 @@ module SugarKelpModel
 
 export SugarKelp, SugarKelpParticles
 
-using Roots
-
 using Oceananigans.Grids: AbstractGrid
 using Oceananigans.Units
 
