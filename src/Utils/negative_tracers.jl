@@ -131,13 +131,6 @@ summary(scaler::ScaleNegativeTracers) = string("Mass conserving negative scaling
 show(io::IO, scaler::ScaleNegativeTracers) = print(io, string(summary(scaler), "\n",
                                                           "└── Scalefactors: $(scaler.scalefactors)"))
 
-# Helper function to create interleaved tuple from two lists
-# is not very robust and supports only lists of equal length!
-interleave(l_list, r_list) = interleave_step(r_list, l_list...)
-function interleave_step(l_list, r_start, r_tail...)
-    return (r_start, interleave_step(r_tail, l_list...)...)
-end
-interleave_step(r_start) = r_start
 
 function update_biogeochemical_state!(model, scale::ScaleNegativeTracers)
     workgroup, worksize = work_layout(model.grid, :xyz, (Center, Center, Center))
@@ -148,8 +141,10 @@ function update_biogeochemical_state!(model, scale::ScaleNegativeTracers)
 
     tracers_to_scale = Tuple(model.tracers[tracer_name] for tracer_name in scale.tracers)
 
-    field_scale = interleave([model.tracers[tracer_name] for tracer_name in scale.tracers],
-                             scale.scalefactors)
+    field_scale = Tuple(Iterators.flatten(
+        zip([model.tracers[tracer_name] for tracer_name in scale.tracers],
+            scale.scalefactors
+        )))
 
     scale_for_negs_kernel!(scale.invalid_fill_value, field_scale...)
 
