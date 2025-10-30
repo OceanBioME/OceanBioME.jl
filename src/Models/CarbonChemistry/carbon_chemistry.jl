@@ -135,7 +135,7 @@ Alternativly, `pH` is returned if `return_pH` is `true`.
                 K1, K2, KB, KW, KS, KF, KP1, KP2, KP3, KSi)
 
     # solve equilibrium for hydrogen ion concentration
-    H = solve_for_H(pH, params, upper_pH_bound, lower_pH_bound)
+    H = solve_for_H(pH, params, initial_pH_guess)
 
     # compute solubility equilibrium constant
     K0 = p.solubility(T, S)
@@ -155,7 +155,7 @@ solve_for_H(pH::FT, args...) where FT = convert(FT, 10.0) ^ - pH
 
 include("alkalinity_residual.jl")
 
-solve_for_H(::Nothing, params, upper_pH_bound::FT, lower_pH_bound) where FT =
+solve_for_H(::Nothing, params, initial_pH_guess::FT) where FT =
    find_zero((alkalinity_residual_new, ∂ₕ_alkalinity_residual), 10^(-initial_pH_guess), Roots.Newton(); atol = convert(FT, 1e-15), p = params)
 
 # display
