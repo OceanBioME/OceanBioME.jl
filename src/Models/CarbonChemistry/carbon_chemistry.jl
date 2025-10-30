@@ -74,54 +74,6 @@ function CarbonChemistry(FT = Float64;
                            sulfate, fluoride, phosphoric_acid, silicic_acid, calcite_solubility, density_function)
 end
 
-
-"""
-    alkalinity_residual(H, p)
-
-Returns the difference between total alkalinity computed from `H`` (hydrogen ion
-concentration), `DIC`, `borate`, `sulfate`, `phosphate`, `silicate`, and `fluoride` 
-concentration and chemical equilibrium constants specified in `p`, and the specified 
-total `Alk`alinity.
-
-    TAlk = [HCO₃⁻] + 2[CO₃²⁻] + [B(OH)₄⁻] + [OH⁻] + [HPO₄²⁻] + 2[PO₄³⁻] + [SiO(OH)₃⁻] 
-           + [NH₃] + [HS⁻] - [H⁺] - [HSO₄⁻] - [HF] - [H₃PO₄] + minor acids and bases
-
-Concentrations diagnosed as specified in Dickson et. al best practice descried in 
-`CarbonChemistry` docstring.
-
-Note ammonia (NH₃) is not currently included.
-"""
-@inline function alkalinity_residual(H, p)
-    carbonate_denom = H^2 + p.K1 * H + p.K1 * p.K2
-    phosphorus_denom = H^3 + p.KP1 * H^2 + p.KP1 * p.KP2 * H + p.KP1 * p.KP2 * p.KP3
-    sulfate_denom = 1 + p.sulfate / p.KS
-
-    bicarbonate = p.K1 * H * p.DIC / carbonate_denom
-    carbonate = 2 * p.DIC * p.K1 * p.K2 / carbonate_denom
-    borate = p.boron / (1 + H / p.KB)
-    hydroxide = p.KW / H
-    hydrogen_phosphate = p.phosphate * p.KP1 * p.KP2 * H / phosphorus_denom
-    phosphate = 2 * p.phosphate * p.KP1 * p.KP2 * p.KP3 / phosphorus_denom
-    silicate = p.silicate / (1 + H / p.KSi)
-    free_hydrogen = - H / sulfate_denom
-    hydrogen_suplfate = - p.sulfate / (1 + p.KS / H / sulfate_denom)
-    hydrogen_fluoride = -p.fluoride / (1 + p.KF / H)
-    phosphoric_acid = -p.phosphate * H^3 / phosphorus_denom
-
-    return (bicarbonate 
-            + carbonate
-            + borate
-            + hydroxide
-            + hydrogen_phosphate
-            + phosphate
-            + silicate
-            + free_hydrogen
-            + hydrogen_suplfate
-            + hydrogen_fluoride
-            + phosphoric_acid 
-            - p.Alk)
-end
-
 """
     (p::CarbonChemistry)(; DIC, T, S, Alk = 0, pH = nothing,
                            return_pH = false,
