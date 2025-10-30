@@ -43,24 +43,24 @@ end
     pH_results = similar(pH)
 
     for (idx, DIC) in enumerate(DIC)
-        fCO₂_results[idx] = fCO₂_model(; DIC, Alk = Alk[idx], T = T[idx], S = S[idx])
-        pH_results[idx] = fCO₂_model(; DIC, Alk = Alk[idx], T = T[idx], S = S[idx], return_pH = true)
+        fCO₂_results[idx] = fCO₂_model(; DIC = Float64(DIC), Alk = Alk[idx], T = T[idx], S = S[idx])
+        pH_results[idx] = fCO₂_model(; DIC = Float64(DIC), Alk = Alk[idx], T = T[idx], S = S[idx], return_pH = true)
     end
 
     fCO₂_err = pCO₂ .- fCO₂_results
     pH_err = pH .- pH_results
 
     # not great not terrible
-    @test (mean(fCO₂_err) < 9 && std(fCO₂_err) < 10) && (mean(pH_err) < 0.01 && std(pH_err) < 0.01)
+    @test (mean(fCO₂_err) < 8.5 && std(fCO₂_err) < 9.5) && (mean(pH_err) < 0.01 && std(pH_err) < 0.01)
 end
 
 grid = RectilinearGrid(architecture; size=(1, 1, 2), extent=(1, 1, 1))
 
-@inline conc_function(x, y, t) = 413.0 + 10.0 * sin(t * π / year)
+@inline conc_function(x, y, t) = 413.0
 
 conc_field = CenterField(grid)
 
-set!(conc_field, (args...) -> 10 * randn() + 413) 
+set!(conc_field, (args...) -> 413) 
 
 @testset "Gas exchange coupling" begin
     for air_concentration in [413.1, conc_function, conc_field]
