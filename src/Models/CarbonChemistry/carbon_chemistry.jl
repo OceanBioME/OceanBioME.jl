@@ -149,8 +149,7 @@ Alternativly, `pH` is returned if `return_pH` is `true`.
                                         fluoride = convert(typeof(DIC), 0.000067 / 18.9984 * S / 1.80655),
                                         silicate = zero(DIC),
                                         phosphate = zero(DIC),
-                                        upper_pH_bound = convert(typeof(DIC), 14),
-                                        lower_pH_bound = convert(typeof(DIC), 0)) where FT
+                                        initial_pH_guess = convert(typeof(DIC), 8)) where FT
 
     ρₒ = p.density_function(T, S, ifelse(isnothing(P), zero(DIC), P), lon, lat)
 
@@ -202,8 +201,10 @@ end
 # solves `alkalinity_residual` for pH
 solve_for_H(pH::FT, args...) where FT = convert(FT, 10.0) ^ - pH
 
+include("alkalinity_residual.jl")
+
 solve_for_H(::Nothing, params, upper_pH_bound::FT, lower_pH_bound) where FT =
-    find_zero(alkalinity_residual, (convert(FT, 10.0) ^ - upper_pH_bound, convert(FT, 10.0) ^ - lower_pH_bound); atol = convert(FT, 1e-10), p = params)
+   find_zero((alkalinity_residual_new, ∂ₕ_alkalinity_residual), 10^(-initial_pH_guess), Roots.Newton(); atol = convert(FT, 1e-15), p = params)
 
 # display
 summary(::IO, ::CarbonChemistry) = string("`CarbonChemistry` model")
