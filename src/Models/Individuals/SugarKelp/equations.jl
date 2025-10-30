@@ -1,5 +1,3 @@
-using Roots
-
 @inline function (kelp::SugarKelp)(::Val{:A}, t, A, N, C, u, v, w, T, NO₃, NH₄, PAR)
     μ = growth(kelp, t, A, N, C, T, NH₄, u, v, w)
 
@@ -125,7 +123,7 @@ end
 
     β₀ = convert(FT, 1e-9)
 
-    return find_zero((β_residual, ∂β_maximum_photosynthesis), β₀, Roots.Newton(); atol = eps(β₀), p = (; α, Iₛ, Pₘ))
+    return kelp.solver(β_residual, ∂β_maximum_photosynthesis, β₀, (; α, Iₛ, Pₘ))
 end
 
 maximum_photosynthesis(α, β) = α / (log(1 + α/β)) * (α / (α + β)) * (β / (α + β)) ^ (β/α)
