@@ -156,7 +156,7 @@ solve_for_H(pH::FT, args...) where FT = convert(FT, 10.0) ^ - pH
 include("alkalinity_residual.jl")
 
 solve_for_H(::Nothing, params, initial_pH_guess::FT) where FT =
-   find_zero((alkalinity_residual_new, ∂ₕ_alkalinity_residual), 10^(-initial_pH_guess), Roots.Newton(); atol = convert(FT, 1e-15), p = params)
+   find_zero((alkalinity_residual, ∂ₕ_alkalinity_residual), 10^(-initial_pH_guess), Roots.Newton(); atol = convert(FT, 1e-15), p = params)
 
 # display
 summary(::IO, ::CarbonChemistry) = string("`CarbonChemistry` model")
