@@ -48,13 +48,13 @@ julia> using OceanBioME
 julia> carbon_chemistry = CarbonChemistry()
 `CarbonChemistry` model which solves for pCO₂ and pH
 
-julia> pCO₂ = carbon_chemistry(; DIC = 2000, Alk = 2000, T = 10, S = 35)
-1308.0843992121615
+julia> pCO₂ = carbon_chemistry(; DIC = 2000.0, Alk = 2000.0, T = 10.0, S = 35.0)
+1308.1006990491182
 
-julia> pH = carbon_chemistry(; DIC = 2000, Alk = 2000, T = 10, S = 35, return_pH = true)
-7.502534641304366
+julia> pH = carbon_chemistry(; DIC = 2000.0, Alk = 2000.0, T = 10.0, S = 35.0, return_pH = true)
+7.502529169785948
 
-julia> pCO₂_higher_pH = carbon_chemistry(; DIC = 2000, T = 10, S = 35, pH = 7.5)
+julia> pCO₂_higher_pH = carbon_chemistry(; DIC = 2000.0, T = 10.0, S = 35.0, pH = 7.5)
 1315.6558976217746
 
 ```
