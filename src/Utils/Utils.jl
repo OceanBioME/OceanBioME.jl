@@ -3,7 +3,7 @@ using Oceananigans.Units
 include("timestep.jl")
 include("negative_tracers.jl")
 include("sinking_velocity_fields.jl")
-include("newton_raphson.jl")
+include("solvers.jl")
 
 """
     (day_length::CBMDayLength)(t, φ)
