@@ -173,7 +173,7 @@ CO₂_molar_mass = (12 + 2 * 16) * 1e-3 # kg / mol
 
 axfDIC = Axis(fig[5, 1], xlabel = "Time (days)", ylabel = "Flux (kgCO₂/m²/year)",
                          title = "Air-sea CO₂ flux and Sinking", limits = ((0, times[end] / days), nothing))
-lines!(axfDIC, times / days, air_sea_CO₂_flux[1, 1, grid.Nz, :] / 1e3 * CO₂_molar_mass * year, linewidth = 3, label = "Air-sea flux")
+lines!(axfDIC, times / days, air_sea_CO₂_flux[1, 1, grid.Nz, :] / 1e3 * CO₂_molar_mass * year * 10, linewidth = 3, label = "Air-sea flux x10")
 lines!(axfDIC, times / days, carbon_export / 1e3    * CO₂_molar_mass * year, linewidth = 3, label = "Sinking export")
 Legend(fig[5, 2], axfDIC, framevisible = false)
 
