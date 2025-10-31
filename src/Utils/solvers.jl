@@ -74,7 +74,7 @@ end
 
 @kwdef struct DampedNewtonRaphsonSolver{FT, IT}
     max_iters :: IT = 100
-         atol :: FT = 10^-10
+         atol :: FT = 10^-20
       damping :: FT = 0.5
 end
 
@@ -84,8 +84,9 @@ end
     N = 0
     fx = f(x, params)
 
-    while (fx > dnrs.atol) & (N < dnrs.max_iters)
+    while (abs(fx) > dnrs.atol) & (N < dnrs.max_iters)
         fx = f(x, params)
+        f′x = 
         x⁻ = x
         δ = fx / f′(x, params)
         λ = 1
