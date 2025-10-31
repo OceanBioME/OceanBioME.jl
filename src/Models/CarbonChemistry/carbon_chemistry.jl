@@ -70,8 +70,8 @@ function CarbonChemistry(FT = Float64;
                          phosphoric_acid = (KP1 = KP1(FT), KP2 = KP2(FT), KP3 = KP3(FT)),
                          silicic_acid = KSi(FT; ionic_strength),
                          calcite_solubility = KSP_calcite(FT),
-                         density_function = teos10_polynomial_approximation,
-                         solver = NewtonRaphsonSolver{FT, Int}()) # the denisity function *is* going to cause type instability but I can't see a way to fix it
+                         density_function = teos10_polynomial_approximation,# the denisity function *is* going to cause type instability but I can't see a way to fix it
+                         solver = DampedNewtonRaphsonSolver{FT, Int}()) 
 
     return CarbonChemistry(ionic_strength, solubility, carbonic_acid, boric_acid, water,
                            sulfate, fluoride, phosphoric_acid, silicic_acid, calcite_solubility, density_function,
