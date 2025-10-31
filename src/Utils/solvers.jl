@@ -9,7 +9,7 @@ end
     N = 0
     fx = f(x, params)
 
-    while (fx > nrs.atol) & (N < nrs.max_iters)
+    while (abs(fx) > nrs.atol) & (N < nrs.max_iters)
         fx = f(x, params)
         x⁻ = x
         x -= fx / f′(x, params)
