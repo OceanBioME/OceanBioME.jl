@@ -48,7 +48,7 @@ Lx, Ly = 20meters, 20meters
 grid = RectilinearGrid(architecture, size=(1, 1, 50), extent=(Lx, Ly, 200))
 
 # Specify the boundary conditions for DIC and O₂ based on the air-sea CO₂ and O₂ flux
-CO₂_flux = CarbonDioxideGasExchangeBoundaryCondition()
+CO₂_flux = CarbonDioxideGasExchangeBoundaryCondition(; carbon_chemistry = CarbonChemistry(solver = OceanBioME.NewtonRaphsonSolver(; damping = 0.7)))
 
 clock = Clock(; time = 0.0)
 T = FunctionField{Center, Center, Center}(temp, grid; clock)
@@ -78,6 +78,7 @@ biogeochemistry = LOBSTER(; grid,
 model = NonhydrostaticModel(; grid,
                               clock,
                               closure = ScalarDiffusivity(ν = κₜ, κ = κₜ),
+                              boundary_conditions = (; DIC = FieldBoundaryConditions(top = CO₂_flux)),
                               biogeochemistry,
                               auxiliary_fields = (; T, S))
 
@@ -109,6 +110,25 @@ simulation.output_writers[:particles] = JLD2Writer(model, (; particles),
                                                    filename = "$(filename)_particles.jld2",
                                                    schedule = TimeInterval(1day),
                                                    overwrite_existing = true)
+
+# Also output the surface CO₂ flux
+@inline qCO₂_kernel(i, j, k, grid, clock, DIC, Alk, T, S, carbon_boundary_condition) =
+    carbon_boundary_condition.condition.func(i, j, grid, clock, (; DIC, Alk, T, S))
+
+qCO₂ = KernelFunctionOperation{Center, Center, Face}(qCO₂_kernel, 
+                                                     grid, 
+                                                     clock,
+                                                     model.tracers.DIC, 
+                                                     model.tracers.Alk,
+                                                     model.auxiliary_fields.T,
+                                                     model.auxiliary_fields.S,
+                                                     CO₂_flux)
+
+simulation.output_writers[:carbon_flux] = JLD2Writer(model, (; qCO₂),
+                                                     indices = (:, :, grid.Nz),
+                                                     filename = "$(filename)_carbon.jld2",
+                                                     schedule = TimeInterval(1day),
+                                                     overwrite_existing = true)
 
 nothing #hide
 

@@ -61,7 +61,7 @@ model = NonhydrostaticModel(; grid,
                               clock,
                               closure = ScalarDiffusivity(ν = κₜ, κ = κₜ),
                               biogeochemistry,
-                              boundary_conditions = (DIC = FieldBoundaryConditions(top = CO₂_flux), ),
+                              boundary_conditions = (DIC = FieldBoundaryConditions(top = CO₂_flux),),
                               auxiliary_fields = (; T, S))
 
 set!(model, P = 0.03, Z = 0.03, NO₃ = 4.0, NH₄ = 0.05, DIC = 2239.8, Alk = 2409.0)
