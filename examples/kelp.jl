@@ -48,7 +48,7 @@ Lx, Ly = 20meters, 20meters
 grid = RectilinearGrid(architecture, size=(1, 1, 50), extent=(Lx, Ly, 200))
 
 # Specify the boundary conditions for DIC and O₂ based on the air-sea CO₂ and O₂ flux
-CO₂_flux = CarbonDioxideGasExchangeBoundaryCondition(; carbon_chemistry = CarbonChemistry(solver = OceanBioME.NewtonRaphsonSolver(; damping = 0.7)))
+CO₂_flux = CarbonDioxideGasExchangeBoundaryCondition()
 
 clock = Clock(; time = 0.0)
 T = FunctionField{Center, Center, Center}(temp, grid; clock)
@@ -140,23 +140,20 @@ run!(simulation)
 
 tracers = FieldDataset("$filename.jld2")
 
+air_sea_CO₂_flux = FieldTimeSeries(filename * "_carbon.jld2", "qCO₂")
+
 x, y, z = nodes(tracers["P"])
 times = tracers["P"].times
 nothing #hide
 
-# We compute the  air-sea CO₂ flux at the surface (corresponding to vertical index `k = grid.Nz`) and
-# the carbon export by computing how much carbon sinks below some arbirtrary depth; here we use depth 
-# that corresponds to `k = grid.Nz - 20`.
-air_sea_CO₂_flux = zeros(length(times))
+# We compute the carbon export by computing how much carbon sinks below some arbirtrary depth; 
+# here we use depth that corresponds to `k = grid.Nz - 20`.
 carbon_export = zeros(length(times))
 
 using Oceananigans.Biogeochemistry: biogeochemical_drift_velocity
 
 for (n, t) in enumerate(times)
     clock.time = t
-
-    air_sea_CO₂_flux[n] = CO₂_flux.condition.func(1, 1, grid, clock, (; DIC = tracers["DIC"][n], Alk = tracers["Alk"][n], T, S))
-
     carbon_export[n] = tracers["sPOC"][n][1, 1, grid.Nz-20] * biogeochemical_drift_velocity(biogeochemistry, Val(:sPOC)).w[1, 1, grid.Nz-20] +
                        tracers["bPOC"][n][1, 1, grid.Nz-20] * biogeochemical_drift_velocity(biogeochemistry, Val(:bPOC)).w[1, 1, grid.Nz-20]
 end
@@ -185,8 +182,8 @@ CO₂_molar_mass = (12 + 2 * 16) * 1e-3 # kg / mol
 
 axfDIC = Axis(fig[4, 1], xlabel = "Time (days)", ylabel = "Flux (kgCO₂/m²/year)",
                          title = "Air-sea CO₂ flux and Sinking", limits = ((0, times[end] / days), nothing))
-lines!(axfDIC, times / days, air_sea_CO₂_flux / 1e3 * CO₂_molar_mass * year, linewidth = 3, label = "Air-sea flux")
-lines!(axfDIC, times / days, carbon_export / 1e3    * CO₂_molar_mass * year, linewidth = 3, label = "Sinking export")
+lines!(axfDIC, times / days, air_sea_CO₂_flux[1, 1, grid.Nz, :] / 1e3 * CO₂_molar_mass * year, linewidth = 3, label = "Air-sea flux")
+lines!(axfDIC, times / days, carbon_export / 1e3 * CO₂_molar_mass * year, linewidth = 3, label = "Sinking export")
 Legend(fig[4, 2], axfDIC, framevisible = false)
 
 save("kelp.png", fig)
