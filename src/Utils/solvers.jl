@@ -43,7 +43,6 @@ end
     return xⁿ
 end
 
-
 @kwdef struct Bisection{FT, IT}
     max_iters :: IT = 100
          atol :: FT = 10^-10
