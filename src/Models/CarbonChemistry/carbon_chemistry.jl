@@ -57,9 +57,6 @@ julia> pCO₂_higher_pH = carbon_chemistry(; DIC = 2000, T = 10, S = 35, pH = 7.
 
 ```
 """
-
-
-
 function CarbonChemistry(FT = Float64; 
                          ionic_strength = IonicStrength{FT}(),
                          solubility = K0{FT}(),
