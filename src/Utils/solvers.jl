@@ -86,11 +86,10 @@ end
 
     while (abs(fx) > dnrs.atol) & (N < dnrs.max_iters)
         fx = f(x, params)
-        f′x = 
         x⁻ = x
         δ = fx / f′(x, params)
         λ = 1
-        while abs(f(x - λ * δ, params)) >= abs(fx)
+        while (abs(f(x - λ * δ, params)) >= abs(fx)) & (λ > dnrs.damping^10)
             λ *= dnrs.damping
         end
         x -= λ * δ
