@@ -71,10 +71,11 @@ end
             ifelse((sign(f(x⁺, params)) == sign(fx)) | (fx == 0), x, x⁺))
 end
 
-@kwdef struct DampedNewtonRaphsonSolver{FT, IT}
+@kwdef struct DampedNewtonRaphsonSolver{FT, IT, BO}
     max_iters :: IT = 100
          atol :: FT = 10^-20
       damping :: FT = 0.5
+       bounds :: BO = (lower = -Inf, upper = Inf)
 end
 
 @inline function (dnrs::DampedNewtonRaphsonSolver)(f, f′, x0, params)
@@ -88,7 +89,7 @@ end
         x⁻ = x
         δ = fx / f′(x, params)
         λ = 1
-        while (abs(f(x - λ * δ, params)) >= abs(fx)) & (λ > dnrs.damping^10)
+        while ((abs(f(x - λ * δ, params)) >= abs(fx)) | !(dnrs.bounds.lower <= x - λ * δ <= dnrs.bounds.upper)) & (λ > dnrs.damping^10)
             λ *= dnrs.damping
         end
         x -= λ * δ

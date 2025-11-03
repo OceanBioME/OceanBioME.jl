@@ -71,7 +71,7 @@ function CarbonChemistry(FT = Float64;
                          silicic_acid = KSi(FT; ionic_strength),
                          calcite_solubility = KSP_calcite(FT),
                          density_function = teos10_polynomial_approximation, # the denisity function *is* going to cause type instability but I can't see a way to fix it
-                         solver = DampedNewtonRaphsonSolver{FT, Int}()) 
+                         solver = DampedNewtonRaphsonSolver{FT, Int, @NamedTuple{lower::FT, upper::FT}}(bounds = (lower = 0, upper = Inf))) 
 
     return CarbonChemistry(ionic_strength, solubility, carbonic_acid, boric_acid, water,
                            sulfate, fluoride, phosphoric_acid, silicic_acid, calcite_solubility, density_function,
@@ -159,7 +159,7 @@ solve_for_H(pH::FT, args...) where FT = convert(FT, 10.0) ^ - pH
 include("alkalinity_residual.jl")
 
 solve_for_H(::Nothing, params, initial_pH_guess::FT, solver) where FT =
-    solver(alkalinity_residual, ∂ₕ_alkalinity_residual, 10^(-initial_pH_guess), params)
+    solver(alkalinity_residual, ∂ₕ_alkalinity_residual, 10^(-initial_pH_guess), params)#
 
 # display
 summary(::IO, ::CarbonChemistry) = string("`CarbonChemistry` model")
