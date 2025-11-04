@@ -8,8 +8,7 @@ function carbonate_concentration(cc::CarbonChemistry;
                                  fluoride = convert(typeof(DIC), 0.000067 / 18.9984 * S / 1.80655),
                                  silicate = zero(DIC),
                                  phosphate = zero(DIC),
-                                 upper_pH_bound = convert(typeof(DIC), 14),
-                                 lower_pH_bound = convert(typeof(DIC), 0)) where FT
+                                 initial_pH_guess = convert(typeof(DIC), 8)) where FT
 
     ρₒ = cc.density_function(T, S, ifelse(isnothing(P), zero(DIC), P), lon, lat)
 
@@ -44,7 +43,7 @@ function carbonate_concentration(cc::CarbonChemistry;
 
     # solve equilibrium for hydrogen ion concentration
 
-    H = solve_for_H(pH, params, upper_pH_bound, lower_pH_bound)
+    H = solve_for_H(pH, params, initial_pH_guess, cc.solver)
 
     # compute the calcite concentration
     denom1 = (H * (H + K1))
@@ -62,8 +61,7 @@ function calcite_saturation(cc::CarbonChemistry;
                             calcium_ion_concentration = convert(typeof(DIC), 0.0103 * S / 35),
                             silicate = zero(DIC),
                             phosphate = zero(DIC),
-                            upper_pH_bound = convert(typeof(DIC), 14),
-                            lower_pH_bound = convert(typeof(DIC), 0)) where FT
+                            initial_pH_guess = convert(typeof(DIC), 8)) where FT
 
     CO₃²⁻ = carbonate_concentration(cc;
                                     DIC, Alk, T, S, pH,
@@ -73,8 +71,7 @@ function calcite_saturation(cc::CarbonChemistry;
                                     fluoride,
                                     silicate,
                                     phosphate,
-                                    upper_pH_bound,
-                                    lower_pH_bound)
+                                    initial_pH_guess)
 
     KSP = cc.calcite_solubility(T+convert(FT, 273.15), S; P)
 

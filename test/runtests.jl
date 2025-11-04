@@ -1,5 +1,6 @@
 include("dependencies_for_runtests.jl")
 
+include("test_solvers.jl")
 include("test_utils.jl")
 include("test_light.jl")
 include("test_particles.jl")
