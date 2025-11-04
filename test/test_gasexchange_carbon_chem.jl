@@ -35,23 +35,23 @@ end
 
 @testset "pCO₂ values" begin
     # approximatly correct sized pCO₂ from DIC and Alk
-    fCO₂_model = CarbonChemistry()
+    carbon_chem = CarbonChemistry()
 
     @load datadep"test_data/CODAP_data.jld2" DIC Alk T S pH pCO₂
     
-    fCO₂_results = similar(pCO₂)
+    pCO₂_results = similar(pCO₂)
     pH_results = similar(pH)
 
     for (idx, DIC) in enumerate(DIC)
-        fCO₂_results[idx] = fCO₂_model(; DIC = Float64(DIC), Alk = Alk[idx], T = T[idx], S = S[idx])
-        pH_results[idx] = fCO₂_model(; DIC = Float64(DIC), Alk = Alk[idx], T = T[idx], S = S[idx], return_pH = true)
+        pCO₂_results[idx] = carbon_chem(; DIC = Float64(DIC), Alk = Float64(Alk[idx]), T = Float64(T[idx]), S = Float64(S[idx]), output = Val(:pCO₂))
+        pH_results[idx] = carbon_chem(; DIC, Alk = Alk[idx], T = T[idx], S = S[idx], output = Val(:pHᶠ))
     end
 
-    fCO₂_err = pCO₂ .- fCO₂_results
+    pCO₂_err = pCO₂ .- pCO₂_results
     pH_err = pH .- pH_results
 
     # not great not terrible
-    @test (mean(fCO₂_err) < 8.5 && std(fCO₂_err) < 9.5) && (mean(pH_err) < 0.01 && std(pH_err) < 0.01)
+    @test (mean(pCO₂_err) < 7.1 && std(pCO₂_err) < 9.1) && (mean(pH_err) < 0.01 && std(pH_err) < 0.01)
 end
 
 grid = RectilinearGrid(architecture; size=(1, 1, 2), extent=(1, 1, 1))
