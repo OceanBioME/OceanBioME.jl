@@ -1,7 +1,7 @@
-using Roots
+using OceanBioME: DampedNewtonRaphsonSolver
 using OceanBioME.Models: teos10_polynomial_approximation
 
-struct CarbonChemistry{P0, PC, PB, PS, PF, PP, PSi, PW, IS, PKS, PRho, FV, CV}
+struct CarbonChemistry{P0, PC, PB, PS, PF, PP, PSi, PW, IS, PKS, PRho, FV, CV, SO}
           ionic_strength :: IS
               solubility :: P0
            carbonic_acid :: PC
@@ -14,7 +14,8 @@ struct CarbonChemistry{P0, PC, PB, PS, PF, PP, PSi, PW, IS, PKS, PRho, FV, CV}
       calcite_solubility :: PKS
         density_function :: PRho   
 first_virial_coefficient :: FV
-cross_virial_coefficient :: CV         
+cross_virial_coefficient :: CV             
+                  solver :: SO     
 end
 
 """
@@ -31,7 +32,8 @@ end
                     calcite_solubility = KSP_calcite(),
                     density_function = teos10_polynomial_approximation,
                     first_virial_coefficient = PolynomialVirialCoefficientForCarbonDioxide(),
-                    cross_viral_coefficient = CrossVirialCoefficientForCarbonDioxide())
+                    cross_viral_coefficient = CrossVirialCoefficientForCarbonDioxide(),
+                    solver = NewtonRaphsonSolver())
 
 Carbon chemistry model capable of solving for sea water pCO₂ from DIC and 
 total alkalinity or DIC and pH. 
@@ -76,57 +78,12 @@ function CarbonChemistry(FT = Float64;
                          first_virial_coefficient = PolynomialVirialCoefficientForCarbonDioxide{FT}(),
                          cross_viral_coefficient = CrossVirialCoefficientForCarbonDioxide{FT}())
 
+                         solver = DampedNewtonRaphsonSolver{FT, Int, @NamedTuple{lower::FT, upper::FT}}(bounds = (lower = 0, upper = Inf))) 
+
     return CarbonChemistry(ionic_strength, solubility, carbonic_acid, boric_acid, water,
                            sulfate, fluoride, phosphoric_acid, silicic_acid, calcite_solubility, density_function,
-                           first_virial_coefficient, cross_viral_coefficient)
-end
-
-
-"""
-    alkalinity_residual(H, p)
-
-Returns the difference between total alkalinity computed from `H`` (hydrogen ion
-concentration), `DIC`, `borate`, `sulfate`, `phosphate`, `silicate`, and `fluoride` 
-concentration and chemical equilibrium constants specified in `p`, and the specified 
-total `Alk`alinity.
-
-    TAlk = [HCO₃⁻] + 2[CO₃²⁻] + [B(OH)₄⁻] + [OH⁻] + [HPO₄²⁻] + 2[PO₄³⁻] + [SiO(OH)₃⁻] 
-           + [NH₃] + [HS⁻] - [H⁺] - [HSO₄⁻] - [HF] - [H₃PO₄] + minor acids and bases
-
-Concentrations diagnosed as specified in Dickson et. al best practice descried in 
-`CarbonChemistry` docstring.
-
-Note ammonia (NH₃) is not currently included.
-"""
-@inline function alkalinity_residual(H, p)
-    carbonate_denom = H^2 + p.K1 * H + p.K1 * p.K2
-    phosphorus_denom = H^3 + p.KP1 * H^2 + p.KP1 * p.KP2 * H + p.KP1 * p.KP2 * p.KP3
-    sulfate_denom = 1 + p.sulfate / p.KS
-
-    bicarbonate = p.K1 * H * p.DIC / carbonate_denom
-    carbonate = 2 * p.DIC * p.K1 * p.K2 / carbonate_denom
-    borate = p.boron / (1 + H / p.KB)
-    hydroxide = p.KW / H
-    hydrogen_phosphate = p.phosphate * p.KP1 * p.KP2 * H / phosphorus_denom
-    phosphate = 2 * p.phosphate * p.KP1 * p.KP2 * p.KP3 / phosphorus_denom
-    silicate = p.silicate / (1 + H / p.KSi)
-    free_hydrogen = - H / sulfate_denom
-    hydrogen_suplfate = - p.sulfate / (1 + p.KS / H / sulfate_denom)
-    hydrogen_fluoride = -p.fluoride / (1 + p.KF / H)
-    phosphoric_acid = -p.phosphate * H^3 / phosphorus_denom
-
-    return (bicarbonate 
-            + carbonate
-            + borate
-            + hydroxide
-            + hydrogen_phosphate
-            + phosphate
-            + silicate
-            + free_hydrogen
-            + hydrogen_suplfate
-            + hydrogen_fluoride
-            + phosphoric_acid 
-            - p.Alk)
+                           first_virial_coefficient, cross_viral_coefficient,
+                            solver)
 end
 
 """
@@ -137,8 +94,7 @@ end
                            fluoride = 0.000067 / 18.9984 * S / 1.80655,
                            silicate = 0,
                            phosphate = 0,
-                           upper_pH_bound = 14,
-                           lower_pH_bound = 0)
+                           initial_pH_guess = 8)
 
 Calculates `fCO₂` in sea water with `DIC`, `Alk`alinity, `T`emperature, and `S`alinity
 unless `pH` is specified, in which case intermediate computation of `pH` is skipped and
@@ -162,8 +118,7 @@ instead of fCO₂.
                                         fluoride = convert(typeof(DIC), 0.000067 / 18.9984 * S / 1.80655),
                                         silicate = zero(DIC),
                                         phosphate = zero(DIC),
-                                        upper_pH_bound = convert(typeof(DIC), 14),
-                                        lower_pH_bound = convert(typeof(DIC), 0)) where FT
+                                        initial_pH_guess = convert(typeof(DIC), 8)) where FT
 
     ρₒ = p.density_function(T, S, ifelse(isnothing(P), one(DIC), P), lon, lat)
 
@@ -197,7 +152,7 @@ instead of fCO₂.
                 K1, K2, KB, KW, KS, KF, KP1, KP2, KP3, KSi)
 
     # solve equilibrium for hydrogen ion concentration
-    H = solve_for_H(pH, params, upper_pH_bound, lower_pH_bound)
+    H = solve_for_H(pH, params, initial_pH_guess, p.solver)
 
     # compute solubility equilibrium constant
     K0 = p.solubility(T, S)
@@ -257,8 +212,10 @@ end
 # solves `alkalinity_residual` for pH
 solve_for_H(pH::FT, args...) where FT = convert(FT, 10.0) ^ - pH
 
-solve_for_H(::Nothing, params, upper_pH_bound::FT, lower_pH_bound) where FT =
-    find_zero(alkalinity_residual, (convert(FT, 10.0) ^ - upper_pH_bound, convert(FT, 10.0) ^ - lower_pH_bound); atol = convert(FT, 1e-10), p = params)
+include("alkalinity_residual.jl")
+
+solve_for_H(::Nothing, params, initial_pH_guess::FT, solver) where FT =
+    solver(alkalinity_residual, ∂ₕ_alkalinity_residual, 10^(-initial_pH_guess), params)#
 
 # display
 summary(::IO, ::CarbonChemistry) = string("`CarbonChemistry` model")

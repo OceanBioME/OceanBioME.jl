@@ -43,7 +43,7 @@ end
     pH_results = similar(pH)
 
     for (idx, DIC) in enumerate(DIC)
-        pCO₂_results[idx] = carbon_chem(; DIC, Alk = Alk[idx], T = T[idx], S = S[idx], output = Val(:pCO₂))
+        pCO₂_results[idx] = carbon_chem(; DIC = Float64(DIC), Alk = Float64(Alk[idx]), T = Float64(T[idx]), S = Float64(S[idx]), output = Val(:pCO₂))
         pH_results[idx] = carbon_chem(; DIC, Alk = Alk[idx], T = T[idx], S = S[idx], output = Val(:pHᶠ))
     end
 
@@ -56,7 +56,7 @@ end
 
 grid = RectilinearGrid(architecture; size=(1, 1, 2), extent=(1, 1, 1))
 
-@inline conc_function(x, y, t) = 413
+@inline conc_function(x, y, t) = 413.0
 
 conc_field = CenterField(grid)
 
