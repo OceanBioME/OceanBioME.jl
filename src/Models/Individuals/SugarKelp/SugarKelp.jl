@@ -19,11 +19,10 @@ module SugarKelpModel
 
 export SugarKelp, SugarKelpParticles
 
-using Roots
-
 using Oceananigans.Grids: AbstractGrid
 using Oceananigans.Units
 
+using OceanBioME: NewtonRaphsonSolver
 using OceanBioME.Particles: BiogeochemicalParticles
 
 import OceanBioME.Particles: required_particle_fields, required_tracers, coupled_tracers
@@ -33,7 +32,7 @@ import OceanBioME.Particles: required_particle_fields, required_tracers, coupled
 
 Defines the parameters for `SugarKelp` biogeochemistry.
 """
-struct SugarKelp{FT, TL}
+struct SugarKelp{FT, TL, SO}
                      temperature_limit :: TL
                 growth_rate_adjustment :: FT
              photosynthetic_efficiency :: FT
@@ -81,6 +80,7 @@ struct SugarKelp{FT, TL}
            base_basal_respiration_rate :: FT
               exudation_redfield_ratio :: FT
                       adapted_latitude :: FT
+                                solver :: SO
 
     function SugarKelp(FT = Float64; 
                        temperature_limit::TL = LinearOptimalTemperatureRange{FT}(),
@@ -129,28 +129,30 @@ struct SugarKelp{FT, TL}
                        base_activity_respiration_rate = 1.11e-4 * 24,
                        base_basal_respiration_rate = 5.57e-5 * 24,
                        exudation_redfield_ratio = Inf,
-                       adapted_latitude = 57.5) where TL
+                       adapted_latitude = 57.5,
+                       solver::SO = NewtonRaphsonSolver{FT, Int}(; atol = eps(FT(1e-9)))) where {TL, SO}
 
-        return new{FT, TL}(temperature_limit, 
-                           growth_rate_adjustment, photosynthetic_efficiency,
-                           minimum_carbon_reserve, structural_carbon,
-                           exudation, erosion_exponent, base_erosion_rate,
-                           saturation_irradiance,
-                           structural_dry_weight_per_area, structural_dry_to_wet_weight,
-                           carbon_reserve_per_carbon, nitrogen_reserve_per_nitrogen,
-                           minimum_nitrogen_reserve, maximum_nitrogen_reserve,
-                           growth_adjustment_2, growth_adjustment_1, maximum_specific_growth_rate,
-                           structural_nitrogen,
-                           photosynthesis_at_ref_temp_1, photosynthesis_at_ref_temp_2,
-                           photosynthesis_ref_temp_1, photosynthesis_ref_temp_2, photoperiod_1, photoperiod_2,
-                           respiration_at_ref_temp_1, respiration_at_ref_temp_2, respiration_ref_temp_1, respiration_ref_temp_2,
-                           photosynthesis_arrhenius_temp, photosynthesis_low_temp, photosynthesis_high_temp,
-                           photosynthesis_high_arrhenius_temp, photosynthesis_low_arrhenius_temp,
-                           respiration_arrhenius_temp,
-                           current_speed_for_0p65_uptake, nitrate_half_saturation, ammonia_half_saturation,
-                           maximum_nitrate_uptake, maximum_ammonia_uptake, current_1, current_2, current_3, 
-                           base_activity_respiration_rate, base_basal_respiration_rate, exudation_redfield_ratio,
-                           adapted_latitude)
+        return new{FT, TL, SO}(temperature_limit, 
+                               growth_rate_adjustment, photosynthetic_efficiency,
+                               minimum_carbon_reserve, structural_carbon,
+                               exudation, erosion_exponent, base_erosion_rate,
+                               saturation_irradiance,
+                               structural_dry_weight_per_area, structural_dry_to_wet_weight,
+                               carbon_reserve_per_carbon, nitrogen_reserve_per_nitrogen,
+                               minimum_nitrogen_reserve, maximum_nitrogen_reserve,
+                               growth_adjustment_2, growth_adjustment_1, maximum_specific_growth_rate,
+                               structural_nitrogen,
+                               photosynthesis_at_ref_temp_1, photosynthesis_at_ref_temp_2,
+                               photosynthesis_ref_temp_1, photosynthesis_ref_temp_2, photoperiod_1, photoperiod_2,
+                               respiration_at_ref_temp_1, respiration_at_ref_temp_2, respiration_ref_temp_1, respiration_ref_temp_2,
+                               photosynthesis_arrhenius_temp, photosynthesis_low_temp, photosynthesis_high_temp,
+                               photosynthesis_high_arrhenius_temp, photosynthesis_low_arrhenius_temp,
+                               respiration_arrhenius_temp,
+                               current_speed_for_0p65_uptake, nitrate_half_saturation, ammonia_half_saturation,
+                               maximum_nitrate_uptake, maximum_ammonia_uptake, current_1, current_2, current_3, 
+                               base_activity_respiration_rate, base_basal_respiration_rate, exudation_redfield_ratio,
+                               adapted_latitude, 
+                               solver)
     end
 end 
 
