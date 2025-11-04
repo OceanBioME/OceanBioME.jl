@@ -1,9 +1,9 @@
 @kwdef struct NewtonRaphsonSolver{FT, IT}
-    max_iters :: IT = 100
+    max_iters :: IT = 1000
          atol :: FT = 10^-10
 end
 
-@inline function (nrs::NewtonRaphsonSolver)(f, f′, x0, params)
+@inline function (nrs::NewtonRaphsonSolver)(f, f′, x0, params; warn_fail = false)
     x = x0
     x⁻ = Inf
     N = 0
@@ -16,17 +16,19 @@ end
         N += 1
     end
 
+    (warn_fail && (abs(fx) > nrs.atol)) && @warn "Failed to converge"
+
     return x
 end
 
 @kwdef struct NewtonRaphsonSafeSolver{FT, IT}
     max_iters :: IT = 100
          atol :: FT = 10^-10
-      damping :: FT = 1.0
 end
 
-@inline function (nrss::NewtonRaphsonSafeSolver)(f, f′, x0, params)
-    x⁻, x⁺ = x0
+@inline function (nrss::NewtonRaphsonSafeSolver)(f, f′, x0, params; warn_fail = false)
+    x⁻ = minimum(x0)
+    x⁺ = maximum(x0)
     xⁿ = (x⁻ + x⁺)/2
     N = 0
 
@@ -40,6 +42,8 @@ end
         N += 1
     end
 
+    (warn_fail && (abs(f(xⁿ, params)) > nrss.atol)) && @warn "Failed to converge"
+
     return xⁿ
 end
 
@@ -49,17 +53,20 @@ end
       damping :: FT = 1.0
 end
 
-@inline function (nrss::Bisection)(f, f′, x0, params)
+@inline (bs::Bisection)(f, x0, params; kwargs...) = bs(f, nothing, x0, params; kwargs...)
+@inline function (bs::Bisection)(f, f′, x0, params; warn_fail = false)
     x⁻, x⁺ = x0
     xⁿ = (x⁻ + x⁺)/2
     N = 0
 
-    while (abs(f((x⁻ + x⁺)/2, params)) > nrss.atol) & (N < nrss.max_iters)
+    while (abs(f(xⁿ, params)) > bs.atol) & (N < bs.max_iters)
         x⁻, x⁺ = bisection(x⁺, x⁻, xⁿ, f, params)
 
         xⁿ = (x⁻ + x⁺)/2
         N += 1
     end
+
+    (warn_fail && (abs(f(xⁿ, params)) > bs.atol)) && @warn "Failed to converge"
 
     return xⁿ
 end
@@ -78,7 +85,7 @@ end
        bounds :: BO = (lower = -Inf, upper = Inf)
 end
 
-@inline function (dnrs::DampedNewtonRaphsonSolver)(f, f′, x0, params)
+@inline function (dnrs::DampedNewtonRaphsonSolver)(f, f′, x0, params; warn_fail = false)
     x = x0
     x⁻ = Inf
     N = 0
@@ -95,6 +102,8 @@ end
         x -= λ * δ
         N += 1
     end
+
+    (warn_fail && (abs(fx) > dnrs.atol)) && @warn "Failed to converge"
 
     return x
 end
