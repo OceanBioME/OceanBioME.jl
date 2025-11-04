@@ -76,9 +76,9 @@ function CarbonChemistry(FT = Float64;
                          calcite_solubility = KSP_calcite(FT),
                          density_function = teos10_polynomial_approximation, # the denisity function *is* going to cause type instability but I can't see a way to fix it
                          first_virial_coefficient = PolynomialVirialCoefficientForCarbonDioxide{FT}(),
-                         cross_viral_coefficient = CrossVirialCoefficientForCarbonDioxide{FT}())
+                         cross_viral_coefficient = CrossVirialCoefficientForCarbonDioxide{FT}(),
 
-                         solver = DampedNewtonRaphsonSolver{FT, Int, @NamedTuple{lower::FT, upper::FT}}(bounds = (lower = 0, upper = Inf))) 
+                         solver = DampedNewtonRaphsonSolver{FT, Int, @NamedTuple{lower::FT, upper::FT}}(bounds = (lower = 0, upper = Inf)))
 
     return CarbonChemistry(ionic_strength, solubility, carbonic_acid, boric_acid, water,
                            sulfate, fluoride, phosphoric_acid, silicic_acid, calcite_solubility, density_function,
