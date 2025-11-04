@@ -116,10 +116,19 @@ end
     return pₛ * (1 - exp(- α * PAR / pₛ)) * exp(-β * PAR / pₛ) 
 end
 
-# solves `alkalinity_residual` for pH
-@inline solve_for_light_inhibition(kelp, maximum_photosynthesis) =
-    find_zero(light_inhibition_residual, (0, 0.1), Bisection(); 
-              p = (; maximum_photosynthesis, kelp.photosynthetic_efficiency, kelp.saturation_irradiance))
+
+@inline function solve_for_light_inhibition(kelp, Pₘ::FT) where FT
+    α = kelp.photosynthetic_efficiency
+    Iₛ = kelp.saturation_irradiance
+
+    β₀ = convert(FT, 1e-9)
+
+    return kelp.solver(β_residual, ∂β_maximum_photosynthesis, β₀, (; α, Iₛ, Pₘ))
+end
+
+maximum_photosynthesis(α, β) = α / (log(1 + α/β)) * (α / (α + β)) * (β / (α + β)) ^ (β/α)
+β_residual(β, p) = (maximum_photosynthesis(p.α, β) - p.Pₘ/p.Iₛ)
+∂β_maximum_photosynthesis(β, p) = (p.α * (β / (β + p.α))^(β / p.α) * ((log(p.α / β + 1) * β^2 + p.α * log(p.α / β + 1) * β) * log(β / (β + p.α)) + p.α^2)) / (log(p.α / β + 1)^2 * β * (β + p.α)^2)
 
 @inline function light_inhibition_residual(β, p)
     pₘ = p.maximum_photosynthesis
