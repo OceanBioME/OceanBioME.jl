@@ -8,7 +8,7 @@ Results could look something like this (from [StrongWright2022](@citet)):
 ![Example A, N, and C profiles from [StrongWright2022](@citet)](https://www.frontiersin.org/files/Articles/793977/fmars-08-793977-HTML/image_m/fmars-08-793977-g002.jpg)
 
 You can access the model biogeochemistry by setting up `SugarKelp`, i.e.:
-```jldoctest
+```jldoctest; filter = r"└ @ OceanBioME\.Models\.SugarKelpModel .+" => "└ @ OceanBioME\.Models\.SugarKelpModel"
 using OceanBioME
 
 kelp_bgc = SugarKelp()
@@ -19,7 +19,7 @@ kelp_bgc = SugarKelp()
 SugarKelp{Float64} biogeochemistry (Broch & Slagstad, 2012) tracking the `N`itrogen and `C`arbon in a frond of `A`rea
 ```
 which can be put into `BiogeochemicalParticles`, or you can directly manifest particles:
-```jldoctest
+```jldoctest; filter = r"└ @ OceanBioME\.Models\.SugarKelpModel .+" => "└ @ OceanBioME\.Models\.SugarKelpModel"
 using OceanBioME, Oceananigans
 
 grid = RectilinearGrid(size = (1, 1, 1), extent = (1, 1, 1));
