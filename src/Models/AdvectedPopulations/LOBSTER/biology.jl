@@ -92,7 +92,7 @@ end # done!
 end
 
 @inline grazing_waste(lobster::PHYTO_ZOO_LOBSTER, i, j, k, fields, auxiliary_fields) = 
-    (1 - lobster.biology.zooplankton_assimilation_fraction) * total_grazing(lobster, i, j, k, field, auxiliary_fields)
+    (1 - lobster.biology.zooplankton_assimilation_fraction) * total_grazing(lobster, i, j, k, fields, auxiliary_fields)
 
 @inline function phytoplankton_preference(lobster, i, j, k, fields, auxiliary_fields)
     p̃ = lobster.biology.preference_for_phytoplankton
