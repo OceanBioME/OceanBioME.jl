@@ -117,6 +117,8 @@ end
     nitrate_limitation = NO₃ * exp(-ψ * NH₄) / (NO₃ + kNO₃)
     ammonia_limitation = max(0, NH₄ / (kNH₄ + NH₄))
 
+    # factor of 1/2 so that the limitation varies between 0 and 1
+    # correspondingly μ₀ is doubled
     return (nitrate_limitation + ammonia_limitation) / 2
 end
 
