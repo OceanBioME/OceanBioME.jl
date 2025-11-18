@@ -72,7 +72,7 @@ function test_sediment(grid, biogeochemistry, model_name, advection = WENO(order
 
     final_total_nitrogen = CUDA.@allowscalar total_nitrogen[1, 1, 1]
 
-     # simple multi-G is only good to this precision, IR is fine to default
+    # simple multi-G is only good to this precision, IR is fine to default
     @test isapprox(initial_total_nitrogen, final_total_nitrogen,rtol = 0.2e-6)
     
     @test all(interior(sediment_nitrogen) .!= 0)
@@ -124,13 +124,13 @@ models = (NonhydrostaticModel, HydrostaticFreeSurfaceModel) # I don't think we n
 
         simple_lobster_multi_g = LOBSTER(;
             grid,
-            sediment_model = SimpleMultiGSediment(grid),
+            sediment = SimpleMultiGSediment(grid),
             oxygen = true
         )
 
         full_lobster_multi_g = LOBSTER(;
             grid,
-            sediment_model = SimpleMultiGSediment(
+            sediment = SimpleMultiGSediment(
                 grid;
                 sinking_nitrogen = (:sPON, :bPON),
                 sinking_carbon = (:sPOC, :bPOC)
