@@ -268,7 +268,7 @@ Keyword Arguments
 - `carbon_chemistry`: the `CarbonChemistry` model used to compute the calicte saturation
 - `calcite_saturation`: an `AbstractField` containing the calcite saturation  (computed during update state)
 - `surface_photosynthetically_active_radiation`: funciton for the photosynthetically available radiation at the surface
-- `light_attenuation_model`: light attenuation model which integrated the attenuation of available light
+- `light_attenuation`: light attenuation model which integrated the attenuation of available light
 - `sinking_speed`: named tuple of constant sinking speeds, or fields (i.e. `ZFaceField(...)`) for any tracers which sink 
   (convention is that a sinking speed is positive, but a field will need to follow the usual down being negative)
 - `open_bottom`: should the sinking velocity be smoothly brought to zero at the bottom to prevent the tracers leaving the domain

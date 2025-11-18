@@ -106,10 +106,10 @@ end
                                                remineralization_rate::FT = 0.1213 / day, # 1/s
 
                                                surface_photosynthetically_active_radiation = default_surface_PAR,
-                                               light_attenuation_model::LA =
+                                               light_attenuation::LA =
                                                    TwoBandPhotosyntheticallyActiveRadiation(; grid,
                                                                                               surface_PAR = surface_photosynthetically_active_radiation),
-                                               sediment_model::S = nothing,
+                                               sediment::S = nothing,
                 
                                                sinking_speeds = (P = 0.2551/day, D = 2.7489/day),
                                                open_bottom::Bool = true,
@@ -127,8 +127,8 @@ Keyword Arguments
 - `grid`: (required) the geometry to build the model on, required to calculate sinking
 - `initial_photosynthetic_slope`, ..., `remineralization_rate`: NPZD parameter values
 - `surface_photosynthetically_active_radiation`: function (or array in the future) for the photosynthetically available radiation at the surface, should be shape `f(x, y, t)`
-- `light_attenuation_model`: light attenuation model which integrated the attenuation of available light
-- `sediment_model`: slot for `BiogeochemicalSediment`
+- `light_attenuation`: light attenuation model which integrated the attenuation of available light
+- `sediment`: slot for `BiogeochemicalSediment`
 - `sinking_speed`: named tuple of constant sinking, of fields (i.e. `ZFaceField(...)`) for any tracers which sink (convention is that a sinking speed is positive, but a field will need to follow the usual down being negative)
 - `open_bottom`: should the sinking velocity be smoothly brought to zero at the bottom to prevent the tracers leaving the domain
 - `scale_negatives`: scale negative tracers?
@@ -167,10 +167,10 @@ function NutrientPhytoplanktonZooplanktonDetritus(; grid::AbstractGrid{FT},
                                                     remineralization_rate::FT = 0.1213 / day, # 1/s
 
                                                     surface_photosynthetically_active_radiation = default_surface_PAR,
-                                                    light_attenuation_model::LA =
+                                                    light_attenuation::LA =
                                                         TwoBandPhotosyntheticallyActiveRadiation(; grid,
                                                                                                    surface_PAR = surface_photosynthetically_active_radiation),
-                                                    sediment_model::S = nothing,
+                                                    sediment::S = nothing,
                 
                                                     sinking_speeds = (P = 0.2551/day, D = 2.7489/day),
                                                     open_bottom::Bool = true,
@@ -203,8 +203,8 @@ function NutrientPhytoplanktonZooplanktonDetritus(; grid::AbstractGrid{FT},
     end
 
     return Biogeochemistry(underlying_biogeochemistry;
-                           light_attenuation = light_attenuation_model, 
-                           sediment = sediment_model, 
+                           light_attenuation, 
+                           sediment = sediment, 
                            particles,
                            modifiers)
 end
