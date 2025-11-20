@@ -18,7 +18,7 @@ using Oceananigans
 grid = RectilinearGrid(size=(3, 3, 30), extent=(10, 10, 200));
 
 model = NonhydrostaticModel(; grid,
-                              biogeochemistry = LOBSTER(; grid, carbonates = true, oxygen = true),
+                              biogeochemistry = LOBSTER(; grid, carbonate_system = CarbonateSystem(), oxygen = Oxygen()),
                               boundary_conditions = (DIC = FieldBoundaryConditions(top = CO₂_flux), 
                                                       O₂ = FieldBoundaryConditions(top =  O₂_flux)),
                               tracers = (:T, :S))
