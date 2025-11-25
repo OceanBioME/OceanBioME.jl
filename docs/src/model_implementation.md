@@ -196,22 +196,7 @@ biogeochemical_drift_velocity(bgc::NutrientPhytoplankton, ::Val{:P}) =
 
 ### Sediment model coupling
 
-Another aspect that OceanBioME includes is sediment models. Doing this varies between sediment models, but for the most generic and simplest, all we need to do is add methods to two functions:
-
-```@example implementing
-using OceanBioME.Sediments: sinking_flux
-
-import OceanBioME.Sediments: nitrogen_flux, carbon_flux, remineralisation_receiver, sinking_tracers
-
-@inline nitrogen_flux(i, j, k, grid, advection, bgc::NutrientPhytoplankton, tracers) =
-     sinking_flux(i, j, k, grid, advection, Val(:P), bgc, tracers)
-                 
-@inline carbon_flux(i, j, k, grid, advection, bgc::NutrientPhytoplankton, tracers) = nitrogen_flux(i, j, k, grid, advection, bgc, tracers) * 6.56
-
-@inline remineralisation_receiver(::NutrientPhytoplankton) = :N
-
-@inline sinking_tracers(::NutrientPhytoplankton) = (:P, )
-```
+OceanBioME includes sediment models that can be coupled to biogeochemical models. For models like `InstantRemineralisationSediment`, coupling is straightforward - you simply specify which tracers sink into the sediment and which tracer receives remineralized nutrients. We'll demonstrate this in the next section.
 
 ### Putting it together
 
