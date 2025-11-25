@@ -123,9 +123,15 @@ Adapt.adapt_structure(to, p::BiogeochemicalParticles{N}) where N =
 const BGC_WITH_PARTICLES = Union{<:DiscreteBiogeochemistry{<:Any, <:Any, <:Any, <:AbstractBiogeochemicalParticles},
                                  <:ContinuousBiogeochemistry{<:Any, <:Any, <:Any, <:AbstractBiogeochemicalParticles}}
 
-const MODEL_WITH_BGC_PARTICLES =
-    Union{<:NonhydrostaticModel{<:Any, <:Any, <:Any, <:Any, <:Any, <:Any, <:Any, <:Any, <:Any, <:Any, <:Any, <:Any, <:Any, <:Any, <:Any, <:Any, <:Any, <:Any, <:BGC_WITH_PARTICLES},
-          <:HydrostaticFreeSurfaceModel{<:Any, <:Any, <:Any, <:Any, <:Any, <:Any, <:Any, <:Any, <:Any, <:Any, <:Any, <:BGC_WITH_PARTICLES}}
+const NONHYDROSTATIC_WITH_BGC_PARTICLES = NonhydrostaticModel{<:Any, <:Any, <:Any, <:Any, <:Any, <:Any, <:Any,
+                                                              <:Any, <:Any, <:Any, <:Any, <:Any, <:Any, <:Any,
+                                                              <:Any, <:Any, <:Any, <:Any, <:BGC_WITH_PARTICLES}
+
+const HYDROSTATIC_WITH_BGC_PARTICLES = HydrostaticFreeSurfaceModel{<:Any, <:Any, <:Any, <:Any, <:Any, <:Any,
+                                                                   <:Any, <:Any, <:Any, <:Any, <:Any,
+                                                                   <:BGC_WITH_PARTICLES}
+
+const MODEL_WITH_BGC_PARTICLES = Union{<:NONHYDROSTATIC_WITH_BGC_PARTICLES, <:HYDROSTATIC_WITH_BGC_PARTICLES}
 
 @inline step_lagrangian_particles!(::Nothing, model::MODEL_WITH_BGC_PARTICLES, Δt) =
     step_lagrangian_particles!(model.biogeochemistry, model, Δt)
