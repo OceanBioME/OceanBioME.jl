@@ -120,14 +120,15 @@ Adapt.adapt_structure(to, p::BiogeochemicalParticles{N}) where N =
                                adapt(to, p.y),
                                adapt(to, p.z))
 
-# Type piracy...oops
 const BGC_WITH_PARTICLES = Union{<:DiscreteBiogeochemistry{<:Any, <:Any, <:Any, <:AbstractBiogeochemicalParticles},
                                  <:ContinuousBiogeochemistry{<:Any, <:Any, <:Any, <:AbstractBiogeochemicalParticles}}
 
-@inline step_lagrangian_particles!(::Nothing, model, Δt) = 
-    step_lagrangian_particles!(model.biogeochemistry, model, Δt)
+const MODEL_WITH_BGC_PARTICLES =
+    Union{<:NonhydrostaticModel{<:Any, <:Any, <:Any, <:Any, <:Any, <:Any, <:Any, <:Any, <:Any, <:Any, <:Any, <:Any, <:Any, <:Any, <:Any, <:Any, <:Any, <:Any, <:BGC_WITH_PARTICLES},
+          <:HydrostaticFreeSurfaceModel{<:Any, <:Any, <:Any, <:Any, <:Any, <:Any, <:Any, <:Any, <:Any, <:Any, <:Any, <:BGC_WITH_PARTICLES}}
 
-@inline step_lagrangian_particles!(bgc, model, Δt) = nothing
+@inline step_lagrangian_particles!(::Nothing, model::MODEL_WITH_BGC_PARTICLES, Δt) =
+    step_lagrangian_particles!(model.biogeochemistry, model, Δt)
 
 @inline step_lagrangian_particles!(bgc::BGC_WITH_PARTICLES, model, Δt) =
     update_lagrangian_particle_properties!(bgc.particles, model, bgc, Δt)
