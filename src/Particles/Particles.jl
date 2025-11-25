@@ -1,4 +1,4 @@
-module Particles 
+module Particles
 
 export BiogeochemicalParticles
 
@@ -25,7 +25,7 @@ abstract type AbstractBiogeochemicalParticles end
 struct BiogeochemicalParticles{N, B, A, F, T, I, S, X, Y, Z} <: AbstractBiogeochemicalParticles
       biogeochemistry :: B
             advection :: A
-               fields :: F 
+               fields :: F
           timestepper :: T
   field_interpolation :: I
          scalefactors :: S
@@ -34,11 +34,11 @@ struct BiogeochemicalParticles{N, B, A, F, T, I, S, X, Y, Z} <: AbstractBiogeoch
                     z :: Z
 
     BiogeochemicalParticles(number, biogeochemistry::B, advection::A,
-                                    fields::F, timestepper::T, 
+                                    fields::F, timestepper::T,
                                     field_interpolation::I, scalefactors::S,
                                     x::X, y::Y, z::Z) where {B, A, F, T, I, S, X, Y, Z} =
         new{number, B, A, F, T, I, S, X, Y, Z}(biogeochemistry, advection, fields, timestepper,
-                                               field_interpolation, scalefactors, x, y, z)     
+                                               field_interpolation, scalefactors, x, y, z)
 end
 
 architecture(p::BiogeochemicalParticles) = architecture(p.x)
@@ -60,7 +60,7 @@ include("update_tracer_tendencies.jl")
 include("set.jl")
 
 """
-    BiogeochemicalParticles(number; 
+    BiogeochemicalParticles(number;
                             grid,
                             biogeochemistry,
                             advection = LagrangianAdvection(),
@@ -77,7 +77,7 @@ the nearest center point and taking up/depositing in the same.
 Particles can also have a `scalefactor` which scales their tracer interaction
 (e.g. to mimic the particle representing multiple particles).
 """
-function BiogeochemicalParticles(number; 
+function BiogeochemicalParticles(number;
                                  grid::AbstractGrid{FT},
                                  biogeochemistry,
                                  advection = LagrangianAdvection(),
@@ -99,17 +99,17 @@ function BiogeochemicalParticles(number;
 
     scalefactors = on_architecture(arch, scalefactors)
 
-    return BiogeochemicalParticles(number, 
-                                   biogeochemistry, 
-                                   advection, 
-                                   fields, 
-                                   timestepper, 
-                                   field_interpolation, 
+    return BiogeochemicalParticles(number,
+                                   biogeochemistry,
+                                   advection,
+                                   fields,
+                                   timestepper,
+                                   field_interpolation,
                                    scalefactors,
                                    x, y, z)
 end
 
-Adapt.adapt_structure(to, p::BiogeochemicalParticles{N}) where N = 
+Adapt.adapt_structure(to, p::BiogeochemicalParticles{N}) where N =
     BiogeochemicalParticles(N, adapt(to, p.biogeochemistry),
                                nothing,
                                adapt(to, p.fields),
@@ -120,16 +120,32 @@ Adapt.adapt_structure(to, p::BiogeochemicalParticles{N}) where N =
                                adapt(to, p.y),
                                adapt(to, p.z))
 
-# Type piracy...oops
-const BGC_WITH_PARTICLES = Union{<:DiscreteBiogeochemistry{<:Any, <:Any, <:Any, <:AbstractBiogeochemicalParticles},
-                                 <:ContinuousBiogeochemistry{<:Any, <:Any, <:Any, <:AbstractBiogeochemicalParticles}}
+const BiogeochemistryWithParticles = Union{
+    <:DiscreteBiogeochemistry{<:Any, <:Any, <:Any, <:AbstractBiogeochemicalParticles},
+    <:ContinuousBiogeochemistry{<:Any, <:Any, <:Any, <:AbstractBiogeochemicalParticles}
+}
 
-@inline step_lagrangian_particles!(::Nothing, model, Δt) = 
+const NonhydrostaticWithBiogeochemicalParticles = NonhydrostaticModel{
+    <:Any, <:Any, <:Any, <:Any, <:Any, <:Any, <:Any,
+    <:Any, <:Any, <:Any, <:Any, <:Any, <:Any, <:Any,
+    <:Any, <:Any, <:Any, <:Any, <:BiogeochemistryWithParticles
+}
+
+const HydrostaticWithBiogeochemicalParticles = HydrostaticFreeSurfaceModel{
+    <:Any, <:Any, <:Any, <:Any, <:Any, <:Any,
+    <:Any, <:Any, <:Any, <:Any, <:Any,
+    <:BiogeochemistryWithParticles
+}
+
+const ModelWithBiogeochemicalParticles = Union{
+    <:NonhydrostaticWithBiogeochemicalParticles,
+    <:HydrostaticWithBiogeochemicalParticles
+}
+
+@inline step_lagrangian_particles!(::Nothing, model::ModelWithBiogeochemicalParticles, Δt) =
     step_lagrangian_particles!(model.biogeochemistry, model, Δt)
 
-@inline step_lagrangian_particles!(bgc, model, Δt) = nothing
-
-@inline step_lagrangian_particles!(bgc::BGC_WITH_PARTICLES, model, Δt) =
+@inline step_lagrangian_particles!(bgc::BiogeochemistryWithParticles, model, Δt) =
     update_lagrangian_particle_properties!(bgc.particles, model, bgc, Δt)
 
 @inline function update_lagrangian_particle_properties!(particles::BiogeochemicalParticles, model, bgc, Δt)
