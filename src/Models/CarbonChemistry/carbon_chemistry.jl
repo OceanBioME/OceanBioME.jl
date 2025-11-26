@@ -78,7 +78,7 @@ function CarbonChemistry(FT = Float64;
                          first_virial_coefficient = PolynomialVirialCoefficientForCarbonDioxide{FT}(),
                          cross_viral_coefficient = CrossVirialCoefficientForCarbonDioxide{FT}(),
 
-                         solver = DampedNewtonRaphsonSolver{FT, Int, @NamedTuple{lower::FT, upper::FT}}(bounds = (lower = 0, upper = Inf)))
+                         solver = DampedNewtonRaphsonSolver{FT, Int, @NamedTuple{lower::FT, upper::FT}}(bounds = (lower = 0, upper = nothing)))
 
     return CarbonChemistry(ionic_strength, solubility, carbonic_acid, boric_acid, water,
                            sulfate, fluoride, phosphoric_acid, silicic_acid, calcite_solubility, density_function,
