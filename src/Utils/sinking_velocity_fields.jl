@@ -1,4 +1,4 @@
-using Oceananigans.Fields: ZFaceField, AbstractField, location, Center, Face, compute!
+using Oceananigans.Fields: ZFaceField, AbstractField, location, Center, Face, compute!, ZeroField
 using Oceananigans.Forcings: maybe_constant_field
 using Oceananigans.Grids: AbstractGrid
 
@@ -7,7 +7,7 @@ import Adapt: adapt_structure, adapt
 # nothings for constant fields 
 const valid_sinking_velocity_locations = ((Center, Center, Face), (Nothing, Nothing, Face), (Nothing, Nothing, Nothing)) 
 
-function setup_velocity_fields(drift_speeds, grid::AbstractGrid, open_bottom; smoothing_distance = 2)
+function setup_velocity_fields(drift_speeds, grid::AbstractGrid, open_bottom; smoothing_distance = 2, three_D = false)
     drift_velocities = []
     for (name, w) in pairs(drift_speeds)
         if isa(w, Number)
@@ -28,7 +28,7 @@ function setup_velocity_fields(drift_speeds, grid::AbstractGrid, open_bottom; sm
             w_field = w
         end
 
-        push!(drift_velocities, w_field)
+        push!(drift_velocities, three_D ? (u = ZeroField(), v = ZeroField(), w = w_field) : w_field)
     end
 
     return NamedTuple{keys(drift_speeds)}(drift_velocities)

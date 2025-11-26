@@ -23,26 +23,9 @@ examples = [
     "Box model" => "box",
     "Simple column model" => "column",
     "Baroclinic instability" => "eady",
-    "Data forced column model" => "data_forced",
     "Model with particles (kelp) interacting with the biogeochemistry" => "kelp",
     "Data assimilation" => "data_assimilation"
 ]
-
-example_scripts = [ filename * ".jl" for (title, filename) in examples ]
-
-replace_silly_warning(content) = replace(content, r"┌ Warning:.*\s+└ @ JLD2 ~/\.julia/packages/JLD2/.*/reconstructing_datatypes\.jl.*\n" => "")
-
-for example in example_scripts
-    example_filepath = joinpath(EXAMPLES_DIR, example)
-
-    withenv("JULIA_DEBUG" => "Literate") do
-        Literate.markdown(example_filepath, OUTPUT_DIR; 
-                          flavor = Literate.DocumenterFlavor(),
-                          repo_root_url = "https://oceanbiome.github.io/OceanBioME.jl",
-                          execute = true,
-                          postprocess = replace_silly_warning)
-    end
-end
 
 example_pages = [ title => "generated/$(filename).md" for (title, filename) in examples ]
 
@@ -52,8 +35,8 @@ if !isdir(OUTPUT_DIR) mkdir(OUTPUT_DIR) end
 
 small_grid = RectilinearGrid(size=(1, 1, 1), extent=(1, 1, 1))
 
-model_parameters = (LOBSTER(; grid = BoxModelGrid(), light_attenuation_model = nothing).underlying_biogeochemistry,
-                    NutrientPhytoplanktonZooplanktonDetritus(; grid = BoxModelGrid(), light_attenuation_model = nothing).underlying_biogeochemistry,
+model_parameters = (LOBSTER(;grid = BoxModelGrid(), light_attenuation = nothing).underlying_biogeochemistry,
+                    NutrientPhytoplanktonZooplanktonDetritus(; grid = BoxModelGrid(), light_attenuation = nothing).underlying_biogeochemistry,
                     SugarKelp(),
                     TwoBandPhotosyntheticallyActiveRadiation(; grid = small_grid),
                     SimpleMultiGSediment(small_grid).biogeochemistry,
@@ -141,7 +124,9 @@ format = Documenter.HTML(
     prettyurls = get(ENV, "CI", nothing) == "true",
     canonical = "https://OceanBioME.github.io/OceanBioME/stable/",
     mathengine = MathJax3(),
-    assets = String["assets/citations.css"]
+    assets = String["assets/citations.css"],
+    size_threshold_warn = 200 * 2^10,
+    size_threshold = 800 * 2^10
 )
 
 makedocs(sitename = "OceanBioME.jl",
@@ -152,7 +137,7 @@ makedocs(sitename = "OceanBioME.jl",
          plugins = [bib],
          doctest = false,#true,
          clean = true,
-         checkdocs = :exports)
+         checkdocs = :exports) 
 
 @info "Clean up temporary .jld2/.nc files created by doctests..."
 

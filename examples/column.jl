@@ -48,7 +48,7 @@ grid = RectilinearGrid(size = (1, 1, 50), extent = (20meters, 20meters, 200meter
 
 biogeochemistry = LOBSTER(; grid,
                             surface_photosynthetically_active_radiation = PAR⁰,
-                            carbonates = true,
+                            carbonate_system = CarbonateSystem(),
                             scale_negatives = true)
 
 CO₂_flux = CarbonDioxideGasExchangeBoundaryCondition()
@@ -61,7 +61,7 @@ model = NonhydrostaticModel(; grid,
                               clock,
                               closure = ScalarDiffusivity(ν = κₜ, κ = κₜ),
                               biogeochemistry,
-                              boundary_conditions = (DIC = FieldBoundaryConditions(top = CO₂_flux), ),
+                              boundary_conditions = (DIC = FieldBoundaryConditions(top = CO₂_flux),),
                               auxiliary_fields = (; T, S))
 
 set!(model, P = 0.03, Z = 0.03, NO₃ = 4.0, NH₄ = 0.05, DIC = 2239.8, Alk = 2409.0)
@@ -86,6 +86,26 @@ simulation.output_writers[:profiles] = JLD2Writer(model, model.tracers,
                                                   filename = "$filename.jld2",
                                                   schedule = TimeInterval(1day),
                                                   overwrite_existing = true)
+
+# Also output the surface CO₂ flux
+@inline qCO₂_kernel(i, j, k, grid, clock, DIC, Alk, T, S, carbon_boundary_condition) =
+    carbon_boundary_condition.condition.func(i, j, grid, clock, (; DIC, Alk, T, S))
+
+qCO₂ = KernelFunctionOperation{Center, Center, Face}(qCO₂_kernel, 
+                                                     grid, 
+                                                     clock,
+                                                     model.tracers.DIC, 
+                                                     model.tracers.Alk,
+                                                     model.auxiliary_fields.T,
+                                                     model.auxiliary_fields.S,
+                                                     CO₂_flux)
+
+simulation.output_writers[:carbon_flux] = JLD2Writer(model, (; qCO₂),
+                                                     indices = (:, :, grid.Nz),
+                                                     filename = filename * "_carbon.jld2",
+                                                     schedule = TimeInterval(1day),
+                                                     overwrite_existing = true)
+
 nothing #hide
 
 # ## Run!
@@ -95,22 +115,22 @@ run!(simulation)
 # ## Load saved output
 # Now we can load the results and do some post processing to diagnose the air-sea CO₂ flux. Hopefully, this looks different to the example without kelp!
 
-   P = FieldTimeSeries("$filename.jld2", "P")
- NO₃ = FieldTimeSeries("$filename.jld2", "NO₃")
-   Z = FieldTimeSeries("$filename.jld2", "Z")
-sPOM = FieldTimeSeries("$filename.jld2", "sPOM")
-bPOM = FieldTimeSeries("$filename.jld2", "bPOM")
- DIC = FieldTimeSeries("$filename.jld2", "DIC")
- Alk = FieldTimeSeries("$filename.jld2", "Alk")
+   P = FieldTimeSeries(filename * ".jld2", "P")
+ NO₃ = FieldTimeSeries(filename * ".jld2", "NO₃")
+   Z = FieldTimeSeries(filename * ".jld2", "Z")
+sPOM = FieldTimeSeries(filename * ".jld2", "sPOM")
+bPOM = FieldTimeSeries(filename * ".jld2", "bPOM")
+ DIC = FieldTimeSeries(filename * ".jld2", "DIC")
+ Alk = FieldTimeSeries(filename * ".jld2", "Alk")
+
+air_sea_CO₂_flux = FieldTimeSeries(filename * "_carbon.jld2", "qCO₂")
 
 x, y, z = nodes(P)
 times = P.times
 nothing #hide
 
-# We compute the  air-sea CO₂ flux at the surface (corresponding to vertical index `k = grid.Nz`) and
-# the carbon export by computing how much carbon sinks below some arbirtrary depth; here we use depth 
-# that corresponds to `k = grid.Nz - 20`.
-air_sea_CO₂_flux = zeros(length(times))
+# We compute the carbon export by computing how much carbon sinks below some arbirtrary depth; 
+# here we use depth that corresponds to `k = grid.Nz - 20`.
 carbon_export = zeros(length(times))
 
 using Oceananigans.Biogeochemistry: biogeochemical_drift_velocity
@@ -118,7 +138,6 @@ using Oceananigans.Biogeochemistry: biogeochemical_drift_velocity
 for (n, t) in enumerate(times)
     clock.time = t
 
-    air_sea_CO₂_flux[n] = CO₂_flux.condition.func(1, 1, grid, clock, (; DIC = DIC[n], Alk = Alk[n], T, S))
     carbon_export[n] = (sPOM[n][1, 1, grid.Nz-20] * biogeochemical_drift_velocity(model.biogeochemistry, Val(:sPOM)).w[1, 1, grid.Nz-20] +
                         bPOM[n][1, 1, grid.Nz-20] * biogeochemical_drift_velocity(model.biogeochemistry, Val(:bPOM)).w[1, 1, grid.Nz-20]) * redfield(Val(:sPOM), model.biogeochemistry)
 end
@@ -154,7 +173,7 @@ CO₂_molar_mass = (12 + 2 * 16) * 1e-3 # kg / mol
 
 axfDIC = Axis(fig[5, 1], xlabel = "Time (days)", ylabel = "Flux (kgCO₂/m²/year)",
                          title = "Air-sea CO₂ flux and Sinking", limits = ((0, times[end] / days), nothing))
-lines!(axfDIC, times / days, air_sea_CO₂_flux / 1e3 * CO₂_molar_mass * year, linewidth = 3, label = "Air-sea flux")
+lines!(axfDIC, times / days, air_sea_CO₂_flux[1, 1, grid.Nz, :] / 1e3 * CO₂_molar_mass * year * 10, linewidth = 3, label = "Air-sea flux x10")
 lines!(axfDIC, times / days, carbon_export / 1e3    * CO₂_molar_mass * year, linewidth = 3, label = "Sinking export")
 Legend(fig[5, 2], axfDIC, framevisible = false)
 

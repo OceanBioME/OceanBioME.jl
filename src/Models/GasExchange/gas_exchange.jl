@@ -25,10 +25,11 @@ end
 
 @inline function (g::GasExchange)(i, j, grid, clock, model_fields)
     T = @inbounds model_fields.T[i, j, grid.Nz]
+    S = @inbounds model_fields.S[i, j, grid.Nz]
 
     u₁₀ = surface_value(g.wind_speed, i, j, grid, clock)
 
-    k = g.transfer_velocity(u₁₀, T)
+    k = g.transfer_velocity(u₁₀, T, S)
 
     air_concentration = surface_value(g.air_concentration, i, j, grid, clock, model_fields)
 

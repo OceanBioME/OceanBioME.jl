@@ -9,7 +9,7 @@ using OceanBioME, Oceananigans, OceanBioME.Sediments
 
 grid = RectilinearGrid(size=(3, 3, 30), extent=(10, 10, 200))
 
-sediment_model = SimpleMultiGSediment(grid)
+sediment = SimpleMultiGSediment(grid)
 
 # output
 `BiogeochemicalSediment` with `Single-layer multi-G sediment model (Float64)` biogeochemsitry
@@ -22,9 +22,10 @@ You may optionally specify the model parameters. This can then be passed in the 
 
 ```julia
 biogeochemistry = LOBSTER(; grid,
-                            carbonates = true, oxygen = true, variable_redfield = true,
-                            open_bottom = true,
-                            sediment_model)
+                            carbonate_system = CarbonateSystem(),
+                            oxygen = Oxygen(), 
+                            detritus = VariableRedfieldDetritus(grid; open_bottom = true),
+                            sediment)
 ```
 
 ### Model equations

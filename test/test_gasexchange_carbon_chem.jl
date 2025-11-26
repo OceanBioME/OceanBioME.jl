@@ -22,7 +22,7 @@ register(dd)
 function test_gas_exchange_model(grid, air_concentration)
     model = NonhydrostaticModel(; grid, 
                                   tracers = (:T, :S),
-                                  biogeochemistry = LOBSTER(; grid, carbonates = true), 
+                                  biogeochemistry = LOBSTER(; grid, carbonate_system = CarbonateSystem()),
                                   boundary_conditions = (DIC = FieldBoundaryConditions(top = CarbonDioxideGasExchangeBoundaryCondition(; air_concentration)), ))
 
     set!(model, T = 15.0, S = 35.0, DIC = 2220, Alk = 2500)
@@ -30,37 +30,37 @@ function test_gas_exchange_model(grid, air_concentration)
     # is everything communicating properly? (can't think of a way to not use allow scalar here)
     value = CUDA.@allowscalar Oceananigans.getbc(model.tracers.DIC.boundary_conditions.top, 1, 1, grid, model.clock, fields(model))
 
-    return isa(model.tracers.DIC.boundary_conditions.top.condition.func, GasExchange)&&≈(value, -0.0002; atol = 0.0001)&&isnothing(time_step!(model, 1.0))
+    return isa(model.tracers.DIC.boundary_conditions.top.condition.func, GasExchange)&&≈(value, -8e-6; atol = 1e-6)&&isnothing(time_step!(model, 1.0))
 end
 
 @testset "pCO₂ values" begin
     # approximatly correct sized pCO₂ from DIC and Alk
-    fCO₂_model = CarbonChemistry()
+    carbon_chem = CarbonChemistry()
 
     @load datadep"test_data/CODAP_data.jld2" DIC Alk T S pH pCO₂
     
-    fCO₂_results = similar(pCO₂)
+    pCO₂_results = similar(pCO₂)
     pH_results = similar(pH)
 
     for (idx, DIC) in enumerate(DIC)
-        fCO₂_results[idx] = fCO₂_model(; DIC, Alk = Alk[idx], T = T[idx], S = S[idx])
-        pH_results[idx] = fCO₂_model(; DIC, Alk = Alk[idx], T = T[idx], S = S[idx], return_pH = true)
+        pCO₂_results[idx] = carbon_chem(; DIC = Float64(DIC), Alk = Float64(Alk[idx]), T = Float64(T[idx]), S = Float64(S[idx]), output = Val(:pCO₂))
+        pH_results[idx] = carbon_chem(; DIC, Alk = Alk[idx], T = T[idx], S = S[idx], output = Val(:pHᶠ))
     end
 
-    fCO₂_err = pCO₂ .- fCO₂_results
+    pCO₂_err = pCO₂ .- pCO₂_results
     pH_err = pH .- pH_results
 
     # not great not terrible
-    @test (mean(fCO₂_err) < 9 && std(fCO₂_err) < 10) && (mean(pH_err) < 0.01 && std(pH_err) < 0.01)
+    @test (mean(pCO₂_err) < 7.1 && std(pCO₂_err) < 9.1) && (mean(pH_err) < 0.01 && std(pH_err) < 0.01)
 end
 
 grid = RectilinearGrid(architecture; size=(1, 1, 2), extent=(1, 1, 1))
 
-@inline conc_function(x, y, t) = 413.0 + 10.0 * sin(t * π / year)
+@inline conc_function(x, y, t) = 413.0
 
 conc_field = CenterField(grid)
 
-set!(conc_field, (args...) -> 10 * randn() + 413) 
+set!(conc_field, (args...) -> 413) 
 
 @testset "Gas exchange coupling" begin
     for air_concentration in [413.1, conc_function, conc_field]
