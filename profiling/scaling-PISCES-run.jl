@@ -24,6 +24,15 @@ function run_PISCES_benchmark_case(
     @info "Precompiling PISCES benchmark case yet again!"
     @time Profiling.Cases.big_PISCES(; backend, grid_size, enable_io, fast_kill = true, runlength_scale, filename)
 
+    @info "Precompiling PISCES benchmark case"
+    @time Profiling.Cases.big_PISCES(; backend, grid_size, enable_io, fast_kill = true, runlength_scale, filename)
+
+    @info "Precompiling PISCES benchmark case again"
+    @time Profiling.Cases.big_PISCES(; backend, grid_size, enable_io, fast_kill = true, runlength_scale, filename)
+
+    @info "Precompiling PISCES benchmark case yet again!"
+    @time Profiling.Cases.big_PISCES(; backend, grid_size, enable_io, fast_kill = true, runlength_scale, filename)
+
     @info "Running PISCES benchmark case"
     run_data = @timed Profiling.Cases.big_PISCES(; backend, grid_size, enable_io, fast_kill = false, runlength_scale, filename)
 
@@ -79,19 +88,19 @@ end
 backend = GPU()
 
 cases_PISCES_grid = [
-    (grid_size = (16, 16, 8), enable_io = true, runlength_scale = 1.0),
-    (grid_size = (16, 32, 8), enable_io = true, runlength_scale = 1.0),
-    (grid_size = (32, 32, 8), enable_io = true, runlength_scale = 1.0), 
-    (grid_size = (32, 32, 16), enable_io = true, runlength_scale = 1.0),
-    (grid_size = (64, 32, 16), enable_io = true, runlength_scale = 1.0),
-    (grid_size = (64, 64, 16), enable_io = true, runlength_scale = 1.0),
-    (grid_size = (64, 64, 32), enable_io = true, runlength_scale = 1.0),
-    (grid_size = (128, 64, 32), enable_io = true, runlength_scale = 1.0),
-    (grid_size = (128, 128, 32), enable_io = true, runlength_scale = 1.0),
-    (grid_size = (128, 128, 64), enable_io = true, runlength_scale = 1.0),
-    (grid_size = (256, 128, 64), enable_io = true, runlength_scale = 1.0),
-    (grid_size = (256, 256, 64), enable_io = true, runlength_scale = 1.0),
-    (grid_size = (256, 256, 128), enable_io = true, runlength_scale = 1.0),
+    (grid_size = (16, 16, 8), enable_io = false, runlength_scale = 0.5),
+    (grid_size = (16, 32, 8), enable_io = false, runlength_scale = 0.5),
+    (grid_size = (32, 32, 8), enable_io = false, runlength_scale = 0.5), 
+    (grid_size = (32, 32, 16), enable_io = false, runlength_scale = 0.5),
+    (grid_size = (64, 32, 16), enable_io = false, runlength_scale = 0.5),
+    (grid_size = (64, 64, 16), enable_io = false, runlength_scale = 0.5),
+    (grid_size = (64, 64, 32), enable_io = false, runlength_scale = 0.5),
+    (grid_size = (128, 64, 32), enable_io = false, runlength_scale = 0.5),
+    (grid_size = (128, 128, 32), enable_io = false, runlength_scale = 0.5),
+    (grid_size = (128, 128, 64), enable_io = false, runlength_scale = 0.5),
+    (grid_size = (256, 128, 64), enable_io = false, runlength_scale = 0.5),
+    (grid_size = (256, 256, 64), enable_io = false, runlength_scale = 0.5),
+    (grid_size = (256, 256, 128), enable_io = false, runlength_scale = 0.5),
 ]
 
 df = DataFrame()
@@ -100,6 +109,6 @@ for case in cases_PISCES_grid
     run_data = run_PISCES_benchmark_case(backend; case...)
     push!(df, repackage_PISCES_run_data(run_data, case))
     # Override each timestep to preserve the data in case of faliure !
-    CSV.write("scaling_PISCES_run_gpu_withio.csv", df)
+    CSV.write("scaling_PISCES_run_gpu_without_io.csv", df)
 end
 

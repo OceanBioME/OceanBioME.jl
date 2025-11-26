@@ -363,11 +363,11 @@ This script is intended as a profiling example for the PISCES biogeochemical mod
 It is intended as a typical use example for the OceanBioME.jl package.
 """
 function big_PISCES(;
-    backend = CPU(),
+    backend = GPU(),
     grid_size :: Tuple{Int, Int, Int} = (32, 32, 8),
-    fast_kill :: Bool = false,
+    fast_kill :: Bool = true,
     enable_io :: Bool = true,
-    runlength_scale :: Float64 = 1.0,
+    runlength_scale :: Float64 = 0.5,
     filename :: AbstractString = "PISCES",
     progress_hook = () -> nothing
    )
@@ -422,7 +422,7 @@ function big_PISCES(;
 
     MLD = -100.0
 
-    @inline κₜ(x, y, z, t) = (1e-2 * (1 + tanh((z - MLD) / 10)) / 2 + 1e-4)
+    @inline κₜ(x, y, z, t) = (1e-2 * (1 + tanh((z - MLD) / 10.0)) / 2 + 1e-4)
 
     κ_field = FunctionField{Center, Center, Center}(κₜ, grid; clock)
 
@@ -431,7 +431,7 @@ function big_PISCES(;
 
     biogeochemistry = PISCES(; 
         grid, 
-        mixed_layer_depth = -100.0,
+        mixed_layer_depth = MLD,
         mean_mixed_layer_vertical_diffusivity = ConstantField(1e-2), # this is by default computed now
         surface_photosynthetically_active_radiation = PAR⁰,
         carbon_chemistry,
@@ -450,8 +450,8 @@ function big_PISCES(;
         closure = ScalarDiffusivity(VerticallyImplicitTimeDiscretization(), κ = κ_field),
         biogeochemistry,
         background_fields = (T = T_field, v = V_field),
-        )
-        #boundary_conditions = (DIC = FieldBoundaryConditions(top = CO₂_flux), O₂ = FieldBoundaryConditions(top = O₂_flux)))
+        boundary_conditions = (DIC = FieldBoundaryConditions(top = CO₂_flux), O₂ = FieldBoundaryConditions(top = O₂_flux))
+    )
 
     @info "Setting initial values..."
 
@@ -484,13 +484,13 @@ function big_PISCES(;
     simulation = Simulation(model, Δt = Δt₀, stop_time = duration)
 
     # Adapt the time step while keeping the CFL number fixed.
-    wizard = TimeStepWizard(cfl = 0.75, diffusive_cfl = 0.75, max_Δt = 30minutes)
+    wizard = TimeStepWizard(cfl = 0.75, diffusive_cfl = 0.75, max_Δt = 20minutes)
     simulation.callbacks[:wizard] = Callback(wizard, IterationInterval(5))
 
 
     function progress_message(sim)
         @printf(
-        "Iteration: %04d, time: %s, Δt: %s, wall time: %s\n",
+        "Iteration: %04d, time: %s, Δt: %s, wall time: %s\n", 
         iteration(sim),
         prettytime(sim),
         prettytime(sim.Δt),
