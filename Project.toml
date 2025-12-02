@@ -1,7 +1,7 @@
 name = "OceanBioME"
 uuid = "a49af516-9db8-4be4-be45-1dad61c5a376"
+version = "0.16.3"
 authors = ["Jago Strong-Wright <js2430@damtp.cam.ac.uk> and contributors"]
-version = "0.16.2"
 
 [deps]
 Adapt = "79e6a3ab-5dfb-504d-930d-738a2a938a0e"
@@ -23,7 +23,7 @@ EnsembleKalmanProcesses = "1"
 GibbsSeaWater = "0.1"
 JLD2 = "0.4, 0.5, 0.6"
 KernelAbstractions = "0.9"
-Oceananigans = "0.100.3, 0.101"
+Oceananigans = "0.100.3, 0.101, 0.102"
 OffsetArrays = "1.14"
 SeawaterPolynomials = "0.3"
 julia = "1.12"
@@ -43,7 +43,6 @@ Random = "9a3f8284-a2c9-5f02-9a11-845980a1fd5c"
 Statistics = "10745b16-79ce-11e8-11f9-7d13ad32a3b2"
 StructArrays = "09ab397b-f2b6-538f-b94a-2f83cf4a842a"
 Test = "8dfed614-e22c-5e08-85e1-65c5234f0b40"
-
 
 [targets]
 examples = ["CairoMakie", "NetCDF", "Interpolations", "Statistics", "Printf", "JLD2", "DataDeps", "EnsembleKalmanProcesses", "Distributions"]
