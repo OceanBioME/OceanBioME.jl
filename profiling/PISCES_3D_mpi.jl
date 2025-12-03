@@ -12,11 +12,26 @@ using OceanBioME.Sediments: sinking_flux
 
 using Plots # for plotting
 
+# Initialize MPI
+MPI.Init()
+
+comm = MPI.COMM_WORLD
+rank = MPI.Comm_rank(comm)
+nranks = MPI.Comm_size(comm)
+
+MPI.Barrier(comm)
+
+Rx = 2
+Ry = 2
+Rz = 1
+
+@assert Rx * Ry * Rz == nranks  # Product of the process grid dimensions must equal the number of MPI ranks.
+
 const year = years = 365days
 nothing #hide
 
 # Set the architecture to use.
-arch = CPU()
+arch = Distributed(CPU(), ranks = (Rx, Ry, Rz), comm)
 # to use an NVIDIA GPU use the follwing lines:
 #using CUDA
 #arch = GPU()
@@ -38,7 +53,7 @@ Ly = 1kilometer
 Lz = 100meters
 
 # Construct a grid with uniform grid spacing.
-grid = RectilinearGrid(arch, size = (Nx, Ny, Nz), extent = (Lx, Ly, Lz))
+distributed_grid = RectilinearGrid(arch, size = (Nx, Ny, Nz), extent = (Lx, Ly, Lz))
 
 clock = Clock(; time = 0.0)
 
@@ -50,7 +65,7 @@ buoyancy = SeawaterBuoyancy()
 background_state_parameters = (M = 1e-4,       # s⁻¹, geostrophic shear
                                f = coriolis.f, # s⁻¹, Coriolis parameter
                                N = 1e-4,       # s⁻¹, buoyancy frequency
-                               H = grid.Lz,
+                               H = distributed_grid.Lz,
                                g = buoyancy.gravitational_acceleration,
                                α = buoyancy.equation_of_state.thermal_expansion)
 
@@ -77,12 +92,12 @@ const MLD = -100.0
 
 @inline κₜ(x, y, z, t) = (1e-2 * (1 + tanh((z - MLD) / 10.0)) / 2 + 1e-4)
 
-κ_field = FunctionField{Center, Center, Center}(κₜ, grid; clock)
+κ_field = FunctionField{Center, Center, Center}(κₜ, distributed_grid; clock)
 
 # Model setup
 carbon_chemistry = CarbonChemistry()
 
-biogeochemistry = PISCES(; grid, 
+biogeochemistry = PISCES(; distributed_grid, 
                            mixed_layer_depth = -100.0,
                            mean_mixed_layer_vertical_diffusivity = ConstantField(1e-2), # this is by default computed now
                            surface_photosynthetically_active_radiation = PAR⁰,
@@ -92,7 +107,7 @@ CO₂_flux = CarbonDioxideGasExchangeBoundaryCondition(; carbon_chemistry)
 O₂_flux = OxygenGasExchangeBoundaryCondition()
 
 @info "Setting up the model..."
-model = NonhydrostaticModel(; grid,
+model = NonhydrostaticModel(; distributed_grid,
                                       advection = WENO(),
                                       buoyancy,
                                       coriolis,
@@ -108,7 +123,7 @@ model = NonhydrostaticModel(; grid,
 # Although not required, we also set the random seed to ensure reproducibility of the results.
 Random.seed!(11)
 
-Ξ(z) = randn() * z / grid.Lz * (z / grid.Lz + 1)
+Ξ(z) = randn() * z / distributed_grid.Lz * (z / distributed_grid.Lz + 1)
 
 Ũ = 1e-3
 uᵢ(x, y, z) = Ũ * Ξ(z)
@@ -123,9 +138,9 @@ set!(model, u = uᵢ, v=vᵢ, P = 0.1, PChl = 0.025, PFe = 0.005,
             NO₃ = 10, NH₄ = 0.1, PO₄ = 5.0, Fe = 0.6, Si = 8.6,
             DIC = 2205, Alk = 2560, O₂ = 317, T=20, S = 35)
 
-Δx = minimum_xspacing(grid, Center(), Center(), Center())
-Δy = minimum_yspacing(grid, Center(), Center(), Center())
-Δz = minimum_zspacing(grid, Center(), Center(), Center())
+Δx = minimum_xspacing(distributed_grid, Center(), Center(), Center())
+Δy = minimum_yspacing(distributed_grid, Center(), Center(), Center())
+Δz = minimum_zspacing(distributed_grid, Center(), Center(), Center())
 
 Δt₀ = 0.75 * min(Δx, Δy, Δz) / V_func(0, 0, 0, 0, background_state_parameters)
 
@@ -158,6 +173,9 @@ simulation.output_writers[:fields] = JLD2Writer(model, merge(model.tracers, (; u
 # ## Run!
 # We are ready to run the simulation
 run!(simulation)
+
+MPI.Barrier(comm)
+MPI.Finalize()
 
 if plot_results
     using JLD2, Plots, Statistics
@@ -194,10 +212,10 @@ if plot_results
         @printf("Plotting frame %d of %d\n", i, length(times))
 
         # extract a slice at the top of the domain
-        ζₙ = interior(ζ[i], :, :, grid.Nz)
-        Nₙ = interior(NO₃[i], :, :, grid.Nz) .+ interior(NH₄[i], :, :, grid.Nz)
-        Pₙ = interior(  P[i], :, :, grid.Nz)
-        DICₙ = interior(DIC[i], :, :, grid.Nz)
+        ζₙ = interior(ζ[i], :, :, distributed_grid.Nz)
+        Nₙ = interior(NO₃[i], :, :, distributed_grid.Nz) .+ interior(NH₄[i], :, :, distributed_grid.Nz)
+        Pₙ = interior(  P[i], :, :, distributed_grid.Nz)
+        DICₙ = interior(DIC[i], :, :, distributed_grid.Nz)
 
         # extract a column
         Pcolumn[:,i] = interior(P[i], 1, 1, :)
@@ -208,10 +226,10 @@ if plot_results
         Tcolumn[:,i] = interior(T[i], 1, 1, :)
         Scolumn[:,i] = interior(S[i], 1, 1, :)
 
-        lims = [(minimum(test), maximum(test)) for test in (  ζ[:, :, grid.Nz, :],
-                                           NO₃[:, :, grid.Nz, :] .+ NH₄[:, :, grid.Nz, :],
-                                             P[:, :, grid.Nz, :],
-                                           DIC[:, :, grid.Nz, :])]
+        lims = [(minimum(test), maximum(test)) for test in (  ζ[:, :, distributed_grid.Nz, :],
+                                           NO₃[:, :, distributed_grid.Nz, :] .+ NH₄[:, :, distributed_grid.Nz, :],
+                                             P[:, :, distributed_grid.Nz, :],
+                                           DIC[:, :, distributed_grid.Nz, :])]
 
         kwargs = (xlabel = "x (m)", ylabel = "y (m)", aspect_ratio = :equal)
 

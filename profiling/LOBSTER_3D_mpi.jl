@@ -7,14 +7,31 @@
 # We load the required packages. 
 using OceanBioME, Oceananigans, Printf
 using Oceananigans.Units
+using MPI
 using Random
 using JLD2
 using Plots
+using Oceananigans.DistributedComputations
 using OceanBioME.Particles: BiogeochemicalParticles
 import OceanBioME.Particles: required_particle_fields, required_tracers, coupled_tracers
 
+# Initialize MPI
+MPI.Init()
+
+comm = MPI.COMM_WORLD
+rank = MPI.Comm_rank(comm)
+nranks = MPI.Comm_size(comm)
+
+MPI.Barrier(comm)
+
+Rx = 2
+Ry = 2
+Rz = 1
+
+@assert Rx * Ry * Rz == nranks  # Product of the process grid dimensions must equal the number of MPI ranks.
+
 # Set the architecture to use.
-arch = CPU()
+arch = Distributed(CPU(), ranks = (Rx, Ry, Rz), comm)
 # to use an NVIDIA GPU use the follwing lines:
 # using CUDA
 # arch = GPU()
@@ -36,7 +53,8 @@ Ly = 1kilometer
 Lz = 100meters
 
 # Construct a grid with uniform grid spacing.
-grid = RectilinearGrid(arch, size = (Nx, Ny, Nz), extent = (Lx, Ly, Lz))
+distributed_grid = RectilinearGrid(arch, size = (Nx, Ny, Nz), extent = (Lx, Ly, Lz))
+grid = distributed_grid # alias for convenience
 
 # Set the Coriolis and buoyancy models.
 coriolis = FPlane(f = 1e-4) # [s⁻¹]
@@ -163,6 +181,9 @@ nothing #hide
 
 # Run the simulation
 run!(simulation)
+
+MPI.Barrier(comm)
+MPI.Finalize()
 
 if plot_results
 
