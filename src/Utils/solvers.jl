@@ -79,11 +79,12 @@ end
 end
 
 @kwdef struct DampedNewtonRaphsonSolver{FT, IT, BO}
-    max_iters :: IT = 100
-         atol :: FT = 10^-20
-      damping :: FT = 0.5
-  min_damping :: FT = damping^10
-       bounds :: BO = (lower = nothing, upper = nothing)
+        max_iters :: IT = 100
+             atol :: FT = 10^-20
+          damping :: FT = 0.5
+  armijo_constant :: FT = 0.5
+      min_damping :: FT = damping^10
+           bounds :: BO = (lower = nothing, upper = nothing)
 end
 
 @inline function (dnrs::DampedNewtonRaphsonSolver)(f, f′, x0, params; warn_fail = false)
@@ -92,6 +93,7 @@ end
     U = dnrs.bounds.upper
     L = dnrs.bounds.lower
     λₘ = dnrs.min_damping
+    c = dnrs.armijo_constant
 
     fx = f(x, params)
 
@@ -102,7 +104,7 @@ end
 
         fnew = f(x - λ * δ, params)
 
-        while ((abs(fnew) >= abs(fx))) & (λ > λₘ)
+        while ((abs(fnew) >= abs(fx) - c * λ * fx * sign(fx))) & (λ > λₘ)
             λ *= dnrs.damping
             fnew = f(x - λ * δ, params)
         end
