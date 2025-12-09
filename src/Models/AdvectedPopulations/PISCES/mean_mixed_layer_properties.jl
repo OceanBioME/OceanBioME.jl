@@ -52,9 +52,8 @@ end
 ##### Mean mixed layer diffusivity
 #####
 
-
 compute_mean_mixed_layer_vertical_diffusivity!(κ, mixed_layer_depth, model) =
-    compute_mean_mixed_layer_vertical_diffusivity!(model.closure, κ, mixed_layer_depth, model.diffusivity_fields, model.grid)
+    compute_mean_mixed_layer_vertical_diffusivity!(model.closure, κ, mixed_layer_depth, model.closure_fields, model.grid)
 
 # need these to catch when model doesn't have closure (i.e. box model)
 compute_mean_mixed_layer_vertical_diffusivity!(κ::ConstantField, mixed_layer_depth, model) = nothing
