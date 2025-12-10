@@ -41,7 +41,9 @@ possible_tuple_value(::Tuple, field_name) = field_name
 
     tracer_values = extract_tracer_values(val_field_name, particles.field_interpolation, particles, grid, fields, n)
 
-    particle_tendency = particles.biogeochemistry(val_field_name, t, field_values..., tracer_values...) 
+    buffer_values = map(x -> x[n], particles.buffer)
+
+    particle_tendency = particles.biogeochemistry(val_field_name, t, field_values..., tracer_values..., buffer_values...)
 
     scalefactor = @inbounds scalefactors[n]
 
