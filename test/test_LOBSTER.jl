@@ -141,7 +141,7 @@ end
     grid = RectilinearGrid(architecture, Float32; size=(3, 3, 10), extent=(10, 10, 200))
     bgc = LOBSTER(; grid)
 
-    par = bgc.underlying_biogeochemistry.light_attenuation
+    par = bgc.light_attenuation
     @test par.water_red_attenuation isa Float32
     @test par.water_blue_attenuation isa Float32
     @test par.chlorophyll_red_attenuation isa Float32
