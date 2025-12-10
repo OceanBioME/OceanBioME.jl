@@ -93,31 +93,31 @@ end
 
 """
     NutrientPhytoplanktonZooplanktonDetritus(; grid::AbstractGrid{FT},
-                                               initial_photosynthetic_slope::FT = 0.1953 / day, # 1/(W/m²)/s
-                                               base_maximum_growth::FT = 0.6989 / day, # 1/s
-                                               nutrient_half_saturation::FT = 2.3868, # mmol N/m³
-                                               base_respiration_rate::FT = 0.066 / day, # 1/s/(mmol N / m³)
-                                               phyto_base_mortality_rate::FT = 0.0101 / day, # 1/s/(mmol N / m³)
-                                               maximum_grazing_rate::FT = 2.1522 / day, # 1/s
-                                               grazing_half_saturation::FT = 0.5573, # mmol N/m³
-                                               assimulation_efficiency::FT = 0.9116, 
-                                               base_excretion_rate::FT = 0.0102 / day, # 1/s/(mmol N / m³)
-                                               zoo_base_mortality_rate::FT = 0.3395 / day, # 1/s/(mmol N / m³)²
-                                               remineralization_rate::FT = 0.1213 / day, # 1/s
+                                               initial_photosynthetic_slope = 0.1953 / day, # 1/(W/m²)/s
+                                               base_maximum_growth = 0.6989 / day, # 1/s
+                                               nutrient_half_saturation = 2.3868, # mmol N/m³
+                                               base_respiration_rate = 0.066 / day, # 1/s/(mmol N / m³)
+                                               phyto_base_mortality_rate = 0.0101 / day, # 1/s/(mmol N / m³)
+                                               maximum_grazing_rate = 2.1522 / day, # 1/s
+                                               grazing_half_saturation = 0.5573, # mmol N/m³
+                                               assimulation_efficiency = 0.9116,
+                                               base_excretion_rate = 0.0102 / day, # 1/s/(mmol N / m³)
+                                               zoo_base_mortality_rate = 0.3395 / day, # 1/s/(mmol N / m³)²
+                                               remineralization_rate = 0.1213 / day, # 1/s
 
                                                surface_photosynthetically_active_radiation = default_surface_PAR,
-                                               light_attenuation::LA =
+                                               light_attenuation =
                                                    TwoBandPhotosyntheticallyActiveRadiation(; grid,
                                                                                               surface_PAR = surface_photosynthetically_active_radiation),
-                                               sediment::S = nothing,
-                
+                                               sediment = nothing,
+
                                                sinking_speeds = (P = 0.2551/day, D = 2.7489/day),
-                                               open_bottom::Bool = true,
+                                               open_bottom = true,
 
                                                scale_negatives = false,
-                                                                                      
-                                               particles::P = nothing,
-                                               modifiers::M = nothing)
+
+                                               particles = nothing,
+                                               modifiers = nothing)
 
 Construct a Nutrient-Phytoplankton-Zooplankton-Detritus ([NPZD](@ref NPZD)) biogeochemical model.
 
@@ -154,32 +154,45 @@ NutrientPhytoplanktonZooplanktonDetritus{Float64} model, with (:P, :D) sinking
 ```
 """
 function NutrientPhytoplanktonZooplanktonDetritus(; grid::AbstractGrid{FT},
-                                                    initial_photosynthetic_slope::FT = 0.1953 / day, # 1/(W/m²)/s
-                                                    base_maximum_growth::FT = 0.6989 / day, # 1/s
-                                                    nutrient_half_saturation::FT = 2.3868, # mmol N/m³
-                                                    base_respiration_rate::FT = 0.066 / day, # 1/s/(mmol N / m³)
-                                                    phyto_base_mortality_rate::FT = 0.0101 / day, # 1/s/(mmol N / m³)
-                                                    maximum_grazing_rate::FT = 2.1522 / day, # 1/s
-                                                    grazing_half_saturation::FT = 0.5573, # mmol N/m³
-                                                    assimulation_efficiency::FT = 0.9116, 
-                                                    base_excretion_rate::FT = 0.0102 / day, # 1/s/(mmol N / m³)
-                                                    zoo_base_mortality_rate::FT = 0.3395 / day, # 1/s/(mmol N / m³)²
-                                                    remineralization_rate::FT = 0.1213 / day, # 1/s
+                                                    initial_photosynthetic_slope = 0.1953 / day, # 1/(W/m²)/s
+                                                    base_maximum_growth = 0.6989 / day, # 1/s
+                                                    nutrient_half_saturation = 2.3868, # mmol N/m³
+                                                    base_respiration_rate = 0.066 / day, # 1/s/(mmol N / m³)
+                                                    phyto_base_mortality_rate = 0.0101 / day, # 1/s/(mmol N / m³)
+                                                    maximum_grazing_rate = 2.1522 / day, # 1/s
+                                                    grazing_half_saturation = 0.5573, # mmol N/m³
+                                                    assimulation_efficiency = 0.9116,
+                                                    base_excretion_rate = 0.0102 / day, # 1/s/(mmol N / m³)
+                                                    zoo_base_mortality_rate = 0.3395 / day, # 1/s/(mmol N / m³)²
+                                                    remineralization_rate = 0.1213 / day, # 1/s
 
                                                     surface_photosynthetically_active_radiation = default_surface_PAR,
-                                                    light_attenuation::LA =
+                                                    light_attenuation =
                                                         TwoBandPhotosyntheticallyActiveRadiation(; grid,
                                                                                                    surface_PAR = surface_photosynthetically_active_radiation),
-                                                    sediment::S = nothing,
-                
+                                                    sediment = nothing,
+
                                                     sinking_speeds = (P = 0.2551/day, D = 2.7489/day),
-                                                    open_bottom::Bool = true,
+                                                    open_bottom = true,
 
                                                     scale_negatives = false,
                                                     invalid_fill_value = NaN,
-                                                                                           
-                                                    particles::P = nothing,
-                                                    modifiers::M = nothing) where {FT, LA, S, P, M}
+
+                                                    particles = nothing,
+                                                    modifiers = nothing) where FT
+
+    # Convert parameters to the grid's float type
+    initial_photosynthetic_slope = convert(FT, initial_photosynthetic_slope)
+    base_maximum_growth = convert(FT, base_maximum_growth)
+    nutrient_half_saturation = convert(FT, nutrient_half_saturation)
+    base_respiration_rate = convert(FT, base_respiration_rate)
+    phyto_base_mortality_rate = convert(FT, phyto_base_mortality_rate)
+    maximum_grazing_rate = convert(FT, maximum_grazing_rate)
+    grazing_half_saturation = convert(FT, grazing_half_saturation)
+    assimulation_efficiency = convert(FT, assimulation_efficiency)
+    base_excretion_rate = convert(FT, base_excretion_rate)
+    zoo_base_mortality_rate = convert(FT, zoo_base_mortality_rate)
+    remineralization_rate = convert(FT, remineralization_rate)
 
     sinking_velocities = setup_velocity_fields(sinking_speeds, grid, open_bottom)
 
