@@ -63,15 +63,15 @@ struct NutrientPhytoplanktonZooplanktonDetritus{FT, W} <: AbstractContinuousForm
                                                       nutrient_half_saturation::FT,
                                                       base_respiration_rate::FT,
                                                       phyto_base_mortality_rate::FT,
-    
+
                                                       maximum_grazing_rate::FT,
                                                       grazing_half_saturation::FT,
                                                       assimulation_efficiency::FT,
                                                       base_excretion_rate::FT,
                                                       zoo_base_mortality_rate::FT,
-    
+
                                                       remineralization_rate::FT,
-    
+
                                                       sinking_velocities::W) where {FT, W}
         return new{FT, W}(initial_photosynthetic_slope,
                           base_maximum_growth,
@@ -86,7 +86,7 @@ struct NutrientPhytoplanktonZooplanktonDetritus{FT, W} <: AbstractContinuousForm
                           zoo_base_mortality_rate,
 
                           remineralization_rate,
-                          
+
                           sinking_velocities)
     end
 end
@@ -146,7 +146,7 @@ julia> using Oceananigans
 julia> grid = RectilinearGrid(size=(20, 30), extent=(200, 200), topology=(Bounded, Flat, Bounded));
 
 julia> model = NutrientPhytoplanktonZooplanktonDetritus(; grid)
-NutrientPhytoplanktonZooplanktonDetritus{Float64} model, with (:P, :D) sinking 
+NutrientPhytoplanktonZooplanktonDetritus{Float64} model, with (:P, :D) sinking
  Light attenuation: Two-band light attenuation model (Float64)
  Sediment: Nothing
  Particles: Nothing
@@ -181,7 +181,6 @@ function NutrientPhytoplanktonZooplanktonDetritus(; grid::AbstractGrid{FT},
                                                     particles = nothing,
                                                     modifiers = nothing) where FT
 
-    # Convert parameters to the grid's float type
     initial_photosynthetic_slope = convert(FT, initial_photosynthetic_slope)
     base_maximum_growth = convert(FT, base_maximum_growth)
     nutrient_half_saturation = convert(FT, nutrient_half_saturation)
@@ -196,7 +195,7 @@ function NutrientPhytoplanktonZooplanktonDetritus(; grid::AbstractGrid{FT},
 
     sinking_velocities = setup_velocity_fields(sinking_speeds, grid, open_bottom)
 
-    underlying_biogeochemistry = 
+    underlying_biogeochemistry =
         NutrientPhytoplanktonZooplanktonDetritus(initial_photosynthetic_slope,
                                                  base_maximum_growth,
                                                  nutrient_half_saturation,
@@ -216,8 +215,8 @@ function NutrientPhytoplanktonZooplanktonDetritus(; grid::AbstractGrid{FT},
     end
 
     return Biogeochemistry(underlying_biogeochemistry;
-                           light_attenuation, 
-                           sediment = sediment, 
+                           light_attenuation,
+                           sediment = sediment,
                            particles,
                            modifiers)
 end
@@ -277,7 +276,7 @@ end
     metabolic_loss = lᶻⁿ * Q₁₀(T) * Z
     mortality_loss = lᶻᵈ * Q₁₀(T) * Z ^ 2
 
-    return grazing - metabolic_loss - mortality_loss 
+    return grazing - metabolic_loss - mortality_loss
 end
 
 @inline function (bgc::NPZD)(::Val{:D}, x, y, z, t, N, P, Z, D, T, PAR)
@@ -310,7 +309,7 @@ show(io::IO, model::NPZD{FT}) where {FT} = print(io, string("NutrientPhytoplankt
 
 @inline maximum_sinking_velocity(bgc::NPZD) = maximum(abs, bgc.sinking_velocities.D.w)
 
-adapt_structure(to, npzd::NPZD) = 
+adapt_structure(to, npzd::NPZD) =
     NutrientPhytoplanktonZooplanktonDetritus(adapt(to, npzd.initial_photosynthetic_slope),
                                              adapt(to, npzd.base_maximum_growth),
                                              adapt(to, npzd.nutrient_half_saturation),
