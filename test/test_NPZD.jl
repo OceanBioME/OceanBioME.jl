@@ -79,7 +79,7 @@ end
     @test ubgc.zoo_base_mortality_rate isa Float32
     @test ubgc.remineralization_rate isa Float32
 
-    par = bgc.underlying_biogeochemistry.light_attenuation
+    par = bgc.light_attenuation
     @test par.water_red_attenuation isa Float32
     @test par.water_blue_attenuation isa Float32
     @test par.chlorophyll_red_attenuation isa Float32
