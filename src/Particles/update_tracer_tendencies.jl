@@ -1,4 +1,7 @@
 function update_tendencies!(bgc, particles::BiogeochemicalParticles{N}, model) where N
+
+    fill_all_buffer_variables!(particles, model)
+
     field_names = coupled_tracers(particles)
 
     dev = device(architecture(model))
