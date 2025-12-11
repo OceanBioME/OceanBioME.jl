@@ -1,10 +1,10 @@
-@kernel function update_TwoBandPhotosyntheticallyActiveRadiation!(PAR, grid, P, surface_PAR, t, PAR_model) 
+@kernel function update_TwoBandPhotosyntheticallyActiveRadiation!(PAR, grid, P, surface_PAR, t, PAR_model)
     i, j = @index(Global, NTuple)
 
     k, k′ = domain_boundary_indices(RightBoundary(), grid.Nz)
 
     X = z_boundary_node(i, j, k′, grid, Center(), Center())
-    
+
     PAR⁰ = surface_PAR(X..., t)
 
     kʳ = PAR_model.water_red_attenuation
@@ -74,38 +74,47 @@ struct TwoBandPhotosyntheticallyActiveRadiation{FT, F, SPAR}
 end
 
 """
-    TwoBandPhotosyntheticallyActiveRadiation(; grid::AbstractGrid{FT}, 
-                                               water_red_attenuation::FT = 0.225, # 1/m
-                                               water_blue_attenuation::FT = 0.0232, # 1/m
-                                               chlorophyll_red_attenuation::FT = 0.037, # 1/(m * (mgChl/m³) ^ eʳ)
-                                               chlorophyll_blue_attenuation::FT = 0.074, # 1/(m * (mgChl/m³) ^ eᵇ)
-                                               chlorophyll_red_exponent::FT = 0.629,
-                                               chlorophyll_blue_exponent::FT = 0.674,
-                                               pigment_ratio::FT = 0.7,
-                                               phytoplankton_chlorophyll_ratio::FT = 1.31,
-                                               surface_PAR::SPAR = default_surface_PAR)
+    TwoBandPhotosyntheticallyActiveRadiation(; grid::AbstractGrid{FT},
+                                               water_red_attenuation = 0.225, # 1/m
+                                               water_blue_attenuation = 0.0232, # 1/m
+                                               chlorophyll_red_attenuation = 0.037, # 1/(m * (mgChl/m³) ^ eʳ)
+                                               chlorophyll_blue_attenuation = 0.074, # 1/(m * (mgChl/m³) ^ eᵇ)
+                                               chlorophyll_red_exponent = 0.629,
+                                               chlorophyll_blue_exponent = 0.674,
+                                               pigment_ratio = 0.7,
+                                               phytoplankton_chlorophyll_ratio = 1.31,
+                                               surface_PAR = default_surface_PAR)
 
 Keyword Arguments
 ==================
 
 - `grid`: grid for building the model on
 - `water_red_attenuation`, ..., `phytoplankton_chlorophyll_ratio`: parameter values
-- `surface_PAR`: function (or array in the future) for the photosynthetically available radiation at the surface, 
+- `surface_PAR`: function (or array in the future) for the photosynthetically available radiation at the surface,
    which should be `f(x, y, t)` where `x` and `y` are the native coordinates (i.e. meters for rectilinear grids
    and latitude/longitude as appropriate)
 """
-function TwoBandPhotosyntheticallyActiveRadiation(; grid::AbstractGrid{FT}, 
-                                                    water_red_attenuation::FT = 0.225, # 1/m
-                                                    water_blue_attenuation::FT = 0.0232, # 1/m
-                                                    chlorophyll_red_attenuation::FT = 0.037, # 1/(m * (mgChl/m³) ^ eʳ)
-                                                    chlorophyll_blue_attenuation::FT = 0.074, # 1/(m * (mgChl/m³) ^ eᵇ)
-                                                    chlorophyll_red_exponent::FT = 0.629,
-                                                    chlorophyll_blue_exponent::FT = 0.674,
-                                                    pigment_ratio::FT = 0.7,
-                                                    phytoplankton_chlorophyll_ratio::FT = 1.31,
-                                                    surface_PAR::SPAR = default_surface_PAR) where {FT, SPAR} # mgChl/mol N
+function TwoBandPhotosyntheticallyActiveRadiation(; grid::AbstractGrid{FT},
+                                                    water_red_attenuation = 0.225, # 1/m
+                                                    water_blue_attenuation = 0.0232, # 1/m
+                                                    chlorophyll_red_attenuation = 0.037, # 1/(m * (mgChl/m³) ^ eʳ)
+                                                    chlorophyll_blue_attenuation = 0.074, # 1/(m * (mgChl/m³) ^ eᵇ)
+                                                    chlorophyll_red_exponent = 0.629,
+                                                    chlorophyll_blue_exponent = 0.674,
+                                                    pigment_ratio = 0.7,
+                                                    phytoplankton_chlorophyll_ratio = 1.31,
+                                                    surface_PAR = default_surface_PAR) where FT
 
-    field = CenterField(grid; boundary_conditions = 
+    water_red_attenuation = convert(FT, water_red_attenuation)
+    water_blue_attenuation = convert(FT, water_blue_attenuation)
+    chlorophyll_red_attenuation = convert(FT, chlorophyll_red_attenuation)
+    chlorophyll_blue_attenuation = convert(FT, chlorophyll_blue_attenuation)
+    chlorophyll_red_exponent = convert(FT, chlorophyll_red_exponent)
+    chlorophyll_blue_exponent = convert(FT, chlorophyll_blue_exponent)
+    pigment_ratio = convert(FT, pigment_ratio)
+    phytoplankton_chlorophyll_ratio = convert(FT, phytoplankton_chlorophyll_ratio)
+
+    field = CenterField(grid; boundary_conditions =
                             regularize_field_boundary_conditions(
                                 FieldBoundaryConditions(top = ValueBoundaryCondition(surface_PAR)), grid, :PAR))
 
@@ -133,7 +142,7 @@ show(io::IO, model::TwoBandPhotosyntheticallyActiveRadiation{FT}) where {FT} = p
 
 biogeochemical_auxiliary_fields(par::TwoBandPhotosyntheticallyActiveRadiation) = (PAR = par.field, )
 
-adapt_structure(to, par::TwoBandPhotosyntheticallyActiveRadiation) = 
+adapt_structure(to, par::TwoBandPhotosyntheticallyActiveRadiation) =
     TwoBandPhotosyntheticallyActiveRadiation(adapt(to, par.water_red_attenuation),
                                              adapt(to, par.water_blue_attenuation),
                                              adapt(to, par.chlorophyll_red_attenuation),

@@ -61,3 +61,31 @@ for sinking = (false, true), open_bottom = (false, true)
         end
     end
 end
+
+@testset "Float32 NPZD" begin
+    grid = RectilinearGrid(architecture, Float32; size=(3, 3, 10), extent=(10, 10, 200))
+    bgc = NutrientPhytoplanktonZooplanktonDetritus(; grid)
+
+    ubgc = bgc.underlying_biogeochemistry
+    @test ubgc.initial_photosynthetic_slope isa Float32
+    @test ubgc.base_maximum_growth isa Float32
+    @test ubgc.nutrient_half_saturation isa Float32
+    @test ubgc.base_respiration_rate isa Float32
+    @test ubgc.phyto_base_mortality_rate isa Float32
+    @test ubgc.maximum_grazing_rate isa Float32
+    @test ubgc.grazing_half_saturation isa Float32
+    @test ubgc.assimulation_efficiency isa Float32
+    @test ubgc.base_excretion_rate isa Float32
+    @test ubgc.zoo_base_mortality_rate isa Float32
+    @test ubgc.remineralization_rate isa Float32
+
+    par = bgc.light_attenuation
+    @test par.water_red_attenuation isa Float32
+    @test par.water_blue_attenuation isa Float32
+    @test par.chlorophyll_red_attenuation isa Float32
+    @test par.chlorophyll_blue_attenuation isa Float32
+    @test par.chlorophyll_red_exponent isa Float32
+    @test par.chlorophyll_blue_exponent isa Float32
+    @test par.pigment_ratio isa Float32
+    @test par.phytoplankton_chlorophyll_ratio isa Float32
+end

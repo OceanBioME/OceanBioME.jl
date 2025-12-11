@@ -103,9 +103,9 @@ function test_multi_band(grid, bgc, model_type)
     return nothing
 end
 
-@testset "Light attenuaiton model" begin 
+@testset "Light attenuaiton model" begin
     for model in (NonhydrostaticModel, HydrostaticFreeSurfaceModel),
-        grid in (RectilinearGrid(architecture; size = (2, 2, 2), extent = (2, 2, 2)), 
+        grid in (RectilinearGrid(architecture; size = (2, 2, 2), extent = (2, 2, 2)),
                  LatitudeLongitudeGrid(architecture; size = (5, 5, 2), longitude = (-180, 180), latitude = (-85, 85), z = (-2, 0))),
         bgc in (LOBSTER, NutrientPhytoplanktonZooplanktonDetritus) # this is now redundant since each model doesn't deal with the light separatly
 
@@ -115,5 +115,19 @@ end
             test_multi_band(grid, bgc, model)
         end
     end
+end
+
+@testset "Float32 TwoBandPhotosyntheticallyActiveRadiation" begin
+    grid = RectilinearGrid(architecture, Float32; size=(3, 3, 10), extent=(10, 10, 200))
+    par = TwoBandPhotosyntheticallyActiveRadiation(; grid)
+
+    @test par.water_red_attenuation isa Float32
+    @test par.water_blue_attenuation isa Float32
+    @test par.chlorophyll_red_attenuation isa Float32
+    @test par.chlorophyll_blue_attenuation isa Float32
+    @test par.chlorophyll_red_exponent isa Float32
+    @test par.chlorophyll_blue_exponent isa Float32
+    @test par.pigment_ratio isa Float32
+    @test par.phytoplankton_chlorophyll_ratio isa Float32
 end
              

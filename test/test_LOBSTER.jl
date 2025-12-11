@@ -136,3 +136,18 @@ for open_bottom = (false, true),
         end
     end
 end
+
+@testset "Float32 LOBSTER" begin
+    grid = RectilinearGrid(architecture, Float32; size=(3, 3, 10), extent=(10, 10, 200))
+    bgc = LOBSTER(; grid)
+
+    par = bgc.light_attenuation
+    @test par.water_red_attenuation isa Float32
+    @test par.water_blue_attenuation isa Float32
+    @test par.chlorophyll_red_attenuation isa Float32
+    @test par.chlorophyll_blue_attenuation isa Float32
+    @test par.chlorophyll_red_exponent isa Float32
+    @test par.chlorophyll_blue_exponent isa Float32
+    @test par.pigment_ratio isa Float32
+    @test par.phytoplankton_chlorophyll_ratio isa Float32
+end
