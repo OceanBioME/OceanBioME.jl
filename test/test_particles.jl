@@ -4,7 +4,9 @@ using OceanBioME.Particles: BiogeochemicalParticles
 
 import OceanBioME.Particles: required_particle_fields, 
                              required_tracers, 
-                             coupled_tracers
+                             coupled_tracers,
+                             buffer_variables,
+                             compute_buffer_variable
 
 import OceanBioME: required_biogeochemical_tracers,
                    required_biogeochemical_auxiliary_fields
@@ -136,4 +138,45 @@ end
     @test all(particles.fields.A .≈ 0.1)
 
     @test interior(model.tracers.B, 1, 1, 3) .≈ 0.8
+end
+
+
+struct SimpleParticleBiogeochemistryWithBuffer end
+
+@inline (::SimpleParticleBiogeochemistryWithBuffer)(::Val{:A}, t, A, B, buffer_var) = one(t) + buffer_var
+@inline (::SimpleParticleBiogeochemistryWithBuffer)(::Val{:B}, t, A, B, buffer_var) = buffer_var
+@inline compute_buffer_variable(::Val{:buffer_var}, ::SimpleParticleBiogeochemistryWithBuffer, B) = 1.0
+
+@inline required_particle_fields(::SimpleParticleBiogeochemistryWithBuffer) = (:A, )
+
+@inline required_tracers(::SimpleParticleBiogeochemistryWithBuffer) = (:B,)
+@inline coupled_tracers(::SimpleParticleBiogeochemistryWithBuffer) = (:B,)
+@inline buffer_variables(::SimpleParticleBiogeochemistryWithBuffer) = (:buffer_var,)
+
+@testset "Testing particles with model using buffer variables" begin
+    # Since the buffer is used for both tracer and fields tendency
+    # we need to have both in the model
+    particle_biogeochemistry = SimpleParticleBiogeochemistryWithBuffer()
+
+    particles = BiogeochemicalParticles(3; grid,
+                                           biogeochemistry = particle_biogeochemistry,
+                                           advection = nothing)
+
+    biogeochemistry = Biogeochemistry(NothingBiogeochemistry(); particles)
+
+
+    model = NonhydrostaticModel(; grid, biogeochemistry, tracers = :B)
+
+    set!(model, B = 0.2)
+
+    # since the 0, 0, 0 point is ambigously closest to both 3, 3, 3 and 1, 1, 3 (and the logic makes it go to 3, 3, 3)
+    set!(particles, x = 0.5, y = 0.5)
+    set!(particles, A = 0.5)
+
+    time_step!(model, 1)
+
+    @test all(particles.fields.A .≈ 2.5)
+
+    @test interior(model.tracers.B, 1, 1, 3) .≈ 3.2 # 0.2 + 3 * 1 (there are 3 particles)
+
 end
