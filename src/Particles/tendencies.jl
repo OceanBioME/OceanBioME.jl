@@ -1,6 +1,9 @@
 using Oceananigans: fields
 
 function compute_particle_tendencies!(particles::BiogeochemicalParticles{N}, model) where N
+
+    fill_all_buffer_variables!(particles, model)
+
     tendencies = particles.timestepper.tendencies
 
     field_names = required_particle_fields(particles)
@@ -31,5 +34,7 @@ end
 
     tracer_values = extract_tracer_values(val_field_name, particles.field_interpolation, particles, grid, fields, n)
 
-    tendencies[field_name][n] = particles.biogeochemistry(val_field_name, t, field_values..., tracer_values...)
+    buffer_values = map(x -> x[n], particles.buffer)
+
+    tendencies[field_name][n] = particles.biogeochemistry(val_field_name, t, field_values..., tracer_values..., buffer_values...)
 end

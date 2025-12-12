@@ -25,7 +25,7 @@ using Oceananigans.Units
 using OceanBioME: NewtonRaphsonSolver
 using OceanBioME.Particles: BiogeochemicalParticles
 
-import OceanBioME.Particles: required_particle_fields, required_tracers, coupled_tracers
+import OceanBioME.Particles: required_particle_fields, required_tracers, coupled_tracers, buffer_variables
 
 """
     SugarKelp
@@ -172,8 +172,11 @@ SugarKelpParticles(n; grid::AbstractGrid{FT}, kelp_parameters = NamedTuple(), kw
 # @inline coupled_tracers(::SugarKelp) = (NO₃ = :NO₃, NH₄ = :NH₄, DON = :DOM, bPON = :POM)
 # if you have a simpler model ... there must be a better way todo this
 
+@inline buffer_variables(::SugarKelp) = (:Photosynthesis,)
+
 include("equations.jl")
 include("coupling.jl")
+include("buffer.jl")
 include("show.jl")
 
 end # module

@@ -1,4 +1,4 @@
-@inline function (kelp::SugarKelp)(::Val{:A}, t, A, N, C, u, v, w, T, NO₃, NH₄, PAR)
+@inline function (kelp::SugarKelp)(::Val{:A}, t, A, N, C, u, v, w, T, NO₃, NH₄, PAR, photosynthesis_var)
     μ = growth(kelp, t, A, N, C, T, NH₄, u, v, w)
 
     ν = erosion(kelp, t, A, N, C, T)
@@ -6,25 +6,23 @@
     return A * (μ - ν) / day
 end
 
-@inline function (kelp::SugarKelp)(::Val{:N}, t, A, N, C, u, v, w, T, NO₃, NH₄, PAR)
+@inline function (kelp::SugarKelp)(::Val{:N}, t, A, N, C, u, v, w, T, NO₃, NH₄, PAR, photosynthesis_var)
     kₐ = kelp.structural_dry_weight_per_area
     Nₛ = kelp.structural_nitrogen
 
     J = nitrate_uptake(kelp, N, NO₃, u, v, w) +
         ammonia_uptake(kelp, t, A, N, C, T, NH₄, u, v, w)
 
-    e = nitrogen_exudate(kelp, C, T, PAR)
+    e = nitrogen_exudate(kelp, C, photosynthesis_var)
 
     μ = growth(kelp, t, A, N, C, T, NH₄, u, v, w)
     
     return ((J - e) / kₐ - μ * (N + Nₛ)) / day
 end
 
-@inline function (kelp::SugarKelp)(::Val{:C}, t, A, N, C, u, v, w, T, NO₃, NH₄, PAR)
+@inline function (kelp::SugarKelp)(::Val{:C}, t, A, N, C, u, v, w, T, NO₃, NH₄, PAR, photosynthesis_var)
     kₐ = kelp.structural_dry_weight_per_area
     Cₛ = kelp.structural_carbon
-
-    P = photosynthesis(kelp, T, PAR)
 
     μ = growth(kelp, t, A, N, C, T, NH₄, u, v, w)
 
@@ -32,7 +30,7 @@ end
 
     e = specific_carbon_exudate(kelp, C)
 
-    return ((P * (1 - e) - R) / kₐ - μ * (C + Cₛ)) / day
+    return ((photosynthesis_var * (1 - e) - R) / kₐ - μ * (C + Cₛ)) / day
 end
 
 @inline function growth(kelp, t, A, N, C, T, NH₄, u, v, w)
@@ -165,10 +163,9 @@ end
     return 1 - exp(γ * (Cₘ - C))
 end
 
-@inline function nitrogen_exudate(kelp, C, T, PAR)
+@inline function nitrogen_exudate(kelp, C, P)
     CN = kelp.exudation_redfield_ratio
 
-    P = photosynthesis(kelp, T, PAR)
     e = specific_carbon_exudate(kelp, C)
 
     return P * e * 14 / 12 / CN
