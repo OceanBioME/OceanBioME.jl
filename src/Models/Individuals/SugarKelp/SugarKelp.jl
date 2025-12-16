@@ -26,7 +26,7 @@ using OceanBioME: NewtonRaphsonSolver
 using OceanBioME.Particles: BiogeochemicalParticles
 
 import OceanBioME.Particles: required_particle_fields, required_tracers, coupled_tracers
-import OceanBioME: UnwrapValueFields
+import OceanBioME: UnwrapValueFields, CallableVal
 
 
 @kwdef struct SugarKelpParameters{FT}
@@ -85,8 +85,8 @@ end
 Defines the parameters for `SugarKelp` biogeochemistry.
 """
 struct SugarKelp{TL, SO, PS} <: UnwrapValueFields
-                    temperature_limit :: TL
-                    solver :: SO
+                    temperature_limit :: CallableVal{TL}
+                    solver :: CallableVal{SO}
                     params :: Val{PS}
 
     function SugarKelp(FT = Float64; 
@@ -95,7 +95,7 @@ struct SugarKelp{TL, SO, PS} <: UnwrapValueFields
                        kwargs...
                        ) where {TL, SO}
         params = SugarKelpParameters{FT}(; kwargs...)
-        return new{TL, SO, params}(temperature_limit, solver, Val(params))
+        return new{temperature_limit, solver, params}(CallableVal(temperature_limit), CallableVal(solver), Val(params))
     end
 end 
 

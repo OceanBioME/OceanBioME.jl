@@ -11,6 +11,9 @@ abstract type UnwrapValueFields end
 unwrap_value(::Val{V}) where {V} = V
 unwrap_value(v) = v
 
+# One expects CallableValue we defined internaly to also be unwraped
+unwrap_value(::CallableVal{V}) where {V} = V
+
 Base.getproperty(p::UnwrapValueFields, s::Symbol) = unwrap_value(Base.getfield(p, s))
 
 
