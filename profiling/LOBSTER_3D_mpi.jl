@@ -31,20 +31,21 @@ Rz = 1
 @assert Rx * Ry * Rz == nranks  # Product of the process grid dimensions must equal the number of MPI ranks.
 
 # Set the architecture to use.
-arch = Distributed(CPU(), ranks = (Rx, Ry, Rz), comm)
+arch = Distributed(CPU(); ranks = (Rx, Ry, Rz), communicator = MPI.COMM_WORLD)
+#arch = Distributed(CPU())
 # to use an NVIDIA GPU use the follwing lines:
 # using CUDA
 # arch = GPU()
 
-plot_results = true # Set to `false` to not plot the results at the end of the simulation.
+plot_results = false # Set to `false` to not plot the results at the end of the simulation.
 
 duration = 10days # Duration of the simulation
 
 filename = "LOBSTER" # Base filename for output files
 
 # set the number of gridpoints in each direction
-Nx = 32
-Ny = 32
+Nx = 16
+Ny = 16
 Nz = 8
 
 # set the domain size
@@ -53,6 +54,8 @@ Ly = 1kilometer
 Lz = 100meters
 
 # Construct a grid with uniform grid spacing.
+partition = Partition((2, 2, 1))
+#distributed_grid = RectilinearGrid(arch, partition;  size = (Nx, Ny, Nz), extent = (Lx, Ly, Lz))
 distributed_grid = RectilinearGrid(arch, size = (Nx, Ny, Nz), extent = (Lx, Ly, Lz))
 grid = distributed_grid # alias for convenience
 
