@@ -7,6 +7,7 @@ using Oceananigans.Biogeochemistry: AbstractBiogeochemistry
 import Adapt: adapt_structure, adapt
 import Base: summary, show
 import Oceananigans.Biogeochemistry: update_tendencies!, update_biogeochemical_state!
+import KernelAbstractions as KA
 
 """
     ZeroNegativeTracers(; exclude = ())
@@ -133,13 +134,18 @@ show(io::IO, scaler::ScaleNegativeTracers) = print(io, string(summary(scaler), "
 
 
 function update_biogeochemical_state!(model, scale::ScaleNegativeTracers)
-    workgroup, worksize = work_layout(model.grid, :xyz, (Center, Center, Center))
 
     dev = device(architecture(model))
 
-    scale_for_negs_kernel! = scale_for_negs!(dev, workgroup, worksize)
+    apply_scale_for_negs!(dev, model, scale)
 
-    tracers_to_scale = Tuple(model.tracers[tracer_name] for tracer_name in scale.tracers)
+    return nothing
+end
+
+function apply_scale_for_negs!(dev::KA.GPU, model, scale)
+    workgroup, worksize = work_layout(model.grid, :xyz, (Center, Center, Center))
+
+    scale_for_negs_kernel! = scale_for_negs_gpu!(dev, workgroup, worksize)
 
     field_scale = Tuple(Iterators.flatten(
         zip([model.tracers[tracer_name] for tracer_name in scale.tracers],
@@ -147,6 +153,18 @@ function update_biogeochemical_state!(model, scale::ScaleNegativeTracers)
         )))
 
     scale_for_negs_kernel!(scale.invalid_fill_value, field_scale...)
+
+    return nothing
+end
+
+function apply_scale_for_negs!(dev::KA.CPU, model, scale)
+    workgroup, worksize = work_layout(model.grid, :xyz, (Center, Center, Center))
+
+    scale_for_negs_kernel! = scale_for_negs_cpu!(dev, workgroup, worksize)
+
+    tracers_to_scale = Tuple(model.tracers[tracer_name] for tracer_name in scale.tracers)
+
+    scale_for_negs_kernel!(scale.invalid_fill_value, scale.scalefactors, tracers_to_scale)
 
     return nothing
 end
@@ -164,7 +182,7 @@ end
 # support arbitrary number of fields we need to make the kernel variadic.
 #
 # We expect Julia to inline the recursive calls and, effectivly unroll the loops
-@kernel function scale_for_negs!(invalid_fill_value, field_scale...)
+@kernel cpu = false function scale_for_negs_gpu!(invalid_fill_value, field_scale...)
     ijk = @index(Global, NTuple)
 
     t, p = calculate_total_and_positive_part(0.0, 0.0, ijk, field_scale...)
@@ -211,4 +229,38 @@ end
     new_value = ifelse(!isfinite(value) | (value > 0), value * t / p, 0)
     @inbounds field[i, j, k] = new_value
     return nothing
+end
+
+#
+# The GPU kernel requires recursive implementation to avoid thread-local copies.
+# However, when used on CPU it produces significant number of temporary allocations.
+# This is most likley related to the fact that julia does not do tail call elimination
+# on a CPU.
+#
+# Hence, for CPU code we need to fall-back to the loop-based version
+#
+@kernel function scale_for_negs_cpu!(invalid_fill_value, scalefactors, fields)
+    i, j, k = @index(Global, NTuple)
+
+    t, p = 0.0, 0.0
+
+    for (idx, field) in enumerate(fields)
+        value = @inbounds field[i, j, k]
+        scalefactor = @inbounds scalefactors[idx]
+
+        t += value * scalefactor
+        if value > 0
+            p += value * scalefactor
+        end
+    end
+
+    t = ifelse(t < 0, invalid_fill_value, t)
+
+    for field in fields
+        value = @inbounds field[i, j, k]
+
+        new_value = ifelse(!isfinite(value) | (value > 0), value * t / p, 0)
+
+        @inbounds field[i, j, k] = new_value
+    end
 end
