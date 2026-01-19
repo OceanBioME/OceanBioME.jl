@@ -24,7 +24,7 @@ using Oceananigans.Architectures: on_architecture
 const year = years = 365days # just for these idealised cases
 nothing #hide
 
-# ## Surface PAR and turbulent vertical diffusivity based on idealised mixed layer depth 
+# ## Surface PAR and turbulent vertical diffusivity based on idealised mixed layer depth
 # Setting up idealised functions for PAR and diffusivity (details here can be ignored but these are typical of the North Atlantic).
 
 @inline PAR⁰(x, y, t) = 60 * (1 - cos((t + 15days) * 2π / year)) * (1 / (1 + 0.2 * exp(-((mod(t, year) - 200days) / 50days)^2))) + 2
@@ -60,7 +60,7 @@ S = ConstantField(35.0)
 n = 5 # number of kelp bundles
 z₀ = [-21:5:-1;] * 1.0 # depth of kelp fronds
 
-particles = SugarKelpParticles(n; grid, 
+particles = SugarKelpParticles(n; grid,
                                advection = nothing, # we don't want them to move around
                                scalefactors = fill(2000, n)) # and we want them to look like there are 500 in each bundle
 
@@ -75,12 +75,12 @@ biogeochemistry = LOBSTER(; grid,
                             scale_negatives = true,
                             particles)
 
-model = NonhydrostaticModel(; grid,
-                              clock,
-                              closure = ScalarDiffusivity(ν = κₜ, κ = κₜ),
-                              boundary_conditions = (; DIC = FieldBoundaryConditions(top = CO₂_flux)),
-                              biogeochemistry,
-                              auxiliary_fields = (; T, S))
+model = NonhydrostaticModel(grid;
+                            clock,
+                            closure = ScalarDiffusivity(ν = κₜ, κ = κₜ),
+                            boundary_conditions = (; DIC = FieldBoundaryConditions(top = CO₂_flux)),
+                            biogeochemistry,
+                            auxiliary_fields = (; T, S))
 
 set!(model, P = 0.03, Z = 0.03, NO₃ = 4.0, NH₄ = 0.05, DIC = 2239.8, Alk = 2409.0)
 
@@ -90,14 +90,14 @@ set!(model, P = 0.03, Z = 0.03, NO₃ = 4.0, NH₄ = 0.05, DIC = 2239.8, Alk = 2
 # - Store the model and particles output
 # - Prevent the tracers from going negative from numerical error (see discussion of this in the [positivity preservation](@ref pos-preservation) implementation page)
 
-simulation = Simulation(model, Δt = 4minutes, stop_time = 150days) 
+simulation = Simulation(model, Δt = 4minutes, stop_time = 150days)
 
 progress_message(sim) = @printf("Iteration: %04d, time: %s, Δt: %s, wall time: %s\n",
                                 iteration(sim),
                                 prettytime(sim),
                                 prettytime(sim.Δt),
-                                prettytime(sim.run_wall_time))      
-                                                                  
+                                prettytime(sim.run_wall_time))
+
 simulation.callbacks[:progress] = Callback(progress_message, TimeInterval(10days))
 
 filename = "kelp"
@@ -115,10 +115,10 @@ simulation.output_writers[:particles] = JLD2Writer(model, (; particles),
 @inline qCO₂_kernel(i, j, k, grid, clock, DIC, Alk, T, S, carbon_boundary_condition) =
     carbon_boundary_condition.condition.func(i, j, grid, clock, (; DIC, Alk, T, S))
 
-qCO₂ = KernelFunctionOperation{Center, Center, Face}(qCO₂_kernel, 
-                                                     grid, 
+qCO₂ = KernelFunctionOperation{Center, Center, Face}(qCO₂_kernel,
+                                                     grid,
                                                      clock,
-                                                     model.tracers.DIC, 
+                                                     model.tracers.DIC,
                                                      model.tracers.Alk,
                                                      model.auxiliary_fields.T,
                                                      model.auxiliary_fields.S,
@@ -146,7 +146,7 @@ x, y, z = nodes(tracers["P"])
 times = tracers["P"].times
 nothing #hide
 
-# We compute the carbon export by computing how much carbon sinks below some arbirtrary depth; 
+# We compute the carbon export by computing how much carbon sinks below some arbirtrary depth;
 # here we use depth that corresponds to `k = grid.Nz - 20`.
 carbon_export = zeros(length(times))
 

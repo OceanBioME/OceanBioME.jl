@@ -13,17 +13,17 @@ const year = years = 365days # just for the idealised case below
 
 dd = DataDep(
     "test_data",
-    "CODAP-NA (https://essd.copernicus.org/articles/13/2777/2021/) data for testing pCO₂ calculations", 
+    "CODAP-NA (https://essd.copernicus.org/articles/13/2777/2021/) data for testing pCO₂ calculations",
     "https://github.com/OceanBioME/OceanBioME_example_data/raw/main/CODAP_data.jld2"
 )
 
 register(dd)
 
 function test_gas_exchange_model(grid, air_concentration)
-    model = NonhydrostaticModel(; grid, 
-                                  tracers = (:T, :S),
-                                  biogeochemistry = LOBSTER(; grid, carbonate_system = CarbonateSystem()),
-                                  boundary_conditions = (DIC = FieldBoundaryConditions(top = CarbonDioxideGasExchangeBoundaryCondition(; air_concentration)), ))
+    model = NonhydrostaticModel(grid;
+                                tracers = (:T, :S),
+                                biogeochemistry = LOBSTER(; grid, carbonate_system = CarbonateSystem()),
+                                boundary_conditions = (DIC = FieldBoundaryConditions(top = CarbonDioxideGasExchangeBoundaryCondition(; air_concentration)), ))
 
     set!(model, T = 15.0, S = 35.0, DIC = 2220, Alk = 2500)
 
@@ -38,7 +38,7 @@ end
     carbon_chem = CarbonChemistry()
 
     @load datadep"test_data/CODAP_data.jld2" DIC Alk T S pH pCO₂
-    
+
     pCO₂_results = similar(pCO₂)
     pH_results = similar(pH)
 
@@ -60,7 +60,7 @@ grid = RectilinearGrid(architecture; size=(1, 1, 2), extent=(1, 1, 1))
 
 conc_field = CenterField(grid)
 
-set!(conc_field, (args...) -> 413) 
+set!(conc_field, (args...) -> 413)
 
 @testset "Gas exchange coupling" begin
     for air_concentration in [413.1, conc_function, conc_field]
@@ -76,7 +76,7 @@ end
     S = 35
     Tk = 298.15
     P = 300
-    
+
     # values from Dickson et. al, 2007
     @test ≈(log(carbon_chemistry.solubility(Tk, S)), -3.5617; atol=0.0001)
     @test ≈(log10(carbon_chemistry.carbonic_acid.K1(Tk, S)), -5.8472; atol=0.0001)
