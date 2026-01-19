@@ -175,18 +175,18 @@ function apply_scale_for_negs!(dev::KA.CPU, model, scale)
 end
 
 # `CUDA.jl` has a tendency to make a local copy if we pass a list of tracer fields
-# as a tuple (despite it beeing immutable). See the related issue:
+# as a tuple (despite it being immutable). See the related issue:
 # https://github.com/JuliaGPU/CUDA.jl/issues/1168
 #
-# This makes each thread use a large amout of 'Local' memory, which in turn 
-# introduces large amout of unoptimal memory traffic and slows the kernel
-# singnificantly.
+# This makes each thread use a large amount of 'Local' memory, which in turn
+# introduces large amount of non-optimal memory traffic and slows the kernel
+# significantly.
 #
 # The easiest workaround to avoid the local copy is to pass each field (and
-# associated scalfactor) as a parameter to the kernel. But since we want to
+# associated scalefactor) as a parameter to the kernel. But since we want to
 # support arbitrary number of fields we need to make the kernel variadic.
 #
-# We expect Julia to inline the recursive calls and, effectivly unroll the loops
+# We expect Julia to inline the recursive calls and, effectively unroll the loops
 @kernel cpu = false function scale_for_negs_gpu!(invalid_fill_value, field_scale...)
     ijk = @index(Global, NTuple)
 
@@ -239,7 +239,7 @@ end
 #
 # The GPU kernel requires recursive implementation to avoid thread-local copies.
 # However, when used on CPU it produces significant number of temporary allocations.
-# This is most likley related to the fact that julia does not do tail call elimination
+# This is most likely related to the fact that julia does not do tail call elimination
 # on a CPU.
 #
 # Hence, for CPU code we need to fall-back to the loop-based version
