@@ -162,7 +162,12 @@ function apply_scale_for_negs!(dev::KA.CPU, model, scale)
 
     scale_for_negs_kernel! = scale_for_negs_cpu!(dev, workgroup, worksize)
 
-    tracers_to_scale = Tuple(model.tracers[tracer_name] for tracer_name in scale.tracers)
+    # Fields themselves may have different types (due to type parameters)
+    # It can cause type instability in the kernel if there is enough of different
+    # field types in the tuple (and cause allocation in the for loop)
+    # We need to homogenise types: hence we provide the data (aka OffsetArray)
+    # directly
+    tracers_to_scale = Tuple(model.tracers[tracer_name].data for tracer_name in scale.tracers)
 
     scale_for_negs_kernel!(scale.invalid_fill_value, scale.scalefactors, tracers_to_scale)
 
