@@ -81,10 +81,10 @@ function test_multi_band(grid, bgc, model_type)
     biogeochemistry = bgc(; grid,
                             light_attenuation)
 
-    model = model_type(; grid,
-                         biogeochemistry,
-                         buoyancy = nothing,
-                         tracers = nothing)
+    model = model_type(grid;
+                       biogeochemistry,
+                       buoyancy = nothing,
+                       tracers = nothing)
 
     set!(model, P = 2/1.31) # this will cause tests to fail for models with different chlorophyll ratios (e.g. PISCES)
 
