@@ -33,11 +33,11 @@ When no additional components are activated the tracers ``NO_3``, ``NH_4``, ``P`
 ```
 
 ```math
-\frac{\partial NO_3}{\partial t} = -\mu_PL_{PAR}L_{NO_3} + \mu_nNH_4,
+\frac{\partial NO_3}{\partial t} = -\mu_PL_{PAR}L_{NO_3}P + \mu_nNH_4,
 ```
 
 ```math
-\frac{\partial NH_4}{\partial t} = -\mu_PL_{PAR}L_{NH_4} - \mu_nNH_4 
+\frac{\partial NH_4}{\partial t} = -\mu_PL_{PAR}L_{NH_4}P - \mu_nNH_4 
      + \alpha_P\gamma\mu_P L_{PAR}\left(L_{NO_3} + L_{NH_4}\right)P
      + \alpha_Z\mu_ZZ + \alpha_{d}\mu_{sPOM}sPOM + \alpha_{d}\mu_{bPOM}bPOM
      + \mu_{DOM}DOM,
