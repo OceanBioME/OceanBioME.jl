@@ -9,7 +9,7 @@ Random.seed!(42)
 
 function ΣC(model, carbonates, biogeochemistry)
     conserved = conserved_tracers(biogeochemistry, true)
-    
+
     if !(:carbon in keys(conserved))
         return NaN
     end
@@ -24,7 +24,7 @@ end
 
 function ΣGᶜ(model, biogeochemistry)
     conserved = conserved_tracers(biogeochemistry, true)
-    
+
     if !(:carbon in keys(conserved))
         return NaN
     end
@@ -36,8 +36,8 @@ function ΣGᶜ(model, biogeochemistry)
 end
 
 function test_LOBSTER(grid, nutrients, carbonate_system, oxygen, detritus, sinking, open_bottom, n_timesteps)
-    model = NonhydrostaticModel(; grid,
-                                  biogeochemistry = LOBSTER(; grid, nutrients, carbonate_system, oxygen, detritus))
+    model = NonhydrostaticModel(grid;
+                                biogeochemistry = LOBSTER(; grid, nutrients, carbonate_system, oxygen, detritus))
 
     # correct tracers and auxiliary fields have been setup, and order has not changed
     required_tracers = (:NO₃, :NH₄, :P, :Z)
@@ -63,9 +63,9 @@ function test_LOBSTER(grid, nutrients, carbonate_system, oxygen, detritus, sinki
     time_step!(model, 1.0)
 
     # mass conservation
-    CUDA.@allowscalar begin 
+    CUDA.@allowscalar begin
         # and that they all return zero
-        @test all([all(values .== 0) for values in values(model.tracers)]) 
+        @test all([all(values .== 0) for values in values(model.tracers)])
 
         model.tracers.NO₃ .= 10 * rand()
         model.tracers.NH₄ .= rand()
@@ -90,7 +90,7 @@ function test_LOBSTER(grid, nutrients, carbonate_system, oxygen, detritus, sinki
             model.tracers.Alk .= 2000 * rand()
         end
     end
-    
+
     ΣN₀ = CUDA.@allowscalar ΣN(model, model.biogeochemistry)
 
     ΣC₀ = CUDA.@allowscalar ΣC(model, carbonate_system, model.biogeochemistry)
@@ -100,7 +100,7 @@ function test_LOBSTER(grid, nutrients, carbonate_system, oxygen, detritus, sinki
     end
 
     ΣN₁ = CUDA.@allowscalar ΣN(model, model.biogeochemistry)
-    
+
     CUDA.@allowscalar if !(sinking && open_bottom) #when we have open bottom sinking we won't conserve anything
         @test ΣN₀ ≈ ΣN₁
         @test ΣGⁿ(model, model.biogeochemistry) ≈ 0.0 atol = 1e-15 # rtol=sqrt(eps) so is usually much larger than even this
@@ -118,15 +118,15 @@ n_timesteps = 100
 
 grid = RectilinearGrid(architecture; size=(1, 1, 1), extent=(1, 1, 2))
 
-for open_bottom = (false, true), 
-    sinking = (false, true), 
+for open_bottom = (false, true),
+    sinking = (false, true),
     detritus = (TwoParticleAndDissolved, VariableRedfieldDetritus),
-    oxygen = (nothing, Oxygen()), 
+    oxygen = (nothing, Oxygen()),
     carbonate_system = (nothing, CarbonateSystem()),
     nutrients = (NitrateAmmonia(), NitrateAmmoniaIron())
 
-    detritus = detritus(grid; 
-                        small_particle_sinking_speed = sinking ? 3.47e-5 : 0.0, 
+    detritus = detritus(grid;
+                        small_particle_sinking_speed = sinking ? 3.47e-5 : 0.0,
                         large_particle_sinking_speed = sinking ? 200/day : 0.0,
                         open_bottom)
 

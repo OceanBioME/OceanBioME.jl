@@ -1,6 +1,6 @@
 # # Biogeochemistry in submesoscale eddies in the Eady model
 #
-# In this example we setup a 3D model with a constant background buoyancy gradient with associated 
+# In this example we setup a 3D model with a constant background buoyancy gradient with associated
 # thermal wind (the [Eady model](https://en.wikipedia.org/wiki/Eady_model)) with the [LOBSTER](@ref LOBSTER)
 # biogeochemical model. This example demonstrates how to use biogeochemistry in a more complicated physical model.
 # The parameters in this example correspond roughly to those used by [taylor2016](@citet) and result to the
@@ -60,16 +60,16 @@ biogeochemistry = LOBSTER(; grid,
 DIC_bcs = FieldBoundaryConditions(top = CarbonDioxideGasExchangeBoundaryCondition())
 
 # Model instantiation
-model = NonhydrostaticModel(; grid,
-                              biogeochemistry,
-                              boundary_conditions = (DIC = DIC_bcs, ),
-                              advection = WENO(),
-                              timestepper = :RungeKutta3,
-                              coriolis,
-                              tracers = (:T, :S),
-                              buoyancy,
-                              background_fields = (T = T_field, v = V_field),
-                              closure = vertical_diffusivity)
+model = NonhydrostaticModel(grid;
+                            biogeochemistry,
+                            boundary_conditions = (DIC = DIC_bcs, ),
+                            advection = WENO(),
+                            timestepper = :RungeKutta3,
+                            coriolis,
+                            tracers = (:T, :S),
+                            buoyancy,
+                            background_fields = (T = T_field, v = V_field),
+                            closure = vertical_diffusivity)
 
 # ## Initial conditions
 # Start with a bit of random noise added to the background thermal wind and an arbitary

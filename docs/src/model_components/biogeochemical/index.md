@@ -7,9 +7,9 @@ For details of the BGC models currently implemented please see the following pag
 ## Oceananigans setup
 At the simplest level, all that is required to setup an existing OceanBioME BGC model is to pass it to the Oceananigans model setup:
 ```julia
-model = NonhydrostaticModel(; grid,
-                              ...,
-                              biogeochemistry = MODEL_NAME(; grid))
+model = NonhydrostaticModel(grid;
+                            ...,
+                            biogeochemistry = MODEL_NAME(; grid))
 ```
 where `MODEL_NAME` is the name of the model. You may also need to pass additional parameters like:
 ```julia

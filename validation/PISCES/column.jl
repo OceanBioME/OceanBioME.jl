@@ -64,15 +64,15 @@ CO₂_flux = CarbonDioxideGasExchangeBoundaryCondition(; carbon_chemistry)
 O₂_flux = OxygenGasExchangeBoundaryCondition()
 
 @info "Setting up the model..."
-model = HydrostaticFreeSurfaceModel(; grid,
-                                      velocities = PrescribedVelocityFields(),
-                                      tracer_advection = FluxFormAdvection(nothing, nothing, WENOFifthOrder(grid)),
-                                      momentum_advection = nothing,
-                                      buoyancy = nothing,
-                                      clock,
-                                      closure = ScalarDiffusivity(VerticallyImplicitTimeDiscretization(), κ = κ_field),
-                                      biogeochemistry,
-                                      boundary_conditions = (DIC = FieldBoundaryConditions(top = CO₂_flux), O₂ = FieldBoundaryConditions(top = O₂_flux)))
+model = HydrostaticFreeSurfaceModel(grid;
+                                    velocities = PrescribedVelocityFields(),
+                                    tracer_advection = FluxFormAdvection(nothing, nothing, WENOFifthOrder(grid)),
+                                    momentum_advection = nothing,
+                                    buoyancy = nothing,
+                                    clock,
+                                    closure = ScalarDiffusivity(VerticallyImplicitTimeDiscretization(), κ = κ_field),
+                                    biogeochemistry,
+                                    boundary_conditions = (DIC = FieldBoundaryConditions(top = CO₂_flux), O₂ = FieldBoundaryConditions(top = O₂_flux)))
 
 
 @info "Setting initial values..."

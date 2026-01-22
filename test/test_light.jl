@@ -14,9 +14,9 @@ function test_two_band(grid, bgc, model_type)
                             light_attenuation = TwoBandPhotosyntheticallyActiveRadiation(; grid),
                             surface_photosynthetically_active_radiation = (x, y, t) -> 100.0)
 
-    model = model_type(; grid, 
-                         biogeochemistry,
-                         tracers = unique((required_biogeochemical_tracers(biogeochemistry)..., :T, :S))) # because hydrostatic free surface will request T and S and some BGC models will too
+    model = model_type(grid;
+                       biogeochemistry,
+                       tracers = unique((required_biogeochemical_tracers(biogeochemistry)..., :T, :S))) # because hydrostatic free surface will request T and S and some BGC models will too
 
     set!(model, P = Pᵢ)
 
@@ -48,7 +48,7 @@ function test_two_band(grid, bgc, model_type)
 end
 
 function test_multi_band(grid, bgc, model_type)
-    light_attenuation = MultiBandPhotosyntheticallyActiveRadiation(; grid, 
+    light_attenuation = MultiBandPhotosyntheticallyActiveRadiation(; grid,
                                                                      bands = ((1, 2), ),
                                                                      base_bands = [1, 2],
                                                                      base_water_attenuation_coefficient = [0.01, 0.01],
@@ -59,10 +59,10 @@ function test_multi_band(grid, bgc, model_type)
     biogeochemistry = bgc(; grid,
                             light_attenuation)
 
-    model = model_type(; grid, 
-                         biogeochemistry,
-                         buoyancy = nothing,
-                         tracers = nothing)
+    model = model_type(grid;
+                       biogeochemistry,
+                       buoyancy = nothing,
+                       tracers = nothing)
 
     set!(model, P = 2/1.31) # this will cause tests to fail for models with different chlorophyll ratios
 
@@ -70,7 +70,7 @@ function test_multi_band(grid, bgc, model_type)
 
     @test (@allowscalar all(interior(on_architecture(CPU(), light_attenuation.fields[1]), 1, 1, :) .≈ expected_PAR))
 
-    light_attenuation = MultiBandPhotosyntheticallyActiveRadiation(; grid, 
+    light_attenuation = MultiBandPhotosyntheticallyActiveRadiation(; grid,
                                                                      bands = ((1, 2), (8, 9)),
                                                                      base_bands = [1, 2, 8, 9],
                                                                      base_water_attenuation_coefficient = [0.01, 0.01, 0.02, 0.02],
@@ -81,10 +81,10 @@ function test_multi_band(grid, bgc, model_type)
     biogeochemistry = bgc(; grid,
                             light_attenuation)
 
-    model = model_type(; grid, 
-                         biogeochemistry,
-                         buoyancy = nothing,
-                         tracers = nothing)
+    model = model_type(grid;
+                       biogeochemistry,
+                       buoyancy = nothing,
+                       tracers = nothing)
 
     set!(model, P = 2/1.31) # this will cause tests to fail for models with different chlorophyll ratios (e.g. PISCES)
 
@@ -130,4 +130,3 @@ end
     @test par.pigment_ratio isa Float32
     @test par.phytoplankton_chlorophyll_ratio isa Float32
 end
-             

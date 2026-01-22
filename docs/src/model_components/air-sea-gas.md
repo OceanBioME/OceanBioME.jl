@@ -6,7 +6,7 @@ F = k(u_{10}, T)(C_w - C_a),
 ```
 where `k` is the gas transfer velocity.
 
-Our implementation is intended to be generic for any gas, so you can specify `air_concentration`, `water_concentration`, `transfer_velocity`, and `wind_speed` as any function in `GasExchange`, but we also provide constructors and default values for carbon dioxide and oxygen. 
+Our implementation is intended to be generic for any gas, so you can specify `air_concentration`, `water_concentration`, `transfer_velocity`, and `wind_speed` as any function in `GasExchange`, but we also provide constructors and default values for carbon dioxide and oxygen.
 
 To setup carbon dioxide and/or oxygen boundary conditions you simply build the condition and then specify it in the model:
 ```@example gasexchange
@@ -17,11 +17,11 @@ using Oceananigans
 
 grid = RectilinearGrid(size=(3, 3, 30), extent=(10, 10, 200));
 
-model = NonhydrostaticModel(; grid,
-                              biogeochemistry = LOBSTER(; grid, carbonate_system = CarbonateSystem(), oxygen = Oxygen()),
-                              boundary_conditions = (DIC = FieldBoundaryConditions(top = CO₂_flux), 
-                                                      O₂ = FieldBoundaryConditions(top =  O₂_flux)),
-                              tracers = (:T, :S))
+model = NonhydrostaticModel(grid;
+                            biogeochemistry = LOBSTER(; grid, carbonate_system = CarbonateSystem(), oxygen = Oxygen()),
+                            boundary_conditions = (DIC = FieldBoundaryConditions(top = CO₂_flux),
+                                                    O₂ = FieldBoundaryConditions(top =  O₂_flux)),
+                            tracers = (:T, :S))
 ```
 
 !!! note

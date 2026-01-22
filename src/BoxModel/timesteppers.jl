@@ -1,7 +1,7 @@
 using Oceananigans.Architectures: device
 using Oceananigans.Biogeochemistry: update_tendencies!, biogeochemical_auxiliary_fields, AbstractBiogeochemistry, AbstractContinuousFormBiogeochemistry
 using Oceananigans.Grids: nodes, Center
-using Oceananigans.TimeSteppers: rk3_substep_field!, RungeKutta3TimeStepper, QuasiAdamsBashforth2TimeStepper
+using Oceananigans.TimeSteppers: RungeKutta3TimeStepper, QuasiAdamsBashforth2TimeStepper
 using Oceananigans.Utils: work_layout, launch!
 using Oceananigans: TendencyCallsite
 
@@ -12,7 +12,7 @@ function BoxModelTimeStepper(name::Symbol, grid, tracers)
 
     Gⁿ = TracerFields(tracers, grid)
     G⁻ = TracerFields(tracers, grid)
-    
+
     return @eval $fullname($grid, $tracers; Gⁿ = $Gⁿ, G⁻ = $G⁻)
 end
 
@@ -40,7 +40,7 @@ function compute_tendencies!(model::BoxModel, callbacks)
 
     for tracer in required_biogeochemical_tracers(model.biogeochemistry)
         forcing = @inbounds model.forcing[tracer]
-        
+
         @inbounds Gⁿ[tracer][1, 1, 1] = tracer_tendency(Val(tracer), model.biogeochemistry, forcing, model.clock, model.fields, model.field_values, model.grid)
     end
 
@@ -63,7 +63,7 @@ end
 @inline tracer_tendency(val_name, biogeochemistry::AbstractBiogeochemistry, forcing, clock, model_fields, model_field_values, grid) =
     biogeochemistry(1, 1, 1, grid, val_name, clock, model_fields) + forcing(clock, model_fields)
 
-function rk3_substep!(model::BoxModel, Δt, γⁿ, ζⁿ)
+function rk3_substep!(model::BoxModel, Δt, γⁿ, ζⁿ, callbacks)
     model_fields = prognostic_fields(model)
 
     for (i, field) in enumerate(model_fields)
@@ -80,7 +80,7 @@ function rk3_substep!(U, Δt, γⁿ::FT, ζⁿ, Gⁿ, G⁻) where FT
     @inbounds begin
         U[1, 1, 1] += convert(FT, Δt) * (γⁿ * Gⁿ[1, 1, 1] + ζⁿ * G⁻[1, 1, 1])
     end
-    
+
     return nothing
 end
 
@@ -93,4 +93,3 @@ function rk3_substep!(U, Δt, γ¹::FT, ::Nothing, G¹, G⁰) where FT
 end
 
 compute_flux_bc_tendencies!(model::BoxModel) = nothing
-
