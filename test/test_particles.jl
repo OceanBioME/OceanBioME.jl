@@ -2,8 +2,8 @@ include("dependencies_for_runtests.jl")
 
 using OceanBioME.Particles: BiogeochemicalParticles
 
-import OceanBioME.Particles: required_particle_fields, 
-                             required_tracers, 
+import OceanBioME.Particles: required_particle_fields,
+                             required_tracers,
                              coupled_tracers
 
 import OceanBioME: required_biogeochemical_tracers,
@@ -36,8 +36,8 @@ grid = RectilinearGrid(architecture; size = (3, 3, 3), extent = (3, 3, 3))
 
     biogeochemistry = Biogeochemistry(NothingBiogeochemistry(); particles)
 
-    model = NonhydrostaticModel(; grid, biogeochemistry)
-    
+    model = NonhydrostaticModel(grid; biogeochemistry)
+
     time_step!(model, 1)
 
     @test all(particles.fields.A .== 1)
@@ -58,10 +58,10 @@ end
 
     biogeochemistry = Biogeochemistry(NothingBiogeochemistry(); particles)
 
-    model = NonhydrostaticModel(; grid, biogeochemistry, tracers = :B)
+    model = NonhydrostaticModel(grid; biogeochemistry, tracers = :B)
 
     set!(model, B = 1)
-    
+
     time_step!(model, 1)
 
     @test all(particles.fields.A .≈ 0.1)
@@ -77,10 +77,10 @@ end
 
     biogeochemistry = Biogeochemistry(NothingBiogeochemistry(); particles)
 
-    model = NonhydrostaticModel(; grid, biogeochemistry, tracers = :B)
+    model = NonhydrostaticModel(grid; biogeochemistry, tracers = :B)
 
     set!(model, B = 1, u = 0.1, v = 0.2)
-    
+
     time_step!(model, 1)
 
     @test all(particles.fields.A .≈ 0.1)
@@ -99,7 +99,7 @@ coupled_tracers(::SimpleParticleBiogeochemistry) = (:B, )
 
     biogeochemistry = Biogeochemistry(NothingBiogeochemistry(); particles)
 
-    model = NonhydrostaticModel(; grid, biogeochemistry, tracers = :B)
+    model = NonhydrostaticModel(grid; biogeochemistry, tracers = :B)
 
     set!(model, B = 1)
 
@@ -117,20 +117,20 @@ end
 @testset "Testing particle-tracer uptake with scalefactors" begin
     particle_biogeochemistry = SimpleParticleBiogeochemistry()
 
-    particles = BiogeochemicalParticles(3; grid, 
-                                           biogeochemistry = particle_biogeochemistry, 
+    particles = BiogeochemicalParticles(3; grid,
+                                           biogeochemistry = particle_biogeochemistry,
                                            advection = nothing,
                                            scalefactors = [1, 0.5, 0.5])
 
     biogeochemistry = Biogeochemistry(NothingBiogeochemistry(); particles)
 
-    model = NonhydrostaticModel(; grid, biogeochemistry, tracers = :B)
+    model = NonhydrostaticModel(grid; biogeochemistry, tracers = :B)
 
     set!(model, B = 1)
 
     # since the 0, 0, 0 point is ambigously closest to both 3, 3, 3 and 1, 1, 3 (and the logic makes it go to 3, 3, 3)
     set!(particles, x = 0.5, y = 0.5)
-    
+
     time_step!(model, 1)
 
     @test all(particles.fields.A .≈ 0.1)

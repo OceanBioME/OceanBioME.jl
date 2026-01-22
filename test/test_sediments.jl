@@ -24,24 +24,24 @@ end
 
 set_sinkers!(::NPZD, model) = set!(model, D = 1)
 set_sinkers!(::LOBSTER, model) = set!(model, sPOM = 1, bPOM = 1)
-set_sinkers!(::LOBSTER{<:Any, Val{(true, true, true)}}, model) = 
+set_sinkers!(::LOBSTER{<:Any, Val{(true, true, true)}}, model) =
     set!(model, sPON = 1, bPON = 1, sPOC = 6.56, bPOC = 6.56)
 
 sum_of_volume_integrals(biogeochemistry, tracers) = sum(map(f -> Field(Integral(f)), values(tracers)))
-sum_of_volume_integrals(::LOBSTER{<:Any, Val{(true, true, true)}}, tracers) = 
+sum_of_volume_integrals(::LOBSTER{<:Any, Val{(true, true, true)}}, tracers) =
     sum([Field(Integral(f)) for (n, f) in pairs(tracers) if n in (:NO₃, :NH₄, :P, :Z, :sPON, :bPON, :DON)])
 
 sum_of_area_integrals(sediment, fields) = sum(map(f -> Field(Integral(f, dims = (1, 2))), values(fields)))
-sum_of_area_integrals(::SimpleMultiG{Nothing}, fields) = 
+sum_of_area_integrals(::SimpleMultiG{Nothing}, fields) =
     sum([Field(Integral(f, dims = (1, 2))) for (n, f) in pairs(fields) if n in (:Nf, :Ns, :Nr)])
 
 function test_sediment(grid, biogeochemistry, model_name, advection = WENO(order = 3, bounds = (0, 1)))
     method = quote
-        return $(model_name)(; grid = $(grid), 
-                               biogeochemistry = $(biogeochemistry), 
-                               buoyancy = nothing, 
-                               tracers = (), 
-                               $(ifelse(model_name == NonhydrostaticModel, :advection, :tracer_advection)) = $advection)
+        return $(model_name)($(grid);
+                             biogeochemistry = $(biogeochemistry),
+                             buoyancy = nothing,
+                             tracers = (),
+                             $(ifelse(model_name == NonhydrostaticModel, :advection, :tracer_advection)) = $advection)
     end
 
     model = eval(method)
@@ -74,7 +74,7 @@ function test_sediment(grid, biogeochemistry, model_name, advection = WENO(order
 
     # simple multi-G is only good to this precision, IR is fine to default
     @test isapprox(initial_total_nitrogen, final_total_nitrogen,rtol = 0.2e-6)
-    
+
     @test all(interior(sediment_nitrogen) .!= 0)
 
     return model
@@ -107,14 +107,14 @@ models = (NonhydrostaticModel, HydrostaticFreeSurfaceModel) # I don't think we n
 #=
 @testset "Sediment integration" begin
     for grid in grids, timestepper in sediment_timesteppers
-        npzd_ir = NutrientPhytoplanktonZooplanktonDetritus(; 
-            grid, 
+        npzd_ir = NutrientPhytoplanktonZooplanktonDetritus(;
+            grid,
             sediment_model = InstantRemineralisationSediment(grid; timestepper)
         )
 
         lobster_ir = LOBSTER(;
             grid,
-            sediment_model = InstantRemineralisationSediment( 
+            sediment_model = InstantRemineralisationSediment(
                 grid;
                 sinking_tracers = (:sPOM, :bPOM),
                 remineralisation_reciever = :NH₄,
@@ -139,7 +139,7 @@ models = (NonhydrostaticModel, HydrostaticFreeSurfaceModel) # I don't think we n
             carbonates = true,
             variable_redfield = true
         )
-        
+
         bgcs = [npzd_ir, lobster_ir, simple_lobster_multi_g, full_lobster_multi_g]
 
         for model in models, biogeochemistry in bgcs

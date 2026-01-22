@@ -17,10 +17,9 @@ function benchmark_LOBSTER(n)
 
     bgc = Setup.Oceananigans(:LOBSTER, grid, LOBSTER.defaults)
 
-    model = NonhydrostaticModel(
+    model = NonhydrostaticModel(grid;
         advection = WENO(;grid),
         timestepper = :RungeKutta3,
-        grid = grid,
         tracers = bgc.tracers,
         closure = ScalarDiffusivity(ν=1e-4, κ=1e-4),
         forcing = bgc.forcing,
@@ -61,10 +60,9 @@ function benchmark_sediment(n)
 
     bgc = Setup.Oceananigans(:LOBSTER, grid, LOBSTER.defaults, optional_sets=(:carbonates, :oxygen), topboundaries=(DIC=dic_bc, OXY=oxy_bc), sinking=true, open_bottom=true, bottomboundaries=sediment.boundary_conditions)
 
-    model = NonhydrostaticModel(
+    model = NonhydrostaticModel(grid;
         advection = WENO(;grid),
         timestepper = :RungeKutta3,
-        grid = grid,
         tracers = bgc.tracers,
         closure = ScalarDiffusivity(ν=1e-4, κ=1e-4),
         forcing =  merge(bgc.forcing, sediment.forcing),
@@ -106,10 +104,9 @@ function benchmark_SLatissima(n)
     oxy_bc = Boundaries.airseasetup(:O₂, forcings=(T=t_function, S=s_function))
     bgc = Setup.Oceananigans(:LOBSTER, grid, LOBSTER.defaults, optional_sets=(:carbonates, :oxygen), topboundaries=(DIC=dic_bc, OXY=oxy_bc))
 
-    model = NonhydrostaticModel(
+    model = NonhydrostaticModel(grid;
         advection = WENO(;grid),
         timestepper = :RungeKutta3,
-        grid = grid,
         tracers = bgc.tracers,
         closure = ScalarDiffusivity(ν=1e-4, κ=1e-4),
         forcing = bgc.forcing,

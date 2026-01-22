@@ -13,7 +13,7 @@ carbon_conservation = ScaleNegativeTracers((tracers = (:bPOC, :sPOC, :DOC, :DIC,
 
 biogeochemistry = LOBSTER(; grid, sediment_model, oxygen = true, variable_redfield = true, carbonates = true, scale_negatives = true, modifiers = carbon_conservation)
 
-model = NonhydrostaticModel(; grid, biogeochemistry, advection = WENO(order = 3))#, bounds = (0, 1)))
+model = NonhydrostaticModel(grid; biogeochemistry, advection = WENO(order = 3))#, bounds = (0, 1)))
 
 set!(model, sPOC = 6.56, bPOC = 6.56, sPON = 1, bPON = 1, O₂ = 500, NH₄ = 1, NO₃ = 10, DIC = 1500)
 
@@ -23,21 +23,21 @@ set!(sediment_model.fields.Nf, 1)
 set!(sediment_model.fields.Cs, 10 * 6.56)
 set!(sediment_model.fields.Cf, 1 * 6.56)
 
-tracer_nitrogen = Field(Integral(model.tracers.sPON)) + 
-                  Field(Integral(model.tracers.bPON)) + 
-                  Field(Integral(model.tracers.P)) + 
-                  Field(Integral(model.tracers.Z)) + 
-                  Field(Integral(model.tracers.NO₃)) + 
-                  Field(Integral(model.tracers.NH₄)) + 
+tracer_nitrogen = Field(Integral(model.tracers.sPON)) +
+                  Field(Integral(model.tracers.bPON)) +
+                  Field(Integral(model.tracers.P)) +
+                  Field(Integral(model.tracers.Z)) +
+                  Field(Integral(model.tracers.NO₃)) +
+                  Field(Integral(model.tracers.NH₄)) +
                   Field(Integral(model.tracers.DON))
 
 total_nitrogen = Field(tracer_nitrogen + sediment_model.fields.Nf + sediment_model.fields.Ns + sediment_model.fields.Nr)
 
-tracer_carbon = Field(Integral(model.tracers.sPOC)) + 
-                Field(Integral(model.tracers.bPOC)) + 
-                Field(Integral(model.tracers.P)) * 6.56 + 
-                Field(Integral(model.tracers.Z)) * 6.56 + 
-                Field(Integral(model.tracers.DIC)) + 
+tracer_carbon = Field(Integral(model.tracers.sPOC)) +
+                Field(Integral(model.tracers.bPOC)) +
+                Field(Integral(model.tracers.P)) * 6.56 +
+                Field(Integral(model.tracers.Z)) * 6.56 +
+                Field(Integral(model.tracers.DIC)) +
                 Field(Integral(model.tracers.DOC))
 
 total_carbon = Field(tracer_carbon + sediment_model.fields.Cf + sediment_model.fields.Cs + sediment_model.fields.Cr)

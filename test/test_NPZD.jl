@@ -4,13 +4,13 @@ using OceanBioME: NutrientPhytoplanktonZooplanktonDetritus
 using Oceananigans
 
 function test_NPZD(grid, sinking, open_bottom)
-    
+
     if sinking
-        model = NonhydrostaticModel(;grid,
-                                     biogeochemistry = NutrientPhytoplanktonZooplanktonDetritus(;grid, open_bottom))
+        model = NonhydrostaticModel(grid;
+                                    biogeochemistry = NutrientPhytoplanktonZooplanktonDetritus(;grid, open_bottom))
     else
-        model = NonhydrostaticModel(;grid,
-                                     biogeochemistry = NutrientPhytoplanktonZooplanktonDetritus(;grid, sinking_speeds = NamedTuple()))
+        model = NonhydrostaticModel(grid;
+                                    biogeochemistry = NutrientPhytoplanktonZooplanktonDetritus(;grid, sinking_speeds = NamedTuple()))
     end
 
     # correct tracers and auxiliary fields have been setup, and order has not changed
@@ -24,7 +24,7 @@ function test_NPZD(grid, sinking, open_bottom)
     time_step!(model, 1.0)
 
     # and that they all return zero
-    @test all([all(Array(interior(values)) .== 0) for values in values(model.tracers)]) 
+    @test all([all(Array(interior(values)) .== 0) for values in values(model.tracers)])
 
     # mass conservation
     model.tracers.N .= rand()
@@ -32,18 +32,18 @@ function test_NPZD(grid, sinking, open_bottom)
     model.tracers.Z .= rand()
     model.tracers.D .= rand()
 
-    ΣN₀ = sum(Array(interior(model.tracers.N))) + 
-          sum(Array(interior(model.tracers.P))) + 
-          sum(Array(interior(model.tracers.Z))) + 
+    ΣN₀ = sum(Array(interior(model.tracers.N))) +
+          sum(Array(interior(model.tracers.P))) +
+          sum(Array(interior(model.tracers.Z))) +
           sum(Array(interior(model.tracers.D)))
 
     for n in 1:1000
         time_step!(model, 1.0)
     end
 
-    ΣN₁ = sum(Array(interior(model.tracers.N))) + 
-          sum(Array(interior(model.tracers.P))) + 
-          sum(Array(interior(model.tracers.Z))) + 
+    ΣN₁ = sum(Array(interior(model.tracers.N))) +
+          sum(Array(interior(model.tracers.P))) +
+          sum(Array(interior(model.tracers.Z))) +
           sum(Array(interior(model.tracers.D)))
 
     @test ΣN₀ ≈ ΣN₁ # guess this should actually fail with a high enough accuracy when sinking is on with an open bottom
