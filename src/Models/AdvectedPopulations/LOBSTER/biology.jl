@@ -27,6 +27,8 @@ rate.
    phytoplankton_exudation_fraction :: FT = 0.05      #
         ammonia_fraction_of_exudate :: FT = 0.75      #
 
+            temperature_coefficient :: FT = 1.0       # Q10 factor, off by default 1.88 option from Kuhn, 2015
+
        phytoplankton_mortality_rate :: FT = 5.8e-7    # 1/s/mmol N/m³
          zooplankton_mortality_rate :: FT = 2.31e-6   # 1/s/mmol N/m³
          zooplankton_excretion_rate :: FT = 5.8e-7    # 1/s
@@ -134,20 +136,60 @@ end
     return nitrogen_limitation(lobster, i, j, k, fields, auxiliary_fields) * iron_limitation
 end
 
+@inline function nutrient_limitation(lobster::LOBSTER{<:Nutrient}, i, j, k, fields, auxiliary_fields)
+    kNO₃ = lobster.biology.nitrate_half_saturation
+
+    @inbounds begin
+        N = fields.N[i, j, k]
+    end
+
+    return N / (N + kNO₃)
+end
+
+@inline function nitrogen_limitation(lobster::PHYTO_ZOO_LOBSTER, i, j, k, fields, auxiliary_fields)
+    kNO₃ = lobster.biology.nitrate_half_saturation
+    kNH₄ = lobster.biology.ammonia_half_saturation
+    ψ = lobster.biology.nitrate_ammonia_inhibition
+
+    @inbounds begin
+        NO₃ = fields.NO₃[i, j, k]
+        NH₄ = fields.NH₄[i, j, k]
+    end
+
+    nitrate_limitation = NO₃ * exp(-ψ * NH₄) / (NO₃ + kNO₃)
+    ammonia_limitation = max(0, NH₄ / (kNH₄ + NH₄))
+
+    # factor of 1/2 so that the limitation varies between 0 and 1
+    # correspondingly μ₀ is doubled
+    return (nitrate_limitation + ammonia_limitation) / 2
+end
+
+
 ##### total phytoplankton growth
 @inline function phytoplankton_growth(lobster::PHYTO_ZOO_LOBSTER, i, j, k, fields, auxiliary_fields)
     kPAR = lobster.biology.light_half_saturation
     μ₀   = lobster.biology.phytoplankton_maximum_growth_rate
+    Q10  = lobster.biology.temperature_coefficient
 
     @inbounds begin
         PAR = auxiliary_fields.PAR[i, j, k]
         P   = fields.P[i, j, k]
+        T   = possibly_get_T(i, j, k, fields)
     end
 
     Lₙ = nutrient_limitation(lobster, i, j, k, fields, auxiliary_fields)
     Lₗ = PAR / (kPAR + PAR)
+    Lₜ = Q10 ^ (T / 10)
 
-    return μ₀ * Lₗ * Lₙ * P
+    return μ₀ * Lₗ * Lₙ * Lₜ * P
+end
+
+@inline function possibly_get_T(i, j, k, fields::NamedTuple{tracer_names}) where tracer_names
+    if :T ∈ tracer_names # this is a compile time evaluation
+        return fields.T[i, j, k]
+    else
+        return zero(eltype(fields.P)) # this doesn't seem optimal but we don't pass grid...
+    end
 end
 
 ###### nutrient uptake
@@ -198,6 +240,9 @@ end
 
     return R * μ
 end
+
+@inline nutrient_uptake(lobster::PHYTO_ZOO_LOBSTER, i, j, k, val_name::Val{:N}, fields, auxiliary_fields) =
+    phytoplankton_growth(lobster, i, j, k, fields, auxiliary_fields)
 
 @inline function phytoplankton_primary_production(lobster::PHYTO_ZOO_LOBSTER, i, j, k, fields, auxiliary_fields)
     α = lobster.biology.ammonia_fraction_of_exudate
@@ -277,6 +322,23 @@ end
 end
 
 @inline function grazing(lobster::PHYTO_ZOO_LOBSTER, i, j, k, ::Union{Val{:sPOM}, Val{:sPON}}, fields, auxiliary_fields)
+    kG = lobster.biology.grazing_half_saturation
+    g  = lobster.biology.maximum_grazing_rate
+
+    @inbounds begin
+        Z = fields.Z[i, j, k]
+        P = fields.P[i, j, k]
+        sPOM = small_particulate_concentration(lobster.detritus, i, j, k, fields, auxiliary_fields)
+    end
+
+    p = weighted_phytoplankton_preference(lobster.biology, P, sPOM)
+
+    food_concentration = p * P + (1-p) * sPOM
+
+    return g * (1-p) * sPOM / (kG + food_concentration) * Z
+end
+
+@inline function grazing(lobster::PHYTO_ZOO_LOBSTER, i, j, k, ::Val{:D}, fields, auxiliary_fields)
     kG = lobster.biology.grazing_half_saturation
     g  = lobster.biology.maximum_grazing_rate
 

@@ -253,5 +253,50 @@ function VariableRedfieldDetritus(grid;
     small_particle_sinking_velocity = setup_velocity_fields((; sPOM = small_particle_sinking_speed), grid, open_bottom; three_D = true).sPOM
     large_particle_sinking_velocity = setup_velocity_fields((; bPOM = large_particle_sinking_speed), grid, open_bottom; three_D = true).bPOM
 
-    return VariableRedfieldDetritus(;small_particle_sinking_velocity, large_particle_sinking_velocity, kwargs...)
+    return VariableRedfieldDetritus(; small_particle_sinking_velocity, large_particle_sinking_velocity, kwargs...)
 end
+
+#####
+##### Single detritus class
+#####
+
+# Kuhn 2015 detritus
+@kwdef struct Detritus{FT, SS}
+      remineralisation_rate :: FT = 0.1213 / day
+    small_particle_fraction :: FT = 0.5 # the fraction available to be grazed
+             redfield_ratio :: FT = 6.56 # C:N
+    
+             sinking_speeds :: SS = (u = ZeroField(), v = ZeroField(), w = ConstantField(-2.7489/day))
+end
+
+function Detritus(grid; 
+                  sinking_speed = 0.1213 / day, # m/s
+                  open_bottom = true,
+                  kwargs...)
+
+    sinking_velocity = setup_velocity_fields((; D = sinking_speed), grid, open_bottom; three_D = true).D
+
+    return VariableRedfieldDetritus(; sinking_speeds, kwargs...)
+end
+
+@inline (lobster::LOBSTER{<:Any, <:Any, <:Detritus})(i, j, k, grid, val_name::Val{:D}, clock, fields, auxiliary_fields) =
+    @inbounds (
+        biology_organic_nitrogen_waste(lobster, i, j, k, fields, auxiliary_fields)
+      + solid_waste(lobster, i, j, k, fields, auxiliary_fields)
+      + grazing(lobster, i, j, k, val_name, fields, auxiliary_fields) 
+      - lobster.detritus.remineralisation_rate * fields.D[i, j, k]
+    )
+
+biogeochemical_drift_velocity(lobster::LOBSTER{<:Any, <:Any, <:Detritus}, ::Val{:D}) = 
+    lobster.detritus.sinking_speeds
+
+required_biogeochemical_tracers(::Detritus) = (:D, )
+
+@inline small_particulate_concentration(detritus::Detritus, i, j, k, fields, auxiliary_fields) =
+    @inbounds fields.D[i, j, k] * detritus.small_particle_fraction
+
+@inline detritus_inorganic_nitrogen_waste(lobster::LOBSTER{<:Any, <:Any, <:Detritus}, i, j, k, fields, auxiliary_fields) =
+    @inbounds fields.D[i, j, k] * lobster.detritus.remineralisation_rate
+
+@inline detritus_inorganic_carbon_waste(lobster::LOBSTER{<:Any, <:Any, <:Detritus}, i, j, k, fields, auxiliary_fields) =
+    @inbounds fields.D[i, j, k] * lobster.detritus.remineralisation_rate * lobster.detritus.redfield_ratio

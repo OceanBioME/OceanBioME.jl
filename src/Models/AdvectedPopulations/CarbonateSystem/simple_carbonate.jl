@@ -27,23 +27,29 @@ biogeochemistry and *does not* effect any other groups (e.g. acidifcation does
 not effect phytoplankton growth). To capture this effect a different `biology` 
 could be defined.
 """
-struct CarbonateSystem end
+struct SimpleCarbonateSystem end
 
-required_biogeochemical_tracers(::CarbonateSystem) = (:DIC, :Alk)
+required_biogeochemical_tracers(::SimpleCarbonateSystem) = (:DIC, :Alk)
 
-@inline (lobster::LOBSTER{<:Any, <:Any, <:Any, <:CarbonateSystem})(i, j, k, grid, ::Val{:DIC}, clock, fields, auxiliary_fields) = (
+@inline carbonte_tendencies(::SimpleCarbonateSystem, bgc, i, j, k, grid, ::Val{:DIC}, clock, fields, auxiliary_fields) = (
+    - net_production(bgc, i, j, k, fields, auxiliary_fields)
+    + inorganic_waste(bgc, i, j, k, fields, auxiliary_fields)
+    + calcite_dissolution(bgc, i, j, k, fields, auxiliary_fields)
+)
+
+@inline carbonte_tendencies(::SimpleCarbonateSystem, bgc, i, j, k, grid, ::Val{:Alk}, clock, fields, auxiliary_fields) = (
+      base_uptake(bgc, i, j, k, fields, auxiliary_fields)
+    - 
+)
+
+@inline (lobster::LOBSTER{<:Any, <:Any, <:Any, <:SimpleCarbonateSystem})(i, j, k, grid, ::Val{:DIC}, clock, fields, auxiliary_fields) = (
   - phytoplankton_primary_production(lobster, i, j, k, fields, auxiliary_fields)
   + biology_inorganic_carbon_waste(lobster, i, j, k, fields, auxiliary_fields)
   + detritus_inorganic_carbon_waste(lobster, i, j, k, fields, auxiliary_fields)
   + calcite_dissolution(lobster, i, j, k, fields, auxiliary_fields)
 )
 
-@inline (lobster::LOBSTER{<:Any, <:Any, <:Any, <:CarbonateSystem})(i, j, k, grid, ::Val{:Alk}, clock, fields, auxiliary_fields) = (
+@inline (lobster::LOBSTER{<:Any, <:Any, <:Any, <:SimpleCarbonateSystem})(i, j, k, grid, ::Val{:Alk}, clock, fields, auxiliary_fields) = (
     nutrient_uptake(lobster, i, j, k, Val(:NO₃), fields, auxiliary_fields)
-  - calcite_uptake(lobster, i, j, k, fields, auxiliary_fields)
-)
-
-@inline (lobster::LOBSTER{<:Nutrient, <:Any, <:Any, <:CarbonateSystem})(i, j, k, grid, ::Val{:Alk}, clock, fields, auxiliary_fields) = (
-    nutrient_uptake(lobster, i, j, k, Val(:N), fields, auxiliary_fields)
   - calcite_uptake(lobster, i, j, k, fields, auxiliary_fields)
 )
