@@ -56,7 +56,7 @@ function test_PISCES_conservation() # only on CPU please
                                                              euphotic_depth,
                                                              mean_mixed_layer_light,
                                                              mean_mixed_layer_vertical_diffusivity,
-                                                             # turn off permanent iron removal and nitrogen fixaiton
+                                                             # turn off permanent iron removal and nitrogen fixation
                                                              iron = SimpleIron(excess_scavenging_enhancement = 0.0),
                                                              nitrogen = NitrateAmmonia(maximum_fixation_rate = 0.0))
 
@@ -81,7 +81,7 @@ function test_PISCES_conservation() # only on CPU please
     total_phosphate_tendencies = sum([value(model.timestepper.Gⁿ[n]) * sf for (n, sf) in zip(conserved_tracers.phosphate.tracers, conserved_tracers.phosphate.scalefactors)])
     total_nitrogen_tendencies = sum([value(model.timestepper.Gⁿ[n]) * sf for (n, sf) in zip(conserved_tracers.nitrogen.tracers, conserved_tracers.nitrogen.scalefactors)])
 
-    # double precision floats are only valid to 17 bits so this tollerance is actually good
+    # double precision floats are only valid to 17 bits so this tolerance is actually good
     @test isapprox(total_carbon_tendencies, 0, atol = 10^-20)
     @test isapprox(total_iron_tendencies, 0, atol = 10^-21)
     @test isapprox(total_silicon_tendencies, 0, atol = 10^-30)
@@ -97,7 +97,7 @@ end
 
 function test_PISCES_update_state(arch)
     @info "Testing PISCES auxiliary field computation and timestepping"
-    # TODO: implement and test mixed layer depth computaiton elsewhere
+    # TODO: implement and test mixed layer depth computation elsewhere
 
     grid = RectilinearGrid(arch, topology = (Flat, Flat, Bounded), size = (10, ), extent = (100, ))
 
@@ -116,7 +116,7 @@ function test_PISCES_update_state(arch)
 
     model = NonhydrostaticModel(grid; biogeochemistry, closure) # this updates the biogeochemical state
 
-    # checked and at very high resolution this converges to higher tollerance
+    # checked and at very high resolution this converges to higher tolerance
     @test isapprox(on_architecture(CPU(), biogeochemistry.underlying_biogeochemistry.mean_mixed_layer_light)[1, 1, 1], 3 * 10 / 25 * (1 - exp(-25/10)), rtol = 0.1)
     @test isapprox(on_architecture(CPU(), biogeochemistry.underlying_biogeochemistry.mean_mixed_layer_vertical_diffusivity)[1, 1, 1], 2, rtol = 0.1)
 
@@ -155,7 +155,7 @@ function test_PISCES_negativity_protection(arch)
     # didn't touch the others
     @test on_architecture(CPU(), interior(model.tracers.PO₄, 1, 1, 1))[1] == 1
 
-    # failed to scale silcate since nothing else in its group was available
+    # failed to scale silicate since nothing else in its group was available
     set!(model, Si = -1, DSi = 0.1)
 
     @test isnan(on_architecture(CPU(), interior(model.tracers.DSi, 1, 1, 1))[1])
