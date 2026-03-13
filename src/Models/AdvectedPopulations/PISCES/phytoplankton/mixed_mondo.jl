@@ -267,7 +267,7 @@ end
     iron_uptake(phyto, val_name, i, j, k, grid, bgc, clock, fields, auxiliary_fields)
     
 @inline function dissolved_exudate(phyto::MixedMondo, val_name, i, j, k, grid, bgc, clock, fields, auxiliary_fields)
-    δ  = phyto.exudated_fracton
+    δ  = phyto.exudated_fraction
 
     μI = total_production(phyto, val_name, i, j, k, grid, bgc, clock, fields, auxiliary_fields)
 
