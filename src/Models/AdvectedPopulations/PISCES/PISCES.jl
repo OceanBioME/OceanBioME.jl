@@ -243,13 +243,13 @@ Keyword Arguments
 - `grid`: (required) the geometry to build the model on
 - `phytoplankton`: phytoplankton evolution parameterisation, defaults to nanophyto and diatom size classes with `MixedMondo` growth
 - `zooplankton`: zooplankton evolution parameterisation, defaults to two class `Z` and `M`
-- `dissolved_organic_matter`: parameterisaion for the evolution of dissolved organic matter (`DOC`)
+- `dissolved_organic_matter`: parameterisation for the evolution of dissolved organic matter (`DOC`)
 - `particulate_organic_matter`: parameterisation for the evolution of particulate organic matter (`POC`, `GOC`, `SFe`, `BFe`, `PSi`, `CaCO₃`)
 - `nitrogen`: parameterisation for the nitrogen compartments (`NH₄` and `NO₃`)
 - `iron`: parameterisation for iron (`Fe`), currently the "complex chemistry" of Aumount 2015 is not implemented
-- `silicate`: parameterisaion for silicate (`Si`)
-- `oxygen`: parameterisaion for oxygen (`O₂`)
-- `phosphate`: parameterisaion for phosphate (`PO₄`)
+- `silicate`: parameterisation for silicate (`Si`)
+- `oxygen`: parameterisation for oxygen (`O₂`)
+- `phosphate`: parameterisation for phosphate (`PO₄`)
 - `inorganic_carbon`: parameterisation for the evolution of the inorganic carbon system (`DIC` and `Alk`)
 - `first_anoxia_threshold` and `second_anoxia_threshold`: thresholds in anoxia parameterisation
 - `nitrogen_redfield_ratio` and `phosphate_redfield_ratio`: the assumed element ratios N/C and P/C 
@@ -269,7 +269,7 @@ Keyword Arguments
 - `calcite_saturation`: an `AbstractField` containing the calcite saturation  (computed during update state)
 - `surface_photosynthetically_active_radiation`: function for the photosynthetically available radiation at the surface
 - `light_attenuation`: light attenuation model which integrated the attenuation of available light
-- `sinking_speed`: named tuple of constant sinking speeds, or fields (i.e. `ZFaceField(...)`) for any tracers which sink 
+- `sinking_speeds`: named tuple of constant sinking speeds, or fields (i.e. `ZFaceField(...)`) for any tracers which sink 
   (convention is that a sinking speed is positive, but a field will need to follow the usual down being negative)
 - `open_bottom`: should the sinking velocity be smoothly brought to zero at the bottom to prevent the tracers leaving the domain
 - `scale_negatives`: scale negative tracers?

@@ -21,7 +21,7 @@ import Oceananigans.Biogeochemistry: required_biogeochemical_tracers
 """
     InorganicCarbon
 
-Default parameterisation for `DIC`` and `Alk`alinity evolution. 
+Default parameterisation for `DIC`` and `Alk` evolution. 
 """
 struct InorganicCarbon end
 
