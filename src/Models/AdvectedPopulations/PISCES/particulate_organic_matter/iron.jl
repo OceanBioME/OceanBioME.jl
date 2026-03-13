@@ -1,5 +1,5 @@
 
-@inline function (bgc::TwoCompartementPOCPISCES)(i, j, k, grid, val_name::Val{:SFe}, clock, fields, auxiliary_fields)
+@inline function (bgc::TwoCompartmentPOCPISCES)(i, j, k, grid, val_name::Val{:SFe}, clock, fields, auxiliary_fields)
     POC = @inbounds fields.POC[i, j, k]
     SFe = @inbounds fields.SFe[i, j, k]
 
@@ -37,14 +37,14 @@
 
     aggregation_to_large = aggregation(bgc.particulate_organic_matter, i, j, k, grid, bgc, clock, fields, auxiliary_fields) * θ
 
-    small_breakdown = degredation(bgc.particulate_organic_matter, val_name, i, j, k, grid, bgc, clock, fields, auxiliary_fields)
+    small_breakdown = degradation(bgc.particulate_organic_matter, val_name, i, j, k, grid, bgc, clock, fields, auxiliary_fields)
 
     return (grazing_waste + phytoplankton_mortality + zooplankton_mortality 
             + large_breakdown + scavenging + bacterial_assimilation + colloidal_aggregation
             - grazing - aggregation_to_large - small_breakdown)
 end
 
-@inline function (bgc::TwoCompartementPOCPISCES)(i, j, k, grid, val_name::Val{:BFe}, clock, fields, auxiliary_fields)
+@inline function (bgc::TwoCompartmentPOCPISCES)(i, j, k, grid, val_name::Val{:BFe}, clock, fields, auxiliary_fields)
     POC = @inbounds fields.POC[i, j, k]
     SFe = @inbounds fields.SFe[i, j, k]
     GOC = @inbounds fields.GOC[i, j, k]
@@ -81,20 +81,20 @@ end
     # losses
     grazing = total_grazing(bgc.zooplankton, Val(:GOC), i, j, k, grid, bgc, clock, fields, auxiliary_fields) * θB
 
-    large_breakdown = degredation(bgc.particulate_organic_matter, val_name, i, j, k, grid, bgc, clock, fields, auxiliary_fields)
+    large_breakdown = degradation(bgc.particulate_organic_matter, val_name, i, j, k, grid, bgc, clock, fields, auxiliary_fields)
 
     return (grazing_waste + phytoplankton_mortality + zooplankton_mortality + upper_trophic_feces
             + scavenging + bacterial_assimilation + colloidal_aggregation + aggregation_to_large
             - grazing  - large_breakdown)
 end
 
-@inline degredation(poc::TwoCompartementCarbonIronParticles, ::Val{:SFe}, i, j, k, grid, bgc, clock, fields, auxiliary_fields) = 
-    @inbounds specific_degredation_rate(poc, i, j, k, grid, bgc, clock, fields, auxiliary_fields) * fields.SFe[i, j, k]
+@inline degradation(poc::TwoCompartmentCarbonIronParticles, ::Val{:SFe}, i, j, k, grid, bgc, clock, fields, auxiliary_fields) = 
+    @inbounds specific_degradation_rate(poc, i, j, k, grid, bgc, clock, fields, auxiliary_fields) * fields.SFe[i, j, k]
 
-@inline degredation(poc::TwoCompartementCarbonIronParticles, ::Val{:BFe}, i, j, k, grid, bgc, clock, fields, auxiliary_fields) = 
-    @inbounds specific_degredation_rate(poc, i, j, k, grid, bgc, clock, fields, auxiliary_fields) * fields.BFe[i, j, k]
+@inline degradation(poc::TwoCompartmentCarbonIronParticles, ::Val{:BFe}, i, j, k, grid, bgc, clock, fields, auxiliary_fields) = 
+    @inbounds specific_degradation_rate(poc, i, j, k, grid, bgc, clock, fields, auxiliary_fields) * fields.BFe[i, j, k]
 
-@inline function iron_scavenging_rate(pom::TwoCompartementCarbonIronParticles, i, j, k, grid, bgc, clock, fields, auxiliary_fields)
+@inline function iron_scavenging_rate(pom::TwoCompartmentCarbonIronParticles, i, j, k, grid, bgc, clock, fields, auxiliary_fields)
     λ₀ = pom.minimum_iron_scavenging_rate
     λ₁ = pom.load_specific_iron_scavenging_rate
 
@@ -106,9 +106,9 @@ end
     return λ₀ + λ₁ * (POC + GOC + CaCO₃ + PSi)
 end
 
-@inline function bacterial_iron_uptake(poc::TwoCompartementCarbonIronParticles, i, j, k, grid, bgc, clock, fields, auxiliary_fields)
+@inline function bacterial_iron_uptake(poc::TwoCompartmentCarbonIronParticles, i, j, k, grid, bgc, clock, fields, auxiliary_fields)
     μ₀ = poc.maximum_bacterial_growth_rate
-    b  = poc.temperature_sensetivity
+    b  = poc.temperature_sensitivity
     θ  = poc.maximum_iron_ratio_in_bacteria
     K  = poc.iron_half_saturation_for_bacteria
     κ  = poc.bacterial_iron_uptake_efficiency
@@ -125,7 +125,7 @@ end
     return μ * LBact * θ * Fe / (Fe + K) * Bact * κ
 end
 
-@inline function iron_scavenging(poc::TwoCompartementCarbonIronParticles, i, j, k, grid, bgc, clock, fields, auxiliary_fields)
+@inline function iron_scavenging(poc::TwoCompartmentCarbonIronParticles, i, j, k, grid, bgc, clock, fields, auxiliary_fields)
     POC = @inbounds fields.POC[i, j, k]
     GOC = @inbounds fields.GOC[i, j, k]
 

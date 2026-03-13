@@ -3,19 +3,19 @@ using Oceananigans.Grids: znode, Center
 using Oceananigans.Operators: ℑzᵃᵃᶜ
 
 """
-    TwoCompartementCarbonIronParticles
+    TwoCompartmentCarbonIronParticles
 
 A quota parameterisation for particulate organic matter with two size classes,
-each with carbon and iron compartements, and a silicate compartement for the
+each with carbon and iron compartments, and a silicate compartment for the
 large size class.
 
-Confusingly we decided to name these compartmenets `POC` and `GOC` for the small
+Confusingly we decided to name these compartments `POC` and `GOC` for the small
 and large carbon classes, `SFe` and `BFe` for the small and  ̶l̶a̶r̶g̶e̶ big iron 
-compartements, and `PSi` for the  ̶l̶a̶r̶g̶e̶ particulate silicon (*not* the 
+compartments, and `PSi` for the  ̶l̶a̶r̶g̶e̶ particulate silicon (*not* the 
 phytoplankton silicon).
 """
-struct TwoCompartementCarbonIronParticles{FT, AP}
-                      temperature_sensetivity :: FT #
+struct TwoCompartmentCarbonIronParticles{FT, AP}
+                      temperature_sensitivity :: FT #
                           base_breakdown_rate :: FT # 1 / s
 # (1 / (mmol C / m³),  1 / (mmol C / m³),  1 / (mmol C / m³) / s,  1 / (mmol C / m³) / s)
                        aggregation_parameters :: AP
@@ -37,8 +37,8 @@ struct TwoCompartementCarbonIronParticles{FT, AP}
             iron_half_saturation_for_bacteria :: FT # μmol Fe / m³
                 maximum_bacterial_growth_rate :: FT # 1 / s
 
-    function TwoCompartementCarbonIronParticles(FT = Float64;
-                                                temperature_sensetivity = 1.066, #
+    function TwoCompartmentCarbonIronParticles(FT = Float64;
+                                                temperature_sensitivity = 1.066, #
                                                 base_breakdown_rate = 0.025 / day, # 1 / s
 # (1 / (mmol C / m³),  1 / (mmol C / m³),  1 / (mmol C / m³) / s,  1 / (mmol C / m³) / s)
                                                 aggregation_parameters = (25.9, 4452, 3.3, 47.1) .* (10^-6 / day),
@@ -64,7 +64,7 @@ struct TwoCompartementCarbonIronParticles{FT, AP}
 
         AP = typeof(aggregation_parameters)
 
-        return new{FT, AP}(convert(FT, temperature_sensetivity),
+        return new{FT, AP}(convert(FT, temperature_sensitivity),
                            convert(FT, base_breakdown_rate),
                            aggregation_parameters,
                            convert(FT, minimum_iron_scavenging_rate),
@@ -83,9 +83,9 @@ struct TwoCompartementCarbonIronParticles{FT, AP}
     end
 end
 
-const TwoCompartementPOCPISCES = PISCES{<:Any, <:Any, <:Any, <:TwoCompartementCarbonIronParticles}
+const TwoCompartmentPOCPISCES = PISCES{<:Any, <:Any, <:Any, <:TwoCompartmentCarbonIronParticles}
 
-required_biogeochemical_tracers(::TwoCompartementCarbonIronParticles) = (:POC, :GOC, :SFe, :BFe, :PSi, :CaCO₃)
+required_biogeochemical_tracers(::TwoCompartmentCarbonIronParticles) = (:POC, :GOC, :SFe, :BFe, :PSi, :CaCO₃)
 
 @inline edible_flux_rate(poc, i, j, k, grid, fields, auxiliary_fields) = 
     flux_rate(Val(:POC), i, j, k, grid, fields, auxiliary_fields) + flux_rate(Val(:GOC), i, j, k, grid, fields, auxiliary_fields)
@@ -100,16 +100,16 @@ required_biogeochemical_tracers(::TwoCompartementCarbonIronParticles) = (:POC, :
 const SMALL_PARTICLE_COMPONENTS = Union{Val{:POC}, Val{:SFe}}
 const LARGE_PARTICLE_COMPONENTS = Union{Val{:GOC}, Val{:BFe}, Val{:PSi}, Val{:CaCO₃}} 
 
-biogeochemical_drift_velocity(bgc::TwoCompartementPOCPISCES, ::SMALL_PARTICLE_COMPONENTS) = 
+biogeochemical_drift_velocity(bgc::TwoCompartmentPOCPISCES, ::SMALL_PARTICLE_COMPONENTS) = 
     (u = ZeroField(), v = ZeroField(), w = bgc.sinking_velocities.POC)
 
-biogeochemical_drift_velocity(bgc::TwoCompartementPOCPISCES, ::LARGE_PARTICLE_COMPONENTS) = 
+biogeochemical_drift_velocity(bgc::TwoCompartmentPOCPISCES, ::LARGE_PARTICLE_COMPONENTS) = 
     (u = ZeroField(), v = ZeroField(), w = bgc.sinking_velocities.GOC)
 
-@inline function aggregation(poc::TwoCompartementCarbonIronParticles, i, j, k, grid, bgc, clock, fields, auxiliary_fields)
+@inline function aggregation(poc::TwoCompartmentCarbonIronParticles, i, j, k, grid, bgc, clock, fields, auxiliary_fields)
     a₁, a₂, a₃, a₄ = poc.aggregation_parameters
 
-    backgroound_shear = bgc.background_shear
+    background_shear = bgc.background_shear
     mixed_layer_shear = bgc.mixed_layer_shear
 
     z = znode(i, j, k, grid, Center(), Center(), Center())
@@ -119,14 +119,14 @@ biogeochemical_drift_velocity(bgc::TwoCompartementPOCPISCES, ::LARGE_PARTICLE_CO
     POC = @inbounds fields.POC[i, j, k]
     GOC = @inbounds fields.GOC[i, j, k]
     
-    shear = ifelse(z < zₘₓₗ, backgroound_shear, mixed_layer_shear)
+    shear = ifelse(z < zₘₓₗ, background_shear, mixed_layer_shear)
 
     return shear * (a₁ * POC^2 + a₂ * POC * GOC) + a₃ * POC * GOC + a₄ * POC^2
 end
 
-@inline function specific_degredation_rate(poc::TwoCompartementCarbonIronParticles, i, j, k, grid, bgc, clock, fields, auxiliary_fields)
+@inline function specific_degradation_rate(poc::TwoCompartmentCarbonIronParticles, i, j, k, grid, bgc, clock, fields, auxiliary_fields)
     λ₀ = poc.base_breakdown_rate
-    b  = poc.temperature_sensetivity
+    b  = poc.temperature_sensitivity
 
     O₂ = @inbounds fields.O₂[i, j, k]
     T  = @inbounds  fields.T[i, j, k]

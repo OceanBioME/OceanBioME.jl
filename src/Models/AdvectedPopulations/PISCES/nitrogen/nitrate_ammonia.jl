@@ -3,7 +3,7 @@
 
 A parameterisation for the evolution of nitrate (`NO₃`) and ammonia (`NH₄`)
 where ammonia can be `nitrif`ied into nitrate, nitrate and ammonia are supplied
-by the bacterial degredation of dissolved organic matter, and consumed by 
+by the bacterial degradation of dissolved organic matter, and consumed by 
 phytoplankton. Additionally waste produces ammonia through various means.
 
 """
@@ -17,9 +17,9 @@ end
 
 required_biogeochemical_tracers(::NitrateAmmonia) = (:NO₃, :NH₄)
 
-const NitrateAmnmoniaPISCES = PISCES{<:Any, <:Any, <:Any, <:Any, <:NitrateAmmonia}
+const NitrateAmmoniaPISCES = PISCES{<:Any, <:Any, <:Any, <:Any, <:NitrateAmmonia}
 
-@inline function (bgc::NitrateAmnmoniaPISCES)(i, j, k, grid, val_name::Val{:NO₃}, clock, fields, auxiliary_fields)
+@inline function (bgc::NitrateAmmoniaPISCES)(i, j, k, grid, val_name::Val{:NO₃}, clock, fields, auxiliary_fields)
     θ = bgc.nitrogen_redfield_ratio
 
     nitrif = nitrification(bgc.nitrogen, i, j, k, grid, bgc, clock, fields, auxiliary_fields)
@@ -31,7 +31,7 @@ const NitrateAmnmoniaPISCES = PISCES{<:Any, <:Any, <:Any, <:Any, <:NitrateAmmoni
     return nitrif + θ * (remineralisation - consumption)
 end
 
-@inline function (bgc::NitrateAmnmoniaPISCES)(i, j, k, grid, val_name::Val{:NH₄}, clock, fields, auxiliary_fields)
+@inline function (bgc::NitrateAmmoniaPISCES)(i, j, k, grid, val_name::Val{:NH₄}, clock, fields, auxiliary_fields)
     θ = bgc.nitrogen_redfield_ratio
 
     nitrif = nitrification(bgc.nitrogen, i, j, k, grid, bgc, clock, fields, auxiliary_fields)
@@ -79,11 +79,11 @@ end
 
     μ = base_production_rate(bgc.phytoplankton, i, j, k, grid, bgc, clock, fields, auxiliary_fields)
 
-    growth_requirment = max(0, μ - 2.15)
+    growth_requirement = max(0, μ - 2.15)
 
     nutrient_limitation = min(Fe / (Fe +  K_Fe), PO₄ / (PO₄ + K_PO₄))
 
     light_limitation = 1 - exp(-PAR / E)
 
-    return Nₘ * growth_requirment * fixation_limit * nutrient_limitation * light_limitation
+    return Nₘ * growth_requirement * fixation_limit * nutrient_limitation * light_limitation
 end

@@ -1,4 +1,4 @@
-@inline function (bgc::TwoCompartementPOCPISCES)(i, j, k, grid, val_name::Val{:CaCO₃}, clock, fields, auxiliary_fields)
+@inline function (bgc::TwoCompartmentPOCPISCES)(i, j, k, grid, val_name::Val{:CaCO₃}, clock, fields, auxiliary_fields)
     phytoplankton_production = calcite_production(bgc.phytoplankton, i, j, k, grid, bgc, clock, fields, auxiliary_fields)
 
     dissolution = calcite_dissolution(bgc.particulate_organic_matter, i, j, k, grid, bgc, clock, fields, auxiliary_fields)
@@ -6,7 +6,7 @@
     return phytoplankton_production - dissolution
 end
 
-@inline function calcite_dissolution(poc::TwoCompartementCarbonIronParticles, i, j, k, grid, bgc, clock, fields, auxiliary_fields)
+@inline function calcite_dissolution(poc::TwoCompartmentCarbonIronParticles, i, j, k, grid, bgc, clock, fields, auxiliary_fields)
     λ   = poc.base_calcite_dissolution_rate
     nca = poc.calcite_dissolution_exponent
 
