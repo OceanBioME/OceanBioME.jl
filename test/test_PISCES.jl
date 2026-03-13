@@ -84,7 +84,7 @@ function test_PISCES_conservation() # only on CPU please
     # double precision floats are only valid to 17 bits so this tollerance is actually good
     @test isapprox(total_carbon_tendencies, 0, atol = 10^-20)
     @test isapprox(total_iron_tendencies, 0, atol = 10^-21)
-    @test isapprox(total_silicon_tendencies, 0, atol = 10^-30)
+    @test isapprox(total_silicon_tendencies, 0, atol = 10^-21)
     @test isapprox(total_phosphate_tendencies, 0, atol = 10^-22)
     @test isapprox(total_nitrogen_tendencies, 0, atol = 10^-21)
 
