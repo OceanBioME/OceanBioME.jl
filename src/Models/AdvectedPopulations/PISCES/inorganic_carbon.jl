@@ -6,7 +6,7 @@ using Oceananigans.Units
 
 using OceanBioME.Models.PISCESModel: PISCES
 
-using OceanBioME.Models.PISCESModel.DissolvedOrganicMatter: degredation
+using OceanBioME.Models.PISCESModel.DissolvedOrganicMatter: degradation
 
 using OceanBioME.Models.PISCESModel.ParticulateOrganicMatter: 
     calcite_production, calcite_dissolution
@@ -34,7 +34,7 @@ const PISCESCarbon = PISCES{<:Any, <:Any, <:Any, <:Any, <:Any, <:Any, <:Any, <:A
 
     upper_trophic = upper_trophic_respiration(bgc.zooplankton, i, j, k, grid, bgc, clock, fields, auxiliary_fields)
 
-    remineralisation = degredation(bgc.dissolved_organic_matter, i, j, k, grid, bgc, clock, fields, auxiliary_fields)
+    remineralisation = degradation(bgc.dissolved_organic_matter, i, j, k, grid, bgc, clock, fields, auxiliary_fields)
 
     calcite_diss = calcite_dissolution(bgc.particulate_organic_matter, i, j, k, grid, bgc, clock, fields, auxiliary_fields)
 
