@@ -20,7 +20,7 @@ When carbonate system is active:
 * Temperature: T (ᵒC)
 * Salinity: S (‰)
 """
-module LOBSTERModel
+module BiologyNutrientsDetritusModels
 
 export LOBSTER, 
        CarbonateSystem, 
@@ -44,9 +44,9 @@ import Oceananigans.Biogeochemistry: AbstractBiogeochemistry,
                                      
 
 # default to "standard" LOBSTER
-struct LOBSTER{NUT, BIO, DET, CAR, OXY} <: AbstractBiogeochemistry
-         nutrients :: NUT # NitrateAmmonia() or NitrateAmmoniaIron()
+struct BiologyNutrientsDetritus{BIO, NUT, DET, CAR, OXY} <: AbstractBiogeochemistry
            biology :: BIO # PhytoZoo() 
+         nutrients :: NUT # NitrateAmmonia() or NitrateAmmoniaIron()
           detritus :: DET # TwoParticleAndDissolved() or VariableRedfieldDetritus()
   carbonate_system :: CAR # nothing or CarbonateSystem()
             oxygen :: OXY # nothing or Oxygen()
@@ -136,10 +136,10 @@ function LOBSTER(; grid,
                    particles = nothing,
                    modifiers = nothing)
 
-    lobster = LOBSTER(nutrients, biology, detritus, carbonate_system, oxygen)
+    bnd = BiologyNutrientsDetritus(nutrients, biology, detritus, carbonate_system, oxygen)
 
     if scale_negatives
-        scaler = ScaleNegativeTracers(lobster, grid; invalid_fill_value)
+        scaler = ScaleNegativeTracers(bnd, grid; invalid_fill_value)
         if isnothing(modifiers)
             modifiers = scaler
         elseif modifiers isa Tuple
@@ -149,7 +149,7 @@ function LOBSTER(; grid,
         end
     end
     
-    return Biogeochemistry(lobster;
+    return Biogeochemistry(bnd;
                            light_attenuation, 
                            sediment, 
                            particles,
@@ -157,19 +157,19 @@ function LOBSTER(; grid,
 end
 
 # The possible tracer combinations are:
-required_biogeochemical_tracers(lobster::LOBSTER) = 
-    (required_biogeochemical_tracers(lobster.nutrients)...,
-     required_biogeochemical_tracers(lobster.biology)...,
-     required_biogeochemical_tracers(lobster.detritus)...,
-     required_biogeochemical_tracers(lobster.carbonate_system)...,
-     required_biogeochemical_tracers(lobster.oxygen)...)
+required_biogeochemical_tracers(bnd::BiologyNutrientsDetritus) = 
+    (required_biogeochemical_tracers(bnd.nutrients)...,
+     required_biogeochemical_tracers(bnd.biology)...,
+     required_biogeochemical_tracers(bnd.detritus)...,
+     required_biogeochemical_tracers(bnd.carbonate_system)...,
+     required_biogeochemical_tracers(bnd.oxygen)...)
 
 required_biogeochemical_tracers(::Nothing) = ()
 
-required_biogeochemical_auxiliary_fields(::LOBSTER) = (:PAR, )
+required_biogeochemical_auxiliary_fields(::BiologyNutrientsDetritus) = (:PAR, )
 
 # fallback
-@inline (::LOBSTER)(i, j, k, grid, val_name, clock, fields, auxiliary_fields) = zero(grid)
+@inline (::BiologyNutrientsDetritus)(i, j, k, grid, val_name, clock, fields, auxiliary_fields) = zero(grid)
 
 include("nutrients.jl")
 include("detritus.jl")

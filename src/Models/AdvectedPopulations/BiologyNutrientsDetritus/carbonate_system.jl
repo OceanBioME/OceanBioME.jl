@@ -1,7 +1,7 @@
 """
     CarbonateSystem
 
-`CarbonateSystem` defines the carbonate system for the `LOBSTER` biogeochemical
+`CarbonateSystem` defines the carbonate system for the `BiologyNutrientsDetritus` biogeochemical
 model and evolves dissolved inorganic carbon (`DIC`) and alkalinity (`Alk`).
 `DIC` is the total inorganic carbon, typically considered to be dissolved 
 carbon dioxide, carbonic acid, bicarbonate, and carbonate. `Alk`alinity is 
@@ -31,19 +31,19 @@ struct CarbonateSystem end
 
 required_biogeochemical_tracers(::CarbonateSystem) = (:DIC, :Alk)
 
-@inline (lobster::LOBSTER{<:Any, <:Any, <:Any, <:CarbonateSystem})(i, j, k, grid, ::Val{:DIC}, clock, fields, auxiliary_fields) = (
-  - phytoplankton_primary_production(lobster, i, j, k, fields, auxiliary_fields)
-  + biology_inorganic_carbon_waste(lobster, i, j, k, fields, auxiliary_fields)
-  + detritus_inorganic_carbon_waste(lobster, i, j, k, fields, auxiliary_fields)
-  + calcite_dissolution(lobster, i, j, k, fields, auxiliary_fields)
+@inline (bnd::BiologyNutrientsDetritus{<:Any, <:Any, <:Any, <:CarbonateSystem})(i, j, k, grid, ::Val{:DIC}, clock, fields, auxiliary_fields) = (
+  - phytoplankton_primary_production(bnd, i, j, k, fields, auxiliary_fields)
+  + biology_inorganic_carbon_waste(bnd, i, j, k, fields, auxiliary_fields)
+  + detritus_inorganic_carbon_waste(bnd, i, j, k, fields, auxiliary_fields)
+  + calcite_dissolution(bnd, i, j, k, fields, auxiliary_fields)
 )
 
-@inline (lobster::LOBSTER{<:Any, <:Any, <:Any, <:CarbonateSystem})(i, j, k, grid, ::Val{:Alk}, clock, fields, auxiliary_fields) = (
-    nutrient_uptake(lobster, i, j, k, Val(:NO₃), fields, auxiliary_fields)
-  - calcite_uptake(lobster, i, j, k, fields, auxiliary_fields)
+@inline (bnd::BiologyNutrientsDetritus{<:Any, <:Any, <:Any, <:CarbonateSystem})(i, j, k, grid, ::Val{:Alk}, clock, fields, auxiliary_fields) = (
+    nutrient_uptake(bnd, i, j, k, Val(:NO₃), fields, auxiliary_fields)
+  - calcite_uptake(bnd, i, j, k, fields, auxiliary_fields)
 )
 
-@inline (lobster::LOBSTER{<:Nutrient, <:Any, <:Any, <:CarbonateSystem})(i, j, k, grid, ::Val{:Alk}, clock, fields, auxiliary_fields) = (
-    nutrient_uptake(lobster, i, j, k, Val(:N), fields, auxiliary_fields)
-  - calcite_uptake(lobster, i, j, k, fields, auxiliary_fields)
+@inline (bnd::BiologyNutrientsDetritus{<:Nutrient, <:Any, <:Any, <:CarbonateSystem})(i, j, k, grid, ::Val{:Alk}, clock, fields, auxiliary_fields) = (
+    nutrient_uptake(bnd, i, j, k, Val(:N), fields, auxiliary_fields)
+  - calcite_uptake(bnd, i, j, k, fields, auxiliary_fields)
 )

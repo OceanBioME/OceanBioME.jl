@@ -1,27 +1,27 @@
 import Base: show, summary
 
 ##### LOBSTER
-summary(lobster::LOBSTER) = string("LOBSTER model $(required_biogeochemical_tracers(lobster))")
-function show(io::IO, lobster::LOBSTER)
+summary(bnd::BiologyNutrientsDetritus) = string("LOBSTER model $(required_biogeochemical_tracers(bnd))")
+function show(io::IO, bnd::BiologyNutrientsDetritus)
     msg = "LOBSTER model\n"
-    msg *= "├── Biology: $(summary(lobster.biology))\n"
-    msg *= "├── Nutrients: $(summary(lobster.nutrients))\n"
+    msg *= "├── Biology: $(summary(bnd.biology))\n"
+    msg *= "├── Nutrients: $(summary(bnd.nutrients))\n"
 
-    if isnothing(lobster.carbonate_system) & isnothing(lobster.oxygen)
+    if isnothing(bnd.carbonate_system) & isnothing(bnd.oxygen)
         msg *= "└── "
     else
         msg *= "├── "
     end
 
-    msg *= "Detritus: $(summary(lobster.detritus))\n"
+    msg *= "Detritus: $(summary(bnd.detritus))\n"
 
-    if isnothing(lobster.carbonate_system) & !isnothing(lobster.oxygen)
-        msg *= "└── Oxygen: $(summary(lobster.oxygen))"
-    elseif isnothing(lobster.oxygen) & !isnothing(lobster.carbonate_system)
-        msg *= "└── Carbonate system: $(summary(lobster.carbonate_system))"
-    elseif !isnothing(lobster.carbonate_system) & !isnothing(lobster.oxygen)
-        msg *= "├── Carbonate system: $(summary(lobster.carbonate_system))\n"
-        msg *= "└── Oxygen: $(summary(lobster.oxygen))"
+    if isnothing(bnd.carbonate_system) & !isnothing(bnd.oxygen)
+        msg *= "└── Oxygen: $(summary(bnd.oxygen))"
+    elseif isnothing(bnd.oxygen) & !isnothing(bnd.carbonate_system)
+        msg *= "└── Carbonate system: $(summary(bnd.carbonate_system))"
+    elseif !isnothing(bnd.carbonate_system) & !isnothing(bnd.oxygen)
+        msg *= "├── Carbonate system: $(summary(bnd.carbonate_system))\n"
+        msg *= "└── Oxygen: $(summary(bnd.oxygen))"
     end
 
     print(io, string(msg))
