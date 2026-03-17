@@ -29,3 +29,15 @@ required_biogeochemical_tracers(::Oxygen) = (:O₂, )
 
     return Rp * μP - (Rp - Rn) * nitrate_production - Rp * μNH₄
 end
+
+@inline function (lobster::LOBSTER{<:Any, <:Nutrient, <:Any, <:Any, <:Oxygen})(i, j, k, grid, val_name::Val{:O₂}, clock, fields, auxiliary_fields)
+    Rp = lobster.oxygen.respiration_oxygen_nitrogen_ratio
+    Rn = lobster.oxygen.nitrification_oxygen_nitrogen_ratio
+
+    μP = phytoplankton_growth(lobster, i, j, k, fields, auxiliary_fields)
+
+    respiration = biology_inorganic_nitrogen_waste(lobster, i, j, k, fields, auxiliary_fields)
+                  + detritus_inorganic_nitrogen_waste(lobster, i, j, k, fields, auxiliary_fields)
+
+    return Rp * μP - (Rp - Rn) * respiration
+end

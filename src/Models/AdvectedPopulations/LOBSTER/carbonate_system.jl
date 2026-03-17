@@ -42,3 +42,8 @@ required_biogeochemical_tracers(::CarbonateSystem) = (:DIC, :Alk)
     nutrient_uptake(lobster, i, j, k, Val(:NO₃), fields, auxiliary_fields)
   - calcite_uptake(lobster, i, j, k, fields, auxiliary_fields)
 )
+
+@inline (lobster::LOBSTER{<:Nutrient, <:Any, <:Any, <:CarbonateSystem})(i, j, k, grid, ::Val{:Alk}, clock, fields, auxiliary_fields) = (
+    nutrient_uptake(lobster, i, j, k, Val(:N), fields, auxiliary_fields)
+  - calcite_uptake(lobster, i, j, k, fields, auxiliary_fields)
+)
