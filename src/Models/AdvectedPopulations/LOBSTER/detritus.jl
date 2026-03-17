@@ -24,7 +24,7 @@ an alternative.
 """ 
 @kwdef struct TwoParticleAndDissolved{FT, SS, LS}
     remineralisation_inorganic_fraction :: FT = 0.0     # 
-            small_reminerlisation_rate :: FT = 5.88e-7 # 1/s
+             small_reminerlisation_rate :: FT = 5.88e-7 # 1/s
              large_reminerlisation_rate :: FT = 5.88e-7 # 1/s
          dissolved_reminerlisation_rate :: FT = 3.86e-7 # 1/s
 
@@ -274,9 +274,9 @@ function Detritus(grid;
                   open_bottom = true,
                   kwargs...)
 
-    sinking_velocity = setup_velocity_fields((; D = sinking_speed), grid, open_bottom; three_D = true).D
+    sinking_speeds = setup_velocity_fields((; D = sinking_speed), grid, open_bottom; three_D = true).D
 
-    return VariableRedfieldDetritus(; sinking_speeds, kwargs...)
+    return Detritus(; sinking_speeds, kwargs...)
 end
 
 @inline (lobster::LOBSTER{<:Any, <:Any, <:Detritus})(i, j, k, grid, val_name::Val{:D}, clock, fields, auxiliary_fields) =

@@ -20,122 +20,113 @@ function ΣC(model, carbonates, biogeochemistry)
     return sum([sum(model.tracers[tracer_name]) * conserved_tracer_scalefactors[n] for (n, tracer_name) in enumerate(conserved_tracer_names)])
 end
 
-ΣGⁿ(model, biogeochemistry) = sum([sum(model.timestepper.Gⁿ[tracer_name]) for tracer_name in conserved_tracers(biogeochemistry, true).nitrogen])
-
-function ΣGᶜ(model, biogeochemistry)
-    conserved = conserved_tracers(biogeochemistry, true)
-
-    if !(:carbon in keys(conserved))
-        return NaN
-    end
-
-    conserved_tracer_names = conserved.carbon.tracers
-    conserved_tracer_scalefactors = conserved.carbon.scalefactors
-
-    return sum([sum(model.timestepper.Gⁿ[tracer_name]) * conserved_tracer_scalefactors[n] for (n, tracer_name) in enumerate(conserved_tracer_names)])
-end
-
-function test_LOBSTER(grid, nutrients, carbonate_system, oxygen, detritus, sinking, open_bottom, n_timesteps)
-    model = NonhydrostaticModel(grid;
-                                biogeochemistry = LOBSTER(; grid, nutrients, carbonate_system, oxygen, detritus))
-
-    # correct tracers and auxiliary fields have been setup, and order has not changed
-    required_tracers = (:NO₃, :NH₄, :P, :Z)
-    if nutrients isa NitrateAmmoniaIron
-        required_tracers = (required_tracers..., :Fe)
-    end
-    if !isnothing(carbonate_system)
-        required_tracers = (required_tracers..., :DIC, :Alk)
-    end
-    if !isnothing(oxygen)
-        required_tracers = (required_tracers..., :O₂)
-    end
-    if detritus isa VariableRedfieldDetritus
-        required_tracers = (required_tracers..., :sPON, :bPON, :DON, :sPOC, :bPOC, :DOC)
-    else
-        required_tracers = (required_tracers..., :sPOM, :bPOM, :DOM)
-    end
-
-    @test all(tracer ∈ Oceananigans.Biogeochemistry.required_biogeochemical_tracers(model.biogeochemistry) for tracer in required_tracers)
-    @test all(tracer ∈ keys(model.tracers) for tracer in required_tracers)
-
-    # checks model works with zero values
-    time_step!(model, 1.0)
-
-    # mass conservation
-    CUDA.@allowscalar begin
-        # and that they all return zero
-        @test all([all(values .== 0) for values in values(model.tracers)])
-
-        model.tracers.NO₃ .= 10 * rand()
-        model.tracers.NH₄ .= rand()
-        model.tracers.P .= rand()
-        model.tracers.Z .= rand()
-        if detritus isa VariableRedfieldDetritus
-            model.tracers.sPON .= rand()
-            model.tracers.bPON .= rand()
-            model.tracers.DON .= rand()
-
-            model.tracers.sPOC .= model.tracers.sPON * 6.56
-            model.tracers.bPOC .= model.tracers.bPON * 6.56
-            model.tracers.DOC .= model.tracers.DON * 6.56
-        else
-            model.tracers.sPOM .= rand()
-            model.tracers.bPOM .= rand()
-            model.tracers.DOM .= rand()
-        end
-
-        if !isnothing(carbonate_system)
-            model.tracers.DIC .= 2000 * rand()
-            model.tracers.Alk .= 2000 * rand()
-        end
-    end
-
-    ΣN₀ = CUDA.@allowscalar ΣN(model, model.biogeochemistry)
-
-    ΣC₀ = CUDA.@allowscalar ΣC(model, carbonate_system, model.biogeochemistry)
-
-    for _ in 1:n_timesteps
-        time_step!(model, 1.0)
-    end
-
-    ΣN₁ = CUDA.@allowscalar ΣN(model, model.biogeochemistry)
-
-    CUDA.@allowscalar if !(sinking && open_bottom) #when we have open bottom sinking we won't conserve anything
-        @test ΣN₀ ≈ ΣN₁
-        @test ΣGⁿ(model, model.biogeochemistry) ≈ 0.0 atol = 1e-15 # rtol=sqrt(eps) so is usually much larger than even this
-
-        if !isnothing(carbonate_system)
-            ΣC₁ = ΣC(model, carbonate_system, model.biogeochemistry)
-            @test ΣC₀ ≈ ΣC₁
-            @test ΣGᶜ(model, model.biogeochemistry.underlying_biogeochemistry) ≈ 0.0 atol = 1e-15
-        end
-    end
-    return model
-end
-
 n_timesteps = 100
 
 grid = RectilinearGrid(architecture; size=(1, 1, 1), extent=(1, 1, 2))
 
-for open_bottom = (false, true),
-    sinking = (false, true),
-    detritus = (TwoParticleAndDissolved, VariableRedfieldDetritus),
+instantiate_detritus(::Val{detritus}, grid, sinking) where detritus = 
+    detritus(grid;
+             small_particle_sinking_speed = sinking ? 3.47e-5 : 0.0,
+             large_particle_sinking_speed = sinking ? 200/day : 0.0)
+
+instantiate_detritus(::Val{Detritus}, grid, sinking) = 
+    Detritus(grid;
+             sinking_speed = sinking ? 0.1213 / day : 0.0)
+
+test_models = []
+
+# construct the possible configurations
+for sinking = (false, true),
+    detritus = (TwoParticleAndDissolved, VariableRedfieldDetritus, Detritus),
     oxygen = (nothing, Oxygen()),
     carbonate_system = (nothing, CarbonateSystem()),
-    nutrients = (NitrateAmmonia(), NitrateAmmoniaIron())
+    nutrients = (NitrateAmmonia(), NitrateAmmoniaIron(), Nutrient())
 
-    detritus = detritus(grid;
-                        small_particle_sinking_speed = sinking ? 3.47e-5 : 0.0,
-                        large_particle_sinking_speed = sinking ? 200/day : 0.0,
-                        open_bottom)
+    detritus = instantiate_detritus(Val(detritus), grid, sinking)
 
-    if !(sinking && open_bottom) # no sinking is the same with and without open bottom
-        @testset "LOBSTER ($(nameof(typeof(nutrients)))/$(nameof(typeof(carbonate_system)))/$(nameof(typeof(oxygen)))/$(nameof(typeof(detritus)))/$sinking/$open_bottom" begin
-            test_LOBSTER(grid, nutrients, carbonate_system, oxygen, detritus, sinking, open_bottom, n_timesteps)
-        end
+    model = NonhydrostaticModel(grid;
+                                biogeochemistry = LOBSTER(; grid, nutrients, carbonate_system, oxygen, detritus))
+
+    required_tracers = (:P, :Z)
+    initial_values = (rand(), rand())
+
+    if nutrients isa NitrateAmmonia
+        required_tracers = (required_tracers..., :NO₃, :NH₄)
+        initial_values = (initial_values..., 10*rand(), rand())
+    elseif nutrients isa NitrateAmmoniaIron
+        required_tracers = (required_tracers..., :NO₃, :NH₄, :Fe)
+        initial_values = (initial_values..., 10*rand(), rand(), 1e-3*rand())
+    elseif nutrients isa Nutrient
+        required_tracers = (required_tracers..., :N)
+        initial_values = (initial_values..., 10*rand())
     end
+
+    if !isnothing(carbonate_system)
+        required_tracers = (required_tracers..., :DIC, :Alk)
+        initial_values = (initial_values..., 2000*rand(), 2000*rand())
+    end
+
+    if !isnothing(oxygen)
+        required_tracers = (required_tracers..., :O₂)
+        initial_values = (initial_values..., 300*rand())
+    end
+
+    if detritus isa VariableRedfieldDetritus
+        required_tracers = (required_tracers..., :sPON, :bPON, :DON, :sPOC, :bPOC, :DOC)
+        sPON, bPON, DON = rand(), rand(), rand()
+        initial_values = (initial_values..., sPON, bPON, DON, 6.56*sPON, 6.56*bPON, 6.56*DON)
+    elseif detritus isa TwoParticleAndDissolved
+        required_tracers = (required_tracers..., :sPOM, :bPOM, :DOM)
+        initial_values = (initial_values..., rand(), rand(), rand())
+    else
+        required_tracers = (required_tracers..., :D)
+        initial_values = (initial_values..., rand())
+    end
+
+     @info "Constructed $(keys(model.tracers))"
+
+    push!(test_models, (; required_tracers, initial_values, model, sinking))
 end
+
+# since compile time dominates tests we can test different conservations separatly
+# at little extra cost because once its been stepped its ~instantanous to step again
+
+@testset "LOBSTER setup and dry step" (for (required_tracers, initial_values, model, sinking) in test_models
+    tracers_are_correct = all(tracer ∈ Oceananigans.Biogeochemistry.required_biogeochemical_tracers(model.biogeochemistry) for tracer in required_tracers)
+    tracers_are_materialised =  all(tracer ∈ keys(model.tracers) for tracer in required_tracers)
+
+    time_step!(model, 1.0) # long wait for compile here...
+
+    # CUDA.@allowscalar maybe
+    everything_stayed_zero = all([all(values .== 0) for values in values(model.tracers)])
+
+    @test tracers_are_correct & tracers_are_materialised & everything_stayed_zero
+    @info "Stepped $(keys(model.tracers))"
+end; )
+
+@testset "LOBSTER nitrogen conservation" (for (required_tracers, initial_values, model, sinking) in test_models
+    if !sinking
+        set!(model, NamedTuple{required_tracers}(initial_values))
+        ΣN₀ = CUDA.@allowscalar ΣN(model, model.biogeochemistry)
+        for _ in 1:n_timesteps
+            time_step!(model, 1.0)
+        end
+        ΣN₁ = CUDA.@allowscalar ΣN(model, model.biogeochemistry)
+        @test ΣN₀ ≈ ΣN₁
+    end
+end; )
+
+@testset "LOBSTER carbon conservation" (for (required_tracers, initial_values, model, sinking) in test_models
+    if !isnothing(model.biogeochemistry.underlying_biogeochemistry.carbonate_system)
+        set!(model, NamedTuple{required_tracers}(initial_values))
+        ΣC₀ = CUDA.@allowscalar ΣC(model, carbonate_system, model.biogeochemistry)
+        for _ in 1:n_timesteps
+            time_step!(model, 1.0)
+        end
+        ΣC₁ = ΣC(model, carbonate_system, model.biogeochemistry)
+        @test ΣC₀ ≈ ΣC₁
+    end
+end; )
 
 @testset "Float32 LOBSTER" begin
     grid = RectilinearGrid(architecture, Float32; size=(3, 3, 10), extent=(10, 10, 200))

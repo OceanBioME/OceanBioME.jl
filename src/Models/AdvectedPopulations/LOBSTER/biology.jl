@@ -136,6 +136,7 @@ end
     return nitrogen_limitation(lobster, i, j, k, fields, auxiliary_fields) * iron_limitation
 end
 
+
 @inline function nutrient_limitation(lobster::LOBSTER{<:Nutrient}, i, j, k, fields, auxiliary_fields)
     kNO₃ = lobster.biology.nitrate_half_saturation
 
@@ -145,25 +146,6 @@ end
 
     return N / (N + kNO₃)
 end
-
-@inline function nitrogen_limitation(lobster::PHYTO_ZOO_LOBSTER, i, j, k, fields, auxiliary_fields)
-    kNO₃ = lobster.biology.nitrate_half_saturation
-    kNH₄ = lobster.biology.ammonia_half_saturation
-    ψ = lobster.biology.nitrate_ammonia_inhibition
-
-    @inbounds begin
-        NO₃ = fields.NO₃[i, j, k]
-        NH₄ = fields.NH₄[i, j, k]
-    end
-
-    nitrate_limitation = NO₃ * exp(-ψ * NH₄) / (NO₃ + kNO₃)
-    ammonia_limitation = max(0, NH₄ / (kNH₄ + NH₄))
-
-    # factor of 1/2 so that the limitation varies between 0 and 1
-    # correspondingly μ₀ is doubled
-    return (nitrate_limitation + ammonia_limitation) / 2
-end
-
 
 ##### total phytoplankton growth
 @inline function phytoplankton_growth(lobster::PHYTO_ZOO_LOBSTER, i, j, k, fields, auxiliary_fields)
@@ -241,8 +223,14 @@ end
     return R * μ
 end
 
-@inline nutrient_uptake(lobster::PHYTO_ZOO_LOBSTER, i, j, k, val_name::Val{:N}, fields, auxiliary_fields) =
-    phytoplankton_growth(lobster, i, j, k, fields, auxiliary_fields)
+@inline function nutrient_uptake(lobster::PHYTO_ZOO_LOBSTER, i, j, k, val_name::Val{:N}, fields, auxiliary_fields)
+    α = lobster.biology.ammonia_fraction_of_exudate
+    γ = lobster.biology.phytoplankton_exudation_fraction
+    
+    μ = phytoplankton_growth(lobster, i, j, k, fields, auxiliary_fields)
+
+    return μ * (1 - α * γ)
+end
 
 @inline function phytoplankton_primary_production(lobster::PHYTO_ZOO_LOBSTER, i, j, k, fields, auxiliary_fields)
     α = lobster.biology.ammonia_fraction_of_exudate
