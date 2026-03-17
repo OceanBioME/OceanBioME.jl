@@ -4,7 +4,7 @@ export Phosphate
 
 using OceanBioME.Models.PISCESModel: PISCES
 
-using OceanBioME.Models.PISCESModel.DissolvedOrganicMatter: degredation
+using OceanBioME.Models.PISCESModel.DissolvedOrganicMatter: degradation
 
 using OceanBioME.Models.PISCESModel.Phytoplankton: total_production
 
@@ -27,7 +27,7 @@ const PISCESPhosphate = PISCES{<:Any, <:Any, <:Any, <:Any, <:Any, <:Any, <:Any, 
 
     respiration_product = upper_trophic_respiration(bgc.zooplankton, i, j, k, grid, bgc, clock, fields, auxiliary_fields)
 
-    remineralisation = degredation(bgc.dissolved_organic_matter, i, j, k, grid, bgc, clock, fields, auxiliary_fields)
+    remineralisation = degradation(bgc.dissolved_organic_matter, i, j, k, grid, bgc, clock, fields, auxiliary_fields)
 
     return θ * (grazing_waste + respiration_product + remineralisation - phytoplankton_uptake)
 end

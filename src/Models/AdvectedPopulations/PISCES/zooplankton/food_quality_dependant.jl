@@ -9,13 +9,13 @@ particulates (POC and GOC).
 This model assumes a fixed ratio for all other elements (i.e. N, P, Fe).
 """
 struct QualityDependantZooplankton{FT, FP}
-                   temperature_sensetivity :: FT #
+                   temperature_sensitivity :: FT #
                       maximum_grazing_rate :: FT # 1 / s
 
                           food_preferences :: FP 
 
               food_threshold_concentration :: FT # mmol C / m³
-    specific_food_thresehold_concentration :: FT # mmol C / m³
+    specific_food_threshold_concentration :: FT # mmol C / m³
 
                    grazing_half_saturation :: FT # mmol C / m³
 
@@ -24,7 +24,7 @@ struct QualityDependantZooplankton{FT, FP}
                                 iron_ratio :: FT # μmol Fe / mmol C
 
                  minimum_growth_efficiency :: FT #
-                  non_assililated_fraction :: FT #
+                  non_assimilated_fraction :: FT #
 
                  mortality_half_saturation :: FT # mmol C / m³
                        quadratic_mortality :: FT # 1 / (mmol C / m³) / s
@@ -34,31 +34,31 @@ struct QualityDependantZooplankton{FT, FP}
               dissolved_excretion_fraction :: FT #
               undissolved_calcite_fraction :: FT #
 
-    QualityDependantZooplankton{FT, FP}(temperature_sensetivity, 
+    QualityDependantZooplankton{FT, FP}(temperature_sensitivity, 
                                         maximum_grazing_rate,
                                         food_preferences,
                                         food_threshold_concentration, 
-                                        specific_food_thresehold_concentration,
+                                        specific_food_threshold_concentration,
                                         grazing_half_saturation, 
                                         maximum_flux_feeding_rate,
                                         iron_ratio,
                                         minimum_growth_efficiency, 
-                                        non_assililated_fraction,
+                                        non_assimilated_fraction,
                                         mortality_half_saturation, 
                                         quadratic_mortality, 
                                         linear_mortality,
                                         dissolved_excretion_fraction, 
                                         undissolved_calcite_fraction) where {FT, FP} = 
-        new{FT, FP}(temperature_sensetivity, 
+        new{FT, FP}(temperature_sensitivity, 
                     maximum_grazing_rate,
                     food_preferences,
                     food_threshold_concentration, 
-                    specific_food_thresehold_concentration,
+                    specific_food_threshold_concentration,
                     grazing_half_saturation, 
                     maximum_flux_feeding_rate,
                     iron_ratio,
                     minimum_growth_efficiency, 
-                    non_assililated_fraction,
+                    non_assimilated_fraction,
                     mortality_half_saturation, 
                     quadratic_mortality, 
                     linear_mortality,
@@ -66,13 +66,13 @@ struct QualityDependantZooplankton{FT, FP}
                     undissolved_calcite_fraction)
 
     function QualityDependantZooplankton(FT = Float64;
-                                         temperature_sensetivity = 1.079, #
+                                         temperature_sensitivity = 1.079, #
                                          maximum_grazing_rate, # 1 / s
 
                                          food_preferences, 
 
                                          food_threshold_concentration = 0.3, # mmol C / m³
-                                         specific_food_thresehold_concentration = 0.001, # mmol C / m³
+                                         specific_food_threshold_concentration = 0.001, # mmol C / m³
 
                                          grazing_half_saturation = 20.0, # mmol C / m³
 
@@ -81,7 +81,7 @@ struct QualityDependantZooplankton{FT, FP}
                                          iron_ratio, # μmol Fe / mmol C
 
                                          minimum_growth_efficiency, #
-                                         non_assililated_fraction = 0.3, #
+                                         non_assimilated_fraction = 0.3, #
 
                                          mortality_half_saturation = 0.2, # mmol C / m³
                                          quadratic_mortality, # 1 / (mmol C / m³) / s
@@ -95,12 +95,12 @@ struct QualityDependantZooplankton{FT, FP}
 
         FP = typeof(food_preferences)
 
-        return new{FT, FP}(temperature_sensetivity, maximum_grazing_rate,
+        return new{FT, FP}(temperature_sensitivity, maximum_grazing_rate,
                            food_preferences,
-                           food_threshold_concentration, specific_food_thresehold_concentration,
+                           food_threshold_concentration, specific_food_threshold_concentration,
                            grazing_half_saturation, maximum_flux_feeding_rate,
                            iron_ratio, 
-                           minimum_growth_efficiency, non_assililated_fraction,
+                           minimum_growth_efficiency, non_assimilated_fraction,
                            mortality_half_saturation, quadratic_mortality, linear_mortality,
                            dissolved_excretion_fraction, undissolved_calcite_fraction)
     end
@@ -126,10 +126,10 @@ end
 @inline function grazing(zoo::QualityDependantZooplankton, val_name, i, j, k, grid, bgc, clock, fields, auxiliary_fields)
     # food quantity
     g₀   = zoo.maximum_grazing_rate
-    b    = zoo.temperature_sensetivity
+    b    = zoo.temperature_sensitivity
     p    = zoo.food_preferences
     food = prey_names(bgc, val_name)
-    J    = zoo.specific_food_thresehold_concentration
+    J    = zoo.specific_food_threshold_concentration
     K    = zoo.grazing_half_saturation
     food_threshold_concentration = zoo.food_threshold_concentration
 
@@ -153,11 +153,11 @@ end
     # food quality
     θFe = zoo.iron_ratio
     e₀  = zoo.minimum_growth_efficiency
-    σ   = zoo.non_assililated_fraction
+    σ   = zoo.non_assimilated_fraction
 
-    iron_availabillity = extract_iron_availability(bgc, i, j, k, fields, food)
+    iron_availability = extract_iron_availability(bgc, i, j, k, fields, food)
 
-    total_iron = sum(ntuple(n->iron_availabillity[n] * p[n], Val(N)))
+    total_iron = sum(ntuple(n->iron_availability[n] * p[n], Val(N)))
 
     iron_grazing_ratio = total_iron / (θFe * total_specific_grazing + eps(0.0))
 
@@ -170,7 +170,7 @@ end
 
 @inline function flux_feeding(zoo::QualityDependantZooplankton, val_name, i, j, k, grid, bgc, clock, fields, auxiliary_fields)
     g₀ =  zoo.maximum_flux_feeding_rate
-    b  = zoo.temperature_sensetivity
+    b  = zoo.temperature_sensitivity
 
     I = zooplankton_concentration(val_name, i, j, k, fields)
 
@@ -186,7 +186,7 @@ end
 end
 
 @inline function mortality(zoo::QualityDependantZooplankton, val_name, i, j, k, grid, bgc, clock, fields, auxiliary_fields)
-    b  = zoo.temperature_sensetivity
+    b  = zoo.temperature_sensitivity
     m₀ = zoo.quadratic_mortality
     Kₘ = zoo.mortality_half_saturation
     r  = zoo.linear_mortality
@@ -204,7 +204,7 @@ end
 end
 
 @inline function linear_mortality(zoo::QualityDependantZooplankton, val_name, i, j, k, grid, bgc, clock, fields, auxiliary_fields)
-    b  = zoo.temperature_sensetivity
+    b  = zoo.temperature_sensitivity
     Kₘ = zoo.mortality_half_saturation
     r  = zoo.linear_mortality
     
@@ -220,15 +220,15 @@ end
 end
 
 #####
-##### Effect on other compartements
+##### Effect on other compartments
 #####
 
 @inline function grazing(zoo::QualityDependantZooplankton, val_name, val_prey_name, i, j, k, grid, bgc, clock, fields, auxiliary_fields)
     g₀   = zoo.maximum_grazing_rate
-    b    = zoo.temperature_sensetivity
+    b    = zoo.temperature_sensitivity
     p    = zoo.food_preferences
     food = prey_names(bgc, val_name)
-    J    = zoo.specific_food_thresehold_concentration
+    J    = zoo.specific_food_threshold_concentration
     K    = zoo.grazing_half_saturation
     food_threshold_concentration = zoo.food_threshold_concentration
 
@@ -256,7 +256,7 @@ end
 
 @inline function flux_feeding(zoo::QualityDependantZooplankton, val_name, val_prey_name, i, j, k, grid, bgc, clock, fields, auxiliary_fields)
     g₀ =  zoo.maximum_flux_feeding_rate
-    b  = zoo.temperature_sensetivity
+    b  = zoo.temperature_sensitivity
 
     I = zooplankton_concentration(val_name, i, j, k, fields)
 

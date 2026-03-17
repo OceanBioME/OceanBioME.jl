@@ -2,10 +2,10 @@
 @inline function iron_grazing(zoo::QualityDependantZooplankton, val_name, i, j, k, grid, bgc, clock, fields, auxiliary_fields)
     # food quantity
     g₀   = zoo.maximum_grazing_rate
-    b    = zoo.temperature_sensetivity
+    b    = zoo.temperature_sensitivity
     p    = zoo.food_preferences
     food = prey_names(bgc, val_name)
-    J    = zoo.specific_food_thresehold_concentration
+    J    = zoo.specific_food_threshold_concentration
     K    = zoo.grazing_half_saturation
     food_threshold_concentration = zoo.food_threshold_concentration
 
@@ -36,7 +36,7 @@ end
 
 @inline function iron_flux_feeding(zoo::QualityDependantZooplankton, val_name, i, j, k, grid, bgc, clock, fields, auxiliary_fields)
     g₀ = zoo.maximum_flux_feeding_rate
-    b  = zoo.temperature_sensetivity
+    b  = zoo.temperature_sensitivity
 
     I = zooplankton_concentration(val_name, i, j, k, fields)
 

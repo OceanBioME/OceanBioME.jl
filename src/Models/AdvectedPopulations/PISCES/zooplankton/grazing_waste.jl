@@ -1,7 +1,7 @@
 include("iron_grazing.jl")
 
 @inline function non_assimilated_waste(zoo::QualityDependantZooplankton, val_name, i, j, k, grid, bgc, clock, fields, auxiliary_fields)
-    σ = zoo.non_assililated_fraction
+    σ = zoo.non_assimilated_fraction
 
     gI, = grazing(zoo, val_name, i, j, k, grid, bgc, clock, fields, auxiliary_fields) 
 
@@ -11,7 +11,7 @@ include("iron_grazing.jl")
 end
 
 @inline function excretion(zoo::QualityDependantZooplankton, val_name, i, j, k, grid, bgc, clock, fields, auxiliary_fields)
-    σ = zoo.non_assililated_fraction
+    σ = zoo.non_assimilated_fraction
 
     gI, e = grazing(zoo, val_name, i, j, k, grid, bgc, clock, fields, auxiliary_fields) 
 
@@ -33,7 +33,7 @@ end
 end
 
 @inline function non_assimilated_iron_waste(zoo::QualityDependantZooplankton, val_name, i, j, k, grid, bgc, clock, fields, auxiliary_fields)
-    σ = zoo.non_assililated_fraction
+    σ = zoo.non_assimilated_fraction
 
     gI = iron_grazing(zoo, val_name, i, j, k, grid, bgc, clock, fields, auxiliary_fields) 
 
@@ -44,7 +44,7 @@ end
 
 @inline function non_assimilated_iron(zoo::QualityDependantZooplankton, val_name, i, j, k, grid, bgc, clock, fields, auxiliary_fields)
     θ = zoo.iron_ratio
-    σ = zoo.non_assililated_fraction
+    σ = zoo.non_assimilated_fraction
 
     gI, growth_efficiency = grazing(zoo, val_name, i, j, k, grid, bgc, clock, fields, auxiliary_fields) 
     gfI = flux_feeding(zoo, val_name, i, j, k, grid, bgc, clock, fields, auxiliary_fields) 

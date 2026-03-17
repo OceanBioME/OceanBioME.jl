@@ -49,16 +49,16 @@ function Adapt.adapt_structure(to, zoo::QualityDependantZooplankton{FT}) where F
     FP = typeof(food_preferences)
 
     return QualityDependantZooplankton{FT, FP}(
-               adapt(to, zoo.temperature_sensetivity),
+               adapt(to, zoo.temperature_sensitivity),
                adapt(to, zoo.maximum_grazing_rate),
                food_preferences,                      
                adapt(to, zoo.food_threshold_concentration),
-               adapt(to, zoo.specific_food_thresehold_concentration),
+               adapt(to, zoo.specific_food_threshold_concentration),
                adapt(to, zoo.grazing_half_saturation),
                adapt(to, zoo.maximum_flux_feeding_rate),
                adapt(to, zoo.iron_ratio),
                adapt(to, zoo.minimum_growth_efficiency),
-               adapt(to, zoo.non_assililated_fraction),
+               adapt(to, zoo.non_assimilated_fraction),
                adapt(to, zoo.mortality_half_saturation),
                adapt(to, zoo.quadratic_mortality),
                adapt(to, zoo.linear_mortality),

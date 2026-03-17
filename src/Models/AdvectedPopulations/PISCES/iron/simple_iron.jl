@@ -2,8 +2,8 @@
     SimpleIron(; excess_scavenging_enhancement = 1000)
 
 Parameterisation for iron evolution, not the "complex chemistry" model
-of Aumount et al, 2015. Iron is scavenged (i.e. perminemtly removed from
-the model) when the free iron concentration exeeds the ligand concentration
+of Aumount et al, 2015. Iron is scavenged (i.e. permanently removed from
+the model) when the free iron concentration exceeds the ligand concentration
 at a rate modified by `excess_scavenging_enhancement`.
 """
 @kwdef struct SimpleIron{FT}
@@ -38,7 +38,7 @@ const SimpleIronPISCES = PISCES{<:Any, <:Any, <:Any, <:Any, <:Any, <:SimpleIron}
     BactFe = bacterial_iron_uptake(bgc.particulate_organic_matter, i, j, k, grid, bgc, clock, fields, auxiliary_fields)
 
     # particle breakdown
-    small_particles = degredation(bgc.particulate_organic_matter, Val(:SFe), i, j, k, grid, bgc, clock, fields, auxiliary_fields)
+    small_particles = degradation(bgc.particulate_organic_matter, Val(:SFe), i, j, k, grid, bgc, clock, fields, auxiliary_fields)
 
     # consumption
     consumption = uptake(bgc.phytoplankton, val_name, i, j, k, grid, bgc, clock, fields, auxiliary_fields)
