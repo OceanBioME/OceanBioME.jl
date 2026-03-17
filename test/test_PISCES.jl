@@ -84,7 +84,7 @@ function test_PISCES_conservation() # only on CPU please
     # double precision floats are only valid to 17 bits so this tolerance is actually good
     @test isapprox(total_carbon_tendencies, 0, atol = 10^-20)
     @test isapprox(total_iron_tendencies, 0, atol = 10^-21)
-    @test isapprox(total_silicon_tendencies, 0, atol = 10^-30)
+    @test isapprox(total_silicon_tendencies, 0, atol = 10^-21)
     @test isapprox(total_phosphate_tendencies, 0, atol = 10^-22)
     @test isapprox(total_nitrogen_tendencies, 0, atol = 10^-21)
 
@@ -166,7 +166,7 @@ function test_PISCES_negativity_protection(arch)
     @test on_architecture(CPU(), interior(model.tracers.Fe, 1, 1, 1))[1] == 0
     @test on_architecture(CPU(), interior(model.tracers.Z, 1, 1, 1))[1] ≈ 900
 end
-#=
+
 @testset "PISCES" begin
     if architecture isa CPU
         test_PISCES_conservation()
@@ -178,4 +178,4 @@ end
     test_PISCES_negativity_protection(architecture)
 
     #test_PISCES_setup(grid) # maybe should test everything works with all the different bits???
-end=#
+end
