@@ -283,7 +283,7 @@ end
     @inbounds (
         biology_organic_nitrogen_waste(lobster, i, j, k, fields, auxiliary_fields)
       + solid_waste(lobster, i, j, k, fields, auxiliary_fields)
-      + grazing(lobster, i, j, k, val_name, fields, auxiliary_fields) 
+      - grazing(lobster, i, j, k, val_name, fields, auxiliary_fields) 
       - lobster.detritus.remineralisation_rate * fields.D[i, j, k]
     )
 
@@ -300,3 +300,19 @@ required_biogeochemical_tracers(::Detritus) = (:D, )
 
 @inline detritus_inorganic_carbon_waste(lobster::LOBSTER{<:Any, <:Any, <:Detritus}, i, j, k, fields, auxiliary_fields) =
     @inbounds fields.D[i, j, k] * lobster.detritus.remineralisation_rate * lobster.detritus.redfield_ratio
+#=
+#####
+##### No detritus - instantly remineralise everything
+#####
+
+@inline small_particulate_concentration(detritus::Nothing, i, j, k, fields, auxiliary_fields) = @inbounds zero(fields.P[1, 1, 1])
+
+@inline detritus_inorganic_nitrogen_waste(lobster::LOBSTER{<:Any, <:Any, <:Nothing}, i, j, k, fields, auxiliary_fields) = 
+    (biology_organic_nitrogen_waste(lobster, i, j, k, fields, auxiliary_fields)
+      + solid_waste(lobster, i, j, k, fields, auxiliary_fields))
+
+@inline detritus_inorganic_carbon_waste(lobster::LOBSTER{<:Any, <:Any, <:Nothing}, i, j, k, fields, auxiliary_fields) = 
+    (biology_organic_nitrogen_waste(lobster, i, j, k, fields, auxiliary_fields)
+      + solid_waste(lobster, i, j, k, fields, auxiliary_fields)
+      + grazing(lobster, i, j, k, val_name, fields, auxiliary_fields)) * lobster.biology.redfield_ratio
+=#
