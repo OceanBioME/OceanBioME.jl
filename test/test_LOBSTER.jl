@@ -106,6 +106,7 @@ end; )
 
 @testset "LOBSTER nitrogen conservation" (for (required_tracers, initial_values, model, sinking) in test_models
     if !sinking
+        @info "Stepped $(keys(model.tracers))"
         set!(model; NamedTuple{required_tracers}(initial_values)...)
         ΣN₀ = CUDA.@allowscalar ΣN(model, model.biogeochemistry)
         for _ in 1:n_timesteps
@@ -119,6 +120,7 @@ end; )
 @testset "LOBSTER carbon conservation" (for (required_tracers, initial_values, model, sinking) in test_models
     carbonate_system = model.biogeochemistry.underlying_biogeochemistry.carbonate_system
     if !isnothing(carbonate_system)
+        @info "Stepped $(keys(model.tracers))"
         set!(model; NamedTuple{required_tracers}(initial_values)...)
         ΣC₀ = CUDA.@allowscalar ΣC(model, carbonate_system, model.biogeochemistry)
         for _ in 1:n_timesteps
