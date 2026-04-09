@@ -98,7 +98,7 @@ end
     time_step!(model, 1.0) # long wait for compile here...
 
     # CUDA.@allowscalar maybe
-    everything_stayed_zero = all([all(values .== 0) for values in values(model.tracers)])
+    everything_stayed_zero = CUDA.@allowscalar all([all(values .== 0) for values in values(model.tracers)])
 
     @test tracers_are_correct & tracers_are_materialised & everything_stayed_zero
     @info "Stepped $(keys(model.tracers))"
