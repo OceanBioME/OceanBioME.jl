@@ -117,7 +117,8 @@ end; )
 end; )
 
 @testset "LOBSTER carbon conservation" (for (required_tracers, initial_values, model, sinking) in test_models
-    if !isnothing(model.biogeochemistry.underlying_biogeochemistry.carbonate_system)
+    carbonate_system = model.biogeochemistry.underlying_biogeochemistry.carbonate_system
+    if !isnothing(carbonate_system)
         set!(model; NamedTuple{required_tracers}(initial_values)...)
         ΣC₀ = CUDA.@allowscalar ΣC(model, carbonate_system, model.biogeochemistry)
         for _ in 1:n_timesteps
