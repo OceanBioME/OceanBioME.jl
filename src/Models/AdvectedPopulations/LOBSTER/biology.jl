@@ -364,7 +364,7 @@ end
 # assume instant dissolution and put it back in DIC (or we could choose to lose it),
 # maybe that would be better?
 # but when we don't this can't be implicitly captured so we put it all back in the DIC compartement
-@inline function calcite_dissolution(lobster::LOBSTER{<:Any, <:PhytoZoo, <:Union{TwoParticleAndDissolved, Detritus}}, i, j, k, fields, auxiliary_fields)
+@inline function calcite_dissolution(lobster::LOBSTER{<:Any, <:PhytoZoo, <:Union{TwoParticleAndDissolved, Detritus, Nothing}}, i, j, k, fields, auxiliary_fields)
     R  = lobster.biology.redfield_ratio 
     ρ  = lobster.biology.carbon_calcate_ratio
     mᴾ = lobster.biology.phytoplankton_mortality_rate
