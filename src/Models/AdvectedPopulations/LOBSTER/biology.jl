@@ -74,7 +74,7 @@ end # done!
     G = total_grazing(lobster, i, j, k, fields, auxiliary_fields)
 
     return α * G - m * Z^2 - μ * Z
-end # done!
+end 
 
 @inline function total_grazing(lobster::PHYTO_ZOO_LOBSTER, i, j, k, fields, auxiliary_fields)
     kG = lobster.biology.grazing_half_saturation
@@ -309,24 +309,7 @@ end
     return g * p * P / (kG + food_concentration) * Z
 end
 
-@inline function grazing(lobster::PHYTO_ZOO_LOBSTER, i, j, k, ::Union{Val{:sPOM}, Val{:sPON}}, fields, auxiliary_fields)
-    kG = lobster.biology.grazing_half_saturation
-    g  = lobster.biology.maximum_grazing_rate
-
-    @inbounds begin
-        Z = fields.Z[i, j, k]
-        P = fields.P[i, j, k]
-        sPOM = small_particulate_concentration(lobster.detritus, i, j, k, fields, auxiliary_fields)
-    end
-
-    p = weighted_phytoplankton_preference(lobster.biology, P, sPOM)
-
-    food_concentration = p * P + (1-p) * sPOM
-
-    return g * (1-p) * sPOM / (kG + food_concentration) * Z
-end
-
-@inline function grazing(lobster::PHYTO_ZOO_LOBSTER, i, j, k, ::Val{:D}, fields, auxiliary_fields)
+@inline function grazing(lobster::PHYTO_ZOO_LOBSTER, i, j, k, ::Union{Val{:sPOM}, Val{:sPON}, Val{:D}}, fields, auxiliary_fields)
     kG = lobster.biology.grazing_half_saturation
     g  = lobster.biology.maximum_grazing_rate
 
@@ -381,7 +364,7 @@ end
 # assume instant dissolution and put it back in DIC (or we could choose to lose it),
 # maybe that would be better?
 # but when we don't this can't be implicitly captured so we put it all back in the DIC compartement
-@inline function calcite_dissolution(lobster::LOBSTER{<:Any, <:PhytoZoo, <:TwoParticleAndDissolved}, i, j, k, fields, auxiliary_fields)
+@inline function calcite_dissolution(lobster::LOBSTER{<:Any, <:PhytoZoo, <:Union{TwoParticleAndDissolved, Detritus}}, i, j, k, fields, auxiliary_fields)
     R  = lobster.biology.redfield_ratio 
     ρ  = lobster.biology.carbon_calcate_ratio
     mᴾ = lobster.biology.phytoplankton_mortality_rate

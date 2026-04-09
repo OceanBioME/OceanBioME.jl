@@ -309,7 +309,8 @@ required_biogeochemical_tracers(::Detritus) = (:D, )
 
 @inline detritus_inorganic_nitrogen_waste(lobster::LOBSTER{<:Any, <:Any, <:Nothing}, i, j, k, fields, auxiliary_fields) = 
     (biology_organic_nitrogen_waste(lobster, i, j, k, fields, auxiliary_fields)
-      + solid_waste(lobster, i, j, k, fields, auxiliary_fields))
+      + solid_waste(lobster, i, j, k, fields, auxiliary_fields)
+      + grazing(lobster, i, j, k, val_name, fields, auxiliary_fields))
 
 @inline detritus_inorganic_carbon_waste(lobster::LOBSTER{<:Any, <:Any, <:Nothing}, i, j, k, fields, auxiliary_fields) = 
     (biology_organic_nitrogen_waste(lobster, i, j, k, fields, auxiliary_fields)
