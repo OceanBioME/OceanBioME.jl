@@ -19,17 +19,17 @@ end
     zoo.iron_ratio * upper_trophic_respiration_product(zoo, val_name, i, j, k, grid, bgc, clock, fields, auxiliary_fields)
 
 @inline upper_trophic_respiration_product(zoo::QualityDependantZooplankton, val_name, i, j, k, grid, bgc, clock, fields, auxiliary_fields) = 
-    (1 - zoo.minimum_growth_efficiency - zoo.non_assililated_fraction) * upper_trophic_waste(zoo, val_name, i, j, k, grid, bgc, clock, fields, auxiliary_fields)
+    (1 - zoo.minimum_growth_efficiency - zoo.non_assimilated_fraction) * upper_trophic_waste(zoo, val_name, i, j, k, grid, bgc, clock, fields, auxiliary_fields)
 
 @inline upper_trophic_fecal_production(zoo::QualityDependantZooplankton, val_name, i, j, k, grid, bgc, clock, fields, auxiliary_fields) =
-    zoo.non_assililated_fraction * upper_trophic_waste(zoo, val_name, i, j, k, grid, bgc, clock, fields, auxiliary_fields)
+    zoo.non_assimilated_fraction * upper_trophic_waste(zoo, val_name, i, j, k, grid, bgc, clock, fields, auxiliary_fields)
 
 @inline upper_trophic_fecal_iron_production(zoo::QualityDependantZooplankton, val_name, i, j, k, grid, bgc, clock, fields, auxiliary_fields) =
     upper_trophic_fecal_production(zoo, val_name, i, j, k, grid, bgc, clock, fields, auxiliary_fields) * zoo.iron_ratio
 
 @inline function upper_trophic_waste(zoo::QualityDependantZooplankton, val_name, i, j, k, grid, bgc, clock, fields, auxiliary_fields)
     e₀ = zoo.minimum_growth_efficiency
-    b  = zoo.temperature_sensetivity
+    b  = zoo.temperature_sensitivity
     m₀ = zoo.quadratic_mortality
 
     T = @inbounds fields.T[i, j, k]

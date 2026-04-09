@@ -5,7 +5,7 @@ Stores the parameter values for calcite (`CaCO₃`) evolution.
 
 Keyword Arguments
 =================
-- `base_rain_ratio`: the base fraction of Coccolithophores
+- `base_rain_ratio`: the base fraction of coccolithophores
 - `base_dissolution_rate`: base rate of calcite dissolution (1/s)
 - `dissolution_exponent`: exponent of calcite excess for dissolution rate 
 
@@ -64,7 +64,7 @@ end
     low_light_factor = max(0, PAR - 1) / (4 + PAR)
     high_light_factor = 30 / (30 + PAR)
 
-    low_temperature_factor = max(0, T / (T + 0.1)) # modified from origional as it goes negative and does not achieve goal otherwise
+    low_temperature_factor = max(0, T / (T + 0.1)) # modified from original as it goes negative and does not achieve goal otherwise
     high_temperature_factor = 1 + exp(-(T - 10)^2 / 25)
 
     depth_factor = min(1, -50/zₘₓₗ)

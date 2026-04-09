@@ -1,5 +1,5 @@
 function MixedMondoNanoAndDiatoms(FT = Float64; 
-                                  nano = MixedMondo(FT; growth_rate = GrowthRespirationLimitedProduction{FT}(dark_tollerance = 3days),
+                                  nano = MixedMondo(FT; growth_rate = GrowthRespirationLimitedProduction{FT}(dark_tolerance = 3days),
                                                     nutrient_limitation = 
                                                         NitrogenIronPhosphateSilicateLimitation{FT}(minimum_ammonium_half_saturation = 0.013,
                                                                                                     minimum_nitrate_half_saturation = 0.13, 
@@ -11,7 +11,7 @@ function MixedMondoNanoAndDiatoms(FT = Float64;
                                                     maximum_quadratic_mortality = convert(FT, 0.0),
                                                     maximum_chlorophyll_ratio = convert(FT, 0.033),
                                                     half_saturation_for_iron_uptake = convert(FT, 1.0)),
-                                  diatoms = MixedMondo(FT; growth_rate = GrowthRespirationLimitedProduction{FT}(dark_tollerance = 4days),
+                                  diatoms = MixedMondo(FT; growth_rate = GrowthRespirationLimitedProduction{FT}(dark_tolerance = 4days),
                                                        nutrient_limitation = 
                                                            NitrogenIronPhosphateSilicateLimitation{FT}(minimum_ammonium_half_saturation = 0.039,
                                                                                                        minimum_nitrate_half_saturation = 0.39, 

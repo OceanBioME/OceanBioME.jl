@@ -10,7 +10,7 @@ struct DissolvedOrganicCarbon{FT, AP}
                              remineralisation_rate :: FT # 1 / s
              bacteria_concentration_depth_exponent :: FT # 
                   reference_bacteria_concentration :: FT # mmol C / m³
-                           temperature_sensetivity :: FT #
+                           temperature_sensitivity :: FT #
 # (1 / (mmol C / m³),  1 / (mmol C / m³),  1 / (mmol C / m³),  1 / (mmol C / m³) / s,  1 / (mmol C / m³) / s)
                             aggregation_parameters :: AP 
 
@@ -18,7 +18,7 @@ struct DissolvedOrganicCarbon{FT, AP}
                                     remineralisation_rate = 0.3/day, # 1 / s
                                     bacteria_concentration_depth_exponent = 0.684, # 
                                     reference_bacteria_concentration = 1.0, # mmol C / m³
-                                    temperature_sensetivity = 1.066, #
+                                    temperature_sensitivity = 1.066, #
 # (1 / (mmol C / m³),  1 / (mmol C / m³),  1 / (mmol C / m³),  1 / (mmol C / m³) / s,  1 / (mmol C / m³) / s)
                                     aggregation_parameters = (0.37, 102, 3530, 5095, 114) .* (10^-6 / day))
 
@@ -29,7 +29,7 @@ struct DissolvedOrganicCarbon{FT, AP}
         return new{FT, AP}(convert(FT, remineralisation_rate), 
                            convert(FT, bacteria_concentration_depth_exponent),
                            convert(FT, reference_bacteria_concentration), 
-                           convert(FT, temperature_sensetivity), 
+                           convert(FT, temperature_sensitivity), 
                            aggregation_parameters)
     end
 end
@@ -43,9 +43,9 @@ required_biogeochemical_tracers(::DissolvedOrganicCarbon) = tuple(:DOC)
     
     grazing_waste = organic_excretion(bgc.zooplankton, i, j, k, grid, bgc, clock, fields, auxiliary_fields)
     
-    particulate_breakdown = degredation(bgc.particulate_organic_matter, i, j, k, grid, bgc, clock, fields, auxiliary_fields)
+    particulate_breakdown = degradation(bgc.particulate_organic_matter, i, j, k, grid, bgc, clock, fields, auxiliary_fields)
     
-    dissolved_breakdown = degredation(bgc.dissolved_organic_matter, i, j, k, grid, bgc, clock, fields, auxiliary_fields)
+    dissolved_breakdown = degradation(bgc.dissolved_organic_matter, i, j, k, grid, bgc, clock, fields, auxiliary_fields)
     
     aggregation_to_particles, = aggregation(bgc.dissolved_organic_matter, i, j, k, grid, bgc, clock, fields, auxiliary_fields)
 
@@ -53,9 +53,9 @@ required_biogeochemical_tracers(::DissolvedOrganicCarbon) = tuple(:DOC)
             - dissolved_breakdown - aggregation_to_particles)
 end
 
-@inline function degredation(dom::DissolvedOrganicCarbon, i, j, k, grid, bgc, clock, fields, auxiliary_fields)
+@inline function degradation(dom::DissolvedOrganicCarbon, i, j, k, grid, bgc, clock, fields, auxiliary_fields)
     Bact_ref = dom.reference_bacteria_concentration
-    b = dom.temperature_sensetivity
+    b = dom.temperature_sensitivity
     λ = dom.remineralisation_rate
 
     T   = @inbounds   fields.T[i, j, k]
@@ -67,13 +67,13 @@ end
 
     LBact = bacteria_activity(bgc.zooplankton, i, j, k, grid, bgc, clock, fields, auxiliary_fields)
 
-    return λ * f * LBact * Bact / Bact_ref * DOC # differes from Aumont 2015 since the dimensions don't make sense 
+    return λ * f * LBact * Bact / Bact_ref * DOC # differs from Aumont 2015 since the dimensions don't make sense 
 end
 
 @inline function aggregation(dom::DissolvedOrganicCarbon, i, j, k, grid, bgc, clock, fields, auxiliary_fields)
     a₁, a₂, a₃, a₄, a₅ = dom.aggregation_parameters
 
-    backgroound_shear = bgc.background_shear
+    background_shear = bgc.background_shear
     mixed_layer_shear = bgc.mixed_layer_shear
 
     z = znode(i, j, k, grid, Center(), Center(), Center())
@@ -84,7 +84,7 @@ end
     POC = @inbounds fields.POC[i, j, k]
     GOC = @inbounds fields.GOC[i, j, k]
 
-    shear = ifelse(z < zₘₓₗ, backgroound_shear, mixed_layer_shear)
+    shear = ifelse(z < zₘₓₗ, background_shear, mixed_layer_shear)
     
     Φ₁ = shear * (a₁ * DOC + a₂ * POC) * DOC
     Φ₂ = shear * (a₃ * GOC) * DOC
@@ -114,9 +114,9 @@ end
 
     ΔO₂ = anoxia_factor(bgc, O₂)
 
-    total_degredation = degredation(dom, i, j, k, grid, bgc, clock, fields, auxiliary_fields)
+    total_degradation = degradation(dom, i, j, k, grid, bgc, clock, fields, auxiliary_fields)
 
-    return (1 - ΔO₂) * total_degredation
+    return (1 - ΔO₂) * total_degradation
 end
 
 @inline function anoxic_remineralisation(dom::DissolvedOrganicCarbon, i, j, k, grid, bgc, clock, fields, auxiliary_fields)
@@ -124,7 +124,7 @@ end
 
     ΔO₂ = anoxia_factor(bgc, O₂)
 
-    total_degredation = degredation(dom, i, j, k, grid, bgc, clock, fields, auxiliary_fields)
+    total_degradation = degradation(dom, i, j, k, grid, bgc, clock, fields, auxiliary_fields)
 
-    return ΔO₂ * total_degredation
+    return ΔO₂ * total_degradation
 end

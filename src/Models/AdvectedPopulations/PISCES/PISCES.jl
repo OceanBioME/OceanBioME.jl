@@ -2,9 +2,9 @@
 Pelagic Interactions Scheme for Carbon and Ecosystem Studies (PISCES) model.
 
 This is *not* currently an official version supported by the PISCES community
-and is not yet verified to be capable of producing results mathcing that of the 
+and is not yet verified to be capable of producing results matching that of the 
 operational PISCES configuration. This is a work in progress, please open an 
-issue or discusison if you'd like to know more.
+issue or discussion if you'd like to know more.
 
 Notes to developers
 ===================
@@ -179,7 +179,7 @@ include("show_methods.jl")
              phytoplankton = MixedMondoNanoAndDiatoms(),
              zooplankton = MicroAndMesoZooplankton(),
              dissolved_organic_matter = DissolvedOrganicCarbon(),
-             particulate_organic_matter = TwoCompartementCarbonIronParticles(),
+             particulate_organic_matter = TwoCompartmentCarbonIronParticles(),
              
              nitrogen = NitrateAmmonia(),
              iron = SimpleIron(),
@@ -190,8 +190,8 @@ include("show_methods.jl")
              inorganic_carbon = InorganicCarbon(),
 
              # from Aumount 2005 rather than 2015 since it doesn't work the other way around
-             first_anoxia_thresehold = 6.0,
-             second_anoxia_thresehold = 1.0,
+             first_anoxia_threshold = 6.0,
+             second_anoxia_threshold = 1.0,
 
              nitrogen_redfield_ratio = 16/122,
              phosphate_redfield_ratio = 1/122,
@@ -243,20 +243,20 @@ Keyword Arguments
 - `grid`: (required) the geometry to build the model on
 - `phytoplankton`: phytoplankton evolution parameterisation, defaults to nanophyto and diatom size classes with `MixedMondo` growth
 - `zooplankton`: zooplankton evolution parameterisation, defaults to two class `Z` and `M`
-- `dissolved_organic_matter`: parameterisaion for the evolution of dissolved organic matter (`DOC`)
+- `dissolved_organic_matter`: parameterisation for the evolution of dissolved organic matter (`DOC`)
 - `particulate_organic_matter`: parameterisation for the evolution of particulate organic matter (`POC`, `GOC`, `SFe`, `BFe`, `PSi`, `CaCO₃`)
-- `nitrogen`: parameterisation for the nitrogen compartements (`NH₄` and `NO₃`)
+- `nitrogen`: parameterisation for the nitrogen compartments (`NH₄` and `NO₃`)
 - `iron`: parameterisation for iron (`Fe`), currently the "complex chemistry" of Aumount 2015 is not implemented
-- `silicate`: parameterisaion for silicate (`Si`)
-- `oxygen`: parameterisaion for oxygen (`O₂`)
-- `phosphate`: parameterisaion for phosphate (`PO₄`)
-- `inorganic_carbon`: parameterisation for the evolution of the inorganic carbon system (`DIC` and `Alk`alinity)
-- `first_anoxia_thresehold` and `second_anoxia_thresehold`: thresholds in anoxia parameterisation
+- `silicate`: parameterisation for silicate (`Si`)
+- `oxygen`: parameterisation for oxygen (`O₂`)
+- `phosphate`: parameterisation for phosphate (`PO₄`)
+- `inorganic_carbon`: parameterisation for the evolution of the inorganic carbon system (`DIC` and `Alk`)
+- `first_anoxia_threshold` and `second_anoxia_threshold`: thresholds in anoxia parameterisation
 - `nitrogen_redfield_ratio` and `phosphate_redfield_ratio`: the assumed element ratios N/C and P/C 
 - `mixed_layer_shear` and `background_shear`: the mixed layer and background shear rates, TODO: move this to a computed field
 - `latitude`: model latitude, should be `PrescribedLatitude` for `RectilinearGrid`s and `ModelLatitude` for grids providing their own latitude
 - `day_length`: parameterisation for day length based on time of year and latitude, you may wish to change this to (φ, t) -> 1day if you
-   want to ignore the effect of day length, or something else if you're modelling a differen planet
+   want to ignore the effect of day length, or something else if you're modelling a different planet
 - `mixed_layer_depth`: an `AbstractField` containing the mixed layer depth (to be computed during update state)
 - `euphotic`: an `AbstractField` containing the euphotic depth, the depth where light reduces to 1/1000 of 
    the surface value (computed during update state)
@@ -265,32 +265,32 @@ Keyword Arguments
 - `mean_mixed_layer_vertical_diffusivity`: an `AbstractField` containing the mean mixed layer vertical diffusivity 
    (to be computed during update state)
 - `mean_mixed_layer_light`: an `AbstractField` containing the mean mixed layer light (computed during update state)
-- `carbon_chemistry`: the `CarbonChemistry` model used to compute the calicte saturation
+- `carbon_chemistry`: the `CarbonChemistry` model used to compute the calcite saturation
 - `calcite_saturation`: an `AbstractField` containing the calcite saturation  (computed during update state)
-- `surface_photosynthetically_active_radiation`: funciton for the photosynthetically available radiation at the surface
+- `surface_photosynthetically_active_radiation`: function for the photosynthetically available radiation at the surface
 - `light_attenuation`: light attenuation model which integrated the attenuation of available light
-- `sinking_speed`: named tuple of constant sinking speeds, or fields (i.e. `ZFaceField(...)`) for any tracers which sink 
+- `sinking_speeds`: named tuple of constant sinking speeds, or fields (i.e. `ZFaceField(...)`) for any tracers which sink 
   (convention is that a sinking speed is positive, but a field will need to follow the usual down being negative)
 - `open_bottom`: should the sinking velocity be smoothly brought to zero at the bottom to prevent the tracers leaving the domain
 - `scale_negatives`: scale negative tracers?
 - `particles`: slot for `BiogeochemicalParticles`
 - `modifiers`: slot for components which modify the biogeochemistry when the tendencies have been calculated or when the state is updated
 
-All parameterisations default to the operaitonal version of PISCES as close as possible.
+All parameterisations default to the operational version of PISCES as close as possible.
 
 Notes
 =====
 Currently only `MixedMondoPhytoplankton` are implemented, and some work should be done to generalise
 the classes to a single `phytoplankton` if more classes are required (see 
 `OceanBioME.Models.PISCESModel` docstring). Similarly, if a more generic `particulate_organic_matter`
-was desired a way to specify arbitary tracers for arguments would be required.
+was desired a way to specify arbitrary tracers for arguments would be required.
 """
 function PISCES(; grid,
                   FT = eltype(grid),
                   phytoplankton = MixedMondoNanoAndDiatoms(FT),
                   zooplankton = MicroAndMesoZooplankton(FT),
                   dissolved_organic_matter = DissolvedOrganicCarbon(FT),
-                  particulate_organic_matter = TwoCompartementCarbonIronParticles(FT),
+                  particulate_organic_matter = TwoCompartmentCarbonIronParticles(FT),
                   
                   nitrogen = NitrateAmmonia{FT}(),
                   iron = SimpleIron{FT}(),
@@ -301,8 +301,8 @@ function PISCES(; grid,
                   inorganic_carbon = InorganicCarbon(),
 
                   # from Aumount 2005 rather than 2015 since it doesn't work the other way around
-                  first_anoxia_thresehold = convert(FT, 6.0),
-                  second_anoxia_thresehold = convert(FT, 1.0),
+                  first_anoxia_threshold = convert(FT, 6.0),
+                  second_anoxia_threshold = convert(FT, 1.0),
 
                   nitrogen_redfield_ratio = convert(FT, 16/122),
                   phosphate_redfield_ratio = convert(FT, 1/122),
@@ -367,7 +367,7 @@ function PISCES(; grid,
         throw(ArgumentError("You must prescribe a latitude when using a `RectilinearGrid`"))
     end
 
-    # just incase we're in the default state with no closure model
+    # just in case we're in the default state with no closure model
     # this highlights that the darkness term for phytoplankton growth is obviously wrong because not all phytoplankton
     # cells spend an infinite amount of time in the dark if the diffusivity is zero, it should depend on where they are...
     if !(mean_mixed_layer_vertical_diffusivity isa ConstantField)
@@ -378,7 +378,7 @@ function PISCES(; grid,
                                         dissolved_organic_matter, particulate_organic_matter,
                                         nitrogen, iron, silicate, oxygen, phosphate,
                                         inorganic_carbon, 
-                                        first_anoxia_thresehold, second_anoxia_thresehold,
+                                        first_anoxia_threshold, second_anoxia_threshold,
                                         nitrogen_redfield_ratio, phosphate_redfield_ratio,
                                         mixed_layer_shear, background_shear,
                                         latitude, day_length,
