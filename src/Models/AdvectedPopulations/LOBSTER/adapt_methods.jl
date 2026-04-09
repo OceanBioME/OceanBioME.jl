@@ -27,3 +27,10 @@ Adapt.adapt_structure(to, detritus::VariableRedfieldDetritus) =
                              adapt(to, detritus.small_solid_waste_fraction),
                              adapt(to, detritus.small_particle_sinking_velocity),
                              adapt(to, detritus.large_particle_sinking_velocity))
+
+Adapt.adapt_structure(to, detritus::Detritus) =
+    Detritus(adapt(to, detritus.remineralisation_rate),
+             adapt(to, detritus.small_particle_fraction),
+             adapt(to, detritus.redfield_ratio),
+             adapt(to, detritus.sinking_speeds))
+             
