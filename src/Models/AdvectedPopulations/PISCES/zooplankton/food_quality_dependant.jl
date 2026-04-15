@@ -123,6 +123,89 @@ end
 @inline extract_iron_availability(bgc, i, j, k, fields, names::NTuple{N}) where N =
     ntuple(n -> iron_ratio(Val(names[n]), i, j, k, bgc, fields), Val(N))
 
+@inline function grazing(g₀,
+                                 b,
+                                 pP,
+                                 pD,
+                                 pZ,
+                                 pPOC,
+                                 J,
+                                 K,
+                                 food_threshold_concentration,
+                                 θFe,
+                                 e₀,
+                                 σ,
+                                 T,
+                                 I,
+                                 food_availability::NamedTuple,
+                                 iron_availability::NamedTuple)
+
+    base_grazing_rate = g₀ * b ^ T
+
+    total_food = (food_availability.P   * pP +
+                  food_availability.D   * pD +
+                  food_availability.Z   * pZ +
+                  food_availability.POC * pPOC)
+
+    available_total_food = (max(zero(I), food_availability.P   - J) * pP +
+                            max(zero(I), food_availability.D   - J) * pD +
+                            max(zero(I), food_availability.Z   - J) * pZ +
+                            max(zero(I), food_availability.POC - J) * pPOC)
+
+    concentration_limited_grazing = max(zero(I), available_total_food - min(available_total_food / 2, food_threshold_concentration))
+
+    total_specific_grazing = base_grazing_rate * concentration_limited_grazing / (K + total_food)
+
+    total_iron = (iron_availability.P   * pP +
+                  iron_availability.D   * pD +
+                  iron_availability.Z   * pZ +
+                  iron_availability.POC * pPOC)
+
+    iron_grazing_ratio = total_iron / (θFe * total_specific_grazing + eps(zero(I)))
+
+    food_quality = min(one(I), iron_grazing_ratio)
+
+    growth_efficiency = food_quality * min(e₀, (one(I) - σ) * iron_grazing_ratio)
+
+    return total_specific_grazing * I, growth_efficiency
+end
+
+@inline function grazing(zoo::QualityDependantZooplankton, T, I, food_availability::NamedTuple, iron_availability::NamedTuple)
+    g₀   = zoo.maximum_grazing_rate
+    b    = zoo.temperature_sensitivity
+    p    = zoo.food_preferences
+    food = keys(p)
+    J    = zoo.specific_food_threshold_concentration
+    K    = zoo.grazing_half_saturation
+    food_threshold_concentration = zoo.food_threshold_concentration
+
+    N = length(food)
+
+    base_grazing_rate = g₀ * b ^ T
+
+    total_food = sum(ntuple(n -> getproperty(food_availability, food[n]) * p[n], Val(N)))
+
+    available_total_food = sum(ntuple(n -> max(zero(I), getproperty(food_availability, food[n]) - J) * p[n], Val(N)))
+
+    concentration_limited_grazing = max(zero(I), available_total_food - min(available_total_food / 2, food_threshold_concentration))
+
+    total_specific_grazing = base_grazing_rate * concentration_limited_grazing / (K + total_food)
+
+    θFe = zoo.iron_ratio
+    e₀  = zoo.minimum_growth_efficiency
+    σ   = zoo.non_assimilated_fraction
+
+    total_iron = sum(ntuple(n -> getproperty(iron_availability, food[n]) * p[n], Val(N)))
+
+    iron_grazing_ratio = total_iron / (θFe * total_specific_grazing + eps(zero(I)))
+
+    food_quality = min(one(I), iron_grazing_ratio)
+
+    growth_efficiency = food_quality * min(e₀, (one(I) - σ) * iron_grazing_ratio)
+
+    return total_specific_grazing * I, growth_efficiency
+end
+
 @inline function grazing(zoo::QualityDependantZooplankton, val_name, i, j, k, grid, bgc, clock, fields, auxiliary_fields)
     # food quantity
     g₀   = zoo.maximum_grazing_rate
@@ -168,21 +251,35 @@ end
     return total_specific_grazing * I, growth_efficiency
 end
 
-@inline function flux_feeding(zoo::QualityDependantZooplankton, val_name, i, j, k, grid, bgc, clock, fields, auxiliary_fields)
-    g₀ =  zoo.maximum_flux_feeding_rate
-    b  = zoo.temperature_sensitivity
+@inline function flux_feeding(g₀,
+                              b,
+                              T,
+                              I,
+                              sinking_flux)
 
+    base_flux_feeding_rate = g₀ * b ^ T
+
+    total_specific_flux_feeding = base_flux_feeding_rate * sinking_flux
+
+    return total_specific_flux_feeding * I
+end
+
+@inline function flux_feeding(zoo::QualityDependantZooplankton, T, I, sinking_flux)
+    return flux_feeding(zoo.maximum_flux_feeding_rate,
+                        zoo.temperature_sensitivity,
+                        T,
+                        I,
+                        sinking_flux)
+end
+
+@inline function flux_feeding(zoo::QualityDependantZooplankton, val_name, i, j, k, grid, bgc, clock, fields, auxiliary_fields)
     I = zooplankton_concentration(val_name, i, j, k, fields)
 
     T = @inbounds fields.T[i, j, k]
 
     sinking_flux = edible_flux_rate(bgc.particulate_organic_matter, i, j, k, grid, fields, auxiliary_fields)
 
-    base_flux_feeding_rate = g₀ * b ^ T
-
-    total_specific_flux_feeding = base_flux_feeding_rate * sinking_flux 
-
-    return total_specific_flux_feeding * I
+    return flux_feeding(zoo, T, I, sinking_flux)
 end
 
 @inline function mortality(zoo::QualityDependantZooplankton, val_name, i, j, k, grid, bgc, clock, fields, auxiliary_fields)

@@ -155,11 +155,11 @@ end
     return μ, 12 * μ̌ * I / (α * IChl * PAR + eps(0.0)) * L # (1 / s, unitless)
 end
 
-@inline function base_production_rate(growth_rate, T)
-    bₜ = growth_rate.temperature_sensitivity
-    μ₀ = growth_rate.base_growth_rate
-
-    fₜ = bₜ ^ T
-
-    return μ₀ * fₜ
+@inline function base_production_rate(μ₀, bₜ, T)
+    return μ₀ * bₜ ^ T
 end
+
+@inline base_production_rate(growth_rate, T) =
+    base_production_rate(growth_rate.base_growth_rate,
+                         growth_rate.temperature_sensitivity,
+                         T)

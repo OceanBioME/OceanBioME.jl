@@ -124,16 +124,29 @@ biogeochemical_drift_velocity(bgc::TwoCompartmentPOCPISCES, ::LARGE_PARTICLE_COM
     return shear * (a₁ * POC^2 + a₂ * POC * GOC) + a₃ * POC * GOC + a₄ * POC^2
 end
 
-@inline function specific_degradation_rate(poc::TwoCompartmentCarbonIronParticles, i, j, k, grid, bgc, clock, fields, auxiliary_fields)
-    λ₀ = poc.base_breakdown_rate
-    b  = poc.temperature_sensitivity
-
-    O₂ = @inbounds fields.O₂[i, j, k]
-    T  = @inbounds  fields.T[i, j, k]
-
-    ΔO₂ = anoxia_factor(bgc, O₂)
+@inline function specific_degradation_rate(λ₀, b, O₂, T, O₂ₘᵢₙ₁, O₂ₘᵢₙ₂)
+    ΔO₂ = anoxia_factor(O₂ₘᵢₙ₁, O₂ₘᵢₙ₂, O₂)
 
     return λ₀ * b^T * (1 - 0.45 * ΔO₂)
+end
+
+@inline function specific_degradation_rate(poc::TwoCompartmentCarbonIronParticles, O₂, T, O₂ₘᵢₙ₁, O₂ₘᵢₙ₂)
+    return specific_degradation_rate(poc.base_breakdown_rate,
+                                     poc.temperature_sensitivity,
+                                     O₂,
+                                     T,
+                                     O₂ₘᵢₙ₁,
+                                     O₂ₘᵢₙ₂)
+end
+
+@inline function specific_degradation_rate(poc::TwoCompartmentCarbonIronParticles, i, j, k, grid, bgc, clock, fields, auxiliary_fields)
+    O₂ = @inbounds fields.O₂[i, j, k]
+    T  = @inbounds  fields.T[i, j, k]
+    
+    O₂ₘᵢₙ₁ = bgc.first_anoxia_threshold
+    O₂ₘᵢₙ₂ = bgc.second_anoxia_threshold
+
+    return specific_degradation_rate(poc, O₂, T, O₂ₘᵢₙ₁, O₂ₘᵢₙ₂)
 end
 
 include("carbon.jl")

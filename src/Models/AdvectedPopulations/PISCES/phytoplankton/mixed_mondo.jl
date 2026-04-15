@@ -174,45 +174,118 @@ end
     return phyto.growth_rate(val_name, i, j, k, grid, bgc, phyto, clock, fields, auxiliary_fields, L) * I
 end
 
-@inline function iron_uptake(phyto::MixedMondo, val_name, i, j, k, grid, bgc, clock, fields, auxiliary_fields)
-    δ  = phyto.exudated_fraction
-    θFeₘ = phyto.maximum_iron_ratio
+@inline function iron_uptake(δ,
+                             θFeₘ,
+                             k,
+                             Iₘ,
+                             S,
+                             Kₙₕᵐᵢₙ,
+                             Kₙₒᵐᵢₙ,
+                             θFeᵒ,
+                             μ₀,
+                             bₜ,
+                             T,
+                             Fe,
+                             I,
+                             IChl,
+                             IFe,
+                             NO₃,
+                             NH₄)
 
-    T  = @inbounds  fields.T[i, j, k]
-    Fe = @inbounds fields.Fe[i, j, k]
+    θFe = IFe / (I + eps(0.0))
+    θChl = ifelse(I == 0, 0, IChl / (12 * I + eps(0.0)))
 
-    I, IChl, IFe = phytoplankton_concentrations(val_name, i, j, k, fields)
+    K̄ = size_factor(Iₘ, S, I)
 
-    θFe = IFe / (I + eps(0.0)) # μmol Fe / mmol C
+    Kₙₒ = Kₙₒᵐᵢₙ * K̄
+    Kₙₕ = Kₙₕᵐᵢₙ * K̄
 
-    L, LFe = phyto.nutrient_limitation(val_name, i, j, k, grid, bgc, phyto, clock, fields, auxiliary_fields)
+    LNO₃ = nitrogen_limitation(NO₃, NH₄, Kₙₒ, Kₙₕ)
+    LNH₄ = nitrogen_limitation(NH₄, NO₃, Kₙₕ, Kₙₒ)
 
-    μᵢ = base_production_rate(phyto.growth_rate, T)
+    LN = LNO₃ + LNH₄
 
-    L₁ = iron_uptake_limitation(phyto, I, Fe) # assuming bFe = Fe
+    θₘ = 10^3 * (0.0016 / 55.85 * 12 * θChl +
+                 1.5 * 1.21e-5 * 14 / (55.85 * 7.625) * LN +
+                 1.15e-4 * 14 / (55.85 * 7.625) * LNO₃)
 
-    L₂ = 4 - 4.5 * LFe / (LFe + 1) # typo in Aumount 2015
+    LFe = min(1, max(0, (θFe - θₘ) / θFeᵒ))
+
+    μᵢ = base_production_rate(μ₀, bₜ, T)
+
+    L₁ = iron_uptake_limitation(k,
+                                Iₘ,
+                                S,
+                                I,
+                                Fe)
+
+    L₂ = 4 - 4.5 * LFe / (LFe + 1)
 
     return (1 - δ) * θFeₘ * L₁ * L₂ * max(0, (1 - θFe / θFeₘ) / (1.05 - θFe / θFeₘ)) * μᵢ * I
 end
 
-@inline function iron_uptake_limitation(phyto, I, Fe)
-    k = phyto.half_saturation_for_iron_uptake
+@inline function iron_uptake(phyto::MixedMondo, T, Fe, I, IChl, IFe, NO₃, NH₄, PO₄, Si, Si′)
+    return iron_uptake(phyto.exudated_fraction,
+                       phyto.maximum_iron_ratio,
+                       phyto.half_saturation_for_iron_uptake,
+                       phyto.threshold_for_size_dependency,
+                       phyto.size_ratio,
+                       phyto.nutrient_limitation.minimum_ammonium_half_saturation,
+                       phyto.nutrient_limitation.minimum_nitrate_half_saturation,
+                       phyto.nutrient_limitation.optimal_iron_quota,
+                       phyto.growth_rate.base_growth_rate,
+                       phyto.growth_rate.temperature_sensitivity,
+                       T,
+                       Fe,
+                       I,
+                       IChl,
+                       IFe,
+                       NO₃,
+                       NH₄)
+end
 
-    K = k * size_factor(phyto, I)
+@inline function iron_uptake(phyto::MixedMondo, val_name, i, j, k, grid, bgc, clock, fields, auxiliary_fields)
+    T  = @inbounds  fields.T[i, j, k]
+    Fe = @inbounds fields.Fe[i, j, k]
+    NO₃ = @inbounds fields.NO₃[i, j, k]
+    NH₄ = @inbounds fields.NH₄[i, j, k]
+    PO₄ = @inbounds fields.PO₄[i, j, k]
+    Si  = @inbounds  fields.Si[i, j, k]
+    Si′ = @inbounds bgc.silicate_climatology[i, j, k]
+
+    I, IChl, IFe = phytoplankton_concentrations(val_name, i, j, k, fields)
+
+    return iron_uptake(phyto, T, Fe, I, IChl, IFe, NO₃, NH₄, PO₄, Si, Si′)
+end
+
+@inline function iron_uptake_limitation(k,
+                                         Iₘ,
+                                         S,
+                                         I,
+                                         Fe)
+    K = k * size_factor(Iₘ, S, I)
 
     return Fe / (Fe + K + eps(0.0))
 end
 
-@inline function size_factor(phyto, I)
-    Iₘ  = phyto.threshold_for_size_dependency
-    S   = phyto.size_ratio
+@inline iron_uptake_limitation(phyto, I, Fe) =
+    iron_uptake_limitation(phyto.half_saturation_for_iron_uptake,
+                           phyto.threshold_for_size_dependency,
+                           phyto.size_ratio,
+                           I,
+                           Fe)
+
+@inline function size_factor(Iₘ, S, I)
 
     I₁ = min(I, Iₘ)
     I₂ = max(0, I - Iₘ)
 
     return (I₁ + S * I₂) / (I₁ + I₂ + eps(0.0))
 end
+
+@inline size_factor(phyto, I) = size_factor(phyto.threshold_for_size_dependency,
+                                            phyto.size_ratio,
+                                            I)
 
 @inline function silicate_uptake(phyto::MixedMondo, val_name, i, j, k, grid, bgc, clock, fields, auxiliary_fields)
     δ  = phyto.exudated_fraction

@@ -63,6 +63,90 @@ end
     (organic_excretion(zoo.micro, Val(:Z), i, j, k, grid, bgc, clock, fields, auxiliary_fields)
      + organic_excretion(zoo.meso, Val(:M), i, j, k, grid, bgc, clock, fields, auxiliary_fields))
 
+@inline non_assimilated_iron(zoo::MicroAndMeso,
+                                 T,
+                                 Z,
+                                 M,
+                                 food_availability::NamedTuple,
+                                 iron_availability::NamedTuple,
+                                 sinking_flux,
+                                 sinking_iron_flux) =
+    (non_assimilated_iron(zoo.micro, T, Z, food_availability, iron_availability, sinking_flux, sinking_iron_flux)
+     + non_assimilated_iron(zoo.meso, T, M, food_availability, iron_availability, sinking_flux, sinking_iron_flux))
+
+@inline function non_assimilated_iron(micro_iron_ratio,
+                                      micro_non_assimilated_fraction,
+                                      micro_maximum_grazing_rate,
+                                      micro_temperature_sensitivity,
+                                      micro_preference_for_p,
+                                      micro_preference_for_d,
+                                      micro_preference_for_z,
+                                      micro_preference_for_poc,
+                                      micro_specific_food_threshold_concentration,
+                                      micro_grazing_half_saturation,
+                                      micro_food_threshold_concentration,
+                                      micro_minimum_growth_efficiency,
+                                      micro_maximum_flux_feeding_rate,
+                                      meso_iron_ratio,
+                                      meso_non_assimilated_fraction,
+                                      meso_maximum_grazing_rate,
+                                      meso_temperature_sensitivity,
+                                      meso_preference_for_p,
+                                      meso_preference_for_d,
+                                      meso_preference_for_z,
+                                      meso_preference_for_poc,
+                                      meso_specific_food_threshold_concentration,
+                                      meso_grazing_half_saturation,
+                                      meso_food_threshold_concentration,
+                                      meso_minimum_growth_efficiency,
+                                      meso_maximum_flux_feeding_rate,
+                                      T,
+                                      Z,
+                                      M,
+                                      food_availability::NamedTuple,
+                                      iron_availability::NamedTuple,
+                                      sinking_flux,
+                                      sinking_iron_flux)
+    return (non_assimilated_iron(micro_iron_ratio,
+                                 micro_non_assimilated_fraction,
+                                 micro_maximum_grazing_rate,
+                                 micro_temperature_sensitivity,
+                                 micro_preference_for_p,
+                                 micro_preference_for_d,
+                                 micro_preference_for_z,
+                                 micro_preference_for_poc,
+                                 micro_specific_food_threshold_concentration,
+                                 micro_grazing_half_saturation,
+                                 micro_food_threshold_concentration,
+                                 micro_minimum_growth_efficiency,
+                                 micro_maximum_flux_feeding_rate,
+                                 T,
+                                 Z,
+                                 food_availability,
+                                 iron_availability,
+                                 sinking_flux,
+                                 sinking_iron_flux)
+            + non_assimilated_iron(meso_iron_ratio,
+                                   meso_non_assimilated_fraction,
+                                   meso_maximum_grazing_rate,
+                                   meso_temperature_sensitivity,
+                                   meso_preference_for_p,
+                                   meso_preference_for_d,
+                                   meso_preference_for_z,
+                                   meso_preference_for_poc,
+                                   meso_specific_food_threshold_concentration,
+                                   meso_grazing_half_saturation,
+                                   meso_food_threshold_concentration,
+                                   meso_minimum_growth_efficiency,
+                                   meso_maximum_flux_feeding_rate,
+                                   T,
+                                   M,
+                                   food_availability,
+                                   iron_availability,
+                                   sinking_flux,
+                                   sinking_iron_flux))
+end
+
 @inline non_assimilated_iron(zoo::MicroAndMeso, i, j, k, grid, bgc, clock, fields, auxiliary_fields) =
     (non_assimilated_iron(zoo.micro, Val(:Z), i, j, k, grid, bgc, clock, fields, auxiliary_fields)
      + non_assimilated_iron(zoo.meso, Val(:M), i, j, k, grid, bgc, clock, fields, auxiliary_fields))
@@ -73,20 +157,47 @@ end
 @inline upper_trophic_respiration(zoo::MicroAndMeso, i, j, k, grid, bgc, clock, fields, auxiliary_fields) =
     upper_trophic_respiration(zoo.meso, Val(:M), i, j, k, grid, bgc, clock, fields, auxiliary_fields)
      
-@inline upper_trophic_dissolved_iron(zoo::MicroAndMeso, i, j, k, grid, bgc, clock, fields, auxiliary_fields) =
-    upper_trophic_dissolved_iron(zoo.meso, Val(:M), i, j, k, grid, bgc, clock, fields, auxiliary_fields)
-    
+@inline upper_trophic_dissolved_iron(zoo::MicroAndMeso, T, M) =
+    upper_trophic_dissolved_iron(zoo.meso, T, M)
+
 @inline upper_trophic_fecal_production(zoo::MicroAndMeso, i, j, k, grid, bgc, clock, fields, auxiliary_fields) =
     upper_trophic_fecal_production(zoo.meso, Val(:M), i, j, k, grid, bgc, clock, fields, auxiliary_fields)
 
 @inline upper_trophic_fecal_iron_production(zoo::MicroAndMeso, i, j, k, grid, bgc, clock, fields, auxiliary_fields) =
     upper_trophic_fecal_iron_production(zoo.meso, Val(:M), i, j, k, grid, bgc, clock, fields, auxiliary_fields)
 
-@inline function bacteria_concentration(zoo::MicroAndMeso, i, j, k, grid, bgc, clock, fields, auxiliary_fields)
-    bZ = zoo.microzooplankton_bacteria_concentration
-    bM = zoo.mesozooplankton_bacteria_concentration
-    a  = zoo.bacteria_concentration_depth_exponent
+@inline function bacteria_concentration(bZ,
+                                         bM,
+                                         Bₘₐₓ,
+                                         a,
+                                         z,
+                                         zₘₓₗ,
+                                         zₑᵤ,
+                                         Z,
+                                         M)
 
+    zₘ = min(zₘₓₗ, zₑᵤ)
+
+    surface_bacteria = min(Bₘₐₓ, bZ * Z + bM * M)
+
+    depth_factor = (zₘ / z) ^ a
+
+    return ifelse(z >= zₘ, 1, depth_factor) * surface_bacteria
+end
+
+@inline function bacteria_concentration(zoo::MicroAndMeso, z, zₘₓₗ, zₑᵤ, Z, M)
+    return bacteria_concentration(zoo.microzooplankton_bacteria_concentration,
+                                  zoo.mesozooplankton_bacteria_concentration,
+                                  zoo.maximum_bacteria_concentration,
+                                  zoo.bacteria_concentration_depth_exponent,
+                                  z,
+                                  zₘₓₗ,
+                                  zₑᵤ,
+                                  Z,
+                                  M)
+end
+
+@inline function bacteria_concentration(zoo::MicroAndMeso, i, j, k, grid, bgc, clock, fields, auxiliary_fields)
     z = znode(i, j, k, grid, Center(), Center(), Center())
 
     zₘₓₗ = @inbounds auxiliary_fields.zₘₓₗ[i, j, k]
@@ -95,27 +206,19 @@ end
     Z = @inbounds fields.Z[i, j, k]
     M = @inbounds fields.M[i, j, k]
 
-    zₘ = min(zₘₓₗ, zₑᵤ)
-
-    surface_bacteria = min(4, bZ * Z + bM * M)
-
-    depth_factor = (zₘ / z) ^ a
-
-    return ifelse(z >= zₘ, 1, depth_factor) * surface_bacteria
+    return bacteria_concentration(zoo, z, zₘₓₗ, zₑᵤ, Z, M)
 end
 
-@inline function bacteria_activity(zoo::MicroAndMeso, i, j, k, grid, bgc, clock, fields, auxiliary_fields)
-    K_DOC = zoo.doc_half_saturation_for_bacterial_activity
-    K_NO₃ = zoo.nitrate_half_saturation_for_bacterial_activity
-    K_NH₄ = zoo.ammonia_half_saturation_for_bacterial_activity
-    K_PO₄ = zoo.phosphate_half_saturation_for_bacterial_activity
-    K_Fe  = zoo.iron_half_saturation_for_bacterial_activity
-
-    NH₄ = @inbounds fields.NH₄[i, j, k]
-    NO₃ = @inbounds fields.NO₃[i, j, k]
-    PO₄ = @inbounds fields.PO₄[i, j, k]
-    Fe  = @inbounds  fields.Fe[i, j, k]
-    DOC = @inbounds fields.DOC[i, j, k]
+@inline function bacteria_activity(K_DOC,
+                                    K_NO₃,
+                                    K_NH₄,
+                                    K_PO₄,
+                                    K_Fe,
+                                    NH₄,
+                                    NO₃,
+                                    PO₄,
+                                    Fe,
+                                    DOC)
 
     DOC_limit = DOC / (DOC + K_DOC)
 
@@ -129,6 +232,29 @@ end
     limiting_quota = min(L_N, L_PO₄, L_Fe)
 
     return limiting_quota * DOC_limit
+end
+
+@inline function bacteria_activity(zoo::MicroAndMeso, NH₄, NO₃, PO₄, Fe, DOC)
+    return bacteria_activity(zoo.doc_half_saturation_for_bacterial_activity,
+                             zoo.nitrate_half_saturation_for_bacterial_activity,
+                             zoo.ammonia_half_saturation_for_bacterial_activity,
+                             zoo.phosphate_half_saturation_for_bacterial_activity,
+                             zoo.iron_half_saturation_for_bacterial_activity,
+                             NH₄,
+                             NO₃,
+                             PO₄,
+                             Fe,
+                             DOC)
+end
+
+@inline function bacteria_activity(zoo::MicroAndMeso, i, j, k, grid, bgc, clock, fields, auxiliary_fields)
+    NH₄ = @inbounds fields.NH₄[i, j, k]
+    NO₃ = @inbounds fields.NO₃[i, j, k]
+    PO₄ = @inbounds fields.PO₄[i, j, k]
+    Fe  = @inbounds  fields.Fe[i, j, k]
+    DOC = @inbounds fields.DOC[i, j, k]
+
+    return bacteria_activity(zoo, NH₄, NO₃, PO₄, Fe, DOC)
 end
 
 @inline calcite_loss(zoo::MicroAndMeso, val_prey_name, i, j, k, grid, bgc, clock, fields, auxiliary_fields) =
