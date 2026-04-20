@@ -108,7 +108,7 @@ end
     low_light_factor = max(0, PAR - 1) / (4 + PAR)
     high_light_factor = 30 / (30 + PAR)
 
-    # modified from origional as it goes negative and does not achieve goal otherwise
+    # modified from original as it goes negative and does not achieve goal otherwise
     low_temperature_factor = max(0, T / (T + 0.1)) 
     high_temperature_factor = 1 + exp(-(T - 10)^2 / 25)
 

@@ -1,12 +1,12 @@
 abstract type BaseProduction end
 
 @inline function (μ::BaseProduction)(val_name, i, j, k, grid, bgc, phyto, clock, fields, auxiliary_fields, L)
-    bₜ = μ.temperature_sensetivity
+    bₜ = μ.temperature_sensitivity
     μ₀ = μ.base_growth_rate
     α₀ = μ.initial_slope_of_PI_curve
     β  = μ.low_light_adaptation
 
-    dark_tollerance = μ.dark_tollerance
+    dark_tolerance = μ.dark_tolerance
 
     β₁ = phyto.blue_light_absorption
     β₂ = phyto.green_light_absorption
@@ -37,7 +37,7 @@ abstract type BaseProduction end
 
     f₁ = 1.5 * day_length / (day_length + 0.5day)
 
-    f₂ = 1 - dark_residence_time / (dark_residence_time + dark_tollerance)
+    f₂ = 1 - dark_residence_time / (dark_residence_time + dark_tolerance)
 
     α = α₀ * (1 + β * exp(-PAR))
 
@@ -50,7 +50,7 @@ end
     NutrientLimitedProduction
 
 `BaseProduction` with light limitation moderated by nutrient availability. This is
-the "origional" PISCES phytoplankton growth rate model. Growth rate is of the form:
+the "original" PISCES phytoplankton growth rate model. Growth rate is of the form:
 
 ```math
 μ = μ₁f₁(τᵈ)f₂(zₘₓₗ)(1-exp(-α θᶜʰˡ PAR / τ μ₀ L)) L.
@@ -59,17 +59,17 @@ the "origional" PISCES phytoplankton growth rate model. Growth rate is of the fo
 Keyword Arguments
 =================
 - `base_growth_rate`: the base growth rate, μ₀, in (1/s)
-- `temperatrue_sensetivity`: temperature sensetivity parameter, b, giving μ₁ = μ₀ bᵀ where T is temperature
-- `dark_tollerance`: the time that the phytoplankton survives in darkness below the euphotic layer, τᵈ (s)
+- `temperature_sensitivity`: temperature sensitivity parameter, b, giving μ₁ = μ₀ bᵀ where T is temperature
+- `dark_tolerance`: the time that the phytoplankton survives in darkness below the euphotic layer, τᵈ (s)
 - `initial_slope_of_PI_curve`: the relationship between photosynthesis and irradiance, α₀ (1/W/m²)
-- `low_light_adaptation`: factor increasing the sensetivity of photosynthesis to irradiance, β,
+- `low_light_adaptation`: factor increasing the sensitivity of photosynthesis to irradiance, β,
    giving α = α₀(1 + exp(-PAR)), typically set to zero
 
 """
 @kwdef struct NutrientLimitedProduction{FT} <: BaseProduction
          base_growth_rate :: FT = 0.6 / day # 1 / s
-  temperature_sensetivity :: FT = 1.066     # 
-          dark_tollerance :: FT             # s 
+  temperature_sensitivity :: FT = 1.066     # 
+          dark_tolerance :: FT             # s 
 initial_slope_of_PI_curve :: FT = 2.0       # 
      low_light_adaptation :: FT = 0.0       # 
 end
@@ -95,10 +95,10 @@ the "new production" PISCES phytoplankton growth rate model. Growth rate is of t
 Keyword Arguments
 =================
 - `base_growth_rate`: the base growth rate, μ₀, in (1/s)
-- `temperatrue_sensetivity`: temperature sensetivity parameter, b, giving μ₁ = μ₀ bᵀ where T is temperature
-- `dark_tollerance`: the time that the phytoplankton survives in darkness below the euphotic layer, τᵈ (s)
+- `temperature_sensitivity`: temperature sensitivity parameter, b, giving μ₁ = μ₀ bᵀ where T is temperature
+- `dark_tolerance`: the time that the phytoplankton survives in darkness below the euphotic layer, τᵈ (s)
 - `initial_slope_of_PI_curve`: the relationship between photosynthesis and irradiance, α₀ (1/W/m²)
-- `low_light_adaptation`: factor increasing the sensetivity of photosynthesis to irradiance, β,
+- `low_light_adaptation`: factor increasing the sensitivity of photosynthesis to irradiance, β,
    giving α = α₀(1 + exp(-PAR)), typically set to zero
 - `basal_respiration_rate`: reference respiration rate, bᵣ (1/s)
 - `reference_growth_rate`: reference growth rate, μᵣ (1/s)
@@ -106,8 +106,8 @@ Keyword Arguments
 """
 @kwdef struct GrowthRespirationLimitedProduction{FT} <: BaseProduction
          base_growth_rate :: FT = 0.6 / day # 1 / s
-  temperature_sensetivity :: FT = 1.066     #
-          dark_tollerance :: FT             # s
+  temperature_sensitivity :: FT = 1.066     #
+          dark_tolerance :: FT             # s
 initial_slope_of_PI_curve :: FT = 2.0       # 
      low_light_adaptation :: FT = 0.0       #
    basal_respiration_rate :: FT = 0.033/day # 1 / s
@@ -156,7 +156,7 @@ end
 end
 
 @inline function base_production_rate(growth_rate, T)
-    bₜ = growth_rate.temperature_sensetivity
+    bₜ = growth_rate.temperature_sensitivity
     μ₀ = growth_rate.base_growth_rate
 
     fₜ = bₜ ^ T

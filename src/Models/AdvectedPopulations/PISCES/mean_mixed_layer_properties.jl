@@ -95,7 +95,7 @@ phytoplankton_diffusivity(closure, diffusivity_fields) =
 phytoplankton_diffusivity(closure::Tuple, diffusivity_fields) = 
     sum(map(n -> phytoplankton_diffusivity(closure[n], diffusivity_fields[n]), 1:length(closure)))
 
-phytoplankton_diffusivity(formulation, closure, diffusivit_fields) = ZeroField()
+phytoplankton_diffusivity(formulation, closure, diffusivity_fields) = ZeroField()
 
 const NotHorizontalFormulation = Union{VerticalFormulation, ThreeDimensionalFormulation}
 

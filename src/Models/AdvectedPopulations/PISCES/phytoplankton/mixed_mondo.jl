@@ -9,7 +9,7 @@ mondo approach for nitrate (NO₃), ammonia (NH₄), phosphate (PO₄),
 and silicate (Si), but the quota approach is used for iron (Fe) 
 and light (PAR).
 
-Therefore each class has a carbon compartement (generically `I`),
+Therefore each class has a carbon compartment (generically `I`),
 chlorophyll (`IChl`), and iron (`IFe`), and may also have silicate
 (`ISi`) if the `nutrient_limitation` specifies that the growth is
 silicate limited, despite the fact that the silicate still limits 
@@ -24,7 +24,7 @@ struct MixedMondo{GR, NL, FT}
                         growth_rate :: GR
                 nutrient_limitation :: NL
                         
-                   exudated_fracton :: FT # 
+                   exudated_fraction :: FT # 
 
               blue_light_absorption :: FT #
              green_light_absorption :: FT #
@@ -53,7 +53,7 @@ struct MixedMondo{GR, NL, FT}
     function MixedMondo(FT = Float64;
                         growth_rate::GR,
                         nutrient_limitation::NL,
-                        exudated_fracton = 0.05, # 
+                        exudated_fraction = 0.05, # 
 
                         blue_light_absorption, #
                         green_light_absorption, #
@@ -80,7 +80,7 @@ struct MixedMondo{GR, NL, FT}
                         size_ratio = 3.0) where {GR, NL} #
 
         return new{GR, NL, FT}(growth_rate, nutrient_limitation, 
-                               exudated_fracton, 
+                               exudated_fraction, 
                                blue_light_absorption, green_light_absorption, red_light_absorption,
                                mortality_half_saturation, linear_mortality_rate,
                                base_quadratic_mortality, maximum_quadratic_mortality,
@@ -102,7 +102,7 @@ required_biogeochemical_tracers(phyto::MixedMondo, base) =
 
 @inline function carbon_growth(phyto::MixedMondo, val_name, i, j, k, grid, bgc, clock, fields, auxiliary_fields)
     # production
-    δ  = phyto.exudated_fracton
+    δ  = phyto.exudated_fraction
 
     μI = total_production(phyto, val_name, i, j, k, grid, bgc, clock, fields, auxiliary_fields)
 
@@ -113,7 +113,7 @@ end
     I, IChl, IFe = phytoplankton_concentrations(val_name, i, j, k, fields)
 
     # production
-    δ  = phyto.exudated_fracton
+    δ  = phyto.exudated_fraction
 
     θ₀ = phyto.minimum_chlorophyll_ratio
     θ₁ = phyto.maximum_chlorophyll_ratio
@@ -175,7 +175,7 @@ end
 end
 
 @inline function iron_uptake(phyto::MixedMondo, val_name, i, j, k, grid, bgc, clock, fields, auxiliary_fields)
-    δ  = phyto.exudated_fracton
+    δ  = phyto.exudated_fraction
     θFeₘ = phyto.maximum_iron_ratio
 
     T  = @inbounds  fields.T[i, j, k]
@@ -215,7 +215,7 @@ end
 end
 
 @inline function silicate_uptake(phyto::MixedMondo, val_name, i, j, k, grid, bgc, clock, fields, auxiliary_fields)
-    δ  = phyto.exudated_fracton
+    δ  = phyto.exudated_fraction
     K₁ = phyto.silicate_half_saturation
     K₂ = phyto.enhanced_silicate_half_saturation
     θ₀ = phyto.optimal_silicate_ratio
@@ -267,7 +267,7 @@ end
     iron_uptake(phyto, val_name, i, j, k, grid, bgc, clock, fields, auxiliary_fields)
     
 @inline function dissolved_exudate(phyto::MixedMondo, val_name, i, j, k, grid, bgc, clock, fields, auxiliary_fields)
-    δ  = phyto.exudated_fracton
+    δ  = phyto.exudated_fraction
 
     μI = total_production(phyto, val_name, i, j, k, grid, bgc, clock, fields, auxiliary_fields)
 

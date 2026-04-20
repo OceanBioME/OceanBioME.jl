@@ -74,8 +74,8 @@ summary(::QualityDependantZooplankton) = string("QualityDependantZooplankton")
 
 summary(::DissolvedOrganicCarbon{FT}) where FT = string("DissolvedOrganicCarbon{$FT} - DOC")
 
-summary(pom::TwoCompartementCarbonIronParticles{FT}) where FT = 
-    string("TwoCompartementCarbonIronParticles{$FT} - $(required_biogeochemical_tracers(pom))")
+summary(pom::TwoCompartmentCarbonIronParticles{FT}) where FT = 
+    string("TwoCompartmentCarbonIronParticles{$FT} - $(required_biogeochemical_tracers(pom))")
 
 summary(::NitrateAmmonia{FT}) where FT = string("NitrateAmmonia{$FT} - (NO₃, NH₄)")
 summary(::SimpleIron{FT}) where FT = string("SimpleIron{$FT} - Fe")
