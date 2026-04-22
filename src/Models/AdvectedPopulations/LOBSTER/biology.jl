@@ -16,7 +16,7 @@ phytoplankton and detritus with `α` the fraction assimilated, `m` is the quadra
 mortality rate, and `μ` is the linear mortality rate taken to represent the excretion 
 rate.
 """ 
-@kwdef struct PhytoZoo{FT}
+@kwdef struct PhytoZoo{FT, TC}
             nitrate_half_saturation :: FT = 0.7       # mmol N/m³
             ammonia_half_saturation :: FT = 0.001     # mmol N/m³
                iron_half_saturation :: FT = 2e-4      # mmol Fe/m³ - estimated from fitting OSP 
@@ -27,7 +27,7 @@ rate.
    phytoplankton_exudation_fraction :: FT = 0.05      #
         ammonia_fraction_of_exudate :: FT = 0.75      #
 
-            temperature_coefficient :: FT = 1.0       # Q10 factor, off by default 1.88 option from Kuhn, 2015
+            temperature_coefficient :: TC = nothing       # Q10 factor, off by default 1.88 option from Kuhn, 2015
 
        phytoplankton_mortality_rate :: FT = 5.8e-7    # 1/s/mmol N/m³
          zooplankton_mortality_rate :: FT = 2.31e-6   # 1/s/mmol N/m³
@@ -63,7 +63,7 @@ required_biogeochemical_tracers(::PhytoZoo) = (:P, :Z)
     Gp = grazing(lobster, i, j, k, val_name, fields, auxiliary_fields)
 
     return (1 - γ) * μP - Gp - m * P^2
-end # done!
+end 
 
 @inline function (lobster::PHYTO_ZOO_LOBSTER)(i, j, k, grid, ::Val{:Z}, clock, fields, auxiliary_fields)
     α = lobster.biology.zooplankton_assimilation_fraction
@@ -156,22 +156,21 @@ end
     @inbounds begin
         PAR = auxiliary_fields.PAR[i, j, k]
         P   = fields.P[i, j, k]
-        T   = possibly_get_T(i, j, k, fields)
     end
 
     Lₙ = nutrient_limitation(lobster, i, j, k, fields, auxiliary_fields)
     Lₗ = PAR / (kPAR + PAR)
-    Lₜ = Q10 ^ (T / 10)
+    Lₜ = temperature_limitation(Q10, i, j, k, fields)
 
     return μ₀ * Lₗ * Lₙ * Lₜ * P
 end
 
-@inline function possibly_get_T(i, j, k, fields::NamedTuple{tracer_names}) where tracer_names
-    if :T ∈ tracer_names # this is a compile time evaluation
-        return fields.T[i, j, k]
-    else
-        return zero(eltype(fields.P)) # this doesn't seem optimal but we don't pass grid...
-    end
+@inline temperature_limitation(::Nothing, i, j, k, fields) = zero(eltype(fields.P))
+
+@inline function temperature_limitation(Q10, i, j, k, fields)
+    T = @inbounds fields.T[i, j, k]
+
+    return Q10 ^ (T / 10)
 end
 
 ###### nutrient uptake
