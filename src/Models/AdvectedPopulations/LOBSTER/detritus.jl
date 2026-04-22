@@ -270,7 +270,7 @@ end
 end
 
 function Detritus(grid; 
-                  sinking_speed = 0.1213 / day, # m/s
+                  sinking_speed = 2.7489 / day, # m/s
                   open_bottom = true,
                   kwargs...)
 
