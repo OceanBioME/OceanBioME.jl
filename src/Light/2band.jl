@@ -1,11 +1,9 @@
-@kernel function update_TwoBandPhotosyntheticallyActiveRadiation!(PAR, grid, P, surface_PAR, t, PAR_model)
+@kernel function update_TwoBandPhotosyntheticallyActiveRadiation!(PAR, grid, clock, P, surface_PAR, PAR_model)
     i, j = @index(Global, NTuple)
 
     k, k′ = domain_boundary_indices(RightBoundary(), grid.Nz)
 
-    X = z_boundary_node(i, j, k′, grid, Center(), Center())
-
-    PAR⁰ = surface_PAR(X..., t)
+    PAR⁰ = getbc(surface_PAR, i, j, grid, clock, P)
 
     kʳ = PAR_model.water_red_attenuation
     kᵇ = PAR_model.water_blue_attenuation
@@ -90,9 +88,22 @@ Keyword Arguments
 
 - `grid`: grid for building the model on
 - `water_red_attenuation`, ..., `phytoplankton_chlorophyll_ratio`: parameter values
-- `surface_PAR`: function (or array in the future) for the photosynthetically available radiation at the surface,
-   which should be `f(x, y, t)` where `x` and `y` are the native coordinates (i.e. meters for rectilinear grids
-   and latitude/longitude as appropriate)
+- `surface_PAR`: the photosynthetically available radiation at the surface, by default,
+   assumed to have the 'continuous form' `condition(x, y t)`
+
+If `parameters` is not `nothing`, then `surface_PAR` has the form
+`func(x, y, t, parameters)`.
+
+If `discrete_form = true`, surface_PAR is assumed to have the "discrete form",
+```
+condition(i, j, grid, clock, fields)
+```
+where `i`, and `j` are indices that vary along the boundary. If `discrete_form = true` and
+`parameters` is not `nothing`, the function `condition` is called with
+```
+condition(i, j, grid, clock, fields, parameters)
+```
+
 """
 function TwoBandPhotosyntheticallyActiveRadiation(; grid::AbstractGrid{FT},
                                                     water_red_attenuation = 0.225, # 1/m
@@ -103,7 +114,9 @@ function TwoBandPhotosyntheticallyActiveRadiation(; grid::AbstractGrid{FT},
                                                     chlorophyll_blue_exponent = 0.674,
                                                     pigment_ratio = 0.7,
                                                     phytoplankton_chlorophyll_ratio = 1.31,
-                                                    surface_PAR = default_surface_PAR) where FT
+                                                    surface_PAR = default_surface_PAR,
+                                                    discrete_form = false,
+                                                    parameters = nothing) where FT
 
     water_red_attenuation = convert(FT, water_red_attenuation)
     water_blue_attenuation = convert(FT, water_blue_attenuation)
@@ -117,6 +130,9 @@ function TwoBandPhotosyntheticallyActiveRadiation(; grid::AbstractGrid{FT},
     field = CenterField(grid; boundary_conditions =
                             regularize_field_boundary_conditions(
                                 FieldBoundaryConditions(top = ValueBoundaryCondition(surface_PAR)), grid, :PAR))
+
+    surface_PAR = materialize_condition(surface_PAR, parameters, discrete_form, nothing) 
+    surface_PAR = regularize_boundary_condition(surface_PAR, grid, (Center(), Center(), Center()), 3, RightBoundary, nothing)
 
     return TwoBandPhotosyntheticallyActiveRadiation(water_red_attenuation,
                                                     water_blue_attenuation,
@@ -132,9 +148,11 @@ end
 
 function update_biogeochemical_state!(model, PAR::TwoBandPhotosyntheticallyActiveRadiation)
     arch = architecture(model.grid)
-    launch!(arch, model.grid, :xy, update_TwoBandPhotosyntheticallyActiveRadiation!, PAR.field, model.grid, model.tracers.P, PAR.surface_PAR, model.clock.time, PAR)
 
+    launch!(arch, model.grid, :xy, update_TwoBandPhotosyntheticallyActiveRadiation!, PAR.field, model.grid, model.clock, model.tracers.P, PAR.surface_PAR, PAR)
     fill_halo_regions!(PAR.field, model.clock, fields(model))
+
+    return nothing
 end
 
 summary(::TwoBandPhotosyntheticallyActiveRadiation{FT}) where {FT} = string("Two-band light attenuation model ($FT)")
