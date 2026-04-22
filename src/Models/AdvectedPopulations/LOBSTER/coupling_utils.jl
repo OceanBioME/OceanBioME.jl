@@ -1,7 +1,7 @@
 @inline function conserved_nitrogen_tracers(lobster::LOBSTER)
     tracers = (:P, :Z)
 
-    if lobster.nutrients isa INCLUDES_NITRATE_AMMONIA
+    if lobster.nutrients isa IncludesNitrateAmmonia
         tracers = (tracers..., :NO₃, :NH₄)
     else
         tracers = (tracers..., :N)
