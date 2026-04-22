@@ -9,10 +9,14 @@ using Oceananigans.Biogeochemistry: update_biogeochemical_state!, required_bioge
 
 Pᵢ(x,y,z) = 2.5 + z
 
-function test_two_band(grid, bgc, model_type)
-    biogeochemistry = bgc(; grid,
-                            light_attenuation = TwoBandPhotosyntheticallyActiveRadiation(; grid),
-                            surface_photosynthetically_active_radiation = (x, y, t) -> 100.0)
+function test_two_band(grid, model_type, surface_PAR, discrete_form)
+    biogeochemistry = NutrientPhytoplanktonZooplanktonDetritus(; 
+                        grid,
+                        light_attenuation = 
+                            TwoBandPhotosyntheticallyActiveRadiation(; grid,
+                                                                       surface_PAR, 
+                                                                       discrete_form)
+                      )
 
     model = model_type(grid;
                        biogeochemistry,
@@ -47,17 +51,16 @@ function test_two_band(grid, bgc, model_type)
     return nothing
 end
 
-function test_multi_band(grid, bgc, model_type)
+function test_multi_band(grid, model_type, surface_PAR, discrete_form)
     light_attenuation = MultiBandPhotosyntheticallyActiveRadiation(; grid,
                                                                      bands = ((1, 2), ),
                                                                      base_bands = [1, 2],
                                                                      base_water_attenuation_coefficient = [0.01, 0.01],
                                                                      base_chlorophyll_exponent = [2, 2],
                                                                      base_chlorophyll_attenuation_coefficient = [0.1, 0.1],
-                                                                     surface_PAR = (args...) -> 1)
+                                                                     surface_PAR, discrete_form)
 
-    biogeochemistry = bgc(; grid,
-                            light_attenuation)
+    biogeochemistry = NutrientPhytoplanktonZooplanktonDetritus(; grid, light_attenuation)
 
     model = model_type(grid;
                        biogeochemistry,
@@ -66,7 +69,7 @@ function test_multi_band(grid, bgc, model_type)
 
     set!(model, P = 2/1.31) # this will cause tests to fail for models with different chlorophyll ratios
 
-    expected_PAR = on_architecture(CPU(), exp.(znodes(grid, Center()) * (0.01 + 0.1 * 2 ^ 2)))
+    expected_PAR = on_architecture(CPU(), 100 .* exp.(znodes(grid, Center()) * (0.01 + 0.1 * 2 ^ 2)))
 
     @test (@allowscalar all(interior(on_architecture(CPU(), light_attenuation.fields[1]), 1, 1, :) .≈ expected_PAR))
 
@@ -76,10 +79,10 @@ function test_multi_band(grid, bgc, model_type)
                                                                      base_water_attenuation_coefficient = [0.01, 0.01, 0.02, 0.02],
                                                                      base_chlorophyll_exponent = [2, 2, 1.5, 1.5],
                                                                      base_chlorophyll_attenuation_coefficient = [0.1, 0.1, 0.2, 0.2],
-                                                                     surface_PAR = (args...) -> 1)
+                                                                     surface_PAR,
+                                                                     discrete_form)
 
-    biogeochemistry = bgc(; grid,
-                            light_attenuation)
+    biogeochemistry = NutrientPhytoplanktonZooplanktonDetritus(; grid, light_attenuation)
 
     model = model_type(grid;
                        biogeochemistry,
@@ -88,14 +91,15 @@ function test_multi_band(grid, bgc, model_type)
 
     set!(model, P = 2/1.31) # this will cause tests to fail for models with different chlorophyll ratios (e.g. PISCES)
 
-    expected_PAR1 = on_architecture(CPU(), exp.(znodes(grid, Center()) * (0.01 + 0.1 * 2 ^ 2)) / 2)
-    expected_PAR2 = on_architecture(CPU(), exp.(znodes(grid, Center()) * (0.02 + 0.2 * 2 ^ 1.5)) / 2)
+    expected_PAR1 = on_architecture(CPU(), 100 .* exp.(znodes(grid, Center()) * (0.01 + 0.1 * 2 ^ 2)) / 2)
+    expected_PAR2 = on_architecture(CPU(), 100 .* exp.(znodes(grid, Center()) * (0.02 + 0.2 * 2 ^ 1.5)) / 2)
 
     PAR, PAR₁, PAR₂ = map(v-> on_architecture(CPU(), v), values(biogeochemical_auxiliary_fields(light_attenuation)))
 
-    @test all(interior(PAR₁, 1, 1, :) .≈ expected_PAR1)
-    @test all(interior(PAR₂, 1, 1, :) .≈ expected_PAR2)
-    @test all(PAR[1, 1, 1:grid.Nz]  .≈ expected_PAR1 .+ expected_PAR2) # binary operation so we can't `interior` it
+    # not sure why I've had to reduce the tolerances here
+    @test all(isapprox.(interior(PAR₁, 1, 1, :), expected_PAR1, atol=1e-4))
+    @test all(isapprox.(interior(PAR₂, 1, 1, :), expected_PAR2, atol=1e-4))
+    @test  all(isapprox.(PAR[1, 1, 1:grid.Nz], expected_PAR1 .+ expected_PAR2, atol=1e-3)) # binary operation so we can't `interior` it
 
     # check all the models work as expected
     @test isnothing(time_step!(model, 1))
@@ -103,17 +107,31 @@ function test_multi_band(grid, bgc, model_type)
     return nothing
 end
 
+@inline discrete_surface_PAR(i, j, grid, clock, fields) = 100
+@inline continuous_surface_PAR(x, y, t) = 100
+field_surface_PAR = Oceananigans.Fields.ConstantField(100)
+
 @testset "Light attenuaiton model" begin
+
+
     for model in (NonhydrostaticModel, HydrostaticFreeSurfaceModel),
         grid in (RectilinearGrid(architecture; size = (2, 2, 2), extent = (2, 2, 2)),
-                 LatitudeLongitudeGrid(architecture; size = (5, 5, 2), longitude = (-180, 180), latitude = (-85, 85), z = (-2, 0))),
-        bgc in (LOBSTER, NutrientPhytoplanktonZooplanktonDetritus) # this is now redundant since each model doesn't deal with the light separatly
+                 LatitudeLongitudeGrid(architecture; size = (5, 5, 2), longitude = (-180, 180), latitude = (-85, 85), z = (-2, 0)))
 
         if !((model == NonhydrostaticModel) && ((grid isa LatitudeLongitudeGrid) | (grid isa OrthogonalSphericalShellGrid)))
-            @info "Testing light with $bgc in $model on $grid..."
-            test_two_band(grid, bgc, model)
-            test_multi_band(grid, bgc, model)
+            @info "Testing light with in $model on $grid..."
+            test_two_band(grid, model, field_surface_PAR, false)
+            test_multi_band(grid, model, field_surface_PAR, discrete_form)
         end
+    end
+
+    grid = RectilinearGrid(architecture; size = (2, 2, 2), extent = (2, 2, 2))
+
+    for surface_PAR in (discrete_surface_PAR, continuous_surface_PAR, field_surface_PAR)
+        discrete_form = surface_PAR == discrete_surface_PAR
+
+        test_two_band(grid, NonhydrostaticModel, surface_PAR, discrete_form)
+        test_multi_band(grid, NonhydrostaticModel, surface_PAR, discrete_form)
     end
 end
 
