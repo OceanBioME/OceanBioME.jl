@@ -86,7 +86,9 @@ function MultiBandPhotosyntheticallyActiveRadiation(; grid::AbstractGrid{FT},
                                                       base_chlorophyll_attenuation_coefficient = MOREL_χ,
                                                       field_names = ntuple(n->par_symbol(n), Val(length(bands))),
                                                       surface_PAR = default_surface_PAR,
-                                                      surface_PAR_division = fill(1 / length(bands), length(bands))) where FT
+                                                      discrete_form = false,
+                                                      parameters = nothing,
+                                                      surface_PAR_division = fill(1 / length(bands), length(bands)),) where FT
     Nbands = length(bands)
 
     kʷ = zeros(eltype(grid), Nbands)
@@ -118,7 +120,7 @@ function MultiBandPhotosyntheticallyActiveRadiation(; grid::AbstractGrid{FT},
 
     total_PAR = sum(fields)
 
-    surface_PAR = materialize_condition(surface_PAR, parameters, discrete_form, nothing) 
+    surface_PAR = materialize_condition(surface_PAR, parameters, discrete_form, ()) 
     surface_PAR = regularize_boundary_condition(surface_PAR, grid, (Center(), Center(), Center()), 3, RightBoundary, nothing)
 
     return MultiBandPhotosyntheticallyActiveRadiation(total_PAR,
@@ -143,17 +145,17 @@ end
     ntuple(n->Symbol(Char('\xe2\x82\x80'+digits[n])), Val(N))
 
 @kernel function update_MultiBandPhotosyntheticallyActiveRadiation!(grid, clock, field, kʷ, e, χ,
-                                                                    _surface_PAR, surface_PAR_division, 
+                                                                    _surface_PAR, 
                                                                     Chl, k′) 
     i, j = @index(Global, NTuple)
 
-    surface_PAR = getbc(_surface_PAR, i, j, grid, clock, P)
+    surface_PAR = getbc(_surface_PAR, i, j, grid, clock, field)
 
     zᶜ = znodes(grid, Center(), Center(), Center())
 
     # first point below surface
     k = grid.Nz
-    @inbounds field[i, j, k] = surface_PAR * surface_PAR_division * exp(zᶜ[grid.Nz] * (kʷ + χ * Chl[i, j, k] ^ e))
+    @inbounds field[i, j, k] = surface_PAR * exp(zᶜ[grid.Nz] * (kʷ + χ * Chl[i, j, k] ^ e))
 
     # the rest of the points
     for k in grid.Nz-1:-1:1

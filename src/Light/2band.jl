@@ -131,7 +131,7 @@ function TwoBandPhotosyntheticallyActiveRadiation(; grid::AbstractGrid{FT},
                             regularize_field_boundary_conditions(
                                 FieldBoundaryConditions(top = ValueBoundaryCondition(surface_PAR)), grid, :PAR))
 
-    surface_PAR = materialize_condition(surface_PAR, parameters, discrete_form, nothing) 
+    surface_PAR = materialize_condition(surface_PAR, parameters, discrete_form, ()) 
     surface_PAR = regularize_boundary_condition(surface_PAR, grid, (Center(), Center(), Center()), 3, RightBoundary, nothing)
 
     return TwoBandPhotosyntheticallyActiveRadiation(water_red_attenuation,
@@ -150,7 +150,7 @@ function update_biogeochemical_state!(model, PAR::TwoBandPhotosyntheticallyActiv
     arch = architecture(model.grid)
 
     launch!(arch, model.grid, :xy, update_TwoBandPhotosyntheticallyActiveRadiation!, PAR.field, model.grid, model.clock, model.tracers.P, PAR.surface_PAR, PAR)
-    fill_halo_regions!(PAR.field, model.clock, fields(model))
+    #fill_halo_regions!(PAR.field, model.clock, fields(model))
 
     return nothing
 end
