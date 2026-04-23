@@ -11,7 +11,7 @@ julia> using OceanBioME, Oceananigans
 
 julia> grid = RectilinearGrid(size=(3, 3, 30), extent=(10, 10, 200));
 
-julia> bgc_model = LOBSTER(; grid, carbonate_system = CarbonateSystem())
+julia> bgc_model = LOBSTER(grid; carbonate_system = CarbonateSystem())
 LOBSTER model (:NO₃, :NH₄, :P, :Z, :sPOM, :bPOM, :DOM, :DIC, :Alk)
  Light attenuation: Two-band light attenuation model (Float64)
  Sediment: Nothing

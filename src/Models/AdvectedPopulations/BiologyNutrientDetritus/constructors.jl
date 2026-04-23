@@ -53,7 +53,7 @@ julia> using OceanBioME, Oceananigans
 
 julia> grid = RectilinearGrid(size=(3, 3, 30), extent=(10, 10, 200));
 
-julia> model = LOBSTER(; grid)
+julia> model = LOBSTER(grid)
 LOBSTER model (:NO₃, :NH₄, :P, :Z, :sPOM, :bPOM, :DOM) 
  Light attenuation: Two-band light attenuation model (Float64)
  Sediment: Nothing
@@ -165,7 +165,7 @@ julia> using OceanBioME, Oceananigans
 
 julia> grid = RectilinearGrid(size=(3, 3, 30), extent=(10, 10, 200));
 
-julia> model = LOBSTER(; grid)
+julia> model = LOBSTER(grid)
 LOBSTER model (:NO₃, :NH₄, :P, :Z, :sPOM, :bPOM, :DOM) 
  Light attenuation: Two-band light attenuation model (Float64)
  Sediment: Nothing

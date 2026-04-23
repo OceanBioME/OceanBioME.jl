@@ -67,13 +67,13 @@ particles = SugarKelpParticles(n; grid,
 set!(particles, A = 10, N = 0.01, C = 0.1, z = z₀, x = Lx / 2, y = Ly / 2)
 
 # ## Setup BGC model
-biogeochemistry = LOBSTER(; grid,
-                            surface_photosynthetically_active_radiation = PAR⁰,
-                            carbonate_system = CarbonateSystem(),
-                            detritus = VariableRedfieldDetritus(),
-                            oxygen = Oxygen(),
-                            scale_negatives = true,
-                            particles)
+biogeochemistry = LOBSTER(grid;
+                          surface_photosynthetically_active_radiation = PAR⁰,
+                          carbonate_system = CarbonateSystem(),
+                          detritus = VariableRedfieldDetritus(),
+                          oxygen = Oxygen(),
+                          scale_negatives = true,
+                          particles)
 
 model = NonhydrostaticModel(grid;
                             clock,

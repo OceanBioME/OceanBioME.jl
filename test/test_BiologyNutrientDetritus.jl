@@ -147,7 +147,7 @@ end
 
 @testset "Float32 LOBSTER" begin
     grid = RectilinearGrid(architecture, Float32; size=(3, 3, 10), extent=(10, 10, 200))
-    bgc = LOBSTER(; grid)
+    bgc = LOBSTER(grid)
 
     par = bgc.light_attenuation
     @test par.water_red_attenuation isa Float32

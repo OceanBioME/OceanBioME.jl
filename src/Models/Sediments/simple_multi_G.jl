@@ -92,7 +92,7 @@ julia> sediment = SimpleMultiGSediment(grid)
     Tracked fields: (:NO₃, :NH₄, :O₂, :sPOM, :bPOM)
     Coupled fields: (:NO₃, :NH₄, :O₂)
 
-julia> biogeochemistry = LOBSTER(; grid, sediment, detritus = TwoParticleAndDissolved(grid; open_bottom=true))
+julia> biogeochemistry = LOBSTER(grid; sediment, detritus = TwoParticleAndDissolved(grid; open_bottom=true))
 LOBSTER model (:NO₃, :NH₄, :P, :Z, :sPOM, :bPOM, :DOM)
  Light attenuation: Two-band light attenuation model (Float64)
  Sediment: `BiogeochemicalSediment` with `Single-layer multi-G sediment model (Float64)` biogeochemsitry

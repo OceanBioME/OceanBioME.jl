@@ -48,12 +48,12 @@ function run_box_simulation(initial_photosynthetic_slope,
 
     PAR = FunctionField{Center, Center, Center}(PAR_func, grid; clock)
   
-    biogeochemistry = NutrientPhytoplanktonZooplanktonDetritus(; grid,
-                                                                 initial_photosynthetic_slope,
-                                                                 base_maximum_growth,
-                                                                 nutrient_half_saturation,
-                                                                 phyto_base_mortality_rate,
-                                                                 light_attenuation = PrescribedPhotosyntheticallyActiveRadiation(PAR))
+    biogeochemistry = NPZD(grid;
+                           initial_photosynthetic_slope,
+                           base_maximum_growth,
+                           nutrient_half_saturation,
+                           phyto_base_mortality_rate,
+                           light_attenuation = PrescribedPhotosyntheticallyActiveRadiation(PAR))
 
     model = BoxModel(; biogeochemistry, clock)
 

@@ -4,7 +4,7 @@ using OceanBioME.Models: InstantRemineralisation, SimpleMultiG
 using OceanBioME.Sediments: BiogeochemicalSediment
 
 display_name(::LOBSTER) = "LOBSTER"
-display_name(::NutrientPhytoplanktonZooplanktonDetritus) = "NPZD"
+display_name(::NPZD) = "NPZD"
 display_name(::BiogeochemicalSediment{<:SimpleMultiG}) = "Multi-G"
 display_name(::BiogeochemicalSediment{<:InstantRemineralisation}) = "Instant remineralisation"
 display_name(::RectilinearGrid) = "Rectilinear grid"

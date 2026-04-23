@@ -36,8 +36,8 @@ function run_box_simulation()
 
     PAR = FunctionField{Center, Center, Center}(PAR_func, grid; clock)
 
-    biogeochemistry = NutrientPhytoplanktonZooplanktonDetritus(; grid,
-                                                                 light_attenuation_model = PrescribedPhotosyntheticallyActiveRadiation(PAR))
+    biogeochemistry = NPZD(grid;
+                           light_attenuation_model = PrescribedPhotosyntheticallyActiveRadiation(PAR))
 
     model = BoxModel(; biogeochemistry, clock)
 
