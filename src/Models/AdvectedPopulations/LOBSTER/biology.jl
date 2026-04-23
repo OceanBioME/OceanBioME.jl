@@ -16,7 +16,7 @@ phytoplankton and detritus with `α` the fraction assimilated, `m` is the quadra
 mortality rate, and `μ` is the linear mortality rate taken to represent the excretion 
 rate.
 """ 
-@kwdef struct PhytoZoo{FT}
+@kwdef struct PhytoZoo{FT, TC}
             nitrate_half_saturation :: FT = 0.7       # mmol N/m³
             ammonia_half_saturation :: FT = 0.001     # mmol N/m³
                iron_half_saturation :: FT = 2e-4      # mmol Fe/m³ - estimated from fitting OSP 
@@ -26,6 +26,8 @@ rate.
                          iron_ratio :: FT = 4.6375e-5 # mol Fe / mol N - from PISCES optimal ratio
    phytoplankton_exudation_fraction :: FT = 0.05      #
         ammonia_fraction_of_exudate :: FT = 0.75      #
+
+            temperature_coefficient :: TC = nothing       # Q10 factor, off by default 1.88 option from Kuhn, 2015
 
        phytoplankton_mortality_rate :: FT = 5.8e-7    # 1/s/mmol N/m³
          zooplankton_mortality_rate :: FT = 2.31e-6   # 1/s/mmol N/m³
@@ -61,7 +63,7 @@ required_biogeochemical_tracers(::PhytoZoo) = (:P, :Z)
     Gp = grazing(lobster, i, j, k, val_name, fields, auxiliary_fields)
 
     return (1 - γ) * μP - Gp - m * P^2
-end # done!
+end 
 
 @inline function (lobster::PHYTO_ZOO_LOBSTER)(i, j, k, grid, ::Val{:Z}, clock, fields, auxiliary_fields)
     α = lobster.biology.zooplankton_assimilation_fraction
@@ -72,7 +74,7 @@ end # done!
     G = total_grazing(lobster, i, j, k, fields, auxiliary_fields)
 
     return α * G - m * Z^2 - μ * Z
-end # done!
+end 
 
 @inline function total_grazing(lobster::PHYTO_ZOO_LOBSTER, i, j, k, fields, auxiliary_fields)
     kG = lobster.biology.grazing_half_saturation
@@ -134,10 +136,22 @@ end
     return nitrogen_limitation(lobster, i, j, k, fields, auxiliary_fields) * iron_limitation
 end
 
+
+@inline function nutrient_limitation(lobster::LOBSTER{<:Nutrient}, i, j, k, fields, auxiliary_fields)
+    kNO₃ = lobster.biology.nitrate_half_saturation
+
+    @inbounds begin
+        N = fields.N[i, j, k]
+    end
+
+    return N / (N + kNO₃)
+end
+
 ##### total phytoplankton growth
 @inline function phytoplankton_growth(lobster::PHYTO_ZOO_LOBSTER, i, j, k, fields, auxiliary_fields)
     kPAR = lobster.biology.light_half_saturation
     μ₀   = lobster.biology.phytoplankton_maximum_growth_rate
+    Q10  = lobster.biology.temperature_coefficient
 
     @inbounds begin
         PAR = auxiliary_fields.PAR[i, j, k]
@@ -146,8 +160,17 @@ end
 
     Lₙ = nutrient_limitation(lobster, i, j, k, fields, auxiliary_fields)
     Lₗ = PAR / (kPAR + PAR)
+    Lₜ = temperature_limitation(Q10, i, j, k, fields)
 
-    return μ₀ * Lₗ * Lₙ * P
+    return μ₀ * Lₗ * Lₙ * Lₜ * P
+end
+
+@inline temperature_limitation(::Nothing, i, j, k, fields) = zero(eltype(fields.P))
+
+@inline function temperature_limitation(Q10, i, j, k, fields)
+    T = @inbounds fields.T[i, j, k]
+
+    return Q10 ^ (T / 10)
 end
 
 ###### nutrient uptake
@@ -197,6 +220,15 @@ end
     μ = phytoplankton_growth(lobster, i, j, k, fields, auxiliary_fields)
 
     return R * μ
+end
+
+@inline function nutrient_uptake(lobster::PHYTO_ZOO_LOBSTER, i, j, k, val_name::Val{:N}, fields, auxiliary_fields)
+    α = lobster.biology.ammonia_fraction_of_exudate
+    γ = lobster.biology.phytoplankton_exudation_fraction
+    
+    μ = phytoplankton_growth(lobster, i, j, k, fields, auxiliary_fields)
+
+    return μ * (1 - α * γ)
 end
 
 @inline function phytoplankton_primary_production(lobster::PHYTO_ZOO_LOBSTER, i, j, k, fields, auxiliary_fields)
@@ -276,7 +308,7 @@ end
     return g * p * P / (kG + food_concentration) * Z
 end
 
-@inline function grazing(lobster::PHYTO_ZOO_LOBSTER, i, j, k, ::Union{Val{:sPOM}, Val{:sPON}}, fields, auxiliary_fields)
+@inline function grazing(lobster::PHYTO_ZOO_LOBSTER, i, j, k, ::Union{Val{:sPOM}, Val{:sPON}, Val{:D}}, fields, auxiliary_fields)
     kG = lobster.biology.grazing_half_saturation
     g  = lobster.biology.maximum_grazing_rate
 
@@ -331,7 +363,7 @@ end
 # assume instant dissolution and put it back in DIC (or we could choose to lose it),
 # maybe that would be better?
 # but when we don't this can't be implicitly captured so we put it all back in the DIC compartement
-@inline function calcite_dissolution(lobster::LOBSTER{<:Any, <:PhytoZoo, <:TwoParticleAndDissolved}, i, j, k, fields, auxiliary_fields)
+@inline function calcite_dissolution(lobster::LOBSTER{<:Any, <:PhytoZoo, <:Union{TwoParticleAndDissolved, Detritus, Nothing}}, i, j, k, fields, auxiliary_fields)
     R  = lobster.biology.redfield_ratio 
     ρ  = lobster.biology.carbon_calcate_ratio
     mᴾ = lobster.biology.phytoplankton_mortality_rate
