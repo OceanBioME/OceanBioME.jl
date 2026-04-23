@@ -35,6 +35,8 @@ instantiate_detritus(::Val{Detritus}, grid, sinking) =
 
 test_models = []
 
+light_attenuation = PrescribedPhotosyntheticallyActiveRadiation(ConstantField(100))
+
 # construct the possible configurations
 for sinking = (false, true),
     detritus = (TwoParticleAndDissolved, VariableRedfieldDetritus, Detritus),
@@ -49,7 +51,8 @@ for sinking = (false, true),
                                                                                 biology = PhytoZoo(),
                                                                                 carbonate_system, 
                                                                                 oxygen, 
-                                                                                detritus))
+                                                                                detritus,
+                                                                                light_attenuation))
 
     required_tracers = (:P, :Z)
     initial_values = (rand(), rand())
