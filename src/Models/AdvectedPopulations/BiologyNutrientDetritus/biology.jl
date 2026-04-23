@@ -16,7 +16,7 @@ phytoplankton and detritus with `α` the fraction assimilated, `m` is the quadra
 mortality rate, and `μ` is the linear mortality rate taken to represent the excretion 
 rate.
 """ 
-@kwdef struct PhytoZoo{FT, TC, PM, GC, PS, ZS}
+@kwdef struct PhytoZoo{FT, LL, TC, PM, GC, PS, ZS}
             nitrate_half_saturation :: FT = 0.7       # mmol N/m³
             ammonia_half_saturation :: FT = 0.001     # mmol N/m³
                iron_half_saturation :: FT = 2e-4      # mmol Fe/m³ - estimated from fitting OSP 
@@ -26,6 +26,7 @@ rate.
                          iron_ratio :: FT = 4.6375e-5 # mol Fe / mol N - from PISCES optimal ratio
    phytoplankton_exudation_fraction :: FT = 0.05      #
         ammonia_fraction_of_exudate :: FT = 0.75      #
+                   light_limitation :: LL = MondoLightLimitation()
 
             temperature_coefficient :: TC = nothing   # Q10 factor, off by default 1.88 option from Kuhn, 2015
 
@@ -199,7 +200,7 @@ end
     end
 
     Lₙ = nutrient_limitation(lobster, i, j, k, fields, auxiliary_fields)
-    Lₗ = PAR / (kPAR + PAR)
+    Lₗ = light_limitation(lobster.biology.light_limitation, PAR, kPAR)
     Lₜ = temperature_limitation(Q10, i, j, k, fields)
 
     return μ₀ * Lₗ * Lₙ * Lₜ * P
@@ -212,6 +213,12 @@ end
 
     return Q10 ^ (T / 10)
 end
+
+struct MondoLightLimitation end
+struct AnalyticalLightLimitation end # This formulation is justified because you can rearrange to αI/√(μ² + α²I²) which if you put simple I(t) in can be integrated analytically
+
+@inline light_limitation(::MondoLightLimitation, PAR, kPAR) = PAR / (kPAR + PAR)
+@inline light_limitation(::AnalyticalLightLimitation, PAR, kPAR) = PAR / sqrt(PAR^2 + kPAR^2)
 
 ###### nutrient uptake
 @inline function nutrient_uptake(lobster::PHYTO_ZOO_LOBSTER, i, j, k, val_name::Val{:NO₃}, fields, auxiliary_fields)
@@ -284,12 +291,19 @@ end
 
 ##### mortality waste
 @inline function biology_inorganic_nitrogen_waste(lobster::PHYTO_ZOO_LOBSTER, i, j, k, fields, auxiliary_fields)
-    α = lobster.biology.excretion_inorganic_fraction
-    μ = lobster.biology.zooplankton_excretion_rate
+    αᴾ = lobster.biology.phytoplankton_solid_waste_fraction
+    αᶻ = lobster.biology.excretion_inorganic_fraction
+    μ  = lobster.biology.zooplankton_excretion_rate
+    mᴾ = lobster.biology.phytoplankton_mortality_rate
 
-    Z = @inbounds fields.Z[i, j, k]
+    @inbounds begin
+        P = fields.P[i, j, k]
+        Z = fields.Z[i, j, k]
+    end
 
-    return α * μ * Z
+    νP = mortality(lobster.biology.phytoplankton_mortality_formulation, P, mᴾ)
+
+    return αᶻ * μ * Z + (1 - αᴾ) * νP
 end
 
 @inline biology_inorganic_carbon_waste(lobster::PHYTO_ZOO_LOBSTER, i, j, k, fields, auxiliary_fields) =
@@ -301,19 +315,14 @@ end
     μ   = lobster.biology.zooplankton_excretion_rate
     αP  = lobster.biology.ammonia_fraction_of_exudate
     γ   = lobster.biology.phytoplankton_exudation_fraction
-    αPm = lobster.biology.phytoplankton_solid_waste_fraction
-    mP = lobster.biology.phytoplankton_mortality_rate
-
     
     @inbounds begin
-        P = fields.P[i, j, k]
         Z = fields.Z[i, j, k]
     end
     
-    νP = mortality(lobster.biology.phytoplankton_mortality_formulation, P, mP)
     μP = phytoplankton_growth(lobster, i, j, k, fields, auxiliary_fields)
 
-    return (1 - αP) * γ * μP + (1 - αZ) * μ * Z + (1 - αPm) * νP
+    return (1 - αP) * γ * μP + (1 - αZ) * μ * Z
 end
 
 @inline biology_organic_carbon_waste(lobster::PHYTO_ZOO_LOBSTER, i, j, k, fields, auxiliary_fields) =
@@ -321,7 +330,7 @@ end
 
 @inline function solid_waste(lobster::PHYTO_ZOO_LOBSTER, i, j, k, fields, auxiliary_fields)
     αᴾ = lobster.biology.phytoplankton_solid_waste_fraction
-    αᶻ  = lobster.biology.zooplankton_assimilation_fraction
+    αᶻ = lobster.biology.zooplankton_assimilation_fraction
     mᴾ = lobster.biology.phytoplankton_mortality_rate
     mᶻ = lobster.biology.zooplankton_mortality_rate
 
@@ -334,7 +343,7 @@ end
 
     νP = mortality(lobster.biology.phytoplankton_mortality_formulation, P, mᴾ)
 
-    return (1 - α) * G + αᴾ * νP + mᶻ * Z^2
+    return (1 - αᶻ) * G + αᴾ * νP + mᶻ * Z^2
 end
 
 @inline solid_carbon_waste(lobster::PHYTO_ZOO_LOBSTER, i, j, k, fields, auxiliary_fields) =
@@ -357,7 +366,7 @@ end
 
     L = concentration_limit(lobster.biology.grazing_concentration_formulation, food_concentration, kG)
 
-    return g * p * L * P / food_concentration * Z
+    return g * p * L * P / (food_concentration + eps(food_concentration)) * Z
 end
 
 @inline function grazing(lobster::PHYTO_ZOO_LOBSTER, i, j, k, ::Union{Val{:sPOM}, Val{:sPON}, Val{:D}}, fields, auxiliary_fields)
@@ -376,7 +385,7 @@ end
 
     L = concentration_limit(lobster.biology.grazing_concentration_formulation, food_concentration, kG)
 
-    return g * (1-p) * L * sPOM / food_concentration * Z
+    return g * (1-p) * L * sPOM / (food_concentration + eps(food_concentration)) * Z
 end
 
 @inline grazing(lobster::PHYTO_ZOO_LOBSTER, i, j, k, ::Val{:sPOC}, fields, auxiliary_fields) =

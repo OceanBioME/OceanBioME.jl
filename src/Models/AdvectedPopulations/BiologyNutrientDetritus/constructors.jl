@@ -114,7 +114,8 @@ LOBSTER(grid;
                             zooplankton_assimilation_fraction = 0.9116,
                             phytoplankton_sinking_speed = 0.2551/day,
                             excretion_inorganic_fraction = one(grid),
-                            phytoplankton_solid_waste_fraction = 0.0101 / (0.066 + 0.0101)),
+                            phytoplankton_solid_waste_fraction = 0.0101 / (0.066 + 0.0101),
+                            maximum_grazing_rate = 2.1522 / day),
         detritus = Detritus(grid),
 
         carbonate_system = nothing,
@@ -190,7 +191,10 @@ NPZD(grid;
                         zooplankton_assimilation_fraction = 0.9116,
                         phytoplankton_sinking_speed = 0.2551/day,
                         excretion_inorganic_fraction = one(grid),
-                        phytoplankton_solid_waste_fraction = 0.0101 / (0.066 + 0.0101)),
+                        phytoplankton_solid_waste_fraction = 0.0101 / (0.066 + 0.0101),
+                        maximum_grazing_rate = 2.1522 / day,
+                        light_limitation = AnalyticalLightLimitation(),
+                        light_half_saturation = (0.6989/day)/(0.1953/day)),
      detritus = Detritus(grid),
 
      carbonate_system = nothing,

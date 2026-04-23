@@ -43,7 +43,6 @@ import Oceananigans.Biogeochemistry: AbstractBiogeochemistry,
                                      required_biogeochemical_tracers,
                                      required_biogeochemical_auxiliary_fields,
                                      biogeochemical_drift_velocity
-                                     
 
 struct BiologyNutrientDetritus{NUT, BIO, DET, CAR, OXY} <: AbstractBiogeochemistry
          nutrients :: NUT 
@@ -94,8 +93,9 @@ required_biogeochemical_tracers(bnd::BiologyNutrientDetritus) =
      required_biogeochemical_tracers(bnd.carbonate_system)...,
      required_biogeochemical_tracers(bnd.oxygen)...)
 
-# needed?
-required_biogeochemical_tracers(::Nothing) = ()
+# oceananigans defines the fallbacks for ::Nothing or ::AbstractBiogeochemistry but not anything else
+required_biogeochemical_tracers(anything_else) = ()
+required_biogeochemical_auxiliary_fields(anything_else) = ()
 
 required_biogeochemical_auxiliary_fields(bnd::BiologyNutrientDetritus) = 
     (required_biogeochemical_auxiliary_fields(bnd.nutrients)...,
@@ -115,6 +115,6 @@ include("oxygen.jl")
 include("show.jl")
 include("coupling_utils.jl")
 include("adapt_methods.jl")
-include("defaults.jl")
+include("constructors.jl")
 
 end # module
