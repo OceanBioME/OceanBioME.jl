@@ -52,7 +52,8 @@ function run_box_simulation(initial_photosynthetic_slope,
                            biology = PhytoZoo(; phytoplankton_maximum_growth_rate,
                                                 nitrate_half_saturation,
                                                 light_half_saturation = phytoplankton_maximum_growth_rate/initial_photosynthetic_slope,
-                                                phytoplankton_mortality_rate = 0.066/day + phyto_base_mortality_rate/day),
+                                                phytoplankton_mortality_rate = 0.066/day + phyto_base_mortality_rate/day,
+                                                phytoplankton_solid_waste_fraction = phyto_base_mortality_rate*day / (0.066 + phyto_base_mortality_rate*day)),
                            light_attenuation = PrescribedPhotosyntheticallyActiveRadiation(PAR))
     model = BoxModel(; biogeochemistry, clock)
 
