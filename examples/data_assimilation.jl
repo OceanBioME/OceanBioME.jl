@@ -39,8 +39,8 @@ z = -10 # nominal depth of the box for the PAR profile
 @inline PAR_func(t) = PAR⁰(t) * exp(0.2z) # Modify the PAR based on the nominal depth and exponential decay 
 
 function run_box_simulation(initial_photosynthetic_slope,
-                            base_maximum_growth,
-                            nutrient_half_saturation,
+                            phytoplankton_maximum_growth_rate,
+                            nitrate_half_saturation,
                             phyto_base_mortality_rate,
                             j)
     grid = BoxModelGrid()
@@ -49,12 +49,11 @@ function run_box_simulation(initial_photosynthetic_slope,
     PAR = FunctionField{Center, Center, Center}(PAR_func, grid; clock)
   
     biogeochemistry = NPZD(grid;
-                           initial_photosynthetic_slope,
-                           base_maximum_growth,
-                           nutrient_half_saturation,
-                           phyto_base_mortality_rate,
+                           biology = PhytoZoo(; phytoplankton_maximum_growth_rate,
+                                                nitrate_half_saturation,
+                                                light_half_saturation = phytoplankton_maximum_growth_rate/initial_photosynthetic_slope,
+                                                phytoplankton_mortality_rate = 0.066/day + phyto_base_mortality_rate/day),
                            light_attenuation = PrescribedPhotosyntheticallyActiveRadiation(PAR))
-
     model = BoxModel(; biogeochemistry, clock)
 
     set!(model, N = 10.0, P = 0.1, Z = 0.01)
