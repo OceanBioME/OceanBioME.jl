@@ -3,8 +3,7 @@ include("dependencies_for_runtests.jl")
 using OceanBioME.Models: InstantRemineralisation, SimpleMultiG
 using OceanBioME.Sediments: BiogeochemicalSediment
 
-display_name(::LOBSTER) = "LOBSTER"
-display_name(::NPZD) = "NPZD"
+display_name(::BiologyNutrientDetritus) = "BiologyNutrientDetritus"
 display_name(::BiogeochemicalSediment{<:SimpleMultiG}) = "Multi-G"
 display_name(::BiogeochemicalSediment{<:InstantRemineralisation}) = "Instant remineralisation"
 display_name(::RectilinearGrid) = "Rectilinear grid"
