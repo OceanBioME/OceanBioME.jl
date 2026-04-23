@@ -77,7 +77,7 @@ end
 
 const PHYTO_ZOO_LOBSTER = BiologyNutrientDetritus{<:Any, <:PhytoZoo}
 
-required_biogeochemical_tracers(::PhytoZoo) = (:P, :Z)
+required_biogeochemical_tracers(pz::PhytoZoo) = ((:P, :Z)..., (isnothing(pz.temperature_coefficient) ? () : (:T, ))...)
 required_biogeochemical_auxiliary_fields(::PhytoZoo) = (:PAR, )
 
 struct Linear end
