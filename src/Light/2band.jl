@@ -1,8 +1,6 @@
 @kernel function update_TwoBandPhotosyntheticallyActiveRadiation!(PAR, grid, clock, P, surface_PAR, PAR_model)
     i, j = @index(Global, NTuple)
 
-    k, k′ = domain_boundary_indices(RightBoundary(), grid.Nz)
-
     PAR⁰ = getbc(surface_PAR, i, j, grid, clock, P)
 
     kʳ = PAR_model.water_red_attenuation

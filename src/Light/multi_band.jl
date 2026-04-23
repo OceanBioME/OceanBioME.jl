@@ -119,6 +119,7 @@ function MultiBandPhotosyntheticallyActiveRadiation(; grid::AbstractGrid{FT},
 
     total_PAR = sum(fields)
 
+    # wrap surface_PAR to make it work with the `getbc` interface
     surface_PAR = materialize_condition(surface_PAR, parameters, discrete_form, ()) 
     surface_PAR = regularize_boundary_condition(surface_PAR, grid, (Center(), Center(), Center()), 3, RightBoundary, nothing)
 
@@ -151,9 +152,8 @@ end
 
     zᶜ = znodes(grid, Center(), Center(), Center())
 
-    # first point below surface
     k = grid.Nz
-    @inbounds field[i, j, k] = surface_PAR * surface_PAR_division * exp(zᶜ[grid.Nz] * (kʷ + χ * Chl[i, j, k] ^ e))
+    @inbounds field[i, j, k] = surface_PAR * surface_PAR_division * exp(zᶜ[k] * (kʷ + χ * Chl[i, j, k] ^ e))
 
     # the rest of the points
     for k in grid.Nz-1:-1:1
