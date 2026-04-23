@@ -45,7 +45,7 @@ for sinking = (false, true),
     detritus = instantiate_detritus(Val(detritus), grid, sinking)
 
     model = NonhydrostaticModel(grid;
-                                biogeochemistry = LOBSTER(; grid, nutrients, carbonate_system, oxygen, detritus))
+                                biogeochemistry = BiologyNutrientDetritus(grid; nutrients, carbonate_system, oxygen, detritus))
 
     required_tracers = (:P, :Z)
     initial_values = (rand(), rand())
@@ -83,7 +83,7 @@ for sinking = (false, true),
         initial_values = (initial_values..., rand())
     end
 
-     @info "Constructed $(keys(model.tracers))"
+    @info "Constructed $(keys(model.tracers))"
 
     push!(test_models, (; required_tracers, initial_values, model, sinking))
 end
@@ -130,6 +130,20 @@ end; )
         @test ΣC₀ ≈ ΣC₁
     end
 end; )
+
+@testset "BND constructors" begin
+    grid = RectilinearGrid(architecture; size=(1, 1, 1), extent=(1, 1, 2))
+
+    lobster = LOBSTER(grid)
+    npzd = NPZD(grid)
+
+    @test lobster isa OceanBioME.DiscreteBiogeochemistry{<:BiologyNutrientDetritus}
+    @test npzd isa OceanBioME.DiscreteBiogeochemistry{<:BiologyNutrientDetritus}
+
+    @test lobster.underlying_biogeochemistry isa BiologyNutrientDetritus{<:NitrateAmmonia, <:PhytoZoo, <:TwoParticleAndDissolved}
+    @test npzd.underlying_biogeochemistry isa BiologyNutrientDetritus{<:Nutrient, <:PhytoZoo, <:Detritus}
+end
+
 
 @testset "Float32 LOBSTER" begin
     grid = RectilinearGrid(architecture, Float32; size=(3, 3, 10), extent=(10, 10, 200))

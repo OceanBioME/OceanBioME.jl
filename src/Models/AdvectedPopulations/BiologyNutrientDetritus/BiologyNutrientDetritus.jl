@@ -30,7 +30,9 @@ export LOBSTER, NPZD,
        TwoParticleAndDissolved, 
        NitrateAmmonia,
        Nutrient,
-       Detritus
+       Detritus,
+       BiologyNutrientDetritus,
+       PhytoZoo
 
 using Oceananigans.Units
 
