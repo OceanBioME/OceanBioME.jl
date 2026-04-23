@@ -62,7 +62,7 @@ function BiologyNutrientDetritus(grid;
                                  oxygen = nothing,
                                  light_attenuation = nothing,
                                  sediment = nothing,
-                                 scale_negatives = nothing,
+                                 scale_negatives = false,
                                  invalid_fill_value = NaN,
                                  particles = nothing,
                                  modifiers = nothing)
