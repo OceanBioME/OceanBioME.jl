@@ -70,7 +70,7 @@ function BiologyNutrientDetritus(grid;
     underlying_biogeochemistry = BiologyNutrientDetritus(nutrients, biology, detritus, carbonate_system, oxygen)
 
     if scale_negatives
-        scaler = ScaleNegativeTracers(lobster, grid; invalid_fill_value)
+        scaler = ScaleNegativeTracers(underlying_biogeochemistry, grid; invalid_fill_value)
         if isnothing(modifiers)
             modifiers = scaler
         elseif modifiers isa Tuple
