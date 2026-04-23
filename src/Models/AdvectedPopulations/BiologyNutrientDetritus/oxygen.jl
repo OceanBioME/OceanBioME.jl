@@ -18,7 +18,7 @@ end
 
 required_biogeochemical_tracers(::Oxygen) = (:O₂, )
 
-@inline function (lobster::LOBSTER{<:Any, <:Any, <:Any, <:Any, <:Oxygen})(i, j, k, grid, val_name::Val{:O₂}, clock, fields, auxiliary_fields)
+@inline function (lobster::BiologyNutrientDetritus{<:Any, <:Any, <:Any, <:Any, <:Oxygen})(i, j, k, grid, val_name::Val{:O₂}, clock, fields, auxiliary_fields)
     Rp = lobster.oxygen.respiration_oxygen_nitrogen_ratio
     Rn = lobster.oxygen.nitrification_oxygen_nitrogen_ratio
 
@@ -30,7 +30,7 @@ required_biogeochemical_tracers(::Oxygen) = (:O₂, )
     return Rp * μP - (Rp - Rn) * nitrate_production - Rp * μNH₄
 end
 
-@inline function (lobster::LOBSTER{<:Any, <:Nutrient, <:Any, <:Any, <:Oxygen})(i, j, k, grid, val_name::Val{:O₂}, clock, fields, auxiliary_fields)
+@inline function (lobster::BiologyNutrientDetritus{<:Any, <:Nutrient, <:Any, <:Any, <:Oxygen})(i, j, k, grid, val_name::Val{:O₂}, clock, fields, auxiliary_fields)
     Rp = lobster.oxygen.respiration_oxygen_nitrogen_ratio
     Rn = lobster.oxygen.nitrification_oxygen_nitrogen_ratio
 

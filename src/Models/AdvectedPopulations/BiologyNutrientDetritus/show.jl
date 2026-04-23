@@ -1,9 +1,9 @@
 import Base: show, summary
 
-##### LOBSTER
-summary(lobster::LOBSTER) = string("LOBSTER model $(required_biogeochemical_tracers(lobster))")
-function show(io::IO, lobster::LOBSTER)
-    msg = "LOBSTER model\n"
+##### BiologyNutrientDetritus
+summary(lobster::BiologyNutrientDetritus) = string("BiologyNutrientDetritus model $(required_biogeochemical_tracers(lobster))")
+function show(io::IO, lobster::BiologyNutrientDetritus)
+    msg = "BiologyNutrientDetritus model\n"
     msg *= "├── Biology: $(summary(lobster.biology))\n"
     msg *= "├── Nutrients: $(summary(lobster.nutrients))\n"
 
@@ -31,7 +31,7 @@ end
 summary(nutrients::NitrateAmmonia) = string("Nitrate and ammonia $(required_biogeochemical_tracers(nutrients))")
 summary(nutrients::NitrateAmmoniaIron) = string("Nitrate, ammonia, and iron $(required_biogeochemical_tracers(nutrients))")
 summary(nutrients::Nutrient) = string("Nutrient $(required_biogeochemical_tracers(nutrients))")
-summary(biology::PhytoZoo) = string("Phytoplankton and zooplankton $(required_biogeochemical_tracers(biology))")
+summary(biology::LOBSTERPhytoZoo) = string("Phytoplankton and zooplankton $(required_biogeochemical_tracers(biology))")
 summary(detritus::Detritus) = string("Detritus $(required_biogeochemical_tracers(detritus))")
 summary(detritus::TwoParticleAndDissolved) = string("Small and large particles, and dissolved organic matter $(required_biogeochemical_tracers(detritus))")
 summary(detritus::VariableRedfieldDetritus) = string("Nitrogen and carbon small and large particles, and dissolved organic matter $(required_biogeochemical_tracers(detritus))")

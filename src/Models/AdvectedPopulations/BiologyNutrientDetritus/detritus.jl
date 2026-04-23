@@ -82,19 +82,19 @@ end
 
 required_biogeochemical_tracers(::VariableRedfieldDetritus) = (:sPOC, :bPOC, :DOC, :sPON, :bPON, :DON)
 
-@inline (lobster::LOBSTER{<:Any, <:Any, <:VariableRedfieldDetritus})(i, j, k, grid, val_name::Val{:sPOC}, clock, fields, auxiliary_fields) = (
+@inline (lobster::BiologyNutrientDetritus{<:Any, <:Any, <:VariableRedfieldDetritus})(i, j, k, grid, val_name::Val{:sPOC}, clock, fields, auxiliary_fields) = (
     lobster.detritus.small_solid_waste_fraction * solid_carbon_waste(lobster, i, j, k, fields, auxiliary_fields)
   - grazing(lobster, i, j, k, val_name, fields, auxiliary_fields)
   - lobster.detritus.small_remineralisation_rate * small_particulate_carbon_concentration(lobster.detritus, i, j, k, fields, auxiliary_fields)
 )
 
-@inline (lobster::LOBSTER{<:Any, <:Any, <:VariableRedfieldDetritus})(i, j, k, grid, ::Val{:bPOC}, clock, fields, auxiliary_fields) = (
+@inline (lobster::BiologyNutrientDetritus{<:Any, <:Any, <:VariableRedfieldDetritus})(i, j, k, grid, ::Val{:bPOC}, clock, fields, auxiliary_fields) = (
     (1 - lobster.detritus.small_solid_waste_fraction) * solid_carbon_waste(lobster, i, j, k, fields, auxiliary_fields)
   + calcite_production(lobster, i, j, k, fields, auxiliary_fields)
   - lobster.detritus.large_remineralisation_rate * large_particulate_carbon_concentration(lobster.detritus, i, j, k, fields, auxiliary_fields)
 )
 
-@inline (lobster::LOBSTER{<:Any, <:Any, <:VariableRedfieldDetritus})(i, j, k, grid, ::Val{:DOC}, clock, fields, auxiliary_fields) = (
+@inline (lobster::BiologyNutrientDetritus{<:Any, <:Any, <:VariableRedfieldDetritus})(i, j, k, grid, ::Val{:DOC}, clock, fields, auxiliary_fields) = (
     biology_organic_carbon_waste(lobster, i, j, k, fields, auxiliary_fields)
   + detritus_organic_carbon_waste(lobster, i, j, k, fields, auxiliary_fields)
   - lobster.detritus.dissolved_remineralisation_rate * dissolved_organic_carbon(lobster.detritus, i, j, k, fields, auxiliary_fields)
@@ -120,14 +120,14 @@ required_biogeochemical_tracers(::VariableRedfieldDetritus) = (:sPOC, :bPOC, :DO
 
 ##### common
 
-const TWO_PARTICLE_SIZE_LOBSTER = Union{LOBSTER{<:Any, <:Any, <:TwoParticleAndDissolved}, LOBSTER{<:Any, <:Any, <:VariableRedfieldDetritus}}
+const TWO_PARTICLE_SIZE_LOBSTER = Union{BiologyNutrientDetritus{<:Any, <:Any, <:TwoParticleAndDissolved}, BiologyNutrientDetritus{<:Any, <:Any, <:VariableRedfieldDetritus}}
 const TWO_PARTICLE_SIZES = Union{TwoParticleAndDissolved, VariableRedfieldDetritus}
 
-const SMALL_SINKING_OFF =  Union{LOBSTER{<:Any, <:Any, <:TwoParticleAndDissolved{<:Any, Nothing}}, 
-                                 LOBSTER{<:Any, <:Any, <:VariableRedfieldDetritus{<:Any, Nothing}}}
+const SMALL_SINKING_OFF =  Union{BiologyNutrientDetritus{<:Any, <:Any, <:TwoParticleAndDissolved{<:Any, Nothing}}, 
+                                 BiologyNutrientDetritus{<:Any, <:Any, <:VariableRedfieldDetritus{<:Any, Nothing}}}
 
-const LARGE_SINKING_OFF =  Union{LOBSTER{<:Any, <:Any, <:TwoParticleAndDissolved{<:Any, <:Any, Nothing}}, 
-                                 LOBSTER{<:Any, <:Any, <:VariableRedfieldDetritus{<:Any, <:Any, Nothing}}}
+const LARGE_SINKING_OFF =  Union{BiologyNutrientDetritus{<:Any, <:Any, <:TwoParticleAndDissolved{<:Any, <:Any, Nothing}}, 
+                                 BiologyNutrientDetritus{<:Any, <:Any, <:VariableRedfieldDetritus{<:Any, <:Any, Nothing}}}
 
 const SMALL_PARTICLES = Union{Val{:sPOM}, Val{:sPON}, Val{:sPOC}}
 const LARGE_PARTICLES = Union{Val{:bPOM}, Val{:bPON}, Val{:bPOC}}
@@ -279,7 +279,7 @@ function Detritus(grid;
     return Detritus(; sinking_speeds, kwargs...)
 end
 
-@inline (lobster::LOBSTER{<:Any, <:Any, <:Detritus})(i, j, k, grid, val_name::Val{:D}, clock, fields, auxiliary_fields) =
+@inline (lobster::BiologyNutrientDetritus{<:Any, <:Any, <:Detritus})(i, j, k, grid, val_name::Val{:D}, clock, fields, auxiliary_fields) =
     @inbounds (
         biology_organic_nitrogen_waste(lobster, i, j, k, fields, auxiliary_fields)
       + solid_waste(lobster, i, j, k, fields, auxiliary_fields)
@@ -287,7 +287,7 @@ end
       - lobster.detritus.remineralisation_rate * fields.D[i, j, k]
     )
 
-biogeochemical_drift_velocity(lobster::LOBSTER{<:Any, <:Any, <:Detritus}, ::Val{:D}) = 
+biogeochemical_drift_velocity(lobster::BiologyNutrientDetritus{<:Any, <:Any, <:Detritus}, ::Val{:D}) = 
     lobster.detritus.sinking_speeds
 
 required_biogeochemical_tracers(::Detritus) = (:D, )
@@ -295,10 +295,10 @@ required_biogeochemical_tracers(::Detritus) = (:D, )
 @inline small_particulate_concentration(detritus::Detritus, i, j, k, fields, auxiliary_fields) =
     @inbounds fields.D[i, j, k] * detritus.small_particle_fraction
 
-@inline detritus_inorganic_nitrogen_waste(lobster::LOBSTER{<:Any, <:Any, <:Detritus}, i, j, k, fields, auxiliary_fields) =
+@inline detritus_inorganic_nitrogen_waste(lobster::BiologyNutrientDetritus{<:Any, <:Any, <:Detritus}, i, j, k, fields, auxiliary_fields) =
     @inbounds fields.D[i, j, k] * lobster.detritus.remineralisation_rate
 
-@inline detritus_inorganic_carbon_waste(lobster::LOBSTER{<:Any, <:Any, <:Detritus}, i, j, k, fields, auxiliary_fields) =
+@inline detritus_inorganic_carbon_waste(lobster::BiologyNutrientDetritus{<:Any, <:Any, <:Detritus}, i, j, k, fields, auxiliary_fields) =
     @inbounds fields.D[i, j, k] * lobster.detritus.remineralisation_rate * lobster.detritus.redfield_ratio
 
 #####
@@ -308,10 +308,10 @@ required_biogeochemical_tracers(::Detritus) = (:D, )
 @inline small_particulate_concentration(detritus::Nothing, i, j, k, fields, auxiliary_fields) = @inbounds zero(fields.P[1, 1, 1])
 
 # close the loop
-@inline detritus_inorganic_nitrogen_waste(lobster::LOBSTER{<:Any, <:Any, <:Nothing}, i, j, k, fields, auxiliary_fields) = 
+@inline detritus_inorganic_nitrogen_waste(lobster::BiologyNutrientDetritus{<:Any, <:Any, <:Nothing}, i, j, k, fields, auxiliary_fields) = 
     (biology_organic_nitrogen_waste(lobster, i, j, k, fields, auxiliary_fields)
       + solid_waste(lobster, i, j, k, fields, auxiliary_fields))
 
-@inline detritus_inorganic_carbon_waste(lobster::LOBSTER{<:Any, <:Any, <:Nothing}, i, j, k, fields, auxiliary_fields) = 
+@inline detritus_inorganic_carbon_waste(lobster::BiologyNutrientDetritus{<:Any, <:Any, <:Nothing}, i, j, k, fields, auxiliary_fields) = 
     (biology_organic_nitrogen_waste(lobster, i, j, k, fields, auxiliary_fields)
       + solid_waste(lobster, i, j, k, fields, auxiliary_fields)) * lobster.biology.redfield_ratio

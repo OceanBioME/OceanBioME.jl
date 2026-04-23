@@ -1,4 +1,4 @@
-@inline function conserved_nitrogen_tracers(lobster::LOBSTER)
+@inline function conserved_nitrogen_tracers(lobster::BiologyNutrientDetritus)
     tracers = (:P, :Z)
 
     if lobster.nutrients isa IncludesNitrateAmmonia
@@ -18,10 +18,10 @@
     return tracers
 end
 
-@inline conserved_tracers(lobster::LOBSTER, labeled = false) =
+@inline conserved_tracers(lobster::BiologyNutrientDetritus, labeled = false) =
     labeled ? (; nitrogen = conserved_nitrogen_tracers(lobster)) : conserved_nitrogen_tracers(lobster)
     
-@inline function conserved_tracers(lobster::LOBSTER{<:Any, 
+@inline function conserved_tracers(lobster::BiologyNutrientDetritus{<:Any, 
                                                     <:Any, 
                                                     <:Any,
                                                     <:CarbonateSystem},
@@ -51,4 +51,4 @@ end
     return labeled ? (; nitrogen, carbon) : (nitrogen, carbon)
 end
     
-@inline chlorophyll(bgc::LOBSTER, model) = bgc.biology.phytoplankton_chlorophyll_ratio * model.tracers.P
+@inline chlorophyll(bgc::BiologyNutrientDetritus, model) = bgc.biology.phytoplankton_chlorophyll_ratio * model.tracers.P

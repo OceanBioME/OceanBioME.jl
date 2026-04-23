@@ -1,7 +1,7 @@
 """
-    PhytoZoo
+    LOBSTERPhytoZoo
 
-`PhytoZoo` defines the default living component for the `LOBSTER` biogeochemical model.
+`LOBSTERPhytoZoo` defines the default living component for the `LOBSTER` biogeochemical model.
 It includes single `P`hytoplankton and `Z`ooplankton tracers which track the 
 nitrogen (mmol N / m³). 
 
@@ -16,7 +16,7 @@ phytoplankton and detritus with `α` the fraction assimilated, `m` is the quadra
 mortality rate, and `μ` is the linear mortality rate taken to represent the excretion 
 rate.
 """ 
-@kwdef struct PhytoZoo{FT, TC}
+@kwdef struct LOBSTERPhytoZoo{FT, TC}
             nitrate_half_saturation :: FT = 0.7       # mmol N/m³
             ammonia_half_saturation :: FT = 0.001     # mmol N/m³
                iron_half_saturation :: FT = 2e-4      # mmol Fe/m³ - estimated from fitting OSP 
@@ -27,7 +27,7 @@ rate.
    phytoplankton_exudation_fraction :: FT = 0.05      #
         ammonia_fraction_of_exudate :: FT = 0.75      #
 
-            temperature_coefficient :: TC = nothing       # Q10 factor, off by default 1.88 option from Kuhn, 2015
+            temperature_coefficient :: TC = nothing   # Q10 factor, off by default 1.88 option from Kuhn, 2015
 
        phytoplankton_mortality_rate :: FT = 5.8e-7    # 1/s/mmol N/m³
          zooplankton_mortality_rate :: FT = 2.31e-6   # 1/s/mmol N/m³
@@ -48,9 +48,10 @@ zooplankton_gut_calcite_dissolution :: FT = 0.3
     phytoplankton_chlorophyll_ratio :: FT = 1.31      # g Chl/mol N
 end
 
-const PHYTO_ZOO_LOBSTER = LOBSTER{<:Any, <:PhytoZoo}
+const PHYTO_ZOO_LOBSTER = BiologyNutrientDetritus{<:Any, <:LOBSTERPhytoZoo}
 
-required_biogeochemical_tracers(::PhytoZoo) = (:P, :Z)
+required_biogeochemical_tracers(::LOBSTERPhytoZoo) = (:P, :Z)
+required_biogeochemical_auxiliary_fields(::LOBSTERPhytoZoo) = (:PAR, )
 
 @inline function (lobster::PHYTO_ZOO_LOBSTER)(i, j, k, grid, val_name::Val{:P}, clock, fields, auxiliary_fields)
     γ = lobster.biology.phytoplankton_exudation_fraction
@@ -124,10 +125,10 @@ end
     return (nitrate_limitation + ammonia_limitation) / 2
 end
 
-@inline nutrient_limitation(lobster::LOBSTER{<:NitrateAmmonia}, i, j, k, fields, auxiliary_fields) =
+@inline nutrient_limitation(lobster::BiologyNutrientDetritus{<:NitrateAmmonia}, i, j, k, fields, auxiliary_fields) =
     nitrogen_limitation(lobster, i, j, k, fields, auxiliary_fields)
 
-@inline function nutrient_limitation(lobster::LOBSTER{<:NitrateAmmoniaIron}, i, j, k, fields, auxiliary_fields)
+@inline function nutrient_limitation(lobster::BiologyNutrientDetritus{<:NitrateAmmoniaIron}, i, j, k, fields, auxiliary_fields)
     kFe = lobster.biology.iron_half_saturation
     Fe = @inbounds fields.Fe[i, j, k]
 
@@ -137,7 +138,7 @@ end
 end
 
 
-@inline function nutrient_limitation(lobster::LOBSTER{<:Nutrient}, i, j, k, fields, auxiliary_fields)
+@inline function nutrient_limitation(lobster::BiologyNutrientDetritus{<:Nutrient}, i, j, k, fields, auxiliary_fields)
     kNO₃ = lobster.biology.nitrate_half_saturation
 
     @inbounds begin
@@ -328,7 +329,7 @@ end
 @inline grazing(lobster::PHYTO_ZOO_LOBSTER, i, j, k, ::Val{:sPOC}, fields, auxiliary_fields) =
     grazing(lobster, i, j, k, Val(:sPOM), fields, auxiliary_fields) * lobster.biology.redfield_ratio
 
-@inline function weighted_phytoplankton_preference(biology::PhytoZoo, P, sPOM)
+@inline function weighted_phytoplankton_preference(biology::LOBSTERPhytoZoo, P, sPOM)
     p̃ = biology.preference_for_phytoplankton
 
     return p̃ * P / (p̃ * P + (1 - p̃) * sPOM + eps(0.0))
@@ -363,7 +364,7 @@ end
 # assume instant dissolution and put it back in DIC (or we could choose to lose it),
 # maybe that would be better?
 # but when we don't this can't be implicitly captured so we put it all back in the DIC compartement
-@inline function calcite_dissolution(lobster::LOBSTER{<:Any, <:PhytoZoo, <:Union{TwoParticleAndDissolved, Detritus, Nothing}}, i, j, k, fields, auxiliary_fields)
+@inline function calcite_dissolution(lobster::BiologyNutrientDetritus{<:Any, <:LOBSTERPhytoZoo, <:Union{TwoParticleAndDissolved, Detritus, Nothing}}, i, j, k, fields, auxiliary_fields)
     R  = lobster.biology.redfield_ratio 
     ρ  = lobster.biology.carbon_calcate_ratio
     mᴾ = lobster.biology.phytoplankton_mortality_rate
@@ -383,3 +384,6 @@ end
 
     return 2 * ρ * μP * R
 end
+
+# Kuhn 2015 PZ
+

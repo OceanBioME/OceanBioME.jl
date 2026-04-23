@@ -2,12 +2,12 @@ using Adapt
 
 import Adapt: adapt_structure
 
-Adapt.adapt_structure(to, lobster::LOBSTER) =
-    LOBSTER(adapt(to, lobster.nutrients),
-            adapt(to, lobster.biology),
-            adapt(to, lobster.detritus),
-            adapt(to, lobster.carbonate_system),
-            adapt(to, lobster.oxygen))
+Adapt.adapt_structure(to, bnd::BiologyNutrientDetritus) =
+    LOBSTER(adapt(to, bnd.nutrients),
+            adapt(to, bnd.biology),
+            adapt(to, bnd.detritus),
+            adapt(to, bnd.carbonate_system),
+            adapt(to, bnd.oxygen))
 
 Adapt.adapt_structure(to, detritus::TwoParticleAndDissolved) =
     TwoParticleAndDissolved(adapt(to, detritus.remineralisation_inorganic_fraction),

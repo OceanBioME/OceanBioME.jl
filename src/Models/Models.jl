@@ -22,7 +22,7 @@ export GasExchange,
        OxygenPolynomialSchmidtNumber
 
 include("Sediments/Sediments.jl")
-include("AdvectedPopulations/LOBSTER/LOBSTER.jl")
+include("AdvectedPopulations/BiologyNutrientDetritus/BiologyNutrientDetritus.jl")
 include("AdvectedPopulations/NPZD.jl")
 include("Individuals/SugarKelp/SugarKelp.jl")
 include("seawater_density.jl")
@@ -31,7 +31,7 @@ include("GasExchange/GasExchange.jl")
 include("AdvectedPopulations/PISCES/PISCES.jl")
 
 using .SedimentModels
-using .LOBSTERModel
+using .BiologyNutrientDetritusModels
 using .NPZDModel
 using .SugarKelpModel
 using .PISCESModel
