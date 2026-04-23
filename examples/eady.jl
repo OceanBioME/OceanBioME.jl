@@ -16,7 +16,7 @@
 # ## Model setup
 # We load the required packages. Although not required, we also set the random seed to ensure
 # reproducibility of the results.
-using OceanBioME, Oceananigans, Printf
+using OceanBioME, Oceananigans, Printf, CairoMakie
 using Oceananigans.Units
 
 using Random
@@ -140,8 +140,6 @@ xc, yc, zc = nodes(P)
 nothing #hide
 
 # and plot.
-
-using CairoMakie
 
 n = Observable(1)
 
