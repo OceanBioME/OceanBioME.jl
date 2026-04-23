@@ -2,9 +2,7 @@ module Models
 
 export InstantRemineralisationSediment, SimpleMultiGSediment
 
-export NPZD, 
-       NutrientPhytoplanktonZooplanktonDetritus, 
-       LOBSTER, CarbonateSystem, Oxygen, NitrateAmmoniaIron, VariableRedfieldDetritus, Detritus, Nutrient,
+export NPZD, LOBSTER, CarbonateSystem, Oxygen, NitrateAmmoniaIron, VariableRedfieldDetritus, Detritus, Nutrient,
        TwoParticleAndDissolved, NitrateAmmonia,
        PISCES, DepthDependantSinkingSpeed, PrescribedLatitude, ModelLatitude, PISCESModel
 
@@ -23,7 +21,6 @@ export GasExchange,
 
 include("Sediments/Sediments.jl")
 include("AdvectedPopulations/BiologyNutrientDetritus/BiologyNutrientDetritus.jl")
-include("AdvectedPopulations/NPZD.jl")
 include("Individuals/SugarKelp/SugarKelp.jl")
 include("seawater_density.jl")
 include("CarbonChemistry/CarbonChemistry.jl")
@@ -32,7 +29,6 @@ include("AdvectedPopulations/PISCES/PISCES.jl")
 
 using .SedimentModels
 using .BiologyNutrientDetritusModels
-using .NPZDModel
 using .SugarKelpModel
 using .PISCESModel
 using .CarbonChemistryModel

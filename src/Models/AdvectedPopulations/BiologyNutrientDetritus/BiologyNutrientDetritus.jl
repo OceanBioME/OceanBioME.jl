@@ -22,7 +22,7 @@ When carbonate system is active:
 """
 module BiologyNutrientDetritusModels
 
-export LOBSTER, 
+export LOBSTER, NPZD,
        CarbonateSystem, 
        Oxygen, 
        NitrateAmmoniaIron, 
