@@ -76,7 +76,6 @@ where `i`, and `j` are indices that vary along the boundary. If `discrete_form =
 condition(i, j, grid, clock, fields, parameters)
 ```
 
-
 """
 function MultiBandPhotosyntheticallyActiveRadiation(; grid::AbstractGrid{FT}, 
                                                       bands = ((400, 500), (500, 600), (600, 700)), #nm
@@ -139,14 +138,13 @@ function numerical_mean(λ, C, idx1, idx2)
     return ∫Cdλ / ∫dλ
 end
 
-@inline par_symbol(n) = Symbol(:PAR, Char('\xe2\x82\x80'+n)) #Symbol(:PAR, number_subscript(tuple(reverse(digits(n))...))...)
+@inline par_symbol(n) = Symbol(:PAR, Char('\xe2\x82\x80'+n)) 
 
 @inline number_subscript(digits::NTuple{N}) where N =
     ntuple(n->Symbol(Char('\xe2\x82\x80'+digits[n])), Val(N))
 
 @kernel function update_MultiBandPhotosyntheticallyActiveRadiation!(grid, clock, field, kʷ, e, χ,
-                                                                    _surface_PAR, 
-                                                                    Chl, k′) 
+                                                                    _surface_PAR, surface_PAR_division, Chl) 
     i, j = @index(Global, NTuple)
 
     surface_PAR = getbc(_surface_PAR, i, j, grid, clock, field)
@@ -155,7 +153,7 @@ end
 
     # first point below surface
     k = grid.Nz
-    @inbounds field[i, j, k] = surface_PAR * exp(zᶜ[grid.Nz] * (kʷ + χ * Chl[i, j, k] ^ e))
+    @inbounds field[i, j, k] = surface_PAR * surface_PAR_division * exp(zᶜ[grid.Nz] * (kʷ + χ * Chl[i, j, k] ^ e))
 
     # the rest of the points
     for k in grid.Nz-1:-1:1
@@ -169,9 +167,7 @@ function update_biogeochemical_state!(model, PAR::MultiBandPhotosyntheticallyAct
 
     arch = architecture(grid)
 
-    _, k′ = domain_boundary_indices(RightBoundary(), grid.Nz)
-
-    for (n, field) in enumerate(PAR.fields)
+    @inbounds for (n, field) in enumerate(PAR.fields)
         launch!(arch, grid, :xy, 
                 update_MultiBandPhotosyntheticallyActiveRadiation!, grid, model.clock,
                 field,
@@ -180,8 +176,7 @@ function update_biogeochemical_state!(model, PAR::MultiBandPhotosyntheticallyAct
                 PAR.chlorophyll_attenuation_coefficient[n], 
                 PAR.surface_PAR, 
                 PAR.surface_PAR_division[n], 
-                chlorophyll(model.biogeochemistry, model), 
-                k′)
+                chlorophyll(model.biogeochemistry, model))
     end
 
     #for field in PAR.fields
@@ -195,7 +190,7 @@ summary(par::MultiBandPhotosyntheticallyActiveRadiation) =
 show(io::IO, model::MultiBandPhotosyntheticallyActiveRadiation) = print(io, summary(model))
 
 biogeochemical_auxiliary_fields(par::MultiBandPhotosyntheticallyActiveRadiation) = 
-    merge((PAR = par.total, ), par.fields)#NamedTuple{field_names(par.field_names, par.fields)}(par.fields))
+    merge((PAR = par.total, ), par.fields)
 
 @inline field_names(field_names, fields) = field_names
 @inline field_names(::Nothing, fields::NTuple{N}) where N = ntuple(n -> par_symbol(n), Val(N))
