@@ -1,11 +1,11 @@
 module ParticulateOrganicMatter
 
-export TwoCompartementCarbonIronParticles
+export TwoCompartmentCarbonIronParticles
 
 using Oceananigans.Units
 
 using OceanBioME.Models.PISCESModel: 
-    degredation, aggregation, free_iron, PISCES, anoxia_factor, mortality
+    degradation, aggregation, free_iron, PISCES, anoxia_factor, mortality
 using OceanBioME.Models.PISCESModel.DissolvedOrganicMatter: aggregation_of_colloidal_iron
 using OceanBioME.Models.PISCESModel.Phytoplankton: dissolved_exudate, NanoAndDiatoms
 using OceanBioME.Models.PISCESModel.Zooplankton: 
@@ -14,7 +14,7 @@ using OceanBioME.Models.PISCESModel.Zooplankton:
     non_assimilated_iron_waste, bacteria_concentration, bacteria_activity
 
 import Oceananigans.Biogeochemistry: required_biogeochemical_tracers, biogeochemical_drift_velocity
-import OceanBioME.Models.PISCESModel: degredation, aggregation, flux_rate
+import OceanBioME.Models.PISCESModel: degradation, aggregation, flux_rate
 import OceanBioME.Models.PISCESModel.Zooplankton: edible_flux_rate, edible_iron_flux_rate
 
 include("two_size_class.jl")

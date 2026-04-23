@@ -41,7 +41,7 @@ end
 @inline prey_names(::PISCES{<:Any, <:MicroAndMeso}, ::Val{:Z}) = (:P, :D, :POC)
 @inline prey_names(::PISCES{<:Any, <:MicroAndMeso}, ::Val{:M}) = (:P, :D, :Z, :POC)
 
-# TODO: move these somewhere else so they can be dispatched on ::PISCES{<:NanoAndDiatoms, <:MicroAndMeso, <:Any, <:TwoCompartementCarbonIronParticles}
+# TODO: move these somewhere else so they can be dispatched on ::PISCES{<:NanoAndDiatoms, <:MicroAndMeso, <:Any, <:TwoCompartmentCarbonIronParticles}
 @inline function extract_food_availability(::PISCES, i, j, k, fields, ::NTuple{N}) where N
     P = @inbounds fields.P[i, j, k]
     D = @inbounds fields.D[i, j, k]

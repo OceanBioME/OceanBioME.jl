@@ -8,11 +8,11 @@ import Oceananigans.TimeSteppers: ab2_step!, rk3_substep!,
 const VALID_TIMESTEPPERS = Union{<:QuasiAdamsBashforth2TimeStepper, <:RungeKutta3TimeStepper}
 
 validate_sediment_timestepper(timestepper) = throw(ArgumentError("$(typeof(timestepper)) is not configured for sediment models"))
-validate_sediment_timestepper(::VALID_TIMESTEPPERS) = nothing 
+validate_sediment_timestepper(::VALID_TIMESTEPPERS) = nothing
 
 # AB2 methods
 
-function ab2_step!(model::BiogeochemicalSediment, Δt)
+function ab2_step!(model::BiogeochemicalSediment, Δt, callbacks)
     grid = model.grid
     arch = architecture(grid)
     model_fields = prognostic_fields(model)
@@ -43,7 +43,7 @@ end
 
 # RK3 methods
 
-function rk3_substep!(model::BiogeochemicalSediment, Δt, γⁿ, ζⁿ)
+function rk3_substep!(model::BiogeochemicalSediment, Δt, γⁿ, ζⁿ, callbacks)
     grid = model.grid
     arch = architecture(grid)
     model_fields = prognostic_fields(model)
@@ -54,7 +54,7 @@ function rk3_substep!(model::BiogeochemicalSediment, Δt, γⁿ, ζⁿ)
     end
 
     return nothing
-end 
+end
 
 @kernel function rk3_substep_flat_field!(U, Δt, γⁿ::FT, ζⁿ, Gⁿ, G⁻) where FT
     i, j = @index(Global, NTuple)

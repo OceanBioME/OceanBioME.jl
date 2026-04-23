@@ -21,7 +21,7 @@ const year = years = 365days
 # ## Grid and PAR field
 # Define the grid and an extra Oceananigans field for the PAR to be stored in
 Lx, Ly = 20, 20
-grid = RectilinearGrid(size=(1, 1, 50), extent=(Lx, Ly, 200)) 
+grid = RectilinearGrid(size=(1, 1, 50), extent=(Lx, Ly, 200))
 
 #####
 ##### Initial warmup
@@ -32,20 +32,20 @@ CO₂_flux = GasExchange(; gas = :CO₂, temperature = t_function, salinity = (a
 N_fixation(x, y, t) = - 10 / year
 N_upwelling = Relaxation(rate = 1/10days, mask = (x, y, z) -> ifelse(z < -150, 1.0, 0.0), target = 1.0)
 
-model = NonhydrostaticModel(; grid,
-                              closure = ScalarDiffusivity(ν = κₜ, κ = κₜ), 
-                              biogeochemistry = LOBSTER(; grid,
-                                                          surface_photosynthetically_active_radiation = PAR⁰,
-                                                          carbonates = true,
-                                                          variable_redfield = true),
-                              boundary_conditions = (DIC = FieldBoundaryConditions(top = CO₂_flux),
-                                                     NO₃ = FieldBoundaryConditions(top = FluxBoundaryCondition(N_fixation))),
-                              forcing = (NO₃ = N_upwelling, ),
-                              advection = nothing)
+model = NonhydrostaticModel(grid;
+                            closure = ScalarDiffusivity(ν = κₜ, κ = κₜ),
+                            biogeochemistry = LOBSTER(; grid,
+                                                        surface_photosynthetically_active_radiation = PAR⁰,
+                                                        carbonates = true,
+                                                        variable_redfield = true),
+                            boundary_conditions = (DIC = FieldBoundaryConditions(top = CO₂_flux),
+                                                   NO₃ = FieldBoundaryConditions(top = FluxBoundaryCondition(N_fixation))),
+                            forcing = (NO₃ = N_upwelling, ),
+                            advection = nothing)
 
 set!(model, P = 0.03, Z = 0.03, NO₃ = 4.0, NH₄ = 0.05, DIC = 2239.8, Alk = 2409.0)
 
-simulation = Simulation(model, Δt = 10minutes, stop_time = 3year) 
+simulation = Simulation(model, Δt = 10minutes, stop_time = 3year)
 
 simulation.callbacks[:nan_checker] = Callback(Oceananigans.Simulations.NaNChecker(; fields = model.tracers, erroring = true))
 
@@ -53,7 +53,7 @@ progress_message(sim) = @printf("Iteration: %04d, time: %s, Δt: %s, wall time: 
                                                         iteration(sim),
                                                         prettytime(sim),
                                                         prettytime(sim.Δt),
-                                                        prettytime(sim.run_wall_time)) 
+                                                        prettytime(sim.run_wall_time))
 
 simulation.callbacks[:progress] = Callback(progress_message, IterationInterval(100))
 
@@ -80,10 +80,10 @@ run!(simulation, pickup = false)
 n = 5 # number of kelp fronds
 z₀ = [-21:5:-1;] * 1.0 # depth of kelp fronds
 
-particles = SLatissima(; x = ones(n) * Lx / 2, y = ones(n) * Ly / 2, z = z₀, 
-                         A = ones(n) * 10.0, N = ones(n) * 0.014, C =  ones(n) * 0.4, 
+particles = SLatissima(; x = ones(n) * Lx / 2, y = ones(n) * Ly / 2, z = z₀,
+                         A = ones(n) * 10.0, N = ones(n) * 0.014, C =  ones(n) * 0.4,
                          latitude = 57.5,
-                         scalefactor = 500.0, 
+                         scalefactor = 500.0,
                          pescribed_temperature = t_function)
 
 CO₂_flux = GasExchange(; gas = :CO₂, temperature = t_function, salinity = (args...) -> 35)
@@ -91,23 +91,23 @@ CO₂_flux = GasExchange(; gas = :CO₂, temperature = t_function, salinity = (a
 N_fixation(x, y, t) = - 10 / year
 N_upwelling = Relaxation(rate = 1/10days, mask = (x, y, z) -> ifelse(z < -150, 1.0, 0.0), target = 1.0)
 
-model = NonhydrostaticModel(; grid,
-                              closure = ScalarDiffusivity(ν = κₜ, κ = κₜ), 
-                              biogeochemistry = LOBSTER(; grid,
-                                                          surface_photosynthetically_active_radiation = PAR⁰,
-                                                          carbonates = true,
-                                                          variable_redfield = true,
-                                                          particles),
-                              boundary_conditions = (DIC = FieldBoundaryConditions(top = CO₂_flux),
-                                                     NO₃ = FieldBoundaryConditions(top = FluxBoundaryCondition(N_fixation))),
-                              forcing = (NO₃ = N_upwelling, ),
-                              advection = nothing)
+model = NonhydrostaticModel(grid,
+                            closure = ScalarDiffusivity(ν = κₜ, κ = κₜ),
+                            biogeochemistry = LOBSTER(; grid,
+                                                        surface_photosynthetically_active_radiation = PAR⁰,
+                                                        carbonates = true,
+                                                        variable_redfield = true,
+                                                        particles),
+                            boundary_conditions = (DIC = FieldBoundaryConditions(top = CO₂_flux),
+                                                   NO₃ = FieldBoundaryConditions(top = FluxBoundaryCondition(N_fixation))),
+                            forcing = (NO₃ = N_upwelling, ),
+                            advection = nothing)
 
 model.clock.time = 5year - 30days
 
 set!(model, "warmup_checkpoint_iteration634986.jld2")
 
-simulation = Simulation(model, Δt=1minutes, stop_time=7years) 
+simulation = Simulation(model, Δt=1minutes, stop_time=7years)
 
 simulation.callbacks[:nan_checker] = Callback(Oceananigans.Simulations.NaNChecker(; fields = model.tracers, erroring = true))
 
@@ -115,7 +115,7 @@ progress_message(sim) = @printf("Iteration: %04d, time: %s, Δt: %s, wall time: 
                                                         iteration(sim),
                                                         prettytime(sim),
                                                         prettytime(sim.Δt),
-                                                        prettytime(sim.run_wall_time))  
+                                                        prettytime(sim.run_wall_time))
 
 simulation.callbacks[:progress] = Callback(progress_message, IterationInterval(100))
 

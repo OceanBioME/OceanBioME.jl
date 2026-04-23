@@ -2,7 +2,7 @@ include("dependencies_for_runtests.jl")
 
 using Oceananigans.Architectures: on_architecture
 
-sum_tracer_nitrogen(tracers) = sum(on_architecture(CPU(), interior(tracers.NO₃))) + 
+sum_tracer_nitrogen(tracers) = sum(on_architecture(CPU(), interior(tracers.NO₃))) +
                                sum(on_architecture(CPU(), interior(tracers.NH₄))) +
                                sum(on_architecture(CPU(), interior(tracers.P))) +
                                sum(on_architecture(CPU(), interior(tracers.Z))) +
@@ -10,11 +10,11 @@ sum_tracer_nitrogen(tracers) = sum(on_architecture(CPU(), interior(tracers.NO₃
                                sum(on_architecture(CPU(), interior(tracers.bPON))) +
                                sum(on_architecture(CPU(), interior(tracers.DON)))
 
-sum_tracer_carbon(tracers, redfield, organic_carbon_calcate_ratio) = 
+sum_tracer_carbon(tracers, redfield, organic_carbon_calcate_ratio) =
     sum(on_architecture(CPU(), interior(tracers.sPOC))) +
     sum(on_architecture(CPU(), interior(tracers.bPOC))) +
     sum(on_architecture(CPU(), interior(tracers.DOC))) +
-    sum(on_architecture(CPU(), interior(tracers.DIC))) + 
+    sum(on_architecture(CPU(), interior(tracers.DIC))) +
     sum(on_architecture(CPU(), interior(tracers.P)) .* (1 + organic_carbon_calcate_ratio) .+ on_architecture(CPU(), interior(tracers.Z))) .* redfield
 
 @testset "SLatissima particle setup and conservations" begin
@@ -27,13 +27,13 @@ sum_tracer_carbon(tracers, redfield, organic_carbon_calcate_ratio) =
     @test length(particles) == 2
 
     biogeochemistry = LOBSTER(; grid,
-                                particles, 
-                                carbonates = true, 
-                                variable_redfield = true, 
-                                oxygen = true, 
+                                particles,
+                                carbonates = true,
+                                variable_redfield = true,
+                                oxygen = true,
                                 sinking_speeds = NamedTuple())
 
-    model = NonhydrostaticModel(; grid, biogeochemistry, advection = nothing, tracers = (:T, :S))
+    model = NonhydrostaticModel(grid; biogeochemistry, advection = nothing, tracers = (:T, :S))
 
     set!(model, NO₃ = 10.0, NH₄ = 1.0, DIC = 2000, Alk = 2000, T = 10, S = 35)
 
@@ -84,7 +84,7 @@ sum_tracer_carbon(tracers, redfield, organic_carbon_calcate_ratio) =
     # (GPU eps is much larger (~10⁻⁷) than on CPU), is this true??? And is this conservation good enough???
     # this is definitly too high since I didn't catch a sign error of an uptake was the wrong way around
     rtol = ifelse(isa(architecture, CPU), max(√eps(initial_tracer_N + initial_kelp_N), √eps(final_tracer_N + final_kelp_N)), 2e-7)
-    @test isapprox(initial_tracer_N + initial_kelp_N, final_tracer_N + final_kelp_N; rtol) 
+    @test isapprox(initial_tracer_N + initial_kelp_N, final_tracer_N + final_kelp_N; rtol)
 
     rtol = ifelse(isa(architecture, CPU), max(√eps(initial_tracer_C + initial_kelp_C), √eps(final_tracer_C + final_kelp_C)), 7e-7)
     @test isapprox(initial_tracer_C + initial_kelp_C, final_tracer_C + final_kelp_C; rtol)

@@ -20,7 +20,7 @@ using Oceananigans.Units
 const year = years = 365days
 nothing #hide
 
-# ## Surface PAR and turbulent vertical diffusivity based on idealised mixed layer depth 
+# ## Surface PAR and turbulent vertical diffusivity based on idealised mixed layer depth
 # Setting up idealised functions for PAR and diffusivity (details here can be ignored but these are typical of the North Atlantic)
 
 @inline PAR⁰(x, y, t) = 60 * (1 - cos((t + 15days) * 2π / year)) * (1 / (1 + 0.2 * exp(-((mod(t, year) - 200days) / 50days)^2))) + 2
@@ -57,12 +57,12 @@ clock = Clock(; time = 0.0)
 T = FunctionField{Center, Center, Center}(temp, grid; clock)
 S = ConstantField(35.0)
 
-model = NonhydrostaticModel(; grid,
-                              clock,
-                              closure = ScalarDiffusivity(ν = κₜ, κ = κₜ),
-                              biogeochemistry,
-                              boundary_conditions = (DIC = FieldBoundaryConditions(top = CO₂_flux),),
-                              auxiliary_fields = (; T, S))
+model = NonhydrostaticModel(grid;
+                            clock,
+                            closure = ScalarDiffusivity(ν = κₜ, κ = κₜ),
+                            biogeochemistry,
+                            boundary_conditions = (DIC = FieldBoundaryConditions(top = CO₂_flux),),
+                            auxiliary_fields = (; T, S))
 
 set!(model, P = 0.03, Z = 0.03, NO₃ = 4.0, NH₄ = 0.05, DIC = 2239.8, Alk = 2409.0)
 
@@ -91,10 +91,10 @@ simulation.output_writers[:profiles] = JLD2Writer(model, model.tracers,
 @inline qCO₂_kernel(i, j, k, grid, clock, DIC, Alk, T, S, carbon_boundary_condition) =
     carbon_boundary_condition.condition.func(i, j, grid, clock, (; DIC, Alk, T, S))
 
-qCO₂ = KernelFunctionOperation{Center, Center, Face}(qCO₂_kernel, 
-                                                     grid, 
+qCO₂ = KernelFunctionOperation{Center, Center, Face}(qCO₂_kernel,
+                                                     grid,
                                                      clock,
-                                                     model.tracers.DIC, 
+                                                     model.tracers.DIC,
                                                      model.tracers.Alk,
                                                      model.auxiliary_fields.T,
                                                      model.auxiliary_fields.S,
@@ -129,7 +129,7 @@ x, y, z = nodes(P)
 times = P.times
 nothing #hide
 
-# We compute the carbon export by computing how much carbon sinks below some arbirtrary depth; 
+# We compute the carbon export by computing how much carbon sinks below some arbirtrary depth;
 # here we use depth that corresponds to `k = grid.Nz - 20`.
 carbon_export = zeros(length(times))
 

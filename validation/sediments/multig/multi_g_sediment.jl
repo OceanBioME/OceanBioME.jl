@@ -6,18 +6,18 @@ sediment_model = OceanBioME.Models.SedimentModels.SimpleMultiGSediment(grid;);
 
 biogeochemistry = LOBSTER(; grid, sediment_model, oxygen = true, scale_negatives = true)
 
-model = NonhydrostaticModel(; grid, biogeochemistry, advection = WENO(order = 3, bounds = (0, 1)))
+model = NonhydrostaticModel(grid; biogeochemistry, advection = WENO(order = 3, bounds = (0, 1)))
 
 set!(model, sPOM = 1, bPOM = 1, O₂ = 500, NH₄ = 1, NO₃ = 10)
 set!(sediment_model.fields.Ns, 10)
 set!(sediment_model.fields.Nf, 1)
 
-tracer_nitrogen = Field(Integral(model.tracers.sPOM)) + 
-                  Field(Integral(model.tracers.bPOM)) + 
-                  Field(Integral(model.tracers.P)) + 
-                  Field(Integral(model.tracers.Z)) + 
-                  Field(Integral(model.tracers.NO₃)) + 
-                  Field(Integral(model.tracers.NH₄)) + 
+tracer_nitrogen = Field(Integral(model.tracers.sPOM)) +
+                  Field(Integral(model.tracers.bPOM)) +
+                  Field(Integral(model.tracers.P)) +
+                  Field(Integral(model.tracers.Z)) +
+                  Field(Integral(model.tracers.NO₃)) +
+                  Field(Integral(model.tracers.NH₄)) +
                   Field(Integral(model.tracers.DOM))
 
 total_nitrogen = Field(tracer_nitrogen + sediment_model.fields.Nf + sediment_model.fields.Ns + sediment_model.fields.Nr)

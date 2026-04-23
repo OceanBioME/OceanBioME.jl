@@ -2,7 +2,7 @@
 
 OceanBioME.jl is a fast and flexible ocean biogeochemical modelling environment. It is highly modular and is designed to make it easy to implement and use a variety of biogeochemical and physical models. OceanBioME is built to be coupled with physics models from [Oceananigans.jl](https://github.com/CliMA/Oceananigans.jl) allowing simulations across a wide range of spatial scales ranging from a global hydrostatic free surface model to non-hydrostatic large-eddy simulations. OceanBioME was designed specifically for ocean carbon dioxide removal applications. Notably, it includes active particles which allow individual-based models to be seamlessly coupled with the flow physics, ecosystem models, and carbonate chemistry.
 
-OceanBioME.jl currently provides a core of several biogeochemical models Nutrient--Phytoplankton--Zooplankton--Detritus ([NPZD](@ref NPZD)), [LOBSTER](https://doi.org/10.1029/2004JC002588), a medium complexity model, and an early implementation of [PISCES](https://www.pisces-community.org/), a complex model. It also provides essential utilities like air-sea gas exchange models to provide appropriate top boundary conditions, a carbon chemistry model for computing the pCO₂, and sediment models to for the benthic boundary. 
+OceanBioME.jl currently provides a core of several biogeochemical models Nutrient--Phytoplankton--Zooplankton--Detritus ([NPZD](@ref NPZD)), [LOBSTER](https://doi.org/10.1029/2004JC002588), a medium complexity model, and an early implementation of [PISCES](https://www.pisces-community.org/), a complex model. It also provides essential utilities like air-sea gas exchange models to provide appropriate top boundary conditions, a carbon chemistry model for computing the pCO₂, and sediment models to for the benthic boundary.
 
 OceanBioME.jl includes a framework for integrating the growth of [biological/active particles](@ref individuals) which move around and can interact with the (Eulerian) tracer fields - for example, consuming nutrients and carbon dioxide while releasing dissolved organic material. A growth model for sugar kelp is currently implemented using active particles, and this model can be used in a variety of dynamical scenarios including free-floating or bottom-attached particles.
 
@@ -39,9 +39,9 @@ using Oceananigans.Units
 
 grid = RectilinearGrid(CPU(), size = (160, 32), extent = (10000meters, 500meters), topology = (Bounded, Flat, Bounded))
 
-biogeochemistry = NutrientPhytoplanktonZooplanktonDetritus(; grid) 
+biogeochemistry = NutrientPhytoplanktonZooplanktonDetritus(; grid)
 
-model = NonhydrostaticModel(; grid, biogeochemistry,
+model = NonhydrostaticModel(grid; biogeochemistry,
                               advection = WENO(),
 			      closure = AnisotropicMinimumDissipation(),
                               buoyancy = SeawaterBuoyancy(constant_salinity = true))
@@ -127,7 +127,7 @@ In the example above, `OceanBioME.jl` provides the `biogeochemistry` and everyth
     * a [library](@ref library_api) documenting all user-facing objects and functions.
 
 * [Discussions on the OceanBioME github](https://github.com/OceanBioME/OceanBioME.jl/discussions)
-  
+
     If you've got a question or something to talk about, don't hesitate to [start a new discussion](https://github.com/OceanBioME/OceanBioME.jl/discussions/new?)!
 
 * [Issues](https://github.com/OceanBioME/OceanBioME.jl//issues) and [pull requests](https://github.com/OceanBioME/OceanBioME.jl/pulls) also contain lots of information about problems we've found, solutions we're trying to implement, and ideas for the future.
@@ -136,7 +136,7 @@ In the example above, `OceanBioME.jl` provides the `biogeochemistry` and everyth
 
 Whether you need help getting started with OceanBioME, found a bug, want OceanBioME to be more expanded, or just want to chat about our project, you can:
 
-* [Start a discussion](https://github.com/OceanBioME/OceanBioME.jl/discussions). 
+* [Start a discussion](https://github.com/OceanBioME/OceanBioME.jl/discussions).
 * [Open an issue](https://github.com/OceanBioME/OceanBioME.jl/issues). Issues are best if you think the OceanBioME source code needs attention: a bug, a sign error, an important missing feature, or a typo in the documentation.
 
 ## Citing

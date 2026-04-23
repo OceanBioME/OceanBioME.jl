@@ -60,9 +60,21 @@ Keyword Arguments
 
 - `grid`: grid for building the model on
 - `water_red_attenuation`, ..., `phytoplankton_chlorophyll_ratio`: parameter values
-- `surface_PAR`: function (or array in the future) for the photosynthetically available radiation at the surface, 
-   which should be `f(x, y, t)` where `x` and `y` are the native coordinates (i.e. meters for rectilinear grids
-   and latitude/longitude as appropriate)
+- `surface_PAR`: the photosynthetically available radiation at the surface, by default,
+   assumed to have the 'continuous form' `condition(x, y t)`
+
+If `parameters` is not `nothing`, then `surface_PAR` has the form
+`func(x, y, t, parameters)`.
+
+If `discrete_form = true`, surface_PAR is assumed to have the "discrete form",
+```
+condition(i, j, grid, clock, fields)
+```
+where `i`, and `j` are indices that vary along the boundary. If `discrete_form = true` and
+`parameters` is not `nothing`, the function `condition` is called with
+```
+condition(i, j, grid, clock, fields, parameters)
+```
 
 """
 function MultiBandPhotosyntheticallyActiveRadiation(; grid::AbstractGrid{FT}, 
@@ -73,7 +85,9 @@ function MultiBandPhotosyntheticallyActiveRadiation(; grid::AbstractGrid{FT},
                                                       base_chlorophyll_attenuation_coefficient = MOREL_χ,
                                                       field_names = ntuple(n->par_symbol(n), Val(length(bands))),
                                                       surface_PAR = default_surface_PAR,
-                                                      surface_PAR_division = fill(1 / length(bands), length(bands))) where FT
+                                                      discrete_form = false,
+                                                      parameters = nothing,
+                                                      surface_PAR_division = fill(1 / length(bands), length(bands)),) where FT
     Nbands = length(bands)
 
     kʷ = zeros(eltype(grid), Nbands)
@@ -105,6 +119,10 @@ function MultiBandPhotosyntheticallyActiveRadiation(; grid::AbstractGrid{FT},
 
     total_PAR = sum(fields)
 
+    # wrap surface_PAR to make it work with the `getbc` interface
+    surface_PAR = materialize_condition(surface_PAR, parameters, discrete_form, ()) 
+    surface_PAR = regularize_boundary_condition(surface_PAR, grid, (Center(), Center(), Center()), 3, RightBoundary, nothing)
+
     return MultiBandPhotosyntheticallyActiveRadiation(total_PAR,
                                                       fields, 
                                                       tuple(field_names...), 
@@ -121,25 +139,21 @@ function numerical_mean(λ, C, idx1, idx2)
     return ∫Cdλ / ∫dλ
 end
 
-@inline par_symbol(n) = Symbol(:PAR, Char('\xe2\x82\x80'+n)) #Symbol(:PAR, number_subscript(tuple(reverse(digits(n))...))...)
+@inline par_symbol(n) = Symbol(:PAR, Char('\xe2\x82\x80'+n)) 
 
 @inline number_subscript(digits::NTuple{N}) where N =
     ntuple(n->Symbol(Char('\xe2\x82\x80'+digits[n])), Val(N))
 
-@kernel function update_MultiBandPhotosyntheticallyActiveRadiation!(grid, field, kʷ, e, χ,
-                                                                    _surface_PAR, surface_PAR_division, 
-                                                                    Chl, t, k′) 
+@kernel function update_MultiBandPhotosyntheticallyActiveRadiation!(grid, clock, field, kʷ, e, χ,
+                                                                    _surface_PAR, surface_PAR_division, Chl) 
     i, j = @index(Global, NTuple)
 
-    X = z_boundary_node(i, j, k′, grid, Center(), Center())
-
-    surface_PAR = _surface_PAR(X..., t)
+    surface_PAR = getbc(_surface_PAR, i, j, grid, clock, field)
 
     zᶜ = znodes(grid, Center(), Center(), Center())
 
-    # first point below surface
     k = grid.Nz
-    @inbounds field[i, j, k] = surface_PAR * surface_PAR_division * exp(zᶜ[grid.Nz] * (kʷ + χ * Chl[i, j, k] ^ e))
+    @inbounds field[i, j, k] = surface_PAR * surface_PAR_division * exp(zᶜ[k] * (kʷ + χ * Chl[i, j, k] ^ e))
 
     # the rest of the points
     for k in grid.Nz-1:-1:1
@@ -153,20 +167,16 @@ function update_biogeochemical_state!(model, PAR::MultiBandPhotosyntheticallyAct
 
     arch = architecture(grid)
 
-    _, k′ = domain_boundary_indices(RightBoundary(), grid.Nz)
-
-    for (n, field) in enumerate(PAR.fields)
+    @inbounds for (n, field) in enumerate(PAR.fields)
         launch!(arch, grid, :xy, 
-                update_MultiBandPhotosyntheticallyActiveRadiation!, grid, 
+                update_MultiBandPhotosyntheticallyActiveRadiation!, grid, model.clock,
                 field,
                 PAR.water_attenuation_coefficient[n], 
                 PAR.chlorophyll_exponent[n], 
                 PAR.chlorophyll_attenuation_coefficient[n], 
                 PAR.surface_PAR, 
                 PAR.surface_PAR_division[n], 
-                chlorophyll(model.biogeochemistry, model), 
-                model.clock.time,
-                k′)
+                chlorophyll(model.biogeochemistry, model))
     end
 
     #for field in PAR.fields
@@ -180,7 +190,7 @@ summary(par::MultiBandPhotosyntheticallyActiveRadiation) =
 show(io::IO, model::MultiBandPhotosyntheticallyActiveRadiation) = print(io, summary(model))
 
 biogeochemical_auxiliary_fields(par::MultiBandPhotosyntheticallyActiveRadiation) = 
-    merge((PAR = par.total, ), par.fields)#NamedTuple{field_names(par.field_names, par.fields)}(par.fields))
+    merge((PAR = par.total, ), par.fields)
 
 @inline field_names(field_names, fields) = field_names
 @inline field_names(::Nothing, fields::NTuple{N}) where N = ntuple(n -> par_symbol(n), Val(N))

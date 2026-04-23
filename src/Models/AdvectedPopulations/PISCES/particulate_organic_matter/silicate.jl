@@ -1,4 +1,4 @@
-@inline function (bgc::TwoCompartementPOCPISCES)(i, j, k, grid, val_name::Val{:PSi}, clock, fields, auxiliary_fields)
+@inline function (bgc::TwoCompartmentPOCPISCES)(i, j, k, grid, val_name::Val{:PSi}, clock, fields, auxiliary_fields)
     # this generalisation still assumes that we're only getting PSi from phytoplankton being grazed, will need changes if zooplankton get Si compartment
 
     phytoplankton_production = particulate_silicate_production(bgc.phytoplankton, i, j, k, grid, bgc, clock, fields, auxiliary_fields)
@@ -8,7 +8,7 @@
     return phytoplankton_production - dissolution
 end
 
-@inline function particulate_silicate_dissolution(poc::TwoCompartementCarbonIronParticles, i, j, k, grid, bgc, clock, fields, auxiliary_fields)
+@inline function particulate_silicate_dissolution(poc::TwoCompartmentCarbonIronParticles, i, j, k, grid, bgc, clock, fields, auxiliary_fields)
     PSi = @inbounds fields.PSi[i, j, k]
     Si  = @inbounds  fields.Si[i, j, k]
 

@@ -17,12 +17,12 @@ function test_flat_sediment(architecture; timestepper = :QuasiAdamsBashforth2)
                                 surface_phytosynthetically_active_radiation = (x, y, t) -> 80,
                                 sediment_model)
 
-    model = NonhydrostaticModel(;grid, biogeochemistry,
-                                 boundary_conditions = (DIC = FieldBoundaryConditions(top = GasExchange(; gas = :CO₂)),
-                                                         O₂ = FieldBoundaryConditions(top = GasExchange(; gas = :O₂))),
-                                 tracers = (:T, :S),
-                                 closure = ScalarDiffusivity(ν = 1e-3, κ = 1e-3),
-                                 timestepper)
+    model = NonhydrostaticModel(grid; biogeochemistry,
+                                boundary_conditions = (DIC = FieldBoundaryConditions(top = GasExchange(; gas = :CO₂)),
+                                                        O₂ = FieldBoundaryConditions(top = GasExchange(; gas = :O₂))),
+                                tracers = (:T, :S),
+                                closure = ScalarDiffusivity(ν = 1e-3, κ = 1e-3),
+                                timestepper)
 
     set!(model.biogeochemistry.sediment_model.fields.N_fast, 0.0230)
     set!(model.biogeochemistry.sediment_model.fields.N_slow, 0.0807)
@@ -33,7 +33,7 @@ function test_flat_sediment(architecture; timestepper = :QuasiAdamsBashforth2)
     set!(model, P = 0.4686, Z = 0.5363,
             NO₃ = 2.3103, NH₄ = 0.0010,
             DIC = 2106.9, Alk = 2408.9,
-            O₂ = 258.92, 
+            O₂ = 258.92,
             DOC = 5.3390, DON = 0.8115,
             sPON = 0.2299, sPOC = 1.5080,
             bPON = 0.0103, bPOC = 0.0781)
@@ -52,12 +52,12 @@ function test_flat_sediment(architecture; timestepper = :QuasiAdamsBashforth2)
                                                       overwrite_existing = true)
 
     @inline progress(simulation) = @info "Time: $(prettytime(simulation.model.clock.time)), Iteration: $(simulation.model.clock.iteration), Walltime: $(prettytime(simulation.run_wall_time))"
-    
+
     simulation.callbacks[:progress] = Callback(progress, IterationInterval(10))
 
     scale_negative_tracers = ScaleNegativeTracers(; model, tracers = (:NO₃, :NH₄, :P, :Z, :sPON, :bPON, :DON))
     simulation.callbacks[:neg] = Callback(scale_negative_tracers; callsite = UpdateStateCallsite())
-    
+
     plankton_redfield = model.biogeochemistry.phytoplankton_redfield
     scale_negative_carbon_tracers = ScaleNegativeTracers(; model, tracers = (:P, :Z, :DOC, :sPOC, :bPOC, :DIC),
                                                          scalefactors = (P = plankton_redfield,

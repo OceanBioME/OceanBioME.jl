@@ -28,7 +28,9 @@ export LOBSTER,
        NitrateAmmoniaIron, 
        VariableRedfieldDetritus, 
        TwoParticleAndDissolved, 
-       NitrateAmmonia
+       NitrateAmmonia,
+       Nutrient,
+       Detritus
 
 using Oceananigans.Units
 

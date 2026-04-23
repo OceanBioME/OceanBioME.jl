@@ -63,7 +63,7 @@ nothing #hide
 # Define the grid (in this case a non uniform grid for better resolution near the surface) and an extra Oceananigans field for the PAR to be stored in
 Nz = 33
 Lz = 600meters
-refinement = 10 
+refinement = 10
 stretching = 5.754
 h(k) = (k - 1) / Nz
 ζ₀(k) = 1 + (h(k) - 1) / refinement
@@ -89,11 +89,11 @@ CO₂_flux = CarbonDioxideGasExchangeBoundaryCondition()
 T = FunctionField{Center, Center, Center}(t_function, grid; clock)
 S = FunctionField{Center, Center, Center}(s_function, grid; clock)
 
-model = NonhydrostaticModel(; grid, clock,
-                              closure = ScalarDiffusivity(ν = κ, κ = κ),
-                              biogeochemistry,
-                              boundary_conditions = (DIC = FieldBoundaryConditions(top = CO₂_flux),),
-                              auxiliary_fields = (; T, S))
+model = NonhydrostaticModel(grid; clock,
+                            closure = ScalarDiffusivity(ν = κ, κ = κ),
+                            biogeochemistry,
+                            boundary_conditions = (DIC = FieldBoundaryConditions(top = CO₂_flux),),
+                            auxiliary_fields = (; T, S))
 
 set!(model, P = 0.03, Z = 0.03, NO₃ = 11.0, NH₄ = 0.05, DIC = 2200.0, Alk = 2400.0)
 

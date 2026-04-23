@@ -2,7 +2,7 @@ using OceanBioME, Printf, Oceananigans, Oceananigans.Units
 
 using Oceananigans.Architectures: on_architecture
 
-using Oceananigans.Solvers: FFTBasedPoissonSolver 
+using Oceananigans.Solvers: FFTBasedPoissonSolver
 
 using Random
 
@@ -55,8 +55,8 @@ y = on_architecture(arch, [repeat([Ly / (sqrt(n) + 1) * n for n in 1:Int(sqrt(n)
 z = on_architecture(arch, zeros(Float64, n))
 
 particles = SLatissima(; architecture = arch,
-                         x, y, z, 
-                         A = on_architecture(arch, 5.0 .* ones(n)), N = on_architecture(arch, 0.01 .* ones(n)), C = on_architecture(arch, 0.18 .* ones(n)), 
+                         x, y, z,
+                         A = on_architecture(arch, 5.0 .* ones(n)), N = on_architecture(arch, 0.01 .* ones(n)), C = on_architecture(arch, 0.18 .* ones(n)),
                          latitude = 43.3,
                          scalefactor = 500.0,
                          pescribed_temperature = (args...) -> 12.0)
@@ -71,16 +71,16 @@ biogeochemistry = LOBSTER(; grid,
 DIC_bcs = FieldBoundaryConditions(top = GasExchange(; gas = :CO₂, temperature = (args...) -> 12, salinity = (args...) -> 35))
 
 # Model instantiation
-model = NonhydrostaticModel(; grid,
-                              biogeochemistry,
-                              boundary_conditions = (DIC = DIC_bcs, ),
-                              advection = WENO(grid),
-                              timestepper = :RungeKutta3,
-                              coriolis,
-                              tracers = :b,
-                              buoyancy = BuoyancyTracer(),
-                              background_fields = (b = B_field, v = V_field),
-                              closure)
+model = NonhydrostaticModel(grid;
+                            biogeochemistry,
+                            boundary_conditions = (DIC = DIC_bcs, ),
+                            advection = WENO(grid),
+                            timestepper = :RungeKutta3,
+                            coriolis,
+                            tracers = :b,
+                            buoyancy = BuoyancyTracer(),
+                            background_fields = (b = B_field, v = V_field),
+                            closure)
 
 model.clock.time = 50days
 

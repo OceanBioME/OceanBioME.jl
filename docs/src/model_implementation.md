@@ -5,7 +5,7 @@ Here we describe how OceanBioME defines biogeochemical (BGC) models, how this va
 ## Model structure
 OceanBioME BGC models are `struct`s of type `ContinuousFormBiogeochemistry`, which is of abstract type `AbstractContinuousFormBiogeochemistry` from Oceananigans. In Oceananigans this describes BGC models which are defined using continuous functions (depending continuously on ``x``, ``y``, and ``z``) rather than discrete functions (depending on ``i``, ``j``, ``k``). This allows the user to implement the BGC model equations without worrying about details of the grid or discretization, and then Oceananigans handles the rest.
 
-OceanBioME's `ContinuousFormBiogeochemistry` adds a layer on top of this which makes it easy to add [light attenuation models](@ref light), [sediment](@ref sediment), and [biologically active particles](@ref individuals) (or individual-based models). OceanBioME's `ContinuousFormBiogeochemistry` includes parameters in which the types of these components are stored. This means that these model components will automatically be integrated into the BGC model without having to add new methods to call Oceananigans functions. 
+OceanBioME's `ContinuousFormBiogeochemistry` adds a layer on top of this which makes it easy to add [light attenuation models](@ref light), [sediment](@ref sediment), and [biologically active particles](@ref individuals) (or individual-based models). OceanBioME's `ContinuousFormBiogeochemistry` includes parameters in which the types of these components are stored. This means that these model components will automatically be integrated into the BGC model without having to add new methods to call Oceananigans functions.
 
 ## Implementing a model
 
@@ -67,7 +67,7 @@ f(N) &= \frac{N}{k_N + N},\\
 h(PAR) &= \frac{PAR}{k_P + PAR},
 \end{align}
 ```
-where ``c_1`` corresponds to `temperature_coefficient`,  ``c_2`` corresponds to `temperature_exponent`, ``T_{opt}`` corresponds to `optimal_temperature`, ``k_N`` corresponds to `nutrient_half_saturation`, and ``k_P`` corresponds to `light_half_saturation`. 
+where ``c_1`` corresponds to `temperature_coefficient`,  ``c_2`` corresponds to `temperature_exponent`, ``T_{opt}`` corresponds to `optimal_temperature`, ``k_N`` corresponds to `nutrient_half_saturation`, and ``k_P`` corresponds to `light_half_saturation`.
 
 We turn this into a function for our model by writing:
 
@@ -105,9 +105,9 @@ end
 end
 ```
 
-The first parameter `::Val{:P}` is a special [value type](http://www.jlhub.com/julia/manual/en/function/Val) that allows this function to be dispatched when it is given the value `Val(:P)`. This is how Oceananigans tells the model which forcing function to use. At the start of the `NutrientPhytoplankton` function we unpack some parameters from the model, then calculate each term, and return the total change (the gain minus the loss). 
+The first parameter `::Val{:P}` is a special [value type](http://www.jlhub.com/julia/manual/en/function/Val) that allows this function to be dispatched when it is given the value `Val(:P)`. This is how Oceananigans tells the model which forcing function to use. At the start of the `NutrientPhytoplankton` function we unpack some parameters from the model, then calculate each term, and return the total change (the gain minus the loss).
 
-For this model, the nutrient evolution can be inferred from the rate of change of phytoplankton. Since this is a simple two variable model and the total concentration is conserved, 
+For this model, the nutrient evolution can be inferred from the rate of change of phytoplankton. Since this is a simple two variable model and the total concentration is conserved,
 ```math
 \frac{\partial N}{\partial t} = - \frac{\partial P}{\partial t}.
 ```
@@ -129,13 +129,13 @@ const year = years = 365days
 clock = Clock(; time = 0.0)
 
 z = -10 # specify the nominal depth of the box for the PAR profile
-@inline PAR_func(t) = PAR⁰(t) * exp(0.2z) # Modify the PAR based on the nominal depth and exponential decay 
+@inline PAR_func(t) = PAR⁰(t) * exp(0.2z) # Modify the PAR based on the nominal depth and exponential decay
 
 PAR = FunctionField{Center, Center, Center}(PAR_func, BoxModelGrid(); clock)
 
 @inline temp(t) = 2.4 * cos(t * 2π / year + 50days) + 26
 
-biogeochemistry = Biogeochemistry(NutrientPhytoplankton(); 
+biogeochemistry = Biogeochemistry(NutrientPhytoplankton();
                                   light_attenuation = PrescribedPhotosyntheticallyActiveRadiation(PAR))
 
 model = BoxModel(; biogeochemistry,
@@ -190,7 +190,7 @@ Now that we have a fully working BGC model we might want to add some more featur
 ```@example implementing
 using Oceananigans.Fields: ZeroField, ConstantField
 
-biogeochemical_drift_velocity(bgc::NutrientPhytoplankton, ::Val{:P}) = 
+biogeochemical_drift_velocity(bgc::NutrientPhytoplankton, ::Val{:P}) =
     (u = ZeroField(), v = ZeroField(), w = bgc.sinking_velocity)
 ```
 
@@ -233,7 +233,7 @@ negative_tracer_scaling = ScaleNegativeTracers((:N, :P))
 biogeochemistry = Biogeochemistry(NutrientPhytoplankton(; sinking_velocity);
                                   light_attenuation,
                                   sediment,
-                                  modifiers = negative_tracer_scaling) 
+                                  modifiers = negative_tracer_scaling)
 
 κ = CenterField(grid)
 
@@ -241,10 +241,10 @@ set!(κ, κₚ)
 
 # put the model together
 
-model = NonhydrostaticModel(; grid,
-                              biogeochemistry,
-                              closure = ScalarDiffusivity(ν = κ; κ), 
-                              forcing = (; T = ∂ₜT))
+model = NonhydrostaticModel(grid;
+                            biogeochemistry,
+                            closure = ScalarDiffusivity(ν = κ; κ),
+                            forcing = (; T = ∂ₜT))
 
 set!(model, P = 0.01, N = 15, T = 28)
 
