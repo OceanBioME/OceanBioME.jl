@@ -2,12 +2,12 @@ using Adapt
 
 import Adapt: adapt_structure
 
-Adapt.adapt_structure(to, bnd::BiologyNutrientDetritus) =
-    BiologyNutrientDetritus(adapt(to, bnd.nutrients),
-                            adapt(to, bnd.biology),
-                            adapt(to, bnd.detritus),
-                            adapt(to, bnd.carbonate_system),
-                            adapt(to, bnd.oxygen))
+Adapt.adapt_structure(to, bnd::NutrientsBiologyDetritus) =
+    NutrientsBiologyDetritus(adapt(to, bnd.nutrients),
+                             adapt(to, bnd.biology),
+                             adapt(to, bnd.detritus),
+                             adapt(to, bnd.carbonate_system),
+                             adapt(to, bnd.oxygen))
 
 Adapt.adapt_structure(to, detritus::TwoParticleAndDissolved) =
     TwoParticleAndDissolved(adapt(to, detritus.remineralisation_inorganic_fraction),

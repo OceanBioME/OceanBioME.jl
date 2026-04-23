@@ -45,12 +45,12 @@ end
 
 required_biogeochemical_tracers(::NitrateAmmoniaIron) = (:NO₃, :NH₄, :Fe)
 
-@inline (lobster::BiologyNutrientDetritus{<:NitrateAmmoniaIron})(i, j, k, grid, val_name::Val{:Fe}, clock, fields, auxiliary_fields) =
+@inline (lobster::NutrientsBiologyDetritus{<:NitrateAmmoniaIron})(i, j, k, grid, val_name::Val{:Fe}, clock, fields, auxiliary_fields) =
     - nutrient_uptake(lobster, i, j, k, val_name, fields, auxiliary_fields)
 
 ##### common
 const IncludesNitrateAmmonia = Union{NitrateAmmonia, NitrateAmmoniaIron}
-const LOBSTER_WITH_NITRATE_AMMONIA = Union{BiologyNutrientDetritus{<:NitrateAmmonia}, BiologyNutrientDetritus{<:NitrateAmmoniaIron}}
+const LOBSTER_WITH_NITRATE_AMMONIA = Union{NutrientsBiologyDetritus{<:NitrateAmmonia}, NutrientsBiologyDetritus{<:NitrateAmmoniaIron}}
 
 @inline nitrifcation(nutrients::IncludesNitrateAmmonia, i, j, k, fields) = @inbounds nutrients.nitrification_rate * fields.NH₄[i, j, k]
 
@@ -83,7 +83,7 @@ struct Nutrient end
 
 required_biogeochemical_tracers(::Nutrient) = (:N, )
 
-@inline (lobster::BiologyNutrientDetritus{<:Nutrient})(i, j, k, grid, val_name::Val{:N}, clock, fields, auxiliary_fields) = (
+@inline (lobster::NutrientsBiologyDetritus{<:Nutrient})(i, j, k, grid, val_name::Val{:N}, clock, fields, auxiliary_fields) = (
     biology_inorganic_nitrogen_waste(lobster, i, j, k, fields, auxiliary_fields)
   + detritus_inorganic_nitrogen_waste(lobster, i, j, k, fields, auxiliary_fields)
   - nutrient_uptake(lobster, i, j, k, val_name, fields, auxiliary_fields)

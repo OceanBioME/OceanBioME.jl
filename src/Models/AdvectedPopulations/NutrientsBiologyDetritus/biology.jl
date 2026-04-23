@@ -75,7 +75,7 @@ function PhytoZoo(grid;
     return PhytoZoo(; phytoplankton_sinking_velocity, zooplankton_sinking_velocity, kwargs...)
 end
 
-const PHYTO_ZOO_BND = BiologyNutrientDetritus{<:Any, <:PhytoZoo}
+const PHYTO_ZOO_BND = NutrientsBiologyDetritus{<:Any, <:PhytoZoo}
 
 required_biogeochemical_tracers(pz::PhytoZoo) = ((:P, :Z)..., (isnothing(pz.temperature_coefficient) ? () : (:T, ))...)
 required_biogeochemical_auxiliary_fields(::PhytoZoo) = (:PAR, )
@@ -165,10 +165,10 @@ end
     return (nitrate_limitation + ammonia_limitation) / 2
 end
 
-@inline nutrient_limitation(lobster::BiologyNutrientDetritus{<:NitrateAmmonia}, i, j, k, fields, auxiliary_fields) =
+@inline nutrient_limitation(lobster::NutrientsBiologyDetritus{<:NitrateAmmonia}, i, j, k, fields, auxiliary_fields) =
     nitrogen_limitation(lobster, i, j, k, fields, auxiliary_fields)
 
-@inline function nutrient_limitation(lobster::BiologyNutrientDetritus{<:NitrateAmmoniaIron}, i, j, k, fields, auxiliary_fields)
+@inline function nutrient_limitation(lobster::NutrientsBiologyDetritus{<:NitrateAmmoniaIron}, i, j, k, fields, auxiliary_fields)
     kFe = lobster.biology.iron_half_saturation
     Fe = @inbounds fields.Fe[i, j, k]
 
@@ -178,7 +178,7 @@ end
 end
 
 
-@inline function nutrient_limitation(lobster::BiologyNutrientDetritus{<:Nutrient}, i, j, k, fields, auxiliary_fields)
+@inline function nutrient_limitation(lobster::NutrientsBiologyDetritus{<:Nutrient}, i, j, k, fields, auxiliary_fields)
     kNO₃ = lobster.biology.nitrate_half_saturation
 
     @inbounds begin
@@ -427,7 +427,7 @@ end
 # assume instant dissolution and put it back in DIC (or we could choose to lose it),
 # maybe that would be better?
 # but when we don't this can't be implicitly captured so we put it all back in the DIC compartement
-@inline function calcite_dissolution(lobster::BiologyNutrientDetritus{<:Any, <:PhytoZoo, <:Union{TwoParticleAndDissolved, Detritus, Nothing}}, i, j, k, fields, auxiliary_fields)
+@inline function calcite_dissolution(lobster::NutrientsBiologyDetritus{<:Any, <:PhytoZoo, <:Union{TwoParticleAndDissolved, Detritus, Nothing}}, i, j, k, fields, auxiliary_fields)
     R  = lobster.biology.redfield_ratio 
     ρ  = lobster.biology.carbon_calcate_ratio
     mᴾ = lobster.biology.phytoplankton_mortality_rate

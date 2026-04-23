@@ -3,7 +3,7 @@ include("dependencies_for_runtests.jl")
 using OceanBioME.Models: InstantRemineralisation, SimpleMultiG
 using OceanBioME.Sediments: BiogeochemicalSediment
 
-display_name(::BiologyNutrientDetritus) = "BiologyNutrientDetritus"
+display_name(::NutrientsBiologyDetritus) = "NutrientsBiologyDetritus"
 display_name(::BiogeochemicalSediment{<:SimpleMultiG}) = "Multi-G"
 display_name(::BiogeochemicalSediment{<:InstantRemineralisation}) = "Instant remineralisation"
 display_name(::RectilinearGrid) = "Rectilinear grid"
@@ -21,13 +21,13 @@ function display_name(architecture, grid, sediment_model, biogeochemistry, times
     return "$architecture, $timestepper, $sediment_name, $bgc_name, $grid_name"
 end
 
-set_sinkers!(::BiologyNutrientDetritus{<:Any, <:Any, <:Detritus}, model) = set!(model, D = 1)
-set_sinkers!(::BiologyNutrientDetritus{<:Any, <:Any, <:TwoParticleAndDissolved}, model) = set!(model, sPOM = 1, bPOM = 1)
-set_sinkers!(::BiologyNutrientDetritus{<:Any, <:Any, <:VariableRedfieldDetritus}, model) =
+set_sinkers!(::NutrientsBiologyDetritus{<:Any, <:Any, <:Detritus}, model) = set!(model, D = 1)
+set_sinkers!(::NutrientsBiologyDetritus{<:Any, <:Any, <:TwoParticleAndDissolved}, model) = set!(model, sPOM = 1, bPOM = 1)
+set_sinkers!(::NutrientsBiologyDetritus{<:Any, <:Any, <:VariableRedfieldDetritus}, model) =
     set!(model, sPON = 1, bPON = 1, sPOC = 6.56, bPOC = 6.56)
 
 sum_of_volume_integrals(biogeochemistry, tracers) = sum(map(f -> Field(Integral(f)), values(tracers)))
-sum_of_volume_integrals(::BiologyNutrientDetritus{<:Any, <:Any, <:VariableRedfieldDetritus}, tracers) =
+sum_of_volume_integrals(::NutrientsBiologyDetritus{<:Any, <:Any, <:VariableRedfieldDetritus}, tracers) =
     sum([Field(Integral(f)) for (n, f) in pairs(tracers) if n in (:NO₃, :NH₄, :P, :Z, :sPON, :bPON, :DON)])
 
 sum_of_area_integrals(sediment, fields) = sum(map(f -> Field(Integral(f, dims = (1, 2))), values(fields)))

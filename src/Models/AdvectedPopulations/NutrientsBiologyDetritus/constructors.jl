@@ -82,7 +82,7 @@ LOBSTER(grid;
 
         particles = nothing,
         modifiers = nothing) =
-    BiologyNutrientDetritus(grid; 
+    NutrientsBiologyDetritus(grid; 
                             nutrients,
                             biology,
                             detritus,
@@ -213,7 +213,7 @@ NPZD(grid;
 
      particles = nothing,
      modifiers = nothing) =
-    BiologyNutrientDetritus(grid; 
+    NutrientsBiologyDetritus(grid; 
                             nutrients,
                             biology,
                             detritus,

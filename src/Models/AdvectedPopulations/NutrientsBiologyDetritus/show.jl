@@ -1,27 +1,32 @@
 import Base: show, summary
 
-##### BiologyNutrientDetritus
-summary(lobster::BiologyNutrientDetritus) = string("BiologyNutrientDetritus model $(required_biogeochemical_tracers(lobster))")
-function show(io::IO, lobster::BiologyNutrientDetritus)
-    msg = "BiologyNutrientDetritus model\n"
-    msg *= "├── Biology: $(summary(lobster.biology))\n"
-    msg *= "├── Nutrients: $(summary(lobster.nutrients))\n"
+##### NutrientsBiologyDetritus
+summary(bgc::NutrientsBiologyDetritus) = string("$(overall_name(bgc)) model $(required_biogeochemical_tracers(bgc))")
 
-    if isnothing(lobster.carbonate_system) & isnothing(lobster.oxygen)
+overall_name(::NutrientsBiologyDetritus) = "NutrientsBiologyDetritus"
+overall_name(::NutrientsBiologyDetritus{<:NitrateAmmonia, <:PhytoZoo, <:TwoParticleAndDissolved}) = "LOBSTER"
+overall_name(::NutrientsBiologyDetritus{<:Nutrient, <:PhytoZoo, <:Detritus}) = "NPZD"
+
+function show(io::IO, bgc::NutrientsBiologyDetritus)
+    msg = "$(overall_name(bgc)) model\n"
+    msg *= "├── Biology: $(summary(bgc.biology))\n"
+    msg *= "├── Nutrients: $(summary(bgc.nutrients))\n"
+
+    if isnothing(bgc.carbonate_system) & isnothing(bgc.oxygen)
         msg *= "└── "
     else
         msg *= "├── "
     end
 
-    msg *= "Detritus: $(summary(lobster.detritus))\n"
+    msg *= "Detritus: $(summary(bgc.detritus))\n"
 
-    if isnothing(lobster.carbonate_system) & !isnothing(lobster.oxygen)
-        msg *= "└── Oxygen: $(summary(lobster.oxygen))"
-    elseif isnothing(lobster.oxygen) & !isnothing(lobster.carbonate_system)
-        msg *= "└── Carbonate system: $(summary(lobster.carbonate_system))"
-    elseif !isnothing(lobster.carbonate_system) & !isnothing(lobster.oxygen)
-        msg *= "├── Carbonate system: $(summary(lobster.carbonate_system))\n"
-        msg *= "└── Oxygen: $(summary(lobster.oxygen))"
+    if isnothing(bgc.carbonate_system) & !isnothing(bgc.oxygen)
+        msg *= "└── Oxygen: $(summary(bgc.oxygen))"
+    elseif isnothing(bgc.oxygen) & !isnothing(bgc.carbonate_system)
+        msg *= "└── Carbonate system: $(summary(bgc.carbonate_system))"
+    elseif !isnothing(bgc.carbonate_system) & !isnothing(bgc.oxygen)
+        msg *= "├── Carbonate system: $(summary(bgc.carbonate_system))\n"
+        msg *= "└── Oxygen: $(summary(bgc.oxygen))"
     end
 
     print(io, string(msg))
