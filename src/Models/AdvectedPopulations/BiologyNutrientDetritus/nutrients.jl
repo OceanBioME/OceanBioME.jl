@@ -76,7 +76,7 @@ The nutrients is taken up by the biological component and replenished
 by the inorganic waste of the biological component and remineralised
 of detritus.
 
-When used with the default `LOBSTERPhytoZoo` biology it is assumed that `N`
+When used with the default `PhytoZoo` biology it is assumed that `N`
 is equivilane to nitrate
 """
 struct Nutrient end

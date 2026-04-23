@@ -1,7 +1,7 @@
 """
-    LOBSTERPhytoZoo
+    PhytoZoo
 
-`LOBSTERPhytoZoo` defines the default living component for the `LOBSTER` biogeochemical model.
+`PhytoZoo` defines the default living component for the `LOBSTER` biogeochemical model.
 It includes single `P`hytoplankton and `Z`ooplankton tracers which track the 
 nitrogen (mmol N / m³). 
 
@@ -16,7 +16,7 @@ phytoplankton and detritus with `α` the fraction assimilated, `m` is the quadra
 mortality rate, and `μ` is the linear mortality rate taken to represent the excretion 
 rate.
 """ 
-@kwdef struct LOBSTERPhytoZoo{FT, TC}
+@kwdef struct PhytoZoo{FT, TC, PM, GC, PS, ZS}
             nitrate_half_saturation :: FT = 0.7       # mmol N/m³
             ammonia_half_saturation :: FT = 0.001     # mmol N/m³
                iron_half_saturation :: FT = 2e-4      # mmol Fe/m³ - estimated from fitting OSP 
@@ -33,11 +33,16 @@ rate.
          zooplankton_mortality_rate :: FT = 2.31e-6   # 1/s/mmol N/m³
          zooplankton_excretion_rate :: FT = 5.8e-7    # 1/s
 
+phytoplankton_mortality_formulation :: PM = Quadratic()
+
+ phytoplankton_solid_waste_fraction :: FT = 1.0
        excretion_inorganic_fraction :: FT = 0.5       #
        preference_for_phytoplankton :: FT = 0.5       # 
                maximum_grazing_rate :: FT = 9.26e-6   # 1/s
             grazing_half_saturation :: FT = 1.0       # mmol N/m²
   zooplankton_assimilation_fraction :: FT = 0.7
+
+  grazing_concentration_formulation :: GC = Quadratic()
 
     zooplankton_calcite_dissolution :: FT = 0.3
 
@@ -46,12 +51,42 @@ rate.
 zooplankton_gut_calcite_dissolution :: FT = 0.3
 
     phytoplankton_chlorophyll_ratio :: FT = 1.31      # g Chl/mol N
+
+     phytoplankton_sinking_velocity :: PS = (u = ZeroField(), v = ZeroField(), w = ZeroField()) # this is already the fallback in Oceananigans
+       zooplankton_sinking_velocity :: ZS = (u = ZeroField(), v = ZeroField(), w = ZeroField())
 end
 
-const PHYTO_ZOO_LOBSTER = BiologyNutrientDetritus{<:Any, <:LOBSTERPhytoZoo}
+biogeochemical_drift_velocity(phytozoo::PhytoZoo, ::Val{:P}) = 
+    phytozoo.phytoplankton_sinking_velocity
+biogeochemical_drift_velocity(phytozoo::PhytoZoo, ::Val{:Z}) = 
+    phytozoo.zooplankton_sinking_velocity
 
-required_biogeochemical_tracers(::LOBSTERPhytoZoo) = (:P, :Z)
-required_biogeochemical_auxiliary_fields(::LOBSTERPhytoZoo) = (:PAR, )
+function PhytoZoo(grid; 
+                  phytoplankton_sinking_speed = 0.0, # m/s
+                  zooplankton_sinking_speed = 0.0, # m/s
+                  open_bottom = true,
+                  kwargs...)
+
+
+    phytoplankton_sinking_velocity = setup_velocity_fields((; P = phytoplankton_sinking_speed), grid, open_bottom; three_D = true).P
+    zooplankton_sinking_velocity = setup_velocity_fields((; Z = zooplankton_sinking_speed), grid, open_bottom; three_D = true).Z
+
+    return PhytoZoo(; phytoplankton_sinking_velocity, zooplankton_sinking_velocity, kwargs...)
+end
+
+const PHYTO_ZOO_LOBSTER = BiologyNutrientDetritus{<:Any, <:PhytoZoo}
+
+required_biogeochemical_tracers(::PhytoZoo) = (:P, :Z)
+required_biogeochemical_auxiliary_fields(::PhytoZoo) = (:PAR, )
+
+struct Linear end
+struct Quadratic end
+
+@inline mortality(::Linear, X, m) = m * X
+@inline mortality(::Quadratic, X, m) = m * X^2
+
+@inline concentration_limit(::Linear, X, k) = X / (X + k)
+@inline concentration_limit(::Quadratic, X, k) = X^2 / (X^2 + k^2)
 
 @inline function (lobster::PHYTO_ZOO_LOBSTER)(i, j, k, grid, val_name::Val{:P}, clock, fields, auxiliary_fields)
     γ = lobster.biology.phytoplankton_exudation_fraction
@@ -63,7 +98,9 @@ required_biogeochemical_auxiliary_fields(::LOBSTERPhytoZoo) = (:PAR, )
 
     Gp = grazing(lobster, i, j, k, val_name, fields, auxiliary_fields)
 
-    return (1 - γ) * μP - Gp - m * P^2
+    ν  = mortality(lobster.biology.phytoplankton_mortality_formulation, P, m)
+
+    return (1 - γ) * μP - Gp - ν
 end 
 
 @inline function (lobster::PHYTO_ZOO_LOBSTER)(i, j, k, grid, ::Val{:Z}, clock, fields, auxiliary_fields)
@@ -91,7 +128,9 @@ end
 
     food_concentration = p * P + (1-p) * sPOM
 
-    return g * food_concentration / (kG + food_concentration) * Z
+    L = concentration_limit(lobster.biology.grazing_concentration_formulation, food_concentration, kG)
+
+    return g * L * Z
 end
 
 @inline grazing_waste(lobster::PHYTO_ZOO_LOBSTER, i, j, k, fields, auxiliary_fields) = 
@@ -258,23 +297,31 @@ end
 
 
 @inline function biology_organic_nitrogen_waste(lobster::PHYTO_ZOO_LOBSTER, i, j, k, fields, auxiliary_fields)
-    αZ = lobster.biology.excretion_inorganic_fraction
-    μ  = lobster.biology.zooplankton_excretion_rate
-    αP = lobster.biology.ammonia_fraction_of_exudate
-    γ  = lobster.biology.phytoplankton_exudation_fraction
+    αZ  = lobster.biology.excretion_inorganic_fraction
+    μ   = lobster.biology.zooplankton_excretion_rate
+    αP  = lobster.biology.ammonia_fraction_of_exudate
+    γ   = lobster.biology.phytoplankton_exudation_fraction
+    αPm = lobster.biology.phytoplankton_solid_waste_fraction
+    mP = lobster.biology.phytoplankton_mortality_rate
 
-    Z = @inbounds fields.Z[i, j, k]
-
+    
+    @inbounds begin
+        P = fields.P[i, j, k]
+        Z = fields.Z[i, j, k]
+    end
+    
+    νP = mortality(lobster.biology.phytoplankton_mortality_formulation, P, mP)
     μP = phytoplankton_growth(lobster, i, j, k, fields, auxiliary_fields)
 
-    return (1 - αP) * γ * μP + (1 - αZ) * μ * Z
+    return (1 - αP) * γ * μP + (1 - αZ) * μ * Z + (1 - αPm) * νP
 end
 
 @inline biology_organic_carbon_waste(lobster::PHYTO_ZOO_LOBSTER, i, j, k, fields, auxiliary_fields) =
     lobster.biology.redfield_ratio * biology_organic_nitrogen_waste(lobster, i, j, k, fields, auxiliary_fields)
 
 @inline function solid_waste(lobster::PHYTO_ZOO_LOBSTER, i, j, k, fields, auxiliary_fields)
-    α  = lobster.biology.zooplankton_assimilation_fraction
+    αᴾ = lobster.biology.phytoplankton_solid_waste_fraction
+    αᶻ  = lobster.biology.zooplankton_assimilation_fraction
     mᴾ = lobster.biology.phytoplankton_mortality_rate
     mᶻ = lobster.biology.zooplankton_mortality_rate
 
@@ -285,7 +332,9 @@ end
 
     G = total_grazing(lobster, i, j, k, fields, auxiliary_fields)
 
-    return (1 - α) * G + mᴾ * P^2 + mᶻ * Z^2
+    νP = mortality(lobster.biology.phytoplankton_mortality_formulation, P, mᴾ)
+
+    return (1 - α) * G + αᴾ * νP + mᶻ * Z^2
 end
 
 @inline solid_carbon_waste(lobster::PHYTO_ZOO_LOBSTER, i, j, k, fields, auxiliary_fields) =
@@ -306,7 +355,9 @@ end
 
     food_concentration = p * P + (1-p) * sPOM
 
-    return g * p * P / (kG + food_concentration) * Z
+    L = concentration_limit(lobster.biology.grazing_concentration_formulation, food_concentration, kG)
+
+    return g * p * L * P / food_concentration * Z
 end
 
 @inline function grazing(lobster::PHYTO_ZOO_LOBSTER, i, j, k, ::Union{Val{:sPOM}, Val{:sPON}, Val{:D}}, fields, auxiliary_fields)
@@ -323,13 +374,15 @@ end
 
     food_concentration = p * P + (1-p) * sPOM
 
-    return g * (1-p) * sPOM / (kG + food_concentration) * Z
+    L = concentration_limit(lobster.biology.grazing_concentration_formulation, food_concentration, kG)
+
+    return g * (1-p) * L * sPOM / food_concentration * Z
 end
 
 @inline grazing(lobster::PHYTO_ZOO_LOBSTER, i, j, k, ::Val{:sPOC}, fields, auxiliary_fields) =
     grazing(lobster, i, j, k, Val(:sPOM), fields, auxiliary_fields) * lobster.biology.redfield_ratio
 
-@inline function weighted_phytoplankton_preference(biology::LOBSTERPhytoZoo, P, sPOM)
+@inline function weighted_phytoplankton_preference(biology::PhytoZoo, P, sPOM)
     p̃ = biology.preference_for_phytoplankton
 
     return p̃ * P / (p̃ * P + (1 - p̃) * sPOM + eps(0.0))
@@ -345,8 +398,9 @@ end
     P = @inbounds fields.P[i, j, k]
 
     G = grazing(lobster, i, j, k, Val(:P), fields, auxiliary_fields)
+    ν = mortality(lobster.biology.phytoplankton_mortality_formulation, P, mᴾ)
 
-    return (G * (1 - η) + mᴾ * P^2) * ρ * R
+    return (G * (1 - η) + ν) * ρ * R
 end
 
 @inline function calcite_dissolution(lobster::PHYTO_ZOO_LOBSTER, i, j, k, fields, auxiliary_fields)
@@ -364,7 +418,7 @@ end
 # assume instant dissolution and put it back in DIC (or we could choose to lose it),
 # maybe that would be better?
 # but when we don't this can't be implicitly captured so we put it all back in the DIC compartement
-@inline function calcite_dissolution(lobster::BiologyNutrientDetritus{<:Any, <:LOBSTERPhytoZoo, <:Union{TwoParticleAndDissolved, Detritus, Nothing}}, i, j, k, fields, auxiliary_fields)
+@inline function calcite_dissolution(lobster::BiologyNutrientDetritus{<:Any, <:PhytoZoo, <:Union{TwoParticleAndDissolved, Detritus, Nothing}}, i, j, k, fields, auxiliary_fields)
     R  = lobster.biology.redfield_ratio 
     ρ  = lobster.biology.carbon_calcate_ratio
     mᴾ = lobster.biology.phytoplankton_mortality_rate
@@ -372,8 +426,10 @@ end
     P = @inbounds fields.P[i, j, k]
 
     G = grazing(lobster, i, j, k, Val(:P), fields, auxiliary_fields)
+    ν = mortality(lobster.biology.phytoplankton_mortality_formulation, P, mᴾ)
 
-    return (G + mᴾ * P^2) * ρ * R
+
+    return (G + ν) * ρ * R
 end
 
 @inline function calcite_uptake(lobster::PHYTO_ZOO_LOBSTER, i, j, k, fields, auxiliary_fields)
@@ -384,6 +440,3 @@ end
 
     return 2 * ρ * μP * R
 end
-
-# Kuhn 2015 PZ
-

@@ -50,7 +50,40 @@ struct BiologyNutrientDetritus{NUT, BIO, DET, CAR, OXY} <: AbstractBiogeochemist
            biology :: BIO 
           detritus :: DET 
   carbonate_system :: CAR 
-            oxygen :: OXY 
+            oxygen :: OXY
+end
+
+function BiologyNutrientDetritus(grid; 
+                                 nutrients = nothing,
+                                 biology = nothing,
+                                 detritus = nothing,
+                                 carbonate_system = nothing,
+                                 oxygen = nothing,
+                                 light_attenuation = nothing,
+                                 sediment = nothing,
+                                 scale_negatives = nothing,
+                                 invalid_fill_value = NaN,
+                                 particles = nothing,
+                                 modifiers = nothing)
+
+    underlying_biogeochemistry = BiologyNutrientDetritus(nutrients, biology, detritus, carbonate_system, oxygen)
+
+    if scale_negatives
+        scaler = ScaleNegativeTracers(lobster, grid; invalid_fill_value)
+        if isnothing(modifiers)
+            modifiers = scaler
+        elseif modifiers isa Tuple
+            modifiers = (modifiers..., scaler)
+        else
+            modifiers = (modifiers, scaler)
+        end
+    end
+    
+    return Biogeochemistry(underlying_biogeochemistry;
+                           light_attenuation, 
+                           sediment, 
+                           particles,
+                           modifiers)
 end
 
 # The possible tracer combinations are:
@@ -82,5 +115,6 @@ include("oxygen.jl")
 include("show.jl")
 include("coupling_utils.jl")
 include("adapt_methods.jl")
+include("defaults.jl")
 
 end # module
