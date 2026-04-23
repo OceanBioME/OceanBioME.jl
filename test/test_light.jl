@@ -112,8 +112,6 @@ end
 field_surface_PAR = Oceananigans.Fields.ConstantField(100)
 
 @testset "Light attenuaiton model" begin
-
-
     for model in (NonhydrostaticModel, HydrostaticFreeSurfaceModel),
         grid in (RectilinearGrid(architecture; size = (2, 2, 2), extent = (2, 2, 2)),
                  LatitudeLongitudeGrid(architecture; size = (5, 5, 2), longitude = (-180, 180), latitude = (-85, 85), z = (-2, 0)))
@@ -121,7 +119,7 @@ field_surface_PAR = Oceananigans.Fields.ConstantField(100)
         if !((model == NonhydrostaticModel) && ((grid isa LatitudeLongitudeGrid) | (grid isa OrthogonalSphericalShellGrid)))
             @info "Testing light with in $model on $grid..."
             test_two_band(grid, model, field_surface_PAR, false)
-            test_multi_band(grid, model, field_surface_PAR, discrete_form)
+            test_multi_band(grid, model, field_surface_PAR, false)
         end
     end
 
