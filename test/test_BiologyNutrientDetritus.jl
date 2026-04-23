@@ -45,7 +45,11 @@ for sinking = (false, true),
     detritus = instantiate_detritus(Val(detritus), grid, sinking)
 
     model = NonhydrostaticModel(grid;
-                                biogeochemistry = BiologyNutrientDetritus(grid; nutrients, carbonate_system, oxygen, detritus))
+                                biogeochemistry = BiologyNutrientDetritus(grid; nutrients, 
+                                                                                biology = PhytoZoo(),
+                                                                                carbonate_system, 
+                                                                                oxygen, 
+                                                                                detritus))
 
     required_tracers = (:P, :Z)
     initial_values = (rand(), rand())

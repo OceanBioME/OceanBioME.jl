@@ -75,7 +75,7 @@ function PhytoZoo(grid;
     return PhytoZoo(; phytoplankton_sinking_velocity, zooplankton_sinking_velocity, kwargs...)
 end
 
-const PHYTO_ZOO_LOBSTER = BiologyNutrientDetritus{<:Any, <:PhytoZoo}
+const PHYTO_ZOO_BND = BiologyNutrientDetritus{<:Any, <:PhytoZoo}
 
 required_biogeochemical_tracers(pz::PhytoZoo) = ((:P, :Z)..., (isnothing(pz.temperature_coefficient) ? () : (:T, ))...)
 required_biogeochemical_auxiliary_fields(::PhytoZoo) = (:PAR, )
@@ -89,7 +89,7 @@ struct Quadratic end
 @inline concentration_limit(::Linear, X, k) = X / (X + k)
 @inline concentration_limit(::Quadratic, X, k) = X^2 / (X^2 + k^2)
 
-@inline function (lobster::PHYTO_ZOO_LOBSTER)(i, j, k, grid, val_name::Val{:P}, clock, fields, auxiliary_fields)
+@inline function (lobster::PHYTO_ZOO_BND)(i, j, k, grid, val_name::Val{:P}, clock, fields, auxiliary_fields)
     γ = lobster.biology.phytoplankton_exudation_fraction
     m = lobster.biology.phytoplankton_mortality_rate
 
@@ -104,7 +104,7 @@ struct Quadratic end
     return (1 - γ) * μP - Gp - ν
 end 
 
-@inline function (lobster::PHYTO_ZOO_LOBSTER)(i, j, k, grid, ::Val{:Z}, clock, fields, auxiliary_fields)
+@inline function (lobster::PHYTO_ZOO_BND)(i, j, k, grid, ::Val{:Z}, clock, fields, auxiliary_fields)
     α = lobster.biology.zooplankton_assimilation_fraction
     m = lobster.biology.zooplankton_mortality_rate
     μ = lobster.biology.zooplankton_excretion_rate
@@ -115,7 +115,7 @@ end
     return α * G - m * Z^2 - μ * Z
 end 
 
-@inline function total_grazing(lobster::PHYTO_ZOO_LOBSTER, i, j, k, fields, auxiliary_fields)
+@inline function total_grazing(lobster::PHYTO_ZOO_BND, i, j, k, fields, auxiliary_fields)
     kG = lobster.biology.grazing_half_saturation
     g = lobster.biology.maximum_grazing_rate
 
@@ -134,7 +134,7 @@ end
     return g * L * Z
 end
 
-@inline grazing_waste(lobster::PHYTO_ZOO_LOBSTER, i, j, k, fields, auxiliary_fields) = 
+@inline grazing_waste(lobster::PHYTO_ZOO_BND, i, j, k, fields, auxiliary_fields) = 
     (1 - lobster.biology.zooplankton_assimilation_fraction) * total_grazing(lobster, i, j, k, fields, auxiliary_fields)
 
 @inline function phytoplankton_preference(lobster, i, j, k, fields, auxiliary_fields)
@@ -147,7 +147,7 @@ end
 end
 
 ##### growth limitation
-@inline function nitrogen_limitation(lobster::PHYTO_ZOO_LOBSTER, i, j, k, fields, auxiliary_fields)
+@inline function nitrogen_limitation(lobster::PHYTO_ZOO_BND, i, j, k, fields, auxiliary_fields)
     kNO₃ = lobster.biology.nitrate_half_saturation
     kNH₄ = lobster.biology.ammonia_half_saturation
     ψ = lobster.biology.nitrate_ammonia_inhibition
@@ -189,7 +189,7 @@ end
 end
 
 ##### total phytoplankton growth
-@inline function phytoplankton_growth(lobster::PHYTO_ZOO_LOBSTER, i, j, k, fields, auxiliary_fields)
+@inline function phytoplankton_growth(lobster::PHYTO_ZOO_BND, i, j, k, fields, auxiliary_fields)
     kPAR = lobster.biology.light_half_saturation
     μ₀   = lobster.biology.phytoplankton_maximum_growth_rate
     Q10  = lobster.biology.temperature_coefficient
@@ -221,7 +221,7 @@ struct AnalyticalLightLimitation end # This formulation is justified because yo
 @inline light_limitation(::AnalyticalLightLimitation, PAR, kPAR) = PAR / sqrt(PAR^2 + kPAR^2)
 
 ###### nutrient uptake
-@inline function nutrient_uptake(lobster::PHYTO_ZOO_LOBSTER, i, j, k, val_name::Val{:NO₃}, fields, auxiliary_fields)
+@inline function nutrient_uptake(lobster::PHYTO_ZOO_BND, i, j, k, val_name::Val{:NO₃}, fields, auxiliary_fields)
     μ = phytoplankton_growth(lobster, i, j, k, fields, auxiliary_fields)
 
     kNO₃ = lobster.biology.nitrate_half_saturation
@@ -239,7 +239,7 @@ struct AnalyticalLightLimitation end # This formulation is justified because yo
     return μ * nitrate_limitation / (nitrate_limitation + ammonia_limitation + eps(0.0))
 end
 
-@inline function nutrient_uptake(lobster::PHYTO_ZOO_LOBSTER, i, j, k, val_name::Val{:NH₄}, fields, auxiliary_fields)
+@inline function nutrient_uptake(lobster::PHYTO_ZOO_BND, i, j, k, val_name::Val{:NH₄}, fields, auxiliary_fields)
     kNO₃ = lobster.biology.nitrate_half_saturation
     kNH₄ = lobster.biology.ammonia_half_saturation
     ψ    = lobster.biology.nitrate_ammonia_inhibition
@@ -261,7 +261,7 @@ end
     return μ * ammonia_limitation / (nitrate_limitation + ammonia_limitation + eps(0.0)) - waste
 end
 
-@inline function nutrient_uptake(lobster::PHYTO_ZOO_LOBSTER, i, j, k, val_name::Val{:Fe}, fields, auxiliary_fields)
+@inline function nutrient_uptake(lobster::PHYTO_ZOO_BND, i, j, k, val_name::Val{:Fe}, fields, auxiliary_fields)
     R = lobster.biology.iron_ratio
     
     μ = phytoplankton_growth(lobster, i, j, k, fields, auxiliary_fields)
@@ -269,7 +269,7 @@ end
     return R * μ
 end
 
-@inline function nutrient_uptake(lobster::PHYTO_ZOO_LOBSTER, i, j, k, val_name::Val{:N}, fields, auxiliary_fields)
+@inline function nutrient_uptake(lobster::PHYTO_ZOO_BND, i, j, k, val_name::Val{:N}, fields, auxiliary_fields)
     α = lobster.biology.ammonia_fraction_of_exudate
     γ = lobster.biology.phytoplankton_exudation_fraction
     
@@ -278,7 +278,7 @@ end
     return μ * (1 - α * γ)
 end
 
-@inline function phytoplankton_primary_production(lobster::PHYTO_ZOO_LOBSTER, i, j, k, fields, auxiliary_fields)
+@inline function phytoplankton_primary_production(lobster::PHYTO_ZOO_BND, i, j, k, fields, auxiliary_fields)
     α = lobster.biology.ammonia_fraction_of_exudate
     γ = lobster.biology.phytoplankton_exudation_fraction
     ρ = lobster.biology.carbon_calcate_ratio
@@ -290,7 +290,7 @@ end
 end
 
 ##### mortality waste
-@inline function biology_inorganic_nitrogen_waste(lobster::PHYTO_ZOO_LOBSTER, i, j, k, fields, auxiliary_fields)
+@inline function biology_inorganic_nitrogen_waste(lobster::PHYTO_ZOO_BND, i, j, k, fields, auxiliary_fields)
     αᴾ = lobster.biology.phytoplankton_solid_waste_fraction
     αᶻ = lobster.biology.excretion_inorganic_fraction
     μ  = lobster.biology.zooplankton_excretion_rate
@@ -306,11 +306,11 @@ end
     return αᶻ * μ * Z + (1 - αᴾ) * νP
 end
 
-@inline biology_inorganic_carbon_waste(lobster::PHYTO_ZOO_LOBSTER, i, j, k, fields, auxiliary_fields) =
+@inline biology_inorganic_carbon_waste(lobster::PHYTO_ZOO_BND, i, j, k, fields, auxiliary_fields) =
     lobster.biology.redfield_ratio * biology_inorganic_nitrogen_waste(lobster, i, j, k, fields, auxiliary_fields)
 
 
-@inline function biology_organic_nitrogen_waste(lobster::PHYTO_ZOO_LOBSTER, i, j, k, fields, auxiliary_fields)
+@inline function biology_organic_nitrogen_waste(lobster::PHYTO_ZOO_BND, i, j, k, fields, auxiliary_fields)
     αZ  = lobster.biology.excretion_inorganic_fraction
     μ   = lobster.biology.zooplankton_excretion_rate
     αP  = lobster.biology.ammonia_fraction_of_exudate
@@ -325,10 +325,10 @@ end
     return (1 - αP) * γ * μP + (1 - αZ) * μ * Z
 end
 
-@inline biology_organic_carbon_waste(lobster::PHYTO_ZOO_LOBSTER, i, j, k, fields, auxiliary_fields) =
+@inline biology_organic_carbon_waste(lobster::PHYTO_ZOO_BND, i, j, k, fields, auxiliary_fields) =
     lobster.biology.redfield_ratio * biology_organic_nitrogen_waste(lobster, i, j, k, fields, auxiliary_fields)
 
-@inline function solid_waste(lobster::PHYTO_ZOO_LOBSTER, i, j, k, fields, auxiliary_fields)
+@inline function solid_waste(lobster::PHYTO_ZOO_BND, i, j, k, fields, auxiliary_fields)
     αᴾ = lobster.biology.phytoplankton_solid_waste_fraction
     αᶻ = lobster.biology.zooplankton_assimilation_fraction
     mᴾ = lobster.biology.phytoplankton_mortality_rate
@@ -346,11 +346,11 @@ end
     return (1 - αᶻ) * G + αᴾ * νP + mᶻ * Z^2
 end
 
-@inline solid_carbon_waste(lobster::PHYTO_ZOO_LOBSTER, i, j, k, fields, auxiliary_fields) =
+@inline solid_carbon_waste(lobster::PHYTO_ZOO_BND, i, j, k, fields, auxiliary_fields) =
     solid_waste(lobster, i, j, k, fields, auxiliary_fields) * lobster.biology.redfield_ratio
 
 #### grazing
-@inline function grazing(lobster::PHYTO_ZOO_LOBSTER, i, j, k, ::Val{:P}, fields, auxiliary_fields)
+@inline function grazing(lobster::PHYTO_ZOO_BND, i, j, k, ::Val{:P}, fields, auxiliary_fields)
     kG = lobster.biology.grazing_half_saturation
     g  = lobster.biology.maximum_grazing_rate
 
@@ -369,7 +369,7 @@ end
     return g * p * L * P / (food_concentration + eps(food_concentration)) * Z
 end
 
-@inline function grazing(lobster::PHYTO_ZOO_LOBSTER, i, j, k, ::Union{Val{:sPOM}, Val{:sPON}, Val{:D}}, fields, auxiliary_fields)
+@inline function grazing(lobster::PHYTO_ZOO_BND, i, j, k, ::Union{Val{:sPOM}, Val{:sPON}, Val{:D}}, fields, auxiliary_fields)
     kG = lobster.biology.grazing_half_saturation
     g  = lobster.biology.maximum_grazing_rate
 
@@ -388,7 +388,7 @@ end
     return g * (1-p) * L * sPOM / (food_concentration + eps(food_concentration)) * Z
 end
 
-@inline grazing(lobster::PHYTO_ZOO_LOBSTER, i, j, k, ::Val{:sPOC}, fields, auxiliary_fields) =
+@inline grazing(lobster::PHYTO_ZOO_BND, i, j, k, ::Val{:sPOC}, fields, auxiliary_fields) =
     grazing(lobster, i, j, k, Val(:sPOM), fields, auxiliary_fields) * lobster.biology.redfield_ratio
 
 @inline function weighted_phytoplankton_preference(biology::PhytoZoo, P, sPOM)
@@ -397,7 +397,7 @@ end
     return p̃ * P / (p̃ * P + (1 - p̃) * sPOM + eps(0.0))
 end
 
-@inline function calcite_production(lobster::PHYTO_ZOO_LOBSTER, i, j, k, fields, auxiliary_fields)
+@inline function calcite_production(lobster::PHYTO_ZOO_BND, i, j, k, fields, auxiliary_fields)
     α  = lobster.biology.zooplankton_assimilation_fraction
     mᴾ = lobster.biology.phytoplankton_mortality_rate
     R  = lobster.biology.redfield_ratio 
@@ -412,7 +412,7 @@ end
     return (G * (1 - η) + ν) * ρ * R
 end
 
-@inline function calcite_dissolution(lobster::PHYTO_ZOO_LOBSTER, i, j, k, fields, auxiliary_fields)
+@inline function calcite_dissolution(lobster::PHYTO_ZOO_BND, i, j, k, fields, auxiliary_fields)
     R  = lobster.biology.redfield_ratio 
     ρ  = lobster.biology.carbon_calcate_ratio
     η  = lobster.biology.zooplankton_gut_calcite_dissolution
@@ -441,7 +441,7 @@ end
     return (G + ν) * ρ * R
 end
 
-@inline function calcite_uptake(lobster::PHYTO_ZOO_LOBSTER, i, j, k, fields, auxiliary_fields)
+@inline function calcite_uptake(lobster::PHYTO_ZOO_BND, i, j, k, fields, auxiliary_fields)
     R  = lobster.biology.redfield_ratio 
     ρ  = lobster.biology.carbon_calcate_ratio
 
