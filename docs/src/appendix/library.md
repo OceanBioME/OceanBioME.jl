@@ -12,7 +12,7 @@ Modules = [OceanBioME]
 ### The NutrientsBiologyDetritus constructor
 
 ```@autodocs
-Modules = [OceanBioME.Models.NutrientsBiologyDetritus]
+Modules = [OceanBioME.Models.NutrientsBiologyDetritusModels]
 ```
 
 ### Pelagic Interactions Scheme for Carbon and Ecosystem Studies (PISCES)
