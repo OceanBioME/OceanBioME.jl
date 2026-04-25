@@ -99,7 +99,7 @@ required_biogeochemical_tracers(bnd::NutrientsPlanktonDetritus) =
 required_biogeochemical_tracers(anything_else) = ()
 required_biogeochemical_auxiliary_fields(anything_else) = ()
 
-required_biogeochemical_auxiliary_fields(npd::NutrientsPlanktonDetritus) = 
+required_biogeochemical_auxiliary_fields(bnd::NutrientsPlanktonDetritus) = 
     (required_biogeochemical_auxiliary_fields(bnd.nutrients)...,
      required_biogeochemical_auxiliary_fields(bnd.plankton)...,
      required_biogeochemical_auxiliary_fields(bnd.detritus)...,
