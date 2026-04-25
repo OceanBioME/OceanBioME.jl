@@ -1,15 +1,15 @@
 import Base: show, summary
 
-##### NutrientsBiologyDetritus
-summary(bgc::NutrientsBiologyDetritus) = string("$(overall_name(bgc)) model $(required_biogeochemical_tracers(bgc))")
+##### NutrientsPlanktonDetritus
+summary(bgc::NutrientsPlanktonDetritus) = string("$(overall_name(bgc)) model $(required_biogeochemical_tracers(bgc))")
 
-overall_name(::NutrientsBiologyDetritus) = "NutrientsBiologyDetritus"
-overall_name(::NutrientsBiologyDetritus{<:NitrateAmmonia, <:PhytoZoo, <:TwoParticleAndDissolved}) = "LOBSTER"
-overall_name(::NutrientsBiologyDetritus{<:Nutrient, <:PhytoZoo, <:Detritus}) = "NPZD"
+overall_name(::NutrientsPlanktonDetritus) = "NutrientsPlanktonDetritus"
+overall_name(::NutrientsPlanktonDetritus{<:NitrateAmmonia, <:PhytoZoo, <:TwoParticleAndDissolved}) = "LOBSTER"
+overall_name(::NutrientsPlanktonDetritus{<:Nutrient, <:PhytoZoo, <:Detritus}) = "NPZD"
 
-function show(io::IO, bgc::NutrientsBiologyDetritus)
+function show(io::IO, bgc::NutrientsPlanktonDetritus)
     msg = "$(overall_name(bgc)) model\n"
-    msg *= "├── Biology: $(summary(bgc.biology))\n"
+    msg *= "├── Biology: $(summary(bgc.plankton))\n"
     msg *= "├── Nutrients: $(summary(bgc.nutrients))\n"
 
     if isnothing(bgc.carbonate_system) & isnothing(bgc.oxygen)
@@ -36,7 +36,7 @@ end
 summary(nutrients::NitrateAmmonia) = string("Nitrate and ammonia $(required_biogeochemical_tracers(nutrients))")
 summary(nutrients::NitrateAmmoniaIron) = string("Nitrate, ammonia, and iron $(required_biogeochemical_tracers(nutrients))")
 summary(nutrients::Nutrient) = string("Nutrient $(required_biogeochemical_tracers(nutrients))")
-summary(biology::PhytoZoo) = string("Phytoplankton and zooplankton $(required_biogeochemical_tracers(biology))")
+summary(plankton::PhytoZoo) = string("Phytoplankton and zooplankton $(required_biogeochemical_tracers(plankton))")
 summary(detritus::Detritus) = string("Detritus $(required_biogeochemical_tracers(detritus))")
 summary(detritus::TwoParticleAndDissolved) = string("Small and large particles, and dissolved organic matter $(required_biogeochemical_tracers(detritus))")
 summary(detritus::VariableRedfieldDetritus) = string("Nitrogen and carbon small and large particles, and dissolved organic matter $(required_biogeochemical_tracers(detritus))")

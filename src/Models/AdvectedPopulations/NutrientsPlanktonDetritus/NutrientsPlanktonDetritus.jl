@@ -20,7 +20,7 @@ When carbonate system is active:
 * Temperature: T (ᵒC)
 * Salinity: S (‰)
 """
-module NutrientsBiologyDetritusModels
+module NutrientsPlanktonDetritusModels
 
 export LOBSTER, NPZD,
        CarbonateSystem, 
@@ -31,7 +31,7 @@ export LOBSTER, NPZD,
        NitrateAmmonia,
        Nutrient,
        Detritus,
-       NutrientsBiologyDetritus,
+       NutrientsPlanktonDetritus,
        PhytoZoo
 
 using Oceananigans.Units
@@ -46,28 +46,28 @@ import Oceananigans.Biogeochemistry: AbstractBiogeochemistry,
                                      required_biogeochemical_auxiliary_fields,
                                      biogeochemical_drift_velocity
 
-struct NutrientsBiologyDetritus{NUT, BIO, DET, CAR, OXY} <: AbstractBiogeochemistry
+struct NutrientsPlanktonDetritus{NUT, PLA, DET, CAR, OXY} <: AbstractBiogeochemistry
          nutrients :: NUT 
-           biology :: BIO 
+          plankton :: PLA 
           detritus :: DET 
   carbonate_system :: CAR 
             oxygen :: OXY
 end
 
-function NutrientsBiologyDetritus(grid; 
-                                 nutrients = nothing,
-                                 biology = nothing,
-                                 detritus = nothing,
-                                 carbonate_system = nothing,
-                                 oxygen = nothing,
-                                 light_attenuation = nothing,
-                                 sediment = nothing,
-                                 scale_negatives = false,
-                                 invalid_fill_value = NaN,
-                                 particles = nothing,
-                                 modifiers = nothing)
+function NutrientsPlanktonDetritus(grid; 
+                                   nutrients = nothing,
+                                   plankton = nothing,
+                                   detritus = nothing,
+                                   carbonate_system = nothing,
+                                   oxygen = nothing,
+                                   light_attenuation = nothing,
+                                   sediment = nothing,
+                                   scale_negatives = false,
+                                   invalid_fill_value = NaN,
+                                   particles = nothing,
+                                   modifiers = nothing)
 
-    underlying_biogeochemistry = NutrientsBiologyDetritus(nutrients, biology, detritus, carbonate_system, oxygen)
+    underlying_biogeochemistry = NutrientsPlanktonDetritus(nutrients, plankton, detritus, carbonate_system, oxygen)
 
     if scale_negatives
         scaler = ScaleNegativeTracers(underlying_biogeochemistry, grid; invalid_fill_value)
@@ -88,9 +88,9 @@ function NutrientsBiologyDetritus(grid;
 end
 
 # The possible tracer combinations are:
-required_biogeochemical_tracers(bnd::NutrientsBiologyDetritus) = 
+required_biogeochemical_tracers(bnd::NutrientsPlanktonDetritus) = 
     (required_biogeochemical_tracers(bnd.nutrients)...,
-     required_biogeochemical_tracers(bnd.biology)...,
+     required_biogeochemical_tracers(bnd.plankton)...,
      required_biogeochemical_tracers(bnd.detritus)...,
      required_biogeochemical_tracers(bnd.carbonate_system)...,
      required_biogeochemical_tracers(bnd.oxygen)...)
@@ -99,19 +99,19 @@ required_biogeochemical_tracers(bnd::NutrientsBiologyDetritus) =
 required_biogeochemical_tracers(anything_else) = ()
 required_biogeochemical_auxiliary_fields(anything_else) = ()
 
-required_biogeochemical_auxiliary_fields(bnd::NutrientsBiologyDetritus) = 
+required_biogeochemical_auxiliary_fields(npd::NutrientsPlanktonDetritus) = 
     (required_biogeochemical_auxiliary_fields(bnd.nutrients)...,
-     required_biogeochemical_auxiliary_fields(bnd.biology)...,
+     required_biogeochemical_auxiliary_fields(bnd.plankton)...,
      required_biogeochemical_auxiliary_fields(bnd.detritus)...,
      required_biogeochemical_auxiliary_fields(bnd.carbonate_system)...,
      required_biogeochemical_auxiliary_fields(bnd.oxygen)...)
 
 # fallback - not surer we want this?
-@inline (::NutrientsBiologyDetritus)(i, j, k, grid, val_name, clock, fields, auxiliary_fields) = zero(grid)
+@inline (::NutrientsPlanktonDetritus)(i, j, k, grid, val_name, clock, fields, auxiliary_fields) = zero(grid)
 
 include("nutrients.jl")
 include("detritus.jl")
-include("biology.jl")
+include("plankton.jl")
 include("carbonate_system.jl")
 include("oxygen.jl")
 include("show.jl")

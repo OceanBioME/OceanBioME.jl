@@ -45,12 +45,12 @@ end
 
 required_biogeochemical_tracers(::NitrateAmmoniaIron) = (:NO₃, :NH₄, :Fe)
 
-@inline (lobster::NutrientsBiologyDetritus{<:NitrateAmmoniaIron})(i, j, k, grid, val_name::Val{:Fe}, clock, fields, auxiliary_fields) =
+@inline (lobster::NutrientsPlanktonDetritus{<:NitrateAmmoniaIron})(i, j, k, grid, val_name::Val{:Fe}, clock, fields, auxiliary_fields) =
     - nutrient_uptake(lobster, i, j, k, val_name, fields, auxiliary_fields)
 
 ##### common
 const IncludesNitrateAmmonia = Union{NitrateAmmonia, NitrateAmmoniaIron}
-const LOBSTER_WITH_NITRATE_AMMONIA = Union{NutrientsBiologyDetritus{<:NitrateAmmonia}, NutrientsBiologyDetritus{<:NitrateAmmoniaIron}}
+const LOBSTER_WITH_NITRATE_AMMONIA = Union{NutrientsPlanktonDetritus{<:NitrateAmmonia}, NutrientsPlanktonDetritus{<:NitrateAmmoniaIron}}
 
 @inline nitrifcation(nutrients::IncludesNitrateAmmonia, i, j, k, fields) = @inbounds nutrients.nitrification_rate * fields.NH₄[i, j, k]
 
@@ -60,7 +60,7 @@ const LOBSTER_WITH_NITRATE_AMMONIA = Union{NutrientsBiologyDetritus{<:NitrateAmm
 )
 
 @inline (lobster::LOBSTER_WITH_NITRATE_AMMONIA)(i, j, k, grid, val_name::Val{:NH₄}, clock, fields, auxiliary_fields) = (
-    biology_inorganic_nitrogen_waste(lobster, i, j, k, fields, auxiliary_fields)
+    plankton_inorganic_nitrogen_waste(lobster, i, j, k, fields, auxiliary_fields)
   + detritus_inorganic_nitrogen_waste(lobster, i, j, k, fields, auxiliary_fields)
   - nitrifcation(lobster.nutrients, i, j, k, fields) 
   - nutrient_uptake(lobster, i, j, k, val_name, fields, auxiliary_fields)
@@ -76,15 +76,15 @@ The nutrients is taken up by the biological component and replenished
 by the inorganic waste of the biological component and remineralised
 of detritus.
 
-When used with the default `PhytoZoo` biology it is assumed that `N`
+When used with the default `PhytoZoo` plankton it is assumed that `N`
 is equivilane to nitrate
 """
 struct Nutrient end
 
 required_biogeochemical_tracers(::Nutrient) = (:N, )
 
-@inline (lobster::NutrientsBiologyDetritus{<:Nutrient})(i, j, k, grid, val_name::Val{:N}, clock, fields, auxiliary_fields) = (
-    biology_inorganic_nitrogen_waste(lobster, i, j, k, fields, auxiliary_fields)
+@inline (lobster::NutrientsPlanktonDetritus{<:Nutrient})(i, j, k, grid, val_name::Val{:N}, clock, fields, auxiliary_fields) = (
+    plankton_inorganic_nitrogen_waste(lobster, i, j, k, fields, auxiliary_fields)
   + detritus_inorganic_nitrogen_waste(lobster, i, j, k, fields, auxiliary_fields)
   - nutrient_uptake(lobster, i, j, k, val_name, fields, auxiliary_fields)
 )

@@ -4,7 +4,7 @@
     LOBSTER(grid; 
 
             nutrients = NitrateAmmonia(),
-            biology = PhytoZoo(),
+            plankton = PhytoZoo(),
             detritus = TwoParticleAndDissolved(grid),
             carbonate_system = nothing,
             oxygen = nothing,
@@ -31,7 +31,7 @@ Keyword Arguments
 - `grid`: (required) the geometry to build the model on, required to configure sinking speeds
 - `nutrients`: nutrients component, defaults to `NitrateAmmonia` which has nitrate (`NO₃`) and ammonia (`NH₄`),
 currently `NitrateAmmoniaIron` is the alternative which includes iron (`Fe`)
-- `biology`: biological (living) component, defaults to `PhytoZoo` which has phytoplankton (`P`) and zooplankton (`Z`)
+- `plankton`: biological (living) component, defaults to `PhytoZoo` which has phytoplankton (`P`) and zooplankton (`Z`)
 - `detritus`: non-living organic component, default to `TwoParticlesAndDissolved` which has small and large 
 particles (`sPOM` and `bPOM`) and dissolved organic (`DOM`), alternatively can be `VariableRedfieldDetritus` which has 
 `sPON`, `bPON`, `DON`, `sPOC`, `bPOC`, and `DOC`
@@ -64,7 +64,7 @@ LOBSTER model (:NO₃, :NH₄, :P, :Z, :sPOM, :bPOM, :DOM)
 """
 LOBSTER(grid;
         nutrients = NitrateAmmonia(),
-        biology = PhytoZoo(),
+        plankton = PhytoZoo(),
         detritus = TwoParticleAndDissolved(grid),
         carbonate_system = nothing,
         oxygen = nothing,
@@ -82,9 +82,9 @@ LOBSTER(grid;
 
         particles = nothing,
         modifiers = nothing) =
-    NutrientsBiologyDetritus(grid; 
+    NutrientsPlanktonDetritus(grid; 
                             nutrients,
-                            biology,
+                            plankton,
                             detritus,
                             carbonate_system,
                             oxygen,
@@ -99,7 +99,7 @@ LOBSTER(grid;
 """
     NPZD(grid;
         nutrients = Nutrient(),
-        biology = PhytoZoo(grid;
+        plankton = PhytoZoo(grid;
                             nitrate_half_saturation = 2.3868,
                             phytoplankton_maximum_growth_rate = 0.6989 / day,
                             phytoplankton_exudation_fraction = zero(grid),
@@ -143,7 +143,7 @@ Keyword Arguments
 - `grid`: (required) the geometry to build the model on, required to configure sinking speeds
 - `nutrients`: nutrients component, defaults to `NitrateAmmonia` which has nitrate (`NO₃`) and ammonia (`NH₄`),
 currently `NitrateAmmoniaIron` is the alternative which includes iron (`Fe`)
-- `biology`: biological (living) component, defaults to `PhytoZoo` which has phytoplankton (`P`) and zooplankton (`Z`)
+- `plankton`: biological (living) component, defaults to `PhytoZoo` which has phytoplankton (`P`) and zooplankton (`Z`)
 - `detritus`: non-living organic component, default to `TwoParticlesAndDissolved` which has small and large 
 particles (`sPOM` and `bPOM`) and dissolved organic (`DOM`), alternatively can be `VariableRedfieldDetritus` which has 
 `sPON`, `bPON`, `DON`, `sPOC`, `bPOC`, and `DOC`
@@ -176,7 +176,7 @@ LOBSTER model (:NO₃, :NH₄, :P, :Z, :sPOM, :bPOM, :DOM)
 """
 NPZD(grid;
      nutrients = Nutrient(),
-     biology = PhytoZoo(grid;
+     plankton = PhytoZoo(grid;
                         nitrate_half_saturation = 2.3868,
                         phytoplankton_maximum_growth_rate = 0.6989 / day,
                         phytoplankton_exudation_fraction = zero(grid),
@@ -213,9 +213,9 @@ NPZD(grid;
 
      particles = nothing,
      modifiers = nothing) =
-    NutrientsBiologyDetritus(grid; 
+    NutrientsPlanktonDetritus(grid; 
                             nutrients,
-                            biology,
+                            plankton,
                             detritus,
                             carbonate_system,
                             oxygen,

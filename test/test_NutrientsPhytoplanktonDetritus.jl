@@ -47,7 +47,7 @@ for sinking = (false, true),
     detritus = instantiate_detritus(Val(detritus), grid, sinking)
 
     model = NonhydrostaticModel(grid;
-                                biogeochemistry = NutrientsBiologyDetritus(grid; nutrients, 
+                                biogeochemistry = NutrientsPlanktonDetritus(grid; nutrients, 
                                                                                 biology = PhytoZoo(),
                                                                                 carbonate_system, 
                                                                                 oxygen, 
@@ -144,11 +144,11 @@ end; )
     lobster = LOBSTER(grid)
     npzd = NPZD(grid)
 
-    @test lobster isa OceanBioME.DiscreteBiogeochemistry{<:NutrientsBiologyDetritus}
-    @test npzd isa OceanBioME.DiscreteBiogeochemistry{<:NutrientsBiologyDetritus}
+    @test lobster isa OceanBioME.DiscreteBiogeochemistry{<:NutrientsPlanktonDetritus}
+    @test npzd isa OceanBioME.DiscreteBiogeochemistry{<:NutrientsPlanktonDetritus}
 
-    @test lobster.underlying_biogeochemistry isa NutrientsBiologyDetritus{<:NitrateAmmonia, <:PhytoZoo, <:TwoParticleAndDissolved}
-    @test npzd.underlying_biogeochemistry isa NutrientsBiologyDetritus{<:Nutrient, <:PhytoZoo, <:Detritus}
+    @test lobster.underlying_biogeochemistry isa NutrientsPlanktonDetritus{<:NitrateAmmonia, <:PhytoZoo, <:TwoParticleAndDissolved}
+    @test npzd.underlying_biogeochemistry isa NutrientsPlanktonDetritus{<:Nutrient, <:PhytoZoo, <:Detritus}
 end
 
 

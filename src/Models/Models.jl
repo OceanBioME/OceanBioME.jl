@@ -5,7 +5,7 @@ export InstantRemineralisationSediment, SimpleMultiGSediment
 export NPZD, LOBSTER, CarbonateSystem, Oxygen, NitrateAmmoniaIron, VariableRedfieldDetritus, Detritus, Nutrient,
        TwoParticleAndDissolved, NitrateAmmonia,
        PISCES, DepthDependantSinkingSpeed, PrescribedLatitude, ModelLatitude, PISCESModel,
-       NutrientsBiologyDetritus, PhytoZoo
+       NutrientsPlanktonDetritus, PhytoZoo
 
 export SugarKelp, SugarKelpParticles, GiantKelp
 
@@ -21,7 +21,7 @@ export GasExchange,
        OxygenPolynomialSchmidtNumber
 
 include("Sediments/Sediments.jl")
-include("AdvectedPopulations/NutrientsBiologyDetritus/NutrientsBiologyDetritus.jl")
+include("AdvectedPopulations/NutrientsPlanktonDetritus/NutrientsPlanktonDetritus.jl")
 include("Individuals/SugarKelp/SugarKelp.jl")
 include("seawater_density.jl")
 include("CarbonChemistry/CarbonChemistry.jl")
@@ -29,7 +29,7 @@ include("GasExchange/GasExchange.jl")
 include("AdvectedPopulations/PISCES/PISCES.jl")
 
 using .SedimentModels
-using .NutrientsBiologyDetritusModels
+using .NutrientsPlanktonDetritusModels
 using .SugarKelpModel
 using .PISCESModel
 using .CarbonChemistryModel
