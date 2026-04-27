@@ -48,11 +48,11 @@ for sinking = (false, true),
 
     model = NonhydrostaticModel(grid;
                                 biogeochemistry = NutrientsPlanktonDetritus(grid; nutrients, 
-                                                                                biology = PhytoZoo(),
-                                                                                carbonate_system, 
-                                                                                oxygen, 
-                                                                                detritus,
-                                                                                light_attenuation))
+                                                                            plankton = PhytoZoo(),
+                                                                            carbonate_system, 
+                                                                            oxygen, 
+                                                                            detritus,
+                                                                            light_attenuation))
 
     required_tracers = (:P, :Z)
     initial_values = (rand(), rand())
