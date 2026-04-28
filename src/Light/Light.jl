@@ -22,7 +22,11 @@ using Oceananigans.BoundaryConditions: fill_halo_regions!,
                                        ContinuousBoundaryFunction,
                                        z_boundary_node,
                                        domain_boundary_indices,
-                                       RightBoundary
+                                       RightBoundary,
+                                       getbc, 
+                                       materialize_condition,
+                                       regularize_boundary_condition
+
 using Oceananigans.ImmersedBoundaries: ImmersedBoundaryGrid
 using OceanBioME: chlorophyll
 
