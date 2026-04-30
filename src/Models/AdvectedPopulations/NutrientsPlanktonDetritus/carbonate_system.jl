@@ -60,14 +60,16 @@ required_biogeochemical_tracers(::CarbonateSystem{N}) where N = (map(n->Symbol(:
 )
 
 function manifest_carbonate_replicates!(N)
-    for n in 1:N
-        DIC_name = Symbol(:DIC, n)
-        Alk_name = Symbol(:Alk, n)
-        @eval begin
-            @inline (lobster::NutrientsPlanktonDetritus{<:Any, <:Any, <:Any, <:CarbonateSystem})(i, j, k, grid, ::Val{$(QuoteNode(DIC_name))}, clock, fields, auxiliary_fields) =
-                lobster(i, j, k, grid, Val(:DIC), clock, fields, auxiliary_fields)
-            @inline (lobster::NutrientsPlanktonDetritus{<:Any, <:Any, <:Any, <:CarbonateSystem})(i, j, k, grid, ::Val{$(QuoteNode(Alk_name))}, clock, fields, auxiliary_fields) =
-                lobster(i, j, k, grid, Val(:Alk), clock, fields, auxiliary_fields)
-        end
+    if N>1
+      for n in 1:N
+          DIC_name = Symbol(:DIC, n)
+          Alk_name = Symbol(:Alk, n)
+          @eval begin
+              @inline (lobster::NutrientsPlanktonDetritus{<:Any, <:Any, <:Any, <:CarbonateSystem})(i, j, k, grid, ::Val{$(QuoteNode(DIC_name))}, clock, fields, auxiliary_fields) =
+                  lobster(i, j, k, grid, Val(:DIC), clock, fields, auxiliary_fields)
+              @inline (lobster::NutrientsPlanktonDetritus{<:Any, <:Any, <:Any, <:CarbonateSystem})(i, j, k, grid, ::Val{$(QuoteNode(Alk_name))}, clock, fields, auxiliary_fields) =
+                  lobster(i, j, k, grid, Val(:Alk), clock, fields, auxiliary_fields)
+          end
+      end
     end
 end
