@@ -17,7 +17,7 @@ using Oceananigans, OceanBioME, Oceananigans.Units
 
 using OceanBioME.Models.GasExchangeModel: CarbonDioxideConcentration
 
-grid = RectilinearGrid(CPU(); 
+grid = RectilinearGrid(GPU(); 
                        size = (64, 64, 8), 
                        extent = (500, 500, 15))
 
@@ -40,10 +40,15 @@ boundary_conditions = (; DIC1 = FieldBoundaryConditions(top = CO₂_flux1),
                          u    = FieldBoundaryConditions(top = wind))
 
 @inline oae_release(x, y, z, t, params) = 
-    ifelse((params.tstart <= t <= params.tend) & (z > params.release_depth) & ((x-250)^2 + (y-250)^2 < params.radius^2), params.release_rate, 0)
+    ifelse((params.start_time <= t < params.start_time + params.duration) & (z > params.depth) & ((x-250)^2 + (y-250)^2 < params.radius^2), params.release_rate, 0)
 
-oae = Forcing(oae_release; parameters = (; tstart = 1hour, tend = 2hour, release_rate = 1/hour, release_depth = -1, radius = 50)) 
-# release rate should probably be replaced by a release quantity that is appropriatly turned into a concentration
+total_release = 2.5e8 # 1t NaOH
+duration = 1hour
+depth = -1
+radius = 50
+release_rate = total_release/duration/(π*radius^2*abs(depth))
+
+oae = Forcing(oae_release; parameters = (; start_time = 1hour, duration, release_rate, radius, depth)) 
 
 model = NonhydrostaticModel(grid;
                             coriolis = FPlane(latitude = 45),
