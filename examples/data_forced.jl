@@ -121,6 +121,14 @@ simulation.output_writers[:profiles] = JLD2Writer(model,
                                                   schedule = TimeInterval(1day),
                                                   overwrite_existing = true)
 
+qCO₂ = BoundaryConditionOperation(model.tracers.DIC, :top, model)
+
+simulation.output_writers[:carbon_flux] = JLD2Writer(model, (; qCO₂),
+                                                     indices = (:, :, grid.Nz),
+                                                     filename = filename * "_carbon.jld2",
+                                                     schedule = TimeInterval(1day),
+                                                     overwrite_existing = true)
+
 wizard = TimeStepWizard(cfl = 0.2, diffusive_cfl = 0.2,
                         max_change = 1.5, min_change = 0.75,
                         cell_advection_timescale = column_advection_timescale)
@@ -141,24 +149,22 @@ run!(simulation)
 sPOM = FieldTimeSeries("$filename.jld2", "sPOM")
 bPOM = FieldTimeSeries("$filename.jld2", "bPOM")
  DIC = FieldTimeSeries("$filename.jld2", "DIC")
- Alk = FieldTimeSeries("$filename.jld2", "Alk")
+ Alk = FieldTimeSeries("$filename.jld2", "Alk") 
+ 
+air_sea_CO₂_flux = mean(interior(FieldTimeSeries(filename * "_carbon.jld2", "qCO₂")), dims = (1, 2))[1, 1, 1, :]
 
 x, y, z = nodes(P)
 times = P.times
 nothing #hide
 
-# We compute the  air-sea CO₂ flux at the surface (corresponding to vertical index `k = grid.Nz`) and
-# the carbon export by computing how much carbon sinks below some arbitrary depth; here we use depth
-# that corresponds to `k = grid.Nz - 20`.
-air_sea_CO₂_flux = zeros(length(times))
+# We compute the carbon export by computing how much carbon sinks below some arbitrary depth; 
+# here we use depth that corresponds to `k = grid.Nz - 20`.
 carbon_export = zeros(length(times))
 
 using Oceananigans.Biogeochemistry: biogeochemical_drift_velocity
 
 for (n, t) in enumerate(times)
     clock.time = t
-
-    air_sea_CO₂_flux[n] = CO₂_flux.condition.func(1, 1, grid, clock, (; DIC = DIC[n], Alk = Alk[n], T, S))
 
     carbon_export[n] = (sPOM[n][1, 1, grid.Nz-20] * biogeochemical_drift_velocity(model.biogeochemistry, Val(:sPOM)).w[1, 1, grid.Nz-20] +
                         bPOM[n][1, 1, grid.Nz-20] * biogeochemical_drift_velocity(model.biogeochemistry, Val(:bPOM)).w[1, 1, grid.Nz-20]) * redfield(Val(:sPOM), model.biogeochemistry)
