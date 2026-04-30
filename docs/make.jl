@@ -24,7 +24,8 @@ examples = [
     "Simple column model" => "column",
     "Baroclinic instability" => "eady",
     "Model with particles (kelp) interacting with the biogeochemistry" => "kelp",
-    "Data assimilation" => "data_assimilation"
+    "Data assimilation" => "data_assimilation",
+    "Ocean alkalinity enhancement" => "oae_experiment"
 ]
 
 example_pages = [ title => "generated/$(filename).md" for (title, filename) in examples ]
