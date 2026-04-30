@@ -1,5 +1,5 @@
 """
-    CarbonateSystem
+    CarbonateSystem{N}
 
 `CarbonateSystem` defines the carbonate system for the `LOBSTER` biogeochemical
 model and evolves dissolved inorganic carbon (`DIC`) and alkalinity (`Alk`).
@@ -26,6 +26,10 @@ the uptake of calcite into phytoplankton.
 biogeochemistry and *does not* effect any other groups (e.g. acidifcation does
 not effect phytoplankton growth). To capture this effect a different `plankton` 
 could be defined.
+
+Multiple (N) instances of the carbonate system can evolve in parallel and the tracers
+will be named `DIC1` ... `DICN` and `Alk1` ... `AlkN`. This is setup by passing an 
+integer argument when the model is constructed like `CarbonateSystem(2)`.
 """
 struct CarbonateSystem{N} end
 
