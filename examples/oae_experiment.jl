@@ -70,7 +70,7 @@ add_callback!(simulation, prog, IterationInterval(100))
 
 simulation.output_writers[:tracers] = JLD2Writer(model, model.tracers;
                                                 filename = "oae.jld2",
-                                                schedule = AveragedTimeInterval(2minutes),
+                                                schedule = AveragedTimeInterval(5minutes),
                                                 overwrite_existing = true)
 
 qCO₂1 = BoundaryConditionOperation(model.tracers.DIC1, :top, model)
@@ -80,12 +80,12 @@ qCO₂2 = BoundaryConditionOperation(model.tracers.DIC2, :top, model)
 simulation.output_writers[:carbon_flux] = JLD2Writer(model, (; qCO₂1, qCO₂2),
                                                      indices = (:, :, grid.Nz),
                                                      filename = "oae_surface_flux.jld2",
-                                                     schedule = TimeInterval(2minutes),
+                                                     schedule = TimeInterval(5minutes),
                                                      overwrite_existing = true)
 
 run!(simulation)
 
-using CairoMakie
+using CairoMakie, Statistics
 
 fds = FieldDataset("oae.jld2")
 fds_surface = FieldDataset("oae_surface_flux.jld2")
