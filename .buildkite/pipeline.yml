@@ -71,6 +71,7 @@ steps:
                 - "eady"
                 - "kelp"
                 - "data_assimilation"
+                - "oae_experiment"
           depends_on: "init"
           agents:
             hostname: "$BUILDKITE_AGENT_META_DATA_HOSTNAME"
