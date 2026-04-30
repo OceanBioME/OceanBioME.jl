@@ -1,11 +1,17 @@
 """
-    CarbonDioxideConcentration(; carbon_chemistry, 
-                                 first_virial_coefficient = PolynomialVirialCoefficientForCarbonDioxide(),
-                                 cross_viral_coefficient = CrossVirialCoefficientForCarbonDioxide(),
-                                 air_pressue = 1 # atm)
+    CarbonDioxideConcentration(FT = Float64;
+                               carbon_chemistry::CC,
+                               first_virial_coefficient::FV = PolynomialVirialCoefficientForCarbonDioxide{FT}(),
+                               cross_virial_coefficient::CV = CrossVirialCoefficientForCarbonDioxide{FT}(),
+                               air_pressure::AP = one(FT), # atm
+                               silicate_and_phosphate_names::SP = nothing,
+                               DIC = :DIC,
+                               Alk = :Alk)
 
 Converts fCO₂ to partial pressure as per Dickson, A.G., Sabine, C.L. and  Christian, J.R. (2007), 
 Guide to Best Practices for Ocean CO 2 Measurements. PICES Special Publication 3, 191 pp.
+
+`DIC` and `Alk` specify the tracer names of the DIC and alkalinity in the model.
 """
 struct CarbonDioxideConcentration{DIC, Alk, CC<:CarbonChemistry, FV, CV, AP, SP}
             carbon_chemistry :: CC 
