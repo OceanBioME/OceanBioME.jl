@@ -87,18 +87,7 @@ simulation.output_writers[:profiles] = JLD2Writer(model, model.tracers,
                                                   schedule = TimeInterval(1day),
                                                   overwrite_existing = true)
 
-# Also output the surface CO₂ flux
-@inline qCO₂_kernel(i, j, k, grid, clock, DIC, Alk, T, S, carbon_boundary_condition) =
-    carbon_boundary_condition.condition.func(i, j, grid, clock, (; DIC, Alk, T, S))
-
-qCO₂ = KernelFunctionOperation{Center, Center, Face}(qCO₂_kernel,
-                                                     grid,
-                                                     clock,
-                                                     model.tracers.DIC,
-                                                     model.tracers.Alk,
-                                                     model.auxiliary_fields.T,
-                                                     model.auxiliary_fields.S,
-                                                     CO₂_flux)
+qCO₂ = BoundaryConditionOperation(model.tracers.DIC, :top, model)
 
 simulation.output_writers[:carbon_flux] = JLD2Writer(model, (; qCO₂),
                                                      indices = (:, :, grid.Nz),
