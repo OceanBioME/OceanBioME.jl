@@ -7,7 +7,7 @@
 Converts fCO₂ to partial pressure as per Dickson, A.G., Sabine, C.L. and  Christian, J.R. (2007), 
 Guide to Best Practices for Ocean CO 2 Measurements. PICES Special Publication 3, 191 pp.
 """
-struct CarbonDioxideConcentration{CC<:CarbonChemistry, FV, CV, AP, SP}
+struct CarbonDioxideConcentration{DIC, Alk, CC<:CarbonChemistry, FV, CV, AP, SP}
             carbon_chemistry :: CC 
     first_virial_coefficient :: FV
     cross_virial_coefficient :: CV
@@ -20,17 +20,21 @@ CarbonDioxideConcentration(FT = Float64;
                            first_virial_coefficient::FV = PolynomialVirialCoefficientForCarbonDioxide{FT}(),
                            cross_virial_coefficient::CV = CrossVirialCoefficientForCarbonDioxide{FT}(),
                            air_pressure::AP = one(FT), # atm
-                           silicate_and_phosphate_names::SP = nothing) where {CC, FV, CV, AP, SP} = 
-    CarbonDioxideConcentration(carbon_chemistry, first_virial_coefficient, cross_virial_coefficient, air_pressure, silicate_and_phosphate_names)
-
-                            
+                           silicate_and_phosphate_names::SP = nothing,
+                           DIC = :DIC,
+                           Alk = :Alk) where {CC, FV, CV, AP, SP} = 
+    CarbonDioxideConcentration{DIC, Alk, CC, FV, CV, AP, SP}(carbon_chemistry, 
+                                                             first_virial_coefficient, 
+                                                             cross_virial_coefficient, 
+                                                             air_pressure, 
+                                                             silicate_and_phosphate_names)
 
 summary(::CarbonDioxideConcentration{CC, FV, CV, AP}) where {CC, FV, CV, AP} = 
     "`CarbonChemistry` derived partial pressure of CO₂ (pCO₂) {$(nameof(CC)), $(nameof(FV)), $(nameof(CV))}"
 
-@inline function surface_value(cc::CarbonDioxideConcentration, i, j, grid, clock, model_fields)
-    DIC = @inbounds model_fields.DIC[i, j, grid.Nz]
-    Alk = @inbounds model_fields.Alk[i, j, grid.Nz]
+@inline function surface_value(cc::CarbonDioxideConcentration{DIC_name, Alk_name}, i, j, grid, clock, model_fields) where {DIC_name, Alk_name}
+    DIC = @inbounds model_fields[DIC_name][i, j, grid.Nz] # this is a compile time inference so is fine on GPU
+    Alk = @inbounds model_fields[Alk_name][i, j, grid.Nz]
 
     T = @inbounds model_fields.T[i, j, grid.Nz]
     S = @inbounds model_fields.S[i, j, grid.Nz]
