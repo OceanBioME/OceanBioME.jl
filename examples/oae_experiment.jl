@@ -56,7 +56,7 @@ depth = -1
 radius = 50
 release_rate = total_release/duration/(π*radius^2*abs(depth))
 
-oae = Forcing(oae_release; parameters = (; start_time = 1hour, 
+oae = Forcing(oae_release; parameters = (; start_time = 20minutes, 
                                            duration, 
                                            release_rate, 
                                            radius, 
@@ -76,7 +76,7 @@ set!(model, P = 1, NO₃ = 10,
             DIC2 = 2000, Alk2 = 2300, 
             u = (x, y, z) -> randn()/2)
 
-simulation = Simulation(model, Δt = 5, stop_time = 5hours)
+simulation = Simulation(model, Δt = 5, stop_time = 2hours)
 
 conjure_time_step_wizard!(simulation)
 
