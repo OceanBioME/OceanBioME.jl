@@ -23,7 +23,8 @@ using Random
 Random.seed!(11)
 
 # Construct a grid with uniform grid spacing on GPU (just remove `GPU()` to run on CPU)
-grid = RectilinearGrid(GPU(); size = (32, 32, 8), extent = (1kilometer, 1kilometer, 100meters))
+grid = RectilinearGrid(CPU();#GPU();
+ size = (32, 32, 8), extent = (1kilometer, 1kilometer, 100meters))
 
 # Set the Coriolis and buoyancy models.
 coriolis = FPlane(f = 1e-4) # [s⁻¹]
@@ -139,7 +140,7 @@ xζ, yζ, zζ = nodes(ζ)
 xc, yc, zc = nodes(P)
 nothing #hide
 
-# and plot.
+# and build the frames,
 n = Observable(1)
 
 Nz = grid.Nz
@@ -148,6 +149,8 @@ Nz = grid.Nz
   Nₙ = @lift interior(NO₃[$n], :, :, Nz) .+ interior(NH₄[$n], :, :, Nz)
   Pₙ = @lift interior(  P[$n], :, :, Nz)
 DICₙ = @lift interior(DIC[$n], :, :, Nz)
+
+# now plot
 
 fig = Figure(size = (1600, 1600), fontsize = 20)
 
@@ -176,6 +179,8 @@ Colorbar(fig[2, 4], hm4)
 
 title = @lift "t = $(prettytime(times[$n]))"
 Label(fig[0, :], title, fontsize = 30)
+
+# and record the movie
 
 record(fig, "eady.mp4", 1:length(times), framerate = 12) do i
     n[] = i
