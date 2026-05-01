@@ -9,7 +9,7 @@ overall_name(::NutrientsPlanktonDetritus{<:Nutrient, <:PhytoZoo, <:Detritus}) = 
 
 function show(io::IO, bgc::NutrientsPlanktonDetritus)
     msg = "$(overall_name(bgc)) model\n"
-    msg *= "├── Biology: $(summary(bgc.plankton))\n"
+    msg *= "├── Plankton: $(summary(bgc.plankton))\n"
     msg *= "├── Nutrients: $(summary(bgc.nutrients))\n"
 
     if isnothing(bgc.carbonate_system) & isnothing(bgc.oxygen)

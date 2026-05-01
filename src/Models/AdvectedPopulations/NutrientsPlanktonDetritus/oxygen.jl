@@ -25,7 +25,7 @@ required_biogeochemical_tracers(::Oxygen) = (:O₂, )
     μP = phytoplankton_growth(lobster, i, j, k, fields, auxiliary_fields)
 
     nitrate_production = lobster(i, j, k, grid, Val(:NH₄), clock, fields, auxiliary_fields)
-    μNH₄ = nitrifcation(lobster.nutrients, i, j, k, fields) 
+    μNH₄ = nitrification(lobster.nutrients, i, j, k, fields) 
 
     return Rp * μP - (Rp - Rn) * nitrate_production - Rp * μNH₄
 end

@@ -30,7 +30,7 @@ end
     nitrogen = conserved_nitrogen_tracers(bpd)
 
     R = bpd.plankton.redfield_ratio
-    ρ = bpd.plankton.carbon_calcate_ratio
+    ρ = bpd.plankton.carbon_calcite_ratio
 
     carbon_tracers = (:P, :Z, :DIC)
     carbon_scalefactors = ((1 + ρ) * R, R, 1)

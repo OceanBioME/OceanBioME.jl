@@ -59,7 +59,7 @@ Adapt.adapt_structure(to, pz::PhytoZoo) =
              adapt(to, pz.grazing_concentration_formulation),
              adapt(to, pz.zooplankton_calcite_dissolution),
              adapt(to, pz.redfield_ratio),
-             adapt(to, pz.carbon_calcate_ratio),
+             adapt(to, pz.carbon_calcite_ratio),
              adapt(to, pz.zooplankton_gut_calcite_dissolution),
              adapt(to, pz.phytoplankton_chlorophyll_ratio),
              adapt(to, pz.phytoplankton_sinking_velocity),

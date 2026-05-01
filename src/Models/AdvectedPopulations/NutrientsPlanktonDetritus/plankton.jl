@@ -48,7 +48,7 @@ phytoplankton_mortality_formulation :: PM = Quadratic()
     zooplankton_calcite_dissolution :: FT = 0.3
 
                      redfield_ratio :: FT = 6.56      # mol C/mol N
-               carbon_calcate_ratio :: FT = 0.1       # mol CaCO₃/mol C
+               carbon_calcite_ratio :: FT = 0.1       # mol CaCO₃/mol C
 zooplankton_gut_calcite_dissolution :: FT = 0.3
 
     phytoplankton_chlorophyll_ratio :: FT = 1.31      # g Chl/mol N
@@ -205,7 +205,7 @@ end
     return μ₀ * Lₗ * Lₙ * Lₜ * P
 end
 
-@inline temperature_limitation(::Nothing, i, j, k, fields) = zero(eltype(fields.P))
+@inline temperature_limitation(::Nothing, i, j, k, fields) = one(eltype(fields.P))
 
 @inline function temperature_limitation(Q10, i, j, k, fields)
     T = @inbounds fields.T[i, j, k]
@@ -280,7 +280,7 @@ end
 @inline function phytoplankton_primary_production(lobster::PHYTO_ZOO_BND, i, j, k, fields, auxiliary_fields)
     α = lobster.plankton.ammonia_fraction_of_exudate
     γ = lobster.plankton.phytoplankton_exudation_fraction
-    ρ = lobster.plankton.carbon_calcate_ratio
+    ρ = lobster.plankton.carbon_calcite_ratio
     R = lobster.plankton.redfield_ratio
 
     μP = phytoplankton_growth(lobster, i, j, k, fields, auxiliary_fields)
@@ -400,7 +400,7 @@ end
     α  = lobster.plankton.zooplankton_assimilation_fraction
     mᴾ = lobster.plankton.phytoplankton_mortality_rate
     R  = lobster.plankton.redfield_ratio 
-    ρ  = lobster.plankton.carbon_calcate_ratio
+    ρ  = lobster.plankton.carbon_calcite_ratio
     η  = lobster.plankton.zooplankton_gut_calcite_dissolution
 
     P = @inbounds fields.P[i, j, k]
@@ -413,7 +413,7 @@ end
 
 @inline function calcite_dissolution(lobster::PHYTO_ZOO_BND, i, j, k, fields, auxiliary_fields)
     R  = lobster.plankton.redfield_ratio 
-    ρ  = lobster.plankton.carbon_calcate_ratio
+    ρ  = lobster.plankton.carbon_calcite_ratio
     η  = lobster.plankton.zooplankton_gut_calcite_dissolution
 
     G = grazing(lobster, i, j, k, Val(:P), fields, auxiliary_fields)
@@ -428,7 +428,7 @@ end
 # but when we don't this can't be implicitly captured so we put it all back in the DIC compartement
 @inline function calcite_dissolution(lobster::NutrientsPlanktonDetritus{<:Any, <:PhytoZoo, <:Union{TwoParticleAndDissolved, Detritus, Nothing}}, i, j, k, fields, auxiliary_fields)
     R  = lobster.plankton.redfield_ratio 
-    ρ  = lobster.plankton.carbon_calcate_ratio
+    ρ  = lobster.plankton.carbon_calcite_ratio
     mᴾ = lobster.plankton.phytoplankton_mortality_rate
 
     P = @inbounds fields.P[i, j, k]
@@ -442,7 +442,7 @@ end
 
 @inline function calcite_uptake(lobster::PHYTO_ZOO_BND, i, j, k, fields, auxiliary_fields)
     R  = lobster.plankton.redfield_ratio 
-    ρ  = lobster.plankton.carbon_calcate_ratio
+    ρ  = lobster.plankton.carbon_calcite_ratio
 
     μP = phytoplankton_growth(lobster, i, j, k, fields, auxiliary_fields)
 
