@@ -187,4 +187,8 @@ record(fig, "eady.mp4", 1:length(times), framerate = 12) do i
 end=# # temporatily disable
 n[] = length(times) 
 fig
+#=
 nothing #hide
+
+# ![](eady.mp4)
+=#
