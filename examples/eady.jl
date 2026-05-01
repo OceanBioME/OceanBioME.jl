@@ -144,17 +144,19 @@ using CairoMakie
 
 n = Observable(1)
 
-  ζₙ = @lift interior(  ζ[$n], :, :, grid.Nz)
-  Nₙ = @lift interior(NO₃[$n], :, :, grid.Nz) .+ interior(NH₄[$n], :, :, grid.Nz)
-  Pₙ = @lift interior(  P[$n], :, :, grid.Nz)
-DICₙ = @lift interior(DIC[$n], :, :, grid.Nz)
+Nz = grid.Nz
+
+  ζₙ = @lift interior(  ζ[$n], :, :, Nz)
+  Nₙ = @lift interior(NO₃[$n], :, :, Nz) .+ interior(NH₄[$n], :, :, Nz)
+  Pₙ = @lift interior(  P[$n], :, :, Nz)
+DICₙ = @lift interior(DIC[$n], :, :, Nz)
 
 fig = Figure(size = (1600, 1600), fontsize = 20)
 
-lims = [(minimum(T), maximum(T)) for T in (  ζ[:, :, grid.Nz, :],
-                                           NO₃[:, :, grid.Nz, :] .+ NH₄[:, :, grid.Nz, :],
-                                             P[:, :, grid.Nz, :],
-                                           DIC[:, :, grid.Nz, :])]
+lims = [(minimum(T), maximum(T)) for T in (  ζ[:, :, Nz, :],
+                                           NO₃[:, :, Nz, :] .+ NH₄[:, :, Nz, :],
+                                             P[:, :, Nz, :],
+                                           DIC[:, :, Nz, :])]
 
 axis_kwargs = (xlabel = "x (m)", ylabel = "y (m)", aspect = DataAspect())
 
