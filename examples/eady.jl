@@ -16,7 +16,7 @@
 # ## Model setup
 # We load the required packages. Although not required, we also set the random seed to ensure
 # reproducibility of the results.
-using OceanBioME, Oceananigans, Printf, CairoMakie
+using OceanBioME, Oceananigans, Printf
 using Oceananigans.Units
 
 using Random
@@ -54,7 +54,8 @@ vertical_diffusivity = VerticalScalarDiffusivity(ν = νᵥ, κ = κᵥ)
 # Setup the biogeochemical model with optional carbonate chemistry turned on.
 
 biogeochemistry = LOBSTER(grid;
-                          carbonate_system = CarbonateSystem())
+                          carbonate_system = CarbonateSystem(),
+                          detritus = TwoParticleAndDissolved(grid; open_bottom = true))
 
 DIC_bcs = FieldBoundaryConditions(top = CarbonDioxideGasExchangeBoundaryCondition())
 
@@ -139,6 +140,7 @@ xc, yc, zc = nodes(P)
 nothing #hide
 
 # and plot.
+using CairoMakie
 
 n = Observable(1)
 
