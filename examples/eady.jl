@@ -188,5 +188,3 @@ end=# # temporatily disable
 n[] = length(times) 
 fig
 nothing #hide
-
-# ![](eady.mp4)
