@@ -30,6 +30,9 @@ could be defined.
 Multiple (N) instances of the carbonate system can evolve in parallel and the tracers
 will be named `DIC1` ... `DICN` and `Alk1` ... `AlkN`. This is setup by passing an 
 integer argument when the model is constructed like `CarbonateSystem(2)`.
+
+You may get method overwrite warnings if you repeatedly define carbonate systems
+with N>1, this shouldn't cause problems.
 """
 struct CarbonateSystem{N} end
 
