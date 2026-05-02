@@ -67,13 +67,13 @@ particles = SugarKelpParticles(n; grid,
 set!(particles, A = 10, N = 0.01, C = 0.1, z = z₀, x = Lx / 2, y = Ly / 2)
 
 # ## Setup BGC model
-biogeochemistry = LOBSTER(; grid,
-                            surface_photosynthetically_active_radiation = PAR⁰,
-                            carbonate_system = CarbonateSystem(),
-                            detritus = VariableRedfieldDetritus(),
-                            oxygen = Oxygen(),
-                            scale_negatives = true,
-                            particles)
+biogeochemistry = LOBSTER(grid;
+                          surface_photosynthetically_active_radiation = PAR⁰,
+                          carbonate_system = CarbonateSystem(),
+                          detritus = VariableRedfieldDetritus(),
+                          oxygen = Oxygen(),
+                          scale_negatives = true,
+                          particles)
 
 model = NonhydrostaticModel(grid;
                             clock,
@@ -111,18 +111,7 @@ simulation.output_writers[:particles] = JLD2Writer(model, (; particles),
                                                    schedule = TimeInterval(1day),
                                                    overwrite_existing = true)
 
-# Also output the surface CO₂ flux
-@inline qCO₂_kernel(i, j, k, grid, clock, DIC, Alk, T, S, carbon_boundary_condition) =
-    carbon_boundary_condition.condition.func(i, j, grid, clock, (; DIC, Alk, T, S))
-
-qCO₂ = KernelFunctionOperation{Center, Center, Face}(qCO₂_kernel,
-                                                     grid,
-                                                     clock,
-                                                     model.tracers.DIC,
-                                                     model.tracers.Alk,
-                                                     model.auxiliary_fields.T,
-                                                     model.auxiliary_fields.S,
-                                                     CO₂_flux)
+qCO₂ = BoundaryConditionOperation(model.tracers.DIC, :top, model)
 
 simulation.output_writers[:carbon_flux] = JLD2Writer(model, (; qCO₂),
                                                      indices = (:, :, grid.Nz),
@@ -182,7 +171,7 @@ CO₂_molar_mass = (12 + 2 * 16) * 1e-3 # kg / mol
 
 axfDIC = Axis(fig[4, 1], xlabel = "Time (days)", ylabel = "Flux (kgCO₂/m²/year)",
                          title = "Air-sea CO₂ flux and Sinking", limits = ((0, times[end] / days), nothing))
-lines!(axfDIC, times / days, air_sea_CO₂_flux[1, 1, grid.Nz, :] / 1e3 * CO₂_molar_mass * year * 10, linewidth = 3, label = "Air-sea flux x10")
+lines!(axfDIC, times / days, interior(air_sea_CO₂_flux, 1, 1, 1, :) ./ 1e3 * CO₂_molar_mass * year * 10, linewidth = 3, label = "Air-sea flux x10")
 lines!(axfDIC, times / days, carbon_export / 1e3 * CO₂_molar_mass * year, linewidth = 3, label = "Sinking export")
 Legend(fig[4, 2], axfDIC, framevisible = false)
 

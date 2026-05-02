@@ -46,5 +46,5 @@ set!(particles, S = 0.1, x = rand(10) * Lx, y = rand(10) * Ly, z = rand(10) * Lz
 We can then put these into a compatible biogeochemical model, for example:
 ```@example particles
 
-biogeochemistry = NPZD(; grid, particles)
+biogeochemistry = NPZD(grid; particles)
 ```

@@ -77,7 +77,7 @@ sediment_model = InstantRemineralisationSediment(grid;
                                                  sinking_tracers = (:sPOM, :bPOM),
                                                  remineralisation_reciever = :NH₄)
 
-biogeochemistry = LOBSTER(; grid, sediment_model)
+biogeochemistry = LOBSTER(grid; sediment_model)
 ```
 """
 InstantRemineralisationSediment(grid;
