@@ -1,7 +1,7 @@
 using Documenter, DocumenterCitations, Literate
 
 using OceanBioME
-using OceanBioME: SugarKelp, LOBSTER, NutrientPhytoplanktonZooplanktonDetritus, SimpleMultiGSediment, InstantRemineralisationSediment
+using OceanBioME: SugarKelp, LOBSTER, NPZD, SimpleMultiGSediment, InstantRemineralisationSediment
 using OceanBioME: CarbonChemistry, GasExchange
 
 using Oceananigans.Grids: RectilinearGrid
@@ -35,8 +35,8 @@ if !isdir(OUTPUT_DIR) mkdir(OUTPUT_DIR) end
 
 small_grid = RectilinearGrid(size=(1, 1, 1), extent=(1, 1, 1))
 
-model_parameters = (LOBSTER(;grid = BoxModelGrid(), light_attenuation = nothing).underlying_biogeochemistry,
-                    NutrientPhytoplanktonZooplanktonDetritus(; grid = BoxModelGrid(), light_attenuation = nothing).underlying_biogeochemistry,
+model_parameters = (LOBSTER(BoxModelGrid(); light_attenuation = nothing).underlying_biogeochemistry,
+                    NPZD(BoxModelGrid(); light_attenuation = nothing).underlying_biogeochemistry,
                     SugarKelp(),
                     TwoBandPhotosyntheticallyActiveRadiation(; grid = small_grid),
                     SimpleMultiGSediment(small_grid).biogeochemistry,

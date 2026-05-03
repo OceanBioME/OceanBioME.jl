@@ -21,11 +21,11 @@ sediment = SimpleMultiGSediment(grid)
 You may optionally specify the model parameters. This can then be passed in the setup of a BGC model:
 
 ```julia
-biogeochemistry = LOBSTER(; grid,
-                            carbonate_system = CarbonateSystem(),
-                            oxygen = Oxygen(), 
-                            detritus = VariableRedfieldDetritus(grid; open_bottom = true),
-                            sediment)
+biogeochemistry = LOBSTER(grid;
+                          carbonate_system = CarbonateSystem(),
+                          oxygen = Oxygen(), 
+                          detritus = VariableRedfieldDetritus(grid; open_bottom = true),
+                          sediment)
 ```
 
 ### Model equations

@@ -92,7 +92,7 @@ julia> sediment = SimpleMultiGSediment(grid)
     Tracked fields: (:NO₃, :NH₄, :O₂, :sPOM, :bPOM)
     Coupled fields: (:NO₃, :NH₄, :O₂)
 
-julia> biogeochemistry = LOBSTER(; grid, sediment, detritus = TwoParticleAndDissolved(grid; open_bottom=true))
+julia> biogeochemistry = LOBSTER(grid; sediment, detritus = TwoParticleAndDissolved(grid; open_bottom=true))
 LOBSTER model (:NO₃, :NH₄, :P, :Z, :sPOM, :bPOM, :DOM)
  Light attenuation: Two-band light attenuation model (Float64)
  Sediment: `BiogeochemicalSediment` with `Single-layer multi-G sediment model (Float64)` biogeochemsitry
@@ -203,7 +203,7 @@ end
     k = reactivity(s, Ns * R, Nf * R) 
 
     pₙ  = ammonia_oxidation_fraction(s, Nr, Cr, k, NH₄, O₂)
-    pₙ′ = denitrifcation_fraction(s, Nr, Cr, k, NO₃, O₂)
+    pₙ′ = denitrification_fraction(s, Nr, Cr, k, NO₃, O₂)
 
     return (1 - pₙ) * Nr + 0.8 * pₙ′ * Cr # I think the implication is that this `0.8 * pₙ′ * Cr` term should be going to N₂, but we want to conserve
 end
@@ -219,7 +219,7 @@ end
     k = reactivity(s, Ns * R, Nf * R) 
 
     pₙ  = ammonia_oxidation_fraction(s, Nr, Cr, k, NH₄, O₂)
-    pₙ′ = denitrifcation_fraction(s, Nr, Cr, k, NO₃, O₂)
+    pₙ′ = denitrification_fraction(s, Nr, Cr, k, NO₃, O₂)
 
     # when pₙ > 1 there is some instant conversion of NH₄ to NO₃ which is kind of strange
     return pₙ * Nr - 0.8 * pₙ′ * Cr
@@ -238,7 +238,7 @@ end
     k = reactivity(s, Ns * R, Nf * R) 
 
     pₙ  = ammonia_oxidation_fraction(s, Nr, Cr, k, NH₄, O₂)
-    pₙ′ = denitrifcation_fraction(s, Nr, Cr, k, NO₃, O₂)
+    pₙ′ = denitrification_fraction(s, Nr, Cr, k, NO₃, O₂)
     pₐ  = anoxic_remineralisation_fraction(s, Nr, Cr, k, NO₃, O₂)
 
     pₛ  = solid_deposition_fraction(s)
@@ -317,7 +317,7 @@ end
     k = reactivity(s, Cs, Cf) 
 
     pₙ = ammonia_oxidation_fraction(s, Nr, Cr, k, NH₄, O₂)
-    pₙ′ = denitrifcation_fraction(s, Nr, Cr, k, NO₃, O₂)
+    pₙ′ = denitrification_fraction(s, Nr, Cr, k, NO₃, O₂)
 
     return (1 - pₙ) * Nr + 0.8 * pₙ′ * Cr # I think the implication is that this `0.8 * pₙ′ * Cr` term should be going to N₂, but we want to conserve
 end
@@ -332,7 +332,7 @@ end
     k = reactivity(s, Cs, Cf) 
 
     pₙ  = ammonia_oxidation_fraction(s, Nr, Cr, k, NH₄, O₂)
-    pₙ′ = denitrifcation_fraction(s, Nr, Cr, k, NO₃, O₂)
+    pₙ′ = denitrification_fraction(s, Nr, Cr, k, NO₃, O₂)
 
     # when pₙ > 1 there is some instant conversion of NH₄ to NO₃ which is kind of strange
     return pₙ * Nr - 0.8 * pₙ′ * Cr
@@ -350,7 +350,7 @@ end
     k = reactivity(s, Cs, Cf) 
 
     pₙ  = ammonia_oxidation_fraction(s, Nr, Cr, k, NH₄, O₂)
-    pₙ′ = denitrifcation_fraction(s, Nr, Cr, k, NO₃, O₂)
+    pₙ′ = denitrification_fraction(s, Nr, Cr, k, NO₃, O₂)
     pₐ  = anoxic_remineralisation_fraction(s, Nr, Cr, k, NO₃, O₂)
 
     pₛ  = solid_deposition_fraction(s)
@@ -394,7 +394,7 @@ end
     return ifelse(isfinite(p), p, zero(Nr))
 end
 
-@inline function denitrifcation_fraction(sediment, Nr, Cr, k, NO₃, O₂)
+@inline function denitrification_fraction(sediment, Nr, Cr, k, NO₃, O₂)
     A, B, C, D, E, F = sediment.denitrification_params
 
     kO₂ = sediment.anoxia_half_saturation

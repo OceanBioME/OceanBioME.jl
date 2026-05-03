@@ -6,7 +6,7 @@ biogeochemical model which includes nitrate (`NO₃`), and ammonia (`NH₄`)
 in mmol N / m³.
 
 Nitrate is only taken up by the biological component (by default only the
-phytoplankton), and replenished by the nitrifcation of ammonia at the 
+phytoplankton), and replenished by the nitrification of ammonia at the 
 `nitrification_rate`.
 
 Ammonia is also taken up by the biological component, and lost as it is 
@@ -45,24 +45,24 @@ end
 
 required_biogeochemical_tracers(::NitrateAmmoniaIron) = (:NO₃, :NH₄, :Fe)
 
-@inline (lobster::LOBSTER{<:NitrateAmmoniaIron})(i, j, k, grid, val_name::Val{:Fe}, clock, fields, auxiliary_fields) =
+@inline (lobster::NutrientsPlanktonDetritus{<:NitrateAmmoniaIron})(i, j, k, grid, val_name::Val{:Fe}, clock, fields, auxiliary_fields) =
     - nutrient_uptake(lobster, i, j, k, val_name, fields, auxiliary_fields)
 
 ##### common
 const IncludesNitrateAmmonia = Union{NitrateAmmonia, NitrateAmmoniaIron}
-const LOBSTER_WITH_NITRATE_AMMONIA = Union{LOBSTER{<:NitrateAmmonia}, LOBSTER{<:NitrateAmmoniaIron}}
+const LOBSTER_WITH_NITRATE_AMMONIA = Union{NutrientsPlanktonDetritus{<:NitrateAmmonia}, NutrientsPlanktonDetritus{<:NitrateAmmoniaIron}}
 
-@inline nitrifcation(nutrients::IncludesNitrateAmmonia, i, j, k, fields) = @inbounds nutrients.nitrification_rate * fields.NH₄[i, j, k]
+@inline nitrification(nutrients::IncludesNitrateAmmonia, i, j, k, fields) = @inbounds nutrients.nitrification_rate * fields.NH₄[i, j, k]
 
 @inline (lobster::LOBSTER_WITH_NITRATE_AMMONIA)(i, j, k, grid, val_name::Val{:NO₃}, clock, fields, auxiliary_fields) = (
-    nitrifcation(lobster.nutrients, i, j, k, fields) 
+    nitrification(lobster.nutrients, i, j, k, fields) 
   - nutrient_uptake(lobster, i, j, k, val_name, fields, auxiliary_fields)
 )
 
 @inline (lobster::LOBSTER_WITH_NITRATE_AMMONIA)(i, j, k, grid, val_name::Val{:NH₄}, clock, fields, auxiliary_fields) = (
-    biology_inorganic_nitrogen_waste(lobster, i, j, k, fields, auxiliary_fields)
+    plankton_inorganic_nitrogen_waste(lobster, i, j, k, fields, auxiliary_fields)
   + detritus_inorganic_nitrogen_waste(lobster, i, j, k, fields, auxiliary_fields)
-  - nitrifcation(lobster.nutrients, i, j, k, fields) 
+  - nitrification(lobster.nutrients, i, j, k, fields) 
   - nutrient_uptake(lobster, i, j, k, val_name, fields, auxiliary_fields)
 )
 
@@ -76,17 +76,17 @@ The nutrients is taken up by the biological component and replenished
 by the inorganic waste of the biological component and remineralised
 of detritus.
 
-When used with the default `PhytoZoo` biology it is assumed that `N`
+When used with the default `PhytoZoo` plankton it is assumed that `N`
 is equivilane to nitrate
 """
 struct Nutrient end
 
 required_biogeochemical_tracers(::Nutrient) = (:N, )
 
-@inline (lobster::LOBSTER{<:Nutrient})(i, j, k, grid, val_name::Val{:N}, clock, fields, auxiliary_fields) = (
-    biology_inorganic_nitrogen_waste(lobster, i, j, k, fields, auxiliary_fields)
+@inline (lobster::NutrientsPlanktonDetritus{<:Nutrient})(i, j, k, grid, val_name::Val{:N}, clock, fields, auxiliary_fields) = (
+    plankton_inorganic_nitrogen_waste(lobster, i, j, k, fields, auxiliary_fields)
   + detritus_inorganic_nitrogen_waste(lobster, i, j, k, fields, auxiliary_fields)
   - nutrient_uptake(lobster, i, j, k, val_name, fields, auxiliary_fields)
 )
 
-@inline nitrifcation(nutrients::Nutrient, i, j, k, fields) = zero(eltype(fields.N))
+@inline nitrification(nutrients::Nutrient, i, j, k, fields) = zero(eltype(fields.N))
