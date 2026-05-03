@@ -190,5 +190,5 @@ fig
 #=
 nothing #hide
 
-# [//]: ![](eady.mp4)
+
 =#
