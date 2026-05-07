@@ -30,7 +30,48 @@ function test_gas_exchange_model(grid, air_concentration)
     # is everything communicating properly? (can't think of a way to not use allow scalar here)
     value = CUDA.@allowscalar Oceananigans.getbc(model.tracers.DIC.boundary_conditions.top, 1, 1, grid, model.clock, fields(model))
 
-    return isa(model.tracers.DIC.boundary_conditions.top.condition.func, GasExchange)&&≈(value, -8e-6; atol = 1e-6)&&isnothing(time_step!(model, 1.0))
+    @test isa(model.tracers.DIC.boundary_conditions.top.condition.func, GasExchange)
+    @test ≈(value, -8e-6; atol = 1e-6)
+    @test isnothing(time_step!(model, 1.0))
+
+    # multiple carbonate systems
+
+    CO₂_flux1 = 
+        CarbonDioxideGasExchangeBoundaryCondition(; 
+            water_concentration = CarbonDioxideConcentration(; DIC = :DIC1,
+                                                            Alk = :Alk1)
+        )
+    CO₂_flux2 = 
+        CarbonDioxideGasExchangeBoundaryCondition(; 
+            water_concentration = CarbonDioxideConcentration(; DIC = :DIC2,
+                                                            Alk = :Alk2)
+        )
+
+
+    boundary_conditions = (; DIC1 = FieldBoundaryConditions(top = CO₂_flux1),
+                             DIC2 = FieldBoundaryConditions(top = CO₂_flux2))
+
+    model = NonhydrostaticModel(grid;
+                                tracers = (:T, :S),
+                                biogeochemistry = LOBSTER(grid; carbonate_system = CarbonateSystem(2)),
+                                boundary_conditions)
+
+    set!(model, T = 15.0, S = 35.0, DIC1 = 2220, Alk1 = 2500, DIC2 = 2221, Alk2 = 2501)
+
+    # maybe this should use BoundaryConditionOperation
+    value1 = CUDA.@allowscalar Oceananigans.getbc(model.tracers.DIC1.boundary_conditions.top, 1, 1, grid, model.clock, fields(model))
+    value2 = CUDA.@allowscalar Oceananigans.getbc(model.tracers.DIC2.boundary_conditions.top, 1, 1, grid, model.clock, fields(model))
+
+    @test isa(model.tracers.DIC1.boundary_conditions.top.condition.func, GasExchange)
+    @test ≈(value1, -8e-6; atol = 1e-6)
+
+    @test isa(model.tracers.DIC2.boundary_conditions.top.condition.func, GasExchange)
+    @test ≈(value2, -8e-6; atol = 1e-6)
+
+    @test value1 != value2
+
+    @test isnothing(time_step!(model, 1.0))
+    return nothing
 end
 
 @testset "pCO₂ values" begin
@@ -65,7 +106,7 @@ set!(conc_field, (args...) -> 413)
 @testset "Gas exchange coupling" begin
     for air_concentration in [413.1, conc_function, conc_field]
         @info "Testing gas exchange with $(typeof(air_concentration))"
-        @test test_gas_exchange_model(grid, air_concentration)
+        test_gas_exchange_model(grid, air_concentration)
     end
 end
 
