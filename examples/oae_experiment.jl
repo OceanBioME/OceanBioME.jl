@@ -24,18 +24,15 @@ grid = RectilinearGrid(GPU();
 biogeochemistry = LOBSTER(grid;
                           carbonate_system = CarbonateSystem(2))
 
-carbon_chemistry = CarbonChemistry()
 CO₂_flux1 = 
     CarbonDioxideGasExchangeBoundaryCondition(; 
-        water_concentration = CarbonDioxideConcentration(; carbon_chemistry, 
-                                                            DIC = :DIC1,
-                                                            Alk = :Alk1)
+        water_concentration = CarbonDioxideConcentration(; DIC = :DIC1,
+                                                           Alk = :Alk1)
     )
 CO₂_flux2 = 
     CarbonDioxideGasExchangeBoundaryCondition(; 
-        water_concentration = CarbonDioxideConcentration(; carbon_chemistry, 
-                                                            DIC = :DIC2,
-                                                            Alk = :Alk2)
+        water_concentration = CarbonDioxideConcentration(; DIC = :DIC2,
+                                                           Alk = :Alk2)
     )
 
 wind = FluxBoundaryCondition(-1.2/1026*2e-3*10^2)
