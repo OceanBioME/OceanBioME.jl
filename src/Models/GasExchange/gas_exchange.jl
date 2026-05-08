@@ -16,20 +16,14 @@ if `discrete_form` is set to true, or any kind of `Field`.
 tracer (you will have to build your own if this is not `OxygenConcentration`), 
 or a `CarbonDioxideConcentration` which diagnoses the partial pressure of CO₂ in the water.
 """
-struct GasExchange{WS, TV, WC, AC} <: Function
-             wind_speed :: WS
+struct GasExchange{TV, WC, AC} <: Function
       transfer_velocity :: TV
     water_concentration :: WC
       air_concentration :: AC
 end
 
 @inline function (g::GasExchange)(i, j, grid, clock, model_fields)
-    T = @inbounds model_fields.T[i, j, grid.Nz]
-    S = @inbounds model_fields.S[i, j, grid.Nz]
-
-    u₁₀ = surface_value(g.wind_speed, i, j, grid, clock)
-
-    k = g.transfer_velocity(u₁₀, T, S)
+    k = surface_value(g.transfer_velocity, i, j, grid, clock, model_fields)
 
     air_concentration = surface_value(g.air_concentration, i, j, grid, clock, model_fields)
 
@@ -38,8 +32,7 @@ end
     return k * (water_concentration - air_concentration)
 end
 
-Adapt.adapt_structure(to, g::GasExchange) = GasExchange(adapt(to, g.wind_speed),
-                                                        adapt(to, g.transfer_velocity),
+Adapt.adapt_structure(to, g::GasExchange) = GasExchange(adapt(to, g.transfer_velocity),
                                                         adapt(to, g.water_concentration),
                                                         adapt(to, g.air_concentration))
 
