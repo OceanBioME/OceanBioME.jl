@@ -760,14 +760,14 @@ end
                 + c.sea_S * S
                 + c.sea_S_sqrt_S³ * S^convert(FT, 1.5))
 
-    return  pressure_correction * exp(lnK_therm + lnK_sea)
+    return  pressure_correction * convert(FT, 10)^(lnK_therm + lnK_sea)
 end
 
 summary(::IO, ::KSP) = string("Calcite solubility")
 show(io::IO, c::KSP) = print(io, "Calcite solubility\n",
-    "    ln(kₛₚ) = $(c.therm_constant) + $(c.therm_T) T + $(c.therm_inverse_T) / T + $(c.therm_log_T) log(T)\n",
-    "    ln(kₛₚˢ) = ln(kₛₚ) + ($(c.sea_sqrt_S) + $(c.sea_T_sqrt_S) T + $(c.sea_inverse_T_sqrt_S) / T) √S\n",
-    "                + $(c.sea_S) S + $(c.sea_S_sqrt_S³) √S³")   
+    "    log₁₀(kₛₚ) = $(c.therm_constant) + $(c.therm_T) T + $(c.therm_inverse_T) / T + $(c.therm_log_T) log(T)\n",
+    "    log₁₀(kₛₚˢ) = log₁₀(kₛₚ) + ($(c.sea_sqrt_S) + $(c.sea_T_sqrt_S) T + $(c.sea_inverse_T_sqrt_S) / T) √S\n",
+    "                 + $(c.sea_S) S + $(c.sea_S_sqrt_S³) √S³")   
 
 """
     KSP_calcite(; therm_constant = -171.9065,
