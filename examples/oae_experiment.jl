@@ -17,6 +17,7 @@ using Oceananigans, OceanBioME, Oceananigans.Units
 
 using OceanBioME.Models.GasExchangeModel: CarbonDioxideConcentration
 
+# we define the grid and the biogeochemistry, adding in the `carbonate_system` with 2 replicates
 grid = RectilinearGrid(GPU(); 
                        size = (64, 64, 8), 
                        extent = (500, 500, 15))
@@ -24,24 +25,36 @@ grid = RectilinearGrid(GPU();
 biogeochemistry = LOBSTER(grid;
                           carbonate_system = CarbonateSystem(2))
 
+# Next we have to construct the boundary conditions for the DIC, changing the defaults to 
+# specify that the DIC and Alkalinity for the calculation should be DIC1 and Alk1/DIC2 
+# and Alk2. Then we can put the boundary conditions together.
+wind_speed = 5 # m/s
+Cᴰ = 2e-3
+ρₐ = 1.2
+ρₒ = 1026
+
 CO₂_flux1 = 
     CarbonDioxideGasExchangeBoundaryCondition(; 
+        wind_speed,
         water_concentration = CarbonDioxideConcentration(; DIC = :DIC1,
                                                            Alk = :Alk1)
     )
 CO₂_flux2 = 
     CarbonDioxideGasExchangeBoundaryCondition(; 
+        wind_speed,
         water_concentration = CarbonDioxideConcentration(; DIC = :DIC2,
                                                            Alk = :Alk2)
     )
 
-wind = FluxBoundaryCondition(-1.2/1026*2e-3*10^2)
+wind = FluxBoundaryCondition(-ρₐ/ρₒ * Cᴰ * wind_speed^2)
 
 boundary_conditions = (; DIC1 = FieldBoundaryConditions(top = CO₂_flux1),
                          DIC2 = FieldBoundaryConditions(top = CO₂_flux2),
                          u    = FieldBoundaryConditions(top = wind))
 
-@inline oae_release(x, y, z, t, params) = 
+# Next we define an alkalinity release in a circle in the center for 1 hour
+
+@inline alkalinity_release(x, y, z, t, params) = 
     ifelse((params.start_time <= t < params.start_time + params.duration) & 
             (z > params.depth) & 
             ((x-250)^2 + (y-250)^2 < params.radius^2), 
@@ -53,11 +66,15 @@ depth = -1
 radius = 50
 release_rate = total_release/duration/(π*radius^2*abs(depth))
 
-oae = Forcing(oae_release; parameters = (; start_time = 20minutes, 
-                                           duration, 
-                                           release_rate, 
-                                           radius, 
-                                           depth)) 
+oae = Forcing(alkalinity_release; 
+              parameters = (; start_time = 20minutes, 
+                              duration, 
+                              release_rate, 
+                              radius, 
+                              depth)) 
+
+# And then put the model together with `Alk2` having the release 
+# while Alk1 evolves normally
 
 model = NonhydrostaticModel(grid;
                             coriolis = FPlane(latitude = 45),
@@ -73,6 +90,9 @@ set!(model, P = 1, NO₃ = 10,
             DIC2 = 2000, Alk2 = 2300, 
             u = (x, y, z) -> randn()/2)
 
+# Then we can setup a simulation with a variable timestep and progress message
+# and output the tracers
+
 simulation = Simulation(model, Δt = 5, stop_time = 2hours)
 
 conjure_time_step_wizard!(simulation)
@@ -87,6 +107,9 @@ simulation.output_writers[:tracers] = JLD2Writer(model, model.tracers;
                                                 schedule = AveragedTimeInterval(5minutes),
                                                 overwrite_existing = true)
 
+# We can also create a `BoundaryConditionOperation` which records the flux through the
+# top boundary for both the DIC fields which we can save
+
 qCO₂1 = BoundaryConditionOperation(model.tracers.DIC1, :top, model)
 qCO₂2 = BoundaryConditionOperation(model.tracers.DIC2, :top, model)
 
@@ -97,7 +120,11 @@ simulation.output_writers[:carbon_flux] = JLD2Writer(model, (; qCO₂1, qCO₂2)
                                                      schedule = TimeInterval(5minutes),
                                                      overwrite_existing = true)
 
+# and then run the simulation
+
 run!(simulation)
+
+# Finally we load the data and create some plots
 
 using CairoMakie, Statistics
 
