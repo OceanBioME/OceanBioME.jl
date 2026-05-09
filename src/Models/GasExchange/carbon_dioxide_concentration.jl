@@ -22,7 +22,7 @@ silicate_and_phosphate_names :: SP
 end
 
 CarbonDioxideConcentration(FT = Float64;
-                           carbon_chemistry::CC,
+                           carbon_chemistry::CC = CarbonChemistry(),
                            first_virial_coefficient::FV = PolynomialVirialCoefficientForCarbonDioxide{FT}(),
                            cross_virial_coefficient::CV = CrossVirialCoefficientForCarbonDioxide{FT}(),
                            air_pressure::AP = one(FT), # atm
