@@ -64,6 +64,10 @@ struct WindSpeedScaledTransferVelocities{WS, P}
     parametrisation :: P
 end
 
+Adapt.adapt_structure(to, k::WindSpeedScaledTransferVelocities) =
+    WindSpeedScaledTransferVelocities(adapt(to, k.wind_speed),
+                                      adapt(to, k.parametrisation))
+
 @inline surface_value(k::WindSpeedScaledTransferVelocities, i, j, grid, clock, model_fields) =
     k.parametrisation(surface_value(k.wind_speed, i, j, grid, clock, model_fields))
 
