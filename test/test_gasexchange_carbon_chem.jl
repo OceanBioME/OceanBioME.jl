@@ -5,7 +5,7 @@ using Oceananigans, Oceananigans.Units, DataDeps, JLD2, Statistics
 using Oceananigans.Fields: ConstantField
 
 using OceanBioME: GasExchange, LOBSTER, CarbonChemistry
-using OceanBioME.Models.GasExchangeModel: surface_value
+using OceanBioME.Models.GasExchangeModel: surface_value, CarbonDioxideConcentration
 
 using OceanBioME.Models.CarbonChemistryModel: IonicStrength, K0, K1, K2, KB, KW, KS, KF, KP, KSi, KSP_aragonite, KSP_calcite
 
