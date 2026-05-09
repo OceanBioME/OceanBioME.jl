@@ -102,7 +102,7 @@ Note: The model always requires `T`, `S`, `DIC`, and `Alk` to be present in the 
 function CarbonDioxideGasExchangeBoundaryCondition(FT = Float64; 
                                                    carbon_chemistry = CarbonChemistry(FT),
                                                    wind_speed = 2,
-                                                   discrete_form = true,
+                                                   discrete_form = false,
                                                    transfer_velocity = 
                                                         SchmidtScaledTransferVelocity(FT; 
                                                            wind_speed = normalise_surface_function(wind_speed; discrete_form, FT),
