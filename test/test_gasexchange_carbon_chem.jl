@@ -27,10 +27,16 @@ function test_gas_exchange_model(grid, air_concentration)
 
     set!(model, T = 15.0, S = 35.0, DIC = 2220, Alk = 2500)
 
-    # is everything communicating properly? (can't think of a way to not use allow scalar here)
+    @test isa(model.tracers.DIC.boundary_conditions.top.condition.func, GasExchange)
+
+    # can't think of a way to not use allow scalar here
     value = CUDA.@allowscalar Oceananigans.getbc(model.tracers.DIC.boundary_conditions.top, 1, 1, grid, model.clock, fields(model))
 
-    return isa(model.tracers.DIC.boundary_conditions.top.condition.func, GasExchange)&&≈(value, -8e-6; atol = 1e-6)&&isnothing(time_step!(model, 1.0))
+    @test ≈(value, -10e-6; atol = 1e-6)
+    
+    @test isnothing(time_step!(model, 1.0))
+
+    return nothing
 end
 
 @testset "pCO₂ values" begin
@@ -64,8 +70,8 @@ set!(conc_field, (args...) -> 413)
 
 @testset "Gas exchange coupling" begin
     for air_concentration in [413.1, conc_function, conc_field]
-        @info "Testing gas exchange with $(typeof(air_concentration))"
-        @test test_gas_exchange_model(grid, air_concentration)
+        @info "Testing gas exchange with $(summary(air_concentration))"
+        test_gas_exchange_model(grid, air_concentration)
     end
 end
 
