@@ -40,7 +40,7 @@ required_biogeochemical_tracers(::CarbonateSystem) = (:DIC, :Alk)
 
 @inline (bgc::NutrientsPlanktonDetritus{<:Any, <:Any, <:Any, <:CarbonateSystem})(i, j, k, grid, ::Val{:Alk}, clock, fields, auxiliary_fields) = (
     bgc(i, j, k, grid, Val(:NH₄), clock, fields, auxiliary_fields)
-  - bgc(i, j, k, grid, Val(:NO₃), clock, fields, auxiliary_fields) * (1 + 2/16) # for phosphate
+  - bgc(i, j, k, grid, Val(:NO₃), clock, fields, auxiliary_fields) #* (1 + 2/16) # for phosphate - doesn't seem like anyone does this
   - 2 * calcite_uptake(bgc, i, j, k, fields, auxiliary_fields)
   + 2 * calcite_dissolution(bgc, i, j, k, fields, auxiliary_fields)
 )
