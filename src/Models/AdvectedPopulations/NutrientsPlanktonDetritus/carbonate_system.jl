@@ -31,22 +31,22 @@ struct CarbonateSystem end
 
 required_biogeochemical_tracers(::CarbonateSystem) = (:DIC, :Alk)
 
-@inline (lobster::LOBSTER{<:Any, <:Any, <:Any, <:CarbonateSystem})(i, j, k, grid, ::Val{:DIC}, clock, fields, auxiliary_fields) = (
-  - phytoplankton_primary_production(lobster, i, j, k, fields, auxiliary_fields)
-  + biology_inorganic_carbon_waste(lobster, i, j, k, fields, auxiliary_fields)
-  + detritus_inorganic_carbon_waste(lobster, i, j, k, fields, auxiliary_fields)
-  + calcite_dissolution(lobster, i, j, k, fields, auxiliary_fields)
+@inline (bgc::NutrientsPlanktonDetritus{<:Any, <:Any, <:Any, <:CarbonateSystem})(i, j, k, grid, ::Val{:DIC}, clock, fields, auxiliary_fields) = (
+  - phytoplankton_primary_production(bgc, i, j, k, fields, auxiliary_fields)
+  + biology_inorganic_carbon_waste(bgc, i, j, k, fields, auxiliary_fields)
+  + detritus_inorganic_carbon_waste(bgc, i, j, k, fields, auxiliary_fields)
+  + calcite_dissolution(bgc, i, j, k, fields, auxiliary_fields)
 )
 
-@inline (lobster::LOBSTER{<:Any, <:Any, <:Any, <:CarbonateSystem})(i, j, k, grid, ::Val{:Alk}, clock, fields, auxiliary_fields) = (
-    lobster(i, j, k, grid, Val(:NH₄), clock, fields, auxiliary_fields)
-  - lobster(i, j, k, grid, Val(:NO₃), clock, fields, auxiliary_fields) * (1 + 2/16) # for phosphate
-  - 2 * calcite_uptake(lobster, i, j, k, fields, auxiliary_fields)
-  + 2 * calcite_dissolution(lobster, i, j, k, fields, auxiliary_fields)
+@inline (bgc::NutrientsPlanktonDetritus{<:Any, <:Any, <:Any, <:CarbonateSystem})(i, j, k, grid, ::Val{:Alk}, clock, fields, auxiliary_fields) = (
+    bgc(i, j, k, grid, Val(:NH₄), clock, fields, auxiliary_fields)
+  - bgc(i, j, k, grid, Val(:NO₃), clock, fields, auxiliary_fields) * (1 + 2/16) # for phosphate
+  - 2 * calcite_uptake(bgc, i, j, k, fields, auxiliary_fields)
+  + 2 * calcite_dissolution(bgc, i, j, k, fields, auxiliary_fields)
 )
 
-@inline (lobster::LOBSTER{<:Nutrient, <:Any, <:Any, <:CarbonateSystem})(i, j, k, grid, ::Val{:Alk}, clock, fields, auxiliary_fields) = (
-    lobster(i, j, k, grid, Val(:N), clock, fields, auxiliary_fields)
-  - 2 * calcite_uptake(lobster, i, j, k, fields, auxiliary_fields)
-  + 2 * calcite_dissolution(lobster, i, j, k, fields, auxiliary_fields)
+@inline (bgc::NutrientsPlanktonDetritus{<:Nutrient, <:Any, <:Any, <:CarbonateSystem})(i, j, k, grid, ::Val{:Alk}, clock, fields, auxiliary_fields) = (
+    bgc(i, j, k, grid, Val(:N), clock, fields, auxiliary_fields)
+  - 2 * calcite_uptake(bgc, i, j, k, fields, auxiliary_fields)
+  + 2 * calcite_dissolution(bgc, i, j, k, fields, auxiliary_fields)
 )

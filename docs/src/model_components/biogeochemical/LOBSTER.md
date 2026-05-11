@@ -11,7 +11,7 @@ julia> using OceanBioME, Oceananigans
 
 julia> grid = RectilinearGrid(size=(3, 3, 30), extent=(10, 10, 200));
 
-julia> bgc_model = LOBSTER(; grid, carbonate_system = CarbonateSystem())
+julia> bgc_model = LOBSTER(grid; carbonate_system = CarbonateSystem())
 LOBSTER model (:NO₃, :NH₄, :P, :Z, :sPOM, :bPOM, :DOM, :DIC, :Alk)
  Light attenuation: Two-band light attenuation model (Float64)
  Sediment: Nothing
@@ -147,7 +147,7 @@ Additionally, the ``DIC`` and ``Alk`` equations are modified to replace each ``X
 | ``R_P``            | `phytoplankton_redfield`               | mmol C / mmol N    |
 | ``R_O``            | `organic_redfield`                     | mmol C / mmol N    |
 | ``R_{Chl:N}``      | `phytoplankton_chlorophyll_ratio`      | mg Chl / mmol N    |
-| ``\rho_{CaCO_3}``  | `organic_carbon_calcate_ratio`         | mmol CaCO₃/ mmol C |
+| ``\rho_{CaCO_3}``  | `organic_carbon_calcite_ratio`         | mmol CaCO₃/ mmol C |
 | ``R_{O_2}``        | `respiration_oxygen_nitrogen_ratio`    | mmol O / mmol N    |
 | ``R_{nit}``        | `nitrification_oxygen_nitrogen_ratio`  | mmol O / mmol N    |
 | ``f_s``            | `slow_sinking_mortality_fraction`      | -                  |

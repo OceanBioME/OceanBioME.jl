@@ -23,7 +23,8 @@ using Random
 Random.seed!(11)
 
 # Construct a grid with uniform grid spacing on GPU (just remove `GPU()` to run on CPU)
-grid = RectilinearGrid(GPU(); size = (32, 32, 8), extent = (1kilometer, 1kilometer, 100meters))
+grid = RectilinearGrid(CPU();#GPU();
+ size = (32, 32, 8), extent = (1kilometer, 1kilometer, 100meters))
 
 # Set the Coriolis and buoyancy models.
 coriolis = FPlane(f = 1e-4) # [s⁻¹]
@@ -53,9 +54,9 @@ vertical_diffusivity = VerticalScalarDiffusivity(ν = νᵥ, κ = κᵥ)
 
 # Setup the biogeochemical model with optional carbonate chemistry turned on.
 
-biogeochemistry = LOBSTER(; grid,
-                            carbonate_system = CarbonateSystem(),
-                            detritus = TwoParticleAndDissolved(grid; open_bottom = true))
+biogeochemistry = LOBSTER(grid;
+                          carbonate_system = CarbonateSystem(),
+                          detritus = TwoParticleAndDissolved(grid; open_bottom = true))
 
 DIC_bcs = FieldBoundaryConditions(top = CarbonDioxideGasExchangeBoundaryCondition())
 
@@ -139,21 +140,24 @@ xζ, yζ, zζ = nodes(ζ)
 xc, yc, zc = nodes(P)
 nothing #hide
 
-# and plot.
-
+# and build the frames,
 n = Observable(1)
 
-  ζₙ = @lift interior(  ζ[$n], :, :, grid.Nz)
-  Nₙ = @lift interior(NO₃[$n], :, :, grid.Nz) .+ interior(NH₄[$n], :, :, grid.Nz)
-  Pₙ = @lift interior(  P[$n], :, :, grid.Nz)
-DICₙ = @lift interior(DIC[$n], :, :, grid.Nz)
+Nz = grid.Nz
+
+  ζₙ = @lift interior(  ζ[$n], :, :, Nz)
+  Nₙ = @lift interior(NO₃[$n], :, :, Nz) .+ interior(NH₄[$n], :, :, Nz)
+  Pₙ = @lift interior(  P[$n], :, :, Nz)
+DICₙ = @lift interior(DIC[$n], :, :, Nz)
+
+# now plot
 
 fig = Figure(size = (1600, 1600), fontsize = 20)
 
-lims = [(minimum(T), maximum(T)) for T in (  ζ[:, :, grid.Nz, :],
-                                           NO₃[:, :, grid.Nz, :] .+ NH₄[:, :, grid.Nz, :],
-                                             P[:, :, grid.Nz, :],
-                                           DIC[:, :, grid.Nz, :])]
+lims = [(minimum(T), maximum(T)) for T in (  ζ[:, :, Nz, :],
+                                           NO₃[:, :, Nz, :] .+ NH₄[:, :, Nz, :],
+                                             P[:, :, Nz, :],
+                                           DIC[:, :, Nz, :])]
 
 axis_kwargs = (xlabel = "x (m)", ylabel = "y (m)", aspect = DataAspect())
 
@@ -176,9 +180,15 @@ Colorbar(fig[2, 4], hm4)
 title = @lift "t = $(prettytime(times[$n]))"
 Label(fig[0, :], title, fontsize = 30)
 
+# and record the movie
+#=
 record(fig, "eady.mp4", 1:length(times), framerate = 12) do i
     n[] = i
-end
+end=# # temporatily disable
+n[] = length(times) 
+fig
+#=
 nothing #hide
 
-# ![](eady.mp4)
+
+=#

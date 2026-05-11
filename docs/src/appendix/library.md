@@ -9,16 +9,10 @@ Modules = [OceanBioME]
 
 ## Biogeochemical Models
 
-### Nutrient Phytoplankton Zooplankton Detritus (NPZD)
+### The NutrientsPlanktonDetritus constructor
 
 ```@autodocs
-Modules = [OceanBioME.Models.NPZDModel]
-```
-
-### The Lodyc-DAMTP Ocean Biogeochemical Simulation Tools for Ecosystem and Resources (LOBSTER)
-
-```@autodocs
-Modules = [OceanBioME.Models.LOBSTERModel]
+Modules = [OceanBioME.Models.NutrientsPlanktonDetritusModels]
 ```
 
 ### Pelagic Interactions Scheme for Carbon and Ecosystem Studies (PISCES)

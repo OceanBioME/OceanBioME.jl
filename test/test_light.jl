@@ -2,7 +2,7 @@ include("dependencies_for_runtests.jl")
 
 using CUDA: @allowscalar
 
-using OceanBioME: TwoBandPhotosyntheticallyActiveRadiation, LOBSTER, NutrientPhytoplanktonZooplanktonDetritus
+using OceanBioME: TwoBandPhotosyntheticallyActiveRadiation, LOBSTER, NPZD
 
 using Oceananigans.Architectures: on_architecture
 using Oceananigans.Biogeochemistry: update_biogeochemical_state!, required_biogeochemical_tracers, biogeochemical_auxiliary_fields
@@ -10,13 +10,11 @@ using Oceananigans.Biogeochemistry: update_biogeochemical_state!, required_bioge
 Pᵢ(x,y,z) = 2.5 + z
 
 function test_two_band(grid, model_type, surface_PAR, discrete_form)
-    biogeochemistry = NutrientPhytoplanktonZooplanktonDetritus(; 
-                        grid,
-                        light_attenuation = 
-                            TwoBandPhotosyntheticallyActiveRadiation(; grid,
+    biogeochemistry = NPZD(grid; 
+                           light_attenuation = 
+                               TwoBandPhotosyntheticallyActiveRadiation(; grid,
                                                                        surface_PAR, 
-                                                                       discrete_form)
-                      )
+                                                                       discrete_form))
 
     model = model_type(grid;
                        biogeochemistry,
@@ -60,7 +58,7 @@ function test_multi_band(grid, model_type, surface_PAR, discrete_form)
                                                                      base_chlorophyll_attenuation_coefficient = [0.1, 0.1],
                                                                      surface_PAR, discrete_form)
 
-    biogeochemistry = NutrientPhytoplanktonZooplanktonDetritus(; grid, light_attenuation)
+    biogeochemistry = NPZD(grid; light_attenuation)
 
     model = model_type(grid;
                        biogeochemistry,
@@ -82,7 +80,7 @@ function test_multi_band(grid, model_type, surface_PAR, discrete_form)
                                                                      surface_PAR,
                                                                      discrete_form)
 
-    biogeochemistry = NutrientPhytoplanktonZooplanktonDetritus(; grid, light_attenuation)
+    biogeochemistry = NPZD(grid; light_attenuation)
 
     model = model_type(grid;
                        biogeochemistry,

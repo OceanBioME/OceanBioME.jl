@@ -22,7 +22,7 @@ register(dd)
 function test_gas_exchange_model(grid, air_concentration)
     model = NonhydrostaticModel(grid;
                                 tracers = (:T, :S),
-                                biogeochemistry = LOBSTER(; grid, carbonate_system = CarbonateSystem()),
+                                biogeochemistry = LOBSTER(grid; carbonate_system = CarbonateSystem()),
                                 boundary_conditions = (DIC = FieldBoundaryConditions(top = CarbonDioxideGasExchangeBoundaryCondition(; air_concentration)), ))
 
     set!(model, T = 15.0, S = 35.0, DIC = 2220, Alk = 2500)
@@ -106,8 +106,8 @@ end
     KspC = KSP_calcite()
 
     # Zeebe & Wolf-Gladrow, 2001, Appendix A
-    @test ≈(log(KspA(Tk, S)), -6.1883; atol = 0.0001)
-    @test ≈(log(KspC(Tk, S)), -6.3693; atol = 0.0001)
+    @test ≈(log10(KspA(Tk, S)), -6.1883; atol = 0.0001)
+    @test ≈(log10(KspC(Tk, S)), -6.3693; atol = 0.0001)
 
     @test ≈(KspA.pressure_correction(Tk, P), 1.47866; atol=0.00001)
     @test ≈(KspC.pressure_correction(Tk, P), 1.52962; atol=0.00001)
