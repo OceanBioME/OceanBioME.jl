@@ -33,7 +33,7 @@ required_biogeochemical_tracers(::CarbonateSystem) = (:DIC, :Alk)
 
 @inline (bgc::NutrientsPlanktonDetritus{<:Any, <:Any, <:Any, <:CarbonateSystem})(i, j, k, grid, ::Val{:DIC}, clock, fields, auxiliary_fields) = (
   - phytoplankton_primary_production(bgc, i, j, k, fields, auxiliary_fields)
-  + biology_inorganic_carbon_waste(bgc, i, j, k, fields, auxiliary_fields)
+  + plankton_inorganic_carbon_waste(bgc, i, j, k, fields, auxiliary_fields)
   + detritus_inorganic_carbon_waste(bgc, i, j, k, fields, auxiliary_fields)
   + calcite_dissolution(bgc, i, j, k, fields, auxiliary_fields)
 )
