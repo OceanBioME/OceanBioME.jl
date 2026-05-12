@@ -1,5 +1,5 @@
 """
-    CarbonateSystem
+    CarbonateSystem{N}
 
 `CarbonateSystem` defines the carbonate system for the `LOBSTER` biogeochemical
 model and evolves dissolved inorganic carbon (`DIC`) and alkalinity (`Alk`).
@@ -26,10 +26,24 @@ the uptake of calcite into phytoplankton.
 biogeochemistry and *does not* effect any other groups (e.g. acidifcation does
 not effect phytoplankton growth). To capture this effect a different `plankton` 
 could be defined.
-"""
-struct CarbonateSystem end
 
-required_biogeochemical_tracers(::CarbonateSystem) = (:DIC, :Alk)
+Multiple (N) instances of the carbonate system can evolve in parallel and the tracers
+will be named `DIC1` ... `DICN` and `Alk1` ... `AlkN`. This is setup by passing an 
+integer argument when the model is constructed like `CarbonateSystem(2)`.
+
+You may get method overwrite warnings if you repeatedly define carbonate systems
+with N>1, this shouldn't cause problems.
+"""
+struct CarbonateSystem{N} end
+
+function CarbonateSystem(replicates = 1)
+    manifest_carbonate_replicates!(replicates)
+
+    return CarbonateSystem{replicates}()
+end
+
+required_biogeochemical_tracers(::CarbonateSystem{1}) = (:DIC, :Alk)
+required_biogeochemical_tracers(::CarbonateSystem{N}) where N = (map(n->Symbol(:DIC, n), 1:N)..., map(n->Symbol(:Alk, n), 1:N)...)
 
 @inline (lobster::NutrientsPlanktonDetritus{<:Any, <:Any, <:Any, <:CarbonateSystem})(i, j, k, grid, ::Val{:DIC}, clock, fields, auxiliary_fields) = (
   - phytoplankton_primary_production(lobster, i, j, k, fields, auxiliary_fields)
@@ -47,3 +61,18 @@ required_biogeochemical_tracers(::CarbonateSystem) = (:DIC, :Alk)
     nutrient_uptake(lobster, i, j, k, Val(:N), fields, auxiliary_fields)
   - calcite_uptake(lobster, i, j, k, fields, auxiliary_fields)
 )
+
+function manifest_carbonate_replicates!(N)
+    if N>1
+      for n in 1:N
+          DIC_name = Symbol(:DIC, n)
+          Alk_name = Symbol(:Alk, n)
+          @eval begin
+              @inline (lobster::NutrientsPlanktonDetritus{<:Any, <:Any, <:Any, <:CarbonateSystem})(i, j, k, grid, ::Val{$(QuoteNode(DIC_name))}, clock, fields, auxiliary_fields) =
+                  lobster(i, j, k, grid, Val(:DIC), clock, fields, auxiliary_fields)
+              @inline (lobster::NutrientsPlanktonDetritus{<:Any, <:Any, <:Any, <:CarbonateSystem})(i, j, k, grid, ::Val{$(QuoteNode(Alk_name))}, clock, fields, auxiliary_fields) =
+                  lobster(i, j, k, grid, Val(:Alk), clock, fields, auxiliary_fields)
+          end
+      end
+    end
+end
