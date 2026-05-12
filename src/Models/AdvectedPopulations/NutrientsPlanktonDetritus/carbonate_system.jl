@@ -45,21 +45,21 @@ end
 required_biogeochemical_tracers(::CarbonateSystem{1}) = (:DIC, :Alk)
 required_biogeochemical_tracers(::CarbonateSystem{N}) where N = (map(n->Symbol(:DIC, n), 1:N)..., map(n->Symbol(:Alk, n), 1:N)...)
 
-@inline (lobster::NutrientsPlanktonDetritus{<:Any, <:Any, <:Any, <:CarbonateSystem})(i, j, k, grid, ::Val{:DIC}, clock, fields, auxiliary_fields) = (
-  - phytoplankton_primary_production(lobster, i, j, k, fields, auxiliary_fields)
-  + plankton_inorganic_carbon_waste(lobster, i, j, k, fields, auxiliary_fields)
-  + detritus_inorganic_carbon_waste(lobster, i, j, k, fields, auxiliary_fields)
-  + calcite_dissolution(lobster, i, j, k, fields, auxiliary_fields)
+@inline (bgc::NutrientsPlanktonDetritus{<:Any, <:Any, <:Any, <:CarbonateSystem})(i, j, k, grid, ::Val{:DIC}, clock, fields, auxiliary_fields) = (
+  - phytoplankton_primary_production(bgc, i, j, k, fields, auxiliary_fields)
+  + plankton_inorganic_carbon_waste(bgc, i, j, k, fields, auxiliary_fields)
+  + detritus_inorganic_carbon_waste(bgc, i, j, k, fields, auxiliary_fields)
+  + calcite_dissolution(bgc, i, j, k, fields, auxiliary_fields)
 )
 
-@inline (lobster::NutrientsPlanktonDetritus{<:Any, <:Any, <:Any, <:CarbonateSystem})(i, j, k, grid, ::Val{:Alk}, clock, fields, auxiliary_fields) = (
-    nutrient_uptake(lobster, i, j, k, Val(:NO₃), fields, auxiliary_fields)
-  - calcite_uptake(lobster, i, j, k, fields, auxiliary_fields)
+@inline (bgc::NutrientsPlanktonDetritus{<:Any, <:Any, <:Any, <:CarbonateSystem})(i, j, k, grid, ::Val{:Alk}, clock, fields, auxiliary_fields) = (
+    nutrient_uptake(bgc, i, j, k, Val(:NO₃), fields, auxiliary_fields)
+  - calcite_uptake(bgc, i, j, k, fields, auxiliary_fields)
 )
 
-@inline (lobster::NutrientsPlanktonDetritus{<:Nutrient, <:Any, <:Any, <:CarbonateSystem})(i, j, k, grid, ::Val{:Alk}, clock, fields, auxiliary_fields) = (
-    nutrient_uptake(lobster, i, j, k, Val(:N), fields, auxiliary_fields)
-  - calcite_uptake(lobster, i, j, k, fields, auxiliary_fields)
+@inline (bgc::NutrientsPlanktonDetritus{<:Nutrient, <:Any, <:Any, <:CarbonateSystem})(i, j, k, grid, ::Val{:Alk}, clock, fields, auxiliary_fields) = (
+    nutrient_uptake(bgc, i, j, k, Val(:N), fields, auxiliary_fields)
+  - calcite_uptake(bgc, i, j, k, fields, auxiliary_fields)
 )
 
 function manifest_carbonate_replicates!(N)
@@ -68,10 +68,10 @@ function manifest_carbonate_replicates!(N)
           DIC_name = Symbol(:DIC, n)
           Alk_name = Symbol(:Alk, n)
           @eval begin
-              @inline (lobster::NutrientsPlanktonDetritus{<:Any, <:Any, <:Any, <:CarbonateSystem})(i, j, k, grid, ::Val{$(QuoteNode(DIC_name))}, clock, fields, auxiliary_fields) =
-                  lobster(i, j, k, grid, Val(:DIC), clock, fields, auxiliary_fields)
-              @inline (lobster::NutrientsPlanktonDetritus{<:Any, <:Any, <:Any, <:CarbonateSystem})(i, j, k, grid, ::Val{$(QuoteNode(Alk_name))}, clock, fields, auxiliary_fields) =
-                  lobster(i, j, k, grid, Val(:Alk), clock, fields, auxiliary_fields)
+              @inline (bgc::NutrientsPlanktonDetritus{<:Any, <:Any, <:Any, <:CarbonateSystem})(i, j, k, grid, ::Val{$(QuoteNode(DIC_name))}, clock, fields, auxiliary_fields) =
+                  bgc(i, j, k, grid, Val(:DIC), clock, fields, auxiliary_fields)
+              @inline (bgc::NutrientsPlanktonDetritus{<:Any, <:Any, <:Any, <:CarbonateSystem})(i, j, k, grid, ::Val{$(QuoteNode(Alk_name))}, clock, fields, auxiliary_fields) =
+                  bgc(i, j, k, grid, Val(:Alk), clock, fields, auxiliary_fields)
           end
       end
     end

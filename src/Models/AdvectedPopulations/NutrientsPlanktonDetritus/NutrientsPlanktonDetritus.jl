@@ -1,25 +1,3 @@
-"""
-The Lodyc-DAMTP Ocean Biogeochemical Simulation Tools for Ecosystem and
-Resources (LOBSTER) model.
-
-LOBSTER is an NPZD type model with multiple nutrients and detritus pools.
-In the default configuration there is one phytoplankton and one zooplankton,
-nitrate and ammonia, and small, large, and dissovled detritus.
-
-Optionally it can also include iron (which limits phytoplankton growth),
-the carbonate system (DIC and alkalinity), oxygen, and variable N:C ratio
-detritus where each of dissolved, small, and large particles have both 
-nitrogen and carbon compartements.
-
-Required submodels
-==================
-
-* Photosynthetically available radiation: PAR (W/m²)
-
-When carbonate system is active:
-* Temperature: T (ᵒC)
-* Salinity: S (‰)
-"""
 module NutrientsPlanktonDetritusModels
 
 export LOBSTER, NPZD,
