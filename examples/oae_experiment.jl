@@ -18,8 +18,7 @@ using Oceananigans, OceanBioME, Oceananigans.Units
 using OceanBioME.Models.GasExchangeModel: CarbonDioxideConcentration
 
 # we define the grid and the biogeochemistry, adding in the `carbonate_system` with 2 replicates
-grid = RectilinearGrid(GPU(); 
-                       size = (64, 64, 8), 
+grid = RectilinearGrid(size = (64, 64, 8), 
                        extent = (500, 500, 15))
 
 biogeochemistry = LOBSTER(grid;
