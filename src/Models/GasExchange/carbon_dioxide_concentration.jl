@@ -35,8 +35,15 @@ CarbonDioxideConcentration(FT = Float64;
                                                              air_pressure, 
                                                              silicate_and_phosphate_names)
 
-summary(::CarbonDioxideConcentration{CC, FV, CV, AP}) where {CC, FV, CV, AP} = 
-    "`CarbonChemistry` derived partial pressure of CO₂ (pCO₂) {$(nameof(CC)), $(nameof(FV)), $(nameof(CV))}"
+summary(::CarbonDioxideConcentration{DIC, Alk, CC, FV, CV, AP}) where {DIC, Alk, CC, FV, CV, AP} = 
+    "`CarbonChemistry` derived partial pressure of CO₂ (pCO₂) {$DIC, $Alk, $(nameof(CC)), $(nameof(FV)), $(nameof(CV))}"
+
+show(io::IO, c::CarbonDioxideConcentration{DIC, Alk, CC, FV, CV, AP}) where {DIC, Alk, CC, FV, CV, AP} = 
+    println(io, "`CarbonChemistry` derived partial pressure of CO₂ (pCO₂) \n",
+            "    Solves the $(nameof(CC)) based on $DIC and $Alk,\n",
+            "    using $(nameof(FV)), \n",
+            "          $(nameof(CV)), \n",
+            "          at Pₐₜₘ = $(c.air_pressure)atm")
 
 @inline function surface_value(cc::CarbonDioxideConcentration{DIC_name, Alk_name}, i, j, grid, clock, model_fields) where {DIC_name, Alk_name}
     DIC = @inbounds model_fields[DIC_name][i, j, grid.Nz] # this is a compile time inference so is fine on GPU
@@ -55,7 +62,6 @@ end
 @inline silicate_and_phosphate(::Nothing, args...) = (0, 0)
 @inline silicate_and_phosphate(vals::NamedTuple, args...) = values(vals)
 @inline silicate_and_phosphate(val::Tuple, model_fields) = @inbounds getproperty(model_fields, val[1]), getproperty(model_fields, val[2])
-
 
 # default values from Dickson et al., 2007
 @kwdef struct PolynomialVirialCoefficientForCarbonDioxide{FT}
