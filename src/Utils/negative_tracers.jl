@@ -3,6 +3,7 @@ using KernelAbstractions: @kernel, @index
 using Oceananigans.Utils: work_layout
 using Oceananigans.Architectures: device, architecture, on_architecture
 using Oceananigans.Biogeochemistry: AbstractBiogeochemistry
+using Oceananigans.ImmersedBoundaries: immersed_cell
 
 import Adapt: adapt_structure, adapt
 import Base: summary, show
@@ -152,7 +153,7 @@ function apply_scale_for_negs!(dev::KA.GPU, model, scale)
             scale.scalefactors
         )))
 
-    scale_for_negs_kernel!(scale.invalid_fill_value, field_scale...)
+    scale_for_negs_kernel!(model.grid, scale.invalid_fill_value, field_scale...)
 
     return nothing
 end
@@ -169,7 +170,7 @@ function apply_scale_for_negs!(dev::KA.CPU, model, scale)
     # directly
     tracers_to_scale = Tuple(model.tracers[tracer_name].data for tracer_name in scale.tracers)
 
-    scale_for_negs_kernel!(scale.invalid_fill_value, scale.scalefactors, tracers_to_scale)
+    scale_for_negs_kernel!(model.grid, scale.invalid_fill_value, scale.scalefactors, tracers_to_scale)
 
     return nothing
 end
@@ -187,14 +188,16 @@ end
 # support arbitrary number of fields we need to make the kernel variadic.
 #
 # We expect Julia to inline the recursive calls and, effectively unroll the loops
-@kernel cpu = false function scale_for_negs_gpu!(invalid_fill_value, field_scale...)
+@kernel cpu = false function scale_for_negs_gpu!(grid, invalid_fill_value, field_scale...)
     ijk = @index(Global, NTuple)
 
-    t, p = calculate_total_and_positive_part(0.0, 0.0, ijk, field_scale...)
-
-    t = ifelse(t < 0, invalid_fill_value, t)
-
-    correct_negative_fields!(t, p, ijk, field_scale...)
+    if !immersed_cell(ijk..., grid)
+        t, p = calculate_total_and_positive_part(0.0, 0.0, ijk, field_scale...)
+    
+        t = ifelse(t < 0, invalid_fill_value, t)
+    
+        correct_negative_fields!(t, p, ijk, field_scale...)
+    end
     nothing
 end
 
@@ -244,28 +247,30 @@ end
 #
 # Hence, for CPU code we need to fall-back to the loop-based version
 #
-@kernel function scale_for_negs_cpu!(invalid_fill_value, scalefactors, fields)
+@kernel function scale_for_negs_cpu!(grid, invalid_fill_value, scalefactors, fields)
     i, j, k = @index(Global, NTuple)
 
-    t, p = 0.0, 0.0
-
-    for (idx, field) in enumerate(fields)
-        value = @inbounds field[i, j, k]
-        scalefactor = @inbounds scalefactors[idx]
-
-        t += value * scalefactor
-        if value > 0
-            p += value * scalefactor
+    if !immersed_cell(i, j, k, grid)
+        t, p = 0.0, 0.0
+    
+        for (idx, field) in enumerate(fields)
+            value = @inbounds field[i, j, k]
+            scalefactor = @inbounds scalefactors[idx]
+    
+            t += value * scalefactor
+            if value > 0
+                p += value * scalefactor
+            end
         end
-    end
-
-    t = ifelse(t < 0, invalid_fill_value, t)
-
-    for field in fields
-        value = @inbounds field[i, j, k]
-
-        new_value = ifelse(!isfinite(value) | (value > 0), value * t / p, 0)
-
-        @inbounds field[i, j, k] = new_value
+    
+        t = ifelse(t < 0, invalid_fill_value, t)
+    
+        for field in fields
+            value = @inbounds field[i, j, k]
+    
+            new_value = ifelse(!isfinite(value) | (value > 0), value * t / p, 0)
+    
+            @inbounds field[i, j, k] = new_value
+        end
     end
 end

@@ -104,7 +104,7 @@ unless `pH` is specified, in which case intermediate computation of `pH` is skip
 
 When pH is specified the free pH (i.e. -log[H⁺]) is expected.
 
-Alternativly pCO₂, and free, total, or sea water pH may be returned by setting `output`
+Alternatively pCO₂, and free, total, or sea water pH may be returned by setting `output`
 to Val(:pCO₂), Val(:pHᶠ), Val(:pHᵗ), or Val(:pHˢ), which will return `X` in `Val(:X)`
 instead of fCO₂.
 """

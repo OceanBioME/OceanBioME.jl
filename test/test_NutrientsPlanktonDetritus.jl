@@ -35,6 +35,8 @@ instantiate_detritus(::Val{Detritus}, grid, sinking) =
 
 test_models = []
 
+light_attenuation = PrescribedPhotosyntheticallyActiveRadiation(ConstantField(100))
+
 # construct the possible configurations
 for sinking = (false, true),
     detritus = (TwoParticleAndDissolved, VariableRedfieldDetritus, Detritus),
@@ -45,7 +47,12 @@ for sinking = (false, true),
     detritus = instantiate_detritus(Val(detritus), grid, sinking)
 
     model = NonhydrostaticModel(grid;
-                                biogeochemistry = LOBSTER(; grid, nutrients, carbonate_system, oxygen, detritus))
+                                biogeochemistry = NutrientsPlanktonDetritus(grid; nutrients, 
+                                                                            plankton = PhytoZoo(),
+                                                                            carbonate_system, 
+                                                                            oxygen, 
+                                                                            detritus,
+                                                                            light_attenuation))
 
     required_tracers = (:P, :Z)
     initial_values = (rand(), rand())
@@ -83,7 +90,7 @@ for sinking = (false, true),
         initial_values = (initial_values..., rand())
     end
 
-     @info "Constructed $(keys(model.tracers))"
+    @info "Constructed $(keys(model.tracers))"
 
     push!(test_models, (; required_tracers, initial_values, model, sinking))
 end
@@ -131,9 +138,23 @@ end; )
     end
 end; )
 
+@testset "BND constructors" begin
+    grid = RectilinearGrid(architecture; size=(1, 1, 1), extent=(1, 1, 2))
+
+    lobster = LOBSTER(grid)
+    npzd = NPZD(grid)
+
+    @test lobster isa OceanBioME.DiscreteBiogeochemistry{<:NutrientsPlanktonDetritus}
+    @test npzd isa OceanBioME.DiscreteBiogeochemistry{<:NutrientsPlanktonDetritus}
+
+    @test lobster.underlying_biogeochemistry isa NutrientsPlanktonDetritus{<:NitrateAmmonia, <:PhytoZoo, <:TwoParticleAndDissolved}
+    @test npzd.underlying_biogeochemistry isa NutrientsPlanktonDetritus{<:Nutrient, <:PhytoZoo, <:Detritus}
+end
+
+
 @testset "Float32 LOBSTER" begin
     grid = RectilinearGrid(architecture, Float32; size=(3, 3, 10), extent=(10, 10, 200))
-    bgc = LOBSTER(; grid)
+    bgc = LOBSTER(grid)
 
     par = bgc.light_attenuation
     @test par.water_red_attenuation isa Float32
