@@ -136,7 +136,7 @@ n = Observable(1)
 N = length(fds["P"])
 
 Δ_Alk = @lift (mean(interior(fds["Alk2"][$n]), dims=3)[:, :, 1] .- 
-               mean(interior(fds["Alk1"][$n]), dims=3)[1, 1, :]).* 15
+               mean(interior(fds["Alk1"][$n]), dims=3)[:, :, 1]).* 15
 Δ_qCO₂ = @lift (interior(fds_surface["qCO₂2"][$n], :, :, 1) .- 
                 interior(fds_surface["qCO₂1"][$n], :, :, 1)) .* (12+2*16)*1e-3*day
 
