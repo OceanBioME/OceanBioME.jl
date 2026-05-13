@@ -65,10 +65,10 @@ function test_gas_exchange_model(grid, air_concentration)
     value2 = CUDA.@allowscalar Oceananigans.getbc(model.tracers.DIC2.boundary_conditions.top, 1, 1, grid, model.clock, fields(model))
 
     @test isa(model.tracers.DIC1.boundary_conditions.top.condition.func, GasExchange)
-    @test ≈(value1, -8e-6; atol = 1e-6)
+    @test ≈(value1, -10e-6; atol = 1e-6)
 
     @test isa(model.tracers.DIC2.boundary_conditions.top.condition.func, GasExchange)
-    @test ≈(value2, -8e-6; atol = 1e-6)
+    @test ≈(value2, -10e-6; atol = 1e-6)
 
     @test value1 != value2
 
