@@ -1,7 +1,7 @@
 using OceanBioME: DampedNewtonRaphsonSolver
 using OceanBioME.Models: teos10_polynomial_approximation
 
-struct CarbonChemistry{P0, PC, PB, PS, PF, PP, PSi, PW, IS, PKS, PRho, FV, CV, SO}
+struct CarbonChemistry{P0, PC, PB, PS, PF, PP, PSi, PNH, PW, IS, PKS, PRho, FV, CV, SO}
           ionic_strength :: IS
               solubility :: P0
            carbonic_acid :: PC
@@ -11,6 +11,7 @@ struct CarbonChemistry{P0, PC, PB, PS, PF, PP, PSi, PW, IS, PKS, PRho, FV, CV, S
                 fluoride :: PF
          phosphoric_acid :: PP
             silicic_acid :: PSi
+                ammonium :: PNH
       calcite_solubility :: PKS
         density_function :: PRho   
 first_virial_coefficient :: FV
@@ -29,6 +30,7 @@ end
                     fluoride = KF(; ionic_strength),
                     phosphoric_acid = (KP1 = KP1(), KP2 = KP2(), KP3 = KP3()),
                     silicic_acid = KSi(; ionic_strength),
+                    ammonium = KNH3(),
                     calcite_solubility = KSP_calcite(),
                     density_function = teos10_polynomial_approximation,
                     first_virial_coefficient = PolynomialVirialCoefficientForCarbonDioxide(),
@@ -73,6 +75,7 @@ function CarbonChemistry(FT = Float64;
                          fluoride = KF(FT; ionic_strength),
                          phosphoric_acid = (KP1 = KP1(FT), KP2 = KP2(FT), KP3 = KP3(FT)),
                          silicic_acid = KSi(FT; ionic_strength),
+                         ammonium = KNH3(FT),
                          calcite_solubility = KSP_calcite(FT),
                          density_function = teos10_polynomial_approximation, # the denisity function *is* going to cause type instability but I can't see a way to fix it
                          first_virial_coefficient = PolynomialVirialCoefficientForCarbonDioxide{FT}(),
@@ -81,9 +84,10 @@ function CarbonChemistry(FT = Float64;
                          solver = DampedNewtonRaphsonSolver{FT, Int, @NamedTuple{lower::FT, upper::Nothing}}(bounds = (lower = 0, upper = nothing)))
 
     return CarbonChemistry(ionic_strength, solubility, carbonic_acid, boric_acid, water,
-                           sulfate, fluoride, phosphoric_acid, silicic_acid, calcite_solubility, density_function,
+                           sulfate, fluoride, phosphoric_acid, silicic_acid, ammonium,
+                           calcite_solubility, density_function,
                            first_virial_coefficient, cross_viral_coefficient,
-                            solver)
+                           solver)
 end
 
 """
@@ -118,6 +122,7 @@ instead of fCO₂.
                                         fluoride = convert(typeof(DIC), 0.000067 / 18.9984 * S / 1.80655),
                                         silicate = zero(DIC),
                                         phosphate = zero(DIC),
+                                        ammonium = zero(DIC),
                                         initial_pH_guess = convert(typeof(DIC), 8)) where FT
 
     ρₒ = p.density_function(T, S, ifelse(isnothing(P), one(DIC), P), lon, lat)
@@ -125,13 +130,16 @@ instead of fCO₂.
     # Centigrade to kelvin
     T += convert(FT, 273.15)
 
+    m_per_m3_to_per_kg = convert(FT, 1e-3) / ρₒ
+
     # mili-equivalents / m³ to equivalents / kg
-    Alk *= convert(FT, 1e-3) / ρₒ
+    Alk *= m_per_m3_to_per_kg
 
     # mmol / m³ to mol / kg
-    DIC       *= convert(FT, 1e-3) / ρₒ
-    phosphate *= convert(FT, 1e-3) / ρₒ
-    silicate  *= convert(FT, 1e-3) / ρₒ
+    DIC       *= m_per_m3_to_per_kg
+    phosphate *= m_per_m3_to_per_kg
+    silicate  *= m_per_m3_to_per_kg
+    ammonium  *= m_per_m3_to_per_kg
     
     # ionic strength
     Is = p.ionic_strength(S)
@@ -147,9 +155,10 @@ instead of fCO₂.
     KP2 = p.phosphoric_acid.KP2(T, S; P)
     KP3 = p.phosphoric_acid.KP3(T, S; P)
     KSi = p.silicic_acid(T, S, Is)
+    KNH = p.ammonium(T, S; P)
 
-    params = (; DIC, Alk, boron, sulfate, fluoride, silicate, phosphate,
-                K1, K2, KB, KW, KS, KF, KP1, KP2, KP3, KSi)
+    params = (; DIC, Alk, boron, sulfate, fluoride, silicate, phosphate, ammonium,
+                K1, K2, KB, KW, KS, KF, KP1, KP2, KP3, KSi, KNH)
 
     # solve equilibrium for hydrogen ion concentration
     H = solve_for_H(pH, params, initial_pH_guess, p.solver)

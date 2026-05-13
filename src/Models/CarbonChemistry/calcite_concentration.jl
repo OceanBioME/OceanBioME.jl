@@ -8,6 +8,7 @@ function carbonate_concentration(cc::CarbonChemistry;
                                  fluoride = convert(typeof(DIC), 0.000067 / 18.9984 * S / 1.80655),
                                  silicate = zero(DIC),
                                  phosphate = zero(DIC),
+                                 ammonium = zero(DIC),
                                  initial_pH_guess = convert(typeof(DIC), 8)) where FT
 
     ρₒ = cc.density_function(T, S, ifelse(isnothing(P), zero(DIC), P), lon, lat)
@@ -15,13 +16,16 @@ function carbonate_concentration(cc::CarbonChemistry;
     # Centigrade to kelvin
     T += convert(FT, 273.15)
 
+    m_per_m3_to_per_kg = convert(FT, 1e-3) / ρₒ
+
     # mili-equivalents / m³ to equivalents / kg
-    Alk *= convert(FT, 1e-3) / ρₒ
+    Alk *= m_per_m3_to_per_kg
 
     # mmol / m³ to mol / kg
-    DIC       *= convert(FT, 1e-3) / ρₒ
-    phosphate *= convert(FT, 1e-3) / ρₒ
-    silicate  *= convert(FT, 1e-3) / ρₒ
+    DIC       *= m_per_m3_to_per_kg
+    phosphate *= m_per_m3_to_per_kg
+    silicate  *= m_per_m3_to_per_kg
+    ammonium  *= m_per_m3_to_per_kg
     
     # ionic strength
     Is = cc.ionic_strength(S)
@@ -37,9 +41,10 @@ function carbonate_concentration(cc::CarbonChemistry;
     KP2 = cc.phosphoric_acid.KP2(T, S; P)
     KP3 = cc.phosphoric_acid.KP3(T, S; P)
     KSi = cc.silicic_acid(T, S, Is)
+    KNH = cc.ammonium(T, S; P)
 
-    params = (; DIC, Alk, boron, sulfate, fluoride, silicate, phosphate,
-                K1, K2, KB, KW, KS, KF, KP1, KP2, KP3, KSi)
+    params = (; DIC, Alk, boron, sulfate, fluoride, silicate, phosphate, ammonium,
+                K1, K2, KB, KW, KS, KF, KP1, KP2, KP3, KSi, KNH)
 
     # solve equilibrium for hydrogen ion concentration
 

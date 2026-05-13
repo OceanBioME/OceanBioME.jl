@@ -475,7 +475,6 @@ struct KF{IS, KS, FT, PC}
 
         return new{IS, KS, FT, PC}(ionic_strength, sulfate_constant, constant, inverse_T, sqrt_S, log_S, log_S_KS, pressure_correction)
     end
-
 end
 
 @inline (c::KF)(T, S, Is = c.ionic_strength(S), KS = c.sulfate_constant(T, S, Is); P = nothing) =
@@ -848,3 +847,60 @@ KSP_aragonite(FT = Float64;
                 sea_S,
                 sea_S_sqrt_S³,
                 pressure_correction)
+
+
+"""
+    KNH3(constant,
+         T, 
+         inverse_T,
+         inverse_T_sqrt_S,
+         inverse_T_S,
+         sqrt_S,
+         S
+         pressure_correction)
+
+Parametrisation of the equilibrium constant for ammonia dissociation
+by Yao and Millero, Aquatic Geochemistry 1:53-88, 1995   SWS.
+
+    NH₃ + H⁺ ⇌ NH₄⁺
+
+    [NH₃] = ([NH₃] + [NH₄⁺])/(1 + [H⁺]/K)
+
+At normal ocean pH [NH₃] is very low and the ammonium is almost all in the 
+NH₄⁺ form, but at high pH it shifts to the NH₃ form (so the alkalinity 
+contribution is almost 0 at "normal" pH, but not at high pH).
+"""
+struct KNH3{FT, PC}
+               constant :: FT
+                      T :: FT
+              inverse_T :: FT
+       inverse_T_sqrt_S :: FT
+            inverse_T_S :: FT
+                 sqrt_S :: FT
+                      S :: FT
+
+    pressure_correction :: PC
+
+    function KNH3(FT = Float64;
+                  constant = -0.25444,
+                  T = 0.0001635,
+                  inverse_T = -6285.33,
+                  inverse_T_sqrt_S = -123.7184,
+                  inverse_T_S = 3.17556,
+                  sqrt_S = 0.46532,
+                  S = -0.01992,
+
+                  pressure_correction::PC =
+                      PressureCorrection(FT; a₀=-26.43, a₁=0.0889, a₂=-0.000905, b₀=-5.03/1000, b₁=0.0814/1000)) where {PC}
+
+        return new{FT, PC}(constant, T, inverse_T, inverse_T_sqrt_S, inverse_T_S, sqrt_S, S, pressure_correction)
+    end
+end
+
+@inline (c::KNH3)(T, S; P = nothing) = 
+    c.pressure_correction(T, P) *
+    exp(c.constant
+        + c.inverse_T / T
+        + c.T * T
+        + (c.sqrt_S + c.inverse_T_sqrt_S / T) * √S
+        + (c.S + c.inverse_T_S / T) * S)

@@ -27,6 +27,7 @@ Note ammonia (NH₃) is not currently included.
      + hydrogen_suplfate(H, p)
      + hydrogen_fluoride(H, p)
      + phosphoric_acid(H, p)
+     + ammonium(H, p)
      - p.Alk)
 
 @inline ∂ₕ_alkalinity_residual(H, p) =
@@ -40,7 +41,8 @@ Note ammonia (NH₃) is not currently included.
      + ∂ₕ_free_hydrogen(H, p)
      + ∂ₕ_hydrogen_suplfate(H, p)
      + ∂ₕ_hydrogen_fluoride(H, p)
-     + ∂ₕ_phosphoric_acid(H, p))
+     + ∂ₕ_phosphoric_acid(H, p)
+     + ∂ₕ_ammonium(H, p))
 
 carbonate_denom(H, p) = H^2 + p.K1 * H + p.K1 * p.K2
 phosphorus_denom(H, p) = H^3 + p.KP1 * H^2 + p.KP1 * p.KP2 * H + p.KP1 * p.KP2 * p.KP3
@@ -57,6 +59,7 @@ free_hydrogen(H, p) = - H / sulfate_denom(H, p)
 hydrogen_suplfate(H, p) = - p.sulfate / (1 + p.KS / H * sulfate_denom(H, p))
 hydrogen_fluoride(H, p) = -p.fluoride / (1 + p.KF / H)
 phosphoric_acid(H, p) = -p.phosphate * H^3 / phosphorus_denom(H, p)
+ammonium(H, p) = p.ammonium / (1 + H / p.KNH)
 
 ∂ₕ_carbonate_denom(H, p) = 2 * H + p.K1 
 ∂ₕ_phosphorus_denom(H, p) = 3 * H^2 + 2 * p.KP1 * H + p.KP1 * p.KP2
@@ -73,3 +76,4 @@ phosphoric_acid(H, p) = -p.phosphate * H^3 / phosphorus_denom(H, p)
 ∂ₕ_hydrogen_suplfate(H, p) = p.sulfate / (1 + p.KS / H * sulfate_denom(H, p))^2 * (p.KS / H * ∂ₕ_sulfate_denom(H, p) - p.KS / H^2 * sulfate_denom(H, p))
 ∂ₕ_hydrogen_fluoride(H, p) = -p.fluoride / (1 + p.KF / H) ^ 2 * p.KF / H^2
 ∂ₕ_phosphoric_acid(H, p) = -3 * p.phosphate * H^2 / phosphorus_denom(H, p) - ∂ₕ_phosphorus_denom(H, p) * p.phosphate * H^3 / phosphorus_denom(H, p)^2 
+∂ₕ_ammonium(H, p) = -p.ammonium / (1 + H / p.KNH)^2 / p.KNH
