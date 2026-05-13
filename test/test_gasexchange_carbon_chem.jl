@@ -41,12 +41,12 @@ function test_gas_exchange_model(grid, air_concentration)
     CO₂_flux1 = 
         CarbonDioxideGasExchangeBoundaryCondition(; 
             water_concentration = CarbonDioxideConcentration(; DIC = :DIC1,
-                                                            Alk = :Alk1)
+                                                               Alk = :Alk1)
         )
     CO₂_flux2 = 
         CarbonDioxideGasExchangeBoundaryCondition(; 
             water_concentration = CarbonDioxideConcentration(; DIC = :DIC2,
-                                                            Alk = :Alk2)
+                                                               Alk = :Alk2)
         )
 
 
@@ -106,10 +106,12 @@ conc_field = CenterField(grid)
 set!(conc_field, (args...) -> 413)
 
 conc_fts = FieldTimeSeries((Center(), Center(), Center()), grid, [0, 1], indices = (:, :, grid.Nz))
-conc_fts .= 413
+set!(conc_fts[1], 413)
+set!(conc_fts[2], 413)
 
 conc_fts2 = FieldTimeSeries((Center(), Center(), Center()), RectilinearGrid(architecture; size=(2, 1, 2), extent=(1, 1, 1)), [0, 1], indices = (:, :, grid.Nz))
-conc_fts2 .= 413
+set!(conc_fts2[1], 413)
+set!(conc_fts2[2], 413)
 
 @testset "Gas exchange coupling" begin
     for air_concentration in [413.1, conc_function, conc_field, conc_fts, conc_fts2]
