@@ -82,22 +82,22 @@ end
 
 required_biogeochemical_tracers(::VariableRedfieldDetritus) = (:sPOC, :bPOC, :DOC, :sPON, :bPON, :DON)
 
-@inline (lobster::NutrientsPlanktonDetritus{<:Any, <:Any, <:VariableRedfieldDetritus})(i, j, k, grid, val_name::Val{:sPOC}, clock, fields, auxiliary_fields) = (
-    lobster.detritus.small_solid_waste_fraction * solid_carbon_waste(lobster, i, j, k, fields, auxiliary_fields)
-  - grazing(lobster, i, j, k, val_name, fields, auxiliary_fields)
-  - lobster.detritus.small_remineralisation_rate * small_particulate_carbon_concentration(lobster.detritus, i, j, k, fields, auxiliary_fields)
+@inline (bgc::NutrientsPlanktonDetritus{<:Any, <:Any, <:VariableRedfieldDetritus})(i, j, k, grid, val_name::Val{:sPOC}, clock, fields, auxiliary_fields) = (
+    bgc.detritus.small_solid_waste_fraction * solid_carbon_waste(bgc, i, j, k, fields, auxiliary_fields)
+  - grazing(bgc, i, j, k, val_name, fields, auxiliary_fields)
+  - bgc.detritus.small_remineralisation_rate * small_particulate_carbon_concentration(bgc.detritus, i, j, k, fields, auxiliary_fields)
 )
 
-@inline (lobster::NutrientsPlanktonDetritus{<:Any, <:Any, <:VariableRedfieldDetritus})(i, j, k, grid, ::Val{:bPOC}, clock, fields, auxiliary_fields) = (
-    (1 - lobster.detritus.small_solid_waste_fraction) * solid_carbon_waste(lobster, i, j, k, fields, auxiliary_fields)
-  + calcite_production(lobster, i, j, k, fields, auxiliary_fields)
-  - lobster.detritus.large_remineralisation_rate * large_particulate_carbon_concentration(lobster.detritus, i, j, k, fields, auxiliary_fields)
+@inline (bgc::NutrientsPlanktonDetritus{<:Any, <:Any, <:VariableRedfieldDetritus})(i, j, k, grid, ::Val{:bPOC}, clock, fields, auxiliary_fields) = (
+    (1 - bgc.detritus.small_solid_waste_fraction) * solid_carbon_waste(bgc, i, j, k, fields, auxiliary_fields)
+  + calcite_production(bgc, i, j, k, fields, auxiliary_fields)
+  - bgc.detritus.large_remineralisation_rate * large_particulate_carbon_concentration(bgc.detritus, i, j, k, fields, auxiliary_fields)
 )
 
-@inline (lobster::NutrientsPlanktonDetritus{<:Any, <:Any, <:VariableRedfieldDetritus})(i, j, k, grid, ::Val{:DOC}, clock, fields, auxiliary_fields) = (
-    plankton_organic_carbon_waste(lobster, i, j, k, fields, auxiliary_fields)
-  + detritus_organic_carbon_waste(lobster, i, j, k, fields, auxiliary_fields)
-  - lobster.detritus.dissolved_remineralisation_rate * dissolved_organic_carbon(lobster.detritus, i, j, k, fields, auxiliary_fields)
+@inline (bgc::NutrientsPlanktonDetritus{<:Any, <:Any, <:VariableRedfieldDetritus})(i, j, k, grid, ::Val{:DOC}, clock, fields, auxiliary_fields) = (
+    plankton_organic_carbon_waste(bgc, i, j, k, fields, auxiliary_fields)
+  + detritus_organic_carbon_waste(bgc, i, j, k, fields, auxiliary_fields)
+  - bgc.detritus.dissolved_remineralisation_rate * dissolved_organic_carbon(bgc.detritus, i, j, k, fields, auxiliary_fields)
 )
 
 @inline small_particulate_concentration(::VariableRedfieldDetritus, i, j, k, fields, auxiliary_fields) =
@@ -120,7 +120,7 @@ required_biogeochemical_tracers(::VariableRedfieldDetritus) = (:sPOC, :bPOC, :DO
 
 ##### common
 
-const TWO_PARTICLE_SIZE_LOBSTER = Union{NutrientsPlanktonDetritus{<:Any, <:Any, <:TwoParticleAndDissolved}, NutrientsPlanktonDetritus{<:Any, <:Any, <:VariableRedfieldDetritus}}
+const TWO_PARTICLE_SIZE_NPD = Union{NutrientsPlanktonDetritus{<:Any, <:Any, <:TwoParticleAndDissolved}, NutrientsPlanktonDetritus{<:Any, <:Any, <:VariableRedfieldDetritus}}
 const TWO_PARTICLE_SIZES = Union{TwoParticleAndDissolved, VariableRedfieldDetritus}
 
 const SMALL_SINKING_OFF =  Union{NutrientsPlanktonDetritus{<:Any, <:Any, <:TwoParticleAndDissolved{<:Any, Nothing}}, 
@@ -132,76 +132,76 @@ const LARGE_SINKING_OFF =  Union{NutrientsPlanktonDetritus{<:Any, <:Any, <:TwoPa
 const SMALL_PARTICLES = Union{Val{:sPOM}, Val{:sPON}, Val{:sPOC}}
 const LARGE_PARTICLES = Union{Val{:bPOM}, Val{:bPON}, Val{:bPOC}}
 
-biogeochemical_drift_velocity(lobster::TWO_PARTICLE_SIZE_LOBSTER, ::SMALL_PARTICLES) = 
-    lobster.detritus.small_particle_sinking_velocity
-biogeochemical_drift_velocity(lobster::TWO_PARTICLE_SIZE_LOBSTER, ::LARGE_PARTICLES) = 
-    lobster.detritus.large_particle_sinking_velocity
+biogeochemical_drift_velocity(bgc::TWO_PARTICLE_SIZE_NPD, ::SMALL_PARTICLES) = 
+    bgc.detritus.small_particle_sinking_velocity
+biogeochemical_drift_velocity(bgc::TWO_PARTICLE_SIZE_NPD, ::LARGE_PARTICLES) = 
+    bgc.detritus.large_particle_sinking_velocity
 
 biogeochemical_drift_velocity(::SMALL_SINKING_OFF, ::SMALL_PARTICLES) = nothing
 biogeochemical_drift_velocity(::LARGE_SINKING_OFF, ::LARGE_PARTICLES) = nothing
 
-@inline (lobster::TWO_PARTICLE_SIZE_LOBSTER)(i, j, k, grid, val_name::Union{Val{:DOM}, Val{:DON}}, clock, fields, auxiliary_fields) = (
-    plankton_organic_nitrogen_waste(lobster, i, j, k, fields, auxiliary_fields)
-  + detritus_organic_nitrogen_waste(lobster, i, j, k, fields, auxiliary_fields)
-  - lobster.detritus.dissolved_remineralisation_rate * dissolved_organic_nitrogen(lobster.detritus, i, j, k, fields, auxiliary_fields)
+@inline (bgc::TWO_PARTICLE_SIZE_NPD)(i, j, k, grid, val_name::Union{Val{:DOM}, Val{:DON}}, clock, fields, auxiliary_fields) = (
+    plankton_organic_nitrogen_waste(bgc, i, j, k, fields, auxiliary_fields)
+  + detritus_organic_nitrogen_waste(bgc, i, j, k, fields, auxiliary_fields)
+  - bgc.detritus.dissolved_remineralisation_rate * dissolved_organic_nitrogen(bgc.detritus, i, j, k, fields, auxiliary_fields)
 )
 
-@inline (lobster::TWO_PARTICLE_SIZE_LOBSTER)(i, j, k, grid, val_name::Union{Val{:sPOM}, Val{:sPON}}, clock, fields, auxiliary_fields) = (
-    lobster.detritus.small_solid_waste_fraction * solid_waste(lobster, i, j, k, fields, auxiliary_fields)
-  - grazing(lobster, i, j, k, val_name, fields, auxiliary_fields)
-  - lobster.detritus.small_remineralisation_rate * small_particulate_concentration(lobster.detritus, i, j, k, fields, auxiliary_fields)
+@inline (bgc::TWO_PARTICLE_SIZE_NPD)(i, j, k, grid, val_name::Union{Val{:sPOM}, Val{:sPON}}, clock, fields, auxiliary_fields) = (
+    bgc.detritus.small_solid_waste_fraction * solid_waste(bgc, i, j, k, fields, auxiliary_fields)
+  - grazing(bgc, i, j, k, val_name, fields, auxiliary_fields)
+  - bgc.detritus.small_remineralisation_rate * small_particulate_concentration(bgc.detritus, i, j, k, fields, auxiliary_fields)
 )
 
-@inline (lobster::TWO_PARTICLE_SIZE_LOBSTER)(i, j, k, grid, val_name::Union{Val{:bPOM}, Val{:bPON}}, clock, fields, auxiliary_fields) = (
-    (1 - lobster.detritus.small_solid_waste_fraction) * solid_waste(lobster, i, j, k, fields, auxiliary_fields)
-  - lobster.detritus.large_remineralisation_rate * large_particulate_concentration(lobster.detritus, i, j, k, fields, auxiliary_fields)
+@inline (bgc::TWO_PARTICLE_SIZE_NPD)(i, j, k, grid, val_name::Union{Val{:bPOM}, Val{:bPON}}, clock, fields, auxiliary_fields) = (
+    (1 - bgc.detritus.small_solid_waste_fraction) * solid_waste(bgc, i, j, k, fields, auxiliary_fields)
+  - bgc.detritus.large_remineralisation_rate * large_particulate_concentration(bgc.detritus, i, j, k, fields, auxiliary_fields)
 )
 
 ##### waste
-@inline function detritus_inorganic_nitrogen_waste(lobster::TWO_PARTICLE_SIZE_LOBSTER, i, j, k, fields, auxiliary_fields)
-    α  = lobster.detritus.remineralisation_inorganic_fraction
-    sμ = lobster.detritus.small_remineralisation_rate
-    bμ = lobster.detritus.large_remineralisation_rate
-    dμ = lobster.detritus.dissolved_remineralisation_rate
+@inline function detritus_inorganic_nitrogen_waste(bgc::TWO_PARTICLE_SIZE_NPD, i, j, k, fields, auxiliary_fields)
+    α  = bgc.detritus.remineralisation_inorganic_fraction
+    sμ = bgc.detritus.small_remineralisation_rate
+    bμ = bgc.detritus.large_remineralisation_rate
+    dμ = bgc.detritus.dissolved_remineralisation_rate
 
-    sPOM = small_particulate_concentration(lobster.detritus, i, j, k, fields, auxiliary_fields)
-    bPOM = large_particulate_concentration(lobster.detritus, i, j, k, fields, auxiliary_fields)
-    DOM  = dissolved_organic_nitrogen(lobster.detritus, i, j, k, fields, auxiliary_fields)
+    sPOM = small_particulate_concentration(bgc.detritus, i, j, k, fields, auxiliary_fields)
+    bPOM = large_particulate_concentration(bgc.detritus, i, j, k, fields, auxiliary_fields)
+    DOM  = dissolved_organic_nitrogen(bgc.detritus, i, j, k, fields, auxiliary_fields)
 
     return (α * (sμ * sPOM + bμ * bPOM) + dμ * DOM)
 end
 
-@inline function detritus_organic_nitrogen_waste(lobster::TWO_PARTICLE_SIZE_LOBSTER, i, j, k, fields, auxiliary_fields)
-    α  = lobster.detritus.remineralisation_inorganic_fraction
-    sμ = lobster.detritus.small_remineralisation_rate
-    bμ = lobster.detritus.large_remineralisation_rate
+@inline function detritus_organic_nitrogen_waste(bgc::TWO_PARTICLE_SIZE_NPD, i, j, k, fields, auxiliary_fields)
+    α  = bgc.detritus.remineralisation_inorganic_fraction
+    sμ = bgc.detritus.small_remineralisation_rate
+    bμ = bgc.detritus.large_remineralisation_rate
 
-    sPOM = small_particulate_concentration(lobster.detritus, i, j, k, fields, auxiliary_fields)
-    bPOM = large_particulate_concentration(lobster.detritus, i, j, k, fields, auxiliary_fields)
+    sPOM = small_particulate_concentration(bgc.detritus, i, j, k, fields, auxiliary_fields)
+    bPOM = large_particulate_concentration(bgc.detritus, i, j, k, fields, auxiliary_fields)
 
     return (1 - α) * (sμ * sPOM + bμ * bPOM)
 end
 
-@inline function detritus_inorganic_carbon_waste(lobster::TWO_PARTICLE_SIZE_LOBSTER, i, j, k, fields, auxiliary_fields)
-    α  = lobster.detritus.remineralisation_inorganic_fraction
-    sμ = lobster.detritus.small_remineralisation_rate
-    bμ = lobster.detritus.large_remineralisation_rate
-    dμ = lobster.detritus.dissolved_remineralisation_rate
+@inline function detritus_inorganic_carbon_waste(bgc::TWO_PARTICLE_SIZE_NPD, i, j, k, fields, auxiliary_fields)
+    α  = bgc.detritus.remineralisation_inorganic_fraction
+    sμ = bgc.detritus.small_remineralisation_rate
+    bμ = bgc.detritus.large_remineralisation_rate
+    dμ = bgc.detritus.dissolved_remineralisation_rate
 
-    sPOC = small_particulate_carbon_concentration(lobster.detritus, i, j, k, fields, auxiliary_fields)
-    bPOC = large_particulate_carbon_concentration(lobster.detritus, i, j, k, fields, auxiliary_fields)
-    DOC  = dissolved_organic_carbon(lobster.detritus, i, j, k, fields, auxiliary_fields)
+    sPOC = small_particulate_carbon_concentration(bgc.detritus, i, j, k, fields, auxiliary_fields)
+    bPOC = large_particulate_carbon_concentration(bgc.detritus, i, j, k, fields, auxiliary_fields)
+    DOC  = dissolved_organic_carbon(bgc.detritus, i, j, k, fields, auxiliary_fields)
 
     return α * (sμ * sPOC + bμ * bPOC) + dμ * DOC
 end
 
-@inline function detritus_organic_carbon_waste(lobster::TWO_PARTICLE_SIZE_LOBSTER, i, j, k, fields, auxiliary_fields)
-    α  = lobster.detritus.remineralisation_inorganic_fraction
-    sμ = lobster.detritus.small_remineralisation_rate
-    bμ = lobster.detritus.large_remineralisation_rate
+@inline function detritus_organic_carbon_waste(bgc::TWO_PARTICLE_SIZE_NPD, i, j, k, fields, auxiliary_fields)
+    α  = bgc.detritus.remineralisation_inorganic_fraction
+    sμ = bgc.detritus.small_remineralisation_rate
+    bμ = bgc.detritus.large_remineralisation_rate
 
-    sPOC = small_particulate_carbon_concentration(lobster.detritus, i, j, k, fields, auxiliary_fields)
-    bPOC = large_particulate_carbon_concentration(lobster.detritus, i, j, k, fields, auxiliary_fields)
+    sPOC = small_particulate_carbon_concentration(bgc.detritus, i, j, k, fields, auxiliary_fields)
+    bPOC = large_particulate_carbon_concentration(bgc.detritus, i, j, k, fields, auxiliary_fields)
 
     return (1 - α) * (sμ * sPOC + bμ * bPOC)
 end
@@ -279,27 +279,27 @@ function Detritus(grid;
     return Detritus(; sinking_speeds, kwargs...)
 end
 
-@inline (lobster::NutrientsPlanktonDetritus{<:Any, <:Any, <:Detritus})(i, j, k, grid, val_name::Val{:D}, clock, fields, auxiliary_fields) =
+@inline (bgc::NutrientsPlanktonDetritus{<:Any, <:Any, <:Detritus})(i, j, k, grid, val_name::Val{:D}, clock, fields, auxiliary_fields) =
     @inbounds (
-        plankton_organic_nitrogen_waste(lobster, i, j, k, fields, auxiliary_fields)
-      + solid_waste(lobster, i, j, k, fields, auxiliary_fields)
-      - grazing(lobster, i, j, k, val_name, fields, auxiliary_fields) 
-      - lobster.detritus.remineralisation_rate * fields.D[i, j, k]
+        plankton_organic_nitrogen_waste(bgc, i, j, k, fields, auxiliary_fields)
+      + solid_waste(bgc, i, j, k, fields, auxiliary_fields)
+      - grazing(bgc, i, j, k, val_name, fields, auxiliary_fields) 
+      - bgc.detritus.remineralisation_rate * fields.D[i, j, k]
     )
 
-biogeochemical_drift_velocity(lobster::NutrientsPlanktonDetritus{<:Any, <:Any, <:Detritus}, ::Val{:D}) = 
-    lobster.detritus.sinking_speeds
+biogeochemical_drift_velocity(bgc::NutrientsPlanktonDetritus{<:Any, <:Any, <:Detritus}, ::Val{:D}) = 
+    bgc.detritus.sinking_speeds
 
 required_biogeochemical_tracers(::Detritus) = (:D, )
 
 @inline small_particulate_concentration(detritus::Detritus, i, j, k, fields, auxiliary_fields) =
     @inbounds fields.D[i, j, k] * detritus.small_particle_fraction
 
-@inline detritus_inorganic_nitrogen_waste(lobster::NutrientsPlanktonDetritus{<:Any, <:Any, <:Detritus}, i, j, k, fields, auxiliary_fields) =
-    @inbounds fields.D[i, j, k] * lobster.detritus.remineralisation_rate
+@inline detritus_inorganic_nitrogen_waste(bgc::NutrientsPlanktonDetritus{<:Any, <:Any, <:Detritus}, i, j, k, fields, auxiliary_fields) =
+    @inbounds fields.D[i, j, k] * bgc.detritus.remineralisation_rate
 
-@inline detritus_inorganic_carbon_waste(lobster::NutrientsPlanktonDetritus{<:Any, <:Any, <:Detritus}, i, j, k, fields, auxiliary_fields) =
-    @inbounds fields.D[i, j, k] * lobster.detritus.remineralisation_rate * lobster.detritus.redfield_ratio
+@inline detritus_inorganic_carbon_waste(bgc::NutrientsPlanktonDetritus{<:Any, <:Any, <:Detritus}, i, j, k, fields, auxiliary_fields) =
+    @inbounds fields.D[i, j, k] * bgc.detritus.remineralisation_rate * bgc.detritus.redfield_ratio
 
 #####
 ##### No detritus - instantly remineralise everything
@@ -308,10 +308,10 @@ required_biogeochemical_tracers(::Detritus) = (:D, )
 @inline small_particulate_concentration(detritus::Nothing, i, j, k, fields, auxiliary_fields) = @inbounds zero(fields.P[1, 1, 1])
 
 # close the loop
-@inline detritus_inorganic_nitrogen_waste(lobster::NutrientsPlanktonDetritus{<:Any, <:Any, <:Nothing}, i, j, k, fields, auxiliary_fields) = 
-    (plankton_organic_nitrogen_waste(lobster, i, j, k, fields, auxiliary_fields)
-      + solid_waste(lobster, i, j, k, fields, auxiliary_fields))
+@inline detritus_inorganic_nitrogen_waste(bgc::NutrientsPlanktonDetritus{<:Any, <:Any, <:Nothing}, i, j, k, fields, auxiliary_fields) = 
+    (plankton_organic_nitrogen_waste(bgc, i, j, k, fields, auxiliary_fields)
+      + solid_waste(bgc, i, j, k, fields, auxiliary_fields))
 
-@inline detritus_inorganic_carbon_waste(lobster::NutrientsPlanktonDetritus{<:Any, <:Any, <:Nothing}, i, j, k, fields, auxiliary_fields) = 
-    (plankton_organic_nitrogen_waste(lobster, i, j, k, fields, auxiliary_fields)
-      + solid_waste(lobster, i, j, k, fields, auxiliary_fields)) * lobster.plankton.redfield_ratio
+@inline detritus_inorganic_carbon_waste(bgc::NutrientsPlanktonDetritus{<:Any, <:Any, <:Nothing}, i, j, k, fields, auxiliary_fields) = 
+    (plankton_organic_nitrogen_waste(bgc, i, j, k, fields, auxiliary_fields)
+      + solid_waste(bgc, i, j, k, fields, auxiliary_fields)) * bgc.plankton.redfield_ratio
