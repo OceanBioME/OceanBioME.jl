@@ -11,7 +11,7 @@ the sum of non-conserved ions such as carbonate, bicarbonate, hydroxide ions,
 etc.
 
 With this module activated the carbon budget can be closed as the flux of carbon
-into the biology and detritus comes from the DIC. Additionally, the flux in/out 
+into the plankton and detritus comes from the DIC. Additionally, the flux in/out 
 of the water from the air can be computed via the `CarbonChemistry` module.
 
 `DIC` is produced by remineralisation of organic matter, for example the breakdown
@@ -24,7 +24,7 @@ the uptake of calcite into phytoplankton.
 
 `DIC` and `Alk` concentration is only one way coupled with the rest of the 
 biogeochemistry and *does not* effect any other groups (e.g. acidifcation does
-not effect phytoplankton growth). To capture this effect a different `biology` 
+not effect phytoplankton growth). To capture this effect a different `plankton` 
 could be defined.
 
 Multiple (N) instances of the carbonate system can evolve in parallel and the tracers
