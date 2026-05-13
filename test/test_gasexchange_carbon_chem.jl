@@ -105,8 +105,14 @@ conc_field = CenterField(grid)
 
 set!(conc_field, (args...) -> 413)
 
+conc_fts = FieldTimeSeries((Center(), Center(), Center()), grid, [0, 1], indices = (:, :, grid.Nz))
+conc_fts .= 413
+
+conc_fts2 = FieldTimeSeries((Center(), Center(), Center()), RectilinearGrid(architecture; size=(2, 1, 2), extent=(1, 1, 1)), [0, 1], indices = (:, :, grid.Nz))
+conc_fts2 .= 413
+
 @testset "Gas exchange coupling" begin
-    for air_concentration in [413.1, conc_function, conc_field]
+    for air_concentration in [413.1, conc_function, conc_field, conc_fts, conc_fts2]
         @info "Testing gas exchange with $(summary(air_concentration))"
         test_gas_exchange_model(grid, air_concentration)
     end

@@ -103,9 +103,10 @@ function CarbonDioxideGasExchangeBoundaryCondition(FT = Float64;
                                                    carbon_chemistry = CarbonChemistry(FT),
                                                    wind_speed = 2,
                                                    discrete_form = false,
+                                                   grid = nothing,
                                                    transfer_velocity = 
                                                         SchmidtScaledTransferVelocity(FT; 
-                                                           wind_speed = normalise_surface_function(wind_speed; discrete_form, FT),
+                                                           wind_speed = normalise_surface_function(wind_speed; discrete_form, FT, grid),
                                                            schmidt_number = CarbonDioxidePolynomialSchmidtNumber(FT),
                                                            solubility = MolPerKgPerAtmToMMolPerCubicMPerMicroAtm(carbon_chemistry.solubility,
                                                                                                                  carbon_chemistry.density_function)),
@@ -139,8 +140,9 @@ specified by the the `OxygenConcentration` in the base model, and `air_concentra
 OxygenGasExchangeBoundaryCondition(FT = Float64;
                                    wind_speed = 2,
                                    discrete_form = true,
+                                   grid = nothing,
                                    transfer_velocity = SchmidtScaledTransferVelocity(FT; 
-                                                                                     wind_speed = normalise_surface_function(wind_speed; discrete_form, FT),
+                                                                                     wind_speed = normalise_surface_function(wind_speed; discrete_form, FT, grid),
                                                                                      schmidt_number = OxygenPolynomialSchmidtNumber(FT)),
                                    water_concentration = OxygenConcentration(),
                                    air_concentration = PartiallySolubleGas(FT; air_concentration = 9352.7, solubility = OxygenSolubility(FT))) = # mmolO₂/m³
