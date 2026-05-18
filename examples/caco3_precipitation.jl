@@ -1,6 +1,6 @@
 # # CaCO₃ Precipitation, Sinking, and Dissolution in a 1-D column model
 
-# This example demonstrates the `SimpleCaCO3Precipitation` biogeochemical model in a single column model. Temperature, salinity, DIC, and alkalinity are initialized with idealized profiles with a 100m mixed layer and exponentially decaying profiles below. The alkalinity is then perturbed by 200 mmol m⁻³ of alkalinity throughout the 100 m mixed layer. Note that since this is a column model, the added alkalinity does not decrease due to horizontal mixing. All particles that form through secondary precipitation are assumed to be aragonite, which is more soluble than calcite. Note, however, that a large dissolution rate is used for illustration/testing purposes.
+# This example demonstrates the `SimpleCaCO3Precipitation` biogeochemical model in a single column model. Temperature, salinity, DIC, and alkalinity are initialized with idealized profiles with a 100m mixed layer and exponentially decaying profiles below. The alkalinity is then perturbed by 200 mmol m⁻³ of alkalinity throughout the 100 m mixed layer. Note that since this is a column model, the added alkalinity does not decrease due to horizontal mixing. All particles that form through secondary precipitation are assumed to be aragonite, which is more soluble than calcite.
 
 # ## Install dependencies
 # ```julia
@@ -35,14 +35,14 @@ d_ML  = 100.0    # mixed-layer depth (m)
 @inline κ_func(z, _) = κ_ml * (1 + tanh((z + d_ML) / 10)) / 2 + κ_deep
 closure = VerticalScalarDiffusivity(VerticallyImplicitTimeDiscretization(), ν = κ_func, κ = κ_func)
 
-k_d_column     = 0.1 / day
-w_CaCO₃_column = 20 / day
-
 bgc = SimpleCaCO3Precipitation(;
     grid,
-    carbon_chemistry = CarbonChemistry(; calcite_solubility = KSP_aragonite()),
-    sinking_speed             = w_CaCO₃_column,
-    dissolution_rate_constant = k_d_column)
+    carbon_chemistry = CarbonChemistry(; calcite_solubility = KSP_aragonite()))
+
+# infer the dissolution rate and sinking velocity from the underlying biogeochemical model
+underlying_bgc = bgc.underlying_biogeochemistry
+k_d_column = underlying_bgc.dissolution_rate_constant
+w_CaCO₃_column = maximum(abs, underlying_bgc.sinking_velocities.CaCO₃)
 
 # Set the air-sea CO₂ flux boundary condition
 CO₂_bc  = CarbonDioxideGasExchangeBoundaryCondition(; wind_speed = 10.0)  # u₁₀ = 10 m s⁻¹

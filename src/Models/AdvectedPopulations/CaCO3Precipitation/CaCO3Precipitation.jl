@@ -41,6 +41,7 @@ References
 Morse & Arvidson (2002), Chem. Rev. — CaCO₃ dissolution kinetics
 Dickson et al. (2007), PICES Special Publication 3 — carbonate chemistry
 Hashim et al. (2025), Biogeosciences — CaCO₃ precipitation rate law
+Aumont et al. (2015), Global Biogeochem. Cycles — CaCO₃ dissolution kinetics
 """
 module CaCO3PrecipitationModel
 
@@ -132,7 +133,7 @@ Keyword Arguments
   precipitation in mmol C m⁻³ s⁻¹ when (Ω − 1) = 1.  Default ≈ 10⁻⁵/day.
 - `precipitation_order`: reaction order *n* for precipitation. Default 2.
 - `dissolution_rate_constant`: first-order dissolution rate constant *k_d* in
-  s⁻¹. Default ≈ 10⁻⁴/day.
+  s⁻¹. Default ≈ 0.197/day taken from Aumont et al. (2015).
 - `dissolution_order`: reaction order *m* for dissolution. Default 1.
 - `carbon_chemistry`: a `CarbonChemistry` instance used to compute Ω.
 - `sinking_speed`: sinking speed of particulate CaCO₃ in m s⁻¹ (positive
@@ -152,14 +153,14 @@ julia> grid = RectilinearGrid(size=(1, 1, 20), extent=(1, 1, 200), topology=(Per
 julia> bgc = SimpleCaCO3Precipitation(; grid)
 SimpleCaCO3Precipitation{Float64} model
  Precipitation: k = 1.157e-10 mol C m⁻³ s⁻¹, n = 2.0
- Dissolution:   k_d = 1.157e-09 s⁻¹, m = 1.0
+ Dissolution:   k_d = 2.280e-06 s⁻¹, m = 1.0
  Sinking: CaCO₃ at 1.157e-04 to 1.157e-04 m/s
 ```
 """
 function SimpleCaCO3Precipitation(; grid::AbstractGrid{FT},
                                     precipitation_rate_constant = 1e-5 / day,
                                     precipitation_order = 2.0,
-                                    dissolution_rate_constant = 1e-4 / day,
+                                    dissolution_rate_constant = 0.197 / day,
                                     dissolution_order = 1.0,
                                     carbon_chemistry = nothing,
                                     sinking_speed = 10 / day,
