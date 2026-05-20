@@ -396,7 +396,7 @@ end
     return p̃ * P / (p̃ * P + (1 - p̃) * sPOM + eps(0.0))
 end
 
-@inline function calcite_production(bgc::PHYTO_ZOO_NPD, i, j, k, fields, auxiliary_fields)
+@inline function biological_calcite_production(bgc::PHYTO_ZOO_NPD, i, j, k, fields, auxiliary_fields)
     α  = bgc.plankton.zooplankton_assimilation_fraction
     mᴾ = bgc.plankton.phytoplankton_mortality_rate
     R  = bgc.plankton.redfield_ratio 
@@ -411,7 +411,7 @@ end
     return (G * (1 - η) + ν) * ρ * R
 end
 
-@inline function calcite_dissolution(bgc::PHYTO_ZOO_NPD, i, j, k, fields, auxiliary_fields)
+@inline function biological_calcite_dissolution(bgc::PHYTO_ZOO_NPD, i, j, k, fields, auxiliary_fields)
     R  = bgc.plankton.redfield_ratio 
     ρ  = bgc.plankton.carbon_calcite_ratio
     η  = bgc.plankton.zooplankton_gut_calcite_dissolution
@@ -426,7 +426,7 @@ end
 # assume instant dissolution and put it back in DIC (or we could choose to lose it),
 # maybe that would be better?
 # but when we don't this can't be implicitly captured so we put it all back in the DIC compartement
-@inline function calcite_dissolution(bgc::NutrientsPlanktonDetritus{<:Any, <:PhytoZoo, <:Union{TwoParticleAndDissolved, Detritus, Nothing}}, i, j, k, fields, auxiliary_fields)
+@inline function biological_calcite_dissolution(bgc::NutrientsPlanktonDetritus{<:Any, <:PhytoZoo, <:Union{TwoParticleAndDissolved, Detritus, Nothing}}, i, j, k, fields, auxiliary_fields)
     R  = bgc.plankton.redfield_ratio 
     ρ  = bgc.plankton.carbon_calcite_ratio
     mᴾ = bgc.plankton.phytoplankton_mortality_rate
@@ -440,7 +440,7 @@ end
     return (G + ν) * ρ * R
 end
 
-@inline function calcite_uptake(bgc::PHYTO_ZOO_NPD, i, j, k, fields, auxiliary_fields)
+@inline function biological_calcite_storage(bgc::PHYTO_ZOO_NPD, i, j, k, fields, auxiliary_fields)
     R  = bgc.plankton.redfield_ratio 
     ρ  = bgc.plankton.carbon_calcite_ratio
 
@@ -448,3 +448,19 @@ end
 
     return 2 * ρ * μP * R
 end
+
+# nothing plankton
+@inline phytoplankton_primary_production(bgc::NutrientsPlanktonDetritus{<:Any, Nothing}, i, j, k, fields, auxiliary_fields) = 
+    @inbounds zero(fields[1][1, 1, 1])
+
+@inline plankton_inorganic_carbon_waste(bgc::NutrientsPlanktonDetritus{<:Any, Nothing}, i, j, k, fields, auxiliary_fields) = 
+    @inbounds zero(fields[1][1, 1, 1])
+
+@inline biological_calcite_storage(bgc::NutrientsPlanktonDetritus{<:Any, Nothing}, i, j, k, fields, auxiliary_fields) = 
+    @inbounds zero(fields[1][1, 1, 1])
+
+@inline biological_calcite_dissolution(bgc::NutrientsPlanktonDetritus{<:Any, Nothing}, i, j, k, fields, auxiliary_fields) = 
+    @inbounds zero(fields[1][1, 1, 1])
+
+@inline biological_calcite_production(bgc::NutrientsPlanktonDetritus{<:Any, Nothing}, i, j, k, fields, auxiliary_fields) = 
+    @inbounds zero(fields[1][1, 1, 1])

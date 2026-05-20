@@ -20,11 +20,11 @@ export GasExchange,
        CarbonDioxidePolynomialSchmidtNumber,
        OxygenPolynomialSchmidtNumber
 
+include("seawater_density.jl")
+include("CarbonChemistry/CarbonChemistry.jl")
 include("Sediments/Sediments.jl")
 include("AdvectedPopulations/NutrientsPlanktonDetritus/NutrientsPlanktonDetritus.jl")
 include("Individuals/SugarKelp/SugarKelp.jl")
-include("seawater_density.jl")
-include("CarbonChemistry/CarbonChemistry.jl")
 include("GasExchange/GasExchange.jl")
 include("AdvectedPopulations/PISCES/PISCES.jl")
 

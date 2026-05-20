@@ -315,3 +315,7 @@ required_biogeochemical_tracers(::Detritus) = (:D, )
 @inline detritus_inorganic_carbon_waste(bgc::NutrientsPlanktonDetritus{<:Any, <:Any, <:Nothing}, i, j, k, fields, auxiliary_fields) = 
     (plankton_organic_nitrogen_waste(bgc, i, j, k, fields, auxiliary_fields)
       + solid_waste(bgc, i, j, k, fields, auxiliary_fields)) * bgc.plankton.redfield_ratio
+
+# nothing detritus
+@inline detritus_inorganic_carbon_waste(bgc::NutrientsPlanktonDetritus{<:Any, <:Any, Nothing}, i, j, k, fields, auxiliary_fields) =
+    @inbounds zero(fields[1][1, 1, 1])
