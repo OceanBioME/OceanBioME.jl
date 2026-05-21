@@ -1,5 +1,6 @@
-using Oceananigans: defaults, Units
+using Adapt: adapt
 
+using Oceananigans: defaults, Units
 using Oceananigans.Architectures: architecture
 using Oceananigans.Fields: CenterField, Center
 using Oceananigans.Grids: znode, AbstractGrid, Flat
@@ -7,8 +8,9 @@ using Oceananigans.Utils: launch!
 
 using OceanBioME.Models.CarbonChemistryModel: CarbonChemistry, calcite_saturation
 
-#using OceanBioME.
 using KernelAbstractions: @kernel, @index
+
+import Adapt: adapt_structure
 
 """
     CarbonateSystem{N, CAL}
