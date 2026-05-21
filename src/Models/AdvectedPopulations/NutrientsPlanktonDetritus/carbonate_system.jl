@@ -1,4 +1,4 @@
-using Adapt: adapt
+using Adapt
 
 using Oceananigans: defaults, Units
 using Oceananigans.Architectures: architecture
