@@ -78,7 +78,7 @@ for sinking = (false,
     detritus = realise_detritus(Val(detritus), grid, sinking)
 
     model = NonhydrostaticModel(grid;
-                                advection = sinking ? Upwind() : nothing,
+                                advection = sinking ? UpwindBiased() : nothing,
                                 biogeochemistry = NutrientsPlanktonDetritus(grid; nutrients, 
                                                                             plankton,
                                                                             carbonate_system, 
