@@ -431,6 +431,9 @@ end
 end
 
 # nothing plankton
+@inline phytoplankton_growth(::NutrientsPlanktonDetritus{<:Any, Nothing}, i, j, k, fields, auxiliary_fields) = 
+    @inbounds zero(fields[1][i, j, k])
+
 @inline phytoplankton_primary_production(::NutrientsPlanktonDetritus{<:Any, Nothing}, i, j, k, fields, auxiliary_fields) = 
     @inbounds zero(fields[1][i, j, k])
 
