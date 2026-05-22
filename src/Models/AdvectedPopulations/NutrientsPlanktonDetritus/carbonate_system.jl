@@ -52,15 +52,20 @@ required_biogeochemical_tracers(::CarbonateSystem{N}) where N = (map(n->Symbol(:
   + calcite_dissolution(bgc, i, j, k, fields, auxiliary_fields)
 )
 
-@inline (bgc::NutrientsPlanktonDetritus{<:Any, <:Any, <:Any, <:CarbonateSystem})(i, j, k, grid, ::Val{:Alk}, clock, fields, auxiliary_fields) = (
+const NonPhosphateNutrients = Union{NitrateAmmonia, NitrateAmmoniaIron}
+
+@inline (bgc::NutrientsPlanktonDetritus{<:NonPhosphateNutrients, <:Any, <:Any, <:CarbonateSystem})(i, j, k, grid, ::Val{:Alk}, clock, fields, auxiliary_fields) = (
     bgc(i, j, k, grid, Val(:NH₄), clock, fields, auxiliary_fields) * (1 - 1/16)
   - bgc(i, j, k, grid, Val(:NO₃), clock, fields, auxiliary_fields) * (1 + 1/16) 
   - 2 * calcite_uptake(bgc, i, j, k, fields, auxiliary_fields)
   + 2 * calcite_dissolution(bgc, i, j, k, fields, auxiliary_fields)
 )
 
+const NitrogenPhosphate = NitratePhosphateIron
+
 @inline (bgc::NutrientsPlanktonDetritus{<:Nutrient, <:Any, <:Any, <:CarbonateSystem})(i, j, k, grid, ::Val{:Alk}, clock, fields, auxiliary_fields) = (
-    bgc(i, j, k, grid, Val(:N), clock, fields, auxiliary_fields)
+  - bgc(i, j, k, grid, Val(:NO₃), clock, fields, auxiliary_fields)
+  - bgc(i, j, k, grid, Val(:PO₄), clock, fields, auxiliary_fields)
   - 2 * calcite_uptake(bgc, i, j, k, fields, auxiliary_fields)
   + 2 * calcite_dissolution(bgc, i, j, k, fields, auxiliary_fields)
 )

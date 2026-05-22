@@ -1,16 +1,16 @@
 module NutrientsPlanktonDetritusModels
 
-export LOBSTER, NPZD,
+export LOBSTER, NPZD, ImplicitBiology,
        CarbonateSystem, 
        Oxygen, 
-       NitrateAmmoniaIron, 
+       NitrateAmmoniaIron, NitrogenPhosphate,
        VariableRedfieldDetritus, 
        TwoParticleAndDissolved, 
        NitrateAmmonia,
        Nutrient,
        Detritus,
        NutrientsPlanktonDetritus,
-       PhytoZoo
+       PhytoZoo, ImplicitProductivity
 
 using Oceananigans.Units
 
@@ -84,7 +84,7 @@ required_biogeochemical_auxiliary_fields(bnd::NutrientsPlanktonDetritus) =
      required_biogeochemical_auxiliary_fields(bnd.carbonate_system)...,
      required_biogeochemical_auxiliary_fields(bnd.oxygen)...)
 
-# fallback - not surer we want this?
+# fallback - not sure we want this?
 @inline (::NutrientsPlanktonDetritus)(i, j, k, grid, val_name, clock, fields, auxiliary_fields) = zero(grid)
 
 include("nutrients.jl")
@@ -96,5 +96,6 @@ include("show.jl")
 include("coupling_utils.jl")
 include("adapt_methods.jl")
 include("constructors.jl")
+include("implicit_productivity.jl")
 
 end # module

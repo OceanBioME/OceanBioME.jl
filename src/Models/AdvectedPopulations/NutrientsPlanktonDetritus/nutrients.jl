@@ -90,3 +90,27 @@ required_biogeochemical_tracers(::Nutrient) = (:N, )
 )
 
 @inline nitrification(nutrients::Nutrient, i, j, k, fields) = zero(eltype(fields.N))
+
+# NO₃, PO₄, Fe 
+
+struct NitratePhosphateIron end
+
+required_biogeochemical_tracers(::NitratePhosphateIron) = (:NO₃, :PO₄, :Fe)
+
+@inline (bgc::NutrientsPlanktonDetritus{<:NitratePhosphateIron})(i, j, k, grid, val_name::Val{:NO₃}, clock, fields, auxiliary_fields, another_arg) = (@info another_arg;
+    plankton_inorganic_nitrogen_waste(bgc, i, j, k, fields, auxiliary_fields)
+  + detritus_inorganic_nitrogen_waste(bgc, i, j, k, fields, auxiliary_fields)
+  - nutrient_uptake(bgc, i, j, k, val_name, fields, auxiliary_fields)
+)
+
+@inline (bgc::NutrientsPlanktonDetritus{<:NitratePhosphateIron})(i, j, k, grid, val_name::Val{:PO₄}, clock, fields, auxiliary_fields) = (
+    plankton_inorganic_phosphate_waste(bgc, i, j, k, fields, auxiliary_fields)
+  + detritus_inorganic_phosphate_waste(bgc, i, j, k, fields, auxiliary_fields)
+  - nutrient_uptake(bgc, i, j, k, val_name, fields, auxiliary_fields)
+)
+
+@inline (bgc::NutrientsPlanktonDetritus{<:NitratePhosphateIron})(i, j, k, grid, val_name::Val{:Fe}, clock, fields, auxiliary_fields) = (
+    plankton_inorganic_phosphate_waste(bgc, i, j, k, fields, auxiliary_fields)
+  + detritus_inorganic_phosphate_waste(bgc, i, j, k, fields, auxiliary_fields)
+  - nutrient_uptake(bgc, i, j, k, val_name, fields, auxiliary_fields)
+)

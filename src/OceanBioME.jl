@@ -5,9 +5,9 @@ between ocean biogeochemistry, carbonate chemistry, and physics.
 module OceanBioME
 
 # Biogeochemistry models and useful things
-export Biogeochemistry, LOBSTER, PISCES, NPZD, redfield
+export Biogeochemistry, LOBSTER, PISCES, NPZD, ImplicitBiology, redfield
 export CarbonateSystem, Oxygen, NitrateAmmoniaIron, VariableRedfieldDetritus, TwoParticleAndDissolved, NitrateAmmonia,
-       Detritus, Nutrient, NutrientsPlanktonDetritus, PhytoZoo
+       Detritus, Nutrient, NitratePhosphateIron, NutrientsPlanktonDetritus, PhytoZoo, ImplicitProductivity
 export InstantRemineralisationSediment, SimpleMultiGSediment
 export DepthDependantSinkingSpeed, PrescribedLatitude, ModelLatitude, PISCESModel
 
