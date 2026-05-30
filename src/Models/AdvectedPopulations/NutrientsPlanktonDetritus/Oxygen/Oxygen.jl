@@ -1,3 +1,5 @@
+module OxygenModels
+
 """
     Oxygen
 
@@ -40,4 +42,6 @@ end
                   + detritus_inorganic_nitrogen_waste(bgc, i, j, k, fields, auxiliary_fields)
 
     return Rp * μP - (Rp - Rn) * respiration
+end
+
 end
