@@ -220,7 +220,7 @@ struct AnalyticalLightLimitation end # This formulation is justified because yo
 @inline light_limitation(::AnalyticalLightLimitation, PAR, kPAR) = PAR / sqrt(PAR^2 + kPAR^2)
 
 ###### nutrient uptake
-@inline function nutrient_uptake(bgc::PHYTO_ZOO_NPD, i, j, k, val_name::Val{:NO₃}, fields, auxiliary_fields)
+@inline function nutrient_uptake(bgc::PHYTO_ZOO_NPD, i, j, k, ::Val{:NO₃}, fields, auxiliary_fields)
     μ = phytoplankton_growth(bgc, i, j, k, fields, auxiliary_fields)
 
     kNO₃ = bgc.plankton.nitrate_half_saturation
@@ -238,7 +238,7 @@ struct AnalyticalLightLimitation end # This formulation is justified because yo
     return μ * nitrate_limitation / (nitrate_limitation + ammonia_limitation + eps(0.0))
 end
 
-@inline function nutrient_uptake(bgc::PHYTO_ZOO_NPD, i, j, k, val_name::Val{:NH₄}, fields, auxiliary_fields)
+@inline function nutrient_uptake(bgc::PHYTO_ZOO_NPD, i, j, k, ::Val{:NH₄}, fields, auxiliary_fields)
     kNO₃ = bgc.plankton.nitrate_half_saturation
     kNH₄ = bgc.plankton.ammonia_half_saturation
     ψ    = bgc.plankton.nitrate_ammonia_inhibition
@@ -260,7 +260,7 @@ end
     return μ * ammonia_limitation / (nitrate_limitation + ammonia_limitation + eps(0.0)) - waste
 end
 
-@inline function nutrient_uptake(bgc::PHYTO_ZOO_NPD, i, j, k, val_name::Val{:Fe}, fields, auxiliary_fields)
+@inline function nutrient_uptake(bgc::PHYTO_ZOO_NPD, i, j, k, ::Val{:Fe}, fields, auxiliary_fields)
     R = bgc.plankton.iron_ratio
     
     μ = phytoplankton_growth(bgc, i, j, k, fields, auxiliary_fields)
@@ -268,24 +268,23 @@ end
     return R * μ
 end
 
-@inline function nutrient_uptake(bgc::PHYTO_ZOO_NPD, i, j, k, val_name::Val{:N}, fields, auxiliary_fields)
+@inline function nutrient_uptake(bgc::PHYTO_ZOO_NPD, i, j, k, ::Val{:N}, fields, auxiliary_fields)
     α = bgc.plankton.ammonia_fraction_of_exudate
     γ = bgc.plankton.phytoplankton_exudation_fraction
     
     μ = phytoplankton_growth(bgc, i, j, k, fields, auxiliary_fields)
 
-    return μ * (1 - α * γ)
+    return (1 - α * γ) * μ
 end
 
 @inline function phytoplankton_primary_production(bgc::PHYTO_ZOO_NPD, i, j, k, fields, auxiliary_fields)
     α = bgc.plankton.ammonia_fraction_of_exudate
     γ = bgc.plankton.phytoplankton_exudation_fraction
-    ρ = bgc.plankton.carbon_calcite_ratio
     R = bgc.plankton.redfield_ratio
 
     μP = phytoplankton_growth(bgc, i, j, k, fields, auxiliary_fields)
 
-    return (1 + ρ * (1 - γ) - α * γ) * μP * R
+    return (1 - α * γ) * μP * R # 
 end
 
 ##### mortality waste
@@ -396,7 +395,7 @@ end
     return p̃ * P / (p̃ * P + (1 - p̃) * sPOM + eps(0.0))
 end
 
-@inline function calcite_production(bgc::PHYTO_ZOO_NPD, i, j, k, fields, auxiliary_fields)
+@inline function biological_calcite_loss(bgc::PHYTO_ZOO_NPD, i, j, k, fields, auxiliary_fields)
     α  = bgc.plankton.zooplankton_assimilation_fraction
     mᴾ = bgc.plankton.phytoplankton_mortality_rate
     R  = bgc.plankton.redfield_ratio 
@@ -411,7 +410,7 @@ end
     return (G * (1 - η) + ν) * ρ * R
 end
 
-@inline function calcite_dissolution(bgc::PHYTO_ZOO_NPD, i, j, k, fields, auxiliary_fields)
+@inline function biological_calcite_dissolution(bgc::PHYTO_ZOO_NPD, i, j, k, fields, auxiliary_fields)
     R  = bgc.plankton.redfield_ratio 
     ρ  = bgc.plankton.carbon_calcite_ratio
     η  = bgc.plankton.zooplankton_gut_calcite_dissolution
@@ -421,30 +420,52 @@ end
     return G * η * ρ * R
 end
 
-# when we have variable redfield particles the calcite production goes to bPOC, but this
-# isn't implicitly captured in the bPOM when we have a fixed redfield, so we have to 
-# assume instant dissolution and put it back in DIC (or we could choose to lose it),
-# maybe that would be better?
-# but when we don't this can't be implicitly captured so we put it all back in the DIC compartement
-@inline function calcite_dissolution(bgc::NutrientsPlanktonDetritus{<:Any, <:PhytoZoo, <:Union{TwoParticleAndDissolved, Detritus, Nothing}}, i, j, k, fields, auxiliary_fields)
+@inline function biological_calcite_precipitation(bgc::PHYTO_ZOO_NPD, i, j, k, fields, auxiliary_fields)
     R  = bgc.plankton.redfield_ratio 
     ρ  = bgc.plankton.carbon_calcite_ratio
-    mᴾ = bgc.plankton.phytoplankton_mortality_rate
-
-    P = @inbounds fields.P[i, j, k]
-
-    G = grazing(bgc, i, j, k, Val(:P), fields, auxiliary_fields)
-    ν = mortality(bgc.plankton.phytoplankton_mortality_formulation, P, mᴾ)
-
-
-    return (G + ν) * ρ * R
-end
-
-@inline function calcite_uptake(bgc::PHYTO_ZOO_NPD, i, j, k, fields, auxiliary_fields)
-    R  = bgc.plankton.redfield_ratio 
-    ρ  = bgc.plankton.carbon_calcite_ratio
+    γ  = bgc.plankton.phytoplankton_exudation_fraction
 
     μP = phytoplankton_growth(bgc, i, j, k, fields, auxiliary_fields)
 
-    return 2 * ρ * μP * R
+    return (1-γ) * ρ * μP * R
 end
+
+# nothing plankton
+@inline phytoplankton_growth(::NutrientsPlanktonDetritus{<:Any, Nothing}, i, j, k, fields, auxiliary_fields) = 
+    @inbounds zero(fields[1][i, j, k])
+
+@inline phytoplankton_primary_production(::NutrientsPlanktonDetritus{<:Any, Nothing}, i, j, k, fields, auxiliary_fields) = 
+    @inbounds zero(fields[1][i, j, k])
+
+@inline plankton_inorganic_carbon_waste(::NutrientsPlanktonDetritus{<:Any, Nothing}, i, j, k, fields, auxiliary_fields) = 
+    @inbounds zero(fields[1][i, j, k])
+
+@inline plankton_organic_carbon_waste(::NutrientsPlanktonDetritus{<:Any, Nothing}, i, j, k, fields, auxiliary_fields) = 
+    @inbounds zero(fields[1][i, j, k])
+
+@inline biological_calcite_precipitation(::NutrientsPlanktonDetritus{<:Any, Nothing}, i, j, k, fields, auxiliary_fields) = 
+    @inbounds zero(fields[1][i, j, k])
+
+@inline biological_calcite_dissolution(::NutrientsPlanktonDetritus{<:Any, Nothing}, i, j, k, fields, auxiliary_fields) = 
+    @inbounds zero(fields[1][i, j, k])
+
+@inline biological_calcite_loss(::NutrientsPlanktonDetritus{<:Any, Nothing}, i, j, k, fields, auxiliary_fields) = 
+    @inbounds zero(fields[1][i, j, k])
+
+@inline nutrient_uptake(::NutrientsPlanktonDetritus{<:Any, Nothing}, i, j, k, val_name, fields, auxiliary_fields) = 
+    @inbounds zero(fields[1][i, j, k])
+
+@inline plankton_inorganic_nitrogen_waste(::NutrientsPlanktonDetritus{<:Any, Nothing}, i, j, k, fields, auxiliary_fields) = 
+    @inbounds zero(fields[1][i, j, k])
+
+@inline plankton_organic_nitrogen_waste(::NutrientsPlanktonDetritus{<:Any, Nothing}, i, j, k, fields, auxiliary_fields) = 
+    @inbounds zero(fields[1][i, j, k])
+
+@inline solid_waste(::NutrientsPlanktonDetritus{<:Any, Nothing}, i, j, k, fields, auxiliary_fields) = 
+    @inbounds zero(fields[1][i, j, k])
+
+@inline solid_carbon_waste(::NutrientsPlanktonDetritus{<:Any, Nothing}, i, j, k, fields, auxiliary_fields) = 
+    @inbounds zero(fields[1][i, j, k])
+
+@inline grazing(::NutrientsPlanktonDetritus{<:Any, Nothing}, i, j, k, val_name, fields, auxiliary_fields) = 
+    @inbounds zero(fields[1][i, j, k])

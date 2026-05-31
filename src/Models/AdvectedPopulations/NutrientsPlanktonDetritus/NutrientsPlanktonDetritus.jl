@@ -22,7 +22,8 @@ import OceanBioME: conserved_tracers, chlorophyll
 import Oceananigans.Biogeochemistry: AbstractBiogeochemistry, 
                                      required_biogeochemical_tracers,
                                      required_biogeochemical_auxiliary_fields,
-                                     biogeochemical_drift_velocity
+                                     biogeochemical_drift_velocity,
+                                     update_biogeochemical_state!
 
 struct NutrientsPlanktonDetritus{NUT, PLA, DET, CAR, OXY} <: AbstractBiogeochemistry
          nutrients :: NUT 
@@ -86,6 +87,14 @@ required_biogeochemical_auxiliary_fields(bnd::NutrientsPlanktonDetritus) =
 
 # fallback - not surer we want this?
 @inline (::NutrientsPlanktonDetritus)(i, j, k, grid, val_name, clock, fields, auxiliary_fields) = zero(grid)
+
+function update_biogeochemical_state!(model, bgc::NutrientsPlanktonDetritus)
+    update_biogeochemical_state!(model, bgc.nutrients)
+    update_biogeochemical_state!(model, bgc.plankton)
+    update_biogeochemical_state!(model, bgc.detritus)
+    update_biogeochemical_state!(model, bgc.carbonate_system)
+    update_biogeochemical_state!(model, bgc.oxygen)
+end
 
 include("nutrients.jl")
 include("detritus.jl")

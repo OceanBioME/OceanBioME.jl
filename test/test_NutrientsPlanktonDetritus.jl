@@ -1,4 +1,4 @@
-#include("dependencies_for_runtests.jl")
+include("dependencies_for_runtests.jl")
 
 using OceanBioME: conserved_tracers
 using Oceananigans, CUDA, Random
@@ -14,48 +14,88 @@ function ΣC(model, carbonates, biogeochemistry)
         return NaN
     end
 
-    conserved_tracer_names = conserved.carbon.tracers
-    conserved_tracer_scalefactors = conserved.carbon.scalefactors
+    if conserved.carbon isa NamedTuple
+        conserved_tracer_names = conserved.carbon.tracers
+        conserved_tracer_scalefactors = conserved.carbon.scalefactors
 
-    return sum([sum(model.tracers[tracer_name]) * conserved_tracer_scalefactors[n] for (n, tracer_name) in enumerate(conserved_tracer_names)])
+        return sum([sum(model.tracers[tracer_name]) * conserved_tracer_scalefactors[n] 
+                    for (n, tracer_name) in enumerate(conserved_tracer_names)])
+    else # multiple DIC/Alk realisations
+        totals = []
+        
+        CUDA.@allowscalar for n in 1:length(conserved.carbon)
+            conserved_tracer_names = conserved.carbon[n].tracers
+            conserved_tracer_scalefactors = conserved.carbon[n].scalefactors
+
+            total = sum([sum(model.tracers[tracer_name]) * conserved_tracer_scalefactors[n]
+                        for (n, tracer_name) in enumerate(conserved_tracer_names)])[1, 1, 1]
+
+            push!(totals, total)
+        end
+
+        return totals
+    end
 end
 
 n_timesteps = 100
 
 grid = RectilinearGrid(architecture; size=(1, 1, 1), extent=(1, 1, 2))
 
-instantiate_detritus(::Val{detritus}, grid, sinking) where detritus = 
+realise_detritus(::Val{detritus}, grid, sinking) where detritus = 
     detritus(grid;
              small_particle_sinking_speed = sinking ? 3.47e-5 : 0.0,
              large_particle_sinking_speed = sinking ? 200/day : 0.0)
 
-instantiate_detritus(::Val{Detritus}, grid, sinking) = 
+realise_detritus(::Val{Detritus}, grid, sinking) = 
     Detritus(grid;
              sinking_speed = sinking ? 0.1213 / day : 0.0)
+
+realise_detritus(::Val{Nothing}, args...) = nothing 
 
 test_models = []
 
 light_attenuation = PrescribedPhotosyntheticallyActiveRadiation(ConstantField(100))
 
 # construct the possible configurations
-for sinking = (false, true),
-    detritus = (TwoParticleAndDissolved, VariableRedfieldDetritus, Detritus),
-    oxygen = (nothing, Oxygen()),
-    carbonate_system = (nothing, CarbonateSystem()),
-    nutrients = (NitrateAmmonia(), NitrateAmmoniaIron(), Nutrient())
+for sinking = (false,
+               true),
+    plankton = (nothing, 
+                PhytoZoo()),
+    detritus = (Nothing, 
+                TwoParticleAndDissolved, 
+                VariableRedfieldDetritus, 
+                Detritus),
+    oxygen = (nothing, 
+              Oxygen()),
+    carbonate_system = (nothing,
+                        CarbonateSystem(), 
+                        CarbonateSystem(grid; explicit_calcite = true, sinking_speed = 0), 
+                        CarbonateSystem(grid, 2; explicit_calcite = true, sinking_speed = 0)),
+    nutrients = (NitrateAmmonia(), 
+                 NitrateAmmoniaIron(), 
+                 Nutrient())
 
-    detritus = instantiate_detritus(Val(detritus), grid, sinking)
+    detritus = realise_detritus(Val(detritus), grid, sinking)
 
     model = NonhydrostaticModel(grid;
+                                advection = sinking ? UpwindBiased() : nothing,
                                 biogeochemistry = NutrientsPlanktonDetritus(grid; nutrients, 
-                                                                            plankton = PhytoZoo(),
+                                                                            plankton,
                                                                             carbonate_system, 
                                                                             oxygen, 
                                                                             detritus,
-                                                                            light_attenuation))
+                                                                            light_attenuation),
+                                tracers = (:T, :S))
 
-    required_tracers = (:P, :Z)
-    initial_values = (rand(), rand())
+    set!(model, T = 10, S = 35)
+
+    required_tracers = tuple()
+    initial_values = tuple()
+
+    if plankton isa PhytoZoo
+        required_tracers = (required_tracers..., :P, :Z)
+        initial_values = (initial_values..., rand(), rand())
+    end
 
     if nutrients isa NitrateAmmonia
         required_tracers = (required_tracers..., :NO₃, :NH₄)
@@ -69,13 +109,25 @@ for sinking = (false, true),
     end
 
     if !isnothing(carbonate_system)
-        required_tracers = (required_tracers..., :DIC, :Alk)
-        initial_values = (initial_values..., 2000*rand(), 2000*rand())
+        N = carbonate_system |> ((::CarbonateSystem{N}) where N) -> N
+        for n in 1:N
+            DIC_symbol = carbonate_system isa CarbonateSystem{1} ? :DIC : Symbol(:DIC, n)
+            Alk_symbol = carbonate_system isa CarbonateSystem{1} ? :Alk : Symbol(:Alk, n)
+            CaCO₃_symbol = carbonate_system isa CarbonateSystem{1} ? :CaCO₃ : Symbol(:CaCO₃, n)
+
+            required_tracers = (required_tracers..., DIC_symbol, Alk_symbol)
+            initial_values = (initial_values..., 1200, 1000*n) # capture different Ω (~0.06 and 11)
+
+            if carbonate_system isa CarbonateSystem{<:Any, true}
+                required_tracers = (required_tracers..., CaCO₃_symbol)
+                initial_values = (initial_values..., 100*(n^2)) 
+            end
+        end
     end
 
     if !isnothing(oxygen)
         required_tracers = (required_tracers..., :O₂)
-        initial_values = (initial_values..., 300*rand())
+        initial_values = (initial_values..., 300)
     end
 
     if detritus isa VariableRedfieldDetritus
@@ -85,7 +137,7 @@ for sinking = (false, true),
     elseif detritus isa TwoParticleAndDissolved
         required_tracers = (required_tracers..., :sPOM, :bPOM, :DOM)
         initial_values = (initial_values..., rand(), rand(), rand())
-    else
+    elseif detritus isa Detritus
         required_tracers = (required_tracers..., :D)
         initial_values = (initial_values..., rand())
     end
@@ -105,28 +157,27 @@ end
     time_step!(model, 1.0) # long wait for compile here...
 
     # CUDA.@allowscalar maybe
-    everything_stayed_zero = CUDA.@allowscalar all([all(values .== 0) for values in values(model.tracers)])
-
+    everything_stayed_zero = CUDA.@allowscalar all([all(values .== 0) for values in values(model.tracers[required_tracers])])
     @test tracers_are_correct & tracers_are_materialised & everything_stayed_zero
     @info "Stepped $(keys(model.tracers))"
 end; )
 
 @testset "LOBSTER nitrogen conservation" (for (required_tracers, initial_values, model, sinking) in test_models
-    if !sinking
+    if !sinking&isnothing(model.biogeochemistry.underlying_biogeochemistry.oxygen) # we don't need to repeat when oxygen is on
         @info "Testing $(keys(model.tracers))"
         set!(model; NamedTuple{required_tracers}(initial_values)...)
-        ΣN₀ = CUDA.@allowscalar ΣN(model, model.biogeochemistry)
+        ΣN₀ = CUDA.@allowscalar ΣN(model, model.biogeochemistry)[1, 1, 1]
         for _ in 1:n_timesteps
             time_step!(model, 1.0)
         end
-        ΣN₁ = CUDA.@allowscalar ΣN(model, model.biogeochemistry)
+        ΣN₁ = CUDA.@allowscalar ΣN(model, model.biogeochemistry)[1, 1, 1]
         @test ΣN₀ ≈ ΣN₁
     end
 end; )
 
 @testset "LOBSTER carbon conservation" (for (required_tracers, initial_values, model, sinking) in test_models
     carbonate_system = model.biogeochemistry.underlying_biogeochemistry.carbonate_system
-    if !(isnothing(carbonate_system)|sinking)
+    if !(isnothing(carbonate_system)|sinking)&isnothing(model.biogeochemistry.underlying_biogeochemistry.oxygen)
         @info "Testing $(keys(model.tracers))"
         set!(model; NamedTuple{required_tracers}(initial_values)...)
         ΣC₀ = CUDA.@allowscalar ΣC(model, carbonate_system, model.biogeochemistry)
@@ -134,7 +185,12 @@ end; )
             time_step!(model, 1.0)
         end
         ΣC₁ = ΣC(model, carbonate_system, model.biogeochemistry)
-        @test ΣC₀ ≈ ΣC₁
+        @info ΣC₀, ΣC₁
+        @test all(ΣC₀ .≈ ΣC₁)
+
+        CUDA.@allowscalar if carbonate_system isa CarbonateSystem{2}
+            @test carbonate_system.calcite_saturation_state[1][1, 1, 1] .!= carbonate_system.calcite_saturation_state[2][1, 1, 1]
+        end
     end
 end; )
 

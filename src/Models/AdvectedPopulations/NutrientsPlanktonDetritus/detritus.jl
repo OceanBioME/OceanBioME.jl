@@ -90,7 +90,6 @@ required_biogeochemical_tracers(::VariableRedfieldDetritus) = (:sPOC, :bPOC, :DO
 
 @inline (bgc::NutrientsPlanktonDetritus{<:Any, <:Any, <:VariableRedfieldDetritus})(i, j, k, grid, ::Val{:bPOC}, clock, fields, auxiliary_fields) = (
     (1 - bgc.detritus.small_solid_waste_fraction) * solid_carbon_waste(bgc, i, j, k, fields, auxiliary_fields)
-  + calcite_production(bgc, i, j, k, fields, auxiliary_fields)
   - bgc.detritus.large_remineralisation_rate * large_particulate_carbon_concentration(bgc.detritus, i, j, k, fields, auxiliary_fields)
 )
 
@@ -315,3 +314,7 @@ required_biogeochemical_tracers(::Detritus) = (:D, )
 @inline detritus_inorganic_carbon_waste(bgc::NutrientsPlanktonDetritus{<:Any, <:Any, <:Nothing}, i, j, k, fields, auxiliary_fields) = 
     (plankton_organic_nitrogen_waste(bgc, i, j, k, fields, auxiliary_fields)
       + solid_waste(bgc, i, j, k, fields, auxiliary_fields)) * bgc.plankton.redfield_ratio
+
+# nothing detritus
+@inline detritus_inorganic_carbon_waste(bgc::NutrientsPlanktonDetritus{<:Any, <:Any, Nothing}, i, j, k, fields, auxiliary_fields) =
+    @inbounds zero(fields[1][1, 1, 1])
