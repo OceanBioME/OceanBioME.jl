@@ -2,10 +2,13 @@ module NutrientsPlanktonDetritusModels
 
 export NutrientsPlanktonDetritus
 
+export LOBSTER, NPZD, ImplicitBiology
+
 export Nutrients, N, PO₄, Si, Fe, NitrateAmmonia
 export CarbonateSystem
 export Abiotic, ImplicitProductivity, PhytoZoo
 export Detritus, DissolvedParticulate, InstantRemineralisation
+export Oxygen
 
 using Adapt
 using Oceananigans.Grids: AbstractGrid
@@ -40,11 +43,13 @@ include("Nutrients/Nutrients.jl")
 include("Detritus/Detritus.jl")
 include("InorganicCarbon/InorganicCarbon.jl")
 include("Plankton/Plankton.jl")
+include("Oxygen/Oxygen.jl")
 
 using .NutrientsModels
 using .InorganicCarbonModels
 using .PlanktonModels
 using .DetritusModels
+using .OxygenModels
 
 include("constructor.jl")
 

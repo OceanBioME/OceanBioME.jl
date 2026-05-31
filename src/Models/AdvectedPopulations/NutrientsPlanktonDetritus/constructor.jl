@@ -1,5 +1,11 @@
 using Oceananigans.Units
 
+using OceanBioME.Light: 
+    TwoBandPhotosyntheticallyActiveRadiation,
+    PrescribedPhotosyntheticallyActiveRadiation
+
+using Oceananigans.Fields: ConstantField
+
 using .PlanktonModels: limiting_nutrients
 
 function NutrientsPlanktonDetritus(grid::AbstractGrid{FT}; 
@@ -40,6 +46,9 @@ function NutrientsPlanktonDetritus(grid::AbstractGrid{FT};
                            modifiers)
 end
 
+const default_light = TwoBandPhotosyntheticallyActiveRadiation
+const default_surface_PAR = 100
+
 ImplicitBiology(grid::AbstractGrid{FT};
                 nutrients = Nutrients(N, PO₄, Fe, nothing),
                 plankton = ImplicitProductivity(FT),
@@ -49,26 +58,30 @@ ImplicitBiology(grid::AbstractGrid{FT};
                                                 dissolved_fraction_of_remineralisation = 0.0,
                                                 sinking_speeds = 10/day),
                 inorganic_carbon = CarbonateSystem(),
+                surface_PAR = default_surface_PAR,
+                light_attenuation = PrescribedPhotosyntheticallyActiveRadiation(ConstantField(surface_PAR)),
                 kwargs...) where FT =
-    NutrientsPlanktonDetritus(grid; nutrients, plankton, detritus, inorganic_carbon, kwargs...)
+    NutrientsPlanktonDetritus(grid; nutrients, plankton, detritus, inorganic_carbon, light_attenuation, kwargs...)
 
 NPZD(grid::AbstractGrid{FT};
-     limiting_nutrients = (:nitrate, :ammonia),
-     nutrients = Nutrients(:ammonia in limiting_nutrients ? NitrateAmmonia(FT) : N, 
-                          :phosphate in limiting_nutrients ? PO₄ : nothing, 
-                          :iron in limiting_nutrients ? Fe : nothing, 
-                          nothing),
+     limiting_nutrients = (:nitrate, ),
+     nutrients = Nutrients(:ammonia in limiting_nutrients ? NitrateAmmonia{FT}() : N, 
+                           :phosphate in limiting_nutrients ? PO₄ : nothing, 
+                           :iron in limiting_nutrients ? Fe : nothing, 
+                           nothing),
      plankton = PhytoZoo(FT;
                         nutrient_half_saturations = (nitrate = 0.7,                     # mmol N/m³
                                                      ammonia = 0.001,                   # mmol N/m³
                                                      iron = 2e-4)[limiting_nutrients]), # mmol Fe / m³
      detritus = Detritus(grid),
+     surface_PAR = default_surface_PAR,
+     light_attenuation = default_light(; grid, surface_PAR),
      kwargs...) where FT =
-    NutrientsPlanktonDetritus(grid; nutrients, plankton, detritus, kwargs...)
+    NutrientsPlanktonDetritus(grid; nutrients, plankton, detritus, light_attenuation, kwargs...)
 
 LOBSTER(grid::AbstractGrid{FT};
         limiting_nutrients = (:nitrate, :ammonia),
-        nutrients = Nutrients(:ammonia in limiting_nutrients ? NitrateAmmonia(FT) : N, 
+        nutrients = Nutrients(:ammonia in limiting_nutrients ? NitrateAmmonia{FT}() : N, 
                               :phosphate in limiting_nutrients ? PO₄ : nothing, 
                               :iron in limiting_nutrients ? Fe : nothing, 
                               nothing),
@@ -77,5 +90,7 @@ LOBSTER(grid::AbstractGrid{FT};
                                                          ammonia = 0.001,                   # mmol N/m³
                                                          iron = 2e-4)[limiting_nutrients]), # mmol Fe / m³
         detritus = DissolvedParticulate(grid),
+        surface_PAR = default_surface_PAR,
+        light_attenuation = default_light(; grid, surface_PAR),
         kwargs...) where FT =
-    NutrientsPlanktonDetritus(grid; nutrients, plankton, detritus, kwargs...)
+    NutrientsPlanktonDetritus(grid; nutrients, plankton, detritus, light_attenuation, kwargs...)

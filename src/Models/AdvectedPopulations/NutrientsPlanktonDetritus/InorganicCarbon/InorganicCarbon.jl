@@ -32,7 +32,8 @@ import Oceananigans.Biogeochemistry:
     required_biogeochemical_tracers,
     required_biogeochemical_auxiliary_fields
 
-import ..NutrientsPlanktonDetritusModels: carbon_ratio
+import ..NutrientsPlanktonDetritusModels: 
+    carbon_ratio
 
 include("abstract_inorganic_carbon.jl")
 include("defaults.jl")

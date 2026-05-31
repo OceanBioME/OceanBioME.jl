@@ -3,13 +3,9 @@
 ##### Separate nitrogen and ammonia
 #####
 # this can model how you might make e.g. a complicated iron cycle
-struct NitrateAmmonia{FT}
-    nitrification_rate::FT
+@kwdef struct NitrateAmmonia{FT}
+    nitrification_rate::FT = 5.8e-7 # 1/s
 end
-
-NitrateAmmonia(FT = Float64; 
-              nitrification_rate = 5.8e-7) = # 1/s
-      NitrateAmmonia{FT}(convert(FT, nitrification_rate))
 
 Adapt.adapt_structure(to, na::NitrateAmmonia) = 
     NitrateAmmonia(adapt(to, na.nitrification_rate))

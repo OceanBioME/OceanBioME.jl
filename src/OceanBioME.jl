@@ -13,6 +13,8 @@ export Nutrients, NitrateAmmonia
 export CarbonateSystem
 export Abiotic, ImplicitProductivity, PhytoZoo
 export Detritus, DissolvedParticulate, InstantRemineralisation
+export Oxygen
+
 export SugarKelp, SugarKelpParticles, GiantKelp
 
 export InstantRemineralisationSediment, SimpleMultiGSediment

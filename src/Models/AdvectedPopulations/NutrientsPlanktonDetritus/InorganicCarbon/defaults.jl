@@ -19,6 +19,15 @@
     bgc(i, j, k, grid, Val(:N), clock, fields, auxiliary_fields)
 
 @inline nitrate_primary_production(plankton,
+                                   bgc::NPD{FT, <:Nutrients{Nothing}}, 
+                                   i, j, k, grid, clock, fields, auxiliary_fields) where FT = 
+    nitrogen_ratio(plankton, bgc, i, j, k, fields) * (
+            inorganic_waste(bgc.plankton, bgc, i, j, k, fields, auxiliary_fields)
+          + inorganic_waste(bgc.detritus, bgc, i, j, k, fields, auxiliary_fields)
+          - nutrient_uptake(bgc.plankton, bgc, i, j, k, fields, auxiliary_fields)
+    )
+
+@inline nitrate_primary_production(plankton,
                                    bgc::NPD{FT, <:Nutrients{<:NitrateAmmonia}}, 
                                    i, j, k, grid, clock, fields, auxiliary_fields) where FT = 
     bgc(i, j, k, grid, Val(:NO₃), clock, fields, auxiliary_fields)
