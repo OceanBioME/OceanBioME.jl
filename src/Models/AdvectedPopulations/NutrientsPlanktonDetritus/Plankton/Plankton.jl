@@ -38,6 +38,8 @@ import Oceananigans.Biogeochemistry:
     required_biogeochemical_tracers,
     required_biogeochemical_auxiliary_fields
 
+import OceanBioME: chlorophyll
+
 import ..NutrientsPlanktonDetritusModels:
     carbon_ratio,
     nitrogen_ratio,
@@ -74,7 +76,9 @@ import ..NutrientsPlanktonDetritusModels.DetritusModels:
     grazing,
     calcite_precipitation
 
-#include("defaults.jl")
+chlorophyll(bgc::NutrientsPlanktonDetritus, model) =
+    chlorophyll(bgc.plankton, model)
+
 include("primatives.jl")
 include("abiotic.jl")
 include("implicit.jl")
