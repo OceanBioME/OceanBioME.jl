@@ -38,7 +38,7 @@ end
 @inline remineralisation(detritus::Detritus, i, j, k, fields, auxiliary_fields) = 
     @inbounds detritus.remineralisation_rate * fields.D[i, j, k]
 
-biogeochemical_drift_velocity(bgc::NutrientsPlanktonDetritus{<:Any, <:Any, <:Detritus}, ::Val{:D}) = 
+biogeochemical_drift_velocity(bgc::NutrientsPlanktonDetritus{<:Any, <:Any, <:Any, <:Detritus}, ::Val{:D}) = 
     bgc.detritus.sinking_speeds
 
 @inline inorganic_waste(detritus::Detritus, bgc, args...) = 

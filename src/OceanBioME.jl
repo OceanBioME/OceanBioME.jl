@@ -7,6 +7,8 @@ module OceanBioME
 # Biogeochemistry models and useful things
 export Biogeochemistry
 
+
+export NutrientsPlanktonDetritus
 export NPZD, LOBSTER, ImplicitBiology, PISCES, DepthDependantSinkingSpeed, PrescribedLatitude, ModelLatitude, PISCESModel
 
 export Nutrients, NitrateAmmonia

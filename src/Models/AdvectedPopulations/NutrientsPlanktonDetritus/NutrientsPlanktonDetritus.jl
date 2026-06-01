@@ -52,5 +52,6 @@ using .DetritusModels
 using .OxygenModels
 
 include("constructor.jl")
+include("utils.jl")
 
 end # module

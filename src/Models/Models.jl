@@ -2,6 +2,8 @@ module Models
 
 export InstantRemineralisationSediment, SimpleMultiGSediment
 
+export NutrientsPlanktonDetritus
+
 export NPZD, LOBSTER, ImplicitBiology, PISCES, DepthDependantSinkingSpeed, PrescribedLatitude, ModelLatitude, PISCESModel
 
 export N, PO₄, Si, Fe

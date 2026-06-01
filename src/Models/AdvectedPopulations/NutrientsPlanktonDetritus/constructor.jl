@@ -50,13 +50,23 @@ const default_light = TwoBandPhotosyntheticallyActiveRadiation
 const default_surface_PAR = 100
 
 ImplicitBiology(grid::AbstractGrid{FT};
-                nutrients = Nutrients(N, PO₄, Fe, nothing),
-                plankton = ImplicitProductivity(FT),
+                limiting_nutrients = (:nitrate, :iron, :phosphate),
+                open_bottom = true,
+                nutrients = Nutrients(:ammonia in limiting_nutrients ? NitrateAmmonia{FT}() : N, 
+                                      :phosphate in limiting_nutrients ? PO₄ : nothing, 
+                                      :iron in limiting_nutrients ? Fe : nothing, 
+                                      nothing),
+                plankton = ImplicitProductivity(FT;
+                                                nutrient_half_saturations = 
+                                                    (nitrate = 7.17,                     # mmol N/m³
+                                                     phosphate = 0.5,                   # mmol N/m³
+                                                     iron = 1e-4)[limiting_nutrients]), # mmol Fe / m³),
                 detritus = DissolvedParticulate(grid, :DOP, :POP;
                                                 dissolved_remineralisation_rate = 2/365/day,
                                                 particulate_remineralisation_rate = 0.03/day,
                                                 dissolved_fraction_of_remineralisation = 0.0,
-                                                sinking_speeds = 10/day),
+                                                sinking_speeds = 10/day,
+                                                open_bottom),
                 inorganic_carbon = CarbonateSystem(),
                 surface_PAR = default_surface_PAR,
                 light_attenuation = PrescribedPhotosyntheticallyActiveRadiation(ConstantField(surface_PAR)),
@@ -65,15 +75,16 @@ ImplicitBiology(grid::AbstractGrid{FT};
 
 NPZD(grid::AbstractGrid{FT};
      limiting_nutrients = (:nitrate, ),
+     open_bottom = true,
      nutrients = Nutrients(:ammonia in limiting_nutrients ? NitrateAmmonia{FT}() : N, 
                            :phosphate in limiting_nutrients ? PO₄ : nothing, 
                            :iron in limiting_nutrients ? Fe : nothing, 
                            nothing),
      plankton = PhytoZoo(FT;
-                        nutrient_half_saturations = (nitrate = 0.7,                     # mmol N/m³
-                                                     ammonia = 0.001,                   # mmol N/m³
-                                                     iron = 2e-4)[limiting_nutrients]), # mmol Fe / m³
-     detritus = Detritus(grid),
+                         nutrient_half_saturations = (nitrate = 0.7,                     # mmol N/m³
+                                                      ammonia = 0.001,                   # mmol N/m³
+                                                      iron = 2e-4)[limiting_nutrients]), # mmol Fe / m³
+     detritus = Detritus(grid; open_bottom),
      surface_PAR = default_surface_PAR,
      light_attenuation = default_light(; grid, surface_PAR),
      kwargs...) where FT =
@@ -81,6 +92,7 @@ NPZD(grid::AbstractGrid{FT};
 
 LOBSTER(grid::AbstractGrid{FT};
         limiting_nutrients = (:nitrate, :ammonia),
+        open_bottom = true,
         nutrients = Nutrients(:ammonia in limiting_nutrients ? NitrateAmmonia{FT}() : N, 
                               :phosphate in limiting_nutrients ? PO₄ : nothing, 
                               :iron in limiting_nutrients ? Fe : nothing, 
@@ -89,7 +101,7 @@ LOBSTER(grid::AbstractGrid{FT};
                             nutrient_half_saturations = (nitrate = 0.7,                     # mmol N/m³
                                                          ammonia = 0.001,                   # mmol N/m³
                                                          iron = 2e-4)[limiting_nutrients]), # mmol Fe / m³
-        detritus = DissolvedParticulate(grid),
+        detritus = DissolvedParticulate(grid; open_bottom),
         surface_PAR = default_surface_PAR,
         light_attenuation = default_light(; grid, surface_PAR),
         kwargs...) where FT =

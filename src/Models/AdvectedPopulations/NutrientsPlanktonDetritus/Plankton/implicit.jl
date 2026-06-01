@@ -66,6 +66,7 @@ required_biogeochemical_auxiliary_fields(::ImplicitProductivity) = (:PAR, )
 
 @inline nutrient_half_saturations(implicit::ImplicitProductivity, ::Val{:N})   = implicit.nutrient_half_saturations.nitrate
 @inline nutrient_half_saturations(implicit::ImplicitProductivity, ::Val{:NO₃}) = implicit.nutrient_half_saturations.nitrate
+@inline nutrient_half_saturations(implicit::ImplicitProductivity, ::Val{:NH₄}) = implicit.nutrient_half_saturations.ammonia
 @inline nutrient_half_saturations(implicit::ImplicitProductivity, ::Val{:PO₄}) = implicit.nutrient_half_saturations.phosphate
 @inline nutrient_half_saturations(implicit::ImplicitProductivity, ::Val{:Fe})  = implicit.nutrient_half_saturations.iron
 

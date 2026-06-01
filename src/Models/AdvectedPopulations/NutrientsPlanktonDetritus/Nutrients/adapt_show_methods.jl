@@ -7,7 +7,7 @@ Adapt.adapt_structure(to, nutrients::Nutrients) =
 Base.summary(nutrients::Nutrients) = string("Nutrients $(required_biogeochemical_tracers(nutrients))")
 
 function Base.show(io::IO, n::Nutrients)
-    msg = "Nutrients"
+    msg = "Nutrients\n"
 
     names, values = present_elements(n)
     
