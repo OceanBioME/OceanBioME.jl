@@ -178,7 +178,7 @@ function manifest_multi_class_dissolved_particulate(dissolved_names, particulate
 end
 
 # admin
-function Adapt.adapt_structure(to, detritus::DissolvedParticulate{N, M}) where {N, M}
+function Adapt.adapt_structure(to, detritus::DissolvedParticulate{N, M, DN, PN}) where {N, M, DN, PN}
     dissolved_remineralisation_rate = adapt(to, detritus.dissolved_remineralisation_rate)
     particulate_remineralisation_rate = adapt(to, detritus.particulate_remineralisation_rate)
     dissolved_waste_partitioning = adapt(to, detritus.dissolved_waste_partitioning)
@@ -189,15 +189,13 @@ function Adapt.adapt_structure(to, detritus::DissolvedParticulate{N, M}) where {
     FN = typeof(dissolved_remineralisation_rate)
     FM = typeof(particulate_remineralisation_rate)
 
-    return DissolvedParticulate{N, M, FN, FM, SV, Nothing, Nothing}(
+    return DissolvedParticulate{N, M, DN, PN, FN, FM, SV}(
         dissolved_remineralisation_rate,
         particulate_remineralisation_rate,
         dissolved_waste_partitioning,
         particulate_waste_partitioning,
         dissolved_fraction_of_remineralisation,
-        sinking_velocities, # I don't know if we need this
-        nothing,
-        nothing,
+        sinking_velocities # I don't know if we need this
     )
 end
 
