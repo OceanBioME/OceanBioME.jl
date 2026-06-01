@@ -110,7 +110,7 @@ oxygen_options = (nothing, Oxygen())
 
         if nutrients.nitrogen isa NitrateAmmonia
             nutrient_half_saturations = merge(nutrient_half_saturations, (nitrate = 0.5, ammonia = 0.1))
-        elseif nutrients.nitrogen isa OceanBioME.Models.NutrientsPlanktonDetritusModels.Nutrients.SingleTracerNutrient
+        elseif nutrients.nitrogen isa OceanBioME.Models.NutrientsPlanktonDetritusModels.NutrientsModels.SingleTracerNutrient
             nutrient_half_saturations = merge(nutrient_half_saturations, (; nitrate = 0.5))
         end
 
