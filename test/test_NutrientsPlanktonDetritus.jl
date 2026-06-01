@@ -110,6 +110,8 @@ oxygen_options = (nothing, Oxygen())
 
         if nutrients.nitrogen isa NitrateAmmonia
             nutrient_half_saturations = merge(nutrient_half_saturations, (nitrate = 0.5, ammonia = 0.1))
+        elseif nutrients.nitrogen isa SingleTracerNutrient
+            nutrient_half_saturations = merge(nutrient_half_saturations, (; nitrate = 0.5))
         end
 
         biogeochemistry = NutrientsPlanktonDetritus(grid;
@@ -178,7 +180,7 @@ end
     end
 
     CUDA.@allowscalar begin
-        @test isapprox(model.tracers.D[1, 1, 2], exp(-0.01*100 * first_cell_flux_velocity), atol = 1e-3)
+        @test isapprox(model.tracers.D[1, 1, 2], exp(0.01*100 * first_cell_flux_velocity), atol = 1e-3)
         @test Field(Integral(model.tracers.D))[1, 1, 1] ≈ 1
     end  
 
