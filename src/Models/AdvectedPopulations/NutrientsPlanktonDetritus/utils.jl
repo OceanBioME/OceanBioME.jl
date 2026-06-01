@@ -81,7 +81,7 @@ function group_element_tracers(group::DissolvedParticulate{N, M, DN, PN}, bgc, :
     ratios = (repeat([ratio], N)...,
               repeat([ratio * (1 + rain_ratio)], M)...)
 
-    return NamedTuple{(DN..., PM...)}(ratios)
+    return NamedTuple{(DN..., PN...)}(ratios)
 end
 
 group_element_tracers(::CarbonateSystem, args...) = NamedTuple()
