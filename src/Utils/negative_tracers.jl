@@ -106,7 +106,7 @@ function ScaleNegativeTracers(tracers, grid; invalid_fill_value=NaN, warn=false)
     return ScaleNegativeTracers(tracers, scalefactors, invalid_fill_value, warn)
 end
 
-function ScaleNegativeTracers(tracers::NTuple{<:Any,Symbol},
+function ScaleNegativeTracers(tracers::NTuple{<:Any, Symbol},
                               grid;
                               invalid_fill_value=NaN,
                               warn=false,)
@@ -116,8 +116,11 @@ function ScaleNegativeTracers(tracers::NTuple{<:Any,Symbol},
 end
 
 # multiple conserved groups
-ScaleNegativeTracers(tracers::Tuple, grid;invalid_fill_value = NaN, warn = false) =
-    tuple(map(tn -> ScaleNegativeTracers(tn, grid; invalid_fill_value, warn), tracers)...)
+ScaleNegativeTracers(tracers::NamedTuple{<:Any, <:Tuple{<:NamedTuple}}, grid; invalid_fill_value = NaN, warn = false) =
+    maybe_a_tuple(map(tn -> ScaleNegativeTracers(keys(tn), values(tn); invalid_fill_value, warn), values(tracers))...)
+
+maybe_a_tuple(a) = a
+maybe_a_tuple(args...) = tuple(args...)
 
 function ScaleNegativeTracers(tracers::NamedTuple,
                               grid;
