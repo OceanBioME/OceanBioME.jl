@@ -73,20 +73,7 @@ function test_PISCES_conservation() # only on CPU please
 
     time_step!(model, 1.0)
 
-    conserved_tracers = OceanBioME.conserved_tracers(biogeochemistry; ntuple = true)
-
-    total_carbon_tendencies = sum(map(f -> value(f), model.timestepper.Gⁿ[conserved_tracers.carbon]))
-    total_iron_tendencies = sum([value(model.timestepper.Gⁿ[n]) * sf for (n, sf) in zip(conserved_tracers.iron.tracers, conserved_tracers.iron.scalefactors)])
-    total_silicon_tendencies = sum(map(f -> value(f), model.timestepper.Gⁿ[conserved_tracers.silicon]))
-    total_phosphate_tendencies = sum([value(model.timestepper.Gⁿ[n]) * sf for (n, sf) in zip(conserved_tracers.phosphate.tracers, conserved_tracers.phosphate.scalefactors)])
-    total_nitrogen_tendencies = sum([value(model.timestepper.Gⁿ[n]) * sf for (n, sf) in zip(conserved_tracers.nitrogen.tracers, conserved_tracers.nitrogen.scalefactors)])
-
-    # double precision floats are only valid to 17 bits so this tolerance is actually good
-    @test isapprox(total_carbon_tendencies, 0, atol = 10^-20)
-    @test isapprox(total_iron_tendencies, 0, atol = 10^-21)
-    @test isapprox(total_silicon_tendencies, 0, atol = 10^-21)
-    @test isapprox(total_phosphate_tendencies, 0, atol = 10^-22)
-    @test isapprox(total_nitrogen_tendencies, 0, atol = 10^-21)
+    check_conservations(model)
 
     return nothing
 end
