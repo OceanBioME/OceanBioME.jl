@@ -17,6 +17,8 @@ end
 
 const NPD{FT, NUT, PLA, DET, CAR, OXY} = NutrientsPlanktonDetritus{FT, NUT, PLA, DET, CAR, OXY}
 
+@inline (::NPD{FT})(i, j, k, grid, val_name, clock, fields, auxiliary_fields) where FT = zero(FT)
+
 required_biogeochemical_tracers(npd::NutrientsPlanktonDetritus) =
     (required_biogeochemical_tracers(npd.nutrients)...,
      required_biogeochemical_tracers(npd.plankton)...,
