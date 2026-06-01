@@ -233,7 +233,7 @@ end
                         fields, auxiliary_fields) = 
     phytoplankton_growth(plankton, bgc, i, j, k, fields, auxiliary_fields)
 
-@inline function nutrient_uptake(plankton::PhytoZoo, bgc, i, j, k, ::Val{:NO₃}, fields, auxiliary_fields)
+@inline function nutrient_uptake(plankton::PhytoZoo, bgc::NPD{FT}, i, j, k, ::Val{:NO₃}, fields, auxiliary_fields) where FT
     μ = phytoplankton_growth(plankton, bgc, i, j, k, fields, auxiliary_fields)
 
     kNO₃ = nutrient_half_saturations(plankton, Val(:NO₃)) 
@@ -248,10 +248,10 @@ end
     nitrate_limitation = NO₃ * exp(-ψ * NH₄) / (NO₃ + kNO₃)
     ammonia_limitation = max(0, NH₄ / (kNH₄ + NH₄))
 
-    return μ * nitrate_limitation / (nitrate_limitation + ammonia_limitation)
+    return μ * nitrate_limitation / (nitrate_limitation + ammonia_limitation + eps(zero(FT)))
 end
 
-@inline function nutrient_uptake(plankton::PhytoZoo, bgc, i, j, k, ::Val{:NH₄}, fields, auxiliary_fields)
+@inline function nutrient_uptake(plankton::PhytoZoo, bgc::NPD{FT}, i, j, k, ::Val{:NH₄}, fields, auxiliary_fields) where FT
     μ = phytoplankton_growth(plankton, bgc, i, j, k, fields, auxiliary_fields)
 
     kNO₃ = nutrient_half_saturations(plankton, Val(:NO₃)) 
@@ -266,7 +266,7 @@ end
     nitrate_limitation = NO₃ * exp(-ψ * NH₄) / (NO₃ + kNO₃)
     ammonia_limitation = max(0, NH₄ / (kNH₄ + NH₄))
 
-    return μ * ammonia_limitation / (nitrate_limitation + ammonia_limitation)
+    return μ * ammonia_limitation / (nitrate_limitation + ammonia_limitation + eps(zero(FT)))
 end
 
 # grazing
@@ -340,8 +340,11 @@ end
 @inline edible_particulate_organic_matter(::Detritus, plankton::PhytoZoo, bgc, i, j, k, fields) = 
     @inbounds plankton.edible_fraction_of_detritus * fields.D[i, j, k]
 
-@inline edible_particulate_organic_matter(::DissolvedParticulate{<:Any, 1}, plankton::PhytoZoo, bgc, i, j, k, fields) = 
-    @inbounds plankton.edible_fraction_of_detritus * fields.POM[i, j, k]
+@inline particle_name(::DissolvedParticulate{<:Any, 1, <:Any, <:Any, <:NamedTuple{N}}) where N = 
+    @inbounds N[1]
+
+@inline edible_particulate_organic_matter(detritus::DissolvedParticulate{<:Any, 1}, plankton::PhytoZoo, bgc, i, j, k, fields) = 
+    @inbounds plankton.edible_fraction_of_detritus * getproperty(fields, particle_name(detritus))[i, j, k]
 
 @inline edible_particulate_organic_matter(::DissolvedParticulate{<:Any, 2}, plankton::PhytoZoo, bgc, i, j, k, fields) = 
     @inbounds fields.sPOM[i, j, k] # this isn't generic because the user might rename the particles...
