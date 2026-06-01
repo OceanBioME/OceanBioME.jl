@@ -258,7 +258,7 @@ using OceanBioME.Models.NutrientsPlanktonDetritusModels: SingleTracerNutrient
 
     # detritus
     @test npzd.underlying_biogeochemistry.detritus |> ((::Detritus{FT}) where FT) -> FT == Float32
-    @test lobster.underlying_biogeochemistry.detritus |> ((::DissolvedParticulate{<:Any, <:Any, FT}) where FT) -> FT == Float32
+    @test lobster.underlying_biogeochemistry.detritus |> ((::DissolvedParticulate{<:Any, <:Any, <:Any, <:Any, FT}) where FT) -> FT == Float32
 
     # oxygen (carbonate system doesn't carry any numbers)
     @test lobster.underlying_biogeochemistry.oxygen |> ((::Oxygen{FT}) where FT) -> FT == Float32
