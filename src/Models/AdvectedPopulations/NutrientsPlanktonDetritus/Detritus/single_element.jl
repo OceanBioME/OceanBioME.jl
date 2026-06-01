@@ -182,8 +182,6 @@ function manifest_multi_class_dissolved_particulate(dissolved_names, particulate
 end
 
 # admin
-
-
 function Adapt.adapt_structure(to, detritus::DissolvedParticulate{N, M}) where {N, M}
     dissolved_remineralisation_rate = adapt(to, detritus.dissolved_remineralisation_rate)
     particulate_remineralisation_rate = adapt(to, detritus.particulate_remineralisation_rate)
