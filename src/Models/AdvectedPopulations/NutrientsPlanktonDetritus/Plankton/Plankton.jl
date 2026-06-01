@@ -29,7 +29,8 @@ using ..NutrientsPlanktonDetritusModels.NutrientsModels:
 
 using ..NutrientsPlanktonDetritusModels.DetritusModels:
     Detritus,
-    DissolvedParticulate
+    DissolvedParticulate,
+    InstantRemineralisation
 
 import Adapt: adapt_structure
 import Base: show, summary

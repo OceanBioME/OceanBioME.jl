@@ -334,6 +334,9 @@ end
 end
 
 # assumptions about particle edibility
+@inline edible_particulate_organic_matter(::InstantRemineralisation, plankton::PhytoZoo, bgc::NPD{FT}, i, j, k, fields) where FT = 
+    zero(FT)
+    
 @inline edible_particulate_organic_matter(::Detritus, plankton::PhytoZoo, bgc, i, j, k, fields) = 
     @inbounds plankton.edible_fraction_of_detritus * fields.D[i, j, k]
 
