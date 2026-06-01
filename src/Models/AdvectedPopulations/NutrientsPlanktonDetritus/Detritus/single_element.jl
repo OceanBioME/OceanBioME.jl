@@ -1,4 +1,4 @@
-struct DissolvedParticulate{N, M, FN, FM, SV, DN, PN}
+struct DissolvedParticulate{N, M, DN, PN, FN, FM, SV}
          dissolved_remineralisation_rate :: FN
        particulate_remineralisation_rate :: FM
         
@@ -8,9 +8,6 @@ struct DissolvedParticulate{N, M, FN, FM, SV, DN, PN}
   dissolved_fraction_of_remineralisation :: FM
 
                       sinking_velocities :: SV
-
-                         dissolved_names :: DN
-                       particulate_names :: PN
 
     function DissolvedParticulate(FT = Float64;
                                   dissolved_remineralisation_rate,
@@ -38,20 +35,19 @@ struct DissolvedParticulate{N, M, FN, FM, SV, DN, PN}
 
         return new{length(dissolved_names), 
                    length(particulate_names),
-                   FN, FM, SV, DN, PN}(dissolved_remineralisation_rate, 
-                                       particulate_remineralisation_rate,
-                                       dissolved_waste_partitioning,
-                                       particulate_waste_partitioning,
-                                       dissolved_fraction_of_remineralisation,
-                                       sinking_velocities,
-                                       dissolved_names,
-                                       particulate_names)
+                   dissolved_names,
+                   particulate_names,
+                   FN, FM, SV}(dissolved_remineralisation_rate, 
+                               particulate_remineralisation_rate,
+                               dissolved_waste_partitioning,
+                               particulate_waste_partitioning,
+                               dissolved_fraction_of_remineralisation,
+                               sinking_velocities)
     end
 end
 
-required_biogeochemical_tracers(dp::DissolvedParticulate) = 
-    (dp.dissolved_names...,
-     dp.particulate_names...)
+required_biogeochemical_tracers(dp::DissolvedParticulate{N, M, DN, PN}) where {N, M, DN, PN} = 
+    (DN..., PN...)
 
 required_biogeochemical_auxiliary_fields(::DissolvedParticulate) = tuple()
 

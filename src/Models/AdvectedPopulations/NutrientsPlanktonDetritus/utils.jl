@@ -74,14 +74,14 @@ for thing in (PhytoZoo, Detritus)
     end
 end
 
-function group_element_tracers(group::DissolvedParticulate, bgc, ::Val{:carbon}) # add specialisation for explicit calcite when done
+function group_element_tracers(group::DissolvedParticulate{N, M, DN, PN}, bgc, ::Val{:carbon}) where {N, M, DN, PN} # add specialisation for explicit calcite when done
     ratio = carbon_ratio(bgc.plankton, bgc, nothing, nothing, nothing, nothing)
     rain_ratio = calcite_rain_ratio(bgc.plankton, bgc, nothing, nothing, nothing, nothing)
     
-    ratios = (repeat([ratio], length(group.dissolved_names))...,
-              repeat([ratio * (1 + rain_ratio)], length(group.particulate_names))...)
+    ratios = (repeat([ratio], N)...,
+              repeat([ratio * (1 + rain_ratio)], M)...)
 
-    return NamedTuple{(group.dissolved_names..., group.particulate_names...)}(ratios)
+    return NamedTuple{(DN..., PM...)}(ratios)
 end
 
 group_element_tracers(::CarbonateSystem, args...) = NamedTuple()

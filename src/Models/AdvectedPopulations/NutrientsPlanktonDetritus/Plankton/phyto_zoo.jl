@@ -340,11 +340,9 @@ end
 @inline edible_particulate_organic_matter(::Detritus, plankton::PhytoZoo, bgc, i, j, k, fields) = 
     @inbounds plankton.edible_fraction_of_detritus * fields.D[i, j, k]
 
-@inline particle_name(::DissolvedParticulate{<:Any, 1, <:Any, <:Any, <:NamedTuple{N}}) where N = 
-    @inbounds N[1]
 
-@inline edible_particulate_organic_matter(detritus::DissolvedParticulate{<:Any, 1}, plankton::PhytoZoo, bgc, i, j, k, fields) = 
-    @inbounds plankton.edible_fraction_of_detritus * getproperty(fields, particle_name(detritus))[i, j, k]
+@inline edible_particulate_organic_matter(::DissolvedParticulate{<:Any, 1, <:Any, PN}, plankton::PhytoZoo, bgc, i, j, k, fields) where PN = 
+    @inbounds plankton.edible_fraction_of_detritus * getproperty(fields, PN[1])[i, j, k]
 
 @inline edible_particulate_organic_matter(::DissolvedParticulate{<:Any, 2}, plankton::PhytoZoo, bgc, i, j, k, fields) = 
     @inbounds fields.sPOM[i, j, k] # this isn't generic because the user might rename the particles...
