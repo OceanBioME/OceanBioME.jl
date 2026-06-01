@@ -12,19 +12,24 @@
     carbon = (:P, :D, :Z, :M, :DOC, :POC, :GOC, :DIC, :CaCO₃)
 
     # iron ratio for DOC might be wrong
-    iron = (tracers = (:PFe, :DFe, :Z, :M, :SFe, :BFe, :Fe), 
-            scalefactors = (1, 1, bgc.zooplankton.micro.iron_ratio, bgc.zooplankton.meso.iron_ratio, 1, 1, 1))
+    iron = (PFe = 1,
+            DFe = 1,
+            Z = bgc.zooplankton.micro.iron_ratio,
+            M = bgc.zooplankton.meso.iron_ratio,
+            SFe = 1,
+            BFe = 1,
+            Fe = 1)
     
+
     θ_PO₄ = bgc.phosphate_redfield_ratio
-    phosphate = (tracers = (:P, :D, :Z, :M, :DOC, :POC, :GOC, :PO₄),
-                 scalefactors = (θ_PO₄, θ_PO₄, θ_PO₄, θ_PO₄, θ_PO₄, θ_PO₄, θ_PO₄, 1))
+    phosphate = (P = θ_PO₄, D = θ_PO₄, Z = θ_PO₄, M = θ_PO₄,
+                 DOC = θ_PO₄, POC = θ_PO₄, GOC = θ_PO₄, PO₄ = 1)
 
     silicon = (:DSi, :Si, :PSi)
 
     θN = bgc.nitrogen_redfield_ratio
-    nitrogen = (tracers = (:NH₄, :NO₃, :P, :D, :Z, :M, :DOC, :POC, :GOC),
-                scalefactors = (1, 1, θN, θN, θN, θN, θN, θN, θN))
-
+    nitrogen = (NH₄ = 1, NO₃ = 1, P = θN, D = θN, Z = θN, M = θN, DOC = θN, POC = θN, GOC = 1)
+    
     if ntuple
         return (; carbon, iron, phosphate, silicon, nitrogen)
     else

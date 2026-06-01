@@ -123,8 +123,8 @@ function ScaleNegativeTracers(tracers::NamedTuple,
                               grid;
                               invalid_fill_value=NaN,
                               warn=false,)
-    scalefactors = [tracers.scalefactors...]
-    tracer_names = tracers.tracers
+    scalefactors = values(tracers)
+    tracer_names = keys(tracers)
 
     return ScaleNegativeTracers(tracer_names, scalefactors, invalid_fill_value, warn)
 end
