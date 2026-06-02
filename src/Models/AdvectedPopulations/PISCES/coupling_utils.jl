@@ -9,7 +9,7 @@
 # negative tracer scaling
 # TODO: deal with remaining (PChl, DChl, O₂, Alk) - latter two should never be near zero
 @inline function conserved_tracers(bgc::PISCES)
-    carbon = (:P, :D, :Z, :M, :DOC, :POC, :GOC, :DIC, :CaCO₃)
+    carbon = NamedTuple{(:P, :D, :Z, :M, :DOC, :POC, :GOC, :DIC, :CaCO₃)}(ones(9))
 
     # iron ratio for DOC might be wrong
     iron = (PFe = 1,
@@ -25,7 +25,7 @@
     phosphate = (P = θ_PO₄, D = θ_PO₄, Z = θ_PO₄, M = θ_PO₄,
                  DOC = θ_PO₄, POC = θ_PO₄, GOC = θ_PO₄, PO₄ = 1)
 
-    silicon = (:DSi, :Si, :PSi)
+    silicon = NamedTuple{(:DSi, :Si, :PSi)}(ones(3))
 
     θN = bgc.nitrogen_redfield_ratio
     nitrogen = (NH₄ = 1, NO₃ = 1, P = θN, D = θN, Z = θN, M = θN, DOC = θN, POC = θN, GOC = 1)
