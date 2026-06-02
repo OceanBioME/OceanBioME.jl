@@ -32,7 +32,11 @@ function get_conservation_values(bgc, fields)
     return conserved_values
 end
 
+set_default!(model) = [set!(tracer, rand()*10) for tracer in model.tracers]
+
 function check_conservations(model, n_timesteps = 100)
+    set_default!(model)
+
     initial_values = get_conservation_values(model.biogeochemistry, model.tracers)
 
     for _ in 1:n_timesteps
