@@ -105,11 +105,27 @@ for thing in (PhytoZoo, Detritus, DissolvedParticulate)
     end
 end
 
-group_element_tracers(nutrient::SingleTracerNutrient, bgc::NPD{<:Any, <:Any, <:Any, <:Any, <:Any, <:Oxygen}, ::Val{:oxygen}) = 
-    NamedTuple{(Symbol(nutrient),)}((bgc.oxygen.nitrification_oxygen_carbon_ratio, ))
-
 group_element_tracers(::Nutrients{<:NitrateAmmonia}, bgc::NPD{<:Any, <:Any, <:Any, <:Any, <:Any, <:Oxygen}, ::Val{:oxygen}) = 
     (; NO₃ = carbon_ratio(nothing, nothing, nothing, nothing, bgc.plankton, bgc, nothing) * bgc.oxygen.nitrification_oxygen_carbon_ratio)
+
+# got to give up on dispatch for this
+function group_element_tracers(nutrients::Nutrients, bgc::NPD{<:Any, <:Any, <:Any, <:Any, <:Any, <:Oxygen}, ::Val{:oxygen})
+    if nutrients.nitrogen isa SingleTracerNutrient
+        return (; N = carbon_ratio(nothing,  nothing, nothing, nothing, bgc.plankton, bgc, nothing) /
+                      nitrogen_ratio(nothing,  nothing, nothing, nothing, bgc.plankton, bgc, nothing) * bgc.oxygen.nitrification_oxygen_carbon_ratio)
+    elseif nutrients.phosphate isa SingleTracerNutrient
+        return (; PO₄ = carbon_ratio(nothing,  nothing, nothing, nothing, bgc.plankton, bgc, nothing) /
+                        phosphate_ratio(nothing,  nothing, nothing, nothing, bgc.plankton, bgc, nothing) * bgc.oxygen.nitrification_oxygen_carbon_ratio)
+    elseif nutrients.iron isa SingleTracerNutrient
+        return (; Fe = carbon_ratio(nothing,  nothing, nothing, nothing, bgc.plankton, bgc, nothing) /
+                       iron_ratio(nothing,  nothing, nothing, nothing, bgc.plankton, bgc, nothing) * bgc.oxygen.nitrification_oxygen_carbon_ratio)
+    elseif nutrients.silicate isa SingleTracerNutrient
+        return (; Si = carbon_ratio(nothing,  nothing, nothing, nothing, bgc.plankton, bgc, nothing) /
+                       silicon_ratio(nothing,  nothing, nothing, nothing, bgc.plankton, bgc, nothing) * bgc.oxygen.nitrification_oxygen_carbon_ratio)
+    else
+        return NamedTuple()
+    end
+end
 
 available_nutrients(nutrients) = 
     [name for name in propertynames(nutrients) if !isnothing(getproperty(nutrients, name))]

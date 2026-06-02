@@ -32,6 +32,7 @@ function get_conservation_values(bgc, fields)
     return conserved_values
 end
 
+# everything should be fine as long as everythings positive right???
 set_default!(model) = [set!(tracer, rand()*10) for tracer in model.tracers]
 
 function check_conservations(model, n_timesteps = 100)

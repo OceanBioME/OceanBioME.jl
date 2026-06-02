@@ -42,7 +42,7 @@ function update_biogeochemical_state!(model, PAR::PrescribedPhotosyntheticallyAc
     return nothing
 end
 
-summary(::PrescribedPhotosyntheticallyActiveRadiation) = string("Prescribed PAR")
+summary(::PrescribedPhotosyntheticallyActiveRadiation) = string("PrescribedPhotosyntheticallyActiveRadiation")
 show(io::IO, model::PrescribedPhotosyntheticallyActiveRadiation{F}) where {F} = print(io, summary(model), "\n",
                                                                                             "  Fields:", "\n",
                                                                                             "    └── $(keys(model.fields))")
