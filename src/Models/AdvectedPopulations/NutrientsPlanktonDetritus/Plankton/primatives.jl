@@ -26,9 +26,11 @@ for (nutrient, symbol) in pairs((phosphate = :PO₄, iron = :Fe, silicate = :Si)
             end
         end
 
-        $fname(::Nothing, plankton,
+        $fname(i, j, k, grid, 
+               ::Nothing, 
+               plankton,
                ::NutrientsPlanktonDetritus{FT},
-                i, j, k, fields, auxiliary_fields) where FT =
+               fields, auxiliary_fields) where FT =
             one(FT)
     end
 end
