@@ -212,7 +212,7 @@ Base.summary(dp::DissolvedParticulate{N, 1}) where N =
 Base.summary(dp::DissolvedParticulate{1, M}) where M = 
     string("DissolvedParticulate{particulate=$M} $(required_biogeochemical_tracers(dp))")
 
-function Base.show(io::IO, dp::DissolvedParticulate{N, M}) where {N, M}
+function Base.show(io::IO, dp::DissolvedParticulate{N, M, ND, NP}) where {N, M, ND, NP}
     msg = summary(dp) * "\n"
 
     if N>1
@@ -226,10 +226,10 @@ function Base.show(io::IO, dp::DissolvedParticulate{N, M}) where {N, M}
     msg *= "└── Particle sinking speeds\n"
 
     for m in 1:M-1
-        msg *= "  ├── $(dp.particulate_names[m]) : " * summary(dp.sinking_velocities[m].w) * "\n"
+        msg *= "  ├── $(ND[m]) : " * summary(dp.sinking_velocities[m].w) * "\n"
     end
 
-    msg *= "  └── $(dp.particulate_names[end]) : " * summary(dp.sinking_velocities[end].w)
+    msg *= "  └── $(NP[end]) : " * summary(dp.sinking_velocities[end].w)
 
     print(io, msg)
 

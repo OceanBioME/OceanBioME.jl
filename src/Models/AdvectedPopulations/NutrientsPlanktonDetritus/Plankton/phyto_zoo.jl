@@ -309,7 +309,7 @@ end
     return g * p * L * P / (food_concentration + eps(zero(P))) * Z
 end
 
-@inline function grazing(i, j, k, grid, ::Union{Val{:sPOM}, Val{:sPON}, Val{:D}, Val{:POM}}, plankton::PhytoZoo, bgc::NPD, fields, auxiliary_fields)
+@inline function grazing(i, j, k, grid, ::Union{Val{:sPOM}, Val{:sPON}, Val{:sPOP}, Val{:D}, Val{:POM}, Val{:POP}}, plankton::PhytoZoo, bgc::NPD, fields, auxiliary_fields)
     kG = plankton.grazing_half_saturation
     g  = plankton.maximum_grazing_rate
 
