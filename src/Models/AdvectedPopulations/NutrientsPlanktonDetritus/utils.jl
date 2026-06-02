@@ -53,7 +53,7 @@ for thing in (PhytoZoo, Detritus, DissolvedParticulate)
         ratio_name = Symbol(element, :_ratio)
         @eval begin
             function group_element_tracers(group::$thing, bgc, ::Val{$(QuoteNode(element))})
-                ratio = $(ratio_name)(bgc.plankton, bgc, nothing, nothing, nothing, nothing)
+                ratio = $(ratio_name)(nothing, nothing, nothing, nothing, bgc.plankton, bgc, nothing)
                 names = required_biogeochemical_tracers(group)
                 return NamedTuple{names}(repeat([ratio], length(names)))
             end
@@ -64,8 +64,8 @@ end
 for thing in (PhytoZoo, Detritus)
     @eval begin
         function group_element_tracers(group::$thing, bgc, ::Val{:carbon}) # add specialisation for explicit calcite when done
-            ratio = carbon_ratio(bgc.plankton, bgc, nothing, nothing, nothing, nothing)
-            rain_ratio = calcite_rain_ratio(bgc.plankton, bgc, nothing, nothing, nothing, nothing)
+            ratio = carbon_ratio(nothing, nothing, nothing, nothing, bgc.plankton, bgc, nothing)
+            rain_ratio = calcite_rain_ratio(nothing, nothing, nothing, nothing, bgc.plankton, bgc, nothing)
 
             names = required_biogeochemical_tracers(group)
 
@@ -75,8 +75,8 @@ for thing in (PhytoZoo, Detritus)
 end
 
 function group_element_tracers(::DissolvedParticulate{N, M, DN, PN}, bgc, ::Val{:carbon}) where {N, M, DN, PN} # add specialisation for explicit calcite when done
-    ratio = carbon_ratio(bgc.plankton, bgc, nothing, nothing, nothing, nothing)
-    rain_ratio = calcite_rain_ratio(bgc.plankton, bgc, nothing, nothing, nothing, nothing)
+    ratio = carbon_ratio(nothing, nothing, nothing, nothing, bgc.plankton, bgc, nothing)
+    rain_ratio = calcite_rain_ratio(nothing, nothing, nothing, nothing, bgc.plankton, bgc, nothing)
     
     ratios = (repeat([ratio], N)...,
               repeat([ratio * (1 + rain_ratio)], M)...)
@@ -95,7 +95,7 @@ group_element_tracers(::Oxygen, bgc::NPD{FT}, ::Val{:oxygen}) where FT =
 for thing in (PhytoZoo, Detritus, DissolvedParticulate)
     @eval begin
         function group_element_tracers(group::$thing, bgc::NPD{<:Any, <:Any, <:Any, <:Any, <:Any, <:Oxygen}, ::Val{:oxygen}) 
-            ratio = carbon_ratio(bgc.plankton, bgc, nothing, nothing, nothing, nothing)
+            ratio = carbon_ratio(nothing, nothing, nothing, nothing, bgc.plankton, bgc, nothing)
             rO = - bgc.oxygen.production_oxygen_carbon_ratio
 
             names = required_biogeochemical_tracers(group)
@@ -109,7 +109,7 @@ group_element_tracers(nutrient::SingleTracerNutrient, bgc::NPD{<:Any, <:Any, <:A
     NamedTuple{(Symbol(nutrient),)}((bgc.oxygen.nitrification_oxygen_carbon_ratio, ))
 
 group_element_tracers(::Nutrients{<:NitrateAmmonia}, bgc::NPD{<:Any, <:Any, <:Any, <:Any, <:Any, <:Oxygen}, ::Val{:oxygen}) = 
-    (; NO₃ = carbon_ratio(bgc.plankton, bgc, nothing, nothing, nothing, nothing) * bgc.oxygen.nitrification_oxygen_carbon_ratio)
+    (; NO₃ = carbon_ratio(nothing, nothing, nothing, nothing, bgc.plankton, bgc, nothing) * bgc.oxygen.nitrification_oxygen_carbon_ratio)
 
 available_nutrients(nutrients) = 
     [name for name in propertynames(nutrients) if !isnothing(getproperty(nutrients, name))]
