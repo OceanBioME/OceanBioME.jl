@@ -11,7 +11,7 @@ required_biogeochemical_auxiliary_fields(::Abiotic) = tuple()
 @inline inorganic_waste(i, j, k, grid, ::Abiotic, ::NPD{FT}, args...) where FT = zero(FT)
 @inline dissolved_waste(i, j, k, grid, ::Abiotic, ::NPD{FT}, args...) where FT = zero(FT)
 @inline solid_waste(i, j, k, grid, ::Abiotic, ::NPD{FT}, args...) where FT = zero(FT)
-@inline nutrient_uptake(i, j, k, grid, :Abiotic, ::NPD{FT}, args...) where FT = zero(FT)
+@inline nutrient_uptake(i, j, k, grid, ::Abiotic, ::NPD{FT}, args...) where FT = zero(FT)
 
 # thats annoying, need these methods for ambiguity
 @inline nutrient_uptake(i, j, k, grid, ::Abiotic, ::NPD{FT}, ::Val{:N}, args...) where FT = zero(FT)
