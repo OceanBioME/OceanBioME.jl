@@ -36,5 +36,5 @@ const NitrateAmmoniaNPD{FT} = NutrientsPlanktonDetritus{FT, <:Nutrients{<:Nitrat
   - nutrient_uptake(i, j, k, grid, val_name, bgc.plankton, bgc, fields, auxiliary_fields)
 )
 
-@inline nitrification(nutrients::NitrateAmmonia, i, j, k, fields, auxiliary_fields) =
+@inline nitrification(i, j, k, nutrients::NitrateAmmonia, fields, auxiliary_fields) =
     @inbounds fields.NH₄[i, j, k] * nutrients.nitrification_rate
