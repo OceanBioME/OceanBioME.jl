@@ -58,7 +58,7 @@ function test_PISCES_conservation() # only on CPU please
                                                              mean_mixed_layer_vertical_diffusivity,
                                                              # turn off permanent iron removal and nitrogen fixation
                                                              iron = SimpleIron(excess_scavenging_enhancement = 0.0),
-                                                             nitrogen = NitrateAmmonia(maximum_fixation_rate = 0.0))
+                                                             nitrogen = OceanBioME.Models.PISCESModel.NitrateAmmonia(maximum_fixation_rate = 0.0))
 
     model = NonhydrostaticModel(grid; biogeochemistry, advection = nothing)
 
