@@ -172,7 +172,7 @@ function manifest_multi_class_dissolved_particulate(dissolved_names, particulate
 
             total += dissolved_waste(i, j, k, grid, bgc.plankton, bgc, fields, auxiliary_fields)
 
-            return total * carbon_ratio(i, j, k, grid, bgc.plankton, bgc, fields) * calcite_rain_ratio(bgc.plankton, bgc, fields)
+            return total * carbon_ratio(i, j, k, grid, bgc.plankton, bgc, fields) * calcite_rain_ratio(i, j, k, grid, bgc.plankton, bgc, fields)
         end
     end
 end
