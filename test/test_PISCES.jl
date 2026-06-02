@@ -73,7 +73,7 @@ function test_PISCES_conservation() # only on CPU please
 
     time_step!(model, 1.0)
 
-    conserved_tracers = OceanBioME.conserved_tracers(biogeochemistry; ntuple = true)
+    conserved_tracers = OceanBioME.conserved_tracers(biogeochemistry)
 
     total_carbon_tendencies = sum(map(f -> value(f), model.timestepper.Gⁿ[keys(conserved_tracers.carbon)]))
     total_iron_tendencies = sum([value(model.timestepper.Gⁿ[n]) * sf for (n, sf) in pairs(conserved_tracers.iron)])
