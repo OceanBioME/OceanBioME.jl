@@ -2,11 +2,11 @@
 
 # growth limitation - to use these primatives plankton must define `limiting_nutrients`
 # and `nutrient_half_saturaitons(plankton, symbol)`
-@inline nutrient_limitation(nutrients, args...) = 
-    min(nitrogen_limitation(nutrients.nitrogen, args...),
-        phosphate_limitation(nutrients.phosphate, args...),
-        iron_limitation(nutrients.iron, args...),
-        silicate_limitation(nutrients.silicate, args...))
+@inline nutrient_limitation(i, j, k, grid, nutrients, args...) = 
+    min(nitrogen_limitation(i, j, k, grid, nutrients.nitrogen, args...),
+        phosphate_limitation(i, j, k, grid, nutrients.phosphate, args...),
+        iron_limitation(i, j, k, grid, nutrients.iron, args...),
+        silicate_limitation(i, j, k, grid, nutrients.silicate, args...))
 
 for (nutrient, symbol) in pairs((phosphate = :PO₄, iron = :Fe, silicate = :Si))
     fname = Symbol(nutrient, :_limitation)
