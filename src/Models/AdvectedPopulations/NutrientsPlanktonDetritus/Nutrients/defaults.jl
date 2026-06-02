@@ -18,8 +18,8 @@ for (element, symbol) in pairs((nitrogen = :N, phosphate = :PO₄, iron = :Fe, s
                             fields, auxiliary_fields)
 
         @inline nutrient_uptake(i, j, k, grid, 
-                                plankton, bgc, 
                                 ::Val{$(QuoteNode(symbol))},
+                                plankton, bgc, 
                                 fields, auxiliary_fields) =
             $ratio_name(i, j, k, grid, bgc.plankton, bgc, fields) *
             nutrient_uptake(i, j, k, grid, plankton, bgc, fields, auxiliary_fields)
