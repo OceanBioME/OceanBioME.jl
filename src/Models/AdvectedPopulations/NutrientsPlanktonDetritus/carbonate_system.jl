@@ -61,10 +61,10 @@ required_biogeochemical_tracers(::CarbonateSystem{N}) where N = (map(n->Symbol(:
   + convert(FT, 2) * calcite_dissolution(bgc, i, j, k, fields, auxiliary_fields)
 )
 
-@inline (bgc::NutrientsPlanktonDetritus{<:Nutrient, <:Any, <:Any, <:CarbonateSystem})(i, j, k, grid, ::Val{:Alk}, clock, fields, auxiliary_fields) = (
+@inline (bgc::NutrientsPlanktonDetritus{<:Nutrient, <:Any, <:Any, <:CarbonateSystem})(i, j, k, grid::AbstractGrid{FT}, ::Val{:Alk}, clock, fields, auxiliary_fields) where FT = (
     bgc(i, j, k, grid, Val(:N), clock, fields, auxiliary_fields)
-  - 2 * calcite_uptake(bgc, i, j, k, fields, auxiliary_fields)
-  + 2 * calcite_dissolution(bgc, i, j, k, fields, auxiliary_fields)
+  - convert(FT, 2) * calcite_uptake(bgc, i, j, k, fields, auxiliary_fields)
+  + convert(FT, 2) * calcite_dissolution(bgc, i, j, k, fields, auxiliary_fields)
 )
 
 function manifest_carbonate_replicates!(N)
