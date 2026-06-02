@@ -193,7 +193,7 @@ end
         P   = fields.P[i, j, k]
     end
 
-    Lₙ = nutrient_limitation(i, j, k, grid, bgc.nutrients, plankton, bgc,fields, auxiliary_fields)
+    Lₙ = nutrient_limitation(i, j, k, grid, bgc.nutrients, plankton, bgc, fields, auxiliary_fields)
     Lₗ = light_limitation(plankton.light_limitation, PAR, kPAR)
     Lₜ = temperature_limitation(Q10, i, j, k, fields)
 
