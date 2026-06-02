@@ -8,42 +8,42 @@ struct DissolvedParticulate{N, M, DN, PN, FN, FM, SV}
   dissolved_fraction_of_remineralisation :: FM
 
                       sinking_velocities :: SV
+end
 
-    function DissolvedParticulate(FT = Float64;
-                                  dissolved_remineralisation_rate,
-                                  particulate_remineralisation_rate,
-                                  dissolved_waste_partitioning,
-                                  particulate_waste_partitioning,
-                                  dissolved_fraction_of_remineralisation,
-                                  sinking_velocities::SV,
-                                  dissolved_names,
-                                  particulate_names) where SV
+function DissolvedParticulate(FT = Float64;
+                              dissolved_remineralisation_rate,
+                              particulate_remineralisation_rate,
+                              dissolved_waste_partitioning,
+                              particulate_waste_partitioning,
+                              dissolved_fraction_of_remineralisation,
+                              sinking_velocities::SV,
+                              dissolved_names,
+                              particulate_names) where SV
 
-        dissolved_names = possibly_tuple_or_symbol(dissolved_names)
-        particulate_names = possibly_tuple_or_symbol(particulate_names)
+    dissolved_names = possibly_tuple_or_symbol(dissolved_names)
+    particulate_names = possibly_tuple_or_symbol(particulate_names)
 
-        dissolved_remineralisation_rate = convert.(FT, dissolved_remineralisation_rate)
-        particulate_remineralisation_rate = convert.(FT, particulate_remineralisation_rate)
-        dissolved_waste_partitioning = convert.(FT, dissolved_waste_partitioning)
-        particulate_waste_partitioning = convert.(FT, particulate_waste_partitioning)
-        dissolved_fraction_of_remineralisation = convert.(FT, dissolved_fraction_of_remineralisation)
+    dissolved_remineralisation_rate = convert.(FT, dissolved_remineralisation_rate)
+    particulate_remineralisation_rate = convert.(FT, particulate_remineralisation_rate)
+    dissolved_waste_partitioning = convert.(FT, dissolved_waste_partitioning)
+    particulate_waste_partitioning = convert.(FT, particulate_waste_partitioning)
+    dissolved_fraction_of_remineralisation = convert.(FT, dissolved_fraction_of_remineralisation)
 
-        DN = typeof(dissolved_names)
-        PN = typeof(particulate_names)
-        FN = typeof(dissolved_remineralisation_rate)
-        FM = typeof(particulate_remineralisation_rate)
+    DN = typeof(dissolved_names)
+    PN = typeof(particulate_names)
+    FN = typeof(dissolved_remineralisation_rate)
+    FM = typeof(particulate_remineralisation_rate)
 
-        return new{length(dissolved_names), 
-                   length(particulate_names),
-                   dissolved_names,
-                   particulate_names,
-                   FN, FM, SV}(dissolved_remineralisation_rate, 
-                               particulate_remineralisation_rate,
-                               dissolved_waste_partitioning,
-                               particulate_waste_partitioning,
-                               dissolved_fraction_of_remineralisation,
-                               sinking_velocities)
-    end
+    return DissolvedParticulate{length(dissolved_names), 
+                                length(particulate_names),
+                                dissolved_names,
+                                particulate_names,
+                                FN, FM, SV}(dissolved_remineralisation_rate, 
+                                            particulate_remineralisation_rate,
+                                            dissolved_waste_partitioning,
+                                            particulate_waste_partitioning,
+                                            dissolved_fraction_of_remineralisation,
+                                            sinking_velocities)
 end
 
 required_biogeochemical_tracers(dp::DissolvedParticulate{N, M, DN, PN}) where {N, M, DN, PN} = 
