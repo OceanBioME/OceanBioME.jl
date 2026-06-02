@@ -188,7 +188,8 @@ function Adapt.adapt_structure(to, detritus::DissolvedParticulate{N, M, DN, PN})
 
     FN = typeof(dissolved_remineralisation_rate)
     FM = typeof(particulate_remineralisation_rate)
-
+    SV = typeof(sinking_velocities)
+    
     return DissolvedParticulate{N, M, DN, PN, FN, FM, SV}(
         dissolved_remineralisation_rate,
         particulate_remineralisation_rate,
