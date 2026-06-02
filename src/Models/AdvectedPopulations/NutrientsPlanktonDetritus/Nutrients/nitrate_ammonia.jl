@@ -25,15 +25,15 @@ required_biogeochemical_tracers(::NitrateAmmonia) = (:NO₃, :NH₄)
 const NitrateAmmoniaNPD{FT} = NutrientsPlanktonDetritus{FT, <:Nutrients{<:NitrateAmmonia}}
 
 @inline (bgc::NitrateAmmoniaNPD)(i, j, k, grid, val_name::Val{:NH₄}, clock, fields, auxiliary_fields) = (
-    inorganic_nitrogen_waste(bgc.plankton, bgc, i, j, k, fields, auxiliary_fields)
-  + inorganic_nitrogen_waste(bgc.detritus, bgc, i, j, k, fields, auxiliary_fields)
-  - nutrient_uptake(bgc.plankton, bgc, i, j, k, val_name, fields, auxiliary_fields)
-  - nitrification(bgc.nutrients.nitrogen, i, j, k, fields, auxiliary_fields)
+    inorganic_nitrogen_waste(i, j, k, grid, bgc.plankton, bgc, fields, auxiliary_fields)
+  + inorganic_nitrogen_waste(i, j, k, grid, bgc.detritus, bgc, fields, auxiliary_fields)
+  - nutrient_uptake(i, j, k, grid, val_name, bgc.plankton, bgc, fields, auxiliary_fields)
+  - nitrification(i, j, k, grid, bgc.nutrients.nitrogen, fields, auxiliary_fields)
 )
 
 @inline (bgc::NitrateAmmoniaNPD)(i, j, k, grid, val_name::Val{:NO₃}, clock, fields, auxiliary_fields) = (
-    nitrification(bgc.nutrients.nitrogen, i, j, k, fields, auxiliary_fields)
-  - nutrient_uptake(bgc.plankton, bgc, i, j, k, val_name, fields, auxiliary_fields)
+    nitrification(i, j, k, grid, bgc.nutrients.nitrogen, fields, auxiliary_fields)
+  - nutrient_uptake(i, j, k, grid, val_name, bgc.plankton, bgc, fields, auxiliary_fields)
 )
 
 @inline nitrification(nutrients::NitrateAmmonia, i, j, k, fields, auxiliary_fields) =

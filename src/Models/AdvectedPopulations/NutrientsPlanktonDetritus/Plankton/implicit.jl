@@ -54,13 +54,13 @@ end
 required_biogeochemical_tracers(::ImplicitProductivity) = tuple()
 required_biogeochemical_auxiliary_fields(::ImplicitProductivity) = (:PAR, )
 
-@inline phosphate_ratio(::ImplicitProductivity, ::NPD{FT}, i, j, k, fields) where FT = 
+@inline phosphate_ratio(i, j, k, grid, ::ImplicitProductivity, ::NPD{FT}, fields) where FT = 
     one(FT)
 
-@inline nitrogen_ratio(plankton::ImplicitProductivity, ::NPD{FT}, i, j, k, fields) where FT = plankton.nitrogen_ratio
-@inline carbon_ratio(plankton::ImplicitProductivity, ::NPD{FT}, i, j, k, fields) where FT = plankton.carbon_ratio
-@inline iron_ratio(plankton::ImplicitProductivity, ::NPD{FT}, i, j, k, fields) where FT = plankton.iron_ratio
-@inline calcite_rain_ratio(plankton::ImplicitProductivity, ::NPD{FT}, i, j, k, fields) where FT = plankton.rain_ratio
+@inline nitrogen_ratio(i, j, k, grid, plankton::ImplicitProductivity, ::NPD{FT}, fields) where FT = plankton.nitrogen_ratio
+@inline carbon_ratio(i, j, k, grid, plankton::ImplicitProductivity, ::NPD{FT}, fields) where FT = plankton.carbon_ratio
+@inline iron_ratio(i, j, k, grid, plankton::ImplicitProductivity, ::NPD{FT}, fields) where FT = plankton.iron_ratio
+@inline calcite_rain_ratio(i, j, k, grid, plankton::ImplicitProductivity, ::NPD{FT}, fields) where FT = plankton.rain_ratio
 
 @inline limiting_nutrients(::ImplicitProductivity{<:Any, <:NamedTuple{LN}}) where LN = LN
 
@@ -70,43 +70,46 @@ required_biogeochemical_auxiliary_fields(::ImplicitProductivity) = (:PAR, )
 @inline nutrient_half_saturations(implicit::ImplicitProductivity, ::Val{:PO₄}) = implicit.nutrient_half_saturations.phosphate
 @inline nutrient_half_saturations(implicit::ImplicitProductivity, ::Val{:Fe})  = implicit.nutrient_half_saturations.iron
 
-@inline inorganic_waste(::ImplicitProductivity, bgc::NPD{FT}, args...) where FT = zero(FT)
+@inline inorganic_waste(i, j, k, grid, ::ImplicitProductivity, bgc::NPD{FT}, args...) where FT = zero(FT)
 
-@inline dissolved_waste(plankton::ImplicitProductivity, bgc, args...) =
-    plankton.dissolved_fraction_of_waste * community_productivity(plankton, bgc, args...)
+@inline dissolved_waste(i, j, k, grid, plankton::ImplicitProductivity, bgc, args...) =
+    plankton.dissolved_fraction_of_waste * community_productivity(i, j, k, grid, plankton, bgc, args...)
 
-@inline solid_waste(plankton::ImplicitProductivity, bgc::NPD{FT}, args...) where FT =
-    (one(FT) - plankton.dissolved_fraction_of_waste) * community_productivity(plankton, bgc, args...)
+@inline solid_waste(i, j, k, grid, plankton::ImplicitProductivity, bgc::NPD{FT}, args...) where FT =
+    (one(FT) - plankton.dissolved_fraction_of_waste) * community_productivity(i, j, k, grid, plankton, bgc, args...)
 
-@inline nutrient_uptake(plankton::ImplicitProductivity, bgc, i, j, k, fields, auxiliary_fields) =
-    community_productivity(plankton, bgc, i, j, k, fields, auxiliary_fields) 
+@inline nutrient_uptake(i, j, k, grid, plankton::ImplicitProductivity, bgc, fields, auxiliary_fields) =
+    community_productivity(i, j, k, grid, plankton, bgc, fields, auxiliary_fields) 
 
-@inline function community_productivity(plankton::ImplicitProductivity, bgc, i, j, k, fields, auxiliary_fields)
+@inline function community_productivity(i, j, k, grid, plankton::ImplicitProductivity, bgc, fields, auxiliary_fields)
     α  = plankton.maximum_community_productivity
     kₗ = plankton.light_half_saturation
 
     PAR = @inbounds auxiliary_fields.PAR[i, j, k]
 
-    Lₙ = nutrient_limitation(bgc.nutrients, plankton, bgc, i, j, k, fields, auxiliary_fields)
+    Lₙ = nutrient_limitation(i, j, k, grid, bgc.nutrients, plankton, bgc, fields, auxiliary_fields)
     Lₗ = PAR / (PAR + kₗ)
 
     return α * Lₙ * Lₗ
 end
 
-@inline nutrient_uptake(plankton::ImplicitProductivity, bgc, 
-                        i, j, k, ::Val{:NO₃},
+@inline nutrient_uptake(i, j, k, grid, 
+                        ::Val{:NO₃},
+                        plankton::ImplicitProductivity, bgc, 
                         fields, auxiliary_fields) =
-    nutrient_uptake(plankton, bgc, i, j, k, fields, auxiliary_fields) * nitrogen_ratio(plankton, bgc, i, j, k, fields)
+    nutrient_uptake(i, j, k, grid, plankton, bgc, fields, auxiliary_fields) * nitrogen_ratio(i, j, k, grid, plankton, bgc, fields)
 
-@inline nutrient_uptake(::ImplicitProductivity, ::NPD{FT}, 
-                        i, j, k, ::Val{:NH₄},
+@inline nutrient_uptake(i, j, k, grid, 
+                        ::Val{:NH₄},
+                        ::ImplicitProductivity, ::NPD{FT}, 
                         fields, auxiliary_fields) where FT = zero(FT)
 
-@inline calcite_precipitation(bgc::NutrientsPlanktonDetritus{<:Any, <:ImplicitProductivity}, 
-                              i, j, k, fields, auxiliary_fields) = (
-    solid_waste(bgc.plankton, bgc, i, j, k, fields, auxiliary_fields) 
-  * carbon_ratio(plankton, bgc, i, j, k, fields)
-  * calcite_rain_ratio(plankton, bgc, i, j, k, fields)
+@inline calcite_precipitation(i, j, k, grid, 
+                              bgc::NutrientsPlanktonDetritus{<:Any, <:ImplicitProductivity}, 
+                              fields, auxiliary_fields) = (
+    solid_waste(i, j, k, grid, bgc.plankton, bgc, fields, auxiliary_fields) 
+  * carbon_ratio(i, j, k, grid, plankton, bgc, fields)
+  * calcite_rain_ratio(i, j, k, grid, plankton, bgc, fields)
 )
 
 # admin

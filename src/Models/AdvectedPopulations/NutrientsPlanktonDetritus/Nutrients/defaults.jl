@@ -9,19 +9,19 @@ for (element, symbol) in pairs((nitrogen = :N, phosphate = :PO₄, iron = :Fe, s
     ratio_name = Symbol(element, :_ratio)
     
     @eval begin
-        @inline $inorganic_waste_name(plankton_or_detritus,
-                                       bgc, i, j, k,
-                                       fields, auxiliary_fields) = 
-            $ratio_name(bgc.plankton, bgc, i, j, k, fields) *
-            inorganic_waste(plankton_or_detritus, 
-                            bgc, i, j, k,
+        @inline $inorganic_waste_name(i, j, k, grid, 
+                                      plankton_or_detritus, bgc,
+                                      fields, auxiliary_fields) = 
+            $ratio_name(i, j, k, grid, bgc.plankton, bgc, fields) *
+            inorganic_waste(i, j, k, grid, 
+                            plankton_or_detritus, bgc, 
                             fields, auxiliary_fields)
 
-        @inline nutrient_uptake(plankton, bgc, 
-                                i, j, k, 
+        @inline nutrient_uptake(i, j, k, grid, 
+                                plankton, bgc, 
                                 ::Val{$(QuoteNode(symbol))},
                                 fields, auxiliary_fields) =
-            $ratio_name(bgc.plankton, bgc, i, j, k, fields) *
-            nutrient_uptake(plankton, bgc, i, j, k, fields, auxiliary_fields)
+            $ratio_name(i, j, k, grid, bgc.plankton, bgc, fields) *
+            nutrient_uptake(i, j, k, grid, plankton, bgc, fields, auxiliary_fields)
     end
 end

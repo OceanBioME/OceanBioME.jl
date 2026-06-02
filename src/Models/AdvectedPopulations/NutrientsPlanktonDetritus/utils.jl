@@ -74,7 +74,7 @@ for thing in (PhytoZoo, Detritus)
     end
 end
 
-function group_element_tracers(group::DissolvedParticulate{N, M, DN, PN}, bgc, ::Val{:carbon}) where {N, M, DN, PN} # add specialisation for explicit calcite when done
+function group_element_tracers(::DissolvedParticulate{N, M, DN, PN}, bgc, ::Val{:carbon}) where {N, M, DN, PN} # add specialisation for explicit calcite when done
     ratio = carbon_ratio(bgc.plankton, bgc, nothing, nothing, nothing, nothing)
     rain_ratio = calcite_rain_ratio(bgc.plankton, bgc, nothing, nothing, nothing, nothing)
     

@@ -27,6 +27,7 @@ import Base: summary, show
 import Oceananigans.Biogeochemistry: 
     required_biogeochemical_tracers,
     required_biogeochemical_auxiliary_fields,
+    biogeochemical_auxiliary_fields,
     biogeochemical_drift_velocity
 
 import ..NutrientsPlanktonDetritusModels.NutrientsModels: 

@@ -29,13 +29,13 @@ function Detritus(grid::AbstractGrid{FT};
 end
 
 @inline (bgc::NPSingleD)(i, j, k, grid, val_name::Val{:D}, clock, fields, auxiliary_fields) = (
-    dissolved_waste(bgc.plankton, bgc, i, j, k, fields, auxiliary_fields)
-  + solid_waste(bgc.plankton, bgc, i, j, k, fields, auxiliary_fields)
-  - grazing(bgc.plankton, bgc, i, j, k, val_name, fields, auxiliary_fields) 
-  - remineralisation(bgc.detritus, i, j, k, fields, auxiliary_fields)
+    dissolved_waste(i, j, k, grid, bgc.plankton, bgc, fields, auxiliary_fields)
+  + solid_waste(i, j, k, grid, bgc.plankton, bgc, fields, auxiliary_fields)
+  - grazing(bgc.plankton, bgc, val_name, fields, auxiliary_fields) 
+  - remineralisation(i, j, k, grid, bgc.detritus, fields, auxiliary_fields)
 )
 
-@inline remineralisation(detritus::Detritus, i, j, k, fields, auxiliary_fields) = 
+@inline remineralisation(i, j, k, grid, detritus::Detritus, fields, auxiliary_fields) = 
     @inbounds detritus.remineralisation_rate * fields.D[i, j, k]
 
 biogeochemical_drift_velocity(bgc::NutrientsPlanktonDetritus{<:Any, <:Any, <:Any, <:Detritus}, ::Val{:D}) = 
@@ -44,10 +44,10 @@ biogeochemical_drift_velocity(bgc::NutrientsPlanktonDetritus{<:Any, <:Any, <:Any
 @inline inorganic_waste(detritus::Detritus, bgc, args...) = 
     remineralisation(detritus, args...)
 
-@inline calcite_dissolution(detritus::Detritus, bgc, i, j, k, fields, auxiliary_fields) = (
-    remineralisation(detritus, i, j, k, fields, auxiliary_fields) 
-  * carbon_ratio(bgc.plankton, bgc, i, j, k, fields) 
-  * calcite_rain_ratio(bgc.plankton, bgc, i, j, k, fields)
+@inline calcite_dissolution(i, j, k, grid, detritus::Detritus, bgc, fields, auxiliary_fields) = (
+    remineralisation(i, j, k, grid, detritus, fields, auxiliary_fields) 
+  * carbon_ratio(i, j, k, grid, bgc.plankton, bgc, fields) 
+  * calcite_rain_ratio(i, j, k, grid, bgc.plankton, bgc, fields)
 )
 
 # admin

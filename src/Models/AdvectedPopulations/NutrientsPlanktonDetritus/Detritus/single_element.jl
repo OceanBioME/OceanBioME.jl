@@ -96,9 +96,9 @@ function manifest_multi_class_dissolved_particulate(dissolved_names, particulate
     for (n, name) in enumerate(dissolved_names)
         @eval begin
             @inline (bgc::NPD_DP)(i, j, k, grid, val_name::Val{$(QuoteNode(name))}, clock, fields, auxiliary_fields) = @inbounds (
-                dissolved_waste(bgc.plankton, bgc, i, j, k, fields, auxiliary_fields) * bgc.detritus.dissolved_waste_partitioning[$n]
-              + dissolved_remineralisation(bgc.detritus, bgc, i, j, k, fields, auxiliary_fields) * bgc.detritus.dissolved_waste_partitioning[$n]
-              - grazing(bgc.plankton, bgc, i, j, k, val_name, fields, auxiliary_fields) 
+                dissolved_waste(i, j, k, grid, bgc.plankton, bgc, fields, auxiliary_fields) * bgc.detritus.dissolved_waste_partitioning[$n]
+              + dissolved_remineralisation(i, j, k, grid, bgc.detritus, bgc, fields, auxiliary_fields) * bgc.detritus.dissolved_waste_partitioning[$n]
+              - grazing(i, j, k, grid, val_name, bgc.plankton, bgc, fields, auxiliary_fields) 
               - bgc.detritus.dissolved_remineralisation_rate[$n] * fields[$(QuoteNode(name))][i, j, k]
             )
         end
@@ -107,8 +107,8 @@ function manifest_multi_class_dissolved_particulate(dissolved_names, particulate
     for (m, name) in enumerate(particulate_names)
         @eval begin
             @inline (bgc::NPD_DP)(i, j, k, grid, val_name::Val{$(QuoteNode(name))}, clock, fields, auxiliary_fields) = @inbounds (
-                solid_waste(bgc.plankton, bgc, i, j, k, fields, auxiliary_fields) * bgc.detritus.particulate_waste_partitioning[$m]
-              - grazing(bgc.plankton, bgc, i, j, k, val_name, fields, auxiliary_fields) 
+                solid_waste(i, j, k, grid, bgc.plankton, bgc, fields, auxiliary_fields) * bgc.detritus.particulate_waste_partitioning[$m]
+              - grazing(i, j, k, grid, val_name, bgc.plankton, bgc, fields, auxiliary_fields) 
               - bgc.detritus.particulate_remineralisation_rate[$m] * fields[$(QuoteNode(name))][i, j, k]
             )
 
@@ -155,24 +155,24 @@ function manifest_multi_class_dissolved_particulate(dissolved_names, particulate
     end
 
     @eval begin
-        @inline function dissolved_remineralisation(detritus::DissolvedParticulate{$N, $M}, bgc::NPD_DP{FT}, i, j, k, fields, auxiliary_fields) where FT
+        @inline function dissolved_remineralisation(i, j, k, grid, detritus::DissolvedParticulate{$N, $M}, bgc::NPD_DP{FT}, fields, auxiliary_fields) where FT
             $ex_dissolved_remineralisation
 
             return total
         end
 
-        @inline function inorganic_waste(detritus::DissolvedParticulate{$N, $M}, bgc::NPD_DP{FT}, i, j, k, fields, auxiliary_fields) where FT
+        @inline function inorganic_waste(i, j, k, grid, detritus::DissolvedParticulate{$N, $M}, bgc::NPD_DP{FT}, fields, auxiliary_fields) where FT
             $ex_inorganic_remineralisation
 
             return total
         end
 
-        @inline function calcite_dissolution(detritus::DissolvedParticulate{$N, $M}, bgc::NPD_DP{FT}, i, j, k, fields, auxiliary_fields) where FT
+        @inline function calcite_dissolution(i, j, k, grid, detritus::DissolvedParticulate{$N, $M}, bgc::NPD_DP{FT}, fields, auxiliary_fields) where FT
             $ex_calcite_remineralisation
 
-            total += dissolved_waste(bgc.plankton, bgc, i, j, k, fields, auxiliary_fields)
+            total += dissolved_waste(i, j, k, grid, bgc.plankton, bgc, fields, auxiliary_fields)
 
-            return total * carbon_ratio(bgc.plankton, bgc, i, j, k, fields) * calcite_rain_ratio(bgc.plankton, bgc, i, j, k, fields)
+            return total * carbon_ratio(i, j, k, grid, bgc.plankton, bgc, fields) * calcite_rain_ratio(bgc.plankton, bgc, fields)
         end
     end
 end

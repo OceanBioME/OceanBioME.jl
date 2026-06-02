@@ -11,10 +11,11 @@
 for (nutrient, symbol) in pairs((phosphate = :PO₄, iron = :Fe, silicate = :Si))
     fname = Symbol(nutrient, :_limitation)
     @eval begin
-        @inline function $fname(::SingleTracerNutrient, 
+        @inline function $fname(i, j, k, grid,
+                                ::SingleTracerNutrient, 
                                 plankton,
                                 bgc::NutrientsPlanktonDetritus{FT},
-                                i, j, k, fields, auxiliary_fields) where FT
+                                fields, auxiliary_fields) where FT
             if $(QuoteNode(nutrient)) in limiting_nutrients(plankton)
                 kN = nutrient_half_saturations(plankton, Val($(QuoteNode(symbol)))) 
                 N = fields.$symbol[i, j, k]
@@ -32,10 +33,11 @@ for (nutrient, symbol) in pairs((phosphate = :PO₄, iron = :Fe, silicate = :Si)
     end
 end
 
-@inline function nitrogen_limitation(::SingleTracerNutrient, 
+@inline function nitrogen_limitation(i, j, k, grid,
+                                     ::SingleTracerNutrient, 
                                      plankton,
                                      ::NutrientsPlanktonDetritus{FT},
-                                     i, j, k, fields, auxiliary_fields) where FT
+                                     fields, auxiliary_fields) where FT
 
     if (:nitrate in limiting_nutrients(plankton)) | (:nitrogen in limiting_nutrients(plankton))
         kN = nutrient_half_saturations(plankton, Val(:N)) 
@@ -47,14 +49,16 @@ end
     end
 end
 
-@inline nitrogen_limitation(::Nothing, plankton,
+@inline nitrogen_limitation(i, j, k, grid,
+                            ::Nothing, plankton,
                             ::NutrientsPlanktonDetritus{FT},
-                            i, j, k, fields, auxiliary_fields) where FT = one(FT)
+                            fields, auxiliary_fields) where FT = one(FT)
 
-@inline function nitrogen_limitation(::NitrateAmmonia, 
+@inline function nitrogen_limitation(i, j, k, grid,
+                                     ::NitrateAmmonia, 
                                      plankton,
                                      ::NutrientsPlanktonDetritus{FT},
-                                     i, j, k, fields, auxiliary_fields) where FT
+                                     fields, auxiliary_fields) where FT
 
     if (:nitrate in  limiting_nutrients(plankton)) & (:ammonia in  limiting_nutrients(plankton))
         kNO₃ = nutrient_half_saturations(plankton, Val(:NO₃)) 

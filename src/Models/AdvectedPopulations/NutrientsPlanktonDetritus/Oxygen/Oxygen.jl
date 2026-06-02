@@ -59,14 +59,14 @@ const OxygenNPD{FT, NUT} = NutrientsPlanktonDetritus{FT, <:Any, <:Any, <:Any, <:
     rN = bgc.oxygen.nitrification_oxygen_carbon_ratio
 
     return (rP + rN) * (
-        primary_production(bgc.plankton, bgc, i, j, k, fields, auxiliary_fields)
-      - inorganic_carbon_waste(bgc.plankton, bgc, i, j, k, fields, auxiliary_fields)
-      - inorganic_carbon_waste(bgc.detritus, bgc, i, j, k, fields, auxiliary_fields)
+        primary_production(i, j, k, grid,bgc.plankton, bgc, fields, auxiliary_fields)
+      - inorganic_carbon_waste(i, j, k, grid,bgc.plankton, bgc, fields, auxiliary_fields)
+      - inorganic_carbon_waste(i, j, k, grid,bgc.detritus, bgc, fields, auxiliary_fields)
     )
 end
 
 @inline function (bgc::OxygenNPD{<:Any, <:Nutrients{<:NitrateAmmonia}})(i, j, k, grid, ::Val{:O₂}, clock, fields, auxiliary_fields)
-    rC = carbon_ratio(bgc.plankton, bgc, i, j, k, fields)
+    rC = carbon_ratio(i, j, k, grid,bgc.plankton, bgc,fields)
 
     rP = bgc.oxygen.production_oxygen_carbon_ratio
     rN = bgc.oxygen.nitrification_oxygen_carbon_ratio
@@ -75,10 +75,10 @@ end
     net_nitrate_production = bgc(i, j, k, grid, Val(:NO₃), clock, fields, auxiliary_fields)
 
     return (
-        rP * primary_production(bgc.plankton, bgc, i, j, k, fields, auxiliary_fields)
+        rP * primary_production(i, j, k, grid,bgc.plankton, bgc, fields, auxiliary_fields)
       - rN * rC * net_nitrate_production
-      - rP * inorganic_carbon_waste(bgc.plankton, bgc, i, j, k, fields, auxiliary_fields)
-      - rP * inorganic_carbon_waste(bgc.detritus, bgc, i, j, k, fields, auxiliary_fields)
+      - rP * inorganic_carbon_waste(i, j, k, grid,bgc.plankton, bgc, fields, auxiliary_fields)
+      - rP * inorganic_carbon_waste(i, j, k, grid,bgc.detritus, bgc, fields, auxiliary_fields)
     )
 end
 

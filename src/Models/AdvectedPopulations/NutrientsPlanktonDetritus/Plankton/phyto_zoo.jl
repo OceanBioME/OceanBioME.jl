@@ -143,11 +143,11 @@ biogeochemical_drift_velocity(bgc::PhytoZoo_NPD, ::Val{:P}) =
 biogeochemical_drift_velocity(bgc::PhytoZoo_NPD, ::Val{:Z}) = 
     bgc.plankton.zooplankton_sinking_velocity
 
-@inline nitrogen_ratio(::PhytoZoo, ::NPD{FT}, i, j, k, fields) where FT = one(FT)
-@inline phosphate_ratio(plankton::PhytoZoo, ::NPD{FT}, i, j, k, fields) where FT = plankton.phosphate_ratio
-@inline carbon_ratio(plankton::PhytoZoo, ::NPD{FT}, i, j, k, fields) where FT = plankton.carbon_ratio
-@inline iron_ratio(plankton::PhytoZoo, ::NPD{FT}, i, j, k, fields) where FT = plankton.iron_ratio
-@inline calcite_rain_ratio(plankton::PhytoZoo, ::NPD{FT}, i, j, k, fields) where FT = plankton.rain_ratio
+@inline nitrogen_ratio(i, j, k, grid, ::PhytoZoo, ::NPD{FT}, fields) where FT = one(FT)
+@inline phosphate_ratio(i, j, k, grid, plankton::PhytoZoo, ::NPD{FT}, fields) where FT = plankton.phosphate_ratio
+@inline carbon_ratio(i, j, k, grid, plankton::PhytoZoo, ::NPD{FT}, fields) where FT = plankton.carbon_ratio
+@inline iron_ratio(i, j, k, grid, plankton::PhytoZoo, ::NPD{FT}, fields) where FT = plankton.iron_ratio
+@inline calcite_rain_ratio(i, j, k, grid, plankton::PhytoZoo, ::NPD{FT}, fields) where FT = plankton.rain_ratio
 @inline chlorophyll(plankton::PhytoZoo, model) = plankton.chlorophyll_ratio * model.tracers.P
 
 @inline limiting_nutrients(::PhytoZoo{<:NamedTuple{LN}}) where LN = LN
@@ -164,9 +164,9 @@ biogeochemical_drift_velocity(bgc::PhytoZoo_NPD, ::Val{:Z}) =
 
     P = @inbounds fields.P[i, j, k]
 
-    μP = phytoplankton_growth(bgc.plankton, bgc, i, j, k, fields, auxiliary_fields)
+    μP = phytoplankton_growth(i, j, k, grid, bgc.plankton, bgc, fields, auxiliary_fields)
 
-    Gp = grazing(bgc.plankton, bgc, i, j, k, val_name, fields, auxiliary_fields)
+    Gp = grazing(i, j, k, grid, val_name, bgc.plankton, bgc, fields, auxiliary_fields)
 
     return (1 - γ) * μP - Gp - m * P^2
 end 
@@ -177,13 +177,13 @@ end
     μ = bgc.plankton.zooplankton_excretion_rate
 
     Z = @inbounds fields.Z[i, j, k]
-    G = total_grazing(bgc.plankton, bgc, i, j, k, fields, auxiliary_fields)
+    G = total_grazing(i, j, k, grid, bgc.plankton, bgc, fields, auxiliary_fields)
 
     return α * G - m * Z^2 - μ * Z
 end 
 
 # growth and nutrient uptake
-@inline function phytoplankton_growth(plankton::PhytoZoo, bgc, i, j, k, fields, auxiliary_fields)
+@inline function phytoplankton_growth(i, j, k, grid, plankton::PhytoZoo, bgc, fields, auxiliary_fields)
     kPAR = plankton.light_half_saturation
     μ₀   = plankton.phytoplankton_maximum_growth_rate
     Q10  = plankton.temperature_coefficient
@@ -193,7 +193,7 @@ end
         P   = fields.P[i, j, k]
     end
 
-    Lₙ = nutrient_limitation(bgc.nutrients, plankton, bgc, i, j, k, fields, auxiliary_fields)
+    Lₙ = nutrient_limitation(i, j, k, grid, bgc.nutrients, plankton, bgc,fields, auxiliary_fields)
     Lₗ = light_limitation(plankton.light_limitation, PAR, kPAR)
     Lₜ = temperature_limitation(Q10, i, j, k, fields)
 
@@ -208,10 +208,11 @@ end
     return Q10 ^ (T / convert(FT, 10))
 end
 
-@inline function nitrogen_limitation(::NitrateAmmonia, 
+@inline function nitrogen_limitation(i, j, k, grid, 
+                                     ::NitrateAmmonia, 
                                      plankton::PhytoZoo,
                                      ::NutrientsPlanktonDetritus{FT},
-                                     i, j, k, fields, auxiliary_fields) where FT
+                                     fields, auxiliary_fields) where FT
 
     kNO₃ = nutrient_half_saturations(plankton, Val(:NO₃)) 
     kNH₄ = nutrient_half_saturations(plankton, Val(:NH₄))
@@ -228,13 +229,13 @@ end
     return (nitrate_limitation + ammonia_limitation) / 2
 end
 
-@inline nutrient_uptake(plankton::PhytoZoo, 
-                        bgc, i, j, k,
+@inline nutrient_uptake(i, j, k, grid,
+                        plankton::PhytoZoo, bgc,
                         fields, auxiliary_fields) = 
-    phytoplankton_growth(plankton, bgc, i, j, k, fields, auxiliary_fields)
+    phytoplankton_growth(i, j, k, grid, plankton, bgc, fields, auxiliary_fields)
 
-@inline function nutrient_uptake(plankton::PhytoZoo, bgc::NPD{FT}, i, j, k, ::Val{:NO₃}, fields, auxiliary_fields) where FT
-    μ = phytoplankton_growth(plankton, bgc, i, j, k, fields, auxiliary_fields)
+@inline function nutrient_uptake(i, j, k, grid, ::Val{:NO₃}, plankton::PhytoZoo, bgc::NPD{FT}, fields, auxiliary_fields) where FT
+    μ = phytoplankton_growth(i, j, k, grid, plankton, bgc, fields, auxiliary_fields)
 
     kNO₃ = nutrient_half_saturations(plankton, Val(:NO₃)) 
     kNH₄ = nutrient_half_saturations(plankton, Val(:NH₄))
@@ -251,8 +252,8 @@ end
     return μ * nitrate_limitation / (nitrate_limitation + ammonia_limitation + eps(zero(FT)))
 end
 
-@inline function nutrient_uptake(plankton::PhytoZoo, bgc::NPD{FT}, i, j, k, ::Val{:NH₄}, fields, auxiliary_fields) where FT
-    μ = phytoplankton_growth(plankton, bgc, i, j, k, fields, auxiliary_fields)
+@inline function nutrient_uptake(i, j, k, grid, ::Val{:NH₄}, plankton::PhytoZoo, bgc::NPD{FT}, fields, auxiliary_fields) where FT
+    μ = phytoplankton_growth(i, j, k, grid, plankton, bgc, fields, auxiliary_fields)
 
     kNO₃ = nutrient_half_saturations(plankton, Val(:NO₃)) 
     kNH₄ = nutrient_half_saturations(plankton, Val(:NH₄))
@@ -270,14 +271,14 @@ end
 end
 
 # grazing
-@inline function total_grazing(plankton::PhytoZoo, bgc, i, j, k, fields, auxiliary_fields)
+@inline function total_grazing(i, j, k, grid, plankton::PhytoZoo, bgc, fields, auxiliary_fields)
     kG = plankton.grazing_half_saturation
     g  = plankton.maximum_grazing_rate
 
     @inbounds begin
         Z    = fields.Z[i, j, k]
         P    = fields.P[i, j, k]
-        ePOM = edible_particulate_organic_matter(bgc.detritus, bgc.plankton, bgc, i, j, k, fields)
+        ePOM = edible_particulate_organic_matter(i, j, k, grid, bgc.detritus, bgc.plankton, bgc, fields)
     end
 
     p = weighted_phytoplankton_preference(bgc.plankton, P, ePOM)
@@ -289,14 +290,14 @@ end
     return g * L * Z
 end
 
-@inline function grazing(plankton::PhytoZoo, bgc::NPD, i, j, k, ::Val{:P}, fields, auxiliary_fields)
+@inline function grazing(i, j, k, grid, ::Val{:P}, plankton::PhytoZoo, bgc::NPD, fields, auxiliary_fields)
     kG = plankton.grazing_half_saturation
     g  = plankton.maximum_grazing_rate
 
     @inbounds begin
         Z    = fields.Z[i, j, k]
         P    = fields.P[i, j, k]
-        ePOM = edible_particulate_organic_matter(bgc.detritus, bgc.plankton, bgc, i, j, k, fields)
+        ePOM = edible_particulate_organic_matter(i, j, k, grid, bgc.detritus, bgc.plankton, bgc, fields)
     end
 
     p = weighted_phytoplankton_preference(bgc.plankton, P, ePOM)
@@ -308,14 +309,14 @@ end
     return g * p * L * P / (food_concentration + eps(zero(P))) * Z
 end
 
-@inline function grazing(plankton::PhytoZoo, bgc::NPD, i, j, k, ::Union{Val{:sPOM}, Val{:sPON}, Val{:D}, Val{:POM}}, fields, auxiliary_fields)
+@inline function grazing(i, j, k, grid, ::Union{Val{:sPOM}, Val{:sPON}, Val{:D}, Val{:POM}}, plankton::PhytoZoo, bgc::NPD, fields, auxiliary_fields)
     kG = plankton.grazing_half_saturation
     g  = plankton.maximum_grazing_rate
 
     @inbounds begin
         Z    = fields.Z[i, j, k]
         P    = fields.P[i, j, k]
-        ePOM = edible_particulate_organic_matter(bgc.detritus, bgc.plankton, bgc, i, j, k, fields)
+        ePOM = edible_particulate_organic_matter(i, j, k, grid, bgc.detritus, bgc.plankton, bgc, fields)
     end
 
     p = weighted_phytoplankton_preference(bgc.plankton, P, ePOM)
@@ -334,21 +335,21 @@ end
 end
 
 # assumptions about particle edibility
-@inline edible_particulate_organic_matter(::InstantRemineralisation, plankton::PhytoZoo, bgc::NPD{FT}, i, j, k, fields) where FT = 
+@inline edible_particulate_organic_matter(i, j, k, grid, ::InstantRemineralisation, plankton::PhytoZoo, bgc::NPD{FT}, fields) where FT = 
     zero(FT)
     
-@inline edible_particulate_organic_matter(::Detritus, plankton::PhytoZoo, bgc, i, j, k, fields) = 
+@inline edible_particulate_organic_matter(i, j, k, grid, ::Detritus, plankton::PhytoZoo, bgc, fields) = 
     @inbounds plankton.edible_fraction_of_detritus * fields.D[i, j, k]
 
 
-@inline edible_particulate_organic_matter(::DissolvedParticulate{<:Any, 1, <:Any, PN}, plankton::PhytoZoo, bgc, i, j, k, fields) where PN = 
+@inline edible_particulate_organic_matter(i, j, k, grid, ::DissolvedParticulate{<:Any, 1, <:Any, PN}, plankton::PhytoZoo, bgc, fields) where PN = 
     @inbounds plankton.edible_fraction_of_detritus * getproperty(fields, PN[1])[i, j, k]
 
-@inline edible_particulate_organic_matter(::DissolvedParticulate{<:Any, 2}, plankton::PhytoZoo, bgc, i, j, k, fields) = 
+@inline edible_particulate_organic_matter(i, j, k, grid, ::DissolvedParticulate{<:Any, 2}, plankton::PhytoZoo, bgc, fields) = 
     @inbounds fields.sPOM[i, j, k] # this isn't generic because the user might rename the particles...
 
 # waste routing
-@inline function solid_waste(plankton::PhytoZoo, bgc, i, j, k, fields, auxiliary_fields)
+@inline function solid_waste(i, j, k, grid, plankton::PhytoZoo, bgc, fields, auxiliary_fields)
     αᴾ = plankton.phytoplankton_solid_waste_fraction
     αᶻ = plankton.zooplankton_assimilation_fraction
     mᴾ = plankton.phytoplankton_mortality_rate
@@ -359,12 +360,12 @@ end
         Z = fields.Z[i, j, k]
     end
 
-    G = total_grazing(plankton, bgc, i, j, k, fields, auxiliary_fields)
+    G = total_grazing(i, j, k, grid, plankton, bgc, fields, auxiliary_fields)
 
     return (1 - αᶻ) * G + αᴾ * mᴾ * P^2 + mᶻ * Z^2
 end
 
-@inline function dissolved_waste(plankton::PhytoZoo, bgc, i, j, k, fields, auxiliary_fields)
+@inline function dissolved_waste(i, j, k, grid, plankton::PhytoZoo, bgc, fields, auxiliary_fields)
     αᶻ  = plankton.excretion_inorganic_fraction
     μ   = plankton.zooplankton_excretion_rate
     αᴾ  = plankton.ammonia_fraction_of_exudate
@@ -374,12 +375,12 @@ end
         Z = fields.Z[i, j, k]
     end
     
-    μP = phytoplankton_growth(plankton, bgc, i, j, k, fields, auxiliary_fields)
+    μP = phytoplankton_growth(i, j, k, grid, plankton, bgc, fields, auxiliary_fields)
 
     return (1 - αᴾ) * γ * μP + (1 - αᶻ) * μ * Z
 end
 
-@inline function inorganic_waste(plankton::PhytoZoo, bgc, i, j, k, fields, auxiliary_fields)
+@inline function inorganic_waste(i, j, k, grid, plankton::PhytoZoo, bgc, fields, auxiliary_fields)
     αᴾ = plankton.phytoplankton_solid_waste_fraction
     αᶻ = plankton.excretion_inorganic_fraction
     μ  = plankton.zooplankton_excretion_rate
@@ -392,7 +393,7 @@ end
         Z = fields.Z[i, j, k]
     end
 
-    μP = phytoplankton_growth(plankton, bgc, i, j, k, fields, auxiliary_fields)
+    μP = phytoplankton_growth(i, j, k, grid, plankton, bgc, fields, auxiliary_fields)
 
     return αᶻ * μ * Z + (1 - αᴾ) * mᴾ * P^2 + αᵃ * γ * μP
 end
