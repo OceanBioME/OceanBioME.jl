@@ -31,7 +31,7 @@ end
 @inline (bgc::NPSingleD)(i, j, k, grid, val_name::Val{:D}, clock, fields, auxiliary_fields) = (
     dissolved_waste(i, j, k, grid, bgc.plankton, bgc, fields, auxiliary_fields)
   + solid_waste(i, j, k, grid, bgc.plankton, bgc, fields, auxiliary_fields)
-  - grazing(bgc.plankton, bgc, val_name, fields, auxiliary_fields) 
+  - grazing(i, j, k, grid, val_name, bgc.plankton, bgc, fields, auxiliary_fields) 
   - remineralisation(i, j, k, grid, bgc.detritus, fields, auxiliary_fields)
 )
 
