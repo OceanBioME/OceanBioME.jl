@@ -46,9 +46,8 @@ function check_conservations(model, n_timesteps = 100)
 
     final_values = get_conservation_values(model.biogeochemistry, model.tracers)
 
-    @info "Checking conservation of $(keys(final_values))"
-
     for (name, value) in pairs(initial_values)
+        @info "Checking conservation of $(name)"
         @test isapprox(final_values[name], value, atol = n_timesteps*eps(value))
     end
 end
