@@ -60,16 +60,16 @@ function test_PISCES_conservation() # only on CPU please
                                                              iron = SimpleIron(excess_scavenging_enhancement = 0.0),
                                                              nitrogen = NitrateAmmonia(maximum_fixation_rate = 0.0))
 
-    model = BoxModel(; grid, biogeochemistry)
+    model = NonhydrostaticModel(grid; biogeochemistry, advection = nothing)
 
     # checks model works with zero values
     time_step!(model, 1.0)
 
     # and that they all return zero
-    @test all([all(!(name in (:T, :S)) | (Array(interior(values))[1] .== 0)) for (name, values) in pairs(model.fields)])
+    @test all([all(!(name in (:T, :S)) | (Array(interior(values))[1] .== 0)) for (name, values) in pairs(model.tracers)])
 
     # set some semi-realistic conditions and check conservation
-    set_PISCES_initial_values!(model.fields)
+    set_PISCES_initial_values!(model.tracers)
 
     time_step!(model, 1.0)
 
