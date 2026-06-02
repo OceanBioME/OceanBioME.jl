@@ -42,7 +42,7 @@ biogeochemical_drift_velocity(bgc::NutrientsPlanktonDetritus{<:Any, <:Any, <:Any
     bgc.detritus.sinking_speeds
 
 @inline inorganic_waste(i, j, k, grid, detritus::Detritus, bgc, args...) = 
-    remineralisation(detritus, args...)
+    remineralisation(i, j, k, grid, detritus, args...)
 
 @inline calcite_dissolution(i, j, k, grid, detritus::Detritus, bgc, fields, auxiliary_fields) = (
     remineralisation(i, j, k, grid, detritus, fields, auxiliary_fields) 
