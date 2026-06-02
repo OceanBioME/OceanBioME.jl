@@ -73,7 +73,19 @@ function test_PISCES_conservation() # only on CPU please
 
     time_step!(model, 1.0)
 
-    check_conservations(model)
+    conserved_tracers = OceanBioME.conserved_tracers(biogeochemistry; ntuple = true)
+
+    total_carbon_tendencies = sum(map(f -> value(f), model.timestepper.Gⁿ[keys(conserved_tracers.carbon)]))
+    total_iron_tendencies = sum([value(model.timestepper.Gⁿ[n]) * sf for (n, sf) in pairs(conserved_tracers.iron)])
+    total_silicon_tendencies = sum(map(f -> value(f), model.timestepper.Gⁿ[keys(conserved_tracers.silicon)]))
+    total_phosphate_tendencies = sum([value(model.timestepper.Gⁿ[n]) * sf for (n, sf) in pairs(conserved_tracers.phosphate)])
+    total_nitrogen_tendencies = sum([value(model.timestepper.Gⁿ[n]) * sf for (n, sf) in pairs(conserved_tracers.nitrogen)])
+
+    @test isapprox(total_carbon_tendencies, 0, atol = 10^-20)
+    @test isapprox(total_iron_tendencies, 0, atol = 10^-21)
+    @test isapprox(total_silicon_tendencies, 0, atol = 10^-21)
+    @test isapprox(total_phosphate_tendencies, 0, atol = 10^-22)
+    @test isapprox(total_nitrogen_tendencies, 0, atol = 10^-21)
 
     return nothing
 end
