@@ -180,14 +180,9 @@ title = @lift "t = $(prettytime(times[$n]))"
 Label(fig[0, :], title, fontsize = 30)
 
 # and record the movie
-#=
+
 record(fig, "eady.mp4", 1:length(times), framerate = 12) do i
     n[] = i
-end=# # temporatily disable
-n[] = length(times) 
-fig
-#=
-nothing #hide
+end 
 
-
-=#
+# ![](eady.mp4)
