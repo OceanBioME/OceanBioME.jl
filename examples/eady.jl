@@ -56,7 +56,8 @@ vertical_diffusivity = VerticalScalarDiffusivity(ν = νᵥ, κ = κᵥ)
 
 biogeochemistry = LOBSTER(grid;
                           carbonate_system = CarbonateSystem(),
-                          detritus = TwoParticleAndDissolved(grid; open_bottom = true))
+                          detritus = TwoParticleAndDissolved(grid; open_bottom = true),
+                          scale_negatives = true)
 
 DIC_bcs = FieldBoundaryConditions(top = CarbonDioxideGasExchangeBoundaryCondition())
 
@@ -65,7 +66,6 @@ model = NonhydrostaticModel(grid;
                             biogeochemistry,
                             boundary_conditions = (DIC = DIC_bcs, ),
                             advection = WENO(),
-                            timestepper = :RungeKutta3,
                             coriolis,
                             tracers = (:T, :S),
                             buoyancy,
@@ -91,12 +91,12 @@ set!(model, u=uᵢ, v=vᵢ, P = 0.03, Z = 0.03, NO₃ = 4.0, NH₄ = 0.05, DIC =
 Δy = minimum_yspacing(grid, Center(), Center(), Center())
 Δz = minimum_zspacing(grid, Center(), Center(), Center())
 
-Δt₀ = 0.75 * min(Δx, Δy, Δz) / V(0, 0, 0, 0, background_state_parameters)
+Δt₀ = 0.5 * min(Δx, Δy, Δz) / V(0, 0, 0, 0, background_state_parameters)
 
 simulation = Simulation(model, Δt = Δt₀, stop_time = 10days)
 
 # Adapt the time step while keeping the CFL number fixed.
-wizard = TimeStepWizard(cfl = 0.75, diffusive_cfl = 0.75, max_Δt = 30minutes)
+wizard = TimeStepWizard(cfl = 0.5, diffusive_cfl = 0.5, max_Δt = 30minutes)
 simulation.callbacks[:wizard] = Callback(wizard, IterationInterval(5))
 nothing #hide
 
@@ -181,14 +181,9 @@ title = @lift "t = $(prettytime(times[$n]))"
 Label(fig[0, :], title, fontsize = 30)
 
 # and record the movie
-#=
+
 record(fig, "eady.mp4", 1:length(times), framerate = 12) do i
     n[] = i
-end=# # temporatily disable
-n[] = length(times) 
-fig
-#=
-nothing #hide
+end 
 
-
-=#
+# ![](eady.mp4)

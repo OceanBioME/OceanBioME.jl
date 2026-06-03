@@ -1,3 +1,5 @@
+using Oceananigans.Grids: AbstractGrid
+
 """
     CarbonateSystem{N}
 
@@ -52,14 +54,17 @@ required_biogeochemical_tracers(::CarbonateSystem{N}) where N = (map(n->Symbol(:
   + calcite_dissolution(bgc, i, j, k, fields, auxiliary_fields)
 )
 
-@inline (bgc::NutrientsPlanktonDetritus{<:Any, <:Any, <:Any, <:CarbonateSystem})(i, j, k, grid, ::Val{:Alk}, clock, fields, auxiliary_fields) = (
-    nutrient_uptake(bgc, i, j, k, Val(:NO₃), fields, auxiliary_fields)
-  - calcite_uptake(bgc, i, j, k, fields, auxiliary_fields)
+@inline (bgc::NutrientsPlanktonDetritus{<:Any, <:Any, <:Any, <:CarbonateSystem})(i, j, k, grid::AbstractGrid{FT}, ::Val{:Alk}, clock, fields, auxiliary_fields) where FT = (
+    bgc(i, j, k, grid, Val(:NH₄), clock, fields, auxiliary_fields) * convert(FT, (1 - 1/16))
+  - bgc(i, j, k, grid, Val(:NO₃), clock, fields, auxiliary_fields) * convert(FT, (1 + 1/16))
+  - convert(FT, 2) * calcite_uptake(bgc, i, j, k, fields, auxiliary_fields)
+  + convert(FT, 2) * calcite_dissolution(bgc, i, j, k, fields, auxiliary_fields)
 )
 
-@inline (bgc::NutrientsPlanktonDetritus{<:Nutrient, <:Any, <:Any, <:CarbonateSystem})(i, j, k, grid, ::Val{:Alk}, clock, fields, auxiliary_fields) = (
-    nutrient_uptake(bgc, i, j, k, Val(:N), fields, auxiliary_fields)
-  - calcite_uptake(bgc, i, j, k, fields, auxiliary_fields)
+@inline (bgc::NutrientsPlanktonDetritus{<:Nutrient, <:Any, <:Any, <:CarbonateSystem})(i, j, k, grid::AbstractGrid{FT}, ::Val{:Alk}, clock, fields, auxiliary_fields) where FT = (
+    bgc(i, j, k, grid, Val(:N), clock, fields, auxiliary_fields)
+  - convert(FT, 2) * calcite_uptake(bgc, i, j, k, fields, auxiliary_fields)
+  + convert(FT, 2) * calcite_dissolution(bgc, i, j, k, fields, auxiliary_fields)
 )
 
 function manifest_carbonate_replicates!(N)
