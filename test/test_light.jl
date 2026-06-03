@@ -13,8 +13,8 @@ function test_two_band(grid, model_type, surface_PAR, discrete_form)
     biogeochemistry = NPZD(grid; 
                            light_attenuation = 
                                TwoBandPhotosyntheticallyActiveRadiation(; grid,
-                                                                       surface_PAR, 
-                                                                       discrete_form))
+                                                                          surface_PAR, 
+                                                                          discrete_form))
 
     model = model_type(grid;
                        biogeochemistry,

@@ -220,7 +220,7 @@ show(io::IO, model::CompleteBiogeochemistry) =
                 " Modifiers: ", modifier_summary(model.modifiers))
 
 modifier_summary(modifier) = summary(modifier)
-modifier_summary(modifiers::Tuple) = tuple([summary(modifier) for modifier in modifiers]...)
+modifier_summary(modifiers::Tuple) = "\n"*join([" "*ifelse(n==length(modifiers), "└─", "├─")*summary(modifier) for (n, modifier) in enumerate(modifiers)], "\n")
 
 include("Utils/Utils.jl")
 include("Light/Light.jl")

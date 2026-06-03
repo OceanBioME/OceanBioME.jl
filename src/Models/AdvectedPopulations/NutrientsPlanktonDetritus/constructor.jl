@@ -29,7 +29,7 @@ function NutrientsPlanktonDetritus(grid::AbstractGrid{FT};
                                                 oxygen)
 
     if scale_negatives
-        scaler = ScaleNegativeTracers(underlying_biogeochemistry, grid; invalid_fill_value)
+        scaler = ScaleNegativeTracers(underlying_biogeochemistry; invalid_fill_value)
         if isnothing(modifiers)
             modifiers = scaler
         elseif modifiers isa Tuple

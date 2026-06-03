@@ -94,20 +94,19 @@ Construct a modifier to scale the conserved tracers in `bgc` biogeochemistry.
 
 If `warn` is true then scaling will raise a warning.
 """
-function ScaleNegativeTracers(bgc::AbstractBiogeochemistry, grid; invalid_fill_value = NaN, warn = false)
+function ScaleNegativeTracers(bgc::AbstractBiogeochemistry; invalid_fill_value = NaN, warn = false)
     tracers = conserved_tracers(bgc)
 
-    return ScaleNegativeTracers(tracers, grid; invalid_fill_value, warn)
+    return ScaleNegativeTracers(tracers; invalid_fill_value, warn)
 end
 
 # for when `conserved_tracers` just returns a tuple of symbols
-function ScaleNegativeTracers(tracers, grid; invalid_fill_value=NaN, warn=false)
+function ScaleNegativeTracers(tracers; invalid_fill_value=NaN, warn=false)
     scalefactors = ones(length(tracers))
     return ScaleNegativeTracers(tracers, scalefactors, invalid_fill_value, warn)
 end
 
-function ScaleNegativeTracers(tracers::NTuple{<:Any, Symbol},
-                              grid;
+function ScaleNegativeTracers(tracers::NTuple{<:Any, Symbol};
                               invalid_fill_value=NaN,
                               warn=false,)
     scalefactors = ones(length(tracers))
@@ -116,14 +115,13 @@ function ScaleNegativeTracers(tracers::NTuple{<:Any, Symbol},
 end
 
 # multiple conserved groups
-ScaleNegativeTracers(tracers::NamedTuple{<:Any, <:Tuple{<:NamedTuple}}, grid; invalid_fill_value = NaN, warn = false) =
-    maybe_a_tuple(map(tn -> ScaleNegativeTracers(keys(tn), values(tn); invalid_fill_value, warn), values(tracers))...)
+ScaleNegativeTracers(tracers::NamedTuple; invalid_fill_value = NaN, warn = false) =
+    maybe_a_tuple(map(tn -> ScaleNegativeTracers(tn; invalid_fill_value, warn), values(tracers))...)
 
 maybe_a_tuple(a) = a
 maybe_a_tuple(args...) = tuple(args...)
 
-function ScaleNegativeTracers(tracers::NamedTuple,
-                              grid;
+function ScaleNegativeTracers(tracers::NamedTuple{<:Any, <:NTuple{<:Any, <:Number}};
                               invalid_fill_value=NaN,
                               warn=false,)
     scalefactors = values(tracers)
