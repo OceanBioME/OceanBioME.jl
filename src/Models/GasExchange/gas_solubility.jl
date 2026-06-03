@@ -23,6 +23,7 @@ end
 @inline surface_value(gs::PartiallySolubleGas, i, j, grid, clock, model_fields) = 
     surface_value(gs.air_concentration, i, j, grid, clock) * surface_value(gs.solubility, i, j, grid, clock, model_fields)
 
+# this isn't used anywhere?
 """
     Wanninkhof92Solubility
 

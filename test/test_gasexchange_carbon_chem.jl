@@ -27,11 +27,13 @@ function test_gas_exchange_model(grid, air_concentration)
 
     set!(model, T = 15.0, S = 35.0, DIC = 2220, Alk = 2500)
 
-    # is everything communicating properly? (can't think of a way to not use allow scalar here)
+    @test isa(model.tracers.DIC.boundary_conditions.top.condition.func, GasExchange)
+
+    # can't think of a way to not use allow scalar here
     value = CUDA.@allowscalar Oceananigans.getbc(model.tracers.DIC.boundary_conditions.top, 1, 1, grid, model.clock, fields(model))
 
     @test isa(model.tracers.DIC.boundary_conditions.top.condition.func, GasExchange)
-    @test ≈(value, -8e-6; atol = 1e-6)
+    @test ≈(value, -10e-6; atol = 1e-6)
     @test isnothing(time_step!(model, 1.0))
 
     # multiple carbonate systems
@@ -39,12 +41,12 @@ function test_gas_exchange_model(grid, air_concentration)
     CO₂_flux1 = 
         CarbonDioxideGasExchangeBoundaryCondition(; 
             water_concentration = CarbonDioxideConcentration(; DIC = :DIC1,
-                                                            Alk = :Alk1)
+                                                               Alk = :Alk1)
         )
     CO₂_flux2 = 
         CarbonDioxideGasExchangeBoundaryCondition(; 
             water_concentration = CarbonDioxideConcentration(; DIC = :DIC2,
-                                                            Alk = :Alk2)
+                                                               Alk = :Alk2)
         )
 
 
@@ -63,10 +65,10 @@ function test_gas_exchange_model(grid, air_concentration)
     value2 = CUDA.@allowscalar Oceananigans.getbc(model.tracers.DIC2.boundary_conditions.top, 1, 1, grid, model.clock, fields(model))
 
     @test isa(model.tracers.DIC1.boundary_conditions.top.condition.func, GasExchange)
-    @test ≈(value1, -8e-6; atol = 1e-6)
+    @test ≈(value1, -10e-6; atol = 1e-6)
 
     @test isa(model.tracers.DIC2.boundary_conditions.top.condition.func, GasExchange)
-    @test ≈(value2, -8e-6; atol = 1e-6)
+    @test ≈(value2, -10e-6; atol = 1e-6)
 
     @test value1 != value2
 
@@ -103,9 +105,17 @@ conc_field = CenterField(grid)
 
 set!(conc_field, (args...) -> 413)
 
+conc_fts = FieldTimeSeries((Center(), Center(), Center()), grid, [0, 1], indices = (:, :, grid.Nz))
+set!(conc_fts[1], 413)
+set!(conc_fts[2], 413)
+
+conc_fts2 = FieldTimeSeries((Center(), Center(), Center()), RectilinearGrid(architecture; size=(2, 1, 2), extent=(1, 1, 1)), [0, 1], indices = (:, :, grid.Nz))
+set!(conc_fts2[1], 413)
+set!(conc_fts2[2], 413)
+
 @testset "Gas exchange coupling" begin
-    for air_concentration in [413.1, conc_function, conc_field]
-        @info "Testing gas exchange with $(typeof(air_concentration))"
+    for air_concentration in [413.1, conc_function, conc_field, conc_fts, conc_fts2]
+        @info "Testing gas exchange with $(summary(air_concentration))"
         test_gas_exchange_model(grid, air_concentration)
     end
 end

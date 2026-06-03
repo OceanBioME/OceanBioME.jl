@@ -1,4 +1,5 @@
-using Oceananigans.Fields: AbstractField
+using Oceananigans.Fields: AbstractField, interpolate, location
+using Oceananigans.OutputReaders: FlavorOfFTS, Time, FieldTimeSeries
 
 # fallback
 @inline surface_value(f, args...) = f
@@ -33,7 +34,41 @@ end
 @inline surface_value(f::AbstractArray{<:Any, 2}, i, j, grid, clock, args...) = @inbounds f[i, j]
 @inline surface_value(f::AbstractArray{<:Any, 3}, i, j, grid, clock, args...) = @inbounds f[i, j, grid.Nz]
 
-# fallback
+@inline surface_value(f::FlavorOfFTS, i, j, grid, clock, args...) =
+    f[i, j, grid.Nz, Time(clock.time)]
+
+struct InterpolableFTS{F, G, L}
+         fts :: F
+        grid :: G
+    location :: L
+end
+
+Adapt.adapt_structure(to, ifts::InterpolableFTS) =
+    InterpolableFTS(adapt(to, ifts.fts),
+                    adapt(to, ifts.grid),
+                    adapt(to, ifts.location))
+
+@inline function surface_value(f::InterpolableFTS, i, j, grid, clock, args...)
+    t = clock.time
+
+    x = xnode(i, j, grid.Nz, grid, Center(), Center(), Center())
+    y = ynode(i, j, grid.Nz, grid, Center(), Center(), Center())
+
+    return interpolate((x, y, 0), Time(clock.time), f.fts, f.location, f.grid)
+end
+
 normalise_surface_function(f; kwargs...) = f
 normalise_surface_function(f::Number; FT, kwargs...) = convert(FT, f)
 normalise_surface_function(f::Function; discrete_form = false, kwargs...) = discrete_form ? DiscreteSurfaceFuncton(f) : ContinuousSurfaceFunction(f)
+
+function normalise_surface_function(f::FieldTimeSeries; grid = nothing, kwargs...)
+    if f.grid == grid
+        return f
+    elseif isnothing(grid)
+        @warn "Grid not passed when wrapping surface function so can not verify if FTS is on the same grid"
+        return f
+    else
+        LX, LY, LZ = location(f)
+        return InterpolableFTS(f, f.grid, (LX(), LY(), LZ()))
+    end
+end

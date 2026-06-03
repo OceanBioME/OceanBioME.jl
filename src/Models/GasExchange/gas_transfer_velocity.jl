@@ -7,6 +7,7 @@ using Oceananigans.Units, Adapt
 using OceanBioME.Models.GasExchangeModel: PolynomialParameterisation
 
 import Adapt: adapt_structure
+import OceanBioME.Models.GasExchangeModel: surface_value
 
 """
     SchmidtScaledTransferVelocity(; schmidt_number, 
@@ -27,11 +28,25 @@ struct SchmidtScaledTransferVelocity{KB, SC, SO}
               solubility :: SO
 end
 
-SchmidtScaledTransferVelocity(FT = Float64; base_transfer_velocity::KB = Ho06(FT), schmidt_number, solubility = (T, S) -> one(FT)) where KB = 
+SchmidtScaledTransferVelocity(FT = Float64; 
+                              wind_speed, 
+                              base_transfer_velocity::KB = WindSpeedScaledTransferVelocities(wind_speed, Ho06(FT)), 
+                              schmidt_number, 
+                              solubility = (T, S) -> one(FT)) where KB = 
     SchmidtScaledTransferVelocity(base_transfer_velocity, schmidt_number, solubility)
 
-(k::SchmidtScaledTransferVelocity)(u₁₀::FT, T, S) where FT = 
-    k.base_transfer_velocity(u₁₀) / sqrt(k.schmidt_number(T) / convert(FT, 660)) * k.solubility(T, S)
+@inline function surface_value(k::SchmidtScaledTransferVelocity, i, j, grid, clock, model_fields)
+    T = @inbounds model_fields.T[i, j, grid.Nz]
+    S = @inbounds model_fields.S[i, j, grid.Nz]
+
+    # maybe we want to generalise these?
+    Sc = k.schmidt_number(T)
+    ζ  = k.solubility(T, S) # this is maybe a bad name, this is really the conversion from gas to concentration I think
+
+    k₀ = surface_value(k.base_transfer_velocity, i, j, grid, clock, model_fields)
+
+    return k₀ * sqrt(Sc / convert(eltype(model_fields.T), 660)) * ζ
+end
 
 Adapt.adapt_structure(to, k::SchmidtScaledTransferVelocity) = SchmidtScaledTransferVelocity(adapt(to, k.base_transfer_velocity),
                                                                                             adapt(to, k.schmidt_number),
@@ -43,6 +58,18 @@ show(io::IO, k::SchmidtScaledTransferVelocity{KB, SC}) where {KB, SC} =
                 "    k = k₆₆₀(u₁₀) √(660/Sc(T)),\n",
                 "    Sc(T): $(nameof(SC)),\n",
                 "    k₆₆₀(u₁₀) : $(nameof(KB))")
+
+struct WindSpeedScaledTransferVelocities{WS, P}
+         wind_speed :: WS
+    parametrisation :: P
+end
+
+Adapt.adapt_structure(to, k::WindSpeedScaledTransferVelocities) =
+    WindSpeedScaledTransferVelocities(adapt(to, k.wind_speed),
+                                      adapt(to, k.parametrisation))
+
+@inline surface_value(k::WindSpeedScaledTransferVelocities, i, j, grid, clock, model_fields) =
+    k.parametrisation(surface_value(k.wind_speed, i, j, grid, clock, model_fields))
 
 """
     Wanninkhof99(FT = Float64; scale_factor = 0.0283 / hour / 100)
