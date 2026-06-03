@@ -30,7 +30,7 @@
     silicon = NamedTuple{(:DSi, :Si, :PSi)}(ones(3))
 
     θN = bgc.nitrogen_redfield_ratio
-    nitrogen = (NH₄ = one(FT), NO₃ = one(FT), P = θN, D = θN, Z = θN, M = θN, DOC = θN, POC = θN, GOC = one(FT))
+    nitrogen = (NH₄ = one(FT), NO₃ = one(FT), P = θN, D = θN, Z = θN, M = θN, DOC = θN, POC = θN, GOC = θN)
     
     return (; carbon, iron, phosphate, silicon, nitrogen)
 end
