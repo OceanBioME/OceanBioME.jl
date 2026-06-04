@@ -257,7 +257,7 @@ using OceanBioME.Models.NutrientsPlanktonDetritusModels: SingleTracerNutrient
     @test lobster.underlying_biogeochemistry.nutrients.nitrogen |> ((::NitrateAmmonia{FT}) where FT) -> FT == Float32
 
     # plankton is converted
-    @test lobster.underlying_biogeochemistry.plankton |> ((::PhytoZoo{<:Any, FT}) where FT) -> FT == Float32
+    @test lobster.underlying_biogeochemistry.plankton |> ((::PhytoZoo{<:Any, <:Any, FT}) where FT) -> FT == Float32
     @test implicit.underlying_biogeochemistry.plankton |> ((::ImplicitProductivity{FT}) where FT) -> FT == Float32
 
     # detritus
