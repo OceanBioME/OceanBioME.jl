@@ -1,0 +1,220 @@
+<!DOCTYPE html>
+<html lang="en"><head><meta charset="UTF-8"/><meta name="viewport" content="width=device-width, initial-scale=1.0"/><title>Implementing new models · OceanBioME.jl</title><meta name="title" content="Implementing new models · OceanBioME.jl"/><meta property="og:title" content="Implementing new models · OceanBioME.jl"/><meta property="twitter:title" content="Implementing new models · OceanBioME.jl"/><meta name="description" content="Documentation for OceanBioME.jl."/><meta property="og:description" content="Documentation for OceanBioME.jl."/><meta property="twitter:description" content="Documentation for OceanBioME.jl."/><meta property="og:url" content="https://OceanBioME.github.io/OceanBioME/stable/model_implementation/"/><meta property="twitter:url" content="https://OceanBioME.github.io/OceanBioME/stable/model_implementation/"/><link rel="canonical" href="https://OceanBioME.github.io/OceanBioME/stable/model_implementation/"/><script data-outdated-warner src="../assets/warner.js"></script><link href="https://cdnjs.cloudflare.com/ajax/libs/lato-font/3.0.0/css/lato-font.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/juliamono/0.050/juliamono.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/fontawesome.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/solid.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/brands.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.16.8/katex.min.css" rel="stylesheet" type="text/css"/><script>documenterBaseURL=".."</script><script src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.6/require.min.js" data-main="../assets/documenter.js"></script><script src="../search_index.js"></script><script src="../siteinfo.js"></script><script src="../../versions.js"></script><link class="docs-theme-link" rel="stylesheet" type="text/css" href="../assets/themes/documenter-dark.css" data-theme-name="documenter-dark" data-theme-primary-dark/><link class="docs-theme-link" rel="stylesheet" type="text/css" href="../assets/themes/documenter-light.css" data-theme-name="documenter-light" data-theme-primary/><script src="../assets/themeswap.js"></script><link href="../assets/citations.css" rel="stylesheet" type="text/css"/></head><body><div id="documenter"><nav class="docs-sidebar"><a class="docs-logo" href="../"><img class="docs-light-only" src="../assets/logo.png" alt="OceanBioME.jl logo"/><img class="docs-dark-only" src="../assets/logo-dark.png" alt="OceanBioME.jl logo"/></a><div class="docs-package-name"><span class="docs-autofit"><a href="../">OceanBioME.jl</a></span></div><button class="docs-search-query input is-rounded is-small is-clickable my-2 mx-auto py-1 px-2" id="documenter-search-query">Search docs (Ctrl + /)</button><ul class="docs-menu"><li><a class="tocitem" href="../">Home</a></li><li><a class="tocitem" href="../quick_start/">Quick start</a></li><li><input class="collapse-toggle" id="menuitem-3" type="checkbox"/><label class="tocitem" for="menuitem-3"><span class="docs-label">Examples</span><i class="docs-chevron"></i></label><ul class="collapsed"><li><a class="tocitem" href="../generated/box/">Box model</a></li><li><a class="tocitem" href="../generated/column/">Simple column model</a></li><li><a class="tocitem" href="../generated/eady/">Baroclinic instability</a></li><li><a class="tocitem" href="../generated/data_forced/">Data forced column model</a></li><li><a class="tocitem" href="../generated/kelp/">Model with particles (kelp) interacting with the biogeochemistry</a></li></ul></li><li><input class="collapse-toggle" id="menuitem-4" type="checkbox"/><label class="tocitem" for="menuitem-4"><span class="docs-label">Model components and setup</span><i class="docs-chevron"></i></label><ul class="collapsed"><li><input class="collapse-toggle" id="menuitem-4-1" type="checkbox"/><label class="tocitem" for="menuitem-4-1"><span class="docs-label">Biogeochemical models</span><i class="docs-chevron"></i></label><ul class="collapsed"><li><a class="tocitem" href="../model_components/biogeochemical/">Overview</a></li><li><a class="tocitem" href="../model_components/biogeochemical/LOBSTER/">LOBSTER</a></li><li><a class="tocitem" href="../model_components/biogeochemical/NPZ/">NPZD</a></li></ul></li><li><a class="tocitem" href="../model_components/air-sea-gas/">Air-sea gas exchange</a></li><li><input class="collapse-toggle" id="menuitem-4-3" type="checkbox"/><label class="tocitem" for="menuitem-4-3"><span class="docs-label">Sediment models</span><i class="docs-chevron"></i></label><ul class="collapsed"><li><a class="tocitem" href="../model_components/sediments/">Overview</a></li><li><a class="tocitem" href="../model_components/sediments/simple_multi_g/">Simple Multi-G</a></li><li><a class="tocitem" href="../model_components/sediments/instant_remineralisation/">Instant remineralisation</a></li></ul></li><li><a class="tocitem" href="../model_components/light/">Light attenuation models</a></li><li><input class="collapse-toggle" id="menuitem-4-5" type="checkbox"/><label class="tocitem" for="menuitem-4-5"><span class="docs-label">Individuals</span><i class="docs-chevron"></i></label><ul class="collapsed"><li><a class="tocitem" href="../model_components/individuals/">Overview</a></li><li><a class="tocitem" href="../model_components/individuals/slatissima/">Sugar Kelp (Broch and Slagstad 2012 ++)</a></li></ul></li><li><a class="tocitem" href="../model_components/utils/">Utilities</a></li></ul></li><li class="is-active"><a class="tocitem" href>Implementing new models</a><ul class="internal"><li><a class="tocitem" href="#Model-structure"><span>Model structure</span></a></li><li><a class="tocitem" href="#Implementing-a-model"><span>Implementing a model</span></a></li></ul></li><li><input class="collapse-toggle" id="menuitem-6" type="checkbox"/><label class="tocitem" for="menuitem-6"><span class="docs-label">Numerical implementation</span><i class="docs-chevron"></i></label><ul class="collapsed"><li><a class="tocitem" href="../numerical_implementation/positivity-preservation/">Positivity preservation</a></li></ul></li><li><a class="tocitem" href="../visualization/">Visualization</a></li><li><a class="tocitem" href="../contributing/">Contibutors guide</a></li><li><a class="tocitem" href="../references/">References</a></li><li><input class="collapse-toggle" id="menuitem-10" type="checkbox"/><label class="tocitem" for="menuitem-10"><span class="docs-label">Appendix</span><i class="docs-chevron"></i></label><ul class="collapsed"><li><a class="tocitem" href="../appendix/library/">Library</a></li><li><a class="tocitem" href="../appendix/function_index/">Function index</a></li><li><input class="collapse-toggle" id="menuitem-10-3" type="checkbox"/><label class="tocitem" for="menuitem-10-3"><span class="docs-label">Parameters</span><i class="docs-chevron"></i></label><ul class="collapsed"><li><a class="tocitem" href="../generated/Biogeochemistry_parameters/">Biogeochemistry</a></li><li><a class="tocitem" href="../generated/Biogeochemistry_parameters/">Biogeochemistry</a></li><li><a class="tocitem" href="../generated/SLatissima_parameters/">SLatissima</a></li><li><a class="tocitem" href="../generated/TwoBandPhotosyntheticallyActiveRadiation_parameters/">TwoBandPhotosyntheticallyActiveRadiation</a></li><li><a class="tocitem" href="../generated/SimpleMultiG_parameters/">SimpleMultiG</a></li><li><a class="tocitem" href="../generated/InstantRemineralisation_parameters/">InstantRemineralisation</a></li><li><a class="tocitem" href="../generated/OceanBioME.Boundaries.pCO₂_parameters/">OceanBioME.Boundaries.pCO₂</a></li><li><a class="tocitem" href="../generated/CO₂ air-sea exchange_parameters/">CO₂ air-sea exchange</a></li><li><a class="tocitem" href="../generated/O₂ air-sea exchange_parameters/">O₂ air-sea exchange</a></li></ul></li></ul></li></ul><div class="docs-version-selector field has-addons"><div class="control"><span class="docs-label button is-static is-size-7">Version</span></div><div class="docs-selector control is-expanded"><div class="select is-fullwidth is-size-7"><select id="documenter-version-selector"></select></div></div></div></nav><div class="docs-main"><header class="docs-navbar"><a class="docs-sidebar-button docs-navbar-link fa-solid fa-bars is-hidden-desktop" id="documenter-sidebar-button" href="#"></a><nav class="breadcrumb"><ul class="is-hidden-mobile"><li class="is-active"><a href>Implementing new models</a></li></ul><ul class="is-hidden-tablet"><li class="is-active"><a href>Implementing new models</a></li></ul></nav><div class="docs-right"><a class="docs-navbar-link" href="https://github.com/OceanBioME/OceanBioME.jl" title="View the repository on GitHub"><span class="docs-icon fa-brands"></span><span class="docs-label is-hidden-touch">GitHub</span></a><a class="docs-navbar-link" href="https://github.com/OceanBioME/OceanBioME.jl/blob/main/docs/src/model_implementation.md" title="Edit source on GitHub"><span class="docs-icon fa-solid"></span></a><a class="docs-settings-button docs-navbar-link fa-solid fa-gear" id="documenter-settings-button" href="#" title="Settings"></a><a class="docs-article-toggle-button fa-solid fa-chevron-up" id="documenter-article-toggle-button" href="javascript:;" title="Collapse all docstrings"></a></div></header><article class="content" id="documenter-page"><h1 id="model_implementation"><a class="docs-heading-anchor" href="#model_implementation">Implementing a new models</a><a id="model_implementation-1"></a><a class="docs-heading-anchor-permalink" href="#model_implementation" title="Permalink"></a></h1><p>Here we describe how OceanBioME defines biogeochemical (BGC) models, how this varies from Oceananigans, and how to implement your own model.</p><h2 id="Model-structure"><a class="docs-heading-anchor" href="#Model-structure">Model structure</a><a id="Model-structure-1"></a><a class="docs-heading-anchor-permalink" href="#Model-structure" title="Permalink"></a></h2><p>OceanBioME BGC models are <code>struct</code>s of type <code>ContinuousFormBiogeochemistry</code>, which is of abstract type <code>AbstractContinuousFormBiogeochemistry</code> from Oceananigans. In Oceananigans this describes BGC models which are defined using continuous functions (depending continuously on <span>$x$</span>, <span>$y$</span>, and <span>$z$</span>) rather than discrete functions (depending on <span>$i$</span>, <span>$j$</span>, <span>$k$</span>). This allows the user to implement the BGC model equations without worrying about details of the grid or discretization, and then Oceananigans handles the rest.</p><p>OceanBioME&#39;s <code>ContinuousFormBiogeochemistry</code> adds a layer on top of this which makes it easy to add <a href="../model_components/light/#light">light attenuation models</a>, <a href="../model_components/sediments/#sediment">sediment</a>, and <a href="../model_components/individuals/#individuals">biologically active particles</a> (or individual-based models). OceanBioME&#39;s <code>ContinuousFormBiogeochemistry</code> includes parameters in which the types of these components are stored. This means that these model components will automatically be integrated into the BGC model without having to add new methods to call Oceananigans functions. </p><h2 id="Implementing-a-model"><a class="docs-heading-anchor" href="#Implementing-a-model">Implementing a model</a><a id="Implementing-a-model-1"></a><a class="docs-heading-anchor-permalink" href="#Implementing-a-model" title="Permalink"></a></h2><p>The nature of multiple dispatch in Julia means that we define new BGC models as new types. You can then define <a href="https://docs.julialang.org/en/v1/manual/methods/">methods</a> to this type which are used by OceanBioME and Oceananigans to integrate the model.</p><h3 id="The-basics"><a class="docs-heading-anchor" href="#The-basics">The basics</a><a id="The-basics-1"></a><a class="docs-heading-anchor-permalink" href="#The-basics" title="Permalink"></a></h3><p>For this example we are going to implement the simple Nutrient-Phytoplankton model similar to that used in (<a href="../references/#Chen2015">Chen <em>et al.</em>, 2015</a>), although we neglect the nutrient in/outflow terms since they may be added as <a href="https://clima.github.io/OceananigansDocumentation/stable/model_setup/boundary_conditions/">boundary conditions</a>, and modified to conserve nitrogen.</p><p>The first step is to import the abstract type from OceanBioME, some units from Oceananigans (for ease of parameter definition), and <a href="https://docs.julialang.org/en/v1/manual/faq/#What-is-the-difference-between-%22using%22-and-%22import%22?"><code>import</code></a> some functions from Oceananigans in order to add methods to:</p><pre><code class="language-julia hljs">using OceanBioME: Biogeochemistry
+using Oceananigans.Biogeochemistry: AbstractContinuousFormBiogeochemistry
+using Oceananigans.Units
+
+import Oceananigans.Biogeochemistry: required_biogeochemical_tracers,
+                                     required_biogeochemical_auxiliary_fields,
+                                     biogeochemical_drift_velocity</code></pre><p>We then define our <code>struct</code> with the model parameters, as well as slots for the particles, light attenuation, and sediment models:</p><pre><code class="language-julia hljs">@kwdef struct NutrientPhytoplankton{FT, W} &lt;: AbstractContinuousFormBiogeochemistry
+            base_growth_rate :: FT = 1.27 / day              # 1 / seconds
+    nutrient_half_saturation :: FT = 0.025 * 1000 / 14       # mmol N / m³
+       light_half_saturation :: FT = 300.0                   # micro einstein / m² / s
+        temperature_exponent :: FT = 0.24                    # 1
+     temperature_coefficient :: FT = 1.57                    # 1
+         optimal_temperature :: FT = 28.0                    # °C
+              mortality_rate :: FT = 0.15 / day              # 1 / seconds
+     crowding_mortality_rate :: FT = 0.004 / day / 1000 * 14 # 1 / seconds / mmol N / m³
+            sinking_velocity :: W  = 2 / day
+end</code></pre><p>Here, we use descriptive names for the parameters. Below, each of these parameters correspond to a symbol (or letter) which is more convenient mathematically and when defining the BGC model functions. In the above code we used <code>@kwdef</code> to set default values for the models so that we don&#39;t have to set all of these parameters each time we use the model. The default parameter values can optionally be over-ridden by the user when running the model. We have also included a <code>sinking_velocity</code> field in the parameter set to demonstrate how we can get tracers (e.g. detritus) to sink. We also need to define some functions so that OceanBioME and Oceananigans know what tracers and auxiliary fields (e.g. light intensity) we use:</p><pre><code class="language-julia hljs">required_biogeochemical_tracers(::NutrientPhytoplankton) = (:N, :P, :T)
+
+required_biogeochemical_auxiliary_fields(::NutrientPhytoplankton) = (:PAR, )</code></pre><pre class="documenter-example-output"><code class="nohighlight hljs ansi">required_biogeochemical_auxiliary_fields (generic function with 5 methods)</code></pre><p>Next, we define the functions that specify how the phytoplankton <span>$P$</span> evolve. In the absence of advection and diffusion (both of which are handled by Oceananigans), we want the phytoplankton to evolve at the rate given by:</p><p class="math-container">\[\frac{\partial P}{\partial t} = \mu g(T) f(N) h(PAR) P - mP - bP^2,\]</p><p>where <span>$\mu$</span> corresponds to the parameter <code>base_growth_rate</code>, <span>$m$</span> corresponds to the parameter <code>mortality_rate</code>, and <span>$b$</span> corresponds to the parameter <code>crowding_mortality_rate</code>. Here, the functions <span>$g$</span>, <span>$f$</span>, and <span>$h$</span> are defined by:</p><p class="math-container">\[\begin{align}
+g(T) &amp;= c_1\exp\left(-c_2|T - T_{opt}|\right),\\
+f(N) &amp;= \frac{N}{k_N + N},\\
+h(PAR) &amp;= \frac{PAR}{k_P + PAR},
+\end{align}\]</p><p>where <span>$c_1$</span> corresponds to <code>temperature_coefficient</code>,  <span>$c_2$</span> corresponds to <code>temperature_exponent</code>, <span>$T_{opt}$</span> corresponds to <code>optimal_temperature</code>, <span>$k_N$</span> corresponds to <code>nutrient_half_saturation</code>, and <span>$k_P$</span> corresponds to <code>light_half_saturation</code>. </p><p>We turn this into a function for our model by writing:</p><pre><code class="language-julia hljs">@inline function (bgc::NutrientPhytoplankton)(::Val{:P}, x, y, z, t, N, P, T, PAR)
+    μ = bgc.base_growth_rate
+    m = bgc.mortality_rate
+    b = bgc.crowding_mortality_rate
+
+    growth = μ * g(bgc, T) * f(bgc, N) * h(bgc, PAR) * P
+
+    death = m * P + b * P ^ 2
+
+    return growth - death
+end
+
+@inline function g(bgc, T)
+    c₁ = bgc.temperature_coefficient
+    c₂ = bgc.temperature_exponent
+    Tₒ = bgc.optimal_temperature
+
+    return c₁ * exp(-c₂ * abs(T - Tₒ))
+end
+
+@inline function f(bgc, N)
+    kₙ = bgc.nutrient_half_saturation
+
+    return N / (N + kₙ)
+end
+
+@inline function h(bgc, PAR)
+    kₚ = bgc.light_half_saturation
+
+    return PAR / (PAR + kₚ)
+end</code></pre><pre class="documenter-example-output"><code class="nohighlight hljs ansi">h (generic function with 1 method)</code></pre><p>The first parameter <code>::Val{:P}</code> is a special <a href="http://www.jlhub.com/julia/manual/en/function/Val">value type</a> that allows this function to be dispatched when it is given the value <code>Val(:P)</code>. This is how Oceananigans tells the model which forcing function to use. At the start of the <code>NutrientPhytoplankton</code> function we unpack some parameters from the model, then calculate each term, and return the total change (the gain minus the loss). </p><p>For this model, the nutrient evolution can be inferred from the rate of change of phytoplankton. Since this is a simple two variable model and the total concentration is conserved, </p><p class="math-container">\[\frac{\partial N}{\partial t} = - \frac{\partial P}{\partial t}\]</p><p>Hence, we define the nutrient forcing using as the negative of the phytoplankton forcing</p><pre><code class="language-julia hljs">@inline (bgc::NutrientPhytoplankton)(::Val{:N}, args...) = -bgc(Val(:P), args...)</code></pre><p>Finally, we need to define some functions to allow us to update the time-dependent parameters (in this case the PAR and temperature, <span>$T$</span>):</p><pre><code class="language-julia hljs">using OceanBioME: BoxModel
+import OceanBioME.BoxModels: update_boxmodel_state!
+
+function update_boxmodel_state!(model::BoxModel{&lt;:NutrientPhytoplankton, &lt;:Any, &lt;:Any, &lt;:Any, &lt;:Any, &lt;:Any})
+    getproperty(model.values, :PAR) .= model.forcing.PAR(model.clock.time)
+    getproperty(model.values, :T) .= model.forcing.T(model.clock.time)
+end</code></pre><pre class="documenter-example-output"><code class="nohighlight hljs ansi">update_boxmodel_state! (generic function with 4 methods)</code></pre><p>Now we can run an example similar to the <a href="../generated/box/#box_example">LOBSTER box model example</a>:</p><pre><code class="language-julia hljs">using OceanBioME, Oceananigans.Units
+
+const year = years = 365days
+
+@inline PAR⁰(t) = 500 * (1 - cos((t + 15days) * 2π / year)) * (1 / (1 + 0.2 * exp(-((mod(t, year) - 200days) / 50days)^2))) + 2
+
+z = -10 # specify the nominal depth of the box for the PAR profile
+@inline PAR(t) = PAR⁰(t) * exp(0.2z) # Modify the PAR based on the nominal depth and exponential decay
+
+@inline temp(t) = 2.4 * cos(t * 2π / year + 50days) + 26
+
+biogeochemistry = NutrientPhytoplankton()
+
+model = BoxModel(; biogeochemistry, forcing = (; PAR, T = temp))
+model.Δt = 5minutes
+model.stop_time = 5years
+
+set!(model, N = 15, P = 15)
+
+# ## Run the model (should only take a few seconds)
+@info &quot;Running the model...&quot;
+run!(model, save_interval = 100, feedback_interval = Inf, save = SaveBoxModel(&quot;box_np.jld2&quot;))</code></pre><pre class="documenter-example-output"><code class="nohighlight hljs ansi"><span class="sgr36"><span class="sgr1">[ Info: </span></span>Running the model...
+<span class="sgr36"><span class="sgr1">[ Info: </span></span>Reached 0 seconds</code></pre><p>We can then visualise this:</p><pre><code class="language-julia hljs">using JLD2
+
+vars = (:N, :P, :T, :PAR)
+file = jldopen(&quot;box_np.jld2&quot;)
+times = parse.(Float64, keys(file[&quot;values&quot;]))
+
+timeseries = NamedTuple{vars}(ntuple(t -&gt; zeros(length(times)), length(vars)))
+
+for (idx, time) in enumerate(times)
+    values = file[&quot;values/$time&quot;]
+    for tracer in vars
+        getproperty(timeseries, tracer)[idx] = values[tracer]
+    end
+end
+
+close(file)
+
+# ## And plot
+using CairoMakie
+
+fig = Figure(resolution = (1200, 480), fontsize = 20)
+
+axN= Axis(fig[1, 1], ylabel = &quot;Nutrient \n(mmol N / m³)&quot;)
+lines!(axN, times / year, timeseries.N, linewidth = 3)
+
+axP = Axis(fig[1, 2], ylabel = &quot;Phytoplankton \n(mmol N / m³)&quot;)
+lines!(axP, times / year, timeseries.P, linewidth = 3)
+
+axPAR= Axis(fig[2, 1], ylabel = &quot;PAR (einstein / m² / s)&quot;, xlabel = &quot;Time (years)&quot;)
+lines!(axPAR, times / year, timeseries.PAR, linewidth = 3)
+
+axT = Axis(fig[2, 2], ylabel = &quot;Temperature (°C)&quot;, xlabel = &quot;Time (years)&quot;)
+lines!(axT, times / year, timeseries.T, linewidth = 3)
+
+fig</code></pre><img src="87c4ffd7.svg" alt="Example block output"/><p>So now we know it works.</p><h3 id="Phytoplankton-sinking"><a class="docs-heading-anchor" href="#Phytoplankton-sinking">Phytoplankton sinking</a><a id="Phytoplankton-sinking-1"></a><a class="docs-heading-anchor-permalink" href="#Phytoplankton-sinking" title="Permalink"></a></h3><p>Now that we have a fully working BGC model we might want to add some more features. Another aspect that is easy to add is negative buoyancy (sinking). To-do this all we do is add a method to the Oceananigans function <code>biogeochemical_drift_velocity</code>, and we use <code>::Val{:P}</code> to specify that only phytoplankton will sink. Above, we set the default value of the parameter <code>bgc.sinking_velocity</code>. We can override this when we call the BGC model like <code>NutrientPhytoplankton(; light_attenuation_model, sinking_velocity = 1/day)</code>. Note that before using <code>biogeochemical_drift_velocity</code>, we need to import several <code>Fields</code> from Oceananigans:</p><pre><code class="language-julia hljs">using Oceananigans.Fields: ZeroField, ConstantField
+
+biogeochemical_drift_velocity(bgc::NutrientPhytoplankton, ::Val{:P}) =
+    (u = ZeroField(), v = ZeroField(), w = bgc.sinking_velocity)</code></pre><pre class="documenter-example-output"><code class="nohighlight hljs ansi">biogeochemical_drift_velocity (generic function with 8 methods)</code></pre><h3 id="Sediment-model-coupling"><a class="docs-heading-anchor" href="#Sediment-model-coupling">Sediment model coupling</a><a id="Sediment-model-coupling-1"></a><a class="docs-heading-anchor-permalink" href="#Sediment-model-coupling" title="Permalink"></a></h3><p>Another aspect that OceanBioME includes is sediment models. Doing this varies between sediment models, but for the most generic and simplest, all we need to do is add methods to two functions:</p><pre><code class="language-julia hljs">using OceanBioME.Boundaries.Sediments: sinking_flux
+
+import OceanBioME.Boundaries.Sediments: nitrogen_flux, carbon_flux, remineralisation_receiver, sinking_tracers
+
+@inline nitrogen_flux(i, j, k, grid, advection, bgc::NutrientPhytoplankton, tracers) =
+     sinking_flux(i, j, k, grid, advection, Val(:P), bgc, tracers)
+
+@inline carbon_flux(i, j, k, grid, advection, bgc::NutrientPhytoplankton, tracers) = nitrogen_flux(i, j, k, grid, advection, bgc, tracers) * 6.56
+
+@inline remineralisation_receiver(::NutrientPhytoplankton) = :N
+
+@inline sinking_tracers(::NutrientPhytoplankton) = (:P, )</code></pre><pre class="documenter-example-output"><code class="nohighlight hljs ansi">sinking_tracers (generic function with 5 methods)</code></pre><h3 id="Putting-it-together"><a class="docs-heading-anchor" href="#Putting-it-together">Putting it together</a><a id="Putting-it-together-1"></a><a class="docs-heading-anchor-permalink" href="#Putting-it-together" title="Permalink"></a></h3><p>Now that we have added these elements we can put it together into another simple example:</p><pre><code class="language-julia hljs">using Oceananigans, OceanBioME
+using OceanBioME.Sediments: InstantRemineralisation
+
+# define some simple forcing
+
+@inline surface_PAR(t) = 200 * (1 - cos((t + 15days) * 2π / year)) * (1 / (1 + 0.2 * exp(-((mod(t, year) - 200days) / 50days)^2))) + 2
+
+@inline ∂ₜT(z, t) = - 2π / year * sin(t * 2π / year + 50days)
+
+@inline κₜ(z, t) = 1e-2 * (1 + tanh((z - 50) / 10)) / 2 + 1e-4
+
+# define the grid
+
+grid = RectilinearGrid(topology = (Flat, Flat, Bounded), size = (32, ), extent = (100, ))
+
+# setup the biogeochemical model
+
+light_attenuation = TwoBandPhotosyntheticallyActiveRadiation(; grid, surface_PAR)
+
+sediment = InstantRemineralisation(; grid)
+
+sinking_velocity = ZFaceField(grid)
+
+w_sink(z) = 2 / day * tanh(z / 5)
+
+set!(sinking_velocity, w_sink)
+
+negative_tracer_scaling = ScaleNegativeTracers((:N, :P))
+
+biogeochemistry = Biogeochemistry(NutrientPhytoplankton(; sinking_velocity);
+                                  light_attenuation,
+                                  sediment,
+                                  modifiers = negative_tracer_scaling)
+
+# put the model together
+
+model = NonhydrostaticModel(; grid,
+                              biogeochemistry,
+                              closure = ScalarDiffusivity(ν = κₜ, κ = κₜ),
+                              forcing = (; T = ∂ₜT))
+
+set!(model, P = 0.01, N = 15, T = 28)
+
+# run
+
+simulation = Simulation(model, Δt = 9minutes, stop_time = 1years)
+
+simulation.output_writers[:tracers] = JLD2OutputWriter(model, model.tracers,
+                                                       filename = &quot;column_np.jld2&quot;,
+                                                       schedule = TimeInterval(1day),
+                                                       overwrite_existing = true)
+
+simulation.output_writers[:sediment] = JLD2OutputWriter(model, model.biogeochemistry.sediment.fields,
+                                                        indices = (:, :, 1),
+                                                        filename = &quot;column_np_sediment.jld2&quot;,
+                                                        schedule = TimeInterval(1day),
+                                                        overwrite_existing = true)
+
+run!(simulation)</code></pre><pre class="documenter-example-output"><code class="nohighlight hljs ansi"><span class="sgr33"><span class="sgr1">┌ Warning: </span></span>Sediment models are an experimental feature and have not yet been validated
+<span class="sgr33"><span class="sgr1">└ </span></span><span class="sgr90">@ OceanBioME.Boundaries.Sediments ~/builds/kelp-6/oceanbiome/oceanbiome/src/Boundaries/Sediments/instant_remineralization.jl:57</span>
+<span class="sgr36"><span class="sgr1">[ Info: </span></span>Initializing simulation...
+<span class="sgr36"><span class="sgr1">[ Info: </span></span>    ... simulation initialization complete (675.997 ms)
+<span class="sgr36"><span class="sgr1">[ Info: </span></span>Executing initial time step...
+<span class="sgr36"><span class="sgr1">[ Info: </span></span>    ... initial time step complete (3.936 seconds).
+<span class="sgr36"><span class="sgr1">[ Info: </span></span>Simulation is stopping after running for 56.097 seconds.
+<span class="sgr36"><span class="sgr1">[ Info: </span></span>Simulation time 365 days equals or exceeds stop time 365 days.</code></pre><p>We can then visualise this:</p><pre><code class="language-julia hljs">N = FieldTimeSeries(&quot;column_np.jld2&quot;, &quot;N&quot;)
+P = FieldTimeSeries(&quot;column_np.jld2&quot;, &quot;P&quot;)
+
+sed = FieldTimeSeries(&quot;column_np_sediment.jld2&quot;, &quot;N_storage&quot;)
+
+fig = Figure()
+
+axN = Axis(fig[1, 1], ylabel = &quot;z (m)&quot;)
+axP = Axis(fig[2, 1], ylabel = &quot;z (m)&quot;)
+axSed = Axis(fig[3, 1:2], ylabel = &quot;Sediment (mmol N / m²)&quot;, xlabel = &quot;Time (years)&quot;)
+
+_, _, zc = nodes(grid, Center(), Center(), Center())
+times = N.times
+
+hmN = heatmap!(axN, times ./ year, zc, N[1, 1, 1:grid.Nz, 1:end]&#39;,
+               interpolate = true, colormap = Reverse(:batlow))
+
+hmP = heatmap!(axP, times ./ year, zc, P[1, 1, 1:grid.Nz, 1:end]&#39;,
+               interpolate = true, colormap = Reverse(:batlow))
+
+lines!(axSed, times ./ year, sed[1, 1, 1, :])
+
+Colorbar(fig[1, 2], hmN, label = &quot;Nutrient (mmol N / m³)&quot;)
+Colorbar(fig[2, 2], hmP, label = &quot;Phytoplankton (mmol N / m³)&quot;)
+
+fig</code></pre><img src="a6c53b9d.svg" alt="Example block output"/><p>We can see in this that some phytoplankton sink to the bottom, and are both remineralized back into nutrients and stored in the sediment.</p><h3 id="Final-notes"><a class="docs-heading-anchor" href="#Final-notes">Final notes</a><a id="Final-notes-1"></a><a class="docs-heading-anchor-permalink" href="#Final-notes" title="Permalink"></a></h3><p>When implementing a new model we recommend following a testing process as we have here, starting with a box model, then a column, and finally using it in a realistic physics scenarios. We have found this very helpful for spotting bugs that were proving difficult to decipher in other situations. You can also add <code>Individuals</code>, light attenuation models, and sediment models in a similar fashion.</p></article><nav class="docs-footer"><a class="docs-footer-prevpage" href="../model_components/utils/">« Utilities</a><a class="docs-footer-nextpage" href="../numerical_implementation/positivity-preservation/">Positivity preservation »</a><div class="flexbox-break"></div><p class="footer-message">Powered by <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> and the <a href="https://julialang.org/">Julia Programming Language</a>.</p></nav></div><div class="modal" id="documenter-settings"><div class="modal-background"></div><div class="modal-card"><header class="modal-card-head"><p class="modal-card-title">Settings</p><button class="delete"></button></header><section class="modal-card-body"><p><label class="label">Theme</label><div class="select"><select id="documenter-themepicker"><option value="documenter-light">documenter-light</option><option value="documenter-dark">documenter-dark</option><option value="auto">Automatic (OS)</option></select></div></p><hr/><p>This document was generated with <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> version 1.1.2 on <span class="colophon-date" title="Wednesday 15 November 2023 13:14">Wednesday 15 November 2023</span>. Using Julia version 1.9.4.</p></section><footer class="modal-card-foot"></footer></div></div></div></body></html>
