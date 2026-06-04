@@ -123,7 +123,7 @@ Adapt.adapt_structure(to, ip::ImplicitProductivity) =
         adapt(to, ip.nitrogen_ratio),
         adapt(to, ip.iron_ratio),
         adapt(to, ip.rain_ratio),
-        nutrient_half_saturations
+        adapt(to, ip.nutrient_half_saturations)
     )
 
 Base.summary(::ImplicitProductivity) = string("ImplicitProductivity")
