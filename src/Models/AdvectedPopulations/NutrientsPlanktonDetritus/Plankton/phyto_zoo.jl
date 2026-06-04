@@ -1,7 +1,7 @@
 using Oceananigans.Fields: ZeroField
 
-struct PhytoZoo{NH, FT, LL, TC, PS, ZS}
-          nutrient_half_saturations :: NH
+struct PhytoZoo{LN, TT, FT, LL, TC, PS, ZS} <: AbstractPlankton{LN}
+          nutrient_half_saturations :: NamedTuple{LN, TT}
 
          nitrate_ammonia_inhibition :: FT
               light_half_saturation :: FT

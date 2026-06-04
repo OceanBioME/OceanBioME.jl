@@ -2,7 +2,7 @@
     Abiotic
 No life, does nothing
 """
-struct Abiotic end
+struct Abiotic <: AbstractPlankton{tuple()} end
 
 required_biogeochemical_tracers(::Abiotic) = tuple()
 required_biogeochemical_auxiliary_fields(::Abiotic) = tuple()

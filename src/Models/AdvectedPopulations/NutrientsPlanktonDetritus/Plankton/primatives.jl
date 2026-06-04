@@ -1,6 +1,9 @@
 # building blocks
 
-# growth limitation - to use these primatives plankton must define `limiting_nutrients`
+abstract type AbstractPlankton{LN} end
+
+# growth limitation - to use these primatives plankton be AbstractPlankton with LN = limiting nutrients
+# a tuple of limiting nutrients
 # and `nutrient_half_saturaitons(plankton, symbol)`
 @inline nutrient_limitation(i, j, k, grid, nutrients, args...) = 
     min(nitrogen_limitation(i, j, k, grid, nutrients.nitrogen, args...),
@@ -13,10 +16,10 @@ for (nutrient, symbol) in pairs((phosphate = :PO₄, iron = :Fe, silicate = :Si)
     @eval begin
         @inline function $fname(i, j, k, grid,
                                 ::SingleTracerNutrient, 
-                                plankton,
+                                plankton::AbstractPlankton{LN},
                                 bgc::NutrientsPlanktonDetritus{FT},
-                                fields, auxiliary_fields) where FT
-            if $(QuoteNode(nutrient)) in limiting_nutrients(plankton)
+                                fields, auxiliary_fields) where {LN, FT}
+            if $(QuoteNode(nutrient)) in LN
                 kN = nutrient_half_saturations(plankton, Val($(QuoteNode(symbol)))) 
                 N = fields.$symbol[i, j, k]
 
@@ -37,11 +40,11 @@ end
 
 @inline function nitrogen_limitation(i, j, k, grid,
                                      ::SingleTracerNutrient, 
-                                     plankton,
+                                     plankton::AbstractPlankton{LN},
                                      ::NutrientsPlanktonDetritus{FT},
-                                     fields, auxiliary_fields) where FT
+                                     fields, auxiliary_fields) where {LN, FT}
 
-    if (:nitrate in limiting_nutrients(plankton)) | (:nitrogen in limiting_nutrients(plankton))
+    if (:nitrate in LN) | (:nitrogen in LN)
         kN = nutrient_half_saturations(plankton, Val(:N)) 
         N = fields.N[i, j, k]
 
@@ -52,17 +55,18 @@ end
 end
 
 @inline nitrogen_limitation(i, j, k, grid,
-                            ::Nothing, plankton,
+                            ::Nothing, 
+                            plankton,
                             ::NutrientsPlanktonDetritus{FT},
                             fields, auxiliary_fields) where FT = one(FT)
 
 @inline function nitrogen_limitation(i, j, k, grid,
                                      ::NitrateAmmonia, 
-                                     plankton,
+                                     plankton::AbstractPlankton{LN},
                                      ::NutrientsPlanktonDetritus{FT},
-                                     fields, auxiliary_fields) where FT
+                                     fields, auxiliary_fields) where {LN, FT}
 
-    if (:nitrate in  limiting_nutrients(plankton)) & (:ammonia in  limiting_nutrients(plankton))
+    if (:nitrate in LN) & (:ammonia in LN)
         kNO₃ = nutrient_half_saturations(plankton, Val(:NO₃)) 
         kNH₄ = nutrient_half_saturations(plankton, Val(:NH₄))
 
@@ -72,7 +76,7 @@ end
         end
 
         return (NO₃/kNO₃ + NH₄/kNH₄) / (1 + NO₃/kNO₃ + NH₄/kNH₄)
-    elseif :nitrogen in limiting_nutrients(plankton)
+    elseif :nitrogen in LN
         kN = nutrient_half_saturations(plankton, Val(:NO₃)) 
         N = fields.NO₃[i, j, k]
 

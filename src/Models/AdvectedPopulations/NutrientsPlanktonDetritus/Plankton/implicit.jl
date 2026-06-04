@@ -11,7 +11,7 @@ Units: mmol P / m³
 Tracers: none
 Default limiting nutrients: N or NO₃, P, Fe
 """
-struct ImplicitProductivity{FT, NH} 
+struct ImplicitProductivity{FT, LN, TT} <: AbstractPlankton{LN} 
     maximum_community_productivity :: FT
              light_half_saturation :: FT
        dissolved_fraction_of_waste :: FT
@@ -20,7 +20,7 @@ struct ImplicitProductivity{FT, NH}
                         iron_ratio :: FT
                         rain_ratio :: FT
 
-         nutrient_half_saturations :: NH
+         nutrient_half_saturations :: NamedTuple{LN, TT}
 end
 
 function ImplicitProductivity(FT = Float64; 
