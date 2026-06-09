@@ -134,7 +134,7 @@ end
 
 const PhytoZoo_NPD{FT} = NutrientsPlanktonDetritus{FT, <:Any, <:PhytoZoo}
 
-required_biogeochemical_tracers(::PhytoZoo) = (:P, :Z)
+required_biogeochemical_tracers(pz::PhytoZoo) = ((:P, :Z)..., (isnothing(pz.temperature_coefficient) ? () : (:T, ))...)
 required_biogeochemical_auxiliary_fields(::PhytoZoo) = (:PAR, )
 
 biogeochemical_drift_velocity(bgc::PhytoZoo_NPD, ::Val{:P}) = 

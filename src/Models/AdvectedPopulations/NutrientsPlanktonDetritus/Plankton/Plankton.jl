@@ -17,6 +17,7 @@ export Abiotic, ImplicitProductivity, PhytoZoo
 using Adapt
 using Oceananigans.Units
 using Oceananigans.Grids: AbstractGrid
+using OceanBioME: setup_velocity_fields
 
 using ..NutrientsPlanktonDetritusModels:
     NutrientsPlanktonDetritus,

@@ -80,10 +80,25 @@ NPZD(grid::AbstractGrid{FT};
                            :phosphate in limiting_nutrients ? PO₄ : nothing, 
                            :iron in limiting_nutrients ? Fe : nothing, 
                            nothing),
-     plankton = PhytoZoo(FT;
-                         nutrient_half_saturations = (nitrate = 0.7,                     # mmol N/m³
+     plankton = PhytoZoo(grid;
+                         nutrient_half_saturations = (nitrate = 2.3868,                     # mmol N/m³
                                                       ammonia = 0.001,                   # mmol N/m³
-                                                      iron = 2e-4)[limiting_nutrients]), # mmol Fe / m³
+                                                      iron = 2e-4)[limiting_nutrients], # mmol Fe / m³
+                         phytoplankton_maximum_growth_rate = 0.6989 / day,
+                         phytoplankton_exudation_fraction = zero(FT),
+                         temperature_coefficient = 1.88,
+                         phytoplankton_mortality_rate = (0.066 + 0.0101)/day,
+                         preference_for_phytoplankton = one(FT),
+                         grazing_half_saturation = 0.5573,
+                         zooplankton_mortality_rate = 0.3395 / day,
+                         zooplankton_excretion_rate = 0.0102 / day,
+                         zooplankton_assimilation_fraction = 0.9116,
+                         phytoplankton_sinking_speed = 0.2551/day,
+                         excretion_inorganic_fraction = one(FT),
+                         phytoplankton_solid_waste_fraction = 0.0101 / (0.066 + 0.0101),
+                         maximum_grazing_rate = 2.1522 / day,
+                         light_limitation = PlanktonModels.AnalyticalLightLimitation(),
+                         light_half_saturation = (0.6989/day)/(0.1953/day)),
      detritus = Detritus(grid; open_bottom),
      surface_PAR = default_surface_PAR,
      light_attenuation = default_light(; grid, surface_PAR),
