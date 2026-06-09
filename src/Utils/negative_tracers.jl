@@ -100,12 +100,6 @@ function ScaleNegativeTracers(bgc::AbstractBiogeochemistry; invalid_fill_value =
     return ScaleNegativeTracers(tracers; invalid_fill_value, warn)
 end
 
-# for when `conserved_tracers` just returns a tuple of symbols
-function ScaleNegativeTracers(tracers; invalid_fill_value=NaN, warn=false)
-    scalefactors = ones(length(tracers))
-    return ScaleNegativeTracers(tracers, scalefactors, invalid_fill_value, warn)
-end
-
 function ScaleNegativeTracers(tracers::NTuple{<:Any, Symbol};
                               invalid_fill_value=NaN,
                               warn=false,)
