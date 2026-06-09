@@ -7,7 +7,7 @@ env:
   JULIA_PKG_SERVER_REGISTRY_PREFERENCE: eager
   OCEANBIOME_DIR: "$HOME/Oceananigans.jl-$BUILDKITE_BUILD_NUMBER"
   JULIAUP: /var/lib/buildkite-agent/.juliaup/bin/juliaup
-  JULIA: /var/lib/buildkite-agent/.juliaup/bin/julia
+  JULIA: /var/lib/buildkite-agent/.juliaup/bin/julialauncher
 
 steps:
   - label: "Upload"

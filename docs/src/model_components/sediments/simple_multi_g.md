@@ -22,7 +22,7 @@ You may optionally specify the model parameters. This can then be passed in the 
 
 ```julia
 biogeochemistry = LOBSTER(grid;
-                          carbonate_system = CarbonateSystem(),
+                          inorganic_carbon = CarbonateSystem(),
                           oxygen = Oxygen(), 
                           detritus = VariableRedfieldDetritus(grid; open_bottom = true),
                           sediment)

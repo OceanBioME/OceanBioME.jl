@@ -390,7 +390,7 @@ function PISCES(; grid,
                                         sinking_velocities)
 
     if scale_negatives
-        scalers = ScaleNegativeTracers(underlying_biogeochemistry, grid; invalid_fill_value)
+        scalers = ScaleNegativeTracers(underlying_biogeochemistry; invalid_fill_value)
         if isnothing(modifiers)
             modifiers = scalers
         elseif modifiers isa Tuple

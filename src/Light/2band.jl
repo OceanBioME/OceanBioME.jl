@@ -154,7 +154,7 @@ function update_biogeochemical_state!(model, PAR::TwoBandPhotosyntheticallyActiv
     return nothing
 end
 
-summary(::TwoBandPhotosyntheticallyActiveRadiation{FT}) where {FT} = string("Two-band light attenuation model ($FT)")
+summary(::TwoBandPhotosyntheticallyActiveRadiation{FT}) where {FT} = string("TwoBandPhotosyntheticallyActiveRadiation{$FT}")
 show(io::IO, model::TwoBandPhotosyntheticallyActiveRadiation{FT}) where {FT} = print(io, summary(model))
 
 biogeochemical_auxiliary_fields(par::TwoBandPhotosyntheticallyActiveRadiation) = (PAR = par.field, )

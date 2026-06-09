@@ -58,30 +58,29 @@ function test_PISCES_conservation() # only on CPU please
                                                              mean_mixed_layer_vertical_diffusivity,
                                                              # turn off permanent iron removal and nitrogen fixation
                                                              iron = SimpleIron(excess_scavenging_enhancement = 0.0),
-                                                             nitrogen = NitrateAmmonia(maximum_fixation_rate = 0.0))
+                                                             nitrogen = OceanBioME.Models.PISCESModel.NitrateAmmonia(maximum_fixation_rate = 0.0))
 
-    model = BoxModel(; grid, biogeochemistry)
+    model = NonhydrostaticModel(grid; biogeochemistry, advection = nothing)
 
     # checks model works with zero values
     time_step!(model, 1.0)
 
     # and that they all return zero
-    @test all([all(!(name in (:T, :S)) | (Array(interior(values))[1] .== 0)) for (name, values) in pairs(model.fields)])
+    @test all([all(!(name in (:T, :S)) | (Array(interior(values))[1] .== 0)) for (name, values) in pairs(model.tracers)])
 
     # set some semi-realistic conditions and check conservation
-    set_PISCES_initial_values!(model.fields)
+    set_PISCES_initial_values!(model.tracers)
 
     time_step!(model, 1.0)
 
-    conserved_tracers = OceanBioME.conserved_tracers(biogeochemistry; ntuple = true)
+    conserved_tracers = OceanBioME.conserved_tracers(biogeochemistry)
 
-    total_carbon_tendencies = sum(map(f -> value(f), model.timestepper.Gⁿ[conserved_tracers.carbon]))
-    total_iron_tendencies = sum([value(model.timestepper.Gⁿ[n]) * sf for (n, sf) in zip(conserved_tracers.iron.tracers, conserved_tracers.iron.scalefactors)])
-    total_silicon_tendencies = sum(map(f -> value(f), model.timestepper.Gⁿ[conserved_tracers.silicon]))
-    total_phosphate_tendencies = sum([value(model.timestepper.Gⁿ[n]) * sf for (n, sf) in zip(conserved_tracers.phosphate.tracers, conserved_tracers.phosphate.scalefactors)])
-    total_nitrogen_tendencies = sum([value(model.timestepper.Gⁿ[n]) * sf for (n, sf) in zip(conserved_tracers.nitrogen.tracers, conserved_tracers.nitrogen.scalefactors)])
+    total_carbon_tendencies = sum(map(f -> value(f), model.timestepper.Gⁿ[keys(conserved_tracers.carbon)]))
+    total_iron_tendencies = sum([value(model.timestepper.Gⁿ[n]) * sf for (n, sf) in pairs(conserved_tracers.iron)])
+    total_silicon_tendencies = sum(map(f -> value(f), model.timestepper.Gⁿ[keys(conserved_tracers.silicon)]))
+    total_phosphate_tendencies = sum([value(model.timestepper.Gⁿ[n]) * sf for (n, sf) in pairs(conserved_tracers.phosphate)])
+    total_nitrogen_tendencies = sum([value(model.timestepper.Gⁿ[n]) * sf for (n, sf) in pairs(conserved_tracers.nitrogen)])
 
-    # double precision floats are only valid to 17 bits so this tolerance is actually good
     @test isapprox(total_carbon_tendencies, 0, atol = 10^-20)
     @test isapprox(total_iron_tendencies, 0, atol = 10^-21)
     @test isapprox(total_silicon_tendencies, 0, atol = 10^-21)

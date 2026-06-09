@@ -22,7 +22,7 @@ register(dd)
 function test_gas_exchange_model(grid, air_concentration)
     model = NonhydrostaticModel(grid;
                                 tracers = (:T, :S),
-                                biogeochemistry = LOBSTER(grid; carbonate_system = CarbonateSystem()),
+                                biogeochemistry = LOBSTER(grid; inorganic_carbon = CarbonateSystem()),
                                 boundary_conditions = (DIC = FieldBoundaryConditions(top = CarbonDioxideGasExchangeBoundaryCondition(; air_concentration)), ))
 
     set!(model, T = 15.0, S = 35.0, DIC = 2220, Alk = 2500)
@@ -53,7 +53,7 @@ function test_gas_exchange_model(grid, air_concentration)
 
     model = NonhydrostaticModel(grid;
                                 tracers = (:T, :S),
-                                biogeochemistry = LOBSTER(grid; carbonate_system = CarbonateSystem(2)),
+                                biogeochemistry = LOBSTER(grid; inorganic_carbon = CarbonateSystem(2)),
                                 boundary_conditions)
 
     set!(model, T = 15.0, S = 35.0, DIC1 = 2220, Alk1 = 2500, DIC2 = 2221, Alk2 = 2501)
