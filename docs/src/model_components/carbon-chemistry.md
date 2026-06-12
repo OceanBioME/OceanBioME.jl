@@ -63,7 +63,7 @@ carbon_chemistry(; DIC, Alk, T, S, lon = -31.52, lat = 33.75)
 The default uses the polynomial approximation described in [roquet2015](@citet) as provided by [`SeawaterPolynomials.jl`](https://github.com/CliMA/SeawaterPolynomials.jl/).
 
 ### Computing the carbonate concentration
-So that this model can be used in calcite dissolution models it can also return the carbonate saturation by calling the function `calcite_saturation`
+So that this model can be used in calcite dissolution models it can also return the calcite saturation state by calling the function `calcite_saturation`
 ```@example carbon-chem
 using OceanBioME.Models.CarbonChemistryModel: calcite_saturation
 
@@ -233,10 +233,16 @@ fCO_2 = \frac{[CO_2(aq)]}{K_0},
 ```
 in atmospheres.
 
-### Carbonate concentration and calcite saturation
-Similarly we can also diagnose the calcite concentration
+### Carbonate ion equilibrium concentration and calcite saturation state
+Similarly we can also diagnose the equilibrium concentration of carbonate ions in seawater using
 ```math
 [CO_3^{2-}] = \frac{[DIC]K_1K_2}{[\ce{H^+}]([\ce{H^+}] + K_1)+K_1K_2}.
+```
+which can be diagnosed by calling `equilibrium_carbonate_ion_concentration`:
+```@example carbon-chem
+using OceanBioME.Models.CarbonChemistryModel: equilibrium_carbonate_ion_concentration
+
+equilibrium_carbonate_ion_concentration(carbon_chemistry; DIC, Alk, T, S)
 ```
 
 This concentration is important in the dissolution of calcium carbonate which reacts according to the equilibrium
@@ -252,6 +258,28 @@ The calcite saturation can then be defined as ``\Omega=\frac{[\ce{CO_3^{2-}}]}{[
 ```math
 \Omega = \frac{[\ce{Ca^{2+}}][\ce{CO_3^{2-}}]}{K_{SP}}.
 ```
+
+### Explicit calcite
+By default, the `CarbonateSystem` component of [LOBSTER](@ref LOBSTER) treats calcite implicitly: biological calcification and dissolution modify `DIC` and `Alk` directly, without a separate calcite tracer.
+Setting `explicit_calcite = true` when constructing the carbonate system evolves an additional prognostic `CaCO₃` tracer, which can sink and exchange carbon with the dissolved pool through kinetic precipitation and dissolution.
+Note that the default parameters are set so that `CaCO₃` corresponds to calcite, but other mineral forms (e.g. araonite) could be used as well.
+At each timestep the calcite saturation state ``\Omega`` is diagnosed from `DIC`, `Alk`, `T`, and `S` using the `calcite_saturation` function described above, so `T` and `S` must be included as model tracers (in °C and PSU) when using the `explicit_calcite = true`.
+The calcite precipitation and dissolution rates depend on how far ``\Omega`` is above or below unity, with rate constants set when the carbonate system is constructed.
+
+For example, to activate explicit calcite in a LOBSTER simulation:
+```julia
+using OceanBioME, Oceananigans
+
+grid = RectilinearGrid(size=(1, 1, 1), extent=(1, 1, 2))
+
+carbonate_system = CarbonateSystem(grid; explicit_calcite = true)
+
+model = NonhydrostaticModel(grid;
+                              tracers = (:T, :S),
+                              biogeochemistry = LOBSTER(grid; carbonate_system))
+```
+
+When `explicit_calcite = false` (the default), no `CaCO₃` tracer is added and the carbonate chemistry functions above are not called during time stepping.
 
 ### Missing pieces
 In most cases the chemistry described above requires information about more elements that is usually available.
