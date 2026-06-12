@@ -15,9 +15,9 @@ import Adapt: adapt_structure
 """
     CarbonateSystem{N, CAL}
 
-`CarbonateSystem` defines the carbonate system for the `LOBSTER` biogeochemical
+`CarbonateSystem` defines the carbonate system for the `NutrientsPlanktonDetritus` biogeochemical
 model and evolves dissolved inorganic carbon (`DIC`) and alkalinity (`Alk`).
-`DIC` is the total inorganic carbon, typically considered to be dissolved 
+`DIC` is the total dissolved inorganic carbon, typically considered to be dissolved 
 carbon dioxide, carbonic acid, bicarbonate, and carbonate. `Alk`alinity is 
 the buffering capacity of the water which is approximately the amount of bases
 in solution that can be neutralised by the addition of acid so is approximately
@@ -33,20 +33,27 @@ of detritus or excretion from zooplankton waste. It is also produced by the
 dissolution of calcite in the zooplankton gut. It is removed by photosynthesis
 in phytoplankton.
 
-`Alk`alinity is produced (by the removal of nitrose acid (?)), and removed by
-the uptake of calcite into phytoplankton.
+`Alk`alinity is modified by nitrogen cycling and calcification. Nitrate uptake by phytoplankton increases alkalinity, while calcification decreases alkalinity through the formation of CaCO₃.
 
 `DIC` and `Alk` concentration is only one way coupled with the rest of the 
-biogeochemistry and *does not* effect any other groups (e.g. acidifcation does
-not effect phytoplankton growth). To capture this effect a different `plankton` 
+biogeochemistry and *does not* effect any other groups (e.g. acidification does
+not affect phytoplankton growth). To capture this effect a different `plankton` 
 could be defined.
 
 Multiple (N) instances of the carbonate system can evolve in parallel and the tracers
 will be named `DIC1` ... `DICN` and `Alk1` ... `AlkN`. This is setup by passing an 
 integer argument when the model is constructed like `CarbonateSystem(2)`.
 
+## Explicit calcite
+
+Pass a `grid` and set `explicit_calcite = true` to evolve a `CaCO₃` tracer with kinetic
+precipitation and dissolution. This requires temperature (`T`, °C) and salinity (`S`, PSU)
+to be model tracers so that the calcite saturation state (Ω) can be computed each timestep.
+Include them when constructing the ocean model, e.g.
+`NonhydrostaticModel(grid; tracers = (:T, :S), biogeochemistry = NutrientsPlanktonDetritus(grid; carbonate_system = CarbonateSystem(grid; explicit_calcite=true)))`.
+
 You may get method overwrite warnings if you repeatedly define carbonate systems
-with N>1, this shouldn't cause problems.
+with N>1, but this shouldn't cause problems.
 """
 struct CarbonateSystem{N, CAL, CSS, CC, FT, SV}
       calcite_saturation_state :: CSS
@@ -83,6 +90,13 @@ function CarbonateSystem(replicates::Int = 1)
                                               nothing, nothing, nothing, nothing)
 end
 
+"""
+    CarbonateSystem(grid, replicates = 1; explicit_calcite = false, ...)
+
+Construct a [`CarbonateSystem`](@ref) on `grid`, optionally with an explicit `CaCO₃` tracer.
+
+When `explicit_calcite = true`, the ocean model must include `T` and `S` tracers (°C and PSU) for calcite saturation calculations. These are included in `required_biogeochemical_tracers` alongside `DIC`, `Alk`, and `CaCO₃`.
+"""
 function CarbonateSystem(grid::AbstractGrid, replicates = 1; 
                          explicit_calcite = false,
                          carbon_chemistry::CC = CarbonChemistry(),
@@ -127,6 +141,7 @@ function update_biogeochemical_state!(model, bgc::CarbonateSystem{N, true}) wher
     carbon_chemistry = bgc.carbon_chemistry
     grid = model.grid
 
+    # T and S must be model tracers when explicit_calcite = true; see required_biogeochemical_tracers
     T = model.tracers.T
     S = model.tracers.S
 
@@ -170,12 +185,13 @@ end
 end
 
 required_biogeochemical_tracers(::CarbonateSystem{1, false}) = (:DIC, :Alk)
-required_biogeochemical_tracers(::CarbonateSystem{1, true}) = (:DIC, :Alk, :CaCO₃)
+required_biogeochemical_tracers(::CarbonateSystem{1, true}) = (:DIC, :Alk, :CaCO₃, :T, :S)
 
 required_biogeochemical_tracers(::CarbonateSystem{N, false}) where N = (map(n->Symbol(:DIC, n), 1:N)..., map(n->Symbol(:Alk, n), 1:N)...)
 required_biogeochemical_tracers(::CarbonateSystem{N, true}) where N = (map(n->Symbol(:DIC, n), 1:N)..., 
                                                                        map(n->Symbol(:Alk, n), 1:N)...,
-                                                                       map(n->Symbol(:CaCO₃, n), 1:N)...)
+                                                                       map(n->Symbol(:CaCO₃, n), 1:N)...,
+                                                                       :T, :S)
 
 @inline biogeochemical_drift_velocity(bgc::NutrientsPlanktonDetritus{<:Any, <:Any, <:Any, <:CarbonateSystem}, 
                                       ::Val{:CaCO₃}) = 

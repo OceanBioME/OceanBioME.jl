@@ -1,4 +1,4 @@
-function carbonate_concentration(cc::CarbonChemistry; 
+function equilibrium_carbonate_ion_concentration(cc::CarbonChemistry; 
                                  DIC::FT, T, S, Alk = zero(DIC), pH = nothing,
                                  P = nothing,
                                  lon = zero(DIC),
@@ -41,11 +41,13 @@ function carbonate_concentration(cc::CarbonChemistry;
     params = (; DIC, Alk, boron, sulfate, fluoride, silicate, phosphate,
                 K1, K2, KB, KW, KS, KF, KP1, KP2, KP3, KSi)
 
-    # solve equilibrium for hydrogen ion concentration
+    # solve equilibrium for hydrogen ion concentration to find the pH
 
     H = solve_for_H(pH, params, initial_pH_guess, cc.solver)
 
-    # compute the calcite concentration
+    # compute the equilibrium carbonate ion concentration using the pH and equilibrium constants using the equation:
+    # [CO₃²⁻] = [DIC]K₁K₂ / ([H⁺]([H⁺] + K₁) + K₁K₂)
+
     denom1 = (H * (H + K1))
     denom2 = (one(DIC) + K1 * K2 / denom1)
 
@@ -63,7 +65,7 @@ function calcite_saturation(cc::CarbonChemistry;
                             phosphate = zero(DIC),
                             initial_pH_guess = convert(typeof(DIC), 8)) where FT
 
-    CO₃²⁻ = carbonate_concentration(cc;
+    CO₃²⁻ = equilibrium_carbonate_ion_concentration(cc;
                                     DIC, Alk, T, S, pH,
                                     P,
                                     boron,
