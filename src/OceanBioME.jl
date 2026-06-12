@@ -31,6 +31,9 @@ export GasExchange, CarbonDioxideGasExchangeBoundaryCondition, OxygenGasExchange
 # carbon chemistry
 export CarbonChemistry
 
+# CaCO₃ precipitation/dissolution
+export SimpleCaCO3Precipitation, CaCO3Precipitation
+
 # sediment
 export Sediments, FlatSediment
 
