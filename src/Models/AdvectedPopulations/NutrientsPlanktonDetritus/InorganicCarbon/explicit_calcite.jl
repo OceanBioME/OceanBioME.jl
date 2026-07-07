@@ -254,12 +254,12 @@ function manifest_explicit_calcite_replicates!(N)
                                           Val($(QuoteNode(CaCO₃_name))), Val($(QuoteNode(Ω_name))))
 
             @inline (bgc::NPD_EC)(i, j, k, grid, ::Val{$(QuoteNode(DIC_name))}, clock, fields, auxiliary_fields) =
-                inorganic_carbon_biological_source(i, j, k, grid, bgc, fields, auxiliary_fields) -
+                net_biological_dic_uptake(i, j, k, grid, bgc, fields, auxiliary_fields) -
                 net_calcite_production(i, j, k, grid, bgc, fields, auxiliary_fields,
                                        Val($(QuoteNode(CaCO₃_name))), Val($(QuoteNode(Ω_name))))
 
             @inline (bgc::NPD_EC)(i, j, k, grid, ::Val{$(QuoteNode(Alk_name))}, clock, fields, auxiliary_fields) =
-                alkalinity_biological_source(i, j, k, grid, bgc, clock, fields, auxiliary_fields) -
+                net_biological_alkalinity_uptake(i, j, k, grid, bgc, clock, fields, auxiliary_fields) -
                 2 * net_calcite_production(i, j, k, grid, bgc, fields, auxiliary_fields,
                                            Val($(QuoteNode(CaCO₃_name))), Val($(QuoteNode(Ω_name))))
 
