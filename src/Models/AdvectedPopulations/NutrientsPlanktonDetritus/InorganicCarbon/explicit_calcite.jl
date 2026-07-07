@@ -135,7 +135,7 @@ saturation_field_names(::ExplicitCalcite{N}) where N = ntuple(n -> Symbol(:Ω, n
 carbonate_field_names(::ExplicitCalcite{1}) = ((:DIC, :Alk), )
 carbonate_field_names(::ExplicitCalcite{N}) where N = ntuple(n -> (Symbol(:DIC, n), Symbol(:Alk, n)), N)
 
-#required_biogeochemical_auxiliary_fields(ic::ExplicitCalcite) = saturation_field_names(ic)
+required_biogeochemical_auxiliary_fields(ic::ExplicitCalcite) = tuple()#saturation_field_names(ic)
 
 @inline function calcite_dissolution_flux(i, j, k, grid, bgc::NPD_EC, fields, auxiliary_fields,
                                           ::Val{calcite_name}, ::Val{Ω_name}) where {calcite_name, Ω_name}
