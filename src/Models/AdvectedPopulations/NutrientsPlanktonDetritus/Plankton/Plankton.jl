@@ -73,7 +73,10 @@ import ..NutrientsPlanktonDetritusModels.InorganicCarbonModels:
     inorganic_carbon_waste,
     primary_production,
     net_calcite_production,
-    calcite_rain_ratio
+    calcite_rain_ratio,
+    biological_calcite_precipitation,
+    particulate_calcite_production,
+    biological_calcite_dissolution
 
 import ..NutrientsPlanktonDetritusModels.DetritusModels:
     grazing,

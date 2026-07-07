@@ -58,9 +58,11 @@ struct PhytoZoo{LN, EN, TT, FT, LL, TC, PS, ZS} <: AbstractPlankton{LN}
         edible_fraction_of_detritus :: FT
                edible_detritus_name :: Val{EN}
 
-# In the original this fraction of calcite is dissolved in zooplankton, but without explicitly tracking calcite we can't close the
-# budget because the calcite to carbon ratio in the detritus will vary depending on where the waste comes from
-#    zooplankton_calcite_dissolution :: FT = 0.3
+# the fraction of grazed phytoplankton calcite that is dissolved in the zooplankton gut and returned
+# straight to DIC/Alk (the rest, plus all phytoplankton-mortality calcite, enters the solid CaCO₃
+# pool). Only meaningful with `ExplicitCalcite`, which tracks the solid pool and so can close the
+# budget; with implicit calcite the calcite-to-carbon ratio of detritus would be ill-defined.
+        zooplankton_calcite_dissolution :: FT
 
                        carbon_ratio :: FT
                          iron_ratio :: FT
@@ -104,6 +106,7 @@ function PhytoZoo(FT = Float64;
                   edible_fraction_of_detritus = 0.5,
                   edible_detritus_name = :sPOM,                   # if multiple detritus classes are present
                                                                   # this is edible in full, if only one then the fraction is used
+                  zooplankton_calcite_dissolution = 0.3,          # fraction of grazed calcite dissolved in the gut (ExplicitCalcite only)
                   carbon_ratio = 6.56,                            # mol C / mol N
                   iron_ratio = 4.6375e-5,                         # mol Fe / mol N - from PISCES optimal ratio
                   phosphate_ratio = 1/16,                         # mol P / mol N
@@ -140,6 +143,7 @@ function PhytoZoo(FT = Float64;
                      convert(FT, zooplankton_assimilation_fraction),
                      convert(FT, edible_fraction_of_detritus),
                      Val(edible_detritus_name),
+                     convert(FT, zooplankton_calcite_dissolution),
                      convert(FT, carbon_ratio),
                      convert(FT, iron_ratio),
                      convert(FT, phosphate_ratio),
@@ -440,6 +444,44 @@ end
     return αᶻ * μ * Z + (1 - αᴾ) * mᴾ * P^2 + αᵃ * γ * μP
 end
 
+# calcite routing (LOBSTER; used by ExplicitCalcite). Living phytoplankton carry calcite at
+# ρ = rain_ratio per organic carbon (R = carbon_ratio). Calcite is formed on the non-exudate fraction
+# of growth `(1 - γ)μP` (removing DIC/Alk). When phytoplankton are lost, a fraction η of the *grazed*
+# calcite is dissolved in the zooplankton gut and returned straight to DIC/Alk; the rest of the grazed
+# calcite `(1 - η)Gₚ` plus all mortality calcite `m P²` enters the solid, sinking CaCO₃ pool.
+# Conservation is exact: living phyto carry `ρ R P`, so ρR·∂P = biological − (particulate + gut).
+@inline function biological_calcite_precipitation(i, j, k, grid, plankton::PhytoZoo, bgc, fields, auxiliary_fields)
+    ρ = plankton.rain_ratio
+    R = plankton.carbon_ratio
+    γ = plankton.phytoplankton_exudation_fraction
+
+    μP = phytoplankton_growth(i, j, k, grid, plankton, bgc, fields, auxiliary_fields)
+
+    return ρ * R * (1 - γ) * μP
+end
+
+@inline function particulate_calcite_production(i, j, k, grid, plankton::PhytoZoo, bgc, fields, auxiliary_fields)
+    ρ = plankton.rain_ratio
+    R = plankton.carbon_ratio
+    m = plankton.phytoplankton_mortality_rate
+    η = plankton.zooplankton_calcite_dissolution
+
+    P  = @inbounds fields.P[i, j, k]
+    Gp = grazing(i, j, k, grid, Val(:P), plankton, bgc, fields, auxiliary_fields)
+
+    return ρ * R * ((1 - η) * Gp + m * P^2)
+end
+
+@inline function biological_calcite_dissolution(i, j, k, grid, plankton::PhytoZoo, bgc, fields, auxiliary_fields)
+    ρ = plankton.rain_ratio
+    R = plankton.carbon_ratio
+    η = plankton.zooplankton_calcite_dissolution
+
+    Gp = grazing(i, j, k, grid, Val(:P), plankton, bgc, fields, auxiliary_fields)
+
+    return ρ * R * η * Gp
+end
+
 # admin
 Adapt.adapt_structure(to, pz::PhytoZoo) = 
     PhytoZoo(adapt(to, pz.nutrient_half_saturations),
@@ -461,6 +503,7 @@ Adapt.adapt_structure(to, pz::PhytoZoo) =
              adapt(to, pz.zooplankton_assimilation_fraction),
              adapt(to, pz.edible_fraction_of_detritus),
              adapt(to, pz.edible_detritus_name),
+             adapt(to, pz.zooplankton_calcite_dissolution),
              adapt(to, pz.carbon_ratio),
              adapt(to, pz.iron_ratio),
              adapt(to, pz.phosphate_ratio),

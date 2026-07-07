@@ -1,6 +1,27 @@
 @inline primary_production(i, j, k, grid, plankton, bgc, fields, auxiliary_fields) =
-    carbon_ratio(i, j, k, grid, bgc.plankton, bgc, fields) * 
+    carbon_ratio(i, j, k, grid, bgc.plankton, bgc, fields) *
     nutrient_uptake(i, j, k, grid, plankton, bgc, fields, auxiliary_fields)
+
+# Default methods for the three per-plankton calcite hooks owned by this module (used by
+# ExplicitCalcite; PhytoZoo overrides all three in Plankton/phyto_zoo.jl). They hold for any plankton
+# with no standing biomass tracer and together conserve carbon exactly there, because primary
+# production then equals the sum of the dissolved + inorganic + solid carbon waste:
+#   - biological_calcite_precipitation — DIC-side formation: ρ × primary production
+#   - particulate_calcite_production   — into the solid CaCO₃ pool: ρ × solid carbon waste
+#   - biological_calcite_dissolution  — returned straight to DIC/Alk: ρ × (inorganic + dissolved) waste
+@inline biological_calcite_precipitation(i, j, k, grid, plankton, bgc, fields, auxiliary_fields) =
+    calcite_rain_ratio(i, j, k, grid, bgc.plankton, bgc, fields) *
+    primary_production(i, j, k, grid, plankton, bgc, fields, auxiliary_fields)
+
+@inline particulate_calcite_production(i, j, k, grid, plankton, bgc, fields, auxiliary_fields) =
+    calcite_rain_ratio(i, j, k, grid, bgc.plankton, bgc, fields) *
+    solid_carbon_waste(i, j, k, grid, plankton, bgc, fields, auxiliary_fields)
+
+@inline biological_calcite_dissolution(i, j, k, grid, plankton, bgc, fields, auxiliary_fields) =
+    calcite_rain_ratio(i, j, k, grid, bgc.plankton, bgc, fields) * (
+        inorganic_carbon_waste(i, j, k, grid, plankton, bgc, fields, auxiliary_fields)
+      + dissolved_carbon_waste(i, j, k, grid, plankton, bgc, fields, auxiliary_fields)
+    )
 
 # assume PP is nitrate based if nitrate and ammonia not available
 @inline nitrate_primary_production(i, j, k, grid, 
