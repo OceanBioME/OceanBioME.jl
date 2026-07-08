@@ -72,14 +72,14 @@ Keyword Arguments
 - `open_bottom`: whether `CaCO₃` can sink out of the bottom of the domain
 - `carbon_chemistry`: the [`CarbonChemistry`](@ref) used to compute the calcite saturation `Ω`
 """
-struct ExplicitCalcite{N, FT, CC, SV, F} <: AbstractInorganicCarbon
-          calcite_dissolution_rate :: FT   # k_diss (1/s); PISCES/CESM default 0.197/day
-      calcite_dissolution_exponent :: FT   # m
-        calcite_precipitation_rate :: FT   # k_prec (1/s); 0 → abiotic precipitation off
-    calcite_precipitation_exponent :: FT   # n
-                  carbon_chemistry :: CC   # CarbonChemistry, used to compute Ω
-                  sinking_velocity :: SV   # CaCO₃ drift-velocity field
-                calcite_saturation :: F    # per-realisation Ω, recomputed each step
+struct ExplicitCalcite{N, SN, FT, CC, SV, ST} <: AbstractInorganicCarbon
+          calcite_dissolution_rate :: FT
+      calcite_dissolution_exponent :: FT
+        calcite_precipitation_rate :: FT
+    calcite_precipitation_exponent :: FT 
+                  carbon_chemistry :: CC
+                  sinking_velocity :: SV
+                calcite_saturation :: NamedTuple{SN, ST} 
 
     ExplicitCalcite{N}(calcite_dissolution_rate::FT,
                        calcite_dissolution_exponent::FT,
@@ -87,14 +87,14 @@ struct ExplicitCalcite{N, FT, CC, SV, F} <: AbstractInorganicCarbon
                        calcite_precipitation_exponent::FT,
                        carbon_chemistry::CC,
                        sinking_velocity::SV,
-                       calcite_saturation::F) where {N, FT, CC, SV, F} =
-        new{N, FT, CC, SV, F}(calcite_dissolution_rate,
-                              calcite_dissolution_exponent,
-                              calcite_precipitation_rate,
-                              calcite_precipitation_exponent,
-                              carbon_chemistry,
-                              sinking_velocity,
-                              calcite_saturation)
+                       calcite_saturation::NamedTuple{SN, ST}) where {N, SN, FT, CC, SV, ST} =
+        new{N, SN, FT, CC, SV, ST}(calcite_dissolution_rate,
+                                   calcite_dissolution_exponent,
+                                   calcite_precipitation_rate,
+                                   calcite_precipitation_exponent,
+                                   carbon_chemistry,
+                                   sinking_velocity,
+                                   calcite_saturation)
 end
 
 function ExplicitCalcite(grid::AbstractGrid{FT};
@@ -109,7 +109,8 @@ function ExplicitCalcite(grid::AbstractGrid{FT};
 
     sinking_velocity = setup_velocity_fields((; CaCO₃ = calcite_sinking_speed), grid, open_bottom; three_D = true).CaCO₃
 
-    calcite_saturation = ntuple(_ -> CenterField(grid), replicates)
+    field_names = saturation_field_names(Val(replicates))
+    calcite_saturation = NamedTuple{field_names}(ntuple(_ -> CenterField(grid), replicates))
 
     manifest_explicit_calcite_replicates!(replicates)
 
@@ -129,13 +130,13 @@ required_biogeochemical_tracers(::ExplicitCalcite{N}) where N =
     (map(n->Symbol(:DIC, n), 1:N)..., map(n->Symbol(:Alk, n), 1:N)..., map(n->Symbol(:CaCO₃, n), 1:N)...)
 
 # per-realisation saturation-field names, and the (DIC, Alk) pairs each is computed from
-saturation_field_names(::ExplicitCalcite{1}) = (:Ω, )
-saturation_field_names(::ExplicitCalcite{N}) where N = ntuple(n -> Symbol(:Ω, n), N)
+saturation_field_names(::Val{1}) = (:Ω, )
+saturation_field_names(::Val{N}) where N = ntuple(n -> Symbol(:Ω, n), N)
 
 carbonate_field_names(::ExplicitCalcite{1}) = ((:DIC, :Alk), )
 carbonate_field_names(::ExplicitCalcite{N}) where N = ntuple(n -> (Symbol(:DIC, n), Symbol(:Alk, n)), N)
 
-required_biogeochemical_auxiliary_fields(ic::ExplicitCalcite) = tuple()#saturation_field_names(ic)
+required_biogeochemical_auxiliary_fields(::ExplicitCalcite{N, FN}) where {N, FN} = FN
 
 @inline function calcite_dissolution_flux(i, j, k, grid, bgc::NPD_EC, fields, auxiliary_fields,
                                           ::Val{calcite_name}, ::Val{Ω_name}) where {calcite_name, Ω_name}
@@ -188,15 +189,9 @@ end
 ##### substep). Requires T and S to be present, as for any carbon-chemistry calculation.
 #####
 
-function biogeochemical_auxiliary_fields(bgc::NPD_EC)
-    ic = bgc.inorganic_carbon
+biogeochemical_auxiliary_fields(ic::ExplicitCalcite) = ic.calcite_saturation
 
-    return NamedTuple{saturation_field_names(ic)}(ic.calcite_saturation)
-end
-
-function update_biogeochemical_state!(model, bgc::NPD_EC)
-    ic = bgc.inorganic_carbon
-
+function update_biogeochemical_state!(model, ic::ExplicitCalcite, npd::NPD)
     for (saturation, carbonate_names) in zip(ic.calcite_saturation, carbonate_field_names(ic))
         compute_calcite_saturation!(ic.carbon_chemistry, saturation, model, carbonate_names)
     end
