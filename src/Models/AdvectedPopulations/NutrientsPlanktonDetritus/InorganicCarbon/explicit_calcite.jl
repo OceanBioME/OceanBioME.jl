@@ -11,7 +11,11 @@ using Oceananigans.Utils: launch!
 using KernelAbstractions: @kernel, @index
 
 using OceanBioME: setup_velocity_fields
-using OceanBioME.Models.CarbonChemistryModel: CarbonChemistry, calcite_saturation
+using OceanBioME.Models.CarbonChemistryModel: 
+    CarbonChemistry, 
+    calcite_saturation,
+    silicate_concentration,
+    phosphate_concentration
 
 import Adapt: adapt_structure, adapt
 import Oceananigans.Biogeochemistry:
@@ -222,12 +226,15 @@ end
     DIC = @inbounds getproperty(model_fields, dic_name)[i, j, k]
     Alk = @inbounds getproperty(model_fields, alk_name)[i, j, k]
 
+    silicate  = silicate_concentration(grid, i, j, k, model_fields)
+    phosphate = phosphate_concentration(grid, i, j, k, model_fields)
+
     z = znode(i, j, k, grid, Center(), Center(), Center())
 
     # rough hydrostatic pressure (bar); matches the PISCES calcite-saturation approximation
     P = abs(z) * g * 1026 / 100000
 
-    @inbounds saturation[i, j, k] = calcite_saturation(carbon_chemistry; DIC, T, S, Alk, P)
+    @inbounds saturation[i, j, k] = calcite_saturation(carbon_chemistry; DIC, T, S, Alk, P, phosphate, silicate)
 end
 
 const _manifested_explicit_calcite = Set{Int}()
