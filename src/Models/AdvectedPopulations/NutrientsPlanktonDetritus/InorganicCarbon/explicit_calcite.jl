@@ -72,14 +72,14 @@ Keyword Arguments
 - `open_bottom`: whether `CaCO₃` can sink out of the bottom of the domain
 - `carbon_chemistry`: the [`CarbonChemistry`](@ref) used to compute the calcite saturation `Ω`
 """
-struct ExplicitCalcite{N, SN, FT, CC, SV, ST} <: AbstractInorganicCarbon
+struct ExplicitCalcite{N, FT, CC, SV, SS} <: AbstractInorganicCarbon
           calcite_dissolution_rate :: FT
       calcite_dissolution_exponent :: FT
         calcite_precipitation_rate :: FT
     calcite_precipitation_exponent :: FT 
                   carbon_chemistry :: CC
                   sinking_velocity :: SV
-                calcite_saturation :: NamedTuple{SN, ST} 
+                calcite_saturation :: SS
 
     ExplicitCalcite{N}(calcite_dissolution_rate::FT,
                        calcite_dissolution_exponent::FT,
@@ -87,14 +87,14 @@ struct ExplicitCalcite{N, SN, FT, CC, SV, ST} <: AbstractInorganicCarbon
                        calcite_precipitation_exponent::FT,
                        carbon_chemistry::CC,
                        sinking_velocity::SV,
-                       calcite_saturation::NamedTuple{SN, ST}) where {N, SN, FT, CC, SV, ST} =
-        new{N, SN, FT, CC, SV, ST}(calcite_dissolution_rate,
-                                   calcite_dissolution_exponent,
-                                   calcite_precipitation_rate,
-                                   calcite_precipitation_exponent,
-                                   carbon_chemistry,
-                                   sinking_velocity,
-                                   calcite_saturation)
+                       calcite_saturation::SS) where {N, FT, CC, SV, SS} =
+        new{N, FT, CC, SV, SS}(calcite_dissolution_rate,
+                               calcite_dissolution_exponent,
+                               calcite_precipitation_rate,
+                               calcite_precipitation_exponent,
+                               carbon_chemistry,
+                               sinking_velocity,
+                               calcite_saturation)
 end
 
 function ExplicitCalcite(grid::AbstractGrid{FT};
@@ -129,14 +129,15 @@ required_biogeochemical_tracers(::ExplicitCalcite{1}) = (:DIC, :Alk, :CaCO₃)
 required_biogeochemical_tracers(::ExplicitCalcite{N}) where N =
     (map(n->Symbol(:DIC, n), 1:N)..., map(n->Symbol(:Alk, n), 1:N)..., map(n->Symbol(:CaCO₃, n), 1:N)...)
 
-# per-realisation saturation-field names, and the (DIC, Alk) pairs each is computed from
+saturation_field_names(::ExplicitCalcite{N}) where N = 
+    saturation_field_names(Val(N))
 saturation_field_names(::Val{1}) = (:Ω, )
 saturation_field_names(::Val{N}) where N = ntuple(n -> Symbol(:Ω, n), N)
 
 carbonate_field_names(::ExplicitCalcite{1}) = ((:DIC, :Alk), )
 carbonate_field_names(::ExplicitCalcite{N}) where N = ntuple(n -> (Symbol(:DIC, n), Symbol(:Alk, n)), N)
 
-required_biogeochemical_auxiliary_fields(::ExplicitCalcite{N, FN}) where {N, FN} = FN
+required_biogeochemical_auxiliary_fields(ic::ExplicitCalcite) = saturation_field_names(ic)
 
 @inline function calcite_dissolution_flux(i, j, k, grid, bgc::NPD_EC, fields, auxiliary_fields,
                                           ::Val{calcite_name}, ::Val{Ω_name}) where {calcite_name, Ω_name}
@@ -192,15 +193,12 @@ end
 biogeochemical_auxiliary_fields(ic::ExplicitCalcite) = ic.calcite_saturation
 
 function update_biogeochemical_state!(model, ic::ExplicitCalcite, npd::NPD)
-    for (saturation, carbonate_names) in zip(ic.calcite_saturation, carbonate_field_names(ic))
+    for (saturation, carbonate_names) in zip(values(ic.calcite_saturation), carbonate_field_names(ic))
         compute_calcite_saturation!(ic.carbon_chemistry, saturation, model, carbonate_names)
     end
 
     return nothing
 end
-
-# alias to reference the CarbonChemistry function inside code that shadows `calcite_saturation`
-const calcite_saturation_state = calcite_saturation
 
 function compute_calcite_saturation!(carbon_chemistry, saturation, model, (dic_name, alk_name))
     grid = model.grid
@@ -229,7 +227,7 @@ end
     # rough hydrostatic pressure (bar); matches the PISCES calcite-saturation approximation
     P = abs(z) * g * 1026 / 100000
 
-    @inbounds saturation[i, j, k] = calcite_saturation_state(carbon_chemistry; DIC, T, S, Alk, P)
+    @inbounds saturation[i, j, k] = calcite_saturation(carbon_chemistry; DIC, T, S, Alk, P)
 end
 
 const _manifested_explicit_calcite = Set{Int}()

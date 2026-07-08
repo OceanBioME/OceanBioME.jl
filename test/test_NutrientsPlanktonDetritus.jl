@@ -308,7 +308,7 @@ end
 
 using Oceananigans.Units: day
 using Oceananigans.Grids: znode, Center
-using Oceananigans.Biogeochemistry: biogeochemical_auxiliary_fields
+using Oceananigans.Biogeochemistry: biogeochemical_auxiliary_fields, update_biogeochemical_state!
 using OceanBioME.Models.CarbonChemistryModel: calcite_saturation
 
 # a single-cell explicit-calcite model with prescribed T/S (T and S are required for the carbon
