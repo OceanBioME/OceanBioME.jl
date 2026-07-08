@@ -16,9 +16,11 @@ using Oceananigans.Grids: AbstractGrid
 import Adapt: adapt_structure
 import Base: show, summary
 
-import Oceananigans.Biogeochemistry: 
+import Oceananigans.Biogeochemistry:
     required_biogeochemical_tracers,
     required_biogeochemical_auxiliary_fields,
+    biogeochemical_auxiliary_fields,
+    update_biogeochemical_state!,
     biogeochemical_drift_velocity
 
 # Consider all biogeochemical models to abstract to "Nutrients" (inorganics which can limit)
