@@ -146,7 +146,7 @@ instead of fCO₂.
     KP1 = p.phosphoric_acid.KP1(T, S; P)
     KP2 = p.phosphoric_acid.KP2(T, S; P)
     KP3 = p.phosphoric_acid.KP3(T, S; P)
-    KSi = p.silicic_acid(T, S, Is)
+    KSi = p.silicic_acid(T, S, Is; P)
 
     params = (; DIC, Alk, boron, sulfate, fluoride, silicate, phosphate,
                 K1, K2, KB, KW, KS, KF, KP1, KP2, KP3, KSi)
@@ -220,3 +220,11 @@ solve_for_H(::Nothing, params, initial_pH_guess::FT, solver) where FT =
 # display
 summary(::IO, ::CarbonChemistry) = string("`CarbonChemistry` model")
 show(io::IO, ::CarbonChemistry) = print(io, "`CarbonChemistry` model which solves for pCO₂ and pH")
+
+# helper functions
+@inline silicate_concentration(grid, i, j, k, model_fields::NamedTuple{N}) where N =
+    @inbounds :Si in N ? model_fields.Si[i, j, k] : zero(grid)
+
+@inline phosphate_concentration(grid, i, j, k, model_fields::NamedTuple{N}) where N =
+    @inbounds :PO₄ in N ? model_fields.PO₄[i, j, k] : zero(grid)
+    

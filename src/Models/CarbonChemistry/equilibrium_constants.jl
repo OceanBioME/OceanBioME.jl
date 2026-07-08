@@ -661,7 +661,9 @@ KP3(FT = Float64;
           inverse_T_Is = 188.74,
           Is² = 0.07871,
           inverse_T_Is² = -12.1652,
-          log_S = -0.001005)
+          log_S = -0.001005,
+          pressure_correction =
+              PressureCorrection(; a₀=-29.48, a₁=0.1622, a₂=-0.002608, b₀=-0.00284, b₁=0.0))
 
 Parameterisation for silicic acid dissociation equilibrium constant.
 
@@ -670,20 +672,25 @@ Parameterisation for silicic acid dissociation equilibrium constant.
     Kʷ = [H⁺][SiO(OH)₃⁻]/[Si(OH)₄]
 
 Default values from Millero (1995, Geochim. Cosmochim. Acta, 59, 661–677).
+
+Following Millero (1995) the pressure dependence uses the boric-acid pressure
+coefficients (matching MARBL's `marbl_co2calc_mod`).
 """
-struct KSi{IS, FT}
-     ionic_strength :: IS 
-   
+struct KSi{IS, FT, PC}
+     ionic_strength :: IS
+
            constant :: FT
-          inverse_T :: FT 
-              log_T :: FT 
+          inverse_T :: FT
+              log_T :: FT
             sqrt_Is :: FT
   inverse_T_sqrt_Is :: FT
-                 Is :: FT 
-       inverse_T_Is :: FT 
-                Is² :: FT 
+                 Is :: FT
+       inverse_T_Is :: FT
+                Is² :: FT
       inverse_T_Is² :: FT
               log_S :: FT
+
+    pressure_correction :: PC
 
     function KSi(FT = Float64;
                  ionic_strength::IS = IonicStrength{FT}(),
@@ -696,14 +703,17 @@ struct KSi{IS, FT}
                  inverse_T_Is = 188.74,
                  Is² = 0.07871,
                  inverse_T_Is² = -12.1652,
-                 log_S = -0.001005) where IS
+                 log_S = -0.001005,
+                 pressure_correction::PC =
+                     PressureCorrection(FT; a₀=-29.48, a₁=0.1622, a₂=-0.002608, b₀=-0.00284, b₁=0.0)) where {IS, PC}
 
-        return new{IS, FT}(ionic_strength, constant, inverse_T, log_T, sqrt_Is, inverse_T_sqrt_Is, Is,
-                           inverse_T_Is, Is², inverse_T_Is², log_S)
+        return new{IS, FT, PC}(ionic_strength, constant, inverse_T, log_T, sqrt_Is, inverse_T_sqrt_Is, Is,
+                           inverse_T_Is, Is², inverse_T_Is², log_S, pressure_correction)
     end
 end
 
-@inline (c::KSi)(T, S, Is = c.ionic_strength(S); P = nothing) = 
+@inline (c::KSi)(T, S, Is = c.ionic_strength(S); P = nothing) =
+    c.pressure_correction(T, P) *
     exp(c.constant
         + c.inverse_T / T
         + c.log_T * log(T)

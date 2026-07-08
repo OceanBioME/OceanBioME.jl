@@ -56,12 +56,6 @@ show(io::IO, c::CarbonDioxideConcentration{DIC, Alk, CC, FV, CV, AP}) where {DIC
     return pCO₂ # ppmv
 end
 
-@inline silicate_concentration(grid, i, j, k, model_fields::NamedTuple{N}) where N =
-    @inbounds :Si in N ? model_fields.Si[i, j, k] : zero(grid)
-
-@inline phosphate_concentration(grid, i, j, k, model_fields::NamedTuple{N}) where N =
-    @inbounds :PO₄ in N ? model_fields.PO₄[i, j, k] : zero(grid)
-
 # default values from Dickson et al., 2007
 @kwdef struct PolynomialVirialCoefficientForCarbonDioxide{FT}
     a :: FT = -1636.75

@@ -36,7 +36,7 @@ function carbonate_concentration(cc::CarbonChemistry;
     KP1 = cc.phosphoric_acid.KP1(T, S; P)
     KP2 = cc.phosphoric_acid.KP2(T, S; P)
     KP3 = cc.phosphoric_acid.KP3(T, S; P)
-    KSi = cc.silicic_acid(T, S, Is)
+    KSi = cc.silicic_acid(T, S, Is; P)
 
     params = (; DIC, Alk, boron, sulfate, fluoride, silicate, phosphate,
                 K1, K2, KB, KW, KS, KF, KP1, KP2, KP3, KSi)
@@ -87,6 +87,8 @@ concentrations, both in **mmol m⁻³** (i.e. the same units as `DIC`/`Alk`, and
 `carbonate%H2CO3`/`CO3`), from a single pH solve. Mirrors [`carbonate_concentration`] but returns
 CO₂ alongside CO₃ and converts back from the internal mol/kg to mmol m⁻³ (`× ρ × 10³`). Used by
 `ExplicitCalcite` to precompute the `:CO₂`/`:CO₃` auxiliary fields the biology reads.
+
+TODO: remove this redundancy and make units optional
 """
 function carbon_dioxide_and_carbonate(cc::CarbonChemistry;
                                       DIC::FT, T, S, Alk = zero(DIC), pH = nothing,
@@ -122,7 +124,7 @@ function carbon_dioxide_and_carbonate(cc::CarbonChemistry;
     KP1 = cc.phosphoric_acid.KP1(T, S; P)
     KP2 = cc.phosphoric_acid.KP2(T, S; P)
     KP3 = cc.phosphoric_acid.KP3(T, S; P)
-    KSi = cc.silicic_acid(T, S, Is)
+    KSi = cc.silicic_acid(T, S, Is; P)
 
     params = (; DIC, Alk, boron, sulfate, fluoride, silicate, phosphate,
                 K1, K2, KB, KW, KS, KF, KP1, KP2, KP3, KSi)

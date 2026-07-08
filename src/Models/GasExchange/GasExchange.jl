@@ -17,7 +17,10 @@ using Oceananigans.BoundaryConditions: FluxBoundaryCondition
 using Oceananigans.Fields: Center
 using Oceananigans.Grids: xnode, ynode
 
-using OceanBioME.Models.CarbonChemistryModel: CarbonChemistry
+using OceanBioME.Models.CarbonChemistryModel: 
+    CarbonChemistry,
+    silicate_concentration,
+    phosphate_concentration
 
 import Base: show, summary
 import Adapt: adapt_structure
