@@ -183,16 +183,7 @@ end
 @inline (bgc::NPD_EC)(i, j, k, grid, ::Val{:CaCO₃}, clock, fields, auxiliary_fields) =
     explicit_calcite_tendency(i, j, k, grid, bgc, fields, auxiliary_fields, Val(:CaCO₃), Val(:Ω))
 
-#####
-##### sinking
-#####
-
 @inline biogeochemical_drift_velocity(bgc::NPD_EC, ::Val{:CaCO₃}) = bgc.inorganic_carbon.sinking_velocity
-
-#####
-##### calcite saturation Ω — precomputed once per step (avoids repeating the pH Newton solve per RK
-##### substep). Requires T and S to be present, as for any carbon-chemistry calculation.
-#####
 
 biogeochemical_auxiliary_fields(ic::ExplicitCalcite) = ic.calcite_saturation
 
@@ -231,7 +222,6 @@ end
 
     z = znode(i, j, k, grid, Center(), Center(), Center())
 
-    # rough hydrostatic pressure (bar); matches the PISCES calcite-saturation approximation
     P = abs(z) * g * 1026 / 100000
 
     @inbounds saturation[i, j, k] = calcite_saturation(carbon_chemistry; DIC, T, S, Alk, P, phosphate, silicate)
@@ -270,10 +260,6 @@ function manifest_explicit_calcite_replicates!(N)
 
     return nothing
 end
-
-#####
-##### adapt / show
-#####
 
 Adapt.adapt_structure(to, ic::ExplicitCalcite{N}) where N =
     ExplicitCalcite{N}(ic.calcite_dissolution_rate,

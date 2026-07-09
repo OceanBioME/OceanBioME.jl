@@ -50,8 +50,6 @@
                                    clock, fields, auxiliary_fields) where FT = 
     bgc(i, j, k, grid, Val(:NH₄), clock, fields, auxiliary_fields)
 
-# default assumption that the biological and detrital pool stores calcite at a fixed ratio to carbon
-# but the dissolved elements might not so `calcite_dissolution` might not be = R(1+ρ)*inorganic_waste
 @inline net_calcite_production(i, j, k, grid, bgc, fields, auxiliary_fields) = (
     calcite_rain_ratio(i, j, k, grid, bgc.plankton, bgc, fields)  * (
         primary_production(i, j, k, grid, bgc.plankton, bgc, fields, auxiliary_fields)

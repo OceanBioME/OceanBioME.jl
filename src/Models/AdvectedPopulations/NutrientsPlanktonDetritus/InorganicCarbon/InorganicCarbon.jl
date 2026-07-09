@@ -37,10 +37,6 @@ import Oceananigans.Biogeochemistry:
 import ..NutrientsPlanktonDetritusModels:
     carbon_ratio
 
-# the per-plankton calcite hooks (biological_calcite_precipitation, particulate_calcite_production,
-# biological_calcite_dissolution) are owned by this module — their default methods in defaults.jl
-# create the generic functions; PhytoZoo overrides them in Plankton/phyto_zoo.jl.
-
 include("abstract_inorganic_carbon.jl")
 include("defaults.jl")
 include("implicit_calcite.jl")

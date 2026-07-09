@@ -58,11 +58,7 @@ struct PhytoZoo{LN, EN, TT, FT, LL, TC, PS, ZS} <: AbstractPlankton{LN}
         edible_fraction_of_detritus :: FT
                edible_detritus_name :: Val{EN}
 
-# the fraction of grazed phytoplankton calcite that is dissolved in the zooplankton gut and returned
-# straight to DIC/Alk (the rest, plus all phytoplankton-mortality calcite, enters the solid CaCO₃
-# pool). Only meaningful with `ExplicitCalcite`, which tracks the solid pool and so can close the
-# budget; with implicit calcite the calcite-to-carbon ratio of detritus would be ill-defined.
-        zooplankton_calcite_dissolution :: FT
+    zooplankton_calcite_dissolution :: FT
 
                        carbon_ratio :: FT
                          iron_ratio :: FT
