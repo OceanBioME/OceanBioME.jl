@@ -234,7 +234,7 @@ fCO_2 = \frac{[CO_2(aq)]}{K_0},
 in atmospheres.
 
 ### Carbonate concentration and calcium carbonate saturation
-Similarly we can also diagnose the calcium carbonate concentration
+Similarly we can also diagnose the carbonate concentration
 ```math
 [CO_3^{2-}] = \frac{[DIC]K_1K_2}{[\ce{H^+}]([\ce{H^+}] + K_1)+K_1K_2}.
 ```
