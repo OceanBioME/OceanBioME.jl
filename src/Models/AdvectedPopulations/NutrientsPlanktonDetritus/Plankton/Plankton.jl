@@ -49,7 +49,7 @@ import ..NutrientsPlanktonDetritusModels:
     phosphate_ratio,
     iron_ratio,
     silicon_ratio,
-    calcite_rain_ratio
+    calcium_carbonate_rain_ratio
 
 import ..NutrientsPlanktonDetritusModels:
     inorganic_waste,
@@ -72,15 +72,15 @@ import ..NutrientsPlanktonDetritusModels:
 import ..NutrientsPlanktonDetritusModels.InorganicCarbonModels:
     inorganic_carbon_waste,
     primary_production,
-    net_calcite_production,
-    calcite_rain_ratio,
-    biological_calcite_precipitation,
-    particulate_calcite_production,
-    biological_calcite_dissolution
+    net_calcium_carbonate_production,
+    calcium_carbonate_rain_ratio,
+    biological_calcium_carbonate_precipitation,
+    particulate_calcium_carbonate_production,
+    biological_calcium_carbonate_dissolution
 
 import ..NutrientsPlanktonDetritusModels.DetritusModels:
     grazing,
-    calcite_precipitation
+    calcium_carbonate_precipitation
 
 chlorophyll(bgc::NutrientsPlanktonDetritus, model) =
     chlorophyll(bgc.plankton, model)

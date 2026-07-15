@@ -309,17 +309,17 @@ end
 using Oceananigans.Units: day
 using Oceananigans.Grids: znode, Center
 using Oceananigans.Biogeochemistry: biogeochemical_auxiliary_fields, update_biogeochemical_state!
-using OceanBioME.Models.CarbonChemistryModel: calcite_saturation
+using OceanBioME.Models.CarbonChemistryModel: calcium_carbonate_saturation
 
-# a single-cell explicit-calcite model with prescribed T/S (T and S are required for the carbon
+# a single-cell explicit-calcium-carbonate model with prescribed T/S (T and S are required for the carbon
 # chemistry). Ω is not automatically updated, so tests that call the tendency directly set it by hand.
-function explicit_calcite_model(grid;
+function explicit_calcium_carbonate_model(grid;
                                 plankton = Abiotic(),
                                 nutrients = Nutrients(nothing, nothing, nothing, nothing),
                                 detritus = InstantRemineralisationDetritus(),
                                 T = 15.0, S = 35.0,
                                 kwargs...)
-    inorganic_carbon = ExplicitCalcite(grid; kwargs...)
+    inorganic_carbon = ExplicitCalciumCarbonate(grid; kwargs...)
 
     biogeochemistry = NutrientsPlanktonDetritus(grid;
         plankton, nutrients, detritus, inorganic_carbon,
@@ -330,29 +330,29 @@ function explicit_calcite_model(grid;
         auxiliary_fields = (T = ConstantField(T), S = ConstantField(S)))
 end
 
-@testset "ExplicitCalcite" begin
+@testset "ExplicitCalciumCarbonate" begin
     grid = RectilinearGrid(architecture; size=(1, 1, 1), extent=(1, 1, 2))
 
     @testset "construction and tracers" begin
-        model  = explicit_calcite_model(grid)
-        model2 = explicit_calcite_model(grid; replicates = 2)
+        model  = explicit_calcium_carbonate_model(grid)
+        model2 = explicit_calcium_carbonate_model(grid; replicates = 2)
 
         @test :CaCO₃ in keys(model.tracers)
         @test (:DIC, :Alk, :CaCO₃) ⊆ keys(model.tracers)
 
         @test (:DIC1, :DIC2, :Alk1, :Alk2, :CaCO₃1, :CaCO₃2) ⊆ keys(model2.tracers)
-        @test model2.biogeochemistry.underlying_biogeochemistry.inorganic_carbon isa ExplicitCalcite{2}
+        @test model2.biogeochemistry.underlying_biogeochemistry.inorganic_carbon isa ExplicitCalciumCarbonate{2}
     end
 
     @testset "dissolution rate law (machine precision)" begin
         k, m = 0.2 / day, 1.5
-        model = explicit_calcite_model(grid;
-            calcite_dissolution_rate = k, calcite_dissolution_exponent = m)
+        model = explicit_calcium_carbonate_model(grid;
+            calcium_carbonate_dissolution_rate = k, calcium_carbonate_dissolution_exponent = m)
 
         set!(model, DIC = 2000, Alk = 2300, CaCO₃ = 3.0)
 
         bgc = model.biogeochemistry.underlying_biogeochemistry
-        Ωfield = bgc.inorganic_carbon.calcite_saturation[1]
+        Ωfield = bgc.inorganic_carbon.calcium_carbonate_saturation[1]
 
         Ωval  = 0.4                # undersaturated → dissolution active
         CaCO₃ = 3.0
@@ -365,7 +365,7 @@ end
         tDIC   = CUDA.@allowscalar bgc(1, 1, 1, grid, Val(:DIC),   model.clock, model.tracers, aux)
         tAlk   = CUDA.@allowscalar bgc(1, 1, 1, grid, Val(:Alk),   model.clock, model.tracers, aux)
 
-        # calcite dissolves; DIC and Alk gain 1× and 2× that (no biology ⇒ no other carbon/alkalinity source)
+        # calcium carbonate dissolves; DIC and Alk gain 1× and 2× that (no biology ⇒ no other carbon/alkalinity source)
         @test tCaCO₃ ≈ -expected_dissolution
         @test tDIC   ≈  expected_dissolution
         @test tAlk   ≈  2 * expected_dissolution
@@ -377,13 +377,13 @@ end
 
     @testset "abiotic precipitation rate law" begin
         k, n = 0.1 / day, 2.0
-        model = explicit_calcite_model(grid;
-            calcite_precipitation_rate = k, calcite_precipitation_exponent = n)
+        model = explicit_calcium_carbonate_model(grid;
+            calcium_carbonate_precipitation_rate = k, calcium_carbonate_precipitation_exponent = n)
 
         set!(model, DIC = 2000, Alk = 2300, CaCO₃ = 3.0)
 
         bgc = model.biogeochemistry.underlying_biogeochemistry
-        Ωfield = bgc.inorganic_carbon.calcite_saturation[1]
+        Ωfield = bgc.inorganic_carbon.calcium_carbonate_saturation[1]
 
         Ωval  = 2.5                # supersaturated → precipitation active
         CaCO₃ = 3.0
@@ -402,30 +402,30 @@ end
     end
 
     @testset "Ω matches a direct carbon-chemistry call" begin
-        model = explicit_calcite_model(grid; T = 12.0, S = 34.0)
+        model = explicit_calcium_carbonate_model(grid; T = 12.0, S = 34.0)
         set!(model, DIC = 2100, Alk = 2350, CaCO₃ = 4.0)
 
         update_biogeochemical_state!(model.biogeochemistry, model)
 
         bgc = model.biogeochemistry.underlying_biogeochemistry
-        Ωfield = bgc.inorganic_carbon.calcite_saturation[1]
+        Ωfield = bgc.inorganic_carbon.calcium_carbonate_saturation[1]
 
         z = znode(1, 1, 1, grid, Center(), Center(), Center())
         P = abs(z) * Oceananigans.defaults.gravitational_acceleration * 1026 / 100000
-        Ωdirect = calcite_saturation(bgc.inorganic_carbon.carbon_chemistry;
+        Ωdirect = calcium_carbonate_saturation(bgc.inorganic_carbon.carbon_chemistry;
                                      DIC = 2100.0, T = 12.0, S = 34.0, Alk = 2350.0, P)
 
         @test (CUDA.@allowscalar Ωfield[1, 1, 1]) ≈ Ωdirect
     end
 
-    @testset "biological calcite production (PhytoZoo, machine precision)" begin
+    @testset "biological calcium carbonate production (PhytoZoo, machine precision)" begin
         NPDM = OceanBioME.Models.NutrientsPlanktonDetritusModels
         function pz_model(ρ)
             biogeochemistry = NutrientsPlanktonDetritus(grid;
                 plankton = PhytoZoo(grid; rain_ratio = ρ),
                 nutrients = Nutrients(; nitrogen = OceanBioME.N),
                 detritus = DissolvedParticulate(grid),
-                inorganic_carbon = ExplicitCalcite(grid),      # precipitation off by default
+                inorganic_carbon = ExplicitCalciumCarbonate(grid),      # precipitation off by default
                 light_attenuation = PrescribedPhotosyntheticallyActiveRadiation(ConstantField(100)))
             m = NonhydrostaticModel(grid; biogeochemistry, advection = nothing,
                 auxiliary_fields = (T = ConstantField(15.0), S = ConstantField(35.0)))
@@ -441,8 +441,8 @@ end
         bgc0 = model_0.biogeochemistry.underlying_biogeochemistry
         pl   = bgc.plankton
 
-        Ωfield_ρ = bgc.inorganic_carbon.calcite_saturation[1]
-        Ωfield_0 = bgc0.inorganic_carbon.calcite_saturation[1]
+        Ωfield_ρ = bgc.inorganic_carbon.calcium_carbonate_saturation[1]
+        Ωfield_0 = bgc0.inorganic_carbon.calcium_carbonate_saturation[1]
         set!(Ωfield_ρ, 2.5)
         set!(Ωfield_0, 2.5)
 
@@ -455,30 +455,30 @@ end
         R = pl.carbon_ratio
         γ = pl.phytoplankton_exudation_fraction
         m = pl.phytoplankton_mortality_rate
-        η = pl.zooplankton_calcite_dissolution
+        η = pl.zooplankton_calcium_carbonate_dissolution
 
         # ∂CaCO₃ = ρR[(1−η)Gₚ + m P²]   
         expected_CaCO₃ = ρ * R * ((1 - η) * Gp + m * P^2)
         tCaCO₃ = CUDA.@allowscalar bgc(1, 1, 1, grid, Val(:CaCO₃), model_ρ.clock, model_ρ.tracers, aux)
         @test tCaCO₃ ≈ expected_CaCO₃
 
-        # DIC calcite term (isolated against ρ=0): −ρR[(1−γ)μP − η Gₚ]
-        tDIC_calcite = CUDA.@allowscalar (bgc(1, 1, 1, grid, Val(:DIC), model_ρ.clock, model_ρ.tracers, aux)
+        # DIC calcium carbonate term (isolated against ρ=0): −ρR[(1−γ)μP − η Gₚ]
+        tDIC_calcium_carbonate = CUDA.@allowscalar (bgc(1, 1, 1, grid, Val(:DIC), model_ρ.clock, model_ρ.tracers, aux)
                                         - bgc0(1, 1, 1, grid, Val(:DIC), model_0.clock, model_0.tracers, aux))
-        tAlk_calcite = CUDA.@allowscalar (bgc(1, 1, 1, grid, Val(:Alk), model_ρ.clock, model_ρ.tracers, aux)
+        tAlk_calcium_carbonate = CUDA.@allowscalar (bgc(1, 1, 1, grid, Val(:Alk), model_ρ.clock, model_ρ.tracers, aux)
                                         - bgc0(1, 1, 1, grid, Val(:Alk), model_0.clock, model_0.tracers, aux))
 
-        expected_DIC_calcite = -ρ * R * ((1 - γ) * μP - η * Gp)
-        @test tDIC_calcite ≈ expected_DIC_calcite
-        @test tAlk_calcite ≈ 2 * expected_DIC_calcite
+        expected_DIC_calcium_carbonate = -ρ * R * ((1 - γ) * μP - η * Gp)
+        @test tDIC_calcium_carbonate ≈ expected_DIC_calcium_carbonate
+        @test tAlk_calcium_carbonate ≈ 2 * expected_DIC_calcium_carbonate
 
-        # tendency-level carbon closure: ρR·∂P + ∂CaCO₃ + (DIC calcite term) = 0
+        # tendency-level carbon closure: ρR·∂P + ∂CaCO₃ + (DIC calcium carbonate term) = 0
         ∂P = CUDA.@allowscalar bgc(1, 1, 1, grid, Val(:P), model_ρ.clock, model_ρ.tracers, aux)
-        @test ρ * R * ∂P + tCaCO₃ + tDIC_calcite ≈ 0 atol = 1e-16
+        @test ρ * R * ∂P + tCaCO₃ + tDIC_calcium_carbonate ≈ 0 atol = 1e-16
     end
 
     @testset "carbon conservation (explicit CaCO₃ pool)" begin
-        ic = ExplicitCalcite(grid)
+        ic = ExplicitCalciumCarbonate(grid)
         biogeochemistry = NutrientsPlanktonDetritus(grid;
             plankton = PhytoZoo(grid),
             nutrients = Nutrients(; nitrogen = OceanBioME.N),
@@ -492,8 +492,8 @@ end
 
         set!(model, N = 5, P = 1, Z = 0.5, DOM = 1, sPOM = 1, bPOM = 1, DIC = 2000, Alk = 2300, CaCO₃ = 3)
 
-        # explicit element sum: total carbon = DIC + CaCO₃ + organic-pool carbon + living calcite (ρRP,
-        # the calcite carried by phytoplankton under formation-at-production, weight R(1+ρ) on P).
+        # explicit element sum: total carbon = DIC + CaCO₃ + organic-pool carbon + living calcium carbonate (ρRP,
+        # the calcium carbonate carried by phytoplankton under formation-at-production, weight R(1+ρ) on P).
         bgcu = model.biogeochemistry.underlying_biogeochemistry
         R = OceanBioME.Models.NutrientsPlanktonDetritusModels.carbon_ratio(bgcu.plankton, bgcu)
         ρ = bgcu.plankton.rain_ratio
@@ -517,13 +517,13 @@ end
     end
 
     @testset "replicates are independent" begin
-        model = explicit_calcite_model(grid; replicates = 2,
+        model = explicit_calcium_carbonate_model(grid; replicates = 2,
             plankton = PhytoZoo(grid),
             nutrients = Nutrients(; nitrogen = OceanBioME.N),
             detritus = DissolvedParticulate(grid))
 
         bgc = model.biogeochemistry.underlying_biogeochemistry
-        Ω1, Ω2 = bgc.inorganic_carbon.calcite_saturation
+        Ω1, Ω2 = bgc.inorganic_carbon.calcium_carbonate_saturation
         aux = biogeochemical_auxiliary_fields(model.biogeochemistry)
 
         # identical state in both realisations ⇒ identical CaCO₃ tendency. Ω is set by hand

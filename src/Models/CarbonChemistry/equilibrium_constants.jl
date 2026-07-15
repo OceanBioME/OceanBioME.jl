@@ -832,7 +832,7 @@ KSP_aragonite(; therm_constant = -171.945,
                 pressure_correction =
                     PressureCorrection(; a₀=-45.96, a₁=0.5304, a₂=-0.0, b₀=-0.01176, b₁=0.0003692))
 
-Instance of `KSP` returning calcite solubility.
+Instance of `KSP` returning aragonite solubility.
 
 Default values from Millero, F. J. (2007, Chemical Reviews, 107(2), 308–341).
 """

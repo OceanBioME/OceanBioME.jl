@@ -2,7 +2,7 @@
 
 Our carbon chemistry model follows the best practice described by [dickson2007](@citet), as implemented by e.g. `cbsyst` [branson2023](@citep) and `CO2SYS` [humphreys2022](@citep) in Python.
 
-The carbon chemistry model is primarily used for diagnosing the partial pressure of carbon dioxide in the surface water for [gas exchange with the air](@ref air-sea-gas), but is capable of diagnosing other species such as carbonate concentration, useful in the calculation of calcite dissolution.
+The carbon chemistry model is primarily used for diagnosing the partial pressure of carbon dioxide in the surface water for [gas exchange with the air](@ref air-sea-gas), but is capable of diagnosing other species such as carbonate concentration, useful in the calculation of calcium carbonate dissolution.
 The model works by computing the pH from the total dissolved inorganic carbon and total alkalinity (and optionally silicate, phosphate, boron, sulfate, and fluoride concentration), along with temperature and salinity, which can then be used to find the concentration of different species.
 We will first describe how to use the model, followed by the underlying chemistry and parameterisations.
 
@@ -63,11 +63,11 @@ carbon_chemistry(; DIC, Alk, T, S, lon = -31.52, lat = 33.75)
 The default uses the polynomial approximation described in [roquet2015](@citet) as provided by [`SeawaterPolynomials.jl`](https://github.com/CliMA/SeawaterPolynomials.jl/).
 
 ### Computing the carbonate concentration
-So that this model can be used in calcite dissolution models it can also return the carbonate saturation by calling the function `calcite_saturation`
+So that this model can be used in calcium carbonate dissolution models it can also return the carbonate saturation by calling the function `calcium_carbonate_saturation`
 ```@example carbon-chem
-using OceanBioME.Models.CarbonChemistryModel: calcite_saturation
+using OceanBioME.Models.CarbonChemistryModel: calcium_carbonate_saturation
 
-calcite_saturation(carbon_chemistry; DIC, Alk, T, S)
+calcium_carbonate_saturation(carbon_chemistry; DIC, Alk, T, S)
 ```
 This function takes all of the same arguments (e.g. `boron`) as `carbon_chemistry` above.
 
@@ -233,8 +233,8 @@ fCO_2 = \frac{[CO_2(aq)]}{K_0},
 ```
 in atmospheres.
 
-### Carbonate concentration and calcite saturation
-Similarly we can also diagnose the calcite concentration
+### Carbonate concentration and calcium carbonate saturation
+Similarly we can also diagnose the calcium carbonate concentration
 ```math
 [CO_3^{2-}] = \frac{[DIC]K_1K_2}{[\ce{H^+}]([\ce{H^+}] + K_1)+K_1K_2}.
 ```
@@ -248,7 +248,7 @@ which has an equilibrium constant
 K_{SP} = [\ce{Ca^{2+}}][\ce{CO_3^{2-}}].
 ```
 
-The calcite saturation can then be defined as ``\Omega=\frac{[\ce{CO_3^{2-}}]}{[\ce{CO_{3, saturation}^{2-}}]}`` which can be diagnosed as:
+The calcium carbonate saturation can then be defined as ``\Omega=\frac{[\ce{CO_3^{2-}}]}{[\ce{CO_{3, saturation}^{2-}}]}`` which can be diagnosed as:
 ```math
 \Omega = \frac{[\ce{Ca^{2+}}][\ce{CO_3^{2-}}]}{K_{SP}}.
 ```

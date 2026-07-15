@@ -8,7 +8,7 @@ export NPZD, LOBSTER, ImplicitBiology, PISCES, DepthDependantSinkingSpeed, Presc
 
 export N, PO₄, Si, Fe
 export Nutrients, NitrateAmmonia
-export CarbonateSystem, ExplicitCalcite
+export CarbonateSystem, ExplicitCalciumCarbonate
 export Abiotic, ImplicitProductivity, PhytoZoo
 export Detritus, DissolvedParticulate, InstantRemineralisationDetritus, CarbonNitrogenDissolvedParticulate
 export Oxygen
@@ -28,7 +28,7 @@ export GasExchange,
 
 include("Sediments/Sediments.jl")
 include("seawater_density.jl")
-include("CarbonChemistry/CarbonChemistry.jl") # NPD's ExplicitCalcite uses CarbonChemistry, so load it first
+include("CarbonChemistry/CarbonChemistry.jl") # NPD's ExplicitCalciumCarbonate uses CarbonChemistry, so load it first
 include("AdvectedPopulations/NutrientsPlanktonDetritus/NutrientsPlanktonDetritus.jl")
 include("Individuals/SugarKelp/SugarKelp.jl")
 include("GasExchange/GasExchange.jl")

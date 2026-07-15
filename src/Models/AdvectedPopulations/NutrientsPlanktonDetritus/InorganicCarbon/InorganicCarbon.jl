@@ -1,6 +1,6 @@
 module InorganicCarbonModels
 
-export CarbonateSystem, ExplicitCalcite
+export CarbonateSystem, ExplicitCalciumCarbonate
 
 using Oceananigans.Units
 
@@ -12,7 +12,7 @@ using ..NutrientsPlanktonDetritusModels:
     phosphate_ratio,
     iron_ratio,
     silicon_ratio,
-    calcite_rain_ratio
+    calcium_carbonate_rain_ratio
 
 using ..NutrientsPlanktonDetritusModels.NutrientsModels:
     Nutrients,
@@ -21,7 +21,7 @@ using ..NutrientsPlanktonDetritusModels.NutrientsModels:
 
 using ..NutrientsPlanktonDetritusModels:
     dissolved_waste,
-    calcite_dissolution,
+    calcium_carbonate_dissolution,
     nutrient_uptake,
     inorganic_waste,
     inorganic_carbon_waste,
@@ -39,7 +39,7 @@ import ..NutrientsPlanktonDetritusModels:
 
 include("abstract_inorganic_carbon.jl")
 include("defaults.jl")
-include("implicit_calcite.jl")
-include("explicit_calcite.jl")
+include("implicit_calcium_carbonate.jl")
+include("explicit_calcium_carbonate.jl")
 
 end # module

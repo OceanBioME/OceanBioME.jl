@@ -19,8 +19,8 @@ end
 
 @inline (bgc::NPD_AIC)(i, j, k, grid, ::Val{:DIC}, clock, fields, auxiliary_fields) =
     net_biological_dic_uptake(i, j, k, grid, bgc, fields, auxiliary_fields) -
-    net_calcite_production(i, j, k, grid, bgc, fields, auxiliary_fields)
+    net_calcium_carbonate_production(i, j, k, grid, bgc, fields, auxiliary_fields)
 
 @inline (bgc::NPD_AIC)(i, j, k, grid, ::Val{:Alk}, clock, fields, auxiliary_fields) =
     net_biological_alkalinity_uptake(i, j, k, grid, bgc, clock, fields, auxiliary_fields) -
-    2 * net_calcite_production(i, j, k, grid, bgc, fields, auxiliary_fields)
+    2 * net_calcium_carbonate_production(i, j, k, grid, bgc, fields, auxiliary_fields)

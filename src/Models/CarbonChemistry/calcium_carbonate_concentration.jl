@@ -45,14 +45,14 @@ function carbonate_concentration(cc::CarbonChemistry;
 
     H = solve_for_H(pH, params, initial_pH_guess, cc.solver)
 
-    # compute the calcite concentration
+    # compute the calcium carbonate concentration
     denom1 = (H * (H + K1))
     denom2 = (one(DIC) + K1 * K2 / denom1)
 
     return DIC * K1 * K2 / denom1 / denom2
 end
 
-function calcite_saturation(cc::CarbonChemistry;
+function calcium_carbonate_saturation(cc::CarbonChemistry;
                             DIC::FT, T, S, Alk = zero(DIC), pH = nothing,
                             P = nothing,
                             boron = convert(typeof(DIC), 0.000232 / 10.811 * S / 1.80655),
@@ -73,7 +73,7 @@ function calcite_saturation(cc::CarbonChemistry;
                                     phosphate,
                                     initial_pH_guess)
 
-    KSP = cc.calcite_solubility(T+convert(FT, 273.15), S; P)
+    KSP = cc.calcium_carbonate_solubility(T+convert(FT, 273.15), S; P)
 
     # not confident these all have the right units
     return calcium_ion_concentration * CO₃²⁻ / KSP
@@ -86,7 +86,7 @@ Return the aqueous carbon-dioxide (`[CO₂(aq)] = [H₂CO₃]`) and carbonate-io
 concentrations, both in **mmol m⁻³** (i.e. the same units as `DIC`/`Alk`, and as MARBL's
 `carbonate%H2CO3`/`CO3`), from a single pH solve. Mirrors [`carbonate_concentration`] but returns
 CO₂ alongside CO₃ and converts back from the internal mol/kg to mmol m⁻³ (`× ρ × 10³`). Used by
-`ExplicitCalcite` to precompute the `:CO₂`/`:CO₃` auxiliary fields the biology reads.
+`ExplicitCalciumCarbonate` to precompute the `:CO₂`/`:CO₃` auxiliary fields the biology reads.
 
 TODO: remove this redundancy and make units optional
 """

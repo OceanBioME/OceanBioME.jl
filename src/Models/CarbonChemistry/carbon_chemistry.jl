@@ -11,7 +11,7 @@ struct CarbonChemistry{P0, PC, PB, PS, PF, PP, PSi, PW, IS, PKS, PRho, FV, CV, S
                 fluoride :: PF
          phosphoric_acid :: PP
             silicic_acid :: PSi
-      calcite_solubility :: PKS
+      calcium_carbonate_solubility :: PKS
         density_function :: PRho   
 first_virial_coefficient :: FV
 cross_virial_coefficient :: CV             
@@ -29,7 +29,7 @@ end
                     fluoride = KF(; ionic_strength),
                     phosphoric_acid = (KP1 = KP1(), KP2 = KP2(), KP3 = KP3()),
                     silicic_acid = KSi(; ionic_strength),
-                    calcite_solubility = KSP_calcite(),
+                    calcium_carbonate_solubility = KSP_calcite(),
                     density_function = teos10_polynomial_approximation,
                     first_virial_coefficient = PolynomialVirialCoefficientForCarbonDioxide(),
                     cross_viral_coefficient = CrossVirialCoefficientForCarbonDioxide(),
@@ -73,7 +73,7 @@ function CarbonChemistry(FT = Float64;
                          fluoride = KF(FT; ionic_strength),
                          phosphoric_acid = (KP1 = KP1(FT), KP2 = KP2(FT), KP3 = KP3(FT)),
                          silicic_acid = KSi(FT; ionic_strength),
-                         calcite_solubility = KSP_calcite(FT),
+                         calcium_carbonate_solubility = KSP_calcite(FT),
                          density_function = teos10_polynomial_approximation, # the denisity function *is* going to cause type instability but I can't see a way to fix it
                          first_virial_coefficient = PolynomialVirialCoefficientForCarbonDioxide{FT}(),
                          cross_viral_coefficient = CrossVirialCoefficientForCarbonDioxide{FT}(),
@@ -81,7 +81,7 @@ function CarbonChemistry(FT = Float64;
                          solver = DampedNewtonRaphsonSolver{FT, Int, @NamedTuple{lower::FT, upper::Nothing}}(bounds = (lower = 0, upper = nothing)))
 
     return CarbonChemistry(ionic_strength, solubility, carbonic_acid, boric_acid, water,
-                           sulfate, fluoride, phosphoric_acid, silicic_acid, calcite_solubility, density_function,
+                           sulfate, fluoride, phosphoric_acid, silicic_acid, calcium_carbonate_solubility, density_function,
                            first_virial_coefficient, cross_viral_coefficient,
                             solver)
 end
