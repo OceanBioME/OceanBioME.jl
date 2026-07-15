@@ -1,12 +1,16 @@
 # I'm sure there are other libraries that can do this
 function parameter_table(labels, values)
-    label_width = maximum((length("$label") for label in labels))
-    value_width = maximum((length("$value") for value in values))
+    # sanitize a value so it stays inside a single markdown table row
+    clean(v) = let s = "$v"
+        s = replace(s, r"\r?\n\s*" => "<br>")   # newlines -> HTML break (drop indent)
+        s = replace(s, "|" => "\\|")            # escape pipes so they don't split cells
+        s
+    end
 
     output = "|Name | Value |\n|---|---|\n"
 
     for (idx, label) in enumerate(labels)
-        output *= "|$label|$(values[idx])|\n"
+        output *= "|$label|$(clean(values[idx]))|\n"
     end
 
     return output 
