@@ -1,19 +1,23 @@
 # I'm sure there are other libraries that can do this
 function parameter_table(labels, values)
-    # sanitize a value so it stays inside a single markdown table row
+    # sanitize a value for use inside an HTML table cell
     clean(v) = let s = "$v"
-        s = replace(s, r"\r?\n\s*" => "<br>")   # newlines -> HTML break (drop indent)
-        s = replace(s, "|" => "\\|")            # escape pipes so they don't split cells
+        s = replace(s, "&" => "&amp;")           # escape first
+        s = replace(s, "<" => "&lt;", ">" => "&gt;")
+        s = replace(s, r"\r\n|\r|\n" => "<br>")  # then reintroduce breaks as real <br> tags
         s
     end
 
-    output = "|Name | Value |\n|---|---|\n"
+    rows = join(("<tr><td><code>$label</code></td><td>$(clean(values[idx]))</td></tr>"
+             for (idx, label) in enumerate(labels)), "\n")
 
-    for (idx, label) in enumerate(labels)
-        output *= "|$label|$(clean(values[idx]))|\n"
-    end
-
-    return output 
+    return """
+```@raw html
+    <table><tr><th>Name</th><th>Value</th></tr>
+    $rows
+    </table>
+```
+    """
 end
 
 function show_parameters(model; exclude = (:optionals, :light_attenuation_model, :particles, :sediment_model, # usually bgc models
