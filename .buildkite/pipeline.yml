@@ -76,7 +76,7 @@ steps:
           commands: |
             cd "$OCEANBIOME_DIR"
             $JULIA +$JULIA_VERSION -O0 --color=yes --project -e 'using Pkg; Pkg.test()'
-          depends_on: "init-cpu
+          depends_on: "init-cpu"
           notify:
             - github_commit_status:
                 context: "CPU tests"
@@ -100,7 +100,7 @@ steps:
                 - "kelp"
                 - "data_assimilation"
                 - "oae_experiment"
-          depends_on: "init"
+          depends_on: "init-gpu"
           agents:
             hostname: "$BUILDKITE_AGENT_META_DATA_HOSTNAME"
           
@@ -112,7 +112,7 @@ steps:
             cd "$OCEANBIOME_DIR"
             $JULIA +$JULIA_VERSION --color=yes --project=docs/ docs/make.jl
           depends_on: 
-            - "init"
+            - "init-gpu"
             - "examples"
           notify:
             - github_commit_status:
