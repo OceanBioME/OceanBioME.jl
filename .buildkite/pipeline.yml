@@ -18,8 +18,8 @@ steps:
         - label: ":building_construction: initialize cpu environment"
           key: "init-cpu"
           env:
-           JULIA_DEPOT_PATH: $JULIA_DEPOT_PATH_CPU
-           CUDA_VISIBLE_DEVICES: "-1"
+            JULIA_DEPOT_PATH: $JULIA_DEPOT_PATH_CPU
+            CUDA_VISIBLE_DEVICES: "-1"
           command: |
             $JULIAUP add $JULIA_VERSION
       
@@ -39,7 +39,7 @@ steps:
         - label: ":building_construction: initialize gpu environment"
           key: "init-gpu"
           env:
-           JULIA_DEPOT_PATH: $JULIA_DEPOT_PATH_GPU
+            JULIA_DEPOT_PATH: $JULIA_DEPOT_PATH_GPU
           command: |
             $JULIAUP add $JULIA_VERSION
       
@@ -58,7 +58,7 @@ steps:
       
         - label: ":speedboat: GPU unit tests"
           env:
-           JULIA_DEPOT_PATH: $JULIA_DEPOT_PATH_GPU
+            JULIA_DEPOT_PATH: $JULIA_DEPOT_PATH_GPU
           commands: |
             cd "$OCEANBIOME_DIR"
             $JULIA +$JULIA_VERSION -O0 --color=yes --project -e 'using Pkg; Pkg.test()'
@@ -71,8 +71,8 @@ steps:
           
         - label: ":rowboat: CPU unit tests"
           env:
-           CUDA_VISIBLE_DEVICES: "-1"
-           JULIA_DEPOT_PATH: $JULIA_DEPOT_PATH_CPU
+            CUDA_VISIBLE_DEVICES: "-1"
+            JULIA_DEPOT_PATH: $JULIA_DEPOT_PATH_CPU
           commands: |
             cd "$OCEANBIOME_DIR"
             $JULIA +$JULIA_VERSION -O0 --color=yes --project -e 'using Pkg; Pkg.test()'
