@@ -93,11 +93,11 @@ julia> sediment = SimpleMultiGSediment(grid)
     Coupled fields: (:NO₃, :NH₄, :O₂)
 
 julia> biogeochemistry = LOBSTER(grid; sediment, detritus = TwoParticleAndDissolved(grid; open_bottom=true))
-LOBSTER model (:NO₃, :NH₄, :P, :Z, :sPOM, :bPOM, :DOM)
- Light attenuation: Two-band light attenuation model (Float64)
- Sediment: `BiogeochemicalSediment` with `Single-layer multi-G sediment model (Float64)` biogeochemsitry
- Particles: Nothing
- Modifiers: Nothing
+ERROR: UndefVarError: `TwoParticleAndDissolved` not defined in `Main`
+Suggestion: check for spelling errors or missing imports.
+Stacktrace:
+ [1] top-level scope
+   @ none:1
 
 ```
 """

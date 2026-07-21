@@ -39,7 +39,7 @@ small_grid = RectilinearGrid(size=(1, 1, 1), extent=(1, 1, 1))
 model_parameters = (LOBSTER(BoxModelGrid(); light_attenuation = nothing).underlying_biogeochemistry,
                     NPZD(BoxModelGrid(); light_attenuation = nothing).underlying_biogeochemistry,
                     SugarKelp(),
-                    TwoBandPhotosyntheticallyActiveRadiation(; grid = small_grid),
+                    TwoBandPhotosyntheticallyActiveRadiation(small_grid, 100),
                     SimpleMultiGSediment(small_grid).biogeochemistry,
                     InstantRemineralisationSediment(small_grid).biogeochemistry,
                     CarbonChemistry(),
@@ -67,8 +67,10 @@ pisces_pages = ["PISCES" => "model_components/biogeochemical/PISCES/PISCES.md",
 
 bgc_pages = [
     "Overview" => "model_components/biogeochemical/index.md",
+    "NPD framework" => "model_components/biogeochemical/abstract_NPD_models.md",
     "LOBSTER" => "model_components/biogeochemical/LOBSTER.md",
     "NPZD" => "model_components/biogeochemical/NPZ.md",
+    "ImplicitBiology" => "model_components/biogeochemical/ImplicitBiology.md",
     "PISCES" => pisces_pages
 ]
 
@@ -108,9 +110,11 @@ pages = [
     "Quick start" => "quick_start.md",
     "Examples" => example_pages,
     "Model components and setup" => component_pages,
-    "Implementing new models" => "model_implementation.md",
+    "Implementing new models" => [
+        "NPD framework models" => "model_implementation.md",
+        "Custom models" => "model_implementation_custom.md"
+    ],
     "Numerical implementation" => numerical_pages,
-    "Visualization" => "visualization.md",
     "Contibutors guide" => "contributing.md",
     "References" => "references.md",
     "Appendix" => appendix_pages

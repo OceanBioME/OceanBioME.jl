@@ -9,10 +9,43 @@ Modules = [OceanBioME]
 
 ## Biogeochemical Models
 
-### The NutrientsPlanktonDetritus constructor
+### Nutrients-Plankton-Detritus (NPD) framework
+
+The [NPD framework](@ref npd_framework) constructor and its preset models
+([`LOBSTER`](@ref LOBSTER), [`NPZD`](@ref NPZD), [`ImplicitBiology`](@ref ImplicitBiology)):
 
 ```@autodocs
 Modules = [OceanBioME.Models.NutrientsPlanktonDetritusModels]
+```
+
+#### Nutrient components
+
+```@autodocs
+Modules = [OceanBioME.Models.NutrientsPlanktonDetritusModels.NutrientsModels]
+```
+
+#### Plankton components
+
+```@autodocs
+Modules = [OceanBioME.Models.NutrientsPlanktonDetritusModels.PlanktonModels]
+```
+
+#### Detritus components
+
+```@autodocs
+Modules = [OceanBioME.Models.NutrientsPlanktonDetritusModels.DetritusModels]
+```
+
+#### Inorganic carbon components
+
+```@autodocs
+Modules = [OceanBioME.Models.NutrientsPlanktonDetritusModels.InorganicCarbonModels]
+```
+
+#### Oxygen component
+
+```@autodocs
+Modules = [OceanBioME.Models.NutrientsPlanktonDetritusModels.OxygenModels]
 ```
 
 ### Pelagic Interactions Scheme for Carbon and Ecosystem Studies (PISCES)

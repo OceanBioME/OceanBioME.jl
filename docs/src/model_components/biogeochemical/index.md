@@ -2,7 +2,7 @@
 
 Biogeochemical (BGC) models can be used within the [Oceananigans biogeochemistry framework](https://github.com/CliMA/Oceananigans.jl/pull/2802) or as stand alone box models. All BGC models should be setup in the same way so that they can easily be substituted for each other. You can easily implement a different model (or a variation on a current model) by following the guide [here](@ref model_implementation).
 
-For details of the BGC models currently implemented please see the following pages.
+For details of the BGC models currently implemented please see the following pages. LOBSTER, NPZD, and ImplicitBiology are all built on a common [Nutrients-Plankton-Detritus framework](@ref npd_framework) that allows mixing and matching of component types.
 
 ## Oceananigans setup
 At the simplest level, all that is required to setup an existing OceanBioME BGC model is to pass it to the Oceananigans model setup:

@@ -5,9 +5,20 @@ between ocean biogeochemistry, carbonate chemistry, and physics.
 module OceanBioME
 
 # Biogeochemistry models and useful things
-export Biogeochemistry, LOBSTER, PISCES, NPZD, redfield
-export CarbonateSystem, Oxygen, NitrateAmmoniaIron, VariableRedfieldDetritus, TwoParticleAndDissolved, NitrateAmmonia,
-       Detritus, Nutrient, NutrientsPlanktonDetritus, PhytoZoo
+export Biogeochemistry
+
+
+export NutrientsPlanktonDetritus
+export NPZD, LOBSTER, ImplicitBiology, PISCES, DepthDependantSinkingSpeed, PrescribedLatitude, ModelLatitude, PISCESModel
+
+export Nutrients, NitrateAmmonia
+export CarbonateSystem
+export Abiotic, ImplicitProductivity, PhytoZoo
+export Detritus, DissolvedParticulate, InstantRemineralisationDetritus, CarbonNitrogenDissolvedParticulate
+export Oxygen
+
+export SugarKelp, SugarKelpParticles, GiantKelp
+
 export InstantRemineralisationSediment, SimpleMultiGSediment
 export DepthDependantSinkingSpeed, PrescribedLatitude, ModelLatitude, PISCESModel
 
@@ -23,7 +34,8 @@ export Particles
 # Light models
 export TwoBandPhotosyntheticallyActiveRadiation, 
        PrescribedPhotosyntheticallyActiveRadiation,
-       MultiBandPhotosyntheticallyActiveRadiation
+       MultiBandPhotosyntheticallyActiveRadiation,
+       PrescribedAttenuationPAR
 
 # airsea flux
 export GasExchange, CarbonDioxideGasExchangeBoundaryCondition, OxygenGasExchangeBoundaryCondition, GasExchangeBoundaryCondition
@@ -209,7 +221,7 @@ show(io::IO, model::CompleteBiogeochemistry) =
                 " Modifiers: ", modifier_summary(model.modifiers))
 
 modifier_summary(modifier) = summary(modifier)
-modifier_summary(modifiers::Tuple) = tuple([summary(modifier) for modifier in modifiers]...)
+modifier_summary(modifiers::Tuple) = "\n"*join([" "*ifelse(n==length(modifiers), "└─", "├─")*summary(modifier) for (n, modifier) in enumerate(modifiers)], "\n")
 
 include("Utils/Utils.jl")
 include("Light/Light.jl")

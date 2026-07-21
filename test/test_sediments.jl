@@ -1,11 +1,11 @@
 include("dependencies_for_runtests.jl")
 
-using OceanBioME.Models: InstantRemineralisation, SimpleMultiG
+using OceanBioME.Models.SedimentModels: InstantRemineralisation, SimpleMultiG
 using OceanBioME.Sediments: BiogeochemicalSediment
 
 display_name(::NutrientsPlanktonDetritus) = "NutrientsPlanktonDetritus"
 display_name(::BiogeochemicalSediment{<:SimpleMultiG}) = "Multi-G"
-display_name(::BiogeochemicalSediment{<:InstantRemineralisation}) = "Instant remineralisation"
+display_name(::BiogeochemicalSediment{<:OceanBioME.Models.SedimentModels.InstantRemineralisation}) = "Instant remineralisation"
 display_name(::RectilinearGrid) = "Rectilinear grid"
 display_name(::LatitudeLongitudeGrid) = "Latitude longitude grid"
 display_name(::ImmersedBoundaryGrid) = "Immersed boundary grid"
@@ -22,13 +22,13 @@ function display_name(architecture, grid, sediment_model, biogeochemistry, times
 end
 
 set_sinkers!(::NutrientsPlanktonDetritus{<:Any, <:Any, <:Detritus}, model) = set!(model, D = 1)
-set_sinkers!(::NutrientsPlanktonDetritus{<:Any, <:Any, <:TwoParticleAndDissolved}, model) = set!(model, sPOM = 1, bPOM = 1)
-set_sinkers!(::NutrientsPlanktonDetritus{<:Any, <:Any, <:VariableRedfieldDetritus}, model) =
-    set!(model, sPON = 1, bPON = 1, sPOC = 6.56, bPOC = 6.56)
+set_sinkers!(::NutrientsPlanktonDetritus{<:Any, <:Any, <:DissolvedParticulate{1, 2}}, model) = set!(model, sPOM = 1, bPOM = 1)
+#=set_sinkers!(::NutrientsPlanktonDetritus{<:Any, <:Any, <:DissolvedPar}, model) =
+    set!(model, sPON = 1, bPON = 1, sPOC = 6.56, bPOC = 6.56)=#
 
 sum_of_volume_integrals(biogeochemistry, tracers) = sum(map(f -> Field(Integral(f)), values(tracers)))
-sum_of_volume_integrals(::NutrientsPlanktonDetritus{<:Any, <:Any, <:VariableRedfieldDetritus}, tracers) =
-    sum([Field(Integral(f)) for (n, f) in pairs(tracers) if n in (:NO₃, :NH₄, :P, :Z, :sPON, :bPON, :DON)])
+#=sum_of_volume_integrals(::NutrientsPlanktonDetritus{<:Any, <:Any, <:VariableRedfieldDetritus}, tracers) =
+    sum([Field(Integral(f)) for (n, f) in pairs(tracers) if n in (:NO₃, :NH₄, :P, :Z, :sPON, :bPON, :DON)])=#
 
 sum_of_area_integrals(sediment, fields) = sum(map(f -> Field(Integral(f, dims = (1, 2))), values(fields)))
 sum_of_area_integrals(::SimpleMultiG{Nothing}, fields) =

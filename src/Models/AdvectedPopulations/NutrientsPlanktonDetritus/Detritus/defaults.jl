@@ -1,0 +1,2 @@
+@inline grazing(i, j, k, grid, val_name, plankton, ::NPD{FT}, fields, auxiliary_fields) where FT = zero(FT)
+@inline calcite_precipitation(i, j, k, grid, ::NPD{FT}, fields, auxiliary_fields) where FT = zero(FT)

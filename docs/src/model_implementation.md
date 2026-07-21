@@ -1,330 +1,299 @@
 # [Implementing new models](@id model_implementation)
 
-Here we describe how OceanBioME defines biogeochemical (BGC) models, how this varies from Oceananigans, and how to implement your own model.
+There are two main ways to extend OceanBioME with new biology:
 
-## Model structure
-OceanBioME BGC models are `struct`s of type `ContinuousFormBiogeochemistry`, which is of abstract type `AbstractContinuousFormBiogeochemistry` from Oceananigans. In Oceananigans this describes BGC models which are defined using continuous functions (depending continuously on ``x``, ``y``, and ``z``) rather than discrete functions (depending on ``i``, ``j``, ``k``). This allows the user to implement the BGC model equations without worrying about details of the grid or discretization, and then Oceananigans handles the rest.
+1. **Add a new plankton component to the NPD framework** — implement a `plankton` type that slots into the existing [Nutrients-Plankton-Detritus framework](@ref npd_framework). The framework automatically handles nutrient uptake, detritus production, inorganic carbon, and oxygen coupling.
 
-OceanBioME's `ContinuousFormBiogeochemistry` adds a layer on top of this which makes it easy to add [light attenuation models](@ref light), [sediment](@ref sediment), and [biologically active particles](@ref individuals) (or individual-based models). OceanBioME's `ContinuousFormBiogeochemistry` includes parameters in which the types of these components are stored. This means that these model components will automatically be integrated into the BGC model without having to add new methods to call Oceananigans functions.
+2. **Implement a completely new BGC model** — subtype `AbstractContinuousFormBiogeochemistry` from Oceananigans for full control over all tracer tendencies. This approach might be prefered for simple biogeochemical models where simplicity of the code is desired. For complex models, building a new biogeochemical model this way is more work but imposes no constraints on model structure. See [Implementing a custom biogeochemical model](@ref model_implementation_custom) for a full walkthrough.
 
-## Implementing a model
+This page focuses on the first approach, which is appropriate for most new plankton models.
 
-The nature of multiple dispatch in Julia means that we define new BGC models as new types. You can then define [methods](https://docs.julialang.org/en/v1/manual/methods/) to this type which are used by OceanBioME and Oceananigans to integrate the model.
+## The NPD plankton interface
 
-### The basics
+Here, we describe how to build a new biogeochemical model using the NPD framework. Using this approach is strongly encouraged for most cases since it allows models to be easily extendable. Before considering implementing a new model using the NPD framework, be sure to read the description of the [Nutrients-Plankton-Detritus framework](@ref npd_framework) to understand the various components.
 
-For this example we are going to implement the simple Nutrient-Phytoplankton model similar to that used in [Chen2015](@citep), although we neglect the nutrient in/outflow terms since they may be added as [boundary conditions](https://clima.github.io/OceananigansDocumentation/stable/model_setup/boundary_conditions/), and modified to conserve nitrogen.
+A plankton component must implement the following four functions, all called with signature `(i, j, k, grid, plankton, bgc, fields, auxiliary_fields)`:
 
-The first step is to import the abstract type from OceanBioME, some units from Oceananigans (for ease of parameter definition), and [`import`](https://docs.julialang.org/en/v1/manual/faq/#What-is-the-difference-between-%22using%22-and-%22import%22?) some functions from Oceananigans in order to add methods to:
+| Function | Returns | Description |
+|----------|---------|-------------|
+| `nutrient_uptake` | mmol N / m³ / s | Total N removed from the inorganic nutrient pool by growth |
+| `dissolved_waste` | mmol N / m³ / s | N exported to dissolved organic pools (exudate, dissolved mortality) |
+| `solid_waste` | mmol N / m³ / s | N exported to particulate organic pools (mortality, fecal pellets) |
+| `inorganic_waste` | mmol N / m³ / s | N returned directly to the inorganic pool (excretion, respiration) |
+
+The `nutrient_uptake` function may optionally be specialised per tracer by adding a `::Val{:NO₃}` (or `::Val{:NH₄}` etc.) argument between `grid` and `plankton`, which is useful when ammonia and nitrate are tracked separately.
+
+Additionally:
+
+- `required_biogeochemical_tracers` must return a tuple of the tracer names the component owns (e.g. `(:P, :Z)`).
+- `required_biogeochemical_auxiliary_fields` must return a tuple of auxiliary fields needed (typically `(:PAR,)`).
+- A tracer tendency method must be defined for each owned tracer via `(bgc::NutrientsPlanktonDetritus)(i, j, k, grid, ::Val{:P}, ...)`.
+
+The default elemental ratios (Redfield: C:N:P:Fe = 106:16:1:0.0032) are used automatically unless you override `carbon_ratio`, `nitrogen_ratio`, `phosphate_ratio`, or `iron_ratio`. You may also define `detritus_grazing` to implement zooplankton-like grazing on the detritus pools.
+
+## Example: simple phytoplankton
+
+Here we implement a minimal phytoplankton model with Michaelis-Menten light and nutrient limitation, linear mortality, and exudation of dissolved organic matter, and then run it in a box model and a sinking water column. In this example, zooplankton are not explicitly included.
+
+### Imports
+
+We import the four interface generics we are adding methods to (they live in the top `NutrientsPlanktonDetritusModels` module), the `required_biogeochemical_*` functions, and `biogeochemical_drift_velocity` so our phytoplankton can sink:
 
 ```@example implementing
-using OceanBioME, Oceananigans
-using Oceananigans.Biogeochemistry: AbstractContinuousFormBiogeochemistry
+using OceanBioME, Oceananigans, CairoMakie
 using Oceananigans.Units
-using Oceananigans.Fields: ConstantField
+using Oceananigans.Fields: ConstantField, ZeroField, FunctionField
 
 import Oceananigans.Biogeochemistry: required_biogeochemical_tracers,
                                      required_biogeochemical_auxiliary_fields,
                                      biogeochemical_drift_velocity
-```
 
-We then define our `struct` with the model parameters, as well as slots for the particles, light attenuation, and sediment models:
+using OceanBioME: NutrientsPlanktonDetritus
 
-```@example implementing
-@kwdef struct NutrientPhytoplankton{FT, W} <: AbstractContinuousFormBiogeochemistry
-            base_growth_rate :: FT = 1.27 / day              # 1 / seconds
-    nutrient_half_saturation :: FT = 0.025 * 1000 / 14       # mmol N / m³
-       light_half_saturation :: FT = 300.0                   # micro einstein / m² / s
-        temperature_exponent :: FT = 0.24                    # 1
-     temperature_coefficient :: FT = 1.57                    # 1
-         optimal_temperature :: FT = 28.0                    # °C
-              mortality_rate :: FT = 0.15 / day              # 1 / seconds
-     crowding_mortality_rate :: FT = 0.004 / day / 1000 * 14 # 1 / seconds / mmol N / m³
-            sinking_velocity :: W  = ConstantField(2 / day)
-end
-```
+# the single-nutrient (nitrogen) enum and the interface generics we add methods to
+using OceanBioME.Models.NutrientsPlanktonDetritusModels: N
 
-Here, we use descriptive names for the parameters. Below, each of these parameters correspond to a symbol (or letter) which is more convenient mathematically and when defining the BGC model functions. In the above code we used `@kwdef` to set default values for the models so that we don't have to set all of these parameters each time we use the model. The default parameter values can optionally be over-ridden by the user when running the model. We have also included a `sinking_velocity` field in the parameter set to demonstrate how we can get tracers (e.g. detritus) to sink.
-
-We also need to define some functions so that OceanBioME and Oceananigans know what tracers and auxiliary fields (e.g. light intensity) we use:
-
-```@example implementing
-required_biogeochemical_tracers(::NutrientPhytoplankton) = (:N, :P, :T)
-
-required_biogeochemical_auxiliary_fields(::NutrientPhytoplankton) = (:PAR, )
-```
-
-Next, we define the functions that specify how the phytoplankton ``P`` evolve. In the absence of advection and diffusion (both of which are handled by Oceananigans), we want the phytoplankton to evolve at the rate given by:
-```math
-\frac{\partial P}{\partial t} = \mu g(T) f(N) h(PAR) P - mP - bP^2,
-```
-
-where ``\mu`` corresponds to the parameter `base_growth_rate`, ``m`` corresponds to the parameter `mortality_rate`, and ``b`` corresponds to the parameter `crowding_mortality_rate`. Here, the functions ``g``, ``f``, and ``h`` are defined by:
-```math
-\begin{align}
-g(T) &= c_1\exp\left(-c_2|T - T_{opt}|\right),\\
-f(N) &= \frac{N}{k_N + N},\\
-h(PAR) &= \frac{PAR}{k_P + PAR},
-\end{align}
-```
-where ``c_1`` corresponds to `temperature_coefficient`,  ``c_2`` corresponds to `temperature_exponent`, ``T_{opt}`` corresponds to `optimal_temperature`, ``k_N`` corresponds to `nutrient_half_saturation`, and ``k_P`` corresponds to `light_half_saturation`.
-
-We turn this into a function for our model by writing:
-
-```@example implementing
-@inline function (bgc::NutrientPhytoplankton)(::Val{:P}, x, y, z, t, N, P, T, PAR)
-    μ = bgc.base_growth_rate
-    m = bgc.mortality_rate
-    b = bgc.crowding_mortality_rate
-
-    growth = μ * g(bgc, T) * f(bgc, N) * h(bgc, PAR) * P
-
-    death = m * P + b * P ^ 2
-
-    return growth - death
-end
-
-@inline function g(bgc, T)
-    c₁ = bgc.temperature_coefficient
-    c₂ = bgc.temperature_exponent
-    Tₒ = bgc.optimal_temperature
-
-    return c₁ * exp(-c₂ * abs(T - Tₒ))
-end
-
-@inline function f(bgc, N)
-    kₙ = bgc.nutrient_half_saturation
-
-    return N / (N + kₙ)
-end
-
-@inline function h(bgc, PAR)
-    kₚ = bgc.light_half_saturation
-
-    return PAR / (PAR + kₚ)
-end
-```
-
-The first parameter `::Val{:P}` is a special [value type](http://www.jlhub.com/julia/manual/en/function/Val) that allows this function to be dispatched when it is given the value `Val(:P)`. This is how Oceananigans tells the model which forcing function to use. At the start of the `NutrientPhytoplankton` function we unpack some parameters from the model, then calculate each term, and return the total change (the gain minus the loss).
-
-For this model, the nutrient evolution can be inferred from the rate of change of phytoplankton. Since this is a simple two variable model and the total concentration is conserved,
-```math
-\frac{\partial N}{\partial t} = - \frac{\partial P}{\partial t}.
-```
-Hence, we define the nutrient forcing using as the negative of the phytoplankton forcing
-```@example implementing
-@inline (bgc::NutrientPhytoplankton)(::Val{:N}, args...) = -bgc(Val(:P), args...)
-```
-
-Now we can run an example similar to the [LOBSTER box model example](@ref box_example):
-
-```@example implementing
-using OceanBioME, Oceananigans.Units
-using Oceananigans.Fields: FunctionField
+import OceanBioME.Models.NutrientsPlanktonDetritusModels:
+    nutrient_uptake, dissolved_waste, solid_waste, inorganic_waste
 
 const year = years = 365days
+nothing #hide
+```
 
-@inline PAR⁰(t) = 500 * (1 - cos((t + 15days) * 2π / year)) * (1 / (1 + 0.2 * exp(-((mod(t, year) - 200days) / 50days)^2))) + 2
+### The struct
+
+We store the model parameters, and include a `sinking_velocity` field (used later for the column example). We also tell OceanBioME that this component owns the `:P` tracer and needs the `:PAR` auxiliary field:
+
+```@example implementing
+@kwdef struct SimplePhytoplankton{FT, W}
+    maximum_growth_rate      :: FT = 2.0 / day   # 1/s
+    light_half_saturation    :: FT = 30.0        # W/m²
+    nutrient_half_saturation :: FT = 0.5         # mmol N/m³
+    mortality_rate           :: FT = 0.1 / day   # 1/s
+    exudate_fraction         :: FT = 0.05        # fraction of gross growth exuded to the dissolved pool
+    sinking_velocity         :: W  = ConstantField(0.0)
+end
+
+required_biogeochemical_tracers(::SimplePhytoplankton)          = (:P,)
+required_biogeochemical_auxiliary_fields(::SimplePhytoplankton) = (:PAR,)
+nothing #hide
+```
+
+### Growth rate
+
+We compute gross phytoplankton growth in a helper so it can be reused across the interface methods. Note the fixed argument order all NPD component functions share: `(i, j, k, grid, plankton, bgc, fields, auxiliary_fields)`:
+
+```@example implementing
+@inline function gross_growth(i, j, k, grid, p::SimplePhytoplankton, fields, auxiliary_fields)
+    PAR = @inbounds auxiliary_fields.PAR[i, j, k]
+    N   = @inbounds fields.N[i, j, k]
+    P   = @inbounds fields.P[i, j, k]
+
+    L_light    = PAR / (PAR + p.light_half_saturation)
+    L_nutrient = N   / (N   + p.nutrient_half_saturation)
+
+    return p.maximum_growth_rate * L_light * L_nutrient * P
+end
+nothing #hide
+```
+
+### Tracer tendency
+
+The `:P` tendency is a method on the `NutrientsPlanktonDetritus` model itself:
+
+```@example implementing
+@inline function (bgc::NutrientsPlanktonDetritus)(i, j, k, grid, ::Val{:P}, clock, fields, auxiliary_fields)
+    p         = bgc.plankton
+    growth    = gross_growth(i, j, k, grid, p, fields, auxiliary_fields)
+    exudate   = p.exudate_fraction * growth
+    mortality = p.mortality_rate * @inbounds fields.P[i, j, k]
+
+    return growth - exudate - mortality
+end
+nothing #hide
+```
+
+### Interface methods
+
+The nutrient and detritus tracers are assembled by the framework from these four functions: growth removes nitrogen from the nutrient pool (`nutrient_uptake`), exudation goes to the dissolved organic pool (`dissolved_waste`), mortality goes to the particulate organic pool (`solid_waste`), and nothing is released directly back to the inorganic pool (`inorganic_waste`):
+
+```@example implementing
+# Nutrient uptake: all gross growth removes N from the nutrient pool
+@inline nutrient_uptake(i, j, k, grid, p::SimplePhytoplankton, bgc, fields, aux) =
+    gross_growth(i, j, k, grid, p, fields, aux)
+
+# Dissolved waste: exudate from growth
+@inline dissolved_waste(i, j, k, grid, p::SimplePhytoplankton, bgc, fields, aux) =
+    p.exudate_fraction * gross_growth(i, j, k, grid, p, fields, aux)
+
+# Solid waste: mortality
+@inline solid_waste(i, j, k, grid, p::SimplePhytoplankton, bgc, fields, aux) =
+    p.mortality_rate * @inbounds fields.P[i, j, k]
+
+# No direct inorganic release
+@inline inorganic_waste(i, j, k, grid, ::SimplePhytoplankton, bgc::NutrientsPlanktonDetritus{FT}, args...) where FT =
+    zero(FT)
+nothing #hide
+```
+
+Because we use a single nitrogen nutrient here, the framework derives the per-tracer uptake for `:N` automatically. If instead you use `NitrateAmmonia` nutrients (separate `:NO₃`/`:NH₄`), specialise uptake by adding a `::Val{:NO₃}` (or `::Val{:NH₄}`) argument between `grid` and the plankton.
+
+The nitrogen budget closes by construction: `nutrient_uptake = dP/dt + dissolved_waste + solid_waste + inorganic_waste` (with the default `nitrogen_ratio = 1`, the model is in nitrogen currency so all pools are directly comparable).
+
+### Sinking
+
+Finally we let the phytoplankton sink by adding a method to `biogeochemical_drift_velocity` for the `:P` tracer, reading the `sinking_velocity` we stored in the struct:
+
+```@example implementing
+biogeochemical_drift_velocity(bgc::NutrientsPlanktonDetritus{<:Any, <:Any, <:SimplePhytoplankton}, ::Val{:P}) =
+    (u = ZeroField(), v = ZeroField(), w = bgc.plankton.sinking_velocity)
+nothing #hide
+```
+
+### Running a box model
+
+We can now drop `SimplePhytoplankton` into `NutrientsPlanktonDetritus` alongside a single nitrogen nutrient, and run a box model forced by a seasonal surface light with a prescribed PAR. Here we keep the default `InstantRemineralisationDetritus` detritus, which returns the dissolved and solid waste straight back to the nutrient pool — so the tracer set is just `(:N, :P)`:
+
+```@example implementing
+@inline PAR⁰(t) = 100 * (1 - cos((t + 15days) * 2π / year)) * (1 / (1 + 0.2 * exp(-((mod(t, year) - 200days) / 50days)^2))) + 2
 
 clock = Clock(; time = 0.0)
 
-z = -10 # specify the nominal depth of the box for the PAR profile
-@inline PAR_func(t) = PAR⁰(t) * exp(0.2z) # Modify the PAR based on the nominal depth and exponential decay
+# PAR at a nominal 5 m depth
+@inline PAR_func(t) = PAR⁰(t) * exp(0.1 * -5)
 
-PAR = FunctionField{Center, Center, Center}(PAR_func, BoxModelGrid(); clock)
+PAR = FunctionField{Center, Center, Center}(t -> PAR_func(t), BoxModelGrid(); clock)
 
-@inline temp(t) = 2.4 * cos(t * 2π / year + 50days) + 26
+grid = BoxModelGrid()
 
-biogeochemistry = Biogeochemistry(NutrientPhytoplankton();
-                                  light_attenuation = PrescribedPhotosyntheticallyActiveRadiation(PAR))
+biogeochemistry = NutrientsPlanktonDetritus(grid;
+                                            nutrients = Nutrients(N, nothing, nothing, nothing),
+                                            plankton  = SimplePhytoplankton(),
+                                            light_attenuation = PrescribedPhotosyntheticallyActiveRadiation(PAR))
 
-model = BoxModel(; biogeochemistry,
-                   prescribed_tracers = (; T = temp),
-                   clock)
+model = BoxModel(; biogeochemistry, clock)
 
-set!(model, N = 15, P = 15)
+set!(model, N = 10, P = 0.1)
 
-simulation = Simulation(model; Δt = 5minutes, stop_time = 5years)
+simulation = Simulation(model; Δt = 10minutes, stop_time = 4years)
 
-simulation.output_writers[:fields] = JLD2Writer(model, model.fields; filename = "box_np.jld2", schedule = TimeInterval(10days), overwrite_existing = true)
+simulation.output_writers[:fields] = JLD2Writer(model, model.fields; filename = "box_simple_phyto.jld2",
+                                                schedule = TimeInterval(1day), overwrite_existing = true)
 
-# ## Run the model (should only take a few seconds)
-@info "Running the model..."
 run!(simulation)
 ```
 
-We can then visualise this:
+And plot the result:
 
 ```@example implementing
-P = FieldTimeSeries("box_np.jld2", "P")
-N = FieldTimeSeries("box_np.jld2", "N")
+P_box = FieldTimeSeries("box_simple_phyto.jld2", "P")
+N_box = FieldTimeSeries("box_simple_phyto.jld2", "N")
 
-times = P.times
+times = P_box.times
 
-# ## And plot
-using CairoMakie
+fig = Figure(size = (1000, 320), fontsize = 18)
 
-fig = Figure(size = (1200, 480), fontsize = 20)
+axP = Axis(fig[1, 1], ylabel = "Phytoplankton \n(mmol N / m³)", xlabel = "Time (years)")
+lines!(axP, times / year, P_box[1, 1, 1, :], linewidth = 3)
 
-axN= Axis(fig[1, 1], ylabel = "Nutrient \n(mmol N / m³)")
-lines!(axN, times / year, N[1, 1, 1, :], linewidth = 3)
-
-axP = Axis(fig[1, 2], ylabel = "Phytoplankton \n(mmol N / m³)")
-lines!(axP, times / year, P[1, 1, 1, :], linewidth = 3)
-
-axPAR= Axis(fig[2, 1], ylabel = "PAR (einstein / m² / s)", xlabel = "Time (years)")
-lines!(axPAR, times / year, PAR_func.(times), linewidth = 3)
-
-axT = Axis(fig[2, 2], ylabel = "Temperature (°C)", xlabel = "Time (years)")
-lines!(axT, times / year, temp.(times), linewidth = 3)
+axN = Axis(fig[1, 2], ylabel = "Nutrient \n(mmol N / m³)", xlabel = "Time (years)")
+lines!(axN, times / year, N_box[1, 1, 1, :], linewidth = 3)
 
 fig
 ```
 
-So now we know it works.
+The phytoplankton blooms as the light increases, drawing the nutrient down to near zero; as the light fades each winter the bloom dies back and the (conserved) nitrogen is remineralised, replenishing the nutrient ready for the next spring bloom.
 
-### Phytoplankton sinking
+### Running a sinking water column
 
-Now that we have a fully working BGC model we might want to add some more features. Another aspect that is easy to add is negative buoyancy (sinking). To-do this all we do is add a method to the Oceananigans function `biogeochemical_drift_velocity`, and we use `::Val{:P}` to specify that only phytoplankton will sink. Above, we set the default value of the parameter `bgc.sinking_velocity`. We can override this when we call the BGC model like `NutrientPhytoplankton(; light_attenuation_model, sinking_velocity = 1/day)`. Note that before using `biogeochemical_drift_velocity`, we need to import several `Fields` from Oceananigans:
+The same component works in a physical column. Here we also switch the detritus slot to a `DissolvedParticulate` model, so that instead of recycling in place, the organic matter is *exported to depth* as it sinks — a more realistic setting for the sinking example. We give the phytoplankton a downward `sinking_velocity`, drive light with this PR's [`PrescribedAttenuationPAR`](@ref light), and couple an [`InstantRemineralisationSediment`](@ref sediment) that catches the sinking phytoplankton at the sea floor and returns it to the nutrient pool (with a small burial fraction). `ScaleNegativeTracers` keeps the tracers non-negative under advection:
 
 ```@example implementing
-using Oceananigans.Fields: ZeroField, ConstantField
+@inline surface_PAR(t) = 100 * (1 - cos((t + 15days) * 2π / year)) * (1 / (1 + 0.2 * exp(-((mod(t, year) - 200days) / 50days)^2))) + 2
 
-biogeochemical_drift_velocity(bgc::NutrientPhytoplankton, ::Val{:P}) =
-    (u = ZeroField(), v = ZeroField(), w = bgc.sinking_velocity)
-```
+grid = RectilinearGrid(topology = (Flat, Flat, Bounded), size = 32, extent = 100)
 
-### Sediment model coupling
+light_attenuation = PrescribedAttenuationPAR(grid, surface_PAR; attenuation = 0.1)
 
-OceanBioME includes sediment models that can be coupled to biogeochemical models. For models like `InstantRemineralisationSediment`, coupling is straightforward - you simply specify which tracers sink into the sediment and which tracer receives remineralized nutrients. We'll demonstrate this in the next section.
+sediment = InstantRemineralisationSediment(grid; sinking_tracers = :P, remineralisation_reciever = :N)
 
-### Putting it together
+biogeochemistry = NutrientsPlanktonDetritus(grid;
+                                            nutrients = Nutrients(N, nothing, nothing, nothing),
+                                            plankton  = SimplePhytoplankton(; sinking_velocity = ConstantField(-2/day)),
+                                            detritus  = DissolvedParticulate(grid),
+                                            light_attenuation,
+                                            sediment,
+                                            modifiers = ScaleNegativeTracers((:N, :P, :DOM, :sPOM, :bPOM)))
 
-Now that we have added these elements we can put it together into another simple example:
-```@example implementing
-using Oceananigans, OceanBioME
+model = NonhydrostaticModel(grid; biogeochemistry,
+                            advection = WENO(),
+                            closure = ScalarDiffusivity(ν = 1e-4, κ = 1e-4))
 
-# define some simple forcing
+set!(model, N = 10, P = 0.1)
 
-@inline surface_PAR(t) = 200 * (1 - cos((t + 15days) * 2π / year)) * (1 / (1 + 0.2 * exp(-((mod(t, year) - 200days) / 50days)^2))) + 2
+simulation = Simulation(model; Δt = 20minutes, stop_time = 1year)
 
-@inline ∂ₜT(z, t) = - 2π / year * sin(t * 2π / year + 50days)
+simulation.output_writers[:tracers] = JLD2Writer(model, model.tracers, filename = "column_simple_phyto.jld2",
+                                                 schedule = TimeInterval(2days), overwrite_existing = true)
 
-@inline κₚ(z) = 1e-2 * (1 + tanh((z - 50) / 10)) / 2 + 1e-4
-
-# define the grid
-
-grid = RectilinearGrid(topology = (Flat, Flat, Bounded), size = (32, ), x = 1, y = 1, z = (-100, 0))
-
-# setup the biogeochemical model
-
-light_attenuation = TwoBandPhotosyntheticallyActiveRadiation(; grid, surface_PAR)
-
-sediment = InstantRemineralisationSediment(grid; sinking_tracers = :P)
-
-sinking_velocity = ZFaceField(grid)
-
-w_sink(z) = 2 / day * tanh(z / 5)
-
-set!(sinking_velocity, w_sink)
-
-negative_tracer_scaling = ScaleNegativeTracers((:N, :P))
-
-biogeochemistry = Biogeochemistry(NutrientPhytoplankton(; sinking_velocity);
-                                  light_attenuation,
-                                  sediment,
-                                  modifiers = negative_tracer_scaling)
-
-κ = CenterField(grid)
-
-set!(κ, κₚ)
-
-# put the model together
-
-model = NonhydrostaticModel(grid;
-                            biogeochemistry,
-                            closure = ScalarDiffusivity(ν = κ; κ),
-                            forcing = (; T = ∂ₜT))
-
-set!(model, P = 0.01, N = 15, T = 28)
-
-# run
-
-simulation = Simulation(model, Δt = 9minutes, stop_time = 1years)
-
-simulation.output_writers[:tracers] = JLD2Writer(model, model.tracers,
-                                                 filename = "column_np.jld2",
-                                                 schedule = TimeInterval(1day),
-                                                 overwrite_existing = true)
-
-simulation.output_writers[:sediment] = JLD2Writer(model, model.biogeochemistry.sediment.fields,
-                                                  indices = (:, :, 1),
-                                                  filename = "column_np_sediment.jld2",
-                                                  schedule = TimeInterval(1day),
-                                                  overwrite_existing = true)
+simulation.output_writers[:sediment] = JLD2Writer(model, model.biogeochemistry.sediment.fields, indices = (:, :, 1),
+                                                  filename = "column_simple_phyto_sediment.jld2",
+                                                  schedule = TimeInterval(2days), overwrite_existing = true)
 
 run!(simulation)
 ```
 
-We can then visualise this:
+We plot the phytoplankton and nutrient over depth and time, along with the nitrogen stored in the sediment:
 
 ```@example implementing
-N = FieldTimeSeries("column_np.jld2", "N")
-P = FieldTimeSeries("column_np.jld2", "P")
-
-sed = FieldTimeSeries("column_np_sediment.jld2", "storage")
-
-fig = Figure()
-
-axN = Axis(fig[1, 1], ylabel = "z (m)")
-axP = Axis(fig[2, 1], ylabel = "z (m)")
-axSed = Axis(fig[3, 1:2], ylabel = "Sediment (mmol N / m²)", xlabel = "Time (years)")
+P_col = FieldTimeSeries("column_simple_phyto.jld2", "P")
+N_col = FieldTimeSeries("column_simple_phyto.jld2", "N")
+sed   = FieldTimeSeries("column_simple_phyto_sediment.jld2", "storage")
 
 _, _, zc = nodes(grid, Center(), Center(), Center())
-times = N.times
+times = P_col.times
 
-hmN = heatmap!(axN, times ./ year, zc, N[1, 1, 1:grid.Nz, 1:end]',
-               interpolate = true, colormap = Reverse(:batlow))
+fig = Figure(size = (1000, 620), fontsize = 18)
 
-hmP = heatmap!(axP, times ./ year, zc, P[1, 1, 1:grid.Nz, 1:end]',
-               interpolate = true, colormap = Reverse(:batlow))
+axP = Axis(fig[1, 1], ylabel = "z (m)")
+hmP = heatmap!(axP, times ./ year, zc, P_col[1, 1, 1:grid.Nz, 1:end]', colormap = Reverse(:batlow))
+Colorbar(fig[1, 2], hmP, label = "P (mmol N / m³)")
 
-lines!(axSed, times ./ year, sed[1, 1, 1, :])
+axN = Axis(fig[2, 1], ylabel = "z (m)")
+hmN = heatmap!(axN, times ./ year, zc, N_col[1, 1, 1:grid.Nz, 1:end]', colormap = Reverse(:batlow))
+Colorbar(fig[2, 2], hmN, label = "N (mmol N / m³)")
 
-Colorbar(fig[1, 2], hmN, label = "Nutrient (mmol N / m³)")
-Colorbar(fig[2, 2], hmP, label = "Phytoplankton (mmol N / m³)")
+axS = Axis(fig[3, 1:2], ylabel = "Sediment \n(mmol N / m²)", xlabel = "Time (years)")
+lines!(axS, times ./ year, sed[1, 1, 1, :], linewidth = 3)
 
 fig
 ```
 
-We can see in this that some phytoplankton sink to the bottom, and are both remineralized back into nutrients and stored in the sediment.
+The surface bloom sinks through the column, drawing the nutrient down near the surface and exporting nitrogen to depth, and the phytoplankton that reaches the bottom accumulates in the sediment.
 
-### Running on a GPU
+## GPU support
 
-In order to run a BGC model on a GPU we need to tell the compiler how to `adapt` the `NutrientPhytoplankton` struct for GPU kernels (see [here](https://clima.github.io/OceananigansDocumentation/stable/simulation_tips/#Arrays-in-GPUs-are-usually-different-from-arrays-in-CPUs) for more information). After the definition of the BGC `struct`, we write:
+When you run a model on a GPU, Oceananigans copies the model state including the model grids, fields, and biogeochemistry parameters, from CPU memory to GPU memory. When we create a custom plankton struct like  `SimplePhytoplankton`, we need to 'teach' Julia how to transfer each of the fields from CPU to GPU.
+
+The [Adapt.jl](https://github.com/JuliaGPU/Adapt.jl) package provides a mechanism to make this easy. The function `adapt(to, x)` takes `x` and returns a GPU-compatible copy on the device `to` (for example, a `CuArray` instead of an `Array`). For a custom struct, you define `Adapt.adapt_structure(to, p::SimplePhytoplankton)` to rebuild the struct field by field, calling `adapt(to, ...)` on each one. Scalar parameters (the growth rates, half-saturations, and so on) pass through unchanged, but fields like `sinking_velocity` must be adapted because they hold grid data that needs to live on the GPU.
+
+For this example, add the following after your struct definition:
 
 ```@example implementing
 using Pkg; Pkg.add("Adapt")
 using Adapt
-
 import Adapt: adapt_structure
 
-Adapt.adapt_structure(to, bgc::NutrientPhytoplankton) = NutrientPhytoplankton(adapt(to, bgc.base_growth_rate),
-                                                                              adapt(to, bgc.nutrient_half_saturation),
-                                                                              adapt(to, bgc.light_half_saturation),
-                                                                              adapt(to, bgc.temperature_exponent),
-                                                                              adapt(to, bgc.temperature_coefficient),
-                                                                              adapt(to, bgc.optimal_temperature),
-                                                                              adapt(to, bgc.mortality_rate),
-                                                                              adapt(to, bgc.crowding_mortality_rate),
-                                                                              adapt(to, bgc.sinking_velocity))
+Adapt.adapt_structure(to, p::SimplePhytoplankton) =
+    SimplePhytoplankton(adapt(to, p.maximum_growth_rate),
+                        adapt(to, p.light_half_saturation),
+                        adapt(to, p.nutrient_half_saturation),
+                        adapt(to, p.mortality_rate),
+                        adapt(to, p.exudate_fraction),
+                        adapt(to, p.sinking_velocity))
+nothing #hide
 ```
 
-We can add `grid` as the second argument for `ScaleNegativeTracers` so that it automatically works on a GPU. We replace the definition of `negative_tracer_scaling` with:
+## Implementing a completely new BGC model
 
-```@example implementing
-negative_tracer_scaling = ScaleNegativeTracers((:N, :P), grid)
-```
-
-### Final notes
-When implementing a new model we recommend following a testing process as we have here, starting with a box model, then a column, and finally using it in a realistic physics scenarios. We have found this very helpful for spotting bugs that were proving difficult to decipher in other situations. You can also add `Individuals`, light attenuation models, and sediment models in a similar fashion.
+If your model does not fit the NPD component structure — for example if it requires non-standard tracer coupling or has no plankton at all — you can implement it as a standalone `AbstractContinuousFormBiogeochemistry`. See [Implementing a custom biogeochemical model](@ref model_implementation_custom) for a full walkthrough, including a worked Lotka-Volterra predator-prey example, or the [Oceananigans biogeochemistry documentation](https://clima.github.io/OceananigansDocumentation/stable/) for the full interface. The OceanBioME `Biogeochemistry` wrapper can be used to add light attenuation, sediments, and particles to a custom model.

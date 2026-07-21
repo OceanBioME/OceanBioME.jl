@@ -47,8 +47,8 @@ grid = RectilinearGrid(size = (1, 1, 50), extent = (20meters, 20meters, 200meter
 # and then setup the Oceananigans model with the boundary condition for the DIC based on the air-sea CO₂ flux.
 
 biogeochemistry = LOBSTER(grid;
-                          surface_photosynthetically_active_radiation = PAR⁰,
-                          carbonate_system = CarbonateSystem(),
+                          surface_PAR = PAR⁰,
+                          inorganic_carbon = CarbonateSystem(),
                           scale_negatives = true)
 
 CO₂_flux = CarbonDioxideGasExchangeBoundaryCondition()
@@ -124,11 +124,13 @@ carbon_export = zeros(length(times))
 
 using Oceananigans.Biogeochemistry: biogeochemical_drift_velocity
 
+R_CN = model.biogeochemistry.underlying_biogeochemistry.plankton.carbon_ratio
+
 for (n, t) in enumerate(times)
     clock.time = t
 
     carbon_export[n] = (sPOM[n][1, 1, grid.Nz-20] * biogeochemical_drift_velocity(model.biogeochemistry, Val(:sPOM)).w[1, 1, grid.Nz-20] +
-                        bPOM[n][1, 1, grid.Nz-20] * biogeochemical_drift_velocity(model.biogeochemistry, Val(:bPOM)).w[1, 1, grid.Nz-20]) * redfield(Val(:sPOM), model.biogeochemistry)
+                        bPOM[n][1, 1, grid.Nz-20] * biogeochemical_drift_velocity(model.biogeochemistry, Val(:bPOM)).w[1, 1, grid.Nz-20]) * R_CN
 end
 
 # Both `air_sea_CO₂_flux` and `carbon_export` are in units `mmol CO₂ / (m² s)`.

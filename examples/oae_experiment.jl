@@ -17,12 +17,12 @@ using Oceananigans, OceanBioME, Oceananigans.Units
 
 using OceanBioME.Models.GasExchangeModel: CarbonDioxideConcentration
 
-# we define the grid and the biogeochemistry, adding in the `carbonate_system` with 2 replicates
+# we define the grid and the biogeochemistry, adding in the `inorganic_carbon` with 2 replicates
 grid = RectilinearGrid(size = (64, 64, 8), 
                        extent = (500, 500, 15))
 
 biogeochemistry = LOBSTER(grid;
-                          carbonate_system = CarbonateSystem(2))
+                          inorganic_carbon = CarbonateSystem(2))
 
 # Next we have to construct the boundary conditions for the DIC, changing the defaults to 
 # specify that the DIC and Alkalinity for the calculation should be DIC1 and Alk1/DIC2 

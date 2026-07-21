@@ -2,10 +2,16 @@ module Models
 
 export InstantRemineralisationSediment, SimpleMultiGSediment
 
-export NPZD, LOBSTER, CarbonateSystem, Oxygen, NitrateAmmoniaIron, VariableRedfieldDetritus, Detritus, Nutrient,
-       TwoParticleAndDissolved, NitrateAmmonia,
-       PISCES, DepthDependantSinkingSpeed, PrescribedLatitude, ModelLatitude, PISCESModel,
-       NutrientsPlanktonDetritus, PhytoZoo
+export NutrientsPlanktonDetritus
+
+export NPZD, LOBSTER, ImplicitBiology, PISCES, DepthDependantSinkingSpeed, PrescribedLatitude, ModelLatitude, PISCESModel
+
+export N, PO₄, Si, Fe
+export Nutrients, NitrateAmmonia
+export CarbonateSystem
+export Abiotic, ImplicitProductivity, PhytoZoo
+export Detritus, DissolvedParticulate, InstantRemineralisationDetritus, CarbonNitrogenDissolvedParticulate
+export Oxygen
 
 export SugarKelp, SugarKelpParticles, GiantKelp
 

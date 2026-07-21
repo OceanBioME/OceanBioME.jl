@@ -1,100 +1,57 @@
 module NutrientsPlanktonDetritusModels
 
-export LOBSTER, NPZD,
-       CarbonateSystem, 
-       Oxygen, 
-       NitrateAmmoniaIron, 
-       VariableRedfieldDetritus, 
-       TwoParticleAndDissolved, 
-       NitrateAmmonia,
-       Nutrient,
-       Detritus,
-       NutrientsPlanktonDetritus,
-       PhytoZoo
+export NutrientsPlanktonDetritus
 
-using Oceananigans.Units
+export LOBSTER, NPZD, ImplicitBiology
 
-using OceanBioME: setup_velocity_fields, Biogeochemistry, ScaleNegativeTracers
-using OceanBioME.Light: TwoBandPhotosyntheticallyActiveRadiation, default_surface_PAR
+export Nutrients, N, PO₄, Si, Fe, NitrateAmmonia
+export CarbonateSystem
+export Abiotic, ImplicitProductivity, PhytoZoo
+export Detritus, DissolvedParticulate, InstantRemineralisationDetritus, CarbonNitrogenDissolvedParticulate
+export Oxygen
 
-import OceanBioME: conserved_tracers, chlorophyll
+using Adapt
+using Oceananigans.Grids: AbstractGrid
 
-import Oceananigans.Biogeochemistry: AbstractBiogeochemistry, 
-                                     required_biogeochemical_tracers,
-                                     required_biogeochemical_auxiliary_fields,
-                                     biogeochemical_drift_velocity
+import Adapt: adapt_structure
+import Base: show, summary
 
-struct NutrientsPlanktonDetritus{NUT, PLA, DET, CAR, OXY} <: AbstractBiogeochemistry
-         nutrients :: NUT 
-          plankton :: PLA 
-          detritus :: DET 
-  carbonate_system :: CAR 
-            oxygen :: OXY
-end
+import Oceananigans.Biogeochemistry: 
+    required_biogeochemical_tracers,
+    required_biogeochemical_auxiliary_fields,
+    biogeochemical_drift_velocity
 
-function NutrientsPlanktonDetritus(grid; 
-                                   nutrients = nothing,
-                                   plankton = nothing,
-                                   detritus = nothing,
-                                   carbonate_system = nothing,
-                                   oxygen = nothing,
-                                   light_attenuation = nothing,
-                                   sediment = nothing,
-                                   scale_negatives = false,
-                                   invalid_fill_value = NaN,
-                                   particles = nothing,
-                                   modifiers = nothing)
+# Consider all biogeochemical models to abstract to "Nutrients" (inorganics which can limit)
+# growth, "Plankton" which is all the planktonic biology (typically phyto and zoo, but 
+# could be mixotrophs), and "detritus" which is all inorganic waste. You then also have 
+# "inorganic carbon" and "oxygen" which should just plug in to the others (they are essentially
+# one way coupled to the rest of the system, kind of).
 
-    underlying_biogeochemistry = NutrientsPlanktonDetritus(nutrients, plankton, detritus, carbonate_system, oxygen)
+# We (some what arbitarily) make the abstract flow between these groups be:
+# Nutrients -> Plankton: `nutrient_uptake` with `nutrient_limitation` effecting the plankton
+# Plankton -> Nutrients: `inorganic_waste` or `inorganic_X_waste`
+# Plankton -> Detritus: `solid_waste` and `dissolved_waste` or ...`_X_waste`
+# Detritus -> Plankton: `grazing` which can limit plankton
+# Detritus -> Nutrients: `inorganic_waste` or `inorganic_X_waste`
 
-    if scale_negatives
-        scaler = ScaleNegativeTracers(underlying_biogeochemistry, grid; invalid_fill_value)
-        if isnothing(modifiers)
-            modifiers = scaler
-        elseif modifiers isa Tuple
-            modifiers = (modifiers..., scaler)
-        else
-            modifiers = (modifiers, scaler)
-        end
-    end
-    
-    return Biogeochemistry(underlying_biogeochemistry;
-                           light_attenuation, 
-                           sediment, 
-                           particles,
-                           modifiers)
-end
+# we are going to assume that the default units are nitrogen, which is maybe a wrong assumtion to some
 
-# The possible tracer combinations are:
-required_biogeochemical_tracers(bnd::NutrientsPlanktonDetritus) = 
-    (required_biogeochemical_tracers(bnd.nutrients)...,
-     required_biogeochemical_tracers(bnd.plankton)...,
-     required_biogeochemical_tracers(bnd.detritus)...,
-     required_biogeochemical_tracers(bnd.carbonate_system)...,
-     required_biogeochemical_tracers(bnd.oxygen)...)
+include("nutrients_plankton_detritus.jl")
+include("assumptions.jl")
 
-# oceananigans defines the fallbacks for ::Nothing or ::AbstractBiogeochemistry but not anything else
-required_biogeochemical_tracers(anything_else) = ()
-required_biogeochemical_auxiliary_fields(anything_else) = ()
+include("Nutrients/Nutrients.jl")
+include("InorganicCarbon/InorganicCarbon.jl")
+include("Detritus/Detritus.jl")
+include("Plankton/Plankton.jl")
+include("Oxygen/Oxygen.jl")
 
-required_biogeochemical_auxiliary_fields(bnd::NutrientsPlanktonDetritus) = 
-    (required_biogeochemical_auxiliary_fields(bnd.nutrients)...,
-     required_biogeochemical_auxiliary_fields(bnd.plankton)...,
-     required_biogeochemical_auxiliary_fields(bnd.detritus)...,
-     required_biogeochemical_auxiliary_fields(bnd.carbonate_system)...,
-     required_biogeochemical_auxiliary_fields(bnd.oxygen)...)
+using .NutrientsModels
+using .InorganicCarbonModels
+using .PlanktonModels
+using .DetritusModels
+using .OxygenModels
 
-# fallback - not surer we want this?
-@inline (::NutrientsPlanktonDetritus)(i, j, k, grid, val_name, clock, fields, auxiliary_fields) = zero(grid)
-
-include("nutrients.jl")
-include("detritus.jl")
-include("plankton.jl")
-include("carbonate_system.jl")
-include("oxygen.jl")
-include("show.jl")
-include("coupling_utils.jl")
-include("adapt_methods.jl")
-include("constructors.jl")
+include("constructor.jl")
+include("utils.jl")
 
 end # module

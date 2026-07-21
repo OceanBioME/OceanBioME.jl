@@ -77,17 +77,16 @@ condition(i, j, grid, clock, fields, parameters)
 ```
 
 """
-function MultiBandPhotosyntheticallyActiveRadiation(; grid::AbstractGrid{FT}, 
-                                                      bands = ((400, 500), (500, 600), (600, 700)), #nm
-                                                      base_bands = MOREL_λ,
-                                                      base_water_attenuation_coefficient = MOREL_kʷ,
-                                                      base_chlorophyll_exponent = MOREL_e,
-                                                      base_chlorophyll_attenuation_coefficient = MOREL_χ,
-                                                      field_names = ntuple(n->par_symbol(n), Val(length(bands))),
-                                                      surface_PAR = default_surface_PAR,
-                                                      discrete_form = false,
-                                                      parameters = nothing,
-                                                      surface_PAR_division = fill(1 / length(bands), length(bands)),) where FT
+function MultiBandPhotosyntheticallyActiveRadiation(grid::AbstractGrid{FT}, surface_PAR;
+                                                    bands = ((400, 500), (500, 600), (600, 700)), #nm
+                                                    base_bands = MOREL_λ,
+                                                    base_water_attenuation_coefficient = MOREL_kʷ,
+                                                    base_chlorophyll_exponent = MOREL_e,
+                                                    base_chlorophyll_attenuation_coefficient = MOREL_χ,
+                                                    field_names = ntuple(n->par_symbol(n), Val(length(bands))),
+                                                    discrete_form = false,
+                                                    parameters = nothing,
+                                                    surface_PAR_division = fill(1 / length(bands), length(bands)),) where FT
     Nbands = length(bands)
 
     kʷ = zeros(eltype(grid), Nbands)
@@ -107,8 +106,10 @@ function MultiBandPhotosyntheticallyActiveRadiation(; grid::AbstractGrid{FT},
     
     n_fields = length(field_names)
 
+    boundary_condition_kwargs = surface_PAR isa Function ? (; parameters, discrete_form) : NamedTuple()
+
     surface_boundary_conditions = 
-        ntuple(n-> ValueBoundaryCondition(ScaledSurfaceFunction(surface_PAR, surface_PAR_division[n])), Val(n_fields))
+        ntuple(n-> ValueBoundaryCondition(ScaledSurfaceFunction(surface_PAR, surface_PAR_division[n]); boundary_condition_kwargs...), Val(n_fields))
 
     field_boundary_conditions =
         ntuple(n -> regularize_field_boundary_conditions(FieldBoundaryConditions(top = surface_boundary_conditions[n]),

@@ -1,6 +1,9 @@
 # [Simple multi-G](@id multi-g)
 
-This model, proposed by [Soetaert2000](@citet), is a "G class" model that evolves carbon and nitrogen in three classes (fast, slow and refectory). The model is also only compatible with the LOBSTER biogeochemical model with carbonate chemistry, oxygen, and variable redfield options on. You also must ensure that the `open_bottom` option is on for particles to leave the bottom of the domain to the sediment model.
+!!! warning "Not CI tested"
+    This sediment model is not currently part of the continuous integration test suite.
+
+This model, proposed by [Soetaert2000](@citet), is a "G class" model that evolves nitrogen in three liability classes (fast, slow and refractory), and optionally carbon. The model requires `:sPOM`, `:bPOM`, `:NO₃`, `:NH₄`, and `:O₂` tracers, so it is compatible with any NPD model that includes oxygen — at minimum `LOBSTER(grid; oxygen = Oxygen())`. You must also ensure that the `open_bottom` option is set so that particles can sink out of the bottom of the domain into the sediment model. By default the sediment uses a fixed Redfield ratio to infer carbon fluxes from the nitrogen fluxes; explicit carbon tracking requires passing `sinking_carbon` to `SimpleMultiGSediment`.
 
 It is straightforward to set up:
 
@@ -22,9 +25,9 @@ You may optionally specify the model parameters. This can then be passed in the 
 
 ```julia
 biogeochemistry = LOBSTER(grid;
-                          carbonate_system = CarbonateSystem(),
-                          oxygen = Oxygen(), 
-                          detritus = VariableRedfieldDetritus(grid; open_bottom = true),
+                          inorganic_carbon = CarbonateSystem(),
+                          oxygen = Oxygen(),
+                          detritus = DissolvedParticulate(grid; open_bottom = true),
                           sediment)
 ```
 
@@ -104,4 +107,4 @@ Nitrogen and carbon is conserved between the model domain and sediment, any nitr
 
 ## Model compatibility
 
-This model is currently only compatible with the [LOBSTER](@ref LOBSTER) biogeochemical model.
+This model is compatible with any [NPD framework](@ref npd_framework) model that includes `:sPOM`, `:bPOM`, `:NO₃`, `:NH₄`, and `:O₂` tracers. In practice this means passing `oxygen = Oxygen()` to whichever preset constructor you use.

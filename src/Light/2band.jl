@@ -103,18 +103,17 @@ condition(i, j, grid, clock, fields, parameters)
 ```
 
 """
-function TwoBandPhotosyntheticallyActiveRadiation(; grid::AbstractGrid{FT},
-                                                    water_red_attenuation = 0.225, # 1/m
-                                                    water_blue_attenuation = 0.0232, # 1/m
-                                                    chlorophyll_red_attenuation = 0.037, # 1/(m * (mgChl/m³) ^ eʳ)
-                                                    chlorophyll_blue_attenuation = 0.074, # 1/(m * (mgChl/m³) ^ eᵇ)
-                                                    chlorophyll_red_exponent = 0.629,
-                                                    chlorophyll_blue_exponent = 0.674,
-                                                    pigment_ratio = 0.7,
-                                                    phytoplankton_chlorophyll_ratio = 1.31,
-                                                    surface_PAR = default_surface_PAR,
-                                                    discrete_form = false,
-                                                    parameters = nothing) where FT
+function TwoBandPhotosyntheticallyActiveRadiation(grid::AbstractGrid{FT}, surface_PAR;
+                                                  water_red_attenuation = 0.225, # 1/m
+                                                  water_blue_attenuation = 0.0232, # 1/m
+                                                  chlorophyll_red_attenuation = 0.037, # 1/(m * (mgChl/m³) ^ eʳ)
+                                                  chlorophyll_blue_attenuation = 0.074, # 1/(m * (mgChl/m³) ^ eᵇ)
+                                                  chlorophyll_red_exponent = 0.629,
+                                                  chlorophyll_blue_exponent = 0.674,
+                                                  pigment_ratio = 0.7,
+                                                  phytoplankton_chlorophyll_ratio = 1.31,
+                                                  discrete_form = false,
+                                                  parameters = nothing) where FT
 
     water_red_attenuation = convert(FT, water_red_attenuation)
     water_blue_attenuation = convert(FT, water_blue_attenuation)
@@ -125,9 +124,11 @@ function TwoBandPhotosyntheticallyActiveRadiation(; grid::AbstractGrid{FT},
     pigment_ratio = convert(FT, pigment_ratio)
     phytoplankton_chlorophyll_ratio = convert(FT, phytoplankton_chlorophyll_ratio)
 
+    boundary_condition_kwargs = surface_PAR isa Function ? (; parameters, discrete_form) : NamedTuple()
+
     field = CenterField(grid; boundary_conditions =
                             regularize_field_boundary_conditions(
-                                FieldBoundaryConditions(top = ValueBoundaryCondition(surface_PAR)), grid, :PAR))
+                                FieldBoundaryConditions(top = ValueBoundaryCondition(surface_PAR; boundary_condition_kwargs...)), grid, :PAR))
 
     # wrap surface_PAR to make it work with the `getbc` interface
     surface_PAR = materialize_condition(surface_PAR, parameters, discrete_form, ()) 
@@ -154,7 +155,7 @@ function update_biogeochemical_state!(model, PAR::TwoBandPhotosyntheticallyActiv
     return nothing
 end
 
-summary(::TwoBandPhotosyntheticallyActiveRadiation{FT}) where {FT} = string("Two-band light attenuation model ($FT)")
+summary(::TwoBandPhotosyntheticallyActiveRadiation{FT}) where {FT} = string("TwoBandPhotosyntheticallyActiveRadiation{$FT}")
 show(io::IO, model::TwoBandPhotosyntheticallyActiveRadiation{FT}) where {FT} = print(io, summary(model))
 
 biogeochemical_auxiliary_fields(par::TwoBandPhotosyntheticallyActiveRadiation) = (PAR = par.field, )

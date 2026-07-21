@@ -29,7 +29,7 @@ using Oceananigans.Units
 using Oceananigans: KernelFunctionOperation
 using Oceananigans.Fields: Field, TracerFields, CenterField, ZeroField, ConstantField, Center, Face
 
-using OceanBioME.Light: MultiBandPhotosyntheticallyActiveRadiation, default_surface_PAR, compute_euphotic_depth!
+using OceanBioME.Light: MultiBandPhotosyntheticallyActiveRadiation, compute_euphotic_depth!
 using OceanBioME: setup_velocity_fields, show_sinking_velocities, Biogeochemistry, DiscreteBiogeochemistry, ScaleNegativeTracers, CBMDayLength
 using OceanBioME.BoxModels: BoxModel
 using OceanBioME.Models.CarbonChemistryModel: CarbonChemistry
@@ -324,11 +324,11 @@ function PISCES(; grid,
                   carbon_chemistry = CarbonChemistry(FT),
                   calcite_saturation = CenterField(grid),
 
-                  surface_photosynthetically_active_radiation = default_surface_PAR,
+                  surface_photosynthetically_active_radiation = 100,
 
                   light_attenuation =
-                    MultiBandPhotosyntheticallyActiveRadiation(; grid, 
-                                                                 surface_PAR = surface_photosynthetically_active_radiation),
+                    MultiBandPhotosyntheticallyActiveRadiation(grid, 
+                                                               surface_photosynthetically_active_radiation),
 
                   sinking_speeds = (POC = convert(FT, 2/day), 
                                     # might be more efficient to just precompute this
@@ -390,7 +390,7 @@ function PISCES(; grid,
                                         sinking_velocities)
 
     if scale_negatives
-        scalers = ScaleNegativeTracers(underlying_biogeochemistry, grid; invalid_fill_value)
+        scalers = ScaleNegativeTracers(underlying_biogeochemistry; invalid_fill_value)
         if isnothing(modifiers)
             modifiers = scalers
         elseif modifiers isa Tuple
