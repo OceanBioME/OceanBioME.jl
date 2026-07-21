@@ -208,7 +208,7 @@ The phytoplankton blooms as the light increases, drawing the nutrient down to ne
 
 The same component works in a physical column. Here we also switch the detritus slot to a `DissolvedParticulate` model, so that instead of recycling in place, the organic matter is *exported to depth* as it sinks — a more realistic setting for the sinking example. We give the phytoplankton a downward `sinking_velocity`, drive light with this PR's [`PrescribedAttenuationPAR`](@ref light), and couple an [`InstantRemineralisationSediment`](@ref sediment) that catches the sinking phytoplankton at the sea floor and returns it to the nutrient pool (with a small burial fraction). `ScaleNegativeTracers` keeps the tracers non-negative under advection:
 
-```@example implementing
+```Julia
 @inline surface_PAR(t) = 100 * (1 - cos((t + 15days) * 2π / year)) * (1 / (1 + 0.2 * exp(-((mod(t, year) - 200days) / 50days)^2))) + 2
 
 grid = RectilinearGrid(topology = (Flat, Flat, Bounded), size = 32, extent = 100)
@@ -245,7 +245,7 @@ run!(simulation)
 
 We plot the phytoplankton and nutrient over depth and time, along with the nitrogen stored in the sediment:
 
-```@example implementing
+```Julia
 P_col = FieldTimeSeries("column_simple_phyto.jld2", "P")
 N_col = FieldTimeSeries("column_simple_phyto.jld2", "N")
 sed   = FieldTimeSeries("column_simple_phyto_sediment.jld2", "storage")
