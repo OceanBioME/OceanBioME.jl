@@ -154,6 +154,12 @@ You can preview how the Documentation will look like after merging by building t
 locally. From the main directory of your local repository call
 
 ```
+julia docs/prepare_examples.jl
+```
+to manually run all examples and create `.md` files. This only needs to be done once. After that is
+done, run
+
+```
 JULIA_DEBUG=Documenter julia --project=docs/ docs/make.jl
 ```
 
