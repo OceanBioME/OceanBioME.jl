@@ -22,9 +22,11 @@ end
 
 Base.summary(io, light::PARFromShortwave) = "PARFromShortwave"
 
-function Base.show(io, light::PARFromShortwave) 
-    msg = summary(light) * "\n"
+function Base.show(io::IO, light::PARFromShortwave) 
+    msg = "PARFromShortwave\n"
     msg *= "└── `photosynthetic_fraction_of_shortwave`: $(light.photosynthetic_fraction_of_shortwave)\n"
 
-    print(io, string(msg))
+    print(io, msg)
+
+    return nothing
 end
