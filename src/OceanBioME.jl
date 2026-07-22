@@ -171,6 +171,9 @@ update_tendencies!(bgc, modifiers::Tuple, model) = [update_tendencies!(bgc, modi
 @inline (bgc::DiscreteBiogeochemistry)(args...) = 
     bgc.underlying_biogeochemistry(args..., biogeochemical_auxiliary_fields(bgc))
 
+@inline (bgc::ContinuousBiogeochemistry{nothing})(i, j, k, grid, args...) = zero(grid)
+@inline (bgc::DiscreteBiogeochemistry{nothing})(i, j, k, grid, args...) = zero(grid)
+
 function update_biogeochemical_state!(bgc::CompleteBiogeochemistry, model)
     # TODO: change the order of arguments here since they should definitly be the other way around
     update_biogeochemical_state!(model, bgc.modifiers)
