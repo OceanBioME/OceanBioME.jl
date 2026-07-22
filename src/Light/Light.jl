@@ -39,6 +39,8 @@ import Oceananigans.BoundaryConditions: _fill_top_halo!
 
 abstract type AbstractPhotosyntheticallyActiveRadiation{SF} end
 
+surface_PAR(par::AbstractPhotosyntheticallyActiveRadiation) = par.surface_PAR
+
 include("2band.jl")
 include("multi_band.jl")
 include("prescribed.jl")
