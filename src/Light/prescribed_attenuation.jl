@@ -1,7 +1,7 @@
 using Oceananigans.Fields: ConstantField
 using Oceananigans.Forcings: Forcing, materialize_forcing
 
-struct PrescribedAttenuationPhotosyntheticallyActiveRadiation{AT, SP, FI}
+struct PrescribedAttenuationPhotosyntheticallyActiveRadiation{AT, SP, FI} <: AbstractPhotosyntheticallyActiveRadiation{SP}
     attenuation :: AT
     surface_PAR :: SP
           field :: FI

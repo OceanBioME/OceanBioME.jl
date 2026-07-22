@@ -32,7 +32,7 @@
     end
 end
 
-struct TwoBandPhotosyntheticallyActiveRadiation{FT, F, SPAR}
+struct TwoBandPhotosyntheticallyActiveRadiation{FT, F, SPAR} <: AbstractPhotosyntheticallyActiveRadiation{SPAR}
     water_red_attenuation :: FT
     water_blue_attenuation :: FT
     chlorophyll_red_attenuation :: FT
