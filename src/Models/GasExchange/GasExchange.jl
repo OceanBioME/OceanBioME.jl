@@ -69,11 +69,12 @@ function GasExchangeBoundaryCondition(FT = Float64;
                                       water_concentration,
                                       air_concentration,
                                       transfer_velocity,
-                                      discrete_form = false)
+                                      discrete_form = false,
+                                      mask = nothing)
                                       
     air_concentration = normalise_surface_function(air_concentration; discrete_form, FT)
 
-    exchange_function = GasExchange(transfer_velocity, water_concentration, air_concentration)
+    exchange_function = GasExchange(transfer_velocity, water_concentration, air_concentration, mask)
 
     return FluxBoundaryCondition(exchange_function; discrete_form = true)
 end
@@ -112,7 +113,8 @@ function CarbonDioxideGasExchangeBoundaryCondition(FT = Float64;
                                                                                                                  carbon_chemistry.density_function)),
                                                    air_concentration = 413, # ppmv
                                                    water_concentration = nothing,
-                                                   silicate_and_phosphate_names = nothing)
+                                                   silicate_and_phosphate_names = nothing,
+                                                   kwargs...)
 
     if isnothing(water_concentration)
         water_concentration = CarbonDioxideConcentration(FT; carbon_chemistry, silicate_and_phosphate_names)
@@ -120,7 +122,7 @@ function CarbonDioxideGasExchangeBoundaryCondition(FT = Float64;
         @warn "Make sure that the `carbon_chemistry` $(carbon_chemistry) is the same as that in `water_concentration` $(water_concentration) (or set it to `nothing`)"
     end
 
-    return GasExchangeBoundaryCondition(FT; water_concentration, air_concentration, transfer_velocity, discrete_form)
+    return GasExchangeBoundaryCondition(FT; water_concentration, air_concentration, transfer_velocity, discrete_form, kwargs...)
 end
 
 """
@@ -145,7 +147,8 @@ OxygenGasExchangeBoundaryCondition(FT = Float64;
                                                                                      wind_speed = normalise_surface_function(wind_speed; discrete_form, FT, grid),
                                                                                      schmidt_number = OxygenPolynomialSchmidtNumber(FT)),
                                    water_concentration = OxygenConcentration(),
-                                   air_concentration = PartiallySolubleGas(FT; air_concentration = 9352.7, solubility = OxygenSolubility(FT))) = # mmolO₂/m³
-    GasExchangeBoundaryCondition(FT; water_concentration, air_concentration, transfer_velocity, discrete_form)
+                                   air_concentration = PartiallySolubleGas(FT; air_concentration = 9352.7, solubility = OxygenSolubility(FT)),
+                                   kwargs...) = # mmolO₂/m³
+    GasExchangeBoundaryCondition(FT; water_concentration, air_concentration, transfer_velocity, discrete_form, kwargs...)
 
 end # module
