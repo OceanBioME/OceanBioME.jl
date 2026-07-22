@@ -1,3 +1,5 @@
+import Oceananigans.BoundaryConditions: getbc
+
 struct PARFromShortwave{SN, FT}
                    surface_net_radiation :: SN
     photosynthetic_fraction_of_shortwave :: FT
@@ -15,3 +17,6 @@ function PARFromShortwave(grid;
     return PARFromShortwave(surface_net_radiation, photosynthetic_fraction_of_shortwave)
 end
 
+@inline getbc(light::PARFromShortwave, i, j, grid, clock, field) = 
+    @inbounds light.surface_net_radiation[i, j, 1]
+    
