@@ -35,7 +35,8 @@ export Particles
 export TwoBandPhotosyntheticallyActiveRadiation, 
        PrescribedPhotosyntheticallyActiveRadiation,
        MultiBandPhotosyntheticallyActiveRadiation,
-       PrescribedAttenuationPAR
+       PrescribedAttenuationPAR,
+       PARFromShortwave
 
 # airsea flux
 export GasExchange, CarbonDioxideGasExchangeBoundaryCondition, OxygenGasExchangeBoundaryCondition, GasExchangeBoundaryCondition

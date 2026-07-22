@@ -6,7 +6,8 @@ module Light
 export TwoBandPhotosyntheticallyActiveRadiation, 
        PrescribedPhotosyntheticallyActiveRadiation, 
        MultiBandPhotosyntheticallyActiveRadiation,
-       PrescribedAttenuationPAR
+       PrescribedAttenuationPAR,
+       PARFromShortwave
 
 using Adapt
 
