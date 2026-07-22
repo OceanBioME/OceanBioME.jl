@@ -17,5 +17,14 @@ function PARFromShortwave(grid;
     return PARFromShortwave(surface_net_radiation, photosynthetic_fraction_of_shortwave)
 end
 
-@inline Oceananigans.BoundaryConditions.getbc(light::PARFromShortwave, i, j, grid, clock, field) = 
+@inline Oceananigans.BoundaryConditions.getbc(light::PARFromShortwave, i, j, args...) = 
     @inbounds light.surface_net_radiation[i, j, 1]
+
+Base.summary(io, light::PARFromShortwave) = "PARFromShortwave"
+
+function Base.show(io, light::PARFromShortwave) 
+    msg = summary(light) * "\n"
+    msg *= "└── `photosynthetic_fraction_of_shortwave`: $(light.photosynthetic_fraction_of_shortwave)\n"
+
+    print(io, string(msg))
+end
