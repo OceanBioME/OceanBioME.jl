@@ -52,8 +52,8 @@ function PAR_field(grid, surface_PAR, parameters, discrete_form)
     field = CenterField(grid; boundary_conditions)
 
     # wrap surface_PAR to make it work with the `getbc` interface
-    surface_PAR = @show materialize_condition(surface_PAR, parameters, discrete_form, ()) 
-    surface_PAR = @show regularize_boundary_condition(surface_PAR, grid, (Center(), Center(), Center()), 3, RightBoundary, nothing)
+    surface_PAR = materialize_condition(surface_PAR, parameters, discrete_form, ()) 
+    surface_PAR = regularize_boundary_condition(surface_PAR, grid, (Center(), Center(), Center()), 3, RightBoundary, nothing)
 
     return field, surface_PAR
 end
