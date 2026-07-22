@@ -20,11 +20,10 @@ or a `CarbonDioxideConcentration` which diagnoses the partial pressure of CO₂ 
 `transfer_velocity` by default should be a `SchmidtScaledTransferVelocity` provided in 
 this module.
 """
-struct GasExchange{TV, WC, AC, MA} <: Function
+struct GasExchange{TV, WC, AC} <: Function
       transfer_velocity :: TV
     water_concentration :: WC
       air_concentration :: AC
-                   mask :: MA
 end
 
 @inline function (g::GasExchange)(i, j, grid, clock, model_fields)
@@ -34,9 +33,7 @@ end
 
     water_concentration = surface_value(g.water_concentration, i, j, grid, clock, model_fields)
 
-    mask = mask_value(g.mask, i, j, grid, clock, model_fields)
-
-    return mask * k * (water_concentration - air_concentration)
+    return k * (water_concentration - air_concentration)
 end
 
 @inline mask_value(::Nothing, i, j, grid, clock, fields) = one(grid)
