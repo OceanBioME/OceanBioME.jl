@@ -75,9 +75,6 @@ end
                                                pigment_ratio = 0.7,
                                                surface_PAR = default_surface_PAR)
 
-Total chlorophyll is obtained from `chlorophyll(model.biogeochemistry, model)`, allowing the
-biogeochemistry to define chlorophyll from one or more plankton or chlorophyll fields.
-
 Keyword Arguments
 ==================
 
