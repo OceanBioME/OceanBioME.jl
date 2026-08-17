@@ -48,8 +48,8 @@ show(io::IO, c::CarbonDioxideConcentration{DIC, Alk, CC, FV, CV, AP}) where {DIC
     T = @inbounds model_fields.T[i, j, grid.Nz]
     S = @inbounds model_fields.S[i, j, grid.Nz]
 
-    silicate  = silicate_concentration(grid, i, j, k, model_fields)
-    phosphate = phosphate_concentration(grid, i, j, k, model_fields)
+    silicate  = silicate_concentration(grid, i, j, grid.Nz, model_fields)
+    phosphate = phosphate_concentration(grid, i, j, grid.Nz, model_fields)
 
     pCO₂ = cc.carbon_chemistry(; DIC, Alk, T, S, silicate, phosphate, output = Val(:pCO₂))
 
