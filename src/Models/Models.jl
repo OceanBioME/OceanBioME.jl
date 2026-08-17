@@ -19,6 +19,7 @@ export CarbonChemistry
 
 export GasExchange, 
        CarbonDioxideGasExchangeBoundaryCondition, 
+       CarbonDioxideGasExchangeBoundaryConditions,
        OxygenGasExchangeBoundaryCondition, 
        GasExchangeBoundaryCondition,
        ScaledGasTransferVelocity,

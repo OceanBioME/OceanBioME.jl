@@ -4,7 +4,8 @@
 module GasExchangeModel
 
 export GasExchange, 
-       CarbonDioxideGasExchangeBoundaryCondition, 
+       CarbonDioxideGasExchangeBoundaryCondition,
+       CarbonDioxideGasExchangeBoundaryConditions, 
        OxygenGasExchangeBoundaryCondition, 
        GasExchangeBoundaryCondition,
        ScaledGasTransferVelocity,
@@ -101,27 +102,94 @@ and phosphate tracers, or a `NamedTuple`  of values for the `carbon_chemistry` m
 
 Note: The model always requires `T`, `S`, `DIC`, and `Alk` to be present in the model.
 """
-function CarbonDioxideGasExchangeBoundaryCondition(FT = Float64; 
-                                                   carbon_chemistry = CarbonChemistry(FT),
-                                                   transfer_velocity = 
-                                                        SchmidtScaledTransferVelocity(FT; 
-                                                           schmidt_number = CarbonDioxidePolynomialSchmidtNumber(FT),
-                                                           solubility = MolPerKgPerAtmToMMolPerCubicMPerMicroAtm(carbon_chemistry.solubility,
-                                                                                                                 carbon_chemistry.density_function)),
-                                                   air_concentration = 413, # ppmv
-                                                   wind_speed = 2,
-                                                   water_concentration = nothing,
-                                                   silicate_and_phosphate_names = nothing,
-                                                   kwargs...)
+CarbonDioxideGasExchangeBoundaryCondition(FT = Float64; 
+                                          carbon_chemistry = CarbonChemistry(FT),
+                                          transfer_velocity = 
+                                               SchmidtScaledTransferVelocity(FT; 
+                                                  schmidt_number = CarbonDioxidePolynomialSchmidtNumber(FT),
+                                                  solubility = MolPerKgPerAtmToMMolPerCubicMPerMicroAtm(carbon_chemistry.solubility,
+                                                                                                        carbon_chemistry.density_function)),
+                                          air_concentration = 413, # ppmv
+                                          wind_speed = 2,
+                                          water_concentration = nothing,
+                                          silicate_and_phosphate_names = nothing,
+                                          kwargs...) =
+    CarbonDioxideGasExchangeBoundaryConditions(1, FT;
+                                               carbon_chemistry,
+                                               transfer_velocity,
+                                               air_concentration,
+                                               wind_speed,
+                                               water_concentration,
+                                               silicate_and_phosphate_names,
+                                               kwargs...)
+
+
+"""
+    CarbonDioxideGasExchangeBoundaryConditions(N = 1, FT = Float64; 
+                                               carbon_chemistry = CarbonChemistry(FT),
+                                               transfer_velocity = SchmidtScaledTransferVelocity(schmidt_number = CarbonDioxidePolynomialSchmidtNumber(FT)),
+                                               air_concentration = 413, # ppmv
+                                               wind_speed = 2,
+                                               water_concentration = nothing,
+                                               silicate_and_phosphate_names = nothing,
+                                               kwargs...)
+
+Returns a `FluxBoundaryCondition` for the gas exchange between carbon dioxide dissolved in the water
+specified by the `carbon_chemisty` model, and `air_concentration` with `transfer_velocity` (see 
+`GasExchangeBoundaryCondition` for details).
+
+`silicate_and_phosphate_names` should either be `nothing`, a `Tuple`` of symbols specifying the name of the silicate
+and phosphate tracers, or a `NamedTuple`  of values for the `carbon_chemistry` model.
+
+`kwargs` are passed on to `GasExchangeBoundaryCondition`.
+
+Note: The model always requires `T`, `S`, `DIC`, and `Alk` to be present in the model.
+"""
+function CarbonDioxideGasExchangeBoundaryConditions(N = 1, FT = Float64; 
+                                                    carbon_chemistry = CarbonChemistry(FT),
+                                                    transfer_velocity = 
+                                                         SchmidtScaledTransferVelocity(FT; 
+                                                            schmidt_number = CarbonDioxidePolynomialSchmidtNumber(FT),
+                                                            solubility = MolPerKgPerAtmToMMolPerCubicMPerMicroAtm(carbon_chemistry.solubility,
+                                                                                                                  carbon_chemistry.density_function)),
+                                                    air_concentration = 413, # ppmv
+                                                    wind_speed = 2,
+                                                    water_concentration = nothing,
+                                                    silicate_and_phosphate_names = nothing,
+                                                    kwargs...)
 
     if isnothing(water_concentration)
-        water_concentration = CarbonDioxideConcentration(FT; carbon_chemistry, silicate_and_phosphate_names)
-    elseif !isnothing(carbon_chemistry)
-        @warn "Make sure that the `carbon_chemistry` $(carbon_chemistry) is the same as that in `water_concentration` $(water_concentration) (or set it to `nothing`)"
+        if N == 1
+            water_concentration = CarbonDioxideConcentration(FT; carbon_chemistry, silicate_and_phosphate_names)
+        else
+            water_concentration = map(
+                n->CarbonDioxideConcentration(FT; carbon_chemistry, 
+                                                  silicate_and_phosphate_names,
+                                                  DIC = Symbol(:DIC, n),
+                                                  Alk = Symbol(:Alk, n)),
+                1:N)
+        end
     end
 
-    return GasExchangeBoundaryCondition(FT; water_concentration, air_concentration, transfer_velocity, wind_speed, kwargs...)
+    if N == 1
+        return GasExchangeBoundaryCondition(FT; water_concentration, air_concentration, transfer_velocity, wind_speed, kwargs...)
+    else
+        dic_names = tuple(map(n->Symbol(:DIC, n), 1:N)...)
+        dic_boundary_kwargs = (; water_concentration, air_concentration, transfer_velocity, wind_speed, kwargs...)
+        return NamedTuple{dic_names}(map(n->materialise_multiple_dic_boundaries(n, FT; dic_boundary_kwargs...), 1:N))
+    end
 end
+
+materialise_multiple_dic_boundaries(n, FT; water_concentration, air_concentration, transfer_velocity, wind_speed, kwargs...) =
+    GasExchangeBoundaryCondition(FT; water_concentration = one_or_nth(water_concentration, n),
+                                     air_concentration = one_or_nth(air_concentration, n),
+                                     transfer_velocity = one_or_nth(transfer_velocity, n),
+                                     wind_speed = one_or_nth(wind_speed, n),
+                                     kwargs...)
+
+one_or_nth(only_one, n) = only_one
+one_or_nth(n_options::Array, n) = n_options[n]
+one_or_nth(n_options::Tuple, n) = n_options[n]
 
 """
     OxygenGasExchangeBoundaryCondition(FT = Float64; 

@@ -32,23 +32,12 @@ Cᴰ = 2e-3
 ρₐ = 1.2
 ρₒ = 1026
 
-CO₂_flux1 = 
-    CarbonDioxideGasExchangeBoundaryCondition(; 
-        wind_speed,
-        water_concentration = CarbonDioxideConcentration(; DIC = :DIC1,
-                                                           Alk = :Alk1)
-    )
-CO₂_flux2 = 
-    CarbonDioxideGasExchangeBoundaryCondition(; 
-        wind_speed,
-        water_concentration = CarbonDioxideConcentration(; DIC = :DIC2,
-                                                           Alk = :Alk2)
-    )
+CO₂_fluxes = CarbonDioxideGasExchangeBoundaryConditions(2; wind_speed)
 
 wind = FluxBoundaryCondition(-ρₐ/ρₒ * Cᴰ * wind_speed^2)
 
-boundary_conditions = (; DIC1 = FieldBoundaryConditions(top = CO₂_flux1),
-                         DIC2 = FieldBoundaryConditions(top = CO₂_flux2),
+boundary_conditions = (; DIC1 = FieldBoundaryConditions(top = CO₂_fluxes.DIC1),
+                         DIC2 = FieldBoundaryConditions(top = CO₂_fluxes.DIC2),
                          u    = FieldBoundaryConditions(top = wind))
 
 # Next we define an alkalinity release in a circle in the center for 1 hour

@@ -38,7 +38,11 @@ export TwoBandPhotosyntheticallyActiveRadiation,
        PrescribedAttenuationPAR
 
 # airsea flux
-export GasExchange, CarbonDioxideGasExchangeBoundaryCondition, OxygenGasExchangeBoundaryCondition, GasExchangeBoundaryCondition
+export GasExchange, 
+       CarbonDioxideGasExchangeBoundaryCondition, 
+       CarbonDioxideGasExchangeBoundaryConditions, 
+       OxygenGasExchangeBoundaryCondition, 
+       GasExchangeBoundaryCondition
 
 # carbon chemistry
 export CarbonChemistry
