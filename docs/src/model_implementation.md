@@ -4,11 +4,13 @@ There are two main ways to extend OceanBioME with new biology:
 
 1. **Add a new plankton component to the NPD framework** — implement a `plankton` type that slots into the existing [Nutrients-Plankton-Detritus framework](@ref npd_framework). The framework automatically handles nutrient uptake, detritus production, inorganic carbon, and oxygen coupling.
 
-2. **Implement a completely new BGC model** — subtype `AbstractContinuousFormBiogeochemistry` from Oceananigans for full control over all tracer tendencies. This is more work but imposes no constraints on model structure.
+2. **Implement a completely new BGC model** — subtype `AbstractContinuousFormBiogeochemistry` from Oceananigans for full control over all tracer tendencies. This approach might be prefered for simple biogeochemical models where simplicity of the code is desired. For complex models, building a new biogeochemical model this way is more work but imposes no constraints on model structure. See [Implementing a custom biogeochemical model](@ref model_implementation_custom) for a full walkthrough.
 
 This page focuses on the first approach, which is appropriate for most new plankton models.
 
 ## The NPD plankton interface
+
+Here, we describe how to build a new biogeochemical model using the NPD framework. Using this approach is strongly encouraged for most cases since it allows models to be easily extendable. Before considering implementing a new model using the NPD framework, be sure to read the description of the [Nutrients-Plankton-Detritus framework](@ref npd_framework) to understand the various components.
 
 A plankton component must implement the following four functions, all called with signature `(i, j, k, grid, plankton, bgc, fields, auxiliary_fields)`:
 
@@ -31,7 +33,7 @@ The default elemental ratios (Redfield: C:N:P:Fe = 106:16:1:0.0032) are used aut
 
 ## Example: simple phytoplankton
 
-Here we implement a minimal phytoplankton model with Michaelis-Menten light and nutrient limitation, linear mortality, and exudation of dissolved organic matter, and then run it in a box model and a sinking water column.
+Here we implement a minimal phytoplankton model with Michaelis-Menten light and nutrient limitation, linear mortality, and exudation of dissolved organic matter, and then run it in a box model and a sinking water column. In this example, zooplankton are not explicitly included.
 
 ### Imports
 
@@ -271,7 +273,11 @@ The surface bloom sinks through the column, drawing the nutrient down near the s
 
 ## GPU support
 
-To run on a GPU you must tell Julia how to transfer your struct to the device. Add this after your struct definition (note the `sinking_velocity` field is adapted too):
+When you run a model on a GPU, Oceananigans copies the model state including the model grids, fields, and biogeochemistry parameters, from CPU memory to GPU memory. When we create a custom plankton struct like  `SimplePhytoplankton`, we need to 'teach' Julia how to transfer each of the fields from CPU to GPU.
+
+The [Adapt.jl](https://github.com/JuliaGPU/Adapt.jl) package provides a mechanism to make this easy. The function `adapt(to, x)` takes `x` and returns a GPU-compatible copy on the device `to` (for example, a `CuArray` instead of an `Array`). For a custom struct, you define `Adapt.adapt_structure(to, p::SimplePhytoplankton)` to rebuild the struct field by field, calling `adapt(to, ...)` on each one. Scalar parameters (the growth rates, half-saturations, and so on) pass through unchanged, but fields like `sinking_velocity` must be adapted because they hold grid data that needs to live on the GPU.
+
+For this example, add the following after your struct definition:
 
 ```@example implementing
 using Pkg; Pkg.add("Adapt")
@@ -290,4 +296,4 @@ nothing #hide
 
 ## Implementing a completely new BGC model
 
-If your model does not fit the NPD component structure — for example if it requires non-standard tracer coupling or has no plankton at all — you can implement it as a standalone `AbstractContinuousFormBiogeochemistry`. See the [Oceananigans biogeochemistry documentation](https://clima.github.io/OceananigansDocumentation/stable/) for the full interface, and the OceanBioME `Biogeochemistry` wrapper to add light attenuation, sediments, and particles.
+If your model does not fit the NPD component structure — for example if it requires non-standard tracer coupling or has no plankton at all — you can implement it as a standalone `AbstractContinuousFormBiogeochemistry`. See [Implementing a custom biogeochemical model](@ref model_implementation_custom) for a full walkthrough, including a worked Lotka-Volterra predator-prey example, or the [Oceananigans biogeochemistry documentation](https://clima.github.io/OceananigansDocumentation/stable/) for the full interface. The OceanBioME `Biogeochemistry` wrapper can be used to add light attenuation, sediments, and particles to a custom model.

@@ -174,7 +174,7 @@ end
     ΔNO₃, ΔNH₄, ΔAlk = CUDA.@allowscalar model.tracers.NO₃[1, 1, 1] - NO₃₀, model.tracers.NH₄[1, 1, 1] - NH₄₀, model.tracers.Alk[1, 1, 1] - Alk₀
 
     @test ΔNO₃ < 0 && ΔAlk > 0 # net nitrate uptake raises alkalinity
-    @test isapprox(ΔAlk, -(1 + 1/16) * ΔNO₃ + (1 - 1/16) * ΔNH₄, atol = 1e-12)
+    @test isapprox(ΔAlk, -(1 + 1/16) * ΔNO₃ + (1 - 1/16) * ΔNH₄, atol=1e-12)
 end
 
 @testset "Explicit particle sinking" begin # not sure how essential this is but seems worth doing

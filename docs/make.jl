@@ -110,7 +110,10 @@ pages = [
     "Quick start" => "quick_start.md",
     "Examples" => example_pages,
     "Model components and setup" => component_pages,
-    "Implementing new models" => "model_implementation.md",
+    "Implementing new models" => [
+        "NPD framework models" => "model_implementation.md",
+        "Custom models" => "model_implementation_custom.md"
+    ],
     "Numerical implementation" => numerical_pages,
     "Contibutors guide" => "contributing.md",
     "References" => "references.md",
