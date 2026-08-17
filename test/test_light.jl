@@ -7,11 +7,27 @@ using OceanBioME: TwoBandPhotosyntheticallyActiveRadiation,
                   LOBSTER, NPZD, ImplicitBiology
 
 using Oceananigans.Architectures: on_architecture
-using Oceananigans.Biogeochemistry: update_biogeochemical_state!, 
+using Oceananigans.Biogeochemistry: AbstractBiogeochemistry,
+                                    update_biogeochemical_state!, 
                                     required_biogeochemical_tracers, 
+                                    required_biogeochemical_auxiliary_fields,
                                     biogeochemical_auxiliary_fields
 
+import OceanBioME: chlorophyll
+
 Pᵢ(x,y,z) = 2.5 + z
+
+struct MultiPhytoplanktonLightTest <: AbstractBiogeochemistry end
+
+required_biogeochemical_tracers(::MultiPhytoplanktonLightTest) = (:P1, :P2, :P3)
+required_biogeochemical_auxiliary_fields(::MultiPhytoplanktonLightTest) = (:PAR, )
+
+@inline function (::MultiPhytoplanktonLightTest)(i, j, k, grid, val_name, clock, fields, auxiliary_fields)
+    return zero(fields.P1[i, j, k])
+end
+
+@inline chlorophyll(::MultiPhytoplanktonLightTest, model) =
+    model.tracers.P1 + 2 * model.tracers.P2 + 3 * model.tracers.P3
 
 function test_two_band(grid, model_type, surface_PAR, discrete_form, parameters = nothing)
     biogeochemistry = NPZD(grid; 
@@ -51,6 +67,17 @@ function test_two_band(grid, model_type, surface_PAR, discrete_form, parameters 
     @test all(results_PAR .≈ reverse(expected_PAR))
 
     return nothing
+end
+
+function multi_phytoplankton_PAR(grid; P1, P2, P3)
+    light_attenuation = TwoBandPhotosyntheticallyActiveRadiation(grid, 100)
+    biogeochemistry = Biogeochemistry(MultiPhytoplanktonLightTest(); light_attenuation)
+    model = NonhydrostaticModel(grid; biogeochemistry, buoyancy = nothing, tracers = nothing)
+
+    @test !hasproperty(model.tracers, :P)
+    set!(model; P1, P2, P3)
+
+    return Array(interior(biogeochemical_auxiliary_fields(biogeochemistry).PAR))[1, 1, :]
 end
 
 function test_prescribed_attenuation(grid, model_type, 
@@ -171,6 +198,21 @@ field_surface_PAR = Oceananigans.Fields.ConstantField(100)
 
     test_prescribed_attenuation(grid, NonhydrostaticModel, continuous_surface_PAR, false, (x, y, z, t, a0) -> a0, false, 100, 0.1) # continuous attenuation with parameters
     test_prescribed_attenuation(grid, NonhydrostaticModel, continuous_surface_PAR, false, (args...) -> 0.1, true, 100) # discrete attenuation
+end
+
+@testset "TwoBand generic phytoplankton chlorophyll" begin
+    grid = RectilinearGrid(architecture; size = (1, 1, 3), extent = (1, 1, 3))
+
+    PAR_P1 = multi_phytoplankton_PAR(grid; P1 = 1, P2 = 0, P3 = 0)
+    PAR_P2 = multi_phytoplankton_PAR(grid; P1 = 0, P2 = 0.5, P3 = 0)
+    PAR_P3 = multi_phytoplankton_PAR(grid; P1 = 0, P2 = 0, P3 = 1/3)
+    PAR_split = multi_phytoplankton_PAR(grid; P1 = 0.2, P2 = 0.1, P3 = 0.2)
+    PAR_more = multi_phytoplankton_PAR(grid; P1 = 1, P2 = 0.5, P3 = 0)
+
+    @test PAR_P1 ≈ PAR_P2
+    @test PAR_P1 ≈ PAR_P3
+    @test PAR_P1 ≈ PAR_split
+    @test all(PAR_more .< PAR_P1)
 end
 
 @testset "Float32 TwoBandPhotosyntheticallyActiveRadiation" begin
