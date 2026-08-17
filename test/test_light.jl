@@ -8,10 +8,11 @@ using OceanBioME: TwoBandPhotosyntheticallyActiveRadiation,
 
 using Oceananigans.Architectures: on_architecture
 using Oceananigans.Biogeochemistry: AbstractBiogeochemistry,
-                                    update_biogeochemical_state!, 
-                                    required_biogeochemical_tracers, 
-                                    required_biogeochemical_auxiliary_fields,
+                                    update_biogeochemical_state!,
                                     biogeochemical_auxiliary_fields
+
+import Oceananigans.Biogeochemistry: required_biogeochemical_tracers,
+                                     required_biogeochemical_auxiliary_fields
 
 import OceanBioME: chlorophyll
 
