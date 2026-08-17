@@ -71,6 +71,14 @@ calcium_carbonate_saturation(carbon_chemistry; DIC, Alk, T, S)
 ```
 This function takes all of the same arguments (e.g. `boron`) as `carbon_chemistry` above.
 
+The carbonate ion concentration itself is available from `carbonate_concentration`, and is returned
+in mmol / m³ (i.e. the same units as `DIC` and `Alk`):
+```@example carbon-chem
+using OceanBioME.Models.CarbonChemistryModel: carbonate_concentration
+
+carbonate_concentration(carbon_chemistry; DIC, Alk, T, S)
+```
+
 ## Chemistry
 ### pH computation
 When carbon dioxide is dissolved in seawater it dissociates into carbonate and bicarbonate species according to the equilibria:

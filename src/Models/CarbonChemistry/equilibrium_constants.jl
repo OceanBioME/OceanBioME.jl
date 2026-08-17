@@ -765,12 +765,14 @@ end
 
     pressure_correction = c.pressure_correction(T, P)
 
-    lnK_therm = c.therm_constant + c.therm_T * T + c.therm_inverse_T / T + c.therm_log_T * log10(T) # seems wrong
-    lnK_sea = ((c.sea_sqrt_S + c.sea_T_sqrt_S * T + c.sea_inverse_T_sqrt_S / T) * √S 
-                + c.sea_S * S
-                + c.sea_S_sqrt_S³ * S^convert(FT, 1.5))
+    # the parameterisation is base 10 throughout, log₁₀(T) included
+    log₁₀K_therm = c.therm_constant + c.therm_T * T + c.therm_inverse_T / T + c.therm_log_T * log10(T)
+    log₁₀K_sea = ((c.sea_sqrt_S + c.sea_T_sqrt_S * T + c.sea_inverse_T_sqrt_S / T) * √S
+                   + c.sea_S * S
+                   + c.sea_S_sqrt_S³ * S^convert(FT, 1.5))
 
-    return  pressure_correction * convert(FT, 10)^(lnK_therm + lnK_sea)
+    # (mol / kg)²
+    return  pressure_correction * convert(FT, 10)^(log₁₀K_therm + log₁₀K_sea)
 end
 
 summary(::IO, ::KSP) = string("Calcite solubility")
