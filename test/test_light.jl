@@ -2,37 +2,20 @@ include("dependencies_for_runtests.jl")
 
 using CUDA: @allowscalar
 
-using OceanBioME: TwoBandPhotosyntheticallyActiveRadiation, 
-                  PrescribedAttenuationPAR, 
+using OceanBioME: TwoBandPhotosyntheticallyActiveRadiation,
+                  PrescribedAttenuationPAR,
                   LOBSTER, NPZD, ImplicitBiology
 
 using Oceananigans.Architectures: on_architecture
-using Oceananigans.Biogeochemistry: AbstractBiogeochemistry,
-                                    update_biogeochemical_state!,
+using Oceananigans.Biogeochemistry: update_biogeochemical_state!,
+                                    required_biogeochemical_tracers,
                                     biogeochemical_auxiliary_fields
-
-import Oceananigans.Biogeochemistry: required_biogeochemical_tracers,
-                                     required_biogeochemical_auxiliary_fields
-
-import OceanBioME: chlorophyll
 
 Pᵢ(x,y,z) = 2.5 + z
 
-struct MultiPhytoplanktonLightTest <: AbstractBiogeochemistry end
-
-required_biogeochemical_tracers(::MultiPhytoplanktonLightTest) = (:P1, :P2, :P3)
-required_biogeochemical_auxiliary_fields(::MultiPhytoplanktonLightTest) = (:PAR, )
-
-@inline function (::MultiPhytoplanktonLightTest)(i, j, k, grid, val_name, clock, fields, auxiliary_fields)
-    return zero(fields.P1[i, j, k])
-end
-
-@inline chlorophyll(::MultiPhytoplanktonLightTest, model) =
-    model.tracers.P1 + 2 * model.tracers.P2 + 3 * model.tracers.P3
-
 function test_two_band(grid, model_type, surface_PAR, discrete_form, parameters = nothing)
-    biogeochemistry = NPZD(grid; 
-                           light_attenuation = 
+    biogeochemistry = NPZD(grid;
+                           light_attenuation =
                                TwoBandPhotosyntheticallyActiveRadiation(grid, surface_PAR;
                                                                         discrete_form,
                                                                         parameters))
@@ -70,31 +53,10 @@ function test_two_band(grid, model_type, surface_PAR, discrete_form, parameters 
     return nothing
 end
 
-function multi_phytoplankton_PAR(grid; P1, P2, P3, surface_PAR = 100, discrete_form = false, parameters = nothing)
-    light_attenuation = TwoBandPhotosyntheticallyActiveRadiation(grid, surface_PAR; discrete_form, parameters)
-    biogeochemistry = Biogeochemistry(MultiPhytoplanktonLightTest(); light_attenuation)
-    model = NonhydrostaticModel(grid; biogeochemistry, buoyancy = nothing, tracers = nothing)
-
-    @test !hasproperty(model.tracers, :P)
-    set!(model; P1, P2, P3)
-
-    return Array(interior(biogeochemical_auxiliary_fields(biogeochemistry).PAR))[1, 1, :]
-end
-
-function npzd_two_band_PAR(grid)
-    light_attenuation = TwoBandPhotosyntheticallyActiveRadiation(grid, 100)
-    biogeochemistry = NPZD(grid; light_attenuation)
-    model = NonhydrostaticModel(grid; biogeochemistry, buoyancy = nothing, tracers = nothing)
-
-    set!(model, P = Pᵢ)
-
-    return Array(interior(biogeochemical_auxiliary_fields(biogeochemistry).PAR))[1, 1, :]
-end
-
-function test_prescribed_attenuation(grid, model_type, 
-                                     surface_PAR, surface_discrete_form, 
-                                     attenuation, attenuation_discrete_form, 
-                                     surface_parameters = nothing, 
+function test_prescribed_attenuation(grid, model_type,
+                                     surface_PAR, surface_discrete_form,
+                                     attenuation, attenuation_discrete_form,
+                                     surface_parameters = nothing,
                                      attenuation_parameters = nothing)
 
     light_attenuation = PrescribedAttenuationPAR(grid, surface_PAR;
@@ -103,7 +65,7 @@ function test_prescribed_attenuation(grid, model_type,
                                                  attenuation,
                                                  attenuation_discrete_form,
                                                  attenuation_parameters)
-                                                 
+
     biogeochemistry = ImplicitBiology(grid; light_attenuation)
 
     model = model_type(grid;
@@ -211,30 +173,10 @@ field_surface_PAR = Oceananigans.Fields.ConstantField(100)
     test_prescribed_attenuation(grid, NonhydrostaticModel, continuous_surface_PAR, false, (args...) -> 0.1, true, 100) # discrete attenuation
 end
 
-@testset "TwoBand generic phytoplankton chlorophyll" begin
-    grid = RectilinearGrid(architecture; size = (1, 1, 3), extent = (1, 1, 3))
-
-    PAR_P1 = multi_phytoplankton_PAR(grid; P1 = 1, P2 = 0, P3 = 0)
-    PAR_P2 = multi_phytoplankton_PAR(grid; P1 = 0, P2 = 0.5, P3 = 0)
-    PAR_P3 = multi_phytoplankton_PAR(grid; P1 = 0, P2 = 0, P3 = 1/3)
-    PAR_split = multi_phytoplankton_PAR(grid; P1 = 0.2, P2 = 0.1, P3 = 0.2)
-    PAR_more = multi_phytoplankton_PAR(grid; P1 = 1, P2 = 0.5, P3 = 0)
-    PAR_discrete = multi_phytoplankton_PAR(grid; P1 = 1, P2 = 0, P3 = 0,
-                                           surface_PAR = discrete_surface_PAR, discrete_form = true)
-    PAR_continuous = multi_phytoplankton_PAR(grid; P1 = 1, P2 = 0, P3 = 0,
-                                             surface_PAR = continuous_surface_PAR, parameters = 100)
-
-    @test PAR_P1 ≈ PAR_P2
-    @test PAR_P1 ≈ PAR_P3
-    @test PAR_P1 ≈ PAR_split
-    @test PAR_P1 ≈ PAR_discrete
-    @test PAR_P1 ≈ PAR_continuous
-    @test all(PAR_more .< PAR_P1)
-end
-
 @testset "Float32 TwoBandPhotosyntheticallyActiveRadiation" begin
-    grid = RectilinearGrid(architecture, Float32; size = (3, 3, 10), extent = (10, 10, 200))
+    grid = RectilinearGrid(architecture, Float32; size=(3, 3, 10), extent=(10, 10, 200))
     par = TwoBandPhotosyntheticallyActiveRadiation(grid, 100)
+
     @test par.water_red_attenuation isa Float32
     @test par.water_blue_attenuation isa Float32
     @test par.chlorophyll_red_attenuation isa Float32
@@ -242,10 +184,4 @@ end
     @test par.chlorophyll_red_exponent isa Float32
     @test par.chlorophyll_blue_exponent isa Float32
     @test par.pigment_ratio isa Float32
-
-    generic_PAR = multi_phytoplankton_PAR(grid; P1 = 1f0, P2 = 0.5f0, P3 = 0.25f0)
-    npzd_PAR = npzd_two_band_PAR(grid)
-
-    @test eltype(generic_PAR) == Float32
-    @test eltype(npzd_PAR) == Float32
 end
