@@ -2,20 +2,20 @@ include("dependencies_for_runtests.jl")
 
 using CUDA: @allowscalar
 
-using OceanBioME: TwoBandPhotosyntheticallyActiveRadiation,
-                  PrescribedAttenuationPAR,
+using OceanBioME: TwoBandPhotosyntheticallyActiveRadiation, 
+                  PrescribedAttenuationPAR, 
                   LOBSTER, NPZD, ImplicitBiology
 
 using Oceananigans.Architectures: on_architecture
-using Oceananigans.Biogeochemistry: update_biogeochemical_state!,
-                                    required_biogeochemical_tracers,
+using Oceananigans.Biogeochemistry: update_biogeochemical_state!, 
+                                    required_biogeochemical_tracers, 
                                     biogeochemical_auxiliary_fields
 
 Pᵢ(x,y,z) = 2.5 + z
 
 function test_two_band(grid, model_type, surface_PAR, discrete_form, parameters = nothing)
-    biogeochemistry = NPZD(grid;
-                           light_attenuation =
+    biogeochemistry = NPZD(grid; 
+                           light_attenuation = 
                                TwoBandPhotosyntheticallyActiveRadiation(grid, surface_PAR;
                                                                         discrete_form,
                                                                         parameters))
@@ -53,10 +53,10 @@ function test_two_band(grid, model_type, surface_PAR, discrete_form, parameters 
     return nothing
 end
 
-function test_prescribed_attenuation(grid, model_type,
-                                     surface_PAR, surface_discrete_form,
-                                     attenuation, attenuation_discrete_form,
-                                     surface_parameters = nothing,
+function test_prescribed_attenuation(grid, model_type, 
+                                     surface_PAR, surface_discrete_form, 
+                                     attenuation, attenuation_discrete_form, 
+                                     surface_parameters = nothing, 
                                      attenuation_parameters = nothing)
 
     light_attenuation = PrescribedAttenuationPAR(grid, surface_PAR;
@@ -65,7 +65,7 @@ function test_prescribed_attenuation(grid, model_type,
                                                  attenuation,
                                                  attenuation_discrete_form,
                                                  attenuation_parameters)
-
+                                                 
     biogeochemistry = ImplicitBiology(grid; light_attenuation)
 
     model = model_type(grid;
