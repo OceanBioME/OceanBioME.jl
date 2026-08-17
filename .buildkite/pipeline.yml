@@ -3,7 +3,8 @@ env:
   JULIA_PATH: /var/lib/buildkite-agent/julia
   DATADEPS_ALWAYS_ACCEPT: true
   BUILDKITE_HOME: "/var/lib/buildkite-agent"
-  JULIA_DEPOT_PATH: "$BUILDKITE_HOME/.julia-oceananigans"
+  JULIA_DEPOT_PATH_GPU: "$BUILDKITE_HOME/.julia-oceananigans-gpu"
+  JULIA_DEPOT_PATH_CPU: "$BUILDKITE_HOME/.julia-oceananigans-cpu"
   JULIA_PKG_SERVER_REGISTRY_PREFERENCE: eager
   OCEANBIOME_DIR: "$HOME/Oceananigans.jl-$BUILDKITE_BUILD_NUMBER"
   JULIAUP: /var/lib/buildkite-agent/.juliaup/bin/juliaup
@@ -14,8 +15,31 @@ steps:
     command: |
       cat << 'EOF' | buildkite-agent pipeline upload
       steps:
-        - label: ":building_construction: initialize environment"
-          key: "init"
+        - label: ":building_construction: initialize cpu environment"
+          key: "init-cpu"
+          env:
+            JULIA_DEPOT_PATH: "$JULIA_DEPOT_PATH_CPU"
+            CUDA_VISIBLE_DEVICES: "-1"
+          command: |
+            $JULIAUP add $JULIA_VERSION
+      
+            mkdir -p "$OCEANBIOME_DIR"
+            rsync -a . "$OCEANBIOME_DIR/"
+            cd "$OCEANBIOME_DIR"
+      
+            $JULIA +$JULIA_VERSION -O0 --color=yes --project -e 'using Pkg; Pkg.instantiate()'
+            $JULIA +$JULIA_VERSION --color=yes --project=docs/ -e \
+              'using Pkg; Pkg.develop(PackageSpec(path=pwd())); Pkg.instantiate()'
+          notify:
+            - github_commit_status:
+                context: "Initialise environment"
+          agents:
+            hostname: "$BUILDKITE_AGENT_META_DATA_HOSTNAME"
+
+        - label: ":building_construction: initialize gpu environment"
+          key: "init-gpu"
+          env:
+            JULIA_DEPOT_PATH: "$JULIA_DEPOT_PATH_GPU"
           command: |
             $JULIAUP add $JULIA_VERSION
       
@@ -33,10 +57,12 @@ steps:
             hostname: "$BUILDKITE_AGENT_META_DATA_HOSTNAME"
       
         - label: ":speedboat: GPU unit tests"
+          env:
+            JULIA_DEPOT_PATH: "$JULIA_DEPOT_PATH_GPU"
           commands: |
             cd "$OCEANBIOME_DIR"
             $JULIA +$JULIA_VERSION -O0 --color=yes --project -e 'using Pkg; Pkg.test()'
-          depends_on: "init"
+          depends_on: "init-gpu"
           notify:
             - github_commit_status:
                 context: "GPU tests"
@@ -45,11 +71,12 @@ steps:
           
         - label: ":rowboat: CPU unit tests"
           env:
-           CUDA_VISIBLE_DEVICES: "-1"
+            CUDA_VISIBLE_DEVICES: "-1"
+            JULIA_DEPOT_PATH: "$JULIA_DEPOT_PATH_CPU"
           commands: |
             cd "$OCEANBIOME_DIR"
             $JULIA +$JULIA_VERSION -O0 --color=yes --project -e 'using Pkg; Pkg.test()'
-          depends_on: "init"
+          depends_on: "init-cpu"
           notify:
             - github_commit_status:
                 context: "CPU tests"
@@ -60,6 +87,7 @@ steps:
           key: "examples"
           env:
             JULIA_DEBUG: "Literate"
+            JULIA_DEPOT_PATH: "$JULIA_DEPOT_PATH_GPU"
           command: |
             cd "$OCEANBIOME_DIR"
             $JULIA +$JULIA_VERSION --color=yes --project=docs/ docs/make_examples.jl  {{matrix.example_path}}
@@ -72,18 +100,19 @@ steps:
                 - "kelp"
                 - "data_assimilation"
                 - "oae_experiment"
-          depends_on: "init"
+          depends_on: "init-gpu"
           agents:
             hostname: "$BUILDKITE_AGENT_META_DATA_HOSTNAME"
           
         - label: ":docusaurus: Documentation"
           env:
             JULIA_DEBUG: "Documenter"
+            JULIA_DEPOT_PATH: "$JULIA_DEPOT_PATH_GPU"
           command: |
             cd "$OCEANBIOME_DIR"
             $JULIA +$JULIA_VERSION --color=yes --project=docs/ docs/make.jl
           depends_on: 
-            - "init"
+            - "init-gpu"
             - "examples"
           notify:
             - github_commit_status:
