@@ -80,8 +80,8 @@ function multi_phytoplankton_PAR(grid; P1, P2, P3, surface_PAR = 100, discrete_f
     return Array(interior(biogeochemical_auxiliary_fields(biogeochemistry).PAR))[1, 1, :]
 end
 
-function npzd_two_band_PAR(grid; phytoplankton_chlorophyll_ratio = nothing)
-    light_attenuation = TwoBandPhotosyntheticallyActiveRadiation(grid, 100; phytoplankton_chlorophyll_ratio)
+function npzd_two_band_PAR(grid)
+    light_attenuation = TwoBandPhotosyntheticallyActiveRadiation(grid, 100)
     biogeochemistry = NPZD(grid; light_attenuation)
     model = NonhydrostaticModel(grid; biogeochemistry, buoyancy = nothing, tracers = nothing)
 
@@ -231,20 +231,9 @@ end
     @test all(PAR_more .< PAR_P1)
 end
 
-@testset "TwoBand legacy chlorophyll ratio compatibility" begin
-    grid = RectilinearGrid(architecture; size = (1, 1, 3), extent = (1, 1, 3))
-
-    generic_PAR = npzd_two_band_PAR(grid)
-    legacy_PAR = npzd_two_band_PAR(grid; phytoplankton_chlorophyll_ratio = 1.31)
-
-    @test generic_PAR ≈ legacy_PAR
-end
-
 @testset "Float32 TwoBandPhotosyntheticallyActiveRadiation" begin
     grid = RectilinearGrid(architecture, Float32; size = (3, 3, 10), extent = (10, 10, 200))
     par = TwoBandPhotosyntheticallyActiveRadiation(grid, 100)
-    legacy_par = TwoBandPhotosyntheticallyActiveRadiation(grid, 100; phytoplankton_chlorophyll_ratio = 1.31)
-
     @test par.water_red_attenuation isa Float32
     @test par.water_blue_attenuation isa Float32
     @test par.chlorophyll_red_attenuation isa Float32
@@ -252,12 +241,10 @@ end
     @test par.chlorophyll_red_exponent isa Float32
     @test par.chlorophyll_blue_exponent isa Float32
     @test par.pigment_ratio isa Float32
-    @test isnothing(par.phytoplankton_chlorophyll_ratio)
-    @test legacy_par.phytoplankton_chlorophyll_ratio isa Float32
 
     generic_PAR = multi_phytoplankton_PAR(grid; P1 = 1f0, P2 = 0.5f0, P3 = 0.25f0)
-    legacy_PAR = npzd_two_band_PAR(grid; phytoplankton_chlorophyll_ratio = 1.31f0)
+    npzd_PAR = npzd_two_band_PAR(grid)
 
     @test eltype(generic_PAR) == Float32
-    @test eltype(legacy_PAR) == Float32
+    @test eltype(npzd_PAR) == Float32
 end
