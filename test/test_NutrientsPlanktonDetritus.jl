@@ -22,6 +22,9 @@ Oceananigans.Biogeochemistry.required_biogeochemical_auxiliary_fields(::External
 NPDModels.group_element_tracers(::ExternalContractPlankton, bgc, ::Val{:nitrogen}) =
     (P1 = 1.0, P2 = 1.0, C1 = 2.0, C2 = 2.0)
 
+NPDModels.chlorophyll_ratio(::ExternalContractPlankton) = 1.31
+NPDModels.chlorophyll_ratio(::ExternalContractPlankton, ::Val{:P2}) = 0.9
+
 const ExternalContractNPD{FT} = NPDModels.NutrientsPlanktonDetritus{FT, <:Any, <:ExternalContractPlankton}
 
 @inline (bgc::ExternalContractNPD{FT})(i, j, k, grid, ::Val{:P1}, clock, fields, auxiliary_fields) where FT = FT(1)
@@ -63,6 +66,9 @@ const ExternalContractNPD{FT} = NPDModels.NutrientsPlanktonDetritus{FT, <:Any, <
     @test NPDModels.inorganic_waste(1, 1, 1, grid, plankton, bgc, fields, auxiliary_fields) == 0.1
 
     @test DetritusModels.grazing(1, 1, 1, grid, Val(:sPOM), plankton, bgc, fields, auxiliary_fields) == 0.5
+
+    @test NPDModels.chlorophyll_ratio(plankton, Val(:P1)) == 1.31
+    @test NPDModels.chlorophyll_ratio(plankton, Val(:P2)) == 0.9
 
     adapted_bgc = Adapt.adapt(Array, bgc)
     @test adapted_bgc.plankton isa ExternalContractPlankton
