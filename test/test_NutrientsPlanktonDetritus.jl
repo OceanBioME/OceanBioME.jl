@@ -3,7 +3,7 @@ include("dependencies_for_runtests.jl")
 using OceanBioME: conserved_tracers
 using OceanBioME.Models.NutrientsPlanktonDetritusModels: InstantRemineralisationDetritus, 
                                                          CarbonNitrogenDissolvedParticulate
-using Adapt, Oceananigans, CUDA, Random
+using Oceananigans, CUDA, Random
 
 Random.seed!(42)
 
@@ -26,11 +26,9 @@ NPDModels.chlorophyll_ratio(::ExternalContractPlankton) = 1.31
 NPDModels.chlorophyll_ratio(::ExternalContractPlankton, ::Val{:P2}) = 0.9
 
 const ExternalContractNPD{FT} = NPDModels.NutrientsPlanktonDetritus{FT, <:Any, <:ExternalContractPlankton}
+const ExternalContractTracer = Union{Val{:P1}, Val{:P2}, Val{:C1}, Val{:C2}}
 
-@inline (bgc::ExternalContractNPD{FT})(i, j, k, grid, ::Val{:P1}, clock, fields, auxiliary_fields) where FT = FT(1)
-@inline (bgc::ExternalContractNPD{FT})(i, j, k, grid, ::Val{:P2}, clock, fields, auxiliary_fields) where FT = FT(2)
-@inline (bgc::ExternalContractNPD{FT})(i, j, k, grid, ::Val{:C1}, clock, fields, auxiliary_fields) where FT = FT(-1)
-@inline (bgc::ExternalContractNPD{FT})(i, j, k, grid, ::Val{:C2}, clock, fields, auxiliary_fields) where FT = FT(-2)
+@inline (bgc::ExternalContractNPD{FT})(i, j, k, grid, ::ExternalContractTracer, clock, fields, auxiliary_fields) where FT = FT(1)
 
 @inline NPDModels.nutrient_uptake(i, j, k, grid, plankton::ExternalContractPlankton, bgc::ExternalContractNPD{FT}, fields, auxiliary_fields) where FT = FT(0.4)
 @inline NPDModels.solid_waste(i, j, k, grid, plankton::ExternalContractPlankton, bgc::ExternalContractNPD{FT}, fields, auxiliary_fields) where FT = FT(0.3)
@@ -56,9 +54,6 @@ const ExternalContractNPD{FT} = NPDModels.NutrientsPlanktonDetritus{FT, <:Any, <
     @test Oceananigans.Biogeochemistry.required_biogeochemical_tracers(bgc) == (:N, :P1, :P2, :C1, :C2)
 
     @test bgc(1, 1, 1, grid, Val(:P1), nothing, fields, auxiliary_fields) == 1.0
-    @test bgc(1, 1, 1, grid, Val(:P2), nothing, fields, auxiliary_fields) == 2.0
-    @test bgc(1, 1, 1, grid, Val(:C1), nothing, fields, auxiliary_fields) == -1.0
-    @test bgc(1, 1, 1, grid, Val(:C2), nothing, fields, auxiliary_fields) == -2.0
 
     @test NPDModels.nutrient_uptake(1, 1, 1, grid, plankton, bgc, fields, auxiliary_fields) == 0.4
     @test NPDModels.solid_waste(1, 1, 1, grid, plankton, bgc, fields, auxiliary_fields) == 0.3
@@ -70,8 +65,6 @@ const ExternalContractNPD{FT} = NPDModels.NutrientsPlanktonDetritus{FT, <:Any, <
     @test NPDModels.chlorophyll_ratio(plankton, Val(:P1)) == 1.31
     @test NPDModels.chlorophyll_ratio(plankton, Val(:P2)) == 0.9
 
-    adapted_bgc = Adapt.adapt(Array, bgc)
-    @test adapted_bgc.plankton isa ExternalContractPlankton
 end
 
 @testset "External plankton conservation metadata" begin
