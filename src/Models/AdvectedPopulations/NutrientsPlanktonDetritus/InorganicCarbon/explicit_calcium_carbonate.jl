@@ -49,7 +49,8 @@ and dissolves at a saturation-dependent rate
     dissolution = calcium_carbonate_dissolution_rate * max(0, 1 - Ω)^calcium_carbonate_dissolution_exponent * CaCO₃
 
 where `Ω` is the calcium carbonate saturation state (computed each step from `DIC`, `Alk`, `T`, `S` via
-`carbon_chemistry`). An optional abiotic precipitation, **off by default**
+`carbon_chemistry`). This dissolution law, and the default `calcium_carbonate_dissolution_rate` of
+0.197/day, follow PISCES-v2 [Aumont2015](@citet). An optional abiotic precipitation, **off by default**
 (`calcium_carbonate_precipitation_rate = 0`), follows a mirror law when the water is supersaturated
 
     precipitation = calcium_carbonate_precipitation_rate * max(0, Ω - 1)^calcium_carbonate_precipitation_exponent * CaCO₃
@@ -58,47 +59,129 @@ Dissolution returns `DIC`/`Alk`; precipitation removes them, so carbon and alkal
 Unlike [`CarbonateSystem`](@ref) (which routes calcium carbonate implicitly through detrital remineralisation),
 this component makes `CaCO₃` an explicit pool and so overrides that implicit routing.
 
+Provenance and limits of the precipitation law
+=============================================
+
+The `k (Ω - 1)ⁿ` form is the empirical description of calcite precipitation from seawater of
+[Zuddas1994](@citet) and [Zuddas1998](@citet). Two features of the implementation follow the
+experimental evidence:
+
+- laboratory rates fall to zero at `Ω = 1`, which is where `max(0, Ω - 1)` puts the cut-off, and
+- precipitation is **heterogeneous**, proceeding on existing particle surfaces. [Moras2022](@citet)
+  found that filtering the particles out suppressed precipitation entirely, so making the rate
+  proportional to `CaCO₃` is a stand-in for reactive surface area.
+
+Two things it does **not** capture, which matter for ocean alkalinity enhancement:
+
+1. **No nucleation.** Because the rate is proportional to `CaCO₃`, a cell holding none can never
+   begin to precipitate however supersaturated it is; the pool must be seeded. This mirrors the
+   filtration result, but in the real ocean any particle will serve as a substrate, not just
+   carbonate.
+2. **No initiation threshold, and no hysteresis.** [Moras2022](@citet) observed precipitation
+   starting above `Ωₐ ≈ 7` (against a theoretical pseudo-homogeneous threshold of ~12.3) and then
+   running away *through* `Ωₐ = 5` to equilibrate near `Ωₐ ≈ 1.8-2`. This law has no such barrier,
+   so it precipitates slowly at any `Ω > 1` — including in ambient seawater. Reproducing the
+   observed behaviour needs a triggered state rather than a different exponent or threshold.
+
+`calcium_carbonate_precipitation_exponent` is left at `1` by default. [Zuddas1998](@citet) found the
+reaction order with respect to carbonate ion rising from 1 to 3 as ionic strength goes from 0.1 to
+0.9 m; seawater sits near 0.7 m, so a value of 2-3 is more defensible if you switch precipitation on.
+
+Calcite or aragonite saturation
+===============================
+
+`Ω` is whatever [`CarbonChemistry`](@ref) is configured to compute, which is **calcite** by default.
+It is formed as
+
+    Ω = [Ca²⁺] [CO₃²⁻] / KSP
+
+with `[Ca²⁺]` and `[CO₃²⁻]` in mol/kg and `KSP` in (mol/kg)², so `Ω` is dimensionless. The mineral
+phase enters only through `KSP`, so aragonite saturation is obtained by swapping the solubility:
+
+```julia
+using OceanBioME.Models.CarbonChemistryModel: KSP_aragonite
+
+ExplicitCalciumCarbonate(grid;
+                         carbon_chemistry = CarbonChemistry(; calcium_carbonate_solubility = KSP_aragonite()))
+```
+
+Aragonite is the more soluble phase, so `Ω_calcite ≈ 1.5 Ω_aragonite`. This matters when comparing
+against the OAE literature, whose thresholds are quoted in `Ω_aragonite`, and because aragonite is
+the phase [Moras2022](@citet) observed precipitating.
+
 `T` and `S` must be present in the model (as for any carbon-chemistry calculation).
 
-Passing `replicates > 1` manifests `replicates` **independent** copies of the carbonate system
+Passing `replicates > 1` manifests `replicates` copies of the carbonate system
 (`DIC1`, `Alk1`, `CaCO₃1`, `DIC2`, …); each copy evolves from its own `DIC`/`Alk`/`CaCO₃` and its own
 saturation state, which is useful for ensemble or perturbation experiments.
+
+Each of the four rate parameters may be given either as a single value shared by every replicate,
+or as a tuple of one value per replicate, so a parameter ensemble can be run under one flow:
+
+```julia
+ExplicitCalciumCarbonate(grid; replicates = 3,
+                         calcium_carbonate_precipitation_rate = (0, 0.05/day, 0.1/day))
+```
+
+Because the plankton, nutrients, and detritus are shared, and no biological term reads a carbonate
+tracer, the biological calcium carbonate source is identical in every replicate — so a parameter
+ensemble isolates the abiotic precipitation and dissolution response exactly. Note that
+`calcium_carbonate_sinking_speed` and `carbon_chemistry` are **not** per-replicate: every replicate
+exports at the same speed and uses the same solubility, so a dissolution ensemble varies the
+redissolution of the pool but not its export.
 
 Keyword Arguments
 =================
 - `grid`: (required) the geometry, needed to build the saturation and sinking-speed fields
 - `replicates`: number of independent DIC/Alk/CaCO₃ realisations
-- `calcium_carbonate_dissolution_rate`: base dissolution rate `k` (1/s)
-- `calcium_carbonate_dissolution_exponent`: exponent `m` of the undersaturation `max(0, 1 - Ω)`
-- `calcium_carbonate_precipitation_rate`: abiotic precipitation rate `k_prec` (1/s), `0` disables it
-- `calcium_carbonate_precipitation_exponent`: exponent `n` of the supersaturation `max(0, Ω - 1)`
-- `calcium_carbonate_sinking_speed`: downward sinking speed of `CaCO₃` (m/s)
+- `calcium_carbonate_dissolution_rate`: base dissolution rate `k` (1/s), scalar or one per replicate
+- `calcium_carbonate_dissolution_exponent`: exponent `m` of the undersaturation `max(0, 1 - Ω)`, scalar or one per replicate
+- `calcium_carbonate_precipitation_rate`: abiotic precipitation rate `k_prec` (1/s), `0` disables it, scalar or one per replicate
+- `calcium_carbonate_precipitation_exponent`: exponent `n` of the supersaturation `max(0, Ω - 1)`, scalar or one per replicate
+- `calcium_carbonate_sinking_speed`: downward sinking speed of `CaCO₃` (m/s), shared by all replicates
 - `open_bottom`: whether `CaCO₃` can sink out of the bottom of the domain
 - `carbon_chemistry`: the [`CarbonChemistry`](@ref) used to compute the calcium carbonate saturation `Ω`
 """
-struct ExplicitCalciumCarbonate{N, FT, CC, SV, SS} <: AbstractInorganicCarbon
-          calcium_carbonate_dissolution_rate :: FT
-      calcium_carbonate_dissolution_exponent :: FT
-        calcium_carbonate_precipitation_rate :: FT
-    calcium_carbonate_precipitation_exponent :: FT 
-                  carbon_chemistry :: CC
-                  sinking_velocity :: SV
+struct ExplicitCalciumCarbonate{N, R, CC, SV, SS} <: AbstractInorganicCarbon
+          calcium_carbonate_dissolution_rate :: R
+      calcium_carbonate_dissolution_exponent :: R
+        calcium_carbonate_precipitation_rate :: R
+    calcium_carbonate_precipitation_exponent :: R
+                            carbon_chemistry :: CC
+                            sinking_velocity :: SV
                 calcium_carbonate_saturation :: SS
 
-    ExplicitCalciumCarbonate{N}(calcium_carbonate_dissolution_rate::FT,
-                       calcium_carbonate_dissolution_exponent::FT,
-                       calcium_carbonate_precipitation_rate::FT,
-                       calcium_carbonate_precipitation_exponent::FT,
+    ExplicitCalciumCarbonate{N}(calcium_carbonate_dissolution_rate::R,
+                       calcium_carbonate_dissolution_exponent::R,
+                       calcium_carbonate_precipitation_rate::R,
+                       calcium_carbonate_precipitation_exponent::R,
                        carbon_chemistry::CC,
                        sinking_velocity::SV,
-                       calcium_carbonate_saturation::SS) where {N, FT, CC, SV, SS} =
-        new{N, FT, CC, SV, SS}(calcium_carbonate_dissolution_rate,
-                               calcium_carbonate_dissolution_exponent,
-                               calcium_carbonate_precipitation_rate,
-                               calcium_carbonate_precipitation_exponent,
-                               carbon_chemistry,
-                               sinking_velocity,
-                               calcium_carbonate_saturation)
+                       calcium_carbonate_saturation::SS) where {N, R, CC, SV, SS} =
+        new{N, R, CC, SV, SS}(calcium_carbonate_dissolution_rate,
+                              calcium_carbonate_dissolution_exponent,
+                              calcium_carbonate_precipitation_rate,
+                              calcium_carbonate_precipitation_exponent,
+                              carbon_chemistry,
+                              sinking_velocity,
+                              calcium_carbonate_saturation)
+end
+
+"""
+    replicate_parameter(value, replicates, FT, name)
+
+Expand a rate parameter into an `NTuple{replicates, FT}`: a scalar is shared by every
+replicate, while an iterable of length `replicates` gives each its own value.
+"""
+@inline replicate_parameter(value::Number, replicates, FT, name) =
+    ntuple(_ -> convert(FT, value), replicates)
+
+function replicate_parameter(value, replicates, FT, name)
+    length(value) == replicates ||
+        throw(ArgumentError("`$name` was given $(length(value)) values but `replicates = $replicates`, " *
+                            "please pass either a single value or one per replicate"))
+
+    return ntuple(n -> convert(FT, value[n]), replicates)
 end
 
 function ExplicitCalciumCarbonate(grid::AbstractGrid{FT};
@@ -118,10 +201,19 @@ function ExplicitCalciumCarbonate(grid::AbstractGrid{FT};
 
     manifest_explicit_calcium_carbonate_replicates!(replicates)
 
-    return ExplicitCalciumCarbonate{replicates}(convert(FT, calcium_carbonate_dissolution_rate),
-                                       convert(FT, calcium_carbonate_dissolution_exponent),
-                                       convert(FT, calcium_carbonate_precipitation_rate),
-                                       convert(FT, calcium_carbonate_precipitation_exponent),
+    dissolution_rate = replicate_parameter(calcium_carbonate_dissolution_rate, replicates, FT,
+                                          :calcium_carbonate_dissolution_rate)
+    dissolution_exponent = replicate_parameter(calcium_carbonate_dissolution_exponent, replicates, FT,
+                                               :calcium_carbonate_dissolution_exponent)
+    precipitation_rate = replicate_parameter(calcium_carbonate_precipitation_rate, replicates, FT,
+                                             :calcium_carbonate_precipitation_rate)
+    precipitation_exponent = replicate_parameter(calcium_carbonate_precipitation_exponent, replicates, FT,
+                                                 :calcium_carbonate_precipitation_exponent)
+
+    return ExplicitCalciumCarbonate{replicates}(dissolution_rate,
+                                       dissolution_exponent,
+                                       precipitation_rate,
+                                       precipitation_exponent,
                                        carbon_chemistry,
                                        sinking_velocity,
                                        calcium_carbonate_saturation)
@@ -144,44 +236,60 @@ carbonate_field_names(::ExplicitCalciumCarbonate{N}) where N = ntuple(n -> (Symb
 required_biogeochemical_auxiliary_fields(ic::ExplicitCalciumCarbonate) = saturation_field_names(ic)
 
 @inline function calcium_carbonate_dissolution_flux(i, j, k, grid, bgc::NPD_EC, fields, auxiliary_fields,
-                                          ::Val{calcium_carbonate_name}, ::Val{Ω_name}) where {calcium_carbonate_name, Ω_name}
+                                          ::Val{calcium_carbonate_name}, ::Val{Ω_name},
+                                          ::Val{n}) where {calcium_carbonate_name, Ω_name, n}
     Ω     = @inbounds getproperty(auxiliary_fields, Ω_name)[i, j, k]
     CaCO₃ = @inbounds getproperty(fields, calcium_carbonate_name)[i, j, k]
 
     ic = bgc.inorganic_carbon
 
-    return ic.calcium_carbonate_dissolution_rate * max(zero(Ω), one(Ω) - Ω)^ic.calcium_carbonate_dissolution_exponent * CaCO₃
+    rate     = @inbounds ic.calcium_carbonate_dissolution_rate[n]
+    exponent = @inbounds ic.calcium_carbonate_dissolution_exponent[n]
+
+    return rate * max(zero(Ω), one(Ω) - Ω)^exponent * CaCO₃
 end
 
 @inline function abiotic_calcium_carbonate_production(i, j, k, grid, bgc::NPD_EC, fields, auxiliary_fields,
-                                            ::Val{calcium_carbonate_name}, ::Val{Ω_name}) where {calcium_carbonate_name, Ω_name}
+                                                      ::Val{calcium_carbonate_name}, ::Val{Ω_name},
+                                                      ::Val{n}) where {calcium_carbonate_name, Ω_name, n}
     Ω     = @inbounds getproperty(auxiliary_fields, Ω_name)[i, j, k]
     CaCO₃ = @inbounds getproperty(fields, calcium_carbonate_name)[i, j, k]
 
     ic = bgc.inorganic_carbon
 
-    return ic.calcium_carbonate_precipitation_rate * max(zero(Ω), Ω - one(Ω))^ic.calcium_carbonate_precipitation_exponent * CaCO₃
+    rate     = @inbounds ic.calcium_carbonate_precipitation_rate[n]
+    exponent = @inbounds ic.calcium_carbonate_precipitation_exponent[n]
+
+    return rate * max(zero(Ω), Ω - one(Ω))^exponent * CaCO₃
 end
 
-@inline calcium_carbonate_production(i, j, k, grid, bgc::NPD_EC, fields, auxiliary_fields, cn::Val, Ωn::Val) =
+@inline calcium_carbonate_production(i, j, k, grid, bgc::NPD_EC, fields, auxiliary_fields,
+                                     calcium_carbonate_name, saturation_name, replicate) =
     biological_calcium_carbonate_precipitation(i, j, k, grid, bgc.plankton, bgc, fields, auxiliary_fields) +
-    abiotic_calcium_carbonate_production(i, j, k, grid, bgc, fields, auxiliary_fields, cn, Ωn)
+    abiotic_calcium_carbonate_production(i, j, k, grid, bgc, fields, auxiliary_fields,
+                                         calcium_carbonate_name, saturation_name, replicate)
 
-@inline explicit_calcium_carbonate_tendency(i, j, k, grid, bgc::NPD_EC, fields, auxiliary_fields, cn::Val, Ωn::Val) =
+@inline explicit_calcium_carbonate_tendency(i, j, k, grid, bgc::NPD_EC, fields, auxiliary_fields,
+                                            calcium_carbonate_name, saturation_name, replicate) =
     particulate_calcium_carbonate_production(i, j, k, grid, bgc.plankton, bgc, fields, auxiliary_fields) +
-    abiotic_calcium_carbonate_production(i, j, k, grid, bgc, fields, auxiliary_fields, cn, Ωn) -
-    calcium_carbonate_dissolution_flux(i, j, k, grid, bgc, fields, auxiliary_fields, cn, Ωn)
+    abiotic_calcium_carbonate_production(i, j, k, grid, bgc, fields, auxiliary_fields,
+                                         calcium_carbonate_name, saturation_name, replicate) -
+    calcium_carbonate_dissolution_flux(i, j, k, grid, bgc, fields, auxiliary_fields,
+                                       calcium_carbonate_name, saturation_name, replicate)
 
-@inline net_calcium_carbonate_production(i, j, k, grid, bgc::NPD_EC, fields, auxiliary_fields, cn::Val, Ωn::Val) =
-    calcium_carbonate_production(i, j, k, grid, bgc, fields, auxiliary_fields, cn, Ωn) -
-    calcium_carbonate_dissolution_flux(i, j, k, grid, bgc, fields, auxiliary_fields, cn, Ωn) -
+@inline net_calcium_carbonate_production(i, j, k, grid, bgc::NPD_EC, fields, auxiliary_fields,
+                                         calcium_carbonate_name, saturation_name, replicate) =
+    calcium_carbonate_production(i, j, k, grid, bgc, fields, auxiliary_fields,
+                                 calcium_carbonate_name, saturation_name, replicate) -
+    calcium_carbonate_dissolution_flux(i, j, k, grid, bgc, fields, auxiliary_fields,
+                                       calcium_carbonate_name, saturation_name, replicate) -
     biological_calcium_carbonate_dissolution(i, j, k, grid, bgc.plankton, bgc, fields, auxiliary_fields)
 
 @inline net_calcium_carbonate_production(i, j, k, grid, bgc::NPD_EC, fields, auxiliary_fields) =
-    net_calcium_carbonate_production(i, j, k, grid, bgc, fields, auxiliary_fields, Val(:CaCO₃), Val(:Ω))
+    net_calcium_carbonate_production(i, j, k, grid, bgc, fields, auxiliary_fields, Val(:CaCO₃), Val(:Ω), Val(1))
 
 @inline (bgc::NPD_EC)(i, j, k, grid, ::Val{:CaCO₃}, clock, fields, auxiliary_fields) =
-    explicit_calcium_carbonate_tendency(i, j, k, grid, bgc, fields, auxiliary_fields, Val(:CaCO₃), Val(:Ω))
+    explicit_calcium_carbonate_tendency(i, j, k, grid, bgc, fields, auxiliary_fields, Val(:CaCO₃), Val(:Ω), Val(1))
 
 @inline biogeochemical_drift_velocity(bgc::NPD_EC, ::Val{:CaCO₃}) = bgc.inorganic_carbon.sinking_velocity
 
@@ -241,17 +349,17 @@ function manifest_explicit_calcium_carbonate_replicates!(N)
         @eval begin
             @inline (bgc::NPD_EC)(i, j, k, grid, ::Val{$(QuoteNode(CaCO₃_name))}, clock, fields, auxiliary_fields) =
                 explicit_calcium_carbonate_tendency(i, j, k, grid, bgc, fields, auxiliary_fields,
-                                          Val($(QuoteNode(CaCO₃_name))), Val($(QuoteNode(Ω_name))))
+                                          Val($(QuoteNode(CaCO₃_name))), Val($(QuoteNode(Ω_name))), Val($n))
 
             @inline (bgc::NPD_EC)(i, j, k, grid, ::Val{$(QuoteNode(DIC_name))}, clock, fields, auxiliary_fields) =
                 net_biological_dic_uptake(i, j, k, grid, bgc, fields, auxiliary_fields) -
                 net_calcium_carbonate_production(i, j, k, grid, bgc, fields, auxiliary_fields,
-                                       Val($(QuoteNode(CaCO₃_name))), Val($(QuoteNode(Ω_name))))
+                                       Val($(QuoteNode(CaCO₃_name))), Val($(QuoteNode(Ω_name))), Val($n))
 
             @inline (bgc::NPD_EC)(i, j, k, grid, ::Val{$(QuoteNode(Alk_name))}, clock, fields, auxiliary_fields) =
                 net_biological_alkalinity_uptake(i, j, k, grid, bgc, clock, fields, auxiliary_fields) -
                 2 * net_calcium_carbonate_production(i, j, k, grid, bgc, fields, auxiliary_fields,
-                                           Val($(QuoteNode(CaCO₃_name))), Val($(QuoteNode(Ω_name))))
+                                           Val($(QuoteNode(CaCO₃_name))), Val($(QuoteNode(Ω_name))), Val($n))
 
             @inline biogeochemical_drift_velocity(bgc::NPD_EC, ::Val{$(QuoteNode(CaCO₃_name))}) =
                 bgc.inorganic_carbon.sinking_velocity
@@ -281,6 +389,13 @@ function Base.show(io::IO, ic::ExplicitCalciumCarbonate{N}) where N
 
     if N > 1
         msg *= "\n└── Realisations: $N"
+
+        for (name, values) in (("dissolution rate", ic.calcium_carbonate_dissolution_rate),
+                               ("dissolution exponent", ic.calcium_carbonate_dissolution_exponent),
+                               ("precipitation rate", ic.calcium_carbonate_precipitation_rate),
+                               ("precipitation exponent", ic.calcium_carbonate_precipitation_exponent))
+            allequal(values) || (msg *= "\n    ├── $name: $values")
+        end
     end
 
     print(io, msg)

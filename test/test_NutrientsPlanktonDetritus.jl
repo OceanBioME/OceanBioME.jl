@@ -545,4 +545,63 @@ end
         t2b = CUDA.@allowscalar bgc(1, 1, 1, grid, Val(:CaCO₃2), model.clock, model.tracers, aux)
         @test t1b != t2b
     end
+
+    @testset "per-replicate rate parameters (machine precision)" begin
+        k1, k2 = 0.2 / day, 0.05 / day    # dissolution rates
+        p1, p2 = 0.0, 0.1 / day           # precipitation rates
+        m1, m2 = 1.0, 2.0                 # dissolution exponents
+
+        model = explicit_calcium_carbonate_model(grid; replicates = 2,
+            calcium_carbonate_dissolution_rate = (k1, k2),
+            calcium_carbonate_dissolution_exponent = (m1, m2),
+            calcium_carbonate_precipitation_rate = (p1, p2),
+            calcium_carbonate_precipitation_exponent = 2)
+
+        bgc = model.biogeochemistry.underlying_biogeochemistry
+        ic  = bgc.inorganic_carbon
+
+        # scalars broadcast, tuples are kept per replicate and in order
+        @test ic.calcium_carbonate_dissolution_rate       == (k1, k2)
+        @test ic.calcium_carbonate_dissolution_exponent   == (m1, m2)
+        @test ic.calcium_carbonate_precipitation_rate     == (p1, p2)
+        @test ic.calcium_carbonate_precipitation_exponent == (2.0, 2.0)
+
+        Ω1, Ω2 = ic.calcium_carbonate_saturation
+        aux = biogeochemical_auxiliary_fields(model.biogeochemistry)
+
+        # identical state, undersaturated ⇒ only the dissolution parameters differ
+        CaCO₃, Ωval = 3.0, 0.4
+        set!(model, DIC1 = 2000, Alk1 = 2300, CaCO₃1 = CaCO₃,
+                    DIC2 = 2000, Alk2 = 2300, CaCO₃2 = CaCO₃)
+        set!(Ω1, Ωval)
+        set!(Ω2, Ωval)
+
+        t1 = CUDA.@allowscalar bgc(1, 1, 1, grid, Val(:CaCO₃1), model.clock, model.tracers, aux)
+        t2 = CUDA.@allowscalar bgc(1, 1, 1, grid, Val(:CaCO₃2), model.clock, model.tracers, aux)
+
+        # each replicate must use *its own* k and m (Abiotic plankton ⇒ no biological production)
+        @test t1 ≈ -k1 * (1 - Ωval)^m1 * CaCO₃
+        @test t2 ≈ -k2 * (1 - Ωval)^m2 * CaCO₃
+        @test t1 != t2
+
+        # DIC/Alk pick up the same per-replicate rates, 1x and 2x
+        d1 = CUDA.@allowscalar bgc(1, 1, 1, grid, Val(:DIC1), model.clock, model.tracers, aux)
+        d2 = CUDA.@allowscalar bgc(1, 1, 1, grid, Val(:DIC2), model.clock, model.tracers, aux)
+        a2 = CUDA.@allowscalar bgc(1, 1, 1, grid, Val(:Alk2), model.clock, model.tracers, aux)
+        @test d1 ≈  k1 * (1 - Ωval)^m1 * CaCO₃
+        @test d2 ≈  k2 * (1 - Ωval)^m2 * CaCO₃
+        @test a2 ≈ 2k2 * (1 - Ωval)^m2 * CaCO₃
+
+        # supersaturated ⇒ only the precipitation parameters differ, and p1 = 0 disables it
+        set!(Ω1, 2.5)
+        set!(Ω2, 2.5)
+        s1 = CUDA.@allowscalar bgc(1, 1, 1, grid, Val(:CaCO₃1), model.clock, model.tracers, aux)
+        s2 = CUDA.@allowscalar bgc(1, 1, 1, grid, Val(:CaCO₃2), model.clock, model.tracers, aux)
+        @test s1 == 0
+        @test s2 ≈ p2 * (2.5 - 1)^2 * CaCO₃
+
+        # a wrong-length tuple is rejected up front rather than in a kernel
+        @test_throws ArgumentError ExplicitCalciumCarbonate(grid; replicates = 2,
+            calcium_carbonate_dissolution_rate = (k1, k2, k1))
+    end
 end

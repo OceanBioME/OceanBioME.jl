@@ -83,7 +83,7 @@ function CarbonChemistry(FT = Float64;
     return CarbonChemistry(ionic_strength, solubility, carbonic_acid, boric_acid, water,
                            sulfate, fluoride, phosphoric_acid, silicic_acid, calcium_carbonate_solubility, density_function,
                            first_virial_coefficient, cross_viral_coefficient,
-                            solver)
+                           solver)
 end
 
 """
