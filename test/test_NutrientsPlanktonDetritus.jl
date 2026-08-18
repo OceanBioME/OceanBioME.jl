@@ -19,7 +19,7 @@ Oceananigans.Biogeochemistry.required_biogeochemical_tracers(::ExternalContractP
 
 Oceananigans.Biogeochemistry.required_biogeochemical_auxiliary_fields(::ExternalContractPlankton) = tuple()
 
-NPDModels.plankton_element_tracers(::ExternalContractPlankton, bgc, ::Val{:nitrogen}) =
+NPDModels.group_element_tracers(::ExternalContractPlankton, bgc, ::Val{:nitrogen}) =
     (P1 = 1.0, P2 = 1.0, C1 = 2.0, C2 = 2.0)
 
 const ExternalContractNPD{FT} = NPDModels.NutrientsPlanktonDetritus{FT, <:Any, <:ExternalContractPlankton}
