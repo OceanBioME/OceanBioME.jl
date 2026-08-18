@@ -2,17 +2,17 @@ module PlanktonModels
 
 export Abiotic, ImplicitProductivity, PhytoZoo
 
-# plankton models *must* define `inorganic_waste`, `nutrient_uptake`, `dissolved_waste`, and `solid_waste`
-# and may define `carbon_ratio`, `nitrogen_ratio`, `phosphate_ratio`, `iron_ratio`, and `silicon_ratio`
-# if they are not defined they default to 106/16:1:0.0062/16:0 (i.e. the default unit is nitrogen)
-# you may also define `X_Y_waste` where X is `inorganic`, `dissolved` and `solid`, and `Y` are the elements
-
-# plankton may also define `detritus_grazing(plankton, bgc, i, j, k, val_name, fields, auxiliary_fields)` which
-# acts on detritus pools and otherwise defaults to zero (and is representative of both zooplankton grazing,
-# dissolved uptake like MARBL, or mixotrophy)
-
-# they must define `nutrient_uptake` with arguments `plankton, bgc, i, j, k, fields, auxiliary_fields`,
-# but may specialise to arguments `plankton, bgc, i, j, k, val_name, fields, auxiliary_fields`
+# Plankton components define `inorganic_waste`, `nutrient_uptake`, `dissolved_waste`, and `solid_waste`.
+# Elemental composition is provided by `carbon_ratio`, `nitrogen_ratio`, `phosphate_ratio`, `iron_ratio`,
+# `silicon_ratio`, and `calcite_rain_ratio`; the NPD defaults use nitrogen as the base unit.
+# Components may specialise `plankton_element_tracers` when their owned tracers require conservation
+# coefficients that differ from the community-wide elemental ratios.
+#
+# Detritus consumption uses the generic
+# `grazing(i, j, k, grid, Val(detritus_name), plankton, bgc, fields, auxiliary_fields)` dispatch.
+# The default is zero, while plankton components may specialise the method for any realised detritus name.
+#
+# `nutrient_uptake` may be defined as an aggregate uptake or specialised for `Val(nutrient_name)`.
 
 using Adapt
 using Oceananigans.Units
