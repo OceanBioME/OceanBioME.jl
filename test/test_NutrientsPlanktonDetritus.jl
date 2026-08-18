@@ -9,6 +9,39 @@ Random.seed!(42)
 
 grid = RectilinearGrid(architecture; size=(1, 1, 1), extent=(1, 1, 2))
 
+struct ExternalConservationPlankton end
+
+Oceananigans.Biogeochemistry.required_biogeochemical_tracers(::ExternalConservationPlankton) =
+    (:P1, :P2, :C1, :C2)
+
+OceanBioME.Models.NutrientsPlanktonDetritusModels.plankton_element_tracers(::ExternalConservationPlankton, bgc, ::Val{:nitrogen}) =
+    (P1 = 1.0, P2 = 1.0, C1 = 2.0, C2 = 2.0)
+
+@testset "External plankton conservation metadata" begin
+    nutrients = Nutrients(; nitrogen = OceanBioME.Models.N,
+                           phosphate = OceanBioME.Models.PO₄,
+                           iron = OceanBioME.Models.Fe,
+                           silicate = OceanBioME.Models.Si)
+
+    bgc = OceanBioME.Models.NutrientsPlanktonDetritusModels.NutrientsPlanktonDetritus{Float64}(
+        nutrients,
+        ExternalConservationPlankton(),
+        InstantRemineralisationDetritus(),
+        CarbonateSystem(),
+        Oxygen(),
+    )
+
+    tracer_groups = conserved_tracers(bgc)
+
+    @test tracer_groups.nitrogen.P1 == 1.0
+    @test tracer_groups.nitrogen.C1 == 2.0
+    @test tracer_groups.phosphate.P1 == 1 / 16
+    @test tracer_groups.iron.P1 == 0.0032 / 16
+    @test tracer_groups.silicate.P1 == 0.0
+    @test tracer_groups.carbon.P1 == 106 / 16
+    @test keys(tracer_groups.nitrogen)[end-3:end] == (:P1, :P2, :C1, :C2)
+end
+
 test_models = []
 
 light_attenuation = PrescribedPhotosyntheticallyActiveRadiation(ConstantField(100))
