@@ -3,19 +3,70 @@ include("dependencies_for_runtests.jl")
 using OceanBioME: conserved_tracers
 using OceanBioME.Models.NutrientsPlanktonDetritusModels: InstantRemineralisationDetritus, 
                                                          CarbonNitrogenDissolvedParticulate
-using Oceananigans, CUDA, Random
+using Adapt, Oceananigans, CUDA, Random
 
 Random.seed!(42)
 
 grid = RectilinearGrid(architecture; size=(1, 1, 1), extent=(1, 1, 2))
 
-struct ExternalConservationPlankton end
+const NPDModels = OceanBioME.Models.NutrientsPlanktonDetritusModels
+const DetritusModels = NPDModels.DetritusModels
 
-Oceananigans.Biogeochemistry.required_biogeochemical_tracers(::ExternalConservationPlankton) =
+struct ExternalContractPlankton end
+
+Oceananigans.Biogeochemistry.required_biogeochemical_tracers(::ExternalContractPlankton) =
     (:P1, :P2, :C1, :C2)
 
-OceanBioME.Models.NutrientsPlanktonDetritusModels.plankton_element_tracers(::ExternalConservationPlankton, bgc, ::Val{:nitrogen}) =
+Oceananigans.Biogeochemistry.required_biogeochemical_auxiliary_fields(::ExternalContractPlankton) = tuple()
+
+NPDModels.plankton_element_tracers(::ExternalContractPlankton, bgc, ::Val{:nitrogen}) =
     (P1 = 1.0, P2 = 1.0, C1 = 2.0, C2 = 2.0)
+
+const ExternalContractNPD{FT} = NPDModels.NutrientsPlanktonDetritus{FT, <:Any, <:ExternalContractPlankton}
+
+@inline (bgc::ExternalContractNPD{FT})(i, j, k, grid, ::Val{:P1}, clock, fields, auxiliary_fields) where FT = FT(1)
+@inline (bgc::ExternalContractNPD{FT})(i, j, k, grid, ::Val{:P2}, clock, fields, auxiliary_fields) where FT = FT(2)
+@inline (bgc::ExternalContractNPD{FT})(i, j, k, grid, ::Val{:C1}, clock, fields, auxiliary_fields) where FT = FT(-1)
+@inline (bgc::ExternalContractNPD{FT})(i, j, k, grid, ::Val{:C2}, clock, fields, auxiliary_fields) where FT = FT(-2)
+
+@inline NPDModels.nutrient_uptake(i, j, k, grid, plankton::ExternalContractPlankton, bgc::ExternalContractNPD{FT}, fields, auxiliary_fields) where FT = FT(0.4)
+@inline NPDModels.solid_waste(i, j, k, grid, plankton::ExternalContractPlankton, bgc::ExternalContractNPD{FT}, fields, auxiliary_fields) where FT = FT(0.3)
+@inline NPDModels.dissolved_waste(i, j, k, grid, plankton::ExternalContractPlankton, bgc::ExternalContractNPD{FT}, fields, auxiliary_fields) where FT = FT(0.2)
+@inline NPDModels.inorganic_waste(i, j, k, grid, plankton::ExternalContractPlankton, bgc::ExternalContractNPD{FT}, fields, auxiliary_fields) where FT = FT(0.1)
+
+@inline DetritusModels.grazing(i, j, k, grid, ::Val{:sPOM}, plankton::ExternalContractPlankton, bgc::ExternalContractNPD{FT}, fields, auxiliary_fields) where FT = FT(0.5)
+
+
+@testset "External plankton interface contract" begin
+    plankton = ExternalContractPlankton()
+    bgc = NPDModels.NutrientsPlanktonDetritus{Float64}(
+        Nutrients(; nitrogen = OceanBioME.Models.N),
+        plankton,
+        InstantRemineralisationDetritus(),
+        nothing,
+        nothing,
+    )
+
+    fields = NamedTuple()
+    auxiliary_fields = NamedTuple()
+
+    @test Oceananigans.Biogeochemistry.required_biogeochemical_tracers(bgc) == (:N, :P1, :P2, :C1, :C2)
+
+    @test bgc(1, 1, 1, grid, Val(:P1), nothing, fields, auxiliary_fields) == 1.0
+    @test bgc(1, 1, 1, grid, Val(:P2), nothing, fields, auxiliary_fields) == 2.0
+    @test bgc(1, 1, 1, grid, Val(:C1), nothing, fields, auxiliary_fields) == -1.0
+    @test bgc(1, 1, 1, grid, Val(:C2), nothing, fields, auxiliary_fields) == -2.0
+
+    @test NPDModels.nutrient_uptake(1, 1, 1, grid, plankton, bgc, fields, auxiliary_fields) == 0.4
+    @test NPDModels.solid_waste(1, 1, 1, grid, plankton, bgc, fields, auxiliary_fields) == 0.3
+    @test NPDModels.dissolved_waste(1, 1, 1, grid, plankton, bgc, fields, auxiliary_fields) == 0.2
+    @test NPDModels.inorganic_waste(1, 1, 1, grid, plankton, bgc, fields, auxiliary_fields) == 0.1
+
+    @test DetritusModels.grazing(1, 1, 1, grid, Val(:sPOM), plankton, bgc, fields, auxiliary_fields) == 0.5
+
+    adapted_bgc = Adapt.adapt(Array, bgc)
+    @test adapted_bgc.plankton isa ExternalContractPlankton
+end
 
 @testset "External plankton conservation metadata" begin
     nutrients = Nutrients(; nitrogen = OceanBioME.Models.N,
@@ -25,7 +76,7 @@ OceanBioME.Models.NutrientsPlanktonDetritusModels.plankton_element_tracers(::Ext
 
     bgc = OceanBioME.Models.NutrientsPlanktonDetritusModels.NutrientsPlanktonDetritus{Float64}(
         nutrients,
-        ExternalConservationPlankton(),
+        ExternalContractPlankton(),
         InstantRemineralisationDetritus(),
         CarbonateSystem(),
         Oxygen(),
@@ -33,13 +84,10 @@ OceanBioME.Models.NutrientsPlanktonDetritusModels.plankton_element_tracers(::Ext
 
     tracer_groups = conserved_tracers(bgc)
 
-    @test tracer_groups.nitrogen.P1 == 1.0
-    @test tracer_groups.nitrogen.C1 == 2.0
-    @test tracer_groups.phosphate.P1 == 1 / 16
-    @test tracer_groups.iron.P1 == 0.0032 / 16
-    @test tracer_groups.silicate.P1 == 0.0
-    @test tracer_groups.carbon.P1 == 106 / 16
-    @test keys(tracer_groups.nitrogen)[end-3:end] == (:P1, :P2, :C1, :C2)
+    @test (tracer_groups.nitrogen.P1, tracer_groups.nitrogen.P2,
+           tracer_groups.nitrogen.C1, tracer_groups.nitrogen.C2) == (1.0, 1.0, 2.0, 2.0)
+    @test (tracer_groups.phosphate.P1, tracer_groups.iron.P1,
+           tracer_groups.silicate.P1, tracer_groups.carbon.P1) == (1 / 16, 0.0032 / 16, 0.0, 106 / 16)
 end
 
 test_models = []
