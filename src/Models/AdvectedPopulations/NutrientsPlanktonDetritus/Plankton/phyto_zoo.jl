@@ -183,7 +183,8 @@ biogeochemical_drift_velocity(bgc::PhytoZoo_NPD, ::Val{:Z}) =
 @inline carbon_ratio(plankton::PhytoZoo, ::NPD{FT}) where FT = plankton.carbon_ratio
 @inline iron_ratio(plankton::PhytoZoo, ::NPD{FT}) where FT = plankton.iron_ratio
 @inline calcite_rain_ratio(plankton::PhytoZoo, ::NPD{FT}) where FT = plankton.rain_ratio
-@inline chlorophyll(plankton::PhytoZoo, model) = plankton.chlorophyll_ratio * model.tracers.P
+@inline chlorophyll_ratio(plankton::PhytoZoo) = plankton.chlorophyll_ratio
+@inline chlorophyll(plankton::PhytoZoo, model) = chlorophyll_ratio(plankton, Val(:P)) * model.tracers.P
 
 @inline limiting_nutrients(::PhytoZoo{LN}) where LN = LN
 @inline edible_detritus_name(::PhytoZoo{<:Any, EN}) where EN = EN
