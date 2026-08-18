@@ -1,7 +1,6 @@
 import OceanBioME: conserved_tracers
 
 # possible conservations are N/P/Fe/Si/C/O
-# neglect Si for now
 # when a nutrient class is nothing it is implicitly conserved so we will not include that in the conservations
 @inline function conserved_tracers(bgc::NutrientsPlanktonDetritus)
     conserved_elements = available_nutrients(bgc.nutrients)
