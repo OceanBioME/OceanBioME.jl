@@ -5,6 +5,7 @@ export Abiotic, ImplicitProductivity, PhytoZoo
 # plankton models *must* define `inorganic_waste`, `nutrient_uptake`, `dissolved_waste`, and `solid_waste`
 # and may define `carbon_ratio`, `nitrogen_ratio`, `phosphate_ratio`, `iron_ratio`, `silicon_ratio`, and `calcite_rain_ratio`
 # if they are not defined they use the default elemental ratios, with nitrogen as the base unit
+# `chlorophyll_ratio` may be defined once for the component and overridden for individual tracers
 # you may also define `X_Y_waste` where X is `inorganic`, `dissolved` and `solid`, and `Y` are the elements
 
 # plankton may also define `grazing` for detritus tracers they consume; it otherwise defaults to zero
@@ -48,7 +49,8 @@ import ..NutrientsPlanktonDetritusModels:
     phosphate_ratio,
     iron_ratio,
     silicon_ratio,
-    calcite_rain_ratio
+    calcite_rain_ratio,
+    chlorophyll_ratio
 
 import ..NutrientsPlanktonDetritusModels:
     inorganic_waste,
