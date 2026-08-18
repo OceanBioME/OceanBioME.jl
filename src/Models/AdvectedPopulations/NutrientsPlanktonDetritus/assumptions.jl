@@ -5,6 +5,7 @@ function solid_waste end
 function calcite_dissolution end
 function inorganic_waste end
 function nutrient_uptake end
+function plankton_element_tracers end
 
 @inline nitrogen_ratio(i, j, k, grid, plankton, bgc, fields) = nitrogen_ratio(plankton, bgc)
 @inline nitrogen_ratio(plankton, ::NutrientsPlanktonDetritus{FT}) where FT = one(FT)
