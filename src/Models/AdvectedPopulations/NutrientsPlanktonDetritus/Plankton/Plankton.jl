@@ -2,13 +2,16 @@ module PlanktonModels
 
 export Abiotic, ImplicitProductivity, PhytoZoo
 
-# Plankton components define `inorganic_waste`, `nutrient_uptake`, `dissolved_waste`, and `solid_waste`.
-# Elemental composition is provided by `carbon_ratio`, `nitrogen_ratio`, `phosphate_ratio`, `iron_ratio`,
-# `silicon_ratio`, and `calcite_rain_ratio`; the defaults use nitrogen as the base unit.
-# `plankton_element_tracers` can provide tracer-specific composition for conservation calculations.
-#
-# Plankton components can consume detritus by defining `grazing` for the detritus tracers they consume.
-# `nutrient_uptake` may be defined for the whole plankton component or for an individual nutrient tracer.
+# plankton models *must* define `inorganic_waste`, `nutrient_uptake`, `dissolved_waste`, and `solid_waste`
+# and may define `carbon_ratio`, `nitrogen_ratio`, `phosphate_ratio`, `iron_ratio`, `silicon_ratio`, and `calcite_rain_ratio`
+# if they are not defined they use the default elemental ratios, with nitrogen as the base unit
+# you may also define `X_Y_waste` where X is `inorganic`, `dissolved` and `solid`, and `Y` are the elements
+
+# plankton may also define `grazing` for detritus tracers they consume; it otherwise defaults to zero
+# and can represent zooplankton grazing, dissolved uptake like MARBL, or mixotrophy
+
+# `nutrient_uptake` is called with `i, j, k, grid, plankton, bgc, fields, auxiliary_fields`,
+# and may also be defined with `Val(name)` between `grid` and `plankton` for tracer-specific uptake
 
 using Adapt
 using Oceananigans.Units
