@@ -11,7 +11,7 @@ struct CarbonChemistry{P0, PC, PB, PS, PF, PP, PSi, PW, IS, PKS, PRho, FV, CV, S
                 fluoride :: PF
          phosphoric_acid :: PP
             silicic_acid :: PSi
-      calcium_carbonate_solubility :: PKS
+calcium_carbonate_solubility :: PKS
         density_function :: PRho   
 first_virial_coefficient :: FV
 cross_virial_coefficient :: CV             

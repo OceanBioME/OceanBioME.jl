@@ -79,6 +79,47 @@ using OceanBioME.Models.CarbonChemistryModel: carbonate_concentration
 carbonate_concentration(carbon_chemistry; DIC, Alk, T, S)
 ```
 
+### [Calcite and aragonite saturation](@id calcium-carbonate-saturation)
+
+The saturation state is formed from the ion product divided by the stoichiometric solubility product
+of the mineral phase,
+
+```math
+\Omega = \frac{[\ce{Ca^2+}][\ce{CO_3^2-}]}{K_{sp}},
+```
+
+where ``[\ce{Ca^2+}]`` and ``[\ce{CO_3^2-}]`` are in mol / kg and ``K_{sp}`` in ``(\mathrm{mol / kg})^2``,
+so ``\Omega`` is dimensionless. The calcium ion concentration defaults to the salinity-scaled estimate
+``[\ce{Ca^2+}] = 0.0103 \times S / 35`` mol / kg and may be overridden with the
+`calcium_ion_concentration` keyword.
+
+The mineral phase enters *only* through ``K_{sp}``, so calcite and aragonite saturation differ solely
+by which solubility the `CarbonChemistry` model carries. The default is calcite; to work in aragonite
+saturation instead, swap `calcium_carbonate_solubility`:
+
+```@example carbon-chem
+using OceanBioME.Models.CarbonChemistryModel: KSP_aragonite
+
+aragonite_chemistry = CarbonChemistry(; density_function = teos10_density,
+                                        calcium_carbonate_solubility = KSP_aragonite())
+
+calcium_carbonate_saturation(aragonite_chemistry; DIC, Alk, T, S)
+```
+
+Aragonite is the more soluble phase, so for the same water ``\Omega_{calcite} \approx 1.5\,\Omega_{aragonite}``:
+
+```@example carbon-chem
+calcium_carbonate_saturation(carbon_chemistry; DIC, Alk, T, S) /
+    calcium_carbonate_saturation(aragonite_chemistry; DIC, Alk, T, S)
+```
+
+Which phase you want depends on the application. Aragonite is the phase observed to precipitate in
+ocean alkalinity enhancement experiments, and the critical saturation thresholds reported in that
+literature (e.g. [Moras2022](@citet)) are quoted in ``\Omega_{aragonite}``, so comparisons against
+those numbers should use the aragonite solubility. Both parameterisations are from
+Millero, F. J. (2007, Chemical Reviews, 107(2), 308–341), as given in the
+[Model parameterisation](@ref) section below.
+
 ## Chemistry
 ### pH computation
 When carbon dioxide is dissolved in seawater it dissociates into carbonate and bicarbonate species according to the equilibria:
