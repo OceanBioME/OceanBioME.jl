@@ -4,15 +4,11 @@ export Abiotic, ImplicitProductivity, PhytoZoo
 
 # Plankton components define `inorganic_waste`, `nutrient_uptake`, `dissolved_waste`, and `solid_waste`.
 # Elemental composition is provided by `carbon_ratio`, `nitrogen_ratio`, `phosphate_ratio`, `iron_ratio`,
-# `silicon_ratio`, and `calcite_rain_ratio`; the NPD defaults use nitrogen as the base unit.
-# Components may specialise `plankton_element_tracers` when their owned tracers require conservation
-# coefficients that differ from the community-wide elemental ratios.
+# `silicon_ratio`, and `calcite_rain_ratio`; the defaults use nitrogen as the base unit.
+# `plankton_element_tracers` can provide tracer-specific composition for conservation calculations.
 #
-# Detritus consumption uses the generic
-# `grazing(i, j, k, grid, Val(detritus_name), plankton, bgc, fields, auxiliary_fields)` dispatch.
-# The default is zero, while plankton components may specialise the method for any realised detritus name.
-#
-# `nutrient_uptake` may be defined as an aggregate uptake or specialised for `Val(nutrient_name)`.
+# Plankton components can consume detritus by defining `grazing` for the detritus tracers they consume.
+# `nutrient_uptake` may be defined for the whole plankton component or for an individual nutrient tracer.
 
 using Adapt
 using Oceananigans.Units
