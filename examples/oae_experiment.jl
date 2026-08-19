@@ -25,13 +25,14 @@
 
 # ## Model setup
 
-using Oceananigans, OceanBioME, Oceananigans.Units
+using Oceananigans, OceanBioME, Oceananigans.Units, CUDA
 
 using OceanBioME.Models.GasExchangeModel: CarbonDioxideConcentration
 using OceanBioME.Models.CarbonChemistryModel: KSP_aragonite
 
 # we define the grid and the biogeochemistry, adding in the `inorganic_carbon` with 3 replicates
-grid = RectilinearGrid(size = (64, 64, 8),
+grid = RectilinearGrid(GPU();
+                       size = (64, 64, 8),
                        extent = (500, 500, 15))
 
 precipitation_rate = 0.03 / day
