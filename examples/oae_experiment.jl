@@ -138,7 +138,7 @@ set!(model, P = 1, NO₃ = 10,
 # and output the tracers, running for longer than the release itself so the air-sea flux
 # has time to respond
 
-simulation = Simulation(model, Δt = 5, stop_time = 8hours)
+simulation = Simulation(model, Δt = 5, stop_time = 4hours)
 
 conjure_time_step_wizard!(simulation; cfl = 0.5)
 
