@@ -1,0 +1,20 @@
+# .buildkite/janitor.yml
+env:
+  BUILDKITE_HOME: "/var/lib/buildkite-agent"
+  MAX_AGE_DAYS: "5"
+
+steps:
+  - label: ":broom: Clean up old Oceananigans build directories"
+    command: |
+      cd "$BUILDKITE_HOME"
+
+      echo "--- Disk usage before cleanup"
+      df -h "$BUILDKITE_HOME"
+
+      echo "--- Removing Oceananigans.jl-* directories older than ${MAX_AGE_DAYS} days"
+      find . -maxdepth 1 -type d -name "Oceananigans.jl-*" -mtime "+${MAX_AGE_DAYS}" -print -exec rm -rf {} \;
+
+      echo "--- Disk usage after cleanup"
+      df -h "$BUILDKITE_HOME"
+    agents:
+      hostname: "ocean-1"   # match whichever agent hosts these dirs
