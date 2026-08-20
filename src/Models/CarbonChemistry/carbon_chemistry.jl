@@ -2,20 +2,20 @@ using OceanBioME: DampedNewtonRaphsonSolver
 using OceanBioME.Models: teos10_polynomial_approximation
 
 struct CarbonChemistry{P0, PC, PB, PS, PF, PP, PSi, PW, IS, PKS, PRho, FV, CV, SO}
-          ionic_strength :: IS
-              solubility :: P0
-           carbonic_acid :: PC
-              boric_acid :: PB
-                   water :: PW
-                 sulfate :: PS
-                fluoride :: PF
-         phosphoric_acid :: PP
-            silicic_acid :: PSi
+              ionic_strength :: IS
+                  solubility :: P0
+               carbonic_acid :: PC
+                  boric_acid :: PB
+                       water :: PW
+                     sulfate :: PS
+                    fluoride :: PF
+             phosphoric_acid :: PP
+                silicic_acid :: PSi
 calcium_carbonate_solubility :: PKS
-        density_function :: PRho   
-first_virial_coefficient :: FV
-cross_virial_coefficient :: CV             
-                  solver :: SO     
+            density_function :: PRho   
+    first_virial_coefficient :: FV
+    cross_virial_coefficient :: CV             
+                      solver :: SO     
 end
 
 """
