@@ -1,4 +1,17 @@
-function carbonate_concentration(cc::CarbonChemistry; 
+"""
+    carbonate_concentration(cc::CarbonChemistry; DIC, T, S, Alk, ...)
+
+Compute the carbonate ion concentration, `[CO₃²⁻]`, by solving the carbon chemistry
+equilibrium for the hydrogen ion concentration and speciating `DIC`.
+
+`DIC` is expected in mmol C/m³, `Alk` in meq/m³, `silicate` and `phosphate` in mmol/m³,
+`T` in °C, `S` in PSU, and `P` in bar; `boron`, `sulfate`, and `fluoride` are in mol/kg.
+The returned `[CO₃²⁻]` is in mmol/m³, matching `DIC`.
+
+When `pH` is specified the intermediate solve is skipped and the free pH (i.e. -log[H⁺])
+is expected.
+"""
+function carbonate_concentration(cc::CarbonChemistry;
                                  DIC::FT, T, S, Alk = zero(DIC), pH = nothing,
                                  P = nothing,
                                  lon = zero(DIC),
@@ -36,7 +49,7 @@ function carbonate_concentration(cc::CarbonChemistry;
     KP1 = cc.phosphoric_acid.KP1(T, S; P)
     KP2 = cc.phosphoric_acid.KP2(T, S; P)
     KP3 = cc.phosphoric_acid.KP3(T, S; P)
-    KSi = cc.silicic_acid(T, S, Is)
+    KSi = cc.silicic_acid(T, S, Is; P)
 
     params = (; DIC, Alk, boron, sulfate, fluoride, silicate, phosphate,
                 K1, K2, KB, KW, KS, KF, KP1, KP2, KP3, KSi)
@@ -45,16 +58,33 @@ function carbonate_concentration(cc::CarbonChemistry;
 
     H = solve_for_H(pH, params, initial_pH_guess, cc.solver)
 
-    # compute the calcite concentration
+    # compute the carbonate ion concentration (mol / kg)
     denom1 = (H * (H + K1))
     denom2 = (one(DIC) + K1 * K2 / denom1)
 
-    return DIC * K1 * K2 / denom1 / denom2
+    CO₃²⁻ = DIC * K1 * K2 / denom1 / denom2
+
+    # mol / kg to mmol / m³
+    return CO₃²⁻ * ρₒ * convert(FT, 1e3)
 end
 
-function calcite_saturation(cc::CarbonChemistry;
+"""
+    calcium_carbonate_saturation(cc::CarbonChemistry; DIC, T, S, Alk, ...)
+
+Compute the calcium carbonate saturation state, `Ω = [Ca²⁺][CO₃²⁻] / KSP`, where `KSP` is
+the solubility of the mineral phase set by `cc.calcium_carbonate_solubility` (calcite by
+default).
+
+Units follow [`carbonate_concentration`](@ref): `DIC` in mmol C/m³, `Alk` in meq/m³,
+`silicate` and `phosphate` in mmol/m³, `T` in °C, `S` in PSU, and `P` in bar, while
+`calcium_ion_concentration` (like `boron`, `sulfate`, and `fluoride`) is in mol/kg since
+that is the basis `KSP` is defined on. `Ω` is dimensionless.
+"""
+function calcium_carbonate_saturation(cc::CarbonChemistry;
                             DIC::FT, T, S, Alk = zero(DIC), pH = nothing,
                             P = nothing,
+                            lon = zero(DIC),
+                            lat = zero(DIC),
                             boron = convert(typeof(DIC), 0.000232 / 10.811 * S / 1.80655),
                             sulfate = convert(typeof(DIC), 0.14 / 96.06 * S / 1.80655),
                             fluoride = convert(typeof(DIC), 0.000067 / 18.9984 * S / 1.80655),
@@ -66,6 +96,8 @@ function calcite_saturation(cc::CarbonChemistry;
     CO₃²⁻ = carbonate_concentration(cc;
                                     DIC, Alk, T, S, pH,
                                     P,
+                                    lon,
+                                    lat,
                                     boron,
                                     sulfate,
                                     fluoride,
@@ -73,8 +105,12 @@ function calcite_saturation(cc::CarbonChemistry;
                                     phosphate,
                                     initial_pH_guess)
 
-    KSP = cc.calcite_solubility(T+convert(FT, 273.15), S; P)
+    ρₒ = cc.density_function(T, S, ifelse(isnothing(P), zero(DIC), P), lon, lat)
 
-    # not confident these all have the right units
+    # KSP is defined on a mol / kg basis, so put [CO₃²⁻] back on one too
+    CO₃²⁻ *= convert(FT, 1e-3) / ρₒ
+
+    KSP = cc.calcium_carbonate_solubility(T + convert(FT, 273.15), S; P)
+
     return calcium_ion_concentration * CO₃²⁻ / KSP
 end

@@ -4,7 +4,7 @@
 The inorganic carbon component for the `inorganic_carbon` slot of a
 [`NutrientsPlanktonDetritus`](@ref) model. It adds dissolved inorganic carbon (`DIC`) and alkalinity
 (`Alk`) tracers whose evolution is driven by primary production, remineralisation of organic waste,
-and calcite production/dissolution (implicit calcite: calcite is not tracked as its own tracer).
+and calcium carbonate production/dissolution (implicit calcium carbonate: calcium carbonate is not tracked as its own tracer).
 
 Passing `replicates > 1` manifests `replicates` independent copies of the carbonate tracers
 (`DIC1`, `Alk1`, `DIC2`, …), which is useful for ensemble or perturbation experiments; each replicate

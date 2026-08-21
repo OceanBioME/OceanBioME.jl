@@ -2,20 +2,20 @@ using OceanBioME: DampedNewtonRaphsonSolver
 using OceanBioME.Models: teos10_polynomial_approximation
 
 struct CarbonChemistry{P0, PC, PB, PS, PF, PP, PSi, PW, IS, PKS, PRho, FV, CV, SO}
-          ionic_strength :: IS
-              solubility :: P0
-           carbonic_acid :: PC
-              boric_acid :: PB
-                   water :: PW
-                 sulfate :: PS
-                fluoride :: PF
-         phosphoric_acid :: PP
-            silicic_acid :: PSi
-      calcite_solubility :: PKS
-        density_function :: PRho   
-first_virial_coefficient :: FV
-cross_virial_coefficient :: CV             
-                  solver :: SO     
+              ionic_strength :: IS
+                  solubility :: P0
+               carbonic_acid :: PC
+                  boric_acid :: PB
+                       water :: PW
+                     sulfate :: PS
+                    fluoride :: PF
+             phosphoric_acid :: PP
+                silicic_acid :: PSi
+calcium_carbonate_solubility :: PKS
+            density_function :: PRho   
+    first_virial_coefficient :: FV
+    cross_virial_coefficient :: CV             
+                      solver :: SO     
 end
 
 """
@@ -29,7 +29,7 @@ end
                     fluoride = KF(; ionic_strength),
                     phosphoric_acid = (KP1 = KP1(), KP2 = KP2(), KP3 = KP3()),
                     silicic_acid = KSi(; ionic_strength),
-                    calcite_solubility = KSP_calcite(),
+                    calcium_carbonate_solubility = KSP_calcite(),
                     density_function = teos10_polynomial_approximation,
                     first_virial_coefficient = PolynomialVirialCoefficientForCarbonDioxide(),
                     cross_viral_coefficient = CrossVirialCoefficientForCarbonDioxide(),
@@ -73,7 +73,7 @@ function CarbonChemistry(FT = Float64;
                          fluoride = KF(FT; ionic_strength),
                          phosphoric_acid = (KP1 = KP1(FT), KP2 = KP2(FT), KP3 = KP3(FT)),
                          silicic_acid = KSi(FT; ionic_strength),
-                         calcite_solubility = KSP_calcite(FT),
+                         calcium_carbonate_solubility = KSP_calcite(FT),
                          density_function = teos10_polynomial_approximation, # the denisity function *is* going to cause type instability but I can't see a way to fix it
                          first_virial_coefficient = PolynomialVirialCoefficientForCarbonDioxide{FT}(),
                          cross_viral_coefficient = CrossVirialCoefficientForCarbonDioxide{FT}(),
@@ -81,9 +81,9 @@ function CarbonChemistry(FT = Float64;
                          solver = DampedNewtonRaphsonSolver{FT, Int, @NamedTuple{lower::FT, upper::Nothing}}(bounds = (lower = 0, upper = nothing)))
 
     return CarbonChemistry(ionic_strength, solubility, carbonic_acid, boric_acid, water,
-                           sulfate, fluoride, phosphoric_acid, silicic_acid, calcite_solubility, density_function,
+                           sulfate, fluoride, phosphoric_acid, silicic_acid, calcium_carbonate_solubility, density_function,
                            first_virial_coefficient, cross_viral_coefficient,
-                            solver)
+                           solver)
 end
 
 """
@@ -146,7 +146,7 @@ instead of fCO₂.
     KP1 = p.phosphoric_acid.KP1(T, S; P)
     KP2 = p.phosphoric_acid.KP2(T, S; P)
     KP3 = p.phosphoric_acid.KP3(T, S; P)
-    KSi = p.silicic_acid(T, S, Is)
+    KSi = p.silicic_acid(T, S, Is; P)
 
     params = (; DIC, Alk, boron, sulfate, fluoride, silicate, phosphate,
                 K1, K2, KB, KW, KS, KF, KP1, KP2, KP3, KSi)
@@ -220,3 +220,11 @@ solve_for_H(::Nothing, params, initial_pH_guess::FT, solver) where FT =
 # display
 summary(::IO, ::CarbonChemistry) = string("`CarbonChemistry` model")
 show(io::IO, ::CarbonChemistry) = print(io, "`CarbonChemistry` model which solves for pCO₂ and pH")
+
+# helper functions
+@inline silicate_concentration(grid, i, j, k, model_fields::NamedTuple{N}) where N =
+    @inbounds :Si in N ? model_fields.Si[i, j, k] : zero(grid)
+
+@inline phosphate_concentration(grid, i, j, k, model_fields::NamedTuple{N}) where N =
+    @inbounds :PO₄ in N ? model_fields.PO₄[i, j, k] : zero(grid)
+    
