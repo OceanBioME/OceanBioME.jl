@@ -48,7 +48,9 @@ group_element_tracers(::InstantRemineralisationDetritus, args...) = NamedTuple()
 group_element_tracers(::Nothing, args...) = NamedTuple()
 
 function group_element_tracers(group, bgc, val_element)
-    group === bgc.plankton || return NamedTuple()
+    if group !== bgc.plankton
+        return NamedTuple()
+    end
 
     if val_element isa Val{:nitrogen}
         coefficient = nitrogen_ratio(group, bgc)
