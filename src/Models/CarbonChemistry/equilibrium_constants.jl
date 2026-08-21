@@ -2,7 +2,7 @@
     PressureCorrection(FT=Float64;
                        a₀, a₁, a₂,
                        b₀, b₁, b₂,
-                       R = 83.14472)
+                       R = 83.1451)
 
 Parameterisation for the pressure effect on thermodynamic constants.
 
@@ -20,7 +20,7 @@ struct PressureCorrection{FT}
     function PressureCorrection(FT = Float64; 
                                 a₀, a₁, a₂, 
                                 b₀, b₁,
-                                R = 83.14472)
+                                R = 83.1451)
 
         return new{FT}(a₀, a₁, a₂, b₀, b₁, R)
     end
