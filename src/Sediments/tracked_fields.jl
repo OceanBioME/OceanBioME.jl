@@ -8,8 +8,7 @@ using Oceananigans.Utils: launch!
 function update_tracked_fields!(sediment, model)
     grid = model.grid
     arch = architecture(grid)
-
-    model_fields = prognostic_fields(model)
+    model_fields = fields(model)
 
     bottom_indices = sediment.bottom_indices
 
