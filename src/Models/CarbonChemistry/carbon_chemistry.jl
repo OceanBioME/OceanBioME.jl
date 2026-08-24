@@ -53,10 +53,10 @@ julia> carbon_chemistry = CarbonChemistry()
 `CarbonChemistry` model which solves for pCO₂ and pH
 
 julia> pCO₂ = carbon_chemistry(; DIC = 2000.0, Alk = 2000.0, T = 10.0, S = 35.0)
-1308.1474527899106
+1308.1474527899113
 
 julia> pH = carbon_chemistry(; DIC = 2000.0, Alk = 2000.0, T = 10.0, S = 35.0, output = Val(:pHᶠ))
-7.502532746463654
+7.502532746463653
 
 julia> pCO₂_higher_pH = carbon_chemistry(; DIC = 2000.0, T = 10.0, S = 35.0, pH = 7.5)
 1315.7136384737507
@@ -90,7 +90,7 @@ end
     (p::CarbonChemistry)(; DIC, T, S, Alk = 0, pH = nothing,
                            output = Val(:fCO₂),
                            boron = 0.000232 / 10.811 * S / 1.80655,
-                           sulfate = 0.14 / 96.06 * S / 1.80655,
+                           sulfate = 0.14 / 96.062 * S / 1.80655,
                            fluoride = 0.000067 / 18.9984 * S / 1.80655,
                            silicate = 0,
                            phosphate = 0,
@@ -104,9 +104,12 @@ unless `pH` is specified, in which case intermediate computation of `pH` is skip
 
 When pH is specified the free pH (i.e. -log[H⁺]) is expected.
 
-Alternatively pCO₂, and free, total, or sea water pH may be returned by setting `output`
-to Val(:pCO₂), Val(:pHᶠ), Val(:pHᵗ), or Val(:pHˢ), which will return `X` in `Val(:X)`
-instead of fCO₂.
+Alternatively pCO₂, the aqueous carbon dioxide concentration, and free, total, or sea water
+pH may be returned by setting `output` to Val(:pCO₂), Val(:CO₂), Val(:pHᶠ), Val(:pHᵗ), or
+Val(:pHˢ), which will return `X` in `Val(:X)` instead of fCO₂.
+
+`Val(:CO₂)` gives `[CO₂(aq)]` (equivalently `[H₂CO₃]`) in mmol/m³, matching the units `DIC`
+was supplied in, rather than the ppm of the fugacity and partial pressure outputs.
 """
 @inline function (p::CarbonChemistry)(; DIC::FT, T, S, Alk = zero(DIC), pH = nothing,
                                         P = nothing, # bars (???)
@@ -114,7 +117,7 @@ instead of fCO₂.
                                         lat = zero(DIC),
                                         output = Val(:fCO₂),
                                         boron = convert(typeof(DIC), 0.000232 / 10.811 * S / 1.80655),
-                                        sulfate = convert(typeof(DIC), 0.14 / 96.06 * S / 1.80655),
+                                        sulfate = convert(typeof(DIC), 0.14 / 96.062 * S / 1.80655),
                                         fluoride = convert(typeof(DIC), 0.000067 / 18.9984 * S / 1.80655),
                                         silicate = zero(DIC),
                                         phosphate = zero(DIC),
@@ -158,16 +161,20 @@ instead of fCO₂.
     K0 = p.solubility(T, S)
 
     # compute pCO₂
-    CO₂  = DIC * H ^ 2 / (H ^ 2 + K1 * H + K1 * K2) 
+    CO₂  = DIC * H ^ 2 / (H ^ 2 + K1 * H + K1 * K2) # mol / kg
     fCO₂ = (CO₂ / K0) * convert(FT, 10 ^ 6) # μatm
 
-    return selected_output(output, fCO₂, H, P, T, S, Is, sulfate, fluoride, p)
+    # mol / kg to mmol / m³, i.e. back into the units `DIC` was given in
+    CO₂ *= ρₒ * convert(FT, 10 ^ 3)
+
+    return selected_output(output, fCO₂, CO₂, H, P, T, S, Is, sulfate, fluoride, p)
 end
 
-@inline selected_output(::Val{:fCO₂}, fCO₂, H, P, Tk, S, Is, sulfate, fluoride, p) = fCO₂ # ppm
-@inline selected_output(::Val{:pHᶠ}, fCO₂, H, P, Tk, S, Is, sulfate, fluoride, p) = -log10(H) # 
+@inline selected_output(::Val{:fCO₂}, fCO₂, CO₂, H, P, Tk, S, Is, sulfate, fluoride, p) = fCO₂ # ppm
+@inline selected_output(::Val{:CO₂}, fCO₂, CO₂, H, P, Tk, S, Is, sulfate, fluoride, p) = CO₂ # mmol / m³
+@inline selected_output(::Val{:pHᶠ}, fCO₂, CO₂, H, P, Tk, S, Is, sulfate, fluoride, p) = -log10(H) #
 
-@inline function selected_output(::Val{:pCO₂}, fCO₂::FT, H, P, Tk, S, Is, sulfate, fluoride, p) where FT
+@inline function selected_output(::Val{:pCO₂}, fCO₂::FT, CO₂, H, P, Tk, S, Is, sulfate, fluoride, p) where FT
     P = ifelse(isnothing(P), one(fCO₂), P)
     P *= convert(FT, 101325) # pascals
 
@@ -192,14 +199,14 @@ end
     return pCO₂ # ppmv
 end
 
-@inline function selected_output(::Val{:pHᵗ}, fCO₂::FT, H, P, Tk, S, Is, sulfate, fluoride, p) where FT
+@inline function selected_output(::Val{:pHᵗ}, fCO₂::FT, CO₂, H, P, Tk, S, Is, sulfate, fluoride, p) where FT
     KS  = p.sulfate(Tk, S, Is; P)
     HSO₄⁻ = sulfate / (1 + KS / H)
 
     return -log10(H + HSO₄⁻)
 end
 
-@inline function selected_output(::Val{:pHˢ}, fCO₂::FT, H, P, Tk, S, Is, sulfate, fluoride, p) where FT
+@inline function selected_output(::Val{:pHˢ}, fCO₂::FT, CO₂, H, P, Tk, S, Is, sulfate, fluoride, p) where FT
     KS  = p.sulfate(Tk, S, Is; P)
     HSO₄⁻ = sulfate / (1 + KS / H)
 

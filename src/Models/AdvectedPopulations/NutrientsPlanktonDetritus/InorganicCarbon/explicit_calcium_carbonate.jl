@@ -328,12 +328,14 @@ end
     silicate  = silicate_concentration(grid, i, j, k, model_fields)
     phosphate = phosphate_concentration(grid, i, j, k, model_fields)
 
-    z = znode(i, j, k, grid, Center(), Center(), Center())
-
-    P = abs(z) * g * 1026 / 100000
+    P = hydrostatic_pressure(model_fields, i, j, k, grid, g)
 
     @inbounds saturation[i, j, k] = calcium_carbonate_saturation(carbon_chemistry; DIC, T, S, Alk, P, phosphate, silicate)
 end
+
+@inline hydrostatic_pressure(model_fields::NamedTuple{N}, i, j, k, grid, g) where N =
+    @inbounds :pressure in N ? model_fields.pressure[i, j, k] :
+              abs(znode(i, j, k, grid, Center(), Center(), Center())) * g * 1026 / 100000
 
 const _manifested_explicit_calcium_carbonate = Set{Int}()
 
