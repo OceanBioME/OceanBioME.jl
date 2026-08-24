@@ -78,8 +78,8 @@ function ballast_oxygen_scale end
 const yr = 365day
 
 include("ballast.jl")
-include("implicit_particles.jl")
 include("explicit_particles.jl")
+include("implicit_particles.jl")
 include("adapt_show_methods.jl")
 
 end # module
