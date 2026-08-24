@@ -4,6 +4,8 @@ using OceanBioME.Models.NutrientsPlanktonDetritusModels: required_biogeochemical
 using Adapt: adapt
 using Oceananigans.Fields: CenterField
 
+const DET = OceanBioME.Models.NutrientsPlanktonDetritusModels.DetritusModels.MultiElement
+
 # a rate which is non-linear in light, and one which is linear, for the sub column tests below
 @subcolumn_average light_saturation(PAR) = 1 - exp(-PAR)
 @subcolumn_average scaled_light(PAR, a) = a * PAR
@@ -221,9 +223,9 @@ silicon(m) = value(m, :diatSi) + value(m, :bSi) + value(m, :Si)
     end
 
     @testset "ballast sinking" begin
-        DM = OceanBioME.Models.NutrientsPlanktonDetritusModels.DetritusModels
+        DM = OceanBioME.Models.NutrientsPlanktonDetritusModels.DetritusModels.MultiElement
 
-        b = Ballast()
+        b = DET.Ballast()
 
         # the depth factor is flat outside the given range and monotonic within it
         @test DM.scale_length(0.0, b)    ≈ b.scale_length_values[1]
@@ -240,16 +242,16 @@ silicon(m) = value(m, :diatSi) + value(m, :bSi) + value(m, :Si)
         grid = RectilinearGrid(size = (1, 1, 4), extent = (1, 1, 100))
 
         for component in (ManyPhytoZoo(), MARBL_small_phyto(), MARBL_zooplankton().zoo,
-                          ComplexedIron(), Redox(), BurialDenitrification(), Ballast())
+                          ComplexedIron(), RedoxOxygen(), BurialDenitrification(), DET.Ballast())
             @test sprint(show, component) isa String
             @test adapt(Array, component) isa Any
         end
 
         @test isbits(MARBL_small_phyto())
         @test isbits(ComplexedIron())
-        @test isbits(Redox())
+        @test isbits(RedoxOxygen())
         @test isbits(BurialDenitrification())
 
-        @test sprint(show, RefractoryDissolvedParticulateCNP(grid)) isa String
+        @test sprint(show, MultiElementRefractoryDissolvedParticulate(grid)) isa String
     end
 end

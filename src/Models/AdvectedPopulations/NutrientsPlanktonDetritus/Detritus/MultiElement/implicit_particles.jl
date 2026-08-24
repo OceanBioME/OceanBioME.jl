@@ -215,7 +215,7 @@ end
     FPOP    = ∅
     FPFe    = ∅
 
-    Fsdust = -(one(Φdust) - ballasgt.dust_hard_fraction) * Φdust
+    Fsdust = -(one(Φdust) - ballast.dust_hard_fraction) * Φdust
     Fhdust = -ballast.dust_hard_fraction * Φdust
 
     𝒬 = ρ_dust * Φdust
@@ -228,8 +228,8 @@ end
         Δz⁻ = one(Δz) / Δz
 
         depth = -znode(i, j, k, grid, Center(), Center(), Face())
-        σ     = scale_length(depth, b)
-        sO₂   = ballast_oxygen_scale(i, j, k, grid, bgc.oxygen, b, model_fields)
+        σ     = scale_length(depth, ballast)
+        sO₂   = ballast_oxygen_scale(i, j, k, grid, bgc.oxygen, ballast, model_fields)
         scale = σ * sO₂
 
         ℓPOC   = scale * ballast.particulate_organic_dissolution_length
@@ -256,9 +256,9 @@ end
         FPOP⁺,    FPFe⁺    = FPOP,    FPFe
 
         𝓜 = ballast_sinking_mass(-(FsPOC⁺ + FhPOC⁺), -(FsCaCO₃⁺ + FhCaCO₃⁺),
-                                 -(FsbSi⁺ + FhbSi⁺), -(Fsdust⁺ + Fhdust⁺), bgc.nutrients.iron, b)
+                                 -(FsbSi⁺ + FhbSi⁺), -(Fsdust⁺ + Fhdust⁺), bgc.nutrients.iron, ballast)
 
-        @inbounds d.sinking_mass[i, j, k] = 𝓜
+        @inbounds detritus.sinking_mass[i, j, k] = 𝓜
 
         FsCaCO₃ = FsCaCO₃⁺ * dCaCO₃ - ΠCaCO₃ * (one(γ_calcite) - γ_calcite) * (one(dCaCO₃) - dCaCO₃) * ℓCaCO₃
         FhCaCO₃ = FhCaCO₃⁺ * dhard  - ΠCaCO₃ * γ_calcite * Δz

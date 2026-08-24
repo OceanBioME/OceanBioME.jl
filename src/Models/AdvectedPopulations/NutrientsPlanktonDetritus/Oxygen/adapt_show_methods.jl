@@ -19,7 +19,7 @@ Base.summary(::RedoxOxygen) =
     "RedoxOxygen (:O₂; nitrification NH₄→NO₃, denitrification NO₃→N₂, N-source-dependent O₂ production)"
 
 function Base.show(io::IO, ox::RedoxOxygen)
-    msg  = summary(o) * "\n"
+    msg  = summary(ox) * "\n"
     msg *= "├── C:O₂ (nitrate/remineralisation/diazotroph): "
     msg *= "$(round(ox.nitrate_carbon_to_oxygen, sigdigits = 4))/"
     msg *= "$(round(ox.remineralisation_carbon_to_oxygen, sigdigits = 4))/"

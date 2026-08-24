@@ -77,6 +77,8 @@ function MultiElementRefractoryDissolvedParticulate(grid::AbstractGrid{FT};
                                                     reference_rates = (carbon = 1/(16000yr), nitrogen = 1/(9500yr), phosphorus = 1/(5500yr)),
                                                     production_refractory_fraction = (carbon = 0.01,      nitrogen = 0.0115,      phosphorus = 0.003),
                                                     particulate_refractory_fraction = (carbon = 0.01*0.06, nitrogen = 0.0115*0.03, phosphorus = 0.003*0.06),
+                                                    particulate_organic_remineralisation_rate_per_day = 0.03,
+                                                    particulate_silica_remineralisation_rate_per_day  = 0.03,
                                                     sinking_speed = 10.0,        # m/day
                                                     open_bottom = true) where FT
 

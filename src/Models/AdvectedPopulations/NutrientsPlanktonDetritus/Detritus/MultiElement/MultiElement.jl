@@ -7,7 +7,7 @@ using Adapt
 using Oceananigans.Units: day
 using Oceananigans.Grids: AbstractGrid, znode, Center, Face
 using Oceananigans.Operators: Δzᶜᶜᶜ
-using Oceananigans.Fields: CenterField, ZFaceField, Field
+using Oceananigans.Fields: CenterField, ZFaceField, Field, OneField
 using Oceananigans.ImmersedBoundaries: ImmersedBoundaryGrid, immersed_cell
 using Oceananigans.Architectures: architecture
 using Oceananigans.Models: fields
@@ -17,23 +17,13 @@ using OceanBioME: setup_velocity_fields
 
 using ...NutrientsPlanktonDetritusModels:
     NutrientsPlanktonDetritus,
-    NPD,
-    carbon_ratio,
-    nitrogen_ratio,
-    phosphate_ratio,
-    iron_ratio,
-    silicon_ratio,
-    calcium_carbonate_rain_ratio
+    nitrogen_ratio
 
-import ...NutrientsPlanktonDetritusModels: 
-    dissolved_waste, solid_waste, 
-    calcium_carbonate_dissolution, 
-    inorganic_waste, nutrient_uptake
+import ...NutrientsPlanktonDetritusModels:
+    dissolved_waste, solid_waste
 
 using ...NutrientsPlanktonDetritusModels.NutrientsModels:
-    Nutrients,
-    SingleTracerNutrient,
-    NitrateAmmonia
+    Nutrients
 
 import Adapt: adapt_structure
 import Base: summary, show
@@ -46,10 +36,10 @@ import Oceananigans.Biogeochemistry:
     update_biogeochemical_state!
 
 import ...NutrientsPlanktonDetritusModels:
+    inorganic_carbon_waste,
     inorganic_nitrogen_waste,
     inorganic_phosphate_waste,
-    inorganic_iron_waste,
-    inorganic_silicon_waste
+    inorganic_iron_waste
 
 using ...NutrientsPlanktonDetritusModels.InorganicCarbonModels:
     particulate_calcium_carbonate_production

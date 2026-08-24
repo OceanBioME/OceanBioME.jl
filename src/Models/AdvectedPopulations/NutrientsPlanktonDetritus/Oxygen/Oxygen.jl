@@ -3,7 +3,7 @@ module OxygenModels
 export Oxygen, RedoxOxygen
 
 using Adapt
-using Oceananigans.Units: day
+using Oceananigans.Units: day, days
 using Oceananigans.Fields: AbstractField, ConstantField
 
 import Adapt: adapt_structure

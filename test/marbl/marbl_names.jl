@@ -12,7 +12,7 @@ using Oceananigans.Fields: CenterField
 
 const NPDM = OceanBioME.Models.NutrientsPlanktonDetritusModels
 const MPK  = NPDM.PlanktonModels.MARBLPlankton
-const DET  = NPDM.DetritusModels
+const DET  = NPDM.DetritusModels.MultiElement
 const NUT  = NPDM.NutrientsModels
 const OXY  = NPDM.OxygenModels
 const ICM  = NPDM.InorganicCarbonModels
@@ -23,10 +23,10 @@ using .NPDM.PlanktonModels.MARBLPlankton: ManyPhytoZoo as MARBLPlankton,
                                           Autotroph as MARBLAutotroph,
                                           Heterotroph as MARBLZooplankton,
                                           Grazing as MARBLGrazing
-using .NPDM.DetritusModels: RefractoryDissolvedParticulateCNP as MARBLDetritus,
-                            DissolvedRefractoryImplicitCNP as MARBLBallastDetritus,
-                            Ballast as MARBLBallast
-using .NPDM.OxygenModels: Redox as MARBLOxygen
+using .NPDM.DetritusModels: MultiElementRefractoryDissolvedParticulate as MARBLDetritus,
+                            MultiElementRefractoryDissolved as MARBLBallastDetritus
+using .NPDM.DetritusModels.MultiElement: Ballast as MARBLBallast
+using .NPDM.OxygenModels: RedoxOxygen as MARBLOxygen
 using .NPDM.InorganicCarbonModels: ImplicitExplicitCalcite
 using .NPDM.NutrientsModels: ComplexedIron
 using .OceanBioME.Models.SedimentModels: BurialDenitrification as MARBLSediment

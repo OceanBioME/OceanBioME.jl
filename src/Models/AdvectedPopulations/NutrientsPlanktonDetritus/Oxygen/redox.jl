@@ -72,7 +72,7 @@ required_biogeochemical_auxiliary_fields(::RedoxOxygen) = (:PAR, )
 biogeochemical_auxiliary_fields(ox::RedoxOxygen) =
     (O₂_consumption_scale = ox.oxygen_consumption_scale_factor isa AbstractField ?
                                 ox.oxygen_consumption_scale_factor : 
-                                ConstantField(o.oxygen_consumption_scale_factor), )
+                                ConstantField(ox.oxygen_consumption_scale_factor), )
 
 const RedoxOxygen_NPD = NutrientsPlanktonDetritus{<:Any, <:Nutrients{<:NitrateAmmonia}, <:Any,
                                                   <:AbstractMultiElementRefractoryDissolvedDetritus, <:Any, 
@@ -82,13 +82,15 @@ const RedoxOxygen_NPD = NutrientsPlanktonDetritus{<:Any, <:Nutrients{<:NitrateAm
 ##### Pure rate helpers
 #####
 
-@subcolumn_average @inline function nitrification_taper(PAR_top, PAR_bot, PAR_nit)
+# NB `nitrification_limit` deliberately does NOT start with `PAR`: `@subcolumn_average` weights every
+# argument so named, and this is a fixed threshold rather than light which is split between sub columns.
+@subcolumn_average @inline function nitrification_taper(PAR_top, PAR_bot, nitrification_limit)
     PAR_bot = max(PAR_bot, eps(zero(PAR_bot)))
 
-    partial = log(PAR_bot / PAR_nit) / log(PAR_bot / PAR_top)
+    partial = log(PAR_bot / nitrification_limit) / log(PAR_bot / PAR_top)
 
-    return ifelse(PAR_bot >= I_nit, zero(partial),
-                  ifelse(PAR_top <= PAR_nit, one(partial), partial))
+    return ifelse(PAR_bot >= nitrification_limit, zero(partial),
+                  ifelse(PAR_top <= nitrification_limit, one(partial), partial))
 end
 
 @inline suboxic_fraction(O₂, o2_min, Δ) = clamp(((o2_min + Δ) - O₂) / Δ, zero(O₂), one(O₂))

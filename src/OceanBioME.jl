@@ -17,7 +17,7 @@ export Abiotic, ImplicitProductivity, PhytoZoo, ManyPhytoZoo, Autotroph, Heterot
 export MARBL_small_phyto, MARBL_diatoms, MARBL_diazotrophs, MARBL_autotrophs, MARBL_zooplankton,
        MARBL_cocco_small_phyto, MARBL_cocco_diatoms, MARBL_cocco_diazotrophs, MARBL_coccolithophores,
        MARBL_cocco_autotrophs, MARBL_cocco_zooplankton, MARBL_cocco_plankton
-export Detritus, DissolvedParticulate, InstantRemineralisationDetritus, CarbonNitrogenDissolvedParticulate, RefractoryDissolvedParticulateCNP, DissolvedRefractoryImplicitCNP, Ballast
+export Detritus, DissolvedParticulate, InstantRemineralisationDetritus, CarbonNitrogenDissolvedParticulate, MultiElementRefractoryDissolvedParticulate, MultiElementRefractoryDissolved, Ballast
 export Oxygen, RedoxOxygen
 
 export SugarKelp, SugarKelpParticles, GiantKelp
