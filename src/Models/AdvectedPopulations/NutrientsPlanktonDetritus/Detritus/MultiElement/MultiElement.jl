@@ -15,7 +15,7 @@ using Oceananigans.Utils: launch!
 using KernelAbstractions: @kernel, @index
 using OceanBioME: setup_velocity_fields
 
-using ..NutrientsPlanktonDetritusModels:
+using ...NutrientsPlanktonDetritusModels:
     NutrientsPlanktonDetritus,
     NPD,
     carbon_ratio,
@@ -25,12 +25,12 @@ using ..NutrientsPlanktonDetritusModels:
     silicon_ratio,
     calcium_carbonate_rain_ratio
 
-import ..NutrientsPlanktonDetritusModels: 
+import ...NutrientsPlanktonDetritusModels: 
     dissolved_waste, solid_waste, 
     calcium_carbonate_dissolution, 
     inorganic_waste, nutrient_uptake
 
-using ..NutrientsPlanktonDetritusModels.NutrientsModels:
+using ...NutrientsPlanktonDetritusModels.NutrientsModels:
     Nutrients,
     SingleTracerNutrient,
     NitrateAmmonia
@@ -45,22 +45,22 @@ import Oceananigans.Biogeochemistry:
     biogeochemical_drift_velocity,
     update_biogeochemical_state!
 
-import ..NutrientsPlanktonDetritusModels:
+import ...NutrientsPlanktonDetritusModels:
     inorganic_nitrogen_waste,
     inorganic_phosphate_waste,
     inorganic_iron_waste,
     inorganic_silicon_waste
 
-using ..NutrientsPlanktonDetritusModels.InorganicCarbonModels:
+using ...NutrientsPlanktonDetritusModels.InorganicCarbonModels:
     particulate_calcium_carbonate_production
 
 using OceanBioME.Light: @subcolumn_average, @preserve_subcolumns, interface_par
 
-using ..NutrientsPlanktonDetritusModels.NutrientsModels:
+using ...NutrientsPlanktonDetritusModels.NutrientsModels:
     ComplexedIron,
     ballast_sinking_mass
 
-import ..NutrientsPlanktonDetritusModels.NutrientsModels:
+import ...NutrientsPlanktonDetritusModels.NutrientsModels:
     poc_remineralisation,
     doc_production,
     scavenging_sinking_mass
@@ -74,6 +74,8 @@ function silicon_dissolution end
 function biogenic_silica_production end
 
 function ballast_oxygen_scale end
+
+const yr = 365day
 
 include("ballast.jl")
 include("implicit_particles.jl")
