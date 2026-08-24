@@ -39,15 +39,8 @@ end
 function autotroph_tracer_names(s, traits)
     names = [carbon_name(s), chlorophyll_name(s), phosphorus_name(s), iron_name(s)]
     traits.silicifier && push!(names, silicon_name(s))
-    (traits.imp_calcifier || traits.exp_calcifier) && push!(names, calcite_name(s))
+    (traits.implicit_calcifier || traits.explicit_calcifier) && push!(names, calcite_name(s))
     return Tuple(names)
 end
 
-@inline calcifier(::Autotroph{traits}) where traits = traits.imp_calcifier | traits.exp_calcifier
-
-const DEFAULT_AUTOTROPH_TRAITS = (silicifier           = false,   # silicifier       (⇒ <sname>Si tracer, VSi, gQsi)
-                                  imp_calcifier        = false,   # imp_calcifier    (⇒ §9.1 CaCO3form)
-                                  exp_calcifier        = false,   # exp_calcifier    (⇒ §9.2 picpoc)
-                                  carbon_limited       = false,   # is_carbon_limited (⇒ §7 VCO2 term)
-                                  nfixer               = false,   # Nfixer           (⇒ VN = 1, §10 Nfix)
-                                  temperature_function = :q10)    # temp_func_form_opt (:q10 | :power)
+@inline calcifier(::Autotroph{traits}) where traits = traits.implicit_calcifier | traits.explicit_calcifier

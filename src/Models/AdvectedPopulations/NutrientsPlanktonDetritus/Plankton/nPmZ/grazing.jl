@@ -82,7 +82,7 @@ end
     grazing_relationship(p, Val(Z), Val(C)).fraction_to_dissolved *
     member_grazing(Val(Z), Val(C), Val(M), i, j, k, grid, p, fields)
 
-# the ballast route is gated on the PREY's imp_calcifier flag: an implicit calcifier's grazed carbon is
+# the ballast route is gated on the PREY's implicit_calcifier flag: an implicit calcifier's grazed carbon is
 # ballasted by its CaCO₃ (so the relationship's graze_poc is ignored); everything else — including an
 # explicit calcifier and any zooplankton prey — uses the relationship's graze_poc.
 @inline _member_graze_to_poc(::Val{Z}, ::Val{C}, ::Val{M}, i, j, k, grid, p, fields) where {Z, C, M} =
@@ -100,9 +100,9 @@ end
                                  loss_active_biomass(Val(M), i, j, k, grid, p, fields),
                                  p.grazed_small_phyto_poc_limit)
 
-# is prey M an autotroph with imp_calcifier set? (zooplankton prey never are)
+# is prey M an autotroph with implicit_calcifier set? (zooplankton prey never are)
 @generated implicit_calcifier_prey(p::ManyPhytoZoo, ::Val{M}) where M =
-    :($(M in phytoplankton_names(p) && base_name_traits(p, M).imp_calcifier))
+    :($(M in phytoplankton_names(p) && base_name_traits(p, M).implicit_calcifier))
 
 @inline graze_to_zooplankton(val_name, i, j, k, grid, p::ManyPhytoZoo, fields) =
     sum_over_predators(_member_graze_to_zooplankton, val_name, i, j, k, grid, p, fields)

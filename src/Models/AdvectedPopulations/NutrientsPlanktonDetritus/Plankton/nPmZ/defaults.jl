@@ -13,7 +13,7 @@ rather than in a name table.
 Keyword Arguments
 =================
 
-- `silicifier`, `imp_calcifier`, `exp_calcifier`, `carbon_limited`, `nfixer`: process traits
+- `silicifier`, `implicit_calcifier`, `explicit_calcifier`, `carbon_limited`, `nitrogen_fixer`: process traits
 - `temperature_function`: `:q10` or `:power` (Eppley)
 - `nitrate`, `ammonia`, `phosphate`, `DOP`, `iron`, `silicate`: nutrient half-saturations (mmol/m³)
 - `photosynthesis_rate_reference_per_day`, `initial_PI_slope_per_day`,
@@ -27,12 +27,12 @@ Keyword Arguments
 - `carbon_dioxide_half_saturation`: only used when `carbon_limited`
 """
 function Autotroph(FT = Float64;
-                   silicifier           = DEFAULT_AUTOTROPH_TRAITS.silicifier,
-                   imp_calcifier        = DEFAULT_AUTOTROPH_TRAITS.imp_calcifier,
-                   exp_calcifier        = DEFAULT_AUTOTROPH_TRAITS.exp_calcifier,
-                   carbon_limited       = DEFAULT_AUTOTROPH_TRAITS.carbon_limited,
-                   nfixer               = DEFAULT_AUTOTROPH_TRAITS.nfixer,
-                   temperature_function = DEFAULT_AUTOTROPH_TRAITS.temperature_function,
+                   silicifier           = false,
+                   implicit_calcifier   = false,
+                   explicit_calcifier   = false,
+                   carbon_limited       = false,
+                   nitrogen_fixer       = false,
+                   temperature_function = :q10,
 
                    nitrate, ammonia, phosphate, DOP, iron, silicate,   # mmol/m³
 
@@ -58,7 +58,7 @@ function Autotroph(FT = Float64;
 
                    carbon_dioxide_half_saturation = 0.0)               # mmol/m³, 0 unless carbon limited
 
-    traits = (; silicifier, imp_calcifier, exp_calcifier, carbon_limited, nfixer, temperature_function)
+    traits = (; silicifier, implicit_calcifier, explicit_calcifier, carbon_limited, nitrogen_fixer, temperature_function)
 
     khs = (nitrate   = convert(FT, nitrate),
            ammonia   = convert(FT, ammonia),

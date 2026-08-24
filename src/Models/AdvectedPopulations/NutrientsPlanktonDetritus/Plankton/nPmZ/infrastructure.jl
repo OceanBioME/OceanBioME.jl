@@ -58,9 +58,9 @@ phytoplankton_names(T) = Tuple(s for (_, s) in phytoplankton_base_names(plankton
 zooplankton_names(T)   = Tuple(z for (_, z) in zooplankton_base_names(plankton_base_type(T)))
 
 calcifier_base_names(T)  = Tuple(s for s in phytoplankton_names(T)
-                                 if (t = base_name_traits(T, s); t.imp_calcifier || t.exp_calcifier))
+                                 if (t = base_name_traits(T, s); t.implicit_calcifier || t.explicit_calcifier))
 silicifier_base_names(T) = Tuple(s for s in phytoplankton_names(T) if base_name_traits(T, s).silicifier)
-nfixer_base_names(T)     = Tuple(s for s in phytoplankton_names(T) if base_name_traits(T, s).nfixer)
+nitrogen_fixer_base_names(T)     = Tuple(s for s in phytoplankton_names(T) if base_name_traits(T, s).nitrogen_fixer)
 
 # the `Heterotroph` type of one predator, and hence its prey classes
 function heterotroph_base_type(T, z)
@@ -114,7 +114,7 @@ end
 # reductions over a trait-selected subset (empty → 0 of the model float type)
 for (reduction, names) in ((:sum_over_calcifiers,  :calcifier_base_names),
                            (:sum_over_silicifiers, :silicifier_base_names),
-                           (:sum_over_nfixers,     :nfixer_base_names))
+                           (:sum_over_nitrogen_fixers,     :nitrogen_fixer_base_names))
     @eval begin
         @generated function $reduction(f, i, j, k, grid, bgc, fields, aux)
             names = $names(bgc)

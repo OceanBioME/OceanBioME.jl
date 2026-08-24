@@ -48,7 +48,7 @@ function manifest_plankton!(autotrophs, zooplankton)
                                    i, j, k, grid, bgc, fields, aux)
         end
 
-        (flags.imp_calcifier || flags.exp_calcifier) && @eval begin
+        (flags.implicit_calcifier || flags.explicit_calcifier) && @eval begin
             @inline (bgc::ManyPhytoZoo_NPD)(i, j, k, grid, ::Val{$(QuoteNode(calcite_name(sname)))}, clock, fields, aux) =
                 autotroph_tendency(calcite_formation, standing_calcite_quota, Val($S),
                                    i, j, k, grid, bgc, fields, aux)
@@ -76,11 +76,10 @@ function manifest_plankton!(autotrophs, zooplankton)
     return nothing
 end
 
-# constructs the autotroph fluxes
-@inline autotroph_tendency(flux, quota, ::Val{S}, i, j, k, grid, bgc, fields, aux) where S =
-    flux(Val(S), i, j, k, grid, bgc, fields, aux) -
-    quota(Val(S), i, j, k, grid, bgc.plankton, fields) *
-    autotroph_aggregate_loss(Val(S), i, j, k, grid, bgc.plankton, fields)
+@inline autotroph_tendency(flux, quota, val_base_name, i, j, k, grid, bgc, fields, aux) =
+    flux(val_base_name, i, j, k, grid, bgc, fields, aux) -
+    quota(val_base_name, i, j, k, grid, bgc.plankton, fields) *
+    autotroph_aggregate_loss(val_base_name, i, j, k, grid, bgc.plankton, fields)
 
 @generated function quota_of(::Val{S}, ::Val{name}) where {S, name}
     name === carbon_name(S)      && return :(unit_quota)
@@ -90,4 +89,4 @@ end
     error("no quota conjugate to $name")
 end
 
-@inline unit_quota(::Val{S}, i, j, k, grid, p::ManyPhytoZoo, fields) where S = one(p.nitrogen_to_carbon)
+@inline unit_quota(val_base_name, i, j, k, grid, p::ManyPhytoZoo, fields) = one(p.nitrogen_to_carbon)

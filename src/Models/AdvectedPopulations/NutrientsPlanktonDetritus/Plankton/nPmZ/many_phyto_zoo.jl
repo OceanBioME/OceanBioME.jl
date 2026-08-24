@@ -125,7 +125,7 @@ end
         SiO₃ =  fields.Si[i, j, k]
     end
 
-    f = minimum_limitation(traits(a).silicifier, traits(a).nfixer,
+    f = minimum_limitation(traits(a).silicifier, traits(a).nitrogen_fixer,
                            khs.nitrate, khs.ammonia, khs.phosphate, khs.DOP, khs.iron, khs.silicate,
                            NO₃, NH₄, PO₄, DOP, Fe, SiO₃)
 
@@ -254,7 +254,7 @@ end
     x = NO₃ / a.nutrient_half_saturations.nitrate
     y = max(zero(NH₄), NH₄ / a.nutrient_half_saturations.ammonia)  # floored, as in minimum_limitation
 
-    return x, y, _total_nitrogen_limitation(Val(traits(a).nfixer), x, y)
+    return x, y, _total_nitrogen_limitation(Val(traits(a).nitrogen_fixer), x, y)
 end
 
 @inline _total_nitrogen_limitation(::Val{false}, x, y) = (x + y) / (1 + x + y)
@@ -328,7 +328,7 @@ end
 # the calcification FORMULA is a per-PFT trait: implicit (production fraction × photosynthesis × f_nut²,
 # with a low-temperature taper and a bloom cap) or explicit (Krumhardt et al. 2019 picpoc)
 @inline calcite_formation(val_prefix, i, j, k, grid, bgc, fields, aux) =
-    _calcite_formation(Val(traits(bgc.plankton, val_prefix).exp_calcifier),
+    _calcite_formation(Val(traits(bgc.plankton, val_prefix).explicit_calcifier),
                        val_prefix, i, j, k, grid, bgc, fields, aux)
 
 @inline function _calcite_formation(::Val{false}, val_prefix, i, j, k, grid, bgc, fields, aux)
@@ -367,7 +367,7 @@ end
 
 # N-fixation excretion to NH₄ (N-fixers only; zero otherwise, so it can be summed over all PFTs)
 @inline nitrogen_excretion(val_prefix, i, j, k, grid, bgc, fields, aux) =
-    _nitrogen_excretion(Val(traits(bgc.plankton, val_prefix).nfixer),
+    _nitrogen_excretion(Val(traits(bgc.plankton, val_prefix).nitrogen_fixer),
                         val_prefix, i, j, k, grid, bgc, fields, aux)
 
 @inline _nitrogen_excretion(::Val{false}, val_prefix, i, j, k, grid, bgc, fields, aux) =
@@ -392,7 +392,7 @@ end
     pc    = photosynthesis(val_prefix, i, j, k, grid, p, fields, aux)
     NO₃_V = nitrate_uptake_flux(val_prefix, i, j, k, grid, bgc, fields, aux)
     NH₄_V = ammonia_uptake_flux(val_prefix, i, j, k, grid, bgc, fields, aux)
-    Nfix  = _nitrogen_fixation(Val(traits(p, val_prefix).nfixer), p, pc, NO₃_V, NH₄_V)
+    Nfix  = _nitrogen_fixation(Val(traits(p, val_prefix).nitrogen_fixer), p, pc, NO₃_V, NH₄_V)
 
     denominator = NO₃_V + NH₄_V + Nfix
 
@@ -519,7 +519,7 @@ end
     p.nitrogen_to_carbon * inorganic_waste(i, j, k, grid, p, bgc, fields, aux) +
     p.nitrogen_to_carbon * (1 - p.nitrogen_to_DON_fraction) *
         dissolved_waste(i, j, k, grid, p, bgc, fields, aux) +
-    sum_over_nfixers(nitrogen_excretion, i, j, k, grid, bgc, fields, aux)
+    sum_over_nitrogen_fixers(nitrogen_excretion, i, j, k, grid, bgc, fields, aux)
 
 # element-specific P/Fe waste to the INORGANIC pools. Variable quotas make the scalar-ratio decomposition
 # invalid, so these cannot be derived from `phosphate_ratio`/`iron_ratio`. The autotrophs contribute only

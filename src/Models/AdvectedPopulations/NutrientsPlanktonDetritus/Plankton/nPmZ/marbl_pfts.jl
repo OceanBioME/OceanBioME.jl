@@ -12,7 +12,7 @@ The CESM2.1 small phytoplankton (`sp`) — an implicit calcifier. Any keyword ov
 value; see [`Autotroph`](@ref) for the full list.
 """
 MARBL_small_phyto(FT = Float64; kwargs...) = Autotroph(FT;
-    imp_calcifier = true,
+    implicit_calcifier = true,
     nitrate = 0.25, ammonia = 0.01, phosphate = 0.01, DOP = 0.3, iron = 3.0e-5, silicate = 0.0,
     photosynthesis_rate_reference_per_day = 5.0,
     maximum_chlorophyll_to_nitrogen = 2.5,
@@ -51,7 +51,7 @@ The CESM2.1 diazotrophs (`diaz`) — a nitrogen fixer. Any keyword overrides the
 [`Autotroph`](@ref) for the full list.
 """
 MARBL_diazotrophs(FT = Float64; kwargs...) = Autotroph(FT;
-    nfixer = true,
+    nitrogen_fixer = true,
     nitrate = 2.0, ammonia = 0.2, phosphate = 0.015, DOP = 0.075, iron = 4.5e-5, silicate = 0.0,
     photosynthesis_rate_reference_per_day = 2.5,
     maximum_chlorophyll_to_nitrogen = 2.5,
@@ -152,7 +152,7 @@ MARBL_cocco_diatoms(FT = Float64; kwargs...) = Autotroph(FT;
 The diazotrophs of the +cocco set.
 """
 MARBL_cocco_diazotrophs(FT = Float64; kwargs...) = Autotroph(FT;
-    nfixer = true,
+    nitrogen_fixer = true,
     nitrate = 2.0, ammonia = 0.2, phosphate = 0.015, DOP = 0.1, iron = 4.5e-5, silicate = 0.0,
     photosynthesis_rate_reference_per_day = 2.2,
     initial_PI_slope_per_day = 0.39,
@@ -171,7 +171,7 @@ MARBL_cocco_diazotrophs(FT = Float64; kwargs...) = Autotroph(FT;
 Coccolithophores — an explicit calcifier which is carbon limited and uses the Eppley temperature form.
 """
 MARBL_coccolithophores(FT = Float64; kwargs...) = Autotroph(FT;
-    exp_calcifier = true, carbon_limited = true, temperature_function = :power,
+    explicit_calcifier = true, carbon_limited = true, temperature_function = :power,
     nitrate = 0.2, ammonia = 0.01, phosphate = 0.006, DOP = 0.25, iron = 3.15e-5, silicate = 0.0,
     photosynthesis_rate_reference_per_day = 4.7,
     initial_PI_slope_per_day = 0.28,

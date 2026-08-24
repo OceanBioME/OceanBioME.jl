@@ -19,15 +19,15 @@
 end
 
 
-# Liebig nutrient_limitation over the nutrients that apply to a PFT (silicifier/nfixer baked at gen time).
+# Liebig nutrient_limitation over the nutrients that apply to a PFT (silicifier/nitrogen_fixer baked at gen time).
 # DOP = 0 in Phase 3 ⇒ VPtot = VPO₄. VSi divides by (SiO₃+kSi); for non-silicifiers it is selected
 # out by `ifelse` (never ×Bool — the dead branch can be NaN when kSi = 0 and SiO₃ = 0).
 @inline competitive_limitation(a, b, ka, kb) = (a/ka + b/kb) / (1 + a/ka + b/kb)
 
-@inline function minimum_limitation(silicifier, nfixer, kNO₃, kNH₄, kPO₄, kDOP, kFe, kSi,
+@inline function minimum_limitation(silicifier, nitrogen_fixer, kNO₃, kNH₄, kPO₄, kDOP, kFe, kSi,
                                     NO₃, NH₄, PO₄, DOP, Fe, SiO₃)
     # isn't there evidence that sometimes nitrifiers also do uptake
-    VN  = ifelse(nfixer, one(NO₃), competitive_limitation(NO₃, max(zero(NH₄), NH₄), kNO₃, kNH₄))
+    VN  = ifelse(nitrogen_fixer, one(NO₃), competitive_limitation(NO₃, max(zero(NH₄), NH₄), kNO₃, kNH₄))
     VFe = Fe / (Fe + kFe)
     VP  = competitive_limitation(PO₄, DOP, kPO₄, kDOP)
 

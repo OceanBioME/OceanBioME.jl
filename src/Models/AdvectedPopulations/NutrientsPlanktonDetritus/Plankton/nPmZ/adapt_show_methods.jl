@@ -85,10 +85,10 @@ function autotroph_description(p::ManyPhytoZoo, s)
 
     roles = String[]
 
-    t.imp_calcifier  && push!(roles, "implicit calcifier")
-    t.exp_calcifier  && push!(roles, "explicit calcifier")
+    t.implicit_calcifier  && push!(roles, "implicit calcifier")
+    t.explicit_calcifier  && push!(roles, "explicit calcifier")
     t.silicifier     && push!(roles, "silicifier")
-    t.nfixer         && push!(roles, "N-fixer")
+    t.nitrogen_fixer         && push!(roles, "N-fixer")
     t.carbon_limited && push!(roles, "carbon limited")
 
     return "$s: " * (isempty(roles) ? "generic autotroph" : join(roles, ", "))
