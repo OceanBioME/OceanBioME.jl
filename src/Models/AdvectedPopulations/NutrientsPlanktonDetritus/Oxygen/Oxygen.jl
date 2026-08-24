@@ -17,14 +17,15 @@ using ..NutrientsPlanktonDetritusModels:
 
 using OceanBioME.Light: @subcolumn_average, interface_par
 
-using ..NutrientsPlanktonDetritusModels.DetritusModels:
-    AbstractRefractoryDissolvedDetritus,
+using ..NutrientsPlanktonDetritusModels.DetritusModels.MultiElement:
+    AbstractMultiElementRefractoryDissolvedDetritus,
     oxygen_scale_factor
 
 using ..NutrientsPlanktonDetritusModels.PlanktonModels:
     oxygen_production_total
 
-import ..NutrientsPlanktonDetritusModels.DetritusModels: ballast_oxygen_scale
+import ..NutrientsPlanktonDetritusModels.DetritusModels.MultiElement: 
+    ballast_oxygen_scale
 
 using ..NutrientsPlanktonDetritusModels.NutrientsModels:
     Nutrients,

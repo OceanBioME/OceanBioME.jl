@@ -42,7 +42,7 @@ import ...NutrientsPlanktonDetritusModels.NutrientsModels:
     iron_scavenging,
     scavenging_sinking_mass
 
-import ...NutrientsPlanktonDetritusModels.DetritusModels:
+import ...NutrientsPlanktonDetritusModels.DetritusModels.MultiElement:
     dissolved_phosphorus_production,
     particulate_phosphorus_production,
     dissolved_phosphorus_balance,

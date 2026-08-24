@@ -75,7 +75,7 @@ biogeochemical_auxiliary_fields(ox::RedoxOxygen) =
                                 ConstantField(o.oxygen_consumption_scale_factor), )
 
 const RedoxOxygen_NPD = NutrientsPlanktonDetritus{<:Any, <:Nutrients{<:NitrateAmmonia}, <:Any,
-                                                  <:AbstractRefractoryDissolvedDetritus, <:Any, 
+                                                  <:AbstractMultiElementRefractoryDissolvedDetritus, <:Any, 
                                                   <:RedoxOxygen}
 
 #####
