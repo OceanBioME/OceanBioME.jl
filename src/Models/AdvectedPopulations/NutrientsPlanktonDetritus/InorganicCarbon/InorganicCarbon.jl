@@ -48,6 +48,6 @@ include("abstract_inorganic_carbon.jl")
 include("defaults.jl")
 include("implicit_calcium_carbonate.jl")
 include("explicit_calcium_carbonate.jl")
-include("ballast_calcite.jl")
+include("implicit_explicit_calcite.jl")
 
 end # module
