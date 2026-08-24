@@ -2,7 +2,7 @@
 
 Our carbon chemistry model follows the best practice described by [dickson2007](@citet), as implemented by e.g. `cbsyst` [branson2023](@citep) and `CO2SYS` [humphreys2022](@citep) in Python.
 
-The carbon chemistry model is primarily used for diagnosing the partial pressure of carbon dioxide in the surface water for [gas exchange with the air](@ref air-sea-gas), but is capable of diagnosing other species such as carbonate concentration, useful in the calculation of calcite dissolution.
+The carbon chemistry model is primarily used for diagnosing the partial pressure of carbon dioxide in the surface water for [gas exchange with the air](@ref air-sea-gas), but is capable of diagnosing other species such as carbonate concentration, useful in the calculation of calcium carbonate dissolution.
 The model works by computing the pH from the total dissolved inorganic carbon and total alkalinity (and optionally silicate, phosphate, boron, sulfate, and fluoride concentration), along with temperature and salinity, which can then be used to find the concentration of different species.
 We will first describe how to use the model, followed by the underlying chemistry and parameterisations.
 
@@ -63,13 +63,62 @@ carbon_chemistry(; DIC, Alk, T, S, lon = -31.52, lat = 33.75)
 The default uses the polynomial approximation described in [roquet2015](@citet) as provided by [`SeawaterPolynomials.jl`](https://github.com/CliMA/SeawaterPolynomials.jl/).
 
 ### Computing the carbonate concentration
-So that this model can be used in calcite dissolution models it can also return the carbonate saturation by calling the function `calcite_saturation`
+So that this model can be used in calcium carbonate dissolution models it can also return the carbonate saturation by calling the function `calcium_carbonate_saturation`
 ```@example carbon-chem
-using OceanBioME.Models.CarbonChemistryModel: calcite_saturation
+using OceanBioME.Models.CarbonChemistryModel: calcium_carbonate_saturation
 
-calcite_saturation(carbon_chemistry; DIC, Alk, T, S)
+calcium_carbonate_saturation(carbon_chemistry; DIC, Alk, T, S)
 ```
 This function takes all of the same arguments (e.g. `boron`) as `carbon_chemistry` above.
+
+The carbonate ion concentration itself is available from `carbonate_concentration`, and is returned
+in mmol / m³ (i.e. the same units as `DIC` and `Alk`):
+```@example carbon-chem
+using OceanBioME.Models.CarbonChemistryModel: carbonate_concentration
+
+carbonate_concentration(carbon_chemistry; DIC, Alk, T, S)
+```
+
+### [Calcite and aragonite saturation](@id calcium-carbonate-saturation)
+
+The saturation state is formed from the ion product divided by the stoichiometric solubility product
+of the mineral phase,
+
+```math
+\Omega = \frac{[\ce{Ca^2+}][\ce{CO_3^2-}]}{K_{sp}},
+```
+
+where ``[\ce{Ca^2+}]`` and ``[\ce{CO_3^2-}]`` are in mol / kg and ``K_{sp}`` in ``(\mathrm{mol / kg})^2``,
+so ``\Omega`` is dimensionless. The calcium ion concentration defaults to the salinity-scaled estimate
+``[\ce{Ca^2+}] = 0.0103 \times S / 35`` mol / kg and may be overridden with the
+`calcium_ion_concentration` keyword.
+
+The mineral phase enters *only* through ``K_{sp}``, so calcite and aragonite saturation differ solely
+by which solubility the `CarbonChemistry` model carries. The default is calcite; to work in aragonite
+saturation instead, swap `calcium_carbonate_solubility`:
+
+```@example carbon-chem
+using OceanBioME.Models.CarbonChemistryModel: KSP_aragonite
+
+aragonite_chemistry = CarbonChemistry(; density_function = teos10_density,
+                                        calcium_carbonate_solubility = KSP_aragonite())
+
+calcium_carbonate_saturation(aragonite_chemistry; DIC, Alk, T, S)
+```
+
+Aragonite is the more soluble phase, so for the same water ``\Omega_{calcite} \approx 1.5\,\Omega_{aragonite}``:
+
+```@example carbon-chem
+calcium_carbonate_saturation(carbon_chemistry; DIC, Alk, T, S) /
+    calcium_carbonate_saturation(aragonite_chemistry; DIC, Alk, T, S)
+```
+
+Which phase you want depends on the application. Aragonite is the phase observed to precipitate in
+ocean alkalinity enhancement experiments, and the critical saturation thresholds reported in that
+literature (e.g. [Moras2022](@citet)) are quoted in ``\Omega_{aragonite}``, so comparisons against
+those numbers should use the aragonite solubility. Both parameterisations are from
+Millero, F. J. (2007, Chemical Reviews, 107(2), 308–341), as given in the
+[Model parameterisation](@ref) section below.
 
 ## Chemistry
 ### pH computation
@@ -233,8 +282,8 @@ fCO_2 = \frac{[CO_2(aq)]}{K_0},
 ```
 in atmospheres.
 
-### Carbonate concentration and calcite saturation
-Similarly we can also diagnose the calcite concentration
+### Carbonate concentration and calcium carbonate saturation
+Similarly we can also diagnose the carbonate concentration
 ```math
 [CO_3^{2-}] = \frac{[DIC]K_1K_2}{[\ce{H^+}]([\ce{H^+}] + K_1)+K_1K_2}.
 ```
@@ -248,7 +297,7 @@ which has an equilibrium constant
 K_{SP} = [\ce{Ca^{2+}}][\ce{CO_3^{2-}}].
 ```
 
-The calcite saturation can then be defined as ``\Omega=\frac{[\ce{CO_3^{2-}}]}{[\ce{CO_{3, saturation}^{2-}}]}`` which can be diagnosed as:
+The calcium carbonate saturation can then be defined as ``\Omega=\frac{[\ce{CO_3^{2-}}]}{[\ce{CO_{3, saturation}^{2-}}]}`` which can be diagnosed as:
 ```math
 \Omega = \frac{[\ce{Ca^{2+}}][\ce{CO_3^{2-}}]}{K_{SP}}.
 ```

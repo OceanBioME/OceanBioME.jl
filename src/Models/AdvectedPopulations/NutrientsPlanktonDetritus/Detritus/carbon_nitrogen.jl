@@ -131,8 +131,8 @@ end
   + fields.bPON[i, j, k] * detritus.large_particle_remineralisation_rate * (1 - detritus.large_particle_remineralisation_dissolved_fraction)
 ) / nitrogen_ratio(i, j, k, grid, bgc.plankton, bgc, fields)
 
-@inline calcite_dissolution(i, j, k, grid, detritus::CarbonNitrogenDissolvedParticulate, bgc, fields, auxiliary_fields) = @inbounds (
-    calcite_rain_ratio(i, j, k, grid, bgc.plankton, bgc, fields) * (
+@inline calcium_carbonate_dissolution(i, j, k, grid, detritus::CarbonNitrogenDissolvedParticulate, bgc, fields, auxiliary_fields) = @inbounds (
+    calcium_carbonate_rain_ratio(i, j, k, grid, bgc.plankton, bgc, fields) * (
         dissolved_carbon_waste(i, j, k, grid, bgc.plankton, bgc, fields, auxiliary_fields)
       + fields.sPOC[i, j, k] * detritus.small_particle_remineralisation_rate
       + fields.bPOC[i, j, k] * detritus.large_particle_remineralisation_rate

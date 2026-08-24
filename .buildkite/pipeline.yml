@@ -105,6 +105,7 @@ steps:
             hostname: "$BUILDKITE_AGENT_META_DATA_HOSTNAME"
           
         - label: ":docusaurus: Documentation"
+          key: "docs"
           env:
             JULIA_DEBUG: "Documenter"
             JULIA_DEPOT_PATH: "$JULIA_DEPOT_PATH_GPU"
@@ -114,6 +115,18 @@ steps:
           depends_on: 
             - "init-gpu"
             - "examples"
+          agents:
+            hostname: "$BUILDKITE_AGENT_META_DATA_HOSTNAME"
+
+        - label: ":rocket: Deploy documentation"
+          env:
+            JULIA_DEBUG: "Documenter"
+            JULIA_DEPOT_PATH: "$JULIA_DEPOT_PATH_GPU"
+          command: |
+            cd "$OCEANBIOME_DIR"
+            $JULIA +$JULIA_VERSION --color=yes --project=docs/ docs/deploy.jl
+          depends_on: 
+            - "docs"
           notify:
             - github_commit_status:
                 context: "Documentation"
@@ -124,6 +137,7 @@ steps:
           continue_on_failure: true
           
         - label: ":skeleton-dance: clean up environment"
+          if: build.state == "passed"   # only clean up on success
           command: 
             - "test -d $OCEANBIOME_DIR && du -hs $OCEANBIOME_DIR || true"
             - "test -d $OCEANBIOME_DIR && rm -rf $OCEANBIOME_DIR || true"
@@ -132,4 +146,3 @@ steps:
                 context: "Clean up"
           agents:
             hostname: "$BUILDKITE_AGENT_META_DATA_HOSTNAME"
-      EOF
