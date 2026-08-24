@@ -16,5 +16,3 @@ steps:
 
       echo "--- Disk usage after cleanup"
       df -h "$BUILDKITE_HOME"
-    agents:
-      hostname: "ocean-1"   # match whichever agent hosts these dirs
