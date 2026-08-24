@@ -8,12 +8,16 @@ export TwoBandPhotosyntheticallyActiveRadiation,
        MultiBandPhotosyntheticallyActiveRadiation,
        PrescribedAttenuationPAR
 
+export subcolumn_sum, interface_par, SubcolumnPAR
+export @subcolumn_average, @preserve_subcolumns
+
 using Adapt
 
 using KernelAbstractions, Oceananigans.Units
 using Oceananigans.Architectures: device, architecture, on_architecture
 using Oceananigans.Utils: launch!
-using Oceananigans: Center, Face, fields
+using Oceananigans: Center, Face, fields, defaults
+using Oceananigans.Operators: ℑzᵃᵃᶠ
 using Oceananigans.Grids: node, znodes, znode, AbstractGrid
 using Oceananigans.Fields: CenterField, TracerFields, location
 using Oceananigans.BoundaryConditions: fill_halo_regions!, 
@@ -37,6 +41,7 @@ import Base: show, summary
 import Oceananigans.Biogeochemistry: biogeochemical_auxiliary_fields, update_biogeochemical_state!, required_biogeochemical_auxiliary_fields
 import Oceananigans.BoundaryConditions: _fill_top_halo!
 
+include("subcolumns.jl")
 include("2band.jl")
 include("multi_band.jl")
 include("prescribed.jl")

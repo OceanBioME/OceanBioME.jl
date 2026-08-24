@@ -1,6 +1,7 @@
 module DetritusModels
 
 export Detritus, DissolvedParticulate, InstantRemineralisationDetritus, CarbonNitrogenDissolvedParticulate
+export MultiElementRefractoryDissolved, MultiElementRefractoryDissolvedParticulate
 
 using Adapt
 using Oceananigans.Grids: AbstractGrid
@@ -43,5 +44,8 @@ include("instant_remineralisation.jl")
 include("single_detritus.jl")
 include("single_element.jl")
 include("carbon_nitrogen.jl")
+include("MultiElement/MultiElement.jl")
+
+using .MultiElement
 
 end # module

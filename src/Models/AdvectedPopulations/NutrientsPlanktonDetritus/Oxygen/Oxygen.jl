@@ -1,10 +1,30 @@
 module OxygenModels
 
-export Oxygen
+export Oxygen, RedoxOxygen
+
+using Adapt
+using Oceananigans.Units: day
+using Oceananigans.Fields: AbstractField, ConstantField
+
+import Adapt: adapt_structure
+import Adapt: adapt
 
 using ..NutrientsPlanktonDetritusModels:
     NutrientsPlanktonDetritus,
-    inorganic_nitrogen_waste
+    inorganic_nitrogen_waste,
+    inorganic_carbon_waste,
+    nutrient_uptake
+
+using OceanBioME.Light: @subcolumn_average, interface_par
+
+using ..NutrientsPlanktonDetritusModels.DetritusModels:
+    AbstractRefractoryDissolvedDetritus,
+    oxygen_scale_factor
+
+using ..NutrientsPlanktonDetritusModels.PlanktonModels:
+    oxygen_production_total
+
+import ..NutrientsPlanktonDetritusModels.DetritusModels: ballast_oxygen_scale
 
 using ..NutrientsPlanktonDetritusModels.NutrientsModels:
     Nutrients,
@@ -23,7 +43,8 @@ import Base: summary, show
 
 import Oceananigans.Biogeochemistry: 
     required_biogeochemical_tracers,
-    required_biogeochemical_auxiliary_fields
+    required_biogeochemical_auxiliary_fields,
+    biogeochemical_auxiliary_fields
 
 import ..NutrientsPlanktonDetritusModels: 
     carbon_ratio,
@@ -109,4 +130,10 @@ const OxygenCNDP{FT} = NutrientsPlanktonDetritus{FT, <:Nutrients{<:SingleTracerN
         - rN * inorganic_nitrogen_waste(i, j, k, grid,bgc.detritus, bgc, fields, auxiliary_fields) * carbon_ratio(i, j, k, grid,bgc.plankton, bgc,fields) / nitrogen_ratio(i, j, k, grid,bgc.plankton, bgc,fields)
     )
 end
+
+
+
+include("redox.jl")
+include("adapt_show_methods.jl")
+
 end

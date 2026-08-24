@@ -9,17 +9,20 @@ export Biogeochemistry
 
 
 export NutrientsPlanktonDetritus
-export NPZD, LOBSTER, ImplicitBiology, PISCES, DepthDependantSinkingSpeed, PrescribedLatitude, ModelLatitude, PISCESModel
+export NPZD, LOBSTER, ImplicitBiology, MARBL, MARBL_Cocco, PISCES, DepthDependantSinkingSpeed, PrescribedLatitude, ModelLatitude, PISCESModel
 
-export Nutrients, NitrateAmmonia
-export CarbonateSystem, ExplicitCalciumCarbonate
-export Abiotic, ImplicitProductivity, PhytoZoo
-export Detritus, DissolvedParticulate, InstantRemineralisationDetritus, CarbonNitrogenDissolvedParticulate
-export Oxygen
+export Nutrients, NitrateAmmonia, ComplexedIron, N, PO₄, Si, Fe
+export CarbonateSystem, ExplicitCalciumCarbonate, ImplicitExplicitCalcite
+export Abiotic, ImplicitProductivity, PhytoZoo, ManyPhytoZoo, Autotroph, Heterotroph, Grazing
+export MARBL_small_phyto, MARBL_diatoms, MARBL_diazotrophs, MARBL_autotrophs, MARBL_zooplankton,
+       MARBL_cocco_small_phyto, MARBL_cocco_diatoms, MARBL_cocco_diazotrophs, MARBL_coccolithophores,
+       MARBL_cocco_autotrophs, MARBL_cocco_zooplankton, MARBL_cocco_plankton
+export Detritus, DissolvedParticulate, InstantRemineralisationDetritus, CarbonNitrogenDissolvedParticulate, RefractoryDissolvedParticulateCNP, DissolvedRefractoryImplicitCNP, Ballast
+export Oxygen, RedoxOxygen
 
 export SugarKelp, SugarKelpParticles, GiantKelp
 
-export InstantRemineralisationSediment, SimpleMultiGSediment
+export InstantRemineralisationSediment, SimpleMultiGSediment, BurialDenitrificationSediment, BurialDenitrification
 export DepthDependantSinkingSpeed, PrescribedLatitude, ModelLatitude, PISCESModel
 
 # Macroalgae models
@@ -36,6 +39,9 @@ export TwoBandPhotosyntheticallyActiveRadiation,
        PrescribedPhotosyntheticallyActiveRadiation,
        MultiBandPhotosyntheticallyActiveRadiation,
        PrescribedAttenuationPAR
+
+# light split between sub columns, and the way a rate consumes it
+export SubcolumnPAR, subcolumn_sum, @subcolumn_average, @preserve_subcolumns
 
 # airsea flux
 export GasExchange, CarbonDioxideGasExchangeBoundaryCondition, OxygenGasExchangeBoundaryCondition, GasExchangeBoundaryCondition

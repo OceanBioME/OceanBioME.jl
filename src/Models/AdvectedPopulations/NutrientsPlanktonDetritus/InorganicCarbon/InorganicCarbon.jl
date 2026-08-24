@@ -1,8 +1,11 @@
 module InorganicCarbonModels
 
-export CarbonateSystem, ExplicitCalciumCarbonate
+export CarbonateSystem, ExplicitCalciumCarbonate, ImplicitExplicitCalcite
 
+using Adapt
 using Oceananigans.Units
+using Oceananigans.Grids: AbstractGrid, Center
+using Oceananigans.Fields: CenterField, Field
 
 using ..NutrientsPlanktonDetritusModels:
     NutrientsPlanktonDetritus,
@@ -28,18 +31,23 @@ using ..NutrientsPlanktonDetritusModels:
     solid_carbon_waste,
     dissolved_carbon_waste
 
+import Adapt: adapt_structure, adapt
 import Base: summary, show
 
 import Oceananigans.Biogeochemistry: 
     required_biogeochemical_tracers,
-    required_biogeochemical_auxiliary_fields
+    required_biogeochemical_auxiliary_fields,
+    biogeochemical_auxiliary_fields,
+    update_biogeochemical_state!
 
 import ..NutrientsPlanktonDetritusModels:
-    carbon_ratio
+    carbon_ratio,
+    group_element_tracers
 
 include("abstract_inorganic_carbon.jl")
 include("defaults.jl")
 include("implicit_calcium_carbonate.jl")
 include("explicit_calcium_carbonate.jl")
+include("ballast_calcite.jl")
 
 end # module

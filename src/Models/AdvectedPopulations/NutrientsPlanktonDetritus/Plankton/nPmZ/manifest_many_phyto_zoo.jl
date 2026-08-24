@@ -10,9 +10,9 @@ pft_traits(pz::ManyPhytoZoo, s) = traits(pz.autotrophs[s])
 # so during runtime this just returns the tuple with no overhead
 @generated function required_biogeochemical_tracers(p::ManyPhytoZoo)
     tracers = Symbol[]
-    autotroph_traits = all_autotroph_traits(p)
+    base_name_traits = all_autotroph_traits(p)
     for (n, s) in phytoplankton_base_names(p)
-        append!(tracers, autotroph_tracer_names(s, autotroph_traits[n].parameters[1]))
+        append!(tracers, autotroph_tracer_names(s, base_name_traits[n].parameters[1]))
     end
     for (n, z) in zooplankton_base_names(p)
         push!(tracers, carbon_name(z))
@@ -37,25 +37,25 @@ function manifest_plankton!(autotrophs, zooplankton)
                              (chlorophyll_name(sname), :photoacclimation_flux),
                              (phosphorus_name(sname),  :phosphorus_uptake_flux),
                              (iron_name(sname),        :iron_uptake_flux))
-            @eval @inline (bgc::MARBL_NPD)(i, j, k, grid, ::Val{$(QuoteNode(name))}, clock, fields, aux) =
+            @eval @inline (bgc::ManyPhytoZoo_NPD)(i, j, k, grid, ::Val{$(QuoteNode(name))}, clock, fields, aux) =
                 autotroph_tendency($flux, quota_of(Val($S), Val($(QuoteNode(name)))), Val($S),
                                    i, j, k, grid, bgc, fields, aux)
         end
 
         flags.silicifier && @eval begin
-            @inline (bgc::MARBL_NPD)(i, j, k, grid, ::Val{$(QuoteNode(silicon_name(sname)))}, clock, fields, aux) =
+            @inline (bgc::ManyPhytoZoo_NPD)(i, j, k, grid, ::Val{$(QuoteNode(silicon_name(sname)))}, clock, fields, aux) =
                 autotroph_tendency(silicon_uptake_flux, standing_silicon_quota, Val($S),
                                    i, j, k, grid, bgc, fields, aux)
         end
 
         (flags.imp_calcifier || flags.exp_calcifier) && @eval begin
-            @inline (bgc::MARBL_NPD)(i, j, k, grid, ::Val{$(QuoteNode(calcite_name(sname)))}, clock, fields, aux) =
+            @inline (bgc::ManyPhytoZoo_NPD)(i, j, k, grid, ::Val{$(QuoteNode(calcite_name(sname)))}, clock, fields, aux) =
                 autotroph_tendency(calcite_formation, standing_calcite_quota, Val($S),
                                    i, j, k, grid, bgc, fields, aux)
         end
 
         for name in autotroph_tracer_names(sname, flags)
-            @eval biogeochemical_drift_velocity(::MARBL_NPD, ::Val{$(QuoteNode(name))}) =
+            @eval biogeochemical_drift_velocity(::ManyPhytoZoo_NPD, ::Val{$(QuoteNode(name))}) =
                 (u = ZeroField(), v = ZeroField(), w = ZeroField())
         end
     end
@@ -63,12 +63,12 @@ function manifest_plankton!(autotrophs, zooplankton)
     for zname in keys(zooplankton)
         Z = QuoteNode(zname)
         @eval begin
-            @inline (bgc::MARBL_NPD)(i, j, k, grid, ::Val{$(QuoteNode(carbon_name(zname)))}, clock, fields, aux) =
+            @inline (bgc::ManyPhytoZoo_NPD)(i, j, k, grid, ::Val{$(QuoteNode(carbon_name(zname)))}, clock, fields, aux) =
                 zooplankton_grazing_gain(Val($Z), i, j, k, grid, bgc.plankton, fields) -
                 zooplankton_grazed(Val($Z), i, j, k, grid, bgc.plankton, fields) -
                 zooplankton_loss(Val($Z), i, j, k, grid, bgc.plankton, fields)
 
-            biogeochemical_drift_velocity(::MARBL_NPD, ::Val{$(QuoteNode(carbon_name(zname)))}) =
+            biogeochemical_drift_velocity(::ManyPhytoZoo_NPD, ::Val{$(QuoteNode(carbon_name(zname)))}) =
                 (u = ZeroField(), v = ZeroField(), w = ZeroField())
         end
     end
@@ -90,4 +90,4 @@ end
     error("no quota conjugate to $name")
 end
 
-@inline unit_quota(::Val{S}, i, j, k, grid, p::Autotroph, fields) where S = one(p.nitrogen_to_carbon)
+@inline unit_quota(::Val{S}, i, j, k, grid, p::ManyPhytoZoo, fields) where S = one(p.nitrogen_to_carbon)

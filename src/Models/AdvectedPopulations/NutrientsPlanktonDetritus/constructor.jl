@@ -229,3 +229,53 @@ LOBSTER(grid::AbstractGrid{FT};
         light_attenuation = default_light(grid, surface_PAR),
         kwargs...) where FT =
     NutrientsPlanktonDetritus(grid; nutrients, plankton, detritus, light_attenuation, kwargs...)
+"""
+    MARBL(grid; kwargs...)
+
+The MARBL biogeochemistry, in its CESM2.1 configuration: three phytoplankton functional types (small
+phytoplankton, diatoms and diazotrophs) and one zooplankton, with variable cell quotas in carbon,
+chlorophyll, phosphorus, iron and silicon, a full grazing matrix, dissolved and particulate organic
+matter with refractory pools, an explicit calcite pool, the dissolved iron and ligand system, and
+oxygen with nitrification and denitrification.
+
+This is a preset assembling the general components — [`ManyPhytoZoo`](@ref),
+[`RefractoryDissolvedParticulateCNP`](@ref), [`ExplicitCalciumCarbonate`](@ref),
+[`ComplexedIron`](@ref) and [`RedoxOxygen`](@ref) — with the CESM2.1 parameter values. Any of them can be
+replaced through the corresponding keyword.
+
+Temperature is *not* a biogeochemical tracer: supply it from the physics, or as `T` in the model's
+tracers.
+
+See [`MARBL_Cocco`](@ref) for the four-PFT variant with coccolithophores, and
+[`BurialDenitrificationSediment`](@ref) to close the bottom boundary.
+"""
+MARBL(grid::AbstractGrid{FT};
+      open_bottom = true,
+      sinking_speed = 10.0,   # m/day
+      nutrients = Nutrients(NitrateAmmonia{FT}(; nitrification_rate = zero(FT)),  # nitrification via `RedoxOxygen`
+                            PO₄, ComplexedIron(FT), Si),
+      plankton = ManyPhytoZoo(FT),
+      detritus = RefractoryDissolvedParticulateCNP(grid; sinking_speed, open_bottom),
+      inorganic_carbon = ExplicitCalciumCarbonate(grid),
+      oxygen = RedoxOxygen(FT),
+      surface_PAR = default_surface_PAR,
+      light_attenuation = default_light(grid, surface_PAR),
+      kwargs...) where FT =
+    NutrientsPlanktonDetritus(grid; nutrients, plankton, detritus, inorganic_carbon, oxygen,
+                              light_attenuation, kwargs...)
+
+"""
+    MARBL_Cocco(grid; kwargs...)
+
+The MARBL biogeochemistry in its `+cocco` configuration: as [`MARBL`](@ref), but with a fourth
+phytoplankton functional type, coccolithophores, which are the sole calcifier and the only carbon-
+limited type. The small phytoplankton do not calcify in this configuration, and several shared
+parameters take different values.
+
+Coccolithophore growth and calcification depend on aqueous CO₂, so the plankton allocates a field for it
+and recomputes it each step from the carbonate system.
+"""
+MARBL_Cocco(grid::AbstractGrid{FT};
+            plankton = MARBL_cocco_plankton(grid, FT),
+            kwargs...) where FT =
+    MARBL(grid; plankton, kwargs...)
