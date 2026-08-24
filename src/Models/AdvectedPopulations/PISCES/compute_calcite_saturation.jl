@@ -33,5 +33,5 @@ end
     # this is a type stability issue
     P = abs(z) * g * 1026 / 100000
 
-    @inbounds calcite_saturation[i, j, k] = CarbonChemistryModel.calcite_saturation(carbon_chemistry; DIC, T, S, Alk, P, silicate)
+    @inbounds calcite_saturation[i, j, k] = CarbonChemistryModel.calcium_carbonate_saturation(carbon_chemistry; DIC, T, S, Alk, P, silicate)
 end

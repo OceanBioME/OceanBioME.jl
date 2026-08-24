@@ -48,7 +48,7 @@ import Oceananigans.Biogeochemistry: required_biogeochemical_tracers,
                                      required_biogeochemical_auxiliary_fields,
                                      biogeochemical_drift_velocity
 
-using OceanBioME: NutrientsPlanktonDetritus
+using OceanBioME: NutrientsPlanktonDetritus, setup_velocity_fields
 
 # the single-nutrient (nitrogen) enum and the interface generics we add methods to
 using OceanBioME.Models.NutrientsPlanktonDetritusModels: N
@@ -217,9 +217,13 @@ light_attenuation = PrescribedAttenuationPAR(grid, surface_PAR; attenuation = 0.
 
 sediment = InstantRemineralisationSediment(grid; sinking_tracers = :P, remineralisation_reciever = :N)
 
+# `setup_velocity_fields` builds a proper sinking `Field` (rather than a `ConstantField`), which
+# `WENO()` advection needs to compute the flux into the sediment at the bottom boundary
+sinking_velocity = setup_velocity_fields((; P = 2 / day), grid, true).P
+
 biogeochemistry = NutrientsPlanktonDetritus(grid;
                                             nutrients = Nutrients(N, nothing, nothing, nothing),
-                                            plankton  = SimplePhytoplankton(; sinking_velocity = ConstantField(-2/day)),
+                                            plankton  = SimplePhytoplankton(; sinking_velocity),
                                             detritus  = DissolvedParticulate(grid),
                                             light_attenuation,
                                             sediment,
