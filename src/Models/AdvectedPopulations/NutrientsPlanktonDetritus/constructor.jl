@@ -239,7 +239,7 @@ matter with refractory pools, an explicit calcite pool, the dissolved iron and l
 oxygen with nitrification and denitrification.
 
 This is a preset assembling the general components — [`ManyPhytoZoo`](@ref),
-[`RefractoryDissolvedParticulateCNP`](@ref), [`ExplicitCalciumCarbonate`](@ref),
+[`MultiElementRefractoryDissolvedParticulate`](@ref), [`ExplicitCalciumCarbonate`](@ref),
 [`ComplexedIron`](@ref) and [`RedoxOxygen`](@ref) — with the CESM2.1 parameter values. Any of them can be
 replaced through the corresponding keyword.
 
@@ -255,7 +255,7 @@ MARBL(grid::AbstractGrid{FT};
       nutrients = Nutrients(NitrateAmmonia{FT}(; nitrification_rate = zero(FT)),  # nitrification via `RedoxOxygen`
                             PO₄, ComplexedIron(FT), Si),
       plankton = ManyPhytoZoo(FT),
-      detritus = RefractoryDissolvedParticulateCNP(grid; sinking_speed, open_bottom),
+      detritus = MultiElementRefractoryDissolvedParticulate(grid; sinking_speed, open_bottom),
       inorganic_carbon = ExplicitCalciumCarbonate(grid),
       oxygen = RedoxOxygen(FT),
       surface_PAR = default_surface_PAR,

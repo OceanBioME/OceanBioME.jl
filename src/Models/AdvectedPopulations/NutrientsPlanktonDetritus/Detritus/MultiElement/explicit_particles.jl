@@ -57,7 +57,7 @@ carbonate lives in the inorganic-carbon slot, so neither is a tracer here.
 
 Semi-labile material remineralises at a light-dependent rate — a faster rate in lit water than in the
 dark — and refractory material at a slow base rate augmented by photodegradation in the surface cell.
-See [`DissolvedRefractoryImplicitCNP`](@ref) for the implicit ballast-sinking sibling.
+See [`MultiElementRefractoryDissolved`](@ref) for the implicit ballast-sinking sibling.
 
 Keyword Arguments
 =================

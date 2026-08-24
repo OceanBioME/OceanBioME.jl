@@ -60,7 +60,7 @@ end
 """
     Ballast([FT = Float64;] kwargs...)
 
-Mineral-protection sinking parameters for [`DissolvedRefractoryImplicitCNP`](@ref), after Armstrong et
+Mineral-protection sinking parameters for [`MultiElementRefractoryDissolved`](@ref), after Armstrong et
 al. (2000). All length scales are in metres.
 
 Keyword Arguments

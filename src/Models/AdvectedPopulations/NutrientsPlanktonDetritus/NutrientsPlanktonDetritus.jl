@@ -12,7 +12,7 @@ export MARBL_small_phyto, MARBL_diatoms, MARBL_diazotrophs, MARBL_autotrophs, MA
        MARBL_cocco_small_phyto, MARBL_cocco_diatoms, MARBL_cocco_diazotrophs, MARBL_coccolithophores,
        MARBL_cocco_autotrophs, MARBL_cocco_zooplankton, MARBL_cocco_plankton
 export Detritus, DissolvedParticulate, InstantRemineralisationDetritus, CarbonNitrogenDissolvedParticulate
-export RefractoryDissolvedParticulateCNP, DissolvedRefractoryImplicitCNP, Ballast
+export MultiElementRefractoryDissolvedParticulate, MultiElementRefractoryDissolved, Ballast
 export Oxygen, RedoxOxygen
 
 using Adapt

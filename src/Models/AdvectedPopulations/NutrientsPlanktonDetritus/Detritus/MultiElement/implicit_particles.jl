@@ -48,7 +48,7 @@ end
 
 A multi-element detritus which sinks its particulates through the implicit mineral-protection (ballast)
 flux of Armstrong et al. (2000) rather than carrying them as tracers — the sibling of
-[`RefractoryDissolvedParticulateCNP`](@ref), swappable in the `detritus` slot.
+[`MultiElementRefractoryDissolvedParticulate`](@ref), swappable in the `detritus` slot.
 
 The dissolved organic matter (`DOC`/`DON`/`DOP` and refractory `DOCr`/`DONr`/`DOPr`) is identical to its
 sibling. The difference is the particulates: organic carbon and phosphorus, biogenic silica, particulate

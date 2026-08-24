@@ -28,7 +28,7 @@ end
     ImplicitExplicitCalcite(grid; replicates = 1, carbon_chemistry = CarbonChemistry())
 
 The inorganic carbon component for implicit ballast sinking
-([`DissolvedRefractoryImplicitCNP`](@ref)), tracking `DIC` and `Alk` only.
+([`MultiElementRefractoryDissolved`](@ref)), tracking `DIC` and `Alk` only.
 
 Unlike [`ExplicitCalciumCarbonate`](@ref) there is **no `CaCO₃` tracer**: calcite is a ballast mineral,
 so its sinking flux is solved implicitly by the ballast sweep and only the resulting remineralisation

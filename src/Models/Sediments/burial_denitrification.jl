@@ -73,7 +73,7 @@ end
 A sediment biogeochemistry which buries part of the organic and mineral flux reaching the sea floor and
 returns the rest to the bottom cell, with sedimentary denitrification and anaerobic remineralisation.
 Designed to close the bottom boundary of a model using a multi-element detritus such as
-[`RefractoryDissolvedParticulateCNP`](@ref).
+[`MultiElementRefractoryDissolvedParticulate`](@ref).
 
 Organic burial efficiency follows Dunne et al. (2007), biogenic silica follows Ragueneau et al. (2000),
 sedimentary denitrification follows Bohlen et al. (2012), and remineralisation by oxidants other than
