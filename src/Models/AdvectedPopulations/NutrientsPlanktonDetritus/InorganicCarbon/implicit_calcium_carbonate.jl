@@ -10,7 +10,7 @@ Passing `replicates > 1` manifests `replicates` independent copies of the carbon
 (`DIC1`, `Alk1`, `DIC2`, …), which is useful for ensemble or perturbation experiments; each replicate
 evolves with the same tendency as the base `DIC`/`Alk`.
 """
-struct CarbonateSystem{N} <: AbstractInorganicCarbon end
+struct CarbonateSystem{N} <: AbstractInorganicCarbon{N} end
 
 function CarbonateSystem(replicates = 1)
     manifest_carbonate_replicates!(replicates)
