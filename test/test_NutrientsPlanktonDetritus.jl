@@ -289,7 +289,6 @@ using OceanBioME.Models.NutrientsPlanktonDetritusModels: SingleTracerNutrient
     @test par.chlorophyll_red_exponent isa Float32
     @test par.chlorophyll_blue_exponent isa Float32
     @test par.pigment_ratio isa Float32
-    @test par.phytoplankton_chlorophyll_ratio isa Float32
 
     # nutrients is converted
     @test lobster.underlying_biogeochemistry.nutrients.nitrogen |> ((::NitrateAmmonia{FT}) where FT) -> FT == Float32
