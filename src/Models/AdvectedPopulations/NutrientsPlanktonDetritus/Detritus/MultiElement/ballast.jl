@@ -150,28 +150,25 @@ function Ballast(FT = Float64;
         open_bottom)
 end
 
-@inline lerp(x, x₀, x₁, y₀, y₁) = y₀ + (y₁ - y₀) * (x - x₀) / (x₁ - x₀)
+@inline interpolate(x, x₀, x₁, y₀, y₁) = y₀ + (y₁ - y₀) * (x - x₀) / (x₁ - x₀)
 
-# the depth scale-length factor: piecewise linear through the given points and flat outside. `depth` is
-# positive metres below the surface, taken at the cell's LOWER FACE.
-#
-# Branchless: each `ifelse` overwrites the previous, so the last satisfied condition wins, and because
-# `depth ≥ z[n]` implies `depth ≥ z[n-1]` that selects exactly the right segment. Every branch value is
-# finite, since the depths are distinct.
 @inline function scale_length(depth, b::Ballast)
+    depth = -depth
+
     z = b.scale_length_depths
     v = b.scale_length_values
 
-    σ = v[1]
-    σ = ifelse(depth >= z[1], lerp(depth, z[1], z[2], v[1], v[2]), σ)
-    σ = ifelse(depth >= z[2], lerp(depth, z[2], z[3], v[2], v[3]), σ)
-    σ = ifelse(depth >= z[3], lerp(depth, z[3], z[4], v[3], v[4]), σ)
-    σ = ifelse(depth >= z[4], v[4], σ)
+    @inbounds begin
+        σ = v[1]
+        σ = ifelse(depth >= z[1], interpolate(depth, z[1], z[2], v[1], v[2]), σ)
+        σ = ifelse(depth >= z[2], interpolate(depth, z[2], z[3], v[2], v[3]), σ)
+        σ = ifelse(depth >= z[3], interpolate(depth, z[3], z[4], v[3], v[4]), σ)
+        σ = ifelse(depth >= z[4], v[4], σ)
+    end
 
     return σ
 end
 
-# a longer length scale, and so slower remineralisation, in low-oxygen water
 @inline function oxygen_scale_factor(O₂, b::Ballast)
     hi, lo, s = b.oxygen_scaling_maximum, b.oxygen_scaling_minimum, b.oxygen_scaling_factor
 

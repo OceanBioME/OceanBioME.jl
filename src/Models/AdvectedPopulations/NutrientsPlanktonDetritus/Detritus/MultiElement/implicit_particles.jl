@@ -227,7 +227,7 @@ end
         Δz  = Δzᶜᶜᶜ(i, j, k, grid)
         Δz⁻ = one(Δz) / Δz
 
-        depth = -znode(i, j, k, grid, Center(), Center(), Face())
+        depth = znode(i, j, k, grid, Center(), Center(), Face())
         σ     = scale_length(depth, ballast)
         sO₂   = ballast_oxygen_scale(i, j, k, grid, bgc.oxygen, ballast, model_fields)
         scale = σ * sO₂
