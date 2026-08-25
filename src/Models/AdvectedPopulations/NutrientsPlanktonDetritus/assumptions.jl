@@ -2,7 +2,7 @@
 
 function dissolved_waste end
 function solid_waste end
-function calcite_dissolution end
+function calcium_carbonate_dissolution end
 function inorganic_waste end
 function nutrient_uptake end
 
@@ -21,8 +21,8 @@ function nutrient_uptake end
 @inline silicon_ratio(i, j, k, grid, plankton, bgc, fields) = silicon_ratio(plankton, bgc)
 @inline silicon_ratio(plankton, ::NutrientsPlanktonDetritus{FT}) where FT = zero(FT)
 
-@inline calcite_rain_ratio(i, j, k, grid, plankton, bgc, fields) = calcite_rain_ratio(plankton, bgc)
-@inline calcite_rain_ratio(plankton, ::NutrientsPlanktonDetritus{FT}) where FT = zero(FT)
+@inline calcium_carbonate_rain_ratio(i, j, k, grid, plankton, bgc, fields) = calcium_carbonate_rain_ratio(plankton, bgc)
+@inline calcium_carbonate_rain_ratio(plankton, ::NutrientsPlanktonDetritus{FT}) where FT = zero(FT)
 
 @inline chlorophyll_ratio(plankton, ::Val) = chlorophyll_ratio(plankton)
 
