@@ -47,7 +47,7 @@ function surface_value(sol::Wanninkhof92Solubility, i, j, grid, clock, model_fie
     return sol(Tk, S)
 end
 
-@inline (sol::Wanninkhof92Solubility)(Tk, S) = 
+@inline (sol::Wanninkhof92Solubility)(Tk::FT, S) where FT = 
     (Tk_100 = Tk / convert(FT, 100);
      exp(sol.A1 + sol.A2 / Tk_100 + sol.A3 * log(Tk_100) + S * (sol.B1 + sol.B2 * Tk_100 + sol.B2 * Tk_100^convert(FT, 2))) / Tk)
 
