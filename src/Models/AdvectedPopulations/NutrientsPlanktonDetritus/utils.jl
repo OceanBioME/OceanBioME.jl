@@ -61,7 +61,7 @@ function group_element_tracers(group, bgc, val_element)
     elseif val_element isa Val{:silicate}
         coefficient = silicon_ratio(group, bgc)
     elseif val_element isa Val{:carbon}
-        coefficient = carbon_ratio(group, bgc) * (1 + calcite_rain_ratio(group, bgc))
+        coefficient = carbon_ratio(group, bgc) * (1 + calcium_carbonate_rain_ratio(group, bgc))
     elseif val_element isa Val{:oxygen}
         bgc.oxygen isa Oxygen || return NamedTuple()
         coefficient = -carbon_ratio(group, bgc) * bgc.oxygen.production_oxygen_carbon_ratio

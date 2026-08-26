@@ -29,7 +29,7 @@ Additionally:
 - `required_biogeochemical_auxiliary_fields` must return a tuple of auxiliary fields needed (typically `(:PAR,)`).
 - A tracer tendency method must be defined for each owned tracer via `(bgc::NutrientsPlanktonDetritus)(i, j, k, grid, ::Val{:P}, ...)`.
 
-Elemental composition is supplied by `carbon_ratio`, `nitrogen_ratio`, `phosphate_ratio`, `iron_ratio`, `silicon_ratio`, and `calcite_rain_ratio`. By default, these ratios are applied to all plankton following the Redfield ratio: C:N:P:Fe = 106:16:1:0.0032, with silicon and calcite rain ratios of zero. If different ratios are needed for specific plankton tracers, `group_element_tracers` can provide the composition of each tracer for conservation calculations.
+Elemental composition is supplied by `carbon_ratio`, `nitrogen_ratio`, `phosphate_ratio`, `iron_ratio`, `silicon_ratio`, and `calcium_carbonate_rain_ratio`. By default, these ratios are applied to all plankton following the Redfield ratio: C:N:P:Fe = 106:16:1:0.0032, with silicon and calcite rain ratios of zero. If different ratios are needed for specific plankton tracers, `group_element_tracers` can provide the composition of each tracer for conservation calculations.
 
 A plankton component can define one `chlorophyll_ratio` for all of its chlorophyll-bearing tracers, or define a different ratio for individual tracers.
 
