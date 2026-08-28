@@ -7,6 +7,7 @@ include("test_particles.jl")
 #include("test_slatissima.jl")
 include("test_NutrientsPlanktonDetritus.jl")
 include("test_PISCES.jl")
+include("test_CaCO3_precipitation.jl")
 include("test_gasexchange_carbon_chem.jl")
 include("test_sediments.jl")
 
