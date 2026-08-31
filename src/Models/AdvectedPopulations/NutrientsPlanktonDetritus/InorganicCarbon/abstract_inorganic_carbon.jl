@@ -11,9 +11,12 @@ const NPD_AIC{FT} = NutrientsPlanktonDetritus{FT, <:Any, <:Any, <:Any, <:Abstrac
 @inline function net_biological_alkalinity_uptake(i, j, k, grid, bgc, clock, fields, auxiliary_fields)
     PN = phosphate_ratio(i, j, k, grid, bgc.plankton, bgc, fields) / nitrogen_ratio(i, j, k, grid, bgc.plankton, bgc, fields)
 
+    # the first two terms below infer phosphate uptake from the dissolved inorganic nitrogen tendencies,
+    # which misses the phosphorus nitrogen fixers take up alongside nitrogen they did not take from that pool
     return (
       - nitrate_primary_production(i, j, k, grid, bgc.plankton, bgc, clock, fields, auxiliary_fields) * (1 + PN)
       + ammonia_primary_production(i, j, k, grid, bgc.plankton, bgc, clock, fields, auxiliary_fields) * (1 - PN)
+      + nitrogen_fixation(i, j, k, grid, bgc.plankton, bgc, fields, auxiliary_fields) * PN
     )
 end
 

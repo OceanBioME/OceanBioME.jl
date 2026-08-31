@@ -23,6 +23,7 @@ using ..NutrientsPlanktonDetritusModels:
     dissolved_waste,
     calcium_carbonate_dissolution,
     nutrient_uptake,
+    nitrogen_fixation,
     inorganic_waste,
     inorganic_carbon_waste,
     solid_carbon_waste,

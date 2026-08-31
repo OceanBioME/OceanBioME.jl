@@ -179,3 +179,31 @@ function group_element_tracers(::CarbonNitrogenDissolvedParticulate, bgc::NPD, :
 
     return (; DOC = rO, sPOC = rO, bPOC = rO)
 end
+
+# `PhytoDiazotroph` is the one plankton whose tracers do not all share a single ratio: the diazotroph
+# carries a larger iron quota than the picoplankton (and than the detritus its dead cells become)
+group_element_tracers(::PhytoDiazotroph, ::NPD{FT}, ::Val{:nitrogen}) where FT =
+    (P = one(FT), Diaz = one(FT))
+
+function group_element_tracers(plankton::PhytoDiazotroph, bgc::NPD, ::Val{:phosphate})
+    R = phosphate_ratio(plankton, bgc)
+
+    return (P = R, Diaz = R)
+end
+
+group_element_tracers(plankton::PhytoDiazotroph, bgc::NPD, ::Val{:iron}) =
+    (P = plankton.picoplankton.iron_ratio, Diaz = plankton.diazotroph.iron_ratio)
+
+function group_element_tracers(plankton::PhytoDiazotroph, bgc::NPD, ::Val{:carbon})
+    R = carbon_ratio(plankton, bgc) * organic_carbon_calcium_carbonate_factor(bgc)
+
+    return (P = R, Diaz = R)
+end
+
+function group_element_tracers(plankton::PhytoDiazotroph,
+                               bgc::NPD{<:Any, <:Any, <:Any, <:Any, <:Any, <:Oxygen},
+                               ::Val{:oxygen})
+    R = - carbon_ratio(plankton, bgc) * bgc.oxygen.production_oxygen_carbon_ratio
+
+    return (P = R, Diaz = R)
+end

@@ -229,3 +229,62 @@ LOBSTER(grid::AbstractGrid{FT};
         light_attenuation = default_light(grid, surface_PAR),
         kwargs...) where FT =
     NutrientsPlanktonDetritus(grid; nutrients, plankton, detritus, light_attenuation, kwargs...)
+
+"""
+    WTSP(grid; limiting_nutrients = (:nitrate, :phosphate, :iron), open_bottom = true, kwargs...)
+
+Construct the `WTSP` preset of the [`NutrientsPlanktonDetritus`](@ref) framework: an oligotrophic,
+iron limited model of the Western Tropical South Pacific in which dinitrogen fixation, rather than
+the supply of fixed nitrogen, sets new production.
+
+It couples the [`Nutrients`](@ref) selected by `limiting_nutrients` (nitrogen, phosphate, and iron by
+default) with a [`PhytoDiazotroph`](@ref) plankton — picoplankton (`P`) growing on dissolved
+inorganic nitrogen alongside `Trichodesmium`-like diazotrophs (`Diaz`) which fix dinitrogen instead —
+a single-class [`Detritus`](@ref) pool (`D`), and the default two-band light model.
+
+Whether diazotrophs can persist is set by iron: their nitrogenase gives them an iron quota about
+eight times the picoplankton's, so with the default parameters they need dissolved iron well above
+the ~0.3 nmol / m³ of the oligotrophic gyre before their growth outpaces their mortality. The
+nitrogen they fix reaches the rest of the ecosystem both through the fraction released as dissolved
+inorganic nitrogen and through remineralisation of their detritus.
+
+Phosphorus, iron, carbon, and (with `oxygen = Oxygen()`) oxygen are conserved exactly; nitrogen is
+conserved apart from the fixation source. Iron scavenging, atmospheric deposition, and any other
+external supply are deliberately left out of the biogeochemistry, and are best added as Oceananigans
+forcings or boundary conditions where they are wanted.
+
+Keyword Arguments
+=================
+
+- `grid`: (required) the geometry to build the model on
+- `limiting_nutrients`: a tuple of the nutrients that limit growth, drawn from `:nitrate` (or
+  `:ammonia` to split nitrogen into `NO₃`/`NH₄`), `:phosphate`, and `:iron`
+- `open_bottom`: whether detritus can sink out of the bottom of the domain
+- `surface_PAR`: the surface photosynthetically active radiation passed to the default light model
+- any other keyword argument is forwarded to [`NutrientsPlanktonDetritus`](@ref)
+"""
+WTSP(grid::AbstractGrid{FT};
+     limiting_nutrients = (:nitrate, :phosphate, :iron),
+     open_bottom = true,
+     nutrients = Nutrients(:ammonia in limiting_nutrients ? NitrateAmmonia{FT}() : N,
+                           :phosphate in limiting_nutrients ? PO₄ : nothing,
+                           :iron in limiting_nutrients ? Fe : nothing,
+                           nothing),
+     plankton = PhytoDiazotroph(grid;
+                                picoplankton_nutrient_half_saturations =
+                                    (nitrate = 0.1,                          # mmol N / m³
+                                     ammonia = 0.01,                         # mmol N / m³
+                                     phosphate = 0.03,                       # mmol P / m³
+                                     iron = 8e-5)[limiting_nutrients],       # mmol Fe / m³
+                                diazotroph_nutrient_half_saturations =
+                                    (phosphate = 0.05,                       # mmol P / m³
+                                     iron = 2e-3)[filter(nutrient -> nutrient in (:phosphate, :iron),
+                                                         limiting_nutrients)],
+                                open_bottom),
+     detritus = Detritus(grid; open_bottom,
+                         remineralisation_rate = 0.4/day,
+                         sinking_speed = 1.5/day),
+     surface_PAR = default_surface_PAR,
+     light_attenuation = default_light(grid, surface_PAR),
+     kwargs...) where FT =
+    NutrientsPlanktonDetritus(grid; nutrients, plankton, detritus, light_attenuation, kwargs...)

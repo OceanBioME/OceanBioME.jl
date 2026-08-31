@@ -604,3 +604,225 @@ end
             calcium_carbonate_dissolution_rate = (k1, k2, k1))
     end
 end
+
+using OceanBioME.Models.NutrientsPlanktonDetritusModels: nitrogen_fixation, iron_ratio
+using Oceananigans.TimeSteppers: update_state!
+
+@testset "PhytoDiazotroph and WTSP" begin
+    grid = RectilinearGrid(architecture; size=(1, 1, 1), extent=(1, 1, 2))
+
+    # the tendency of every tracer, and the gross nitrogen fixation, of a single cell
+    function tendencies_and_fixation(model)
+        bgc = model.biogeochemistry.underlying_biogeochemistry
+        aux = biogeochemical_auxiliary_fields(model.biogeochemistry)
+
+        tendencies = NamedTuple(name => CUDA.@allowscalar bgc(1, 1, 1, grid, Val(name), model.clock, model.tracers, aux)
+                                for name in keys(model.tracers))
+
+        fixation = CUDA.@allowscalar nitrogen_fixation(1, 1, 1, grid, bgc.plankton, bgc, model.tracers, aux)
+
+        return tendencies, fixation
+    end
+
+    @testset "construction" begin
+        wtsp = WTSP(grid)
+
+        @test wtsp isa OceanBioME.DiscreteBiogeochemistry{<:NutrientsPlanktonDetritus}
+        @test wtsp.underlying_biogeochemistry isa
+            NutrientsPlanktonDetritus{Float64, <:Nutrients{<:SingleTracerNutrient, <:SingleTracerNutrient, <:SingleTracerNutrient, Nothing},
+                                      <:PhytoDiazotroph, <:Detritus}
+
+        model = NonhydrostaticModel(grid; biogeochemistry = wtsp, advection = nothing)
+
+        @test keys(model.tracers) == (:N, :PO₄, :Fe, :P, :Diaz, :D)
+
+        # diazotrophs fix nitrogen so they are not nitrogen limited, but they are iron hungry
+        plankton = wtsp.underlying_biogeochemistry.plankton
+        @test !(:nitrate in keys(plankton.diazotroph.nutrient_half_saturations))
+        @test plankton.diazotroph.iron_ratio > plankton.picoplankton.iron_ratio
+
+        # and the model runs
+        set!(model, N = 0.05, PO₄ = 0.15, Fe = 3e-3, P = 0.05, Diaz = 0.01, D = 0.01)
+        time_step!(model, 100.0)
+        @test all(all(isfinite.(Array(interior(tracer)))) for tracer in model.tracers)
+
+        wtsp32 = WTSP(RectilinearGrid(architecture, Float32; size=(1, 1, 1), extent=(1, 1, 2)))
+        @test wtsp32.underlying_biogeochemistry.plankton |>
+            ((::PhytoDiazotroph{<:Any, <:Any, FT}) where FT) -> FT == Float32
+    end
+
+    @testset "elemental closure of the tendencies" begin
+        # nitrogen fixation is the only source of any element, so at the level of the tendencies every
+        # other element must close exactly, and nitrogen must close to gross fixation
+        for nutrients in (Nutrients(nitrogen = OceanBioME.N, phosphate = OceanBioME.PO₄, iron = OceanBioME.Fe),
+                          Nutrients(nitrogen = NitrateAmmonia(), phosphate = OceanBioME.PO₄, iron = OceanBioME.Fe)),
+            detritus in (Detritus(grid), InstantRemineralisationDetritus(), DissolvedParticulate(grid)),
+            inorganic_carbon in inorganic_carbon_options,
+            oxygen in oxygen_options
+
+            picoplankton_nutrient_half_saturations =
+                nutrients.nitrogen isa NitrateAmmonia ?
+                    (nitrate = 0.5, ammonia = 0.1, phosphate = 0.03, iron = 8e-5) :
+                    (nitrate = 0.5, phosphate = 0.03, iron = 8e-5)
+
+            # density dependent mortality on as well, so every loss term is exercised
+            plankton = PhytoDiazotroph(grid; picoplankton_nutrient_half_saturations,
+                                             picoplankton_quadratic_mortality_rate = 0.1/day,
+                                             diazotroph_quadratic_mortality_rate = 0.05/day)
+
+            biogeochemistry = NutrientsPlanktonDetritus(grid; nutrients, plankton, detritus,
+                                                              inorganic_carbon, oxygen, light_attenuation)
+
+            @info summary(biogeochemistry.underlying_biogeochemistry)
+
+            model = NonhydrostaticModel(grid; biogeochemistry, advection = nothing)
+
+            set_default!(model)
+            update_state!(model)
+
+            tendencies, fixation = tendencies_and_fixation(model)
+
+            @test fixation > 0
+
+            for (element, group) in pairs(conserved_tracers(biogeochemistry.underlying_biogeochemistry))
+                budget = sum(scale_factor * tendencies[name] for (name, scale_factor) in pairs(group))
+
+                # the size of the terms which have to cancel, to scale the tolerance by
+                magnitude = maximum(abs(scale_factor * tendencies[name]) for (name, scale_factor) in pairs(group))
+
+                source = element === :nitrogen ? fixation : 0
+
+                @test isapprox(budget, source, atol = 1e-10 * magnitude)
+            end
+        end
+    end
+
+    @testset "conservation over time" begin
+        biogeochemistry = WTSP(grid; oxygen = Oxygen(), inorganic_carbon = CarbonateSystem())
+
+        model = NonhydrostaticModel(grid; biogeochemistry, advection = nothing)
+
+        set_default!(model)
+
+        initial_values = get_conservation_values(model.biogeochemistry, model.tracers)
+
+        for _ in 1:100
+            time_step!(model, 1)
+        end
+
+        final_values = get_conservation_values(model.biogeochemistry, model.tracers)
+
+        for element in (:phosphate, :iron, :carbon, :oxygen)
+            @info "Checking conservation of $element"
+            @test isapprox(final_values[element], initial_values[element], atol = 100*eps(initial_values[element]))
+        end
+
+        # nitrogen is not conserved: fixation adds to it
+        @test final_values.nitrogen > initial_values.nitrogen
+
+        # ... and with no diazotrophs there is nothing to fix it, so then it is
+        set_default!(model)
+        set!(model, Diaz = 0)
+
+        initial_values = get_conservation_values(model.biogeochemistry, model.tracers)
+
+        for _ in 1:100
+            time_step!(model, 1)
+        end
+
+        final_values = get_conservation_values(model.biogeochemistry, model.tracers)
+
+        @test isapprox(final_values.nitrogen, initial_values.nitrogen, atol = 100*eps(initial_values.nitrogen))
+    end
+
+    @testset "iron sets where diazotrophs can live" begin
+        biogeochemistry = WTSP(grid; light_attenuation)
+
+        model = NonhydrostaticModel(grid; biogeochemistry, advection = nothing)
+
+        plankton = biogeochemistry.underlying_biogeochemistry.plankton
+
+        # an oligotrophic gyre: no dissolved inorganic nitrogen left, residual phosphate, and the
+        # ~0.3 nmol/m³ of iron which cannot support Trichodesmium
+        set!(model, N = 0, PO₄ = 0.15, Fe = 3e-4, P = 0.05, Diaz = 1e-4, D = 0.01)
+        update_state!(model)
+
+        depleted, depleted_fixation = tendencies_and_fixation(model)
+
+        @test depleted.Diaz < 0
+
+        # an iron rich plume: fixation takes off
+        set!(model, Fe = 6e-3)
+        update_state!(model)
+
+        replete, replete_fixation = tendencies_and_fixation(model)
+
+        @test replete.Diaz > 0
+        @test replete_fixation > depleted_fixation
+
+        # fixed nitrogen fuels the picoplankton, both directly through the released fraction and
+        # through remineralisation of diazotroph detritus
+        γ = plankton.diazotroph_nitrogen_release_fraction
+
+        CUDA.@allowscalar begin
+            P, Diaz, D = model.tracers.P[1, 1, 1], model.tracers.Diaz[1, 1, 1], model.tracers.D[1, 1, 1]
+        end
+
+        # both groups' mortality is the only path into detritus, and remineralisation the only path out
+        @test isapprox(replete.D,
+                       plankton.picoplankton.mortality_rate * P
+                     + plankton.diazotroph.mortality_rate * Diaz
+                     - biogeochemistry.underlying_biogeochemistry.detritus.remineralisation_rate * D,
+                       rtol = 1e-12)
+
+        @test isapprox(replete.N,
+                       γ * replete_fixation
+                     + biogeochemistry.underlying_biogeochemistry.detritus.remineralisation_rate * D,
+                       rtol = 1e-12) # no dissolved inorganic nitrogen left to take up
+
+        # and dissolved inorganic nitrogen inhibits fixation: at the half saturation it is halved
+        kᴺ = plankton.nitrogen_fixation_inhibition_half_saturation
+
+        set!(model, N = kᴺ)
+        update_state!(model)
+
+        _, inhibited_fixation = tendencies_and_fixation(model)
+
+        @test isapprox(inhibited_fixation, replete_fixation / 2, rtol = 1e-12)
+    end
+
+    @testset "the diazotroph's excess iron is routed around the detritus pool" begin
+        biogeochemistry = WTSP(grid; light_attenuation)
+
+        model = NonhydrostaticModel(grid; biogeochemistry, advection = nothing)
+
+        set!(model, N = 0.1, PO₄ = 0.15, Fe = 6e-3, P = 0.05, Diaz = 0.02, D = 0.01)
+        update_state!(model)
+
+        bgc = biogeochemistry.underlying_biogeochemistry
+        plankton = bgc.plankton
+
+        Δ = plankton.diazotroph.iron_ratio - plankton.picoplankton.iron_ratio
+
+        @test Δ > 0
+
+        tendencies, fixation = tendencies_and_fixation(model)
+
+        CUDA.@allowscalar begin
+            P, Diaz, D = model.tracers.P[1, 1, 1], model.tracers.Diaz[1, 1, 1], model.tracers.D[1, 1, 1]
+        end
+
+        γ = plankton.diazotroph_nitrogen_release_fraction
+        R = iron_ratio(plankton, bgc)
+
+        picoplankton_growth = tendencies.P + plankton.picoplankton.mortality_rate * P
+        diazotroph_loss = plankton.diazotroph.mortality_rate * Diaz
+
+        # iron is taken up at each group's own quota and, since the detritus pool carries only one,
+        # the excess is returned to the dissolved pool as diazotrophs die
+        uptake = R * (picoplankton_growth + (1 - γ) * fixation) + Δ * (1 - γ) * fixation
+        remineralisation = R * bgc.detritus.remineralisation_rate * D + Δ * diazotroph_loss
+
+        @test isapprox(tendencies.Fe, remineralisation - uptake, rtol = 1e-12)
+    end
+end

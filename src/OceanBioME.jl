@@ -9,11 +9,11 @@ export Biogeochemistry
 
 
 export NutrientsPlanktonDetritus
-export NPZD, LOBSTER, ImplicitBiology, PISCES, DepthDependantSinkingSpeed, PrescribedLatitude, ModelLatitude, PISCESModel
+export NPZD, LOBSTER, ImplicitBiology, WTSP, PISCES, DepthDependantSinkingSpeed, PrescribedLatitude, ModelLatitude, PISCESModel
 
 export Nutrients, NitrateAmmonia
 export CarbonateSystem, ExplicitCalciumCarbonate
-export Abiotic, ImplicitProductivity, PhytoZoo
+export Abiotic, ImplicitProductivity, PhytoZoo, PhytoDiazotroph, Photoautotroph
 export Detritus, DissolvedParticulate, InstantRemineralisationDetritus, CarbonNitrogenDissolvedParticulate
 export Oxygen
 

@@ -91,3 +91,13 @@ struct AnalyticalLightLimitation end # This formulation is justified because yo
 
 @inline light_limitation(::MondoLightLimitation, PAR, kPAR) = PAR / (kPAR + PAR)
 @inline light_limitation(::AnalyticalLightLimitation, PAR, kPAR) = PAR / sqrt(PAR^2 + kPAR^2)
+
+"""
+    ExponentialLightLimitation()
+
+The saturating light limitation `1 - exp(-PAR / kPAR)`, which saturates more sharply than
+`MondoLightLimitation` and so leaves growth light limited only in genuinely dim water.
+"""
+struct ExponentialLightLimitation end
+
+@inline light_limitation(::ExponentialLightLimitation, PAR, kPAR) = 1 - exp(-PAR / kPAR)

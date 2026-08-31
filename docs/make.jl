@@ -71,6 +71,7 @@ bgc_pages = [
     "LOBSTER" => "model_components/biogeochemical/LOBSTER.md",
     "NPZD" => "model_components/biogeochemical/NPZ.md",
     "ImplicitBiology" => "model_components/biogeochemical/ImplicitBiology.md",
+    "WTSP" => "model_components/biogeochemical/WTSP.md",
     "PISCES" => pisces_pages
 ]
 

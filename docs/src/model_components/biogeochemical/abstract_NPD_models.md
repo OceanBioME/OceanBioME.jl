@@ -9,7 +9,7 @@ The `NutrientsPlanktonDetritus` framework organises the biogeochemistry into fiv
 | Component | Keyword | Available types |
 |------|---------|-----------------|
 | Nutrients | `nutrients` | `Nutrients` (constructed with `NitrateAmmonia`, `N`, `PO₄`, `Fe`, or `Si` sub-components) |
-| Plankton | `plankton` | `Abiotic`, `ImplicitProductivity`, `PhytoZoo` |
+| Plankton | `plankton` | `Abiotic`, `ImplicitProductivity`, `PhytoZoo`, `PhytoDiazotroph` |
 | Detritus | `detritus` | `InstantRemineralisationDetritus`, `Detritus`, `DissolvedParticulate`, `CarbonNitrogenDissolvedParticulate` |
 | Inorganic Carbon | `inorganic_carbon` | `nothing` (default), `CarbonateSystem` |
 | Oxygen | `oxygen` | `nothing` (default), `Oxygen` |
@@ -37,6 +37,7 @@ Phytoplankton and zooplankton are grouped together in the `Plankton` component. 
 - **`Abiotic`** (default) — phytoplankton and zooplankton are not explicitly tracked. Adds no tracers and produces no biological source or sink terms. Useful for purely abiotic experiments (for example, carbonate chemistry without biology).
 - **`ImplicitProductivity`** — nutrient- and light-limited community productivity with no explicit plankton biomass (used by [`ImplicitBiology`](@ref ImplicitBiology)).
 - **`PhytoZoo`** — explicit phytoplankton (`P`) and zooplankton (`Z`) with growth, grazing, and loss terms (used by [`LOBSTER`](@ref LOBSTER) and [`NPZD`](@ref NPZD)). Call `PhytoZoo(grid; ...)` to configure sinking-velocity fields on the grid; call `PhytoZoo(; ...)` without `grid` when sinking is not needed (for example, in a box model).
+- **`PhytoDiazotroph`** — two explicit photoautotrophs and no grazers: picoplankton (`P`) growing on dissolved inorganic nitrogen, and diazotrophs (`Diaz`) which fix dinitrogen instead and carry a much larger iron quota (used by [`WTSP`](@ref WTSP)). As for `PhytoZoo`, pass `grid` only when the plankton should sink.
 
 ### Detritus
 
@@ -72,6 +73,7 @@ For common configurations, convenience constructors assemble the components usin
 - `LOBSTER(grid)` — medium-complexity model with phytoplankton, zooplankton, nitrate, ammonia, and dissolved/particulate detritus. See the [LOBSTER](@ref LOBSTER) page.
 - `NPZD(grid)` — simple four-compartment nutrient–phytoplankton–zooplankton–detritus model from [Kuhn2015](@citet). See the [NPZD](@ref NPZD) page.
 - `ImplicitBiology(grid)` — nutrient-limited community productivity with no explicit plankton biomass. See the [ImplicitBiology](@ref ImplicitBiology) page.
+- `WTSP(grid)` — oligotrophic, iron limited model in which dinitrogen fixation sets new production, with picoplankton and `Trichodesmium`-like diazotrophs. See the [WTSP](@ref WTSP) page.
 
 Any of the default parameter values can be over-ridden by passing in parameter values to the NPD components. The following example builds a NPZD model with user-specified phytoplankton and zooplankton growth rates:
 

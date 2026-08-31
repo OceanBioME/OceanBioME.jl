@@ -4,7 +4,8 @@ export Oxygen
 
 using ..NutrientsPlanktonDetritusModels:
     NutrientsPlanktonDetritus,
-    inorganic_nitrogen_waste
+    inorganic_nitrogen_waste,
+    nitrogen_fixation
 
 using ..NutrientsPlanktonDetritusModels.NutrientsModels:
     Nutrients,
@@ -68,14 +69,18 @@ const OxygenNPD{FT, NUT} = NutrientsPlanktonDetritus{FT, <:Any, <:Any, <:Any, <:
 
 # since we're assuming that nitrogen is nitrate (maybe erroneously), then it has to be denitrified before production/after remin
 @inline function (bgc::OxygenNPD)(i, j, k, grid, ::Val{:O₂}, clock, fields, auxiliary_fields)
+    rC = carbon_ratio(i, j, k, grid, bgc.plankton, bgc, fields)
+
     rP = bgc.oxygen.production_oxygen_carbon_ratio
     rN = bgc.oxygen.nitrification_oxygen_carbon_ratio
 
+    # this branch charges organic nitrogen with the oxygen of the nitrate it is assumed to have been
+    # reduced from. Nitrogen which was fixed from N2 never was, so it must not be credited that oxygen
     return (rP + rN) * (
         primary_production(i, j, k, grid,bgc.plankton, bgc, fields, auxiliary_fields)
       - inorganic_carbon_waste(i, j, k, grid,bgc.plankton, bgc, fields, auxiliary_fields)
       - inorganic_carbon_waste(i, j, k, grid,bgc.detritus, bgc, fields, auxiliary_fields)
-    )
+    ) - rN * rC * nitrogen_fixation(i, j, k, grid, bgc.plankton, bgc, fields, auxiliary_fields)
 end
 
 @inline function (bgc::OxygenNPD{<:Any, <:Nutrients{<:NitrateAmmonia}})(i, j, k, grid, ::Val{:O₂}, clock, fields, auxiliary_fields)

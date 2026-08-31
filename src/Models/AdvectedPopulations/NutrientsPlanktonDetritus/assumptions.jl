@@ -6,6 +6,21 @@ function calcium_carbonate_dissolution end
 function inorganic_waste end
 function nutrient_uptake end
 
+"""
+    nitrogen_fixation(i, j, k, grid, plankton, bgc, fields, auxiliary_fields)
+
+Gross dinitrogen fixation (mmol N / m³ / s), i.e. the rate at which nitrogen enters the model from
+outside its nitrogen budget. It is zero for every plankton which does not fix nitrogen, and is the
+only term which can break nitrogen conservation for those which do.
+
+It also enters the alkalinity and oxygen budgets, which otherwise infer the phosphorus taken up, and
+the nitrate reduced, from the dissolved inorganic nitrogen tendencies — neither of which holds for
+nitrogen taken from N₂.
+"""
+function nitrogen_fixation end
+
+@inline nitrogen_fixation(i, j, k, grid, plankton, ::NutrientsPlanktonDetritus{FT}, fields, auxiliary_fields) where FT = zero(FT)
+
 @inline nitrogen_ratio(i, j, k, grid, plankton, bgc, fields) = nitrogen_ratio(plankton, bgc)
 @inline nitrogen_ratio(plankton, ::NutrientsPlanktonDetritus{FT}) where FT = one(FT)
 

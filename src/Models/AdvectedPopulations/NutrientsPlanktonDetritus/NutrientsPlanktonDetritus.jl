@@ -2,11 +2,11 @@ module NutrientsPlanktonDetritusModels
 
 export NutrientsPlanktonDetritus
 
-export LOBSTER, NPZD, ImplicitBiology
+export LOBSTER, NPZD, ImplicitBiology, WTSP
 
 export Nutrients, N, PO₄, Si, Fe, NitrateAmmonia
 export CarbonateSystem, ExplicitCalciumCarbonate
-export Abiotic, ImplicitProductivity, PhytoZoo
+export Abiotic, ImplicitProductivity, PhytoZoo, PhytoDiazotroph, Photoautotroph
 export Detritus, DissolvedParticulate, InstantRemineralisationDetritus, CarbonNitrogenDissolvedParticulate
 export Oxygen
 
