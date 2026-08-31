@@ -27,13 +27,13 @@ nitrogen at all, but their nitrogenase makes them iron hungry. Their iron quota 
 the picoplankton's, and their iron half-saturation about twenty-five times larger. Hence iron
 availability, not nitrogen, decides where the diazotrophs can live.
 
-Fixed nitrogen reaches the rest of the ecosystem along two paths: a fraction ``\gamma`` of gross
+Fixed nitrogen reaches the rest of the ecosystem along two paths: a fraction $\gamma$ of gross
 fixation is released directly as dissolved inorganic nitrogen, and the rest enters biomass and is
 returned when diazotrophs die and their detritus is remineralised.
 
 ## Model equations
 
-Writing ``\mathrm{DIN}`` for the dissolved inorganic nitrogen (`N`, or `NO₃` + `NH₄`), each group has
+Writing $\mathrm{DIN}$ for the dissolved inorganic nitrogen (`N`, or `NO₃` + `NH₄`), each group has
 a light and Liebig-nutrient limited specific growth rate
 
 ```math
@@ -46,7 +46,7 @@ a light and Liebig-nutrient limited specific growth rate
 
 where the diazotroph has no nitrogen term but is inhibited by dissolved inorganic nitrogen, which is
 energetically cheaper for it to use than fixing N₂. Gross nitrogen fixation is then
-``F = \mu_D\,\mathrm{Diaz}``, and losses are ``\ell_X = m_X X + m_X' X^2`` (the density dependent part
+$F = \mu_D\,\mathrm{Diaz}$, and losses are $\ell_X = m_X X + m_X' X^2$ (the density dependent part
 is off by default, and closes the model where grazers, which are not resolved, would otherwise be
 needed).
 
@@ -74,13 +74,13 @@ needed).
 \frac{\partial Fe}{\partial t} = R_{Fe}\left(r D - \mu_P P - (1 - \gamma) F\right) + \Delta_{Fe}\left(\ell_{\mathrm{Diaz}} - (1 - \gamma)F\right),
 ```
 
-where ``R_P`` and ``R_{Fe}`` are the phosphorus and iron content of all organic matter other than the
-diazotroph's extra iron, and ``\Delta_{Fe} = R_{Fe}^{\mathrm{Diaz}} - R_{Fe}`` is that extra quota.
+where $R_P$ and $R_{Fe}$ are the phosphorus and iron content of all organic matter other than the
+diazotroph's extra iron, and $\Delta_{Fe} = R_{Fe}^{\mathrm{Diaz}} - R_{Fe}$ is that extra quota.
 Detritus additionally sinks, and phytoplankton may be given a sinking (or, for `Trichodesmium`,
 rising) speed.
 
 Only the nitrogen released by fixation and the nitrogen fixed into diazotroph biomass enter the model
-from outside; the ``\gamma F`` term carries no carbon, phosphorus, or iron, because it comes straight
+from outside; the $\gamma F$ term carries no carbon, phosphorus, or iron, because it comes straight
 from N₂.
 
 ## Model conservation
@@ -96,7 +96,7 @@ and phosphorus, iron, carbon, and — when [`Oxygen`](@ref) is included — oxyg
 conserved too.
 
 Iron is the one element whose inventory is not a single ratio times the tracers, since the diazotroph
-carries a larger quota than the detritus its dead cells become. The excess ``\Delta_{Fe}`` is
+carries a larger quota than the detritus its dead cells become. The excess $\Delta_{Fe}$ is
 therefore returned straight to the dissolved pool as diazotrophs die, rather than being buried in a
 detritus pool which cannot represent two quotas at once. [`conserved_tracers`](@ref) reports the
 weight each tracer carries, which for iron is
