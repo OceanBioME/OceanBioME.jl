@@ -1,4 +1,4 @@
-# [Western Tropical South Pacific (WTSP) diazotroph model](@id WTSP)
+# Western Tropical South Pacific (WTSP) diazotroph model
 
 The `WTSP` model is a six-tracer model of an oligotrophic, iron limited surface ocean in which
 dinitrogen fixation, rather than the supply of fixed nitrogen, sets new production. It was built for
