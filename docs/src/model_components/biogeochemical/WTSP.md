@@ -23,11 +23,9 @@ be added.
 
 The distinguishing feature is the second photoautotroph. Picoplankton (`P`) grow on dissolved
 inorganic nitrogen, phosphate, iron, and light in the usual way. Diazotrophs (`Diaz`) need no fixed
-nitrogen at all, but their nitrogenase makes them iron hungry — their iron quota is about eight times
-the picoplankton's, and their iron half-saturation about twenty-five times larger — so iron
-availability, not nitrogen, decides where they can live. With the default parameters they need
-dissolved iron above about 2 nmol / m³ to outgrow their mortality, well above the ~0.3 nmol / m³ of
-the surrounding gyre.
+nitrogen at all, but their nitrogenase makes them iron hungry. Their iron quota is about eight times
+the picoplankton's, and their iron half-saturation about twenty-five times larger. Hence iron
+availability, not nitrogen, decides where the diazotrophs can live.
 
 Fixed nitrogen reaches the rest of the ecosystem along two paths: a fraction ``\gamma`` of gross
 fixation is released directly as dissolved inorganic nitrogen, and the rest enters biomass and is
