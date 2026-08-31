@@ -125,7 +125,7 @@ Rates are stored per second; the values below are given per day where that is mo
 | Symbol | Variable name | Value | Units |
 |--------|---------------|-------|-------|
 | $\mu_P^\text{max}$ | `picoplankton_maximum_growth_rate` | 0.8 | 1 / day |
-| $\mu_D^\text{max}`` | `diazotroph_maximum_growth_rate` | 0.2 / 0.7 | 1 / day |
+| $\mu_D^\text{max}$ | `diazotroph_maximum_growth_rate` | 0.2 / 0.7 | 1 / day |
 | $k_N$ | `picoplankton_nutrient_half_saturations.nitrate` | 0.1 | mmol N / m³ |
 | $k_{PO_4}^P$ | `picoplankton_nutrient_half_saturations.phosphate` | 0.03 | mmol P / m³ |
 | $k_{Fe}^P$ | `picoplankton_nutrient_half_saturations.iron` | 8 × 10⁻⁵ | mmol Fe / m³ |
