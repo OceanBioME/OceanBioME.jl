@@ -124,31 +124,31 @@ Rates are stored per second; the values below are given per day where that is mo
 
 | Symbol | Variable name | Value | Units |
 |--------|---------------|-------|-------|
-| ``\mu_P^\text{max}`` | `picoplankton_maximum_growth_rate` | 0.8 | 1 / day |
-| ``\mu_D^\text{max}`` | `diazotroph_maximum_growth_rate` | 0.2 / 0.7 | 1 / day |
-| ``k_N`` | `picoplankton_nutrient_half_saturations.nitrate` | 0.1 | mmol N / m³ |
-| ``k_{PO_4}^P`` | `picoplankton_nutrient_half_saturations.phosphate` | 0.03 | mmol P / m³ |
-| ``k_{Fe}^P`` | `picoplankton_nutrient_half_saturations.iron` | 8 × 10⁻⁵ | mmol Fe / m³ |
-| ``k_{PO_4}^D`` | `diazotroph_nutrient_half_saturations.phosphate` | 0.05 | mmol P / m³ |
-| ``k_{Fe}^D`` | `diazotroph_nutrient_half_saturations.iron` | 2 × 10⁻³ | mmol Fe / m³ |
-| ``k_{PAR}^P``, ``k_{PAR}^D`` | `picoplankton_light_half_saturation`, `diazotroph_light_half_saturation` | 2.17 | W / m² |
-| ``k_{\mathrm{DIN}}`` | `nitrogen_fixation_inhibition_half_saturation` | 0.3 | mmol N / m³ |
-| ``\gamma`` | `diazotroph_nitrogen_release_fraction` | 0.3 | - |
-| ``m_P`` | `picoplankton_mortality_rate` | 0.06 | 1 / day |
-| ``m_{\mathrm{Diaz}}`` | `diazotroph_mortality_rate` | 0.1 | 1 / day |
-| ``m_P'``, ``m_{\mathrm{Diaz}}'`` | `picoplankton_quadratic_mortality_rate`, `diazotroph_quadratic_mortality_rate` | 0 | 1 / day / mmol N / m³ |
-| ``r`` | `remineralisation_rate` ([`Detritus`](@ref)) | 0.4 | 1 / day |
-| ``w_D`` | `sinking_speed` ([`Detritus`](@ref)) | 1.5 | m / day |
-| ``R_C`` | `carbon_ratio` | 6.625 | mol C / mol N |
-| ``R_P`` | `phosphate_ratio` | 1/16 | mol P / mol N |
-| ``R_{Fe}`` | `picoplankton_iron_ratio` | 3.3125 × 10⁻⁵ | mol Fe / mol N |
-| ``R_{Fe}^{\mathrm{Diaz}}`` | `diazotroph_iron_ratio` | 2.65 × 10⁻⁴ | mol Fe / mol N |
+| $\mu_P^\text{max}$ | `picoplankton_maximum_growth_rate` | 0.8 | 1 / day |
+| $\mu_D^\text{max}`` | `diazotroph_maximum_growth_rate` | 0.2 / 0.7 | 1 / day |
+| $k_N$ | `picoplankton_nutrient_half_saturations.nitrate` | 0.1 | mmol N / m³ |
+| $k_{PO_4}^P$ | `picoplankton_nutrient_half_saturations.phosphate` | 0.03 | mmol P / m³ |
+| $k_{Fe}^P$ | `picoplankton_nutrient_half_saturations.iron` | 8 × 10⁻⁵ | mmol Fe / m³ |
+| $k_{PO_4}^D$ | `diazotroph_nutrient_half_saturations.phosphate` | 0.05 | mmol P / m³ |
+| $k_{Fe}^D$ | `diazotroph_nutrient_half_saturations.iron` | 2 × 10⁻³ | mmol Fe / m³ |
+| $k_{PAR}^P$, ``k_{PAR}^D`` | `picoplankton_light_half_saturation`, `diazotroph_light_half_saturation` | 2.17 | W / m² |
+| $k_{\mathrm{DIN}}$ | `nitrogen_fixation_inhibition_half_saturation` | 0.3 | mmol N / m³ |
+| $\gamma$ | `diazotroph_nitrogen_release_fraction` | 0.3 | - |
+| $m_P$ | `picoplankton_mortality_rate` | 0.06 | 1 / day |
+| $m_{\mathrm{Diaz}}$ | `diazotroph_mortality_rate` | 0.1 | 1 / day |
+| $m_P'$, $m_{\mathrm{Diaz}}'$ | `picoplankton_quadratic_mortality_rate`, `diazotroph_quadratic_mortality_rate` | 0 | 1 / day / mmol N / m³ |
+| $r$ | `remineralisation_rate` ([`Detritus`](@ref)) | 0.4 | 1 / day |
+| $w_D$ | `sinking_speed` ([`Detritus`](@ref)) | 1.5 | m / day |
+| $R_C$ | `carbon_ratio` | 6.625 | mol C / mol N |
+| $R_P$ | `phosphate_ratio` | 1/16 | mol P / mol N |
+| $R_{Fe}$ | `picoplankton_iron_ratio` | 3.3125 × 10⁻⁵ | mol Fe / mol N |
+| $R_{Fe}^{\mathrm{Diaz}}$ | `diazotroph_iron_ratio` | 2.65 × 10⁻⁴ | mol Fe / mol N |
 
 The two iron quotas correspond to Fe:C of 5 and 40 μmol Fe / mol C, and the chlorophyll ratio of
 1.137 g Chl / mol N to a C:Chl of 70 g C / g Chl.
 
-Note that ``\mu_D^\text{max}`` is *gross* of the released fraction, so diazotroph biomass grows at
-most at ``(1 - \gamma)\mu_D^\text{max} = 0.2``/day.
+Note that $\mu_D^\text{max}$ is *gross* of the released fraction, so diazotroph biomass grows at
+most at $(1 - \gamma)\mu_D^\text{max} = 0.2$/day.
 
 ## Adding external supply
 
