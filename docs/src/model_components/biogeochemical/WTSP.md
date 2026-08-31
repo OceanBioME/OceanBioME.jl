@@ -131,7 +131,7 @@ Rates are stored per second; the values below are given per day where that is mo
 | $k_{Fe}^P$ | `picoplankton_nutrient_half_saturations.iron` | 8 × 10⁻⁵ | mmol Fe / m³ |
 | $k_{PO_4}^D$ | `diazotroph_nutrient_half_saturations.phosphate` | 0.05 | mmol P / m³ |
 | $k_{Fe}^D$ | `diazotroph_nutrient_half_saturations.iron` | 2 × 10⁻³ | mmol Fe / m³ |
-| $k_{PAR}^P$, ``k_{PAR}^D`` | `picoplankton_light_half_saturation`, `diazotroph_light_half_saturation` | 2.17 | W / m² |
+| $k_{PAR}^P$, $k_{PAR}^D$ | `picoplankton_light_half_saturation`, `diazotroph_light_half_saturation` | 2.17 | W / m² |
 | $k_{\mathrm{DIN}}$ | `nitrogen_fixation_inhibition_half_saturation` | 0.3 | mmol N / m³ |
 | $\gamma$ | `diazotroph_nitrogen_release_fraction` | 0.3 | - |
 | $m_P$ | `picoplankton_mortality_rate` | 0.06 | 1 / day |
