@@ -17,7 +17,10 @@ using Oceananigans.BoundaryConditions: FluxBoundaryCondition
 using Oceananigans.Fields: Center
 using Oceananigans.Grids: xnode, ynode
 
-using OceanBioME.Models.CarbonChemistryModel: CarbonChemistry
+using OceanBioME.Models.CarbonChemistryModel: 
+    CarbonChemistry,
+    silicate_concentration,
+    phosphate_concentration
 
 import Base: show, summary
 import Adapt: adapt_structure
@@ -111,11 +114,10 @@ function CarbonDioxideGasExchangeBoundaryCondition(FT = Float64;
                                                    air_concentration = 413, # ppmv
                                                    wind_speed = 2,
                                                    water_concentration = nothing,
-                                                   silicate_and_phosphate_names = nothing,
                                                    kwargs...)
 
     if isnothing(water_concentration)
-        water_concentration = CarbonDioxideConcentration(FT; carbon_chemistry, silicate_and_phosphate_names)
+        water_concentration = CarbonDioxideConcentration(FT; carbon_chemistry)
     elseif !isnothing(carbon_chemistry)
         @warn "Make sure that the `carbon_chemistry` $(carbon_chemistry) is the same as that in `water_concentration` $(water_concentration) (or set it to `nothing`)"
     end

@@ -1,4 +1,4 @@
-using Oceananigans.Advection: advective_tracer_flux_z, FluxFormAdvection
+using Oceananigans.Advection: _advective_tracer_flux_z, FluxFormAdvection
 using Oceananigans.Architectures: architecture
 using Oceananigans.Biogeochemistry: biogeochemical_drift_velocity
 using Oceananigans.Models: total_velocities, AbstractModel
@@ -8,8 +8,7 @@ using Oceananigans.Utils: launch!
 function update_tracked_fields!(sediment, model)
     grid = model.grid
     arch = architecture(grid)
-
-    model_fields = prognostic_fields(model)
+    model_fields = fields(model)
 
     bottom_indices = sediment.bottom_indices
 
@@ -58,7 +57,7 @@ end
 @inline vertical_advection_scheme(model::AbstractModel, name) = vertical_advection_scheme(model.advection, name)
 
 @inline sinking_flux(i, j, k, grid, advection, w, C) =
-    - advective_tracer_flux_z(i, j, k, grid, advection, w, C) / Azᶜᶜᶠ(i, j, k, grid)
+    - _advective_tracer_flux_z(i, j, k, grid, advection, w, C) / Azᶜᶜᶠ(i, j, k, grid)
 
 @kernel function compute_sinking_flux!(destination, source, advection, w, bottom_indices, grid)
     i, j = @index(Global, NTuple)

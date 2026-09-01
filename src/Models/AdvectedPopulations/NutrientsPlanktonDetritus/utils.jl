@@ -61,32 +61,53 @@ for thing in (PhytoZoo, Detritus, DissolvedParticulate)
     end
 end
 
+@inline organic_carbon_calcium_carbonate_factor(bgc::NPD{FT}) where FT = one(FT) + calcium_carbonate_rain_ratio(bgc.plankton, bgc)
+@inline organic_carbon_calcium_carbonate_factor(bgc::NPD{FT, <:Any, <:Any, <:Any, <:ExplicitCalciumCarbonate}) where FT = one(FT)
+
 for thing in (PhytoZoo, Detritus)
     @eval begin
-        function group_element_tracers(group::$thing, bgc, ::Val{:carbon}) # add specialisation for explicit calcite when done
-            ratio = carbon_ratio(bgc.plankton, bgc)
-            rain_ratio = calcite_rain_ratio(bgc.plankton, bgc)
+        function group_element_tracers(group::$thing, bgc, ::Val{:carbon})
+            ratio = carbon_ratio(bgc.plankton, bgc) * organic_carbon_calcium_carbonate_factor(bgc)
 
             names = required_biogeochemical_tracers(group)
 
-            return NamedTuple{names}(repeat([ratio * (1 + rain_ratio)], length(names)))
+            return NamedTuple{names}(repeat([ratio], length(names)))
         end
     end
 end
 
-function group_element_tracers(::DissolvedParticulate{N, M, DN, PN}, bgc, ::Val{:carbon}) where {N, M, DN, PN} # add specialisation for explicit calcite when done
+function group_element_tracers(group::PhytoZoo, bgc::NPD{<:Any, <:Any, <:Any, <:Any, <:ExplicitCalciumCarbonate}, ::Val{:carbon})
+    R = carbon_ratio(bgc.plankton, bgc)
+    ρ = calcium_carbonate_rain_ratio(bgc.plankton, bgc)
+
+    names = required_biogeochemical_tracers(group)
+
+    return NamedTuple{names}(map(name -> name === :P ? R * (1 + ρ) : R, names))
+end
+
+function group_element_tracers(::DissolvedParticulate{N, M, DN, PN}, bgc, ::Val{:carbon}) where {N, M, DN, PN}
     ratio = carbon_ratio(bgc.plankton, bgc)
-    rain_ratio = calcite_rain_ratio(bgc.plankton, bgc)
-    
+    particulate_ratio = ratio * organic_carbon_calcium_carbonate_factor(bgc)
+
     ratios = (repeat([ratio], N)...,
-              repeat([ratio * (1 + rain_ratio)], M)...)
+              repeat([particulate_ratio], M)...)
 
     return NamedTuple{(DN..., PN...)}(ratios)
 end
 
 group_element_tracers(::CarbonateSystem, args...) = NamedTuple()
-group_element_tracers(::CarbonateSystem, bgc::NPD{FT}, ::Val{:carbon}) where FT = 
+group_element_tracers(::CarbonateSystem, bgc::NPD{FT}, ::Val{:carbon}) where FT =
     (; DIC = one(FT))
+
+group_element_tracers(::ExplicitCalciumCarbonate, args...) = NamedTuple()
+group_element_tracers(::ExplicitCalciumCarbonate{1}, bgc::NPD{FT}, ::Val{:carbon}) where FT =
+    (DIC = one(FT), CaCO₃ = one(FT))
+function group_element_tracers(ic::ExplicitCalciumCarbonate{N}, bgc::NPD{FT}, ::Val{:carbon}) where {N, FT}
+    names = filter(n -> startswith(String(n), "DIC") || startswith(String(n), "CaCO₃"),
+                   required_biogeochemical_tracers(ic))
+
+    return NamedTuple{names}(ntuple(_ -> one(FT), length(names)))
+end
 
 group_element_tracers(::Oxygen, args...) = NamedTuple()
 group_element_tracers(::Oxygen, bgc::NPD{FT}, ::Val{:oxygen}) where FT = 
@@ -148,9 +169,9 @@ function group_element_tracers(::CarbonNitrogenDissolvedParticulate, bgc::NPD, :
 end
 
 function group_element_tracers(::CarbonNitrogenDissolvedParticulate{FT}, bgc, ::Val{:carbon}) where FT
-    rain_ratio = calcite_rain_ratio(bgc.plankton, bgc)
+    particulate_factor = organic_carbon_calcium_carbonate_factor(bgc)
 
-    return (; DOC = one(FT), sPOC = one(FT) + rain_ratio, bPOC = one(FT) + rain_ratio)
+    return (; DOC = one(FT), sPOC = particulate_factor, bPOC = particulate_factor)
 end
 
 function group_element_tracers(::CarbonNitrogenDissolvedParticulate, bgc::NPD, ::Val{:oxygen})
