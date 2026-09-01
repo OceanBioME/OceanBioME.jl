@@ -271,14 +271,20 @@ using OceanBioME.Models.NutrientsPlanktonDetritusModels.DetritusModels.MultiElem
     # ...and the sweep those indices drive runs to completion on an immersed column
     immersed_grid = ImmersedBoundaryGrid(grid, GridFittedBottom(stepped_bottom))
 
-    biogeochemistry = MARBL(immersed_grid)
+    # PAR is prescribed, so the sweep is what is under test rather than the light model
+    biogeochemistry = MARBL(immersed_grid;
+                            light_attenuation = PrescribedPhotosyntheticallyActiveRadiation(ConstantField(50.0)))
 
     model = HydrostaticFreeSurfaceModel(immersed_grid; biogeochemistry,
                                         tracer_advection = WENO(order = 3),
                                         buoyancy = nothing, tracers = (:T, :S))
 
     set!(model, T = 10, S = 35, DIC = 2000, Alk = 2300, NO₃ = 10, NH₄ = 0.1, PO₄ = 1,
-         Si = 10, Fe = 1e-3, O₂ = 200, sp = 0.1, diat = 0.1, zoo = 0.1)
+         Si = 10, Fe = 1e-3, Lig = 1e-3, O₂ = 200,
+         spC = 1, spChl = 0.03, spP = 1e-2, spFe = 5e-5, spCaCO₃ = 1e-2,
+         diatC = 1, diatChl = 0.03, diatP = 1e-2, diatFe = 5e-5, diatSi = 0.1,
+         diazC = 0.1, diazChl = 3e-3, diazP = 1e-3, diazFe = 5e-6,
+         zooC = 1, DOC = 10, DON = 1, DOP = 0.1, DOCr = 10, DONr = 1, DOPr = 0.1)
 
     time_step!(model, 100)
 
@@ -286,12 +292,20 @@ using OceanBioME.Models.NutrientsPlanktonDetritusModels.DetritusModels.MultiElem
 
     detritus = biogeochemistry.underlying_biogeochemistry.detritus
 
-    @test all(isfinite, Array(interior(detritus.floor_flux.POC)))
+    floor_flux = Array(interior(detritus.floor_flux.POC, :, 1, 1))
+    remineralisation = Array(interior(detritus.remineralisation.POC, 1, 1, :))
 
-    # the sweep never touches the immersed cells, so their remineralisation stays untouched
-    @test all(Array(interior(detritus.remineralisation.POC, 1, 1, 1:2)) .== 0)
+    @test all(isfinite, floor_flux)
+    @test all(isfinite, remineralisation)
+
+    # particulate organic carbon is produced, so it reaches the floor of every column
+    @test all(floor_flux .> 0)
+
+    # the sweep starts at the floor, so it never writes to the immersed cells below it
+    @test all(remineralisation[1:2] .== 0)
+    @test any(remineralisation[3:end] .!= 0)
 
     @info "floor indices $(Array(interior(detritus.floor_indices, :, 1, 1))) " *
-          "($(eltype(detritus.floor_indices))), floor POC flux " *
-          "$(Array(interior(detritus.floor_flux.POC, :, 1, 1)))"
+          "($(eltype(detritus.floor_indices)))\n  floor POC flux $(floor_flux)" *
+          "\n  POC remineralisation (column 1) $(remineralisation)"
 end

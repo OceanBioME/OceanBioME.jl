@@ -19,7 +19,9 @@ const BOX_CC = CarbonChemistry(; density_function = (args...) -> 1026.0)
 function marbl_box(; PAR = 100.0, plankton = nothing, grid = RectilinearGrid(size = (1, 1, 1), extent = (1, 1, 1)))
     plankton = isnothing(plankton) ? ManyPhytoZoo() : plankton
 
-    bgc = MARBL(grid;
+    # explicitly the EXPLICIT-sinking configuration: the default `MARBL` sweeps a column for the
+    # implicit ballast flux, which a one cell box is no home for (and whose particulates are not tracers)
+    bgc = MARBL_ExplicitSinking(grid;
                 plankton,
                 sinking_speed = 0.0,
                 nutrients = Nutrients(NitrateAmmonia(; nitrification_rate = 0.0), PO₄, Fe, Si),
@@ -79,6 +81,19 @@ silicon(m) = value(m, :diatSi) + value(m, :bSi) + value(m, :Si)
         # the iron cycle and the redox chemistry are on by default
         @test :Lig in tracers
         @test :O₂ in tracers
+
+        # sinking is MARBL's implicit ballast flux by default, so the particulates and the detrital
+        # calcite are diagnostic, not tracers
+        for name in (:POC, :POP, :bSi, :PFe, :CaCO₃)
+            @test !(name in tracers)
+        end
+
+        # ... while the explicitly sinking testing configuration carries them
+        explicit_tracers = required_biogeochemical_tracers(MARBL_ExplicitSinking(grid))
+
+        for name in (:POC, :POP, :bSi, :PFe, :CaCO₃)
+            @test name in explicit_tracers
+        end
 
         # the +cocco variant: coccolithophores calcify and the small phytoplankton do not
         cocco = MARBL_Cocco(grid)
