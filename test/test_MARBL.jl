@@ -227,10 +227,11 @@ silicon(m) = value(m, :diatSi) + value(m, :bSi) + value(m, :Si)
 
         b = DET.Ballast()
 
-        # the depth factor is flat outside the given range and monotonic within it
-        @test DM.scale_length(0.0, b)    ≈ b.scale_length_values[1]
-        @test DM.scale_length(5000.0, b) ≈ b.scale_length_values[end]
-        @test DM.scale_length(150.0, b) > DM.scale_length(50.0, b)
+        # `scale_length` takes a z-coordinate (negative below the surface); the depth factor
+        # is flat outside the given range and monotonic within it
+        @test DM.scale_length(0.0, b)     ≈ b.scale_length_values[1]
+        @test DM.scale_length(-5000.0, b) ≈ b.scale_length_values[end]
+        @test DM.scale_length(-400.0, b) > DM.scale_length(-150.0, b)
 
         # the low-oxygen stretch lengthens the scale and is inert in oxygenated water
         @test DM.oxygen_scale_factor(300.0, b) ≈ 1
