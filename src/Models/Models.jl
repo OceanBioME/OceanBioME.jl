@@ -4,7 +4,7 @@ export InstantRemineralisationSediment, SimpleMultiGSediment, BurialDenitrificat
 
 export NutrientsPlanktonDetritus
 
-export NPZD, LOBSTER, ImplicitBiology, MARBL, MARBL_Cocco, PISCES, DepthDependantSinkingSpeed, PrescribedLatitude, ModelLatitude, PISCESModel
+export NPZD, LOBSTER, ImplicitBiology, MARBL, MARBL_Cocco, MARBL_ExplicitSinking, PISCES, DepthDependantSinkingSpeed, PrescribedLatitude, ModelLatitude, PISCESModel
 
 export N, PO₄, Si, Fe
 export Nutrients, NitrateAmmonia, ComplexedIron

@@ -9,7 +9,7 @@ export Biogeochemistry
 
 
 export NutrientsPlanktonDetritus
-export NPZD, LOBSTER, ImplicitBiology, MARBL, MARBL_Cocco, PISCES, DepthDependantSinkingSpeed, PrescribedLatitude, ModelLatitude, PISCESModel
+export NPZD, LOBSTER, ImplicitBiology, MARBL, MARBL_Cocco, MARBL_ExplicitSinking, PISCES, DepthDependantSinkingSpeed, PrescribedLatitude, ModelLatitude, PISCESModel
 
 export Nutrients, NitrateAmmonia, ComplexedIron, N, PO₄, Si, Fe
 export CarbonateSystem, ExplicitCalciumCarbonate, ImplicitExplicitCalcite
