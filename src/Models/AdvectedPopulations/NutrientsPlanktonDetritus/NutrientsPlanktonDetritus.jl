@@ -2,7 +2,7 @@ module NutrientsPlanktonDetritusModels
 
 export NutrientsPlanktonDetritus
 
-export LOBSTER, NPZD, ImplicitBiology, MARBL, MARBL_Cocco
+export LOBSTER, NPZD, ImplicitBiology, MARBL, MARBL_Cocco, MARBL_ExplicitSinking
 
 export Nutrients, N, PO₄, Si, Fe, NitrateAmmonia, ComplexedIron
 export CarbonateSystem, ExplicitCalciumCarbonate, ImplicitExplicitCalcite
