@@ -34,11 +34,15 @@ function Adapt.adapt_structure(to, p::ManyPhytoZoo{LN, P, Z}) where {LN, P, Z}
     zooplankton    = adapt(to, p.zooplankton)
     carbon_dioxide = adapt(to, p.carbon_dioxide)
 
+    zero_consistency = p.autotroph_zero_consistency_enforcement
+
     return ManyPhytoZoo{LN, P, Z, typeof(autotrophs), typeof(zooplankton),
-                        typeof(carbon_dioxide), typeof(p.nitrogen_to_carbon)}(
+                        typeof(carbon_dioxide), typeof(zero_consistency),
+                        typeof(p.nitrogen_to_carbon)}(
         autotrophs,
         zooplankton,
         carbon_dioxide,
+        zero_consistency,
         p.zooplankton_phosphate_to_carbon,
         p.zooplankton_iron_to_carbon,
         p.nitrogen_to_carbon,

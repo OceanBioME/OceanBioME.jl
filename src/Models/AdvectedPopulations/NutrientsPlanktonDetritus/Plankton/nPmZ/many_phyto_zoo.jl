@@ -1,10 +1,12 @@
 #####
 ##### Combined class
 #####
-struct ManyPhytoZoo{LN, P, Z, AT, ZT, CD, FT} <: AbstractPlankton{LN}
+struct ManyPhytoZoo{LN, P, Z, AT, ZT, CD, ZC, FT} <: AbstractPlankton{LN}
                                   autotrophs :: AT  # NamedTuple of Autotroph
                                  zooplankton :: ZT  # NamedTuple of Heterotroph
                               carbon_dioxide :: CD  # mmol/m³; aqueous CO₂ (nothing if unused)
+
+      autotroph_zero_consistency_enforcement :: ZC  # Val{true}/Val{false}; MARBL autotroph_zero_consistency_enforce
 
              zooplankton_phosphate_to_carbon :: FT  # mmol P/mmol C; MARBL Qp_zoo
                   zooplankton_iron_to_carbon :: FT  # mmol Fe/mmol C; MARBL Qfe_zoo

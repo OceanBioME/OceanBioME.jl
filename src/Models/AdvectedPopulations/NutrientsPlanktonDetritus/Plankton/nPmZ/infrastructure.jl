@@ -1,5 +1,12 @@
-# check that nothing is zero
+# check that nothing is zero. The enforcement is switched by the plankton's
+# `autotroph_zero_consistency_enforcement`, a `Val{Bool}` field, so the switch is resolved by dispatch:
+# with it off the companion loads below are never emitted at all, rather than guarded by a branch.
 @inline autotroph_present(val_prefix::Val, i, j, k, p::ManyPhytoZoo, fields) =
+    _enforce_zero_consistency(p.autotroph_zero_consistency_enforcement, val_prefix, i, j, k, p, fields)
+
+@inline _enforce_zero_consistency(::Val{false}, val_prefix, i, j, k, p::ManyPhytoZoo, fields) = true
+
+@inline _enforce_zero_consistency(::Val{true}, val_prefix, i, j, k, p::ManyPhytoZoo, fields) =
     _autotroph_present(Val(traits(p, val_prefix).silicifier), val_prefix, i, j, k, fields)
 
 @inline _autotroph_present(::Val{false}, val_prefix, i, j, k, fields) =

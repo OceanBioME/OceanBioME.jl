@@ -184,6 +184,11 @@ Keyword Arguments
   the PFT names that give the tracers their prefixes
 - `carbon_dioxide`: an aqueous-CO₂ field, needed only when some PFT is carbon limited or an explicit
   calcifier (`nothing` otherwise)
+- `autotroph_zero_consistency_enforcement`: when `true` (the default, and MARBL's behaviour) an
+  autotroph whose carbon, chlorophyll, phosphorus, iron (or silicon, where it silicifies) is exactly
+  zero in a cell is treated as absent there, i.e. all of its tracers read as zero. It is switched at
+  compile time, so setting it to `false` removes the companion loads from every accessor rather than
+  branching on them
 - `nitrogen_to_carbon`, `zooplankton_phosphate_to_carbon`, `zooplankton_iron_to_carbon`: the fixed
   stoichiometric ratios
 - `phosphate_quota_*`, `iron_quota_threshold_factor`, `*_silicon_quota`: variable growth-quota
@@ -200,6 +205,8 @@ function ManyPhytoZoo(FT = Float64;
                       autotrophs  = MARBL_autotrophs(FT),
                       zooplankton = MARBL_zooplankton(FT),
                       carbon_dioxide = nothing,
+
+                      autotroph_zero_consistency_enforcement = true,
 
                       zooplankton_phosphate_to_carbon = 1 / 117,
                       zooplankton_iron_to_carbon      = 3.0e-6,
@@ -256,11 +263,14 @@ function ManyPhytoZoo(FT = Float64;
     # only to satisfy `AbstractPlankton{LN}`
     LN = (:nitrate, :ammonia, :phosphate, :iron, :silicate)
 
+    zero_consistency = Val(autotroph_zero_consistency_enforcement)
+
     return ManyPhytoZoo{LN, keys(autotrophs), keys(zooplankton), typeof(autotrophs),
-                        typeof(zooplankton), typeof(carbon_dioxide), FT}(
+                        typeof(zooplankton), typeof(carbon_dioxide), typeof(zero_consistency), FT}(
         autotrophs,
         zooplankton,
         carbon_dioxide,
+        zero_consistency,
         convert(FT, zooplankton_phosphate_to_carbon),
         convert(FT, zooplankton_iron_to_carbon),
         convert(FT, nitrogen_to_carbon),
