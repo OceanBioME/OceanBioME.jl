@@ -4,7 +4,6 @@
                                first_virial_coefficient::FV = PolynomialVirialCoefficientForCarbonDioxide{FT}(),
                                cross_virial_coefficient::CV = CrossVirialCoefficientForCarbonDioxide{FT}(),
                                air_pressure::AP = one(FT), # atm
-                               silicate_and_phosphate_names::SP = nothing,
                                DIC = :DIC,
                                Alk = :Alk)
 
@@ -13,12 +12,11 @@ Guide to Best Practices for Ocean CO 2 Measurements. PICES Special Publication 3
 
 `DIC` and `Alk` specify the tracer names of the DIC and alkalinity in the model.
 """
-struct CarbonDioxideConcentration{DIC, Alk, CC<:CarbonChemistry, FV, CV, AP, SP}
+struct CarbonDioxideConcentration{DIC, Alk, CC<:CarbonChemistry, FV, CV, AP}
             carbon_chemistry :: CC 
     first_virial_coefficient :: FV
     cross_virial_coefficient :: CV
                 air_pressure :: AP
-silicate_and_phosphate_names :: SP
 end
 
 CarbonDioxideConcentration(FT = Float64;
@@ -26,14 +24,12 @@ CarbonDioxideConcentration(FT = Float64;
                            first_virial_coefficient::FV = PolynomialVirialCoefficientForCarbonDioxide{FT}(),
                            cross_virial_coefficient::CV = CrossVirialCoefficientForCarbonDioxide{FT}(),
                            air_pressure::AP = one(FT), # atm
-                           silicate_and_phosphate_names::SP = nothing,
                            DIC = :DIC,
-                           Alk = :Alk) where {CC, FV, CV, AP, SP} = 
-    CarbonDioxideConcentration{DIC, Alk, CC, FV, CV, AP, SP}(carbon_chemistry, 
-                                                             first_virial_coefficient, 
-                                                             cross_virial_coefficient, 
-                                                             air_pressure, 
-                                                             silicate_and_phosphate_names)
+                           Alk = :Alk) where {CC, FV, CV, AP} = 
+    CarbonDioxideConcentration{DIC, Alk, CC, FV, CV, AP}(carbon_chemistry, 
+                                                         first_virial_coefficient, 
+                                                         cross_virial_coefficient, 
+                                                         air_pressure)
 
 summary(::CarbonDioxideConcentration{DIC, Alk, CC, FV, CV, AP}) where {DIC, Alk, CC, FV, CV, AP} = 
     "`CarbonChemistry` derived partial pressure of CO₂ (pCO₂) {$DIC, $Alk, $(nameof(CC)), $(nameof(FV)), $(nameof(CV))}"
@@ -52,16 +48,13 @@ show(io::IO, c::CarbonDioxideConcentration{DIC, Alk, CC, FV, CV, AP}) where {DIC
     T = @inbounds model_fields.T[i, j, grid.Nz]
     S = @inbounds model_fields.S[i, j, grid.Nz]
 
-    silicate, phosphate = silicate_and_phosphate(cc.silicate_and_phosphate_names, model_fields)
+    silicate  = silicate_concentration(grid, i, j, grid.Nz, model_fields)
+    phosphate = phosphate_concentration(grid, i, j, grid.Nz, model_fields)
 
     pCO₂ = cc.carbon_chemistry(; DIC, Alk, T, S, silicate, phosphate, output = Val(:pCO₂))
 
     return pCO₂ # ppmv
 end
-
-@inline silicate_and_phosphate(::Nothing, args...) = (0, 0)
-@inline silicate_and_phosphate(vals::NamedTuple, args...) = values(vals)
-@inline silicate_and_phosphate(val::Tuple, model_fields) = @inbounds getproperty(model_fields, val[1]), getproperty(model_fields, val[2])
 
 # default values from Dickson et al., 2007
 @kwdef struct PolynomialVirialCoefficientForCarbonDioxide{FT}

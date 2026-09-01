@@ -1,6 +1,6 @@
 name = "OceanBioME"
 uuid = "a49af516-9db8-4be4-be45-1dad61c5a376"
-version = "0.18.0"
+version = "0.18.3"
 authors = ["Jago Strong-Wright <js2430@damtp.cam.ac.uk> and contributors"]
 
 [deps]
@@ -45,5 +45,5 @@ StructArrays = "09ab397b-f2b6-538f-b94a-2f83cf4a842a"
 Test = "8dfed614-e22c-5e08-85e1-65c5234f0b40"
 
 [targets]
-examples = ["CairoMakie", "NetCDF", "Interpolations", "Statistics", "Printf", "JLD2", "DataDeps", "EnsembleKalmanProcesses", "Distributions"]
+examples = ["CairoMakie", "NetCDF", "Interpolations", "Statistics", "Printf", "JLD2", "DataDeps", "EnsembleKalmanProcesses", "Distributions", "CUDA"]
 test = ["Test", "CUDA", "DataDeps", "Documenter", "Statistics", "JLD2", "Random"]

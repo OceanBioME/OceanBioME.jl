@@ -58,7 +58,7 @@ required_biogeochemical_auxiliary_fields(::ImplicitProductivity) = (:PAR, )
 @inline nitrogen_ratio(plankton::ImplicitProductivity, ::NPD{FT}) where FT = plankton.nitrogen_ratio
 @inline carbon_ratio(plankton::ImplicitProductivity, ::NPD{FT}) where FT = plankton.carbon_ratio
 @inline iron_ratio(plankton::ImplicitProductivity, ::NPD{FT}) where FT = plankton.iron_ratio
-@inline calcite_rain_ratio(plankton::ImplicitProductivity, ::NPD{FT}) where FT = plankton.rain_ratio
+@inline calcium_carbonate_rain_ratio(plankton::ImplicitProductivity, ::NPD{FT}) where FT = plankton.rain_ratio
 
 @inline limiting_nutrients(::ImplicitProductivity{<:Any, <:NamedTuple{LN}}) where LN = LN
 
@@ -102,12 +102,12 @@ end
                         ::ImplicitProductivity, ::NPD{FT}, 
                         fields, auxiliary_fields) where FT = zero(FT)
 
-@inline calcite_precipitation(i, j, k, grid,
+@inline calcium_carbonate_precipitation(i, j, k, grid,
                               bgc::NutrientsPlanktonDetritus{<:Any, <:Any, <:ImplicitProductivity},
                               fields, auxiliary_fields) = (
     solid_waste(i, j, k, grid, bgc.plankton, bgc, fields, auxiliary_fields)
   * carbon_ratio(i, j, k, grid, bgc.plankton, bgc, fields)
-  * calcite_rain_ratio(i, j, k, grid, bgc.plankton, bgc, fields)
+  * calcium_carbonate_rain_ratio(i, j, k, grid, bgc.plankton, bgc, fields)
 )
 
 # admin
