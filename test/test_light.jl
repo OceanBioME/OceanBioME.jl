@@ -35,7 +35,7 @@ function test_two_band(grid, model_type, surface_PAR, discrete_form, parameters 
     eʳ = PAR_model.chlorophyll_red_exponent
     eᵇ = PAR_model.chlorophyll_blue_exponent
     r = PAR_model.pigment_ratio
-    Rᶜₚ = PAR_model.phytoplankton_chlorophyll_ratio
+    Rᶜₚ = biogeochemistry.underlying_biogeochemistry.plankton.chlorophyll_ratio
 
     ∫Chlʳ = [(2.0 * Rᶜₚ / r) ^ eʳ * 0.5]
     ∫Chlᵇ = [(2.0 * Rᶜₚ / r) ^ eᵇ * 0.5]
@@ -184,5 +184,4 @@ end
     @test par.chlorophyll_red_exponent isa Float32
     @test par.chlorophyll_blue_exponent isa Float32
     @test par.pigment_ratio isa Float32
-    @test par.phytoplankton_chlorophyll_ratio isa Float32
 end
