@@ -6,7 +6,7 @@ export InstantRemineralisation, InstantRemineralisationSediment,
 
 using Adapt
 using Oceananigans.Units: day
-using Oceananigans.Operators: Δzᶜᶜᶠ
+using Oceananigans.Operators: Δzᶜᶜᶜ
 using Oceananigans.ImmersedBoundaries: ImmersedBoundaryGrid, immersed_cell
 
 using OceanBioME.Sediments: AbstractContinuousFormSedimentBiogeochemistry,

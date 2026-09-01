@@ -310,6 +310,11 @@ end
 # walk up to the first live one — the same search the framework uses to gather the tracked fields, so this
 # is the identical cell. A plain grid skips nothing. Tests calling a tendency directly pass `nothing`,
 # meaning a single box with no vertical structure, where the cap is inert.
+#
+# The thickness must be Δzᶜᶜᶜ (the floor cell's own thickness), the very divisor the coupling applies to
+# the area flux (`Sediments/tracer_coupling.jl`), and not Δzᶜᶜᶠ (the face-centred centre-to-centre spacing
+# straddling the cell and the one below it): the two agree only on a uniformly spaced column, and differ on
+# a stretched grid and on a `PartialCellBottom` floor, where the cell is deliberately cut.
 @inline function bottom_Δz(grid::ImmersedBoundaryGrid, i, j)
     Nz = size(grid, 3)
     k = 1
@@ -318,10 +323,10 @@ end
         k += 1
     end
 
-    return Δzᶜᶜᶠ(i, j, k, grid)
+    return Δzᶜᶜᶜ(i, j, k, grid)
 end
 
-@inline bottom_Δz(grid, i, j) = Δzᶜᶜᶠ(i, j, 1, grid)
+@inline bottom_Δz(grid, i, j) = Δzᶜᶜᶜ(i, j, 1, grid)
 @inline bottom_Δz(::Nothing, i, j) = Inf
 
 # the returned organic carbon is oxidised aerobically except the part respired on nitrate and by other

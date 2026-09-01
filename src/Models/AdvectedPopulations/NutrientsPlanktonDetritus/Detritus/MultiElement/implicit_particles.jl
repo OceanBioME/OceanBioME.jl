@@ -166,16 +166,18 @@ biogeochemical_auxiliary_fields(d::MultiElementRefractoryDissolved) =
     return nothing
 end
 
+# the index the column sweep starts from. It has to be an integer field: the sweep uses it as a loop bound
+# and compares it to `k`, so a float would make the range non-integer.
 floor_index_field(grid) = OneField(Int)
 function floor_index_field(grid::ImmersedBoundaryGrid)
-    floor_indices = Field{Center, Center, Nothing}(grid)
+    floor_indices = Field{Center, Center, Nothing}(grid, Int)
 
-    launch!(architecture(grid), grid, :xy, compute_floor_indices!, grid, floor_indices)
+    launch!(architecture(grid), grid, :xy, compute_floor_indices!, grid, floor_indices, size(grid, 3))
 
     return floor_indices
 end
 
-@kernel function compute_floor_indices!(grid, floor_indices)
+@kernel function compute_floor_indices!(grid, floor_indices, Nz)
     i, j = @index(Global, NTuple)
 
     k = 1

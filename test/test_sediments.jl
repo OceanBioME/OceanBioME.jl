@@ -161,3 +161,137 @@ models = (NonhydrostaticModel, HydrostaticFreeSurfaceModel) # I don't think we n
     end
 end
 =#
+
+#####
+##### The sedimentary denitrification cap needs the floor cell's thickness, and the floor is not always
+##### k = 1. Build the same physical floor cell two ways — a rectilinear grid cut to the sea floor
+##### (k_bottom = 1, the shape every MARBL gate has used) and a full-depth immersed grid whose bathymetry
+##### puts the floor at the same depth (k_bottom > 1) — and require the tendencies to agree. The vertical
+##### spacing is stretched *across the floor*, so a thickness taken from the face-centred spacing (which
+##### straddles the floor cell and the one below it) differs from the cell's own and the test fails.
+#####
+
+using OceanBioME.Models.SedimentModels: BurialDenitrification, bottom_Δz
+
+sediment_tracked_fields(grid; POC, O₂, NO₃) =
+    NamedTuple{(:POC, :POP, :bSi, :CaCO₃, :PFe, :O₂, :NO₃, :Ω, :O₂_consumption_scale)}(
+        map((POC, POC / 117, POC / 15, POC, POC / 3e4, O₂, NO₃, 1, 1)) do value
+            field = Field{Center, Center, Nothing}(grid)
+            set!(field, value)
+            field
+        end)
+
+@testset "Denitrification clamp on an immersed floor" begin
+    # stretched so that the floor cell and the cell below it have different thicknesses
+    z_faces = [-500, -400, -200, -150, -100, -70, -45, -25, -10, 0]
+    k_floor = 3    # the cell spanning -200 to -150
+    z_floor = z_faces[k_floor]
+
+    full_grid = RectilinearGrid(architecture; size = (1, 1, length(z_faces) - 1),
+                                x = (0, 1), y = (0, 1), z = z_faces,
+                                topology = (Bounded, Bounded, Bounded))
+
+    cut_grid = RectilinearGrid(architecture; size = (1, 1, length(z_faces) - k_floor),
+                               x = (0, 1), y = (0, 1), z = z_faces[k_floor:end],
+                               topology = (Bounded, Bounded, Bounded))
+
+    # a mid-cell floor, where the cell is cut to a thickness no face spacing knows about
+    z_partial = (z_faces[k_floor] + z_faces[k_floor + 1]) / 2
+
+    partial_cut_grid = RectilinearGrid(architecture; size = (1, 1, length(z_faces) - k_floor),
+                                       x = (0, 1), y = (0, 1),
+                                       z = [z_partial, z_faces[(k_floor + 1):end]...],
+                                       topology = (Bounded, Bounded, Bounded))
+
+    immersed_grids = (GridFittedBottom(z_floor) => cut_grid,
+                      PartialCellBottom(z_partial) => partial_cut_grid)
+
+    sediment = BurialDenitrification()
+
+    # suboxic and nitrate poor, so the cap actually binds
+    POC, O₂, NO₃ = 5e-4, 1.0, 0.4
+
+    tendency(grid) =
+        sediment(1, 1, grid, Val(:denitrified_N), nothing, nothing,
+                 sediment_tracked_fields(grid; POC, O₂, NO₃))
+
+    # a cap of exactly one would make every comparison below vacuous
+    clamp = OceanBioME.Models.SedimentModels.denitrification_clamp(sediment, POC, O₂, NO₃,
+                                                                  bottom_Δz(cut_grid, 1, 1))
+
+    @test 0 < clamp < 1
+
+    for (bottom, equivalent_grid) in immersed_grids
+        immersed_grid = ImmersedBoundaryGrid(full_grid, bottom)
+
+        expected = CUDA.@allowscalar bottom_Δz(equivalent_grid, 1, 1)
+
+        @test (CUDA.@allowscalar bottom_Δz(immersed_grid, 1, 1)) ≈ expected
+
+        # the thickness must be the one the coupling divides the returned area flux by
+        @test expected ≈ CUDA.@allowscalar Oceananigans.Operators.Δzᶜᶜᶜ(1, 1, 1, equivalent_grid)
+
+        @test (CUDA.@allowscalar tendency(immersed_grid)) ≈ CUDA.@allowscalar tendency(equivalent_grid)
+    end
+end
+
+#####
+##### The implicit ballast sweep starts each column at its own sea floor. That index is built by
+##### `floor_index_field`, which had never run on an immersed grid, so check both that it does and that the
+##### sweep it feeds completes a step — the index is a loop bound (`for k in Nz:-1:k_bottom`) and is
+##### compared to `k`, so it has to come back as an integer.
+#####
+
+using OceanBioME.Models.NutrientsPlanktonDetritusModels.DetritusModels.MultiElement: floor_index_field
+
+@testset "Implicit ballast floor index on an immersed grid" begin
+    z_faces = [-500, -400, -200, -150, -100, -70, -45, -25, -10, 0]
+
+    grid = RectilinearGrid(architecture; size = (4, 4, length(z_faces) - 1), halo = (3, 3, 3),
+                           x = (0, 1), y = (0, 1), z = z_faces,
+                           topology = (Bounded, Bounded, Bounded))
+
+    # a two step sea floor, so the columns start the sweep at different levels and a k = 1 assumption shows
+    stepped_bottom(x, y) = ifelse(x < 0.5, -200, -100)
+
+    bottoms = (GridFittedBottom(stepped_bottom),
+               PartialCellBottom((x, y) -> stepped_bottom(x, y) + 25))
+
+    for bottom in bottoms
+        immersed_grid = ImmersedBoundaryGrid(grid, bottom)
+
+        floor_indices = floor_index_field(immersed_grid)
+
+        @test eltype(floor_indices) <: Integer
+
+        # -200 is the base of the third cell, -100 the base of the fifth
+        @test Array(interior(floor_indices, :, 1, 1)) == [3, 3, 5, 5]
+    end
+
+    # ...and the sweep those indices drive runs to completion on an immersed column
+    immersed_grid = ImmersedBoundaryGrid(grid, GridFittedBottom(stepped_bottom))
+
+    biogeochemistry = MARBL(immersed_grid)
+
+    model = HydrostaticFreeSurfaceModel(immersed_grid; biogeochemistry,
+                                        tracer_advection = WENO(order = 3),
+                                        buoyancy = nothing, tracers = (:T, :S))
+
+    set!(model, T = 10, S = 35, DIC = 2000, Alk = 2300, NO₃ = 10, NH₄ = 0.1, PO₄ = 1,
+         Si = 10, Fe = 1e-3, O₂ = 200, sp = 0.1, diat = 0.1, zoo = 0.1)
+
+    time_step!(model, 100)
+
+    @test model.clock.iteration == 1
+
+    detritus = biogeochemistry.underlying_biogeochemistry.detritus
+
+    @test all(isfinite, Array(interior(detritus.floor_flux.POC)))
+
+    # the sweep never touches the immersed cells, so their remineralisation stays untouched
+    @test all(Array(interior(detritus.remineralisation.POC, 1, 1, 1:2)) .== 0)
+
+    @info "floor indices $(Array(interior(detritus.floor_indices, :, 1, 1))) " *
+          "($(eltype(detritus.floor_indices))), floor POC flux " *
+          "$(Array(interior(detritus.floor_flux.POC, :, 1, 1)))"
+end

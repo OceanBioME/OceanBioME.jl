@@ -1,7 +1,8 @@
 module MultiElement
 
 export MultiElementRefractoryDissolvedParticulate, 
-       MultiElementRefractoryDissolved
+       MultiElementRefractoryDissolved,
+       Ballast
 
 using Adapt
 using Oceananigans.Units: day
