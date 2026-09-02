@@ -1,7 +1,6 @@
 import OceanBioME: conserved_tracers
 
 # possible conservations are N/P/Fe/Si/C/O
-# neglect Si for now
 # when a nutrient class is nothing it is implicitly conserved so we will not include that in the conservations
 @inline function conserved_tracers(bgc::NutrientsPlanktonDetritus)
     conserved_elements = available_nutrients(bgc.nutrients)
@@ -48,6 +47,32 @@ group_element_tracers(::ImplicitProductivity, args...) = NamedTuple()
 group_element_tracers(::InstantRemineralisationDetritus, args...) = NamedTuple()
 group_element_tracers(::Nothing, args...) = NamedTuple()
 
+function group_element_tracers(group, bgc, val_element)
+    if group !== bgc.plankton
+        return NamedTuple()
+    end
+
+    if val_element isa Val{:nitrogen}
+        coefficient = nitrogen_ratio(group, bgc)
+    elseif val_element isa Val{:iron}
+        coefficient = iron_ratio(group, bgc)
+    elseif val_element isa Val{:phosphate}
+        coefficient = phosphate_ratio(group, bgc)
+    elseif val_element isa Val{:silicate}
+        coefficient = silicon_ratio(group, bgc)
+    elseif val_element isa Val{:carbon}
+        coefficient = carbon_ratio(group, bgc) * (1 + calcium_carbonate_rain_ratio(group, bgc))
+    elseif val_element isa Val{:oxygen}
+        bgc.oxygen isa Oxygen || return NamedTuple()
+        coefficient = -carbon_ratio(group, bgc) * bgc.oxygen.production_oxygen_carbon_ratio
+    else
+        return NamedTuple()
+    end
+
+    names = required_biogeochemical_tracers(group)
+    return NamedTuple{names}(repeat([coefficient], length(names)))
+end
+
 for thing in (PhytoZoo, Detritus, DissolvedParticulate)
     for element in (:nitrogen, :iron, :phosphate)
         ratio_name = Symbol(element, :_ratio)
@@ -57,6 +82,14 @@ for thing in (PhytoZoo, Detritus, DissolvedParticulate)
                 names = required_biogeochemical_tracers(group)
                 return NamedTuple{names}(repeat([ratio], length(names)))
             end
+        end
+    end
+
+    @eval begin
+        function group_element_tracers(group::$thing, bgc, ::Val{:silicate})
+            ratio = silicon_ratio(bgc.plankton, bgc)
+            names = required_biogeochemical_tracers(group)
+            return NamedTuple{names}(repeat([ratio], length(names)))
         end
     end
 end
@@ -115,7 +148,7 @@ group_element_tracers(::Oxygen, bgc::NPD{FT}, ::Val{:oxygen}) where FT =
 
 for thing in (PhytoZoo, Detritus, DissolvedParticulate)
     @eval begin
-        function group_element_tracers(group::$thing, bgc::NPD{<:Any, <:Any, <:Any, <:Any, <:Any, <:Oxygen}, ::Val{:oxygen}) 
+        function group_element_tracers(group::$thing, bgc::NPD{<:Any, <:Any, <:Any, <:Any, <:Any, <:Oxygen}, ::Val{:oxygen})
             ratio = carbon_ratio(bgc.plankton, bgc)
             rO = - bgc.oxygen.production_oxygen_carbon_ratio
 
