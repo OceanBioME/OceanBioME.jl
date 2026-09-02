@@ -24,6 +24,8 @@ function nutrient_uptake end
 @inline calcium_carbonate_rain_ratio(i, j, k, grid, plankton, bgc, fields) = calcium_carbonate_rain_ratio(plankton, bgc)
 @inline calcium_carbonate_rain_ratio(plankton, ::NutrientsPlanktonDetritus{FT}) where FT = zero(FT)
 
+@inline chlorophyll_ratio(plankton, ::Val) = chlorophyll_ratio(plankton)
+
 for (element, symbol) in pairs((nitrogen = :N, phosphate = :PO₄, iron = :Fe, silicon = :Si, carbon = :C))
     inorganic_waste_name  = Symbol(:inorganic_, element, :_waste)
     solid_waste_name      = Symbol(:solid_,     element, :_waste)
