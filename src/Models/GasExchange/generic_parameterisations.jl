@@ -15,7 +15,7 @@ end
 @inline function (p::PolynomialParameterisation{N})(x) where N
     y = 0
     for n in 0:N
-        y += @inbounds p.coefficients[n+1] * x^N
+        y += @inbounds p.coefficients[n+1] * x^n
     end
     return y
 end
