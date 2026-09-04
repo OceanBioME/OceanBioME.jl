@@ -16,7 +16,7 @@ const AbstractLight{BA, IN, CA, SP} = AbstractSingleBandExponentialLightAttenuat
     @inbounds PAR[i, j, grid.Nz] = PAR⁰ * surface_center_attenuation(i, j, grid, la, clock, Chl)
 
     @inbounds for k in grid.Nz-1:-1:1
-        PAR[i, j, k] = PAR[i, j, k+1] * @show center_to_center_attenuation(i, j, k, grid, la, clock, Chl)
+        PAR[i, j, k] = PAR[i, j, k+1] * center_to_center_attenuation(i, j, k, grid, la, clock, Chl)
     end
 end
 

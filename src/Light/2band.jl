@@ -60,6 +60,9 @@ Keyword Arguments
 - `water_red_attenuation`, ..., `pigment_ratio`: parameter values
 - `surface_PAR`: the photosynthetically available radiation at the surface, by default,
    assumed to have the 'continuous form' `condition(x, y t)`
+- `interface_field`: optional field (e.g. `ZFaceField(grid)`) on which to record `PAR` at cell
+   faces, in addition to the default cell-centred `PAR`; see the "Recording PAR at cell faces"
+   section of the light attenuation model documentation
 
 If `parameters` is not `nothing`, then `surface_PAR` has the form
 `func(x, y, t, parameters)`.
@@ -132,4 +135,5 @@ adapt_structure(to, par::TwoBandPhotosyntheticallyActiveRadiation) =
                                              adapt(to, par.chlorophyll_blue_exponent),
                                              adapt(to, par.pigment_ratio),
                                              adapt(to, par.field),
+                                             adapt(to, par.interface_field),
                                              adapt(to, par.surface_PAR))

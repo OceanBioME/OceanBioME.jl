@@ -45,6 +45,9 @@ Keyword Arguments
   is a function
 - `surface_parameters`, `surface_discrete_form`: parameters and form for `surface_PAR` when it is a
   function
+- `interface_field`: optional field (e.g. `ZFaceField(grid)`) on which to record `PAR` at cell
+  faces, in addition to the default cell-centred `PAR`; see the "Recording PAR at cell faces"
+  section of the light attenuation model documentation
 """
 function PrescribedAttenuationPhotosyntheticallyActiveRadiation(grid, surface_PAR;
                                                                 surface_parameters = nothing,
@@ -81,9 +84,11 @@ end
 summary(::PrescribedAttenuationPAR) = string("PrescribedAttenuationPhotosyntheticallyActiveRadiation")
 show(io::IO, par::PrescribedAttenuationPAR) = print(io, summary(par)*" with typeof(k) = $(summary(par.attenuation)))")
 
-biogeochemical_auxiliary_fields(par::PrescribedAttenuationPhotosyntheticallyActiveRadiation) = (PAR = par.field, )
+biogeochemical_auxiliary_fields(par::PrescribedAttenuationPhotosyntheticallyActiveRadiation) = (PAR = par.field, PAR_interface = par.interface_field)
+biogeochemical_auxiliary_fields(par::PrescribedAttenuationPhotosyntheticallyActiveRadiation{<:Any, <:Any, <:Any, Nothing}) = (PAR = par.field, )
 
 Adapt.adapt_structure(to, par::PrescribedAttenuationPAR) =
     PrescribedAttenuationPhotosyntheticallyActiveRadiation(nothing,
                                                            nothing,
-                                                           adapt(to, par.field))
+                                                           adapt(to, par.field),
+                                                           adapt(to, par.interface_field))
