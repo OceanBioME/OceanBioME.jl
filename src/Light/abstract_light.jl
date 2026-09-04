@@ -11,12 +11,12 @@ const AbstractLight{BA, IN, CA, SP} = AbstractSingleBandExponentialLightAttenuat
 
     i, j = @index(Global, NTuple)
 
-    PAR⁰ = getbc(surface_PAR, i, j, grid, clock, Chl)
+    PARᵢ = getbc(surface_PAR, i, j, grid, clock, Chl)
 
-    @inbounds PAR[i, j, grid.Nz] = PAR⁰ * surface_center_attenuation(i, j, grid, la, clock, Chl)
-
-    @inbounds for k in grid.Nz-1:-1:1
-        PAR[i, j, k] = PAR[i, j, k+1] * center_to_center_attenuation(i, j, k, grid, la, clock, Chl)
+    @inbounds for k in grid.Nz:-1:1
+        eᵏᵈᶻ = face_to_face_attenuation(i, j, k, grid, la, clock, Chl)
+        PAR[i, j, k] = - PARᵢ * (1 - eᵏᵈᶻ)/log(eᵏᵈᶻ)
+        PARᵢ *= eᵏᵈᶻ
     end
 end
 
@@ -55,17 +55,18 @@ end
     i, j = @index(Global, NTuple)
 
     PAR⁰ = getbc(surface_PAR, i, j, grid, clock, Chl)
+    K = initial_attenuation(la, eltype(grid))
+    δ = one(grid)
 
-    z = znode(i, j, grid.Nz, grid, Center(), Center(), Center())
-    K = surface_center_attenuation(i, j, grid, la, clock, Chl, z)
+    @inbounds for k in grid.Nz:-1:1
+        Δz = Δzᵃᵃᶜ(i, j, k, grid)
+        K =  face_to_face_attenuation(i, j, k, grid, la, clock, Chl, K, Δz)
+        
+        eᵏᵈᶻ = total_attenuation(K, la) / δ
 
-    @inbounds PAR[i, j, grid.Nz] = PAR⁰ * total_attenuation(K, la)
+        PAR[i, j, k] = - PAR⁰ * δ * (1 - eᵏᵈᶻ) / log(eᵏᵈᶻ)
 
-    @inbounds for k in grid.Nz-1:-1:1
-        Δz1 = Δzᵃᵃᶜ(i, j, k+1, grid)
-        Δz2 = Δzᵃᵃᶜ(i, j, k, grid)
-        K = center_to_center_attenuation(i, j, k, grid, la, clock, Chl, K, Δz1, Δz2)
-        PAR[i, j, k] = PAR⁰ * total_attenuation(K, la)
+        δ = total_attenuation(K, la)
     end
 end
 
@@ -78,7 +79,7 @@ end
     
     @inbounds PARᵢ[i, j, grid.Nz+1] = PAR⁰
 
-    K = (one(grid), one(grid))
+    K = initial_attenuation(la, eltype(grid))
 
     @inbounds for k in grid.Nz:-1:1
         Δz = Δzᵃᵃᶜ(i, j, k, grid)
@@ -88,17 +89,18 @@ end
 
         eᵏᵈᶻ = PARᵢ[i, j, k] / PARᵢ[i, j, k+1]
 
-        PAR[i, j, k] = -PARᵢ[i, j, k+1] * (1 - eᵏᵈᶻ)/log(eᵏᵈᶻ) # I'm not convinced this is correct and that we don't have to average with each component first
+        PAR[i, j, k] = -PARᵢ[i, j, k+1] * (1 - eᵏᵈᶻ)/log(eᵏᵈᶻ) 
     end
 end
 
-@inline weight(::AbstractLight{N}, n) where N = 1/N
+@inline initial_attenuation(::AbstractLight{N}, FT = Float64) where N = ntuple(_ -> one(FT), N)
+@inline weight(::AbstractLight{N}, val_n) where N = 1/N
 
 @inline @generated function total_attenuation(K, la::AbstractLight{N}) where N
     combined = Expr(:block)
     push!(combined.args, :(total = zero(K[1])))
     for n in 1:N
-        push!(combined.args, :(total += @inbounds weight(la, $n) * K[$n]))
+        push!(combined.args, :(total += @inbounds weight(la, Val($n)) * K[$n]))
     end
     push!(combined.args, :(return total))
 
