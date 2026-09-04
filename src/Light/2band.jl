@@ -1,37 +1,4 @@
-@kernel function update_TwoBandPhotosyntheticallyActiveRadiation!(PAR, grid, clock, Chl, surface_PAR, PAR_model)
-    i, j = @index(Global, NTuple)
-
-    PAR⁰ = getbc(surface_PAR, i, j, grid, clock, Chl)
-
-    kʳ = PAR_model.water_red_attenuation
-    kᵇ = PAR_model.water_blue_attenuation
-    χʳ = PAR_model.chlorophyll_red_attenuation
-    χᵇ = PAR_model.chlorophyll_blue_attenuation
-    eʳ = PAR_model.chlorophyll_red_exponent
-    eᵇ = PAR_model.chlorophyll_blue_exponent
-    r  = PAR_model.pigment_ratio
-
-    zᶜ = znodes(grid, Center(), Center(), Center())
-    zᶠ = znodes(grid, Center(), Center(), Face())
-
-    # first point below surface
-    @inbounds begin
-        ∫chlʳ = (zᶠ[grid.Nz + 1] - zᶜ[grid.Nz]) * (Chl[i, j, grid.Nz] / r)^eʳ
-        ∫chlᵇ = (zᶠ[grid.Nz + 1] - zᶜ[grid.Nz]) * (Chl[i, j, grid.Nz] / r)^eᵇ
-        PAR[i, j, grid.Nz] = PAR⁰ * (exp(kʳ * zᶜ[grid.Nz] - χʳ * ∫chlʳ) + exp(kᵇ * zᶜ[grid.Nz] - χᵇ * ∫chlᵇ)) / 2
-    end
-
-    # the rest of the points
-    for k in grid.Nz-1:-1:1
-        @inbounds begin
-            ∫chlʳ += (zᶜ[k + 1] - zᶠ[k + 1]) * (Chl[i, j, k + 1] / r)^eʳ + (zᶠ[k + 1] - zᶜ[k]) * (Chl[i, j, k] / r)^eʳ
-            ∫chlᵇ += (zᶜ[k + 1] - zᶠ[k + 1]) * (Chl[i, j, k + 1] / r)^eᵇ + (zᶠ[k + 1] - zᶜ[k]) * (Chl[i, j, k] / r)^eᵇ
-            PAR[i, j, k] =  PAR⁰ * (exp(kʳ * zᶜ[k] - χʳ * ∫chlʳ) + exp(kᵇ * zᶜ[k] - χᵇ * ∫chlᵇ)) / 2
-        end
-    end
-end
-
-struct TwoBandPhotosyntheticallyActiveRadiation{FT, F, SPAR}
+struct TwoBandPhotosyntheticallyActiveRadiation{FT, FF, F, SPAR} <: AbstractSingleBandExponentialLightAttenuation{2, FF, F, SPAR}
     water_red_attenuation :: FT
     water_blue_attenuation :: FT
     chlorophyll_red_attenuation :: FT
@@ -41,6 +8,7 @@ struct TwoBandPhotosyntheticallyActiveRadiation{FT, F, SPAR}
     pigment_ratio :: FT
 
     field :: F
+    interface_field :: FF
 
     surface_PAR :: SPAR
 
@@ -52,8 +20,9 @@ struct TwoBandPhotosyntheticallyActiveRadiation{FT, F, SPAR}
                                              chlorophyll_blue_exponent::FT,
                                              pigment_ratio::FT,
                                              field::F,
-                                             surface_PAR::SPAR) where {FT, F, SPAR} =
-        new{FT, F, SPAR}(water_red_attenuation,
+                                             interface_field::FF,
+                                             surface_PAR::SPAR) where {FT, F, FF, SPAR} =
+        new{FT, FF, F, SPAR}(water_red_attenuation,
                          water_blue_attenuation,
                          chlorophyll_red_attenuation,
                          chlorophyll_blue_attenuation,
@@ -61,8 +30,17 @@ struct TwoBandPhotosyntheticallyActiveRadiation{FT, F, SPAR}
                          chlorophyll_blue_exponent,
                          pigment_ratio,
                          field,
+                         interface_field,
                          surface_PAR)
 end
+
+const TwoBandLight{FT, F, SPAR} = TwoBandPhotosyntheticallyActiveRadiation{FT, F, SPAR}
+
+@inline attenuation(i, j, k, grid, la::TwoBandLight, clock, Chl, ::Val{1}) =
+    @inbounds la.water_red_attenuation + (Chl[i, j, k]/la.pigment_ratio)^la.chlorophyll_red_exponent * la.chlorophyll_red_attenuation
+
+@inline attenuation(i, j, k, grid, la::TwoBandLight, clock, Chl, ::Val{2}) =
+    @inbounds la.water_blue_attenuation + (Chl[i, j, k]/la.pigment_ratio)^la.chlorophyll_blue_exponent * la.chlorophyll_blue_attenuation
 
 """
     TwoBandPhotosyntheticallyActiveRadiation(; grid::AbstractGrid{FT},
@@ -106,7 +84,8 @@ function TwoBandPhotosyntheticallyActiveRadiation(grid::AbstractGrid{FT}, surfac
                                                   chlorophyll_blue_exponent = 0.674,
                                                   pigment_ratio = 0.7,
                                                   discrete_form = false,
-                                                  parameters = nothing) where FT
+                                                  parameters = nothing,
+                                                  interface_field = nothing) where FT
 
     water_red_attenuation = convert(FT, water_red_attenuation)
     water_blue_attenuation = convert(FT, water_blue_attenuation)
@@ -134,23 +113,15 @@ function TwoBandPhotosyntheticallyActiveRadiation(grid::AbstractGrid{FT}, surfac
                                                     chlorophyll_blue_exponent,
                                                     pigment_ratio,
                                                     field,
+                                                    interface_field,
                                                     surface_PAR)
-end
-
-function update_biogeochemical_state!(model, PAR::TwoBandPhotosyntheticallyActiveRadiation)
-    arch = architecture(model.grid)
-    Chl = chlorophyll(model.biogeochemistry, model)
-
-    launch!(arch, model.grid, :xy, update_TwoBandPhotosyntheticallyActiveRadiation!, PAR.field, model.grid, model.clock, Chl, PAR.surface_PAR, PAR)
-    #fill_halo_regions!(PAR.field, model.clock, fields(model))
-
-    return nothing
 end
 
 summary(::TwoBandPhotosyntheticallyActiveRadiation{FT}) where {FT} = string("TwoBandPhotosyntheticallyActiveRadiation{$FT}")
 show(io::IO, model::TwoBandPhotosyntheticallyActiveRadiation{FT}) where {FT} = print(io, summary(model))
 
-biogeochemical_auxiliary_fields(par::TwoBandPhotosyntheticallyActiveRadiation) = (PAR = par.field, )
+biogeochemical_auxiliary_fields(par::TwoBandPhotosyntheticallyActiveRadiation) = (PAR = par.field, PAR_interface = par.interface_field)
+biogeochemical_auxiliary_fields(par::TwoBandPhotosyntheticallyActiveRadiation{<:Any, Nothing}) = (PAR = par.field, )
 
 adapt_structure(to, par::TwoBandPhotosyntheticallyActiveRadiation) =
     TwoBandPhotosyntheticallyActiveRadiation(adapt(to, par.water_red_attenuation),
