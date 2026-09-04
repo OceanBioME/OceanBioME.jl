@@ -6,14 +6,15 @@ module Light
 export TwoBandPhotosyntheticallyActiveRadiation, 
        PrescribedPhotosyntheticallyActiveRadiation, 
        MultiBandPhotosyntheticallyActiveRadiation,
-       PrescribedAttenuationPAR
+       PrescribedAttenuationPAR,
+       PARFromShortwave
 
 using Adapt
 
 using KernelAbstractions, Oceananigans.Units
 using Oceananigans.Architectures: device, architecture, on_architecture
 using Oceananigans.Utils: launch!
-using Oceananigans: Center, Face, fields
+using Oceananigans: Oceananigans, Center, Face, fields
 using Oceananigans.Grids: node, znodes, znode, AbstractGrid
 using Oceananigans.Fields: CenterField, TracerFields, location
 using Oceananigans.BoundaryConditions: fill_halo_regions!, 
@@ -37,11 +38,32 @@ import Base: show, summary
 import Oceananigans.Biogeochemistry: biogeochemical_auxiliary_fields, update_biogeochemical_state!, required_biogeochemical_auxiliary_fields
 import Oceananigans.BoundaryConditions: _fill_top_halo!
 
+abstract type AbstractPhotosyntheticallyActiveRadiation{SF} end
+
+surface_PAR(par::AbstractPhotosyntheticallyActiveRadiation) = par.surface_PAR
+
+function PAR_field(grid, surface_PAR, parameters, discrete_form)
+    boundary_condition_kwargs = surface_PAR isa Function ? (; parameters, discrete_form) : NamedTuple()
+
+    boundary_conditions =
+       regularize_field_boundary_conditions(
+           FieldBoundaryConditions(top = ValueBoundaryCondition(surface_PAR; boundary_condition_kwargs...)), grid, :PAR)
+
+    field = CenterField(grid; boundary_conditions)
+
+    # wrap surface_PAR to make it work with the `getbc` interface
+    surface_PAR = materialize_condition(surface_PAR, parameters, discrete_form, ()) 
+    surface_PAR = regularize_boundary_condition(surface_PAR, grid, (Center(), Center(), Center()), 3, RightBoundary, nothing)
+
+    return field, surface_PAR
+end
+
 include("2band.jl")
 include("multi_band.jl")
 include("prescribed.jl")
 include("prescribed_attenuation.jl")
-
 include("compute_euphotic_depth.jl")
+
+include("PAR_from_shortwave.jl")
 
 end

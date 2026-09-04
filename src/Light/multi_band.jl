@@ -23,7 +23,7 @@ and χ(i) the chlorophyll attenuation coefficient.
 When the fields are called with `biogeochemical_auxiliary_fields` an additional field named `PAR`
 is also returned which is a sum of the bands.
 """
-struct MultiBandPhotosyntheticallyActiveRadiation{T, F, FN, K, E, C, SPAR, SPARD}
+struct MultiBandPhotosyntheticallyActiveRadiation{T, F, FN, K, E, C, SPAR, SPARD} <: AbstractPhotosyntheticallyActiveRadiation{SPAR}
                                 total :: T
                                fields :: F
                           field_names :: FN

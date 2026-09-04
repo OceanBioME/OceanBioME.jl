@@ -31,7 +31,7 @@
     end
 end
 
-struct TwoBandPhotosyntheticallyActiveRadiation{FT, F, SPAR}
+struct TwoBandPhotosyntheticallyActiveRadiation{FT, F, SPAR} <: AbstractPhotosyntheticallyActiveRadiation{SPAR}
     water_red_attenuation :: FT
     water_blue_attenuation :: FT
     chlorophyll_red_attenuation :: FT
@@ -116,15 +116,7 @@ function TwoBandPhotosyntheticallyActiveRadiation(grid::AbstractGrid{FT}, surfac
     chlorophyll_blue_exponent = convert(FT, chlorophyll_blue_exponent)
     pigment_ratio = convert(FT, pigment_ratio)
 
-    boundary_condition_kwargs = surface_PAR isa Function ? (; parameters, discrete_form) : NamedTuple()
-
-    field = CenterField(grid; boundary_conditions =
-                            regularize_field_boundary_conditions(
-                                FieldBoundaryConditions(top = ValueBoundaryCondition(surface_PAR; boundary_condition_kwargs...)), grid, :PAR))
-
-    # wrap surface_PAR to make it work with the `getbc` interface
-    surface_PAR = materialize_condition(surface_PAR, parameters, discrete_form, ()) 
-    surface_PAR = regularize_boundary_condition(surface_PAR, grid, (Center(), Center(), Center()), 3, RightBoundary, nothing)
+    field, surface_PAR = PAR_field(grid, surface_PAR, parameters, discrete_form)
 
     return TwoBandPhotosyntheticallyActiveRadiation(water_red_attenuation,
                                                     water_blue_attenuation,
