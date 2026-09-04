@@ -1,5 +1,4 @@
-using Oceananigans.Grids: znode
-using Oceananigans.Operators: Δzᵃᵃᶠ, Δzᵃᵃᶜ
+using Oceananigans.Operators: Δzᵃᵃᶜ
 
 abstract type AbstractSingleBandExponentialLightAttenuation{BA, IN, CA, SP} end # bands, interface, cell average, and surface light
 
@@ -38,13 +37,6 @@ end
     end
 end
 
-@inline surface_center_attenuation(i, j, grid, la::AbstractLight{1}, clock, Chl) =
-    exp(attenuation(i, j, grid.Nz, grid, la, clock, Chl) * znode(i, j, grid.Nz, grid, Center(), Center(), Center()))
-
-@inline center_to_center_attenuation(i, j, k, grid, la::AbstractLight{1}, clock, Chl) =
-    (exp(-attenuation(i, j, k+1, grid, la, clock, Chl) * Δzᵃᵃᶜ(i, j, k+1, grid)/2) *
-     exp(-attenuation(i, j, k, grid, la, clock, Chl) * Δzᵃᵃᶜ(i, j, k, grid)/2))
-
 @inline face_to_face_attenuation(i, j, k, grid, la::AbstractLight{1}, clock, Chl) =
     exp(-attenuation(i, j, k, grid, la, clock, Chl) * Δzᵃᵃᶜ(i, j, k, grid))
 
@@ -56,17 +48,14 @@ end
 
     PAR⁰ = getbc(surface_PAR, i, j, grid, clock, Chl)
     K = initial_attenuation(la, eltype(grid))
-    δ = one(grid)
 
     @inbounds for k in grid.Nz:-1:1
         Δz = Δzᵃᵃᶜ(i, j, k, grid)
-        K =  face_to_face_attenuation(i, j, k, grid, la, clock, Chl, K, Δz)
-        
-        eᵏᵈᶻ = total_attenuation(K, la) / δ
+        K_next = face_to_face_attenuation(i, j, k, grid, la, clock, Chl, K, Δz)
 
-        PAR[i, j, k] = - PAR⁰ * δ * (1 - eᵏᵈᶻ) / log(eᵏᵈᶻ)
+        PAR[i, j, k] = - PAR⁰ * total_cell_average(K, K_next, la)
 
-        δ = total_attenuation(K, la)
+        K = K_next
     end
 end
 
@@ -83,13 +72,13 @@ end
 
     @inbounds for k in grid.Nz:-1:1
         Δz = Δzᵃᵃᶜ(i, j, k, grid)
-        K = face_to_face_attenuation(i, j, k, grid, la, clock, Chl, K, Δz)
-        
-        PARᵢ[i, j, k] = PAR⁰ * total_attenuation(K, la)
+        K_next = face_to_face_attenuation(i, j, k, grid, la, clock, Chl, K, Δz)
 
-        eᵏᵈᶻ = PARᵢ[i, j, k] / PARᵢ[i, j, k+1]
+        PARᵢ[i, j, k] = PAR⁰ * total_attenuation(K_next, la)
 
-        PAR[i, j, k] = -PARᵢ[i, j, k+1] * (1 - eᵏᵈᶻ)/log(eᵏᵈᶻ) 
+        PAR[i, j, k] = - PAR⁰ * total_cell_average(K, K_next, la)
+
+        K = K_next
     end
 end
 
@@ -107,27 +96,20 @@ end
     return combined
 end
 
-@inline @generated function surface_center_attenuation(i, j, grid, la::AbstractLight{N}, clock, Chl, z) where N
-    args = [:(exp(z * attenuation(i, j, grid.Nz, grid, la, clock, Chl, Val($n)))) for n in 1:N]
-
-    return Expr(:tuple, args...)
-end
-
-@inline @generated function center_to_center_attenuation(i, j, k, grid, 
-                                                         la::AbstractLight{N}, 
-                                                         clock, Chl, 
-                                                         cumulative_attenuation, 
-                                                         Δz1, Δz2) where N
-    args = [:(@inbounds cumulative_attenuation[$n] * 
-                        (exp(-Δz1/2 * attenuation(i, j, k+1, grid, la, clock, Chl, Val($n))) *
-                         exp(-Δz2/2 * attenuation(i, j, k, grid, la, clock, Chl, Val($n))))) for n in 1:N]
-
-    return Expr(:tuple, args...)
-end
-
 @inline @generated function face_to_face_attenuation(i, j, k, grid, la::AbstractLight{N}, clock, Chl, cumulative_attenuation, Δz) where N
     total_args = [:(@inbounds cumulative_attenuation[$n] * exp(-Δz * attenuation(i, j, k, grid, la, clock, Chl, Val($n)))) for n in 1:N]
     return Expr(:tuple, total_args...)
+end
+
+@inline @generated function total_cell_average(K, K_next, la::AbstractLight{N}) where N
+    combined = Expr(:block)
+    push!(combined.args, :(total = zero(K[1])))
+    for n in 1:N
+        push!(combined.args, :(total += @inbounds weight(la, Val($n)) * K[$n] * (1 - K_next[$n]/K[$n]) / log(K_next[$n]/K[$n])))
+    end
+    push!(combined.args, :(return total))
+
+    return combined
 end
 
 function update_biogeochemical_state!(model, PAR::AbstractLight{<:Any, Nothing})

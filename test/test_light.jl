@@ -43,45 +43,38 @@ function test_two_band(grid, model_type, surface_PAR, discrete_form, parameters 
 
     results_PAR = Array(interior(biogeochemical_auxiliary_fields(biogeochemistry).PAR))[1, 1, 1:2]
 
+    attenuationʳ(P) = kʳ + χʳ * (Rᶜₚ * P / r) ^ eʳ
+    attenuationᵇ(P) = kᵇ + χᵇ * (Rᶜₚ * P / r) ^ eᵇ
+
+    Δz = 1.0
+    PAR⁰ = 100.0
+
+    tʳ, tᵇ = 1.0, 1.0
+
+    Aʳ = exp(-Δz * attenuationʳ(2.0))
+    Aᵇ = exp(-Δz * attenuationᵇ(2.0))
+
+    PAR2 = PAR⁰ * (0.5 * tʳ * (1 - Aʳ) / (-log(Aʳ)) + 0.5 * tᵇ * (1 - Aᵇ) / (-log(Aᵇ)))
+    PARi_face2 = PAR⁰ * (0.5 * tʳ * Aʳ + 0.5 * tᵇ * Aᵇ)
+
+    tʳ, tᵇ = tʳ * Aʳ, tᵇ * Aᵇ
+
+    Aʳ = exp(-Δz * attenuationʳ(1.0))
+    Aᵇ = exp(-Δz * attenuationᵇ(1.0))
+
+    PAR1 = PAR⁰ * (0.5 * tʳ * (1 - Aʳ) / (-log(Aʳ)) + 0.5 * tᵇ * (1 - Aᵇ) / (-log(Aᵇ)))
+    PARi_face1 = PAR⁰ * (0.5 * tʳ * Aʳ + 0.5 * tᵇ * Aᵇ)
+
+    expected_PAR = [PAR1, PAR2]
+
+    @test all(results_PAR .≈ expected_PAR)
+
     if test_interface
-        attenuationʳ(P) = kʳ + χʳ * (Rᶜₚ * P / r) ^ eʳ
-        attenuationᵇ(P) = kᵇ + χᵇ * (Rᶜₚ * P / r) ^ eᵇ
-
-        Δz = 1.0
-        PAR⁰ = 100.0
-
-        Kʳ = exp(-Δz * attenuationʳ(2.0))
-        Kᵇ = exp(-Δz * attenuationᵇ(2.0))
-
-        PARi_face2 = PAR⁰ * (Kʳ + Kᵇ) / 2
-        ekdz = PARi_face2 / PAR⁰
-        PAR2 = -PAR⁰ * (1 - ekdz) / log(ekdz)
-
-        Kʳ *= exp(-Δz * attenuationʳ(1.0))
-        Kᵇ *= exp(-Δz * attenuationᵇ(1.0))
-
-        PARi_face1 = PAR⁰ * (Kʳ + Kᵇ) / 2
-        ekdz = PARi_face1 / PARi_face2
-        PAR1 = -PARi_face2 * (1 - ekdz) / log(ekdz)
-
-        expected_PAR = [PAR1, PAR2]
         expected_PAR_interface = [PARi_face1, PARi_face2, PAR⁰]
 
         results_PAR_interface = Array(interior(biogeochemical_auxiliary_fields(biogeochemistry).PAR_interface))[1, 1, 1:3]
 
-        @test all(results_PAR .≈ expected_PAR)
         @test all(results_PAR_interface .≈ expected_PAR_interface)
-    else
-        ∫Chlʳ = [(2.0 * Rᶜₚ / r) ^ eʳ * 0.5]
-        ∫Chlᵇ = [(2.0 * Rᶜₚ / r) ^ eᵇ * 0.5]
-
-        push!(∫Chlʳ, ∫Chlʳ[1] + (2.0 * Rᶜₚ / r) ^ eʳ * 0.5 + (1.0 * Rᶜₚ / r) ^ eʳ * 0.5)
-        push!(∫Chlᵇ, ∫Chlᵇ[1] + (2.0 * Rᶜₚ / r) ^ eᵇ * 0.5 + (1.0 * Rᶜₚ / r) ^ eᵇ * 0.5)
-
-        expected_PAR = 100.0 .* [exp(- 0.5 * kʳ - ∫Chlʳ[1] * χʳ) + exp(- 0.5 * kᵇ - ∫Chlᵇ[1] * χᵇ),
-                                 exp(- 1.5 * kʳ - ∫Chlʳ[2] * χʳ) + exp(- 1.5 * kᵇ - ∫Chlᵇ[2] * χᵇ)] ./ 2
-
-        @test all(results_PAR .≈ reverse(expected_PAR))
     end
 
     return nothing
@@ -110,34 +103,30 @@ function test_prescribed_attenuation(grid, model_type,
                        biogeochemistry,
                        tracers = unique((required_biogeochemical_tracers(biogeochemistry)..., :T, :S))) # because hydrostatic free surface will request T and S and some BGC models will too
 
-    PAR = model.biogeochemistry.light_attenuation
-
     results_PAR = Array(interior(biogeochemical_auxiliary_fields(biogeochemistry).PAR))[1, 1, 1:2]
 
+    K = 0.1
+    Δz = 1.0
+    PAR⁰ = 100.0
+
+    e = exp(-K * Δz)
+
+    PARi_face2 = PAR⁰ * e
+    PAR2 = PAR⁰ * (1 - e) / (K * Δz)
+
+    PARi_face1 = PARi_face2 * e
+    PAR1 = PARi_face2 * (1 - e) / (K * Δz)
+
+    expected_PAR = [PAR1, PAR2]
+
+    @test all(results_PAR .≈ expected_PAR)
+
     if test_interface
-        K = 0.1
-        Δz = 1.0
-        PAR⁰ = 100.0
-
-        e = exp(-K * Δz)
-
-        PARi_face2 = PAR⁰ * e
-        PAR2 = PAR⁰ * (1 - e) / (K * Δz)
-
-        PARi_face1 = PARi_face2 * e
-        PAR1 = PARi_face2 * (1 - e) / (K * Δz)
-
-        expected_PAR = [PAR1, PAR2]
         expected_PAR_interface = [PARi_face1, PARi_face2, PAR⁰]
 
         results_PAR_interface = Array(interior(biogeochemical_auxiliary_fields(biogeochemistry).PAR_interface))[1, 1, 1:3]
 
-        @test all(results_PAR .≈ expected_PAR)
         @test all(results_PAR_interface .≈ expected_PAR_interface)
-    else
-        expected_PAR = 100 .* exp.(znodes(PAR.field) .* 0.1)
-
-        @test all(results_PAR .≈ expected_PAR)
     end
 
     return nothing
