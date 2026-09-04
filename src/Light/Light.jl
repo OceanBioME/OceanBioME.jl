@@ -37,7 +37,9 @@ import Base: show, summary
 import Oceananigans.Biogeochemistry: biogeochemical_auxiliary_fields, update_biogeochemical_state!, required_biogeochemical_auxiliary_fields
 import Oceananigans.BoundaryConditions: _fill_top_halo!
 
+include("abstract_light.jl")
 include("2band.jl")
+include("2band_new.jl")
 include("multi_band.jl")
 include("prescribed.jl")
 include("prescribed_attenuation.jl")
