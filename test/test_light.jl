@@ -7,18 +7,22 @@ using OceanBioME: TwoBandPhotosyntheticallyActiveRadiation,
                   LOBSTER, NPZD, ImplicitBiology
 
 using Oceananigans.Architectures: on_architecture
-using Oceananigans.Biogeochemistry: update_biogeochemical_state!, 
-                                    required_biogeochemical_tracers, 
+using Oceananigans.Biogeochemistry: update_biogeochemical_state!,
+                                    required_biogeochemical_tracers,
                                     biogeochemical_auxiliary_fields
+using Oceananigans.Fields: ZFaceField
 
 Pᵢ(x,y,z) = 2.5 + z
 
-function test_two_band(grid, model_type, surface_PAR, discrete_form, parameters = nothing)
-    biogeochemistry = NPZD(grid; 
-                           light_attenuation = 
+function test_two_band(grid, model_type, surface_PAR, discrete_form, parameters = nothing; test_interface = false)
+    interface_field = test_interface ? ZFaceField(grid) : nothing
+
+    biogeochemistry = NPZD(grid;
+                           light_attenuation =
                                TwoBandPhotosyntheticallyActiveRadiation(grid, surface_PAR;
                                                                         discrete_form,
-                                                                        parameters))
+                                                                        parameters,
+                                                                        interface_field))
 
     model = model_type(grid;
                        biogeochemistry,
@@ -37,34 +41,68 @@ function test_two_band(grid, model_type, surface_PAR, discrete_form, parameters 
     r = PAR_model.pigment_ratio
     Rᶜₚ = biogeochemistry.underlying_biogeochemistry.plankton.chlorophyll_ratio
 
-    ∫Chlʳ = [(2.0 * Rᶜₚ / r) ^ eʳ * 0.5]
-    ∫Chlᵇ = [(2.0 * Rᶜₚ / r) ^ eᵇ * 0.5]
-
-    push!(∫Chlʳ, ∫Chlʳ[1] + (2.0 * Rᶜₚ / r) ^ eʳ * 0.5 + (1.0 * Rᶜₚ / r) ^ eʳ * 0.5)
-    push!(∫Chlᵇ, ∫Chlᵇ[1] + (2.0 * Rᶜₚ / r) ^ eᵇ * 0.5 + (1.0 * Rᶜₚ / r) ^ eᵇ * 0.5)
-
-    expected_PAR = 100.0 .* [exp(- 0.5 * kʳ - ∫Chlʳ[1] * χʳ) + exp(- 0.5 * kᵇ - ∫Chlᵇ[1] * χᵇ),
-                             exp(- 1.5 * kʳ - ∫Chlʳ[2] * χʳ) + exp(- 1.5 * kᵇ - ∫Chlᵇ[2] * χᵇ)] ./ 2
-
     results_PAR = Array(interior(biogeochemical_auxiliary_fields(biogeochemistry).PAR))[1, 1, 1:2]
 
-    @test all(results_PAR .≈ reverse(expected_PAR))
+    if test_interface
+        attenuationʳ(P) = kʳ + χʳ * (Rᶜₚ * P / r) ^ eʳ
+        attenuationᵇ(P) = kᵇ + χᵇ * (Rᶜₚ * P / r) ^ eᵇ
+
+        Δz = 1.0
+        PAR⁰ = 100.0
+
+        Kʳ = exp(-Δz * attenuationʳ(2.0))
+        Kᵇ = exp(-Δz * attenuationᵇ(2.0))
+
+        PARi_face2 = PAR⁰ * (Kʳ + Kᵇ) / 2
+        ekdz = PARi_face2 / PAR⁰
+        PAR2 = -PAR⁰ * (1 - ekdz) / log(ekdz)
+
+        Kʳ *= exp(-Δz * attenuationʳ(1.0))
+        Kᵇ *= exp(-Δz * attenuationᵇ(1.0))
+
+        PARi_face1 = PAR⁰ * (Kʳ + Kᵇ) / 2
+        ekdz = PARi_face1 / PARi_face2
+        PAR1 = -PARi_face2 * (1 - ekdz) / log(ekdz)
+
+        expected_PAR = [PAR1, PAR2]
+        expected_PAR_interface = [PARi_face1, PARi_face2, PAR⁰]
+
+        results_PAR_interface = Array(interior(biogeochemical_auxiliary_fields(biogeochemistry).PAR_interface))[1, 1, 1:3]
+
+        @test all(results_PAR .≈ expected_PAR)
+        @test all(results_PAR_interface .≈ expected_PAR_interface)
+    else
+        ∫Chlʳ = [(2.0 * Rᶜₚ / r) ^ eʳ * 0.5]
+        ∫Chlᵇ = [(2.0 * Rᶜₚ / r) ^ eᵇ * 0.5]
+
+        push!(∫Chlʳ, ∫Chlʳ[1] + (2.0 * Rᶜₚ / r) ^ eʳ * 0.5 + (1.0 * Rᶜₚ / r) ^ eʳ * 0.5)
+        push!(∫Chlᵇ, ∫Chlᵇ[1] + (2.0 * Rᶜₚ / r) ^ eᵇ * 0.5 + (1.0 * Rᶜₚ / r) ^ eᵇ * 0.5)
+
+        expected_PAR = 100.0 .* [exp(- 0.5 * kʳ - ∫Chlʳ[1] * χʳ) + exp(- 0.5 * kᵇ - ∫Chlᵇ[1] * χᵇ),
+                                 exp(- 1.5 * kʳ - ∫Chlʳ[2] * χʳ) + exp(- 1.5 * kᵇ - ∫Chlᵇ[2] * χᵇ)] ./ 2
+
+        @test all(results_PAR .≈ reverse(expected_PAR))
+    end
 
     return nothing
 end
 
-function test_prescribed_attenuation(grid, model_type, 
-                                     surface_PAR, surface_discrete_form, 
-                                     attenuation, attenuation_discrete_form, 
-                                     surface_parameters = nothing, 
-                                     attenuation_parameters = nothing)
+function test_prescribed_attenuation(grid, model_type,
+                                     surface_PAR, surface_discrete_form,
+                                     attenuation, attenuation_discrete_form,
+                                     surface_parameters = nothing,
+                                     attenuation_parameters = nothing;
+                                     test_interface = false)
+
+    interface_field = test_interface ? ZFaceField(grid) : nothing
 
     light_attenuation = PrescribedAttenuationPAR(grid, surface_PAR;
                                                  surface_discrete_form,
                                                  surface_parameters,
                                                  attenuation,
                                                  attenuation_discrete_form,
-                                                 attenuation_parameters)
+                                                 attenuation_parameters,
+                                                 interface_field)
                                                  
     biogeochemistry = ImplicitBiology(grid; light_attenuation)
 
@@ -74,11 +112,33 @@ function test_prescribed_attenuation(grid, model_type,
 
     PAR = model.biogeochemistry.light_attenuation
 
-    expected_PAR = 100 .* exp.(znodes(PAR.field) .* 0.1)
-
     results_PAR = Array(interior(biogeochemical_auxiliary_fields(biogeochemistry).PAR))[1, 1, 1:2]
 
-    @test all(results_PAR .≈ expected_PAR)
+    if test_interface
+        K = 0.1
+        Δz = 1.0
+        PAR⁰ = 100.0
+
+        e = exp(-K * Δz)
+
+        PARi_face2 = PAR⁰ * e
+        PAR2 = PAR⁰ * (1 - e) / (K * Δz)
+
+        PARi_face1 = PARi_face2 * e
+        PAR1 = PARi_face2 * (1 - e) / (K * Δz)
+
+        expected_PAR = [PAR1, PAR2]
+        expected_PAR_interface = [PARi_face1, PARi_face2, PAR⁰]
+
+        results_PAR_interface = Array(interior(biogeochemical_auxiliary_fields(biogeochemistry).PAR_interface))[1, 1, 1:3]
+
+        @test all(results_PAR .≈ expected_PAR)
+        @test all(results_PAR_interface .≈ expected_PAR_interface)
+    else
+        expected_PAR = 100 .* exp.(znodes(PAR.field) .* 0.1)
+
+        @test all(results_PAR .≈ expected_PAR)
+    end
 
     return nothing
 end
@@ -150,8 +210,10 @@ field_surface_PAR = Oceananigans.Fields.ConstantField(100)
         if !((model == NonhydrostaticModel) && ((grid isa LatitudeLongitudeGrid) | (grid isa OrthogonalSphericalShellGrid)))
             @info "Testing light with in $model on $grid..."
             test_two_band(grid, model, field_surface_PAR, false)
+            test_two_band(grid, model, field_surface_PAR, false; test_interface = true)
             test_multi_band(grid, model, field_surface_PAR, false)
             test_prescribed_attenuation(grid, model, field_surface_PAR, false, 0.1, false)
+            test_prescribed_attenuation(grid, model, field_surface_PAR, false, 0.1, false; test_interface = true)
         end
     end
 
