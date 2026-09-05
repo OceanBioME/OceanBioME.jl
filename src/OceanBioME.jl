@@ -57,6 +57,7 @@ export ColumnField, isacolumn
 
 using Oceananigans.Architectures: architecture, device, CPU
 using Oceananigans.Biogeochemistry: AbstractBiogeochemistry, AbstractContinuousFormBiogeochemistry
+using Oceananigans.Fields: ZeroField
 using Oceananigans.Grids: RectilinearGrid, Flat
 
 using Adapt
@@ -131,16 +132,22 @@ Biogeochemistry(underlying_biogeochemistry::AbstractContinuousFormBiogeochemistr
                               particles,
                               modifiers)
 
-required_biogeochemical_tracers(bgc::CompleteBiogeochemistry) = required_biogeochemical_tracers(bgc.underlying_biogeochemistry)
+required_biogeochemical_tracers(bgc::CompleteBiogeochemistry) = 
+    required_biogeochemical_tracers(bgc.underlying_biogeochemistry)
 
-required_biogeochemical_auxiliary_fields(bgc::CompleteBiogeochemistry) = required_biogeochemical_auxiliary_fields(bgc.underlying_biogeochemistry)
+required_biogeochemical_auxiliary_fields(bgc::CompleteBiogeochemistry) = 
+    required_biogeochemical_auxiliary_fields(bgc.underlying_biogeochemistry)
 
-biogeochemical_drift_velocity(bgc::CompleteBiogeochemistry, val_name) = biogeochemical_drift_velocity(bgc.underlying_biogeochemistry, val_name)
+biogeochemical_drift_velocity(bgc::CompleteBiogeochemistry, val_name) = 
+    biogeochemical_drift_velocity(bgc.underlying_biogeochemistry, val_name)
 
-biogeochemical_auxiliary_fields(bgc::CompleteBiogeochemistry) = merge(biogeochemical_auxiliary_fields(bgc.underlying_biogeochemistry),
-                                                                      biogeochemical_auxiliary_fields(bgc.light_attenuation))
+biogeochemical_auxiliary_fields(bgc::CompleteBiogeochemistry) = 
+    merge(biogeochemical_auxiliary_fields(bgc.underlying_biogeochemistry),
+          biogeochemical_auxiliary_fields(bgc.light_attenuation))
 
-@inline chlorophyll(bgc::CompleteBiogeochemistry, model) = chlorophyll(bgc.underlying_biogeochemistry, model)
+@inline chlorophyll(bgc::CompleteBiogeochemistry, model) = 
+    chlorophyll(bgc.underlying_biogeochemistry, model)
+@inline chlorophyll(::Nothing, model) = ZeroField()
 
 @inline adapt_structure(to, bgc::ContinuousBiogeochemistry) = 
     ContinuousBiogeochemistry(adapt(to, bgc.underlying_biogeochemistry),
@@ -155,7 +162,6 @@ biogeochemical_auxiliary_fields(bgc::CompleteBiogeochemistry) = merge(biogeochem
                             nothing,
                             nothing,
                             nothing)
-
 
 function update_tendencies!(bgc::CompleteBiogeochemistry, model)
     update_tendencies!(bgc, bgc.sediment, model)

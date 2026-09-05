@@ -1,41 +1,17 @@
 using Oceananigans.Fields: ConstantField
 using Oceananigans.Forcings: Forcing, materialize_forcing
 
-struct PrescribedAttenuationPhotosyntheticallyActiveRadiation{AT, SP, FI}
+struct PrescribedAttenuationPhotosyntheticallyActiveRadiation{AT, SP, FI, IF} <: AbstractSingleBandExponentialLightAttenuation{1, IF, FI, SP}
     attenuation :: AT
     surface_PAR :: SP
           field :: FI
+interface_field :: IF
 end
 
-function PrescribedAttenuationPhotosyntheticallyActiveRadiation(grid, surface_PAR;
-                                                                surface_parameters = nothing,
-                                                                surface_discrete_form = false,
-                                                                attenuation = 0.1, 
-                                                                attenuation_parameters = nothing,
-                                                                attenuation_discrete_form = false)
+const PrescribedAttenuationPAR = PrescribedAttenuationPhotosyntheticallyActiveRadiation
 
-    boundary_condition_kwargs = surface_PAR isa Function ? (; parameters = surface_parameters, discrete_form = surface_discrete_form) : NamedTuple()
-
-    field = CenterField(grid; 
-                        boundary_conditions =
-                            regularize_field_boundary_conditions(
-                                FieldBoundaryConditions(top = ValueBoundaryCondition(surface_PAR; boundary_condition_kwargs...)), grid, :PAR
-                            ))
-
-    surface_PAR = materialize_condition(surface_PAR, surface_parameters, surface_discrete_form, ()) 
-    surface_PAR = regularize_boundary_condition(surface_PAR, grid, (Center(), Center(), Center()), 3, RightBoundary, nothing)
-
-    if attenuation isa Number
-        attenuation = Forcing(ConstantField(attenuation))
-    else
-        attenuation = Forcing(attenuation; parameters = attenuation_parameters, discrete_form = attenuation_discrete_form)
-        attenuation = materialize_forcing(attenuation, field, :PAR, (:PAR, ))
-    end
-
-    return PrescribedAttenuationPhotosyntheticallyActiveRadiation(attenuation, 
-                                                                  surface_PAR, 
-                                                                  field)
-end
+@inline attenuation(i, j, k, grid, la::PrescribedAttenuationPAR, clock, chlorophyll) =
+    la.attenuation(i, j, k, grid, clock, nothing)
 
 """
     PrescribedAttenuationPAR(grid, surface_PAR;
@@ -69,47 +45,50 @@ Keyword Arguments
   is a function
 - `surface_parameters`, `surface_discrete_form`: parameters and form for `surface_PAR` when it is a
   function
+- `interface_field`: optional field (e.g. `ZFaceField(grid)`) on which to record `PAR` at cell
+  faces, in addition to the default cell-centred `PAR`; see the "Recording PAR at cell faces"
+  section of the light attenuation model documentation
 """
-const PrescribedAttenuationPAR = PrescribedAttenuationPhotosyntheticallyActiveRadiation
+function PrescribedAttenuationPhotosyntheticallyActiveRadiation(grid, surface_PAR;
+                                                                surface_parameters = nothing,
+                                                                surface_discrete_form = false,
+                                                                attenuation = 0.1, 
+                                                                attenuation_parameters = nothing,
+                                                                attenuation_discrete_form = false,
+                                                                interface_field = nothing)
 
-function update_biogeochemical_state!(model, PAR::PrescribedAttenuationPAR)
-    arch = architecture(model.grid)
+    boundary_condition_kwargs = surface_PAR isa Function ? (; parameters = surface_parameters, discrete_form = surface_discrete_form) : NamedTuple()
 
-    launch!(arch, model.grid, :xy, update_PrescribedAttenuationPhotosyntheticallyActiveRadiation!, PAR.field, model.grid, model.clock, PAR.surface_PAR, PAR.attenuation)
+    field = CenterField(grid; 
+                        boundary_conditions =
+                            regularize_field_boundary_conditions(
+                                FieldBoundaryConditions(top = ValueBoundaryCondition(surface_PAR; boundary_condition_kwargs...)), grid, :PAR
+                            ))
 
-    return nothing
-end
+    surface_PAR = materialize_condition(surface_PAR, surface_parameters, surface_discrete_form, ()) 
+    surface_PAR = regularize_boundary_condition(surface_PAR, grid, (Center(), Center(), Center()), 3, RightBoundary, nothing)
 
-@kernel function update_PrescribedAttenuationPhotosyntheticallyActiveRadiation!(PAR, grid, clock, surface_PAR, attenuation)
-    i, j = @index(Global, NTuple)
-
-    PAR⁰ = getbc(surface_PAR, i, j, grid, clock, nothing)
-
-    zᶜ = znodes(grid, Center(), Center(), Center())
-    zᶠ = znodes(grid, Center(), Center(), Face())
-
-    @inbounds begin
-        K̃ = -attenuation(i, j, grid.Nz, grid, clock, nothing) * zᶜ[grid.Nz]
-        PAR[i, j, grid.Nz] =  PAR⁰ * exp(-K̃)
+    if attenuation isa Number
+        attenuation = Forcing(ConstantField(attenuation))
+    else
+        attenuation = Forcing(attenuation; parameters = attenuation_parameters, discrete_form = attenuation_discrete_form)
+        attenuation = materialize_forcing(attenuation, field, :PAR, (:PAR, ))
     end
 
-    for k in grid.Nz-1:-1:1
-        @inbounds begin
-            K̃ += attenuation(i, j, k+1, grid, clock, nothing) * (zᶜ[k + 1] - zᶠ[k + 1])
-            K̃ += attenuation(i, j, k,   grid, clock, nothing) * (zᶠ[k + 1] - zᶜ[k])
-            PAR[i, j, k] =  PAR⁰ * exp(-K̃)
-        end
-    end
-
-    nothing
+    return PrescribedAttenuationPhotosyntheticallyActiveRadiation(attenuation, 
+                                                                  surface_PAR, 
+                                                                  field,
+                                                                  interface_field)
 end
 
 summary(::PrescribedAttenuationPAR) = string("PrescribedAttenuationPhotosyntheticallyActiveRadiation")
 show(io::IO, par::PrescribedAttenuationPAR) = print(io, summary(par)*" with typeof(k) = $(summary(par.attenuation)))")
 
-biogeochemical_auxiliary_fields(par::PrescribedAttenuationPhotosyntheticallyActiveRadiation) = (PAR = par.field, )
+biogeochemical_auxiliary_fields(par::PrescribedAttenuationPhotosyntheticallyActiveRadiation) = (PAR = par.field, PAR_interface = par.interface_field)
+biogeochemical_auxiliary_fields(par::PrescribedAttenuationPhotosyntheticallyActiveRadiation{<:Any, <:Any, <:Any, Nothing}) = (PAR = par.field, )
 
 Adapt.adapt_structure(to, par::PrescribedAttenuationPAR) =
-    PrescribedAttenuationPhotosyntheticallyActiveRadiation(nothing,
+    PrescribedAttenuationPhotosyntheticallyActiveRadiation(adapt(to, par.attenuation),
                                                            nothing,
-                                                           adapt(to, par.field))
+                                                           adapt(to, par.field),
+                                                           adapt(to, par.interface_field))
