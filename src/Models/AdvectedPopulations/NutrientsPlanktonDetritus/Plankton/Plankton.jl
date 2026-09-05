@@ -2,6 +2,12 @@ module PlanktonModels
 
 export Abiotic, ImplicitProductivity, PhytoZoo
 
+export ManyPhytoZoo, Autotroph, Heterotroph, Grazing
+export MARBL_small_phyto, MARBL_diatoms, MARBL_diazotrophs, MARBL_autotrophs, MARBL_zooplankton
+export MARBL_cocco_small_phyto, MARBL_cocco_diatoms, MARBL_cocco_diazotrophs, MARBL_coccolithophores
+export MARBL_cocco_autotrophs, MARBL_cocco_zooplankton, MARBL_cocco_plankton
+export oxygen_production_total
+
 # plankton models *must* define `inorganic_waste`, `nutrient_uptake`, `dissolved_waste`, and `solid_waste`
 # and may define `carbon_ratio`, `nitrogen_ratio`, `phosphate_ratio`, `iron_ratio`, `silicon_ratio`, and `calcium_carbonate_rain_ratio`
 # if they are not defined they use the default elemental ratios, with nitrogen as the base unit
@@ -89,5 +95,8 @@ include("primitives.jl")
 include("abiotic.jl")
 include("implicit.jl")
 include("phyto_zoo.jl")
+include("nPmZ/nPmZ.jl")
+
+using .MARBLPlankton
 
 end # module

@@ -1,4 +1,4 @@
-using Oceananigans.Operators: Δzᶜᶜᶠ
+using Oceananigans.Operators: Δzᶜᶜᶜ
 
 function update_tendencies!(bgc, sediment_model::BiogeochemicalSediment, model)
     coupled_fields = coupled_tracers(sediment_model)
@@ -33,7 +33,11 @@ end
     @inbounds begin
         k = bottom_indices[i, j, 1]
 
-        # eflux in X/m²/s
-        @inbounds G[i, j, k] += sediment_tendencies(i, j, grid, args...) / Δzᶜᶜᶠ(i, j, k, grid) 
+        # eflux in X/m²/s. Δzᶜᶜᶜ (the bottom cell's own thickness), not Δzᶜᶜᶠ (the face-centered
+        # center-to-center spacing spanning it and its neighbour) — those only coincide when the bottom
+        # cell sits at a domain boundary (k=1), which every single-column-per-grid model happened to have
+        # by construction; a shared multi-column grid with per-column bathymetry (bottom_indices != 1) does
+        # not, and Δzᶜᶜᶠ there silently divides by the wrong (neighbour-blended) length.
+        @inbounds G[i, j, k] += sediment_tendencies(i, j, grid, args...) / Δzᶜᶜᶜ(i, j, k, grid)
     end
 end

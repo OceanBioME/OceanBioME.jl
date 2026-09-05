@@ -1,6 +1,6 @@
 module NutrientsModels 
 
-export Nutrients, SingleTracerNutrient, NitrateAmmonia, N, PO₄, Fe, Si
+export Nutrients, SingleTracerNutrient, NitrateAmmonia, N, PO₄, Fe, Si, ComplexedIron
 
 using Adapt
 
@@ -74,8 +74,15 @@ required_biogeochemical_auxiliary_fields(::Nutrients) = tuple()
 
 const NutrientsNPD{FT} = NutrientsPlanktonDetritus{FT, <:Nutrients}
 
+function poc_remineralisation end
+function doc_production end
+function iron_scavenging end
+function scavenging_sinking_mass end
+function ballast_sinking_mass end
+
 include("prognosis.jl")
 include("nitrate_ammonia.jl")
+include("complexed_iron.jl")
 include("defaults.jl")
 include("adapt_show_methods.jl")
 
