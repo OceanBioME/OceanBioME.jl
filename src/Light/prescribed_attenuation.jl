@@ -88,7 +88,7 @@ biogeochemical_auxiliary_fields(par::PrescribedAttenuationPhotosyntheticallyActi
 biogeochemical_auxiliary_fields(par::PrescribedAttenuationPhotosyntheticallyActiveRadiation{<:Any, <:Any, <:Any, Nothing}) = (PAR = par.field, )
 
 Adapt.adapt_structure(to, par::PrescribedAttenuationPAR) =
-    PrescribedAttenuationPhotosyntheticallyActiveRadiation(nothing,
+    PrescribedAttenuationPhotosyntheticallyActiveRadiation(adapt(to, par.attenuation),
                                                            nothing,
                                                            adapt(to, par.field),
                                                            adapt(to, par.interface_field))
