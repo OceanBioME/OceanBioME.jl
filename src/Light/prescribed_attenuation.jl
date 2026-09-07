@@ -8,6 +8,11 @@ struct PrescribedAttenuationPhotosyntheticallyActiveRadiation{AT, SP, FI, IF} <:
 interface_field :: IF
 end
 
+"""
+    PrescribedAttenuationPAR
+
+Alias for [`PrescribedAttenuationPhotosyntheticallyActiveRadiation`](@ref).
+"""
 const PrescribedAttenuationPAR = PrescribedAttenuationPhotosyntheticallyActiveRadiation
 
 @inline attenuation(i, j, k, grid, la::PrescribedAttenuationPAR, clock, chlorophyll) =
