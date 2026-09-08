@@ -13,7 +13,7 @@ const AbstractLight{BA, IN, CA, SP} = AbstractSingleBandExponentialLightAttenuat
     PARᵢ = getbc(surface_PAR, i, j, grid, clock, Chl)
 
     @inbounds for k in grid.Nz:-1:1
-        eᵏᵈᶻ = face_to_face_attenuation(i, j, k, grid, la, clock, Chl)
+        eᵏᵈᶻ = exponential_face_to_face_attenuation(i, j, k, grid, la, clock, Chl)
         PAR[i, j, k] = - PARᵢ * (1 - eᵏᵈᶻ)/log(eᵏᵈᶻ)
         PARᵢ *= eᵏᵈᶻ
     end
@@ -30,14 +30,14 @@ end
     @inbounds PARᵢ[i, j, grid.Nz+1] = PAR⁰
 
     @inbounds for k in grid.Nz:-1:1
-        eᵏᵈᶻ = face_to_face_attenuation(i, j, k, grid, la, clock, Chl)
+        eᵏᵈᶻ = exponential_face_to_face_attenuation(i, j, k, grid, la, clock, Chl)
 
         PARᵢ[i, j, k] = PARᵢ[i, j, k+1] * eᵏᵈᶻ
         PAR[i, j, k] = -PARᵢ[i, j, k+1] * (1 - eᵏᵈᶻ)/log(eᵏᵈᶻ)
     end
 end
 
-@inline face_to_face_attenuation(i, j, k, grid, la::AbstractLight{1}, clock, Chl) =
+@inline exponential_face_to_face_attenuation(i, j, k, grid, la::AbstractLight{1}, clock, Chl) =
     exp(-attenuation(i, j, k, grid, la, clock, Chl) * Δzᵃᵃᶜ(i, j, k, grid))
 
 # multiple implicit bands
@@ -51,7 +51,7 @@ end
 
     @inbounds for k in grid.Nz:-1:1
         Δz = Δzᵃᵃᶜ(i, j, k, grid)
-        K_next = face_to_face_attenuation(i, j, k, grid, la, clock, Chl, K, Δz)
+        K_next = exponential_face_to_face_attenuation(i, j, k, grid, la, clock, Chl, K, Δz)
 
         PAR[i, j, k] = - PAR⁰ * total_cell_average(K, K_next, la)
 
@@ -72,10 +72,9 @@ end
 
     @inbounds for k in grid.Nz:-1:1
         Δz = Δzᵃᵃᶜ(i, j, k, grid)
-        K_next = face_to_face_attenuation(i, j, k, grid, la, clock, Chl, K, Δz)
+        K_next = exponential_face_to_face_attenuation(i, j, k, grid, la, clock, Chl, K, Δz)
 
         PARᵢ[i, j, k] = PAR⁰ * total_attenuation(K_next, la)
-
         PAR[i, j, k] = - PAR⁰ * total_cell_average(K, K_next, la)
 
         K = K_next
@@ -96,7 +95,7 @@ end
     return combined
 end
 
-@inline @generated function face_to_face_attenuation(i, j, k, grid, la::AbstractLight{N}, clock, Chl, cumulative_attenuation, Δz) where N
+@inline @generated function exponential_face_to_face_attenuation(i, j, k, grid, la::AbstractLight{N}, clock, Chl, cumulative_attenuation, Δz) where N
     total_args = [:(@inbounds cumulative_attenuation[$n] * exp(-Δz * attenuation(i, j, k, grid, la, clock, Chl, Val($n)))) for n in 1:N]
     return Expr(:tuple, total_args...)
 end
