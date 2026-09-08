@@ -42,6 +42,7 @@ import Oceananigans.Biogeochemistry: biogeochemical_auxiliary_fields, update_bio
 import Oceananigans.BoundaryConditions: _fill_top_halo!
 
 include("subcolumns.jl")
+include("abstract_light.jl")
 include("2band.jl")
 include("multi_band.jl")
 include("prescribed.jl")

@@ -110,6 +110,8 @@ end
   * calcium_carbonate_rain_ratio(i, j, k, grid, bgc.plankton, bgc, fields)
 )
 
+@inline chlorophyll(::ImplicitProductivity, model) = ZeroField()
+
 # admin
 
 Adapt.adapt_structure(to, ip::ImplicitProductivity) = 
