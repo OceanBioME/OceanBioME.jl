@@ -36,14 +36,14 @@ if !isdir(OUTPUT_DIR) mkdir(OUTPUT_DIR) end
 
 small_grid = RectilinearGrid(size=(1, 1, 1), extent=(1, 1, 1))
 
-model_parameters = (LOBSTER(BoxModelGrid(); light_attenuation = nothing).underlying_biogeochemistry,
+model_parameters = (#LOBSTER(BoxModelGrid(); light_attenuation = nothing).underlying_biogeochemistry,
                     NPZD(BoxModelGrid(); light_attenuation = nothing).underlying_biogeochemistry,
                     SugarKelp(),
                     TwoBandPhotosyntheticallyActiveRadiation(small_grid, 100),
                     SimpleMultiGSediment(small_grid).biogeochemistry,
                     InstantRemineralisationSediment(small_grid).biogeochemistry,
                     CarbonChemistry(),
-                    CarbonDioxideGasExchangeBoundaryCondition().condition.func,
+                    #CarbonDioxideGasExchangeBoundaryCondition().condition.func,
                     OxygenGasExchangeBoundaryCondition().condition.func)
 
 exchanged_gas(::Val{G}) where G = G
@@ -164,11 +164,3 @@ end
 for file in files
     rm(file)
 end
-
-deploydocs(
-    repo = "github.com/OceanBioME/OceanBioME.jl",
-    versions = ["stable" => "v^", "dev" => "dev", "v#.#.#"],
-    forcepush = true,
-    push_preview = true,
-    devbranch = "main"
-)

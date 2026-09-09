@@ -1,15 +1,23 @@
 # I'm sure there are other libraries that can do this
 function parameter_table(labels, values)
-    label_width = maximum((length("$label") for label in labels))
-    value_width = maximum((length("$value") for value in values))
-
-    output = "|Name | Value |\n|---|---|\n"
-
-    for (idx, label) in enumerate(labels)
-        output *= "|$label|$(values[idx])|\n"
+    # sanitize a value for use inside an HTML table cell
+    clean(v) = let s = "$v"
+        s = replace(s, "&" => "&amp;")           # escape first
+        s = replace(s, "<" => "&lt;", ">" => "&gt;")
+        s = replace(s, r"\r\n|\r|\n" => "<br>")  # then reintroduce breaks as real <br> tags
+        s
     end
 
-    return output 
+    rows = join(("<tr><td><code>$label</code></td><td>$(clean(values[idx]))</td></tr>"
+             for (idx, label) in enumerate(labels)), "\n")
+
+    return """
+```@raw html
+    <table><tr><th>Name</th><th>Value</th></tr>
+    $rows
+    </table>
+```
+    """
 end
 
 function show_parameters(model; exclude = (:optionals, :light_attenuation_model, :particles, :sediment_model, # usually bgc models

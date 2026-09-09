@@ -178,7 +178,7 @@ end
     return combined
 end
 
-@inline @generated function calcite_dissolution(i, j, k, grid, detritus::DissolvedParticulate{N, M, DN, PN}, bgc::NPD_DP{FT}, fields, auxiliary_fields) where {N, M, DN, PN, FT}
+@inline @generated function calcium_carbonate_dissolution(i, j, k, grid, detritus::DissolvedParticulate{N, M, DN, PN}, bgc::NPD_DP{FT}, fields, auxiliary_fields) where {N, M, DN, PN, FT}
     combined = Expr(:block)
     push!(combined.args, :(total = zero($FT)))
     for (m, name) in enumerate(PN)
@@ -187,7 +187,7 @@ end
     end
     push!(combined.args, :(total += dissolved_waste(i, j, k, grid, bgc.plankton, bgc, fields, auxiliary_fields)))
     push!(combined.args, :(return total * carbon_ratio(i, j, k, grid, bgc.plankton, bgc, fields) *
-                                         calcite_rain_ratio(i, j, k, grid, bgc.plankton, bgc, fields)))
+                                         calcium_carbonate_rain_ratio(i, j, k, grid, bgc.plankton, bgc, fields)))
     return combined
 end
 

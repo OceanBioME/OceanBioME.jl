@@ -2,7 +2,7 @@
     PressureCorrection(FT=Float64;
                        a₀, a₁, a₂,
                        b₀, b₁, b₂,
-                       R = 83.14472)
+                       R = 83.1451)
 
 Parameterisation for the pressure effect on thermodynamic constants.
 
@@ -20,7 +20,7 @@ struct PressureCorrection{FT}
     function PressureCorrection(FT = Float64; 
                                 a₀, a₁, a₂, 
                                 b₀, b₁,
-                                R = 83.14472)
+                                R = 83.1451)
 
         return new{FT}(a₀, a₁, a₂, b₀, b₁, R)
     end
@@ -661,7 +661,9 @@ KP3(FT = Float64;
           inverse_T_Is = 188.74,
           Is² = 0.07871,
           inverse_T_Is² = -12.1652,
-          log_S = -0.001005)
+          log_S = -0.001005,
+          pressure_correction =
+              PressureCorrection(; a₀=-29.48, a₁=0.1622, a₂=-0.002608, b₀=-0.00284, b₁=0.0))
 
 Parameterisation for silicic acid dissociation equilibrium constant.
 
@@ -670,20 +672,25 @@ Parameterisation for silicic acid dissociation equilibrium constant.
     Kʷ = [H⁺][SiO(OH)₃⁻]/[Si(OH)₄]
 
 Default values from Millero (1995, Geochim. Cosmochim. Acta, 59, 661–677).
+
+Following Millero (1995) the pressure dependence uses the boric-acid pressure
+coefficients (matching MARBL's `marbl_co2calc_mod`).
 """
-struct KSi{IS, FT}
-     ionic_strength :: IS 
-   
+struct KSi{IS, FT, PC}
+     ionic_strength :: IS
+
            constant :: FT
-          inverse_T :: FT 
-              log_T :: FT 
+          inverse_T :: FT
+              log_T :: FT
             sqrt_Is :: FT
   inverse_T_sqrt_Is :: FT
-                 Is :: FT 
-       inverse_T_Is :: FT 
-                Is² :: FT 
+                 Is :: FT
+       inverse_T_Is :: FT
+                Is² :: FT
       inverse_T_Is² :: FT
               log_S :: FT
+
+    pressure_correction :: PC
 
     function KSi(FT = Float64;
                  ionic_strength::IS = IonicStrength{FT}(),
@@ -696,14 +703,17 @@ struct KSi{IS, FT}
                  inverse_T_Is = 188.74,
                  Is² = 0.07871,
                  inverse_T_Is² = -12.1652,
-                 log_S = -0.001005) where IS
+                 log_S = -0.001005,
+                 pressure_correction::PC =
+                     PressureCorrection(FT; a₀=-29.48, a₁=0.1622, a₂=-0.002608, b₀=-0.00284, b₁=0.0)) where {IS, PC}
 
-        return new{IS, FT}(ionic_strength, constant, inverse_T, log_T, sqrt_Is, inverse_T_sqrt_Is, Is,
-                           inverse_T_Is, Is², inverse_T_Is², log_S)
+        return new{IS, FT, PC}(ionic_strength, constant, inverse_T, log_T, sqrt_Is, inverse_T_sqrt_Is, Is,
+                           inverse_T_Is, Is², inverse_T_Is², log_S, pressure_correction)
     end
 end
 
-@inline (c::KSi)(T, S, Is = c.ionic_strength(S); P = nothing) = 
+@inline (c::KSi)(T, S, Is = c.ionic_strength(S); P = nothing) =
+    c.pressure_correction(T, P) *
     exp(c.constant
         + c.inverse_T / T
         + c.log_T * log(T)
@@ -755,12 +765,14 @@ end
 
     pressure_correction = c.pressure_correction(T, P)
 
-    lnK_therm = c.therm_constant + c.therm_T * T + c.therm_inverse_T / T + c.therm_log_T * log10(T) # seems wrong
-    lnK_sea = ((c.sea_sqrt_S + c.sea_T_sqrt_S * T + c.sea_inverse_T_sqrt_S / T) * √S 
-                + c.sea_S * S
-                + c.sea_S_sqrt_S³ * S^convert(FT, 1.5))
+    # the parameterisation is base 10 throughout, log₁₀(T) included
+    log₁₀K_therm = c.therm_constant + c.therm_T * T + c.therm_inverse_T / T + c.therm_log_T * log10(T)
+    log₁₀K_sea = ((c.sea_sqrt_S + c.sea_T_sqrt_S * T + c.sea_inverse_T_sqrt_S / T) * √S
+                   + c.sea_S * S
+                   + c.sea_S_sqrt_S³ * S^convert(FT, 1.5))
 
-    return  pressure_correction * convert(FT, 10)^(lnK_therm + lnK_sea)
+    # (mol / kg)²
+    return  pressure_correction * convert(FT, 10)^(log₁₀K_therm + log₁₀K_sea)
 end
 
 summary(::IO, ::KSP) = string("Calcite solubility")
@@ -822,7 +834,7 @@ KSP_aragonite(; therm_constant = -171.945,
                 pressure_correction =
                     PressureCorrection(; a₀=-45.96, a₁=0.5304, a₂=-0.0, b₀=-0.01176, b₁=0.0003692))
 
-Instance of `KSP` returning calcite solubility.
+Instance of `KSP` returning aragonite solubility.
 
 Default values from Millero, F. J. (2007, Chemical Reviews, 107(2), 308–341).
 """

@@ -2,17 +2,17 @@ module PlanktonModels
 
 export Abiotic, ImplicitProductivity, PhytoZoo
 
-# plankton models *must* define `inorganic_waste`, `nutrient_uptake`, `dissolved_waste`, and `solid_waste`
-# and may define `carbon_ratio`, `nitrogen_ratio`, `phosphate_ratio`, `iron_ratio`, and `silicon_ratio`
-# if they are not defined they default to 106/16:1:0.0062/16:0 (i.e. the default unit is nitrogen)
+# plankton models *must* define `inorganic_waste`, `nutrient_uptake`, `dissolved_waste`, and `solid_waste`
+# and may define `carbon_ratio`, `nitrogen_ratio`, `phosphate_ratio`, `iron_ratio`, `silicon_ratio`, and `calcium_carbonate_rain_ratio`
+# if they are not defined they use the default elemental ratios, with nitrogen as the base unit
+# `chlorophyll_ratio` may be defined once for the component and overridden for individual tracers
 # you may also define `X_Y_waste` where X is `inorganic`, `dissolved` and `solid`, and `Y` are the elements
 
-# plankton may also define `detritus_grazing(plankton, bgc, i, j, k, val_name, fields, auxiliary_fields)` which
-# acts on detritus pools and otherwise defaults to zero (and is representative of both zooplankton grazing,
-# dissolved uptake like MARBL, or mixotrophy)
+# plankton may also define `grazing` for detritus tracers they consume; it otherwise defaults to zero
+# and can represent zooplankton grazing, dissolved uptake like MARBL, or mixotrophy
 
-# they must define `nutrient_uptake` with arguments `plankton, bgc, i, j, k, fields, auxiliary_fields`,
-# but may specialise to arguments `plankton, bgc, i, j, k, val_name, fields, auxiliary_fields`
+# `nutrient_uptake` is called with `i, j, k, grid, plankton, bgc, fields, auxiliary_fields`,
+# and may also be defined with `Val(name)` between `grid` and `plankton` for tracer-specific uptake
 
 using Adapt
 using Oceananigans.Units
@@ -49,7 +49,7 @@ import ..NutrientsPlanktonDetritusModels:
     phosphate_ratio,
     iron_ratio,
     silicon_ratio,
-    calcite_rain_ratio
+    calcium_carbonate_rain_ratio
 
 import ..NutrientsPlanktonDetritusModels:
     inorganic_waste,
@@ -72,12 +72,15 @@ import ..NutrientsPlanktonDetritusModels:
 import ..NutrientsPlanktonDetritusModels.InorganicCarbonModels:
     inorganic_carbon_waste,
     primary_production,
-    net_calcite_production,
-    calcite_rain_ratio
+    net_calcium_carbonate_production,
+    calcium_carbonate_rain_ratio,
+    biological_calcium_carbonate_precipitation,
+    particulate_calcium_carbonate_production,
+    biological_calcium_carbonate_dissolution
 
 import ..NutrientsPlanktonDetritusModels.DetritusModels:
     grazing,
-    calcite_precipitation
+    calcium_carbonate_precipitation
 
 chlorophyll(bgc::NutrientsPlanktonDetritus, model) =
     chlorophyll(bgc.plankton, model)

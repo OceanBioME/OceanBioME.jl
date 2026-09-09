@@ -13,6 +13,6 @@ const GAS_CONSTANT = 8.31446261815324 # J / kg / mol
 include("equilibrium_constants.jl")
 include("virial_coefficients.jl")
 include("carbon_chemistry.jl")
-include("calcite_concentration.jl")
+include("calcium_carbonate_concentration.jl")
 
 end

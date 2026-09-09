@@ -1,4 +1,7 @@
 using Literate
+using CairoMakie
+
+CairoMakie.activate!(type = "svg")
 
 const EXAMPLES_DIR = joinpath(@__DIR__, "..", "examples")
 const OUTPUT_DIR   = joinpath(@__DIR__, "src/generated")

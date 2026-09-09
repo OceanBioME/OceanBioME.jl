@@ -33,6 +33,25 @@ required_biogeochemical_auxiliary_fields(npd::NutrientsPlanktonDetritus) =
      required_biogeochemical_auxiliary_fields(npd.inorganic_carbon)...,
      required_biogeochemical_auxiliary_fields(npd.oxygen)...)
 
+update_biogeochemical_state!(model, component, npd::NutrientsPlanktonDetritus) = nothing
+
+biogeochemical_auxiliary_fields(npd::NutrientsPlanktonDetritus) =
+    merge(biogeochemical_auxiliary_fields(npd.nutrients),
+          biogeochemical_auxiliary_fields(npd.plankton),
+          biogeochemical_auxiliary_fields(npd.detritus),
+          biogeochemical_auxiliary_fields(npd.inorganic_carbon),
+          biogeochemical_auxiliary_fields(npd.oxygen))
+
+function update_biogeochemical_state!(model, npd::NutrientsPlanktonDetritus)
+    update_biogeochemical_state!(model, npd.nutrients, npd)
+    update_biogeochemical_state!(model, npd.plankton, npd)
+    update_biogeochemical_state!(model, npd.detritus, npd)
+    update_biogeochemical_state!(model, npd.inorganic_carbon, npd)
+    update_biogeochemical_state!(model, npd.oxygen, npd)
+
+    return nothing
+end
+
 Adapt.adapt_structure(to, npd::NutrientsPlanktonDetritus{FT}) where FT =
     NutrientsPlanktonDetritus{FT}(adapt(to, npd.nutrients),
                                   adapt(to, npd.plankton),

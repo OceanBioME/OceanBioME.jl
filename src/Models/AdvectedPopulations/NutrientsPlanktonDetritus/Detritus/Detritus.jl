@@ -14,9 +14,9 @@ using ..NutrientsPlanktonDetritusModels:
     phosphate_ratio,
     iron_ratio,
     silicon_ratio,
-    calcite_rain_ratio
+    calcium_carbonate_rain_ratio
 
-import ..NutrientsPlanktonDetritusModels: dissolved_waste, solid_waste, calcite_dissolution, inorganic_waste, nutrient_uptake
+import ..NutrientsPlanktonDetritusModels: dissolved_waste, solid_waste, calcium_carbonate_dissolution, inorganic_waste, nutrient_uptake
 
 using ..NutrientsPlanktonDetritusModels.NutrientsModels:
     Nutrients,

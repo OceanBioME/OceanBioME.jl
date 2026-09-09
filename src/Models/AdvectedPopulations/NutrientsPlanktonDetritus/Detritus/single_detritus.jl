@@ -59,10 +59,10 @@ biogeochemical_drift_velocity(bgc::NutrientsPlanktonDetritus{<:Any, <:Any, <:Any
 @inline inorganic_waste(i, j, k, grid, detritus::Detritus, bgc, args...) = 
     remineralisation(i, j, k, grid, detritus, args...)
 
-@inline calcite_dissolution(i, j, k, grid, detritus::Detritus, bgc, fields, auxiliary_fields) = (
+@inline calcium_carbonate_dissolution(i, j, k, grid, detritus::Detritus, bgc, fields, auxiliary_fields) = (
     remineralisation(i, j, k, grid, detritus, fields, auxiliary_fields) 
   * carbon_ratio(i, j, k, grid, bgc.plankton, bgc, fields) 
-  * calcite_rain_ratio(i, j, k, grid, bgc.plankton, bgc, fields)
+  * calcium_carbonate_rain_ratio(i, j, k, grid, bgc.plankton, bgc, fields)
 )
 
 # admin

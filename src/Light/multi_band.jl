@@ -59,7 +59,10 @@ Keyword Arguments
 ==================
 
 - `grid`: grid for building the model on
-- `water_red_attenuation`, ..., `phytoplankton_chlorophyll_ratio`: parameter values
+- `bands`, `base_bands`, `base_water_attenuation_coefficient`, `base_chlorophyll_exponent`,
+  `base_chlorophyll_attenuation_coefficient`: wavelength bands and attenuation coefficients
+- `field_names`: names of the auxiliary PAR band fields
+- `surface_PAR_division`: fraction of surface PAR assigned to each band
 - `surface_PAR`: the photosynthetically available radiation at the surface, by default,
    assumed to have the 'continuous form' `condition(x, y t)`
 

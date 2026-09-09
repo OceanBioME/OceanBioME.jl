@@ -146,7 +146,7 @@ Additionally, the ``DIC`` and ``Alk`` equations are modified to replace each ``X
 | ``\alpha_d``       | `ammonia_fraction_of_detritus`         | -                  |
 | ``R_P``            | `phytoplankton_redfield`               | mmol C / mmol N    |
 | ``R_O``            | `organic_redfield`                     | mmol C / mmol N    |
-| ``R_{Chl:N}``      | `phytoplankton_chlorophyll_ratio`      | mg Chl / mmol N    |
+| ``R_{Chl:N}``      | `chlorophyll_ratio`                    | mg Chl / mmol N    |
 | ``\rho_{CaCO_3}``  | `organic_carbon_calcite_ratio`         | mmol CaCO₃/ mmol C |
 | ``R_{O_2}``        | `respiration_oxygen_nitrogen_ratio`    | mmol O / mmol N    |
 | ``R_{nit}``        | `nitrification_oxygen_nitrogen_ratio`  | mmol O / mmol N    |
