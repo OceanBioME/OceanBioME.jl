@@ -4,13 +4,15 @@ using Oceananigans.TimeSteppers: time_step!
 import Oceananigans.TimeSteppers: update_state!
 
 function update_biogeochemical_state!(model, sediment_model::BiogeochemicalSediment)
-    Δt = model.clock.last_stage_Δt
-
     update_tracked_fields!(sediment_model, model)
 
-    if isfinite(Δt)
-        time_step!(sediment_model, Δt;)
+    priming_call = (model.clock.iteration == 0) & (model.clock.stage == 1)
+
+    if !priming_call
+        step_sediment!(sediment_model, model, model.timestepper)
     end
+
+    update_state!(sediment_model)
 
     return nothing
 end
