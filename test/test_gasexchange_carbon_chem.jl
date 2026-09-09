@@ -1,13 +1,19 @@
 include("dependencies_for_runtests.jl")
 
-using Oceananigans, Oceananigans.Units, DataDeps, JLD2, Statistics
+using Oceananigans, Oceananigans.Units, DataDeps, JLD2, Statistics, Adapt
 
 using Oceananigans.Fields: ConstantField
 
 using OceanBioME: GasExchange, LOBSTER, CarbonChemistry
-using OceanBioME.Models.GasExchangeModel: surface_value, CarbonDioxideConcentration
+using OceanBioME.Models.GasExchangeModel: surface_value, CarbonDioxideConcentration, GarciaGordonOxygenSaturation,
+                                          CarbonDioxideAirConcentration, PartiallySolubleGas, OxygenSolubility,
+                                          MolPerKgPerAtmToMMolPerCubicMPerMicroAtm
 
-using OceanBioME.Models.CarbonChemistryModel: IonicStrength, K0, K1, K2, KB, KW, KS, KF, KP, KSi, KSP_aragonite, KSP_calcite
+using OceanBioME.Models.GasExchangeModel.ScaledGasTransferVelocity: UnitSolubility
+
+using OceanBioME.Models: teos10_polynomial_approximation
+
+using OceanBioME.Models.CarbonChemistryModel: IonicStrength, FF, K0, K1, K2, KB, KW, KS, KF, KP, KSi, KSP_aragonite, KSP_calcite
 
 const year = years = 365days # just for the idealised case below
 
@@ -31,7 +37,7 @@ function test_gas_exchange_model(grid, air_concentration)
     value = CUDA.@allowscalar Oceananigans.getbc(model.tracers.DIC.boundary_conditions.top, 1, 1, grid, model.clock, fields(model))
 
     @test isa(model.tracers.DIC.boundary_conditions.top.condition.func, GasExchange)
-    @test ≈(value, -8e-6; atol = 1e-6)
+    @test ≈(value, -6.8234e-6; atol = 1e-8) # was -7.5266e-6 on the legacy pCO₂ basis
     @test isnothing(time_step!(model, 1.0))
 
     # multiple carbonate systems
@@ -63,10 +69,10 @@ function test_gas_exchange_model(grid, air_concentration)
     value2 = CUDA.@allowscalar Oceananigans.getbc(model.tracers.DIC2.boundary_conditions.top, 1, 1, grid, model.clock, fields(model))
 
     @test isa(model.tracers.DIC1.boundary_conditions.top.condition.func, GasExchange)
-    @test ≈(value1, -8e-6; atol = 1e-6)
+    @test ≈(value1, -6.8234e-6; atol = 1e-8) # was -7.5266e-6 on the legacy pCO₂ basis
 
     @test isa(model.tracers.DIC2.boundary_conditions.top.condition.func, GasExchange)
-    @test ≈(value2, -8e-6; atol = 1e-6)
+    @test ≈(value2, -6.7970e-6; atol = 1e-8) # moved by the ff/concentration basis
 
     @test value1 != value2
 
@@ -167,8 +173,8 @@ end
 
         Tk = 25+273.15
         # values from Dickson et. al, 2007
-        @test ≈(CO₂_exchange.water_concentration.first_virial_coefficient(Tk), -123.2 * 10^-6, atol=10^-8)
-        @test ≈(CO₂_exchange.water_concentration.cross_virial_coefficient(Tk), 22.5 * 10^-6, atol=10^-7)
+        @test ≈(CO₂_exchange.water_concentration.carbon_chemistry.first_virial_coefficient(Tk), -123.2 * 10^-6, atol=10^-8)
+        @test ≈(CO₂_exchange.water_concentration.carbon_chemistry.cross_virial_coefficient(Tk), 22.5 * 10^-6, atol=10^-7)
 
         T = ConstantField(FT(25))
         S = ConstantField(FT(35))
@@ -176,10 +182,16 @@ end
         Alk = ConstantField(FT(2500))
         O₂ = ConstantField(FT(100))
 
-        # value from Dickson et. al, 2007
-        pCO₂ = surface_value(CO₂_exchange.water_concentration, 1, 1, BoxModelGrid(FT), Clock(; time = 0), (; T, S, DIC, Alk))
+        # value from Dickson et. al, 2007 (a partial pressure, so on the legacy water side)
+        pCO₂_concentration = CarbonDioxideConcentration(FT; output = Val(:pCO₂))
+        pCO₂ = surface_value(pCO₂_concentration, 1, 1, BoxModelGrid(FT), Clock(; time = 0), (; T, S, DIC, Alk))
         @test ≈(pCO₂, 350, atol = 0.1)
         @test typeof(pCO₂) == FT
+
+        # the default water side is instead the aqueous concentration in mmol/m³
+        CO₂ = surface_value(CO₂_exchange.water_concentration, 1, 1, BoxModelGrid(FT), Clock(; time = 0), (; T, S, DIC, Alk))
+        @test CO₂ === CarbonChemistry(FT)(; DIC = FT(2136.242890518708), Alk = FT(2500), T = FT(25), S = FT(35), output = Val(:CO₂))
+        @test typeof(CO₂) == FT
 
         pO₂ = surface_value(O₂_exchange.air_concentration, 1, 1, BoxModelGrid(FT), Clock(; time = 0), (; T, S))
         @test ≈(pO₂, 200, atol = 50) # ball park correct
@@ -191,5 +203,328 @@ end
 
         O₂_flux = O₂_exchange(1, 1, BoxModelGrid(FT), Clock(; time = 0), (; T, S, O₂))
         @test typeof(O₂_flux) == FT
+    end
+end
+
+@testset "Garcia and Gordon (1992) oxygen saturation" begin
+    for FT in [Float64, Float32]
+        saturation = GarciaGordonOxygenSaturation(FT)
+
+        grid = BoxModelGrid(FT)
+        clock = Clock(; time = zero(FT))
+
+        O₂sat(sat, T, S) = surface_value(sat, 1, 1, grid, clock, (T = ConstantField(FT(T)), S = ConstantField(FT(S))))
+
+        # check value from Garcia and Gordon (1992), quoted to six significant figures
+        check_value = O₂sat(saturation, 10, 35)
+
+        @test ≈(check_value, 282.015, atol = 5e-4)
+        @test typeof(check_value) == FT
+
+        # solubility falls with both temperature and salinity
+        @test all(diff([O₂sat(saturation, T, 35) for T in 0:2.5:35]) .< 0)
+        @test all(diff([O₂sat(saturation, 10, S) for S in 0:2.5:40]) .< 0)
+
+        # the saturation is exactly linear in the atmospheric pressure, which defaults to 1 atm
+        reduced_pressure = GarciaGordonOxygenSaturation(FT; atmospheric_pressure = 0.9)
+
+        @test O₂sat(reduced_pressure, 10, 35) == FT(0.9) * check_value
+
+        # usable as the air concentration of an oxygen gas exchange boundary condition
+        exchange = OxygenGasExchangeBoundaryCondition(FT; air_concentration = saturation).condition.func
+
+        O₂ = ConstantField(FT(100))
+        T = ConstantField(FT(10))
+        S = ConstantField(FT(35))
+
+        flux = exchange(1, 1, grid, clock, (; T, S, O₂))
+
+        @test typeof(flux) == FT
+        @test flux < 0 # undersaturated water takes up oxygen
+
+        # GPU compatibility
+        @test isbits(saturation)
+        @test adapt(Array, saturation) isa GarciaGordonOxygenSaturation
+        @test surface_value(adapt(Array, saturation), 1, 1, grid, clock, (; T, S)) == check_value
+
+        # the atmospheric pressure may also be a `Field`
+        field_grid = RectilinearGrid(architecture, FT; size = (1, 1, 2), extent = (1, 1, 2))
+
+        pressure_field = CenterField(field_grid)
+
+        set!(pressure_field, 0.9)
+
+        field_pressure = GarciaGordonOxygenSaturation(FT; atmospheric_pressure = pressure_field)
+
+        field_T = CenterField(field_grid)
+        field_S = CenterField(field_grid)
+
+        set!(field_T, 10)
+        set!(field_S, 35)
+
+        field_value = CUDA.@allowscalar surface_value(field_pressure, 1, 1, field_grid, clock, (T = field_T, S = field_S))
+
+        @test field_value == FT(0.9) * check_value
+
+        adapted = adapt(Array, field_pressure)
+
+        @test CUDA.@allowscalar(surface_value(adapted, 1, 1, field_grid, clock, (T = field_T, S = field_S))) == field_value
+    end
+end
+
+@testset "Atmospheric pressure on the CO₂ air concentration (anti-double-count regression)" begin
+    for FT in [Float64, Float32]
+        grid = BoxModelGrid(FT)
+        clock = Clock(; time = zero(FT))
+
+        T = ConstantField(FT(15))
+        S = ConstantField(FT(35))
+        DIC = ConstantField(FT(2220))
+        Alk = ConstantField(FT(2500))
+
+        model_fields = (; T, S, DIC, Alk)
+
+        # bare (ppmv) air concentrations, i.e. the legacy basis
+        air_concentration = CarbonDioxideAirConcentration(FT)
+        reduced_pressure = CarbonDioxideAirConcentration(FT; atmospheric_pressure = 0.9)
+
+        xCO₂ = surface_value(air_concentration, 1, 1, grid, clock, model_fields)
+
+        # the default pressure of 1 atm leaves the mole fraction untouched
+        @test xCO₂ === FT(413)
+
+        # the air concentration is exactly linear in the atmospheric pressure
+        @test surface_value(reduced_pressure, 1, 1, grid, clock, model_fields) === FT(0.9) * xCO₂
+
+        # ... and only the air side can see it: the water-side `CarbonDioxideConcentration`
+        # carries no atmospheric pressure at all, and rejects one. This is the
+        # anti-double-count assertion — reintroducing an `air_pressure` field (which fed
+        # nothing: the `P` of the fugacity coefficient is the hydrostatic pressure, a
+        # different and much smaller correction) fails here loudly rather than silently.
+        carbon_chemistry = CarbonChemistry(FT)
+
+        @test_throws MethodError CarbonDioxideConcentration(FT; carbon_chemistry, air_pressure = FT(0.9))
+
+        # a bare number `air_concentration` still means a mole fraction in ppmv, so it is put on
+        # whichever basis the water side is on rather than being compared against a concentration
+        default_exchange = CarbonDioxideGasExchangeBoundaryCondition(FT).condition.func
+        scalar_exchange = CarbonDioxideGasExchangeBoundaryCondition(FT; air_concentration = 413).condition.func
+
+        @test default_exchange.air_concentration isa CarbonDioxideAirConcentration
+        @test !isnothing(default_exchange.air_concentration.solubility) # i.e. it is a concentration
+        @test surface_value(default_exchange.air_concentration, 1, 1, grid, clock, model_fields) ===
+                surface_value(scalar_exchange.air_concentration, 1, 1, grid, clock, model_fields)
+        @test default_exchange(1, 1, grid, clock, model_fields) === scalar_exchange(1, 1, grid, clock, model_fields)
+
+        # the flux is `k (water - air)`, positive out of the ocean, so raising the pressure
+        # raises the air term and drives more uptake, and the difference is exactly `k xCO₂ ΔP`
+        solubility = MolPerKgPerAtmToMMolPerCubicMPerMicroAtm(FF{FT}(), carbon_chemistry.density_function)
+
+        exchange = CarbonDioxideGasExchangeBoundaryCondition(FT;
+                        air_concentration = CarbonDioxideAirConcentration(FT; solubility)).condition.func
+        reduced_exchange = CarbonDioxideGasExchangeBoundaryCondition(FT;
+                        air_concentration = CarbonDioxideAirConcentration(FT; atmospheric_pressure = 0.9, solubility)).condition.func
+
+        flux = exchange(1, 1, grid, clock, model_fields)
+        reduced_flux = reduced_exchange(1, 1, grid, clock, model_fields)
+
+        air_term = surface_value(exchange.air_concentration, 1, 1, grid, clock, model_fields)
+
+        u₁₀ = surface_value(exchange.wind_speed, 1, 1, grid, clock)
+        k = exchange.transfer_velocity(u₁₀, FT(15), FT(35))
+
+        @test typeof(flux) == FT
+        @test flux < 0             # pCO₂ of 337 μatm under 413 ppmv of air ⇒ uptake
+        @test reduced_flux > flux  # less air-side CO₂ ⇒ less uptake
+        @test ≈(reduced_flux - flux, k * air_term * FT(0.1); rtol = 100 * eps(FT))
+
+        # GPU compatibility
+        @test isbits(air_concentration)
+        @test isbits(default_exchange) # the whole assembled exchange, air side, water side and k
+        @test adapt(Array, reduced_pressure) isa CarbonDioxideAirConcentration
+        @test surface_value(adapt(Array, reduced_pressure), 1, 1, grid, clock, model_fields) ===
+                surface_value(reduced_pressure, 1, 1, grid, clock, model_fields)
+
+        # a number, a function and a `Field` pressure all give the same value
+        field_grid = RectilinearGrid(architecture, FT; size = (1, 1, 2), extent = (1, 1, 2))
+
+        pressure_field = CenterField(field_grid)
+
+        set!(pressure_field, 0.9)
+
+        field_pressure = CarbonDioxideAirConcentration(FT; atmospheric_pressure = pressure_field)
+        function_pressure = CarbonDioxideAirConcentration(FT; atmospheric_pressure = (x, y, t) -> FT(0.9))
+
+        @test CUDA.@allowscalar(surface_value(field_pressure, 1, 1, field_grid, clock, model_fields)) === FT(0.9) * xCO₂
+        @test surface_value(function_pressure, 1, 1, field_grid, clock, model_fields) === FT(0.9) * xCO₂
+
+        # a units slip (pascals for atmospheres) is caught for numbers, but cannot be for
+        # functions or `Field`s
+        @test_logs (:warn, r"atmospheres") CarbonDioxideAirConcentration(FT; atmospheric_pressure = 101325)
+
+        # `PartiallySolubleGas` adapts a `Field` air concentration
+        field_air_concentration = CenterField(field_grid)
+        field_T = CenterField(field_grid)
+        field_S = CenterField(field_grid)
+
+        set!(field_air_concentration, 9352.7)
+        set!(field_T, 10)
+        set!(field_S, 35)
+
+        gas = PartiallySolubleGas(FT; air_concentration = field_air_concentration, solubility = OxygenSolubility(FT))
+
+        field_fields = (T = field_T, S = field_S)
+
+        value = CUDA.@allowscalar surface_value(gas, 1, 1, field_grid, clock, field_fields)
+
+        adapted = adapt(Array, gas)
+
+        @test adapted isa PartiallySolubleGas
+        @test !(adapted.air_concentration isa Field) # i.e. the `Field` was actually adapted
+        @test CUDA.@allowscalar(surface_value(adapted, 1, 1, field_grid, clock, field_fields)) == value
+    end
+end
+
+# a direct transliteration of MARBL's `ff` (marbl_co2calc_mod.F90:414-423), the authority for the
+# `FF` coefficients
+function marbl_ff(temp, salt)
+    tk = 273.15 + temp
+    tk100 = tk * 1e-2
+    tk1002 = tk100^2
+
+    arg = -162.8301 + 218.2968 / tk100 + 90.9241 * (log(tk) + log(1e-2)) - 1.47696 * tk1002 +
+          salt * (0.025695 - 0.025225 * tk100 + 0.0049867 * tk1002)
+
+    return exp(arg)
+end
+
+@testset "CO₂ exchange on the concentration (ff) basis" begin
+    for FT in [Float64, Float32]
+        grid = BoxModelGrid(FT)
+        clock = Clock(; time = zero(FT))
+
+        cc = CarbonChemistry(FT)
+
+        # the reference numbers below are quoted to eight significant figures, which is finer than
+        # `Float32` can resolve them
+        ref_rtol = max(1e-7, 1000 * eps(FT))
+
+        states = ((T = 10, S = 35, DIC = 2000, Alk = 2000),
+                  (T = 15, S = 35, DIC = 2220, Alk = 2500),
+                  (T = 25, S = 35, DIC = 2100, Alk = 2350))
+
+        model_fields(s) = (T = ConstantField(FT(s.T)), S = ConstantField(FT(s.S)),
+                           DIC = ConstantField(FT(s.DIC)), Alk = ConstantField(FT(s.Alk)))
+
+        # -- leg 1: `Val(:CO₂)` is MARBL's `co2star · mass_to_vol`, to machine precision -----------
+        # (`co2star = dic H²/(H² + k1 H + k1 k2)`, marbl_co2calc_mod.F90:177)
+        for s in states
+            args = (; DIC = FT(s.DIC), Alk = FT(s.Alk), T = FT(s.T), S = FT(s.S))
+
+            CO₂ = cc(; args..., output = Val(:CO₂))
+
+            H  = FT(10) ^ -cc(; args..., output = Val(:pHᶠ))
+            K₁ = cc.carbonic_acid.K1(FT(s.T) + FT(273.15), FT(s.S))
+            K₂ = cc.carbonic_acid.K2(FT(s.T) + FT(273.15), FT(s.S))
+
+            co2star = FT(s.DIC) * H^2 / (H^2 + K₁ * H + K₁ * K₂)
+
+            @test ≈(CO₂, co2star; rtol = 10 * eps(FT))
+        end
+
+        # -- leg 5a: `FF` in `K0`'s functional form reproduces the Fortran -------------------------
+        for T in (0, 10, 30), S in (5, 35)
+            @test ≈(FF{Float64}()(T + 273.15, Float64(S)), marbl_ff(T, S); rtol = 1e-13)
+        end
+
+        # -- leg 2: the hand-computed MARBL air term ----------------------------------------------
+        # MARBL's `co2starair · mass_to_vol` = xco2·1e-6 · ff · atmpres · 1e6 ρ_sw, with the
+        # constant ρ_sw = 1026 kg/m³ of marbl_constants_mod.F90:59
+        marbl_density(args...) = FT(1026)
+
+        marbl_air = CarbonDioxideAirConcentration(FT;
+                        solubility = MolPerKgPerAtmToMMolPerCubicMPerMicroAtm(FF{FT}(), marbl_density))
+
+        # the residual is float associativity in the `T² T^2` vs `-1.47696 tk100^2` term, not algebra
+        @test ≈(surface_value(marbl_air, 1, 1, grid, clock, model_fields(states[1])),
+                413e-6 * marbl_ff(10, 35) * 1.026e6; rtol = max(1e-13, 1000 * eps(FT)))
+
+        @test ≈(surface_value(marbl_air, 1, 1, grid, clock, model_fields(states[1])), 18.295270; rtol = ref_rtol)
+        @test ≈(surface_value(marbl_air, 1, 1, grid, clock, model_fields(states[2])), 15.553088; rtol = ref_rtol)
+
+        # our default uses the TEOS-10 density rather than MARBL's constant, which moves the air
+        # term by the density ratio and nothing else
+        default_exchange = CarbonDioxideGasExchangeBoundaryCondition(FT).condition.func
+
+        for s in states
+            ρ = teos10_polynomial_approximation(FT(s.T), FT(s.S))
+
+            @test ≈(surface_value(default_exchange.air_concentration, 1, 1, grid, clock, model_fields(s)),
+                    surface_value(marbl_air, 1, 1, grid, clock, model_fields(s)) * ρ / FT(1026); rtol = 1e-6)
+        end
+
+        @test ≈(surface_value(default_exchange.air_concentration, 1, 1, grid, clock, model_fields(states[1])),
+                18.309978; rtol = ref_rtol)
+
+        # the old, `K₀`-based air term this replaces — about 1.7 % larger at 10 °C
+        old_air_term = K0{FT}()(FT(283.15), FT(35)) * teos10_polynomial_approximation(FT(10), FT(35)) / FT(1e3) * 413
+
+        @test ≈(old_air_term, 18.608272; rtol = ref_rtol)
+        @test old_air_term > surface_value(default_exchange.air_concentration, 1, 1, grid, clock, model_fields(states[1]))
+
+        # -- leg 3a: the converter still means mmol/m³ per μatm after being moved ------------------
+        # with `K0` swapped back in, the air term is exactly the old `K₀ρ·1e-3·x_a`
+        legacy_converter_air = CarbonDioxideAirConcentration(FT;
+            solubility = MolPerKgPerAtmToMMolPerCubicMPerMicroAtm(cc.solubility, cc.density_function))
+
+        @test ≈(surface_value(legacy_converter_air, 1, 1, grid, clock, model_fields(states[1])),
+                old_air_term; rtol = 10 * eps(FT))
+
+        # -- leg 3b: the water side is a concentration, not a partial pressure ---------------------
+        # this is the assertion that fails loudly on a partial application of the change (the two
+        # differ by a factor of ~20-25 here, and by ~10³ once the transfer velocity's `K₀ρ/1e3` is
+        # or is not applied)
+        legacy_water = CarbonDioxideConcentration(FT; output = Val(:pCO₂))
+
+        for s in states
+            args = (; DIC = FT(s.DIC), Alk = FT(s.Alk), T = FT(s.T), S = FT(s.S))
+
+            water = surface_value(default_exchange.water_concentration, 1, 1, grid, clock, model_fields(s))
+
+            @test water === cc(; args..., output = Val(:CO₂))
+            @test water < surface_value(legacy_water, 1, 1, grid, clock, model_fields(s)) / 10
+        end
+
+        @test ≈(surface_value(default_exchange.water_concentration, 1, 1, grid, clock, model_fields(states[1])),
+                58.937761; rtol = ref_rtol)
+        @test ≈(surface_value(default_exchange.water_concentration, 1, 1, grid, clock, model_fields(states[2])),
+                12.907474; rtol = ref_rtol)
+
+        # -- leg 5b: the transfer velocity is now MARBL's bare piston velocity ---------------------
+        @test default_exchange.transfer_velocity.solubility === UnitSolubility()
+        @test default_exchange.transfer_velocity(FT(2), FT(10), FT(35)) ===
+                default_exchange.transfer_velocity.base_transfer_velocity(FT(2)) /
+                    sqrt(default_exchange.transfer_velocity.schmidt_number(FT(10)) / FT(660))
+
+        # -- the legacy basis is still reachable, and picks up matching defaults ------------------
+        legacy_exchange = CarbonDioxideGasExchangeBoundaryCondition(FT; water_concentration = legacy_water).condition.func
+
+        @test isnothing(legacy_exchange.air_concentration.solubility)          # ppmv air side
+        @test legacy_exchange.transfer_velocity.solubility isa MolPerKgPerAtmToMMolPerCubicMPerMicroAtm
+        @test surface_value(legacy_exchange.air_concentration, 1, 1, grid, clock, model_fields(states[1])) === FT(413)
+
+        # ... and it cannot be defaulted without a `carbon_chemistry` to build it from
+        @test_throws ArgumentError CarbonDioxideGasExchangeBoundaryCondition(FT; carbon_chemistry = nothing,
+                                                                                water_concentration = legacy_water)
+        @test_throws ArgumentError CarbonDioxideGasExchangeBoundaryCondition(FT; carbon_chemistry = nothing,
+                                                                                water_concentration = CarbonDioxideConcentration(FT))
+
+        # -- the change is deliberately not bit for bit: it reduces CO₂ uptake ---------------------
+        # the flux is `k (water - air)`, positive out of the ocean, and both defects inflated the
+        # air term more than the water term, so every flux moves positive
+        for s in states
+            @test default_exchange(1, 1, grid, clock, model_fields(s)) >
+                    legacy_exchange(1, 1, grid, clock, model_fields(s))
+        end
     end
 end

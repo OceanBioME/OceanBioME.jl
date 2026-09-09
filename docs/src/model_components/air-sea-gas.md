@@ -40,11 +40,31 @@ where ``c`` is a coefficient (`coeff`) which typically is wind product specific 
 
 Currently, the parameters for CO₂ and oxygen are included, but it would be very straightforward to add the parameters given in the original publication for other gases (e.g. inert tracers of other nutrients such as N₂).
 
-### Carbon dioxide partial pressure
+### Carbon dioxide concentration
 
-For most gasses the water concentration `C_w` is simply taken directly from the biogeochemical model or another tracer (in which case `water_concentration` should be set to `TracerConcentration(:tracer_name)`), but for carbon dioxide the fugacity (``fCO_2``) must be derived from the dissolved inorganic carbon (`DIC`) and `Alk`alinity by a `CarbonChemistry` model (please see the docs for [CarbonChemistry](@ref carbon-chemistry)), and used to calculate the partial pressure (``pCO_2``).
+For most gasses the water concentration `C_w` is simply taken directly from the biogeochemical model or another tracer (in which case `water_concentration` should be set to `TracerConcentration(:tracer_name)`), but for carbon dioxide it must be derived from the dissolved inorganic carbon (`DIC`) and `Alk`alinity by a `CarbonChemistry` model (please see the docs for [CarbonChemistry](@ref carbon-chemistry)).
 
-The default parameterisation for the partial pressure (`CarbonDioxideConcentration`) is given by [dickson2007](@citet) and defines the partial pressure to be the mole fraction ``x(CO_2)`` multiplied by the pressure, ``P``, related to the fugacity by:
+By default the exchange is computed on a *concentration* basis, i.e. the water concentration is the aqueous carbon dioxide concentration in mmol / m³,
+```math
+C_w = [CO_2(aq)] = DIC\frac{[H^+]^2}{[H^+]^2 + K_1[H^+] + K_1K_2},
+```
+(`CarbonDioxideConcentration` with `output = Val(:CO₂)`), and the air concentration is the dry air mole fraction converted onto the same basis by Dalton's law and a solubility,
+```math
+C_a = x(CO_2)p_{atm}f_f(T, S)\frac{\rho}{10^3}.
+```
+The solubility ``f_f`` is the [Weiss1980](@citet) parameterisation (`FF`), which is the solubility ``K_0`` corrected for the water vapour pressure of saturated air and for the non-ideality of the gas phase,
+```math
+f_f = K_0(1 - p_{H_2O})\gamma,
+```
+and is therefore the right quantity to multiply a *dry air* mole fraction by. On this basis the transfer velocity is a bare piston velocity (its `solubility` is `UnitSolubility`), and the atmospheric pressure enters the flux exactly once, on the air side.
+
+### Carbon dioxide partial pressure (legacy)
+
+Passing `water_concentration = CarbonDioxideConcentration(; carbon_chemistry, output = Val(:pCO₂))` instead computes the exchange as a difference of partial pressures in μatm, with the conversion to mmol / m³ carried by the `solubility` of the `transfer_velocity` rather than by the air concentration. The defaults for the `transfer_velocity` and `air_concentration` follow whichever basis the `water_concentration` is on, so the two cannot be mixed by accident.
+
+This basis compares a dry air mole fraction against a moist air partial pressure, and passes the water side through the fugacity coefficient, which does not cancel. It is retained only to reproduce older results.
+
+The partial pressure itself is given by [dickson2007](@citet), and is the mole fraction ``x(CO_2)`` multiplied by the pressure, ``P``, related to the fugacity by:
 ```math
 fCO_2 = x(CO_2)P\exp\left(\frac{1}{RT}\int_0^P\left(V(CO_2)-\frac{RT}{P'}\right)dP'\right).
 ```
@@ -58,4 +78,4 @@ B_{CO_2-\text{air}} \approx B_{CO_2}(T) + 2x(CO_2)\delta_{CO_2-\text{air}}(T),
 ```
 where ``\delta`` is the cross virial coefficient.
 
-``B_{CO_2}`` and ``\delta_{CO_2-\text{air}}`` are parameterised by [Weiss1974](@citet) and reccomended in [dickson2007](@citet) as fourth and first order polynomials respectively.
+``B_{CO_2}`` and ``\delta_{CO_2-\text{air}}`` are parameterised by [Weiss1974](@citet) and reccomended in [dickson2007](@citet) as fourth and first order polynomials respectively. It remains available as the `Val(:pCO₂)` output of a `CarbonChemistry` model, which is the quantity to compare against underway ``pCO_2`` observations.

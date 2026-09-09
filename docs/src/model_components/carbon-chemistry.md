@@ -328,8 +328,11 @@ The chemical system described above has a large number of equilibrium constants,
 By default, this model parameterises them based on the "best practice" guidelines of [dickson2007](@citet).
 These parameterisations are:
 ```@example carbon-chem
-using OceanBioME.Models.CarbonChemistryModel: K0, K1, K2, KB, KW, KS, KF, KP1, KP2, KP3, KSi, KSP_calcite, KSP_aragonite
-K0() # Weiss & Price (1980, Mar. Chem., 8, 347-359; Eq 13 with table 6 values)
+using OceanBioME.Models.CarbonChemistryModel: FF, K0, K1, K2, KB, KW, KS, KF, KP1, KP2, KP3, KSi, KSP_calcite, KSP_aragonite
+K0() # Weiss (1974, Mar. Chem., 2, 203-215)
+```
+```@example carbon-chem
+FF() # Weiss & Price (1980, Mar. Chem., 8, 347-359; Eq 13 with table 6 values)
 ```
 ```@example carbon-chem
 K1() # Millero (1995, Geochim. Cosmochim. Acta, 59, 664)
