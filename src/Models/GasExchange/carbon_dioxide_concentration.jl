@@ -63,11 +63,6 @@ converted into the units of the water-side concentration by a `solubility`,
 x_{CO_2} p_{atm} f_f(T, S) \\rho / 10^3,
 ```
 
-matching the way the reference implementation forms its air-side term (the atmospheric
-pressure multiplies the air-side concentration, linearly and once, and enters neither the
-water-side concentration nor the transfer velocity; and the solubility sits here rather than
-on the piston velocity).
-
 The default `solubility` is the Weiss and Price (1980) [`FF`](@ref) fit converted to
 mmol / m³ per μatm, which pairs with a [`CarbonDioxideConcentration`](@ref) water side. Note
 that this is the solubility of a *dry air mole fraction*
