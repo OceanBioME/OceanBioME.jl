@@ -99,11 +99,11 @@ conc_field = CenterField(grid)
 
 set!(conc_field, (args...) -> 413)
 
-conc_fts = FieldTimeSeries((Center(), Center(), Center()), grid, [0, 1], indices = (:, :, grid.Nz))
+conc_fts = FieldTimeSeries((Center(), Center(), nothing), grid, [0, 1])
 set!(conc_fts[1], 413)
 set!(conc_fts[2], 413)
 
-conc_fts2 = FieldTimeSeries((Center(), Center(), Center()), RectilinearGrid(architecture; size=(2, 1, 2), extent=(1, 1, 1)), [0, 1], indices = (:, :, grid.Nz))
+conc_fts2 = FieldTimeSeries((Center(), Center(), nothing), RectilinearGrid(architecture; size=(2, 1, 2), extent=(1, 1, 1)), [0, 1])
 set!(conc_fts2[1], 413)
 set!(conc_fts2[2], 413)
 
@@ -112,6 +112,31 @@ set!(conc_fts2[2], 413)
         @info "Testing gas exchange with $(summary(air_concentration))"
         test_gas_exchange_model(grid, air_concentration)
     end
+end
+
+@testset "Off grid FieldTimeSeries interpolation" begin
+    using OceanBioME.Models.GasExchangeModel: InterpolableFTS, normalise_surface_function
+    using Oceananigans.Grids: xnode
+
+    fts_grid = RectilinearGrid(architecture; size = (4, 4, 2), extent = (1, 1, 1))
+
+    varying = FieldTimeSeries((Center(), Center(), nothing), fts_grid, [0, 1])
+
+    set!(varying[1], (x, y) -> 100x)
+    set!(varying[2], (x, y) -> 100x)
+
+    wrapped = normalise_surface_function(varying; grid, FT = Float64)
+
+    @test wrapped isa InterpolableFTS
+
+    clock = Oceananigans.TimeSteppers.Clock(; time = 0.0)
+
+    x = xnode(1, 1, grid.Nz, grid, Center(), Center(), Center())
+
+    @test CUDA.@allowscalar surface_value(wrapped, 1, 1, grid, clock) ≈ 100x
+
+    # a series on the model's own grid is used directly, not wrapped
+    @test normalise_surface_function(conc_fts; grid, FT = Float64) === conc_fts
 end
 
 @testset "Carbon chemistry" begin

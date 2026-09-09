@@ -35,8 +35,15 @@ end
 @inline surface_value(f::AbstractArray{<:Any, 3}, i, j, grid, clock, args...) = @inbounds f[i, j, grid.Nz]
 
 @inline surface_value(f::FlavorOfFTS, i, j, grid, clock, args...) =
-    f[i, j, grid.Nz, Time(clock.time)]
+    f[i, j, 1, Time(clock.time)]
 
+"""
+    InterpolableFTS(fts, grid, location)
+
+Wraps a surface `FieldTimeSeries` which lives on a different grid to the model so that it is
+interpolated onto the model's surface. `fts` should be surface located, i.e. `(Center, Center,
+Nothing)`, so that no vertical interpolation is attempted.
+"""
 struct InterpolableFTS{F, G, L}
          fts :: F
         grid :: G
@@ -52,7 +59,7 @@ Adapt.adapt_structure(to, ifts::InterpolableFTS) =
     x = xnode(i, j, grid.Nz, grid, Center(), Center(), Center())
     y = ynode(i, j, grid.Nz, grid, Center(), Center(), Center())
 
-    return interpolate((x, y, zero(x)), Time(clock.time), f.fts, f.location, f.grid)
+    return interpolate((x, y), Time(clock.time), f.fts, f.location, f.grid)
 end
 
 normalise_surface_function(f; kwargs...) = f

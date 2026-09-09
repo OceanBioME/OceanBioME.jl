@@ -71,8 +71,8 @@ or a `CarbonDioxideConcentration` which diagnoses the partial pressure of CO₂ 
 (and hence the wind speed dependence) inside it.
 
 `grid` is only needed so that a `FieldTimeSeries` given for `air_concentration` which lives on a
-different grid to the model can be wrapped for interpolation; without it the field time series is
-assumed to be on the model grid.
+different grid to the model can be wrapped for horizontal interpolation; without it the field time
+series is assumed to be on the model grid.
 """
 function GasExchangeBoundaryCondition(FT = Float64; 
                                       water_concentration,
