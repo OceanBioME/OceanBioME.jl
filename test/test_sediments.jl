@@ -29,6 +29,10 @@ set_sinkers!(::NutrientsPlanktonDetritus{<:Any, <:Any, <:Any, <:CarbonNitrogenDi
 sum_of_volume_integrals(biogeochemistry, tracers) = sum(map(f -> Field(Integral(f)), values(tracers)))
 sum_of_volume_integrals(::NutrientsPlanktonDetritus{<:Any, <:Any, <:Any, <:CarbonNitrogenDissolvedParticulate}, tracers) =
     sum([Field(Integral(f)) for (n, f) in pairs(tracers) if n in (:NO₃, :NH₄, :P, :Z, :sPON, :bPON, :DON)])
+# `O₂` carries no nitrogen and isn't conserved against the sediment inventory, so it has to be
+# excluded from what this test calls "total nitrogen"
+sum_of_volume_integrals(::NutrientsPlanktonDetritus{<:Any, <:Any, <:Any, <:DissolvedParticulate, <:Any, <:Oxygen}, tracers) =
+    sum([Field(Integral(f)) for (n, f) in pairs(tracers) if n != :O₂])
 
 sum_of_area_integrals(sediment, fields) = sum(map(f -> Field(Integral(f, dims = (1, 2))), values(fields)))
 sum_of_area_integrals(::SimpleMultiG{Nothing}, fields) =
@@ -153,7 +157,11 @@ models = (NonhydrostaticModel, HydrostaticFreeSurfaceModel) # exercises both `su
             test_name = display_name(architecture, grid, biogeochemistry.sediment, biogeochemistry, model)
 
             @testset "$(test_name)" begin
-                test_sediment(grid, biogeochemistry, model)
+                # `InstantRemineralisation` defines its tendency method for the chosen
+                # `remineralisation_reciever` via `eval` at construction time, so a top-level
+                # loop that both builds the biogeochemistry and calls `test_sediment` in the
+                # same compiled thunk needs `invokelatest` to see it
+                Base.invokelatest(test_sediment, grid, biogeochemistry, model)
             end
         end
     end
