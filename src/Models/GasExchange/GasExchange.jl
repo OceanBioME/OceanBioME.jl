@@ -19,11 +19,13 @@ using Oceananigans.BoundaryConditions: FluxBoundaryCondition
 using Oceananigans.Fields: Center
 using Oceananigans.Grids: xnode, ynode
 
-using OceanBioME.Models.CarbonChemistryModel: 
+using OceanBioME.Models.CarbonChemistryModel:
     CarbonChemistry,
     FF,
     silicate_concentration,
     phosphate_concentration
+
+using OceanBioME.Models: teos10_polynomial_approximation
 
 import Base: show, summary
 import Adapt: adapt_structure

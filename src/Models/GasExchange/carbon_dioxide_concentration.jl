@@ -64,10 +64,14 @@ x_{CO_2} p_{atm} f_f(T, S) \\rho / 10^3,
 ```
 
 The default `solubility` is the Weiss and Price (1980) [`FF`](@ref) fit converted to
-mmol / m³ per μatm, which pairs with a [`CarbonDioxideConcentration`](@ref) water side. Note
-that this is the solubility of a *dry air mole fraction*
-(``f_f = K_0 (1 - p_{H_2O}) \\gamma``), and so already carries the water vapour and
-non-ideality corrections; it is not [`K0`](@ref).
+mmol / m³ per μatm using the TEOS-10 density, which pairs with a
+[`CarbonDioxideConcentration`](@ref) water side. Note that this is the solubility of a
+*dry air mole fraction* (``f_f = K_0 (1 - p_{H_2O}) \\gamma``), and so already carries the
+water vapour and non-ideality corrections; it is not [`K0`](@ref).
+
+[`CarbonDioxideGasExchangeBoundaryCondition`](@ref) instead supplies a `solubility` built
+from its `carbon_chemistry`'s own `density_function`, so that the air and water sides always
+use the same density even if a non-default one is given.
 
 A `solubility` of `nothing` leaves the air concentration as a mole fraction in ppmv.
 
@@ -90,10 +94,10 @@ end
     CarbonDioxideAirConcentration(FT = Float64;
                                   mole_fraction = 413,       # ppmv
                                   atmospheric_pressure = 1,  # atm
-                                  solubility = nothing)
+                                  solubility = MolPerKgPerAtmToMMolPerCubicMPerMicroAtm(FF{FT}(), teos10_polynomial_approximation))
 
-Returns the air-side carbon dioxide concentration ``x_{CO_2} p_{atm}`` (in ppmv ≡ μatm), or
-``x_{CO_2} p_{atm} f_f \\rho / 10^3`` (in mmol / m³) when a `solubility` is given.
+Returns the air-side carbon dioxide concentration ``x_{CO_2} p_{atm} f_f \\rho / 10^3`` (in
+mmol / m³), or ``x_{CO_2} p_{atm}`` (in ppmv ≡ μatm) when `solubility = nothing`.
 
 Keyword Arguments
 =================
@@ -106,9 +110,11 @@ Keyword Arguments
   warning) only when a number is given, since the value of a function or `Field` is not
   known at construction time
 - `solubility`: a function of `(T, S)` returning the conversion from a partial pressure in
-  μatm to a concentration in mmol / m³, or `nothing` (the default) to leave the air
-  concentration as a mole fraction in ppmv. `CarbonDioxideGasExchangeBoundaryCondition`
-  supplies `MolPerKgPerAtmToMMolPerCubicMPerMicroAtm(FF{FT}(), density_function)` here
+  μatm to a concentration in mmol / m³. Defaults to the Weiss and Price (1980) [`FF`](@ref)
+  fit with the TEOS-10 density; pass `nothing` to leave the air concentration as a mole
+  fraction in ppmv instead. `CarbonDioxideGasExchangeBoundaryCondition` supplies its own
+  `carbon_chemistry`'s `density_function` here, so the air and water sides stay matched even
+  when a non-default density is used
 
 See also [`CarbonDioxideConcentration`](@ref) and
 [`CarbonDioxideGasExchangeBoundaryCondition`](@ref).
@@ -116,7 +122,7 @@ See also [`CarbonDioxideConcentration`](@ref) and
 function CarbonDioxideAirConcentration(FT = Float64;
                                        mole_fraction = 413,      # ppmv
                                        atmospheric_pressure = 1, # atm
-                                       solubility = nothing)
+                                       solubility = MolPerKgPerAtmToMMolPerCubicMPerMicroAtm(FF{FT}(), teos10_polynomial_approximation))
 
     mole_fraction = normalise_surface_function(mole_fraction; FT)
     atmospheric_pressure = normalise_surface_function(atmospheric_pressure; FT)

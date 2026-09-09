@@ -283,8 +283,8 @@ end
         model_fields = (; T, S, DIC, Alk)
 
         # bare (ppmv) air concentrations
-        air_concentration = CarbonDioxideAirConcentration(FT)
-        reduced_pressure = CarbonDioxideAirConcentration(FT; atmospheric_pressure = 0.9)
+        air_concentration = CarbonDioxideAirConcentration(FT; solubility = nothing)
+        reduced_pressure = CarbonDioxideAirConcentration(FT; atmospheric_pressure = 0.9, solubility = nothing)
 
         xCO₂ = surface_value(air_concentration, 1, 1, grid, clock, model_fields)
 
@@ -346,8 +346,8 @@ end
 
         set!(pressure_field, 0.9)
 
-        field_pressure = CarbonDioxideAirConcentration(FT; atmospheric_pressure = pressure_field)
-        function_pressure = CarbonDioxideAirConcentration(FT; atmospheric_pressure = (x, y, t) -> FT(0.9))
+        field_pressure = CarbonDioxideAirConcentration(FT; atmospheric_pressure = pressure_field, solubility = nothing)
+        function_pressure = CarbonDioxideAirConcentration(FT; atmospheric_pressure = (x, y, t) -> FT(0.9), solubility = nothing)
 
         @test CUDA.@allowscalar(surface_value(field_pressure, 1, 1, field_grid, clock, model_fields)) === FT(0.9) * xCO₂
         @test surface_value(function_pressure, 1, 1, field_grid, clock, model_fields) === FT(0.9) * xCO₂
