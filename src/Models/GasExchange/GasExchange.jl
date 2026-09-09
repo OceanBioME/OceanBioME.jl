@@ -10,7 +10,9 @@ export GasExchange,
        ScaledGasTransferVelocity,
        SchmidtScaledTransferVelocity,
        CarbonDioxidePolynomialSchmidtNumber,
-       OxygenPolynomialSchmidtNumber
+       OxygenPolynomialSchmidtNumber,
+       GarciaGordonOxygenSaturation,
+       CarbonDioxideAirConcentration
 
 using Adapt
 using Oceananigans.BoundaryConditions: FluxBoundaryCondition
@@ -87,7 +89,7 @@ end
     CarbonDioxideGasExchangeBoundaryCondition(FT = Float64; 
                                               carbon_chemistry = CarbonChemistry(FT),
                                               transfer_velocity = SchmidtScaledTransferVelocity(schmidt_number = CarbonDioxidePolynomialSchmidtNumber(FT)),
-                                              air_concentration = 413, # ppmv
+                                              air_concentration = CarbonDioxideAirConcentration(FT), # xCO₂ pₐₜₘ (ppmv)
                                               wind_speed = 2,
                                               water_concentration = nothing,
                                               silicate_and_phosphate_names = nothing,
@@ -111,7 +113,7 @@ function CarbonDioxideGasExchangeBoundaryCondition(FT = Float64;
                                                            schmidt_number = CarbonDioxidePolynomialSchmidtNumber(FT),
                                                            solubility = MolPerKgPerAtmToMMolPerCubicMPerMicroAtm(carbon_chemistry.solubility,
                                                                                                                  carbon_chemistry.density_function)),
-                                                   air_concentration = 413, # ppmv
+                                                   air_concentration = CarbonDioxideAirConcentration(FT), # xCO₂ pₐₜₘ (ppmv)
                                                    wind_speed = 2,
                                                    water_concentration = nothing,
                                                    kwargs...)
