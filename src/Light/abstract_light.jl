@@ -1,6 +1,10 @@
 using Oceananigans.Operators: Δzᵃᵃᶜ
 
-abstract type AbstractSingleBandExponentialLightAttenuation{BA, IN, CA, SP} end # bands, interface, cell average, and surface light
+abstract type AbstractPhotosyntheticallyActiveRadiation{SP} end
+
+surface_PAR(par::AbstractPhotosyntheticallyActiveRadiation) = par.surface_PAR
+
+abstract type AbstractSingleBandExponentialLightAttenuation{BA, IN, CA, SP} <: AbstractPhotosyntheticallyActiveRadiation{SP} end # bands, interface, cell average, and surface light
 
 const AbstractLight{BA, IN, CA, SP} = AbstractSingleBandExponentialLightAttenuation{BA, IN, CA, SP}
 

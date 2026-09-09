@@ -6,7 +6,15 @@ F = k(u_{10}, T)(C_w - C_a),
 ```
 where `k` is the gas transfer velocity.
 
-Our implementation is intended to be generic for any gas, so you can specify `air_concentration`, `water_concentration`, `transfer_velocity`, and `wind_speed` as any function in `GasExchange`, but we also provide constructors and default values for carbon dioxide and oxygen.
+Our implementation is intended to be generic for any gas, so you can specify `air_concentration`, `water_concentration`, and `transfer_velocity` as any function in `GasExchange`, but we also provide constructors and default values for carbon dioxide and oxygen.
+
+The wind speed lives *inside* the transfer velocity rather than alongside it, so that transfer velocities are free to depend on whatever they need to. The default `SchmidtScaledTransferVelocity` scales a `WindSpeedScaledTransferVelocities` — which holds the `wind_speed` and the ``k_{660}(u_{10})`` parameterisation — by the Schmidt number. The carbon dioxide and oxygen constructors still take `wind_speed` directly and build this for you:
+
+```julia
+CO₂_flux = CarbonDioxideGasExchangeBoundaryCondition(; wind_speed = 5)
+```
+
+`wind_speed` (like `air_concentration`) may be a number, a function of `(x, y, t)`, a function of `(i, j, grid, clock, model_fields)` if `discrete_form = true`, a `Field`, or a `FieldTimeSeries`. If you pass a `FieldTimeSeries` which lives on a different grid to the model, also pass `grid = grid` so that it can be wrapped for interpolation onto the model grid.
 
 To setup carbon dioxide and/or oxygen boundary conditions you simply build the condition and then specify it in the model:
 ```@example gasexchange

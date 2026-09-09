@@ -2,8 +2,9 @@ include("dependencies_for_runtests.jl")
 
 using CUDA: @allowscalar
 
-using OceanBioME: TwoBandPhotosyntheticallyActiveRadiation, 
-                  PrescribedAttenuationPAR, 
+using OceanBioME: TwoBandPhotosyntheticallyActiveRadiation,
+                  PrescribedAttenuationPAR,
+                  PARFromShortwave,
                   LOBSTER, NPZD, ImplicitBiology
 
 using Oceananigans.Architectures: on_architecture
@@ -222,6 +223,46 @@ field_surface_PAR = Oceananigans.Fields.ConstantField(100)
 
     test_prescribed_attenuation(grid, NonhydrostaticModel, continuous_surface_PAR, false, (x, y, z, t, a0) -> a0, false, 100, 0.1) # continuous attenuation with parameters
     test_prescribed_attenuation(grid, NonhydrostaticModel, continuous_surface_PAR, false, (args...) -> 0.1, true, 100) # discrete attenuation
+end
+
+@testset "PARFromShortwave" begin
+    grid = RectilinearGrid(architecture; size = (2, 2, 2), extent = (2, 2, 2))
+
+    fₚₐᵣ = 0.43
+    shortwave = Oceananigans.Fields.ConstantField(100 / fₚₐᵣ)
+
+    surface_PAR = PARFromShortwave(shortwave)
+
+    @test surface_PAR.photosynthetic_fraction_of_shortwave == fₚₐᵣ
+
+    adapted = on_architecture(architecture, surface_PAR)
+
+    @test adapted.photosynthetic_fraction_of_shortwave == fₚₐᵣ
+
+    for model in (NonhydrostaticModel, HydrostaticFreeSurfaceModel)
+        test_prescribed_attenuation(grid, model, surface_PAR, false, 0.1, false)
+        test_two_band(grid, model, surface_PAR, false)
+    end
+
+    half_PAR = PARFromShortwave(shortwave; photosynthetic_fraction_of_shortwave = fₚₐᵣ / 2)
+
+    light_attenuation = PrescribedAttenuationPAR(grid, half_PAR; attenuation = 0.1)
+
+    biogeochemistry = ImplicitBiology(grid; light_attenuation)
+
+    model = HydrostaticFreeSurfaceModel(grid;
+                                        biogeochemistry,
+                                        tracers = unique((required_biogeochemical_tracers(biogeochemistry)..., :T, :S)))
+
+    K, Δz, PAR⁰ = 0.1, 1.0, 50.0
+
+    e = exp(-K * Δz)
+
+    expected_PAR = [PAR⁰ * e * (1 - e) / (K * Δz), PAR⁰ * (1 - e) / (K * Δz)]
+
+    results_PAR = Array(interior(biogeochemical_auxiliary_fields(biogeochemistry).PAR))[1, 1, 1:2]
+
+    @test all(results_PAR .≈ expected_PAR)
 end
 
 @testset "Float32 TwoBandPhotosyntheticallyActiveRadiation" begin

@@ -49,12 +49,10 @@ Adapt.adapt_structure(to, ifts::InterpolableFTS) =
                     adapt(to, ifts.location))
 
 @inline function surface_value(f::InterpolableFTS, i, j, grid, clock, args...)
-    t = clock.time
-
     x = xnode(i, j, grid.Nz, grid, Center(), Center(), Center())
     y = ynode(i, j, grid.Nz, grid, Center(), Center(), Center())
 
-    return interpolate((x, y, 0), Time(clock.time), f.fts, f.location, f.grid)
+    return interpolate((x, y, zero(x)), Time(clock.time), f.fts, f.location, f.grid)
 end
 
 normalise_surface_function(f; kwargs...) = f
