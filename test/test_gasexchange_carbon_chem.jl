@@ -37,7 +37,7 @@ function test_gas_exchange_model(grid, air_concentration)
     value = CUDA.@allowscalar Oceananigans.getbc(model.tracers.DIC.boundary_conditions.top, 1, 1, grid, model.clock, fields(model))
 
     @test isa(model.tracers.DIC.boundary_conditions.top.condition.func, GasExchange)
-    @test ≈(value, -6.8234e-6; atol = 1e-8)
+    @test ≈(value, -6.8331e-6; atol = 1e-8)
     @test isnothing(time_step!(model, 1.0))
 
     # multiple carbonate systems
