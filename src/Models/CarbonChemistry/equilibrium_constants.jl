@@ -84,6 +84,49 @@ show(io::IO, k0::K0) = print(io, "Solubility constant\n",
     "    ln(k₀/k°) = $(k0.constant) + $(k0.inverse_T) / T + $(k0.log_T) (log(T) - log(100)) + $(k0.T²) T² + ($(k0.S) + $(k0.ST) T + $(k0.ST²) T²)S")
 
 """
+    FF(; constant = -162.8301,
+         inverse_T =  218.2968 * 100,
+         log_T =  90.9241,
+         T² = -1.47696 / 100^2,
+         S =  0.025695,
+         ST = -0.025225 / 100,
+         ST² =  0.0049867 / 100^2)
+
+Parameterisation for the carbon dioxide solubility used to convert a *dry air* mole
+fraction into a dissolved concentration,
+
+    ff = K₀ (1 - pH₂O) γ,
+
+i.e. the solubility `K0` corrected for the water vapour pressure of saturated air and for
+the non-ideality of the gas phase. It is therefore the quantity to multiply a dry air mole
+fraction by (as opposed to `K0`, which multiplies a fugacity), and it has the same units as
+`K0` (mol / kg / atm).
+
+Default values from Weiss, R.F. and Price, B.A. (1980, Mar. Chem., 8, 347-359), equation 13
+with the table 6 values.
+"""
+@kwdef struct FF{FT}
+     constant :: FT = -162.8301
+    inverse_T :: FT =  218.2968 * 100
+        log_T :: FT =  90.9241
+           T² :: FT = -1.47696 / 100^2
+            S :: FT =  0.025695
+           ST :: FT = -0.025225 / 100
+          ST² :: FT =  0.0049867 / 100^2
+end
+
+@inline (c::FF)(T::FT, S; P = nothing) where FT =
+    exp(c.constant
+        + c.inverse_T / T
+        + c.log_T * (log(T) - log(convert(FT, 100)))
+        + c.T² * T^convert(FT, 2)
+        + (c.S + c.ST * T + c.ST² * T^convert(FT, 2)) * S)
+
+summary(::IO, ::FF) = string("Dry air solubility constant")
+show(io::IO, ff::FF) = print(io, "Dry air solubility constant\n",
+    "    ln(ff/k°) = $(ff.constant) + $(ff.inverse_T) / T + $(ff.log_T) (log(T) - log(100)) + $(ff.T²) T² + ($(ff.S) + $(ff.ST) T + $(ff.ST²) T²)S")
+
+"""
     K1(FT = Float64;
        constant =  61.2172,
        inverse_T = -3633.86,

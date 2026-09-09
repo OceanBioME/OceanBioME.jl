@@ -28,11 +28,21 @@ struct SchmidtScaledTransferVelocity{KB, SC, SO}
               solubility :: SO
 end
 
-SchmidtScaledTransferVelocity(FT = Float64; 
-                              wind_speed, 
-                              base_transfer_velocity::KB = WindSpeedScaledTransferVelocities(wind_speed, Ho06(FT)), 
-                              schmidt_number, 
-                              solubility = (T, S) -> one(FT)) where KB = 
+"""
+    UnitSolubility()
+
+The default `solubility` of a `SchmidtScaledTransferVelocity`, which returns one and so leaves
+the transfer velocity as a bare piston velocity. Unlike a closure it is `isbits`, so the
+transfer velocity remains GPU compatible.
+"""
+struct UnitSolubility end
+
+@inline (::UnitSolubility)(T::FT, S) where FT = one(FT)
+
+summary(::UnitSolubility) = "UnitSolubility"
+show(io::IO, ::UnitSolubility) = print(io, "UnitSolubility (i.e. no solubility scaling)")
+
+SchmidtScaledTransferVelocity(FT = Float64; base_transfer_velocity::KB = Ho06(FT), schmidt_number, solubility = UnitSolubility()) where KB =
     SchmidtScaledTransferVelocity(base_transfer_velocity, schmidt_number, solubility)
 
 @inline function surface_value(k::SchmidtScaledTransferVelocity, i, j, grid, clock, model_fields)
