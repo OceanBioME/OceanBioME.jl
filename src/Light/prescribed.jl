@@ -50,7 +50,7 @@ show(io::IO, model::PrescribedPhotosyntheticallyActiveRadiation{F}) where {F} = 
 biogeochemical_auxiliary_fields(par::PrescribedPhotosyntheticallyActiveRadiation) = par.fields
 
 @inline prescribed_field_names(field_names, fields) = field_names
-@inline prescribed_field_names(::Nothing, fields::NTuple{N}) where N = tuple(:PAR, ntuple(n -> par_symbol(n), Val(N-1))...)
+@inline prescribed_field_names(::Nothing, ::NTuple{N}) where N = tuple(:PAR, ntuple(n -> par_symbol(n), Val(N-1))...)
 
 adapt_structure(to, par::PrescribedPhotosyntheticallyActiveRadiation) = 
     PrescribedPhotosyntheticallyActiveRadiation(adapt(to, par.fields))
