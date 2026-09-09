@@ -37,9 +37,10 @@ using ..NutrientsPlanktonDetritusModels.DetritusModels:
 import Adapt: adapt_structure
 import Base: show, summary
 
-import Oceananigans.Biogeochemistry: 
+import Oceananigans.Biogeochemistry:
     required_biogeochemical_tracers,
-    required_biogeochemical_auxiliary_fields
+    required_biogeochemical_auxiliary_fields,
+    biogeochemical_drift_velocity
 
 import OceanBioME: chlorophyll
 

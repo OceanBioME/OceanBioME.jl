@@ -7,7 +7,7 @@ function update_biogeochemical_state!(model, sediment_model::BiogeochemicalSedim
     update_tracked_fields!(sediment_model, model)
 
     if !((model.clock.iteration == 0) & (model.clock.stage == 1))
-        time_step!(sediment_model, Δt;)
+        step_sediment!(sediment_model, model, model.timestepper)
     end
 
     update_state!(sediment_model)
