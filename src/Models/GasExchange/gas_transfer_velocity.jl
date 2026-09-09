@@ -45,7 +45,7 @@ SchmidtScaledTransferVelocity(FT = Float64;
 
     k₀ = surface_value(k.base_transfer_velocity, i, j, grid, clock, model_fields)
 
-    return k₀ * sqrt(Sc / convert(eltype(model_fields.T), 660)) * ζ
+    return k₀ * sqrt(convert(eltype(model_fields.T), 660) / Sc) * ζ
 end
 
 Adapt.adapt_structure(to, k::SchmidtScaledTransferVelocity) = SchmidtScaledTransferVelocity(adapt(to, k.base_transfer_velocity),
