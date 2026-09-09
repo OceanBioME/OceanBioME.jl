@@ -105,6 +105,10 @@ specified by the `carbon_chemisty` model, and `air_concentration` with `transfer
 `silicate_and_phosphate_names` should either be `nothing`, a `Tuple`` of symbols specifying the name of the silicate
 and phosphate tracers, or a `NamedTuple`  of values for the `carbon_chemistry` model.
 
+`DIC` and `Alk` name the dissolved inorganic carbon and alkalinity tracers that the default
+`water_concentration` reads, which is how replicate carbonate systems (`DIC1`/`Alk1`, ...) are
+exchanged. They are ignored if `water_concentration` is given explicitly.
+
 `kwargs` are passed on to `GasExchangeBoundaryCondition`.
 
 Note: The model always requires `T`, `S`, `DIC`, and `Alk` to be present in the model.
@@ -121,11 +125,13 @@ function CarbonDioxideGasExchangeBoundaryCondition(FT = Float64;
                                                            solubility = MolPerKgPerAtmToMMolPerCubicMPerMicroAtm(carbon_chemistry.solubility,
                                                                                                                  carbon_chemistry.density_function)),
                                                    air_concentration = 413, # ppmv
+                                                   DIC = :DIC,
+                                                   Alk = :Alk,
                                                    water_concentration = nothing,
                                                    kwargs...)
 
     if isnothing(water_concentration)
-        water_concentration = CarbonDioxideConcentration(FT; carbon_chemistry)
+        water_concentration = CarbonDioxideConcentration(FT; carbon_chemistry, DIC, Alk)
     elseif !isnothing(carbon_chemistry)
         @warn "Make sure that the `carbon_chemistry` $(carbon_chemistry) is the same as that in `water_concentration` $(water_concentration) (or set it to `nothing`)"
     end
