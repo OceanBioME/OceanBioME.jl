@@ -2,63 +2,44 @@
     CarbonDioxideConcentration(FT = Float64;
                                carbon_chemistry::CC,
                                DIC = :DIC,
-                               Alk = :Alk,
-                               output = Val(:CO₂))
+                               Alk = :Alk)
 
-The water-side carbon dioxide concentration seen by an air-sea gas exchange, computed by the
-`carbon_chemistry` model from the model's dissolved inorganic carbon and alkalinity.
+The water-side carbon dioxide concentration seen by an air-sea gas exchange: the aqueous
+carbon dioxide concentration, `[CO₂(aq)]` in mmol / m³, computed by the `carbon_chemistry`
+model from the model's dissolved inorganic carbon and alkalinity.
 
 `DIC` and `Alk` specify the tracer names of the DIC and alkalinity in the model.
 
-`output` selects which `carbon_chemistry` quantity is returned, and thereby the *basis* on
-which the exchange is computed:
-
-- `Val(:CO₂)` (the default) returns the aqueous carbon dioxide concentration, `[CO₂(aq)]` in
-  mmol / m³, so the exchange is a difference of *concentrations*. The solubility which turns
-  the air-side mole fraction into a concentration then lives on the `air_concentration`
-  (see [`CarbonDioxideAirConcentration`](@ref)), and the transfer velocity is a bare piston
-  velocity.
-- `Val(:pCO₂)` returns the partial pressure of carbon dioxide in μatm, so the exchange is a
-  difference of *partial pressures*, and the solubility instead lives on the
-  `transfer_velocity`. This is the legacy basis: it compares a dry air mole fraction against
-  a moist air partial pressure, and it passes the water side through the fugacity
-  coefficient, which does not cancel. It is retained only to reproduce older results.
-
-[`CarbonDioxideGasExchangeBoundaryCondition`](@ref) chooses matching defaults for the
-`transfer_velocity` and `air_concentration` from this choice, so the two bases cannot be
-mixed by accident.
+The exchange is a difference of concentrations: the solubility that turns the air-side mole
+fraction into a concentration lives on the `air_concentration`
+(see [`CarbonDioxideAirConcentration`](@ref)), and the transfer velocity is a bare piston
+velocity.
 
 Follows Dickson, A.G., Sabine, C.L. and Christian, J.R. (2007), Guide to Best Practices for
 Ocean CO 2 Measurements. PICES Special Publication 3, 191 pp.
 
-The fugacity coefficient, and hence the virial coefficients that set it, belong to the
-`carbon_chemistry`; and no atmospheric pressure enters the water-side concentration (see
+No atmospheric pressure enters the water-side concentration (see
 [`CarbonDioxideAirConcentration`](@ref), which carries the only atmospheric pressure on this
 path).
 """
-struct CarbonDioxideConcentration{DIC, Alk, CC<:CarbonChemistry, Out}
-    carbon_chemistry :: CC 
+struct CarbonDioxideConcentration{DIC, Alk, CC<:CarbonChemistry}
+    carbon_chemistry :: CC
 end
 
 CarbonDioxideConcentration(FT = Float64;
                            carbon_chemistry::CC = CarbonChemistry(FT),
                            DIC = :DIC,
-                           Alk = :Alk,
-                           output::Out = Val(:CO₂)) where {CC, Out} = 
-    CarbonDioxideConcentration{DIC, Alk, CC, Out}(carbon_chemistry)
+                           Alk = :Alk) where CC =
+    CarbonDioxideConcentration{DIC, Alk, CC}(carbon_chemistry)
 
-carbon_dioxide_output_name(::Val{:CO₂})  = "aqueous carbon dioxide concentration ([CO₂(aq)], mmol/m³)"
-carbon_dioxide_output_name(::Val{:pCO₂}) = "partial pressure of CO₂ (pCO₂, μatm)"
-carbon_dioxide_output_name(::Val{name}) where name = string(name)
+summary(::CarbonDioxideConcentration{DIC, Alk, CC}) where {DIC, Alk, CC} =
+    "`CarbonChemistry` derived aqueous carbon dioxide concentration ([CO₂(aq)], mmol/m³) {$DIC, $Alk, $(nameof(CC))}"
 
-summary(::CarbonDioxideConcentration{DIC, Alk, CC, Out}) where {DIC, Alk, CC, Out} = 
-    "`CarbonChemistry` derived $(carbon_dioxide_output_name(Out())) {$DIC, $Alk, $(nameof(CC))}"
-
-show(io::IO, ccc::CarbonDioxideConcentration{DIC, Alk, CC, Out}) where {DIC, Alk, CC, Out} = 
+show(io::IO, ccc::CarbonDioxideConcentration{DIC, Alk}) where {DIC, Alk} =
     println(io, summary(ccc), "\n",
-            "    Solves the $(nameof(CC)) based on $DIC and $Alk")
+            "    Solves the $(nameof(typeof(ccc.carbon_chemistry))) based on $DIC and $Alk")
 
-@inline function surface_value(cc::CarbonDioxideConcentration{DIC_name, Alk_name, <:Any, Out}, i, j, grid, clock, model_fields) where {DIC_name, Alk_name, Out}
+@inline function surface_value(cc::CarbonDioxideConcentration{DIC_name, Alk_name}, i, j, grid, clock, model_fields) where {DIC_name, Alk_name}
     DIC = @inbounds model_fields[DIC_name][i, j, grid.Nz] # this is a compile time inference so is fine on GPU
     Alk = @inbounds model_fields[Alk_name][i, j, grid.Nz]
 
@@ -68,8 +49,7 @@ show(io::IO, ccc::CarbonDioxideConcentration{DIC, Alk, CC, Out}) where {DIC, Alk
     silicate  = silicate_concentration(grid, i, j, grid.Nz, model_fields)
     phosphate = phosphate_concentration(grid, i, j, grid.Nz, model_fields)
 
-    # mmol/m³ for the default `Val(:CO₂)`, μatm for the legacy `Val(:pCO₂)`
-    return cc.carbon_chemistry(; DIC, Alk, T, S, silicate, phosphate, output = Out())
+    return cc.carbon_chemistry(; DIC, Alk, T, S, silicate, phosphate, output = Val(:CO₂))
 end
 
 """
@@ -89,14 +69,12 @@ water-side concentration nor the transfer velocity; and the solubility sits here
 on the piston velocity).
 
 The default `solubility` is the Weiss and Price (1980) [`FF`](@ref) fit converted to
-mmol / m³ per μatm, which pairs with a water-side
-[`CarbonDioxideConcentration`](@ref) returning `Val(:CO₂)`. Note that this is the solubility
-of a *dry air mole fraction* (``f_f = K_0 (1 - p_{H_2O}) \\gamma``), and so already carries
-the water vapour and non-ideality corrections; it is not [`K0`](@ref).
+mmol / m³ per μatm, which pairs with a [`CarbonDioxideConcentration`](@ref) water side. Note
+that this is the solubility of a *dry air mole fraction*
+(``f_f = K_0 (1 - p_{H_2O}) \\gamma``), and so already carries the water vapour and
+non-ideality corrections; it is not [`K0`](@ref).
 
-A `solubility` of `nothing` leaves the air concentration as a mole fraction in ppmv, which
-pairs with the legacy `Val(:pCO₂)` water side (there the conversion is carried by the
-`transfer_velocity` instead).
+A `solubility` of `nothing` leaves the air concentration as a mole fraction in ppmv.
 
 This drops into the `air_concentration` of a
 [`CarbonDioxideGasExchangeBoundaryCondition`](@ref) in place of a bare number, and with the
@@ -135,8 +113,7 @@ Keyword Arguments
 - `solubility`: a function of `(T, S)` returning the conversion from a partial pressure in
   μatm to a concentration in mmol / m³, or `nothing` (the default) to leave the air
   concentration as a mole fraction in ppmv. `CarbonDioxideGasExchangeBoundaryCondition`
-  supplies `MolPerKgPerAtmToMMolPerCubicMPerMicroAtm(FF{FT}(), density_function)` here when
-  the water side is on the concentration basis
+  supplies `MolPerKgPerAtmToMMolPerCubicMPerMicroAtm(FF{FT}(), density_function)` here
 
 See also [`CarbonDioxideConcentration`](@ref) and
 [`CarbonDioxideGasExchangeBoundaryCondition`](@ref).
@@ -146,11 +123,7 @@ function CarbonDioxideAirConcentration(FT = Float64;
                                        atmospheric_pressure = 1, # atm
                                        solubility = nothing)
 
-    if atmospheric_pressure isa Number && atmospheric_pressure > 10
-        @warn "The `atmospheric_pressure` $(atmospheric_pressure) is very large, are you sure it is in atmospheres (and not, for example, pascals)?"
-    end
-
-           mole_fraction = normalise_surface_function(mole_fraction; FT)
+    mole_fraction = normalise_surface_function(mole_fraction; FT)
     atmospheric_pressure = normalise_surface_function(atmospheric_pressure; FT)
 
     MF = typeof(mole_fraction)
@@ -165,7 +138,7 @@ end
     surface_value(ac.atmospheric_pressure, i, j, grid, clock) *
     air_solubility(ac.solubility, i, j, grid, model_fields)
 
-# no solubility: the air concentration stays a mole fraction in ppmv (the legacy basis)
+# no solubility: the air concentration stays a mole fraction in ppmv
 @inline air_solubility(::Nothing, i, j, grid, model_fields) = one(eltype(grid))
 
 @inline air_solubility(solubility, i, j, grid, model_fields) =
