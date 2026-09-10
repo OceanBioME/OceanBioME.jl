@@ -67,7 +67,7 @@ The default `solubility` is the Weiss and Price (1980) [`FF`](@ref) fit converte
 mmol / m³ per μatm using the TEOS-10 density, which pairs with a
 [`CarbonDioxideConcentration`](@ref) water side. Note that this is the solubility of a
 *dry air mole fraction* (``f_f = K_0 (1 - p_{H_2O}) \\gamma``), and so already carries the
-water vapour and non-ideality corrections; it is not [`K0`](@ref).
+water vapour and non-ideality corrections; it is not [`K0`](@ref OceanBioME.Models.CarbonChemistryModel.K0).
 
 [`CarbonDioxideGasExchangeBoundaryCondition`](@ref) instead supplies a `solubility` built
 from its `carbon_chemistry`'s own `density_function`, so that the air and water sides always
