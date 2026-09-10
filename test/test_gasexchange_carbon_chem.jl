@@ -9,7 +9,10 @@ using OceanBioME.Models.GasExchangeModel: surface_value, CarbonDioxideConcentrat
                                           CarbonDioxideAirConcentration, PartiallySolubleGas, OxygenSolubility,
                                           MolPerKgPerAtmToMMolPerCubicMPerMicroAtm
 
-using OceanBioME.Models.GasExchangeModel.ScaledGasTransferVelocity: UnitSolubility
+using OceanBioME.Models.GasExchangeModel.ScaledGasTransferVelocity: UnitSolubility, Wanninkhof14
+
+using OceanBioME.Models.GasExchangeModel: PolynomialParameterisation, SchmidtScaledTransferVelocity,
+                                          CarbonDioxidePolynomialSchmidtNumber, OxygenPolynomialSchmidtNumber
 
 using OceanBioME.Models: teos10_polynomial_approximation
 
@@ -375,8 +378,8 @@ end
     end
 end
 
-# a direct transliteration of MARBL's `ff` (marbl_co2calc_mod.F90:414-423), the authority for the
-# `FF` coefficients
+# a direct transliteration of MARBL's `ff` (marbl_co2calc_mod.F90:431-434 on the `development`
+# branch, commit f00d642), the authority for the `FF` coefficients
 function marbl_ff(temp, salt)
     tk = 273.15 + temp
     tk100 = tk * 1e-2
@@ -407,7 +410,7 @@ end
                            DIC = ConstantField(FT(s.DIC)), Alk = ConstantField(FT(s.Alk)))
 
         # `Val(:CO₂)` is MARBL's `co2star · mass_to_vol`, to machine precision
-        # (`co2star = dic H²/(H² + k1 H + k1 k2)`, marbl_co2calc_mod.F90:177)
+        # (`co2star = dic H²/(H² + k1 H + k1 k2)`, marbl_co2calc_mod.F90:184)
         for s in states
             args = (; DIC = FT(s.DIC), Alk = FT(s.Alk), T = FT(s.T), S = FT(s.S))
 
@@ -429,7 +432,9 @@ end
 
         # the hand-computed MARBL air term:
         # MARBL's `co2starair · mass_to_vol` = xco2·1e-6 · ff · atmpres · 1e6 ρ_sw, with the
-        # constant ρ_sw = 1026 kg/m³ of marbl_constants_mod.F90:59
+        # constant ρ_sw = 1026 kg/m³ set in marbl_settings_mod.F90:2486 (`mks`; the `cgs` branch
+        # at :2452 uses 1.026 g/cm³, giving the same 1.026e6 mol/kg -> mmol/m³ factor).
+        # marbl_constants_mod.F90:72 only declares `rho_sw`, it does not set it.
         marbl_density(args...) = FT(1026)
 
         marbl_air = CarbonDioxideAirConcentration(FT;
@@ -491,5 +496,146 @@ end
         # a `carbon_chemistry` is required to build the default `air_concentration`
         @test_throws ArgumentError CarbonDioxideGasExchangeBoundaryCondition(FT; carbon_chemistry = nothing,
                                                                                 water_concentration = CarbonDioxideConcentration(FT))
+    end
+end
+
+# ==============================================================================================
+# Reference values produced by *running* MARBL, not by transliterating it.
+#
+# MARBL `development`, commit f00d642, built as `libmarbl-gnu.a` with gfortran 16.1.0 and driven
+# through its genuine public routines:
+#
+#   marbl_co2calc_mod.F90     : marbl_co2calc_surface  -> ph, ff, co2star, dco2star, pco2surf
+#   marbl_schmidt_number_mod.F90 : schmidt_co2_surf    -> sc_co2
+#   marbl_oxygen.F90          : schmidt_o2_surf, o2sat_surf -> sc_o2, o2sat
+#   marbl_surface_flux_mod.F90:191,196,326             -> pv_co2 = xkw_coeff u10² √(660/Sc)
+#                                                         flux_co2 = pv_co2 · dco2star
+#
+# The unit system is `mks`, so rho_sw = 1026 kg/m³ and xkw_coeff = 6.97e-7 s/m
+# (marbl_settings_mod.F90:2486 and :2481). ifrac = 0, atmpres = 1 atm, phosphate = silicate = 0.
+#
+# NOTE ON SIGN: MARBL's `flux_co2` is positive *into* the ocean; OceanBioME's is positive *out*
+# of the ocean, so the comparison below is against `-flux`.
+#
+# NOTE ON PRECISION: MARBL's pH root-find (`drtsafe`) stops at `xacc = 1e-10`, which is an
+# *absolute* tolerance on H ≈ 5e-9, i.e. ~2% relative; marbl_co2calc_mod.F90:42-45 states its
+# `co2star` is accurate to "3 significant figures". OceanBioME's solver uses `atol = 1e-20` on
+# the residual and is therefore the more accurate of the two. Consequently the *chemistry* is
+# tested at MARBL's own converged pH (agreement ~1e-14), while the end-to-end flux, which
+# includes the root-finder difference, is tested at a looser tolerance.
+# ==============================================================================================
+
+const MARBL_XKW_COEFF = 6.97e-7 # marbl_settings_mod.F90:2481, the truncated literal MARBL uses
+
+# (T °C, S, DIC mmol/m³, Alk meq/m³, xCO₂ ppmv, u₁₀ m/s) => MARBL outputs
+const MARBL_REFERENCE = (
+    (T =  10.0, S = 35.0, DIC = 2100.0, Alk = 2400.0, xCO₂ = 413.0, u₁₀ = 5.0,
+     pH = 8.2585003532032157, ff = 4.3175902289787509e-2, co2star = 1.0213306238066989e1,
+     dco2star = 8.0819642464029879e0, pco2surf = 2.3055660641378412e2,
+     sc_co2 = 1.1430780000000002e3, pv_co2 = 1.3240574260114171e-5,
+     flux_co2 = 1.0700984777208642e-4, sc_o2 = 9.8560770000000002e2, o2sat = 2.8201500911637402e2),
+    (T =  25.0, S = 35.0, DIC = 2000.0, Alk = 2350.0, xCO₂ = 413.0, u₁₀ = 5.0,
+     pH = 8.1146592462957710, ff = 2.7439592274591997e-2, co2star = 9.4243164045330836e0,
+     dco2star = 2.2028815467179781e0, pco2surf = 3.3475328203674093e2,
+     sc_co2 = 5.2293281249999973e2, pv_co2 = 1.9575903155844858e-5,
+     flux_co2 = 4.3123395822348870e-5, sc_o2 = 4.4512265625000026e2, o2sat = 2.1159691365532706e2),
+    (T =   0.0, S = 30.0, DIC = 2150.0, Alk = 2400.0, xCO₂ = 413.0, u₁₀ = 5.0,
+     pH = 8.3987572679966274, ff = 6.4157813460522128e-2, co2star = 1.0696874331948049e1,
+     dco2star = 1.6489229228186673e1, pco2surf = 1.6250247444700938e2,
+     sc_co2 = 2.1168000000000002e3, pv_co2 = 9.7298207874908655e-6,
+     flux_co2 = 1.6043724531411265e-4, sc_o2 = 1.9204000000000001e3, o2sat = 3.7048522933290894e2),
+    (T =  15.0, S = 38.0, DIC = 2220.0, Alk = 2500.0, xCO₂ = 413.0, u₁₀ = 5.0,
+     pH = 8.0953824705695467, ff = 3.6094517593594860e-2, co2star = 1.3735511114520520e1,
+     dco2star = 1.5591075815541779e0, pco2surf = 3.7089947798128935e2,
+     sc_co2 = 8.6520356250000020e2, pv_co2 = 1.5218982058276824e-5,
+     flux_co2 = 2.3728030310596403e-5, sc_o2 = 7.3742835625000021e2, o2sat = 2.4957275122226790e2),
+    (T =  20.0, S = 35.0, DIC = 2050.0, Alk = 2350.0, xCO₂ = 413.0, u₁₀ = 5.0,
+     pH = 8.1100675891234069, ff = 3.1571575067664399e-2, co2star = 1.1044206527179936e1,
+     dco2star = 2.3338695488420389e0, pco2surf = 3.4095016875413233e2,
+     sc_co2 = 6.6834400000000005e2, pv_co2 = 1.7315886391042392e-5,
+     flux_co2 = 4.0413019959262108e-5, sc_o2 = 5.6820320000000027e2, o2sat = 2.3110669223343555e2))
+
+@testset "Air-sea gas exchange against compiled MARBL (development f00d642)" begin
+    for FT in [Float64, Float32]
+        grid  = BoxModelGrid(FT)
+        clock = Clock(; time = zero(FT))
+
+        # MARBL's constant seawater density, in place of our TEOS-10 default
+        marbl_density(args...) = FT(1026)
+
+        cc = CarbonChemistry(FT; density_function = marbl_density)
+
+        marbl_solubility = MolPerKgPerAtmToMMolPerCubicMPerMicroAtm(FF{FT}(), marbl_density)
+
+        marbl_air = CarbonDioxideAirConcentration(FT; mole_fraction = 413, solubility = marbl_solubility)
+
+        # MARBL's piston velocity: k₆₆₀ = xkw_coeff u₁₀², using MARBL's own truncated coefficient
+        marbl_k660 = PolynomialParameterisation{2}(FT; coefficients = (0, 0, MARBL_XKW_COEFF))
+
+        marbl_transfer_velocity = SchmidtScaledTransferVelocity(FT;
+                                      base_transfer_velocity = marbl_k660,
+                                      schmidt_number = CarbonDioxidePolynomialSchmidtNumber(FT))
+
+        exchange = CarbonDioxideGasExchangeBoundaryCondition(FT;
+                       carbon_chemistry = cc,
+                       air_concentration = marbl_air,
+                       transfer_velocity = marbl_transfer_velocity,
+                       wind_speed = 5).condition.func
+
+        o2_saturation = GarciaGordonOxygenSaturation(FT)
+
+        # tight: everything that is a closed-form expression on both sides
+        tight = max(1e-11, 1000 * eps(FT))
+        # loose: includes MARBL's `xacc = 1e-10` pH root-find (the accuracy limit at Float64),
+        # plus, at Float32, the accumulated rounding of the whole pH-solve pipeline
+        loose = FT == Float32 ? 1e-3 : 1e-4
+
+        for r in MARBL_REFERENCE
+            T = ConstantField(FT(r.T)); S = ConstantField(FT(r.S))
+            fields = (; T, S, DIC = ConstantField(FT(r.DIC)), Alk = ConstantField(FT(r.Alk)))
+
+            # --- closed-form quantities: exact to (near) machine precision -----------------
+            @test ≈(FF{FT}()(FT(r.T) + FT(273.15), FT(r.S)), r.ff; rtol = tight)
+
+            @test ≈(CarbonDioxidePolynomialSchmidtNumber(FT)(FT(r.T)), r.sc_co2; rtol = tight)
+            @test ≈(OxygenPolynomialSchmidtNumber(FT)(FT(r.T)),        r.sc_o2;  rtol = tight)
+
+            @test ≈(surface_value(o2_saturation, 1, 1, grid, clock, (; T, S)), r.o2sat; rtol = tight)
+
+            # MARBL's `co2starair · mass_to_vol` = xco2·1e-6 · ff · atmpres · 1e3 · rho_sw
+            @test ≈(surface_value(marbl_air, 1, 1, grid, clock, fields),
+                    r.xCO₂ * 1e-6 * r.ff * 1.026e6; rtol = tight)
+
+            # the piston velocity path, independent of any chemistry
+            @test ≈(marbl_transfer_velocity(FT(r.u₁₀), FT(r.T), FT(r.S)), r.pv_co2; rtol = tight)
+
+            # --- chemistry evaluated at MARBL's OWN converged pH --------------------------
+            # this removes the root-finder difference and isolates the formula + constants
+            co2_at_marbl_pH = cc(; DIC = FT(r.DIC), T = FT(r.T), S = FT(r.S),
+                                   pH = FT(r.pH), output = Val(:CO₂))
+
+            @test ≈(co2_at_marbl_pH, r.co2star; rtol = tight)
+
+            # the whole flux, assembled at MARBL's pH, reproduces MARBL to machine precision
+            marbl_dco2star = surface_value(marbl_air, 1, 1, grid, clock, fields) - co2_at_marbl_pH
+
+            @test ≈(marbl_dco2star, r.dco2star; rtol = tight)
+            @test ≈(marbl_transfer_velocity(FT(r.u₁₀), FT(r.T), FT(r.S)) * marbl_dco2star,
+                    r.flux_co2; rtol = tight)
+
+            # --- end to end, each code solving its own pH --------------------------------
+            # the residual here is MARBL's `xacc = 1e-10`, not a difference of formulation
+            @test ≈(-exchange(1, 1, grid, clock, fields), r.flux_co2; rtol = loose)
+        end
+
+        # our stock `Wanninkhof14` computes 0.251/hour/100 = 6.97222e-7 rather than MARBL's
+        # truncated 6.97e-7, a systematic 0.032% offset in the piston velocity
+        w14 = SchmidtScaledTransferVelocity(FT; base_transfer_velocity = Wanninkhof14(FT),
+                                                schmidt_number = CarbonDioxidePolynomialSchmidtNumber(FT))
+
+        r = MARBL_REFERENCE[1]
+
+        @test ≈(w14(FT(r.u₁₀), FT(r.T), FT(r.S)) / r.pv_co2, (0.251 / 3600 / 100) / MARBL_XKW_COEFF;
+                rtol = max(1e-6, 1000 * eps(FT)))
     end
 end

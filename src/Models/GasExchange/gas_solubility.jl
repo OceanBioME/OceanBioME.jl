@@ -78,8 +78,11 @@ Adapt.adapt_structure(to, k::MolPerKgPerAtmToMMolPerCubicMPerMicroAtm) =
 
 The saturation concentration of oxygen in sea water (mmol O₂ / m³) after Garcia and Gordon
 (1992), Limnology and Oceanography, page 1310, equation (8), scaled by the atmospheric
-pressure. Note that the `A₃Tₛ²` term printed in the paper is an error and is not included
-(as in the reference implementation).
+pressure. Note that the `A₃Tₛ²` term printed in the paper is an error and is not included.
+This follows MARBL's `o2sat_surf` (`marbl_oxygen.F90:60-112`), which states the same:
+"*** NOTE: THE "A_3*TS^2" TERM (IN THE PAPER) IS INCORRECT. *** IT SHOULD NOT BE THERE. ***".
+Verified against MARBL (`development`, commit f00d642) compiled and run directly: this
+implementation agrees with `o2sat_surf` to 4.6e-16 relative (machine precision).
 
 The fit is written in terms of the scaled temperature
 ``T_s = \\ln\\left[(T_0 + T_{ref} - T)/(T_0 + T)\\right]`` (with ``T_0`` the freezing point
