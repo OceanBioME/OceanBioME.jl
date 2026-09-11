@@ -16,7 +16,7 @@ Alias for [`PrescribedAttenuationPhotosyntheticallyActiveRadiation`](@ref).
 const PrescribedAttenuationPAR = PrescribedAttenuationPhotosyntheticallyActiveRadiation
 
 @inline attenuation(i, j, k, grid, la::PrescribedAttenuationPAR, clock, chlorophyll) =
-    la.attenuation(i, j, k, grid, clock, nothing)
+    la.attenuation(i, j, k, grid, clock, chlorophyll)
 
 """
     PrescribedAttenuationPAR(grid, surface_PAR;
