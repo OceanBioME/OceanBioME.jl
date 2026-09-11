@@ -40,22 +40,20 @@ where ``c`` is a coefficient (`coeff`) which typically is wind product specific 
 
 Currently, the parameters for CO₂ and oxygen are included, but it would be very straightforward to add the parameters given in the original publication for other gases (e.g. inert tracers of other nutrients such as N₂).
 
-### Carbon dioxide partial pressure
+### Carbon dioxide concentration
 
-For most gasses the water concentration `C_w` is simply taken directly from the biogeochemical model or another tracer (in which case `water_concentration` should be set to `TracerConcentration(:tracer_name)`), but for carbon dioxide the fugacity (``fCO_2``) must be derived from the dissolved inorganic carbon (`DIC`) and `Alk`alinity by a `CarbonChemistry` model (please see the docs for [CarbonChemistry](@ref carbon-chemistry)), and used to calculate the partial pressure (``pCO_2``).
+For most gasses the water concentration `C_w` is simply taken directly from the biogeochemical model or another tracer (in which case `water_concentration` should be set to `TracerConcentration(:tracer_name)`), but for carbon dioxide it must be derived from the dissolved inorganic carbon (`DIC`) and `Alk`alinity by a `CarbonChemistry` model (please see the docs for [CarbonChemistry](@ref carbon-chemistry)).
 
-The default parameterisation for the partial pressure (`CarbonDioxideConcentration`) is given by [dickson2007](@citet) and defines the partial pressure to be the mole fraction ``x(CO_2)`` multiplied by the pressure, ``P``, related to the fugacity by:
+The water concentration is the aqueous carbon dioxide concentration in mmol / m³,
 ```math
-fCO_2 = x(CO_2)P\exp\left(\frac{1}{RT}\int_0^P\left(V(CO_2)-\frac{RT}{P'}\right)dP'\right).
+C_w = [CO_2(aq)] = DIC\frac{[H^+]^2}{[H^+]^2 + K_1[H^+] + K_1K_2},
 ```
-The volume (``V``) is related to the gas pressure by the virial expression:
+(`CarbonDioxideConcentration`), and the air concentration is the dry air mole fraction converted onto the same basis by Dalton's law and a solubility,
 ```math
-\frac{PV(CO_2)}{RT}\approx1+\frac{B(x, T)}{V(CO_2)}+\mathcal{O}(V(CO_2)^{-2}),
+C_a = x(CO_2)p_{atm}f_f(T, S)\frac{\rho}{10^3}.
 ```
-and the first virial coefficient ``B`` for carbon dioxide in air can be approximated as:
+The solubility ``f_f`` is the [Weiss1980](@citet) parameterisation (`FF`), which is the solubility ``K_0`` corrected for the water vapour pressure of saturated air and for the non-ideality of the gas phase,
 ```math
-B_{CO_2-\text{air}} \approx B_{CO_2}(T) + 2x(CO_2)\delta_{CO_2-\text{air}}(T),
+f_f = K_0(1 - p_{H_2O})\gamma,
 ```
-where ``\delta`` is the cross virial coefficient.
-
-``B_{CO_2}`` and ``\delta_{CO_2-\text{air}}`` are parameterised by [Weiss1974](@citet) and reccomended in [dickson2007](@citet) as fourth and first order polynomials respectively.
+and is therefore the right quantity to multiply a *dry air* mole fraction by. The transfer velocity is a bare piston velocity (its `solubility` is `UnitSolubility`), and the atmospheric pressure enters the flux exactly once, on the air side.
