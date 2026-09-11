@@ -378,6 +378,21 @@ end
     end
 end
 
+"""
+    MARBLDensity()
+
+MARBL's constant seawater density, `rho_sw = 1026 kg/m³` (marbl_settings_mod.F90:2486), in
+place of our TEOS-10 default so that the two codes can be compared.
+
+This is a singleton rather than a closure such as `(args...) -> FT(1026)`: a closure written
+inside the `for FT in ...` loop below captures `FT` and so is *not* `isbits`, which would make
+every object built from it (the solubility, the air concentration, the `CarbonChemistry`, and
+hence the whole assembled boundary condition) non-`isbits` and unusable inside a GPU kernel.
+"""
+struct MARBLDensity end
+
+@inline (::MARBLDensity)(T, S, args...) = convert(typeof(T), 1026)
+
 # a direct transliteration of MARBL's `ff` (marbl_co2calc_mod.F90:431-434 on the `development`
 # branch, commit f00d642), the authority for the `FF` coefficients
 function marbl_ff(temp, salt)
@@ -435,7 +450,7 @@ end
         # constant ρ_sw = 1026 kg/m³ set in marbl_settings_mod.F90:2486 (`mks`; the `cgs` branch
         # at :2452 uses 1.026 g/cm³, giving the same 1.026e6 mol/kg -> mmol/m³ factor).
         # marbl_constants_mod.F90:72 only declares `rho_sw`, it does not set it.
-        marbl_density(args...) = FT(1026)
+        marbl_density = MARBLDensity()
 
         marbl_air = CarbonDioxideAirConcentration(FT;
                         solubility = MolPerKgPerAtmToMMolPerCubicMPerMicroAtm(FF{FT}(), marbl_density))
@@ -561,7 +576,7 @@ const MARBL_REFERENCE = (
         clock = Clock(; time = zero(FT))
 
         # MARBL's constant seawater density, in place of our TEOS-10 default
-        marbl_density(args...) = FT(1026)
+        marbl_density = MARBLDensity()
 
         cc = CarbonChemistry(FT; density_function = marbl_density)
 
@@ -637,5 +652,32 @@ const MARBL_REFERENCE = (
 
         @test ≈(w14(FT(r.u₁₀), FT(r.T), FT(r.S)) / r.pv_co2, (0.251 / 3600 / 100) / MARBL_XKW_COEFF;
                 rtol = max(1e-6, 1000 * eps(FT)))
+
+        # --- the same comparison on the actual `architecture`, through real `Field`s ----------
+        # `BoxModelGrid` above is always a CPU grid, so on a GPU run the checks so far never
+        # touch the device. Repeat the flux against MARBL with device-resident fields.
+        field_grid = RectilinearGrid(architecture, FT; size = (1, 1, 2), extent = (1, 1, 2))
+
+        field_T, field_S = CenterField(field_grid), CenterField(field_grid)
+        field_DIC, field_Alk = CenterField(field_grid), CenterField(field_grid)
+
+        field_fields = (T = field_T, S = field_S, DIC = field_DIC, Alk = field_Alk)
+
+        for r in MARBL_REFERENCE
+            set!(field_T, r.T); set!(field_S, r.S)
+            set!(field_DIC, r.DIC); set!(field_Alk, r.Alk)
+
+            device_flux = CUDA.@allowscalar -exchange(1, 1, field_grid, clock, field_fields)
+
+            @test ≈(device_flux, r.flux_co2; rtol = loose)
+
+            @test ≈(CUDA.@allowscalar(surface_value(o2_saturation, 1, 1, field_grid, clock,
+                                                    (T = field_T, S = field_S))), r.o2sat; rtol = tight)
+
+            # an `adapt`ed copy must give bit-identical answers
+            adapted = adapt(Array, exchange)
+
+            @test CUDA.@allowscalar(-adapted(1, 1, field_grid, clock, field_fields)) === device_flux
+        end
     end
 end
