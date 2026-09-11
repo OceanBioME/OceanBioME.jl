@@ -142,7 +142,7 @@ Keyword Arguments
 - `open_bottom`: whether `CaCO₃` can sink out of the bottom of the domain
 - `carbon_chemistry`: the [`CarbonChemistry`](@ref) used to compute the calcium carbonate saturation `Ω`
 """
-struct ExplicitCalciumCarbonate{N, R, CC, SV, SS} <: AbstractInorganicCarbon
+struct ExplicitCalciumCarbonate{N, R, CC, SV, SS} <: AbstractInorganicCarbon{N}
           calcium_carbonate_dissolution_rate :: R
       calcium_carbonate_dissolution_exponent :: R
         calcium_carbonate_precipitation_rate :: R

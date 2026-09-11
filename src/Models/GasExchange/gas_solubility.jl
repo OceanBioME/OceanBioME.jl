@@ -23,6 +23,7 @@ end
 @inline surface_value(gs::PartiallySolubleGas, i, j, grid, clock, model_fields) = 
     surface_value(gs.air_concentration, i, j, grid, clock) * surface_value(gs.solubility, i, j, grid, clock, model_fields)
 
+# this isn't used anywhere?
 """
     Wanninkhof92Solubility
 
@@ -43,14 +44,14 @@ function surface_value(sol::Wanninkhof92Solubility, i, j, grid, clock, model_fie
     Tk = @inbounds model_fields.T[i, j, grid.Nz] + convert(FT, 273.15)
     S = @inbounds model_fields.S[i, j, grid.Nz]
 
-    Tk_100 = Tk / convert(FT, 100)
-
-    β = exp(sol.A1 + sol.A2 / Tk_100 + sol.A3 * log(Tk_100) + S * (sol.B1 + sol.B2 * Tk_100 + sol.B3 * Tk_100^convert(FT, 2)))
-
-    return β * Tk / convert(FT, 273.15)
+    return sol(Tk, S)
 end
 
-OxygenSolubility(FT = Float64; A1 = -58.3877, A2 = 85.8079, A3 = 23.8439, B1 = -0.034892, B2 = 0.015568, B3 = -0.0019387) =
+@inline (sol::Wanninkhof92Solubility)(Tk::FT, S) where FT = 
+    (Tk_100 = Tk / convert(FT, 100);
+     exp(sol.A1 + sol.A2 / Tk_100 + sol.A3 * log(Tk_100) + S * (sol.B1 + sol.B2 * Tk_100 + sol.B3 * Tk_100^convert(FT, 2))) * Tk / convert(FT, 273.15))
+
+OxygenSolubility(FT = Float64; A1 = -58.3877, A2 = 85.8079, A3 = 23.8439, B1 = -0.034892, B2 = 0.015578, B3 = -0.0019387) =
     Wanninkhof92Solubility{FT}(A1, A2, A3, B1, B2, B3)
 
 struct MolPerKgPerAtmToMMolPerCubicMPerMicroAtm{SO, DE}

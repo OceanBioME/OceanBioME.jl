@@ -23,11 +23,13 @@ function test_gas_exchange_model(grid, air_concentration)
     model = NonhydrostaticModel(grid;
                                 tracers = (:T, :S),
                                 biogeochemistry = LOBSTER(grid; inorganic_carbon = CarbonateSystem()),
-                                boundary_conditions = (DIC = FieldBoundaryConditions(top = CarbonDioxideGasExchangeBoundaryCondition(; air_concentration)), ))
+                                boundary_conditions = (DIC = FieldBoundaryConditions(top = CarbonDioxideGasExchangeBoundaryCondition(; grid, air_concentration)), ))
 
     set!(model, T = 15.0, S = 35.0, DIC = 2220, Alk = 2500)
 
-    # is everything communicating properly? (can't think of a way to not use allow scalar here)
+    @test isa(model.tracers.DIC.boundary_conditions.top.condition.func, GasExchange)
+
+    # can't think of a way to not use allow scalar here
     value = CUDA.@allowscalar Oceananigans.getbc(model.tracers.DIC.boundary_conditions.top, 1, 1, grid, model.clock, fields(model))
 
     @test isa(model.tracers.DIC.boundary_conditions.top.condition.func, GasExchange)
@@ -36,16 +38,10 @@ function test_gas_exchange_model(grid, air_concentration)
 
     # multiple carbonate systems
 
-    CO₂_flux1 = 
-        CarbonDioxideGasExchangeBoundaryCondition(; 
-            water_concentration = CarbonDioxideConcentration(; DIC = :DIC1,
-                                                            Alk = :Alk1)
-        )
-    CO₂_flux2 = 
-        CarbonDioxideGasExchangeBoundaryCondition(; 
-            water_concentration = CarbonDioxideConcentration(; DIC = :DIC2,
-                                                            Alk = :Alk2)
-        )
+    CO₂_flux1 = CarbonDioxideGasExchangeBoundaryCondition(; DIC = :DIC1, Alk = :Alk1)
+    CO₂_flux2 = CarbonDioxideGasExchangeBoundaryCondition(; DIC = :DIC2, Alk = :Alk2)
+
+    @test CO₂_flux1.condition.func.water_concentration isa CarbonDioxideConcentration
 
 
     boundary_conditions = (; DIC1 = FieldBoundaryConditions(top = CO₂_flux1),
@@ -103,11 +99,44 @@ conc_field = CenterField(grid)
 
 set!(conc_field, (args...) -> 413)
 
+conc_fts = FieldTimeSeries((Center(), Center(), nothing), grid, [0, 1])
+set!(conc_fts[1], 413)
+set!(conc_fts[2], 413)
+
+conc_fts2 = FieldTimeSeries((Center(), Center(), nothing), RectilinearGrid(architecture; size=(2, 1, 2), extent=(1, 1, 1)), [0, 1])
+set!(conc_fts2[1], 413)
+set!(conc_fts2[2], 413)
+
 @testset "Gas exchange coupling" begin
-    for air_concentration in [413.1, conc_function, conc_field]
-        @info "Testing gas exchange with $(typeof(air_concentration))"
+    for air_concentration in [413.1, conc_function, conc_field, conc_fts, conc_fts2]
+        @info "Testing gas exchange with $(summary(air_concentration))"
         test_gas_exchange_model(grid, air_concentration)
     end
+end
+
+@testset "Off grid FieldTimeSeries interpolation" begin
+    using OceanBioME.Models.GasExchangeModel: InterpolableFTS, normalise_surface_function
+    using Oceananigans.Grids: xnode
+
+    fts_grid = RectilinearGrid(architecture; size = (4, 4, 2), extent = (1, 1, 1))
+
+    varying = FieldTimeSeries((Center(), Center(), nothing), fts_grid, [0, 1])
+
+    set!(varying[1], (x, y) -> 100x)
+    set!(varying[2], (x, y) -> 100x)
+
+    wrapped = normalise_surface_function(varying; grid, FT = Float64)
+
+    @test wrapped isa InterpolableFTS
+
+    clock = Oceananigans.TimeSteppers.Clock(; time = 0.0)
+
+    x = xnode(1, 1, grid.Nz, grid, Center(), Center(), Center())
+
+    @test CUDA.@allowscalar surface_value(wrapped, 1, 1, grid, clock) ≈ 100x
+
+    # a series on the model's own grid is used directly, not wrapped
+    @test normalise_surface_function(conc_fts; grid, FT = Float64) === conc_fts
 end
 
 @testset "Carbon chemistry" begin

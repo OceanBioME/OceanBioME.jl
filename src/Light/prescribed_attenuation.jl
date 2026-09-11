@@ -16,7 +16,7 @@ Alias for [`PrescribedAttenuationPhotosyntheticallyActiveRadiation`](@ref).
 const PrescribedAttenuationPAR = PrescribedAttenuationPhotosyntheticallyActiveRadiation
 
 @inline attenuation(i, j, k, grid, la::PrescribedAttenuationPAR, clock, chlorophyll) =
-    la.attenuation(i, j, k, grid, clock, nothing)
+    la.attenuation(i, j, k, grid, clock, chlorophyll)
 
 """
     PrescribedAttenuationPAR(grid, surface_PAR;
@@ -62,16 +62,7 @@ function PrescribedAttenuationPhotosyntheticallyActiveRadiation(grid, surface_PA
                                                                 attenuation_discrete_form = false,
                                                                 interface_field = nothing)
 
-    boundary_condition_kwargs = surface_PAR isa Function ? (; parameters = surface_parameters, discrete_form = surface_discrete_form) : NamedTuple()
-
-    field = CenterField(grid; 
-                        boundary_conditions =
-                            regularize_field_boundary_conditions(
-                                FieldBoundaryConditions(top = ValueBoundaryCondition(surface_PAR; boundary_condition_kwargs...)), grid, :PAR
-                            ))
-
-    surface_PAR = materialize_condition(surface_PAR, surface_parameters, surface_discrete_form, ()) 
-    surface_PAR = regularize_boundary_condition(surface_PAR, grid, (Center(), Center(), Center()), 3, RightBoundary, nothing)
+    field, surface_PAR = PAR_field(grid, surface_PAR, surface_parameters, surface_discrete_form)
 
     if attenuation isa Number
         attenuation = Forcing(ConstantField(attenuation))

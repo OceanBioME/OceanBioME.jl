@@ -1,4 +1,4 @@
-abstract type AbstractInorganicCarbon end
+abstract type AbstractInorganicCarbon{N} end
 
 const NPD_AIC{FT} = NutrientsPlanktonDetritus{FT, <:Any, <:Any, <:Any, <:AbstractInorganicCarbon}
 

@@ -22,7 +22,7 @@ fields which are user specified, e.g. they may be `FunctionField`s or
 fields which will be returned in `biogeochemical_auxiliary_fields`, if only
 one field is present the field will be named `PAR`.
 """
-struct PrescribedPhotosyntheticallyActiveRadiation{F}
+struct PrescribedPhotosyntheticallyActiveRadiation{F} <: AbstractPhotosyntheticallyActiveRadiation{nothing}
     fields :: F
 
     function PrescribedPhotosyntheticallyActiveRadiation(fields)
