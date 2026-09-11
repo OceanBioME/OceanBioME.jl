@@ -75,8 +75,7 @@ function test_sediment(grid, biogeochemistry, model_name, advection = WENO(order
 
     final_total_nitrogen = CUDA.@allowscalar total_nitrogen[1, 1, 1]
 
-    # simple multi-G is only good to this precision, IR is fine to default
-    @test isapprox(initial_total_nitrogen, final_total_nitrogen,rtol = 0.2e-6)
+    @test isapprox(initial_total_nitrogen, final_total_nitrogen, rtol = 1e-8)#0.2e-6)
 
     @test CUDA.@allowscalar all(interior(sediment_nitrogen) .!= 0)
 
