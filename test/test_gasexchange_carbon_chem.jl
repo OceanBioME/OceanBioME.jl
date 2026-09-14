@@ -9,7 +9,7 @@ using OceanBioME.Models.GasExchangeModel: surface_value, CarbonDioxideConcentrat
                                           CarbonDioxideAirConcentration, PartiallySolubleGas, OxygenSolubility,
                                           MolPerKgPerAtmToMMolPerCubicMPerMicroAtm
 
-using OceanBioME.Models.GasExchangeModel.ScaledGasTransferVelocity: Wanninkhof14
+using OceanBioME.Models.GasExchangeModel.ScaledGasTransferVelocity: Wanninkhof14, WindSpeedScaledTransferVelocities
 
 using OceanBioME.Models.GasExchangeModel: PolynomialParameterisation, SchmidtScaledTransferVelocity,
                                           CarbonDioxidePolynomialSchmidtNumber, OxygenPolynomialSchmidtNumber
@@ -589,16 +589,16 @@ const MARBL_REFERENCE = (
 
         # MARBL's piston velocity: k₆₆₀ = xkw_coeff u₁₀², using MARBL's own truncated coefficient
         marbl_k660 = PolynomialParameterisation{2}(FT; coefficients = (0, 0, MARBL_XKW_COEFF))
+        marbl_Sc = CarbonDioxidePolynomialSchmidtNumber(FT)
 
         marbl_transfer_velocity = SchmidtScaledTransferVelocity(FT;
-                                      base_transfer_velocity = marbl_k660,
-                                      schmidt_number = CarbonDioxidePolynomialSchmidtNumber(FT))
+                                      base_transfer_velocity = WindSpeedScaledTransferVelocities(FT(5), marbl_k660),
+                                      schmidt_number = marbl_Sc)
 
         exchange = CarbonDioxideGasExchangeBoundaryCondition(FT;
                        carbon_chemistry = cc,
                        air_concentration = marbl_air,
-                       transfer_velocity = marbl_transfer_velocity,
-                       wind_speed = 5).condition.func
+                       transfer_velocity = marbl_transfer_velocity).condition.func
 
         o2_saturation = GarciaGordonOxygenSaturation(FT)
 
@@ -625,7 +625,8 @@ const MARBL_REFERENCE = (
                     r.xCO₂ * 1e-6 * r.ff * 1.026e6; rtol = tight)
 
             # the piston velocity path, independent of any chemistry
-            @test ≈(marbl_transfer_velocity(FT(r.u₁₀), FT(r.T), FT(r.S)), r.pv_co2; rtol = tight)
+            pv = marbl_k660(FT(r.u₁₀)) * sqrt(FT(660) / marbl_Sc(FT(r.T)))
+            @test ≈(pv, r.pv_co2; rtol = tight)
 
             # --- chemistry evaluated at MARBL's OWN converged pH --------------------------
             # this removes the root-finder difference and isolates the formula + constants
@@ -638,8 +639,7 @@ const MARBL_REFERENCE = (
             marbl_dco2star = surface_value(marbl_air, 1, 1, grid, clock, fields) - co2_at_marbl_pH
 
             @test ≈(marbl_dco2star, r.dco2star; rtol = tight)
-            @test ≈(marbl_transfer_velocity(FT(r.u₁₀), FT(r.T), FT(r.S)) * marbl_dco2star,
-                    r.flux_co2; rtol = tight)
+            @test ≈(pv * marbl_dco2star, r.flux_co2; rtol = tight)
 
             # --- end to end, each code solving its own pH --------------------------------
             # the residual here is MARBL's `xacc = 1e-10`, not a difference of formulation
