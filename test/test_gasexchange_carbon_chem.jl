@@ -47,17 +47,8 @@ function test_gas_exchange_model(grid, air_concentration)
 
     # multiple carbonate systems
 
-    CO₂_flux1 =
-        CarbonDioxideGasExchangeBoundaryCondition(;
-            water_concentration = CarbonDioxideConcentration(; DIC = :DIC1,
-                                                            Alk = :Alk1)
-        )
-    CO₂_flux2 =
-        CarbonDioxideGasExchangeBoundaryCondition(;
-            water_concentration = CarbonDioxideConcentration(; DIC = :DIC2,
-                                                            Alk = :Alk2)
-        )
-
+    CO₂_flux1 = CarbonDioxideGasExchangeBoundaryCondition(; DIC = :DIC1, Alk = :Alk1)
+    CO₂_flux2 = CarbonDioxideGasExchangeBoundaryCondition(; DIC = :DIC2, Alk = :Alk2)
 
     boundary_conditions = (; DIC1 = FieldBoundaryConditions(top = CO₂_flux1),
                              DIC2 = FieldBoundaryConditions(top = CO₂_flux2))

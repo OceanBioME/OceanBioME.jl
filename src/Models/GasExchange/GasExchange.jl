@@ -131,6 +131,8 @@ exchanged. They are ignored if `water_concentration` is given explicitly.
 Note: The model always requires `T`, `S`, `DIC`, and `Alk` to be present in the model.
 """
 function CarbonDioxideGasExchangeBoundaryCondition(FT = Float64;
+                                                   DIC = :DIC,
+                                                   Alk = :Alk,
                                                    carbon_chemistry = CarbonChemistry(FT),
                                                    transfer_velocity = nothing,
                                                    air_concentration = nothing,
@@ -139,7 +141,7 @@ function CarbonDioxideGasExchangeBoundaryCondition(FT = Float64;
                                                    kwargs...)
 
     if isnothing(water_concentration)
-        water_concentration = CarbonDioxideConcentration(FT; carbon_chemistry)
+        water_concentration = CarbonDioxideConcentration(FT; carbon_chemistry, DIC, Alk)
     elseif !isnothing(carbon_chemistry)
         @warn "Make sure that the `carbon_chemistry` $(carbon_chemistry) is the same as that in `water_concentration` $(water_concentration) (or set it to `nothing`)"
     end
