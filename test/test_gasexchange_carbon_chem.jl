@@ -9,7 +9,7 @@ using OceanBioME.Models.GasExchangeModel: surface_value, CarbonDioxideConcentrat
                                           CarbonDioxideAirConcentration, PartiallySolubleGas, OxygenSolubility,
                                           MolPerKgPerAtmToMMolPerCubicMPerMicroAtm
 
-using OceanBioME.Models.GasExchangeModel.ScaledGasTransferVelocity: UnitSolubility, Wanninkhof14
+using OceanBioME.Models.GasExchangeModel.ScaledGasTransferVelocity: Wanninkhof14
 
 using OceanBioME.Models.GasExchangeModel: PolynomialParameterisation, SchmidtScaledTransferVelocity,
                                           CarbonDioxidePolynomialSchmidtNumber, OxygenPolynomialSchmidtNumber
@@ -576,8 +576,6 @@ const MARBL_REFERENCE = (
         @test ≈(surface_value(default_exchange.water_concentration, 1, 1, grid, clock, model_fields(states[2])),
                 12.907474; rtol = ref_rtol)
 
-        # the transfer velocity is a bare piston velocity
-        @test default_exchange.transfer_velocity.solubility === UnitSolubility()
         @test default_exchange.transfer_velocity(FT(2), FT(10), FT(35)) ===
                 default_exchange.transfer_velocity.base_transfer_velocity(FT(2)) /
                     sqrt(default_exchange.transfer_velocity.schmidt_number(FT(10)) / FT(660))
