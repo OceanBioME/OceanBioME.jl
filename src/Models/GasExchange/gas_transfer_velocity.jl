@@ -31,9 +31,11 @@ struct SchmidtScaledTransferVelocity{KB, SC}
 end
 
 SchmidtScaledTransferVelocity(FT = Float64;
-                              wind_speed,
-                              base_transfer_velocity::KB = WindSpeedScaledTransferVelocities(wind_speed, Ho06(FT)),
-                              schmidt_number) where KB =
+                              wind_speed = nothing,
+                              base_transfer_velocity = isnothing(wind_speed) ?
+                                  throw(ArgumentError("`wind_speed` is required when `base_transfer_velocity` is not provided")) :
+                                  WindSpeedScaledTransferVelocities(wind_speed, Ho06(FT)),
+                              schmidt_number) =
     SchmidtScaledTransferVelocity(base_transfer_velocity, schmidt_number)
 
 @inline function surface_value(k::SchmidtScaledTransferVelocity, i, j, grid, clock, model_fields)
@@ -45,6 +47,9 @@ SchmidtScaledTransferVelocity(FT = Float64;
 
     return k₀ * sqrt(convert(eltype(model_fields.T), 660) / Sc)
 end
+
+@inline (k::SchmidtScaledTransferVelocity)(u₁₀::FT, T, args...) where FT =
+    k.base_transfer_velocity(u₁₀) * sqrt(convert(FT, 660) / k.schmidt_number(T))
 
 Adapt.adapt_structure(to, k::SchmidtScaledTransferVelocity) = SchmidtScaledTransferVelocity(adapt(to, k.base_transfer_velocity),
                                                                                             adapt(to, k.schmidt_number))

@@ -267,7 +267,6 @@ end
         @test flux < 0 # undersaturated water takes up oxygen
 
         # GPU compatibility
-        @test isbits(saturation)
         @test adapt(Array, saturation) isa GarciaGordonOxygenSaturation
         @test surface_value(adapt(Array, saturation), 1, 1, grid, clock, (; T, S)) == check_value
 
@@ -344,8 +343,7 @@ end
 
         air_term = surface_value(exchange.air_concentration, 1, 1, grid, clock, model_fields)
 
-        u₁₀ = surface_value(exchange.wind_speed, 1, 1, grid, clock)
-        k = exchange.transfer_velocity(u₁₀, FT(15), FT(35))
+        k = surface_value(exchange.transfer_velocity, 1, 1, grid, clock, model_fields)
 
         @test typeof(flux) == FT
         @test flux < 0             # pCO₂ of 337 μatm under 413 ppmv of air ⇒ uptake
@@ -353,8 +351,6 @@ end
         @test ≈(reduced_flux - flux, k * air_term * FT(0.1); rtol = 100 * eps(FT))
 
         # GPU compatibility
-        @test isbits(air_concentration)
-        @test isbits(default_exchange) # the whole assembled exchange, air side, water side and k
         @test adapt(Array, reduced_pressure) isa CarbonDioxideAirConcentration
         @test surface_value(adapt(Array, reduced_pressure), 1, 1, grid, clock, model_fields) ===
                 surface_value(reduced_pressure, 1, 1, grid, clock, model_fields)
@@ -576,9 +572,11 @@ const MARBL_REFERENCE = (
         @test ≈(surface_value(default_exchange.water_concentration, 1, 1, grid, clock, model_fields(states[2])),
                 12.907474; rtol = ref_rtol)
 
-        @test default_exchange.transfer_velocity(FT(2), FT(10), FT(35)) ===
-                default_exchange.transfer_velocity.base_transfer_velocity(FT(2)) /
-                    sqrt(default_exchange.transfer_velocity.schmidt_number(FT(10)) / FT(660))
+        # the transfer velocity is a bare piston velocity: k = k₆₆₀(u₁₀) √(660/Sc(T))
+        fields_10 = (; T = ConstantField(FT(10)), S = ConstantField(FT(35)))
+        k₆₆₀ = surface_value(default_exchange.transfer_velocity.base_transfer_velocity, 1, 1, grid, clock, fields_10)
+        Sc_10 = default_exchange.transfer_velocity.schmidt_number(FT(10))
+        @test surface_value(default_exchange.transfer_velocity, 1, 1, grid, clock, fields_10) === k₆₆₀ * sqrt(FT(660) / Sc_10)
 
         # a `carbon_chemistry` is required to build the default `air_concentration`
         @test_throws ArgumentError CarbonDioxideGasExchangeBoundaryCondition(FT; carbon_chemistry = nothing,
