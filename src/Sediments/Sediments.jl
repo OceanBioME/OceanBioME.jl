@@ -45,7 +45,9 @@ include("show.jl")
 
 function BiogeochemicalSediment(grid, biogeochemistry;
                                 clock = Clock(time = zero(grid)),
-                                timestepper = :QuasiAdamsBashforth2)
+                                timestepper = nothing)
+
+    deprecate_sediment_timestepper(timestepper)
 
     bottom_indices = calculate_bottom_indices(grid)
 
@@ -55,7 +57,7 @@ function BiogeochemicalSediment(grid, biogeochemistry;
     prognostic_fields = NamedTuple{sediment_field_names}(map(n -> Field{Center, Center, Nothing}(grid), 1:length(sediment_field_names)))
     tracked_fields = NamedTuple{tracked_field_names}(map(n -> Field{Center, Center, Nothing}(grid), 1:length(tracked_field_names)))
 
-    timestepper = TimeStepper(timestepper, grid, prognostic_fields)
+    timestepper = TimeStepper(:QuasiAdamsBashforth2, grid, prognostic_fields)
 
     return BiogeochemicalSediment(architecture(grid), biogeochemistry, timestepper, clock, grid, prognostic_fields, tracked_fields, bottom_indices)
 end

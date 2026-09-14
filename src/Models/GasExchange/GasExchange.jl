@@ -58,32 +58,37 @@ using .ScaledGasTransferVelocity
     GasExchangeBoundaryCondition(; water_concentration,
                                    air_concentration,
                                    transfer_velocity,
-                                   wind_speed)
+                                   grid = nothing,
+                                   discrete_form = false)
 
 Returns a `FluxBoundaryCondition` for the gas exchange between `water_concentration` and `air_concentration`
 with `transfer_velocity`.
 
-`water_concentration`, `air_concentration` and `wind_speed` can either be numbers, 
-functions of the form `(x, y, t)`, functions of the form `(i, j, grid, clock, model_fields)` 
-if `discrete_form` is set to true, or any kind of `Field`.
+`water_concentration` and `air_concentration` can either be numbers, functions of the form `(x, y, t)`,
+functions of the form `(i, j, grid, clock, model_fields)` if `discrete_form` is set to true, or any kind
+of `Field` or `FieldTimeSeries`.
 
 `water_concentration` should usually be a `[Tracer]Concentration` where is the name of the
-tracer (you will have to build your own if this is not `OxygenConcentration`), 
+tracer (you will have to build your own if this is not `OxygenConcentration`),
 or a `CarbonDioxideConcentration` which diagnoses the partial pressure of CO₂ in the water.
 
-`transfer_velocity` should be a function of the form `k(u₁₀, T)`.
+`transfer_velocity` should usually be a `SchmidtScaledTransferVelocity`, which carries the wind speed
+(and hence the wind speed dependence) inside it.
+
+`grid` is only needed so that a `FieldTimeSeries` given for `air_concentration` which lives on a
+different grid to the model can be wrapped for horizontal interpolation; without it the field time
+series is assumed to be on the model grid.
 """
 function GasExchangeBoundaryCondition(FT = Float64; 
                                       water_concentration,
                                       air_concentration,
                                       transfer_velocity,
-                                      wind_speed,
+                                      grid = nothing,
                                       discrete_form = false)
 
-    wind_speed = normalise_surface_function(wind_speed; discrete_form, FT)
-    air_concentration = normalise_surface_function(air_concentration; discrete_form, FT)
+    air_concentration = normalise_surface_function(air_concentration; discrete_form, FT, grid)
 
-    exchange_function = GasExchange(wind_speed, transfer_velocity, water_concentration, air_concentration)
+    exchange_function = GasExchange(transfer_velocity, water_concentration, air_concentration)
 
     return FluxBoundaryCondition(exchange_function; discrete_form = true)
 end
@@ -117,17 +122,28 @@ mole fraction in ppmv; pass a [`CarbonDioxideAirConcentration`](@ref) to control
 `silicate_and_phosphate_names` should either be `nothing`, a `Tuple`` of symbols specifying the name of the silicate
 and phosphate tracers, or a `NamedTuple`  of values for the `carbon_chemistry` model.
 
+`DIC` and `Alk` name the dissolved inorganic carbon and alkalinity tracers that the default
+`water_concentration` reads, which is how replicate carbonate systems (`DIC1`/`Alk1`, ...) are
+exchanged. They are ignored if `water_concentration` is given explicitly.
+
 `kwargs` are passed on to `GasExchangeBoundaryCondition`.
 
 Note: The model always requires `T`, `S`, `DIC`, and `Alk` to be present in the model.
 """
 function CarbonDioxideGasExchangeBoundaryCondition(FT = Float64; 
+                                                   grid = nothing,
+                                                   carbon_chemistry = CarbonChemistry(FT),
+                                                   wind_speed = default_wind_speed(FT, grid),
+                                                   discrete_form = false,
+                                                   transfer_velocity = 
+                                                        SchmidtScaledTransferVelocity(FT; 
+                                                           wind_speed = normalise_surface_function(wind_speed; discrete_form, FT, grid),
+                                                           schmidt_number = CarbonDioxidePolynomialSchmidtNumber(FT),
+                                                           solubility = MolPerKgPerAtmToMMolPerCubicMPerMicroAtm(carbon_chemistry.solubility,
+                                                                                                                 carbon_chemistry.density_function)),
+                                                   air_concentration = 413, # ppmv
                                                    DIC = :DIC,
                                                    Alk = :Alk,
-                                                   carbon_chemistry = CarbonChemistry(FT),
-                                                   transfer_velocity = nothing,
-                                                   air_concentration = nothing,
-                                                   wind_speed = 2,
                                                    water_concentration = nothing,
                                                    kwargs...)
 
@@ -137,12 +153,9 @@ function CarbonDioxideGasExchangeBoundaryCondition(FT = Float64;
         @warn "Make sure that the `carbon_chemistry` $(carbon_chemistry) is the same as that in `water_concentration` $(water_concentration) (or set it to `nothing`)"
     end
 
-    isnothing(transfer_velocity) &&
-        (transfer_velocity = SchmidtScaledTransferVelocity(FT; schmidt_number = CarbonDioxidePolynomialSchmidtNumber(FT)))
-
     air_concentration = carbon_dioxide_air_concentration(FT, carbon_chemistry, air_concentration)
 
-    return GasExchangeBoundaryCondition(FT; water_concentration, air_concentration, transfer_velocity, wind_speed, kwargs...)
+    return GasExchangeBoundaryCondition(FT; water_concentration, air_concentration, transfer_velocity, grid, discrete_form, kwargs...)
 end
 
 # a bare number, function, or `Field` `air_concentration` means a dry air mole fraction in ppmv
@@ -180,11 +193,17 @@ specified by the the `OxygenConcentration` in the base model, and `air_concentra
 `kwargs` are passed on to `GasExchangeBoundaryCondition`.
 """
 OxygenGasExchangeBoundaryCondition(FT = Float64;
-                                   transfer_velocity = SchmidtScaledTransferVelocity(FT; schmidt_number = OxygenPolynomialSchmidtNumber(FT)),
+                                   grid = nothing,
+                                   wind_speed = default_wind_speed(FT, grid),
+                                   discrete_form = false,
+                                   transfer_velocity = SchmidtScaledTransferVelocity(FT;
+                                                                                     wind_speed = normalise_surface_function(wind_speed; discrete_form, FT, grid),
+                                                                                     schmidt_number = OxygenPolynomialSchmidtNumber(FT)),
                                    water_concentration = OxygenConcentration(),
-                                   air_concentration = PartiallySolubleGas(FT; air_concentration = 9352.7, solubility = OxygenSolubility(FT)), # mmolO₂/m³
-                                   wind_speed = 2,
-                                   kwargs...) = 
-    GasExchangeBoundaryCondition(FT; water_concentration, air_concentration, transfer_velocity, wind_speed, kwargs...)
+                                   air_concentration = PartiallySolubleGas(FT; air_concentration = 9352.7, solubility = OxygenSolubility(FT)),
+                                   kwargs...) = # mmolO₂/m³
+    GasExchangeBoundaryCondition(FT; water_concentration, air_concentration, transfer_velocity, grid, discrete_form, kwargs...)
+
+default_wind_speed(FT, grid) = convert(FT, 2)
 
 end # module
