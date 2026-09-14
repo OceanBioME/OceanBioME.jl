@@ -42,7 +42,11 @@ struct UnitSolubility end
 summary(::UnitSolubility) = "UnitSolubility"
 show(io::IO, ::UnitSolubility) = print(io, "UnitSolubility (i.e. no solubility scaling)")
 
-SchmidtScaledTransferVelocity(FT = Float64; base_transfer_velocity::KB = Ho06(FT), schmidt_number, solubility = UnitSolubility()) where KB =
+SchmidtScaledTransferVelocity(FT = Float64;
+                              wind_speed,
+                              base_transfer_velocity::KB = WindSpeedScaledTransferVelocities(wind_speed, Ho06(FT)),
+                              schmidt_number,
+                              solubility = UnitSolubility()) where KB =
     SchmidtScaledTransferVelocity(base_transfer_velocity, schmidt_number, solubility)
 
 @inline function surface_value(k::SchmidtScaledTransferVelocity, i, j, grid, clock, model_fields)

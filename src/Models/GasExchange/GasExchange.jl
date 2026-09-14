@@ -131,12 +131,17 @@ exchanged. They are ignored if `water_concentration` is given explicitly.
 Note: The model always requires `T`, `S`, `DIC`, and `Alk` to be present in the model.
 """
 function CarbonDioxideGasExchangeBoundaryCondition(FT = Float64;
+                                                   grid = nothing,
+                                                   carbon_chemistry = CarbonChemistry(FT),
+                                                   wind_speed = default_wind_speed(FT, grid),
+                                                   discrete_form = false,
+                                                   transfer_velocity =
+                                                        SchmidtScaledTransferVelocity(FT;
+                                                           wind_speed = normalise_surface_function(wind_speed; discrete_form, FT, grid),
+                                                           schmidt_number = CarbonDioxidePolynomialSchmidtNumber(FT)),
+                                                   air_concentration = 413, # ppmv
                                                    DIC = :DIC,
                                                    Alk = :Alk,
-                                                   carbon_chemistry = CarbonChemistry(FT),
-                                                   transfer_velocity = nothing,
-                                                   air_concentration = nothing,
-                                                   wind_speed = 2,
                                                    water_concentration = nothing,
                                                    kwargs...)
 
@@ -146,12 +151,9 @@ function CarbonDioxideGasExchangeBoundaryCondition(FT = Float64;
         @warn "Make sure that the `carbon_chemistry` $(carbon_chemistry) is the same as that in `water_concentration` $(water_concentration) (or set it to `nothing`)"
     end
 
-    isnothing(transfer_velocity) &&
-        (transfer_velocity = SchmidtScaledTransferVelocity(FT; schmidt_number = CarbonDioxidePolynomialSchmidtNumber(FT)))
-
     air_concentration = carbon_dioxide_air_concentration(FT, carbon_chemistry, air_concentration)
 
-    return GasExchangeBoundaryCondition(FT; water_concentration, air_concentration, transfer_velocity, wind_speed, kwargs...)
+    return GasExchangeBoundaryCondition(FT; water_concentration, air_concentration, transfer_velocity, grid, discrete_form, kwargs...)
 end
 
 # a bare number, function, or `Field` `air_concentration` means a dry air mole fraction in ppmv
