@@ -28,7 +28,7 @@ using Oceananigans.BoundaryConditions: fill_halo_regions!,
                                        materialize_condition,
                                        regularize_boundary_condition
 
-using Oceananigans.ImmersedBoundaries: ImmersedBoundaryGrid
+using Oceananigans.ImmersedBoundaries: ImmersedBoundaryGrid, immersed_cell
 using OceanBioME: chlorophyll
 
 import Adapt: adapt_structure, adapt
