@@ -4,7 +4,7 @@ export SchmidtScaledTransferVelocity
 
 using Oceananigans.Units, Adapt
 
-using OceanBioME.Models.GasExchangeModel: PolynomialParameterisation
+using OceanBioME.Models.GasExchangeModel: PolynomialParameterisation, CarbonDioxideAirConcentration
 
 import Adapt: adapt_structure
 import OceanBioME.Models.GasExchangeModel: surface_value
