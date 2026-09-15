@@ -10,17 +10,22 @@ export GasExchange,
        ScaledGasTransferVelocity,
        SchmidtScaledTransferVelocity,
        CarbonDioxidePolynomialSchmidtNumber,
-       OxygenPolynomialSchmidtNumber
+       OxygenPolynomialSchmidtNumber,
+       GarciaGordonOxygenSaturation,
+       CarbonDioxideAirConcentration
 
 using Adapt
 using Oceananigans.BoundaryConditions: FluxBoundaryCondition
 using Oceananigans.Fields: Center
 using Oceananigans.Grids: xnode, ynode
 
-using OceanBioME.Models.CarbonChemistryModel: 
+using OceanBioME.Models.CarbonChemistryModel:
     CarbonChemistry,
+    FF,
     silicate_concentration,
     phosphate_concentration
+
+using OceanBioME.Models: teos10_polynomial_approximation
 
 import Base: show, summary
 import Adapt: adapt_structure
@@ -91,8 +96,8 @@ end
 """
     CarbonDioxideGasExchangeBoundaryCondition(FT = Float64; 
                                               carbon_chemistry = CarbonChemistry(FT),
-                                              transfer_velocity = SchmidtScaledTransferVelocity(schmidt_number = CarbonDioxidePolynomialSchmidtNumber(FT)),
-                                              air_concentration = 413, # ppmv
+                                              transfer_velocity = nothing,
+                                              air_concentration = nothing,
                                               wind_speed = 2,
                                               water_concentration = nothing,
                                               silicate_and_phosphate_names = nothing,
@@ -101,6 +106,18 @@ end
 Returns a `FluxBoundaryCondition` for the gas exchange between carbon dioxide dissolved in the water
 specified by the `carbon_chemisty` model, and `air_concentration` with `transfer_velocity` (see 
 `GasExchangeBoundaryCondition` for details).
+
+The exchange is computed as
+
+    k (‌[CO₂(aq)] - xCO₂ pₐₜₘ ff(T, S) ρ / 10³),
+
+where the water side is the aqueous carbon dioxide concentration in mmol / m³
+([`CarbonDioxideConcentration`](@ref)), the air side is the dry air mole fraction converted to
+a concentration by the Weiss and Price (1980) solubility ([`CarbonDioxideAirConcentration`](@ref)),
+and `k` is a bare piston velocity.
+
+An `air_concentration` given as a bare number, a function, or a `Field` is interpreted as a dry air
+mole fraction in ppmv; pass a [`CarbonDioxideAirConcentration`](@ref) to control that conversion.
 
 `silicate_and_phosphate_names` should either be `nothing`, a `Tuple`` of symbols specifying the name of the silicate
 and phosphate tracers, or a `NamedTuple`  of values for the `carbon_chemistry` model.
@@ -113,17 +130,15 @@ exchanged. They are ignored if `water_concentration` is given explicitly.
 
 Note: The model always requires `T`, `S`, `DIC`, and `Alk` to be present in the model.
 """
-function CarbonDioxideGasExchangeBoundaryCondition(FT = Float64; 
+function CarbonDioxideGasExchangeBoundaryCondition(FT = Float64;
                                                    grid = nothing,
                                                    carbon_chemistry = CarbonChemistry(FT),
                                                    wind_speed = default_wind_speed(FT, grid),
                                                    discrete_form = false,
-                                                   transfer_velocity = 
-                                                        SchmidtScaledTransferVelocity(FT; 
+                                                   transfer_velocity =
+                                                        SchmidtScaledTransferVelocity(FT;
                                                            wind_speed = normalise_surface_function(wind_speed; discrete_form, FT, grid),
-                                                           schmidt_number = CarbonDioxidePolynomialSchmidtNumber(FT),
-                                                           solubility = MolPerKgPerAtmToMMolPerCubicMPerMicroAtm(carbon_chemistry.solubility,
-                                                                                                                 carbon_chemistry.density_function)),
+                                                           schmidt_number = CarbonDioxidePolynomialSchmidtNumber(FT)),
                                                    air_concentration = 413, # ppmv
                                                    DIC = :DIC,
                                                    Alk = :Alk,
@@ -136,8 +151,30 @@ function CarbonDioxideGasExchangeBoundaryCondition(FT = Float64;
         @warn "Make sure that the `carbon_chemistry` $(carbon_chemistry) is the same as that in `water_concentration` $(water_concentration) (or set it to `nothing`)"
     end
 
+    air_concentration = carbon_dioxide_air_concentration(FT, carbon_chemistry, air_concentration)
+
     return GasExchangeBoundaryCondition(FT; water_concentration, air_concentration, transfer_velocity, grid, discrete_form, kwargs...)
 end
+
+# a bare number, function, or `Field` `air_concentration` means a dry air mole fraction in ppmv
+carbon_dioxide_air_concentration(FT, carbon_chemistry, mole_fraction) =
+    default_carbon_dioxide_air_concentration(FT, carbon_chemistry; mole_fraction)
+
+carbon_dioxide_air_concentration(FT, carbon_chemistry, ::Nothing) =
+    default_carbon_dioxide_air_concentration(FT, carbon_chemistry)
+
+carbon_dioxide_air_concentration(FT, carbon_chemistry, air_concentration::CarbonDioxideAirConcentration) =
+    air_concentration
+
+default_carbon_dioxide_air_concentration(FT, carbon_chemistry; mole_fraction = 413) =
+    CarbonDioxideAirConcentration(FT; mole_fraction,
+                                      solubility = MolPerKgPerAtmToMMolPerCubicMPerMicroAtm(FF{FT}(),
+                                                                                            carbon_chemistry.density_function))
+
+default_carbon_dioxide_air_concentration(FT, ::Nothing; mole_fraction = 413) =
+    throw(ArgumentError("`CarbonDioxideGasExchangeBoundaryCondition` needs a `carbon_chemistry` to build the " *
+                        "default `air_concentration` (it supplies the density), so please pass either a " *
+                        "`carbon_chemistry` or an explicit `air_concentration`."))
 
 """
     OxygenGasExchangeBoundaryCondition(FT = Float64; 

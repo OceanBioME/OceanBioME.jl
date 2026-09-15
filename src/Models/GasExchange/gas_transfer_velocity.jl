@@ -4,16 +4,16 @@ export SchmidtScaledTransferVelocity
 
 using Oceananigans.Units, Adapt
 
-using OceanBioME.Models.GasExchangeModel: PolynomialParameterisation
+using OceanBioME.Models.GasExchangeModel: PolynomialParameterisation, CarbonDioxideAirConcentration
 
 import Adapt: adapt_structure
 import OceanBioME.Models.GasExchangeModel: surface_value
 
 """
-    SchmidtScaledTransferVelocity(; schmidt_number, 
+    SchmidtScaledTransferVelocity(; schmidt_number,
                                     base_transfer_velocity = Ho06())
 
-Returns a model for gas transfer velocity which depends on the `u₁₀`, the 10m-wind, and 
+Returns a model for gas transfer velocity which depends on the `u₁₀`, the 10m-wind, and
 `T`emperature. The model is of the typical form:
 
     k(u₁₀, T) = k₆₆₀(u₁₀) √(660/Sc(T))
@@ -21,39 +21,41 @@ Returns a model for gas transfer velocity which depends on the `u₁₀`, the 10
 The `base_transfer_velocity` (k₆₆₀) is typically an empirically derived gas transfer velocity
 normalised by the Scmidt number for CO₂ at 20°C (660), and the `schmidt_number` (Sc) is a parameterisation
 of the gas specific Schmidt number.
+
+The transfer velocity is a bare piston velocity (m/s). Any solubility or unit conversion
+belongs on the concentration side (e.g. [`CarbonDioxideAirConcentration`](@ref)).
 """
-struct SchmidtScaledTransferVelocity{KB, SC, SO} 
+struct SchmidtScaledTransferVelocity{KB, SC}
   base_transfer_velocity :: KB
           schmidt_number :: SC
-              solubility :: SO
 end
 
-SchmidtScaledTransferVelocity(FT = Float64; 
-                              wind_speed, 
-                              base_transfer_velocity::KB = WindSpeedScaledTransferVelocities(wind_speed, Ho06(FT)), 
-                              schmidt_number, 
-                              solubility = (T, S) -> one(FT)) where KB = 
-    SchmidtScaledTransferVelocity(base_transfer_velocity, schmidt_number, solubility)
+SchmidtScaledTransferVelocity(FT = Float64;
+                              wind_speed = nothing,
+                              base_transfer_velocity = isnothing(wind_speed) ?
+                                  throw(ArgumentError("`wind_speed` is required when `base_transfer_velocity` is not provided")) :
+                                  WindSpeedScaledTransferVelocities(wind_speed, Ho06(FT)),
+                              schmidt_number) =
+    SchmidtScaledTransferVelocity(base_transfer_velocity, schmidt_number)
 
 @inline function surface_value(k::SchmidtScaledTransferVelocity, i, j, grid, clock, model_fields)
     T = @inbounds model_fields.T[i, j, grid.Nz]
-    S = @inbounds model_fields.S[i, j, grid.Nz]
 
-    # maybe we want to generalise these?
     Sc = k.schmidt_number(T)
-    ζ  = k.solubility(T, S) # this is maybe a bad name, this is really the conversion from gas to concentration I think
 
     k₀ = surface_value(k.base_transfer_velocity, i, j, grid, clock, model_fields)
 
-    return k₀ * sqrt(convert(eltype(model_fields.T), 660) / Sc) * ζ
+    return k₀ * sqrt(convert(eltype(model_fields.T), 660) / Sc)
 end
 
+@inline (k::SchmidtScaledTransferVelocity)(u₁₀::FT, T, args...) where FT =
+    k.base_transfer_velocity(u₁₀) * sqrt(convert(FT, 660) / k.schmidt_number(T))
+
 Adapt.adapt_structure(to, k::SchmidtScaledTransferVelocity) = SchmidtScaledTransferVelocity(adapt(to, k.base_transfer_velocity),
-                                                                                            adapt(to, k.schmidt_number),
-                                                                                            adapt(to, k.solubility))
+                                                                                            adapt(to, k.schmidt_number))
 
 summary(::SchmidtScaledTransferVelocity{KB, SC}) where {KB, SC} = "SchmidtScaledTransferVelocity{$(nameof(KB)), $(nameof(SC))}"
-show(io::IO, k::SchmidtScaledTransferVelocity{KB, SC}) where {KB, SC} = 
+show(io::IO, k::SchmidtScaledTransferVelocity{KB, SC}) where {KB, SC} =
     println(io, summary(k), "\n",
                 "    k = k₆₆₀(u₁₀) √(660/Sc(T)),\n",
                 "    Sc(T): $(nameof(SC)),\n",
@@ -74,7 +76,7 @@ Adapt.adapt_structure(to, k::WindSpeedScaledTransferVelocities) =
 """
     Wanninkhof99(FT = Float64; scale_factor = 0.0283 / hour / 100)
 
-Cubic k₆₆₀ parameterisation of Wanninkhof & McGillis (1999) suitable for 
+Cubic k₆₆₀ parameterisation of Wanninkhof & McGillis (1999) suitable for
 short term, in situ wind products.
 """
 Wanninkhof99(FT = Float64; scale_factor = 0.0283 / hour / 100) = PolynomialParameterisation{3}(FT; coefficients = (0, 0, 0, scale_factor))
@@ -82,7 +84,7 @@ Wanninkhof99(FT = Float64; scale_factor = 0.0283 / hour / 100) = PolynomialParam
 """
     Ho06(FT = Float64; scale_factor = 0.266 / hour / 100)
 
-Quadratic k₆₆₀ parameterisation of Ho et al. (2006) suitable for the QuickSCAT satellite and short-term 
+Quadratic k₆₆₀ parameterisation of Ho et al. (2006) suitable for the QuickSCAT satellite and short-term
 steady wind product.
 """
 Ho06(FT = Float64; scale_factor = 0.266 / hour / 100) = PolynomialParameterisation{2}(FT; coefficients = (0, 0, scale_factor))
@@ -90,7 +92,7 @@ Ho06(FT = Float64; scale_factor = 0.266 / hour / 100) = PolynomialParameterisati
 """
    Nightingale00(FT = Float64; linear = 0.333 / hour / 100, quadratic = 0.222 / hour / 100)
 
-Cubic k₆₆₀ parameterisation of Nightingale et al. (2000) suitable for 
+Cubic k₆₆₀ parameterisation of Nightingale et al. (2000) suitable for
 short term, in situ wind products (?).
 """
 Nightingale00(FT = Float64; linear = 0.333 / hour / 100, quadratic = 0.222 / hour / 100) =
@@ -99,7 +101,7 @@ Nightingale00(FT = Float64; linear = 0.333 / hour / 100, quadratic = 0.222 / hou
 """
     McGillis01(FT = Float64; constant = 3.3 / hour / 100, cubic = 0.026 / hour / 100)
 
-Cubic k₆₆₀ parameterisation of McGillis et al. (2001) suitable for 
+Cubic k₆₆₀ parameterisation of McGillis et al. (2001) suitable for
 short term, in situ wind products.
 """
 McGillis01(FT = Float64; constant = 3.3 / hour / 100, cubic = 0.026 / hour / 100) =
