@@ -51,11 +51,11 @@ end
 
     @inbounds for k in grid.Nz:-1:1
         Δz = Δzᵃᵃᶜ(i, j, k, grid)
-        K_next = exponential_face_to_face_attenuation(i, j, k, grid, la, clock, Chl, K, Δz)
+        t = exponential_face_to_face_attenuation(i, j, k, grid, la, clock, Chl, Δz)
 
-        PAR[i, j, k] = - PAR⁰ * total_cell_average(K, K_next, la)
+        PAR[i, j, k] = - PAR⁰ * total_cell_average(K, t, la)
 
-        K = K_next
+        K = attenuate(K, t, la)
     end
 end
 
@@ -72,10 +72,11 @@ end
 
     @inbounds for k in grid.Nz:-1:1
         Δz = Δzᵃᵃᶜ(i, j, k, grid)
-        K_next = exponential_face_to_face_attenuation(i, j, k, grid, la, clock, Chl, K, Δz)
+        t = exponential_face_to_face_attenuation(i, j, k, grid, la, clock, Chl, Δz)
+        K_next = attenuate(K, t, la)
 
         PARᵢ[i, j, k] = PAR⁰ * total_attenuation(K_next, la)
-        PAR[i, j, k] = - PAR⁰ * total_cell_average(K, K_next, la)
+        PAR[i, j, k] = - PAR⁰ * total_cell_average(K, t, la)
 
         K = K_next
     end
@@ -95,16 +96,23 @@ end
     return combined
 end
 
-@inline @generated function exponential_face_to_face_attenuation(i, j, k, grid, la::AbstractLight{N}, clock, Chl, cumulative_attenuation, Δz) where N
-    total_args = [:(@inbounds cumulative_attenuation[$n] * exp(-Δz * attenuation(i, j, k, grid, la, clock, Chl, Val($n)))) for n in 1:N]
-    return Expr(:tuple, total_args...)
+# transmittance of each band across cell k, exp(-Δz * attenuation), independent of the light above
+@inline @generated function exponential_face_to_face_attenuation(i, j, k, grid, la::AbstractLight{N}, clock, Chl, Δz) where N
+    args = [:(exp(-Δz * attenuation(i, j, k, grid, la, clock, Chl, Val($n)))) for n in 1:N]
+    return Expr(:tuple, args...)
 end
 
-@inline @generated function total_cell_average(K, K_next, la::AbstractLight{N}) where N
+# attenuation of each band from the surface to the bottom of the cell
+@inline @generated function attenuate(K, t, ::AbstractLight{N}) where N
+    args = [:(@inbounds K[$n] * t[$n]) for n in 1:N]
+    return Expr(:tuple, args...)
+end
+
+@inline @generated function total_cell_average(K, t, la::AbstractLight{N}) where N
     combined = Expr(:block)
     push!(combined.args, :(total = zero(K[1])))
     for n in 1:N
-        push!(combined.args, :(total += @inbounds weight(la, Val($n)) * K[$n] * (1 - K_next[$n]/K[$n]) / log(K_next[$n]/K[$n])))
+        push!(combined.args, :(total += @inbounds weight(la, Val($n)) * K[$n] * (1 - t[$n]) / log(t[$n])))
     end
     push!(combined.args, :(return total))
 
