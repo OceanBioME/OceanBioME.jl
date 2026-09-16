@@ -51,6 +51,7 @@ include("gas_transfer_velocity.jl")
 include("gas_solubility.jl")
 
 using .ScaledGasTransferVelocity
+using .ScaledGasTransferVelocity: Ho06
 
 # wrappers to produce boundary conditions
 
