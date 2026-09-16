@@ -343,7 +343,7 @@ end
 
         air_term = surface_value(exchange.air_concentration, 1, 1, grid, clock, model_fields)
 
-        k = surface_value(exchange.transfer_velocity, 1, 1, grid, clock, model_fields)
+        k = exchange.transfer_velocity(exchange.wind_speed, model_fields.T[1, 1, grid.Nz])
 
         @test typeof(flux) == FT
         @test flux < 0             # pCO₂ of 337 μatm under 413 ppmv of air ⇒ uptake
@@ -573,10 +573,10 @@ const MARBL_REFERENCE = (
                 12.907474; rtol = ref_rtol)
 
         # the transfer velocity is a bare piston velocity: k = k₆₆₀(u₁₀) √(660/Sc(T))
-        fields_10 = (; T = ConstantField(FT(10)), S = ConstantField(FT(35)))
-        k₆₆₀ = surface_value(default_exchange.transfer_velocity.base_transfer_velocity, 1, 1, grid, clock, fields_10)
+        u₁₀ = default_exchange.wind_speed
+        k₆₆₀ = default_exchange.transfer_velocity.base_transfer_velocity(u₁₀)
         Sc_10 = default_exchange.transfer_velocity.schmidt_number(FT(10))
-        @test surface_value(default_exchange.transfer_velocity, 1, 1, grid, clock, fields_10) === k₆₆₀ * sqrt(FT(660) / Sc_10)
+        @test default_exchange.transfer_velocity(u₁₀, FT(10)) === k₆₆₀ * sqrt(FT(660) / Sc_10)
 
         # a `carbon_chemistry` is required to build the default `air_concentration`
         @test_throws ArgumentError CarbonDioxideGasExchangeBoundaryCondition(FT; carbon_chemistry = nothing,

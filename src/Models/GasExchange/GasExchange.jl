@@ -138,7 +138,7 @@ function CarbonDioxideGasExchangeBoundaryCondition(FT = Float64;
                                                    carbon_chemistry = CarbonChemistry(FT),
                                                    wind_speed = default_wind_speed(FT, grid),
                                                    discrete_form = false,
-                                                   base_transfer_velocity = Ho06(),
+                                                   base_transfer_velocity = Ho06(FT),
                                                    schmidt_number = CarbonDioxidePolynomialSchmidtNumber(FT),
                                                    transfer_velocity =
                                                         SchmidtScaledTransferVelocity(FT; base_transfer_velocity, schmidt_number),
@@ -196,7 +196,7 @@ specified by the the `OxygenConcentration` in the base model, and `air_concentra
 OxygenGasExchangeBoundaryCondition(FT = Float64;
                                    grid = nothing,
                                    wind_speed = default_wind_speed(FT, grid),
-                                   base_transfer_velocity = Ho06(),
+                                   base_transfer_velocity = Ho06(FT),
                                    schmidt_number = OxygenPolynomialSchmidtNumber(FT),
                                    discrete_form = false,
                                    transfer_velocity = SchmidtScaledTransferVelocity(FT; schmidt_number, base_transfer_velocity),
