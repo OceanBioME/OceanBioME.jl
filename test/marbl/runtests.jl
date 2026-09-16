@@ -11,7 +11,7 @@
 include(joinpath(@__DIR__, "marbl_names.jl"))
 include(joinpath(@__DIR__, "marbl_baselines.jl"))
 
-const HARNESSES = ("compare_marbl.jl", "test_stepped_marbl.jl")
+const HARNESSES = ("test_marbl_light.jl", "compare_marbl.jl", "test_stepped_marbl.jl")
 
 if !baselines_available()
     @warn "MARBL comparisons skipped: baselines not present under $MARBL_INPUTS"

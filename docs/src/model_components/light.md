@@ -40,6 +40,30 @@ where ``PAR_0`` is the surface value, ``k_r`` and ``k_b`` are the red and blue a
 | ``e_b``          | `chlorophyll_blue_exponent`       | -                                 |
 | ``r_\text{pig}`` | `pigment_ratio`                   | -                                 |
 
+## The Morel & Maritorena model
+
+`MorelMaritorenaPhotosyntheticallyActiveRadiation` is the single band model of [Morel2001](@citet), as used by MARBL. There is one band and no separate clear water attenuation; instead the attenuation coefficient is a two branch power law in the total chlorophyll ``\chi = \max(Chl, \chi_{min})``,
+
+```math
+k(\chi) = \begin{cases} k^l \chi^{e^l} & \chi < \chi^*, \\ k^h \chi^{e^h} & \chi \geq \chi^*, \end{cases}
+```
+
+which is continuous at ``\chi^*``. The floor ``\chi_{min}`` is the clear water bound, and it also guarantees ``k > 0`` everywhere.
+
+One thing distinguishes it from the models above: irradiance which falls below `minimum_par` (MARBL's `PAR_threshold`) is set to exactly zero, there and everywhere below it, so a column goes fully dark below the depth at which the light stops mattering. The value stored in each cell is the layer mean rather than a centre sample, and because it is built from the interface *above* the cell, the cell in which the cutoff fires keeps its (positive) mean while only the cells below it go to zero. `interface_field` is on by default for this model, since the cutoff is exactly what makes interpolating the interface irradiance from the cell means wrong. The surface forcing is the PAR, supplied externally like every other model here (MARBL's shortwave-to-PAR fraction and its surface sub-column selection are applied before the value reaches this model).
+
+### Parameter variable names
+
+| Symbol      | Variable name                       | Units                             |
+|-------------|-------------------------------------|-----------------------------------|
+| ``k^l``     | `low_chlorophyll_attenuation`       | 1 / m / (mg Chl / m³) ``^{e^l}``  |
+| ``k^h``     | `high_chlorophyll_attenuation`      | 1 / m / (mg Chl / m³) ``^{e^h}``  |
+| ``e^l``     | `low_chlorophyll_exponent`          | -                                 |
+| ``e^h``     | `high_chlorophyll_exponent`         | -                                 |
+| ``\chi^*``  | `chlorophyll_branch_position`       | mg Chl / m³                       |
+| ``\chi_{min}`` | `minimum_chlorophyll`            | mg Chl / m³                       |
+|             | `minimum_par`                       | W / m²                            |
+
 ## Recording PAR at cell faces
 
 By default, the light attenuation models above return ``PAR`` sampled at the *centre* of each grid cell, found by integrating the attenuation downward from the surface. `TwoBandPhotosyntheticallyActiveRadiation` and `PrescribedAttenuationPAR` can additionally be given a field on which to record the attenuation at cell *faces* (interfaces), by passing the `interface_field` keyword argument, for example:

@@ -7,7 +7,8 @@ export TwoBandPhotosyntheticallyActiveRadiation,
        PrescribedPhotosyntheticallyActiveRadiation, 
        MultiBandPhotosyntheticallyActiveRadiation,
        PrescribedAttenuationPAR,
-       PARFromShortwave
+       PARFromShortwave,
+       MorelMaritorenaPhotosyntheticallyActiveRadiation
 
 export subcolumn_sum, interface_par, SubcolumnPAR
 export @subcolumn_average, @preserve_subcolumns
@@ -64,6 +65,7 @@ include("2band.jl")
 include("multi_band.jl")
 include("prescribed.jl")
 include("prescribed_attenuation.jl")
+include("morel_maritorena.jl")
 
 include("compute_euphotic_depth.jl")
 
