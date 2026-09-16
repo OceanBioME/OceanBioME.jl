@@ -20,8 +20,11 @@
 #####   7. +cocco config — Eppley temp / VCO2 / picpoc + J_cocco*, freshly-built cocco baseline
 #####
 ##### Grid: Oceananigans indexes k bottom→top, MARBL lev surface→bottom ⇒ oce k ↔ MARBL lev = nlev-k+1.
-##### PAR is MARBL's PAR_avg, decomposed into ice-radiation sub-columns (FRACR_BIN/QSW_BIN) + the exact
-##### interface PAR so the nonlinear Geider curve and the nitrification light-taper reproduce MARBL exactly.
+##### PAR is COMPUTED by the shipped `MorelMaritorenaPhotosyntheticallyActiveRadiation` from MARBL's surface
+##### shortwave and the chlorophyll — cell means and interface irradiance both — and then decomposed into
+##### ice-radiation sub-columns (FRACR_BIN/QSW_BIN) so the nonlinear Geider curve and the nitrification
+##### light-taper reproduce MARBL exactly. Section 0 asserts the computed light against MARBL's own
+##### `PAR_avg` for every config first, so a light regression cannot be mistaken for a rate regression.
 #####
 ##### Out-of-scope terms belong to unimplemented phases (stated, not fudged): implicit ballast remin
 ##### (J_DOCr/DONr/DOPr, ballast flux into J_DIC/J_Alk/J_PO4/J_SiO3) → Phase 11 (here POC_REMIN_DIC is
@@ -123,8 +126,11 @@ close(icds)
 Smed = _median(filter(fin, Sraw))
 salinity = (10 < Smed < 45) ? Sraw : Sraw .* 1000.0                              # apply scale_factor if packed
 
-# ---- build the base current-config model (ExplicitCalciumCarbonate + MARBLOxygen), PAR prescribed ----
-PARfield = CenterField(grid); light = PrescribedPhotosyntheticallyActiveRadiation(PARfield)
+# ---- build the base current-config model (ExplicitCalciumCarbonate + MARBLOxygen), PAR computed ----
+# the light is the shipped chlorophyll based model driven by MARBL's surface shortwave, not MARBL's
+# `PAR_avg` prescribed; `PARfield`/`PARiface` below are the fields it computes
+light    = marbl_light(grid, column_shortwave(FRACR, QSW))
+PARfield = light.field
 Sfield   = CenterField(grid)
 bgc0 = NutrientsPlanktonDetritus(grid;
         nutrients = Nutrients(NitrateAmmonia(; nitrification_rate = 0.0), PO₄, Fe, Si),
@@ -155,30 +161,20 @@ for name in (required_biogeochemical_tracers(bgc)..., PHYSICS_TRACERS...)
     name in zerofill && continue
     set!(tracers[name], flip(r2(get(marbl_of, name, ascii_name(name)))))
 end
-set!(PARfield, flip(r2("PAR_avg")))
 set!(Sfield,   flip(salinity))
 
-# ---- ice-radiation sub-columns (φ, r) + exact mean-column interface PAR ----
+# the chlorophyll is now in place, so the light model can make its own PAR (the model computes this
+# inside `update_state!`; here the sections are rate-level, so fire it once by hand)
+update_biogeochemical_state!(model, light)
+
+# ---- ice-radiation sub-columns (φ, r) + the computed interface PAR ----
 nbin = size(FRACR, 1)
 subcols_of(c) = (φ = @view FRACR[:, c]; meanQSW = sum(φ .* @view QSW[:, c]);
                  meanQSW > 0 ? ntuple(j -> (φ[j], (@view(QSW[:, c]) ./ meanQSW)[j]), nbin) :
                                ntuple(j -> (j == 1 ? 1.0 : 0.0, 0.0), nbin))
 Δz_m = [zw_bot - zw_top for (zw_top, zw_bot) in zip(vcat(0.0, zw)[1:nlev], zw)]
-KPARdz(chl, dz_m) = (w = max(chl, 0.02); (w < 0.13224 ? 0.000919 * w^0.3536 : 0.001131 * w^0.4562) * (dz_m * 100))
-function build_PARiface(totalChl, PARavg, gridx)
-    Pif = Field{Center, Center, Face}(gridx)
-    for c in 1:ncols
-        Iface = fill(0.0, nlev + 1)
-        if fin(PARavg[c,1]) && PARavg[c,1] > 0
-            K1 = KPARdz(totalChl[c,1], Δz_m[1])
-            Iface[1] = PARavg[c,1] * K1 / (1 - exp(-K1))
-            for l in 1:nlev; Iface[l+1] = Iface[l] * exp(-KPARdz(totalChl[c,l], Δz_m[l])); end
-        end
-        for kf in 1:(nlev + 1); @inbounds Pif[c, 1, kf] = Iface[nlev - kf + 2]; end
-    end
-    Pif
-end
-PARiface = build_PARiface(r2("spChl") .+ r2("diatChl") .+ r2("diazChl"), r2("PAR_avg"), grid)
+PARiface = light.interface_field
+PARavg_computed = par_top_down(PARfield)
 auxs = ntuple(c -> (PAR = SubcolumnPAR(PARfield, map(first, subcols_of(c)), map(last, subcols_of(c))),
                     PAR_interface = PARiface), ncols)
 
@@ -186,6 +182,26 @@ auxs = ntuple(c -> (PAR = SubcolumnPAR(PARfield, map(first, subcols_of(c)), map(
 Tm = r2("insitu_temp")
 active(c, lev) = fin(Tm[c, lev])
 bottomlev(c) = maximum(lev for lev in 1:nlev if active(c, lev))   # exclude the sediment-flux cell
+
+# ---- the computed light against MARBL's own PAR_avg, per config ----
+# `FRACR_BIN`/`QSW_BIN` come from the base initial condition while each config brings its own chlorophyll
+# and its own baseline, so this is asserted for every config rather than once. The relative measure skips
+# cells below 1e-12 W/m²: MARBL cuts each ice sub-column off at its own depth, which a single column
+# cannot reproduce, and the cells that disagree hold ~1e-19 W/m² (see the report at the bottom).
+function check_light(tag, field, PARavg, kmt)
+    dev = par_deviation(field, PARavg, kmt)
+    ok  = dev.relative ≤ 1e-13
+    @printf("  [%s] computed PAR_avg vs MARBL: max |Δ| = %.2e W/m², max rel (cells > 1e-12 W/m²) = %.2e  %s\n",
+            tag, dev.difference, dev.relative, ok ? "✅" : "FAIL ❌")
+    @test ok
+    return ok
+end
+
+function section_light()
+    println("\n═══ 0. computed light (Morel & Maritorena) vs MARBL PAR_avg ═══")
+    return check_light("base CESM", PARfield, r2("PAR_avg"), [bottomlev(c) for c in 1:ncols])
+end
+
 pbase = MARBLPlankton()
 A  = (sp = pbase.autotrophs.sp, diat = pbase.autotrophs.diat, diaz = pbase.autotrophs.diaz)
 Cf = Dict(:sp => r2("spC"), :diat => r2("diatC"), :diaz => r2("diazC"))
@@ -255,7 +271,7 @@ end
 # =====================================================================================================
 function section_rates()
     println("\n═══ 1. per-rate terms + grazing network vs MARBL ═══")
-    T = r2("insitu_temp"); PAR_avg = r2("PAR_avg")
+    T = r2("insitu_temp"); PAR_avg = PARavg_computed
     NO3=r2("NO3"); NH4=r2("NH4"); PO4=r2("PO4"); FeA=r2("Fe"); SiO3=r2("SiO3"); DOP=r2("DOP")
     spC=r2("spC"); spP=r2("spP"); spFe=r2("spFe"); spCaCO3=r2("spCaCO3"); spChl=r2("spChl")
     diatC=r2("diatC"); diatP=r2("diatP"); diatFe=r2("diatFe"); diatSi=r2("diatSi")
@@ -487,7 +503,7 @@ end
 # =====================================================================================================
 function section_jtend()
     println("\n═══ 3. ASSEMBLED J_<tracer> (reconstructed from MARBL rate diagnostics) ═══")
-    T = r2("insitu_temp"); PAR_avg = r2("PAR_avg")
+    T = r2("insitu_temp"); PAR_avg = PARavg_computed
     NO3=r2("NO3"); NH4=r2("NH4"); PO4=r2("PO4"); FeA=r2("Fe"); SiO3=r2("SiO3"); DOP=r2("DOP")
     state = Dict(n => r2(n) for n in
       ("spC","spChl","spP","spFe","spCaCO3","diatC","diatChl","diatP","diatFe","diatSi","diazC","diazChl","diazP","diazFe"))
@@ -577,7 +593,7 @@ end
 # =====================================================================================================
 function section_dompom()
     println("\n═══ 4. DOM / POM / PFe rate terms vs MARBL ═══")
-    T = r2("insitu_temp"); PAR_avg = r2("PAR_avg")
+    T = r2("insitu_temp"); PAR_avg = PARavg_computed
     DOC=r2("DOC"); DON=r2("DON"); DOP=r2("DOP"); DOCr=r2("DOCr"); DONr=r2("DONr"); DOPr=r2("DOPr")
     spC=r2("spC"); spP=r2("spP"); diatC=r2("diatC"); diatP=r2("diatP"); diazC=r2("diazC"); diazP=r2("diazP")
     spFe=r2("spFe"); diatFe=r2("diatFe"); diazFe=r2("diazFe")
@@ -820,22 +836,23 @@ function section_cocco()
     nc = size(r2c("insitu_temp"), 1); nl = length(zt_c)
     gridc = RectilinearGrid(size = (nc, 1, nl), x = (0, nc), y = (0, 1), z = vcat(-reverse(zw_c), 0.0), topology = (Periodic, Periodic, Bounded))
     flipc(A) = (B = fill(0.0, nc, 1, nl); for c in 1:nc, k in 1:nl; v = A[c, nl-k+1]; B[c,1,k] = fin(v) ? v : 0.0; end; B)
-    PARf = CenterField(gridc); Sf = CenterField(gridc)
+    lightc = marbl_light(gridc, column_shortwave(FRACR, QSW))
+    PARf = lightc.field; Sf = CenterField(gridc)
     bgc0c = NutrientsPlanktonDetritus(gridc;
             nutrients = Nutrients(NitrateAmmonia(; nitrification_rate = 0.0), PO₄, Fe, Si),
             plankton  = MARBLPlankton_cocco(gridc), detritus = MARBLDetritus(gridc; sinking_speed = 10.0),
             inorganic_carbon = ExplicitCalciumCarbonate(gridc; calcium_carbonate_dissolution_rate = 0.03/day, carbon_chemistry = CONST_RHO_CC),
-            oxygen = MARBLOxygen(), light_attenuation = PrescribedPhotosyntheticallyActiveRadiation(PARf))
+            oxygen = MARBLOxygen(), light_attenuation = lightc)
     modelc = NonhydrostaticModel(gridc; tracers = PHYSICS_TRACERS, biogeochemistry = bgc0c, buoyancy = nothing, auxiliary_fields = (S = Sf,))
     bgcc = modelc.biogeochemistry.underlying_biogeochemistry
     marbl_of_c = Dict(:NO₃=>"NO3", :NH₄=>"NH4", :PO₄=>"PO4", :Fe=>"Fe", :Si=>"SiO3", :DIC=>"DIC", :Alk=>"ALK", :O₂=>"O2", :T=>"insitu_temp")
     zerofill_c = Set((:POP, :PFe, :bSi, :POC, :CaCO₃)); trc = modelc.tracers
     for name in (required_biogeochemical_tracers(bgcc)..., PHYSICS_TRACERS...); name in zerofill_c && continue; set!(trc[name], flipc(r2c(get(marbl_of_c, name, ascii_name(name))))); end
-    set!(PARf, flipc(r2c("PAR_avg")))
+    update_biogeochemical_state!(modelc, lightc)   # the light computes its own PAR from the chlorophyll
     set!(bgcc.plankton.carbon_dioxide, flipc(r2c("H2CO3")))    # prescribe MARBL's CO₂aq (VCO2 + picpoc input)
     clockc = modelc.clock
     subc(c) = (φ = @view FRACR[:, c]; mq = sum(φ .* @view QSW[:, c]); mq > 0 ? ntuple(j -> (φ[j], (@view(QSW[:, c]) ./ mq)[j]), nbin) : ntuple(j -> (j == 1 ? 1.0 : 0.0, 0.0), nbin))
-    PARif = build_PARiface(r2c("spChl") .+ r2c("diatChl") .+ r2c("diazChl") .+ r2c("coccoChl"), r2c("PAR_avg"), gridc)
+    PARif = lightc.interface_field
     auxsc = ntuple(c -> (PAR = SubcolumnPAR(PARf, map(first, subc(c)), map(last, subc(c))),
                          PAR_interface = PARif), nc)
     Tmc = r2c("insitu_temp"); activec(c,lev) = fin(Tmc[c,lev]); botc(c) = maximum(lev for lev in 1:nl if activec(c,lev))
@@ -850,7 +867,7 @@ function section_cocco()
         end
         (mr, n, worst)
     end
-    pass = true
+    pass = check_light("+cocco", PARf, r2c("PAR_avg"), [botc(c) for c in 1:nc])
     println("── cocco growth + calcification (machine precision) ──")
     p = mreport("photoC_cocco", ccompare((c,k,aux) -> photosynthesis(Val(:cocco), c,1,k, gridc, bgcc.plankton, trc, aux), r2c("photoC_cocco"))...; tol = 1e-10); @test p; pass &= p
     p = mreport("cocco_CaCO3_form", ccompare((c,k,aux) -> calcite_formation(Val(:cocco), c,1,k, gridc, bgcc, trc, aux), r2c("cocco_CaCO3_form"))...; tol = 1e-10); @test p; pass &= p
@@ -1131,12 +1148,13 @@ function section_general(name, plankton_of, asnames, zsnames; prescribe_co2)
                             z = vcat(-reverse(zw_g), 0.0), topology = (Periodic, Periodic, Bounded))
     flipg(A) = (B = fill(0.0, ng, 1, nlg); for c in 1:ng, k in 1:nlg; v = A[c, nlg-k+1]; B[c,1,k] = fin(v) ? v : 0.0; end; B)
 
-    PARg = CenterField(gridg); Sg = CenterField(gridg)
+    lightg = marbl_light(gridg, column_shortwave(FRACR, QSW))
+    PARg = lightg.field; Sg = CenterField(gridg)
     bgc0g = NutrientsPlanktonDetritus(gridg;
             nutrients = Nutrients(NitrateAmmonia(; nitrification_rate = 0.0), PO₄, Fe, Si),
             plankton  = plankton_of(gridg), detritus = MARBLDetritus(gridg; sinking_speed = 10.0),
             inorganic_carbon = ExplicitCalciumCarbonate(gridg; calcium_carbonate_dissolution_rate = 0.03/day, carbon_chemistry = CONST_RHO_CC),
-            oxygen = MARBLOxygen(), light_attenuation = PrescribedPhotosyntheticallyActiveRadiation(PARg))
+            oxygen = MARBLOxygen(), light_attenuation = lightg)
     modelg = NonhydrostaticModel(gridg; tracers = PHYSICS_TRACERS, biogeochemistry = bgc0g, buoyancy = nothing, auxiliary_fields = (S = Sg,))
     bgcg = modelg.biogeochemistry.underlying_biogeochemistry
     pg = bgcg.plankton; trg = modelg.tracers; clockg = modelg.clock
@@ -1170,14 +1188,14 @@ function section_general(name, plankton_of, asnames, zsnames; prescribe_co2)
         nm in zerofill_g && continue
         set!(trg[nm], flipg(stateg(nm)))
     end
-    set!(PARg, flipg(r2g("PAR_avg")))
+    update_biogeochemical_state!(modelg, lightg)   # the light computes its own PAR from the chlorophyll
     prescribe_co2 && set!(pg.carbon_dioxide, flipg(r2g("H2CO3")))   # MARBL's CO₂aq (cocco VCO2 + picpoc)
 
     subg(c) = (φ = @view FRACR[:, c]; mq = sum(φ .* @view QSW[:, c]);
                mq > 0 ? ntuple(j -> (φ[j], (@view(QSW[:, c]) ./ mq)[j]), nbin) :
                         ntuple(j -> (j == 1 ? 1.0 : 0.0, 0.0), nbin))
     totChl = sum(stateg(MP.chlorophyll_name(s)) for s in asnames)
-    PARifg = build_PARiface(totChl, r2g("PAR_avg"), gridg)
+    PARifg = lightg.interface_field
     auxg = ntuple(c -> (PAR = SubcolumnPAR(PARg, map(first, subg(c)), map(last, subg(c))),
                         PAR_interface = PARifg), ng)
 
@@ -1195,7 +1213,7 @@ function section_general(name, plankton_of, asnames, zsnames; prescribe_co2)
     end
     check(nm, f, truth; tol = 1e-9) = (p = mreport(nm, gcompare(f, truth)...; tol); @test p; p)
 
-    pass = true
+    pass = check_light(name, PARg, r2g("PAR_avg"), [botg(c) for c in 1:ng])
     println("── per-autotroph growth, calcification & loss ──")
     for s in asnames
         V = Val(s)
@@ -1392,10 +1410,11 @@ end
 # run all sections
 # =====================================================================================================
 println("MARBL numerical comparison — OceanBioME vs standalone MARBL Fortran driver")
-println("(base CESM2.1 60-level column; ice-radiation sub-columns + interface PAR prescribed)")
+println("(base CESM2.1 60-level column; light computed from the surface shortwave, ice-radiation sub-columns)")
 
 ALLPASS = Ref(true)
 @testset "MARBL comparison vs Fortran driver (all phases)" begin
+    ALLPASS[] &= section_light()
     ALLPASS[] &= section_rates()
     ALLPASS[] &= section_realmethod()
     ALLPASS[] &= section_jtend()

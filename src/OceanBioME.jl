@@ -38,7 +38,8 @@ export Particles
 export TwoBandPhotosyntheticallyActiveRadiation, 
        PrescribedPhotosyntheticallyActiveRadiation,
        MultiBandPhotosyntheticallyActiveRadiation,
-       PrescribedAttenuationPAR
+       PrescribedAttenuationPAR,
+       MorelMaritorenaPhotosyntheticallyActiveRadiation
 
 # light split between sub columns, and the way a rate consumes it
 export SubcolumnPAR, subcolumn_sum, @subcolumn_average, @preserve_subcolumns

@@ -3,6 +3,8 @@
 These compare the OceanBioME MARBL components against the **standalone MARBL Fortran driver's**
 baseline output, at two levels:
 
+- **`test_marbl_light.jl`** — the chlorophyll based light model against MARBL's `PAR_avg`, computed from
+  the surface shortwave rather than prescribed. Seconds rather than minutes.
 - **`compare_marbl.jl`** — individual rate terms and reconstructed tendencies, section by section
   (per-rate terms and the grazing network, the real tendency methods, assembled `J_<tracer>`,
   DOM/POM/PFe, carbonate and calcite, O₂/N redox, +cocco, the iron cycle, sediments).
@@ -65,6 +67,7 @@ knowing when reading a failure:
 | `marbl_baselines.jl` | where the baselines are, how to read them, the MARBL-matched carbon chemistry |
 | `marbl_names.jl` | the name aliases and the signatures that changed in the port |
 | `general_configs.jl` | the general N-plankton configurations |
+| `test_marbl_light.jl` | the computed PAR against MARBL's `compute_PAR` (fast) |
 | `compare_marbl.jl` | rate terms, section by section |
 | `test_stepped_marbl.jl` | assembled tendencies through the timestepper |
 

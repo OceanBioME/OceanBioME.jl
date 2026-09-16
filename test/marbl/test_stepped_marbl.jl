@@ -8,14 +8,17 @@
 #####
 ##### Per-column kmt-deep grids make sediment.bottom_indices = 1 = the true sea floor, so the implicit ballast
 ##### sweep runs surface→floor through only physical cells (no FILL-poisoned below-floor cells) and the sediment
-##### deposits its remineralised return at the correct cell. Exact MARBL light is supplied through the model's
-##### own light path (cell-mean PAR + interface PAR + ice sub-columns). Carbonate uses the independent CC_MARBL
+##### deposits its remineralised return at the correct cell. The light is COMPUTED by the shipped
+##### `MorelMaritorenaPhotosyntheticallyActiveRadiation` inside `update_state!` — cell means and interface
+##### irradiance from MARBL's surface shortwave and the chlorophyll — with MARBL's ice-radiation sub-column
+##### weights wrapped around it, and is asserted against MARBL's `PAR_avg` per config before Gⁿ is read.
+##### Carbonate uses the independent CC_MARBL
 ##### solve (drtsafe pH[6,9] + Dickson&Riley KF + R=83.1451); O₂ uses MARBL's O2_CONSUMPTION_SCALEF.
 #####
 ##### Run: julia --check-bounds=yes --project=marbl-info3/draft/cmpenv marbl-info3/draft/test_stepped_marbl.jl
 
 using NCDatasets, Printf, Test, Oceananigans, OceanBioME
-using Oceananigans.Fields: CenterField, Field, set!, compute!, AbstractField
+using Oceananigans.Fields: CenterField, Field, set!
 using Oceananigans.Grids: Center, Face
 using Oceananigans.Biogeochemistry: required_biogeochemical_tracers, biogeochemical_transition
 import Oceananigans.Biogeochemistry: biogeochemical_auxiliary_fields, update_biogeochemical_state!
@@ -63,7 +66,6 @@ subcols_of(c) = (φ = @view FRACR[:, c]; meanQSW = sum(φ .* @view QSW[:, c]);
 # the ice radiation bins, as sub column weights carried on the light itself
 subcolumn_par(field, c) = (s = subcols_of(c);
                            SubcolumnPAR(field, ntuple(j -> s[j][1], nbin), ntuple(j -> s[j][2], nbin)))
-KPARdz(chl, dz_m) = (w = max(chl, 0.02); (w < 0.13224 ? 0.000919 * w^0.3536 : 0.001131 * w^0.4562) * (dz_m * 100))
 
 marbl_of = Dict(:NO₃=>"NO3", :NH₄=>"NH4", :PO₄=>"PO4", :Fe=>"Fe", :Si=>"SiO3", :DIC=>"DIC", :Alk=>"ALK",
                 :O₂=>"O2", :T=>"insitu_temp")
@@ -80,11 +82,13 @@ const CC_MARBL = CarbonChemistry(; density_function = (args...) -> 1026.0,
         K1 = CCM.K1(; pressure_correction = CCM.PressureCorrection(; a₀=-25.50, a₁=0.1271, a₂=0.0, b₀=-0.00308, b₁=0.0000877, R=83.1451)),
         K2 = CCM.K2(; pressure_correction = CCM.PressureCorrection(; a₀=-15.82, a₁=-0.0219, a₂=0.0, b₀=0.00113, b₁=-0.0001475, R=83.1451))))
 
-# ---- MARBL's exact light, prescribed through the model's own light path
-# (aux.PAR / PAR_interface / PAR_subcolumns) ----
-struct StepLight{NT}; aux :: NT; end
+# ---- MARBL's light, COMPUTED by the shipped chlorophyll based model inside `update_state!` ----
+# `marbl_light` makes both the cell mean PAR and the interface PAR from MARBL's surface shortwave; this
+# wrapper only adds the ice-radiation sub-column weights to the mean field it computes, so `aux.PAR`
+# carries φⱼ/rⱼ and every nonlinear rate is still φ-weighted over the sub columns.
+struct StepLight{L, NT}; light :: L; aux :: NT; end
 biogeochemical_auxiliary_fields(l::StepLight) = l.aux
-update_biogeochemical_state!(model, l::StepLight) = (for f in values(l.aux); f isa AbstractField && compute!(f); end; nothing)
+update_biogeochemical_state!(model, l::StepLight) = update_biogeochemical_state!(model, l.light)
 
 # MARBLPlankton*/general*_plankton @eval their per-PFT tendency methods on construction (manifest_*!); do it ONCE
 # at top level so per-column models (built inside stepped_config) call them at a valid world age, not silently zero.
@@ -105,8 +109,7 @@ function stepped_config(tag, HISTX, plankton_of, asnames)
     O2SCF = haskey(dsX, "O2_CONSUMPTION_SCALEF") ? r2X("O2_CONSUMPTION_SCALEF") : nothing
     DFs   = Array{Float64}(coalesce.(dsX["DUST_FLUX"][:], FILL))
     FSFs  = r2X("FESEDFLUX")
-    PARavg = r2X("PAR_avg")
-    totChl = sum(r2X(ascii_name(MP.chlorophyll_name(s))) for s in asnames)
+    PARavg = r2X("PAR_avg")   # not prescribed any more: the reference the computed light is asserted against
 
     # MARBL autotroph_zero_consistency_enforce: if any of an autotroph's C/Chl/P/Fe(/Si) is 0 in a cell, ALL of
     # that autotroph's tracers are zeroed there (marbl_interior_tendency_mod.F90:1048). The shipped IC has such
@@ -126,19 +129,9 @@ function stepped_config(tag, HISTX, plankton_of, asnames)
     end
     stateX(nm) = get(enforced, nm, nothing) === nothing ? r2X(get(marbl_of, nm, ascii_name(nm))) : enforced[nm]
 
-    function pariface_col(c, kmt, gc)
-        Pif = Field{Center, Center, Face}(gc); Iface = fill(0.0, kmt + 1)
-        if fin(PARavg[c,1]) && PARavg[c,1] > 0
-            Iface[1] = PARavg[c,1] * KPARdz(totChl[c,1], Δz_mX[1]) / (1 - exp(-KPARdz(totChl[c,1], Δz_mX[1])))
-            for l in 1:kmt; Iface[l+1] = Iface[l] * exp(-KPARdz(totChl[c,l], Δz_mX[l])); end
-        end
-        for kf in 1:(kmt + 1); @inbounds Pif[1,1,kf] = Iface[kmt - kf + 2]; end
-        Pif
-    end
-
     istat   = Dict{Symbol, Vector{Float64}}()
     min_inj = Dict(nm => Inf for nm in (:O₂,:NO₃,:PO₄,:Si,:Fe,:DIC,:Alk))
-    maxint_assembly = 0.0; max_pocfloor = 0.0
+    maxint_assembly = 0.0; max_pocfloor = 0.0; max_par_rel = 0.0; max_par_abs = 0.0
     println("▶ $tag: $ncX columns, building/stepping..."); flush(stdout)
 
     for c in 1:ncX
@@ -148,13 +141,13 @@ function stepped_config(tag, HISTX, plankton_of, asnames)
         cflip(v) = reshape([v[kmt - k + 1] for k in 1:kmt], 1, 1, kmt)
         lev_of(k) = kmt - k + 1
 
-        PARc  = CenterField(gc); set!(PARc, cflip([PARavg[c,l]   for l in 1:kmt]))
         Sc    = CenterField(gc); set!(Sc,   cflip([salinity[c,l] for l in 1:kmt]))
         dustc = Field{Center, Center, Nothing}(gc); @inbounds dustc[1,1,1] = fin(DFs[c]) ? DFs[c] * 1e4 : 0.0
         fesc  = CenterField(gc); set!(fesc, cflip([fin(FSFs[c,l]) ? FSFs[c,l] / 100 : 0.0 for l in 1:kmt]))
         o2scf = CenterField(gc); set!(o2scf, cflip([(O2SCF !== nothing && fin(O2SCF[c,l])) ? O2SCF[c,l] : 1.0 for l in 1:kmt]))
         Pc    = CenterField(gc); set!(Pc, cflip([Praw[c,l] for l in 1:kmt]))   # MARBL's prescribed pressure for the carbonate
-        lgt   = StepLight((PAR = subcolumn_par(PARc, c), PAR_interface = pariface_col(c, kmt, gc)))
+        mmc   = marbl_light(gc, [sum(@view(FRACR[:, c]) .* @view(QSW[:, c]))])
+        lgt   = StepLight(mmc, (PAR = subcolumn_par(mmc.field, c), PAR_interface = mmc.interface_field))
 
         bdc  = MARBLBallastDetritus(gc; ballast = MARBLBallast(; surface_dust_flux = dustc, sedimentary_iron_flux = fesc, open_bottom = true))
         bgcc = NutrientsPlanktonDetritus(gc;
@@ -170,7 +163,15 @@ function stepped_config(tag, HISTX, plankton_of, asnames)
             set!(mc.tracers[nm], cflip([stateX(nm)[c,l] for l in 1:kmt]))
         end
 
-        update_state!(mc)
+        update_state!(mc)   # ← this is where the light integrates its own PAR from the chlorophyll
+
+        # the light is computed, so check it against MARBL's PAR_avg before reading anything downstream of
+        # it (the relative measure skips cells below 1e-12 W/m², where MARBL's per-sub-column cutoff — which
+        # a single column cannot reproduce — leaves ~1e-19 W/m² differences)
+        let dev = par_deviation(mmc.field, PARavg[c:c, :], [kmt])
+            max_par_abs = max(max_par_abs, dev.difference); max_par_rel = max(max_par_rel, dev.relative)
+        end
+
         Gc = mc.timestepper.Gⁿ
         fc = Oceananigans.fields(mc)
         sm = mc.biogeochemistry.sediment
@@ -201,6 +202,9 @@ function stepped_config(tag, HISTX, plankton_of, asnames)
     close(dsX)
 
     @testset "$tag" begin
+        @printf("    %-9s max |Δ| = %.2e W/m², max rel (cells > 1e-12 W/m²) = %.2e\n",
+                "PAR_avg", max_par_abs, max_par_rel)
+        @test max_par_rel < 1e-13                             # the computed light reproduces MARBL's PAR_avg
         @test maxint_assembly == 0.0                          # Gⁿ ≡ assembled pointwise biogeochemistry
         @test 0 < max_pocfloor < 1e-2                         # physical floor flux (flat grid gave 1e51 garbage)
         for nm in (:O₂,:NO₃,:PO₄,:Si,:DIC,:Alk); @test min_inj[nm] > 0; end   # sediment injects a dissolved return

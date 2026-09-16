@@ -4,6 +4,7 @@ using CUDA: @allowscalar
 
 using OceanBioME: TwoBandPhotosyntheticallyActiveRadiation, 
                   PrescribedAttenuationPAR, 
+                  MorelMaritorenaPhotosyntheticallyActiveRadiation, 
                   LOBSTER, NPZD, ImplicitBiology
 
 using Oceananigans.Architectures: on_architecture
@@ -132,6 +133,76 @@ function test_prescribed_attenuation(grid, model_type,
     return nothing
 end
 
+function test_morel_maritorena(grid, model_type, surface_PAR, discrete_form, parameters = nothing;
+                               minimum_par = 1e-19, test_interface = true, expect_cutoff = false)
+
+    biogeochemistry = NPZD(grid;
+                           light_attenuation =
+                               MorelMaritorenaPhotosyntheticallyActiveRadiation(grid, surface_PAR;
+                                                                                discrete_form,
+                                                                                parameters,
+                                                                                minimum_par,
+                                                                                interface_field = test_interface ? ZFaceField(grid) : nothing))
+
+    model = model_type(grid;
+                       biogeochemistry,
+                       tracers = unique((required_biogeochemical_tracers(biogeochemistry)..., :T, :S)))
+
+    set!(model, P = Pᵢ)
+
+    PAR_model = model.biogeochemistry.light_attenuation
+
+    kˡ = PAR_model.low_chlorophyll_attenuation
+    kʰ = PAR_model.high_chlorophyll_attenuation
+    eˡ = PAR_model.low_chlorophyll_exponent
+    eʰ = PAR_model.high_chlorophyll_exponent
+    χ★ = PAR_model.chlorophyll_branch_position
+    χ₀ = PAR_model.minimum_chlorophyll
+    Rᶜₚ = biogeochemistry.underlying_biogeochemistry.plankton.chlorophyll_ratio
+
+    attenuation(P) = (χ = max(Rᶜₚ * P, χ₀); χ < χ★ ? kˡ * χ ^ eˡ : kʰ * χ ^ eʰ)
+
+    Δz = 1.0
+    PAR⁰ = 100.0
+
+    cutoff(I) = I < minimum_par ? zero(I) : I
+
+    # the surface forcing is the PAR directly, and the recursion keeps the layer mean of the cell in which
+    # the cutoff fires — it is built from the interface *above*, which is not zeroed
+    I₃ = cutoff(PAR⁰)
+
+    k₂ = attenuation(2.0)
+    A₂ = exp(-Δz * k₂)
+    PAR2 = I₃ * (1 - A₂) / (k₂ * Δz)
+    I₂ = cutoff(I₃ * A₂)
+
+    k₁ = attenuation(1.0)
+    A₁ = exp(-Δz * k₁)
+    PAR1 = I₂ * (1 - A₁) / (k₁ * Δz)
+    I₁ = cutoff(I₂ * A₁)
+
+    # when a cutoff is expected, prove it actually engages between the two cells (both sides of the
+    # comparison above use `cutoff`, so they would agree even if it never fired)
+    if expect_cutoff
+        @test I₃ > 0
+        @test I₂ == 0
+        @test PAR2 > 0   # the cell in which it fires keeps a positive layer mean
+        @test PAR1 == 0
+    end
+
+    results_PAR = Array(interior(biogeochemical_auxiliary_fields(biogeochemistry).PAR))[1, 1, 1:2]
+
+    @test all(results_PAR .≈ [PAR1, PAR2])
+
+    if test_interface
+        results_PAR_interface = Array(interior(biogeochemical_auxiliary_fields(biogeochemistry).PAR_interface))[1, 1, 1:3]
+
+        @test all(results_PAR_interface .≈ [I₁, I₂, I₃])
+    end
+
+    return nothing
+end
+
 function test_multi_band(grid, model_type, surface_PAR, discrete_form, parameters = nothing)
     light_attenuation = MultiBandPhotosyntheticallyActiveRadiation(grid,surface_PAR;
                                                                    bands = ((1, 2), ),
@@ -203,6 +274,11 @@ field_surface_PAR = Oceananigans.Fields.ConstantField(100)
             test_multi_band(grid, model, field_surface_PAR, false)
             test_prescribed_attenuation(grid, model, field_surface_PAR, false, 0.1, false)
             test_prescribed_attenuation(grid, model, field_surface_PAR, false, 0.1, false; test_interface = true)
+            test_morel_maritorena(grid, model, field_surface_PAR, false)
+            test_morel_maritorena(grid, model, field_surface_PAR, false; test_interface = false)
+            # a cutoff which fires within the two cells: the layer below goes to zero but the cell in which
+            # it fires keeps its (positive) layer mean
+            test_morel_maritorena(grid, model, field_surface_PAR, false; minimum_par = 95.0, expect_cutoff = true)
         end
     end
 
@@ -213,11 +289,13 @@ field_surface_PAR = Oceananigans.Fields.ConstantField(100)
 
         test_two_band(  grid, NonhydrostaticModel, surface_PAR, discrete_form)
         test_multi_band(grid, NonhydrostaticModel, surface_PAR, discrete_form)
+        test_morel_maritorena(grid, NonhydrostaticModel, surface_PAR, discrete_form)
         test_prescribed_attenuation(grid, NonhydrostaticModel, surface_PAR, discrete_form, 0.1, false)
     end
 
     test_two_band(  grid, NonhydrostaticModel, continuous_surface_PAR, false, 100)
     test_multi_band(grid, NonhydrostaticModel, continuous_surface_PAR, false, 100)
+    test_morel_maritorena(grid, NonhydrostaticModel, continuous_surface_PAR, false, 100)
     test_prescribed_attenuation(grid, NonhydrostaticModel, continuous_surface_PAR, false, 0.1, false, 100)
 
     test_prescribed_attenuation(grid, NonhydrostaticModel, continuous_surface_PAR, false, (x, y, z, t, a0) -> a0, false, 100, 0.1) # continuous attenuation with parameters

@@ -7,7 +7,8 @@
 #####
 
 using NCDatasets
-using OceanBioME: CarbonChemistry
+using Oceananigans.Fields: interior
+using OceanBioME: CarbonChemistry, MorelMaritorenaPhotosyntheticallyActiveRadiation
 
 const CCM = OceanBioME.Models.CarbonChemistryModel
 
@@ -99,3 +100,60 @@ const CC_MARBL = CarbonChemistry(;
 # the chlorophyll dependent attenuation the driver uses, per cell
 attenuation_per_cell(chl, Δz) =
     (w = max(chl, 0.02); (w < 0.13224 ? 0.000919 * w^0.3536 : 0.001131 * w^0.4562) * (Δz * 100))
+
+# MARBL's f_qsw_par (marbl_settings_mod): the fixed fraction of surface shortwave that is PAR. The light
+# model is now supplied the surface PAR directly, so this scaling (part of MARBL's surface sub-column
+# handling) is applied here, in the harness, before the model sees it.
+const F_QSW_PAR = 0.45
+
+# MARBL's surface forcing is the shortwave irradiance in each of its ice radiation sub columns; a single
+# column sees their area weighted mean, from which the light model makes the PAR itself
+column_shortwave(areas, shortwave) =
+    [sum(@view(areas[:, c]) .* @view(shortwave[:, c])) for c in axes(areas, 2)]
+
+# each MARBL column is a separate i index on the comparison grid, so the surface forcing is read from a
+# vector of one PAR per column
+@inline column_surface_PAR(i, j, grid, clock, fields, Q) = @inbounds Q[i]
+
+"""
+    marbl_light(grid, shortwave)
+
+The light model MARBL's `compute_PAR` implements, forced by one surface `shortwave` per column (scaled to
+PAR by `F_QSW_PAR` here), which computes both the cell mean PAR and the interface PAR from the chlorophyll
+(rather than the harnesses prescribing MARBL's `PAR_avg` and reconstructing an interface from it).
+"""
+marbl_light(grid, shortwave) =
+    MorelMaritorenaPhotosyntheticallyActiveRadiation(grid, column_surface_PAR;
+                                                     discrete_form = true, parameters = F_QSW_PAR .* shortwave)
+
+# a computed light field back in MARBL's (column, level) top down indexing
+par_top_down(field) = (A = Array(interior(field))[:, 1, :];
+                       [A[c, size(A, 2) - lev + 1] for c in axes(A, 1), lev in axes(A, 2)])
+
+"""
+    par_deviation(field, PAR_avg, kmt; threshold = 1e-12)
+
+How far a computed light `field` sits from MARBL's `PAR_avg`, as the largest absolute difference over
+every water column cell and the largest relative difference over the cells holding more than
+`threshold` W/m². The relative measure needs the floor because MARBL propagates each ice radiation sub
+column separately and so cuts off at a different depth in each, which a single column cannot reproduce;
+the cells that disagree hold ~1e-19 W/m², where a relative measure is meaningless.
+"""
+function par_deviation(field, PAR_avg, kmt; threshold = 1e-12)
+    ours = par_top_down(field)
+
+    difference = 0.0
+    relative = 0.0
+
+    for c in axes(ours, 1), lev in 1:kmt[c]
+        fin(PAR_avg[c, lev]) || continue
+
+        error = abs(ours[c, lev] - PAR_avg[c, lev])
+
+        difference = max(difference, error)
+
+        PAR_avg[c, lev] > threshold && (relative = max(relative, error / PAR_avg[c, lev]))
+    end
+
+    return (; difference, relative)
+end
