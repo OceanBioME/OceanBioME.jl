@@ -160,22 +160,12 @@ end
 ##### Interface light
 #####
 
-# some rates need the light at the interface between two cells rather than at the cell centre. A light
-# model may supply it directly; otherwise it is interpolated from the cell centres.
-@inline interface_par(i, j, k, grid, aux::NamedTuple{names}) where {names} =
-    _interface_par(i, j, k, grid, aux, aux.PAR, Val(:PAR_interface in names))
+@inline interface_par(i, j, k, grid, aux) = _interface_par(i, j, k, grid, aux, aux.PAR)
 
-@inline _interface_par(i, j, k, grid, aux, PAR, ::Val{true}) = @inbounds aux.PAR_interface[i, j, k]
-@inline _interface_par(i, j, k, grid, aux, PAR, ::Val{false}) = ℑzᵃᵃᶠ(i, j, k, grid, PAR)
+@inline _interface_par(i, j, k, grid, aux, PAR) = @inbounds aux.PAR_interface[i, j, k]
 
-# the interface light belongs to the same column as the light it bounds, so it is split the same way. A
-# supplied `PAR_interface` field is the MEAN interface light, exactly as `PAR` is the mean, so it takes
-# its weights from `PAR` rather than carrying its own.
-@inline _interface_par(i, j, k, grid, aux, PAR::SubcolumnPAR, ::Val{true}) =
+@inline _interface_par(i, j, k, grid, aux, PAR::SubcolumnPAR) =
     subcolumn_values(@inbounds(aux.PAR_interface[i, j, k]), PAR, i, j, k)
-
-@inline _interface_par(i, j, k, grid, aux, PAR::SubcolumnPAR, ::Val{false}) =
-    subcolumn_values(ℑzᵃᵃᶠ(i, j, k, grid, PAR), PAR, i, j, k)
 
 @inline subcolumn_values(value, PAR::SubcolumnPAR, i, j, k) =
     SubcolumnValues(value,

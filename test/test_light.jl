@@ -2,8 +2,9 @@ include("dependencies_for_runtests.jl")
 
 using CUDA: @allowscalar
 
-using OceanBioME: TwoBandPhotosyntheticallyActiveRadiation, 
-                  PrescribedAttenuationPAR, 
+using OceanBioME: TwoBandPhotosyntheticallyActiveRadiation,
+                  PrescribedAttenuationPAR,
+                  PARFromShortwave,
                   LOBSTER, NPZD, ImplicitBiology
 
 using Oceananigans.Architectures: on_architecture
@@ -224,6 +225,46 @@ field_surface_PAR = Oceananigans.Fields.ConstantField(100)
     test_prescribed_attenuation(grid, NonhydrostaticModel, continuous_surface_PAR, false, (args...) -> 0.1, true, 100) # discrete attenuation
 end
 
+@testset "PARFromShortwave" begin
+    grid = RectilinearGrid(architecture; size = (2, 2, 2), extent = (2, 2, 2))
+
+    fₚₐᵣ = 0.43
+    shortwave = Oceananigans.Fields.ConstantField(100 / fₚₐᵣ)
+
+    surface_PAR = PARFromShortwave(shortwave)
+
+    @test surface_PAR.photosynthetic_fraction_of_shortwave == fₚₐᵣ
+
+    adapted = on_architecture(architecture, surface_PAR)
+
+    @test adapted.photosynthetic_fraction_of_shortwave == fₚₐᵣ
+
+    for model in (NonhydrostaticModel, HydrostaticFreeSurfaceModel)
+        test_prescribed_attenuation(grid, model, surface_PAR, false, 0.1, false)
+        test_two_band(grid, model, surface_PAR, false)
+    end
+
+    half_PAR = PARFromShortwave(shortwave; photosynthetic_fraction_of_shortwave = fₚₐᵣ / 2)
+
+    light_attenuation = PrescribedAttenuationPAR(grid, half_PAR; attenuation = 0.1)
+
+    biogeochemistry = ImplicitBiology(grid; light_attenuation)
+
+    model = HydrostaticFreeSurfaceModel(grid;
+                                        biogeochemistry,
+                                        tracers = unique((required_biogeochemical_tracers(biogeochemistry)..., :T, :S)))
+
+    K, Δz, PAR⁰ = 0.1, 1.0, 50.0
+
+    e = exp(-K * Δz)
+
+    expected_PAR = [PAR⁰ * e * (1 - e) / (K * Δz), PAR⁰ * (1 - e) / (K * Δz)]
+
+    results_PAR = Array(interior(biogeochemical_auxiliary_fields(biogeochemistry).PAR))[1, 1, 1:2]
+
+    @test all(results_PAR .≈ expected_PAR)
+end
+
 @testset "Float32 TwoBandPhotosyntheticallyActiveRadiation" begin
     grid = RectilinearGrid(architecture, Float32; size=(3, 3, 10), extent=(10, 10, 200))
     par = TwoBandPhotosyntheticallyActiveRadiation(grid, 100)
@@ -235,4 +276,36 @@ end
     @test par.chlorophyll_red_exponent isa Float32
     @test par.chlorophyll_blue_exponent isa Float32
     @test par.pigment_ratio isa Float32
+end
+
+@testset "TwoBandPhotosyntheticallyActiveRadiation stays finite in deep water" begin
+    # The red band's transmittance from the surface underflows to zero at ≈ 745 / 0.225 ≈ 3300 m
+    # in `Float64` and ≈ 103 / 0.225 ≈ 460 m in `Float32`, and the cell average must not divide by it
+    for (FT, depth) in ((Float64, 5000), (Float32, 1000)), test_interface in (false, true)
+        grid = RectilinearGrid(architecture, FT; size = (1, 1, 50), extent = (1, 1, depth))
+
+        interface_field = test_interface ? ZFaceField(grid) : nothing
+
+        light_attenuation = TwoBandPhotosyntheticallyActiveRadiation(grid, 100; interface_field)
+
+        biogeochemistry = NPZD(grid; light_attenuation)
+
+        model = NonhydrostaticModel(grid; biogeochemistry, buoyancy = nothing, tracers = nothing)
+
+        set!(model, P = 1)
+
+        PAR = Array(interior(biogeochemical_auxiliary_fields(biogeochemistry).PAR))[1, 1, :]
+
+        @test all(isfinite, PAR)
+        @test all(PAR .>= 0)
+        @test issorted(PAR) # PAR does not increase with depth (k = 1 is the bottom)
+
+        if test_interface
+            PAR_interface = Array(interior(biogeochemical_auxiliary_fields(biogeochemistry).PAR_interface))[1, 1, :]
+
+            @test all(isfinite, PAR_interface)
+            @test all(PAR_interface .>= 0)
+            @test issorted(PAR_interface)
+        end
+    end
 end

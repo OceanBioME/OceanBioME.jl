@@ -1,22 +1,68 @@
 using Oceananigans.Architectures: architecture
-using Oceananigans.TimeSteppers: QuasiAdamsBashforth2TimeStepper, RungeKutta3TimeStepper
+using Oceananigans.TimeSteppers: QuasiAdamsBashforth2TimeStepper, RungeKutta3TimeStepper,
+                                 time_step!, tick!
 using Oceananigans.Utils: launch!
 
 import Oceananigans.TimeSteppers: ab2_step!, rk3_substep!,
                                   cache_previous_tendencies!, compute_flux_bc_tendencies!
 
-const VALID_TIMESTEPPERS = Union{<:QuasiAdamsBashforth2TimeStepper, <:RungeKutta3TimeStepper}
+const SUPPORTED_TIMESTEPPERS = Union{QuasiAdamsBashforth2TimeStepper, RungeKutta3TimeStepper}
 
-validate_sediment_timestepper(timestepper) = throw(ArgumentError("$(typeof(timestepper)) is not configured for sediment models"))
-validate_sediment_timestepper(::VALID_TIMESTEPPERS) = nothing
+function step_sediment!(sediment, model, parent_timestepper::SUPPORTED_TIMESTEPPERS)
+    substep_sediment!(sediment, model, parent_timestepper)
+
+    cache_previous_tendencies!(sediment)
+
+    tick!(sediment.clock, model.clock.last_stage_Δt)
+
+    return nothing
+end
+
+function step_sediment!(sediment, model, parent_timestepper)
+    @warn "$(nameof(typeof(parent_timestepper))) is not supported for sediment models, " *
+          "so the sediment is being stepped independently of $(nameof(typeof(model))), " *
+          "which is neither mass conserving nor higher than first order accurate" maxlog = 1
+
+    time_step!(sediment, model.clock.last_stage_Δt)
+
+    return nothing
+end
+
+function substep_sediment!(sediment, model, parent_timestepper::QuasiAdamsBashforth2TimeStepper)
+    ab2_step!(sediment, model.clock.last_Δt, parent_timestepper.χ, nothing)
+
+    return nothing
+end
+
+function substep_sediment!(sediment, model, parent_timestepper::RungeKutta3TimeStepper)
+    γ¹ = parent_timestepper.γ¹
+    γ² = parent_timestepper.γ²
+    γ³ = parent_timestepper.γ³
+    ζ² = parent_timestepper.ζ²
+    ζ³ = parent_timestepper.ζ³
+
+    stage_Δt = model.clock.last_stage_Δt
+
+    if model.clock.stage == 2
+        rk3_substep!(sediment, stage_Δt / γ¹, γ¹, nothing, nothing)
+    elseif model.clock.stage == 3
+        rk3_substep!(sediment, stage_Δt / (γ² + ζ²), γ², ζ², nothing)
+    else
+        rk3_substep!(sediment, model.clock.last_Δt, γ³, ζ³, nothing)
+    end
+
+    return nothing
+end
 
 # AB2 methods
 
-function ab2_step!(model::BiogeochemicalSediment, Δt, callbacks)
+ab2_step!(model::BiogeochemicalSediment, Δt, callbacks) =
+    ab2_step!(model, Δt, model.timestepper.χ, callbacks)
+
+function ab2_step!(model::BiogeochemicalSediment, Δt, χ, callbacks)
     grid = model.grid
     arch = architecture(grid)
     model_fields = prognostic_fields(model)
-    χ = model.timestepper.χ
 
     for (i, field) in enumerate(model_fields)
         kernel_args = (field, Δt, χ, model.timestepper.Gⁿ[i], model.timestepper.G⁻[i])
@@ -94,3 +140,10 @@ function cache_previous_tendencies!(model::BiogeochemicalSediment)
 end
 
 compute_flux_bc_tendencies!(model::BiogeochemicalSediment) = nothing
+
+deprecate_sediment_timestepper(::Nothing) = nothing
+
+deprecate_sediment_timestepper(timestepper) =
+    @warn "The `timestepper` keyword argument to sediment models is deprecated and ignored: " *
+          "the sediment is stepped with the time stepping coefficients of the model it is " *
+          "coupled to, so `timestepper = :$(timestepper)` has no effect" maxlog = 1

@@ -13,7 +13,7 @@
 ##### dissolution length are all shared; only the carbon and alkalinity differ.
 #####
 
-struct ImplicitExplicitCalcite{N, CC, RM, FL, SS} <: AbstractInorganicCarbon
+struct ImplicitExplicitCalcite{N, CC, RM, FL, SS} <: AbstractInorganicCarbon{N}
       carbon_chemistry :: CC
       remineralisation :: RM   # filled by the ballast sweep; shared by every realisation
             floor_flux :: FL   # what reaches the sea floor, positive-down

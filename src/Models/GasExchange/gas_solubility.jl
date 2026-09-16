@@ -19,7 +19,6 @@ struct PartiallySolubleGas{AC, S}
         return new{AC, S}(air_concentration, solubility)
     end
 
-    # bypasses `normalise_surface_function`, for `Adapt`
     PartiallySolubleGas{AC, S}(air_concentration::AC, solubility::S) where {AC, S} =
         new{AC, S}(air_concentration, solubility)
 end
@@ -32,6 +31,7 @@ Adapt.adapt_structure(to, gs::PartiallySolubleGas) =
 @inline surface_value(gs::PartiallySolubleGas, i, j, grid, clock, model_fields) = 
     surface_value(gs.air_concentration, i, j, grid, clock) * surface_value(gs.solubility, i, j, grid, clock, model_fields)
 
+# this isn't used anywhere?
 """
     Wanninkhof92Solubility
 
@@ -52,14 +52,14 @@ function surface_value(sol::Wanninkhof92Solubility, i, j, grid, clock, model_fie
     Tk = @inbounds model_fields.T[i, j, grid.Nz] + convert(FT, 273.15)
     S = @inbounds model_fields.S[i, j, grid.Nz]
 
-    Tk_100 = Tk / convert(FT, 100)
-
-    β = exp(sol.A1 + sol.A2 / Tk_100 + sol.A3 * log(Tk_100) + S * (sol.B1 + sol.B2 * Tk_100 + sol.B3 * Tk_100^convert(FT, 2)))
-
-    return β * Tk / convert(FT, 273.15)
+    return sol(Tk, S)
 end
 
-OxygenSolubility(FT = Float64; A1 = -58.3877, A2 = 85.8079, A3 = 23.8439, B1 = -0.034892, B2 = 0.015568, B3 = -0.0019387) =
+@inline (sol::Wanninkhof92Solubility)(Tk::FT, S) where FT = 
+    (Tk_100 = Tk / convert(FT, 100);
+     exp(sol.A1 + sol.A2 / Tk_100 + sol.A3 * log(Tk_100) + S * (sol.B1 + sol.B2 * Tk_100 + sol.B3 * Tk_100^convert(FT, 2))) * Tk / convert(FT, 273.15))
+
+OxygenSolubility(FT = Float64; A1 = -58.3877, A2 = 85.8079, A3 = 23.8439, B1 = -0.034892, B2 = 0.015578, B3 = -0.0019387) =
     Wanninkhof92Solubility{FT}(A1, A2, A3, B1, B2, B3)
 
 struct MolPerKgPerAtmToMMolPerCubicMPerMicroAtm{SO, DE}
@@ -79,8 +79,11 @@ Adapt.adapt_structure(to, k::MolPerKgPerAtmToMMolPerCubicMPerMicroAtm) =
 
 The saturation concentration of oxygen in sea water (mmol O₂ / m³) after Garcia and Gordon
 (1992), Limnology and Oceanography, page 1310, equation (8), scaled by the atmospheric
-pressure. Note that the `A₃Tₛ²` term printed in the paper is an error and is not included
-(as in the reference implementation).
+pressure. Note that the `A₃Tₛ²` term printed in the paper is an error and is not included.
+This follows MARBL's `o2sat_surf` (`marbl_oxygen.F90:60-112`), which states the same:
+"*** NOTE: THE "A_3*TS^2" TERM (IN THE PAPER) IS INCORRECT. *** IT SHOULD NOT BE THERE. ***".
+Verified against MARBL (`development`, commit f00d642) compiled and run directly: this
+implementation agrees with `o2sat_surf` to 4.6e-16 relative (machine precision).
 
 The fit is written in terms of the scaled temperature
 ``T_s = \\ln\\left[(T_0 + T_{ref} - T)/(T_0 + T)\\right]`` (with ``T_0`` the freezing point

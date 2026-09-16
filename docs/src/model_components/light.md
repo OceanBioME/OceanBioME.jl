@@ -82,3 +82,23 @@ light_attenuation = PrescribedAttenuationPAR(grid, surface_PAR; attenuation = 0.
 ```
 
 where `surface_PAR` may be a constant or a function `f(x, y, t)`, and `attenuation` may be a constant or a function `f(x, y, z, t)`. `PrescribedAttenuationPAR` also accepts the `interface_field` keyword described in [Recording PAR at cell faces](@ref).
+
+## Diagnosing the surface PAR from shortwave radiation
+
+All of the models above take a `surface_PAR`, which is usually a constant or a function of horizontal position and time. When you have a shortwave radiation flux instead — for example from an atmospheric forcing dataset, or from a coupled model — `PARFromShortwave` wraps it and takes a fixed fraction of it:
+
+```math
+PAR_0 = f_{PAR}Q_{sw},
+```
+
+where ``f_{PAR}`` is `photosynthetic_fraction_of_shortwave`, ``0.43`` by default. It is used in place of any other `surface_PAR`:
+
+```julia
+using OceanBioME
+
+light_attenuation = TwoBandPhotosyntheticallyActiveRadiation(grid, PARFromShortwave(shortwave))
+```
+
+where `shortwave` may be a constant, a function, a `Field`, or a `FieldTimeSeries`.
+
+When OceanBioME is coupled to [NumericalEarth](https://github.com/NumericalEarth/NumericalEarth.jl), `PARFromShortwave(grid)` builds the surface field for you, and the coupled model writes the ocean's penetrating shortwave radiation (i.e. after reflection and any sea ice blocking) into it every time step.
