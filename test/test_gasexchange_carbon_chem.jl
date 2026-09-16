@@ -9,7 +9,7 @@ using OceanBioME.Models.GasExchangeModel: surface_value, CarbonDioxideConcentrat
                                           CarbonDioxideAirConcentration, PartiallySolubleGas, OxygenSolubility,
                                           MolPerKgPerAtmToMMolPerCubicMPerMicroAtm
 
-using OceanBioME.Models.GasExchangeModel.ScaledGasTransferVelocity: Wanninkhof14, WindSpeedScaledTransferVelocities
+using OceanBioME.Models.GasExchangeModel.ScaledGasTransferVelocity: Wanninkhof14
 
 using OceanBioME.Models.GasExchangeModel: PolynomialParameterisation, SchmidtScaledTransferVelocity,
                                           CarbonDioxidePolynomialSchmidtNumber, OxygenPolynomialSchmidtNumber
@@ -592,12 +592,13 @@ const MARBL_REFERENCE = (
         marbl_Sc = CarbonDioxidePolynomialSchmidtNumber(FT)
 
         marbl_transfer_velocity = SchmidtScaledTransferVelocity(FT;
-                                      base_transfer_velocity = WindSpeedScaledTransferVelocities(FT(5), marbl_k660),
+                                      base_transfer_velocity = marbl_k660,
                                       schmidt_number = marbl_Sc)
 
         exchange = CarbonDioxideGasExchangeBoundaryCondition(FT;
                        carbon_chemistry = cc,
                        air_concentration = marbl_air,
+                       wind_speed = FT(5),
                        transfer_velocity = marbl_transfer_velocity).condition.func
 
         o2_saturation = GarciaGordonOxygenSaturation(FT)
