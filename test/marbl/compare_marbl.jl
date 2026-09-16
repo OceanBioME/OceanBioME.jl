@@ -889,7 +889,7 @@ function section_cocco()
                                     auxsc, COCCO_J_TRACERS)
 
     # ---- +cocco implicit ballast: the sweep must reproduce every cocco-config flux/remin/tendency too ----
-    pass &= ballast_config("+cocco", dsc, r2c, flipc, gridc, nc, nl, bgcc.plankton, PARf, Sf,
+    pass &= ballast_config("+cocco", dsc, r2c, flipc, gridc, nc, nl, bgcc.plankton, PARf, lightc.interface_field, Sf,
                            marbl_of_c, auxsc, activec, botc; prescribe_co2 = true)
     close(dsc)
     pass
@@ -1258,7 +1258,7 @@ function section_general(name, plankton_of, asnames, zsnames; prescribe_co2)
     end
 
     # ---- implicit ballast for this general config: sweep flux/remin + every assembled tendency vs MARBL ----
-    pass &= ballast_config(name, dsg, r2g, flipg, gridg, ng, nlg, pg, PARg, Sg,
+    pass &= ballast_config(name, dsg, r2g, flipg, gridg, ng, nlg, pg, PARg, lightg.interface_field, Sg,
                            marbl_of_g, auxg, activeg, botg; prescribe_co2 = prescribe_co2)
 
     close(dsg)
@@ -1278,7 +1278,7 @@ end
 # `open_bottom = false`: the floor flux is remineralised in the bottom cell (nothing buried), so the column
 # CLOSES — which is what makes the element-conservation check below exact. This changes ONLY the bottom
 # cell, and every comparison excludes it (`lev != botX`), so the interior match to MARBL is untouched.
-function ballast_config(tag, dsX, r2X, flipX, gridX, ncX, nlX, plankton, PARfieldX, SfieldX,
+function ballast_config(tag, dsX, r2X, flipX, gridX, ncX, nlX, plankton, PARfieldX, PARifaceX, SfieldX,
                         marbl_of_X, auxX, activeX, botX; prescribe_co2 = false)
     println("\n── [$tag] implicit ballast: fluxes + remin + 𝓜 + every assembled tendency vs MARBL J_<tracer> ──")
 
@@ -1300,7 +1300,7 @@ function ballast_config(tag, dsX, r2X, flipX, gridX, ncX, nlX, plankton, PARfiel
             plankton  = plankton, detritus = bd,
             inorganic_carbon = ImplicitExplicitCalcite(gridX; carbon_chemistry = CONST_RHO_CC),
             oxygen = MARBLOxygen(),
-            light_attenuation = PrescribedPhotosyntheticallyActiveRadiation(PARfieldX))
+            light_attenuation = PrescribedPhotosyntheticallyActiveRadiation((PAR = PARfieldX, PAR_interface = PARifaceX)))
     modelB = NonhydrostaticModel(gridX; tracers = PHYSICS_TRACERS, biogeochemistry = bgcB, buoyancy = nothing,
                                  auxiliary_fields = (S = SfieldX,))
     bgcBu = modelB.biogeochemistry.underlying_biogeochemistry
@@ -1403,7 +1403,7 @@ end
 function section_ballast()
     println("\n═══ 11. implicit ballast sinking (Armstrong 2000) — flux + remin profiles vs MARBL ═══")
     return ballast_config("base CESM", ds, r2, flip, grid, ncols, nlev, MARBLPlankton(),
-                          PARfield, Sfield, marbl_of, auxs, active, bottomlev)
+                          PARfield, light.interface_field, Sfield, marbl_of, auxs, active, bottomlev)
 end
 
 # =====================================================================================================
