@@ -45,7 +45,7 @@ function run_box_simulation()
 
     simulation = Simulation(model; Δt = 20minutes, stop_iteration = 1000, verbose = false)
 
-    #simulation.output_writers[:fields] = JLD2OutputWriter(model, model.fields; filename = "box_benchmarking.jld2", schedule = IterationInterval(20), overwrite_existing = true)
+    #simulation.output_writers[:fields] = JLD2OutputWriter(model, model.fields; filename = "box_benchmarking.jld2", schedule = IterationInterval(20), overwrite_files = true)
 
     fast_output = SpeedyOutput("box_benchmarking.jld2")
 

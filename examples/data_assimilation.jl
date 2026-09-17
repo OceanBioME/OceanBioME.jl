@@ -61,7 +61,7 @@ function run_box_simulation(initial_photosynthetic_slope,
 
     simulation = Simulation(model; Δt = 20minutes, stop_time = 2years, verbose = false)
 
-    simulation.output_writers[:fields] = JLD2Writer(model, model.fields; filename = "box_calibration_$j.jld2", schedule = TimeInterval(8hours), overwrite_existing = true)
+    simulation.output_writers[:fields] = JLD2Writer(model, model.fields; filename = "box_calibration_$j.jld2", schedule = TimeInterval(8hours), overwrite_files = true)
 
     @info "Running the model..."
     run!(simulation)

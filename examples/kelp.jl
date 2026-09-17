@@ -104,12 +104,12 @@ filename = "kelp"
 simulation.output_writers[:profiles] = JLD2Writer(model, model.tracers,
                                                   filename = "$filename.jld2",
                                                   schedule = TimeInterval(1day),
-                                                  overwrite_existing = true)
+                                                  overwrite_files = true)
 
 simulation.output_writers[:particles] = JLD2Writer(model, (; particles),
                                                    filename = "$(filename)_particles.jld2",
                                                    schedule = TimeInterval(1day),
-                                                   overwrite_existing = true)
+                                                   overwrite_files = true)
 
 qCO₂ = BoundaryConditionOperation(model.tracers.DIC, :top, model)
 
@@ -117,7 +117,7 @@ simulation.output_writers[:carbon_flux] = JLD2Writer(model, (; qCO₂),
                                                      indices = (:, :, grid.Nz),
                                                      filename = "$(filename)_carbon.jld2",
                                                      schedule = TimeInterval(1day),
-                                                     overwrite_existing = true)
+                                                     overwrite_files = true)
 
 nothing #hide
 
