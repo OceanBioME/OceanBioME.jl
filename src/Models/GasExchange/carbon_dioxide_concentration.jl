@@ -139,7 +139,6 @@ end
     surface_value(ac.atmospheric_pressure, i, j, grid, clock) *
     air_solubility(ac.solubility, i, j, grid, model_fields)
 
-# no solubility: the air concentration stays a mole fraction in ppmv
 @inline air_solubility(::Nothing, i, j, grid, model_fields) = one(eltype(grid))
 
 @inline air_solubility(solubility, i, j, grid, model_fields) =

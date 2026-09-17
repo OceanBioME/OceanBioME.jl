@@ -685,3 +685,175 @@ const MARBL_REFERENCE = (
         end
     end
 end
+
+@testset "Garcia and Gordon (1992) oxygen saturation" begin
+    for FT in [Float64, Float32]
+        saturation = GarciaGordonOxygenSaturation(FT)
+
+        grid = BoxModelGrid(FT)
+        clock = Clock(; time = zero(FT))
+
+        O₂sat(sat, T, S) = surface_value(sat, 1, 1, grid, clock, (T = ConstantField(FT(T)), S = ConstantField(FT(S))))
+
+        # check value from Garcia and Gordon (1992), quoted to six significant figures
+        check_value = O₂sat(saturation, 10, 35)
+
+        @test ≈(check_value, 282.015, atol = 5e-4)
+        @test typeof(check_value) == FT
+
+        # solubility falls with both temperature and salinity
+        @test all(diff([O₂sat(saturation, T, 35) for T in 0:2.5:35]) .< 0)
+        @test all(diff([O₂sat(saturation, 10, S) for S in 0:2.5:40]) .< 0)
+
+        # the saturation is exactly linear in the atmospheric pressure, which defaults to 1 atm
+        reduced_pressure = GarciaGordonOxygenSaturation(FT; atmospheric_pressure = 0.9)
+
+        @test O₂sat(reduced_pressure, 10, 35) == FT(0.9) * check_value
+
+        # usable as the air concentration of an oxygen gas exchange boundary condition
+        exchange = OxygenGasExchangeBoundaryCondition(FT; air_concentration = saturation).condition.func
+
+        O₂ = ConstantField(FT(100))
+        T = ConstantField(FT(10))
+        S = ConstantField(FT(35))
+
+        flux = exchange(1, 1, grid, clock, (; T, S, O₂))
+
+        @test typeof(flux) == FT
+        @test flux < 0 # undersaturated water takes up oxygen
+
+        # GPU compatibility
+        @test isbits(saturation)
+        @test adapt(Array, saturation) isa GarciaGordonOxygenSaturation
+        @test surface_value(adapt(Array, saturation), 1, 1, grid, clock, (; T, S)) == check_value
+
+        # the atmospheric pressure may also be a `Field`
+        field_grid = RectilinearGrid(architecture, FT; size = (1, 1, 2), extent = (1, 1, 2))
+
+        pressure_field = CenterField(field_grid)
+
+        set!(pressure_field, 0.9)
+
+        field_pressure = GarciaGordonOxygenSaturation(FT; atmospheric_pressure = pressure_field)
+
+        field_T = CenterField(field_grid)
+        field_S = CenterField(field_grid)
+
+        set!(field_T, 10)
+        set!(field_S, 35)
+
+        field_value = CUDA.@allowscalar surface_value(field_pressure, 1, 1, field_grid, clock, (T = field_T, S = field_S))
+
+        @test field_value == FT(0.9) * check_value
+
+        adapted = adapt(Array, field_pressure)
+
+        @test CUDA.@allowscalar(surface_value(adapted, 1, 1, field_grid, clock, (T = field_T, S = field_S))) == field_value
+    end
+end
+
+@testset "Atmospheric pressure on the CO₂ air concentration (anti-double-count regression)" begin
+    for FT in [Float64, Float32]
+        grid = BoxModelGrid(FT)
+        clock = Clock(; time = zero(FT))
+
+        T = ConstantField(FT(15))
+        S = ConstantField(FT(35))
+        DIC = ConstantField(FT(2220))
+        Alk = ConstantField(FT(2500))
+
+        model_fields = (; T, S, DIC, Alk)
+
+        air_concentration = CarbonDioxideAirConcentration(FT)
+        reduced_pressure = CarbonDioxideAirConcentration(FT; atmospheric_pressure = 0.9)
+
+        xCO₂ = surface_value(air_concentration, 1, 1, grid, clock, model_fields)
+
+        # the default pressure of 1 atm leaves the mole fraction untouched
+        @test xCO₂ === FT(413)
+
+        # the air concentration is exactly linear in the atmospheric pressure
+        @test surface_value(reduced_pressure, 1, 1, grid, clock, model_fields) === FT(0.9) * xCO₂
+
+        # ... and only the air side can see it: the water-side `CarbonDioxideConcentration`
+        # carries no atmospheric pressure at all, and rejects one. This is the
+        # anti-double-count assertion — reintroducing an `air_pressure` field (which fed
+        # nothing: the `P` of the fugacity coefficient is the hydrostatic pressure, a
+        # different and much smaller correction) fails here loudly rather than silently.
+        carbon_chemistry = CarbonChemistry(FT)
+
+        @test_throws MethodError CarbonDioxideConcentration(FT; carbon_chemistry, air_pressure = FT(0.9))
+
+        # `atmospheric_pressure = 1` is a bit-for-bit no-op against the bare-number default,
+        # which is what makes `CarbonDioxideAirConcentration` a drop-in default
+        default_exchange = CarbonDioxideGasExchangeBoundaryCondition(FT).condition.func
+        scalar_exchange = CarbonDioxideGasExchangeBoundaryCondition(FT; air_concentration = 413).condition.func
+        exchange = CarbonDioxideGasExchangeBoundaryCondition(FT; air_concentration).condition.func
+        reduced_exchange = CarbonDioxideGasExchangeBoundaryCondition(FT; air_concentration = reduced_pressure).condition.func
+
+        flux = exchange(1, 1, grid, clock, model_fields)
+        reduced_flux = reduced_exchange(1, 1, grid, clock, model_fields)
+
+        # the default is now the Dalton-law air concentration, and it is bit-for-bit the old
+        # bare number of 413 ppmv, both as a surface value and as an assembled flux
+        @test default_exchange.air_concentration isa CarbonDioxideAirConcentration
+        @test surface_value(default_exchange.air_concentration, 1, 1, grid, clock, model_fields) ===
+                surface_value(scalar_exchange.air_concentration, 1, 1, grid, clock, model_fields)
+        @test flux === default_exchange(1, 1, grid, clock, model_fields)
+        @test flux === scalar_exchange(1, 1, grid, clock, model_fields)
+        @test typeof(flux) == FT
+
+        # the flux is `k (water - air)`, positive out of the ocean, so raising the pressure
+        # raises the air term and drives more uptake, and the difference is exactly `k xCO₂ ΔP`
+        u₁₀ = surface_value(exchange.wind_speed, 1, 1, grid, clock)
+        k = exchange.transfer_velocity(u₁₀, FT(15), FT(35))
+
+        @test flux < 0             # pCO₂ of 350 μatm under 413 ppmv of air ⇒ uptake
+        @test reduced_flux > flux  # less air-side CO₂ ⇒ less uptake
+        @test ≈(reduced_flux - flux, k * xCO₂ * FT(0.1); rtol = 100 * eps(FT))
+
+        # GPU compatibility
+        @test isbits(air_concentration)
+        @test adapt(Array, reduced_pressure) isa CarbonDioxideAirConcentration
+        @test surface_value(adapt(Array, reduced_pressure), 1, 1, grid, clock, model_fields) ===
+                surface_value(reduced_pressure, 1, 1, grid, clock, model_fields)
+
+        # a number, a function and a `Field` pressure all give the same value
+        field_grid = RectilinearGrid(architecture, FT; size = (1, 1, 2), extent = (1, 1, 2))
+
+        pressure_field = CenterField(field_grid)
+
+        set!(pressure_field, 0.9)
+
+        field_pressure = CarbonDioxideAirConcentration(FT; atmospheric_pressure = pressure_field)
+        function_pressure = CarbonDioxideAirConcentration(FT; atmospheric_pressure = (x, y, t) -> FT(0.9))
+
+        @test CUDA.@allowscalar(surface_value(field_pressure, 1, 1, field_grid, clock, model_fields)) === FT(0.9) * xCO₂
+        @test surface_value(function_pressure, 1, 1, field_grid, clock, model_fields) === FT(0.9) * xCO₂
+
+        # a units slip (pascals for atmospheres) is caught for numbers, but cannot be for
+        # functions or `Field`s
+        @test_logs (:warn, r"atmospheres") CarbonDioxideAirConcentration(FT; atmospheric_pressure = 101325)
+
+        # `PartiallySolubleGas` adapts a `Field` air concentration
+        field_air_concentration = CenterField(field_grid)
+        field_T = CenterField(field_grid)
+        field_S = CenterField(field_grid)
+
+        set!(field_air_concentration, 9352.7)
+        set!(field_T, 10)
+        set!(field_S, 35)
+
+        gas = PartiallySolubleGas(FT; air_concentration = field_air_concentration, solubility = OxygenSolubility(FT))
+
+        field_fields = (T = field_T, S = field_S)
+
+        value = CUDA.@allowscalar surface_value(gas, 1, 1, field_grid, clock, field_fields)
+
+        adapted = adapt(Array, gas)
+
+        @test adapted isa PartiallySolubleGas
+        @test !(adapted.air_concentration isa Field) # i.e. the `Field` was actually adapted
+        @test CUDA.@allowscalar(surface_value(adapted, 1, 1, field_grid, clock, field_fields)) == value
+    end
+end
