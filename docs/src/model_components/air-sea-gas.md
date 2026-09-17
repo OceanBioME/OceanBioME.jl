@@ -8,7 +8,7 @@ where `k` is the gas transfer velocity.
 
 Our implementation is intended to be generic for any gas, so you can specify `air_concentration`, `water_concentration`, and `transfer_velocity` as any function in `GasExchange`, but we also provide constructors and default values for carbon dioxide and oxygen.
 
-The wind speed lives *inside* the transfer velocity rather than alongside it, so that transfer velocities are free to depend on whatever they need to. The default `SchmidtScaledTransferVelocity` scales a `WindSpeedScaledTransferVelocities` — which holds the `wind_speed` and the ``k_{660}(u_{10})`` parameterisation — by the Schmidt number. The carbon dioxide and oxygen constructors still take `wind_speed` directly and build this for you:
+The wind speed is a top-level property of `GasExchange` and is passed to the transfer velocity at evaluation time. The default `SchmidtScaledTransferVelocity` evaluates a ``k_{660}(u_{10})`` parameterisation scaled by the Schmidt number. The carbon dioxide and oxygen constructors take `wind_speed` directly:
 
 ```julia
 CO₂_flux = CarbonDioxideGasExchangeBoundaryCondition(; wind_speed = 5)
