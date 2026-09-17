@@ -7,7 +7,6 @@ using Oceananigans.Units, Adapt
 using OceanBioME.Models.GasExchangeModel: PolynomialParameterisation, CarbonDioxideAirConcentration
 
 import Adapt: adapt_structure
-import OceanBioME.Models.GasExchangeModel: surface_value
 
 """
     SchmidtScaledTransferVelocity(; schmidt_number,
@@ -31,22 +30,9 @@ struct SchmidtScaledTransferVelocity{KB, SC}
 end
 
 SchmidtScaledTransferVelocity(FT = Float64;
-                              wind_speed = nothing,
-                              base_transfer_velocity = isnothing(wind_speed) ?
-                                  throw(ArgumentError("`wind_speed` is required when `base_transfer_velocity` is not provided")) :
-                                  WindSpeedScaledTransferVelocities(wind_speed, Ho06(FT)),
+                              base_transfer_velocity = Ho06(FT),
                               schmidt_number) =
     SchmidtScaledTransferVelocity(base_transfer_velocity, schmidt_number)
-
-@inline function surface_value(k::SchmidtScaledTransferVelocity, i, j, grid, clock, model_fields)
-    T = @inbounds model_fields.T[i, j, grid.Nz]
-
-    Sc = k.schmidt_number(T)
-
-    k₀ = surface_value(k.base_transfer_velocity, i, j, grid, clock, model_fields)
-
-    return k₀ * sqrt(convert(eltype(model_fields.T), 660) / Sc)
-end
 
 @inline (k::SchmidtScaledTransferVelocity)(u₁₀::FT, T, args...) where FT =
     k.base_transfer_velocity(u₁₀) * sqrt(convert(FT, 660) / k.schmidt_number(T))
@@ -61,17 +47,6 @@ show(io::IO, k::SchmidtScaledTransferVelocity{KB, SC}) where {KB, SC} =
                 "    Sc(T): $(nameof(SC)),\n",
                 "    k₆₆₀(u₁₀) : $(nameof(KB))")
 
-struct WindSpeedScaledTransferVelocities{WS, P}
-         wind_speed :: WS
-    parametrisation :: P
-end
-
-Adapt.adapt_structure(to, k::WindSpeedScaledTransferVelocities) =
-    WindSpeedScaledTransferVelocities(adapt(to, k.wind_speed),
-                                      adapt(to, k.parametrisation))
-
-@inline surface_value(k::WindSpeedScaledTransferVelocities, i, j, grid, clock, model_fields) =
-    k.parametrisation(surface_value(k.wind_speed, i, j, grid, clock, model_fields))
 
 """
     Wanninkhof99(FT = Float64; scale_factor = 0.0283 / hour / 100)
