@@ -157,7 +157,7 @@ outputs = merge(model.tracers, (; Ω1 = model.auxiliary_fields.Ω1,
 simulation.output_writers[:tracers] = JLD2Writer(model, outputs;
                                                 filename = "oae.jld2",
                                                 schedule = AveragedTimeInterval(20minutes),
-                                                overwrite_existing = true)
+                                                overwrite_files = true)
 
 # We can also create a `BoundaryConditionOperation` which records the flux through the
 # top boundary for both the DIC fields which we can save
@@ -170,7 +170,7 @@ simulation.output_writers[:carbon_flux] = JLD2Writer(model, (; qCO₂1, qCO₂2,
                                                      indices = (:, :, grid.Nz),
                                                      filename = "oae_surface_flux.jld2",
                                                      schedule = TimeInterval(20minutes),
-                                                     overwrite_existing = true)
+                                                     overwrite_files = true)
 
 # and then run the simulation
 

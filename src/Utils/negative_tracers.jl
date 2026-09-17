@@ -139,7 +139,7 @@ function update_biogeochemical_state!(model, scale::ScaleNegativeTracers)
 end
 
 function apply_scale_for_negs!(dev::KA.GPU, model, scale)
-    workgroup, worksize = work_layout(model.grid, :xyz, (Center, Center, Center))
+    workgroup, worksize = work_layout(dev, model.grid, :xyz, (Center, Center, Center))
 
     scale_for_negs_kernel! = scale_for_negs_gpu!(dev, workgroup, worksize)
 
@@ -154,7 +154,7 @@ function apply_scale_for_negs!(dev::KA.GPU, model, scale)
 end
 
 function apply_scale_for_negs!(dev::KA.CPU, model, scale)
-    workgroup, worksize = work_layout(model.grid, :xyz, (Center, Center, Center))
+    workgroup, worksize = work_layout(dev, model.grid, :xyz, (Center, Center, Center))
 
     scale_for_negs_kernel! = scale_for_negs_cpu!(dev, workgroup, worksize)
 

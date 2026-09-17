@@ -23,7 +23,7 @@ simulation = Simulation(model, Δt = 1minute, stop_time = 30days)
 simulation.output_writers[:profiles] = JLD2Writer(model, model.tracers,
                                                   filename = "quickstart.jld2",
                                                   schedule = TimeInterval(0.5days),
-                                                  overwrite_existing = true)
+                                                  overwrite_files = true)
 
 run!(simulation)
 ```
