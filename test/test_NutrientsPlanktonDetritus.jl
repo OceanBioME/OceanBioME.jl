@@ -318,7 +318,7 @@ end
 
 using OceanBioME.Models.NutrientsPlanktonDetritusModels.NutrientsModels: free_iron
 using Oceananigans.Biogeochemistry: biogeochemical_auxiliary_fields, required_biogeochemical_tracers
-using Oceananigans.BoundaryConditions: FieldBoundaryConditions
+
 
 @testset "SimpleIron" begin
     grid = RectilinearGrid(architecture; size=(1, 1, 1), extent=(1, 1, 2))
@@ -373,25 +373,41 @@ end
     grid2 = RectilinearGrid(architecture; size=(1, 1, 2), extent=(1, 1, 4))
 
     dust_flux = 1e-8
-    iron_bc = IronDustDepositionBoundaryCondition(dust_flux; solubility = 0.01)
+    f_iron = 0.035
+    M_Fe = 55.845e-6
+    λ = 400.0
 
     biogeochemistry = NutrientsPlanktonDetritus(grid2;
                                                 plankton = Abiotic(),
-                                                nutrients = Nutrients(; phosphate = OceanBioME.PO₄, iron = SimpleIron()),
+                                                nutrients = Nutrients(; phosphate = OceanBioME.PO₄, iron = SimpleIron(scavenging_rate = 0.0)),
                                                 detritus = InstantRemineralisationDetritus(),
                                                 light_attenuation)
+
+    iron_forcing = IronDustDepositionForcing(dust_flux)
 
     model = NonhydrostaticModel(grid2;
                                 advection = nothing,
                                 biogeochemistry,
-                                boundary_conditions = (; Fe = FieldBoundaryConditions(top = iron_bc)))
+                                forcing = (; Fe = iron_forcing))
 
     set!(model, Fe = 0.0, PO₄ = 1.0)
     time_step!(model, 1.0)
     @test CUDA.@allowscalar model.tracers.Fe[1, 1, 2] > 0
+    @test CUDA.@allowscalar model.tracers.Fe[1, 1, 2] > model.tracers.Fe[1, 1, 1]
 
-    dep = IronDustDeposition(dust_flux; solubility = 0.01)
-    @test dep(1, 1, nothing, nothing, nothing) ≈ -0.01 * dust_flux
+    # two-component MARBL formulation (default)
+    γ = 0.98
+    λₕ = 1.2e6
+    dep = IronDustDeposition(dust_flux)
+    z = znode(1, 1, 2, grid2, Center(), Center(), Center())
+    expected = dust_flux * f_iron / M_Fe * ((1 - γ) / λ * exp(z / λ) + γ / λₕ * exp(z / λₕ))
+    @test dep(1, 1, 2, grid2, nothing, nothing) ≈ expected
+
+    # single exponential
+    dep_single = IronDustDeposition(dust_flux; hard_fraction = 0.0)
+    expected_single = dust_flux * f_iron / M_Fe / λ * exp(z / λ)
+    @test dep_single(1, 1, 2, grid2, nothing, nothing) ≈ expected_single
+    @test dep_single(1, 1, 2, grid2, nothing, nothing) > dep(1, 1, 2, grid2, nothing, nothing)
 end
 
 using Oceananigans.Units: day
