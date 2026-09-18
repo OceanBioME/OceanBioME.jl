@@ -39,8 +39,11 @@ group_element_tracers(nutrients::Nutrients, bgc, val_element::Val{:iron}) =
     group_element_tracers(nutrients.iron, bgc, val_element)
 group_element_tracers(nutrient::SingleTracerNutrient, ::NPD{FT}, val_element) where FT = 
     NamedTuple{(Symbol(nutrient),)}((one(FT), ))
-group_element_tracers(::NitrateAmmonia, ::NPD{FT}, val_element) where FT = 
+group_element_tracers(::NitrateAmmonia, ::NPD{FT}, val_element) where FT =
     (NO₃ = one(FT), NH₄ = one(FT))
+
+group_element_tracers(::SimpleIron, ::NPD{FT}, val_element) where FT =
+    NamedTuple{(:Fe,)}((one(FT), ))
 
 group_element_tracers(::Abiotic, args...) = NamedTuple()
 group_element_tracers(::ImplicitProductivity, args...) = NamedTuple()
@@ -170,7 +173,7 @@ function group_element_tracers(nutrients::Nutrients, bgc::NPD{<:Any, <:Any, <:An
     elseif nutrients.phosphate isa SingleTracerNutrient
         return (; PO₄ = carbon_ratio(bgc.plankton, bgc) /
                         phosphate_ratio(bgc.plankton, bgc) * bgc.oxygen.nitrification_oxygen_carbon_ratio)
-    elseif nutrients.iron isa SingleTracerNutrient
+    elseif nutrients.iron isa SingleTracerNutrient || nutrients.iron isa SimpleIron
         return (; Fe = carbon_ratio(bgc.plankton, bgc) /
                        iron_ratio(bgc.plankton, bgc) * bgc.oxygen.nitrification_oxygen_carbon_ratio)
     elseif nutrients.silicate isa SingleTracerNutrient
