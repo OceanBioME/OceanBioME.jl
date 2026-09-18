@@ -1,4 +1,4 @@
-using Oceananigans.BoundaryConditions: FluxBoundaryCondition
+using Oceananigans.BoundaryConditions: FluxBoundaryCondition, getbc
 
 import Adapt: adapt_structure, adapt
 import Base: summary, show
@@ -42,11 +42,7 @@ show(io::IO, d::IronDustDeposition) =
           "└── Solubility: ", d.solubility)
 
 @inline (d::IronDustDeposition)(i, j, grid, clock, model_fields) =
-    - d.solubility * surface_value(d.dust_iron_flux, i, j, grid, clock, model_fields)
-
-@inline surface_value(f::Number, i, j, grid, clock, model_fields) = f
-@inline surface_value(f::Function, i, j, grid, clock, model_fields) = f(i, j, grid, clock, model_fields)
-@inline surface_value(f::AbstractArray{<:Any, 2}, i, j, grid, clock, model_fields) = @inbounds f[i, j]
+    - d.solubility * getbc(d.dust_iron_flux, i, j, grid, clock, model_fields)
 
 """
     IronDustDepositionBoundaryCondition(dust_iron_flux; solubility = 0.01)
