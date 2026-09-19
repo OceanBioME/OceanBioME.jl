@@ -318,6 +318,7 @@ end
 
 using OceanBioME.Models.NutrientsPlanktonDetritusModels.NutrientsModels: free_iron
 using Oceananigans.Biogeochemistry: biogeochemical_auxiliary_fields, required_biogeochemical_tracers
+using Oceananigans.Grids: znode, Center
 
 
 @testset "SimpleIron" begin
@@ -411,7 +412,6 @@ end
 end
 
 using Oceananigans.Units: day
-using Oceananigans.Grids: znode, Center
 using OceanBioME.Models.CarbonChemistryModel: calcium_carbonate_saturation
 
 # a single-cell explicit-calcium-carbonate model with prescribed T/S (T and S are required for the carbon
