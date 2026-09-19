@@ -19,19 +19,22 @@ Keyword Arguments
   waste is split across the classes (each sums to 1)
 - `dissolved_fraction_of_remineralisation`: the fraction of each particulate class's remineralisation
   that passes through the dissolved pool rather than directly to inorganic nutrients
-- `sinking_speeds`: the downward sinking speed of each particulate class (m/s)
+- `sinking_speeds`: the downward sinking speed of each particulate class (m/s); mutually exclusive
+  with `dissolution_lengths`
+- `dissolution_lengths`: dissolution length scale for each particulate class (m), enabling implicit
+  sinking; mutually exclusive with `sinking_speeds`
 - `open_bottom`: whether particulate detritus can sink out of the bottom of the domain
 """
-struct DissolvedParticulate{N, M, DN, PN, FN, FM, SV}
+struct DissolvedParticulate{N, M, DN, PN, FN, FM, SK} <: AbstractSinkingDetritus{SK}
          dissolved_remineralisation_rate :: FN
        particulate_remineralisation_rate :: FM
-        
+
             dissolved_waste_partitioning :: FN
           particulate_waste_partitioning :: FM
 
   dissolved_fraction_of_remineralisation :: FM
 
-                      sinking_velocities :: SV
+                                 sinking :: SK
 end
 
 function DissolvedParticulate(FT = Float64;
@@ -40,9 +43,9 @@ function DissolvedParticulate(FT = Float64;
                               dissolved_waste_partitioning,
                               particulate_waste_partitioning,
                               dissolved_fraction_of_remineralisation,
-                              sinking_velocities::SV,
+                              sinking,
                               dissolved_names,
-                              particulate_names) where SV
+                              particulate_names)
 
     dissolved_names = possibly_tuple_or_symbol(dissolved_names)
     particulate_names = possibly_tuple_or_symbol(particulate_names)
@@ -57,21 +60,25 @@ function DissolvedParticulate(FT = Float64;
     PN = typeof(particulate_names)
     FN = typeof(dissolved_remineralisation_rate)
     FM = typeof(particulate_remineralisation_rate)
+    SK = typeof(sinking)
 
-    return DissolvedParticulate{length(dissolved_names), 
+    return DissolvedParticulate{length(dissolved_names),
                                 length(particulate_names),
                                 dissolved_names,
                                 particulate_names,
-                                FN, FM, SV}(dissolved_remineralisation_rate, 
+                                FN, FM, SK}(dissolved_remineralisation_rate,
                                             particulate_remineralisation_rate,
                                             dissolved_waste_partitioning,
                                             particulate_waste_partitioning,
                                             dissolved_fraction_of_remineralisation,
-                                            sinking_velocities)
+                                            sinking)
 end
 
-required_biogeochemical_tracers(dp::DissolvedParticulate{N, M, DN, PN}) where {N, M, DN, PN} = 
+required_biogeochemical_tracers(dp::DissolvedParticulate{N, M, DN, PN}) where {N, M, DN, PN} =
     (DN..., PN...)
+
+required_biogeochemical_tracers(dp::DissolvedParticulate{N, M, DN, PN, <:Any, <:Any, <:ImplicitSinking}) where {N, M, DN, PN} =
+    (DN...,)
 
 required_biogeochemical_auxiliary_fields(::DissolvedParticulate) = tuple()
 
@@ -83,10 +90,28 @@ function DissolvedParticulate(grid::AbstractGrid{FT}, dissolved_names = :DOM, pa
                               dissolved_waste_partitioning =  default_partitioning(dissolved_names),
                               particulate_waste_partitioning = default_partitioning(particulate_names),
                               dissolved_fraction_of_remineralisation = repeat_property(particulate_names, one(FT)),
-                              sinking_speeds = default_sinking_speeds(particulate_names),
+                              sinking_speeds = nothing,
+                              dissolution_lengths = nothing,
                               open_bottom = true) where FT
 
-    sinking_velocities = setup_velocity_fields(NamedTuple{possibly_tuple_or_symbol(particulate_names)}(sinking_speeds), grid, open_bottom; three_D = true)
+    if dissolution_lengths !== nothing && sinking_speeds !== nothing
+        throw(ArgumentError("Cannot specify both `sinking_speeds` and `dissolution_lengths`"))
+    end
+
+    pnames = possibly_tuple_or_symbol(particulate_names)
+
+    if dissolution_lengths !== nothing
+        if dissolution_lengths isa Number
+            dl = NamedTuple{pnames}(ntuple(_ -> convert(FT, dissolution_lengths), length(pnames)))
+        else
+            dl = NamedTuple{pnames}(convert.(FT, dissolution_lengths))
+        end
+        sinking = ImplicitSinking(grid, dl; open_bottom)
+    else
+        speeds = sinking_speeds === nothing ? default_sinking_speeds(particulate_names) : sinking_speeds
+        sinking_velocities = setup_velocity_fields(NamedTuple{pnames}(speeds), grid, open_bottom; three_D = true)
+        sinking = ExplicitSinking(sinking_velocities)
+    end
 
     manifest_multi_class_dissolved_particulate(dissolved_names, particulate_names)
 
@@ -96,7 +121,7 @@ function DissolvedParticulate(grid::AbstractGrid{FT}, dissolved_names = :DOM, pa
                                 dissolved_waste_partitioning,
                                 particulate_waste_partitioning,
                                 dissolved_fraction_of_remineralisation,
-                                sinking_velocities,
+                                sinking,
                                 dissolved_names,
                                 particulate_names)
 end
@@ -143,12 +168,17 @@ function manifest_multi_class_dissolved_particulate(dissolved_names, particulate
             )
 
             @inline biogeochemical_drift_velocity(bgc::NPD_DP, ::Val{$(QuoteNode(name))}) =
-                bgc.detritus.sinking_velocities[$m]
+                bgc.detritus.sinking.sinking_speeds[$m]
+
+            @inline implicit_sinking_production(i, j, k, grid, det::DissolvedParticulate, bgc, fields, aux, ::Val{$(QuoteNode(name))}) =
+                solid_waste(i, j, k, grid, bgc.plankton, bgc, fields, aux) * det.particulate_waste_partitioning[$m]
         end
     end
 
     return nothing
 end
+
+# --- remineralisation dispatches ---
 
 @inline @generated function dissolved_remineralisation(i, j, k, grid, detritus::DissolvedParticulate{N, M, DN, PN}, bgc::NPD_DP{FT}, fields, auxiliary_fields) where {N, M, DN, PN, FT}
     combined = Expr(:block)
@@ -162,12 +192,38 @@ end
     return combined
 end
 
+@inline @generated function dissolved_remineralisation(i, j, k, grid, detritus::DissolvedParticulate{N, M, DN, PN, <:Any, <:Any, <:ImplicitSinking}, bgc::NPD_DP{FT}, fields, auxiliary_fields) where {N, M, DN, PN, FT}
+    combined = Expr(:block)
+    push!(combined.args, :(total = zero($FT)))
+    for (m, name) in enumerate(PN)
+        push!(combined.args, :(total += detritus.sinking.remineralisation[$(QuoteNode(name))][i, j, k] *
+                        detritus.dissolved_fraction_of_remineralisation[$m]))
+    end
+    push!(combined.args, :(return total))
+    return combined
+end
+
 @inline @generated function inorganic_waste(i, j, k, grid, detritus::DissolvedParticulate{N, M, DN, PN}, bgc::NPD_DP{FT}, fields, auxiliary_fields) where {N, M, DN, PN, FT}
     combined = Expr(:block)
     push!(combined.args, :(total = zero($FT)))
     for (m, name) in enumerate(PN)
         push!(combined.args, :(total += fields[$(QuoteNode(name))][i, j, k] *
                         detritus.particulate_remineralisation_rate[$m] *
+                        (one($FT) - detritus.dissolved_fraction_of_remineralisation[$m])))
+    end
+    for (n, name) in enumerate(DN)
+        push!(combined.args, :(total += fields[$(QuoteNode(name))][i, j, k] *
+                        detritus.dissolved_remineralisation_rate[$n]))
+    end
+    push!(combined.args, :(return total))
+    return combined
+end
+
+@inline @generated function inorganic_waste(i, j, k, grid, detritus::DissolvedParticulate{N, M, DN, PN, <:Any, <:Any, <:ImplicitSinking}, bgc::NPD_DP{FT}, fields, auxiliary_fields) where {N, M, DN, PN, FT}
+    combined = Expr(:block)
+    push!(combined.args, :(total = zero($FT)))
+    for (m, name) in enumerate(PN)
+        push!(combined.args, :(total += detritus.sinking.remineralisation[$(QuoteNode(name))][i, j, k] *
                         (one($FT) - detritus.dissolved_fraction_of_remineralisation[$m])))
     end
     for (n, name) in enumerate(DN)
@@ -191,42 +247,55 @@ end
     return combined
 end
 
-# admin
+@inline @generated function calcium_carbonate_dissolution(i, j, k, grid, detritus::DissolvedParticulate{N, M, DN, PN, <:Any, <:Any, <:ImplicitSinking}, bgc::NPD_DP{FT}, fields, auxiliary_fields) where {N, M, DN, PN, FT}
+    combined = Expr(:block)
+    push!(combined.args, :(total = zero($FT)))
+    for (m, name) in enumerate(PN)
+        push!(combined.args, :(total += detritus.sinking.remineralisation[$(QuoteNode(name))][i, j, k]))
+    end
+    push!(combined.args, :(total += dissolved_waste(i, j, k, grid, bgc.plankton, bgc, fields, auxiliary_fields)))
+    push!(combined.args, :(return total * carbon_ratio(i, j, k, grid, bgc.plankton, bgc, fields) *
+                                         calcium_carbonate_rain_ratio(i, j, k, grid, bgc.plankton, bgc, fields)))
+    return combined
+end
+
+# --- admin ---
+
 function Adapt.adapt_structure(to, detritus::DissolvedParticulate{N, M, DN, PN}) where {N, M, DN, PN}
     dissolved_remineralisation_rate = adapt(to, detritus.dissolved_remineralisation_rate)
     particulate_remineralisation_rate = adapt(to, detritus.particulate_remineralisation_rate)
     dissolved_waste_partitioning = adapt(to, detritus.dissolved_waste_partitioning)
     particulate_waste_partitioning = adapt(to, detritus.particulate_waste_partitioning)
     dissolved_fraction_of_remineralisation = adapt(to, detritus.dissolved_fraction_of_remineralisation)
-    sinking_velocities = adapt(to, detritus.sinking_velocities)
+    sinking = adapt(to, detritus.sinking)
 
     FN = typeof(dissolved_remineralisation_rate)
     FM = typeof(particulate_remineralisation_rate)
-    SV = typeof(sinking_velocities)
-    
-    return DissolvedParticulate{N, M, DN, PN, FN, FM, SV}(
+    SK = typeof(sinking)
+
+    return DissolvedParticulate{N, M, DN, PN, FN, FM, SK}(
         dissolved_remineralisation_rate,
         particulate_remineralisation_rate,
         dissolved_waste_partitioning,
         particulate_waste_partitioning,
         dissolved_fraction_of_remineralisation,
-        sinking_velocities # I don't know if we need this
+        sinking
     )
 end
 
-Base.summary(dp::DissolvedParticulate{N, M}) where {N, M} = 
+Base.summary(dp::DissolvedParticulate{N, M}) where {N, M} =
     string("DissolvedParticulate{dissolved=$N, particulate=$M} $(required_biogeochemical_tracers(dp))")
 
-Base.summary(dp::DissolvedParticulate{1, 1}) = 
+Base.summary(dp::DissolvedParticulate{1, 1}) =
     string("DissolvedParticulate $(required_biogeochemical_tracers(dp))")
 
-Base.summary(dp::DissolvedParticulate{N, 1}) where N = 
+Base.summary(dp::DissolvedParticulate{N, 1}) where N =
     string("DissolvedParticulate{dissolved=$N} $(required_biogeochemical_tracers(dp))")
 
-Base.summary(dp::DissolvedParticulate{1, M}) where M = 
+Base.summary(dp::DissolvedParticulate{1, M}) where M =
     string("DissolvedParticulate{particulate=$M} $(required_biogeochemical_tracers(dp))")
 
-function Base.show(io::IO, dp::DissolvedParticulate{N, M, ND, NP}) where {N, M, ND, NP}
+function Base.show(io::IO, dp::DissolvedParticulate{N, M, ND, NP, <:Any, <:Any, <:ExplicitSinking}) where {N, M, ND, NP}
     msg = summary(dp) * "\n"
 
     if N>1
@@ -240,10 +309,28 @@ function Base.show(io::IO, dp::DissolvedParticulate{N, M, ND, NP}) where {N, M, 
     msg *= "└── Particle sinking speeds\n"
 
     for m in 1:M-1
-        msg *= "  ├── $(NP[m]) : " * summary(dp.sinking_velocities[m].w) * "\n"
+        msg *= "  ├── $(NP[m]) : " * summary(dp.sinking.sinking_speeds[m].w) * "\n"
     end
 
-    msg *= "  └── $(NP[end]) : " * summary(dp.sinking_velocities[end].w)
+    msg *= "  └── $(NP[end]) : " * summary(dp.sinking.sinking_speeds[end].w)
+
+    print(io, msg)
+
+    return nothing
+end
+
+function Base.show(io::IO, dp::DissolvedParticulate{N, M, ND, NP, <:Any, <:Any, <:ImplicitSinking}) where {N, M, ND, NP}
+    msg = summary(dp) * "\n"
+
+    if N>1
+        msg *= "├── Dissolved waste partitioning : $(dp.dissolved_waste_partitioning)\n"
+    end
+
+    if M>1
+        msg *= "├── Particulate waste partitioning : $(dp.particulate_waste_partitioning)\n"
+    end
+
+    msg *= "└── Sinking: $(summary(dp.sinking))"
 
     print(io, msg)
 

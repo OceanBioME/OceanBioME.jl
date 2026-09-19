@@ -28,6 +28,8 @@ using ..NutrientsPlanktonDetritusModels.NutrientsModels:
     SingleTracerNutrient,
     NitrateAmmonia
 
+using OceanBioME: ImplicitSinking
+
 using ..NutrientsPlanktonDetritusModels.DetritusModels:
     Detritus,
     DissolvedParticulate,
