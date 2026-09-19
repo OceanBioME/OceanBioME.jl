@@ -48,7 +48,8 @@ export CarbonChemistry
 export Sediments, FlatSediment
 
 # Utilities
-export column_advection_timescale, sinking_advection_timescale, Budget
+export column_advection_timescale, sinking_advection_timescale, Budget, floor_index_field, ExplicitSinking, ImplicitSinking,
+       implicit_sinking_production
 
 # Positivity preservation utilities
 export ScaleNegativeTracers, ZeroNegativeTracers
