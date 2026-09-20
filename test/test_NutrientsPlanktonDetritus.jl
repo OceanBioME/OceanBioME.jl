@@ -275,12 +275,12 @@ using Oceananigans.Biogeochemistry: update_biogeochemical_state!, required_bioge
         @test :DOC in tracers_cn
     end
 
-    @testset "Conflicting kwargs" begin
+    @testset "dissolution_length takes priority" begin
         grid = RectilinearGrid(architecture; size=(1, 1, 10), extent=(1, 1, 100))
-        @test_throws ArgumentError Detritus(grid; sinking_speed = 1/day, dissolution_length = 100.0)
-        @test_throws ArgumentError DissolvedParticulate(grid; sinking_speeds = (3/day, 200/day), dissolution_lengths = (100.0, 500.0))
-        @test_throws ArgumentError CarbonNitrogenDissolvedParticulate(grid; sinking_speeds = (sPO = 3/day, bPO = 200/day),
-                                                                            dissolution_lengths = (sPO = 100.0, bPO = 500.0))
+        @test Detritus(grid; sinking_speed = 1/day, dissolution_length = 100.0).sinking isa ImplicitSinking
+        @test DissolvedParticulate(grid; sinking_speeds = (3/day, 200/day), dissolution_lengths = (100.0, 500.0)).sinking isa ImplicitSinking
+        @test CarbonNitrogenDissolvedParticulate(grid; sinking_speeds = (sPO = 3/day, bPO = 200/day),
+                                                       dissolution_lengths = (sPO = 100.0, bPO = 500.0)).sinking isa ImplicitSinking
     end
 
     @testset "NPZD implicit integration" begin
