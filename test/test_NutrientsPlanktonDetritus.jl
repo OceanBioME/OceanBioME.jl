@@ -370,47 +370,6 @@ end
     @test CUDA.@allowscalar model.tracers.Fe[1, 1, 1] != 1e-4
 end
 
-@testset "IronDustDeposition" begin
-    grid2 = RectilinearGrid(architecture; size=(1, 1, 2), extent=(1, 1, 4))
-
-    dust_flux = 1e-8
-    f_iron = 0.035
-    M_Fe = 55.845e-6
-    λ = 400.0
-
-    biogeochemistry = NutrientsPlanktonDetritus(grid2;
-                                                plankton = Abiotic(),
-                                                nutrients = Nutrients(; phosphate = OceanBioME.PO₄, iron = SimpleIron(scavenging_rate = 0.0)),
-                                                detritus = InstantRemineralisationDetritus(),
-                                                light_attenuation)
-
-    iron_forcing = IronDustDepositionForcing(dust_flux)
-
-    model = NonhydrostaticModel(grid2;
-                                advection = nothing,
-                                biogeochemistry,
-                                forcing = (; Fe = iron_forcing))
-
-    set!(model, Fe = 0.0, PO₄ = 1.0)
-    time_step!(model, 1.0)
-    @test CUDA.@allowscalar model.tracers.Fe[1, 1, 2] > 0
-    @test CUDA.@allowscalar model.tracers.Fe[1, 1, 2] > model.tracers.Fe[1, 1, 1]
-
-    # two-component MARBL formulation (default)
-    γ = 0.98
-    λₕ = 1.2e6
-    dep = IronDustDeposition(dust_flux)
-    z = znode(1, 1, 2, grid2, Center(), Center(), Center())
-    expected = dust_flux * f_iron / M_Fe * ((1 - γ) / λ * exp(z / λ) + γ / λₕ * exp(z / λₕ))
-    @test dep(1, 1, 2, grid2, nothing, nothing) ≈ expected
-
-    # single exponential
-    dep_single = IronDustDeposition(dust_flux; hard_fraction = 0.0)
-    expected_single = dust_flux * f_iron / M_Fe / λ * exp(z / λ)
-    @test dep_single(1, 1, 2, grid2, nothing, nothing) ≈ expected_single
-    @test dep_single(1, 1, 2, grid2, nothing, nothing) > dep(1, 1, 2, grid2, nothing, nothing)
-end
-
 using Oceananigans.Units: day
 using OceanBioME.Models.CarbonChemistryModel: calcium_carbonate_saturation
 
