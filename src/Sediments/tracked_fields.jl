@@ -55,7 +55,7 @@ function update_tracked_fields!(sediment, model)
         launch!(arch, grid, :xy, copy_to_sediment!, source, destination, bottom_indices)
     end
 
-    # tracked fluxs
+    # tracked fluxes
     field_names = sinking_fluxes(sediment)
 
     for field_name in field_names
@@ -88,7 +88,7 @@ end
     end
 end
 
-# fluxs
+# fluxes
 
 @inline vertical_advection_scheme(advection, name) = advection
 @inline vertical_advection_scheme(advection::FluxFormAdvection, name) = advection.z
