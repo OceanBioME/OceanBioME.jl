@@ -4,8 +4,7 @@ export Detritus, DissolvedParticulate, InstantRemineralisationDetritus, CarbonNi
 
 using Adapt
 using Oceananigans.Grids: AbstractGrid
-using OceanBioME: setup_velocity_fields, ExplicitSinking, ImplicitSinking, floor_index_field,
-                  implicit_sinking_column!, dissolution_length
+using OceanBioME: setup_velocity_fields, ExplicitSinking, ImplicitSinking, implicit_sinking_column!, dissolution_length
 
 import OceanBioME: implicit_sinking_production
 
@@ -61,21 +60,18 @@ include("single_detritus.jl")
 include("single_element.jl")
 include("carbon_nitrogen.jl")
 
-# --- shared implicit sinking update for all AbstractSinkingDetritus ---
-
 function update_biogeochemical_state!(model, detritus::AbstractSinkingDetritus{<:ImplicitSinking}, npd::NutrientsPlanktonDetritus)
     sinking = detritus.sinking
     grid = model.grid
     Nz = size(grid, 3)
-    FT = eltype(grid)
 
     for name in keys(sinking.remineralisation)
         ℓ = dissolution_length(sinking, name)
         launch!(architecture(grid), grid, :xy, implicit_sinking_column!,
                 grid, detritus, npd, fields(model), biogeochemical_auxiliary_fields(model.biogeochemistry),
                 sinking.remineralisation[name], sinking.floor_flux[name],
-                sinking.floor_indices, convert(FT, ℓ),
-                sinking.open_bottom, Nz, Val(name))
+                sinking.floor_indices, ℓ,
+                sinking.open_bottom, Nz, Val(name), model.clock)
     end
 
     return nothing

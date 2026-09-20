@@ -1,11 +1,9 @@
 using Oceananigans.Fields: Field, OneField, CenterField
-using Oceananigans.Grids: Center
+using Oceananigans.Grids: Center, znode
 using Oceananigans.Operators: Δzᶜᶜᶜ
 using Oceananigans.ImmersedBoundaries: ImmersedBoundaryGrid, immersed_cell
 using Oceananigans.Architectures: architecture
-using Oceananigans.Biogeochemistry: biogeochemical_auxiliary_fields
 using Oceananigans.Utils: launch!
-using Oceananigans: fields
 using KernelAbstractions: @kernel, @index
 
 using Adapt
@@ -14,11 +12,11 @@ floor_index_field(grid) = OneField(Int)
 
 function floor_index_field(grid::ImmersedBoundaryGrid)
     floor_indices = Field{Center, Center, Nothing}(grid, Int)
-    launch!(architecture(grid), grid, :xy, _compute_floor_indices!, grid, floor_indices, size(grid, 3))
+    launch!(architecture(grid), grid, :xy, compute_floor_indices!, grid, floor_indices, size(grid, 3))
     return floor_indices
 end
 
-@kernel function _compute_floor_indices!(grid, floor_indices, Nz)
+@kernel function compute_floor_indices!(grid, floor_indices, Nz)
     i, j = @index(Global, NTuple)
 
     k = 1
@@ -29,10 +27,6 @@ end
     @inbounds floor_indices[i, j, 1] = k
 end
 
-#####
-##### Sinking types
-#####
-
 struct ExplicitSinking{SS}
     sinking_speeds :: SS
 end
@@ -42,48 +36,29 @@ Adapt.adapt_structure(to, s::ExplicitSinking) =
 
 struct ImplicitSinking{FT, RM, FL, FI}
     dissolution_length :: FT
-    remineralisation    :: RM
-    floor_flux          :: FL
-    floor_indices       :: FI
-    open_bottom         :: Bool
+      remineralisation :: RM
+            floor_flux :: FL
+         floor_indices :: FI
+           open_bottom :: Bool
 end
 
-function ImplicitSinking(grid, dissolution_length::Number; tracer_names, open_bottom = true)
-    FT = eltype(grid)
-    fi = floor_index_field(grid)
-    remin = NamedTuple{tracer_names}(ntuple(length(tracer_names)) do _
-        f = CenterField(grid)
-        fill!(f, 0)
-        f
-    end)
-    ff = NamedTuple{tracer_names}(ntuple(length(tracer_names)) do _
-        f = Field{Center, Center, Nothing}(grid)
-        fill!(f, 0)
-        f
-    end)
-    return ImplicitSinking(convert(FT, dissolution_length), remin, ff, fi, open_bottom)
-end
+convert_dissolution_length(FT, ℓ::Number) = convert(FT, ℓ)
+convert_dissolution_length(FT, ℓ::NamedTuple) = map(ℓ -> convert_dissolution_length(FT, ℓ), ℓ)
+convert_dissolution_length(FT, ℓ) = ℓ
 
-function ImplicitSinking(grid, dissolution_length::NamedTuple; open_bottom = true)
-    FT = eltype(grid)
-    tracer_names = keys(dissolution_length)
-    fi = floor_index_field(grid)
-    dl = NamedTuple{tracer_names}(convert.(FT, values(dissolution_length)))
-    remin = NamedTuple{tracer_names}(ntuple(length(tracer_names)) do _
-        f = CenterField(grid)
-        fill!(f, 0)
-        f
-    end)
-    ff = NamedTuple{tracer_names}(ntuple(length(tracer_names)) do _
-        f = Field{Center, Center, Nothing}(grid)
-        fill!(f, 0)
-        f
-    end)
-    return ImplicitSinking(dl, remin, ff, fi, open_bottom)
+function ImplicitSinking(grid, dissolution_length; tracer_names = keys(dissolution_length), open_bottom = true)
+    remineralisation = NamedTuple{tracer_names}(map(_ -> CenterField(grid), tracer_names))
+    floor_flux = NamedTuple{tracer_names}(map(_ -> Field{Center, Center, Nothing}(grid), tracer_names))
+
+    return ImplicitSinking(convert_dissolution_length(eltype(grid), dissolution_length),
+                           remineralisation,
+                           floor_flux,
+                           floor_index_field(grid),
+                           open_bottom)
 end
 
 Adapt.adapt_structure(to, s::ImplicitSinking) =
-    ImplicitSinking(s.dissolution_length,
+    ImplicitSinking(Adapt.adapt(to, s.dissolution_length),
                     Adapt.adapt(to, s.remineralisation),
                     Adapt.adapt(to, s.floor_flux),
                     Adapt.adapt(to, s.floor_indices),
@@ -92,9 +67,32 @@ Adapt.adapt_structure(to, s::ImplicitSinking) =
 Base.summary(::ExplicitSinking) = "ExplicitSinking"
 Base.summary(s::ImplicitSinking) = "ImplicitSinking(ℓ=$(s.dissolution_length) m)"
 
-#####
-##### Shared implicit-sinking column sweep
-#####
+"""
+    DepthDependentDissolutionLength(f)
+
+Wrap a function of depth `z -> ℓ(z)` so that it can be used as a spatially varying dissolution
+length in [`ImplicitSinking`](@ref). The wrapped function receives the cell-centre depth (negative
+below the surface) and must return the dissolution length in metres.
+
+Example
+=======
+
+```julia
+Detritus(grid; dissolution_length = DepthDependentDissolutionLength(z -> 100 + 2 * abs(z)))
+```
+"""
+struct DepthDependentDissolutionLength{F}
+    f :: F
+end
+
+@inline (d::DepthDependentDissolutionLength)(i, j, k, grid, clock, fields) =
+    d.f(znode(i, j, k, grid, Center(), Center(), Center()))
+
+Adapt.adapt_structure(to, d::DepthDependentDissolutionLength) =
+    DepthDependentDissolutionLength(Adapt.adapt(to, d.f))
+
+@inline dissolution_length(ℓ::Number, i, j, k, grid, clock, fields) = ℓ
+@inline dissolution_length(ℓ, i, j, k, grid, clock, fields) = ℓ(i, j, k, grid, clock, fields)
 
 """
     implicit_sinking_production(i, j, k, grid, detritus, bgc, fields, aux, val_name)
@@ -105,12 +103,12 @@ particulate tracers.
 """
 function implicit_sinking_production end
 
-dissolution_length(s::ImplicitSinking{<:Number}, name) = s.dissolution_length
-dissolution_length(s::ImplicitSinking, name) = s.dissolution_length[name]
+dissolution_length(s::ImplicitSinking{<:NamedTuple}, name) = s.dissolution_length[name]
+dissolution_length(s::ImplicitSinking, name) = s.dissolution_length
 
 @kernel function implicit_sinking_column!(grid, detritus, bgc, model_fields, aux,
-                                           remin, floor_flux, floor_indices,
-                                           ℓ, open_bottom, Nz, val_name)
+                                           remineralisation, floor_flux, floor_indices,
+                                           ℓ, open_bottom, Nz, val_name, clock)
     i, j = @index(Global, NTuple)
 
     FT = eltype(grid)
@@ -122,16 +120,17 @@ dissolution_length(s::ImplicitSinking, name) = s.dissolution_length[name]
 
         Π = implicit_sinking_production(i, j, k, grid, detritus, bgc, model_fields, aux, val_name)
 
+        ℓₖ = dissolution_length(ℓ, i, j, k, grid, clock, model_fields)
+
         F_in = F
-        F = (F_in + Π * Δz) / (one(FT) + Δz / ℓ)
+        F = (F_in + Π * Δz) / (one(FT) + Δz / ℓₖ)
 
         at_closed_floor = (k == kf) & !open_bottom
         R = ifelse(at_closed_floor, Π + F_in / Δz, Π + (F_in - F) / Δz)
         F = ifelse(at_closed_floor, zero(FT), F)
 
-        @inbounds remin[i, j, k] = R
+        @inbounds remineralisation[i, j, k] = R
     end
 
     @inbounds floor_flux[i, j, 1] = ifelse(open_bottom, F, zero(FT))
 end
-

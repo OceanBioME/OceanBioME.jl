@@ -19,10 +19,10 @@ Keyword Arguments
   waste is split across the classes (each sums to 1)
 - `dissolved_fraction_of_remineralisation`: the fraction of each particulate class's remineralisation
   that passes through the dissolved pool rather than directly to inorganic nutrients
-- `sinking_speeds`: the downward sinking speed of each particulate class (m/s); mutually exclusive
-  with `dissolution_lengths`
+- `sinking_speeds`: the downward sinking speed of each particulate class (m/s), used unless
+  `dissolution_lengths` is given
 - `dissolution_lengths`: dissolution length scale for each particulate class (m), enabling implicit
-  sinking; mutually exclusive with `sinking_speeds`
+  sinking in place of `sinking_speeds`
 - `open_bottom`: whether particulate detritus can sink out of the bottom of the domain
 """
 struct DissolvedParticulate{N, M, DN, PN, FN, FM, SK} <: AbstractSinkingDetritus{SK}
@@ -90,27 +90,27 @@ function DissolvedParticulate(grid::AbstractGrid{FT}, dissolved_names = :DOM, pa
                               dissolved_waste_partitioning =  default_partitioning(dissolved_names),
                               particulate_waste_partitioning = default_partitioning(particulate_names),
                               dissolved_fraction_of_remineralisation = repeat_property(particulate_names, one(FT)),
-                              sinking_speeds = nothing,
+                              sinking_speeds = default_sinking_speeds(particulate_names),
                               dissolution_lengths = nothing,
                               open_bottom = true) where FT
 
-    if dissolution_lengths !== nothing && sinking_speeds !== nothing
-        throw(ArgumentError("Cannot specify both `sinking_speeds` and `dissolution_lengths`"))
-    end
-
     pnames = possibly_tuple_or_symbol(particulate_names)
 
-    if dissolution_lengths !== nothing
+    if !isnothing(dissolution_lengths)
         if dissolution_lengths isa Number
             dl = NamedTuple{pnames}(ntuple(_ -> convert(FT, dissolution_lengths), length(pnames)))
-        else
+        elseif dissolution_lengths isa Tuple && all(v -> v isa Number, dissolution_lengths)
             dl = NamedTuple{pnames}(convert.(FT, dissolution_lengths))
+        else
+            dl = NamedTuple{pnames}(dissolution_lengths isa Tuple ? dissolution_lengths :
+                                    ntuple(_ -> dissolution_lengths, length(pnames)))
         end
         sinking = ImplicitSinking(grid, dl; open_bottom)
-    else
-        speeds = sinking_speeds === nothing ? default_sinking_speeds(particulate_names) : sinking_speeds
-        sinking_velocities = setup_velocity_fields(NamedTuple{pnames}(speeds), grid, open_bottom; three_D = true)
+    elseif !isnothing(sinking_speeds)
+        sinking_velocities = setup_velocity_fields(NamedTuple{pnames}(sinking_speeds), grid, open_bottom; three_D = true)
         sinking = ExplicitSinking(sinking_velocities)
+    else
+        throw(ArgumentError("Must specify either `sinking_speeds` or `dissolution_lengths`"))
     end
 
     manifest_multi_class_dissolved_particulate(dissolved_names, particulate_names)
@@ -177,8 +177,6 @@ function manifest_multi_class_dissolved_particulate(dissolved_names, particulate
 
     return nothing
 end
-
-# --- remineralisation dispatches ---
 
 @inline @generated function dissolved_remineralisation(i, j, k, grid, detritus::DissolvedParticulate{N, M, DN, PN}, bgc::NPD_DP{FT}, fields, auxiliary_fields) where {N, M, DN, PN, FT}
     combined = Expr(:block)
@@ -259,7 +257,7 @@ end
     return combined
 end
 
-# --- admin ---
+# admin
 
 function Adapt.adapt_structure(to, detritus::DissolvedParticulate{N, M, DN, PN}) where {N, M, DN, PN}
     dissolved_remineralisation_rate = adapt(to, detritus.dissolved_remineralisation_rate)

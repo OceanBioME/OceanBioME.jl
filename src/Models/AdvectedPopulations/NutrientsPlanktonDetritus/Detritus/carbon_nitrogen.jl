@@ -30,9 +30,9 @@ Keyword Arguments
   `large_particle_remineralisation_dissolved_fraction`: the fraction of each particulate class's
   remineralisation that passes through the dissolved pool
 - `sinking_speeds`: a `NamedTuple` `(sPO = …, bPO = …)` of the small/large particle sinking speeds
-  (m/s); mutually exclusive with `dissolution_lengths`
+  (m/s), used unless `dissolution_lengths` is given
 - `dissolution_lengths`: a `NamedTuple` `(sPO = …, bPO = …)` of the small/large particle dissolution
-  length scales (m), enabling implicit sinking; mutually exclusive with `sinking_speeds`
+  length scales (m), enabling implicit sinking in place of `sinking_speeds`
 - `open_bottom`: whether particulate detritus can sink out of the bottom of the domain
 """
 struct CarbonNitrogenDissolvedParticulate{FT, SK} <: AbstractSinkingDetritus{SK}
@@ -65,26 +65,21 @@ function CarbonNitrogenDissolvedParticulate(grid::AbstractGrid{FT};
                                             small_fraction_of_solid_waste = 0.5,
                                             small_particle_remineralisation_dissolved_fraction = 1.0,
                                             large_particle_remineralisation_dissolved_fraction = 1.0,
-                                            sinking_speeds = nothing,
+                                            sinking_speeds = (sPO = 3/day, bPO = 200/day),
                                             dissolution_lengths = nothing,
                                             open_bottom = true) where FT
 
-    if dissolution_lengths !== nothing && sinking_speeds !== nothing
-        throw(ArgumentError("Cannot specify both `sinking_speeds` and `dissolution_lengths`"))
-    end
-
-    if dissolution_lengths !== nothing
-        dl = (sPON = convert(FT, dissolution_lengths.sPO),
-              sPOC = convert(FT, dissolution_lengths.sPO),
-              bPON = convert(FT, dissolution_lengths.bPO),
-              bPOC = convert(FT, dissolution_lengths.bPO))
+    if !isnothing(dissolution_lengths)
+        dl = (sPON = dissolution_lengths.sPO,
+              sPOC = dissolution_lengths.sPO,
+              bPON = dissolution_lengths.bPO,
+              bPOC = dissolution_lengths.bPO)
         sinking = ImplicitSinking(grid, dl; open_bottom)
-    else
-        speeds = sinking_speeds === nothing ? (sPO = 3/day, bPO = 200/day) : sinking_speeds
-        sinking_velocities = setup_velocity_fields((; sPO = convert(FT, speeds.sPO),
-                                                      bPO = convert(FT, speeds.bPO)),
-                                                   grid, open_bottom; three_D = true)
+    elseif !isnothing(sinking_speeds)
+        sinking_velocities = setup_velocity_fields(sinking_speeds, grid, open_bottom; three_D = true)
         sinking = ExplicitSinking(sinking_velocities)
+    else
+        throw(ArgumentError("Must specify either `sinking_speeds` or `dissolution_lengths`"))
     end
 
     SK = typeof(sinking)
@@ -99,8 +94,6 @@ function CarbonNitrogenDissolvedParticulate(grid::AbstractGrid{FT};
         sinking
     )
 end
-
-# --- helpers: particulate remineralisation dispatched on sinking type ---
 
 @inline particulate_to_dissolved_nitrogen(i, j, k, d::CarbonNitrogenDissolvedParticulate, fields) = @inbounds (
     fields.sPON[i, j, k] * d.small_particle_remineralisation_rate * d.small_particle_remineralisation_dissolved_fraction +
@@ -122,8 +115,6 @@ end
     d.sinking.remineralisation.bPOC[i, j, k] * d.large_particle_remineralisation_dissolved_fraction
 )
 
-# --- DON / DOC tendencies ---
-
 @inline (bgc::NPD_CNDP)(i, j, k, grid, ::Val{:DON}, clock, fields, auxiliary_fields) = @inbounds (
     dissolved_nitrogen_waste(i, j, k, grid, bgc.plankton, bgc, fields, auxiliary_fields)
   + particulate_to_dissolved_nitrogen(i, j, k, bgc.detritus, fields)
@@ -137,8 +128,6 @@ end
   - grazing(i, j, k, grid, Val(:DOC), bgc.plankton, bgc, fields, auxiliary_fields)
   - bgc.detritus.dissolved_remineralisation_rate * fields.DOC[i, j, k]
 )
-
-# --- particulate tendencies (explicit sinking only — these tracers are not present with implicit) ---
 
 @inline (bgc::NPD_CNDP)(i, j, k, grid, ::Val{:sPON}, clock, fields, auxiliary_fields) = @inbounds (
     solid_nitrogen_waste(i, j, k, grid, bgc.plankton, bgc, fields, auxiliary_fields) * bgc.detritus.small_fraction_of_solid_waste
@@ -164,15 +153,11 @@ end
   - bgc.detritus.large_particle_remineralisation_rate * fields.bPOC[i, j, k]
 )
 
-# --- drift velocity (explicit only) ---
-
 @inline biogeochemical_drift_velocity(bgc::NutrientsPlanktonDetritus{<:Any, <:Any, <:Any, <:CarbonNitrogenDissolvedParticulate{<:Any, <:ExplicitSinking}}, ::Union{Val{:sPON}, Val{:sPOC}}) =
     bgc.detritus.sinking.sinking_speeds.sPO
 
 @inline biogeochemical_drift_velocity(bgc::NutrientsPlanktonDetritus{<:Any, <:Any, <:Any, <:CarbonNitrogenDissolvedParticulate{<:Any, <:ExplicitSinking}}, ::Union{Val{:bPON}, Val{:bPOC}}) =
     bgc.detritus.sinking.sinking_speeds.bPO
-
-# --- inorganic waste / carbon waste ---
 
 @inline inorganic_waste(i, j, k, grid, detritus::CarbonNitrogenDissolvedParticulate, bgc, fields, auxiliary_fields) = @inbounds (
     fields.DON[i, j, k] * detritus.dissolved_remineralisation_rate
@@ -214,8 +199,6 @@ end
   + detritus.sinking.remineralisation.bPOC[i, j, k] * (1 - detritus.large_particle_remineralisation_dissolved_fraction)
 )
 
-# --- implicit sinking production ---
-
 @inline implicit_sinking_production(i, j, k, grid, d::CarbonNitrogenDissolvedParticulate, bgc, fields, aux, ::Val{:sPON}) =
     solid_nitrogen_waste(i, j, k, grid, bgc.plankton, bgc, fields, aux) * d.small_fraction_of_solid_waste
 
@@ -227,8 +210,6 @@ end
 
 @inline implicit_sinking_production(i, j, k, grid, d::CarbonNitrogenDissolvedParticulate, bgc, fields, aux, ::Val{:bPOC}) =
     solid_carbon_waste(i, j, k, grid, bgc.plankton, bgc, fields, aux) * (1 - d.small_fraction_of_solid_waste)
-
-# --- admin ---
 
 function Adapt.adapt_structure(to, detritus::CarbonNitrogenDissolvedParticulate{FT}) where FT
     sinking = adapt(to, detritus.sinking)

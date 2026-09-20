@@ -1,6 +1,27 @@
 using Oceananigans.Units
-using Oceananigans.Fields: ZeroField, ConstantField, CenterField
+using Oceananigans.Fields: ZeroField, ConstantField
 
+# Kuhn 2015 "detritus"
+"""
+    Detritus(grid; sinking_speed = 2.7489/day, dissolution_length = nothing, open_bottom = true,
+                   remineralisation_rate = 0.1213/day)
+
+A single-class detritus component (after Kuhn et al., 2015) for the `detritus` slot of a
+[`NutrientsPlanktonDetritus`](@ref) model. It adds one sinking detritus tracer `D` which accumulates
+plankton waste and grazing residue and is remineralised back to the nutrient pool.
+
+Keyword Arguments
+=================
+
+- `grid`: (required) the geometry, needed to configure the sinking-speed field
+- `sinking_speed`: the downward sinking speed of detritus (m/s), used unless `dissolution_length`
+  is given
+- `dissolution_length`: the dissolution length scale of detritus (m), a number or a function of
+  `(i, j, k, grid, clock, fields)` such as `DepthDependentDissolutionLength`, enabling
+  implicit sinking in place of `sinking_speed` (`D` is then not a tracer)
+- `open_bottom`: whether detritus can sink out of the bottom of the domain
+- `remineralisation_rate`: the rate at which detritus is remineralised to inorganic nutrients (1/s)
+"""
 struct Detritus{FT, SK} <: AbstractSinkingDetritus{SK}
       remineralisation_rate :: FT
                     sinking :: SK
@@ -15,34 +36,27 @@ Detritus(FT = Float64;
 const NPSingleD{FT} = NutrientsPlanktonDetritus{FT, <:Any, <:Any, <:Detritus}
 
 function Detritus(grid::AbstractGrid{FT};
-                  sinking_speed = nothing,
+                  sinking_speed = 2.7489/day,
                   dissolution_length = nothing,
                   open_bottom = true,
                   remineralisation_rate = 0.1213/day) where FT
 
-    if dissolution_length !== nothing && sinking_speed !== nothing
-        throw(ArgumentError("Cannot specify both `sinking_speed` and `dissolution_length`"))
-    end
-
-    if dissolution_length !== nothing
+    if !isnothing(dissolution_length)
         sinking = ImplicitSinking(grid, dissolution_length; tracer_names = (:D,), open_bottom)
-    else
-        speed = sinking_speed === nothing ? convert(FT, 2.7489/day) : sinking_speed
-        sv = setup_velocity_fields((; D = speed), grid, open_bottom; three_D = true).D
+    elseif !isnothing(sinking_speed)
+        sv = setup_velocity_fields((; D = sinking_speed), grid, open_bottom; three_D = true).D
         sinking = ExplicitSinking(sv)
+    else
+        throw(ArgumentError("Must specify either `sinking_speed` or `dissolution_length`"))
     end
 
     return Detritus{FT, typeof(sinking)}(convert(FT, remineralisation_rate), sinking)
 end
 
-# --- tracers ---
-
 required_biogeochemical_tracers(::Detritus) = (:D, )
 required_biogeochemical_tracers(::Detritus{<:Any, <:ImplicitSinking}) = ()
 
 required_biogeochemical_auxiliary_fields(::Detritus) = tuple()
-
-# --- tendencies (explicit sinking only — D is a tracer) ---
 
 @inline (bgc::NPSingleD)(i, j, k, grid, val_name::Val{:D}, clock, fields, auxiliary_fields) = (
     dissolved_waste(i, j, k, grid, bgc.plankton, bgc, fields, auxiliary_fields)
@@ -51,20 +65,14 @@ required_biogeochemical_auxiliary_fields(::Detritus) = tuple()
   - remineralisation(i, j, k, grid, bgc.detritus, fields, auxiliary_fields)
 )
 
-# --- remineralisation ---
-
 @inline remineralisation(i, j, k, grid, detritus::Detritus, fields, auxiliary_fields) =
     @inbounds detritus.remineralisation_rate * fields.D[i, j, k]
 
 @inline remineralisation(i, j, k, grid, detritus::Detritus{<:Any, <:ImplicitSinking}, fields, auxiliary_fields) =
     @inbounds detritus.sinking.remineralisation.D[i, j, k]
 
-# --- drift velocity (explicit only) ---
-
 biogeochemical_drift_velocity(bgc::NutrientsPlanktonDetritus{<:Any, <:Any, <:Any, <:Detritus{<:Any, <:ExplicitSinking}}, ::Val{:D}) =
     bgc.detritus.sinking.sinking_speeds
-
-# --- inorganic waste (nutrient remineralisation source) ---
 
 @inline inorganic_waste(i, j, k, grid, detritus::Detritus, bgc, args...) =
     remineralisation(i, j, k, grid, detritus, args...)
@@ -75,13 +83,11 @@ biogeochemical_drift_velocity(bgc::NutrientsPlanktonDetritus{<:Any, <:Any, <:Any
   * calcium_carbonate_rain_ratio(i, j, k, grid, bgc.plankton, bgc, fields)
 )
 
-# --- implicit sinking production ---
-
 @inline implicit_sinking_production(i, j, k, grid, ::Detritus, bgc, fields, aux, ::Val{:D}) =
     dissolved_waste(i, j, k, grid, bgc.plankton, bgc, fields, aux) +
     solid_waste(i, j, k, grid, bgc.plankton, bgc, fields, aux)
 
-# --- admin ---
+# admin
 
 Adapt.adapt_structure(to, detritus::Detritus) =
     Detritus(remineralisation_rate = adapt(to, detritus.remineralisation_rate),

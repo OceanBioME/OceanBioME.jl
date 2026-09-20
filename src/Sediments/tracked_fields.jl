@@ -5,10 +5,6 @@ using Oceananigans.Models: total_velocities, AbstractModel
 using Oceananigans.Operators: Azᶜᶜᶠ
 using Oceananigans.Utils: launch!
 
-#####
-##### Floor-flux lookup for implicit column sinking
-#####
-
 _search_floor_flux(::Nothing, name) = nothing
 
 function _search_floor_flux(m, name)
@@ -42,10 +38,6 @@ function _implicit_floor_flux(model, name)
     return nothing
 end
 
-#####
-##### Tracked field updates
-#####
-
 function update_tracked_fields!(sediment, model)
     grid = model.grid
     arch = architecture(grid)
@@ -63,7 +55,7 @@ function update_tracked_fields!(sediment, model)
         launch!(arch, grid, :xy, copy_to_sediment!, source, destination, bottom_indices)
     end
 
-    # tracked fluxes
+    # tracked fluxs
     field_names = sinking_fluxes(sediment)
 
     for field_name in field_names
@@ -96,7 +88,7 @@ end
     end
 end
 
-# fluxes
+# fluxs
 
 @inline vertical_advection_scheme(advection, name) = advection
 @inline vertical_advection_scheme(advection::FluxFormAdvection, name) = advection.z
