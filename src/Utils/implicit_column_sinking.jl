@@ -27,6 +27,12 @@ end
     @inbounds floor_indices[i, j, 1] = k
 end
 
+"""
+    ExplicitSinking(sinking_speeds)
+
+Sinking handled by the tracer advection scheme via `biogeochemical_drift_velocity`.
+`sinking_speeds` is a `NamedTuple` of velocity fields `(u, v, w)`.
+"""
 struct ExplicitSinking{SS}
     sinking_speeds :: SS
 end
@@ -34,6 +40,14 @@ end
 Adapt.adapt_structure(to, s::ExplicitSinking) =
     ExplicitSinking(Adapt.adapt(to, s.sinking_speeds))
 
+"""
+    ImplicitSinking(grid, dissolution_length; tracer_names = keys(dissolution_length), open_bottom = true)
+
+Sinking handled as an implicit vertical redistribution with an exponential profile characterised
+by `dissolution_length` (in metres). This avoids the CFL restriction of explicit advection for
+fast-sinking particles. When `open_bottom = true` material reaching the bottom cell leaves the
+domain; otherwise it accumulates.
+"""
 struct ImplicitSinking{FT, RM, FL, FI}
     dissolution_length :: FT
       remineralisation :: RM
