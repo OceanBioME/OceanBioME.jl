@@ -75,20 +75,22 @@ import Oceananigans.Biogeochemistry: required_biogeochemical_tracers,
 import Adapt: adapt_structure
 import Base: show, summary
 
-struct ContinuousBiogeochemistry{B, L, S, P, M} <: AbstractContinuousFormBiogeochemistry
+struct ContinuousBiogeochemistry{B, L, S, P, M, N} <: AbstractContinuousFormBiogeochemistry
     underlying_biogeochemistry :: B
              light_attenuation :: L
                       sediment :: S
                      particles :: P
                      modifiers :: M
+              negative_tracers :: N
 end
 
-struct DiscreteBiogeochemistry{B, L, S, P, M} <: AbstractBiogeochemistry
+struct DiscreteBiogeochemistry{B, L, S, P, M, N} <: AbstractBiogeochemistry
     underlying_biogeochemistry :: B
              light_attenuation :: L
                       sediment :: S
                      particles :: P
                      modifiers :: M
+              negative_tracers :: N
 end
 
 const CompleteBiogeochemistry = Union{<:ContinuousBiogeochemistry, <:DiscreteBiogeochemistry}
@@ -98,10 +100,11 @@ const CompleteBiogeochemistry = Union{<:ContinuousBiogeochemistry, <:DiscreteBio
                     light_attenuation = nothing,
                     sediment = nothing,
                     particles = nothing,
-                    modifiers = nothing)
+                    modifiers = nothing,
+                    negative_tracers = nothing)
 
 Construct a biogeochemical model based on `underlying_biogeochemistry` which may have
-a `light_attenuation` model, `sediment`, `particles`, and `modifiers`.
+a `light_attenuation` model, `sediment`, `particles`, `modifiers`, and a `negative_tracers` treatment.
 
 Keyword Arguments
 =================
@@ -110,28 +113,33 @@ Keyword Arguments
 - `sediment_model`: slot for `AbstractSediment`
 - `particles`: slot for `BiogeochemicalParticles`
 - `modifiers`: slot for components which modify the biogeochemistry when the tendencies have been calculated or when the state is updated
+- `negative_tracers`: treatment for negative tracer values; for example [`ClipNegativeTracers`](@ref), [`ScaleNegativeTracers`](@ref), or [`IgnoreNegativeTracerValues`](@ref)
 """
 Biogeochemistry(underlying_biogeochemistry;
                 light_attenuation = nothing,
                 sediment = nothing,
                 particles = nothing,
-                modifiers = nothing) = 
+                modifiers = nothing,
+                negative_tracers = nothing) = 
     DiscreteBiogeochemistry(underlying_biogeochemistry,
                             light_attenuation,
                             sediment,
                             particles,
-                            modifiers)
+                            modifiers,
+                            negative_tracers)
 
 Biogeochemistry(underlying_biogeochemistry::AbstractContinuousFormBiogeochemistry;
                 light_attenuation = nothing,
                 sediment = nothing,
                 particles = nothing,
-                modifiers = nothing) = 
+                modifiers = nothing,
+                negative_tracers = nothing) = 
     ContinuousBiogeochemistry(underlying_biogeochemistry,
                               light_attenuation,
                               sediment,
                               particles,
-                              modifiers)
+                              modifiers,
+                              negative_tracers)
 
 required_biogeochemical_tracers(bgc::CompleteBiogeochemistry) = 
     required_biogeochemical_tracers(bgc.underlying_biogeochemistry)
@@ -155,14 +163,16 @@ biogeochemical_auxiliary_fields(bgc::CompleteBiogeochemistry) =
                               adapt(to, bgc.light_attenuation),
                               nothing,
                               nothing,
-                              nothing)
+                              nothing,
+                              adapt(to, bgc.negative_tracers))
 
 @inline adapt_structure(to, bgc::DiscreteBiogeochemistry) = 
     DiscreteBiogeochemistry(adapt(to, bgc.underlying_biogeochemistry),
                             adapt(to, bgc.light_attenuation),
                             nothing,
                             nothing,
-                            nothing)
+                            nothing,
+                            adapt(to, bgc.negative_tracers))
 
 function update_tendencies!(bgc::CompleteBiogeochemistry, model)
     update_tendencies!(bgc, bgc.sediment, model)
@@ -182,6 +192,7 @@ update_tendencies!(bgc, modifiers::Tuple, model) = [update_tendencies!(bgc, modi
 
 function update_biogeochemical_state!(bgc::CompleteBiogeochemistry, model)
     # TODO: change the order of arguments here since they should definitly be the other way around
+    update_biogeochemical_state!(model, bgc.negative_tracers)
     update_biogeochemical_state!(model, bgc.modifiers)
     update_biogeochemical_state!(model, bgc.light_attenuation)
     update_biogeochemical_state!(model, bgc.underlying_biogeochemistry)
@@ -228,7 +239,8 @@ show(io::IO, model::CompleteBiogeochemistry) =
                 " Light attenuation: ", summary(model.light_attenuation), "\n",
                 " Sediment: ", summary(model.sediment), "\n",
                 " Particles: ", summary(model.particles), "\n",
-                " Modifiers: ", modifier_summary(model.modifiers))
+                " Modifiers: ", modifier_summary(model.modifiers), "\n",
+                " Negative tracers: ", modifier_summary(model.negative_tracers))
 
 modifier_summary(modifier) = summary(modifier)
 modifier_summary(modifiers::Tuple) = "\n"*join([" "*ifelse(n==length(modifiers), "└─", "├─")*summary(modifier) for (n, modifier) in enumerate(modifiers)], "\n")

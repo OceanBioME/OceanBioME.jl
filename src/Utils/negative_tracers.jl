@@ -13,7 +13,7 @@ import KernelAbstractions as KA
 """
     ClipNegativeTracers(; exclude = ())
 
-Construct a modifier that clips negative tracer values to zero, excluding those listed in `exclude`.
+Construct a negative-tracer treatment that clips negative tracer values to zero, excluding those listed in `exclude`.
 
 !!! danger "Tracer conservation"
     This method is _not_ recommended as a way to preserve positivity of tracers since
@@ -39,6 +39,8 @@ when evaluating biogeochemical processes while leaving prognostic tracer fields 
 """
 struct IgnoreNegativeTracerValues end
 
+update_biogeochemical_state!(model, ::IgnoreNegativeTracerValues) = nothing
+
 #####
 ##### Infastructure to rescale negative values
 #####
@@ -61,10 +63,10 @@ adapt_structure(to, snt::ScaleNegativeTracers) = ScaleNegativeTracers(adapt(to, 
 """
     ScaleNegativeTracers(; tracers, scalefactors = ones(length(tracers)), warn = false, invalid_fill_value = NaN)
 
-Constructs a modifier to scale `tracers` so that none are negative. Use like:
+Constructs a negative-tracer treatment to scale `tracers` so that none are negative. Use like:
 ```julia
-modifier = ScaleNegativeTracers((:P, :Z, :N))
-biogeochemistry = Biogeochemistry(...; modifier)
+negative_tracers = ScaleNegativeTracers((:P, :Z, :N))
+biogeochemistry = Biogeochemistry(...; negative_tracers)
 ```
 This method is better, though still imperfect, method to prevent numerical errors that lead to
 negative tracer values compared to [`ClipNegativeTracers`](@ref). Please see [discussion in
@@ -98,7 +100,7 @@ end
 """
     ScaleNegativeTracers(bgc::AbstractBiogeochemistry; warn = false)
 
-Construct a modifier to scale the conserved tracers in `bgc` biogeochemistry.
+Construct a negative-tracer treatment to scale the conserved tracers in `bgc` biogeochemistry.
 
 If `warn` is true then scaling will raise a warning.
 """

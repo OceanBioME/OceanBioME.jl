@@ -4,15 +4,25 @@ include("dependencies_for_runtests.jl")
 
 # using Oceananigans.Fields: AbstractField, CenterField, ConstantField, FunctionField, ZFaceField, location
 
+function with_negative_tracers(bgc, negative_tracers)
+    return Biogeochemistry(bgc.underlying_biogeochemistry;
+                           light_attenuation = bgc.light_attenuation,
+                           sediment = bgc.sediment,
+                           particles = bgc.particles,
+                           modifiers = bgc.modifiers,
+                           negative_tracers)
+end
+
 function test_negative_scaling(arch)
     grid = RectilinearGrid(arch, size = (1, 1, 1), extent = (1, 1, 1))
 
-    model = NonhydrostaticModel(grid; biogeochemistry = NPZD(grid; scale_negatives = true))
+    bgc = NPZD(grid)
+    scaler = ScaleNegativeTracers(bgc.underlying_biogeochemistry)
+    model = NonhydrostaticModel(grid; biogeochemistry = with_negative_tracers(bgc, scaler))
 
     set!(model, N = 2, P = -1)
 
     simulation = Simulation(model, Δt = 1e-10, stop_iteration = 1)
-
     run!(simulation)
 
     N = Array(interior(model.tracers.N))[1, 1, 1]
@@ -24,12 +34,13 @@ end
 function test_negative_clipping(arch)
     grid = RectilinearGrid(arch, size = (1, 1, 1), extent = (1, 1, 1))
 
-    model = NonhydrostaticModel(grid; biogeochemistry = NPZD(grid; modifiers = ClipNegativeTracers(; exclude = (:Z, ))))
+    bgc = NPZD(grid)
+    clip = ClipNegativeTracers(; exclude = (:Z, ))
+    model = NonhydrostaticModel(grid; biogeochemistry = with_negative_tracers(bgc, clip))
 
     set!(model, N = 2, P = -1, Z = -1)
 
     simulation = Simulation(model, Δt = 1e-10, stop_iteration = 1)
-
     run!(simulation)
 
     N = Array(interior(model.tracers.N))[1, 1, 1]
@@ -42,7 +53,11 @@ end
 @testset "Test negative tracer handling" begin
     @test test_negative_scaling(architecture)
     @test test_negative_clipping(architecture)
-    @test IgnoreNegativeTracerValues() isa IgnoreNegativeTracerValues
+
+    grid = RectilinearGrid(architecture, size = (1, 1, 1), extent = (1, 1, 1))
+    bgc = NPZD(grid)
+    @test isnothing(bgc.negative_tracers)
+    @test with_negative_tracers(bgc, IgnoreNegativeTracerValues()).negative_tracers isa IgnoreNegativeTracerValues
 end
 
 # scalar_sinking_speeds = (A = 1, B = 1.0)
