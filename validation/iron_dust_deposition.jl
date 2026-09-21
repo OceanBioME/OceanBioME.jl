@@ -92,16 +92,12 @@ file_dust   = run_column(grid; dust_deposition = dust_flux, label = "iron_dust")
 
 using CairoMakie
 
-function load_timeseries(filename, tracer)
-    return FieldTimeSeries(filename * ".jld2", tracer)
-end
-
-Fe_nodust  = load_timeseries(file_nodust, "Fe")
-Fe_dust    = load_timeseries(file_dust,   "Fe")
-PO₄_nodust = load_timeseries(file_nodust, "PO₄")
-PO₄_dust   = load_timeseries(file_dust,   "PO₄")
-DIC_nodust = load_timeseries(file_nodust, "DIC")
-DIC_dust   = load_timeseries(file_dust,   "DIC")
+Fe_nodust  = FieldTimeSeries("$file_nodust.jld2", "Fe")
+Fe_dust    = FieldTimeSeries("$file_dust.jld2",   "Fe")
+PO₄_nodust = FieldTimeSeries("$file_nodust.jld2", "PO₄")
+PO₄_dust   = FieldTimeSeries("$file_dust.jld2",   "PO₄")
+DIC_nodust = FieldTimeSeries("$file_nodust.jld2", "DIC")
+DIC_dust   = FieldTimeSeries("$file_dust.jld2",   "DIC")
 
 x, y, z = nodes(Fe_nodust)
 times = Fe_nodust.times
