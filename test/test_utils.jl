@@ -13,6 +13,22 @@ function with_negative_tracers(bgc, negative_tracers)
                            negative_tracers)
 end
 
+
+struct ContinuousNegativeTracerTestBGC <: Oceananigans.Biogeochemistry.AbstractContinuousFormBiogeochemistry end
+
+Oceananigans.Biogeochemistry.required_biogeochemical_tracers(::ContinuousNegativeTracerTestBGC) = (:A, :T)
+
+@inline (::ContinuousNegativeTracerTestBGC)(::Val{:A}, x, y, z, t, A, T, auxiliary) = A + T + auxiliary
+
+struct DiscreteNegativeTracerTestBGC <: Oceananigans.Biogeochemistry.AbstractBiogeochemistry end
+
+Oceananigans.Biogeochemistry.required_biogeochemical_tracers(::DiscreteNegativeTracerTestBGC) = (:A, :T)
+Oceananigans.Biogeochemistry.biogeochemical_auxiliary_fields(::DiscreteNegativeTracerTestBGC) = NamedTuple()
+
+@inline function (::DiscreteNegativeTracerTestBGC)(i, j, k, grid, ::Val{:A}, clock, fields, auxiliary_fields)
+    return fields[:A][i, j, k] + fields.T[i, j, k] + fields.extra[i, j, k]
+end
+
 function test_negative_scaling(arch)
     grid = RectilinearGrid(arch, size = (1, 1, 1), extent = (1, 1, 1))
 
@@ -57,7 +73,37 @@ end
     grid = RectilinearGrid(architecture, size = (1, 1, 1), extent = (1, 1, 1))
     bgc = NPZD(grid)
     @test isnothing(bgc.negative_tracers)
-    @test with_negative_tracers(bgc, IgnoreNegativeTracerValues()).negative_tracers isa IgnoreNegativeTracerValues
+
+    raw = Biogeochemistry(ContinuousNegativeTracerTestBGC())
+    safe = Biogeochemistry(ContinuousNegativeTracerTestBGC(); negative_tracers = IgnoreNegativeTracerValues())
+
+    @test raw(Val(:A), 0, 0, 0, 0, -1.0, -2.0, -3.0) == -6.0
+    @test safe(Val(:A), 0, 0, 0, 0, -1.0, -2.0, -3.0) == -5.0
+    @test safe(Val(:A), 0, 0, 0, 0, 1.0, -2.0, -3.0) == raw(Val(:A), 0, 0, 0, 0, 1.0, -2.0, -3.0)
+
+    raw_discrete = Biogeochemistry(DiscreteNegativeTracerTestBGC())
+    safe_discrete = Biogeochemistry(DiscreteNegativeTracerTestBGC(); negative_tracers = IgnoreNegativeTracerValues())
+    fields = (A = fill(-1.0, 1, 1, 1), T = fill(-2.0, 1, 1, 1), extra = fill(-3.0, 1, 1, 1))
+
+    @test raw_discrete(1, 1, 1, grid, Val(:A), nothing, fields) == -6.0
+    @test safe_discrete(1, 1, 1, grid, Val(:A), nothing, fields) == -5.0
+    @test fields.A[1, 1, 1] == -1.0
+
+    light = PrescribedPhotosyntheticallyActiveRadiation(ConstantField(10.0))
+    reference = NPZD(grid; light_attenuation = light)
+    safe_npzd = with_negative_tracers(NPZD(grid; light_attenuation = light), IgnoreNegativeTracerValues())
+    reference_model = NonhydrostaticModel(grid; biogeochemistry = reference)
+    safe_model = NonhydrostaticModel(grid; biogeochemistry = safe_npzd)
+
+    common = (; N = 2.0, Z = 0.1, D = 0.1, T = -1.0)
+    set!(reference_model; common..., P = 0.0)
+    set!(safe_model; common..., P = -1e-3)
+
+    tendency_reference = reference(1, 1, 1, grid, Val(:P), reference_model.clock, reference_model.tracers)
+    tendency_safe = safe_npzd(1, 1, 1, grid, Val(:P), safe_model.clock, safe_model.tracers)
+
+    @test tendency_safe ≈ tendency_reference
+    @test safe_model.tracers.P[1, 1, 1] == -1e-3
 end
 
 # scalar_sinking_speeds = (A = 1, B = 1.0)

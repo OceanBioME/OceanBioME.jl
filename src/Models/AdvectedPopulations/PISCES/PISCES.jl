@@ -30,7 +30,7 @@ using Oceananigans: KernelFunctionOperation
 using Oceananigans.Fields: Field, TracerFields, CenterField, ZeroField, ConstantField, Center, Face
 
 using OceanBioME.Light: MultiBandPhotosyntheticallyActiveRadiation, compute_euphotic_depth!
-using OceanBioME: setup_velocity_fields, show_sinking_velocities, Biogeochemistry, DiscreteBiogeochemistry, ScaleNegativeTracers, CBMDayLength
+using OceanBioME: setup_velocity_fields, show_sinking_velocities, Biogeochemistry, ScaleNegativeTracers, CBMDayLength
 using OceanBioME.BoxModels: BoxModel
 using OceanBioME.Models.CarbonChemistryModel: CarbonChemistry
 
@@ -118,9 +118,6 @@ end
      wGOC = bgc.sinking_velocities.GOC)
 
 (bgc::PISCES)(i, j, k, grid, val_name, clock, fields, auxiliary_fields) = zero(grid)
-
-(bgc::DiscreteBiogeochemistry{<:PISCES})(i, j, k, grid, val_name, clock, fields) =
-    bgc.underlying_biogeochemistry(i, j, k, grid, val_name, clock, fields, biogeochemical_auxiliary_fields(bgc))
 
 include("common.jl")
 include("generic_functions.jl")

@@ -2,7 +2,7 @@ using Oceananigans: fields, Simulation
 using KernelAbstractions: @kernel, @index
 using Oceananigans.Utils: work_layout
 using Oceananigans.Architectures: device, architecture, on_architecture
-using Oceananigans.Biogeochemistry: AbstractBiogeochemistry
+using Oceananigans.Biogeochemistry: AbstractBiogeochemistry, required_biogeochemical_tracers
 using Oceananigans.ImmersedBoundaries: immersed_cell
 
 import Adapt: adapt_structure, adapt
@@ -34,12 +34,99 @@ end
 """
     IgnoreNegativeTracerValues()
 
-Construct a negative-tracer treatment that presents negative tracer values as zero
-when evaluating biogeochemical processes while leaving prognostic tracer fields unchanged.
+Construct a negative-tracer treatment that presents negative concentration-tracer values as zero
+when evaluating biogeochemical processes while leaving prognostic tracer fields unchanged. Signed
+environmental tracers such as temperature (`T`) and salinity (`S`) are evaluated unchanged.
 """
 struct IgnoreNegativeTracerValues end
 
 update_biogeochemical_state!(model, ::IgnoreNegativeTracerValues) = nothing
+
+# Concentration tracers are evaluated as nonnegative by default. Temperature and
+# salinity are signed environmental state variables even when a biogeochemical
+# model lists them among its required tracers. Models can add further exceptions.
+@inline ignore_negative_value_for_tracer(::Type, ::Val) = Val(true)
+@inline ignore_negative_value_for_tracer(::Type, ::Val{:T}) = Val(false)
+@inline ignore_negative_value_for_tracer(::Type, ::Val{:S}) = Val(false)
+
+@inline ignored_negative_value(::Val{true}, value) = max(value, zero(value))
+@inline ignored_negative_value(::Val{false}, value) = value
+
+@inline ignored_negative_value(model_type, val_name, value) =
+    ignored_negative_value(ignore_negative_value_for_tracer(model_type, val_name), value)
+
+# Continuous-form models receive required tracer values first, followed by any
+# auxiliary values. Transform exactly that required-tracer prefix.
+@inline ignored_negative_values(::Type, ::Tuple{}, values::Tuple) = values
+
+@inline function ignored_negative_values(model_type, names::Tuple, values::Tuple)
+    name = first(names)
+    value = first(values)
+    transformed = ignored_negative_value(model_type, Val(name), value)
+    return (transformed, ignored_negative_values(model_type, Base.tail(names), Base.tail(values))...)
+end
+
+@inline function evaluate_continuous_biogeochemistry(::IgnoreNegativeTracerValues, bgc, val_name, x, y, z, t, values...)
+    names = required_biogeochemical_tracers(bgc)
+    values = ignored_negative_values(typeof(bgc), names, values)
+    return bgc(val_name, x, y, z, t, values...)
+end
+
+@inline evaluate_continuous_biogeochemistry(::Any, bgc, args...) = bgc(args...)
+
+# Discrete-form models index fields inside their tendency functions. The proxy
+# wraps only required concentration tracers and leaves all other model fields
+# untouched.
+struct NonnegativeTracerValueField{F}
+    field :: F
+end
+
+@inline function Base.getindex(field::NonnegativeTracerValueField, I...)
+    value = @inbounds getfield(field, :field)[I...]
+    return max(value, zero(value))
+end
+
+Base.eltype(field::NonnegativeTracerValueField) = eltype(getfield(field, :field))
+Base.eltype(::Type{NonnegativeTracerValueField{F}}) where F = eltype(F)
+Base.size(field::NonnegativeTracerValueField, args...) = size(getfield(field, :field), args...)
+Base.axes(field::NonnegativeTracerValueField, args...) = axes(getfield(field, :field), args...)
+Base.parent(field::NonnegativeTracerValueField) = getfield(field, :field)
+
+@inline function Base.getproperty(field::NonnegativeTracerValueField, name::Symbol)
+    name === :field && return getfield(field, :field)
+    return getproperty(getfield(field, :field), name)
+end
+
+@inline ignored_negative_field(::Val{true}, ::Val{true}, field) = NonnegativeTracerValueField(field)
+@inline ignored_negative_field(::Val, ::Val, field) = field
+
+struct IgnoreNegativeTracerFields{B, N, F}
+    fields :: F
+end
+
+@inline IgnoreNegativeTracerFields(bgc::B, fields::F) where {B, F} =
+    IgnoreNegativeTracerFields{B, required_biogeochemical_tracers(bgc), F}(fields)
+
+Base.keys(fields::IgnoreNegativeTracerFields) = keys(getfield(fields, :fields))
+Base.propertynames(fields::IgnoreNegativeTracerFields, args...) = propertynames(getfield(fields, :fields), args...)
+
+@inline function Base.getproperty(fields::IgnoreNegativeTracerFields{B, N}, name::Symbol) where {B, N}
+    name === :fields && return getfield(fields, :fields)
+    field = getproperty(getfield(fields, :fields), name)
+    required = Val(name in N)
+    ignore = ignore_negative_value_for_tracer(B, Val(name))
+    return ignored_negative_field(required, ignore, field)
+end
+
+@inline Base.getindex(fields::IgnoreNegativeTracerFields, name::Symbol) = getproperty(fields, name)
+
+@inline function evaluate_discrete_biogeochemistry(::IgnoreNegativeTracerValues, bgc, i, j, k, grid, val_name, clock, fields, auxiliary_fields)
+    fields = IgnoreNegativeTracerFields(bgc, fields)
+    return bgc(i, j, k, grid, val_name, clock, fields, auxiliary_fields)
+end
+
+@inline evaluate_discrete_biogeochemistry(::Any, bgc, i, j, k, grid, val_name, clock, fields, auxiliary_fields) =
+    bgc(i, j, k, grid, val_name, clock, fields, auxiliary_fields)
 
 #####
 ##### Infastructure to rescale negative values

@@ -183,9 +183,14 @@ end
 update_tendencies!(bgc, modifier, model) = nothing
 update_tendencies!(bgc, modifiers::Tuple, model) = [update_tendencies!(bgc, modifier, model) for modifier in modifiers]
 
-@inline (bgc::ContinuousBiogeochemistry)(args...) = bgc.underlying_biogeochemistry(args...)
-@inline (bgc::DiscreteBiogeochemistry)(args...) = 
-    bgc.underlying_biogeochemistry(args..., biogeochemical_auxiliary_fields(bgc))
+@inline (bgc::ContinuousBiogeochemistry)(args...) =
+    evaluate_continuous_biogeochemistry(bgc.negative_tracers, bgc.underlying_biogeochemistry, args...)
+
+@inline (bgc::DiscreteBiogeochemistry)(i, j, k, grid, val_name, clock, fields) =
+    evaluate_discrete_biogeochemistry(bgc.negative_tracers,
+                                      bgc.underlying_biogeochemistry,
+                                      i, j, k, grid, val_name, clock, fields,
+                                      biogeochemical_auxiliary_fields(bgc))
 
 @inline (bgc::ContinuousBiogeochemistry{nothing})(i, j, k, grid, args...) = zero(grid)
 @inline (bgc::DiscreteBiogeochemistry{nothing})(i, j, k, grid, args...) = zero(grid)
