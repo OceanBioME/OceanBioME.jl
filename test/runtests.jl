@@ -1,6 +1,5 @@
 include("dependencies_for_runtests.jl")
 
-# Focused cycle test: negative tracer handling.
 include("test_utils.jl")
 
 # include("test_solvers.jl")
