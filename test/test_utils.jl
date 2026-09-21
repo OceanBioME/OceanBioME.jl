@@ -73,23 +73,21 @@ using Oceananigans.Grids: znode, Center
 using OceanBioME.Models.NutrientsPlanktonDetritusModels: InstantRemineralisationDetritus
 
 @testset "IronDustDeposition" begin
-    grid2 = RectilinearGrid(architecture; size=(1, 1, 2), extent=(1, 1, 4))
+    grid = RectilinearGrid(architecture; size=(1, 1, 2), extent=(1, 1, 4))
     light_attenuation = PrescribedPhotosyntheticallyActiveRadiation(ConstantField(100))
 
     dust_flux = 1e-8
-    f_iron = 0.035
-    M_Fe = 55.845e-6
-    λ = 400.0
 
-    biogeochemistry = NutrientsPlanktonDetritus(grid2;
+    biogeochemistry = NutrientsPlanktonDetritus(grid;
                                                 plankton = Abiotic(),
-                                                nutrients = Nutrients(; phosphate = OceanBioME.PO₄, iron = SimpleIron(scavenging_rate = 0.0)),
+                                                nutrients = Nutrients(; phosphate = OceanBioME.PO₄, 
+                                                                        iron = SimpleIron(scavenging_rate = 0.0)),
                                                 detritus = InstantRemineralisationDetritus(),
                                                 light_attenuation)
 
     iron_forcing = IronDustDepositionForcing(dust_flux)
 
-    model = NonhydrostaticModel(grid2;
+    model = NonhydrostaticModel(grid;
                                 advection = nothing,
                                 biogeochemistry,
                                 forcing = (; Fe = iron_forcing))
@@ -99,17 +97,21 @@ using OceanBioME.Models.NutrientsPlanktonDetritusModels: InstantRemineralisation
     @test CUDA.@allowscalar model.tracers.Fe[1, 1, 2] > 0
     @test CUDA.@allowscalar model.tracers.Fe[1, 1, 2] > model.tracers.Fe[1, 1, 1]
 
+    f_iron = 0.035
+    M_Fe = 55.845e-6
+    λ = 400.0
+
     # two-component MARBL formulation (default)
     γ = 0.98
     λₕ = 1.2e6
     dep = IronDustDeposition(dust_flux)
-    z = znode(1, 1, 2, grid2, Center(), Center(), Center())
+    z = znode(1, 1, 2, grid, Center(), Center(), Center())
     expected = dust_flux * f_iron / M_Fe * ((1 - γ) / λ * exp(z / λ) + γ / λₕ * exp(z / λₕ))
-    @test dep(1, 1, 2, grid2, nothing, nothing) ≈ expected
+    @test dep(1, 1, 2, grid, nothing, nothing) ≈ expected
 
     # single exponential
     dep_single = IronDustDeposition(dust_flux; hard_fraction = 0.0)
     expected_single = dust_flux * f_iron / M_Fe / λ * exp(z / λ)
-    @test dep_single(1, 1, 2, grid2, nothing, nothing) ≈ expected_single
-    @test dep_single(1, 1, 2, grid2, nothing, nothing) > dep(1, 1, 2, grid2, nothing, nothing)
+    @test dep_single(1, 1, 2, grid, nothing, nothing) ≈ expected_single
+    @test dep_single(1, 1, 2, grid, nothing, nothing) > dep(1, 1, 2, grid, nothing, nothing)
 end
