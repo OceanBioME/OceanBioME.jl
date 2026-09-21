@@ -56,7 +56,7 @@ simulation = Simulation(model; Δt = 50, stop_time = 4days)
 simulation.output_writers[:tracers] = JLD2Writer(model, model.tracers,
                                                  filename = "buoyancy_front.jld2",
                                                  schedule = TimeInterval(24minute),
-                                                 overwrite_existing = true)
+                                                 overwrite_files = true)
 
 run!(simulation)
 ```

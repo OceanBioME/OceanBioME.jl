@@ -189,7 +189,7 @@ set!(model, N = 10, P = 0.1)
 simulation = Simulation(model; Δt = 10minutes, stop_time = 4years)
 
 simulation.output_writers[:fields] = JLD2Writer(model, model.fields; filename = "box_simple_phyto.jld2",
-                                                schedule = TimeInterval(1day), overwrite_existing = true)
+                                                schedule = TimeInterval(1day), overwrite_files = true)
 
 run!(simulation)
 ```
@@ -249,11 +249,11 @@ set!(model, N = 10, P = 0.1)
 simulation = Simulation(model; Δt = 20minutes, stop_time = 1year)
 
 simulation.output_writers[:tracers] = JLD2Writer(model, model.tracers, filename = "column_simple_phyto.jld2",
-                                                 schedule = TimeInterval(2days), overwrite_existing = true)
+                                                 schedule = TimeInterval(2days), overwrite_files = true)
 
 simulation.output_writers[:sediment] = JLD2Writer(model, model.biogeochemistry.sediment.fields, indices = (:, :, 1),
                                                   filename = "column_simple_phyto_sediment.jld2",
-                                                  schedule = TimeInterval(2days), overwrite_existing = true)
+                                                  schedule = TimeInterval(2days), overwrite_files = true)
 
 run!(simulation)
 ```

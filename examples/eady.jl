@@ -119,7 +119,7 @@ u, v, w = model.velocities # unpack velocity `Field`s
 simulation.output_writers[:fields] = JLD2Writer(model, merge(model.tracers, (; u, v, w, ζ));
                                                 schedule = TimeInterval(2hours),
                                                 filename = "eady_turbulence_bgc",
-                                                overwrite_existing = true)
+                                                overwrite_files = true)
 
 nothing #hide
 

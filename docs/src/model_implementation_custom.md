@@ -126,7 +126,7 @@ set!(model, P = 1.0, Z = 1.0)
 simulation = Simulation(model; Δt = 10minutes, stop_time = 20days)
 
 simulation.output_writers[:fields] = JLD2Writer(model, model.fields; filename = "box_lotka_volterra.jld2",
-                                                schedule = TimeInterval(2hours), overwrite_existing = true)
+                                                schedule = TimeInterval(2hours), overwrite_files = true)
 
 run!(simulation)
 ```
