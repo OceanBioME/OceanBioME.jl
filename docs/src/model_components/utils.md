@@ -25,9 +25,9 @@ You may also pass a scale factor for each component (e.g. in case they have diff
 negativity_protection = ScaleNegativeTracers((:P, :Z, :N); scalefactors = (1, 1, 2))
 biogeochemistry = Biogeochemistry(...; modifiers = negativity_protection)
 ```
-Here you should carefully consider which tracers form a conserved group (if at all). Alternatively, force to zero by:
+Here you should carefully consider which tracers form a conserved group (if at all). Alternatively, clip negative tracer values to zero by:
 ```julia
-negativity_protection = ZeroNegativeTracers()
+negativity_protection = ClipNegativeTracers()
 biogeochemistry = Biogeochemistry(...; modifiers = negativity_protection)
 ```
 The latter optionally takes a named tuple of parameters that may include `exclude`, which can be a tuple of tracer names (Symbols) which are allowed to be negative.

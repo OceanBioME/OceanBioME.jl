@@ -21,10 +21,10 @@ function test_negative_scaling(arch)
     return (N ≈ 1) && (P ≈ 0.0)
 end
 
-function test_negative_zeroing(arch)
+function test_negative_clipping(arch)
     grid = RectilinearGrid(arch, size = (1, 1, 1), extent = (1, 1, 1))
 
-    model = NonhydrostaticModel(grid; biogeochemistry = NPZD(grid; modifiers = ZeroNegativeTracers(; exclude = (:Z, ))))
+    model = NonhydrostaticModel(grid; biogeochemistry = NPZD(grid; modifiers = ClipNegativeTracers(; exclude = (:Z, ))))
 
     set!(model, N = 2, P = -1, Z = -1)
 
@@ -39,9 +39,9 @@ function test_negative_zeroing(arch)
     return (N ≈ 2) && (P ≈ 0.0) && (Z ≈ -1)
 end
 
-@testset "Test negative tracer handeling" begin
+@testset "Test negative tracer handling" begin
     @test test_negative_scaling(architecture)
-    @test test_negative_zeroing(architecture)
+    @test test_negative_clipping(architecture)
 end
 
 scalar_sinking_speeds = (A = 1, B = 1.0)

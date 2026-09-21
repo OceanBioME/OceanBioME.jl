@@ -11,25 +11,33 @@ import Oceananigans.Biogeochemistry: update_tendencies!, update_biogeochemical_s
 import KernelAbstractions as KA
 
 """
-    ZeroNegativeTracers(; exclude = ())
+    ClipNegativeTracers(; exclude = ())
 
-Construct a modifier that zeroes any negative tracers excluding those listed in `exclude`.
+Construct a modifier that clips negative tracer values to zero, excluding those listed in `exclude`.
 
 !!! danger "Tracer conservation"
     This method is _not_ recommended as a way to preserve positivity of tracers since
     it does not conserve the total tracer.
 """
-@kwdef struct ZeroNegativeTracers{E}
+@kwdef struct ClipNegativeTracers{E}
     exclude :: E = ()
 end
 
-function update_biogeochemical_state!(model, zero::ZeroNegativeTracers)
+function update_biogeochemical_state!(model, clip::ClipNegativeTracers)
     for (tracer_name, tracer) in pairs(model.tracers)
-        if !(tracer_name in zero.exclude)
+        if !(tracer_name in clip.exclude)
             parent(tracer) .= max.(0.0, parent(tracer))
         end
     end
 end
+
+"""
+    IgnoreNegativeTracerValues()
+
+Construct a negative-tracer treatment that presents negative tracer values as zero
+when evaluating biogeochemical processes while leaving prognostic tracer fields unchanged.
+"""
+struct IgnoreNegativeTracerValues end
 
 #####
 ##### Infastructure to rescale negative values
@@ -59,7 +67,7 @@ modifier = ScaleNegativeTracers((:P, :Z, :N))
 biogeochemistry = Biogeochemistry(...; modifier)
 ```
 This method is better, though still imperfect, method to prevent numerical errors that lead to
-negative tracer values compared to [`ZeroNegativeTracers`](@ref). Please see [discussion in
+negative tracer values compared to [`ClipNegativeTracers`](@ref). Please see [discussion in
 github](https://github.com/OceanBioME/OceanBioME.jl/discussions/48).
 
 Future plans include implement a positivity-preserving timestepping scheme as the ideal alternative.
