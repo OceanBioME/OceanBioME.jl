@@ -2,13 +2,18 @@ module NutrientsPlanktonDetritusModels
 
 export NutrientsPlanktonDetritus
 
-export LOBSTER, NPZD, ImplicitBiology
+export LOBSTER, NPZD, ImplicitBiology, MARBL, MARBL_Cocco, MARBL_ExplicitSinking
 
-export Nutrients, N, PO₄, Si, Fe, NitrateAmmonia
-export CarbonateSystem, ExplicitCalciumCarbonate
+export Nutrients, N, PO₄, Si, Fe, NitrateAmmonia, ComplexedIron
+export CarbonateSystem, ExplicitCalciumCarbonate, ImplicitExplicitCalcite
 export Abiotic, ImplicitProductivity, PhytoZoo
+export ManyPhytoZoo, Autotroph, Heterotroph, Grazing
+export MARBL_small_phyto, MARBL_diatoms, MARBL_diazotrophs, MARBL_autotrophs, MARBL_zooplankton,
+       MARBL_cocco_small_phyto, MARBL_cocco_diatoms, MARBL_cocco_diazotrophs, MARBL_coccolithophores,
+       MARBL_cocco_autotrophs, MARBL_cocco_zooplankton, MARBL_cocco_plankton
 export Detritus, DissolvedParticulate, InstantRemineralisationDetritus, CarbonNitrogenDissolvedParticulate
-export Oxygen
+export MultiElementRefractoryDissolvedParticulate, MultiElementRefractoryDissolved, Ballast
+export Oxygen, RedoxOxygen
 
 using Adapt
 using Oceananigans.Grids: AbstractGrid
@@ -40,6 +45,9 @@ import Oceananigans.Biogeochemistry:
 
 include("nutrients_plankton_detritus.jl")
 include("assumptions.jl")
+
+# components may add methods to this before `utils.jl` (which holds the rest) is included
+function group_element_tracers end
 
 include("Nutrients/Nutrients.jl")
 include("InorganicCarbon/InorganicCarbon.jl")
