@@ -3,10 +3,16 @@ include("dependencies_for_runtests.jl")
 using OceanBioME: setup_velocity_fields, valid_sinking_velocity_locations
 
 using Oceananigans.Architectures: on_architecture
+using Oceananigans.AbstractOperations: AbstractOperation
 using Oceananigans.Fields: AbstractField, CenterField, ConstantField, FunctionField, ZFaceField, location
 
+scalar_value(field::AbstractField) = on_architecture(CPU(), interior(field, 1, 1, 1))[1]
 
-scalar_value(field) = on_architecture(CPU(), interior(field, 1, 1, 1))[1]
+function scalar_value(operation::AbstractOperation)
+    field = Field(operation)
+    compute!(field)
+    return scalar_value(field)
+end
 
 struct ContinuousNegativeTracerTestBGC <: Oceananigans.Biogeochemistry.AbstractContinuousFormBiogeochemistry end
 
