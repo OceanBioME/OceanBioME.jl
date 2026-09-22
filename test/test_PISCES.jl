@@ -187,11 +187,11 @@ function test_PISCES_ignores_negative_tracer_values(arch)
     set_PISCES_initial_values!(model.tracers)
     set!(model.tracers.P, 0)
     Oceananigans.Biogeochemistry.update_biogeochemical_state!(biogeochemistry, model)
-    zero_tendency = biogeochemistry(1, 1, 1, grid, Val(:P), model.clock, model.tracers)
+    zero_tendency = CUDA.@allowscalar biogeochemistry(1, 1, 1, grid, Val(:P), model.clock, model.tracers)
 
     set!(model.tracers.P, -1e-3)
     Oceananigans.Biogeochemistry.update_biogeochemical_state!(biogeochemistry, model)
-    negative_tendency = biogeochemistry(1, 1, 1, grid, Val(:P), model.clock, model.tracers)
+    negative_tendency = CUDA.@allowscalar biogeochemistry(1, 1, 1, grid, Val(:P), model.clock, model.tracers)
 
     @test negative_tendency ≈ zero_tendency
     @test value(model.tracers.P) == -1e-3

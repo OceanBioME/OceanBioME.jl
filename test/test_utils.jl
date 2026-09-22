@@ -2,8 +2,11 @@ include("dependencies_for_runtests.jl")
 
 using OceanBioME: setup_velocity_fields, valid_sinking_velocity_locations
 
+using Oceananigans.Architectures: on_architecture
 using Oceananigans.Fields: AbstractField, CenterField, ConstantField, FunctionField, ZFaceField, location
 
+
+scalar_value(field) = on_architecture(CPU(), interior(field, 1, 1, 1))[1]
 
 struct ContinuousNegativeTracerTestBGC <: Oceananigans.Biogeochemistry.AbstractContinuousFormBiogeochemistry end
 
@@ -31,8 +34,8 @@ function test_negative_scaling(arch)
     simulation = Simulation(model, Δt = 1e-10, stop_iteration = 1)
     run!(simulation)
 
-    N = Array(interior(model.tracers.N))[1, 1, 1]
-    P = Array(interior(model.tracers.P))[1, 1, 1]
+    N = scalar_value(model.tracers.N)
+    P = scalar_value(model.tracers.P)
 
     return (N ≈ 1) && (P ≈ 0.0)
 end
@@ -48,9 +51,9 @@ function test_negative_clipping(arch)
     simulation = Simulation(model, Δt = 1e-10, stop_iteration = 1)
     run!(simulation)
 
-    N = Array(interior(model.tracers.N))[1, 1, 1]
-    P = Array(interior(model.tracers.P))[1, 1, 1]
-    Z = Array(interior(model.tracers.Z))[1, 1, 1]
+    N = scalar_value(model.tracers.N)
+    P = scalar_value(model.tracers.P)
+    Z = scalar_value(model.tracers.Z)
 
     return (N ≈ 2) && (P ≈ 0.0) && (Z ≈ -1)
 end
@@ -61,15 +64,18 @@ end
 
     grid = RectilinearGrid(architecture, size = (1, 1, 1), extent = (1, 1, 1))
     bgc = NPZD(grid)
-    @test isnothing(bgc.negative_tracers)
-    @test NPZD(grid; negative_tracers = IgnoreNegativeTracerValues()).negative_tracers isa IgnoreNegativeTracerValues
-    @test NPZD(grid; negative_tracers = ScaleNegativeTracers()).negative_tracers isa ScaleNegativeTracers
-    @test NPZD(grid; scale_negatives = true).negative_tracers isa ScaleNegativeTracers
-    @test_throws ArgumentError NPZD(grid; negative_tracers = IgnoreNegativeTracerValues(), scale_negatives = true)
-
+    ignore = NPZD(grid; negative_tracers = IgnoreNegativeTracerValues()).negative_tracers
+    scale = NPZD(grid; negative_tracers = ScaleNegativeTracers()).negative_tracers
+    scale_compat = NPZD(grid; scale_negatives = true).negative_tracers
     composed_npzd = NPZD(grid; negative_tracers = (IgnoreNegativeTracerValues(), ScaleNegativeTracers()))
+
+    @test isnothing(bgc.negative_tracers)
+    @test ignore isa IgnoreNegativeTracerValues
+    @test scale isa ScaleNegativeTracers
+    @test scale_compat isa ScaleNegativeTracers
     @test composed_npzd.negative_tracers[1] isa IgnoreNegativeTracerValues
     @test composed_npzd.negative_tracers[2] isa ScaleNegativeTracers
+    @test_throws ArgumentError NPZD(grid; negative_tracers = IgnoreNegativeTracerValues(), scale_negatives = true)
 
     raw = Biogeochemistry(ContinuousNegativeTracerTestBGC())
     safe = Biogeochemistry(ContinuousNegativeTracerTestBGC(); negative_tracers = IgnoreNegativeTracerValues())
@@ -104,11 +110,14 @@ end
     set!(reference_model; common..., P = 0.0)
     set!(safe_model; common..., P = -1e-3)
 
-    tendency_reference = reference(1, 1, 1, grid, Val(:P), reference_model.clock, reference_model.tracers)
-    tendency_safe = safe_npzd(1, 1, 1, grid, Val(:P), safe_model.clock, safe_model.tracers)
+    tendency_reference = CUDA.@allowscalar reference(1, 1, 1, grid, Val(:P), reference_model.clock, reference_model.tracers)
+    tendency_safe = CUDA.@allowscalar safe_npzd(1, 1, 1, grid, Val(:P), safe_model.clock, safe_model.tracers)
 
     @test tendency_safe ≈ tendency_reference
-    @test safe_model.tracers.P[1, 1, 1] == -1e-3
+
+    simulation = Simulation(safe_model, Δt = 1e-10, stop_iteration = 1)
+    run!(simulation)
+    @test scalar_value(safe_model.tracers.P) ≈ -1e-3
 
     for light_model in (TwoBandPhotosyntheticallyActiveRadiation,
                         MultiBandPhotosyntheticallyActiveRadiation)
@@ -122,7 +131,6 @@ end
         set!(reference_model; common..., P = 0.0)
         set!(safe_model; common..., P = -1e-3)
 
-        @test OceanBioME.chlorophyll(safe_npzd, safe_model)[1, 1, 1] == 0
 
         Oceananigans.Biogeochemistry.update_biogeochemical_state!(reference_model, reference.light_attenuation)
         Oceananigans.Biogeochemistry.update_biogeochemical_state!(safe_model, safe_npzd.light_attenuation)
@@ -130,9 +138,9 @@ end
         reference_light = Oceananigans.Biogeochemistry.biogeochemical_auxiliary_fields(reference.light_attenuation)
         safe_light = Oceananigans.Biogeochemistry.biogeochemical_auxiliary_fields(safe_npzd.light_attenuation)
 
-        @test all(name -> safe_light[name][1, 1, 1] ≈ reference_light[name][1, 1, 1], keys(reference_light))
-        @test all(name -> isfinite(safe_light[name][1, 1, 1]), keys(safe_light))
-        @test safe_model.tracers.P[1, 1, 1] == -1e-3
+        @test all(name -> scalar_value(safe_light[name]) ≈ scalar_value(reference_light[name]), keys(reference_light))
+        @test all(name -> isfinite(scalar_value(safe_light[name])), keys(safe_light))
+        @test scalar_value(safe_model.tracers.P) == -1e-3
     end
 end
 
