@@ -1,8 +1,3 @@
-
-#####
-##### SimpleIron — single-pool iron with ligand equilibrium and scavenging
-#####
-
 """
     SimpleIron(; scavenging_rate = 0.19/(360*86400),
                  ligand_stability = 1e11,
