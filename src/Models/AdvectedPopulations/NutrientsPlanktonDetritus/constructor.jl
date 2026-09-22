@@ -163,10 +163,10 @@ Keyword Arguments
 NPZD(grid::AbstractGrid{FT};
      limiting_nutrients = (:nitrate, ),
      open_bottom = true,
-     dissolution_length = nothing,
-     nutrients = Nutrients(:ammonia in limiting_nutrients ? NitrateAmmonia{FT}() : N, 
-                           :phosphate in limiting_nutrients ? PO₄ : nothing, 
-                           :iron in limiting_nutrients ? Fe : nothing, 
+     implicit_sinking = false,
+     nutrients = Nutrients(:ammonia in limiting_nutrients ? NitrateAmmonia{FT}() : N,
+                           :phosphate in limiting_nutrients ? PO₄ : nothing,
+                           :iron in limiting_nutrients ? Fe : nothing,
                            nothing),
      plankton = PhytoZoo(grid;
                          nutrient_half_saturations = (nitrate = 2.3868,                     # mmol N/m³
@@ -187,7 +187,7 @@ NPZD(grid::AbstractGrid{FT};
                          maximum_grazing_rate = 2.1522 / day,
                          light_limitation = PlanktonModels.AnalyticalLightLimitation(),
                          light_half_saturation = (0.6989/day)/(0.1953/day)),
-     detritus = Detritus(grid; open_bottom, dissolution_length),
+     detritus = Detritus(grid; open_bottom, implicit_sinking),
      surface_PAR = default_surface_PAR,
      light_attenuation = default_light(grid, surface_PAR),
      kwargs...) where FT =
@@ -217,16 +217,16 @@ Keyword Arguments
 LOBSTER(grid::AbstractGrid{FT};
         limiting_nutrients = (:nitrate, :ammonia),
         open_bottom = true,
-        dissolution_lengths = nothing,
-        nutrients = Nutrients(:ammonia in limiting_nutrients ? NitrateAmmonia{FT}() : N, 
-                              :phosphate in limiting_nutrients ? PO₄ : nothing, 
-                              :iron in limiting_nutrients ? Fe : nothing, 
+        implicit_sinking = false,
+        nutrients = Nutrients(:ammonia in limiting_nutrients ? NitrateAmmonia{FT}() : N,
+                              :phosphate in limiting_nutrients ? PO₄ : nothing,
+                              :iron in limiting_nutrients ? Fe : nothing,
                               nothing),
         plankton = PhytoZoo(FT;
                             nutrient_half_saturations = (nitrate = 0.7,                     # mmol N/m³
                                                          ammonia = 0.001,                   # mmol N/m³
                                                          iron = 2e-4)[limiting_nutrients]), # mmol Fe / m³
-        detritus = DissolvedParticulate(grid; open_bottom, dissolution_lengths),
+        detritus = DissolvedParticulate(grid; open_bottom, implicit_sinking),
         surface_PAR = default_surface_PAR,
         light_attenuation = default_light(grid, surface_PAR),
         kwargs...) where FT =
@@ -257,6 +257,7 @@ Keyword Arguments
 """
 MITgcmDIC(grid::AbstractGrid{FT};
           open_bottom = true,
+          implicit_sinking = false,
           nutrients = Nutrients(nothing, PO₄, SimpleIron{FT}(), nothing),
           plankton = ImplicitProductivity(FT;
                                           maximum_community_productivity = 2 / (360 * day),  # mmol P / m³ / s
@@ -274,7 +275,7 @@ MITgcmDIC(grid::AbstractGrid{FT};
                                           particulate_remineralisation_rate = 0.03 / day,
                                           dissolved_fraction_of_remineralisation = 0.0,
                                           sinking_speeds = 10 / day,
-                                          open_bottom),
+                                          open_bottom, implicit_sinking),
           inorganic_carbon = CarbonateSystem(),
           oxygen = Oxygen(FT;
                           production_oxygen_carbon_ratio = 170 / 117,     # |R_OP / R_CP|

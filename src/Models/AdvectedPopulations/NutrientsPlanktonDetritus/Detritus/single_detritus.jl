@@ -37,17 +37,16 @@ const NPSingleD{FT} = NutrientsPlanktonDetritus{FT, <:Any, <:Any, <:Detritus}
 
 function Detritus(grid::AbstractGrid{FT};
                   sinking_speed = 2.7489/day,
-                  dissolution_length = nothing,
-                  open_bottom = true,
-                  remineralisation_rate = 0.1213/day) where FT
+                  remineralisation_rate = 0.1213/day,
+                  dissolution_length = sinking_speed / remineralisation_rate,
+                  implicit_sinking = false,
+                  open_bottom = true) where FT
 
-    if !isnothing(dissolution_length)
+    if implicit_sinking
         sinking = ImplicitSinking(grid, dissolution_length; tracer_names = (:D,), open_bottom)
-    elseif !isnothing(sinking_speed)
+    else
         sv = setup_velocity_fields((; D = sinking_speed), grid, open_bottom; three_D = true).D
         sinking = ExplicitSinking(sv)
-    else
-        throw(ArgumentError("Must specify either `sinking_speed` or `dissolution_length`"))
     end
 
     return Detritus{FT, typeof(sinking)}(convert(FT, remineralisation_rate), sinking)

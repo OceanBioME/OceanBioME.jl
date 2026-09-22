@@ -66,20 +66,20 @@ function CarbonNitrogenDissolvedParticulate(grid::AbstractGrid{FT};
                                             small_particle_remineralisation_dissolved_fraction = 1.0,
                                             large_particle_remineralisation_dissolved_fraction = 1.0,
                                             sinking_speeds = (sPO = 3/day, bPO = 200/day),
-                                            dissolution_lengths = nothing,
+                                            dissolution_lengths = (sPO = sinking_speeds.sPO / small_particle_remineralisation_rate,
+                                                                   bPO = sinking_speeds.bPO / large_particle_remineralisation_rate),
+                                            implicit_sinking = false,
                                             open_bottom = true) where FT
 
-    if !isnothing(dissolution_lengths)
+    if implicit_sinking
         dl = (sPON = dissolution_lengths.sPO,
               sPOC = dissolution_lengths.sPO,
               bPON = dissolution_lengths.bPO,
               bPOC = dissolution_lengths.bPO)
         sinking = ImplicitSinking(grid, dl; open_bottom)
-    elseif !isnothing(sinking_speeds)
+    else
         sinking_velocities = setup_velocity_fields(sinking_speeds, grid, open_bottom; three_D = true)
         sinking = ExplicitSinking(sinking_velocities)
-    else
-        throw(ArgumentError("Must specify either `sinking_speeds` or `dissolution_lengths`"))
     end
 
     SK = typeof(sinking)
@@ -153,10 +153,12 @@ end
   - bgc.detritus.large_particle_remineralisation_rate * fields.bPOC[i, j, k]
 )
 
-@inline biogeochemical_drift_velocity(bgc::NutrientsPlanktonDetritus{<:Any, <:Any, <:Any, <:CarbonNitrogenDissolvedParticulate{<:Any, <:ExplicitSinking}}, ::Union{Val{:sPON}, Val{:sPOC}}) =
+const CN_NPD_Explicit = NutrientsPlanktonDetritus{<:Any, <:Any, <:Any, <:CarbonNitrogenDissolvedParticulate{<:Any, <:ExplicitSinking}}
+
+@inline biogeochemical_drift_velocity(bgc::CN_NPD_Explicit, ::Union{Val{:sPON}, Val{:sPOC}}) =
     bgc.detritus.sinking.sinking_speeds.sPO
 
-@inline biogeochemical_drift_velocity(bgc::NutrientsPlanktonDetritus{<:Any, <:Any, <:Any, <:CarbonNitrogenDissolvedParticulate{<:Any, <:ExplicitSinking}}, ::Union{Val{:bPON}, Val{:bPOC}}) =
+@inline biogeochemical_drift_velocity(bgc::CN_NPD_Explicit, ::Union{Val{:bPON}, Val{:bPOC}}) =
     bgc.detritus.sinking.sinking_speeds.bPO
 
 @inline inorganic_waste(i, j, k, grid, detritus::CarbonNitrogenDissolvedParticulate, bgc, fields, auxiliary_fields) = @inbounds (

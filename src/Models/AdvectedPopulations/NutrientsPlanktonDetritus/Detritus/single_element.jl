@@ -91,26 +91,17 @@ function DissolvedParticulate(grid::AbstractGrid{FT}, dissolved_names = :DOM, pa
                               particulate_waste_partitioning = default_partitioning(particulate_names),
                               dissolved_fraction_of_remineralisation = repeat_property(particulate_names, one(FT)),
                               sinking_speeds = default_sinking_speeds(particulate_names),
-                              dissolution_lengths = nothing,
+                              dissolution_lengths = NamedTuple{particulate_names}(values(sinking_speeds) ./ values(particulate_remineralisation_rate)),
+                              implicit_sinking = false,
                               open_bottom = true) where FT
 
     pnames = possibly_tuple_or_symbol(particulate_names)
 
-    if !isnothing(dissolution_lengths)
-        if dissolution_lengths isa Number
-            dl = NamedTuple{pnames}(ntuple(_ -> convert(FT, dissolution_lengths), length(pnames)))
-        elseif dissolution_lengths isa Tuple && all(v -> v isa Number, dissolution_lengths)
-            dl = NamedTuple{pnames}(convert.(FT, dissolution_lengths))
-        else
-            dl = NamedTuple{pnames}(dissolution_lengths isa Tuple ? dissolution_lengths :
-                                    ntuple(_ -> dissolution_lengths, length(pnames)))
-        end
-        sinking = ImplicitSinking(grid, dl; open_bottom)
-    elseif !isnothing(sinking_speeds)
+    if implicit_sinking
+        sinking = ImplicitSinking(grid, dissolution_lengths; open_bottom)
+    else
         sinking_velocities = setup_velocity_fields(NamedTuple{pnames}(sinking_speeds), grid, open_bottom; three_D = true)
         sinking = ExplicitSinking(sinking_velocities)
-    else
-        throw(ArgumentError("Must specify either `sinking_speeds` or `dissolution_lengths`"))
     end
 
     manifest_multi_class_dissolved_particulate(dissolved_names, particulate_names)
@@ -130,6 +121,7 @@ possibly_tuple_or_symbol(names) = names
 possibly_tuple_or_symbol(names::Symbol) = tuple(names)
 repeat_property(names, value) = tuple(repeat([value], length(names))...)
 repeat_property(::Symbol, value) = value
+
 
 default_sinking_speeds(names, FT=Float64) = tuple(repeat([convert(FT, 10/day)], length(names))...)
 default_sinking_speeds(::NTuple{2}, FT=Float64) = (convert(FT, 3/day), convert(FT, 200/day))

@@ -260,18 +260,18 @@ using Oceananigans.Biogeochemistry: update_biogeochemical_state!, required_bioge
     @testset "Construction and tracer exclusion" begin
         grid = RectilinearGrid(architecture; size=(1, 1, 10), extent=(1, 1, 100))
 
-        det_npzd = Detritus(grid; dissolution_length = 100.0)
+        det_npzd = Detritus(grid; implicit_sinking = true)
         @test det_npzd.sinking isa ImplicitSinking
         @test required_biogeochemical_tracers(det_npzd) == ()
 
-        det_lob = DissolvedParticulate(grid; dissolution_lengths = (100.0, 500.0))
+        det_lob = DissolvedParticulate(grid; implicit_sinking = true)
         @test det_lob.sinking isa ImplicitSinking
         tracers_lob = required_biogeochemical_tracers(det_lob)
         @test :sPOM ∉ tracers_lob
         @test :bPOM ∉ tracers_lob
         @test :DOM in tracers_lob
 
-        det_cn = CarbonNitrogenDissolvedParticulate(grid; dissolution_lengths = (sPO = 100.0, bPO = 500.0))
+        det_cn = CarbonNitrogenDissolvedParticulate(grid; implicit_sinking = true)
         @test det_cn.sinking isa ImplicitSinking
         tracers_cn = required_biogeochemical_tracers(det_cn)
         @test :sPON ∉ tracers_cn
@@ -280,17 +280,19 @@ using Oceananigans.Biogeochemistry: update_biogeochemical_state!, required_bioge
         @test :DOC in tracers_cn
     end
 
-    @testset "dissolution_length takes priority" begin
+    @testset "implicit_sinking flag controls sinking type" begin
         grid = RectilinearGrid(architecture; size=(1, 1, 10), extent=(1, 1, 100))
-        @test Detritus(grid; sinking_speed = 1/day, dissolution_length = 100.0).sinking isa ImplicitSinking
-        @test DissolvedParticulate(grid; sinking_speeds = (3/day, 200/day), dissolution_lengths = (100.0, 500.0)).sinking isa ImplicitSinking
-        @test CarbonNitrogenDissolvedParticulate(grid; sinking_speeds = (sPO = 3/day, bPO = 200/day),
-                                                       dissolution_lengths = (sPO = 100.0, bPO = 500.0)).sinking isa ImplicitSinking
+        @test Detritus(grid; implicit_sinking = true).sinking isa ImplicitSinking
+        @test Detritus(grid; implicit_sinking = false).sinking isa ExplicitSinking
+        @test DissolvedParticulate(grid; implicit_sinking = true).sinking isa ImplicitSinking
+        @test DissolvedParticulate(grid; implicit_sinking = false).sinking isa ExplicitSinking
+        @test CarbonNitrogenDissolvedParticulate(grid; implicit_sinking = true).sinking isa ImplicitSinking
+        @test CarbonNitrogenDissolvedParticulate(grid; implicit_sinking = false).sinking isa ExplicitSinking
     end
 
     @testset "NPZD implicit integration" begin
         grid = RectilinearGrid(architecture; size=(1, 1, 50), extent=(1, 1, 200))
-        bgc = NPZD(grid; dissolution_length = 100.0)
+        bgc = NPZD(grid; implicit_sinking = true)
         model = NonhydrostaticModel(grid; biogeochemistry = bgc)
         @test !haskey(model.tracers, :D)
 
@@ -308,7 +310,7 @@ using Oceananigans.Biogeochemistry: update_biogeochemical_state!, required_bioge
 
     @testset "LOBSTER implicit integration" begin
         grid = RectilinearGrid(architecture; size=(1, 1, 50), extent=(1, 1, 200))
-        bgc = LOBSTER(grid; dissolution_lengths = (100.0, 500.0))
+        bgc = LOBSTER(grid; implicit_sinking = true)
         model = NonhydrostaticModel(grid; biogeochemistry = bgc)
         @test !haskey(model.tracers, :sPOM)
         @test !haskey(model.tracers, :bPOM)
@@ -331,7 +333,7 @@ using Oceananigans.Biogeochemistry: update_biogeochemical_state!, required_bioge
         bgc = NutrientsPlanktonDetritus(grid;
             nutrients = Nutrients(NitrateAmmonia{Float64}(), nothing, nothing, nothing),
             plankton = PhytoZoo(grid),
-            detritus = CarbonNitrogenDissolvedParticulate(grid; dissolution_lengths = (sPO = 100.0, bPO = 500.0)),
+            detritus = CarbonNitrogenDissolvedParticulate(grid; implicit_sinking = true),
             light_attenuation = TwoBandPhotosyntheticallyActiveRadiation(grid, 100))
         model = NonhydrostaticModel(grid; biogeochemistry = bgc)
         @test !haskey(model.tracers, :sPON)
@@ -353,11 +355,11 @@ using Oceananigans.Biogeochemistry: update_biogeochemical_state!, required_bioge
     @testset "Column sweep mass balance" begin
         grid = RectilinearGrid(architecture; size=(1, 1, 10), extent=(1, 1, 100))
 
-        bgc_closed = NPZD(grid; detritus = Detritus(grid; dissolution_length = 50.0, open_bottom = false))
+        bgc_closed = NPZD(grid; detritus = Detritus(grid; implicit_sinking = true, dissolution_length = 50.0, open_bottom = false))
         model_closed = NonhydrostaticModel(grid; biogeochemistry = bgc_closed, advection = nothing)
         set!(model_closed, N = 10.0, P = 1.0, Z = 0.5)
 
-        bgc_open = NPZD(grid; detritus = Detritus(grid; dissolution_length = 50.0, open_bottom = true))
+        bgc_open = NPZD(grid; detritus = Detritus(grid; implicit_sinking = true, dissolution_length = 50.0, open_bottom = true))
         model_open = NonhydrostaticModel(grid; biogeochemistry = bgc_open, advection = nothing)
         set!(model_open, N = 10.0, P = 1.0, Z = 0.5)
 
@@ -384,8 +386,8 @@ using Oceananigans.Biogeochemistry: update_biogeochemical_state!, required_bioge
     @testset "Dissolution length shapes remineralisation profile" begin
         grid = RectilinearGrid(architecture; size=(1, 1, 20), extent=(1, 1, 200))
 
-        bgc_short = NPZD(grid; detritus = Detritus(grid; dissolution_length = 20.0, open_bottom = true))
-        bgc_long  = NPZD(grid; detritus = Detritus(grid; dissolution_length = 500.0, open_bottom = true))
+        bgc_short = NPZD(grid; detritus = Detritus(grid; implicit_sinking = true, dissolution_length = 20.0, open_bottom = true))
+        bgc_long  = NPZD(grid; detritus = Detritus(grid; implicit_sinking = true, dissolution_length = 500.0, open_bottom = true))
 
         model_short = NonhydrostaticModel(grid; biogeochemistry = bgc_short, advection = nothing)
         model_long  = NonhydrostaticModel(grid; biogeochemistry = bgc_long, advection = nothing)
@@ -408,13 +410,13 @@ using Oceananigans.Biogeochemistry: update_biogeochemical_state!, required_bioge
     @testset "Sediment coupling" begin
         grid = RectilinearGrid(architecture; size=(1, 1, 50), extent=(1, 1, 200))
 
-        bgc = NPZD(grid; dissolution_length = 100.0, sediment = InstantRemineralisationSediment(grid))
+        bgc = NPZD(grid; implicit_sinking = true, sediment = InstantRemineralisationSediment(grid))
         model = NonhydrostaticModel(grid; biogeochemistry = bgc)
         set!(model, N = 10.0, P = 0.1, Z = 0.01)
         for _ in 1:3; time_step!(model, 60.0); end
         CUDA.@allowscalar @test bgc.sediment.tracked_fields.D[1, 1, 1] > 0
 
-        bgc_lob = LOBSTER(grid; dissolution_lengths = (100.0, 500.0),
+        bgc_lob = LOBSTER(grid; implicit_sinking = true,
                           sediment = InstantRemineralisationSediment(grid;
                               sinking_tracers = (:sPOM, :bPOM),
                               remineralisation_reciever = :NH₄))
@@ -427,13 +429,13 @@ using Oceananigans.Biogeochemistry: update_biogeochemical_state!, required_bioge
     @testset "Preset constructors pass through" begin
         grid = RectilinearGrid(architecture; size=(1, 1, 10), extent=(1, 1, 100))
 
-        npzd = NPZD(grid; dissolution_length = 100.0)
+        npzd = NPZD(grid; implicit_sinking = true)
         @test npzd.underlying_biogeochemistry.detritus.sinking isa ImplicitSinking
 
-        lobster = LOBSTER(grid; dissolution_lengths = (100.0, 500.0))
+        lobster = LOBSTER(grid; implicit_sinking = true)
         @test lobster.underlying_biogeochemistry.detritus.sinking isa ImplicitSinking
 
-        npzd_sn = NPZD(grid; dissolution_length = 100.0, scale_negatives = true)
+        npzd_sn = NPZD(grid; implicit_sinking = true, scale_negatives = true)
         @test npzd_sn.underlying_biogeochemistry.detritus.sinking isa ImplicitSinking
     end
 end

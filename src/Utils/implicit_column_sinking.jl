@@ -1,5 +1,5 @@
 using Oceananigans.Fields: Field, OneField, CenterField
-using Oceananigans.Grids: Center, znode
+using Oceananigans.Grids: Center, znode, AbstractGrid
 using Oceananigans.Operators: Δzᶜᶜᶜ
 using Oceananigans.ImmersedBoundaries: ImmersedBoundaryGrid, immersed_cell
 using Oceananigans.Architectures: architecture
@@ -60,7 +60,7 @@ convert_dissolution_length(FT, ℓ::Number) = convert(FT, ℓ)
 convert_dissolution_length(FT, ℓ::NamedTuple) = map(ℓ -> convert_dissolution_length(FT, ℓ), ℓ)
 convert_dissolution_length(FT, ℓ) = ℓ
 
-function ImplicitSinking(grid, dissolution_length; tracer_names = keys(dissolution_length), open_bottom = true)
+function ImplicitSinking(grid::AbstractGrid{FT}, dissolution_length; tracer_names = keys(dissolution_length), open_bottom = true) where FT
     remineralisation = NamedTuple{tracer_names}(map(_ -> CenterField(grid), tracer_names))
     floor_flux = NamedTuple{tracer_names}(map(_ -> Field{Center, Center, Nothing}(grid), tracer_names))
 
