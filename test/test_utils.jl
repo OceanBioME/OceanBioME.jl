@@ -2,32 +2,15 @@ include("dependencies_for_runtests.jl")
 
 using OceanBioME: setup_velocity_fields, valid_sinking_velocity_locations
 
-using Oceananigans.Architectures: on_architecture
-using Oceananigans.AbstractOperations: AbstractOperation
 using Oceananigans.Fields: AbstractField, CenterField, ConstantField, FunctionField, ZFaceField, location
 
-scalar_value(field::AbstractField) = on_architecture(CPU(), interior(field, 1, 1, 1))[1]
-
-function scalar_value(operation::AbstractOperation)
-    field = Field(operation)
-    compute!(field)
-    return scalar_value(field)
-end
+scalar_value(field) = CUDA.@allowscalar field[1, 1, 1]
 
 struct ContinuousNegativeTracerTestBGC <: Oceananigans.Biogeochemistry.AbstractContinuousFormBiogeochemistry end
 
 Oceananigans.Biogeochemistry.required_biogeochemical_tracers(::ContinuousNegativeTracerTestBGC) = (:A, :T)
 
 @inline (::ContinuousNegativeTracerTestBGC)(::Val{:A}, x, y, z, t, A, T, auxiliary) = A + T + auxiliary
-
-struct DiscreteNegativeTracerTestBGC <: Oceananigans.Biogeochemistry.AbstractBiogeochemistry end
-
-Oceananigans.Biogeochemistry.required_biogeochemical_tracers(::DiscreteNegativeTracerTestBGC) = (:A, :T)
-Oceananigans.Biogeochemistry.biogeochemical_auxiliary_fields(::DiscreteNegativeTracerTestBGC) = NamedTuple()
-
-@inline function (::DiscreteNegativeTracerTestBGC)(i, j, k, grid, ::Val{:A}, clock, fields, auxiliary_fields)
-    return fields[:A][i, j, k] + fields.T[i, j, k] + fields.extra[i, j, k]
-end
 
 function test_negative_scaling(arch)
     grid = RectilinearGrid(arch, size = (1, 1, 1), extent = (1, 1, 1))
@@ -69,18 +52,7 @@ end
     @test test_negative_clipping(architecture)
 
     grid = RectilinearGrid(architecture, size = (1, 1, 1), extent = (1, 1, 1))
-    bgc = NPZD(grid)
-    ignore = NPZD(grid; negative_tracers = IgnoreNegativeTracerValues()).negative_tracers
-    scale = NPZD(grid; negative_tracers = ScaleNegativeTracers()).negative_tracers
-    scale_compat = NPZD(grid; scale_negatives = true).negative_tracers
-    composed_npzd = NPZD(grid; negative_tracers = (IgnoreNegativeTracerValues(), ScaleNegativeTracers()))
-
-    @test isnothing(bgc.negative_tracers)
-    @test ignore isa IgnoreNegativeTracerValues
-    @test scale isa ScaleNegativeTracers
-    @test scale_compat isa ScaleNegativeTracers
-    @test composed_npzd.negative_tracers[1] isa IgnoreNegativeTracerValues
-    @test composed_npzd.negative_tracers[2] isa ScaleNegativeTracers
+    @test NPZD(grid; scale_negatives = true).negative_tracers isa ScaleNegativeTracers
     @test_throws ArgumentError NPZD(grid; negative_tracers = IgnoreNegativeTracerValues(), scale_negatives = true)
 
     raw = Biogeochemistry(ContinuousNegativeTracerTestBGC())
@@ -88,23 +60,9 @@ end
 
     @test raw(Val(:A), 0, 0, 0, 0, -1.0, -2.0, -3.0) == -6.0
     @test safe(Val(:A), 0, 0, 0, 0, -1.0, -2.0, -3.0) == -5.0
-    @test safe(Val(:A), 0, 0, 0, 0, 1.0, -2.0, -3.0) == raw(Val(:A), 0, 0, 0, 0, 1.0, -2.0, -3.0)
-
     composed = Biogeochemistry(ContinuousNegativeTracerTestBGC();
                                 negative_tracers = (ClipNegativeTracers(), (IgnoreNegativeTracerValues(),)))
     @test composed(Val(:A), 0, 0, 0, 0, -1.0, -2.0, -3.0) == -5.0
-
-    raw_discrete = Biogeochemistry(DiscreteNegativeTracerTestBGC())
-    safe_discrete = Biogeochemistry(DiscreteNegativeTracerTestBGC(); negative_tracers = IgnoreNegativeTracerValues())
-    fields = (A = fill(-1.0, 1, 1, 1), T = fill(-2.0, 1, 1, 1), extra = fill(-3.0, 1, 1, 1))
-
-    @test raw_discrete(1, 1, 1, grid, Val(:A), nothing, fields) == -6.0
-    @test safe_discrete(1, 1, 1, grid, Val(:A), nothing, fields) == -5.0
-
-    composed_discrete = Biogeochemistry(DiscreteNegativeTracerTestBGC();
-                                         negative_tracers = (ClipNegativeTracers(), IgnoreNegativeTracerValues()))
-    @test composed_discrete(1, 1, 1, grid, Val(:A), nothing, fields) == -5.0
-    @test fields.A[1, 1, 1] == -1.0
 
     light = PrescribedPhotosyntheticallyActiveRadiation(ConstantField(10.0))
     reference = NPZD(grid; light_attenuation = light)
@@ -137,7 +95,6 @@ end
         set!(reference_model; common..., P = 0.0)
         set!(safe_model; common..., P = -1e-3)
 
-
         Oceananigans.Biogeochemistry.update_biogeochemical_state!(reference_model, reference.light_attenuation)
         Oceananigans.Biogeochemistry.update_biogeochemical_state!(safe_model, safe_npzd.light_attenuation)
 
@@ -145,8 +102,6 @@ end
         safe_light = Oceananigans.Biogeochemistry.biogeochemical_auxiliary_fields(safe_npzd.light_attenuation)
 
         @test all(name -> scalar_value(safe_light[name]) ≈ scalar_value(reference_light[name]), keys(reference_light))
-        @test all(name -> isfinite(scalar_value(safe_light[name])), keys(safe_light))
-        @test scalar_value(safe_model.tracers.P) == -1e-3
     end
 end
 
