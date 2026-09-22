@@ -96,6 +96,8 @@ end
 const CompleteBiogeochemistry = Union{<:ContinuousBiogeochemistry, <:DiscreteBiogeochemistry}
 
 @inline resolve_negative_tracers(negative_tracers, underlying_biogeochemistry) = negative_tracers
+@inline resolve_negative_tracers(negative_tracers::Tuple, underlying_biogeochemistry) =
+    map(treatment -> resolve_negative_tracers(treatment, underlying_biogeochemistry), negative_tracers)
 
 """
     Biogeochemistry(underlying_biogeochemistry;
