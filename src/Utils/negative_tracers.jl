@@ -77,27 +77,34 @@ end
 # Discrete-form models index fields inside their tendency functions. The proxy
 # wraps only required concentration tracers and leaves all other model fields
 # untouched.
-struct NonnegativeTracerValueField{F}
+struct NonnegativeValueField{F}
     field :: F
 end
 
-@inline function Base.getindex(field::NonnegativeTracerValueField, I...)
+@inline function Base.getindex(field::NonnegativeValueField, I...)
     value = @inbounds getfield(field, :field)[I...]
     return max(value, zero(value))
 end
 
-Base.eltype(field::NonnegativeTracerValueField) = eltype(getfield(field, :field))
-Base.eltype(::Type{NonnegativeTracerValueField{F}}) where F = eltype(F)
-Base.size(field::NonnegativeTracerValueField, args...) = size(getfield(field, :field), args...)
-Base.axes(field::NonnegativeTracerValueField, args...) = axes(getfield(field, :field), args...)
-Base.parent(field::NonnegativeTracerValueField) = getfield(field, :field)
+Base.eltype(field::NonnegativeValueField) = eltype(getfield(field, :field))
+Base.eltype(::Type{NonnegativeValueField{F}}) where F = eltype(F)
+Base.size(field::NonnegativeValueField, args...) = size(getfield(field, :field), args...)
+Base.axes(field::NonnegativeValueField, args...) = axes(getfield(field, :field), args...)
+Base.parent(field::NonnegativeValueField) = getfield(field, :field)
 
-@inline function Base.getproperty(field::NonnegativeTracerValueField, name::Symbol)
+@inline function Base.getproperty(field::NonnegativeValueField, name::Symbol)
     name === :field && return getfield(field, :field)
     return getproperty(getfield(field, :field), name)
 end
 
-@inline ignored_negative_field(::Val{true}, ::Val{true}, field) = NonnegativeTracerValueField(field)
+# Chlorophyll-dependent light attenuation is evaluated through the same policy.
+# Wrapping the derived chlorophyll field keeps this generic across light models
+# while leaving the prognostic tracer fields untouched.
+@inline chlorophyll(::IgnoreNegativeTracerValues, bgc, model) =
+    NonnegativeValueField(chlorophyll(bgc, model))
+@inline chlorophyll(::Any, bgc, model) = chlorophyll(bgc, model)
+
+@inline ignored_negative_field(::Val{true}, ::Val{true}, field) = NonnegativeValueField(field)
 @inline ignored_negative_field(::Val, ::Val, field) = field
 
 struct IgnoreNegativeTracerFields{B, N, F}

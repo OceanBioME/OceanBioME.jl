@@ -154,8 +154,8 @@ biogeochemical_auxiliary_fields(bgc::CompleteBiogeochemistry) =
     merge(biogeochemical_auxiliary_fields(bgc.underlying_biogeochemistry),
           biogeochemical_auxiliary_fields(bgc.light_attenuation))
 
-@inline chlorophyll(bgc::CompleteBiogeochemistry, model) = 
-    chlorophyll(bgc.underlying_biogeochemistry, model)
+@inline chlorophyll(bgc::CompleteBiogeochemistry, model) =
+    chlorophyll(bgc.negative_tracers, bgc.underlying_biogeochemistry, model)
 @inline chlorophyll(::Nothing, model) = ZeroField()
 
 @inline adapt_structure(to, bgc::ContinuousBiogeochemistry) = 

@@ -104,6 +104,30 @@ end
 
     @test tendency_safe ≈ tendency_reference
     @test safe_model.tracers.P[1, 1, 1] == -1e-3
+
+    for light_model in (TwoBandPhotosyntheticallyActiveRadiation,
+                        MultiBandPhotosyntheticallyActiveRadiation)
+        reference = NPZD(grid; light_attenuation = light_model(grid, 100.0))
+        safe_npzd = with_negative_tracers(NPZD(grid; light_attenuation = light_model(grid, 100.0)),
+                                          IgnoreNegativeTracerValues())
+        reference_model = NonhydrostaticModel(grid; biogeochemistry = reference)
+        safe_model = NonhydrostaticModel(grid; biogeochemistry = safe_npzd)
+
+        set!(reference_model; common..., P = 0.0)
+        set!(safe_model; common..., P = -1e-3)
+
+        @test OceanBioME.chlorophyll(safe_npzd, safe_model)[1, 1, 1] == 0
+
+        Oceananigans.Biogeochemistry.update_biogeochemical_state!(reference_model, reference.light_attenuation)
+        Oceananigans.Biogeochemistry.update_biogeochemical_state!(safe_model, safe_npzd.light_attenuation)
+
+        reference_light = Oceananigans.Biogeochemistry.biogeochemical_auxiliary_fields(reference.light_attenuation)
+        safe_light = Oceananigans.Biogeochemistry.biogeochemical_auxiliary_fields(safe_npzd.light_attenuation)
+
+        @test all(name -> safe_light[name][1, 1, 1] ≈ reference_light[name][1, 1, 1], keys(reference_light))
+        @test all(name -> isfinite(safe_light[name][1, 1, 1]), keys(safe_light))
+        @test safe_model.tracers.P[1, 1, 1] == -1e-3
+    end
 end
 
 # scalar_sinking_speeds = (A = 1, B = 1.0)
