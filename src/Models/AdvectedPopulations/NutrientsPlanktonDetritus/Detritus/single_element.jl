@@ -178,6 +178,10 @@ function manifest_multi_class_dissolved_particulate(dissolved_names, particulate
     return nothing
 end
 
+# manifest defaults to prevent world age issues
+manifest_multi_class_dissolved_particulate(:DOP, :POP)
+manifest_multi_class_dissolved_particulate(:DOM, (:sPOM, :bPOM))
+
 @inline @generated function dissolved_remineralisation(i, j, k, grid, detritus::DissolvedParticulate{N, M, DN, PN}, bgc::NPD_DP{FT}, fields, auxiliary_fields) where {N, M, DN, PN, FT}
     combined = Expr(:block)
     push!(combined.args, :(total = zero($FT)))

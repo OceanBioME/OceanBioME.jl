@@ -231,3 +231,55 @@ LOBSTER(grid::AbstractGrid{FT};
         light_attenuation = default_light(grid, surface_PAR),
         kwargs...) where FT =
     NutrientsPlanktonDetritus(grid; nutrients, plankton, detritus, light_attenuation, kwargs...)
+
+"""
+    MITgcmDIC(grid; open_bottom = true, kwargs...)
+
+Construct a [`NutrientsPlanktonDetritus`](@ref) preset matching the MITgcm DIC package
+(Dutkiewicz et al., 2005). It tracks phosphate (`PO₄`), dissolved organic phosphorus (`DOP`),
+particulate organic phosphorus (`POP`), iron (`Fe`) with ligand equilibrium and scavenging
+([`SimpleIron`](@ref)), dissolved inorganic carbon (`DIC`), alkalinity (`Alk`), and oxygen (`O₂`).
+
+Community productivity is computed by [`ImplicitProductivity`](@ref) (equivalent to MITgcm's
+`bio_export.F`), limited by phosphate, iron, and light.
+
+External iron sources (aeolian dust deposition, sediment flux) should be applied as Oceananigans
+`Forcing` on the `Fe` tracer.
+
+Keyword Arguments
+=================
+
+- `grid`: (required) the geometry to build the model on
+- `open_bottom`: whether detritus can sink out of the bottom of the domain
+- `surface_PAR`: the surface photosynthetically active radiation passed to the default light model
+- any other keyword argument is forwarded to [`NutrientsPlanktonDetritus`](@ref) (e.g. `nutrients`,
+  `plankton`, `detritus`, `oxygen`, `light_attenuation`)
+"""
+MITgcmDIC(grid::AbstractGrid{FT};
+          open_bottom = true,
+          nutrients = Nutrients(nothing, PO₄, SimpleIron{FT}(), nothing),
+          plankton = ImplicitProductivity(FT;
+                                          maximum_community_productivity = 2 / (360 * day),  # mmol P / m³ / s
+                                          light_half_saturation = 30.0,                      # W / m²
+                                          dissolved_fraction_of_waste = 0.67,
+                                          carbon_ratio = 117.0,                              # mol C / mol P
+                                          nitrogen_ratio = 16.0,                             # mol N / mol P
+                                          iron_ratio = 4.68e-4,                              # mol Fe / mol P
+                                          rain_ratio = 0.07,                                 # mol CaCO₃ / mol C
+                                          nutrient_half_saturations =
+                                              (phosphate = 0.5,                              # mmol P / m³
+                                               iron = 1.2e-4)),                              # mmol Fe / m³
+          detritus = DissolvedParticulate(grid, :DOP, :POP;
+                                          dissolved_remineralisation_rate = 1 / (6 * 30 * day), # 1/s
+                                          particulate_remineralisation_rate = 0.03 / day,
+                                          dissolved_fraction_of_remineralisation = 0.0,
+                                          sinking_speeds = 10 / day,
+                                          open_bottom),
+          inorganic_carbon = CarbonateSystem(),
+          oxygen = Oxygen(FT;
+                          production_oxygen_carbon_ratio = 170 / 117,     # |R_OP / R_CP|
+                          nitrification_oxygen_carbon_ratio = 16 / 117),  # R_NP / R_CP
+          surface_PAR = default_surface_PAR,
+          light_attenuation = PrescribedAttenuationPAR(grid, surface_PAR),
+          kwargs...) where FT =
+    NutrientsPlanktonDetritus(grid; nutrients, plankton, detritus, inorganic_carbon, oxygen, light_attenuation, kwargs...)
