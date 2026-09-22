@@ -139,6 +139,9 @@ Base.size(field::NonnegativeValueField, args...) = size(getfield(field, :field),
 Base.axes(field::NonnegativeValueField, args...) = axes(getfield(field, :field), args...)
 Base.parent(field::NonnegativeValueField) = getfield(field, :field)
 
+adapt_structure(to, field::NonnegativeValueField) =
+    NonnegativeValueField(adapt(to, getfield(field, :field)))
+
 @inline function Base.getproperty(field::NonnegativeValueField, name::Symbol)
     name === :field && return getfield(field, :field)
     return getproperty(getfield(field, :field), name)
