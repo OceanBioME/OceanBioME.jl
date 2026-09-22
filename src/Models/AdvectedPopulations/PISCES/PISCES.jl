@@ -30,7 +30,7 @@ using Oceananigans: KernelFunctionOperation
 using Oceananigans.Fields: Field, TracerFields, CenterField, ZeroField, ConstantField, Center, Face
 
 using OceanBioME.Light: MultiBandPhotosyntheticallyActiveRadiation, compute_euphotic_depth!
-using OceanBioME: setup_velocity_fields, show_sinking_velocities, Biogeochemistry, DiscreteBiogeochemistry, ScaleNegativeTracers, CBMDayLength
+using OceanBioME: setup_velocity_fields, show_sinking_velocities, Biogeochemistry, ScaleNegativeTracers, CBMDayLength
 using OceanBioME.BoxModels: BoxModel
 using OceanBioME.Models.CarbonChemistryModel: CarbonChemistry
 
@@ -118,9 +118,6 @@ end
      wGOC = bgc.sinking_velocities.GOC)
 
 (bgc::PISCES)(i, j, k, grid, val_name, clock, fields, auxiliary_fields) = zero(grid)
-
-(bgc::DiscreteBiogeochemistry{<:PISCES})(i, j, k, grid, val_name, clock, fields) =
-    bgc.underlying_biogeochemistry(i, j, k, grid, val_name, clock, fields, biogeochemical_auxiliary_fields(bgc))
 
 include("common.jl")
 include("generic_functions.jl")
@@ -227,6 +224,7 @@ include("show_methods.jl")
                                                                                          euphotic_depth))),
              open_bottom = true,
 
+             negative_tracers = nothing,
              scale_negatives = false,
              invalid_fill_value = NaN,
              
@@ -272,7 +270,8 @@ Keyword Arguments
 - `sinking_speeds`: named tuple of constant sinking speeds, or fields (i.e. `ZFaceField(...)`) for any tracers which sink 
   (convention is that a sinking speed is positive, but a field will need to follow the usual down being negative)
 - `open_bottom`: should the sinking velocity be smoothly brought to zero at the bottom to prevent the tracers leaving the domain
-- `scale_negatives`: scale negative tracers?
+- `negative_tracers`: treatment for negative tracer values, such as [`IgnoreNegativeTracerValues`](@ref), [`ClipNegativeTracers`](@ref), or [`ScaleNegativeTracers`](@ref)
+- `scale_negatives`: convenience for `negative_tracers = ScaleNegativeTracers(; invalid_fill_value)`
 - `particles`: slot for `BiogeochemicalParticles`
 - `modifiers`: slot for components which modify the biogeochemistry when the tendencies have been calculated or when the state is updated
 
@@ -338,6 +337,7 @@ function PISCES(; grid,
                                                                                               euphotic_depth))),
                   open_bottom = true,
 
+                  negative_tracers = nothing,
                   scale_negatives = false,
                   invalid_fill_value = NaN,
                   
@@ -390,21 +390,17 @@ function PISCES(; grid,
                                         sinking_velocities)
 
     if scale_negatives
-        scalers = ScaleNegativeTracers(underlying_biogeochemistry; invalid_fill_value)
-        if isnothing(modifiers)
-            modifiers = scalers
-        elseif modifiers isa Tuple
-            modifiers = (modifiers..., scalers...)
-        else
-            modifiers = (modifiers, scalers...)
-        end
+        isnothing(negative_tracers) ||
+            throw(ArgumentError("Specify either `scale_negatives=true` or `negative_tracers`, not both."))
+        negative_tracers = ScaleNegativeTracers(; invalid_fill_value)
     end
 
     return Biogeochemistry(underlying_biogeochemistry;
-                           light_attenuation, 
-                           sediment, 
+                           light_attenuation,
+                           sediment,
                            particles,
-                           modifiers)
+                           modifiers,
+                           negative_tracers)
 end
 
 end # module

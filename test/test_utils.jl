@@ -4,44 +4,105 @@ using OceanBioME: setup_velocity_fields, valid_sinking_velocity_locations
 
 using Oceananigans.Fields: AbstractField, CenterField, ConstantField, FunctionField, ZFaceField, location
 
+scalar_value(field) = CUDA.@allowscalar field[1, 1, 1]
+
+struct ContinuousNegativeTracerTestBGC <: Oceananigans.Biogeochemistry.AbstractContinuousFormBiogeochemistry end
+
+Oceananigans.Biogeochemistry.required_biogeochemical_tracers(::ContinuousNegativeTracerTestBGC) = (:A, :T)
+
+@inline (::ContinuousNegativeTracerTestBGC)(::Val{:A}, x, y, z, t, A, T, auxiliary) = A + T + auxiliary
+
 function test_negative_scaling(arch)
     grid = RectilinearGrid(arch, size = (1, 1, 1), extent = (1, 1, 1))
 
-    model = NonhydrostaticModel(grid; biogeochemistry = NPZD(grid; scale_negatives = true))
+    bgc = NPZD(grid; negative_tracers = ScaleNegativeTracers())
+    model = NonhydrostaticModel(grid; biogeochemistry = bgc)
 
     set!(model, N = 2, P = -1)
 
     simulation = Simulation(model, Δt = 1e-10, stop_iteration = 1)
-
     run!(simulation)
 
-    N = Array(interior(model.tracers.N))[1, 1, 1]
-    P = Array(interior(model.tracers.P))[1, 1, 1]
+    N = scalar_value(model.tracers.N)
+    P = scalar_value(model.tracers.P)
 
     return (N ≈ 1) && (P ≈ 0.0)
 end
 
-function test_negative_zeroing(arch)
+function test_negative_clipping(arch)
     grid = RectilinearGrid(arch, size = (1, 1, 1), extent = (1, 1, 1))
 
-    model = NonhydrostaticModel(grid; biogeochemistry = NPZD(grid; modifiers = ZeroNegativeTracers(; exclude = (:Z, ))))
+    bgc = NPZD(grid; negative_tracers = ClipNegativeTracers(; exclude = (:Z, )))
+    model = NonhydrostaticModel(grid; biogeochemistry = bgc)
 
     set!(model, N = 2, P = -1, Z = -1)
 
     simulation = Simulation(model, Δt = 1e-10, stop_iteration = 1)
-
     run!(simulation)
 
-    N = Array(interior(model.tracers.N))[1, 1, 1]
-    P = Array(interior(model.tracers.P))[1, 1, 1]
-    Z = Array(interior(model.tracers.Z))[1, 1, 1]
+    N = scalar_value(model.tracers.N)
+    P = scalar_value(model.tracers.P)
+    Z = scalar_value(model.tracers.Z)
 
     return (N ≈ 2) && (P ≈ 0.0) && (Z ≈ -1)
 end
 
-@testset "Test negative tracer handeling" begin
+@testset "Test negative tracer handling" begin
     @test test_negative_scaling(architecture)
-    @test test_negative_zeroing(architecture)
+    @test test_negative_clipping(architecture)
+
+    grid = RectilinearGrid(architecture, size = (1, 1, 1), extent = (1, 1, 1))
+    @test NPZD(grid; scale_negatives = true).negative_tracers isa ScaleNegativeTracers
+    @test_throws ArgumentError NPZD(grid; negative_tracers = IgnoreNegativeTracerValues(), scale_negatives = true)
+
+    raw = Biogeochemistry(ContinuousNegativeTracerTestBGC())
+    safe = Biogeochemistry(ContinuousNegativeTracerTestBGC(); negative_tracers = IgnoreNegativeTracerValues())
+
+    @test raw(Val(:A), 0, 0, 0, 0, -1.0, -2.0, -3.0) == -6.0
+    @test safe(Val(:A), 0, 0, 0, 0, -1.0, -2.0, -3.0) == -5.0
+    composed = Biogeochemistry(ContinuousNegativeTracerTestBGC();
+                                negative_tracers = (ClipNegativeTracers(), (IgnoreNegativeTracerValues(),)))
+    @test composed(Val(:A), 0, 0, 0, 0, -1.0, -2.0, -3.0) == -5.0
+
+    light = PrescribedPhotosyntheticallyActiveRadiation(ConstantField(10.0))
+    reference = NPZD(grid; light_attenuation = light)
+    safe_npzd = NPZD(grid; light_attenuation = light, negative_tracers = IgnoreNegativeTracerValues())
+    reference_model = NonhydrostaticModel(grid; biogeochemistry = reference)
+    safe_model = NonhydrostaticModel(grid; biogeochemistry = safe_npzd)
+
+    common = (; N = 2.0, Z = 0.1, D = 0.1, T = -1.0)
+    set!(reference_model; common..., P = 0.0)
+    set!(safe_model; common..., P = -1e-3)
+
+    tendency_reference = CUDA.@allowscalar reference(1, 1, 1, grid, Val(:P), reference_model.clock, reference_model.tracers)
+    tendency_safe = CUDA.@allowscalar safe_npzd(1, 1, 1, grid, Val(:P), safe_model.clock, safe_model.tracers)
+
+    @test tendency_safe ≈ tendency_reference
+
+    simulation = Simulation(safe_model, Δt = 1e-10, stop_iteration = 1)
+    run!(simulation)
+    @test scalar_value(safe_model.tracers.P) ≈ -1e-3
+
+    for light_model in (TwoBandPhotosyntheticallyActiveRadiation,
+                        MultiBandPhotosyntheticallyActiveRadiation)
+        reference = NPZD(grid; light_attenuation = light_model(grid, 100.0))
+        safe_npzd = NPZD(grid;
+                         light_attenuation = light_model(grid, 100.0),
+                         negative_tracers = IgnoreNegativeTracerValues())
+        reference_model = NonhydrostaticModel(grid; biogeochemistry = reference)
+        safe_model = NonhydrostaticModel(grid; biogeochemistry = safe_npzd)
+
+        set!(reference_model; common..., P = 0.0)
+        set!(safe_model; common..., P = -1e-3)
+
+        Oceananigans.Biogeochemistry.update_biogeochemical_state!(reference_model, reference.light_attenuation)
+        Oceananigans.Biogeochemistry.update_biogeochemical_state!(safe_model, safe_npzd.light_attenuation)
+
+        reference_light = Oceananigans.Biogeochemistry.biogeochemical_auxiliary_fields(reference.light_attenuation)
+        safe_light = Oceananigans.Biogeochemistry.biogeochemical_auxiliary_fields(safe_npzd.light_attenuation)
+
+        @test all(name -> scalar_value(safe_light[name]) ≈ scalar_value(reference_light[name]), keys(reference_light))
+    end
 end
 
 scalar_sinking_speeds = (A = 1, B = 1.0)

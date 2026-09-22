@@ -17,6 +17,7 @@ using .PlanktonModels: limiting_nutrients
                               oxygen = nothing,
                               light_attenuation = nothing,
                               sediment = nothing,
+                              negative_tracers = nothing,
                               scale_negatives = false,
                               invalid_fill_value = NaN,
                               particles = nothing,
@@ -47,8 +48,10 @@ Keyword Arguments
   oxygen (`O₂`)
 - `light_attenuation`: light attenuation model which integrates the attenuation of available light
 - `sediment`: slot for a sediment model (`AbstractSediment`)
-- `scale_negatives`: whether to add a [`ScaleNegativeTracers`](@ref) modifier to keep tracers non-negative
-- `invalid_fill_value`: the value used to fill invalid tracer values when `scale_negatives` is `true`
+- `negative_tracers`: treatment for negative tracer values, such as [`IgnoreNegativeTracerValues`](@ref),
+  [`ClipNegativeTracers`](@ref), or [`ScaleNegativeTracers`](@ref)
+- `scale_negatives`: convenience for `negative_tracers = ScaleNegativeTracers(; invalid_fill_value)`
+- `invalid_fill_value`: value used by the `scale_negatives` convenience
 - `particles`: slot for `BiogeochemicalParticles`
 - `modifiers`: slot for components which modify the biogeochemistry after the tendencies have been
   calculated or when the state is updated
@@ -61,6 +64,7 @@ function NutrientsPlanktonDetritus(grid::AbstractGrid{FT};
                                    oxygen = nothing,
                                    light_attenuation = nothing,
                                    sediment = nothing,
+                                   negative_tracers = nothing,
                                    scale_negatives = false,
                                    invalid_fill_value = convert(FT, NaN),
                                    particles = nothing,
@@ -74,21 +78,17 @@ function NutrientsPlanktonDetritus(grid::AbstractGrid{FT};
                                                 oxygen)
 
     if scale_negatives
-        scaler = ScaleNegativeTracers(underlying_biogeochemistry; invalid_fill_value)
-        if isnothing(modifiers)
-            modifiers = scaler
-        elseif modifiers isa Tuple
-            modifiers = (modifiers..., scaler)
-        else
-            modifiers = (modifiers, scaler)
-        end
+        isnothing(negative_tracers) ||
+            throw(ArgumentError("Specify either `scale_negatives=true` or `negative_tracers`, not both."))
+        negative_tracers = ScaleNegativeTracers(; invalid_fill_value)
     end
-    
+
     return Biogeochemistry(underlying_biogeochemistry;
-                           light_attenuation, 
-                           sediment, 
+                           light_attenuation,
+                           sediment,
                            particles,
-                           modifiers)
+                           modifiers,
+                           negative_tracers)
 end
 
 const default_light = TwoBandPhotosyntheticallyActiveRadiation
