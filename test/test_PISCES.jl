@@ -139,7 +139,7 @@ function test_PISCES_negativity_protection(arch)
     biogeochemistry = PISCES(; grid,
                                light_attenuation,
                                mixed_layer_depth,
-                               scale_negatives = true)
+                               negative_tracers = ScaleNegativeTracers())
 
     model = NonhydrostaticModel(grid; biogeochemistry)
 

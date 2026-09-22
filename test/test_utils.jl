@@ -4,15 +4,6 @@ include("dependencies_for_runtests.jl")
 
 # using Oceananigans.Fields: AbstractField, CenterField, ConstantField, FunctionField, ZFaceField, location
 
-function with_negative_tracers(bgc, negative_tracers)
-    return Biogeochemistry(bgc.underlying_biogeochemistry;
-                           light_attenuation = bgc.light_attenuation,
-                           sediment = bgc.sediment,
-                           particles = bgc.particles,
-                           modifiers = bgc.modifiers,
-                           negative_tracers)
-end
-
 
 struct ContinuousNegativeTracerTestBGC <: Oceananigans.Biogeochemistry.AbstractContinuousFormBiogeochemistry end
 
@@ -32,9 +23,8 @@ end
 function test_negative_scaling(arch)
     grid = RectilinearGrid(arch, size = (1, 1, 1), extent = (1, 1, 1))
 
-    bgc = NPZD(grid)
-    scaler = ScaleNegativeTracers(bgc.underlying_biogeochemistry)
-    model = NonhydrostaticModel(grid; biogeochemistry = with_negative_tracers(bgc, scaler))
+    bgc = NPZD(grid; negative_tracers = ScaleNegativeTracers())
+    model = NonhydrostaticModel(grid; biogeochemistry = bgc)
 
     set!(model, N = 2, P = -1)
 
@@ -50,9 +40,8 @@ end
 function test_negative_clipping(arch)
     grid = RectilinearGrid(arch, size = (1, 1, 1), extent = (1, 1, 1))
 
-    bgc = NPZD(grid)
-    clip = ClipNegativeTracers(; exclude = (:Z, ))
-    model = NonhydrostaticModel(grid; biogeochemistry = with_negative_tracers(bgc, clip))
+    bgc = NPZD(grid; negative_tracers = ClipNegativeTracers(; exclude = (:Z, )))
+    model = NonhydrostaticModel(grid; biogeochemistry = bgc)
 
     set!(model, N = 2, P = -1, Z = -1)
 
@@ -73,6 +62,15 @@ end
     grid = RectilinearGrid(architecture, size = (1, 1, 1), extent = (1, 1, 1))
     bgc = NPZD(grid)
     @test isnothing(bgc.negative_tracers)
+    @test NPZD(grid; negative_tracers = IgnoreNegativeTracerValues()).negative_tracers isa IgnoreNegativeTracerValues
+    @test NPZD(grid; negative_tracers = ScaleNegativeTracers()).negative_tracers isa ScaleNegativeTracers
+    @test NPZD(grid; scale_negatives = true).negative_tracers isa ScaleNegativeTracers
+    @test_throws ArgumentError NPZD(grid; negative_tracers = IgnoreNegativeTracerValues(), scale_negatives = true)
+
+    validation_warning = "This implementation of PISCES is in early development and has not yet been validated against the operational version"
+    pisces = @test_warn validation_warning PISCES(; grid, negative_tracers = ScaleNegativeTracers())
+    @test length(pisces.negative_tracers) == 5
+    @test all(treatment -> treatment isa ScaleNegativeTracers, pisces.negative_tracers)
 
     raw = Biogeochemistry(ContinuousNegativeTracerTestBGC())
     safe = Biogeochemistry(ContinuousNegativeTracerTestBGC(); negative_tracers = IgnoreNegativeTracerValues())
@@ -91,7 +89,7 @@ end
 
     light = PrescribedPhotosyntheticallyActiveRadiation(ConstantField(10.0))
     reference = NPZD(grid; light_attenuation = light)
-    safe_npzd = with_negative_tracers(NPZD(grid; light_attenuation = light), IgnoreNegativeTracerValues())
+    safe_npzd = NPZD(grid; light_attenuation = light, negative_tracers = IgnoreNegativeTracerValues())
     reference_model = NonhydrostaticModel(grid; biogeochemistry = reference)
     safe_model = NonhydrostaticModel(grid; biogeochemistry = safe_npzd)
 
@@ -108,8 +106,9 @@ end
     for light_model in (TwoBandPhotosyntheticallyActiveRadiation,
                         MultiBandPhotosyntheticallyActiveRadiation)
         reference = NPZD(grid; light_attenuation = light_model(grid, 100.0))
-        safe_npzd = with_negative_tracers(NPZD(grid; light_attenuation = light_model(grid, 100.0)),
-                                          IgnoreNegativeTracerValues())
+        safe_npzd = NPZD(grid;
+                         light_attenuation = light_model(grid, 100.0),
+                         negative_tracers = IgnoreNegativeTracerValues())
         reference_model = NonhydrostaticModel(grid; biogeochemistry = reference)
         safe_model = NonhydrostaticModel(grid; biogeochemistry = safe_npzd)
 

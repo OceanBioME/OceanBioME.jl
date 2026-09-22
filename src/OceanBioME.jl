@@ -95,6 +95,8 @@ end
 
 const CompleteBiogeochemistry = Union{<:ContinuousBiogeochemistry, <:DiscreteBiogeochemistry}
 
+@inline resolve_negative_tracers(negative_tracers, underlying_biogeochemistry) = negative_tracers
+
 """
     Biogeochemistry(underlying_biogeochemistry;
                     light_attenuation = nothing,
@@ -126,7 +128,7 @@ Biogeochemistry(underlying_biogeochemistry;
                             sediment,
                             particles,
                             modifiers,
-                            negative_tracers)
+                            resolve_negative_tracers(negative_tracers, underlying_biogeochemistry))
 
 Biogeochemistry(underlying_biogeochemistry::AbstractContinuousFormBiogeochemistry;
                 light_attenuation = nothing,
@@ -139,7 +141,7 @@ Biogeochemistry(underlying_biogeochemistry::AbstractContinuousFormBiogeochemistr
                               sediment,
                               particles,
                               modifiers,
-                              negative_tracers)
+                              resolve_negative_tracers(negative_tracers, underlying_biogeochemistry))
 
 required_biogeochemical_tracers(bgc::CompleteBiogeochemistry) = 
     required_biogeochemical_tracers(bgc.underlying_biogeochemistry)

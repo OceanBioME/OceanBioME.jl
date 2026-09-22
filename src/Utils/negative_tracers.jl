@@ -155,6 +155,19 @@ adapt_structure(to, snt::ScaleNegativeTracers) = ScaleNegativeTracers(adapt(to, 
                                                                       adapt(to, snt.warn))
 
 """
+    ScaleNegativeTracers(; invalid_fill_value = NaN, warn = false)
+
+Construct a scaling treatment whose conserved tracer groups are inferred from the underlying
+biogeochemical model when it is passed as `negative_tracers` to [`Biogeochemistry`](@ref) or a
+model constructor.
+"""
+ScaleNegativeTracers(; invalid_fill_value = NaN, warn = false) =
+    ScaleNegativeTracers(nothing, nothing, invalid_fill_value, warn)
+
+@inline resolve_negative_tracers(scale::ScaleNegativeTracers{Nothing}, bgc) =
+    ScaleNegativeTracers(bgc; invalid_fill_value = scale.invalid_fill_value, warn = scale.warn)
+
+"""
     ScaleNegativeTracers(; tracers, scalefactors = ones(length(tracers)), warn = false, invalid_fill_value = NaN)
 
 Constructs a negative-tracer treatment to scale `tracers` so that none are negative. Use like:
