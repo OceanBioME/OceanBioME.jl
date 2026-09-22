@@ -166,6 +166,37 @@ function test_PISCES_negativity_protection(arch)
     @test on_architecture(CPU(), interior(model.tracers.Z, 1, 1, 1))[1] ≈ 900
 end
 
+
+function test_PISCES_ignores_negative_tracer_values(arch)
+    @info "Testing PISCES nonnegative tendency evaluation"
+
+    grid = RectilinearGrid(arch, topology = (Flat, Flat, Bounded), size = (1, ), extent = (1, ))
+    PAR = PAR₁ = PAR₂ = PAR₃ = ConstantField(100)
+    light_attenuation = PrescribedPhotosyntheticallyActiveRadiation((; PAR, PAR₁, PAR₂, PAR₃))
+
+    biogeochemistry = PISCES(; grid,
+                               sinking_speeds = (POC = 0, GOC = 0),
+                               light_attenuation,
+                               mixed_layer_depth = ConstantField(-10),
+                               euphotic_depth = ConstantField(-10),
+                               mean_mixed_layer_light = ConstantField(100),
+                               mean_mixed_layer_vertical_diffusivity = ConstantField(1),
+                               negative_tracers = IgnoreNegativeTracerValues())
+
+    model = NonhydrostaticModel(grid; biogeochemistry, advection = nothing)
+    set_PISCES_initial_values!(model.tracers)
+    set!(model.tracers.P, 0)
+    Oceananigans.Biogeochemistry.update_biogeochemical_state!(biogeochemistry, model)
+    zero_tendency = biogeochemistry(1, 1, 1, grid, Val(:P), model.clock, model.tracers)
+
+    set!(model.tracers.P, -1e-3)
+    Oceananigans.Biogeochemistry.update_biogeochemical_state!(biogeochemistry, model)
+    negative_tendency = biogeochemistry(1, 1, 1, grid, Val(:P), model.clock, model.tracers)
+
+    @test negative_tendency ≈ zero_tendency
+    @test value(model.tracers.P) == -1e-3
+end
+
 @testset "PISCES" begin
     if architecture isa CPU
         test_PISCES_conservation()
@@ -175,6 +206,7 @@ end
     test_PISCES_update_state(architecture)
 
     test_PISCES_negativity_protection(architecture)
+    test_PISCES_ignores_negative_tracer_values(architecture)
 
     #test_PISCES_setup(grid) # maybe should test everything works with all the different bits???
 end
