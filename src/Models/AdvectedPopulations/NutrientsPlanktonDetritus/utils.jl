@@ -1,4 +1,5 @@
 import OceanBioME: conserved_tracers
+using OceanBioME: ImplicitSinking
 
 # possible conservations are N/P/Fe/Si/C/O
 # when a nutrient class is nothing it is implicitly conserved so we will not include that in the conservations
