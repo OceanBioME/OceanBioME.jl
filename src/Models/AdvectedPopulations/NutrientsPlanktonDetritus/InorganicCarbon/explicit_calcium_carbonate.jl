@@ -111,7 +111,7 @@ the phase [Moras2022](@citet) observed precipitating.
 
 `T` and `S` must be present in the model (as for any carbon-chemistry calculation).
 
-Passing `replicates > 1` manifests `replicates` copies of the carbonate system
+Passing `replicates > 1` adds `replicates` copies of the carbonate system
 (`DIC1`, `Alk1`, `CaCO₃1`, `DIC2`, …); each copy evolves from its own `DIC`/`Alk`/`CaCO₃` and its own
 saturation state, which is useful for ensemble or perturbation experiments.
 
@@ -198,8 +198,6 @@ function ExplicitCalciumCarbonate(grid::AbstractGrid{FT};
 
     field_names = saturation_field_names(Val(replicates))
     calcium_carbonate_saturation = NamedTuple{field_names}(ntuple(_ -> CenterField(grid), replicates))
-
-    manifest_explicit_calcium_carbonate_replicates!(replicates)
 
     dissolution_rate = replicate_parameter(calcium_carbonate_dissolution_rate, replicates, FT,
                                           :calcium_carbonate_dissolution_rate)
@@ -337,38 +335,41 @@ end
     @inbounds :pressure in N ? model_fields.pressure[i, j, k] :
               abs(znode(i, j, k, grid, Center(), Center(), Center())) * g * 1026 / 100000
 
-const _manifested_explicit_calcium_carbonate = Set{Int}()
-
-function manifest_explicit_calcium_carbonate_replicates!(N)
-    (N > 1 && !(N in _manifested_explicit_calcium_carbonate)) || return nothing
-    push!(_manifested_explicit_calcium_carbonate, N)
+# With `replicates > 1` the tracers are `DIC1`, `Alk1`, `CaCO₃1`, `DIC2`, … (with the saturation
+# fields `Ω1`, `Ω2`, …) rather than `DIC`, `Alk` and `CaCO₃`, and each replicate evolves independently
+# with its own parameters. Which replicate names exist is only fixed when the component is
+# constructed, so they are matched against `N` here at compile time rather than having one method
+# per name (see `component_tendency` in nutrients_plankton_detritus.jl).
+@inline @generated function component_tendency(i, j, k, grid, ::ExplicitCalciumCarbonate{N}, ::Val{name},
+                                               bgc::NPD_EC{FT}, clock, fields, auxiliary_fields) where {N, name, FT}
+    N > 1 || return :(zero($FT))
 
     for n in 1:N
-        DIC_name   = Symbol(:DIC, n)
-        Alk_name   = Symbol(:Alk, n)
-        CaCO₃_name = Symbol(:CaCO₃, n)
-        Ω_name     = Symbol(:Ω, n)
-        @eval begin
-            @inline (bgc::NPD_EC)(i, j, k, grid, ::Val{$(QuoteNode(CaCO₃_name))}, clock, fields, auxiliary_fields) =
-                explicit_calcium_carbonate_tendency(i, j, k, grid, bgc, fields, auxiliary_fields,
-                                          Val($(QuoteNode(CaCO₃_name))), Val($(QuoteNode(Ω_name))), Val($n))
+        replicate = (:(Val($(QuoteNode(Symbol(:CaCO₃, n))))), :(Val($(QuoteNode(Symbol(:Ω, n))))), :(Val($n)))
 
-            @inline (bgc::NPD_EC)(i, j, k, grid, ::Val{$(QuoteNode(DIC_name))}, clock, fields, auxiliary_fields) =
-                net_biological_dic_uptake(i, j, k, grid, bgc, fields, auxiliary_fields) -
-                net_calcium_carbonate_production(i, j, k, grid, bgc, fields, auxiliary_fields,
-                                       Val($(QuoteNode(CaCO₃_name))), Val($(QuoteNode(Ω_name))), Val($n))
+        name == Symbol(:CaCO₃, n) && return quote
+            explicit_calcium_carbonate_tendency(i, j, k, grid, bgc, fields, auxiliary_fields, $(replicate...))
+        end
 
-            @inline (bgc::NPD_EC)(i, j, k, grid, ::Val{$(QuoteNode(Alk_name))}, clock, fields, auxiliary_fields) =
-                net_biological_alkalinity_uptake(i, j, k, grid, bgc, clock, fields, auxiliary_fields) -
-                2 * net_calcium_carbonate_production(i, j, k, grid, bgc, fields, auxiliary_fields,
-                                           Val($(QuoteNode(CaCO₃_name))), Val($(QuoteNode(Ω_name))), Val($n))
+        name == Symbol(:DIC, n) && return quote
+            net_biological_dic_uptake(i, j, k, grid, bgc, fields, auxiliary_fields) -
+            net_calcium_carbonate_production(i, j, k, grid, bgc, fields, auxiliary_fields, $(replicate...))
+        end
 
-            @inline biogeochemical_drift_velocity(bgc::NPD_EC, ::Val{$(QuoteNode(CaCO₃_name))}) =
-                bgc.inorganic_carbon.sinking_velocity
+        name == Symbol(:Alk, n) && return quote
+            net_biological_alkalinity_uptake(i, j, k, grid, bgc, clock, fields, auxiliary_fields) -
+            2 * net_calcium_carbonate_production(i, j, k, grid, bgc, fields, auxiliary_fields, $(replicate...))
         end
     end
 
-    return nothing
+    return :(zero($FT))
+end
+
+# every replicate's calcium carbonate sinks with the shared sinking velocity
+@inline @generated function component_drift_velocity(inorganic_carbon::ExplicitCalciumCarbonate{N}, ::Val{name}, fallback) where {N, name}
+    sinks = N > 1 && any(n -> name == Symbol(:CaCO₃, n), 1:N)
+
+    return sinks ? :(inorganic_carbon.sinking_velocity) : :fallback
 end
 
 Adapt.adapt_structure(to, ic::ExplicitCalciumCarbonate{N}) where N =

@@ -156,11 +156,7 @@ models = (NonhydrostaticModel, HydrostaticFreeSurfaceModel) # exercises both `su
             test_name = display_name(architecture, grid, biogeochemistry.sediment, biogeochemistry, model)
 
             @testset "$(test_name)" begin
-                # `InstantRemineralisation` defines its tendency method for the chosen
-                # `remineralisation_reciever` via `eval` at construction time, so a top-level
-                # loop that both builds the biogeochemistry and calls `test_sediment` in the
-                # same compiled thunk needs `invokelatest` to see it
-                Base.invokelatest(test_sediment, grid, biogeochemistry, model)
+                test_sediment(grid, biogeochemistry, model)
             end
         end
     end

@@ -17,7 +17,26 @@ end
 
 const NPD{FT, NUT, PLA, DET, CAR, OXY} = NutrientsPlanktonDetritus{FT, NUT, PLA, DET, CAR, OXY}
 
-@inline (::NPD{FT})(i, j, k, grid, val_name, clock, fields, auxiliary_fields) where FT = zero(FT)
+# Fallback for tracers without a component-specific method. Components whose tracer names are
+# only known at construction time (`DissolvedParticulate` classes, `CarbonateSystem` replicates, …)
+# claim theirs via `component_tendency`, resolved from their type parameters at compile time;
+# unclaimed tracers (e.g. `T` and `S`) get zero.
+@inline (bgc::NPD)(i, j, k, grid, val_name::Val, clock, fields, auxiliary_fields) =
+    component_tendency(i, j, k, grid, bgc.nutrients,        val_name, bgc, clock, fields, auxiliary_fields) +
+    component_tendency(i, j, k, grid, bgc.plankton,         val_name, bgc, clock, fields, auxiliary_fields) +
+    component_tendency(i, j, k, grid, bgc.detritus,         val_name, bgc, clock, fields, auxiliary_fields) +
+    component_tendency(i, j, k, grid, bgc.inorganic_carbon, val_name, bgc, clock, fields, auxiliary_fields) +
+    component_tendency(i, j, k, grid, bgc.oxygen,           val_name, bgc, clock, fields, auxiliary_fields)
+
+@inline component_tendency(i, j, k, grid, component, val_name, ::NPD{FT}, clock, fields, auxiliary_fields) where FT = zero(FT)
+
+# Likewise for sinking: each component that can sink either owns the tracer and returns its
+# velocity, or passes `fallback` on; `nothing` (no sinking) is Oceananigans' default.
+@inline biogeochemical_drift_velocity(bgc::NPD, val_name::Val) =
+    component_drift_velocity(bgc.detritus, val_name,
+                             component_drift_velocity(bgc.inorganic_carbon, val_name, nothing))
+
+@inline component_drift_velocity(component, val_name, fallback) = fallback
 
 required_biogeochemical_tracers(npd::NutrientsPlanktonDetritus) =
     (required_biogeochemical_tracers(npd.nutrients)...,
