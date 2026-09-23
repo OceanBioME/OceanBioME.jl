@@ -80,6 +80,11 @@ nutrients_options = (Nutrients(; nitrogen = OceanBioME.N),
                      Nutrients(; nitrogen = OceanBioME.N, phosphate = OceanBioME.PO₄, iron = OceanBioME.Fe),
                      Nutrients(; nitrogen = NitrateAmmonia(), phosphate = OceanBioME.PO₄, iron = OceanBioME.Fe))
 
+# SimpleIron has scavenging (a permanent sink), so it does not conserve iron — tested separately
+simple_iron_nutrients_options = (Nutrients(; iron = SimpleIron()),
+                                Nutrients(; phosphate = OceanBioME.PO₄, iron = SimpleIron()),
+                                Nutrients(; nitrogen = OceanBioME.N, phosphate = OceanBioME.PO₄, iron = SimpleIron()))
+
 detritus_options = (InstantRemineralisationDetritus(),
                     Detritus(grid), 
                     DissolvedParticulate(grid, :DOP, :POP), 
@@ -257,28 +262,34 @@ using OceanBioME.Models.NutrientsPlanktonDetritusModels: SingleTracerNutrient
     lobster = LOBSTER(grid)
     npzd = NPZD(grid)
     implicit = ImplicitBiology(grid)
+    dic = MITgcmDIC(grid)
 
     @test lobster isa OceanBioME.DiscreteBiogeochemistry{<:NutrientsPlanktonDetritus}
     @test npzd isa OceanBioME.DiscreteBiogeochemistry{<:NutrientsPlanktonDetritus}
     @test implicit isa OceanBioME.DiscreteBiogeochemistry{<:NutrientsPlanktonDetritus}
+    @test dic isa OceanBioME.DiscreteBiogeochemistry{<:NutrientsPlanktonDetritus}
 
     @test lobster.underlying_biogeochemistry isa NutrientsPlanktonDetritus{Float64, <:Nutrients{<:NitrateAmmonia, Nothing, Nothing, Nothing}, <:PhytoZoo, <:DissolvedParticulate{1, 2}}
     @test npzd.underlying_biogeochemistry isa NutrientsPlanktonDetritus{Float64, <:Nutrients{<:SingleTracerNutrient, Nothing, Nothing, Nothing}, <:PhytoZoo, <:Detritus}
     @test implicit.underlying_biogeochemistry isa NutrientsPlanktonDetritus{Float64, <:Nutrients{<:SingleTracerNutrient, <:SingleTracerNutrient, <:SingleTracerNutrient, Nothing}, <:ImplicitProductivity, <:DissolvedParticulate{1, 1}}
+    @test dic.underlying_biogeochemistry isa NutrientsPlanktonDetritus{Float64, <:Nutrients{Nothing, <:SingleTracerNutrient, <:SimpleIron, Nothing}, <:ImplicitProductivity, <:DissolvedParticulate{1, 1}}
 
     grid = RectilinearGrid(architecture, Float32; size=(1, 1, 1), extent=(1, 1, 2))
 
     lobster = LOBSTER(grid; oxygen = Oxygen(Float32))
     npzd = NPZD(grid)
     implicit = ImplicitBiology(grid)
+    dic = MITgcmDIC(grid)
 
     @test lobster isa OceanBioME.DiscreteBiogeochemistry{<:NutrientsPlanktonDetritus}
     @test npzd isa OceanBioME.DiscreteBiogeochemistry{<:NutrientsPlanktonDetritus}
     @test implicit isa OceanBioME.DiscreteBiogeochemistry{<:NutrientsPlanktonDetritus}
+    @test dic isa OceanBioME.DiscreteBiogeochemistry{<:NutrientsPlanktonDetritus}
 
     @test lobster.underlying_biogeochemistry isa NutrientsPlanktonDetritus{Float32, <:Nutrients{<:NitrateAmmonia, Nothing, Nothing, Nothing}, <:PhytoZoo, <:DissolvedParticulate{1, 2}}
     @test npzd.underlying_biogeochemistry isa NutrientsPlanktonDetritus{Float32, <:Nutrients{<:SingleTracerNutrient, Nothing, Nothing, Nothing}, <:PhytoZoo, <:Detritus}
     @test implicit.underlying_biogeochemistry isa NutrientsPlanktonDetritus{Float32, <:Nutrients{<:SingleTracerNutrient, <:SingleTracerNutrient, <:SingleTracerNutrient, Nothing}, <:ImplicitProductivity, <:DissolvedParticulate{1, 1}}
+    @test dic.underlying_biogeochemistry isa NutrientsPlanktonDetritus{Float32, <:Nutrients{Nothing, <:SingleTracerNutrient, <:SimpleIron{Float32}, Nothing}, <:ImplicitProductivity, <:DissolvedParticulate{1, 1}}
 
     # light is converted
     par = lobster.light_attenuation
@@ -305,9 +316,61 @@ using OceanBioME.Models.NutrientsPlanktonDetritusModels: SingleTracerNutrient
     @test lobster.underlying_biogeochemistry.oxygen |> ((::Oxygen{FT}) where FT) -> FT == Float32
 end
 
-using Oceananigans.Units: day
+using OceanBioME.Models.NutrientsPlanktonDetritusModels.NutrientsModels: free_iron
+using Oceananigans.Biogeochemistry: biogeochemical_auxiliary_fields, required_biogeochemical_tracers
 using Oceananigans.Grids: znode, Center
-using Oceananigans.Biogeochemistry: biogeochemical_auxiliary_fields, update_biogeochemical_state!
+
+
+@testset "SimpleIron" begin
+    grid = RectilinearGrid(architecture; size=(1, 1, 1), extent=(1, 1, 2))
+    iron = SimpleIron()
+
+    # ligand equilibrium
+    @test free_iron(0.0, iron) == 0.0
+    @test free_iron(-1e-4, iron) == 0.0
+    @test 0 < free_iron(1e-3, iron) < 1e-3
+    @test free_iron(1.0, iron) ≈ iron.free_iron_maximum
+    @test free_iron(1e-6, iron) < 1e-6 * 0.01
+
+    # scavenging tendency (Abiotic → only scavenging contributes)
+    biogeochemistry = NutrientsPlanktonDetritus(grid;
+                                                plankton = Abiotic(),
+                                                nutrients = Nutrients(; phosphate = OceanBioME.PO₄, iron = SimpleIron()),
+                                                detritus = InstantRemineralisationDetritus(),
+                                                light_attenuation)
+
+    model = NonhydrostaticModel(grid; advection = nothing, biogeochemistry)
+    set!(model, Fe = 1e-3, PO₄ = 1.0)
+
+    bgc = model.biogeochemistry.underlying_biogeochemistry
+    aux = biogeochemical_auxiliary_fields(model.biogeochemistry)
+    tendency = CUDA.@allowscalar bgc(1, 1, 1, grid, Val(:Fe), model.clock, model.tracers, aux)
+
+    @test tendency < 0
+    @test tendency ≈ -iron.scavenging_rate * free_iron(1e-3, iron)
+
+    # stepping with ImplicitProductivity
+    biogeochemistry = NutrientsPlanktonDetritus(grid;
+                                                plankton = ImplicitProductivity(; nutrient_half_saturations = (phosphate = 1.0, iron = 0.001)),
+                                                nutrients = Nutrients(; phosphate = OceanBioME.PO₄, iron = SimpleIron()),
+                                                detritus = DissolvedParticulate(grid, :DOP, :POP),
+                                                light_attenuation)
+
+    model = NonhydrostaticModel(grid; advection = nothing, biogeochemistry)
+    set!(model, Fe = 1e-3, PO₄ = 1.0, DOP = 0.1, POP = 0.1)
+    time_step!(model, 1.0)
+    @test CUDA.@allowscalar model.tracers.Fe[1, 1, 1] != 1e-3
+end
+
+@testset "MITgcmDIC stepping" begin
+    grid = RectilinearGrid(architecture; size=(1, 1, 1), extent=(1, 1, 2))
+    model = NonhydrostaticModel(grid; advection = nothing, biogeochemistry = MITgcmDIC(grid))
+    set!(model, Fe = 1e-4, PO₄ = 1.0, DOP = 0.1, POP = 0.1, DIC = 2000.0, Alk = 2300.0, O₂ = 200.0)
+    time_step!(model, 1.0)
+    @test CUDA.@allowscalar model.tracers.Fe[1, 1, 1] != 1e-4
+end
+
+using Oceananigans.Units: day
 using OceanBioME.Models.CarbonChemistryModel: calcium_carbonate_saturation
 
 # a single-cell explicit-calcium-carbonate model with prescribed T/S (T and S are required for the carbon

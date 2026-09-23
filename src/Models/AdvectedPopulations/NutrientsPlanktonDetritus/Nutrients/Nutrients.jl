@@ -1,6 +1,6 @@
 module NutrientsModels 
 
-export Nutrients, SingleTracerNutrient, NitrateAmmonia, N, PO₄, Fe, Si
+export Nutrients, SingleTracerNutrient, NitrateAmmonia, SimpleIron, N, PO₄, Fe, Si
 
 using Adapt
 
@@ -20,7 +20,7 @@ using ..NutrientsPlanktonDetritusModels:
     inorganic_iron_waste,
     inorganic_silicon_waste
 
-import Oceananigans.Biogeochemistry: 
+import Oceananigans.Biogeochemistry:
     required_biogeochemical_tracers,
     required_biogeochemical_auxiliary_fields
 
@@ -76,6 +76,7 @@ const NutrientsNPD{FT} = NutrientsPlanktonDetritus{FT, <:Nutrients}
 
 include("prognosis.jl")
 include("nitrate_ammonia.jl")
+include("simple_iron.jl")
 include("defaults.jl")
 include("adapt_show_methods.jl")
 
