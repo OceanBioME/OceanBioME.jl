@@ -47,8 +47,8 @@ function DissolvedParticulate(FT = Float64;
                               dissolved_names,
                               particulate_names)
 
-    dissolved_names = possibly_tuple_or_symbol(dissolved_names)
-    particulate_names = possibly_tuple_or_symbol(particulate_names)
+    dissolved_names = possibly_tuple(dissolved_names)
+    particulate_names = possibly_tuple(particulate_names)
 
     dissolved_remineralisation_rate = convert.(FT, dissolved_remineralisation_rate)
     particulate_remineralisation_rate = convert.(FT, particulate_remineralisation_rate)
@@ -91,17 +91,18 @@ function DissolvedParticulate(grid::AbstractGrid{FT}, dissolved_names = :DOM, pa
                               particulate_waste_partitioning = default_partitioning(particulate_names),
                               dissolved_fraction_of_remineralisation = repeat_property(particulate_names, one(FT)),
                               sinking_speeds = default_sinking_speeds(particulate_names),
-                              dissolution_lengths = NamedTuple{particulate_names}(values(sinking_speeds) ./ values(particulate_remineralisation_rate)),
+                              dissolution_lengths = 
+                                NamedTuple{possibly_tuple(particulate_names)}(possibly_tuple(values(sinking_speeds) ./ values(particulate_remineralisation_rate))),
                               implicit_sinking = false,
                               store_flux = false,
                               open_bottom = true) where FT
 
-    pnames = possibly_tuple_or_symbol(particulate_names)
+    particulate_names = possibly_tuple(particulate_names)
 
     if implicit_sinking
         sinking = ImplicitSinking(grid, dissolution_lengths; open_bottom, store_flux)
     else
-        sinking_velocities = setup_velocity_fields(NamedTuple{pnames}(sinking_speeds), grid, open_bottom; three_D = true)
+        sinking_velocities = setup_velocity_fields(NamedTuple{particulate_names}(sinking_speeds), grid, open_bottom; three_D = true)
         sinking = ExplicitSinking(sinking_velocities)
     end
 
@@ -118,8 +119,10 @@ function DissolvedParticulate(grid::AbstractGrid{FT}, dissolved_names = :DOM, pa
                                 particulate_names)
 end
 
-possibly_tuple_or_symbol(names) = names
-possibly_tuple_or_symbol(names::Symbol) = tuple(names)
+possibly_tuple(names) = names
+possibly_tuple(names::Symbol) = tuple(names)
+possibly_tuple(names::Number) = tuple(names)
+
 repeat_property(names, value) = tuple(repeat([value], length(names))...)
 repeat_property(::Symbol, value) = value
 
@@ -134,8 +137,8 @@ default_partitioning(::Symbol, FT=Float64) = one(FT)
 const _manifested_dissolved_particulate = Set{Tuple}()
 
 function manifest_multi_class_dissolved_particulate(dissolved_names, particulate_names)
-    dissolved_names = possibly_tuple_or_symbol(dissolved_names)
-    particulate_names = possibly_tuple_or_symbol(particulate_names)
+    dissolved_names = possibly_tuple(dissolved_names)
+    particulate_names = possibly_tuple(particulate_names)
 
     key = (dissolved_names, particulate_names)
     key in _manifested_dissolved_particulate && return nothing
