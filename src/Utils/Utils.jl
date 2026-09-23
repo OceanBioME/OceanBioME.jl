@@ -5,6 +5,7 @@ include("negative_tracers.jl")
 include("iron_dust_deposition.jl")
 include("sinking_velocity_fields.jl")
 include("solvers.jl")
+include("implicit_column_sinking.jl")
 
 """
     (day_length::CBMDayLength)(t, φ)

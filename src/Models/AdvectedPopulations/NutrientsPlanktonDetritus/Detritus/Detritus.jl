@@ -4,7 +4,9 @@ export Detritus, DissolvedParticulate, InstantRemineralisationDetritus, CarbonNi
 
 using Adapt
 using Oceananigans.Grids: AbstractGrid
-using OceanBioME: setup_velocity_fields
+using OceanBioME: setup_velocity_fields, ExplicitSinking, ImplicitSinking, implicit_sinking_column!, dissolution_length
+
+import OceanBioME: implicit_sinking_production
 
 using ..NutrientsPlanktonDetritusModels:
     NutrientsPlanktonDetritus,
@@ -30,7 +32,12 @@ import Oceananigans.Biogeochemistry:
     required_biogeochemical_tracers,
     required_biogeochemical_auxiliary_fields,
     biogeochemical_auxiliary_fields,
-    biogeochemical_drift_velocity
+    biogeochemical_drift_velocity,
+    update_biogeochemical_state!
+
+using Oceananigans.Architectures: architecture
+using Oceananigans.Utils: launch!
+using Oceananigans: fields
 
 import ..NutrientsPlanktonDetritusModels:
     inorganic_nitrogen_waste,
@@ -38,10 +45,37 @@ import ..NutrientsPlanktonDetritusModels:
     inorganic_iron_waste,
     inorganic_silicon_waste
 
+"""
+    AbstractSinkingDetritus{SK}
+
+Abstract supertype for detritus models that carry a `sinking :: SK` field, where `SK` is either
+[`ExplicitSinking`](@ref) or [`ImplicitSinking`](@ref). Provides a shared
+`update_biogeochemical_state!` implementation for implicit sinking.
+"""
+abstract type AbstractSinkingDetritus{SK} end
+
 include("defaults.jl")
 include("instant_remineralisation.jl")
 include("single_detritus.jl")
 include("single_element.jl")
 include("carbon_nitrogen.jl")
+
+function update_biogeochemical_state!(model, detritus::AbstractSinkingDetritus{<:ImplicitSinking}, npd::NutrientsPlanktonDetritus)
+    sinking = detritus.sinking
+    grid = model.grid
+    Nz = size(grid, 3)
+
+    for name in keys(sinking.remineralisation)
+        ℓ = dissolution_length(sinking, name)
+        flux_field = isnothing(sinking.flux) ? nothing : sinking.flux[name]
+        launch!(architecture(grid), grid, :xy, implicit_sinking_column!,
+                grid, detritus, npd, fields(model), biogeochemical_auxiliary_fields(model.biogeochemistry),
+                sinking.remineralisation[name], sinking.floor_flux[name], flux_field,
+                sinking.floor_indices, ℓ,
+                sinking.open_bottom, Nz, Val(name), model.clock)
+    end
+
+    return nothing
+end
 
 end # module
