@@ -348,15 +348,18 @@ end
         replicate = (:(Val($(QuoteNode(Symbol(:CaCO₃, n))))), :(Val($(QuoteNode(Symbol(:Ω, n))))), :(Val($n)))
 
         name == Symbol(:CaCO₃, n) && return quote
+            $(Expr(:meta, :inline))
             explicit_calcium_carbonate_tendency(i, j, k, grid, bgc, fields, auxiliary_fields, $(replicate...))
         end
 
         name == Symbol(:DIC, n) && return quote
+            $(Expr(:meta, :inline))
             net_biological_dic_uptake(i, j, k, grid, bgc, fields, auxiliary_fields) -
             net_calcium_carbonate_production(i, j, k, grid, bgc, fields, auxiliary_fields, $(replicate...))
         end
 
         name == Symbol(:Alk, n) && return quote
+            $(Expr(:meta, :inline))
             net_biological_alkalinity_uptake(i, j, k, grid, bgc, clock, fields, auxiliary_fields) -
             2 * net_calcium_carbonate_production(i, j, k, grid, bgc, fields, auxiliary_fields, $(replicate...))
         end

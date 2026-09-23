@@ -29,8 +29,8 @@ const NPD_DIC_Alk{FT} = NPD{FT, <:Any, <:Any, <:Any, <:CarbonateSystem}
     N > 1 || return :(zero($FT))
 
     for n in 1:N
-        name == Symbol(:DIC, n) && return :(bgc(i, j, k, grid, Val(:DIC), clock, fields, auxiliary_fields))
-        name == Symbol(:Alk, n) && return :(bgc(i, j, k, grid, Val(:Alk), clock, fields, auxiliary_fields))
+        name == Symbol(:DIC, n) && return :($(Expr(:meta, :inline)); bgc(i, j, k, grid, Val(:DIC), clock, fields, auxiliary_fields))
+        name == Symbol(:Alk, n) && return :($(Expr(:meta, :inline)); bgc(i, j, k, grid, Val(:Alk), clock, fields, auxiliary_fields))
     end
 
     return :(zero($FT))

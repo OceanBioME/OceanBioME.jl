@@ -123,6 +123,7 @@ default_partitioning(::Symbol, FT=Float64) = one(FT)
 
     if !isnothing(n) # a dissolved class
         return quote
+            $(Expr(:meta, :inline))
             @inbounds (
                 dissolved_waste(i, j, k, grid, bgc.plankton, bgc, fields, auxiliary_fields) * detritus.dissolved_waste_partitioning[$n]
               + dissolved_remineralisation(i, j, k, grid, detritus, bgc, fields, auxiliary_fields) * detritus.dissolved_waste_partitioning[$n]
@@ -132,6 +133,7 @@ default_partitioning(::Symbol, FT=Float64) = one(FT)
         end
     elseif !isnothing(m) # a particulate class
         return quote
+            $(Expr(:meta, :inline))
             @inbounds (
                 solid_waste(i, j, k, grid, bgc.plankton, bgc, fields, auxiliary_fields) * detritus.particulate_waste_partitioning[$m]
               - grazing(i, j, k, grid, val_name, bgc.plankton, bgc, fields, auxiliary_fields)
