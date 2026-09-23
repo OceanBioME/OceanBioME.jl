@@ -40,10 +40,11 @@ function Detritus(grid::AbstractGrid{FT};
                   remineralisation_rate = 0.1213/day,
                   dissolution_length = sinking_speed / remineralisation_rate,
                   implicit_sinking = false,
+                  store_flux = false,
                   open_bottom = true) where FT
 
     if implicit_sinking
-        sinking = ImplicitSinking(grid, dissolution_length; tracer_names = (:D,), open_bottom)
+        sinking = ImplicitSinking(grid, dissolution_length; tracer_names = (:D,), open_bottom, store_flux)
     else
         sv = setup_velocity_fields((; D = sinking_speed), grid, open_bottom; three_D = true).D
         sinking = ExplicitSinking(sv)

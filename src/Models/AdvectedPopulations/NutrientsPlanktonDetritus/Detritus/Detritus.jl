@@ -67,9 +67,10 @@ function update_biogeochemical_state!(model, detritus::AbstractSinkingDetritus{<
 
     for name in keys(sinking.remineralisation)
         ℓ = dissolution_length(sinking, name)
+        flux_field = isnothing(sinking.flux) ? nothing : sinking.flux[name]
         launch!(architecture(grid), grid, :xy, implicit_sinking_column!,
                 grid, detritus, npd, fields(model), biogeochemical_auxiliary_fields(model.biogeochemistry),
-                sinking.remineralisation[name], sinking.floor_flux[name],
+                sinking.remineralisation[name], sinking.floor_flux[name], flux_field,
                 sinking.floor_indices, ℓ,
                 sinking.open_bottom, Nz, Val(name), model.clock)
     end

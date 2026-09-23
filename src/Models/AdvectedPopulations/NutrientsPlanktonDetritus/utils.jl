@@ -131,6 +131,11 @@ function group_element_tracers(::DissolvedParticulate{N, M, DN, PN}, bgc, ::Val{
     return NamedTuple{(DN..., PN...)}(ratios)
 end
 
+function group_element_tracers(::DissolvedParticulate{N, M, DN, PN, <:Any, <:Any, <:ImplicitSinking}, bgc, ::Val{:carbon}) where {N, M, DN, PN}
+    ratio = carbon_ratio(bgc.plankton, bgc)
+    return NamedTuple{DN}(ntuple(_ -> ratio, N))
+end
+
 group_element_tracers(::CarbonateSystem, args...) = NamedTuple()
 group_element_tracers(::CarbonateSystem, bgc::NPD{FT}, ::Val{:carbon}) where FT =
     (; DIC = one(FT))
@@ -190,18 +195,35 @@ available_nutrients(nutrients) =
 group_element_tracers(::CarbonNitrogenDissolvedParticulate{FT}, bgc, ::Val{:nitrogen}) where FT =
     (; DON = one(FT), sPON = one(FT), bPON = one(FT))
 
+group_element_tracers(::CarbonNitrogenDissolvedParticulate{FT, <:ImplicitSinking}, bgc, ::Val{:nitrogen}) where FT =
+    (; DON = one(FT))
+
 function group_element_tracers(::CarbonNitrogenDissolvedParticulate, bgc::NPD, ::Val{:phosphate})
-    R_PN = phosphate_ratio(bgc.plankton, bgc) / 
+    R_PN = phosphate_ratio(bgc.plankton, bgc) /
           nitrogen_ratio(bgc.plankton, bgc)
 
     return (; DON = R_PN, sPON = R_PN, bPON = R_PN)
 end
 
+function group_element_tracers(::CarbonNitrogenDissolvedParticulate{<:Any, <:ImplicitSinking}, bgc::NPD, ::Val{:phosphate})
+    R_PN = phosphate_ratio(bgc.plankton, bgc) /
+          nitrogen_ratio(bgc.plankton, bgc)
+
+    return (; DON = R_PN)
+end
+
 function group_element_tracers(::CarbonNitrogenDissolvedParticulate, bgc::NPD, ::Val{:iron})
-    R_FeN = iron_ratio(bgc.plankton, bgc) / 
+    R_FeN = iron_ratio(bgc.plankton, bgc) /
             nitrogen_ratio(bgc.plankton, bgc)
 
     return (; DON = R_FeN, sPON = R_FeN, bPON = R_FeN)
+end
+
+function group_element_tracers(::CarbonNitrogenDissolvedParticulate{<:Any, <:ImplicitSinking}, bgc::NPD, ::Val{:iron})
+    R_FeN = iron_ratio(bgc.plankton, bgc) /
+            nitrogen_ratio(bgc.plankton, bgc)
+
+    return (; DON = R_FeN)
 end
 
 function group_element_tracers(::CarbonNitrogenDissolvedParticulate{FT}, bgc, ::Val{:carbon}) where FT
@@ -210,8 +232,18 @@ function group_element_tracers(::CarbonNitrogenDissolvedParticulate{FT}, bgc, ::
     return (; DOC = one(FT), sPOC = particulate_factor, bPOC = particulate_factor)
 end
 
+function group_element_tracers(::CarbonNitrogenDissolvedParticulate{FT, <:ImplicitSinking}, bgc, ::Val{:carbon}) where FT
+    return (; DOC = one(FT))
+end
+
 function group_element_tracers(::CarbonNitrogenDissolvedParticulate, bgc::NPD, ::Val{:oxygen})
     rO = - bgc.oxygen.production_oxygen_carbon_ratio
 
     return (; DOC = rO, sPOC = rO, bPOC = rO)
+end
+
+function group_element_tracers(::CarbonNitrogenDissolvedParticulate{<:Any, <:ImplicitSinking}, bgc::NPD, ::Val{:oxygen})
+    rO = - bgc.oxygen.production_oxygen_carbon_ratio
+
+    return (; DOC = rO)
 end

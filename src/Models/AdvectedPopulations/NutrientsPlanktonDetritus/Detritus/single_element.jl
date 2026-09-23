@@ -93,12 +93,13 @@ function DissolvedParticulate(grid::AbstractGrid{FT}, dissolved_names = :DOM, pa
                               sinking_speeds = default_sinking_speeds(particulate_names),
                               dissolution_lengths = NamedTuple{particulate_names}(values(sinking_speeds) ./ values(particulate_remineralisation_rate)),
                               implicit_sinking = false,
+                              store_flux = false,
                               open_bottom = true) where FT
 
     pnames = possibly_tuple_or_symbol(particulate_names)
 
     if implicit_sinking
-        sinking = ImplicitSinking(grid, dissolution_lengths; open_bottom)
+        sinking = ImplicitSinking(grid, dissolution_lengths; open_bottom, store_flux)
     else
         sinking_velocities = setup_velocity_fields(NamedTuple{pnames}(sinking_speeds), grid, open_bottom; three_D = true)
         sinking = ExplicitSinking(sinking_velocities)

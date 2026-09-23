@@ -1,5 +1,5 @@
 using Oceananigans.Fields: Field, OneField, CenterField
-using Oceananigans.Grids: Center, znode, AbstractGrid
+using Oceananigans.Grids: Center, Face, znode, AbstractGrid
 using Oceananigans.Operators: Δzᶜᶜᶜ
 using Oceananigans.ImmersedBoundaries: ImmersedBoundaryGrid, immersed_cell
 using Oceananigans.Architectures: architecture
@@ -48,11 +48,12 @@ by `dissolution_length` (in metres). This avoids the CFL restriction of explicit
 fast-sinking particles. When `open_bottom = true` material reaching the bottom cell leaves the
 domain; otherwise it accumulates.
 """
-struct ImplicitSinking{FT, RM, FL, FI}
+struct ImplicitSinking{FT, RM, FL, FI, FX}
     dissolution_length :: FT
       remineralisation :: RM
             floor_flux :: FL
          floor_indices :: FI
+                  flux :: FX
            open_bottom :: Bool
 end
 
@@ -60,14 +61,17 @@ convert_dissolution_length(FT, ℓ::Number) = convert(FT, ℓ)
 convert_dissolution_length(FT, ℓ::NamedTuple) = map(ℓ -> convert_dissolution_length(FT, ℓ), ℓ)
 convert_dissolution_length(FT, ℓ) = ℓ
 
-function ImplicitSinking(grid::AbstractGrid{FT}, dissolution_length; tracer_names = keys(dissolution_length), open_bottom = true) where FT
+function ImplicitSinking(grid::AbstractGrid{FT}, dissolution_length; tracer_names = keys(dissolution_length), open_bottom = true, store_flux = false) where FT
     remineralisation = NamedTuple{tracer_names}(map(_ -> CenterField(grid), tracer_names))
     floor_flux = NamedTuple{tracer_names}(map(_ -> Field{Center, Center, Nothing}(grid), tracer_names))
+
+    flux = store_flux ? NamedTuple{tracer_names}(map(_ -> Field{Center, Center, Face}(grid), tracer_names)) : nothing
 
     return ImplicitSinking(convert_dissolution_length(eltype(grid), dissolution_length),
                            remineralisation,
                            floor_flux,
                            floor_index_field(grid),
+                           flux,
                            open_bottom)
 end
 
@@ -76,6 +80,7 @@ Adapt.adapt_structure(to, s::ImplicitSinking) =
                     Adapt.adapt(to, s.remineralisation),
                     Adapt.adapt(to, s.floor_flux),
                     Adapt.adapt(to, s.floor_indices),
+                    Adapt.adapt(to, s.flux),
                     s.open_bottom)
 
 Base.summary(::ExplicitSinking) = "ExplicitSinking"
@@ -121,7 +126,7 @@ dissolution_length(s::ImplicitSinking{<:NamedTuple}, name) = s.dissolution_lengt
 dissolution_length(s::ImplicitSinking, name) = s.dissolution_length
 
 @kernel function implicit_sinking_column!(grid, detritus, bgc, model_fields, aux,
-                                           remineralisation, floor_flux, floor_indices,
+                                           remineralisation, floor_flux, flux_field, floor_indices,
                                            ℓ, open_bottom, Nz, val_name, clock)
     i, j = @index(Global, NTuple)
 
@@ -144,7 +149,12 @@ dissolution_length(s::ImplicitSinking, name) = s.dissolution_length
         F = ifelse(at_closed_floor, zero(FT), F)
 
         @inbounds remineralisation[i, j, k] = R
+
+        store_flux!(i, j, k, flux_field, F)
     end
 
     @inbounds floor_flux[i, j, 1] = ifelse(open_bottom, F, zero(FT))
 end
+
+@inline store_flux!(i, j, k, ::Nothing, F) = nothing
+@inline store_flux!(i, j, k, flux_field, F) = @inbounds flux_field[i, j, k] = F

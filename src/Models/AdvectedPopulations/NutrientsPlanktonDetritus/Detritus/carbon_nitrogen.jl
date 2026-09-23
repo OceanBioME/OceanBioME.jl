@@ -69,6 +69,7 @@ function CarbonNitrogenDissolvedParticulate(grid::AbstractGrid{FT};
                                             dissolution_lengths = (sPO = sinking_speeds.sPO / small_particle_remineralisation_rate,
                                                                    bPO = sinking_speeds.bPO / large_particle_remineralisation_rate),
                                             implicit_sinking = false,
+                                            store_flux = false,
                                             open_bottom = true) where FT
 
     if implicit_sinking
@@ -76,7 +77,7 @@ function CarbonNitrogenDissolvedParticulate(grid::AbstractGrid{FT};
               sPOC = dissolution_lengths.sPO,
               bPON = dissolution_lengths.bPO,
               bPOC = dissolution_lengths.bPO)
-        sinking = ImplicitSinking(grid, dl; open_bottom)
+        sinking = ImplicitSinking(grid, dl; open_bottom, store_flux)
     else
         sinking_velocities = setup_velocity_fields(sinking_speeds, grid, open_bottom; three_D = true)
         sinking = ExplicitSinking(sinking_velocities)
