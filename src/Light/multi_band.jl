@@ -157,10 +157,14 @@ end
     zᶜ = znodes(grid, Center(), Center(), Center())
 
     k = grid.Nz
-    @inbounds field[i, j, k] = surface_PAR * surface_PAR_division * exp(zᶜ[k] * (kʷ + χ * Chl[i, j, k] ^ e))
+    if !immersed_cell(i, j, k, grid)
+        @inbounds field[i, j, k] = surface_PAR * surface_PAR_division * exp(zᶜ[k] * (kʷ + χ * Chl[i, j, k] ^ e))
+    end
 
-    # the rest of the points
+    # the rest of the points, stopping at the seafloor
     for k in grid.Nz-1:-1:1
+        immersed_cell(i, j, k, grid) && break
+
         Δz = @inbounds zᶜ[k] - zᶜ[k + 1] 
         @inbounds field[i, j, k] = @inbounds field[i, j, k + 1] * exp(Δz * (kʷ + χ * Chl[i, j, k] ^ e))
     end
