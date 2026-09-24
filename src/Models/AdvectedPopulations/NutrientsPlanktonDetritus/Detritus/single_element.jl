@@ -88,8 +88,6 @@ function DissolvedParticulate(grid::AbstractGrid{FT}, dissolved_names = :DOM, pa
 
     sinking_velocities = setup_velocity_fields(NamedTuple{possibly_tuple_or_symbol(particulate_names)}(sinking_speeds), grid, open_bottom; three_D = true)
 
-    manifest_multi_class_dissolved_particulate(dissolved_names, particulate_names)
-
     return DissolvedParticulate(FT;
                                 dissolved_remineralisation_rate,
                                 particulate_remineralisation_rate,
@@ -113,46 +111,46 @@ default_sinking_speeds(::Symbol, FT=Float64) = convert(FT, 10/day)
 default_partitioning(names, FT=Float64) = tuple(repeat([convert(FT, 1/length(names))], length(names))...)
 default_partitioning(::Symbol, FT=Float64) = one(FT)
 
-const _manifested_dissolved_particulate = Set{Tuple}()
+# The tendencies of the detritus classes. Their tracer names are only fixed when the component
+# is constructed (they are the `DN` and `PN` type parameters), so rather than one method per name
+# the tendency of `name` is generated from its position in those tuples; a name that is not one
+# of the classes contributes nothing (see `component_tendency` in nutrients_plankton_detritus.jl).
+@inline @generated function component_tendency(i, j, k, grid, detritus::DissolvedParticulate{N, M, DN, PN}, val_name::Val{name},
+                                               bgc::NPD_DP{FT}, clock, fields, auxiliary_fields) where {N, M, DN, PN, name, FT}
+    n = findfirst(==(name), DN)
+    m = findfirst(==(name), PN)
+    tracer = QuoteNode(name)
 
-function manifest_multi_class_dissolved_particulate(dissolved_names, particulate_names)
-    dissolved_names = possibly_tuple_or_symbol(dissolved_names)
-    particulate_names = possibly_tuple_or_symbol(particulate_names)
-
-    key = (dissolved_names, particulate_names)
-    key in _manifested_dissolved_particulate && return nothing
-    push!(_manifested_dissolved_particulate, key)
-
-    for (n, name) in enumerate(dissolved_names)
-        @eval begin
-            @inline (bgc::NPD_DP)(i, j, k, grid, val_name::Val{$(QuoteNode(name))}, clock, fields, auxiliary_fields) = @inbounds (
-                dissolved_waste(i, j, k, grid, bgc.plankton, bgc, fields, auxiliary_fields) * bgc.detritus.dissolved_waste_partitioning[$n]
-              + dissolved_remineralisation(i, j, k, grid, bgc.detritus, bgc, fields, auxiliary_fields) * bgc.detritus.dissolved_waste_partitioning[$n]
+    if !isnothing(n) # a dissolved class
+        return quote
+            $(Expr(:meta, :inline))
+            @inbounds (
+                dissolved_waste(i, j, k, grid, bgc.plankton, bgc, fields, auxiliary_fields) * detritus.dissolved_waste_partitioning[$n]
+              + dissolved_remineralisation(i, j, k, grid, detritus, bgc, fields, auxiliary_fields) * detritus.dissolved_waste_partitioning[$n]
               - grazing(i, j, k, grid, val_name, bgc.plankton, bgc, fields, auxiliary_fields)
-              - bgc.detritus.dissolved_remineralisation_rate[$n] * fields[$(QuoteNode(name))][i, j, k]
+              - detritus.dissolved_remineralisation_rate[$n] * fields[$tracer][i, j, k]
             )
         end
-    end
-
-    for (m, name) in enumerate(particulate_names)
-        @eval begin
-            @inline (bgc::NPD_DP)(i, j, k, grid, val_name::Val{$(QuoteNode(name))}, clock, fields, auxiliary_fields) = @inbounds (
-                solid_waste(i, j, k, grid, bgc.plankton, bgc, fields, auxiliary_fields) * bgc.detritus.particulate_waste_partitioning[$m]
+    elseif !isnothing(m) # a particulate class
+        return quote
+            $(Expr(:meta, :inline))
+            @inbounds (
+                solid_waste(i, j, k, grid, bgc.plankton, bgc, fields, auxiliary_fields) * detritus.particulate_waste_partitioning[$m]
               - grazing(i, j, k, grid, val_name, bgc.plankton, bgc, fields, auxiliary_fields)
-              - bgc.detritus.particulate_remineralisation_rate[$m] * fields[$(QuoteNode(name))][i, j, k]
+              - detritus.particulate_remineralisation_rate[$m] * fields[$tracer][i, j, k]
             )
-
-            @inline biogeochemical_drift_velocity(bgc::NPD_DP, ::Val{$(QuoteNode(name))}) =
-                bgc.detritus.sinking_velocities[$m]
         end
+    else
+        return :(zero($FT))
     end
-
-    return nothing
 end
 
-# manifest defaults to prevent world age issues
-manifest_multi_class_dissolved_particulate(:DOP, :POP)
-manifest_multi_class_dissolved_particulate(:DOM, (:sPOM, :bPOM))
+# only the particulate classes sink
+@inline @generated function component_drift_velocity(detritus::DissolvedParticulate{N, M, DN, PN}, ::Val{name}, fallback) where {N, M, DN, PN, name}
+    m = findfirst(==(name), PN)
+
+    return isnothing(m) ? :fallback : :(detritus.sinking_velocities[$m])
+end
 
 @inline @generated function dissolved_remineralisation(i, j, k, grid, detritus::DissolvedParticulate{N, M, DN, PN}, bgc::NPD_DP{FT}, fields, auxiliary_fields) where {N, M, DN, PN, FT}
     combined = Expr(:block)

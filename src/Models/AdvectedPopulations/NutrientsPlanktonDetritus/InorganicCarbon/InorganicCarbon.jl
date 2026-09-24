@@ -35,7 +35,9 @@ import Oceananigans.Biogeochemistry:
     required_biogeochemical_auxiliary_fields
 
 import ..NutrientsPlanktonDetritusModels:
-    carbon_ratio
+    carbon_ratio,
+    component_tendency,
+    component_drift_velocity
 
 include("abstract_inorganic_carbon.jl")
 include("defaults.jl")

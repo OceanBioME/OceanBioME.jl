@@ -16,24 +16,22 @@ struct InstantRemineralisation{FT, ST, RR} <: AbstractContinuousFormSedimentBiog
     burial_efficiency_half_saturation :: FT
 
                       sinking_tracers :: ST
-            remineralisation_reciever :: RR
-
-    function InstantRemineralisation(a::FT, b::FT, k::FT, 
-                                     sinking_tracers::ST, 
-                                     remineralisation_reciever::RR) where {FT, ST, RR}
-
-        add_remineralisation_methods!(remineralisation_reciever)
-
-        return new{FT, ST, RR}(a, b, k, sinking_tracers, remineralisation_reciever)
-    end
 end
 
-Adapt.adapt_structure(to, ir::InstantRemineralisation) = 
-    InstantRemineralisation(adapt(to, ir.burial_efficiency_constant1),
-                            adapt(to, ir.burial_efficiency_constant2),
-                            adapt(to, ir.burial_efficiency_half_saturation),
-                            nothing,
-                            nothing)
+# `RR` is the name of the tracer that receives the remineralised flux. It is a type parameter
+# rather than a field so that the tendency method for that tracer (below) can dispatch on it.
+InstantRemineralisation(a::FT, b::FT, k::FT, sinking_tracers::ST, remineralisation_reciever::Symbol) where {FT, ST} =
+    InstantRemineralisation{FT, ST, remineralisation_reciever}(a, b, k, sinking_tracers)
+
+@inline remineralisation_reciever(::InstantRemineralisation{<:Any, <:Any, RR}) where RR = RR
+
+function Adapt.adapt_structure(to, ir::InstantRemineralisation{<:Any, <:Any, RR}) where RR
+    a = adapt(to, ir.burial_efficiency_constant1)
+    b = adapt(to, ir.burial_efficiency_constant2)
+    k = adapt(to, ir.burial_efficiency_half_saturation)
+
+    return InstantRemineralisation{typeof(a), Nothing, RR}(a, b, k, nothing)
+end
 
 """
     InstantRemineralisationSediment(grid;
@@ -98,7 +96,7 @@ InstantRemineralisationSediment(grid;
 @inline required_sediment_fields(::InstantRemineralisation) = (:storage, )
 @inline required_tracers(::InstantRemineralisation) = tuple()
 @inline sinking_fluxes(s::InstantRemineralisation) = s.sinking_tracers
-@inline coupled_tracers(s::InstantRemineralisation) = tuple(s.remineralisation_reciever)
+@inline coupled_tracers(s::InstantRemineralisation) = tuple(remineralisation_reciever(s))
 
 @inline function (s::InstantRemineralisation)(::Val{:storage}, x, y, t, storage, fluxs...)
     a = s.burial_efficiency_constant1
@@ -124,15 +122,9 @@ end
     return (1 - burial_efficiency) * flux
 end
 
-function add_remineralisation_methods!(remineralisation_reciever; fname = remineralisation)
-    method = quote
-        function (s::InstantRemineralisation)(::$(typeof(Val(remineralisation_reciever))), args...)
-            return $(fname)(s, args...)
-        end
-    end
-
-    eval(method)
-end
+# the receiver's tendency is the remineralised flux
+@inline (s::InstantRemineralisation{<:Any, <:Any, RR})(::Val{RR}, x, y, t, storage, fluxs...) where RR =
+    remineralisation(s, x, y, t, storage, fluxs...)
 
 summary(::InstantRemineralisation{FT}) where {FT} = string("Single-layer instant remineralisation ($FT)")
 show(io::IO, model::InstantRemineralisation) = print(io, summary(model))
