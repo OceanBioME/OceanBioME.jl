@@ -157,12 +157,12 @@ end
     zᶜ = znodes(grid, Center(), Center(), Center())
 
     k = grid.Nz
-    @inbounds field[i, j, k] = surface_PAR * surface_PAR_division * exp(zᶜ[k] * (kʷ + χ * Chl[i, j, k] ^ e))
+    @inbounds field[i, j, k] = surface_PAR * surface_PAR_division * exp(zᶜ[k] * (kʷ + χ * nonnegative_chlorophyll(i, j, k, Chl) ^ e))
 
     # the rest of the points
     for k in grid.Nz-1:-1:1
         Δz = @inbounds zᶜ[k] - zᶜ[k + 1] 
-        @inbounds field[i, j, k] = @inbounds field[i, j, k + 1] * exp(Δz * (kʷ + χ * Chl[i, j, k] ^ e))
+        @inbounds field[i, j, k] = @inbounds field[i, j, k + 1] * exp(Δz * (kʷ + χ * nonnegative_chlorophyll(i, j, k, Chl) ^ e))
     end
 end
 
