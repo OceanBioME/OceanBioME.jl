@@ -326,9 +326,9 @@ end
     silicate  = silicate_concentration(grid, i, j, k, model_fields)
     phosphate = phosphate_concentration(grid, i, j, k, model_fields)
 
-    P = hydrostatic_pressure(model_fields, i, j, k, grid, g)
+    water_pressure = hydrostatic_pressure(model_fields, i, j, k, grid, g) # bar, gauge (surface = 0)
 
-    @inbounds saturation[i, j, k] = calcium_carbonate_saturation(carbon_chemistry; DIC, T, S, Alk, P, phosphate, silicate)
+    @inbounds saturation[i, j, k] = calcium_carbonate_saturation(carbon_chemistry; DIC, T, S, Alk, water_pressure, phosphate, silicate)
 end
 
 @inline hydrostatic_pressure(model_fields::NamedTuple{N}, i, j, k, grid, g) where N =

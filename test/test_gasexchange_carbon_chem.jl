@@ -14,9 +14,10 @@ using OceanBioME.Models.GasExchangeModel.ScaledGasTransferVelocity: Wanninkhof14
 using OceanBioME.Models.GasExchangeModel: PolynomialParameterisation, SchmidtScaledTransferVelocity,
                                           CarbonDioxidePolynomialSchmidtNumber, OxygenPolynomialSchmidtNumber
 
-using OceanBioME.Models: teos10_polynomial_approximation
+using OceanBioME.Models: teos10_polynomial_approximation, teos10_density
 
-using OceanBioME.Models.CarbonChemistryModel: IonicStrength, FF, K0, K1, K2, KB, KW, KS, KF, KP, KSi, KSP_aragonite, KSP_calcite
+using OceanBioME.Models.CarbonChemistryModel: IonicStrength, FF, K0, K1, K2, KB, KW, KS, KF, KP, KSi, KSP_aragonite, KSP_calcite,
+                                              calcium_carbonate_saturation
 
 const year = years = 365days # just for the idealised case below
 
@@ -187,6 +188,67 @@ end
 
     @test ≈(KspA.pressure_correction(Tk, P), 1.47866; atol=0.00001)
     @test ≈(KspC.pressure_correction(Tk, P), 1.52962; atol=0.00001)
+end
+
+@testset "Water and atmospheric pressure" begin
+    carbon_chemistry = CarbonChemistry()
+
+    args = (; DIC = 2145.0, Alk = 2448.0, T = 25.4, S = 36.45)
+
+    outputs = (:fCO₂, :CO₂, :pHᶠ, :pHᵗ, :pHˢ, :pCO₂)
+
+    # surface values are unchanged by the separation of the two pressures (values from before
+    # it, with the density evaluated at 0 bar)
+    surface = (fCO₂ = 460.8517068223346, CO₂ = 13.167231494430746, pHᶠ = 8.001438638766434,
+               pHᵗ = 7.891118124117329, pHˢ = 7.880742652625449, pCO₂ = 462.31990978647883)
+
+    for output in outputs
+        value = carbon_chemistry(; args..., output = Val(output))
+
+        @test ≈(value, surface[output]; rtol = 1e-12)
+
+        # the defaults are the surface (zero water pressure) and one atmosphere
+        @test carbon_chemistry(; args..., water_pressure = 0.0, atmospheric_pressure = 1.0, output = Val(output)) == value
+    end
+
+    # the water pressure changes the equilibrium constants...
+    fCO₂_surface = carbon_chemistry(; args...)
+    pCO₂_surface = carbon_chemistry(; args..., output = Val(:pCO₂))
+
+    fCO₂_deep = carbon_chemistry(; args..., water_pressure = 100.0)
+    pCO₂_deep = carbon_chemistry(; args..., water_pressure = 100.0, output = Val(:pCO₂))
+
+    @test fCO₂_deep != fCO₂_surface
+
+    # ...but not the fugacity to partial pressure conversion, which is at the atmospheric pressure
+    @test ≈(pCO₂_deep / fCO₂_deep, pCO₂_surface / fCO₂_surface; rtol = 1e-6)
+
+    # the atmospheric pressure only changes the partial pressure output
+    for output in (:fCO₂, :CO₂, :pHᶠ, :pHᵗ, :pHˢ)
+        @test carbon_chemistry(; args..., atmospheric_pressure = 0.9, output = Val(output)) ==
+              carbon_chemistry(; args..., output = Val(output))
+    end
+
+    pCO₂_low = carbon_chemistry(; args..., atmospheric_pressure = 0.9, output = Val(:pCO₂))
+
+    @test pCO₂_low != pCO₂_surface
+
+    # ln(φ) is (almost exactly) proportional to the total pressure
+    @test ≈(log(fCO₂_surface / pCO₂_low), 0.9 * log(fCO₂_surface / pCO₂_surface); rtol = 1e-4)
+
+    # higher water pressure lowers the calcite saturation
+    @test calcium_carbonate_saturation(carbon_chemistry; args..., water_pressure = 300.0) <
+          calcium_carbonate_saturation(carbon_chemistry; args...)
+
+    # density increases with water pressure (gauge, bar), and the polynomial approximation
+    # agrees with the full TEOS-10 density
+    for density in (teos10_polynomial_approximation, teos10_density)
+        @test all(diff([density(15.0, 35.0, Pbar) for Pbar in 0:100:400]) .> 0)
+    end
+
+    for Pbar in 0:100:400
+        @test ≈(teos10_polynomial_approximation(15.0, 35.0, Pbar), teos10_density(15.0, 35.0, Pbar); atol = 0.2)
+    end
 end
 
 @testset "Gas exchange constants defaults" begin
@@ -567,10 +629,11 @@ const MARBL_REFERENCE = (
             @test water === cc(; args..., output = Val(:CO₂))
         end
 
+        # the water side is at the surface, so its density is at zero water pressure
         @test ≈(surface_value(default_exchange.water_concentration, 1, 1, grid, clock, model_fields(states[1])),
-                58.937761; rtol = ref_rtol)
+                58.938241; rtol = ref_rtol)
         @test ≈(surface_value(default_exchange.water_concentration, 1, 1, grid, clock, model_fields(states[2])),
-                12.907474; rtol = ref_rtol)
+                12.907676; rtol = ref_rtol)
 
         # the transfer velocity is a bare piston velocity: k = k₆₆₀(u₁₀) √(660/Sc(T))
         u₁₀ = default_exchange.wind_speed

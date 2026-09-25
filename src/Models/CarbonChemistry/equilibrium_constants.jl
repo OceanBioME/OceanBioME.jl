@@ -7,6 +7,9 @@
 Parameterisation for the pressure effect on thermodynamic constants.
 
 Form from Millero, F. J. (2007, Chemical Reviews, 107(2), 308–341).
+
+The pressure, `P`, is the sea water pressure above atmospheric (i.e. zero at the surface) in bar,
+and `nothing` gives no correction.
 """
 struct PressureCorrection{FT}
     a₀ :: FT
