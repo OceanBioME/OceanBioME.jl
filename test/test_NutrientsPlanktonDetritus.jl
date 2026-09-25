@@ -475,7 +475,7 @@ end
         z = znode(1, 1, 1, grid, Center(), Center(), Center())
         P = abs(z) * Oceananigans.defaults.gravitational_acceleration * 1026 / 100000
         Ωdirect = calcium_carbonate_saturation(bgc.inorganic_carbon.carbon_chemistry;
-                                     DIC = 2100.0, T = 12.0, S = 34.0, Alk = 2350.0, P)
+                                     DIC = 2100.0, T = 12.0, S = 34.0, Alk = 2350.0, water_pressure = P)
 
         @test (CUDA.@allowscalar Ωfield[1, 1, 1]) ≈ Ωdirect
     end
