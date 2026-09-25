@@ -5,7 +5,9 @@ Compute the carbonate ion concentration, `[CO₃²⁻]`, by solving the carbon c
 equilibrium for the hydrogen ion concentration and speciating `DIC`.
 
 `DIC` is expected in mmol C/m³, `Alk` in meq/m³, `silicate` and `phosphate` in mmol/m³,
-`T` in °C, `S` in PSU, and `P` in bar; `boron`, `sulfate`, and `fluoride` are in mol/kg.
+`T` in °C, `S` in PSU, and `water_pressure` in bar; `boron`, `sulfate`, and `fluoride` are in
+mol/kg. `water_pressure` is the sea water (hydrostatic) pressure above atmospheric, i.e. zero at
+the surface, and the default of `nothing` means the surface.
 The returned `[CO₃²⁻]` is in mmol/m³, matching `DIC`.
 
 When `pH` is specified the intermediate solve is skipped and the free pH (i.e. -log[H⁺])
@@ -13,7 +15,7 @@ is expected.
 """
 function carbonate_concentration(cc::CarbonChemistry;
                                  DIC::FT, T, S, Alk = zero(DIC), pH = nothing,
-                                 P = nothing,
+                                 water_pressure = nothing, # bar, gauge (surface = 0)
                                  lon = zero(DIC),
                                  lat = zero(DIC),
                                  boron = convert(typeof(DIC), 0.000232 / 10.811 * S / 1.80655),
@@ -23,7 +25,7 @@ function carbonate_concentration(cc::CarbonChemistry;
                                  phosphate = zero(DIC),
                                  initial_pH_guess = convert(typeof(DIC), 8)) where FT
 
-    ρₒ = cc.density_function(T, S, ifelse(isnothing(P), zero(DIC), P), lon, lat)
+    ρₒ = cc.density_function(T, S, ifelse(isnothing(water_pressure), zero(DIC), water_pressure), lon, lat)
 
     # Centigrade to kelvin
     T += convert(FT, 273.15)
@@ -40,16 +42,16 @@ function carbonate_concentration(cc::CarbonChemistry;
     Is = cc.ionic_strength(S)
 
     # compute equilibrium constants
-    K1 = cc.carbonic_acid.K1(T, S; P)
-    K2 = cc.carbonic_acid.K2(T, S; P)
-    KB = cc.boric_acid(T, S; P)
-    KW = cc.water(T, S; P)
-    KS = cc.sulfate(T, S, Is; P)
-    KF = cc.fluoride(T, S, Is, KS; P)
-    KP1 = cc.phosphoric_acid.KP1(T, S; P)
-    KP2 = cc.phosphoric_acid.KP2(T, S; P)
-    KP3 = cc.phosphoric_acid.KP3(T, S; P)
-    KSi = cc.silicic_acid(T, S, Is; P)
+    K1 = cc.carbonic_acid.K1(T, S; P = water_pressure)
+    K2 = cc.carbonic_acid.K2(T, S; P = water_pressure)
+    KB = cc.boric_acid(T, S; P = water_pressure)
+    KW = cc.water(T, S; P = water_pressure)
+    KS = cc.sulfate(T, S, Is; P = water_pressure)
+    KF = cc.fluoride(T, S, Is, KS; P = water_pressure)
+    KP1 = cc.phosphoric_acid.KP1(T, S; P = water_pressure)
+    KP2 = cc.phosphoric_acid.KP2(T, S; P = water_pressure)
+    KP3 = cc.phosphoric_acid.KP3(T, S; P = water_pressure)
+    KSi = cc.silicic_acid(T, S, Is; P = water_pressure)
 
     params = (; DIC, Alk, boron, sulfate, fluoride, silicate, phosphate,
                 K1, K2, KB, KW, KS, KF, KP1, KP2, KP3, KSi)
@@ -76,13 +78,14 @@ the solubility of the mineral phase set by `cc.calcium_carbonate_solubility` (ca
 default).
 
 Units follow [`carbonate_concentration`](@ref): `DIC` in mmol C/m³, `Alk` in meq/m³,
-`silicate` and `phosphate` in mmol/m³, `T` in °C, `S` in PSU, and `P` in bar, while
+`silicate` and `phosphate` in mmol/m³, `T` in °C, `S` in PSU, and `water_pressure` (above
+atmospheric, zero at the surface) in bar, while
 `calcium_ion_concentration` (like `boron`, `sulfate`, and `fluoride`) is in mol/kg since
 that is the basis `KSP` is defined on. `Ω` is dimensionless.
 """
 function calcium_carbonate_saturation(cc::CarbonChemistry;
                             DIC::FT, T, S, Alk = zero(DIC), pH = nothing,
-                            P = nothing,
+                            water_pressure = nothing, # bar, gauge (surface = 0)
                             lon = zero(DIC),
                             lat = zero(DIC),
                             boron = convert(typeof(DIC), 0.000232 / 10.811 * S / 1.80655),
@@ -95,7 +98,7 @@ function calcium_carbonate_saturation(cc::CarbonChemistry;
 
     CO₃²⁻ = carbonate_concentration(cc;
                                     DIC, Alk, T, S, pH,
-                                    P,
+                                    water_pressure,
                                     lon,
                                     lat,
                                     boron,
@@ -105,12 +108,12 @@ function calcium_carbonate_saturation(cc::CarbonChemistry;
                                     phosphate,
                                     initial_pH_guess)
 
-    ρₒ = cc.density_function(T, S, ifelse(isnothing(P), zero(DIC), P), lon, lat)
+    ρₒ = cc.density_function(T, S, ifelse(isnothing(water_pressure), zero(DIC), water_pressure), lon, lat)
 
     # KSP is defined on a mol / kg basis, so put [CO₃²⁻] back on one too
     CO₃²⁻ *= convert(FT, 1e-3) / ρₒ
 
-    KSP = cc.calcium_carbonate_solubility(T + convert(FT, 273.15), S; P)
+    KSP = cc.calcium_carbonate_solubility(T + convert(FT, 273.15), S; P = water_pressure)
 
     return calcium_ion_concentration * CO₃²⁻ / KSP
 end

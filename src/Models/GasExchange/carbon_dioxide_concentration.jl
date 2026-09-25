@@ -80,9 +80,9 @@ This drops into the `air_concentration` of a
 default pressure of 1 atm it leaves the mole fraction unscaled by pressure.
 
 Note that this is the *only* atmospheric pressure on the carbon dioxide exchange path. The
-water-side [`CarbonDioxideConcentration`](@ref) carries no atmospheric pressure, and the
-hydrostatic pressure of the `CarbonChemistry` fugacity coefficient is a distinct quantity
-which is not this Dalton factor.
+water-side [`CarbonDioxideConcentration`](@ref) carries no atmospheric pressure (it is evaluated
+at the surface, i.e. zero `water_pressure`, and its `[CO₂(aq)]` output does not depend on the
+`atmospheric_pressure` of the `CarbonChemistry` call, which only enters its `Val(:pCO₂)` output).
 """
 struct CarbonDioxideAirConcentration{MF, AP, SO}
            mole_fraction :: MF # ppmv (≡ μatm at 1 atm)
@@ -106,9 +106,8 @@ Keyword Arguments
   number, a function of the form `(x, y, t)`, or a `Field`
 - `atmospheric_pressure`: the total atmospheric pressure (atm), which may be a number, a
   function of the form `(x, y, t)`, or a `Field`; the default of 1 leaves the mole fraction
-  unchanged. Note that the units are atmospheres, not pascals; this is checked (with a
-  warning) only when a number is given, since the value of a function or `Field` is not
-  known at construction time
+  unchanged. Note that the units are atmospheres, not pascals, and that the value is not
+  checked
 - `solubility`: a function of `(T, S)` returning the conversion from a partial pressure in
   μatm to a concentration in mmol / m³. Defaults to the Weiss and Price (1980) [`FF`](@ref)
   fit with the TEOS-10 density; pass `nothing` to leave the air concentration as a mole

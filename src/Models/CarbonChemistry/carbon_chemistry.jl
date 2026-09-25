@@ -53,13 +53,13 @@ julia> carbon_chemistry = CarbonChemistry()
 `CarbonChemistry` model which solves for pCO₂ and pH
 
 julia> pCO₂ = carbon_chemistry(; DIC = 2000.0, Alk = 2000.0, T = 10.0, S = 35.0)
-1308.1474527899113
+1308.1006995915372
 
 julia> pH = carbon_chemistry(; DIC = 2000.0, Alk = 2000.0, T = 10.0, S = 35.0, output = Val(:pHᶠ))
-7.502532746463653
+7.5025291696038705
 
 julia> pCO₂_higher_pH = carbon_chemistry(; DIC = 2000.0, T = 10.0, S = 35.0, pH = 7.5)
-1315.7136384737507
+1315.6558976217746
 
 ```
 """
@@ -88,6 +88,8 @@ end
 
 """
     (p::CarbonChemistry)(; DIC, T, S, Alk = 0, pH = nothing,
+                           water_pressure = nothing,
+                           atmospheric_pressure = 1,
                            output = Val(:fCO₂),
                            boron = 0.000232 / 10.811 * S / 1.80655,
                            sulfate = 0.14 / 96.062 * S / 1.80655,
@@ -110,9 +112,19 @@ Val(:pHˢ), which will return `X` in `Val(:X)` instead of fCO₂.
 
 `Val(:CO₂)` gives `[CO₂(aq)]` (equivalently `[H₂CO₃]`) in mmol/m³, matching the units `DIC`
 was supplied in, rather than the ppm of the fugacity and partial pressure outputs.
+
+Two distinct pressures may be given:
+
+- `water_pressure`: the sea water (hydrostatic) pressure in bar *above* atmospheric, i.e. the
+  gauge pressure which is zero at the surface. It is used for the Millero (2007) pressure
+  correction of the equilibrium constants and for the density. The default of `nothing`
+  means the surface (no pressure correction, and density at 0 bar).
+- `atmospheric_pressure`: the total pressure of the gas phase in atm (default 1), which is
+  only used in the conversion from fugacity to partial pressure for `output = Val(:pCO₂)`.
 """
 @inline function (p::CarbonChemistry)(; DIC::FT, T, S, Alk = zero(DIC), pH = nothing,
-                                        P = nothing, # bars (???)
+                                        water_pressure = nothing, # bar, gauge (surface = 0)
+                                        atmospheric_pressure = one(DIC), # atm, only for `Val(:pCO₂)`
                                         lon = zero(DIC),
                                         lat = zero(DIC),
                                         output = Val(:fCO₂),
@@ -123,7 +135,7 @@ was supplied in, rather than the ppm of the fugacity and partial pressure output
                                         phosphate = zero(DIC),
                                         initial_pH_guess = convert(typeof(DIC), 8)) where FT
 
-    ρₒ = p.density_function(T, S, ifelse(isnothing(P), one(DIC), P), lon, lat)
+    ρₒ = p.density_function(T, S, ifelse(isnothing(water_pressure), zero(DIC), water_pressure), lon, lat)
 
     # Centigrade to kelvin
     T += convert(FT, 273.15)
@@ -140,16 +152,16 @@ was supplied in, rather than the ppm of the fugacity and partial pressure output
     Is = p.ionic_strength(S)
 
     # compute equilibrium constants
-    K1  = p.carbonic_acid.K1(T, S; P)
-    K2  = p.carbonic_acid.K2(T, S; P)
-    KB  = p.boric_acid(T, S; P)
-    KW  = p.water(T, S; P)
-    KS  = p.sulfate(T, S, Is; P)
-    KF  = p.fluoride(T, S, Is, KS; P)
-    KP1 = p.phosphoric_acid.KP1(T, S; P)
-    KP2 = p.phosphoric_acid.KP2(T, S; P)
-    KP3 = p.phosphoric_acid.KP3(T, S; P)
-    KSi = p.silicic_acid(T, S, Is; P)
+    K1  = p.carbonic_acid.K1(T, S; P = water_pressure)
+    K2  = p.carbonic_acid.K2(T, S; P = water_pressure)
+    KB  = p.boric_acid(T, S; P = water_pressure)
+    KW  = p.water(T, S; P = water_pressure)
+    KS  = p.sulfate(T, S, Is; P = water_pressure)
+    KF  = p.fluoride(T, S, Is, KS; P = water_pressure)
+    KP1 = p.phosphoric_acid.KP1(T, S; P = water_pressure)
+    KP2 = p.phosphoric_acid.KP2(T, S; P = water_pressure)
+    KP3 = p.phosphoric_acid.KP3(T, S; P = water_pressure)
+    KSi = p.silicic_acid(T, S, Is; P = water_pressure)
 
     params = (; DIC, Alk, boron, sulfate, fluoride, silicate, phosphate,
                 K1, K2, KB, KW, KS, KF, KP1, KP2, KP3, KSi)
@@ -167,16 +179,16 @@ was supplied in, rather than the ppm of the fugacity and partial pressure output
     # mol / kg to mmol / m³, i.e. back into the units `DIC` was given in
     CO₂ *= ρₒ * convert(FT, 10 ^ 3)
 
-    return selected_output(output, fCO₂, CO₂, H, P, T, S, Is, sulfate, fluoride, p)
+    return selected_output(output, fCO₂, CO₂, H, water_pressure, atmospheric_pressure, T, S, Is, sulfate, fluoride, p)
 end
 
-@inline selected_output(::Val{:fCO₂}, fCO₂, CO₂, H, P, Tk, S, Is, sulfate, fluoride, p) = fCO₂ # ppm
-@inline selected_output(::Val{:CO₂}, fCO₂, CO₂, H, P, Tk, S, Is, sulfate, fluoride, p) = CO₂ # mmol / m³
-@inline selected_output(::Val{:pHᶠ}, fCO₂, CO₂, H, P, Tk, S, Is, sulfate, fluoride, p) = -log10(H) #
+@inline selected_output(::Val{:fCO₂}, fCO₂, CO₂, H, water_pressure, atmospheric_pressure, Tk, S, Is, sulfate, fluoride, p) = fCO₂ # ppm
+@inline selected_output(::Val{:CO₂}, fCO₂, CO₂, H, water_pressure, atmospheric_pressure, Tk, S, Is, sulfate, fluoride, p) = CO₂ # mmol / m³
+@inline selected_output(::Val{:pHᶠ}, fCO₂, CO₂, H, water_pressure, atmospheric_pressure, Tk, S, Is, sulfate, fluoride, p) = -log10(H) #
 
-@inline function selected_output(::Val{:pCO₂}, fCO₂::FT, CO₂, H, P, Tk, S, Is, sulfate, fluoride, p) where FT
-    P = ifelse(isnothing(P), one(fCO₂), P)
-    P *= convert(FT, 101325) # pascals
+@inline function selected_output(::Val{:pCO₂}, fCO₂::FT, CO₂, H, water_pressure, atmospheric_pressure, Tk, S, Is, sulfate, fluoride, p) where FT
+    # the total pressure of the gas phase, not the water pressure
+    P = convert(FT, atmospheric_pressure) * convert(FT, 101325) # pascals
 
     B = p.first_virial_coefficient(Tk)
     δ = p.cross_virial_coefficient(Tk)
@@ -199,18 +211,18 @@ end
     return pCO₂ # ppmv
 end
 
-@inline function selected_output(::Val{:pHᵗ}, fCO₂::FT, CO₂, H, P, Tk, S, Is, sulfate, fluoride, p) where FT
-    KS  = p.sulfate(Tk, S, Is; P)
+@inline function selected_output(::Val{:pHᵗ}, fCO₂::FT, CO₂, H, water_pressure, atmospheric_pressure, Tk, S, Is, sulfate, fluoride, p) where FT
+    KS  = p.sulfate(Tk, S, Is; P = water_pressure)
     HSO₄⁻ = sulfate / (1 + KS / H)
 
     return -log10(H + HSO₄⁻)
 end
 
-@inline function selected_output(::Val{:pHˢ}, fCO₂::FT, CO₂, H, P, Tk, S, Is, sulfate, fluoride, p) where FT
-    KS  = p.sulfate(Tk, S, Is; P)
+@inline function selected_output(::Val{:pHˢ}, fCO₂::FT, CO₂, H, water_pressure, atmospheric_pressure, Tk, S, Is, sulfate, fluoride, p) where FT
+    KS  = p.sulfate(Tk, S, Is; P = water_pressure)
     HSO₄⁻ = sulfate / (1 + KS / H)
 
-    KF  = p.fluoride(Tk, S, Is, KS; P)
+    KF  = p.fluoride(Tk, S, Is, KS; P = water_pressure)
     HF = fluoride / (1 + KF / H)
 
     return -log10(H + HSO₄⁻ + HF)

@@ -31,7 +31,7 @@ end
 
     # very rough - don't think we should bother integrating the actual density
     # this is a type stability issue
-    P = abs(z) * g * 1026 / 100000
+    water_pressure = abs(z) * g * 1026 / 100000 # bar, gauge (surface = 0)
 
-    @inbounds calcite_saturation[i, j, k] = CarbonChemistryModel.calcium_carbonate_saturation(carbon_chemistry; DIC, T, S, Alk, P, silicate)
+    @inbounds calcite_saturation[i, j, k] = CarbonChemistryModel.calcium_carbonate_saturation(carbon_chemistry; DIC, T, S, Alk, water_pressure, silicate)
 end
