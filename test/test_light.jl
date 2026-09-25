@@ -309,3 +309,42 @@ end
         end
     end
 end
+
+@testset "Light attenuation with negative chlorophyll" begin
+    # Advection can undershoot P, and so the chlorophyll, slightly below zero. Chlorophyll attenuates light
+    # as Chl^e with a fractional e, which has no real value for Chl < 0 (a `DomainError` on the CPU and
+    # `NaN` on the GPU), so negative chlorophyll should attenuate exactly like no chlorophyll
+    grid = RectilinearGrid(architecture; size = (1, 1, 4), extent = (1, 1, 20))
+
+    # P = 0.1 everywhere except in the cell centred at z = -7.5 m, which has light above and below it
+    P_with(Pᵇᵃᵈ) = (x, y, z) -> -10 < z < -5 ? Pᵇᵃᵈ : 0.1
+
+    # the multi-band `PAR` is the sum of the bands, an operation rather than a `Field`, so we check the bands
+    light_profiles(light_attenuation) = [Array(interior(field)) for field in values(biogeochemical_auxiliary_fields(light_attenuation))
+                                         if field isa Field]
+
+    light_attenuation_models = (two_band = TwoBandPhotosyntheticallyActiveRadiation(grid, 100),
+                                two_band_with_interface = TwoBandPhotosyntheticallyActiveRadiation(grid, 100; interface_field = ZFaceField(grid)),
+                                multi_band = MultiBandPhotosyntheticallyActiveRadiation(grid, 100))
+
+    @testset "$name" for (name, light_attenuation) in pairs(light_attenuation_models)
+        biogeochemistry = NPZD(grid; light_attenuation)
+
+        model = NonhydrostaticModel(grid; biogeochemistry, buoyancy = nothing, tracers = nothing)
+
+        set!(model, P = P_with(0.0))
+
+        PAR_without_chlorophyll = light_profiles(light_attenuation)
+
+        set!(model, P = P_with(-1e-12)) # `set!` updates the light too
+
+        PAR = light_profiles(light_attenuation)
+
+        @test all(PARᵢ -> all(isfinite, PARᵢ), PAR)
+        @test PAR == PAR_without_chlorophyll
+
+        time_step!(model, 1)
+
+        @test all(tracer -> all(isfinite, Array(interior(tracer))), model.tracers)
+    end
+end

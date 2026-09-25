@@ -37,10 +37,10 @@ end
 const TwoBandLight{FT, F, SPAR} = TwoBandPhotosyntheticallyActiveRadiation{FT, F, SPAR}
 
 @inline attenuation(i, j, k, grid, la::TwoBandLight, clock, Chl, ::Val{1}) =
-    @inbounds la.water_red_attenuation + (Chl[i, j, k]/la.pigment_ratio)^la.chlorophyll_red_exponent * la.chlorophyll_red_attenuation
+    la.water_red_attenuation + (nonnegative_chlorophyll(i, j, k, Chl)/la.pigment_ratio)^la.chlorophyll_red_exponent * la.chlorophyll_red_attenuation
 
 @inline attenuation(i, j, k, grid, la::TwoBandLight, clock, Chl, ::Val{2}) =
-    @inbounds la.water_blue_attenuation + (Chl[i, j, k]/la.pigment_ratio)^la.chlorophyll_blue_exponent * la.chlorophyll_blue_attenuation
+    la.water_blue_attenuation + (nonnegative_chlorophyll(i, j, k, Chl)/la.pigment_ratio)^la.chlorophyll_blue_exponent * la.chlorophyll_blue_attenuation
 
 """
     TwoBandPhotosyntheticallyActiveRadiation(; grid::AbstractGrid{FT},
