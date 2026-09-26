@@ -40,6 +40,10 @@ function element_groups(inorganic_carbon::AbstractInorganicCarbon{N}, bgc, ::Val
     return NamedTuple{names}(groups)
 end
 
+# the tracers of plankton and detritus which contain elements, which excludes e.g. the temperature
+# that `PhytoZoo` requires for temperature dependent growth
+organic_tracers(group) = filter(name -> !(name in (:T, :S)), required_biogeochemical_tracers(group))
+
 # tracer conservations
 
 group_element_tracers(Nutrients::Nutrients, bgc, val_element) = NamedTuple()
@@ -84,7 +88,7 @@ function group_element_tracers(group, bgc, val_element)
         return NamedTuple()
     end
 
-    names = required_biogeochemical_tracers(group)
+    names = organic_tracers(group)
     return NamedTuple{names}(repeat([coefficient], length(names)))
 end
 
@@ -94,7 +98,7 @@ for thing in (PhytoZoo, Detritus, DissolvedParticulate)
         @eval begin
             function group_element_tracers(group::$thing, bgc, ::Val{$(QuoteNode(element))})
                 ratio = $(ratio_name)(bgc.plankton, bgc)
-                names = required_biogeochemical_tracers(group)
+                names = organic_tracers(group)
                 return NamedTuple{names}(repeat([ratio], length(names)))
             end
         end
@@ -103,7 +107,7 @@ for thing in (PhytoZoo, Detritus, DissolvedParticulate)
     @eval begin
         function group_element_tracers(group::$thing, bgc, ::Val{:silicate})
             ratio = silicon_ratio(bgc.plankton, bgc)
-            names = required_biogeochemical_tracers(group)
+            names = organic_tracers(group)
             return NamedTuple{names}(repeat([ratio], length(names)))
         end
     end
@@ -117,7 +121,7 @@ for thing in (PhytoZoo, Detritus)
         function group_element_tracers(group::$thing, bgc, ::Val{:carbon})
             ratio = carbon_ratio(bgc.plankton, bgc) * organic_carbon_calcium_carbonate_factor(bgc)
 
-            names = required_biogeochemical_tracers(group)
+            names = organic_tracers(group)
 
             return NamedTuple{names}(repeat([ratio], length(names)))
         end
@@ -128,7 +132,7 @@ function group_element_tracers(group::PhytoZoo, bgc::NPD{<:Any, <:Any, <:Any, <:
     R = carbon_ratio(bgc.plankton, bgc)
     ρ = calcium_carbonate_rain_ratio(bgc.plankton, bgc)
 
-    names = required_biogeochemical_tracers(group)
+    names = organic_tracers(group)
 
     return NamedTuple{names}(map(name -> name === :P ? R * (1 + ρ) : R, names))
 end
@@ -163,7 +167,7 @@ for thing in (PhytoZoo, Detritus, DissolvedParticulate)
             ratio = carbon_ratio(bgc.plankton, bgc)
             rO = - bgc.oxygen.production_oxygen_carbon_ratio
 
-            names = required_biogeochemical_tracers(group)
+            names = organic_tracers(group)
 
             return NamedTuple{names}(repeat([ratio * rO], length(names)))
         end

@@ -145,6 +145,19 @@ group_totals(model, groups) = map(group -> sum(scalefactor * tracer_value(model,
         @test tracer_value(model, :O₂) == -1
     end
 
+    @testset "Temperature is not scaled" begin
+        biogeochemistry = NPZD(grid; scale_negatives = true, light_attenuation)
+        model = NonhydrostaticModel(grid; biogeochemistry, advection = nothing)
+
+        @test keys(conserved_tracers(biogeochemistry).nitrogen) == (:N, :P, :Z, :D)
+
+        set_tracers!(model; N = 5, P = 0.1, Z = 0.5, D = 0.5, T = -1)
+        update_state!(model)
+
+        @test tracer_value(model, :T) == -1
+        @test tracer_value(model, :N) == 5
+    end
+
     @testset "Halos are filled after scaling" begin
         grid = RectilinearGrid(architecture, size = 4, z = (-4, 0), topology = (Flat, Flat, Bounded))
         model = NonhydrostaticModel(grid; biogeochemistry = NPZD(grid; scale_negatives = true),
