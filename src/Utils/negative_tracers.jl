@@ -1,14 +1,14 @@
-using Oceananigans: fields, Simulation
+using Oceananigans: fields
 using KernelAbstractions: @kernel, @index
-using Oceananigans.Utils: work_layout
-using Oceananigans.Architectures: device, architecture, on_architecture
+using Oceananigans.Architectures: architecture
 using Oceananigans.Biogeochemistry: AbstractBiogeochemistry
+using Oceananigans.BoundaryConditions: fill_halo_regions!
+using Oceananigans.DistributedComputations: synchronize_communication!
 using Oceananigans.ImmersedBoundaries: immersed_cell
+using Oceananigans.Utils: launch!
 
-import Adapt: adapt_structure, adapt
 import Base: summary, show
 import Oceananigans.Biogeochemistry: update_tendencies!, update_biogeochemical_state!
-import KernelAbstractions as KA
 
 """
     ZeroNegativeTracers(; exclude = ())
@@ -35,25 +35,20 @@ end
 ##### Infastructure to rescale negative values
 #####
 
-struct ScaleNegativeTracers{FA, SA, FV, W}
-           tracers :: FA
-      scalefactors :: SA
-invalid_fill_value :: FV
-              warn :: W
-
-    ScaleNegativeTracers(tracers::FA, scalefactors::SA, invalid_fill_value::FV, warn::W) where {FA, SA, W, FV} =
-        warn ? error("Warning not currently implemented") : new{FA, SA, FV, W}(tracers, scalefactors, invalid_fill_value, warn)
+struct ScaleNegativeTracers{FA, SA, SH, OT, FV}
+             tracers :: FA
+        scalefactors :: SA
+              shared :: SH
+    first_own_tracer :: OT
+  invalid_fill_value :: FV
 end
 
-adapt_structure(to, snt::ScaleNegativeTracers) = ScaleNegativeTracers(adapt(to, snt.tracers),
-                                                                      adapt(to, snt.scalefactors),
-                                                                      adapt(to, snt.invalid_fill_value),
-                                                                      adapt(to, snt.warn))
-
 """
-    ScaleNegativeTracers(; tracers, scalefactors = ones(length(tracers)), warn = false, invalid_fill_value = NaN)
+    ScaleNegativeTracers(tracers; scalefactors = ones(length(tracers)), invalid_fill_value = NaN)
+    ScaleNegativeTracers(groups::NamedTuple; invalid_fill_value = NaN)
 
-Constructs a modifier to scale `tracers` so that none are negative. Use like:
+Constructs a modifier to scale `tracers` so that none are negative, while conserving their total
+weighted by `scalefactors`. Use like:
 ```julia
 modifier = ScaleNegativeTracers((:P, :Z, :N))
 biogeochemistry = Biogeochemistry(...; modifier)
@@ -61,6 +56,25 @@ biogeochemistry = Biogeochemistry(...; modifier)
 This method is better, though still imperfect, method to prevent numerical errors that lead to
 negative tracer values compared to [`ZeroNegativeTracers`](@ref). Please see [discussion in
 github](https://github.com/OceanBioME/OceanBioME.jl/discussions/48).
+
+In each cell where a tracer is negative, the negative tracers are set to zero and the positive ones are
+multiplied by `t / p`, where `t` is the weighted total and `p` is the weighted total of the positive tracers.
+
+Several totals can be conserved at once, for example the nitrogen and the carbon in the same plankton, by
+passing a named tuple of groups, each a tuple of tracer names or a named tuple of scale factors:
+```julia
+modifier = ScaleNegativeTracers((nitrogen = (N = 1, P = 1, Z = 1),
+                                 carbon = (DIC = 1, P = 6.56, Z = 6.56)))
+```
+A tracer in more than one group (`P` and `Z` here) is scaled by the smallest of its groups' factors `t / p`,
+and the tracers that are only in one group (`N` and `DIC`) are then scaled to keep that group's total, so
+every group is conserved (if none of them is positive, the first one gets the difference). Groups which
+share tracers must therefore be given to the same `ScaleNegativeTracers`, and each group needs at least one
+tracer of its own. Scale factors can not be negative, and a tracer with a zero scale factor is not part of
+the group.
+
+After scaling, the halos of the tracers are filled again so that the fluxes through the boundaries use the
+scaled values.
 
 Future plans include implement a positivity-preserving timestepping scheme as the ideal alternative.
 
@@ -84,188 +98,161 @@ function ScaleNegativeTracers(tracers; scalefactors = ones(length(tracers)), inv
         error("Incorrect number of scale factors provided")
     end
 
-    return ScaleNegativeTracers(tracers, scalefactors, invalid_fill_value, warn)
+    group = NamedTuple{Tuple(tracers)}(Tuple(scalefactors))
+
+    return ScaleNegativeTracers(group; invalid_fill_value, warn)
 end
 
+ScaleNegativeTracers(group::NamedTuple{<:Any, <:Tuple{Vararg{Number}}}; invalid_fill_value = NaN, warn = false) =
+    ScaleNegativeTracers((; scalefactors = group); invalid_fill_value, warn)
+
 """
-    ScaleNegativeTracers(bgc::AbstractBiogeochemistry; warn = false)
+    ScaleNegativeTracers(bgc::AbstractBiogeochemistry; invalid_fill_value = NaN)
 
 Construct a modifier to scale the conserved tracers in `bgc` biogeochemistry.
 
-If `warn` is true then scaling will raise a warning.
+Groups whose scale factors have both signs are left out: their total (e.g. the oxygen in
+`NutrientsPlanktonDetritus` models, which counts organic matter as the oxygen needed to respire it)
+can be negative when no tracer is.
 """
 function ScaleNegativeTracers(bgc::AbstractBiogeochemistry; invalid_fill_value = NaN, warn = false)
-    tracers = conserved_tracers(bgc)
+    groups = map(group_scalefactors, conserved_tracers(bgc))
 
-    return ScaleNegativeTracers(tracers; invalid_fill_value, warn)
+    names = filter(name -> all(≥(0), values(groups[name])), keys(groups))
+
+    return ScaleNegativeTracers(groups[names]; invalid_fill_value, warn)
 end
 
-function ScaleNegativeTracers(tracers::NTuple{<:Any, Symbol};
-                              invalid_fill_value=NaN,
-                              warn=false,)
-    scalefactors = ones(length(tracers))
+function ScaleNegativeTracers(groups::NamedTuple; invalid_fill_value = NaN, warn = false)
+    warn && error("Warning not currently implemented")
 
-    return ScaleNegativeTracers(tracers, scalefactors, invalid_fill_value, warn)
+    groups = map(group_scalefactors, groups)
+
+    for (group_name, group) in pairs(groups), (name, scalefactor) in pairs(group)
+        isfinite(scalefactor) && scalefactor ≥ 0 ||
+            throw(ArgumentError("The scale factor of $name in the $group_name group is $scalefactor, but scale factors " *
+                                "must not be negative: a total with negative scale factors can be negative when no tracer is."))
+    end
+
+    groups = map(group -> (; (name => s for (name, s) in pairs(group) if s > 0)...), groups)
+    groups = (; (group_name => group for (group_name, group) in pairs(groups) if !isempty(group))...)
+
+    tracers = Tuple(unique(Symbol[name for group in groups for name in keys(group)]))
+
+    scalefactors = map(group -> map(name -> float(get(group, name, 0)), tracers), groups)
+
+    shared = map(n -> count(s -> s[n] > 0, values(scalefactors)) > 1, Tuple(1:length(tracers)))
+
+    first_own_tracer = map(keys(scalefactors), values(scalefactors)) do group_name, s
+        n = findfirst(n -> (s[n] > 0) & !shared[n], 1:length(tracers))
+
+        isnothing(n) && throw(ArgumentError("All of the tracers in the $group_name group are also in other groups, but each " *
+                                            "group needs a tracer of its own to make up the changes to its total."))
+
+        return n
+    end
+
+    return ScaleNegativeTracers(tracers, scalefactors, shared, first_own_tracer, invalid_fill_value)
 end
 
-# multiple conserved groups
-ScaleNegativeTracers(tracers::NamedTuple; invalid_fill_value = NaN, warn = false) =
-    maybe_a_tuple(map(tn -> ScaleNegativeTracers(tn; invalid_fill_value, warn), values(tracers))...)
-
-maybe_a_tuple(a) = a
-maybe_a_tuple(args...) = tuple(args...)
-
-function ScaleNegativeTracers(tracers::NamedTuple{<:Any, <:NTuple{<:Any, <:Number}};
-                              invalid_fill_value=NaN,
-                              warn=false,)
-    scalefactors = values(tracers)
-    tracer_names = keys(tracers)
-
-    return ScaleNegativeTracers(tracer_names, scalefactors, invalid_fill_value, warn)
-end
+group_scalefactors(group::NamedTuple) = group
+group_scalefactors(names::Tuple{Vararg{Symbol}}) = NamedTuple{names}(map(_ -> 1, names))
 
 summary(scaler::ScaleNegativeTracers) = string("Mass conserving negative scaling of $(scaler.tracers)")
-show(io::IO, scaler::ScaleNegativeTracers) = print(io, string(summary(scaler), "\n",
-                                                          "└── Scalefactors: $(scaler.scalefactors)"))
 
+function show(io::IO, scaler::ScaleNegativeTracers)
+    print(io, summary(scaler))
+
+    for (n, (group_name, scalefactors)) in enumerate(pairs(scaler.scalefactors))
+        group = (; (name => s for (name, s) in zip(scaler.tracers, scalefactors) if s > 0)...)
+
+        print(io, "\n", n == length(scaler.scalefactors) ? "└── " : "├── ", group_name, ": ", group)
+    end
+end
 
 function update_biogeochemical_state!(model, scale::ScaleNegativeTracers)
+    isempty(scale.tracers) && return nothing
 
-    dev = device(architecture(model))
+    grid = model.grid
+    FT = eltype(grid)
 
-    apply_scale_for_negs!(dev, model, scale)
+    tracers = Tuple(model.tracers[name] for name in scale.tracers)
+    scalefactors = map(s -> map(sₙ -> convert(FT, sₙ), s), values(scale.scalefactors))
 
-    return nothing
-end
+    launch!(architecture(grid), grid, :xyz, _scale_negative_tracers!,
+            map(tracer -> tracer.data, tracers), grid, scalefactors,
+            scale.shared, scale.first_own_tracer, convert(FT, scale.invalid_fill_value))
 
-function apply_scale_for_negs!(dev::KA.GPU, model, scale)
-    workgroup, worksize = work_layout(dev, model.grid, :xyz, (Center, Center, Center))
-
-    scale_for_negs_kernel! = scale_for_negs_gpu!(dev, workgroup, worksize)
-
-    field_scale = Tuple(Iterators.flatten(
-        zip([model.tracers[tracer_name] for tracer_name in scale.tracers],
-            scale.scalefactors
-        )))
-
-    scale_for_negs_kernel!(model.grid, scale.invalid_fill_value, field_scale...)
+    # `update_state!` filled the halos before calling this, so they still hold the values from before the scaling
+    synchronize_communication!(tracers)
+    fill_halo_regions!(tracers, model.clock, fields(model))
 
     return nothing
 end
 
-function apply_scale_for_negs!(dev::KA.CPU, model, scale)
-    workgroup, worksize = work_layout(dev, model.grid, :xyz, (Center, Center, Center))
-
-    scale_for_negs_kernel! = scale_for_negs_cpu!(dev, workgroup, worksize)
-
-    # Fields themselves may have different types (due to type parameters)
-    # It can cause type instability in the kernel if there is enough of different
-    # field types in the tuple (and cause allocation in the for loop)
-    # We need to homogenise types: hence we provide the data (aka OffsetArray)
-    # directly
-    tracers_to_scale = Tuple(model.tracers[tracer_name].data for tracer_name in scale.tracers)
-
-    scale_for_negs_kernel!(model.grid, scale.invalid_fill_value, scale.scalefactors, tracers_to_scale)
-
-    return nothing
-end
-
-# `CUDA.jl` has a tendency to make a local copy if we pass a list of tracer fields
-# as a tuple (despite it being immutable). See the related issue:
-# https://github.com/JuliaGPU/CUDA.jl/issues/1168
-#
-# This makes each thread use a large amount of 'Local' memory, which in turn
-# introduces large amount of non-optimal memory traffic and slows the kernel
-# significantly.
-#
-# The easiest workaround to avoid the local copy is to pass each field (and
-# associated scalefactor) as a parameter to the kernel. But since we want to
-# support arbitrary number of fields we need to make the kernel variadic.
-#
-# We expect Julia to inline the recursive calls and, effectively unroll the loops
-@kernel cpu = false function scale_for_negs_gpu!(grid, invalid_fill_value, field_scale...)
-    ijk = @index(Global, NTuple)
-
-    if !immersed_cell(ijk..., grid)
-        t, p = calculate_total_and_positive_part(0.0, 0.0, ijk, field_scale...)
-    
-        t = ifelse(t < 0, invalid_fill_value, t)
-    
-        correct_negative_fields!(t, p, ijk, field_scale...)
-    end
-    nothing
-end
-
-# Recursive step
-@inline function calculate_total_and_positive_part(t,
-                                                   p,
-                                                   ijk,
-                                                   field,
-                                                   scale,
-                                                   field_scale...)
-    t, p = calculate_total_and_positive_part(t, p, ijk, field, scale)
-    return calculate_total_and_positive_part(t, p, ijk, field_scale...)
-end
-
-# Recursion terminal
-@inline function calculate_total_and_positive_part(t, p, ijk, field, scale)
-    i, j, k = ijk
-    value = @inbounds field[i, j, k]
-    t += value * scale
-    if value > 0
-        p += value * scale
-    end
-    return t, p
-end
-
-# Recursive step
-@inline function correct_negative_fields!(t, p, ijk, field, scale, field_scale...)
-    correct_negative_fields!(t, p, ijk, field, scale)
-    correct_negative_fields!(t, p, ijk, field_scale...)
-    return nothing
-end
-
-# Recursion terminal
-@inline function correct_negative_fields!(t, p, ijk, field, scale)
-    i, j, k = ijk
-    value = @inbounds field[i, j, k]
-    new_value = ifelse(!isfinite(value) | (value > 0), value * t / p, 0)
-    @inbounds field[i, j, k] = new_value
-    return nothing
-end
-
-#
-# The GPU kernel requires recursive implementation to avoid thread-local copies.
-# However, when used on CPU it produces significant number of temporary allocations.
-# This is most likely related to the fact that julia does not do tail call elimination
-# on a CPU.
-#
-# Hence, for CPU code we need to fall-back to the loop-based version
-#
-@kernel function scale_for_negs_cpu!(grid, invalid_fill_value, scalefactors, fields)
+@kernel function _scale_negative_tracers!(tracers, grid, scalefactors, shared, first_own_tracer, invalid_fill_value)
     i, j, k = @index(Global, NTuple)
 
-    if !immersed_cell(i, j, k, grid)
-        t, p = 0.0, 0.0
-    
-        for (idx, field) in enumerate(fields)
-            value = @inbounds field[i, j, k]
-            scalefactor = @inbounds scalefactors[idx]
-    
-            t += value * scalefactor
-            if value > 0
-                p += value * scalefactor
-            end
-        end
-    
-        t = ifelse(t < 0, invalid_fill_value, t)
-    
-        for field in fields
-            value = @inbounds field[i, j, k]
-    
-            new_value = ifelse(!isfinite(value) | (value > 0), value * t / p, 0)
-    
-            @inbounds field[i, j, k] = new_value
-        end
+    scale_negative_tracers!(i, j, k, grid, tracers, scalefactors, shared, first_own_tracer, invalid_fill_value)
+end
+
+# The tracers are passed as a tuple and every loop over them is unrolled with `ntuple`,
+# which lets the GPU keep them in registers rather than making a local copy of the tuple
+@inline function scale_negative_tracers!(i, j, k, grid, tracers::NTuple{M, Any}, args...) where M
+    c = ntuple(n -> @inbounds(tracers[n][i, j, k]), Val(M))
+
+    if !immersed_cell(i, j, k, grid) && reduce(|, ntuple(n -> !(c[n] ≥ 0), Val(M)))
+        scaled = scale_negative_values(c, args...)
+
+        ntuple(n -> @inbounds(tracers[n][i, j, k] = scaled[n]), Val(M))
+    end
+
+    return nothing
+end
+
+@inline function scale_negative_values(c::NTuple{M, Any}, s::NTuple{G, Any}, shared,
+                                       first_own_tracer, invalid_fill_value) where {M, G}
+
+    c⁺ = ntuple(n -> ifelse(c[n] > 0, c[n], zero(c[n])), Val(M))
+
+    # the total of each group (t), and how much of it is in the positive tracers (p)
+    t = ntuple(g -> weighted_sum(s[g], c), Val(G))
+    p = ntuple(g -> weighted_sum(s[g], c⁺), Val(G))
+
+    # the factor that would scale the positive tracers of each group to its total if it was the only group
+    f = ntuple(g -> ifelse(p[g] > 0, ifelse(t[g] < 0, invalid_fill_value, t[g]) / p[g], one(p[g])), Val(G))
+
+    # a tracer in several groups is scaled by the smallest factor of its groups
+    φ = ntuple(n -> reduce(min, ntuple(g -> ifelse(s[g][n] > 0, f[g], one(f[g])), Val(G))), Val(M))
+
+    # the tracers which are only in one group then hold the rest of its total (r): what its positive ones held (q)
+    # plus the change (Δ) made by zeroing the negative tracers and scaling the shared ones
+    Δ = ntuple(n -> c[n] - ifelse(shared[n], φ[n] * c⁺[n], c⁺[n]), Val(M))
+    own = ntuple(n -> ifelse(shared[n], zero(c⁺[n]), c⁺[n]), Val(M))
+    scaled_shared = ntuple(n -> ifelse(shared[n], φ[n] * c⁺[n], zero(c⁺[n])), Val(M))
+
+    q = ntuple(g -> weighted_sum(s[g], own), Val(G))
+    r = ntuple(g -> ifelse(t[g] < 0, invalid_fill_value - weighted_sum(s[g], scaled_shared),
+                                     q[g] + weighted_sum(s[g], Δ)), Val(G))
+
+    # so they are scaled by r / q, or if none of them is positive the first of them gets all of r
+    β = ntuple(g -> ifelse(q[g] > 0, r[g] / q[g], zero(r[g])), Val(G))
+    remainder = ntuple(g -> ifelse(!(q[g] > 0) & (r[g] > 0), r[g], zero(r[g])) / selected(s[g], first_own_tracer[g]), Val(G))
+
+    return ntuple(Val(M)) do n
+        βₙ = sum(ntuple(g -> ifelse(s[g][n] > 0, β[g], zero(β[g])), Val(G)))
+        remainderₙ = sum(ntuple(g -> ifelse(first_own_tracer[g] == n, remainder[g], zero(remainder[g])), Val(G)))
+
+        scaled = ifelse(shared[n], φ[n], βₙ) * c[n]
+        filled = ifelse(shared[n], zero(c[n]), remainderₙ)
+
+        ifelse(c[n] > 0, scaled, ifelse(isnan(c[n]), c[n], filled))
     end
 end
+
+# only the tracers in the group are added, so that e.g. a `NaN` in another group doesn't make the total `NaN`
+@inline weighted_sum(s::NTuple{M, Any}, c::NTuple{M, Any}) where M =
+    sum(ntuple(n -> ifelse(s[n] > 0, s[n] * c[n], zero(s[n] * c[n])), Val(M)))
+
+# `s[m]` without indexing the tuple with a number that is only known at run time
+@inline selected(s::NTuple{M, Any}, m) where M = sum(ntuple(n -> ifelse(n == m, s[n], zero(s[n])), Val(M)))

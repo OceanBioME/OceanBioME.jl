@@ -25,7 +25,13 @@ You may also pass a scale factor for each component (e.g. in case they have diff
 negativity_protection = ScaleNegativeTracers((:P, :Z, :N); scalefactors = (1, 1, 2))
 biogeochemistry = Biogeochemistry(...; modifiers = negativity_protection)
 ```
-Here you should carefully consider which tracers form a conserved group (if at all). Alternatively, force to zero by:
+Here you should carefully consider which tracers form a conserved group (if at all). If some tracers are in more than one group (e.g. plankton contain both nitrogen and carbon), give all of the groups to the same `ScaleNegativeTracers` so that they are all conserved:
+```julia
+negativity_protection = ScaleNegativeTracers((nitrogen = (N = 1, P = 1, Z = 1),
+                                              carbon = (DIC = 1, P = 6.56, Z = 6.56)))
+biogeochemistry = Biogeochemistry(...; modifiers = negativity_protection)
+```
+Separate `ScaleNegativeTracers` modifiers are applied one after the other, so each would change the totals of the others. The `scale_negatives = true` option of the models does this for the groups given by `OceanBioME.conserved_tracers(biogeochemistry)`. Alternatively, force to zero by:
 ```julia
 negativity_protection = ZeroNegativeTracers()
 biogeochemistry = Biogeochemistry(...; modifiers = negativity_protection)

@@ -1,5 +1,7 @@
 import OceanBioME: conserved_tracers
 
+using .InorganicCarbonModels: AbstractInorganicCarbon
+
 # possible conservations are N/P/Fe/Si/C/O
 # when a nutrient class is nothing it is implicitly conserved so we will not include that in the conservations
 @inline function conserved_tracers(bgc::NutrientsPlanktonDetritus)
@@ -19,25 +21,39 @@ import OceanBioME: conserved_tracers
         element_tracers = group_element_tracers(bgc.nutrients, bgc, Val(element))
         element_tracers = merge(element_tracers, group_element_tracers(bgc.plankton, bgc, Val(element)))
         element_tracers = merge(element_tracers, group_element_tracers(bgc.detritus, bgc, Val(element)))
-        element_tracers = merge(element_tracers, group_element_tracers(bgc.inorganic_carbon, bgc, Val(element)))
         element_tracers = merge(element_tracers, group_element_tracers(bgc.oxygen, bgc, Val(element)))
 
-        conserved_tracers = merge(conserved_tracers, NamedTuple{(element, )}((element_tracers, ))) 
+        conserved_tracers = merge(conserved_tracers, element_groups(bgc.inorganic_carbon, bgc, Val(element), element_tracers))
     end
 
     return conserved_tracers
 end
 
+element_groups(inorganic_carbon, bgc, ::Val{element}, element_tracers) where element =
+    NamedTuple{(element, )}((element_tracers, ))
+
+# each replicate of the inorganic carbon (`DIC1`, `DIC2`, ...) has its own total carbon, which includes the organic carbon
+function element_groups(inorganic_carbon::AbstractInorganicCarbon{N}, bgc, ::Val{:carbon}, organic_carbon) where N
+    names = N == 1 ? (:carbon, ) : ntuple(n -> Symbol(:carbon, n), N)
+    groups = ntuple(n -> merge(inorganic_carbon_tracers(inorganic_carbon, bgc, n), organic_carbon), N)
+
+    return NamedTuple{names}(groups)
+end
+
+# the tracers of plankton and detritus which contain elements, which excludes e.g. the temperature
+# that `PhytoZoo` requires for temperature dependent growth
+organic_tracers(group) = filter(name -> !(name in (:T, :S)), required_biogeochemical_tracers(group))
+
 # tracer conservations
 
 group_element_tracers(Nutrients::Nutrients, bgc, val_element) = NamedTuple()
-group_element_tracers(nutrients::Nutrients, bgc, val_element::Val{:nitrogen}) = 
+group_element_tracers(nutrients::Nutrients, bgc, val_element::Val{:nitrogen}) =
     group_element_tracers(nutrients.nitrogen, bgc, val_element)
-group_element_tracers(nutrients::Nutrients, bgc, val_element::Val{:phosphate}) = 
+group_element_tracers(nutrients::Nutrients, bgc, val_element::Val{:phosphate}) =
     group_element_tracers(nutrients.phosphate, bgc, val_element)
-group_element_tracers(nutrients::Nutrients, bgc, val_element::Val{:iron}) = 
+group_element_tracers(nutrients::Nutrients, bgc, val_element::Val{:iron}) =
     group_element_tracers(nutrients.iron, bgc, val_element)
-group_element_tracers(nutrient::SingleTracerNutrient, ::NPD{FT}, val_element) where FT = 
+group_element_tracers(nutrient::SingleTracerNutrient, ::NPD{FT}, val_element) where FT =
     NamedTuple{(Symbol(nutrient),)}((one(FT), ))
 group_element_tracers(::NitrateAmmonia, ::NPD{FT}, val_element) where FT =
     (NO₃ = one(FT), NH₄ = one(FT))
@@ -72,7 +88,7 @@ function group_element_tracers(group, bgc, val_element)
         return NamedTuple()
     end
 
-    names = required_biogeochemical_tracers(group)
+    names = organic_tracers(group)
     return NamedTuple{names}(repeat([coefficient], length(names)))
 end
 
@@ -82,7 +98,7 @@ for thing in (PhytoZoo, Detritus, DissolvedParticulate)
         @eval begin
             function group_element_tracers(group::$thing, bgc, ::Val{$(QuoteNode(element))})
                 ratio = $(ratio_name)(bgc.plankton, bgc)
-                names = required_biogeochemical_tracers(group)
+                names = organic_tracers(group)
                 return NamedTuple{names}(repeat([ratio], length(names)))
             end
         end
@@ -91,7 +107,7 @@ for thing in (PhytoZoo, Detritus, DissolvedParticulate)
     @eval begin
         function group_element_tracers(group::$thing, bgc, ::Val{:silicate})
             ratio = silicon_ratio(bgc.plankton, bgc)
-            names = required_biogeochemical_tracers(group)
+            names = organic_tracers(group)
             return NamedTuple{names}(repeat([ratio], length(names)))
         end
     end
@@ -105,7 +121,7 @@ for thing in (PhytoZoo, Detritus)
         function group_element_tracers(group::$thing, bgc, ::Val{:carbon})
             ratio = carbon_ratio(bgc.plankton, bgc) * organic_carbon_calcium_carbonate_factor(bgc)
 
-            names = required_biogeochemical_tracers(group)
+            names = organic_tracers(group)
 
             return NamedTuple{names}(repeat([ratio], length(names)))
         end
@@ -116,7 +132,7 @@ function group_element_tracers(group::PhytoZoo, bgc::NPD{<:Any, <:Any, <:Any, <:
     R = carbon_ratio(bgc.plankton, bgc)
     ρ = calcium_carbonate_rain_ratio(bgc.plankton, bgc)
 
-    names = required_biogeochemical_tracers(group)
+    names = organic_tracers(group)
 
     return NamedTuple{names}(map(name -> name === :P ? R * (1 + ρ) : R, names))
 end
@@ -131,22 +147,18 @@ function group_element_tracers(::DissolvedParticulate{N, M, DN, PN}, bgc, ::Val{
     return NamedTuple{(DN..., PN...)}(ratios)
 end
 
-group_element_tracers(::CarbonateSystem, args...) = NamedTuple()
-group_element_tracers(::CarbonateSystem, bgc::NPD{FT}, ::Val{:carbon}) where FT =
+inorganic_carbon_tracers(::CarbonateSystem{1}, bgc::NPD{FT}, n) where FT =
     (; DIC = one(FT))
+inorganic_carbon_tracers(::CarbonateSystem, bgc::NPD{FT}, n) where FT =
+    NamedTuple{(Symbol(:DIC, n), )}((one(FT), ))
 
-group_element_tracers(::ExplicitCalciumCarbonate, args...) = NamedTuple()
-group_element_tracers(::ExplicitCalciumCarbonate{1}, bgc::NPD{FT}, ::Val{:carbon}) where FT =
+inorganic_carbon_tracers(::ExplicitCalciumCarbonate{1}, bgc::NPD{FT}, n) where FT =
     (DIC = one(FT), CaCO₃ = one(FT))
-function group_element_tracers(ic::ExplicitCalciumCarbonate{N}, bgc::NPD{FT}, ::Val{:carbon}) where {N, FT}
-    names = filter(n -> startswith(String(n), "DIC") || startswith(String(n), "CaCO₃"),
-                   required_biogeochemical_tracers(ic))
-
-    return NamedTuple{names}(ntuple(_ -> one(FT), length(names)))
-end
+inorganic_carbon_tracers(::ExplicitCalciumCarbonate, bgc::NPD{FT}, n) where FT =
+    NamedTuple{(Symbol(:DIC, n), Symbol(:CaCO₃, n))}((one(FT), one(FT)))
 
 group_element_tracers(::Oxygen, args...) = NamedTuple()
-group_element_tracers(::Oxygen, bgc::NPD{FT}, ::Val{:oxygen}) where FT = 
+group_element_tracers(::Oxygen, bgc::NPD{FT}, ::Val{:oxygen}) where FT =
     (; O₂ = one(FT))
 
 for thing in (PhytoZoo, Detritus, DissolvedParticulate)
@@ -155,14 +167,14 @@ for thing in (PhytoZoo, Detritus, DissolvedParticulate)
             ratio = carbon_ratio(bgc.plankton, bgc)
             rO = - bgc.oxygen.production_oxygen_carbon_ratio
 
-            names = required_biogeochemical_tracers(group)
+            names = organic_tracers(group)
 
             return NamedTuple{names}(repeat([ratio * rO], length(names)))
         end
     end
 end
 
-group_element_tracers(::Nutrients{<:NitrateAmmonia}, bgc::NPD{<:Any, <:Any, <:Any, <:Any, <:Any, <:Oxygen}, ::Val{:oxygen}) = 
+group_element_tracers(::Nutrients{<:NitrateAmmonia}, bgc::NPD{<:Any, <:Any, <:Any, <:Any, <:Any, <:Oxygen}, ::Val{:oxygen}) =
     (; NO₃ = carbon_ratio(bgc.plankton, bgc) * bgc.oxygen.nitrification_oxygen_carbon_ratio)
 
 # got to give up on dispatch for this
@@ -184,21 +196,21 @@ function group_element_tracers(nutrients::Nutrients, bgc::NPD{<:Any, <:Any, <:An
     end
 end
 
-available_nutrients(nutrients) = 
+available_nutrients(nutrients) =
     [name for name in propertynames(nutrients) if !isnothing(getproperty(nutrients, name))]
 
 group_element_tracers(::CarbonNitrogenDissolvedParticulate{FT}, bgc, ::Val{:nitrogen}) where FT =
     (; DON = one(FT), sPON = one(FT), bPON = one(FT))
 
 function group_element_tracers(::CarbonNitrogenDissolvedParticulate, bgc::NPD, ::Val{:phosphate})
-    R_PN = phosphate_ratio(bgc.plankton, bgc) / 
+    R_PN = phosphate_ratio(bgc.plankton, bgc) /
           nitrogen_ratio(bgc.plankton, bgc)
 
     return (; DON = R_PN, sPON = R_PN, bPON = R_PN)
 end
 
 function group_element_tracers(::CarbonNitrogenDissolvedParticulate, bgc::NPD, ::Val{:iron})
-    R_FeN = iron_ratio(bgc.plankton, bgc) / 
+    R_FeN = iron_ratio(bgc.plankton, bgc) /
             nitrogen_ratio(bgc.plankton, bgc)
 
     return (; DON = R_FeN, sPON = R_FeN, bPON = R_FeN)
