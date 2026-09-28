@@ -131,6 +131,8 @@ struct SugarKelp{FT, TL, SO}
                        exudation_redfield_ratio = Inf,
                        adapted_latitude = 57.5,
                        solver::SO = NewtonRaphsonSolver{FT, Int}(; atol = eps(FT(1e-9)))) where {TL, SO}
+    
+        @warn "The sugar kelp model includes an inate seasonality which is formulated assuming that the model time starts at the start of the year"
 
         return new{FT, TL, SO}(temperature_limit, 
                                growth_rate_adjustment, photosynthetic_efficiency,
