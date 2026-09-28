@@ -5,41 +5,62 @@ paths:
 
 # Docstring Rules
 
-## Use DocStringExtensions.jl
+## Format
 
-- Include `$(TYPEDSIGNATURES)` for automatic signature documentation
-- Add examples in docstrings when helpful
-
-## CRITICAL: Always use `jldoctest`, NEVER plain `julia` blocks
-
-Plain code blocks (`` ```julia ``) are NOT tested and can become stale or incorrect.
-Doctests (`` ```jldoctest ``) are automatically tested and verified to work.
-
-### Example:
+OceanBioME does not depend on DocStringExtensions.jl. Write the signature(s) by hand:
 
 ~~~~
 """
-    my_function(x)
+    PhytoZoo([FT = Float64;] kwargs...)
+    PhytoZoo(grid; phytoplankton_sinking_speed = 0, kwargs...)
 
-Example:
+One-paragraph description of what the component does and which tracers it adds.
+
+Keyword Arguments
+=================
+
+- `maximum_grazing_rate`: maximum zooplankton grazing rate (1/s)
+- `grazing_half_saturation`: grazing half-saturation constant (mmol N/m³)
+"""
+~~~~
+
+- Give units for every dimensional keyword argument
+- Cross-reference with `[`Name`](@ref)`
+- Only cite papers the user has provided or that are already in `docs/oceanbiome.bib`;
+  never add references from memory
+
+## Prefer `jldoctest` over plain `julia` blocks
+
+Plain code blocks (`` ```julia ``) are not tested and go stale. Doctests (`` ```jldoctest ``)
+run in the CPU test suite (`doctest(OceanBioME)` at the end of `test/runtests.jl`).
+Note `docs/make.jl` currently has `doctest = false`, so the docs build does **not** check them.
+
+~~~~
+"""
+    CarbonChemistry(FT = Float64; kwargs...)
+
+Example
+=======
 
 ```jldoctest
-using Oceananigans
+julia> using OceanBioME
 
-grid = RectilinearGrid(size=(4, 4, 4), extent=(1, 1, 1))
-typeof(grid)
+julia> carbon_chemistry = CarbonChemistry()
+`CarbonChemistry` model which solves for pCO₂ and pH
 
-# output
-RectilinearGrid{Float64, Periodic, Periodic, Bounded, Nothing, Nothing, Nothing, Nothing}
+julia> pCO₂ = carbon_chemistry(; DIC = 2000.0, Alk = 2000.0, T = 10.0, S = 35.0)
+1308.1006995915372
 ```
 """
 ~~~~
 
+(from `src/Models/CarbonChemistry/carbon_chemistry.jl`). Copy the exact output from running the
+code — do not guess what `show` prints.
+
 ## Doctest Best Practices
 
-- Always include expected output after `# output`
-- Use simple, verifiable output (e.g., `typeof(result)`, accessing a field)
+- Always include expected output (either REPL-style `julia>` blocks or a `# output` section)
 - Doctests should exercise `Base.show` to verify objects display correctly
-- Keep doctests minimal but complete enough to verify the feature works
-- **Do NOT use boolean comparisons as the final line** (e.g., avoid `x ≈ 1.0` or `obj isa Type`)
-- Instead, make the final line invoke a `show` method that prints something useful
+- Use `filter = r"..."` for output that varies (paths, timings), as in `simple_multi_G.jl`
+- Keep doctests minimal and CPU-only
+- **Do NOT use boolean comparisons as the final line** (e.g. avoid `x ≈ 1.0` or `obj isa Type`)

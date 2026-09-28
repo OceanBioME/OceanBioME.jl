@@ -8,7 +8,12 @@ paths:
 
 # Style Rules
 
-These rules are **ALWAYS** in effect. Apply them in every file, every scope — no exceptions.
+Apply these rules to all new and modified code. Don't rename existing public API
+(exported names, keyword arguments, tracer names) to conform — that is a breaking change and
+belongs in its own PR, if at all.
+
+General formatting follows `docs/src/contributing.md`: verbose and explicit names, spaces after
+commas, loosely the [YASGuide](https://github.com/jrevels/YASGuide).
 
 ## Variable Naming
 
@@ -16,15 +21,19 @@ These rules are **ALWAYS** in effect. Apply them in every file, every scope — 
 
 A single identifier is *either* fully math notation *or* fully verbose English. Never half-and-half.
 
-- ❌ `T_air`, `temp_a`, `Nz_max`, `dt_start`
+- ❌ `T_air`, `temp_a`, `Nz_max`, `dt_start`, `P_growth`
 - ✅ math: `Tₐ`, `Tᵃ`, `Ta`, `Nz`, `dt`
 - ✅ verbose: `air_temperature`, `maximum_vertical_grid_size`, `start_timestep`
 
 In the same scope, pick one style and stay consistent — don't write `t_start` alongside `start_time`, or `t_s` next to `time_series`.
 
 Default by context:
-- **Inside kernels / computational inner loops**: prefer math notation (`τ`, `δT`, `Nz`, `φ`, `λ`)
-- **Outside kernels (scripts, function signatures, keyword arguments, user-facing APIs)**: prefer verbose notation
+- **Inside tendency functions / kernels**: prefer math notation matching the source paper's
+  equations (`μ`, `Kₙ`, `Rᶜₚ`, `PAR⁰`)
+- **Outside kernels (scripts, struct fields, keyword arguments, user-facing APIs)**: prefer
+  verbose notation (`phytoplankton_maximum_growth_rate`, `grazing_half_saturation`)
+- Chemical species in tracer names use unicode subscripts and are exempt from Rule 1:
+  `NO₃`, `NH₄`, `O₂`, `CO₂`, and verbose names containing them (`air_sea_CO₂_flux`) are fine
 
 ### Rule 2 — Verbose variables read in English, no truncation, qualifier-first
 
@@ -48,11 +57,11 @@ Math-style identifiers never use `_`. Use sub/superscript Unicode or concatenati
 
 ### Rule 4 — Leading `_` is reserved for `@kernel` functions
 
-A name starting with `_` is reserved by convention for the `@kernel` form of a launching function (e.g., `compute_tendencies!` launches `_compute_tendencies!`). Never use a leading `_` for ordinary helpers, internal utilities, or "private" functions — pick a real name instead.
+A name starting with `_` is reserved by convention for `@kernel` functions (e.g. `_scale_negative_tracers!`, launched from `update_biogeochemical_state!(model, ::ScaleNegativeTracers)`); many existing kernels here have no underscore, which is also fine. Never use a leading `_` for ordinary helpers, internal utilities, or "private" functions — pick a real name instead.
 
 - ❌ `_helper`, `_compute_internal`, `_validate` (for non-kernel helpers)
 - ✅ `compute_internal`, `validate_inputs`, `apply_boundary`
-- ✅ `_compute_tendencies!` (only because it is the `@kernel` paired with `compute_tendencies!`)
+- ✅ `_scale_negative_tracers!` (only because it is a `@kernel`)
 
 ## Comments
 
@@ -66,3 +75,5 @@ Be synthetic with comments. Code should be self-documenting through clear names 
 - ❌ `# loop over all cells` above `for cell in cells`
 - ✅ `# offset by -1 because Fortran indexing is preserved in the on-disk layout`
 - ✅ `# use Kahan summation here: naïve sum loses ~3 digits on long trajectories`
+- ✅ `maximum_grazing_rate = 9.26e-6, # 1/s` — units on parameter defaults are always wanted
+- ✅ `# Eq. 12 of <paper the user supplied>` — pointing at the source equation is always wanted
