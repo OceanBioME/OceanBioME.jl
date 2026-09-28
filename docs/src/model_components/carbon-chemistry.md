@@ -23,9 +23,13 @@ T = 25.4
 S = 36.45
 carbon_chemistry(; DIC, Alk, T, S)
 ```
-This is sufficient when computing ``fCO_2`` at the surface, but if we wanted to know ``fCO_2`` at depth where there is higher pressure we can specify the pressure in bar like:
+This is sufficient when computing ``fCO_2`` at the surface, but if we wanted to know ``fCO_2`` at depth where there is higher pressure we can specify the sea water pressure above atmospheric (i.e. zero at the surface) in bar like:
 ```@example carbon-chem
-carbon_chemistry(; DIC, Alk, T, S, P = 100)
+carbon_chemistry(; DIC, Alk, T, S, water_pressure = 100)
+```
+This is a different quantity from the atmospheric pressure (in atm, 1 by default), which is only used when converting the fugacity to a partial pressure (``pCO_2``):
+```@example carbon-chem
+carbon_chemistry(; DIC, Alk, T, S, atmospheric_pressure = 0.98, output = Val(:pCO₂))
 ```
 
 We may also be interested in the total pH so we can request that be outputted:
