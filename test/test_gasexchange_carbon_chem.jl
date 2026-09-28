@@ -4,7 +4,7 @@ using Oceananigans, Oceananigans.Units, DataDeps, JLD2, Statistics, Adapt
 
 using Oceananigans.Fields: ConstantField
 
-using OceanBioME: GasExchange, LOBSTER, CarbonChemistry
+using OceanBioME: GasExchange, LOBSTER, CarbonChemistry, DampedNewtonRaphsonSolver
 using OceanBioME.Models.GasExchangeModel: surface_value, CarbonDioxideConcentration, GarciaGordonOxygenSaturation,
                                           CarbonDioxideAirConcentration, PartiallySolubleGas, OxygenSolubility,
                                           MolPerKgPerAtmToMMolPerCubicMPerMicroAtm
@@ -191,7 +191,10 @@ end
 end
 
 @testset "Water and atmospheric pressure" begin
-    carbon_chemistry = CarbonChemistry()
+    # solve to round off (only the relative step check stops it) so the values below can be compared at
+    # `rtol = 1e-12`; the default `atol` leaves differences of order 1e-11
+    solver = DampedNewtonRaphsonSolver{Float64, Int, @NamedTuple{lower::Float64, upper::Nothing}}(atol = 0, bounds = (lower = 0, upper = nothing))
+    carbon_chemistry = CarbonChemistry(; solver)
 
     args = (; DIC = 2145.0, Alk = 2448.0, T = 25.4, S = 36.45)
 
