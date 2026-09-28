@@ -43,7 +43,9 @@ import ..NutrientsPlanktonDetritusModels:
     inorganic_nitrogen_waste,
     inorganic_phosphate_waste,
     inorganic_iron_waste,
-    inorganic_silicon_waste
+    inorganic_silicon_waste,
+    component_tendency,
+    component_drift_velocity
 
 """
     AbstractSinkingDetritus{SK}
