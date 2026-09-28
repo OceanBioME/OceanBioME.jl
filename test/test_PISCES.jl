@@ -148,11 +148,19 @@ function test_PISCES_negativity_protection(arch)
     # got rid of the negative
     @test on_architecture(CPU(), interior(model.tracers.P, 1, 1, 1))[1] == 0
 
-    # correctly conserved mass
-    @test all(map(t -> on_architecture(CPU(), interior(t, 1, 1, 1))[1] ≈ 7/8, model.tracers[(:D, :Z, :M, :DOC, :POC, :GOC, :DIC, :CaCO₃)]))
+    # correctly conserved mass: the organic tracers are scaled by the factor of the group which lost the most
+    # (nitrogen, since there is no nitrate or ammonia), and the DIC, CaCO₃, PO₄, and Fe make up the other groups
+    @test all(map(t -> on_architecture(CPU(), interior(t, 1, 1, 1))[1] ≈ 5/6, model.tracers[(:D, :Z, :M, :DOC, :POC, :GOC)]))
+    @test all(map(t -> on_architecture(CPU(), interior(t, 1, 1, 1))[1] ≈ 1, model.tracers[(:DIC, :CaCO₃, :PO₄)]))
 
-    # didn't touch the others
-    @test on_architecture(CPU(), interior(model.tracers.PO₄, 1, 1, 1))[1] == 1
+    bgc = biogeochemistry.underlying_biogeochemistry
+    total(group) = sum(s * value(model.tracers[name]) for (name, s) in pairs(group))
+    groups = OceanBioME.conserved_tracers(bgc)
+
+    @test total(groups.carbon) ≈ 7
+    @test total(groups.nitrogen) ≈ 5 * bgc.nitrogen_redfield_ratio
+    @test total(groups.phosphate) ≈ 5 * bgc.phosphate_redfield_ratio + 1
+    @test total(groups.iron) ≈ bgc.zooplankton.micro.iron_ratio + bgc.zooplankton.meso.iron_ratio
 
     # failed to scale silicate since nothing else in its group was available
     set!(model, Si = -1, DSi = 0.1)

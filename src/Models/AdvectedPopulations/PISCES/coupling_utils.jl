@@ -14,14 +14,14 @@
     carbon = NamedTuple{(:P, :D, :Z, :M, :DOC, :POC, :GOC, :DIC, :CaCO₃)}(ones(FT, 9))
 
     # iron ratio for DOC might be wrong
-    iron = (PFe = one(FT),
+    iron = (Fe = one(FT),
+            PFe = one(FT),
             DFe = one(FT),
             Z = bgc.zooplankton.micro.iron_ratio,
             M = bgc.zooplankton.meso.iron_ratio,
             SFe = one(FT),
-            BFe = one(FT),
-            Fe = one(FT))
-    
+            BFe = one(FT))
+
 
     θ_PO₄ = bgc.phosphate_redfield_ratio
     phosphate = (P = θ_PO₄, D = θ_PO₄, Z = θ_PO₄, M = θ_PO₄,
@@ -31,6 +31,6 @@
 
     θN = bgc.nitrogen_redfield_ratio
     nitrogen = (NH₄ = one(FT), NO₃ = one(FT), P = θN, D = θN, Z = θN, M = θN, DOC = θN, POC = θN, GOC = θN)
-    
+
     return (; carbon, iron, phosphate, silicon, nitrogen)
 end
