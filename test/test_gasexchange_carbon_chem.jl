@@ -751,3 +751,70 @@ const MARBL_REFERENCE = (
         end
     end
 end
+
+@inline surface_CO₂_kernel(i, j, k, grid, concentration, clock, fields) = surface_value(concentration, i, j, grid, clock, fields)
+
+@testset "Warm started carbon dioxide concentration" begin
+    grid = RectilinearGrid(architecture; size = (4, 3, 2), extent = (1, 1, 1))
+    clock = Clock(time = 0.0)
+
+    T, S, DIC, Alk, PO₄ = CenterField(grid), CenterField(grid), CenterField(grid), CenterField(grid), CenterField(grid)
+
+    set!(T, (x, y, z) -> 2 + 26x)
+    set!(S, 35)
+    set!(DIC, (x, y, z) -> 1950 + 300y)
+    set!(Alk, (x, y, z) -> 2250 + 200x * y)
+    set!(PO₄, 1)
+
+    model_fields = (; T, S, DIC, Alk, PO₄)
+
+    @test_throws ArgumentError CarbonDioxideConcentration(; warm_start = true)
+
+    cold = CarbonDioxideConcentration()
+    warm = CarbonDioxideConcentration(; warm_start = true, grid)
+
+    @test isnothing(cold.pH)
+    @test warm.pH isa Field{Center, Center, Nothing}
+
+    solve!(concentration) =
+        Array(interior(Field(KernelFunctionOperation{Center, Center, Nothing}(surface_CO₂_kernel, grid, concentration, clock, model_fields))))
+
+    CO₂_cold = solve!(cold)
+
+    pH_cold = Array(interior(Field(KernelFunctionOperation{Center, Center, Nothing}(
+                        (i, j, k, grid, cc, f) -> @inbounds(cc(; DIC = f.DIC[i, j, grid.Nz], Alk = f.Alk[i, j, grid.Nz],
+                                                                 T = f.T[i, j, grid.Nz], S = f.S[i, j, grid.Nz],
+                                                                 phosphate = f.PO₄[i, j, grid.Nz], output = Val(:pHᶠ))),
+                        grid, cold.carbon_chemistry, model_fields))))
+
+    rtol = 1e-8 # both solves stop at the solver tolerance, from different starting points
+
+    # first solve cold starts from the zeroed field, and stores the pH it found
+    @test all(isapprox.(solve!(warm), CO₂_cold; rtol))
+    @test all(isapprox.(Array(interior(warm.pH)), pH_cold; rtol))
+
+    # subsequent solves start from it and agree
+    @test all(isapprox.(solve!(warm), CO₂_cold; rtol))
+
+    # bad stored values fall back to the default guess
+    set!(warm.pH, NaN)
+    @test all(isapprox.(solve!(warm), CO₂_cold; rtol))
+    @test all(isapprox.(Array(interior(warm.pH)), pH_cold; rtol))
+
+    # and through a boundary condition in a model
+    model = NonhydrostaticModel(grid;
+                                tracers = (:T, :S),
+                                biogeochemistry = LOBSTER(grid; inorganic_carbon = CarbonateSystem()),
+                                boundary_conditions = (DIC = FieldBoundaryConditions(top = CarbonDioxideGasExchangeBoundaryCondition(; grid, warm_start = true)), ))
+
+    set!(model, T = 15.0, S = 35.0, DIC = 2220, Alk = 2500)
+
+    stored_pH = model.tracers.DIC.boundary_conditions.top.condition.func.water_concentration.pH
+
+    @test stored_pH isa Field{Center, Center, Nothing}
+    @test all(iszero, Array(interior(stored_pH)))
+
+    time_step!(model, 1.0)
+
+    @test all(pH -> 7 < pH < 9, Array(interior(stored_pH)))
+end

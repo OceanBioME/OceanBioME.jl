@@ -2,7 +2,9 @@
     CarbonDioxideConcentration(FT = Float64;
                                carbon_chemistry::CC,
                                DIC = :DIC,
-                               Alk = :Alk)
+                               Alk = :Alk,
+                               warm_start = false,
+                               grid = nothing)
 
 The water-side carbon dioxide concentration seen by an air-sea gas exchange: the aqueous
 carbon dioxide concentration, `[CO₂(aq)]` in mmol / m³, computed by the `carbon_chemistry`
@@ -21,23 +23,46 @@ Ocean CO 2 Measurements. PICES Special Publication 3, 191 pp.
 No atmospheric pressure enters the water-side concentration (see
 [`CarbonDioxideAirConcentration`](@ref), which carries the only atmospheric pressure on this
 path).
+
+With `warm_start = true` the surface free pH from each solve is stored in a
+`Field{Center, Center, Nothing}` on `grid` (the `pH` property) and used as the
+`initial_pH_guess` of the next, which roughly halves the solver iterations since the surface pH
+changes little between time steps. The field starts at zero, and any stored value outside
+`0 < pH < 14` (e.g. the first solve, or after a restart) falls back to the default guess of 8.
 """
-struct CarbonDioxideConcentration{DIC, Alk, CC<:CarbonChemistry}
+struct CarbonDioxideConcentration{DIC, Alk, CC<:CarbonChemistry, PH}
     carbon_chemistry :: CC
+                  pH :: PH
 end
 
-CarbonDioxideConcentration(FT = Float64;
-                           carbon_chemistry::CC = CarbonChemistry(FT),
-                           DIC = :DIC,
-                           Alk = :Alk) where CC =
-    CarbonDioxideConcentration{DIC, Alk, CC}(carbon_chemistry)
+CarbonDioxideConcentration{DIC, Alk}(carbon_chemistry::CC, pH::PH) where {DIC, Alk, CC, PH} =
+    CarbonDioxideConcentration{DIC, Alk, CC, PH}(carbon_chemistry, pH)
+
+function CarbonDioxideConcentration(FT = Float64;
+                                    carbon_chemistry = CarbonChemistry(FT),
+                                    DIC = :DIC,
+                                    Alk = :Alk,
+                                    warm_start = false,
+                                    grid = nothing)
+
+    pH = warm_start ? warm_start_pH(grid) : nothing
+
+    return CarbonDioxideConcentration{DIC, Alk}(carbon_chemistry, pH)
+end
+
+warm_start_pH(::Nothing) = throw(ArgumentError("`warm_start = true` needs a `grid` to store the surface pH on"))
+warm_start_pH(grid) = Field{Center, Center, Nothing}(grid)
+
+Adapt.adapt_structure(to, cc::CarbonDioxideConcentration{DIC, Alk}) where {DIC, Alk} =
+    CarbonDioxideConcentration{DIC, Alk}(adapt(to, cc.carbon_chemistry), adapt(to, cc.pH))
 
 summary(::CarbonDioxideConcentration{DIC, Alk, CC}) where {DIC, Alk, CC} =
     "`CarbonChemistry` derived aqueous carbon dioxide concentration ([CO₂(aq)], mmol/m³) {$DIC, $Alk, $(nameof(CC))}"
 
 show(io::IO, ccc::CarbonDioxideConcentration{DIC, Alk}) where {DIC, Alk} =
     println(io, summary(ccc), "\n",
-            "    Solves the $(nameof(typeof(ccc.carbon_chemistry))) based on $DIC and $Alk")
+            "    Solves the $(nameof(typeof(ccc.carbon_chemistry))) based on $DIC and $Alk",
+            isnothing(ccc.pH) ? "" : ", warm started from the stored surface pH")
 
 @inline function surface_value(cc::CarbonDioxideConcentration{DIC_name, Alk_name}, i, j, grid, clock, model_fields) where {DIC_name, Alk_name}
     DIC = @inbounds model_fields[DIC_name][i, j, grid.Nz] # this is a compile time inference so is fine on GPU
@@ -49,7 +74,23 @@ show(io::IO, ccc::CarbonDioxideConcentration{DIC, Alk}) where {DIC, Alk} =
     silicate  = silicate_concentration(grid, i, j, grid.Nz, model_fields)
     phosphate = phosphate_concentration(grid, i, j, grid.Nz, model_fields)
 
-    return cc.carbon_chemistry(; DIC, Alk, T, S, silicate, phosphate, output = Val(:CO₂))
+    return surface_CO₂(cc.pH, cc.carbon_chemistry, i, j; DIC, Alk, T, S, silicate, phosphate)
+end
+
+@inline surface_CO₂(::Nothing, carbon_chemistry, i, j; kwargs...) = carbon_chemistry(; kwargs..., output = Val(:CO₂))
+
+@inline function surface_CO₂(pH, carbon_chemistry, i, j; DIC, kwargs...)
+    pH⁻ = @inbounds pH[i, j, 1]
+
+    # nothing stored yet (the field starts at zero) or a bad value falls back to the default guess
+    initial_pH_guess = ifelse((pH⁻ > 0) & (pH⁻ < 14), pH⁻, convert(typeof(DIC), 8))
+
+    CO₂, pHⁿ = carbon_chemistry(; DIC, kwargs..., initial_pH_guess, output = Val((:CO₂, :pHᶠ)))
+
+    # each thread only writes its own column so this is safe on the GPU
+    @inbounds pH[i, j, 1] = pHⁿ
+
+    return CO₂
 end
 
 """
