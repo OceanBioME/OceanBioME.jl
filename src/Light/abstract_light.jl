@@ -8,8 +8,13 @@ abstract type AbstractSingleBandExponentialLightAttenuation{BA, IN, CA, SP} <: A
 
 const AbstractLight{BA, IN, CA, SP} = AbstractSingleBandExponentialLightAttenuation{BA, IN, CA, SP}
 
+@inline function nonnegative_chlorophyll(i, j, k, Chl)
+    Chlᵢⱼₖ = @inbounds Chl[i, j, k]
+    return max(zero(Chlᵢⱼₖ), Chlᵢⱼₖ)
+end
+
 # single band
-@kernel function integrate_light_attenuation!(la::AbstractLight{1, Nothing}, 
+@kernel function integrate_light_attenuation!(la::AbstractLight{1, Nothing},
                                               PAR, grid, clock, Chl, surface_PAR)
 
     i, j = @index(Global, NTuple)
@@ -24,13 +29,13 @@ const AbstractLight{BA, IN, CA, SP} = AbstractSingleBandExponentialLightAttenuat
 end
 
 # recording interfaces
-@kernel function integrate_light_attenuation!(la::AbstractLight{1}, 
+@kernel function integrate_light_attenuation!(la::AbstractLight{1},
                                               PAR, PARᵢ, grid, clock, Chl, surface_PAR)
 
     i, j = @index(Global, NTuple)
 
     PAR⁰ = getbc(surface_PAR, i, j, grid, clock, Chl)
-    
+
     @inbounds PARᵢ[i, j, grid.Nz+1] = PAR⁰
 
     @inbounds for k in grid.Nz:-1:1
@@ -45,7 +50,7 @@ end
     exp(-attenuation(i, j, k, grid, la, clock, Chl) * Δzᵃᵃᶜ(i, j, k, grid))
 
 # multiple implicit bands
-@kernel function integrate_light_attenuation!(la::AbstractLight{N, Nothing}, 
+@kernel function integrate_light_attenuation!(la::AbstractLight{N, Nothing},
                                               PAR, grid, clock, Chl, surface_PAR) where N
 
     i, j = @index(Global, NTuple)
@@ -64,12 +69,12 @@ end
 end
 
 # recording interfaces
-@kernel function integrate_light_attenuation!(la::AbstractLight{N}, 
+@kernel function integrate_light_attenuation!(la::AbstractLight{N},
                                               PAR, PARᵢ, grid, clock, Chl, surface_PAR) where N
     i, j = @index(Global, NTuple)
 
     PAR⁰ = getbc(surface_PAR, i, j, grid, clock, Chl)
-    
+
     @inbounds PARᵢ[i, j, grid.Nz+1] = PAR⁰
 
     K = initial_attenuation(la, eltype(grid))
@@ -126,9 +131,9 @@ end
 function update_biogeochemical_state!(model, PAR::AbstractLight{<:Any, Nothing})
     arch = architecture(model.grid)
 
-    launch!(arch, model.grid, :xy, integrate_light_attenuation!, 
-            PAR, PAR.field, model.grid, model.clock, 
-            chlorophyll(model.biogeochemistry, model), 
+    launch!(arch, model.grid, :xy, integrate_light_attenuation!,
+            PAR, PAR.field, model.grid, model.clock,
+            chlorophyll(model.biogeochemistry, model),
             PAR.surface_PAR)
 
     return nothing
@@ -137,9 +142,9 @@ end
 function update_biogeochemical_state!(model, PAR::AbstractLight)
     arch = architecture(model.grid)
 
-    launch!(arch, model.grid, :xy, integrate_light_attenuation!, 
-            PAR, PAR.field, PAR.interface_field, model.grid, 
-            model.clock, chlorophyll(model.biogeochemistry, model), 
+    launch!(arch, model.grid, :xy, integrate_light_attenuation!,
+            PAR, PAR.field, PAR.interface_field, model.grid,
+            model.clock, chlorophyll(model.biogeochemistry, model),
             PAR.surface_PAR)
 
     return nothing

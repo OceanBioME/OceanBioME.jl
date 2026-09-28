@@ -8,6 +8,8 @@ Models requiring light attenuation models will set these up automatically, for e
 
 The two band and prescribed attenuation models (below) share a common internal implementation of exponential light attenuation, which also allows them to optionally track ``PAR`` at cell faces as well as cell centres — see [Recording PAR at cell faces](@ref) below.
 
+The multi band and two band models raise the chlorophyll concentration to a fractional power. Numerical errors, for example from advection, can push the tracers that chlorophyll is computed from slightly below zero, where that power has no real value, so both models treat negative chlorophyll as zero (see [positivity preservation](@ref pos-preservation) for keeping the tracers themselves non-negative).
+
 ## The multi band model
 The surface intensity is split into multiple bands (usually with equal weight, but users may specify custom weights), and the attenuation of each band (i) is computed from the radiative transfer equation:
 ```math
