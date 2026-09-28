@@ -1,6 +1,6 @@
 using Oceananigans.Units
 
-using OceanBioME.Light: 
+using OceanBioME.Light:
     TwoBandPhotosyntheticallyActiveRadiation,
     PrescribedAttenuationPAR
 
@@ -47,7 +47,8 @@ Keyword Arguments
   oxygen (`O₂`)
 - `light_attenuation`: light attenuation model which integrates the attenuation of available light
 - `sediment`: slot for a sediment model (`AbstractSediment`)
-- `scale_negatives`: whether to add a [`ScaleNegativeTracers`](@ref) modifier to keep tracers non-negative
+- `scale_negatives`: whether to add a [`ScaleNegativeTracers`](@ref) modifier to keep tracers non-negative while
+  conserving each element (oxygen is not scaled)
 - `invalid_fill_value`: the value used to fill invalid tracer values when `scale_negatives` is `true`
 - `particles`: slot for `BiogeochemicalParticles`
 - `modifiers`: slot for components which modify the biogeochemistry after the tendencies have been
@@ -66,11 +67,11 @@ function NutrientsPlanktonDetritus(grid::AbstractGrid{FT};
                                    particles = nothing,
                                    modifiers = nothing) where FT
 
-    underlying_biogeochemistry = 
-        NutrientsPlanktonDetritus{eltype(grid)}(nutrients, 
-                                                plankton, 
-                                                detritus, 
-                                                inorganic_carbon, 
+    underlying_biogeochemistry =
+        NutrientsPlanktonDetritus{eltype(grid)}(nutrients,
+                                                plankton,
+                                                detritus,
+                                                inorganic_carbon,
                                                 oxygen)
 
     if scale_negatives
@@ -83,10 +84,10 @@ function NutrientsPlanktonDetritus(grid::AbstractGrid{FT};
             modifiers = (modifiers, scaler)
         end
     end
-    
+
     return Biogeochemistry(underlying_biogeochemistry;
-                           light_attenuation, 
-                           sediment, 
+                           light_attenuation,
+                           sediment,
                            particles,
                            modifiers)
 end
@@ -120,12 +121,12 @@ Keyword Arguments
 ImplicitBiology(grid::AbstractGrid{FT};
                 limiting_nutrients = (:nitrate, :iron, :phosphate),
                 open_bottom = true,
-                nutrients = Nutrients(:ammonia in limiting_nutrients ? NitrateAmmonia{FT}() : N, 
-                                      :phosphate in limiting_nutrients ? PO₄ : nothing, 
-                                      :iron in limiting_nutrients ? Fe : nothing, 
+                nutrients = Nutrients(:ammonia in limiting_nutrients ? NitrateAmmonia{FT}() : N,
+                                      :phosphate in limiting_nutrients ? PO₄ : nothing,
+                                      :iron in limiting_nutrients ? Fe : nothing,
                                       nothing),
                 plankton = ImplicitProductivity(FT;
-                                                nutrient_half_saturations = 
+                                                nutrient_half_saturations =
                                                     (nitrate = 7.17,                     # mmol N/m³
                                                      phosphate = 0.5,                    # mmol N/m³
                                                      iron = 1e-4)[limiting_nutrients]),  # mmol Fe / m³),
@@ -163,9 +164,9 @@ Keyword Arguments
 NPZD(grid::AbstractGrid{FT};
      limiting_nutrients = (:nitrate, ),
      open_bottom = true,
-     nutrients = Nutrients(:ammonia in limiting_nutrients ? NitrateAmmonia{FT}() : N, 
-                           :phosphate in limiting_nutrients ? PO₄ : nothing, 
-                           :iron in limiting_nutrients ? Fe : nothing, 
+     nutrients = Nutrients(:ammonia in limiting_nutrients ? NitrateAmmonia{FT}() : N,
+                           :phosphate in limiting_nutrients ? PO₄ : nothing,
+                           :iron in limiting_nutrients ? Fe : nothing,
                            nothing),
      plankton = PhytoZoo(grid;
                          nutrient_half_saturations = (nitrate = 2.3868,                     # mmol N/m³
@@ -216,9 +217,9 @@ Keyword Arguments
 LOBSTER(grid::AbstractGrid{FT};
         limiting_nutrients = (:nitrate, :ammonia),
         open_bottom = true,
-        nutrients = Nutrients(:ammonia in limiting_nutrients ? NitrateAmmonia{FT}() : N, 
-                              :phosphate in limiting_nutrients ? PO₄ : nothing, 
-                              :iron in limiting_nutrients ? Fe : nothing, 
+        nutrients = Nutrients(:ammonia in limiting_nutrients ? NitrateAmmonia{FT}() : N,
+                              :phosphate in limiting_nutrients ? PO₄ : nothing,
+                              :iron in limiting_nutrients ? Fe : nothing,
                               nothing),
         plankton = PhytoZoo(FT;
                             nutrient_half_saturations = (nitrate = 0.7,                     # mmol N/m³
