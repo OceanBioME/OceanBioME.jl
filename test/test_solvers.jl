@@ -75,7 +75,7 @@ f5′(x, p) = 2 * p.a * x
     # DampedNewtonRaphsonSolver
     solver = DampedNewtonRaphsonSolver(; damping = 0.1)
 
-    correct1 = map(x0 -> solver(f1, f1′, x0, nothing) == X1, (-10, -1, 0, 1, 10))
+    correct1 = map(x0 -> isapprox(solver(f1, f1′, x0, nothing), X1, atol = solver.atol), (-10, -1, 0, 1, 10))
     @test all(correct1)
 
     correct2 = (map(x0 -> solver(f2, f2′, x0, nothing) ≈ X2[1], (-5, -1, -0.1, 0))...,

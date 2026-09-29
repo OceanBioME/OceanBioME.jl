@@ -189,9 +189,25 @@ end
             ifelse((sign(f(x⁺, params)) == sign(fx)) | (fx == 0), x, x⁺))
 end
 
+"""
+    DampedNewtonRaphsonSolver(; max_iters = 100, atol = 10^-10, rtol = 10^-8, damping = 0.5,
+                                armijo_constant = 0.5, min_damping = damping^10,
+                                bounds = (lower = nothing, upper = nothing))
+
+A Newton-Raphson solver with an Armijo backtracking line search, which stops when the residual falls
+below `atol`, or when the step falls below `rtol` relative to the iterate (`|λδ| < rtol |x|`).
+
+The step check stops the solve at the floating point limit, where the residual may never reach `atol`
+(e.g. an absolute tolerance below `eps` times an alkalinity residual of order `10^-3` mol/kg); without
+it every such solve would run to `max_iters`, backtracking to `min_damping` on each iteration. The
+default `rtol` is roughly `√eps(Float64)`: once a Newton step is that small, quadratic convergence
+has already put the iterate within round off of the root. For `Float32` pass a larger `rtol`
+(e.g. `√eps(Float32) ≈ 3×10⁻⁴`), since `10^-8` is below its round off.
+"""
 @kwdef struct DampedNewtonRaphsonSolver{FT, IT, BO}
         max_iters :: IT = 100
-             atol :: FT = 10^-20
+             atol :: FT = 10^-10
+             rtol :: FT = 10^-8
           damping :: FT = 0.5
   armijo_constant :: FT = 0.5
       min_damping :: FT = damping^10
@@ -207,8 +223,9 @@ end
     c = dnrs.armijo_constant
 
     fx = f(x, params)
+    stalled = false
 
-    while (abs(fx) > dnrs.atol) & (N < dnrs.max_iters)
+    while (abs(fx) > dnrs.atol) & (N < dnrs.max_iters) & !stalled
         δ = fx / f′(x, params)
 
         λ = bounded_λ(x, L, U, δ)
@@ -220,13 +237,16 @@ end
             fnew = f(x - λ * δ, params)
         end
 
+        # a step which is small relative to the iterate means we are at the round off limit
+        stalled = abs(λ * δ) < dnrs.rtol * abs(x)
+
         x -= λ * δ
         N += 1
 
         fx = fnew
     end
 
-    (warn_fail && (abs(fx) > dnrs.atol)) && @warn "Failed to converge"
+    (warn_fail && !stalled && (abs(fx) > dnrs.atol)) && @warn "Failed to converge"
 
     return x
 end
