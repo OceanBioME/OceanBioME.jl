@@ -8,6 +8,8 @@ using Oceananigans.Fields: ConstantField, ZeroField
     @inbounds euphotic_depth[i, j, 1] = convert(FT, -Inf)
 
     for k in grid.Nz-1:-1:1
+        immersed_cell(i, j, k, grid) && break
+
         PARₖ = @inbounds PAR[i, j, k]
 
         # BRANCHING!
