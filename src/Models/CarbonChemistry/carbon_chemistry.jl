@@ -53,10 +53,10 @@ julia> carbon_chemistry = CarbonChemistry()
 `CarbonChemistry` model which solves for pCO₂ and pH
 
 julia> pCO₂ = carbon_chemistry(; DIC = 2000.0, Alk = 2000.0, T = 10.0, S = 35.0)
-1308.1006995915372
+1308.1006990491123
 
 julia> pH = carbon_chemistry(; DIC = 2000.0, Alk = 2000.0, T = 10.0, S = 35.0, output = Val(:pHᶠ))
-7.5025291696038705
+7.50252916978595
 
 julia> pCO₂_higher_pH = carbon_chemistry(; DIC = 2000.0, T = 10.0, S = 35.0, pH = 7.5)
 1315.6558976217746
@@ -112,6 +112,9 @@ Val(:pHˢ), which will return `X` in `Val(:X)` instead of fCO₂.
 
 `Val(:CO₂)` gives `[CO₂(aq)]` (equivalently `[H₂CO₃]`) in mmol/m³, matching the units `DIC`
 was supplied in, rather than the ppm of the fugacity and partial pressure outputs.
+
+`Val((:CO₂, :pHᶠ))` returns both `([CO₂(aq)], pHᶠ)` from the one solve, so the free pH can be
+kept as the `initial_pH_guess` of the next solve (see [`CarbonDioxideConcentration`](@ref OceanBioME.Models.GasExchangeModel.CarbonDioxideConcentration)).
 
 Two distinct pressures may be given:
 
@@ -185,6 +188,7 @@ end
 @inline selected_output(::Val{:fCO₂}, fCO₂, CO₂, H, water_pressure, atmospheric_pressure, Tk, S, Is, sulfate, fluoride, p) = fCO₂ # ppm
 @inline selected_output(::Val{:CO₂}, fCO₂, CO₂, H, water_pressure, atmospheric_pressure, Tk, S, Is, sulfate, fluoride, p) = CO₂ # mmol / m³
 @inline selected_output(::Val{:pHᶠ}, fCO₂, CO₂, H, water_pressure, atmospheric_pressure, Tk, S, Is, sulfate, fluoride, p) = -log10(H) #
+@inline selected_output(::Val{(:CO₂, :pHᶠ)}, fCO₂, CO₂, H, water_pressure, atmospheric_pressure, Tk, S, Is, sulfate, fluoride, p) = (CO₂, -log10(H))
 
 @inline function selected_output(::Val{:pCO₂}, fCO₂::FT, CO₂, H, water_pressure, atmospheric_pressure, Tk, S, Is, sulfate, fluoride, p) where FT
     # the total pressure of the gas phase, not the water pressure
