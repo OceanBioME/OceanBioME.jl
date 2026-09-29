@@ -2,16 +2,16 @@
 Pelagic Interactions Scheme for Carbon and Ecosystem Studies (PISCES) model.
 
 This is *not* currently an official version supported by the PISCES community
-and is not yet verified to be capable of producing results matching that of the 
-operational PISCES configuration. This is a work in progress, please open an 
+and is not yet verified to be capable of producing results matching that of the
+operational PISCES configuration. This is a work in progress, please open an
 issue or discussion if you'd like to know more.
 
 Notes to developers
 ===================
 Part of the vision for this implementation of PISCES is to harness the features
 of Julia that would allow it to be fully modular. An obvious step to improve the
-ease of this would be to do some minor refactoring to group the phytoplankton 
-classes, and zooplankton classes together, and for the other groups to generically 
+ease of this would be to do some minor refactoring to group the phytoplankton
+classes, and zooplankton classes together, and for the other groups to generically
 call the whole lot. This may cause some issues with argument passing, and although
 it may not be the best way todo it my first thought is to pass them round as named
 tuples built from something like,
@@ -91,7 +91,7 @@ struct PISCES{PP, ZP, DM, PM, NI, FE, SI, OX, PO, IC, FT, LA, DL, ML, EU, MS, VD
                        sinking_velocities :: SS
 end
 
-@inline required_biogeochemical_tracers(bgc::PISCES) = 
+@inline required_biogeochemical_tracers(bgc::PISCES) =
     (required_biogeochemical_tracers(bgc.phytoplankton)...,
      required_biogeochemical_tracers(bgc.zooplankton)...,
      required_biogeochemical_tracers(bgc.dissolved_organic_matter)...,
@@ -107,10 +107,10 @@ end
 @inline required_biogeochemical_auxiliary_fields(::PISCES) =
     (:zₘₓₗ, :zₑᵤ, :Si′, :Ω, :κ, :mixed_layer_PAR, :wPOC, :wGOC, :PAR, :PAR₁, :PAR₂, :PAR₃)
 
-@inline biogeochemical_auxiliary_fields(bgc::PISCES) = 
-    (zₘₓₗ = bgc.mixed_layer_depth, 
-     zₑᵤ = bgc.euphotic_depth, 
-     Si′ = bgc.silicate_climatology, 
+@inline biogeochemical_auxiliary_fields(bgc::PISCES) =
+    (zₘₓₗ = bgc.mixed_layer_depth,
+     zₑᵤ = bgc.euphotic_depth,
+     Si′ = bgc.silicate_climatology,
      Ω = bgc.calcite_saturation,
      κ = bgc.mean_mixed_layer_vertical_diffusivity,
      mixed_layer_PAR = bgc.mean_mixed_layer_light,
@@ -180,13 +180,13 @@ include("show_methods.jl")
              zooplankton = MicroAndMesoZooplankton(),
              dissolved_organic_matter = DissolvedOrganicCarbon(),
              particulate_organic_matter = TwoCompartmentCarbonIronParticles(),
-             
+
              nitrogen = NitrateAmmonia(),
              iron = SimpleIron(),
              silicate = Silicate(),
              oxygen = Oxygen(),
              phosphate = Phosphate(),
-             
+
              inorganic_carbon = InorganicCarbon(),
 
              # from Aumount 2005 rather than 2015 since it doesn't work the other way around
@@ -195,13 +195,13 @@ include("show_methods.jl")
 
              nitrogen_redfield_ratio = 16/122,
              phosphate_redfield_ratio = 1/122,
-             
+
              mixed_layer_shear = 1.0,
-             background_shear = 0.01, 
-             
+             background_shear = 0.01,
+
              latitude = PrescribedLatitude(45),
              day_length = day_length_function,
-             
+
              mixed_layer_depth = Field{Center, Center, Nothing}(grid),
              euphotic_depth = Field{Center, Center, Nothing}(grid),
 
@@ -216,20 +216,20 @@ include("show_methods.jl")
              surface_photosynthetically_active_radiation = default_surface_PAR,
 
              light_attenuation =
-               MultiBandPhotosyntheticallyActiveRadiation(; grid, 
+               MultiBandPhotosyntheticallyActiveRadiation(; grid,
                                                             surface_PAR = surface_photosynthetically_active_radiation),
 
-             sinking_speeds = (POC = 2/day, 
+             sinking_speeds = (POC = 2/day,
                                # might be more efficient to just precompute this
-                               GOC = Field(KernelFunctionOperation{Center, Center, Face}(DepthDependantSinkingSpeed(), 
-                                                                                         grid, 
-                                                                                         mixed_layer_depth, 
+                               GOC = Field(KernelFunctionOperation{Center, Center, Face}(DepthDependantSinkingSpeed(),
+                                                                                         grid,
+                                                                                         mixed_layer_depth,
                                                                                          euphotic_depth))),
              open_bottom = true,
 
              scale_negatives = false,
              invalid_fill_value = NaN,
-             
+
              sediment = nothing,
              particles = nothing,
              modifiers = nothing)
@@ -252,24 +252,24 @@ Keyword Arguments
 - `phosphate`: parameterisation for phosphate (`PO₄`)
 - `inorganic_carbon`: parameterisation for the evolution of the inorganic carbon system (`DIC` and `Alk`)
 - `first_anoxia_threshold` and `second_anoxia_threshold`: thresholds in anoxia parameterisation
-- `nitrogen_redfield_ratio` and `phosphate_redfield_ratio`: the assumed element ratios N/C and P/C 
+- `nitrogen_redfield_ratio` and `phosphate_redfield_ratio`: the assumed element ratios N/C and P/C
 - `mixed_layer_shear` and `background_shear`: the mixed layer and background shear rates, TODO: move this to a computed field
 - `latitude`: model latitude, should be `PrescribedLatitude` for `RectilinearGrid`s and `ModelLatitude` for grids providing their own latitude
 - `day_length`: parameterisation for day length based on time of year and latitude, you may wish to change this to (φ, t) -> 1day if you
    want to ignore the effect of day length, or something else if you're modelling a different planet
 - `mixed_layer_depth`: an `AbstractField` containing the mixed layer depth (to be computed during update state)
-- `euphotic`: an `AbstractField` containing the euphotic depth, the depth where light reduces to 1/1000 of 
+- `euphotic`: an `AbstractField` containing the euphotic depth, the depth where light reduces to 1/1000 of
    the surface value (computed during update state)
 - `silicate_climatology`: an `AbstractField` containing the silicate climatology which effects the diatoms silicate
    half saturation constant
-- `mean_mixed_layer_vertical_diffusivity`: an `AbstractField` containing the mean mixed layer vertical diffusivity 
+- `mean_mixed_layer_vertical_diffusivity`: an `AbstractField` containing the mean mixed layer vertical diffusivity
    (to be computed during update state)
 - `mean_mixed_layer_light`: an `AbstractField` containing the mean mixed layer light (computed during update state)
 - `carbon_chemistry`: the `CarbonChemistry` model used to compute the calcite saturation
 - `calcite_saturation`: an `AbstractField` containing the calcite saturation  (computed during update state)
 - `surface_photosynthetically_active_radiation`: function for the photosynthetically available radiation at the surface
 - `light_attenuation`: light attenuation model which integrated the attenuation of available light
-- `sinking_speeds`: named tuple of constant sinking speeds, or fields (i.e. `ZFaceField(...)`) for any tracers which sink 
+- `sinking_speeds`: named tuple of constant sinking speeds, or fields (i.e. `ZFaceField(...)`) for any tracers which sink
   (convention is that a sinking speed is positive, but a field will need to follow the usual down being negative)
 - `open_bottom`: should the sinking velocity be smoothly brought to zero at the bottom to prevent the tracers leaving the domain
 - `scale_negatives`: scale negative tracers?
@@ -281,7 +281,7 @@ All parameterisations default to the operational version of PISCES as close as p
 Notes
 =====
 Currently only `MixedMondoPhytoplankton` are implemented, and some work should be done to generalise
-the classes to a single `phytoplankton` if more classes are required (see 
+the classes to a single `phytoplankton` if more classes are required (see
 `OceanBioME.Models.PISCESModel` docstring). Similarly, if a more generic `particulate_organic_matter`
 was desired a way to specify arbitrary tracers for arguments would be required.
 """
@@ -291,13 +291,13 @@ function PISCES(; grid,
                   zooplankton = MicroAndMesoZooplankton(FT),
                   dissolved_organic_matter = DissolvedOrganicCarbon(FT),
                   particulate_organic_matter = TwoCompartmentCarbonIronParticles(FT),
-                  
+
                   nitrogen = NitrateAmmonia{FT}(),
                   iron = SimpleIron{FT}(),
                   silicate = Silicate(),
                   oxygen = Oxygen{FT}(),
                   phosphate = Phosphate(),
-                  
+
                   inorganic_carbon = InorganicCarbon(),
 
                   # from Aumount 2005 rather than 2015 since it doesn't work the other way around
@@ -306,13 +306,13 @@ function PISCES(; grid,
 
                   nitrogen_redfield_ratio = convert(FT, 16/122),
                   phosphate_redfield_ratio = convert(FT, 1/122),
-                  
+
                   mixed_layer_shear = convert(FT, 1.0),
-                  background_shear = convert(FT, 0.01), 
-                  
+                  background_shear = convert(FT, 0.01),
+
                   latitude = PrescribedLatitude{FT}(45),
                   day_length = CBMDayLength(),
-                  
+
                   mixed_layer_depth = Field{Center, Center, Nothing}(grid),
                   euphotic_depth = Field{Center, Center, Nothing}(grid),
 
@@ -327,20 +327,20 @@ function PISCES(; grid,
                   surface_photosynthetically_active_radiation = 100,
 
                   light_attenuation =
-                    MultiBandPhotosyntheticallyActiveRadiation(grid, 
+                    MultiBandPhotosyntheticallyActiveRadiation(grid,
                                                                surface_photosynthetically_active_radiation),
 
-                  sinking_speeds = (POC = convert(FT, 2/day), 
+                  sinking_speeds = (POC = convert(FT, 2/day),
                                     # might be more efficient to just precompute this
-                                    GOC = Field(KernelFunctionOperation{Center, Center, Face}(DepthDependantSinkingSpeed{FT}(), 
-                                                                                              grid, 
-                                                                                              mixed_layer_depth, 
+                                    GOC = Field(KernelFunctionOperation{Center, Center, Face}(DepthDependantSinkingSpeed{FT}(),
+                                                                                              grid,
+                                                                                              mixed_layer_depth,
                                                                                               euphotic_depth))),
                   open_bottom = true,
 
                   scale_negatives = false,
                   invalid_fill_value = NaN,
-                  
+
                   sediment = nothing,
                   particles = nothing,
                   modifiers = nothing)
@@ -362,7 +362,7 @@ function PISCES(; grid,
 
         @warn "A latitude of $latitude was given but the grid has its own latitude ($(minimum(φ)), $(maximum(φ))) so the prescribed value is ignored"
 
-        latitude = nothing 
+        latitude = nothing
     elseif (latitude isa ModelLatitude) & (grid isa RectilinearGrid)
         throw(ArgumentError("You must prescribe a latitude when using a `RectilinearGrid`"))
     end
@@ -377,32 +377,32 @@ function PISCES(; grid,
     underlying_biogeochemistry = PISCES(phytoplankton, zooplankton,
                                         dissolved_organic_matter, particulate_organic_matter,
                                         nitrogen, iron, silicate, oxygen, phosphate,
-                                        inorganic_carbon, 
+                                        inorganic_carbon,
                                         first_anoxia_threshold, second_anoxia_threshold,
                                         nitrogen_redfield_ratio, phosphate_redfield_ratio,
                                         mixed_layer_shear, background_shear,
                                         latitude, day_length,
                                         mixed_layer_depth, euphotic_depth,
                                         silicate_climatology,
-                                        mean_mixed_layer_vertical_diffusivity, 
+                                        mean_mixed_layer_vertical_diffusivity,
                                         mean_mixed_layer_light,
                                         carbon_chemistry, calcite_saturation,
                                         sinking_velocities)
 
     if scale_negatives
-        scalers = ScaleNegativeTracers(underlying_biogeochemistry; invalid_fill_value)
+        scaler = ScaleNegativeTracers(underlying_biogeochemistry; invalid_fill_value)
         if isnothing(modifiers)
-            modifiers = scalers
+            modifiers = scaler
         elseif modifiers isa Tuple
-            modifiers = (modifiers..., scalers...)
+            modifiers = (modifiers..., scaler)
         else
-            modifiers = (modifiers, scalers...)
+            modifiers = (modifiers, scaler)
         end
     end
 
     return Biogeochemistry(underlying_biogeochemistry;
-                           light_attenuation, 
-                           sediment, 
+                           light_attenuation,
+                           sediment,
                            particles,
                            modifiers)
 end

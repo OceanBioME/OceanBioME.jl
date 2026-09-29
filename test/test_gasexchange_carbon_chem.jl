@@ -43,7 +43,7 @@ function test_gas_exchange_model(grid, air_concentration)
     value = CUDA.@allowscalar Oceananigans.getbc(model.tracers.DIC.boundary_conditions.top, 1, 1, grid, model.clock, fields(model))
 
     @test isa(model.tracers.DIC.boundary_conditions.top.condition.func, GasExchange)
-    @test ≈(value, -6.8331e-6; atol = 1e-8)
+    @test ≈(value, -6.8326e-6; atol = 1e-8)
     @test isnothing(time_step!(model, 1.0))
 
     # multiple carbonate systems
@@ -100,19 +100,19 @@ end
 
 grid = RectilinearGrid(architecture; size=(1, 1, 2), extent=(1, 1, 1))
 
-@inline conc_function(x, y, t) = 413.0
+@inline conc_function(x, y, t) = 413.1
 
 conc_field = CenterField(grid)
 
-set!(conc_field, (args...) -> 413)
+set!(conc_field, (args...) -> 413.1)
 
 conc_fts = FieldTimeSeries((Center(), Center(), nothing), grid, [0, 1])
-set!(conc_fts[1], 413)
-set!(conc_fts[2], 413)
+set!(conc_fts[1], 413.1)
+set!(conc_fts[2], 413.1)
 
 conc_fts2 = FieldTimeSeries((Center(), Center(), nothing), RectilinearGrid(architecture; size=(2, 1, 2), extent=(1, 1, 1)), [0, 1])
-set!(conc_fts2[1], 413)
-set!(conc_fts2[2], 413)
+set!(conc_fts2[1], 413.1)
+set!(conc_fts2[2], 413.1)
 
 @testset "Gas exchange coupling" begin
     for air_concentration in [413.1, conc_function, conc_field, conc_fts, conc_fts2]
