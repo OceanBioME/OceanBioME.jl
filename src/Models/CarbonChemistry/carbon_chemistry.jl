@@ -114,7 +114,7 @@ Val(:pHˢ), which will return `X` in `Val(:X)` instead of fCO₂.
 was supplied in, rather than the ppm of the fugacity and partial pressure outputs.
 
 `Val((:CO₂, :pHᶠ))` returns both `([CO₂(aq)], pHᶠ)` from the one solve, so the free pH can be
-kept as the `initial_pH_guess` of the next solve (see [`CarbonDioxideConcentration`](@ref)).
+kept as the `initial_pH_guess` of the next solve (see [`CarbonDioxideConcentration`](@ref OceanBioME.Models.GasExchangeModel.CarbonDioxideConcentration)).
 
 Two distinct pressures may be given:
 
