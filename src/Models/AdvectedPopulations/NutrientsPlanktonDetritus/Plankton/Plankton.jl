@@ -29,6 +29,8 @@ using ..NutrientsPlanktonDetritusModels.NutrientsModels:
     NitrateAmmonia,
     SimpleIron
 
+using OceanBioME: ImplicitSinking
+
 using ..NutrientsPlanktonDetritusModels.DetritusModels:
     Detritus,
     DissolvedParticulate,
