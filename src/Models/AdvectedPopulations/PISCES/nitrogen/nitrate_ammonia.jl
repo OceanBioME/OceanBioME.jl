@@ -9,7 +9,7 @@ phytoplankton. Additionally waste produces ammonia through various means.
 """
 @kwdef struct NitrateAmmonia{FT}
               maximum_nitrification_rate :: FT = 0.05  / day # 1 / s
-                   maximum_fixation_rate :: FT = 0.013 / day # mmol N / m³ (maybe shouldn't be a rate)
+                   maximum_fixation_rate :: FT = 0.013 / day # mmol N / m³
        iron_half_saturation_for_fixation :: FT = 0.1         # μmol Fe / m³
   phosphate_half_saturation_for_fixation :: FT = 0.8         # mmol P / m³
            light_saturation_for_fixation :: FT = 50.0        # W / m²
@@ -79,7 +79,7 @@ end
 
     μ = base_production_rate(bgc.phytoplankton, i, j, k, grid, bgc, clock, fields, auxiliary_fields)
 
-    growth_requirement = max(0, μ - 2.15)
+    growth_requirement = max(0, μ * day - 2.15)
 
     nutrient_limitation = min(Fe / (Fe +  K_Fe), PO₄ / (PO₄ + K_PO₄))
 
