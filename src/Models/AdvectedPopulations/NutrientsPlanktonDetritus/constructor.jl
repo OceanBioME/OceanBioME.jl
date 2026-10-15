@@ -48,8 +48,8 @@ Keyword Arguments
   oxygen (`O₂`)
 - `light_attenuation`: light attenuation model which integrates the attenuation of available light
 - `sediment`: slot for a sediment model (`AbstractSediment`)
-- `negative_tracers`: treatment for negative tracer values, such as [`IgnoreNegativeTracerValues`](@ref),
-  [`ClipNegativeTracers`](@ref), or [`ScaleNegativeTracers`](@ref)
+- `negative_tracers`: treatment for negative tracer values, such as [`IgnoreNegativeTracerValues`](@ref OceanBioME.IgnoreNegativeTracerValues),
+  [`ClipNegativeTracers`](@ref OceanBioME.ClipNegativeTracers), or [`ScaleNegativeTracers`](@ref OceanBioME.ScaleNegativeTracers)
 - `scale_negatives`: convenience for automatically scaling conserved elemental tracer groups (excluding oxygen)
 - `invalid_fill_value`: value used by the `scale_negatives` convenience
 - `particles`: slot for `BiogeochemicalParticles`

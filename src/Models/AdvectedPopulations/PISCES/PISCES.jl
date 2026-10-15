@@ -270,7 +270,7 @@ Keyword Arguments
 - `sinking_speeds`: named tuple of constant sinking speeds, or fields (i.e. `ZFaceField(...)`) for any tracers which sink
   (convention is that a sinking speed is positive, but a field will need to follow the usual down being negative)
 - `open_bottom`: should the sinking velocity be smoothly brought to zero at the bottom to prevent the tracers leaving the domain
-- `negative_tracers`: treatment for negative tracer values, such as [`IgnoreNegativeTracerValues`](@ref), [`ClipNegativeTracers`](@ref), or [`ScaleNegativeTracers`](@ref)
+- `negative_tracers`: treatment for negative tracer values, such as [`IgnoreNegativeTracerValues`](@ref OceanBioME.IgnoreNegativeTracerValues), [`ClipNegativeTracers`](@ref OceanBioME.ClipNegativeTracers), or [`ScaleNegativeTracers`](@ref OceanBioME.ScaleNegativeTracers)
 - `scale_negatives`: convenience for scaling the conserved tracer groups of the model
 - `particles`: slot for `BiogeochemicalParticles`
 - `modifiers`: slot for components which modify the biogeochemistry when the tendencies have been calculated or when the state is updated
