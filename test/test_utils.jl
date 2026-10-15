@@ -159,6 +159,11 @@ group_totals(model, groups) = map(group -> sum(scalefactor * tracer_value(model,
         @test tracer_value(model, :P) == 0
         @test tracer_value(model, :Z) + 2 * tracer_value(model, :N) ≈ 2
 
+        # A negative conserved total cannot be made nonnegative while conserving it.
+        set_tracers!(model; N = 0.1, P = -1, Z = 0)
+        update_state!(model)
+        @test isnan(tracer_value(model, :N))
+
         @test_throws ArgumentError ScaleNegativeTracers((O₂ = 1, P = -7))
     end
 
