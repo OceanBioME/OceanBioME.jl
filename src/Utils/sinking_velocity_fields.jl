@@ -1,5 +1,5 @@
 using KernelAbstractions: @kernel, @index
-using Oceananigans.Architectures: architecture, on_architecture
+using Oceananigans.Architectures: architecture
 using Oceananigans.BoundaryConditions: fill_halo_regions!
 using Oceananigans.Fields: ZFaceField, AbstractField, location, Center, Face, compute!, ZeroField
 using Oceananigans.Forcings: maybe_constant_field
@@ -17,11 +17,10 @@ function setup_velocity_fields(drift_speeds, grid::AbstractGrid, open_bottom; sm
     for (name, w) in pairs(drift_speeds)
         if isa(w, Number)
             w_field = ZFaceField(grid)
-            profile = [- w * ifelse(open_bottom, 1.0, (1 - exp((1-k) / smoothing_distance))) for k=1:grid.Nz]
             for k=1:grid.Nz
-                @inbounds w_field[:, :, k] .= profile[k]
+                @inbounds w_field[:, :, k] .= - w * ifelse(open_bottom, 1.0, (1 - exp((1-k) / smoothing_distance)))
             end
-            open_bottom || move_taper_to_seafloor!(w_field, grid, profile)
+            open_bottom || move_taper_to_seafloor!(w_field, grid, w, smoothing_distance)
         elseif isa(w, AbstractField)
             location(w) in valid_sinking_velocity_locations ||
                 @warn "The location of the sinking velocity field provided for $name is incorrect, it should be (Center, Center, Face)"
@@ -41,20 +40,19 @@ function setup_velocity_fields(drift_speeds, grid::AbstractGrid, open_bottom; sm
     return NamedTuple{keys(drift_speeds)}(drift_velocities)
 end
 
-move_taper_to_seafloor!(w_field, grid, profile) = nothing
+move_taper_to_seafloor!(w_field, grid, w, smoothing_distance) = nothing
 
-function move_taper_to_seafloor!(w_field, grid::ImmersedBoundaryGrid, profile)
+function move_taper_to_seafloor!(w_field, grid::ImmersedBoundaryGrid, w, smoothing_distance)
     arch = architecture(grid)
-    profile = on_architecture(arch, convert.(eltype(w_field), profile))
 
-    launch!(arch, grid, :xy, _move_taper_to_seafloor!, w_field, grid, profile)
+    launch!(arch, grid, :xy, _move_taper_to_seafloor!, w_field, grid, w, smoothing_distance)
 
     fill_halo_regions!(w_field)
 
     return nothing
 end
 
-@kernel function _move_taper_to_seafloor!(w, grid, profile)
+@kernel function _move_taper_to_seafloor!(w_field, grid, w, smoothing_distance)
     i, j = @index(Global, NTuple)
 
     kᵇ = 1
@@ -63,8 +61,8 @@ end
     end
 
     for k in 1:grid.Nz
-        wₖ = @inbounds profile[max(1, k - kᵇ + 1)]
-        @inbounds w[i, j, k] = ifelse(k < kᵇ, zero(wₖ), wₖ)
+        wₖ = - w * (1 - exp((kᵇ - k) / smoothing_distance))
+        @inbounds w_field[i, j, k] = ifelse(k < kᵇ, zero(wₖ), wₖ)
     end
 end
 
