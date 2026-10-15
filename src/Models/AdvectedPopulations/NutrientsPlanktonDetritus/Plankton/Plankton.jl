@@ -26,7 +26,8 @@ using ..NutrientsPlanktonDetritusModels:
 using ..NutrientsPlanktonDetritusModels.NutrientsModels:
     Nutrients,
     SingleTracerNutrient,
-    NitrateAmmonia
+    NitrateAmmonia,
+    SimpleIron
 
 using ..NutrientsPlanktonDetritusModels.DetritusModels:
     Detritus,

@@ -11,16 +11,20 @@ abstract type AbstractPlankton{LN} end
         iron_limitation(i, j, k, grid, nutrients.iron, args...),
         silicate_limitation(i, j, k, grid, nutrients.silicate, args...))
 
-for (nutrient, symbol) in pairs((phosphate = :PO₄, iron = :Fe, silicate = :Si))
+const IronNutrient = Union{SingleTracerNutrient, SimpleIron}
+
+for (nutrient, symbol, dispatch) in ((:phosphate, :PO₄, :SingleTracerNutrient),
+                                     (     :iron,  :Fe,  :IronNutrient),
+                                     ( :silicate,  :Si,  :SingleTracerNutrient))
     fname = Symbol(nutrient, :_limitation)
     @eval begin
         @inline function $fname(i, j, k, grid,
-                                ::SingleTracerNutrient, 
+                                ::$dispatch,
                                 plankton::AbstractPlankton{LN},
                                 bgc::NutrientsPlanktonDetritus{FT},
                                 fields, auxiliary_fields) where {LN, FT}
             if $(QuoteNode(nutrient)) in LN
-                kN = nutrient_half_saturations(plankton, Val($(QuoteNode(symbol)))) 
+                kN = nutrient_half_saturations(plankton, Val($(QuoteNode(symbol))))
                 N = fields.$symbol[i, j, k]
 
                 return N / (N + kN)
@@ -29,8 +33,8 @@ for (nutrient, symbol) in pairs((phosphate = :PO₄, iron = :Fe, silicate = :Si)
             end
         end
 
-        $fname(i, j, k, grid, 
-               ::Nothing, 
+        $fname(i, j, k, grid,
+               ::Nothing,
                plankton,
                ::NutrientsPlanktonDetritus{FT},
                fields, auxiliary_fields) where FT =
@@ -39,7 +43,7 @@ for (nutrient, symbol) in pairs((phosphate = :PO₄, iron = :Fe, silicate = :Si)
 end
 
 @inline function nitrogen_limitation(i, j, k, grid,
-                                     ::SingleTracerNutrient, 
+                                     ::SingleTracerNutrient,
                                      plankton::AbstractPlankton{LN},
                                      ::NutrientsPlanktonDetritus{FT},
                                      fields, auxiliary_fields) where {LN, FT}

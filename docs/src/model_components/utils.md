@@ -15,7 +15,7 @@ simulation.callbacks[:wizard] = Callback(wizard, IterationInterval(10))
 ```
 
 ## Negative tracer treatment
-Negative tracer values can be handled through the `negative_tracers` keyword of `Biogeochemistry` and model constructors. Three treatments are available.
+Negative tracer values can be handled through the `negative_tracers` keyword of `Biogeochemistry` and model constructors. Three treatments are available, alongside the upstream `ZeroNegativeTracers` modifier.
 
 `ScaleNegativeTracers` rescales a conserved tracer group so none of its members remain negative:
 ```julia
@@ -27,7 +27,18 @@ A scale factor can be provided for each component, for example when tracers use 
 negativity_protection = ScaleNegativeTracers((:P, :Z, :N); scalefactors = (1, 1, 2))
 biogeochemistry = Biogeochemistry(...; negative_tracers = negativity_protection)
 ```
-The conserved group should be chosen to match the model's elemental bookkeeping. For supported model constructors, `ScaleNegativeTracers()` can infer the conserved group or groups from the underlying biogeochemistry.
+Overlapping elemental pools should be scaled together. For example, nitrogen and carbon conservation
+can be enforced simultaneously even when both groups contain the same plankton tracers:
+```julia
+negative_tracers = ScaleNegativeTracers((nitrogen = (N = 1, P = 1, Z = 1),
+                                          carbon = (DIC = 1, P = 6.56, Z = 6.56)))
+biogeochemistry = Biogeochemistry(...; negative_tracers)
+```
+All overlapping groups should be passed to one `ScaleNegativeTracers` treatment, since applying separate
+scalers sequentially can change the totals of other groups. Each group needs at least one tracer not shared
+with another group. For supported constructors, `ScaleNegativeTracers()` automatically infers conserved
+groups from the underlying biogeochemistry; `scale_negatives = true` provides the same convenience.
+Groups with signed scale factors, such as the oxygen budget, are excluded from automatic scaling.
 
 `ClipNegativeTracers` directly clips negative prognostic tracer values to zero:
 ```julia

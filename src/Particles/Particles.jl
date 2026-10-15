@@ -15,7 +15,7 @@ using Oceananigans.Grids: AbstractGrid
 import Oceananigans.Architectures: architecture
 import Oceananigans.Biogeochemistry: update_tendencies!
 import Oceananigans.Fields: set!
-import Oceananigans.Models.LagrangianParticleTracking: update_lagrangian_particle_properties!, step_lagrangian_particles!
+import Oceananigans.TimeSteppers: step_lagrangian_particles!, update_lagrangian_particle_state!
 import Oceananigans.OutputWriters: fetch_output
 import Base: length, size, show, summary
 import Adapt: adapt_structure
@@ -146,12 +146,19 @@ const ModelWithBiogeochemicalParticles = Union{
     step_lagrangian_particles!(model.biogeochemistry, model, Δt)
 
 @inline step_lagrangian_particles!(bgc::BiogeochemistryWithParticles, model, Δt) =
-    update_lagrangian_particle_properties!(bgc.particles, model, bgc, Δt)
+    advect_particles!(bgc.particles.advection, bgc.particles, model, Δt)
 
-@inline function update_lagrangian_particle_properties!(particles::BiogeochemicalParticles, model, bgc, Δt)
-    advect_particles!(particles.advection, particles, model, Δt)
+@inline update_lagrangian_particle_state!(::Nothing, model::ModelWithBiogeochemicalParticles) =
+    update_lagrangian_particle_state!(model.biogeochemistry, model)
+
+@inline function update_lagrangian_particle_state!(bgc::BiogeochemistryWithParticles, model)
+    particles = bgc.particles
+    Δt = model.clock.last_stage_Δt
+
     time_step_particle_fields!(particles.timestepper, particles, model, Δt)
     update_particle_state!(particles, model, Δt)
+
+    return nothing
 end
 
 @inline update_particle_state!(particles, model, Δt) = nothing
