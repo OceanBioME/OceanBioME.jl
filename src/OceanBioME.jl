@@ -214,8 +214,8 @@ update_tendencies!(bgc, modifiers::Tuple, model) = [update_tendencies!(bgc, modi
 
 function update_biogeochemical_state!(bgc::CompleteBiogeochemistry, model)
     # TODO: change the order of arguments here since they should definitly be the other way around
-    update_biogeochemical_state!(model, bgc.negative_tracers)
     update_biogeochemical_state!(model, bgc.modifiers)
+    update_biogeochemical_state!(model, bgc.negative_tracers)
     update_biogeochemical_state!(model, bgc.light_attenuation)
     update_biogeochemical_state!(model, bgc.underlying_biogeochemistry)
     update_biogeochemical_state!(model, bgc.sediment)
