@@ -1,6 +1,6 @@
 module InorganicCarbonModels
 
-export CarbonateSystem, ExplicitCalciumCarbonate
+export CarbonateSystem, ExplicitCalciumCarbonate, ImplicitCalciumCarbonate
 
 using Oceananigans.Units
 
@@ -43,5 +43,6 @@ include("abstract_inorganic_carbon.jl")
 include("defaults.jl")
 include("implicit_calcium_carbonate.jl")
 include("explicit_calcium_carbonate.jl")
+include("implicit_sinking_calcium_carbonate.jl")
 
 end # module

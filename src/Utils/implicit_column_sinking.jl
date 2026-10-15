@@ -1,3 +1,4 @@
+using Oceananigans: fields
 using Oceananigans.Fields: Field, OneField, CenterField
 using Oceananigans.Grids: Center, Face, znode, AbstractGrid
 using Oceananigans.Operators: Δzᶜᶜᶜ
@@ -158,3 +159,26 @@ end
 
 @inline store_flux!(i, j, k, ::Nothing, F) = nothing
 @inline store_flux!(i, j, k, flux_field, F) = @inbounds flux_field[i, j, k] = F
+
+"""
+    compute_implicit_sinking!(model, sinking::ImplicitSinking, component, bgc)
+
+Sink each class of `sinking` down every column of `model`, from the production of `component` given by
+[`implicit_sinking_production`](@ref), filling its `remineralisation`, `floor_flux` and (if stored) `flux`.
+"""
+function compute_implicit_sinking!(model, sinking::ImplicitSinking, component, bgc)
+    grid = model.grid
+    Nz = size(grid, 3)
+
+    for name in keys(sinking.remineralisation)
+        ℓ = dissolution_length(sinking, name)
+        flux_field = isnothing(sinking.flux) ? nothing : sinking.flux[name]
+        launch!(architecture(grid), grid, :xy, implicit_sinking_column!,
+                grid, component, bgc, fields(model), biogeochemical_auxiliary_fields(model.biogeochemistry),
+                sinking.remineralisation[name], sinking.floor_flux[name], flux_field,
+                sinking.floor_indices, ℓ,
+                sinking.open_bottom, Nz, Val(name), model.clock)
+    end
+
+    return nothing
+end
