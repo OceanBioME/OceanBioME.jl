@@ -16,7 +16,7 @@ export GasExchange,
 
 using Adapt
 using Oceananigans.BoundaryConditions: FluxBoundaryCondition
-using Oceananigans.Fields: Center
+using Oceananigans.Fields: Center, Field
 using Oceananigans.Grids: xnode, ynode
 
 using OceanBioME.Models.CarbonChemistryModel:
@@ -129,6 +129,9 @@ and phosphate tracers, or a `NamedTuple`  of values for the `carbon_chemistry` m
 `water_concentration` reads, which is how replicate carbonate systems (`DIC1`/`Alk1`, ...) are
 exchanged. They are ignored if `water_concentration` is given explicitly.
 
+`warm_start = true` (which needs `grid`) stores the surface pH of each solve to start the next
+from, see [`CarbonDioxideConcentration`](@ref). It is also ignored if `water_concentration` is given.
+
 `kwargs` are passed on to `GasExchangeBoundaryCondition`.
 
 Note: The model always requires `T`, `S`, `DIC`, and `Alk` to be present in the model.
@@ -146,10 +149,11 @@ function CarbonDioxideGasExchangeBoundaryCondition(FT = Float64;
                                                    DIC = :DIC,
                                                    Alk = :Alk,
                                                    water_concentration = nothing,
+                                                   warm_start = false,
                                                    kwargs...)
 
     if isnothing(water_concentration)
-        water_concentration = CarbonDioxideConcentration(FT; carbon_chemistry, DIC, Alk)
+        water_concentration = CarbonDioxideConcentration(FT; carbon_chemistry, DIC, Alk, warm_start, grid)
     elseif !isnothing(carbon_chemistry)
         @warn "Make sure that the `carbon_chemistry` $(carbon_chemistry) is the same as that in `water_concentration` $(water_concentration) (or set it to `nothing`)"
     end
