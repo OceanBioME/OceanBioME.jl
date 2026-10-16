@@ -16,7 +16,9 @@ using ..NutrientsPlanktonDetritusModels:
     phosphate_ratio,
     iron_ratio,
     silicon_ratio,
-    calcium_carbonate_rain_ratio
+    calcium_carbonate_rain_ratio,
+    hard_organic_production,
+    hard_organic_remineralisation
 
 import ..NutrientsPlanktonDetritusModels: dissolved_waste, solid_waste, calcium_carbonate_dissolution, inorganic_waste, nutrient_uptake
 

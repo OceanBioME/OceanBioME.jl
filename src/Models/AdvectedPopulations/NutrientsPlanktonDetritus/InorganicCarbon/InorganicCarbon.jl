@@ -37,7 +37,9 @@ import Oceananigans.Biogeochemistry:
 import ..NutrientsPlanktonDetritusModels:
     carbon_ratio,
     component_tendency,
-    component_drift_velocity
+    component_drift_velocity,
+    hard_organic_production,
+    hard_organic_remineralisation
 
 include("abstract_inorganic_carbon.jl")
 include("defaults.jl")
