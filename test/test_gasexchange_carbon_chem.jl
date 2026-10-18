@@ -121,6 +121,25 @@ set!(conc_fts2[2], 413.1)
     end
 end
 
+@testset "Oxygen gas exchange equilibrium" begin
+    # 1 m of sea water with no biology, where only the air-sea flux changes O₂, so O₂ should
+    # settle at the Garcia and Gordon (1992) check value for 10 °C and S = 35: 6.315 cm³/dm³,
+    # i.e. 282.0 mmol/m³ with the molar volume of oxygen (0.0223916 m³/mol)
+    column_grid = RectilinearGrid(architecture; size = (1, 1, 1), extent = (1, 1, 1))
+
+    model = NonhydrostaticModel(column_grid;
+                                tracers = (:T, :S, :O₂),
+                                boundary_conditions = (; O₂ = FieldBoundaryConditions(top = OxygenGasExchangeBoundaryCondition(; wind_speed = 10))))
+
+    set!(model, T = 10, S = 35, O₂ = 0)
+
+    for _ in 1:100
+        time_step!(model, 1hour)
+    end
+
+    @test ≈(CUDA.@allowscalar(model.tracers.O₂[1, 1, 1]), 6.315 / 0.0223916; rtol = 1e-4)
+end
+
 @testset "Off grid FieldTimeSeries interpolation" begin
     using OceanBioME.Models.GasExchangeModel: InterpolableFTS, normalise_surface_function
     using Oceananigans.Grids: xnode
@@ -285,9 +304,20 @@ end
         @test CO₂ === CarbonChemistry(FT)(; DIC = FT(2136.242890518708), Alk = FT(2500), T = FT(25), S = FT(35), output = Val(:CO₂))
         @test typeof(CO₂) == FT
 
+        # the default is the Garcia and Gordon (1992) saturation at 25 °C and S = 35
         pO₂ = surface_value(O₂_exchange.air_concentration, 1, 1, grid, clock, (; T, S))
-        @test ≈(pO₂, 200, atol = 50) # ball park correct
+        @test ≈(pO₂, 211.597, rtol = 1e-5)
         @test typeof(pO₂) == FT
+
+        # Weiss (1970) constants for the Bunsen coefficient of oxygen (`B2` was mistyped as 0.015578)
+        O₂_solubility = OxygenSolubility(FT)
+
+        @test O₂_solubility.A1 == FT(-58.3877)
+        @test O₂_solubility.A2 == FT(85.8079)
+        @test O₂_solubility.A3 == FT(23.8439)
+        @test O₂_solubility.B1 == FT(-0.034892)
+        @test O₂_solubility.B2 == FT(0.015568)
+        @test O₂_solubility.B3 == FT(-0.0019387)
 
         # check flux is correct type
         DIC_flux = CO₂_exchange(1, 1, grid, clock, (; T, S, DIC, Alk))
@@ -666,6 +696,9 @@ const MARBL_REFERENCE = (
 
         o2_saturation = GarciaGordonOxygenSaturation(FT)
 
+        # the default oxygen exchange with MARBL's piston velocity
+        o2_exchange = OxygenGasExchangeBoundaryCondition(FT; wind_speed = FT(5), base_transfer_velocity = marbl_k660).condition.func
+
         # tight: everything that is a closed-form expression on both sides
         tight = max(1e-11, 1000 * eps(FT))
         # loose: includes MARBL's `xacc = 1e-10` pH root-find (the accuracy limit at Float64),
@@ -683,6 +716,13 @@ const MARBL_REFERENCE = (
             @test ≈(OxygenPolynomialSchmidtNumber(FT)(FT(r.T)),        r.sc_o2;  rtol = tight)
 
             @test ≈(surface_value(o2_saturation, 1, 1, grid, clock, (; T, S)), r.o2sat; rtol = tight)
+
+            # MARBL's oxygen flux into the ocean is `pv_o2 (o2sat - O₂)`, so the default exchange
+            # relaxes O₂ to MARBL's saturation
+            pv_o2 = MARBL_XKW_COEFF * r.u₁₀^2 * sqrt(660 / r.sc_o2)
+            O₂ = ConstantField(FT(150))
+
+            @test ≈(-o2_exchange(1, 1, grid, clock, (; T, S, O₂)), pv_o2 * (r.o2sat - 150); rtol = tight)
 
             # MARBL's `co2starair · mass_to_vol` = xco2·1e-6 · ff · atmpres · 1e3 · rho_sw
             @test ≈(surface_value(marbl_air, 1, 1, grid, clock, fields),

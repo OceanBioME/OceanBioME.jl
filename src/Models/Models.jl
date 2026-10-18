@@ -26,7 +26,8 @@ export GasExchange,
        ScaledGasTransferVelocity,
        SchmidtScaledTransferVelocity,
        CarbonDioxidePolynomialSchmidtNumber,
-       OxygenPolynomialSchmidtNumber
+       OxygenPolynomialSchmidtNumber,
+       GarciaGordonOxygenSaturation
 
 include("Sediments/Sediments.jl")
 include("seawater_density.jl")
