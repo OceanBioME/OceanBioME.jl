@@ -180,16 +180,30 @@ default_carbon_dioxide_air_concentration(FT, ::Nothing; mole_fraction = 413) =
                         "`carbon_chemistry` or an explicit `air_concentration`."))
 
 """
-    OxygenGasExchangeBoundaryCondition(FT = Float64; 
-                                       transfer_velocity = SchmidtScaledTransferVelocity(schmidt_number = OxygenPolynomialSchmidtNumber(FT)),
-                                       water_concentration = OxygenConcentration(),
-                                       air_concentration = 9352.7, # mmolO₂/m³
+    OxygenGasExchangeBoundaryCondition(FT = Float64;
+                                       grid = nothing,
                                        wind_speed = 2,
-                                       kwagrs...)
+                                       base_transfer_velocity = Ho06(FT),
+                                       schmidt_number = OxygenPolynomialSchmidtNumber(FT),
+                                       discrete_form = false,
+                                       transfer_velocity = SchmidtScaledTransferVelocity(FT; schmidt_number, base_transfer_velocity),
+                                       water_concentration = OxygenConcentration(),
+                                       air_concentration = GarciaGordonOxygenSaturation(FT),
+                                       kwargs...)
 
 Returns a `FluxBoundaryCondition` for the gas exchange between oxygen dissolved in the water
-specified by the the `OxygenConcentration` in the base model, and `air_concentration` with `transfer_velocity`
+specified by the `OxygenConcentration` in the base model, and `air_concentration` with `transfer_velocity`
 (see `GasExchangeBoundaryCondition` for details).
+
+The exchange is computed as
+
+    k ([O₂] - [O₂]ₛₐₜ(T, S) pₐₜₘ),
+
+where the default `air_concentration` is the [`GarciaGordonOxygenSaturation`](@ref): the
+concentration of oxygen in sea water in equilibrium with water vapour saturated air at 1 atm,
+scaled by the atmospheric pressure `pₐₜₘ` (in atm, 1 by default). Saturated surface water
+therefore neither takes up nor gives off oxygen. To change the atmospheric pressure pass
+`air_concentration = GarciaGordonOxygenSaturation(FT; atmospheric_pressure)`.
 
 `kwargs` are passed on to `GasExchangeBoundaryCondition`.
 """
@@ -201,8 +215,8 @@ OxygenGasExchangeBoundaryCondition(FT = Float64;
                                    discrete_form = false,
                                    transfer_velocity = SchmidtScaledTransferVelocity(FT; schmidt_number, base_transfer_velocity),
                                    water_concentration = OxygenConcentration(),
-                                   air_concentration = PartiallySolubleGas(FT; air_concentration = 9352.7, solubility = OxygenSolubility(FT)),
-                                   kwargs...) = # mmolO₂/m³
+                                   air_concentration = GarciaGordonOxygenSaturation(FT),
+                                   kwargs...) =
     GasExchangeBoundaryCondition(FT; wind_speed, water_concentration, air_concentration, transfer_velocity, grid, discrete_form, kwargs...)
 
 default_wind_speed(FT, grid) = convert(FT, 2)
