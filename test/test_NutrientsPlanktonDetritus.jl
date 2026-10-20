@@ -515,7 +515,7 @@ using Oceananigans.Grids: znode, Center
     @test free_iron(0.0, iron) == 0.0
     @test free_iron(-1e-4, iron) == 0.0
     @test 0 < free_iron(1e-3, iron) < 1e-3
-    @test free_iron(1.0, iron) ≈ iron.free_iron_maximum
+    @test free_iron(1.0, iron) ≈ 1.0 - iron.total_ligand
     @test free_iron(1e-6, iron) < 1e-6 * 0.01
 
     # scavenging tendency (Abiotic → only scavenging contributes)
