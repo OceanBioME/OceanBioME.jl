@@ -1,6 +1,6 @@
 """
     SimpleIron(; scavenging_rate = 0.19/(360*86400),
-                 ligand_stability = 1e11,
+                 ligand_stability = 1e5,
                  total_ligand = 1e-3,
                  free_iron_maximum = 3e-4)
 
@@ -22,13 +22,13 @@ Keyword Arguments
 =================
 
 - `scavenging_rate`: first-order scavenging rate of free iron (1/s)
-- `ligand_stability`: ligand–free-iron stability constant (m³/mmol)
+- `ligand_stability`: ligand–free-iron stability constant (m³/mmol; MITgcm's `ligand_stab = 1e8` m³/mol)
 - `total_ligand`: uniform total ligand concentration (mmol/m³)
 - `free_iron_maximum`: maximum concentration of free iron before precipitation (mmol/m³)
 """
 @kwdef struct SimpleIron{FT}
      scavenging_rate :: FT = 0.19 / (360 * 86400)  # 1/s
-    ligand_stability :: FT = 1e11                    # m³/mmol
+    ligand_stability :: FT = 1e5                     # m³/mmol
         total_ligand :: FT = 1e-3                    # mmol/m³
    free_iron_maximum :: FT = 3e-4                    # mmol/m³
 end
