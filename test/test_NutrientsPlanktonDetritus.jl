@@ -667,3 +667,56 @@ end
             calcium_carbonate_dissolution_rate = (k1, k2, k1))
     end
 end
+
+using Oceananigans.Biogeochemistry: required_biogeochemical_auxiliary_fields
+
+@testset "Carbonate replicates" begin
+    grid = RectilinearGrid(architecture; size=(1, 1, 1), extent=(1, 1, 2))
+
+    @testset "names" begin
+        for (inorganic_carbon, tracers, auxiliary_fields, carbon_groups) in
+                ((CarbonateSystem(), (:DIC, :Alk), (), (:carbon, )),
+                 (CarbonateSystem(2), (:DIC1, :DIC2, :Alk1, :Alk2), (), (:carbon1, :carbon2)),
+                 (ExplicitCalciumCarbonate(grid), (:DIC, :Alk, :CaCO₃), (:Ω, ), (:carbon, )),
+                 (ExplicitCalciumCarbonate(grid; replicates = 2),
+                  (:DIC1, :DIC2, :Alk1, :Alk2, :CaCO₃1, :CaCO₃2), (:Ω1, :Ω2), (:carbon1, :carbon2)))
+
+            @test required_biogeochemical_tracers(inorganic_carbon) == tracers
+            @test required_biogeochemical_auxiliary_fields(inorganic_carbon) == auxiliary_fields
+            @test keys(conserved_tracers(NPZD(grid; inorganic_carbon, light_attenuation))) == (:nitrogen, carbon_groups...)
+        end
+    end
+
+    # The replicates are in different states (the second undersaturated), and each is compared with the
+    # single system in the same state, made by renaming the replicate's fields
+    @testset "each replicate has exactly the tendencies of the single system" begin
+        for (single, replicated) in ((CarbonateSystem(), CarbonateSystem(2)),
+                                     (ExplicitCalciumCarbonate(grid; calcium_carbonate_precipitation_rate = 1e-6),
+                                      ExplicitCalciumCarbonate(grid; replicates = 2, calcium_carbonate_precipitation_rate = 1e-6)))
+
+            model = NonhydrostaticModel(grid; advection = nothing,
+                                        biogeochemistry = NPZD(grid; inorganic_carbon = replicated, light_attenuation),
+                                        auxiliary_fields = (; S = ConstantField(35.0)))
+
+            set!(model; N = 5, P = 1, Z = 0.5, D = 1, T = 15, DIC1 = 2000, Alk1 = 2300, DIC2 = 2300, Alk2 = 2200)
+            replicated isa ExplicitCalciumCarbonate && set!(model; CaCO₃1 = 1, CaCO₃2 = 2)
+
+            bgc = model.biogeochemistry.underlying_biogeochemistry
+            aux = biogeochemical_auxiliary_fields(model.biogeochemistry)
+            single_bgc = NutrientsPlanktonDetritus{Float64}(bgc.nutrients, bgc.plankton, bgc.detritus, single, bgc.oxygen)
+
+            for n in 1:2
+                replicate(name) = Symbol(name, n)
+
+                fields = merge(model.tracers, NamedTuple(name => model.tracers[replicate(name)] for name in required_biogeochemical_tracers(single)))
+                single_aux = merge(aux, NamedTuple(name => aux[replicate(name)] for name in required_biogeochemical_auxiliary_fields(single)))
+
+                for name in required_biogeochemical_tracers(single)
+                    tendency = CUDA.@allowscalar bgc(1, 1, 1, grid, Val(replicate(name)), model.clock, model.tracers, aux)
+                    @test tendency == CUDA.@allowscalar single_bgc(1, 1, 1, grid, Val(name), model.clock, fields, single_aux)
+                    @test tendency != 0
+                end
+            end
+        end
+    end
+end

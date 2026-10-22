@@ -55,14 +55,18 @@ end
 implicit_replicates(grid) = CarbonateSystem(2)
 explicit_replicates(grid) = ExplicitCalciumCarbonate(grid; replicates = 2)
 
-# builds an NPZD column with two replicates of the carbonate tracers, steps it, and reports whether
-# the first replicate responded to the primary production, all inside this function
+# builds an NPZD column with two identically initialised replicates of the carbonate tracers, each with
+# its own air-sea CO₂ exchange, steps it, and reports whether the first replicate responded to the
+# primary production and whether the replicates are still identical, all inside this function
 function run_replicated_carbonate_inside_function(grid, build_inorganic_carbon)
     inorganic_carbon = build_inorganic_carbon(grid)
     biogeochemistry = NPZD(grid; inorganic_carbon, light_attenuation)
 
-    # the carbon chemistry behind `ExplicitCalciumCarbonate` needs salinity as well as temperature
-    model = NonhydrostaticModel(grid; biogeochemistry, auxiliary_fields = (; S = ConstantField(35.0)))
+    boundary_conditions = (DIC1 = FieldBoundaryConditions(top = CarbonDioxideGasExchangeBoundaryCondition(; DIC = :DIC1, Alk = :Alk1)),
+                           DIC2 = FieldBoundaryConditions(top = CarbonDioxideGasExchangeBoundaryCondition(; DIC = :DIC2, Alk = :Alk2)))
+
+    # the carbon chemistry behind `ExplicitCalciumCarbonate` and the gas exchange needs salinity as well as temperature
+    model = NonhydrostaticModel(grid; biogeochemistry, boundary_conditions, auxiliary_fields = (; S = ConstantField(35.0)))
 
     set!(model; N = 5, P = 1, Z = 0.5, D = 1, T = 15, DIC1 = 2100, Alk1 = 2300, DIC2 = 2100, Alk2 = 2300)
 
@@ -70,7 +74,11 @@ function run_replicated_carbonate_inside_function(grid, build_inorganic_carbon)
         time_step!(model, 60)
     end
 
+    names = inorganic_carbon isa ExplicitCalciumCarbonate ? (:DIC, :Alk, :CaCO₃, :Ω) : (:DIC, :Alk)
+    identical(name) = Array(interior(fields(model)[Symbol(name, 1)])) == Array(interior(fields(model)[Symbol(name, 2)]))
+
     return (replicate_changed = top_cell(model, :DIC1) != 2100,
+            replicates_identical = all(identical, names),
             calcium_carbonate_sinks = !isnothing(biogeochemical_drift_velocity(model.biogeochemistry, Val(:CaCO₃1))))
 end
 
@@ -78,10 +86,12 @@ end
     implicit = run_replicated_carbonate_inside_function(grid, implicit_replicates)
 
     @test implicit.replicate_changed
+    @test implicit.replicates_identical
 
     explicit = run_replicated_carbonate_inside_function(grid, explicit_replicates)
 
     @test explicit.replicate_changed
+    @test explicit.replicates_identical
     @test explicit.calcium_carbonate_sinks
 end
 
