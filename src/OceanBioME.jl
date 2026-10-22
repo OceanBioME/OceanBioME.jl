@@ -13,7 +13,7 @@ export NPZD, LOBSTER, ImplicitBiology, MITgcmDIC, PISCES, DepthDependantSinkingS
 
 export Nutrients, NitrateAmmonia, SimpleIron
 export IronDustDeposition, IronDustDepositionForcing
-export CarbonateSystem, ExplicitCalciumCarbonate
+export CarbonateSystem, ExplicitCalciumCarbonate, carbonate_replicates
 export Abiotic, ImplicitProductivity, PhytoZoo
 export Detritus, DissolvedParticulate, InstantRemineralisationDetritus, CarbonNitrogenDissolvedParticulate
 export Oxygen
@@ -41,7 +41,7 @@ export TwoBandPhotosyntheticallyActiveRadiation,
 
 # airsea flux
 export GasExchange, CarbonDioxideGasExchangeBoundaryCondition, OxygenGasExchangeBoundaryCondition, GasExchangeBoundaryCondition,
-       GarciaGordonOxygenSaturation
+       GarciaGordonOxygenSaturation, carbon_dioxide_gas_exchange_boundary_conditions
 
 # carbon chemistry
 export CarbonChemistry

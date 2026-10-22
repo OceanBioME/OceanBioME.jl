@@ -11,7 +11,7 @@ The `NutrientsPlanktonDetritus` framework organises the biogeochemistry into fiv
 | Nutrients | `nutrients` | `Nutrients` (constructed with `NitrateAmmonia`, `N`, `PO₄`, `Fe`, or `Si` sub-components) |
 | Plankton | `plankton` | `Abiotic`, `ImplicitProductivity`, `PhytoZoo` |
 | Detritus | `detritus` | `InstantRemineralisationDetritus`, `Detritus`, `DissolvedParticulate`, `CarbonNitrogenDissolvedParticulate` |
-| Inorganic Carbon | `inorganic_carbon` | `nothing` (default), `CarbonateSystem` |
+| Inorganic Carbon | `inorganic_carbon` | `nothing` (default), `CarbonateSystem`, `ExplicitCalciumCarbonate` |
 | Oxygen | `oxygen` | `nothing` (default), `Oxygen` |
 
 ## Component structure
@@ -53,6 +53,9 @@ The `Inorganic Carbon` component can be used to enable carbon chemistry. This co
 
 - **`nothing`** (default) — inorganic carbon is not tracked.
 - **`CarbonateSystem`** — dissolved inorganic carbon and alkalinity (`DIC`, `Alk`), driven by primary production, remineralisation, and implicit calcite production/dissolution.
+- **`ExplicitCalciumCarbonate`** — as `CarbonateSystem`, but with calcium carbonate (`CaCO₃`) as its own sinking tracer, which dissolves or precipitates depending on its saturation state (`Ω`); requires `grid`.
+
+Both can carry several independent replicates of their tracers, for example to compare a perturbation with a control under the same flow and biology. Replicates are numbered or labelled: `CarbonateSystem(2)` has `DIC1`, `DIC2`, `Alk1` and `Alk2`, while `CarbonateSystem((:control, :release))` has `DIC_control`, `DIC_release`, `Alk_control` and `Alk_release` (a single labelled replicate, `CarbonateSystem(:control)`, also works). [`carbonate_replicates`](@ref) returns the names of each replicate's tracers.
 
 ### Oxygen
 
