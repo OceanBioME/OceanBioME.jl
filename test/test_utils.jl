@@ -205,6 +205,59 @@ sinking_speeds = merge(scalar_sinking_speeds, field_sinking_speeds)
     @test_warn "The location of the sinking velocity field provided for X is incorrect, it should be (Center, Center, Face)" setup_velocity_fields((X = CenterField(grid), ), grid, true)
 end
 
+@testset "A closed bottom is closed at the seafloor of an immersed grid" begin
+    # Column 1 has `Nz_wet` wet cells above the seafloor and column 2 is land. With a closed bottom the sinking velocity
+    # above the seafloor must be the same as on a grid whose bottom is the seafloor, and zero at and below the seafloor
+    Nz, Nz_wet = 10, 4
+    kᵇ = Nz - Nz_wet + 1 # the lowest wet cell, whose bottom face is the seafloor
+
+    seafloor(x, y) = ifelse(x < 1, -Nz_wet, 0)
+
+    for FT in (Float64, Float32), bottom in (GridFittedBottom(seafloor), PartialCellBottom(seafloor))
+        grid = ImmersedBoundaryGrid(RectilinearGrid(architecture, FT; size = (2, 1, Nz), extent = (2, 1, Nz)), bottom)
+        shallow_grid = RectilinearGrid(architecture, FT; size = (2, 1, Nz_wet), extent = (2, 1, Nz_wet))
+
+        w_closed = Array(interior(setup_velocity_fields((; A = 1), grid, false).A))
+        w_shallow = Array(interior(setup_velocity_fields((; A = 1), shallow_grid, false).A))
+        w_open = Array(interior(setup_velocity_fields((; A = 1), grid, true).A))
+
+        @test w_closed[1, 1, kᵇ:end] == w_shallow[1, 1, :]
+        @test all(w_closed[1, 1, 1:kᵇ] .== 0)
+        @test all(w_closed[2, 1, :] .== 0)
+        @test all(w_open[1, 1, kᵇ:Nz] .== -1) # an open bottom still lets tracers sink through the seafloor
+    end
+end
+
+@testset "Sinking tracers are conserved with a closed bottom on an immersed grid" begin
+    # Detritus sinks and remineralises into N, so with a closed bottom N + D can't change, and the
+    # water above the seafloor must evolve like it does on a grid whose bottom is the seafloor
+    deep_grid = RectilinearGrid(architecture; size = 8, z = (-8, 0), topology = (Flat, Flat, Bounded))
+    immersed_grid = ImmersedBoundaryGrid(deep_grid, GridFittedBottom(-4))
+    shallow_grid = RectilinearGrid(architecture; size = 4, z = (-4, 0), topology = (Flat, Flat, Bounded))
+
+    immersed, shallow = map((immersed_grid, shallow_grid)) do grid
+        detritus = Detritus(grid; sinking_speed = 1, remineralisation_rate = 0.1, open_bottom = false)
+        biogeochemistry = NutrientsPlanktonDetritus(grid; nutrients = Nutrients(; nitrogen = OceanBioME.N), detritus)
+
+        # upwinding keeps the detritus piling up on the seafloor positive
+        model = HydrostaticFreeSurfaceModel(grid; biogeochemistry, buoyancy = nothing, tracers = (),
+                                            tracer_advection = UpwindBiased(order = 1))
+        set!(model, D = 1)
+
+        for _ in 1:100
+            time_step!(model, 0.1)
+        end
+
+        return model
+    end
+
+    total_nitrogen = sum(CUDA.@allowscalar first(Field(Integral(immersed.tracers[c]))) for c in (:N, :D))
+
+    @test total_nitrogen ≈ 4 # D = 1 in the 4 m of water above the seafloor
+    @test Array(interior(immersed.tracers.D, 1, 1, 5:8)) ≈ Array(interior(shallow.tracers.D, 1, 1, :))
+    @test Array(interior(immersed.tracers.N, 1, 1, 5:8)) ≈ Array(interior(shallow.tracers.N, 1, 1, :))
+end
+
 using Oceananigans.Grids: znode, Center
 using OceanBioME.Models.NutrientsPlanktonDetritusModels: InstantRemineralisationDetritus
 
