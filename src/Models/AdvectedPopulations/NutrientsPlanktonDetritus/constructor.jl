@@ -67,6 +67,8 @@ function NutrientsPlanktonDetritus(grid::AbstractGrid{FT};
                                    particles = nothing,
                                    modifiers = nothing) where FT
 
+    NutrientsModels.validate_iron_scavenging(nutrients.iron, detritus)
+
     underlying_biogeochemistry =
         NutrientsPlanktonDetritus{eltype(grid)}(nutrients,
                                                 plankton,

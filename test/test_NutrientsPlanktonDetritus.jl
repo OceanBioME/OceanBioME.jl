@@ -502,7 +502,8 @@ using OceanBioME.Models.NutrientsPlanktonDetritusModels: SingleTracerNutrient
     @test lobster.underlying_biogeochemistry.oxygen |> ((::Oxygen{FT}) where FT) -> FT == Float32
 end
 
-using OceanBioME.Models.NutrientsPlanktonDetritusModels.NutrientsModels: free_iron
+using OceanBioME.Models.NutrientsPlanktonDetritusModels.NutrientsModels: free_iron, free_and_bound_iron
+using OceanBioME.Models.NutrientsPlanktonDetritusModels: carbon_ratio
 using Oceananigans.Biogeochemistry: biogeochemical_auxiliary_fields, required_biogeochemical_tracers
 using Oceananigans.Grids: znode, Center
 
@@ -533,7 +534,7 @@ using Oceananigans.Grids: znode, Center
     tendency = CUDA.@allowscalar bgc(1, 1, 1, grid, Val(:Fe), model.clock, model.tracers, aux)
 
     @test tendency < 0
-    @test tendency ≈ -iron.scavenging_rate * free_iron(1e-3, iron)
+    @test tendency ≈ -iron.scavenging * free_iron(1e-3, iron)
 
     # stepping with ImplicitProductivity
     biogeochemistry = NutrientsPlanktonDetritus(grid;
@@ -546,6 +547,72 @@ using Oceananigans.Grids: znode, Center
     set!(model, Fe = 1e-3, PO₄ = 1.0, DOP = 0.1, POP = 0.1)
     time_step!(model, 1.0)
     @test CUDA.@allowscalar model.tracers.Fe[1, 1, 1] != 1e-3
+end
+
+@testset "SimpleIron with ParticleScavenging" begin
+    grid = RectilinearGrid(architecture; size=(1, 1, 2), extent=(1, 1, 2))
+    iron = SimpleIron(scavenging = ParticleScavenging())
+
+    # the detritus has to store its sinking flux
+    @test_throws ArgumentError NutrientsPlanktonDetritus(grid;
+                                                         nutrients = Nutrients(; phosphate = OceanBioME.PO₄, iron),
+                                                         detritus = InstantRemineralisationDetritus(),
+                                                         light_attenuation)
+
+    biogeochemistry = NutrientsPlanktonDetritus(grid;
+                                                plankton = Abiotic(),
+                                                nutrients = Nutrients(; phosphate = OceanBioME.PO₄, iron),
+                                                detritus = DissolvedParticulate(grid, :DOP, :POP;
+                                                                                dissolution_lengths = (; POP = 100.0),
+                                                                                implicit_sinking = true,
+                                                                                store_flux = true),
+                                                light_attenuation)
+
+    model = NonhydrostaticModel(grid; advection = nothing, biogeochemistry)
+    set!(model, Fe = 1e-3, PO₄ = 1.0)
+
+    bgc = model.biogeochemistry.underlying_biogeochemistry
+    aux = biogeochemical_auxiliary_fields(model.biogeochemistry)
+
+    # a POP flux of 1e-6 mmol P m⁻² s⁻¹ into the bottom cell, through the face above it
+    F = 1e-6
+    CUDA.@allowscalar bgc.detritus.sinking.flux.POP[1, 1, 2] = F
+    tendency = CUDA.@allowscalar bgc(1, 1, 1, grid, Val(:Fe), model.clock, model.tracers, aux)
+
+    Fe′, FeL = free_and_bound_iron(1e-3, bgc.nutrients.iron)
+    M = F * carbon_ratio(bgc.plankton, bgc) * 100 * 3 * 12.01 # ng cm⁻² s⁻¹
+    @test tendency ≈ -M * (22 * Fe′ + 1.2 * FeL) / (365 * 86400)
+
+    # no flux, no scavenging
+    CUDA.@allowscalar bgc.detritus.sinking.flux.POP[1, 1, 2] = 0
+    @test CUDA.@allowscalar(bgc(1, 1, 1, grid, Val(:Fe), model.clock, model.tracers, aux)) == 0
+
+    time_step!(model, 1.0)
+    @test CUDA.@allowscalar isfinite(model.tracers.Fe[1, 1, 1])
+
+    # sinking calcium carbonate adds its mass and that of the organic matter it carries
+    biogeochemistry = NutrientsPlanktonDetritus(grid;
+                                                plankton = Abiotic(),
+                                                nutrients = Nutrients(; phosphate = OceanBioME.PO₄, iron),
+                                                detritus = DissolvedParticulate(grid, :DOP, :POP;
+                                                                                dissolution_lengths = (; POP = 100.0),
+                                                                                implicit_sinking = true,
+                                                                                store_flux = true),
+                                                inorganic_carbon = ImplicitCalciumCarbonate(grid; store_flux = true),
+                                                light_attenuation)
+
+    model = NonhydrostaticModel(grid; advection = nothing, biogeochemistry)
+    set!(model, Fe = 1e-3, PO₄ = 1.0, DIC = 2000.0, Alk = 2300.0)
+
+    bgc = model.biogeochemistry.underlying_biogeochemistry
+    aux = biogeochemical_auxiliary_fields(model.biogeochemistry)
+
+    CUDA.@allowscalar bgc.detritus.sinking.flux.POP[1, 1, 2] = 0
+    CUDA.@allowscalar bgc.inorganic_carbon.sinking.flux.soft_CaCO₃[1, 1, 2] = F
+    tendency = CUDA.@allowscalar bgc(1, 1, 1, grid, Val(:Fe), model.clock, model.tracers, aux)
+
+    M = F * 100 * (100.09 + bgc.inorganic_carbon.hard_organic_carbon_ratio * 3 * 12.01)
+    @test tendency ≈ -M * (22 * Fe′ + 1.2 * FeL) / (365 * 86400)
 end
 
 @testset "MITgcmDIC stepping" begin

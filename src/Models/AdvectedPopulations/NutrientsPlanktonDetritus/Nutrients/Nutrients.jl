@@ -1,6 +1,6 @@
 module NutrientsModels 
 
-export Nutrients, SingleTracerNutrient, NitrateAmmonia, SimpleIron, N, PO₄, Fe, Si
+export Nutrients, SingleTracerNutrient, NitrateAmmonia, SimpleIron, ParticleScavenging, N, PO₄, Fe, Si
 
 using Adapt
 
@@ -18,7 +18,9 @@ using ..NutrientsPlanktonDetritusModels:
     inorganic_nitrogen_waste,
     inorganic_phosphate_waste,
     inorganic_iron_waste,
-    inorganic_silicon_waste
+    inorganic_silicon_waste,
+    sinking_particle_mass_flux,
+    stores_sinking_flux
 
 import Oceananigans.Biogeochemistry:
     required_biogeochemical_tracers,
