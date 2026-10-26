@@ -77,15 +77,16 @@ Cᴰ = 2e-3
 
 wind = FluxBoundaryCondition(-ρₐ/ρₒ * Cᴰ * wind_speed^2)
 
-boundary_conditions = merge(carbon_dioxide_gas_exchange_boundary_conditions(biogeochemistry; wind_speed),
-                            (; u = FieldBoundaryConditions(top = wind)))
+u_bcs = (; u = FieldBoundaryConditions(top = wind))
+co2_bcs = carbon_dioxide_gas_exchange_boundary_conditions(biogeochemistry; wind_speed)
+boundary_conditions = merge(u_bcs, co2_bcs)
 
 # Next we define an alkalinity release in a circle in the center for 1 hour
 
 @inline alkalinity_release(x, y, z, t, params) =
-    ifelse((params.start_time <= t < params.start_time + params.duration) & 
-            (z > params.depth) & 
-            ((x-250)^2 + (y-250)^2 < params.radius^2), 
+    ifelse((params.start_time <= t < params.start_time + params.duration) &
+            (z > params.depth) &
+            ((x-250)^2 + (y-250)^2 < params.radius^2),
             params.release_rate, 0)
 
 total_release = 2.5e7 # 1t NaOH = 25000mol NaOH = 2.5e7 meq Alk
@@ -94,12 +95,12 @@ depth = -1
 radius = 50
 release_rate = total_release/duration/(π*radius^2*abs(depth))
 
-oae = Forcing(alkalinity_release; 
-              parameters = (; start_time = 20minutes, 
-                              duration, 
-                              release_rate, 
-                              radius, 
-                              depth)) 
+oae = Forcing(alkalinity_release;
+              parameters = (; start_time = 20minutes,
+                              duration,
+                              release_rate,
+                              radius,
+                              depth))
 
 # And then put the model together with `Alk_release` and `Alk_no_precipitation` both receiving
 # the release while `Alk_control` evolves normally
@@ -127,7 +128,7 @@ simulation = Simulation(model, Δt = 5, stop_time = 4hours)
 
 conjure_time_step_wizard!(simulation; cfl = 0.5)
 
-prog(sim) = 
+prog(sim) =
     @info prettytime(sim)*" in "*prettytime(sim.run_wall_time)*" with Δt = "*prettytime(sim.Δt)
 
 add_callback!(simulation, prog, IterationInterval(100))
@@ -199,11 +200,11 @@ hm = heatmap!(ax, xc, yc, Δ_Alk, colormap = :balance, colorrange = (-1, 1) .* �
 hm2 = heatmap!(ax2, xc, yc, Δ_qCO₂, colormap = :balance, colorrange = (-1, 1) .* Δ_qCO₂_range)
 hm3 = heatmap!(ax3, xc, yc, Δ_CaCO₃, colormap = :balance, colorrange = (-1, 1) .* Δ_CaCO₃_range)
 
-Colorbar(fig[2, 1], hm, vertical = false, 
-                        label = "Alkalinity pertubation (mmol / m²)", 
+Colorbar(fig[2, 1], hm, vertical = false,
+                        label = "Alkalinity pertubation (mmol / m²)",
                         flip_vertical_label = true)
-Colorbar(fig[2, 2], hm2, vertical = false, 
-                         label = "Surface CO₂ flux difference (gCO₂/m²/day)", 
+Colorbar(fig[2, 2], hm2, vertical = false,
+                         label = "Surface CO₂ flux difference (gCO₂/m²/day)",
                          flip_vertical_label = true)
 Colorbar(fig[2, 3], hm3, vertical = false,
                          label = "Calcium carbonate difference (mmol / m²)",

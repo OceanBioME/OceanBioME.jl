@@ -1,7 +1,7 @@
 include("dependencies_for_runtests.jl")
 
 using OceanBioME: conserved_tracers
-using OceanBioME.Models.NutrientsPlanktonDetritusModels: InstantRemineralisationDetritus, 
+using OceanBioME.Models.NutrientsPlanktonDetritusModels: InstantRemineralisationDetritus,
                                                          CarbonNitrogenDissolvedParticulate
 using Oceananigans, CUDA, Random
 
@@ -86,19 +86,19 @@ simple_iron_nutrients_options = (Nutrients(; iron = SimpleIron()),
                                 Nutrients(; nitrogen = OceanBioME.N, phosphate = OceanBioME.PO₄, iron = SimpleIron()))
 
 detritus_options = (InstantRemineralisationDetritus(),
-                    Detritus(grid), 
-                    DissolvedParticulate(grid, :DOP, :POP), 
+                    Detritus(grid),
+                    DissolvedParticulate(grid, :DOP, :POP),
                     DissolvedParticulate(grid),
                     CarbonNitrogenDissolvedParticulate(grid))
 
 # TODO: test multiple separately
-inorganic_carbon_options = (nothing, 
+inorganic_carbon_options = (nothing,
                             CarbonateSystem(),)#, CarbonateSystem(2))
 
-oxygen_options = (nothing, 
+oxygen_options = (nothing,
                   Oxygen(),)
 
-@testset "Elemental conservations" begin 
+@testset "Elemental conservations" begin
     # maybe this is pointless but would like to keep Abiotic working for testing
     # (abiotic is going to result in everything being remineralised since theres no path to make detritus)
     for nutrients in nutrients_options[end-3:end], # empty slot, nitrate/ammonia, and N
@@ -115,11 +115,11 @@ oxygen_options = (nothing,
 
         @info summary(biogeochemistry.underlying_biogeochemistry)
 
-        model = NonhydrostaticModel(grid; 
+        model = NonhydrostaticModel(grid;
                                     advection = nothing,
                                     biogeochemistry)
 
-        time_step!(model, 1.0) 
+        time_step!(model, 1.0)
         @test (CUDA.@allowscalar all([all(values .== 0) for values in values(model.tracers)]))
 
         check_conservations(model)
@@ -131,9 +131,9 @@ oxygen_options = (nothing,
         inorganic_carbon in inorganic_carbon_options,
         oxygen in oxygen_options
 
-        nutrient_half_saturations = 
-            NamedTuple(name=>half_sat for 
-                        (name, half_sat) in pairs((phosphate = 1, iron = 0.001)) 
+        nutrient_half_saturations =
+            NamedTuple(name=>half_sat for
+                        (name, half_sat) in pairs((phosphate = 1, iron = 0.001))
                         if !isnothing(getproperty(nutrients, name)))
 
         if nutrients.nitrogen isa NitrateAmmonia
@@ -152,11 +152,11 @@ oxygen_options = (nothing,
 
         @info summary(biogeochemistry.underlying_biogeochemistry)
 
-        model = NonhydrostaticModel(grid; 
+        model = NonhydrostaticModel(grid;
                                     advection = nothing,
                                     biogeochemistry)
 
-        time_step!(model, 1.0) 
+        time_step!(model, 1.0)
         @test (CUDA.@allowscalar all([all(values .== 0) for values in values(model.tracers)]))
 
         check_conservations(model)
@@ -175,7 +175,7 @@ end
     set!(model, NO₃ = 10, NH₄ = 0, P = 1, Z = 0.1, DOM = 0.1, sPOM = 0.1, bPOM = 0.1, DIC = 2000, Alk = 1900)
 
     NO₃₀, NH₄₀, Alk₀ = CUDA.@allowscalar model.tracers.NO₃[1, 1, 1], model.tracers.NH₄[1, 1, 1], model.tracers.Alk[1, 1, 1]
-    time_step!(model, 1) 
+    time_step!(model, 1)
     ΔNO₃, ΔNH₄, ΔAlk = CUDA.@allowscalar model.tracers.NO₃[1, 1, 1] - NO₃₀, model.tracers.NH₄[1, 1, 1] - NH₄₀, model.tracers.Alk[1, 1, 1] - Alk₀
 
     @test ΔNO₃ < 0 && ΔAlk > 0 # net nitrate uptake raises alkalinity
@@ -185,14 +185,14 @@ end
 @testset "Explicit particle sinking" begin # not sure how essential this is but seems worth doing
     grid = RectilinearGrid(architecture; size=(1, 1, 2), extent=(1, 1, 2))
 
-    biogeochemistry = NPZD(grid; 
+    biogeochemistry = NPZD(grid;
                            detritus = Detritus(grid;
                                                sinking_speed=1,
                                                remineralisation_rate=0.0,
                                                open_bottom = true))
 
-    model = NonhydrostaticModel(grid; 
-                                biogeochemistry, 
+    model = NonhydrostaticModel(grid;
+                                biogeochemistry,
                                 advection = UpwindBiased(order=1),
                                 timestepper = :QuasiAdamsBashforth2)
 
@@ -204,9 +204,9 @@ end
 
     CUDA.@allowscalar begin
         @test isapprox(model.tracers.D[1, 1, 2], exp(-0.01*100), atol = 1e-3)
-    end 
+    end
 
-    biogeochemistry = NPZD(grid; 
+    biogeochemistry = NPZD(grid;
                            detritus = Detritus(grid;
                                                sinking_speed=1,
                                                remineralisation_rate=0.0,
@@ -215,8 +215,8 @@ end
     # we scale to zero at the bottom which in a normal situation is fine but in this situation means the top cell is also not as set
     first_cell_flux_velocity = CUDA.@allowscalar biogeochemistry.underlying_biogeochemistry.detritus.sinking_speeds.w[1, 1, 2]
 
-    model = NonhydrostaticModel(grid; 
-                                biogeochemistry, 
+    model = NonhydrostaticModel(grid;
+                                biogeochemistry,
                                 advection = UpwindBiased(order=1),
                                 timestepper = :QuasiAdamsBashforth2)
 
@@ -229,16 +229,16 @@ end
     CUDA.@allowscalar begin
         @test isapprox(model.tracers.D[1, 1, 2], exp(0.01*100 * first_cell_flux_velocity), atol = 1e-3)
         @test Field(Integral(model.tracers.D))[1, 1, 1] ≈ 1
-    end  
+    end
 
-    biogeochemistry = NPZD(grid; 
+    biogeochemistry = NPZD(grid;
                            detritus = DissolvedParticulate(grid;
                                                            sinking_speeds=(0.1, 1),
                                                            particulate_remineralisation_rate=(0.0, 0.0),
                                                            open_bottom = true))
 
-    model = NonhydrostaticModel(grid; 
-                                biogeochemistry, 
+    model = NonhydrostaticModel(grid;
+                                biogeochemistry,
                                 advection = UpwindBiased(order=1),
                                 timestepper = :QuasiAdamsBashforth2)
 
@@ -251,7 +251,7 @@ end
     CUDA.@allowscalar begin
         @test isapprox(model.tracers.sPOM[1, 1, 2], exp(-0.01*100*0.1), atol = 1e-3)
         @test isapprox(model.tracers.bPOM[1, 1, 2], exp(-0.01*100), atol = 1e-3)
-    end 
+    end
 end
 
 using OceanBioME.Models.NutrientsPlanktonDetritusModels: SingleTracerNutrient
@@ -519,7 +519,7 @@ end
         m = pl.phytoplankton_mortality_rate
         η = pl.zooplankton_calcium_carbonate_dissolution
 
-        # ∂CaCO₃ = ρR[(1−η)Gₚ + m P²]   
+        # ∂CaCO₃ = ρR[(1−η)Gₚ + m P²]
         expected_CaCO₃ = ρ * R * ((1 - η) * Gp + m * P^2)
         tCaCO₃ = CUDA.@allowscalar bgc(1, 1, 1, grid, Val(:CaCO₃), model_ρ.clock, model_ρ.tracers, aux)
         @test tCaCO₃ ≈ expected_CaCO₃
@@ -674,26 +674,38 @@ using Oceananigans.Biogeochemistry: required_biogeochemical_auxiliary_fields, bi
     grid = RectilinearGrid(architecture; size=(1, 1, 1), extent=(1, 1, 2))
 
     @testset "names" begin
-        for (inorganic_carbon, tracers, auxiliary_fields, carbon_groups) in
-                ((CarbonateSystem(), (:DIC, :Alk), (), (:carbon, )),
-                 (CarbonateSystem(2), (:DIC1, :DIC2, :Alk1, :Alk2), (), (:carbon1, :carbon2)),
-                 (CarbonateSystem(:x), (:DIC_x, :Alk_x), (), (:carbon_x, )),
-                 (CarbonateSystem((:a, :b)), (:DIC_a, :DIC_b, :Alk_a, :Alk_b), (), (:carbon_a, :carbon_b)),
-                 (ExplicitCalciumCarbonate(grid), (:DIC, :Alk, :CaCO₃), (:Ω, ), (:carbon, )),
-                 (ExplicitCalciumCarbonate(grid; replicates = 2),
-                  (:DIC1, :DIC2, :Alk1, :Alk2, :CaCO₃1, :CaCO₃2), (:Ω1, :Ω2), (:carbon1, :carbon2)),
-                 (ExplicitCalciumCarbonate(grid; replicates = (:a, :b)),
-                  (:DIC_a, :DIC_b, :Alk_a, :Alk_b, :CaCO₃_a, :CaCO₃_b), (:Ω_a, :Ω_b), (:carbon_a, :carbon_b)))
+        carbonate_systems = (
+            (CarbonateSystem(), (:DIC, :Alk), (), (:carbon, )),
+            (CarbonateSystem(2), (:DIC1, :DIC2, :Alk1, :Alk2), (), (:carbon1, :carbon2)),
+            (CarbonateSystem(:x), (:DIC_x, :Alk_x), (), (:carbon_x, )),
+            (CarbonateSystem((:a, :b)), (:DIC_a, :DIC_b, :Alk_a, :Alk_b), (), (:carbon_a, :carbon_b))
+        )
+        explicit_calcium_carbonate_systems = (
+            (ExplicitCalciumCarbonate(grid), (:DIC, :Alk, :CaCO₃), (:Ω, ), (:carbon, )),
+            (ExplicitCalciumCarbonate(grid; replicates = 2),
+             (:DIC1, :DIC2, :Alk1, :Alk2, :CaCO₃1, :CaCO₃2), (:Ω1, :Ω2), (:carbon1, :carbon2)),
+            (ExplicitCalciumCarbonate(grid; replicates = (:a, :b)),
+             (:DIC_a, :DIC_b, :Alk_a, :Alk_b, :CaCO₃_a, :CaCO₃_b), (:Ω_a, :Ω_b), (:carbon_a, :carbon_b))
+        )
 
+        systems = (carbonate_systems..., explicit_calcium_carbonate_systems...)
+
+        for (inorganic_carbon, tracers, auxiliary_fields, carbon_groups) in systems
             @test required_biogeochemical_tracers(inorganic_carbon) == tracers
             @test required_biogeochemical_auxiliary_fields(inorganic_carbon) == auxiliary_fields
             @test keys(conserved_tracers(NPZD(grid; inorganic_carbon, light_attenuation))) == (:nitrogen, carbon_groups...)
         end
 
         @test carbonate_replicates(CarbonateSystem()) == ((label = nothing, DIC = :DIC, Alk = :Alk), )
-        @test carbonate_replicates(CarbonateSystem(2)) == ((label = 1, DIC = :DIC1, Alk = :Alk1), (label = 2, DIC = :DIC2, Alk = :Alk2))
-        @test carbonate_replicates(NPZD(grid; inorganic_carbon = ExplicitCalciumCarbonate(grid; replicates = :x), light_attenuation)) ==
-                  ((label = :x, DIC = :DIC_x, Alk = :Alk_x, CaCO₃ = :CaCO₃_x, Ω = :Ω_x), )
+
+        @test carbonate_replicates(CarbonateSystem(2)) == (
+            (label = 1, DIC = :DIC1, Alk = :Alk1),
+            (label = 2, DIC = :DIC2, Alk = :Alk2)
+        )
+
+        npzd_model = NPZD(grid; inorganic_carbon = ExplicitCalciumCarbonate(grid; replicates = :x), light_attenuation)
+        @test carbonate_replicates(npzd_model) == ((label = :x, DIC = :DIC_x, Alk = :Alk_x, CaCO₃ = :CaCO₃_x, Ω = :Ω_x), )
+
         @test carbonate_replicates(NPZD(grid; light_attenuation)) == ()
 
         @test_throws ArgumentError CarbonateSystem((:a, :a))
@@ -702,12 +714,16 @@ using Oceananigans.Biogeochemistry: required_biogeochemical_auxiliary_fields, bi
     # The replicates are in different states (the second undersaturated), and each is compared with the
     # single system in the same state, made by renaming the replicate's fields
     @testset "each replicate has exactly the tendencies of the single system" begin
-        for (single, replicated) in ((CarbonateSystem(), CarbonateSystem(2)),
-                                     (CarbonateSystem(), CarbonateSystem((:a, :b))),
-                                     (ExplicitCalciumCarbonate(grid; calcium_carbonate_precipitation_rate = 1e-6),
-                                      ExplicitCalciumCarbonate(grid; replicates = 2, calcium_carbonate_precipitation_rate = 1e-6)),
-                                     (ExplicitCalciumCarbonate(grid; calcium_carbonate_precipitation_rate = 1e-6),
-                                      ExplicitCalciumCarbonate(grid; replicates = (:a, :b), calcium_carbonate_precipitation_rate = (a = 1e-6, b = 1e-6))))
+        systems = (
+            (CarbonateSystem(), CarbonateSystem(2)),
+            (CarbonateSystem(), CarbonateSystem((:a, :b))),
+            (ExplicitCalciumCarbonate(grid; calcium_carbonate_precipitation_rate = 1e-6),
+             ExplicitCalciumCarbonate(grid; replicates = 2, calcium_carbonate_precipitation_rate = 1e-6)),
+            (ExplicitCalciumCarbonate(grid; calcium_carbonate_precipitation_rate = 1e-6),
+             ExplicitCalciumCarbonate(grid; replicates = (:a, :b), calcium_carbonate_precipitation_rate = (a = 1e-6, b = 1e-6)))
+        )
+
+        for (single, replicated) in systems
 
             model = NonhydrostaticModel(grid; advection = nothing,
                                         biogeochemistry = NPZD(grid; inorganic_carbon = replicated, light_attenuation),
@@ -715,16 +731,36 @@ using Oceananigans.Biogeochemistry: required_biogeochemical_auxiliary_fields, bi
 
             a, b = carbonate_replicates(replicated)
 
-            set!(model; N = 5, P = 1, Z = 0.5, D = 1, T = 15, (a.DIC => 2000, a.Alk => 2300, b.DIC => 2300, b.Alk => 2200)...)
-            replicated isa ExplicitCalciumCarbonate && set!(model; (a.CaCO₃ => 1, b.CaCO₃ => 2)...)
+            set!(model;
+                N = 5,
+                P = 1,
+                Z = 0.5,
+                D = 1,
+                T = 15,
+                a.DIC => 2000,
+                a.Alk => 2300,
+                b.DIC => 2300,
+                b.Alk => 2200
+            )
+
+            replicated isa ExplicitCalciumCarbonate && set!(model; a.CaCO₃ => 1, b.CaCO₃ => 2)
 
             bgc = model.biogeochemistry.underlying_biogeochemistry
             aux = biogeochemical_auxiliary_fields(model.biogeochemistry)
             single_bgc = NutrientsPlanktonDetritus{Float64}(bgc.nutrients, bgc.plankton, bgc.detritus, single, bgc.oxygen)
 
             for replicate in (a, b)
-                fields = merge(model.tracers, NamedTuple(name => model.tracers[replicate[name]] for name in required_biogeochemical_tracers(single)))
-                single_aux = merge(aux, NamedTuple(name => aux[replicate[name]] for name in required_biogeochemical_auxiliary_fields(single)))
+                replicate_tracers = NamedTuple(
+                    name => model.tracers[replicate[name]]
+                    for name in required_biogeochemical_tracers(single)
+                )
+                fields = merge(model.tracers, replicate_tracers)
+
+                single_aux_fields = NamedTuple(
+                    name => aux[replicate[name]]
+                    for name in required_biogeochemical_auxiliary_fields(single)
+                )
+                single_aux = merge(aux, single_aux_fields)
 
                 for name in required_biogeochemical_tracers(single)
                     tendency = CUDA.@allowscalar bgc(1, 1, 1, grid, Val(replicate[name]), model.clock, model.tracers, aux)
@@ -737,11 +773,26 @@ using Oceananigans.Biogeochemistry: required_biogeochemical_auxiliary_fields, bi
 
     @testset "tracers the carbonate system does not own are left alone" begin
         for inorganic_carbon in (CarbonateSystem(2), ExplicitCalciumCarbonate(grid; replicates = 2))
-            model = NonhydrostaticModel(grid; advection = nothing, tracers = (:DIC, :CaCO₃),
-                                        biogeochemistry = NPZD(grid; inorganic_carbon, light_attenuation),
-                                        auxiliary_fields = (; S = ConstantField(35.0)))
+            model = NonhydrostaticModel(grid;
+                advection = nothing,
+                tracers = (:DIC, :CaCO₃),
+                biogeochemistry = NPZD(grid; inorganic_carbon, light_attenuation),
+                auxiliary_fields = (; S = ConstantField(35.0))
+            )
 
-            set!(model; N = 5, P = 1, Z = 0.5, D = 1, T = 15, DIC = 2000, CaCO₃ = 1, DIC1 = 2000, Alk1 = 2300, DIC2 = 2000, Alk2 = 2300)
+            set!(model;
+                N = 5,
+                P = 1,
+                Z = 0.5,
+                D = 1,
+                T = 15,
+                DIC = 2000,
+                CaCO₃ = 1,
+                DIC1 = 2000,
+                Alk1 = 2300,
+                DIC2 = 2000,
+                Alk2 = 2300
+            )
 
             bgc = model.biogeochemistry.underlying_biogeochemistry
             aux = biogeochemical_auxiliary_fields(model.biogeochemistry)
@@ -760,7 +811,14 @@ using Oceananigans.Biogeochemistry: required_biogeochemical_auxiliary_fields, bi
 
         @test inorganic_carbon.calcium_carbonate_precipitation_rate == (1e-6, 2e-6)
 
-        @test_throws ArgumentError ExplicitCalciumCarbonate(grid; replicates = (:control, :other), calcium_carbonate_precipitation_rate = rates)
-        @test_throws ArgumentError ExplicitCalciumCarbonate(grid; replicates = 2, calcium_carbonate_precipitation_rate = rates)
+        @test_throws ArgumentError ExplicitCalciumCarbonate(grid;
+            replicates = (:control, :other),
+            calcium_carbonate_precipitation_rate = rates
+        )
+
+        @test_throws ArgumentError ExplicitCalciumCarbonate(grid;
+            replicates = 2,
+            calcium_carbonate_precipitation_rate = rates
+        )
     end
 end
