@@ -9,9 +9,11 @@ function update_tendencies!(bgc, particles::BiogeochemicalParticles{N}, model) w
     tendency_kernel! = _update_tracer_tendencies!(dev, workgroup, worksize)
 
     for field_name in field_names
-        target_name = possible_tuple_value(field_names, field_name) # coupled_tracers can return a NamedTuple 
+        coupled_name = possible_tuple_value(field_names, field_name) # coupled_tracers can return a NamedTuple
 
-        tendency_kernel!(Val(field_name), Val(target_name), particles, model.grid, fields(model), model.clock, model.timestepper.Gⁿ, particles.scalefactors)
+        for target_name in tracer_replicates(bgc, coupled_name)
+            tendency_kernel!(Val(field_name), Val(target_name), particles, model.grid, fields(model), model.clock, model.timestepper.Gⁿ, particles.scalefactors)
+        end
     end
 
     return nothing
