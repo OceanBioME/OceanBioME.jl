@@ -53,13 +53,19 @@ Keyword Arguments
 end
 
 """
-    SingleTracerNutrient
+    SingleTracerNutrient{name}
 
-An `@enum` of the single-tracer inorganic nutrients that can fill a [`Nutrients`](@ref) slot: `N`
-(nitrogen), `PO₄` (phosphate), `Fe` (iron), and `Si` (silicate). Each introduces one tracer of the
-same name and is the simplest way to represent a limiting nutrient.
+A single-tracer inorganic nutrient that can fill a [`Nutrients`](@ref) slot: `N` (nitrogen), `PO₄`
+(phosphate), `Fe` (iron), and `Si` (silicate). Each introduces one tracer of the same name and is the
+simplest way to represent a limiting nutrient. The tracer name is a type parameter, so it is known at
+compile time, including inside GPU kernels.
 """
-@enum SingleTracerNutrient N PO₄ Fe Si
+struct SingleTracerNutrient{name} end
+
+const N   = SingleTracerNutrient{:N}()
+const PO₄ = SingleTracerNutrient{:PO₄}()
+const Fe  = SingleTracerNutrient{:Fe}()
+const Si  = SingleTracerNutrient{:Si}()
 
 required_biogeochemical_tracers(nutrients::Nutrients) =
     (required_biogeochemical_tracers(nutrients.nitrogen)...,
@@ -67,8 +73,7 @@ required_biogeochemical_tracers(nutrients::Nutrients) =
      required_biogeochemical_tracers(nutrients.iron)...,
      required_biogeochemical_tracers(nutrients.silicate)...)
 
-required_biogeochemical_tracers(tracer::SingleTracerNutrient) =
-    (Symbol(tracer), )
+required_biogeochemical_tracers(::SingleTracerNutrient{name}) where name = (name, )
 
 required_biogeochemical_auxiliary_fields(::Nutrients) = tuple()
 

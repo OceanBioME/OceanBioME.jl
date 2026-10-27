@@ -4,6 +4,8 @@ Adapt.adapt_structure(to, nutrients::Nutrients) =
               adapt(to, nutrients.iron),
               adapt(to, nutrients.silicate))
 
+Base.show(io::IO, ::SingleTracerNutrient{name}) where name = print(io, name)
+
 Base.summary(nutrients::Nutrients) = string("Nutrients $(required_biogeochemical_tracers(nutrients))")
 
 function Base.show(io::IO, n::Nutrients)

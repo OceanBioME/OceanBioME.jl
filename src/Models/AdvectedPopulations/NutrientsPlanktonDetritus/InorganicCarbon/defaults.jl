@@ -25,7 +25,7 @@
 
 # assume PP is nitrate based if nitrate and ammonia not available
 @inline nitrate_primary_production(i, j, k, grid, 
-                                   plankton, bgc::NPD{FT, <:Nutrients{SingleTracerNutrient}}, 
+                                   plankton, bgc::NPD{FT, <:Nutrients{<:SingleTracerNutrient}}, 
                                    clock, fields, auxiliary_fields) where FT = 
     bgc(i, j, k, grid, Val(:N), clock, fields, auxiliary_fields)
 

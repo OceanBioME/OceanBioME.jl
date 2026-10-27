@@ -53,8 +53,8 @@ group_element_tracers(nutrients::Nutrients, bgc, val_element::Val{:phosphate}) =
     group_element_tracers(nutrients.phosphate, bgc, val_element)
 group_element_tracers(nutrients::Nutrients, bgc, val_element::Val{:iron}) =
     group_element_tracers(nutrients.iron, bgc, val_element)
-group_element_tracers(nutrient::SingleTracerNutrient, ::NPD{FT}, val_element) where FT =
-    NamedTuple{(Symbol(nutrient),)}((one(FT), ))
+group_element_tracers(::SingleTracerNutrient{name}, ::NPD{FT}, val_element) where {name, FT} =
+    NamedTuple{(name,)}((one(FT), ))
 group_element_tracers(::NitrateAmmonia, ::NPD{FT}, val_element) where FT =
     (NO₃ = one(FT), NH₄ = one(FT))
 
