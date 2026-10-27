@@ -170,14 +170,13 @@ end
     function carbon_column(inorganic_carbon)
         sediment = SimpleMultiGSediment(grid; sinking_nitrogen = (:sPON, :bPON), sinking_carbon = (:sPOC, :bPOC))
 
-        biogeochemistry = NutrientsPlanktonDetritus(grid; inorganic_carbon, sediment,
-                                                    nutrients = Nutrients(NitrateAmmonia(), nothing, nothing, nothing),
-                                                    detritus = CarbonNitrogenDissolvedParticulate(grid),
-                                                    oxygen = Oxygen())
+        biogeochemistry = LOBSTER(grid; inorganic_carbon, sediment,
+                                  detritus = CarbonNitrogenDissolvedParticulate(grid),
+                                  oxygen = Oxygen())
 
         model = NonhydrostaticModel(grid; biogeochemistry)
 
-        set!(model; NO₃ = 10, NH₄ = 1, O₂ = 300, sPON = 1, bPON = 1, sPOC = 6.56, bPOC = 6.56,
+        set!(model; NO₃ = 10, NH₄ = 1, P = 0.1, Z = 0.1, O₂ = 300, sPON = 1, bPON = 1, sPOC = 6.56, bPOC = 6.56,
                     (replicate.DIC => 2000 for replicate in carbonate_replicates(biogeochemistry))...)
 
         for _ in 1:10
