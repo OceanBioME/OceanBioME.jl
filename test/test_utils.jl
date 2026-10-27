@@ -135,16 +135,38 @@ group_totals(model, groups) = map(group -> sum(scalefactor * tracer_value(model,
         auxiliary_fields = (T = ConstantField(15.0), S = ConstantField(35.0))
         detritus = CarbonNitrogenDissolvedParticulate(grid)
 
-        single = NonhydrostaticModel(grid; advection = nothing, auxiliary_fields,
-                                     biogeochemistry = LOBSTER(grid; detritus, scale_negatives = true, light_attenuation,
-                                                               inorganic_carbon = ExplicitCalciumCarbonate(grid)))
+        single = NonhydrostaticModel(grid;
+            auxiliary_fields,
+            advection = nothing,
+            biogeochemistry = LOBSTER(grid;
+                detritus,
+                light_attenuation,
+                scale_negatives = true,
+                inorganic_carbon = ExplicitCalciumCarbonate(grid)
+            )
+        )
 
-        biogeochemistry = LOBSTER(grid; detritus, scale_negatives = true, light_attenuation,
-                                  inorganic_carbon = ExplicitCalciumCarbonate(grid; replicates = (:a, :b)))
+        biogeochemistry = LOBSTER(grid;
+            detritus,
+            light_attenuation,
+            scale_negatives = true,
+            inorganic_carbon = ExplicitCalciumCarbonate(grid; replicates = (:a, :b))
+        )
+
         replicated = NonhydrostaticModel(grid; biogeochemistry, advection = nothing, auxiliary_fields)
         groups = conserved_tracers(biogeochemistry)
 
-        common = (NO₃ = 10, NH₄ = 0.1, Z = 0.5, DON = 0.2, DOC = 1.3, sPON = 0.1, sPOC = 0.66, bPON = 0.1, bPOC = 0.66)
+        common = (
+            NO₃ = 10,
+            NH₄ = 0.1,
+            Z = 0.5,
+            DON = 0.2,
+            DOC = 1.3,
+            sPON = 0.1,
+            sPOC = 0.66,
+            bPON = 0.1,
+            bPOC = 0.66
+        )
 
         # negative calcium carbonate in the second replicate only changes that replicate
         unchanged = (common..., P = 0.5, DIC_a = 2000, CaCO₃_a = 1)
