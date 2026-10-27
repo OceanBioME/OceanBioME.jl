@@ -1,4 +1,4 @@
-import OceanBioME: conserved_tracers
+import OceanBioME: conserved_tracers, follower_groups
 
 using .InorganicCarbonModels: AbstractInorganicCarbon, replicate_name
 
@@ -39,6 +39,11 @@ function element_groups(inorganic_carbon::AbstractInorganicCarbon{L}, bgc, ::Val
 
     return NamedTuple{replicate_name.(:carbon, L)}(groups)
 end
+
+# the carbon of the replicates after the first follows when negative tracers are scaled, so that they don't
+# change the shared organic carbon (see `ScaleNegativeTracers`)
+follower_groups(bgc::NutrientsPlanktonDetritus) = follower_groups(bgc.inorganic_carbon)
+follower_groups(::AbstractInorganicCarbon{L}) where L = replicate_name.(:carbon, Base.tail(L))
 
 # the tracers of plankton and detritus which contain elements, which excludes e.g. the temperature
 # that `PhytoZoo` requires for temperature dependent growth

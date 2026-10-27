@@ -129,6 +129,51 @@ group_totals(model, groups) = map(group -> sum(scalefactor * tracer_value(model,
         end
     end
 
+    # The biology and the first replicate are scaled as they would be without the other replicates, which make up
+    # the changes to their totals with their own inorganic carbon
+    @testset "Replicates are scaled independently" begin
+        auxiliary_fields = (T = ConstantField(15.0), S = ConstantField(35.0))
+        detritus = CarbonNitrogenDissolvedParticulate(grid)
+
+        single = NonhydrostaticModel(grid; advection = nothing, auxiliary_fields,
+                                     biogeochemistry = LOBSTER(grid; detritus, scale_negatives = true, light_attenuation,
+                                                               inorganic_carbon = ExplicitCalciumCarbonate(grid)))
+
+        biogeochemistry = LOBSTER(grid; detritus, scale_negatives = true, light_attenuation,
+                                  inorganic_carbon = ExplicitCalciumCarbonate(grid; replicates = (:a, :b)))
+        replicated = NonhydrostaticModel(grid; biogeochemistry, advection = nothing, auxiliary_fields)
+        groups = conserved_tracers(biogeochemistry)
+
+        common = (NO₃ = 10, NH₄ = 0.1, Z = 0.5, DON = 0.2, DOC = 1.3, sPON = 0.1, sPOC = 0.66, bPON = 0.1, bPOC = 0.66)
+
+        # negative calcium carbonate in the second replicate only changes that replicate
+        unchanged = (common..., P = 0.5, DIC_a = 2000, CaCO₃_a = 1)
+        set_tracers!(replicated; unchanged..., DIC_b = 2100, CaCO₃_b = -0.5)
+        update_state!(replicated)
+
+        @test all(name -> tracer_value(replicated, name) == unchanged[name], keys(unchanged))
+        @test tracer_value(replicated, :CaCO₃_b) == 0
+        @test tracer_value(replicated, :DIC_b) ≈ 2100 - 0.5
+
+        # negative phytoplankton changes the biology and the first replicate exactly as it does without the second
+        set_tracers!(single; common..., P = -0.5, DIC = 2000, CaCO₃ = 1)
+        set_tracers!(replicated; common..., P = -0.5, DIC_a = 2000, CaCO₃_a = 1, DIC_b = 2100, CaCO₃_b = -0.5)
+
+        before = group_totals(replicated, groups)
+        update_state!(single)
+        update_state!(replicated)
+        after = group_totals(replicated, groups)
+
+        @test all(name -> tracer_value(replicated, name) == tracer_value(single, name), (keys(common)..., :P))
+        @test tracer_value(replicated, :DIC_a) == tracer_value(single, :DIC)
+        @test tracer_value(replicated, :CaCO₃_a) == tracer_value(single, :CaCO₃)
+        @test tracer_value(replicated, :CaCO₃_b) == 0
+        @test all(map(≈, after, before))
+
+        @test_throws ArgumentError ScaleNegativeTracers((nitrogen = (:N, :P), carbon = (:DIC, :P)); followers = (:oxygen, ))
+        @test_throws ArgumentError ScaleNegativeTracers((nitrogen = (:N, :P), carbon = (:P, )); followers = (:carbon, ))
+    end
+
     @testset "Oxygen is not scaled" begin
         biogeochemistry = LOBSTER(grid; oxygen = Oxygen(), scale_negatives = true, light_attenuation)
         model = NonhydrostaticModel(grid; biogeochemistry, advection = nothing)
