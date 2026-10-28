@@ -36,12 +36,12 @@ using Oceananigans.Units
 
 grid = RectilinearGrid(CPU(), size = (160, 32), extent = (10000meters, 500meters), topology = (Bounded, Flat, Bounded))
 
-biogeochemistry = NutrientPhytoplanktonZooplanktonDetritus(; grid) 
+biogeochemistry = NPZD(grid)
 
-model = NonhydrostaticModel(; grid, biogeochemistry,
-                              advection = WENO(),
-                              closure = AnisotropicMinimumDissipation(),
-			      buoyancy = SeawaterBuoyancy(constant_salinity = true))
+model = NonhydrostaticModel(grid; biogeochemistry,
+                            advection = WENO(),
+                            closure = AnisotropicMinimumDissipation(),
+                            buoyancy = SeawaterBuoyancy(constant_salinity = true))
 
 @inline front(x, z, μ, δ) = μ + δ * tanh((x - 7000 + 4 * z) / 500)
 
