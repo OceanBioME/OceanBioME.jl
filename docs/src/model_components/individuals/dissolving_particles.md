@@ -19,7 +19,8 @@ DissolvingMineral{Float64} biogeochemistry tracking particle `r`adius
 ├── molar mass: 0.074093 kg/mol
 ├── released tracers: (Alk = 2.0,) mol/mol
 ├── dissolution rate: 1.0e-8 m/s
-└── sinking speed: StokesSinking{Float64}(2211.0, 1025.0, 0.00108, 9.81) m/s
+├── sinking speed: StokesSinking{Float64, Float64}(2211.0, 1025.0, 0.00108, 9.81) m/s
+└── required fields: ()
 ```
 which can be put into `BiogeochemicalParticles`, or you can directly create the particles with [`DissolvingParticles`](@ref):
 ```jldoctest
@@ -85,6 +86,20 @@ and ``\mu`` the dynamic viscosity of the water. This is only valid for small par
 Particles which reach the bottom of the domain bounce off it, so they stay within one timestep's sinking of the bottom
 and continue to dissolve into the bottom grid cells.
 
+### Dependence on model fields
+
+The dissolution rate and sinking speed can also depend on model fields at the particle position, such as
+tracers (e.g. temperature), velocities, or auxiliary fields, by listing their names in `required_fields`.
+`dissolution_rate` and `sinking_speed` are then called with the radius followed by the values of those fields.
+For example, a dissolution rate which increases with temperature, and Stokes' sinking in water whose density
+depends on temperature and salinity:
+```julia
+mineral = DissolvingMineral(required_fields = (:T, :S),
+                            dissolution_rate = (r, T, S) -> 1e-8 * (1 + 0.05 * (T - 20)),
+                            sinking_speed = StokesSinking(particle_density = 2211,
+                                                          water_density = (T, S) -> 1025 * (1 - 2e-4 * (T - 10) + 8e-4 * (S - 35))))
+```
+
 ### Parameter variable names
 
 | Symbol      | Variable name      | Units                  |
@@ -94,6 +109,7 @@ and continue to dissolve into the bottom grid cells.
 | ``\nu_X``   | `released_tracers` | mol / mol              |
 | ``k``       | `dissolution_rate` | m / s                  |
 | ``w``       | `sinking_speed`    | m / s                  |
+| -           | `required_fields`  | -                      |
 
 The default `density`, `molar_mass`, and `released_tracers` are for calcium hydroxide. The default dissolution rate is only illustrative
 (a 100 μm particle dissolves in about 3 hours) and should be set for the mineral and conditions being modelled.

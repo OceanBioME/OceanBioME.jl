@@ -37,6 +37,10 @@ grid = RectilinearGrid(size = (128, 128), x = (0, 64), z = (-64, 0),
 # Here, we set the dissolution rate so that the mass loss from the particles is proportional to the surface area of the particles. This leads to a constant decrease in the particle radius,  ``dr/dt = -k``.  Here, set ``k = 10^{-8}`` m/s, so a particle with initial radius ``r_0`` in meters lasts ``r_0 / k`` seconds.
 # A different dependence on radius only needs a different function here, for example `dissolution_rate(r) = 5e-13 / r`
 # for dissolution limited by diffusion away from the particle surface.
+#
+# The dissolution rate can also depend on model fields at the particle position (tracers, velocities, or auxiliary fields).
+# To do this, list the fields in `required_fields` in `mineral_parameters` below, and they are passed after the radius,
+# e.g. with `required_fields = (:T, )` we would write `dissolution_rate(r, T) = ...`.
 dissolution_rate(r) = 1e-8 # m/s
 
 # The particles sink at the Stokes' law speed for their size, ``w = 2(\rho_p - \rho)gr^2/9\mu``, so as the particles dissolve they also sink more slowly.
@@ -46,6 +50,10 @@ const μ = 1.08e-3  # kg/m/s, dynamic viscosity of seawater
 const g = 9.81     # m/s², gravitational acceleration
 
 sinking_speed(r) = 2 * (ρₚ - ρ) * g * r^2 / (9μ) # m/s, positive downwards
+
+# `sinking_speed` is also passed the values of any `required_fields`, e.g. `sinking_speed(r, T) = ...`.
+# Alternatively, the default [`StokesSinking`](@ref) can take a water density which depends on the
+# required fields, e.g. `StokesSinking(particle_density = ρₚ, water_density = (T, S) -> ...)`.
 
 # The other [`DissolvingMineral`](@ref) parameters (`molar_mass` and `released_tracers`) are left at their defaults, which are for calcium hydroxide. It releases 2 moles of alkalinity per mole dissolved.
 #
@@ -79,6 +87,7 @@ set!(particles, r = r₀, x = x₀, z = z₀, scalefactors = fill(scalefactor, n
 particles # Output the particle properties
 
 # We couple the particles to a carbonate system with dissolved inorganic carbon (`DIC`) and alkalinity (`Alk`) without any biology
+biogeochemistry = NutrientsPlanktonDetritus(grid; inorganic_carbon = CarbonateSystem(), particles)
 
 model = NonhydrostaticModel(grid; biogeochemistry, advection = WENO(order = 5))
 

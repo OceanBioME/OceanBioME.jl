@@ -7,10 +7,10 @@ total_tracer(tracer) = sum(on_architecture(CPU(), interior(tracer)))
 
 particle_radii(particles) = on_architecture(CPU(), particles.fields.r)
 
-function dissolving_particle_model(grid, particles)
+function dissolving_particle_model(grid, particles; kwargs...)
     biogeochemistry = NutrientsPlanktonDetritus(grid; inorganic_carbon = CarbonateSystem(), particles)
 
-    model = NonhydrostaticModel(grid; biogeochemistry, advection = nothing)
+    model = NonhydrostaticModel(grid; biogeochemistry, advection = nothing, kwargs...)
 
     set!(model, DIC = 2000, Alk = 2300)
 
@@ -90,4 +90,32 @@ end
                              dynamic_viscosity = 1e-3, gravitational_acceleration = 9)
 
     @test stokes(1e-4) ≈ 2 * 1000 * 9 * 1e-8 / (9 * 1e-3)
+end
+
+@testset "Dissolving particles depending on model fields" begin
+    grid = RectilinearGrid(architecture; size = (1, 1, 10), extent = (2, 2, 10))
+
+    r₀ = 1e-4 # m
+    Δt = 1
+
+    stokes = StokesSinking(; particle_density = 2025, water_density = T -> 1000 + T)
+
+    particles = DissolvingParticles(1; grid, mineral_parameters = (; required_fields = (:T, ),
+                                                                     dissolution_rate = (r, T) -> 1e-9 * T,
+                                                                     sinking_speed = stokes))
+
+    set!(particles, r = r₀, x = 1, y = 1, z = -1)
+
+    model = dissolving_particle_model(grid, particles; tracers = :T)
+
+    set!(model, T = 10)
+
+    time_step!(model, Δt)
+
+    @test particle_radii(particles)[1] ≈ r₀ - 1e-8 * Δt
+
+    # sinks as if the water density were 1010 kg/m³ (up to the small change in radius during the step)
+    w = StokesSinking(; particle_density = 2025, water_density = 1010)(r₀)
+
+    @test isapprox(on_architecture(CPU(), particles.z)[1] + 1, - w * Δt; rtol = 1e-3)
 end
