@@ -1,21 +1,10 @@
 include("dependencies_for_runtests.jl")
 
 using Oceananigans.Architectures: on_architecture
+using OceanBioME: conserved_tracers
 
-sum_tracer_nitrogen(tracers) = sum(on_architecture(CPU(), interior(tracers.NO₃))) +
-                               sum(on_architecture(CPU(), interior(tracers.NH₄))) +
-                               sum(on_architecture(CPU(), interior(tracers.P))) +
-                               sum(on_architecture(CPU(), interior(tracers.Z))) +
-                               sum(on_architecture(CPU(), interior(tracers.sPON))) +
-                               sum(on_architecture(CPU(), interior(tracers.bPON))) +
-                               sum(on_architecture(CPU(), interior(tracers.DON)))
-
-sum_tracer_carbon(tracers, redfield, organic_carbon_calcate_ratio) =
-    sum(on_architecture(CPU(), interior(tracers.sPOC))) +
-    sum(on_architecture(CPU(), interior(tracers.bPOC))) +
-    sum(on_architecture(CPU(), interior(tracers.DOC))) +
-    sum(on_architecture(CPU(), interior(tracers.DIC))) +
-    sum(on_architecture(CPU(), interior(tracers.P)) .* (1 + organic_carbon_calcate_ratio) .+ on_architecture(CPU(), interior(tracers.Z))) .* redfield
+# the amount of an element in the tracers, where `group` is one of the `conserved_tracers` of the biogeochemistry
+sum_tracers(tracers, group) = sum(scale * sum(on_architecture(CPU(), interior(tracers[name]))) for (name, scale) in pairs(group))
 
 @testset "SLatissima particle setup and conservations" begin
     grid = RectilinearGrid(architecture; size=(1, 1, 1), extent=(1, 1, 1))
@@ -28,10 +17,11 @@ sum_tracer_carbon(tracers, redfield, organic_carbon_calcate_ratio) =
 
     biogeochemistry = LOBSTER(grid;
                               particles,
-                              carbonates = true,
-                              variable_redfield = true,
-                              oxygen = true,
-                              sinking_speeds = NamedTuple())
+                              inorganic_carbon = CarbonateSystem(),
+                              detritus = CarbonNitrogenDissolvedParticulate(grid),
+                              oxygen = Oxygen())
+
+    tracer_groups = conserved_tracers(biogeochemistry)
 
     model = NonhydrostaticModel(grid; biogeochemistry, advection = nothing, tracers = (:T, :S))
 
@@ -53,10 +43,10 @@ sum_tracer_carbon(tracers, redfield, organic_carbon_calcate_ratio) =
     Cₛ = particles.biogeochemistry.structural_carbon
     kₐ = particles.biogeochemistry.structural_dry_weight_per_area
 
-    initial_tracer_N = sum_tracer_nitrogen(model.tracers)
+    initial_tracer_N = sum_tracers(model.tracers, tracer_groups.nitrogen)
     initial_kelp_N = sum(A .* kₐ .* (N .+ Nₛ)) / (14 * 0.001)
 
-    initial_tracer_C = sum_tracer_carbon(model.tracers, model.biogeochemistry.underlying_biogeochemistry.phytoplankton_redfield, model.biogeochemistry.underlying_biogeochemistry.organic_carbon_calcate_ratio)
+    initial_tracer_C = sum_tracers(model.tracers, tracer_groups.carbon)
     initial_kelp_C = sum(A .* kₐ .* (C .+ Cₛ)) / (12 * 0.001)
 
     model.clock.time = 60days # get to a high growth phase
@@ -70,10 +60,10 @@ sum_tracer_carbon(tracers, redfield, organic_carbon_calcate_ratio) =
     N = on_architecture(CPU(), particles.fields.N)
     C = on_architecture(CPU(), particles.fields.C)
 
-    final_tracer_N = sum_tracer_nitrogen(model.tracers)
+    final_tracer_N = sum_tracers(model.tracers, tracer_groups.nitrogen)
     final_kelp_N = sum(A .* kₐ .* (N .+ Nₛ)) / (14 * 0.001)
 
-    final_tracer_C = sum_tracer_carbon(model.tracers, model.biogeochemistry.underlying_biogeochemistry.phytoplankton_redfield, model.biogeochemistry.underlying_biogeochemistry.organic_carbon_calcate_ratio)
+    final_tracer_C = sum_tracers(model.tracers, tracer_groups.carbon)
     final_kelp_C = sum(A .* kₐ .* (C .+ Cₛ)) / (12 * 0.001)
 
     # kelp is being integrated
