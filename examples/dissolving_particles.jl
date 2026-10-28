@@ -30,19 +30,6 @@ nothing #hide
 grid = RectilinearGrid(size = (128, 128), x = (0, 64), z = (-64, 0),
                        topology = (Periodic, Flat, Bounded))
 
-# ## Turbulence
-# Start by spinning up some decaying two-dimensional turbulence from random velocities.
-# Over the first half an hour the energy moves to larger scales, leaving a field of eddies
-# with velocities of a few mm/s, similar to the sinking speeds of the smaller particles
-# Create a non-hydrostatic model with WENO advection and no particles or tracers for the spinup.
-spinup_model = NonhydrostaticModel(grid; advection = WENO(order = 5))
-
-set!(spinup_model, u = (x, z) -> 0.02 * randn(), w = (x, z) -> 0.02 * randn())
-
-spinup = Simulation(spinup_model, Δt = 1, stop_time = 30minutes)
-conjure_time_step_wizard!(spinup, cfl = 0.5)
-run!(spinup) # Run the spinup simulation
-
 # ## Particles
 # Each particle is a sphere of radius ``r``, and [`DissolvingParticles`](@ref) needs two functions of that radius: the `dissolution_rate`, ``k(r)``, which is how fast the radius shrinks (``dr/dt = -k(r)``), and the `sinking_speed`, ``w(r)``, which is how fast the particle sinks relative to the water.
 # Either can be a constant number or a function.
@@ -85,28 +72,25 @@ particles = DissolvingParticles(n; grid, mineral_parameters) # Create the partic
 
 mineral = particles.biogeochemistry # Get the mineral parameters
 
-particle_mass(r) = mineral.density * 4/3 * π * r^3 # Calculate the mass of a particle
-
-scalefactor = 1 / sum(particle_mass.(r₀)) 
+scalefactor = 1 / sum(mineral.density * 4/3 * π * r₀.^3) # 1 kg divided by the total particle mass 
 
 set!(particles, r = r₀, x = x₀, z = z₀, scalefactors = fill(scalefactor, n)) 
 
 particles # Output the particle properties
 
-# ## Biogeochemistry
-# We couple the particles to a carbonate system with dissolved inorganic carbon (`DIC`) and
-# alkalinity (`Alk`) without any biology
-biogeochemistry = NutrientsPlanktonDetritus(grid; inorganic_carbon = CarbonateSystem(), particles)
+# We couple the particles to a carbonate system with dissolved inorganic carbon (`DIC`) and alkalinity (`Alk`) without any biology
 
 model = NonhydrostaticModel(grid; biogeochemistry, advection = WENO(order = 5))
 
+# Set the initial conditions
 Alk₀ = 2300 # mmol/m³, initial alkalinity
+u_ic(x, z) = 0.02 * randn() # m/s
+w_ic(x, z) = 0.02 * randn() # m/s
 
-set!(model, u = spinup_model.velocities.u, w = spinup_model.velocities.w, DIC = 2000, Alk = Alk₀)
+set!(model, u = u_ic, w = w_ic, DIC = 2000, Alk = Alk₀)
 
-# ## Simulation
-# Run the simulation for 2.5 hours, long enough for the largest particles to dissolve, saving the particles and alkalinity field every minute
-simulation = Simulation(model, Δt = 1, stop_time = 2.5hours)
+# Run the simulation for 3 hours, long enough for the largest particles to dissolve, saving the particles and alkalinity field every minutes
+simulation = Simulation(model, Δt = 1, stop_time = 3hours)
 
 conjure_time_step_wizard!(simulation, cfl = 0.5, max_Δt = 10)
 
@@ -116,6 +100,15 @@ progress_message(sim) = @printf("Iteration: %04d, time: %s, Δt: %s, wall time: 
 
 add_callback!(simulation, progress_message, TimeInterval(15minutes))
 
+# After 30 minutes, put the particles, DIC, and alkalinity back to their initial values.
+function reset_particles_and_tracers!(sim)
+    set!(particles, r = r₀, x = x₀, z = z₀, scalefactors = fill(scalefactor, n))
+    set!(sim.model, DIC = 2000, Alk = Alk₀, enforce_incompressibility = false)
+    return nothing
+end
+add_callback!(simulation, reset_particles_and_tracers!, SpecifiedTimes(30minutes))
+
+# Save output
 filename = "dissolving_particles"
 
 simulation.output_writers[:fields] = JLD2Writer(model, (; Alk = model.tracers.Alk),
@@ -182,7 +175,10 @@ hm = heatmap!(ax, xc, zc, Alkₙ, colormap = Reverse(:deep), colorrange = (0, 80
 scatter!(ax, xₙ, zₙ; markersize = sizeₙ, color = :white)
 Colorbar(fig[1, 2], hm, label = "Alkalinity increase (mmol/m³)")
 
-record(fig, "$filename.mp4", 1:length(times), framerate = 12) do i
+# start the movie after the spinup period has ended
+run_frames = findall(times .>= 30minutes)
+
+record(fig, "$filename.mp4", run_frames, framerate = 12) do i
     frame[] = i
 end
 nothing #hide
@@ -203,12 +199,7 @@ still_water_depth(r₀) = sinking_speed(r₀) * r₀ / 3dissolution_rate(r₀)
 
 # We can also look at the horizontally averaged alkalinity increase, and check that the
 # alkalinity released into the water is the same as the alkalinity lost from the particles.
-# Since the domain is 2D the cell volumes are per metre in the y direction, just like the scalefactors.
-using Oceananigans.Operators: volume
-
-cell_volume = volume(1, 1, 1, grid, Center(), Center(), Center())
-
-alkalinity_released = [sum(interior(Alk[i]) .- Alk₀) * cell_volume for i in 1:length(times)]
+alkalinity_released = [Field(Integral(Alk[i] - Alk₀))[1, 1, 1] for i in 1:length(times)]
 
 molar_volume = mineral.molar_mass / mineral.density # m³/mol
 ν = mineral.released_tracers.Alk # mol Alk per mol Ca(OH)₂

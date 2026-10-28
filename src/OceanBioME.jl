@@ -26,7 +26,6 @@ export DepthDependantSinkingSpeed, PrescribedLatitude, ModelLatitude, PISCESMode
 # Macroalgae models
 export BiogeochemicalParticles, SugarKelp, SugarKelpParticles
 
-# Dissolving particles (e.g. for ocean alkalinity enhancement)
 export DissolvingMineral, DissolvingParticles, StokesSinking
 
 # Box model
