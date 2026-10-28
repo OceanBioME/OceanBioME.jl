@@ -35,11 +35,11 @@ end
 end 
 
 @inline (kelp::SugarKelp)(::Val{:DON}, t, A, N, C, u, v, w, T, NO₃, NH₄, PAR) =
-    kelp(Val(:DOC), t, A, N, C, u, v, w, T, NO₃, NH₄, PAR) / kelp.exudation_redfield_ratio
+    kelp(Val(:DOC), t, A, N, C, u, v, w, T, NO₃, NH₄, PAR) / kelp.params.exudation_redfield_ratio
 
 @inline function (kelp::SugarKelp)(::Val{:bPON}, t, A, N, C, u, v, w, T, NO₃, NH₄, PAR)
-    kₐ = kelp.structural_dry_weight_per_area
-    Nₛ = kelp.structural_nitrogen
+    kₐ = kelp.params.structural_dry_weight_per_area
+    Nₛ = kelp.params.structural_nitrogen
 
     ν = erosion(kelp, t, A, N, C, T)
 
@@ -48,8 +48,8 @@ end
 
 # this is why the particles made by kelp can be much more carbon rich
 @inline function (kelp::SugarKelp)(::Val{:bPOC}, t, A, N, C, u, v, w, T, NO₃, NH₄, PAR)
-    kₐ = kelp.structural_dry_weight_per_area
-    Cₛ = kelp.structural_carbon
+    kₐ = kelp.params.structural_dry_weight_per_area
+    Cₛ = kelp.params.structural_carbon
 
     ν = erosion(kelp, t, A, N, C, T)
 
