@@ -74,6 +74,7 @@ import Oceananigans.Biogeochemistry: required_biogeochemical_tracers,
                                      update_tendencies!,
                                      biogeochemical_transition
 
+import Oceananigans: prognostic_state, restore_prognostic_state!
 import Adapt: adapt_structure
 import Base: show, summary
 
@@ -191,6 +192,25 @@ function update_biogeochemical_state!(bgc::CompleteBiogeochemistry, model)
 end
 
 update_biogeochemical_state!(model, modifiers::Tuple) = [update_biogeochemical_state!(model, modifier) for modifier in modifiers]
+
+# the light attenuation is recomputed when the state is updated and the modifiers have no state,
+# so only the underlying biogeochemistry, sediment, and particles are checkpointed
+prognostic_state(bgc::CompleteBiogeochemistry) =
+    (underlying_biogeochemistry = biogeochemistry_state(bgc.underlying_biogeochemistry),
+     sediment = prognostic_state(bgc.sediment),
+     particles = prognostic_state(bgc.particles))
+
+function restore_prognostic_state!(bgc::CompleteBiogeochemistry, from)
+    restore_prognostic_state!(bgc.underlying_biogeochemistry, from.underlying_biogeochemistry)
+    restore_prognostic_state!(bgc.sediment, from.sediment)
+    restore_prognostic_state!(bgc.particles, from.particles)
+    return bgc
+end
+
+# biogeochemistry which isn't an `AbstractBiogeochemistry` has no state of its own, and would
+# otherwise be checkpointed whole by the fallback `prognostic_state(obj) = obj`
+biogeochemistry_state(bgc::AbstractBiogeochemistry) = prognostic_state(bgc)
+biogeochemistry_state(bgc) = nothing
 
 BoxModelGrid(FT = Float64; arch = CPU(), kwargs...) = RectilinearGrid(arch, FT; topology = (Flat, Flat, Flat), size = (), kwargs...)
 

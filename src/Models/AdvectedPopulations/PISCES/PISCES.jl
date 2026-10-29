@@ -127,6 +127,7 @@ include("generic_functions.jl")
 include("mean_mixed_layer_properties.jl")
 include("compute_calcite_saturation.jl")
 include("update_state.jl")
+include("checkpointing.jl")
 
 include("zooplankton/zooplankton.jl")
 

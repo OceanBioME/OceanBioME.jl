@@ -1,6 +1,5 @@
 using Oceananigans.Architectures: architecture
-using Oceananigans.TimeSteppers: QuasiAdamsBashforth2TimeStepper, RungeKutta3TimeStepper,
-                                 time_step!, tick!
+using Oceananigans.TimeSteppers: QuasiAdamsBashforth2TimeStepper, RungeKutta3TimeStepper, time_step!
 using Oceananigans.Utils: launch!
 
 import Oceananigans.TimeSteppers: ab2_step!, rk3_substep!,
@@ -12,8 +11,6 @@ function step_sediment!(sediment, model, parent_timestepper::SUPPORTED_TIMESTEPP
     substep_sediment!(sediment, model, parent_timestepper)
 
     cache_previous_tendencies!(sediment)
-
-    tick!(sediment.clock, model.clock.last_stage_Δt)
 
     return nothing
 end

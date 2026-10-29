@@ -11,6 +11,9 @@ struct SpeedyOutput{FN, B} # I will make this an `AbstractOutputWriter` at some 
     end
 end
 
+# has no state to checkpoint when used as a callback
+prognostic_state(::SpeedyOutput) = nothing
+
 function (save::SpeedyOutput)(simulation)
     model = simulation.model
 
