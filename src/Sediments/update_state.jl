@@ -9,10 +9,10 @@ function update_biogeochemical_state!(model, sediment_model::BiogeochemicalSedim
     # the state can be updated without the model having been stepped (e.g. when a simulation is
     # initialised after picking up from a checkpoint, or by `set!`), so we only step the sediment
     # when the model clock has moved on since the sediment was last updated
-    first_update = (model.clock.iteration == 0) & (model.clock.stage == 1)
+    first_update = (model.clock.iteration == 0) && (model.clock.stage == 1)
     model_stepped = model.clock.time != sediment_model.clock.time
 
-    if !first_update & model_stepped
+    if !first_update && model_stepped
         step_sediment!(sediment_model, model, model.timestepper)
     end
 
