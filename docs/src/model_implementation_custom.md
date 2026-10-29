@@ -16,6 +16,7 @@ Optionally, a model may also implement:
 - `biogeochemical_auxiliary_fields`: a `NamedTuple` of the auxiliary fields themselves, if they are computed by the model rather than prescribed externally.
 - `biogeochemical_drift_velocity`: an additional velocity field for a tracer (e.g. sinking); defaults to `nothing`.
 - `update_biogeochemical_state!`: called once per time step to update any internal state (e.g. to recompute light attenuation); defaults to doing nothing.
+- `Oceananigans.prognostic_state` and `Oceananigans.restore_prognostic_state!`: return and restore any state the model evolves outside of the tracers (i.e. that can't be recomputed from them in `update_biogeochemical_state!`), so that a `Checkpointer` saves it and picking up from a checkpoint restores it; by default nothing is saved.
 
 This is a different, lower-level interface to the one used by [NPD plankton components](@ref model_implementation). NPD components use a discrete `(i, j, k, grid, plankton, bgc, fields, auxiliary_fields)` signature and only need to define four functions (`nutrient_uptake`, `dissolved_waste`, `solid_waste`, `inorganic_waste`); the framework then assembles these into tracer tendencies that automatically conserve nitrogen (or whichever currency the nutrients are tracked in). With `AbstractContinuousFormBiogeochemistry` there is no such bookkeeping: you write the full right-hand side for every tracer yourself, in continuous `(x, y, z, t)` form. This gives you complete freedom over the model structure, but also responsibility for ensuring conservation laws.
 

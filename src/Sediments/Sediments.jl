@@ -41,10 +41,11 @@ include("tracked_fields.jl")
 include("update_state.jl")
 include("compute_tendencies.jl")
 include("tracer_coupling.jl")
+include("checkpointing.jl")
 include("show.jl")
 
 function BiogeochemicalSediment(grid, biogeochemistry;
-                                clock = Clock(time = zero(grid)),
+                                clock = Clock(grid),
                                 timestepper = nothing)
 
     deprecate_sediment_timestepper(timestepper)

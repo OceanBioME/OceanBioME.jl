@@ -13,6 +13,9 @@ Oceananigans = "9e8cae18-63c1-5223-a75c-80ca9d6e9a09"
 OffsetArrays = "6fe1bfb0-de20-5000-8ca7-80f57d26f881"
 SeawaterPolynomials = "d496a93d-167e-4197-9f49-d3af4ff8fe40"
 
+[sources]
+Oceananigans = {url = "https://github.com/CliMA/Oceananigans.jl", rev = "3d98c12da88f112e9d82af9303891dfc2f0cf1b2"}
+
 [compat]
 Adapt = "3, 4"
 Atomix = "1.0"
@@ -23,7 +26,7 @@ EnsembleKalmanProcesses = "1, 2"
 GibbsSeaWater = "0.1"
 JLD2 = "0.4, 0.5, 0.6"
 KernelAbstractions = "0.9, 0.10"
-Oceananigans = "0.113.3, 0.114, 0.115, 0.116"
+Oceananigans = "0.117"
 OffsetArrays = "1.14"
 SeawaterPolynomials = "0.3, 0.4"
 julia = "1.10"
