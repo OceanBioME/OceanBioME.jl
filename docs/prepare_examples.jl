@@ -10,7 +10,8 @@ const EXAMPLES = [
     "eady",
     "kelp",
     "data_assimilation",
-    "oae_experiment"
+    "oae_experiment",
+    "dissolving_particles"
 ]
 
 for example_name in EXAMPLES

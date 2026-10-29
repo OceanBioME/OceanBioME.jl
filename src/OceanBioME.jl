@@ -26,6 +26,8 @@ export DepthDependantSinkingSpeed, PrescribedLatitude, ModelLatitude, PISCESMode
 # Macroalgae models
 export BiogeochemicalParticles, SugarKelp, SugarKelpParticles
 
+export DissolvingMineral, DissolvingParticles, StokesSinking
+
 # Box model
 export BoxModel, BoxModelGrid, SpeedyOutput, load_output
 
