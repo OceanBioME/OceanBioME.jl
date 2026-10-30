@@ -5,6 +5,39 @@ using Oceananigans.Models: total_velocities, AbstractModel
 using Oceananigans.Operators: Azᶜᶜᶠ
 using Oceananigans.Utils: launch!
 
+_search_floor_flux(::Nothing, name) = nothing
+
+function _search_floor_flux(m, name)
+    hasproperty(m, :floor_flux) || return nothing
+    ff = getproperty(m, :floor_flux)
+    hasproperty(ff, name) || return nothing
+    return getproperty(ff, name)
+end
+
+function _search_floor_flux(mods::Tuple, name)
+    for m in mods
+        ff = _search_floor_flux(m, name)
+        ff !== nothing && return ff
+    end
+    return nothing
+end
+
+function _implicit_floor_flux(model, name)
+    bgc = model.biogeochemistry
+    if hasproperty(bgc, :modifiers)
+        ff = _search_floor_flux(bgc.modifiers, name)
+        ff !== nothing && return ff
+    end
+    if hasproperty(bgc, :underlying_biogeochemistry)
+        det = bgc.underlying_biogeochemistry
+        if hasproperty(det, :detritus) && hasproperty(det.detritus, :sinking)
+            ff = _search_floor_flux(det.detritus.sinking, name)
+            ff !== nothing && return ff
+        end
+    end
+    return nothing
+end
+
 function update_tracked_fields!(sediment, model)
     grid = model.grid
     arch = architecture(grid)
@@ -22,16 +55,22 @@ function update_tracked_fields!(sediment, model)
         launch!(arch, grid, :xy, copy_to_sediment!, source, destination, bottom_indices)
     end
 
-    # tracked fluxs
+    # tracked fluxes
     field_names = sinking_fluxes(sediment)
 
     for field_name in field_names
-        source = model_fields[field_name]
-        advection = vertical_advection_scheme(model, field_name)
-        w = biogeochemical_drift_velocity(model.biogeochemistry, Val(field_name)).w
         destination = sediment.tracked_fields[field_name]
 
-        launch!(arch, grid, :xy, compute_sinking_flux!, destination, source, advection, w, bottom_indices, grid)
+        ff = _implicit_floor_flux(model, field_name)
+
+        if ff !== nothing
+            launch!(arch, grid, :xy, _copy_floor_flux!, destination, ff)
+        else
+            source = model_fields[field_name]
+            advection = vertical_advection_scheme(model, field_name)
+            w = biogeochemical_drift_velocity(model.biogeochemistry, Val(field_name)).w
+            launch!(arch, grid, :xy, compute_sinking_flux!, destination, source, advection, w, bottom_indices, grid)
+        end
     end
 
     return nothing
@@ -49,7 +88,7 @@ end
     end
 end
 
-# fluxs
+# fluxes
 
 @inline vertical_advection_scheme(advection, name) = advection
 @inline vertical_advection_scheme(advection::FluxFormAdvection, name) = advection.z
@@ -67,4 +106,9 @@ end
 
         destination[i, j, 1] = sinking_flux(i, j, k, grid, advection, w, source)
     end
+end
+
+@kernel function _copy_floor_flux!(destination, source)
+    i, j = @index(Global, NTuple)
+    @inbounds destination[i, j, 1] = source[i, j, 1]
 end

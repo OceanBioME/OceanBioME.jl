@@ -52,6 +52,28 @@ end
     end
 end
 
+function run_implicit_lobster_inside_function(grid, dissolved, particulate)
+    detritus = DissolvedParticulate(grid, dissolved, particulate; implicit_sinking = true)
+    biogeochemistry = LOBSTER(grid; detritus, light_attenuation)
+    model = NonhydrostaticModel(grid; biogeochemistry)
+
+    set!(model; NO₃ = 5, NH₄ = 0.1, P = 1, Z = 1)
+
+    for _ in 1:10
+        time_step!(model, 60)
+    end
+
+    remineralisation = biogeochemistry.underlying_biogeochemistry.detritus.sinking.remineralisation
+
+    return (; particulate_remineralised = all(name -> sum(interior(remineralisation[name])) > 0, particulate))
+end
+
+@testset "Implicitly sinking DissolvedParticulate constructed and used inside a function" begin
+    results = run_implicit_lobster_inside_function(grid, :DOMᵢᵢ, (:sPOMᵢᵢ, :bPOMᵢᵢ))
+
+    @test results.particulate_remineralised
+end
+
 implicit_replicates(grid) = CarbonateSystem(2)
 explicit_replicates(grid) = ExplicitCalciumCarbonate(grid; replicates = 2)
 
