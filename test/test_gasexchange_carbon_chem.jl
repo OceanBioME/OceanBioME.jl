@@ -88,14 +88,14 @@ end
 
     for (idx, DIC) in enumerate(DIC)
         pCO₂_results[idx] = carbon_chem(; DIC = Float64(DIC), Alk = Float64(Alk[idx]), T = Float64(T[idx]), S = Float64(S[idx]), output = Val(:pCO₂))
-        pH_results[idx] = carbon_chem(; DIC, Alk = Alk[idx], T = T[idx], S = S[idx], output = Val(:pHᶠ))
+        pH_results[idx] = carbon_chem(; DIC, Alk = Alk[idx], T = T[idx], S = S[idx], output = Val(:pHᵗ))
     end
 
     pCO₂_err = pCO₂ .- pCO₂_results
     pH_err = pH .- pH_results
 
-    # not great not terrible
-    @test (mean(pCO₂_err) < 7.1 && std(pCO₂_err) < 9.1) && (mean(pH_err) < 0.01 && std(pH_err) < 0.01)
+    # not great not terrible (CODAP-NA's pH is on the total scale)
+    @test (mean(pCO₂_err) < 7.1 && std(pCO₂_err) < 9.1) && (abs(mean(pH_err)) < 0.01 && std(pH_err) < 0.01)
 end
 
 grid = RectilinearGrid(architecture; size=(1, 1, 2), extent=(1, 1, 1))
@@ -119,6 +119,25 @@ set!(conc_fts2[2], 413.1)
         @info "Testing gas exchange with $(summary(air_concentration))"
         test_gas_exchange_model(grid, air_concentration)
     end
+end
+
+@testset "Oxygen gas exchange equilibrium" begin
+    # 1 m of sea water with no biology, where only the air-sea flux changes O₂, so O₂ should
+    # settle at the Garcia and Gordon (1992) check value for 10 °C and S = 35: 6.315 cm³/dm³,
+    # i.e. 282.0 mmol/m³ with the molar volume of oxygen (0.0223916 m³/mol)
+    column_grid = RectilinearGrid(architecture; size = (1, 1, 1), extent = (1, 1, 1))
+
+    model = NonhydrostaticModel(column_grid;
+                                tracers = (:T, :S, :O₂),
+                                boundary_conditions = (; O₂ = FieldBoundaryConditions(top = OxygenGasExchangeBoundaryCondition(; wind_speed = 10))))
+
+    set!(model, T = 10, S = 35, O₂ = 0)
+
+    for _ in 1:100
+        time_step!(model, 1hour)
+    end
+
+    @test ≈(CUDA.@allowscalar(model.tracers.O₂[1, 1, 1]), 6.315 / 0.0223916; rtol = 1e-4)
 end
 
 @testset "Off grid FieldTimeSeries interpolation" begin
@@ -190,6 +209,54 @@ end
     @test ≈(KspC.pressure_correction(Tk, P), 1.52962; atol=0.00001)
 end
 
+@inline carbon_chemistry_output(i, j, k, grid, carbon_chemistry, args, output) = carbon_chemistry(; args..., output)
+
+@testset "pH scales" begin
+    carbon_chemistry = CarbonChemistry()
+
+    # free and total scale pH from PyCO2SYS 1.8.3.4 with the same constants (`opt_k_carbonic = 10`,
+    # `opt_k_bisulfate = 1`, `opt_k_fluoride = 2`, `opt_total_borate = 1`), with DIC and Alk
+    # converted to μmol/kg with our density
+    reference = ((T = 25.4, S = 36.45, DIC = 2145.0, Alk = 2448.0, pHᶠ = 8.1119, pHᵗ = 8.0015),
+                 (T =  0.0, S = 34.0,  DIC = 2200.0, Alk = 2350.0, pHᶠ = 8.1706, pHᵗ = 8.1298),
+                 (T = 30.0, S = 35.0,  DIC = 1950.0, Alk = 2350.0, pHᶠ = 8.2392, pHᵗ = 8.1138),
+                 (T = 15.0, S = 15.0,  DIC = 1300.0, Alk = 1400.0, pHᶠ = 8.2244, pHᵗ = 8.1741))
+
+    for r in reference
+        args = (; DIC = r.DIC, Alk = r.Alk, T = r.T, S = r.S)
+
+        pHᶠ = carbon_chemistry(; args..., output = Val(:pHᶠ))
+        pHᵗ = carbon_chemistry(; args..., output = Val(:pHᵗ))
+        pHˢ = carbon_chemistry(; args..., output = Val(:pHˢ))
+
+        @test ≈(pHᶠ, r.pHᶠ; atol = 5e-4)
+        @test ≈(pHᵗ, r.pHᵗ; atol = 5e-4)
+
+        # the sea water scale also counts the hydrogen ions bound in HF: [H⁺]ˢ = [H⁺]ᵗ + [HF]
+        fluoride = 0.000067 / 18.9984 * r.S / 1.80655
+        KF = carbon_chemistry.fluoride(r.T + 273.15, r.S)
+
+        @test ≈(10^-pHˢ, 10^-pHᵗ + fluoride / (1 + KF * 10^pHᵗ); rtol = 1e-12)
+
+        # a `pH` input is on the total scale
+        @test ≈(carbon_chemistry(; DIC = r.DIC, T = r.T, S = r.S, pH = pHᵗ), carbon_chemistry(; args...); rtol = 1e-12)
+
+        @test ≈(calcium_carbonate_saturation(carbon_chemistry; DIC = r.DIC, T = r.T, S = r.S, pH = pHᵗ),
+                calcium_carbonate_saturation(carbon_chemistry; args...); rtol = 1e-12)
+    end
+
+    # the same values from inside a kernel on the `architecture`
+    field_grid = RectilinearGrid(architecture; size = (1, 1, 1), extent = (1, 1, 1))
+
+    args = (; DIC = 2145.0, Alk = 2448.0, T = 25.4, S = 36.45)
+
+    for output in (:pHᶠ, :pHᵗ, :pHˢ)
+        pH = KernelFunctionOperation{Center, Center, Center}(carbon_chemistry_output, field_grid, carbon_chemistry, args, Val(output))
+
+        @test ≈(CUDA.@allowscalar(compute!(Field(pH))[1, 1, 1]), carbon_chemistry(; args..., output = Val(output)))
+    end
+end
+
 @testset "Water and atmospheric pressure" begin
     carbon_chemistry = CarbonChemistry()
 
@@ -199,8 +266,8 @@ end
 
     # surface values are unchanged by the separation of the two pressures (values from before
     # it, with the density evaluated at 0 bar)
-    surface = (fCO₂ = 460.8517068223346, CO₂ = 13.167231494430746, pHᶠ = 8.001438638766434,
-               pHᵗ = 7.891118124117329, pHˢ = 7.880742652625449, pCO₂ = 462.31990978647883)
+    surface = (fCO₂ = 460.8517068223346, CO₂ = 13.167231494430746, pHᶠ = 8.111759162965459,
+               pHᵗ = 8.001438638766434, pHˢ = 7.988108208839734, pCO₂ = 462.31990978647883)
 
     for output in outputs
         value = carbon_chemistry(; args..., output = Val(output))
@@ -285,9 +352,20 @@ end
         @test CO₂ === CarbonChemistry(FT)(; DIC = FT(2136.242890518708), Alk = FT(2500), T = FT(25), S = FT(35), output = Val(:CO₂))
         @test typeof(CO₂) == FT
 
+        # the default is the Garcia and Gordon (1992) saturation at 25 °C and S = 35
         pO₂ = surface_value(O₂_exchange.air_concentration, 1, 1, grid, clock, (; T, S))
-        @test ≈(pO₂, 200, atol = 50) # ball park correct
+        @test ≈(pO₂, 211.597, rtol = 1e-5)
         @test typeof(pO₂) == FT
+
+        # Weiss (1970) constants for the Bunsen coefficient of oxygen (`B2` was mistyped as 0.015578)
+        O₂_solubility = OxygenSolubility(FT)
+
+        @test O₂_solubility.A1 == FT(-58.3877)
+        @test O₂_solubility.A2 == FT(85.8079)
+        @test O₂_solubility.A3 == FT(23.8439)
+        @test O₂_solubility.B1 == FT(-0.034892)
+        @test O₂_solubility.B2 == FT(0.015568)
+        @test O₂_solubility.B3 == FT(-0.0019387)
 
         # check flux is correct type
         DIC_flux = CO₂_exchange(1, 1, grid, clock, (; T, S, DIC, Alk))
@@ -564,7 +642,7 @@ const MARBL_REFERENCE = (
 
             CO₂ = cc(; args..., output = Val(:CO₂))
 
-            H  = FT(10) ^ -cc(; args..., output = Val(:pHᶠ))
+            H  = FT(10) ^ -cc(; args..., output = Val(:pHᵗ))
             K₁ = cc.carbonic_acid.K1(FT(s.T) + FT(273.15), FT(s.S))
             K₂ = cc.carbonic_acid.K2(FT(s.T) + FT(273.15), FT(s.S))
 
@@ -666,6 +744,9 @@ const MARBL_REFERENCE = (
 
         o2_saturation = GarciaGordonOxygenSaturation(FT)
 
+        # the default oxygen exchange with MARBL's piston velocity
+        o2_exchange = OxygenGasExchangeBoundaryCondition(FT; wind_speed = FT(5), base_transfer_velocity = marbl_k660).condition.func
+
         # tight: everything that is a closed-form expression on both sides
         tight = max(1e-11, 1000 * eps(FT))
         # loose: includes MARBL's `xacc = 1e-10` pH root-find (the accuracy limit at Float64),
@@ -683,6 +764,13 @@ const MARBL_REFERENCE = (
             @test ≈(OxygenPolynomialSchmidtNumber(FT)(FT(r.T)),        r.sc_o2;  rtol = tight)
 
             @test ≈(surface_value(o2_saturation, 1, 1, grid, clock, (; T, S)), r.o2sat; rtol = tight)
+
+            # MARBL's oxygen flux into the ocean is `pv_o2 (o2sat - O₂)`, so the default exchange
+            # relaxes O₂ to MARBL's saturation
+            pv_o2 = MARBL_XKW_COEFF * r.u₁₀^2 * sqrt(660 / r.sc_o2)
+            O₂ = ConstantField(FT(150))
+
+            @test ≈(-o2_exchange(1, 1, grid, clock, (; T, S, O₂)), pv_o2 * (r.o2sat - 150); rtol = tight)
 
             # MARBL's `co2starair · mass_to_vol` = xco2·1e-6 · ff · atmpres · 1e3 · rho_sw
             @test ≈(surface_value(marbl_air, 1, 1, grid, clock, fields),
