@@ -1,6 +1,6 @@
 import OceanBioME: conserved_tracers
 
-using .InorganicCarbonModels: AbstractInorganicCarbon
+using .InorganicCarbonModels: AbstractInorganicCarbon, replicate_name
 
 # possible conservations are N/P/Fe/Si/C/O
 # when a nutrient class is nothing it is implicitly conserved so we will not include that in the conservations
@@ -32,12 +32,12 @@ end
 element_groups(inorganic_carbon, bgc, ::Val{element}, element_tracers) where element =
     NamedTuple{(element, )}((element_tracers, ))
 
-# each replicate of the inorganic carbon (`DIC1`, `DIC2`, ...) has its own total carbon, which includes the organic carbon
-function element_groups(inorganic_carbon::AbstractInorganicCarbon{N}, bgc, ::Val{:carbon}, organic_carbon) where N
-    names = N == 1 ? (:carbon, ) : ntuple(n -> Symbol(:carbon, n), N)
-    groups = ntuple(n -> merge(inorganic_carbon_tracers(inorganic_carbon, bgc, n), organic_carbon), N)
+# each replicate of the inorganic carbon (`DIC1`, `DIC_control`, ...) has its own total carbon (`carbon1`,
+# `carbon_control`, ...), which includes the organic carbon
+function element_groups(inorganic_carbon::AbstractInorganicCarbon{L}, bgc, ::Val{:carbon}, organic_carbon) where L
+    groups = map(label -> merge(inorganic_carbon_tracers(inorganic_carbon, bgc, label), organic_carbon), L)
 
-    return NamedTuple{names}(groups)
+    return NamedTuple{replicate_name.(:carbon, L)}(groups)
 end
 
 # the tracers of plankton and detritus which contain elements, which excludes e.g. the temperature
@@ -147,15 +147,10 @@ function group_element_tracers(::DissolvedParticulate{N, M, DN, PN}, bgc, ::Val{
     return NamedTuple{(DN..., PN...)}(ratios)
 end
 
-inorganic_carbon_tracers(::CarbonateSystem{1}, bgc::NPD{FT}, n) where FT =
-    (; DIC = one(FT))
-inorganic_carbon_tracers(::CarbonateSystem, bgc::NPD{FT}, n) where FT =
-    NamedTuple{(Symbol(:DIC, n), )}((one(FT), ))
-
-inorganic_carbon_tracers(::ExplicitCalciumCarbonate{1}, bgc::NPD{FT}, n) where FT =
-    (DIC = one(FT), CaCO₃ = one(FT))
-inorganic_carbon_tracers(::ExplicitCalciumCarbonate, bgc::NPD{FT}, n) where FT =
-    NamedTuple{(Symbol(:DIC, n), Symbol(:CaCO₃, n))}((one(FT), one(FT)))
+inorganic_carbon_tracers(::CarbonateSystem, bgc::NPD{FT}, label) where FT =
+    NamedTuple{(replicate_name(:DIC, label), )}((one(FT), ))
+inorganic_carbon_tracers(::ExplicitCalciumCarbonate, bgc::NPD{FT}, label) where FT =
+    NamedTuple{replicate_name.((:DIC, :CaCO₃), label)}((one(FT), one(FT)))
 
 group_element_tracers(::Oxygen, args...) = NamedTuple()
 group_element_tracers(::Oxygen, bgc::NPD{FT}, ::Val{:oxygen}) where FT =
