@@ -1077,8 +1077,8 @@ using OceanBioME.Models.NutrientsPlanktonDetritusModels.InorganicCarbonModels: p
         @test isapprox(C₁.carbon2, C₀.carbon2; rtol = 1e-12)
         @test isapprox(A₁, A₀; rtol = 1e-12)
 
-        # the replicates have the same tendencies
-        @test interior(model.tracers.DIC2) .- interior(model.tracers.DIC1) ≈ fill(100, 1, 1, Nz) rtol = 1e-12
-        @test interior(model.tracers.Alk2) .- interior(model.tracers.Alk1) ≈ fill(50, 1, 1, Nz) rtol = 1e-12
+        # the replicates have the same tendencies (compared on the CPU: `≈` would broadcast a GPU array with a CPU one)
+        @test Array(interior(model.tracers.DIC2) .- interior(model.tracers.DIC1)) ≈ fill(100, 1, 1, Nz) rtol = 1e-12
+        @test Array(interior(model.tracers.Alk2) .- interior(model.tracers.Alk1)) ≈ fill(50, 1, 1, Nz) rtol = 1e-12
     end
 end
