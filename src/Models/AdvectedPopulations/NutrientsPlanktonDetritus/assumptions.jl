@@ -33,6 +33,22 @@ function nutrient_uptake end
 @inline hard_organic_production(i, j, k, grid, inorganic_carbon, ::NutrientsPlanktonDetritus{FT}, fields, auxiliary_fields) where FT = zero(FT)
 @inline hard_organic_remineralisation(i, j, k, grid, inorganic_carbon, ::NutrientsPlanktonDetritus{FT}, fields, auxiliary_fields) where FT = zero(FT)
 
+# The sinking particle mass flux into the top of cell `k` (ng cm⁻² s⁻¹, MARBL's units, positive downward), which
+# `SimpleIron`'s `ParticleScavenging` scales the scavenging with. Only components that sink implicitly and store their
+# flux (`store_flux = true`) contribute; `stores_sinking_flux` says whether one does.
+@inline sinking_particle_mass_flux(i, j, k, grid, component, ::NutrientsPlanktonDetritus{FT}) where FT = zero(FT)
+stores_sinking_flux(component) = false
+
+# MARBL's mass of sinking organic matter, 3 × its carbon (g / mol C), and of calcium carbonate (g / mol), and the
+# conversion of a flux from mmol m⁻² s⁻¹ to nmol cm⁻² s⁻¹ (so that mol × g mol⁻¹ gives ng cm⁻² s⁻¹)
+const organic_matter_mass_per_carbon = 3 * 12.01
+const calcium_carbonate_molar_mass   = 100.09
+const mmol_m⁻²_to_nmol_cm⁻²          = 100
+
+# the total of the stored implicit sinking fluxes (`F[i, j, k]` leaves the bottom of cell `k`) into the top of cell `k`
+@inline sinking_flux_into(i, j, k, grid, flux::NamedTuple) =
+    sum(map(F -> ifelse(k == size(grid, 3), zero(eltype(grid)), @inbounds(F[i, j, k + 1])), values(flux)))
+
 for (element, symbol) in pairs((nitrogen = :N, phosphate = :PO₄, iron = :Fe, silicon = :Si, carbon = :C))
     inorganic_waste_name  = Symbol(:inorganic_, element, :_waste)
     solid_waste_name      = Symbol(:solid_,     element, :_waste)
