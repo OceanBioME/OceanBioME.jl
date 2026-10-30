@@ -14,26 +14,46 @@ wizard = TimeStepWizard(cfl = 0.6, diffusive_cfl = 0.5, max_change = 1.5, min_ch
 simulation.callbacks[:wizard] = Callback(wizard, IterationInterval(10))
 ```
 
-## Negative tracer detection
-As a temporary measure we have implemented a callback to either detect negative tracers and either scale a conserved group, force them back to zero, or throw an error. Please see the numerical implementations' page for details. This can be set up by:
+## Negative tracer treatment
+Negative tracer values can be handled through the `negative_tracers` keyword of `Biogeochemistry` and model constructors. Three treatments are available, alongside the upstream `ZeroNegativeTracers` modifier.
+
+`ScaleNegativeTracers` rescales a conserved tracer group so none of its members remain negative:
 ```julia
 negativity_protection = ScaleNegativeTracers((:P, :Z, :N))
-biogeochemistry = Biogeochemistry(...; modifiers = negativity_protection)
+biogeochemistry = Biogeochemistry(...; negative_tracers = negativity_protection)
 ```
-You may also pass a scale factor for each component (e.g. in case they have different redfield ratios):
+A scale factor can be provided for each component, for example when tracers use different Redfield ratios:
 ```julia
 negativity_protection = ScaleNegativeTracers((:P, :Z, :N); scalefactors = (1, 1, 2))
-biogeochemistry = Biogeochemistry(...; modifiers = negativity_protection)
+biogeochemistry = Biogeochemistry(...; negative_tracers = negativity_protection)
 ```
-Here you should carefully consider which tracers form a conserved group (if at all). If some tracers are in more than one group (e.g. plankton contain both nitrogen and carbon), give all of the groups to the same `ScaleNegativeTracers` so that they are all conserved:
+Overlapping elemental pools should be scaled together. For example, nitrogen and carbon conservation
+can be enforced simultaneously even when both groups contain the same plankton tracers:
 ```julia
-negativity_protection = ScaleNegativeTracers((nitrogen = (N = 1, P = 1, Z = 1),
-                                              carbon = (DIC = 1, P = 6.56, Z = 6.56)))
-biogeochemistry = Biogeochemistry(...; modifiers = negativity_protection)
+negative_tracers = ScaleNegativeTracers((nitrogen = (N = 1, P = 1, Z = 1),
+                                          carbon = (DIC = 1, P = 6.56, Z = 6.56)))
+biogeochemistry = Biogeochemistry(...; negative_tracers)
 ```
-Separate `ScaleNegativeTracers` modifiers are applied one after the other, so each would change the totals of the others. The `scale_negatives = true` option of the models does this for the groups given by `OceanBioME.conserved_tracers(biogeochemistry)`. Alternatively, force to zero by:
+All overlapping groups should be passed to one `ScaleNegativeTracers` treatment, since applying separate
+scalers sequentially can change the totals of other groups. Each group needs at least one tracer not shared
+with another group. For supported constructors, `ScaleNegativeTracers()` automatically infers conserved
+groups from the underlying biogeochemistry; `scale_negatives = true` provides the same convenience.
+Groups with signed scale factors, such as the oxygen budget, are excluded from automatic scaling.
+
+`ClipNegativeTracers` directly clips negative prognostic tracer values to zero:
 ```julia
-negativity_protection = ZeroNegativeTracers()
-biogeochemistry = Biogeochemistry(...; modifiers = negativity_protection)
+biogeochemistry = Biogeochemistry(...; negative_tracers = ClipNegativeTracers())
 ```
-The latter optionally takes a named tuple of parameters that may include `exclude`, which can be a tuple of tracer names (Symbols) which are allowed to be negative.
+It optionally accepts `exclude`, a tuple of tracer names (`Symbol`s) that may remain negative.
+
+`IgnoreNegativeTracerValues` leaves the prognostic tracer fields unchanged while biogeochemical processes evaluate negative concentration-tracer values as zero:
+```julia
+biogeochemistry = Biogeochemistry(...; negative_tracers = IgnoreNegativeTracerValues())
+```
+Signed environmental tracers such as temperature and salinity remain unchanged. The same treatment is applied to chlorophyll values used by light attenuation.
+
+Treatments can be composed in a tuple when evaluation-time and state-update behaviour are both desired:
+```julia
+biogeochemistry = Biogeochemistry(...;
+    negative_tracers = (IgnoreNegativeTracerValues(), ScaleNegativeTracers((:P, :Z, :N))))
+```

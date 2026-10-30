@@ -3,7 +3,7 @@ include("dependencies_for_runtests.jl")
 using Oceananigans.Architectures: on_architecture
 using Oceananigans.Fields: ConstantField, FunctionField
 
-using OceanBioME.Models.PISCESModel: SimpleIron, NitrateAmmonia
+using OceanBioME.Models.PISCESModel: SimpleIron as PISCESSimpleIron
 
 const PISCES_INITIAL_VALUES = (P = 0.5, PChl = 0.02, PFe = 0.005,
                                D = 0.1, DChl = 0.004, DFe = 0.001, DSi = 0.01,
@@ -57,7 +57,7 @@ function test_PISCES_conservation() # only on CPU please
                                                              mean_mixed_layer_light,
                                                              mean_mixed_layer_vertical_diffusivity,
                                                              # turn off permanent iron removal and nitrogen fixation
-                                                             iron = SimpleIron(excess_scavenging_enhancement = 0.0),
+                                                             iron = PISCESSimpleIron(excess_scavenging_enhancement = 0.0),
                                                              nitrogen = OceanBioME.Models.PISCESModel.NitrateAmmonia(maximum_fixation_rate = 0.0))
 
     model = NonhydrostaticModel(grid; biogeochemistry, advection = nothing)
@@ -139,40 +139,30 @@ function test_PISCES_negativity_protection(arch)
     biogeochemistry = PISCES(; grid,
                                light_attenuation,
                                mixed_layer_depth,
-                               scale_negatives = true)
+                               negative_tracers = ScaleNegativeTracers())
 
     model = NonhydrostaticModel(grid; biogeochemistry)
 
-    set!(model, P = -1, D = 1, Z = 1, M = 1, DOC = 1, POC = 1, GOC = 1, DIC = 1, CaCO₃ = 1, PO₄ = 1)
+    # Set tracers directly so totals can be measured before negativity protection runs.
+    initial = (P = -1.0, D = 1.0, Z = 1.0, M = 1.0, DOC = 1.0,
+               POC = 1.0, GOC = 1.0, DIC = 1.0, CaCO₃ = 1.0, PO₄ = 1.0)
+    set_PISCES_initial_values!(model.tracers; values = initial)
 
-    # got rid of the negative
-    @test on_architecture(CPU(), interior(model.tracers.P, 1, 1, 1))[1] == 0
+    groups = OceanBioME.conserved_tracers(biogeochemistry)
+    totals() = map(groups) do group
+        sum(s * value(model.tracers[name]) for (name, s) in pairs(group))
+    end
 
-    # correctly conserved mass: the organic tracers are scaled by the factor of the group which lost the most
-    # (nitrogen, since there is no nitrate or ammonia), and the DIC, CaCO₃, PO₄, and Fe make up the other groups
-    @test all(map(t -> on_architecture(CPU(), interior(t, 1, 1, 1))[1] ≈ 5/6, model.tracers[(:D, :Z, :M, :DOC, :POC, :GOC)]))
-    @test all(map(t -> on_architecture(CPU(), interior(t, 1, 1, 1))[1] ≈ 1, model.tracers[(:DIC, :CaCO₃, :PO₄)]))
+    before = totals()
+    Oceananigans.TimeSteppers.update_state!(model)
 
-    bgc = biogeochemistry.underlying_biogeochemistry
-    total(group) = sum(s * value(model.tracers[name]) for (name, s) in pairs(group))
-    groups = OceanBioME.conserved_tracers(bgc)
+    @test keys(groups) == (:carbon, :iron, :phosphate, :silicon, :nitrogen)
+    @test all(map(≈, before, totals()))
+    @test value(model.tracers.P) == 0
+    @test all(group -> all(name -> value(model.tracers[name]) ≥ 0, keys(group)), groups)
 
-    @test total(groups.carbon) ≈ 7
-    @test total(groups.nitrogen) ≈ 5 * bgc.nitrogen_redfield_ratio
-    @test total(groups.phosphate) ≈ 5 * bgc.phosphate_redfield_ratio + 1
-    @test total(groups.iron) ≈ bgc.zooplankton.micro.iron_ratio + bgc.zooplankton.meso.iron_ratio
-
-    # failed to scale silicate since nothing else in its group was available
-    set!(model, Si = -1, DSi = 0.1)
-
-    @test isnan(on_architecture(CPU(), interior(model.tracers.DSi, 1, 1, 1))[1])
-
-    # this is actually going to cause failures in conserving other groups because now we'll have less carbon etc from the M and Z...
-    set!(model, Fe = -1, Z = 1000, M = 0)
-
-    @test on_architecture(CPU(), interior(model.tracers.Fe, 1, 1, 1))[1] == 0
-    @test on_architecture(CPU(), interior(model.tracers.Z, 1, 1, 1))[1] ≈ 900
 end
+
 
 @testset "PISCES" begin
     if architecture isa CPU
