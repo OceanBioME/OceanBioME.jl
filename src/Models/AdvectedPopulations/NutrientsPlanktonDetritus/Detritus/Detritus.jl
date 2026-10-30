@@ -4,7 +4,7 @@ export Detritus, DissolvedParticulate, InstantRemineralisationDetritus, CarbonNi
 
 using Adapt
 using Oceananigans.Grids: AbstractGrid
-using OceanBioME: setup_velocity_fields, ExplicitSinking, ImplicitSinking, implicit_sinking_column!, dissolution_length
+using OceanBioME: setup_velocity_fields, ExplicitSinking, ImplicitSinking, compute_implicit_sinking!
 
 import OceanBioME: implicit_sinking_production
 
@@ -16,7 +16,9 @@ using ..NutrientsPlanktonDetritusModels:
     phosphate_ratio,
     iron_ratio,
     silicon_ratio,
-    calcium_carbonate_rain_ratio
+    calcium_carbonate_rain_ratio,
+    hard_organic_production,
+    hard_organic_remineralisation
 
 import ..NutrientsPlanktonDetritusModels: dissolved_waste, solid_waste, calcium_carbonate_dissolution, inorganic_waste, nutrient_uptake
 
@@ -34,10 +36,6 @@ import Oceananigans.Biogeochemistry:
     biogeochemical_auxiliary_fields,
     biogeochemical_drift_velocity,
     update_biogeochemical_state!
-
-using Oceananigans.Architectures: architecture
-using Oceananigans.Utils: launch!
-using Oceananigans: fields
 
 import ..NutrientsPlanktonDetritusModels:
     inorganic_nitrogen_waste,
@@ -62,22 +60,7 @@ include("single_detritus.jl")
 include("single_element.jl")
 include("carbon_nitrogen.jl")
 
-function update_biogeochemical_state!(model, detritus::AbstractSinkingDetritus{<:ImplicitSinking}, npd::NutrientsPlanktonDetritus)
-    sinking = detritus.sinking
-    grid = model.grid
-    Nz = size(grid, 3)
-
-    for name in keys(sinking.remineralisation)
-        ℓ = dissolution_length(sinking, name)
-        flux_field = isnothing(sinking.flux) ? nothing : sinking.flux[name]
-        launch!(architecture(grid), grid, :xy, implicit_sinking_column!,
-                grid, detritus, npd, fields(model), biogeochemical_auxiliary_fields(model.biogeochemistry),
-                sinking.remineralisation[name], sinking.floor_flux[name], flux_field,
-                sinking.floor_indices, ℓ,
-                sinking.open_bottom, Nz, Val(name), model.clock)
-    end
-
-    return nothing
-end
+update_biogeochemical_state!(model, detritus::AbstractSinkingDetritus{<:ImplicitSinking}, npd::NutrientsPlanktonDetritus) =
+    compute_implicit_sinking!(model, detritus.sinking, detritus, npd)
 
 end # module

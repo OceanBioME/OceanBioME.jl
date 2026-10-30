@@ -853,3 +853,232 @@ end
             calcium_carbonate_dissolution_rate = (k1, k2, k1))
     end
 end
+
+using OceanBioME.Models.NutrientsPlanktonDetritusModels: nitrogen_ratio, carbon_ratio, solid_waste, inorganic_waste,
+                                                         hard_organic_production, hard_organic_remineralisation
+using OceanBioME.Models.NutrientsPlanktonDetritusModels.InorganicCarbonModels: primary_production,
+                                                                               biological_calcium_carbonate_precipitation,
+                                                                               net_calcium_carbonate_production,
+                                                                               sinking_calcium_carbonate_dissolution,
+                                                                               hard_organic_ratio
+
+@testset "ImplicitCalciumCarbonate" begin
+    Nz = 20
+    grid = RectilinearGrid(architecture; size = (1, 1, Nz), extent = (1, 1, 2000))
+    Δz = 100.0
+
+    # light (and so production) decays over 50 m and is cut off below 300 m
+    PAR = CenterField(grid)
+    set!(PAR, (x, y, z) -> z > -300 ? 100 * exp(z / 50) : 0)
+    light_attenuation = PrescribedPhotosyntheticallyActiveRadiation(PAR)
+
+    function implicit_calcium_carbonate_model(; open_bottom, timestepper = :RungeKutta3, kwargs...)
+        inorganic_carbon = ImplicitCalciumCarbonate(grid; replicates = 2, open_bottom, store_flux = true, kwargs...)
+        biogeochemistry = MITgcmDIC(grid; inorganic_carbon, light_attenuation, open_bottom, implicit_sinking = true, store_flux = true)
+
+        model = NonhydrostaticModel(grid; biogeochemistry, advection = nothing, timestepper)
+        set!(model, Fe = 1e-3, PO₄ = 2, DOP = 0.1, DIC1 = 2000, Alk1 = 2300, DIC2 = 2100, Alk2 = 2350, O₂ = 200)
+
+        return model
+    end
+
+    @testset "construction and tracers" begin
+        ic = ImplicitCalciumCarbonate(grid)
+        @test keys(ic.sinking.floor_flux) == (:soft_CaCO₃, :hard_CaCO₃)
+        @test required_biogeochemical_tracers(ic) == (:DIC, :Alk)
+        @test required_biogeochemical_tracers(ImplicitCalciumCarbonate(grid; replicates = 2)) == (:DIC1, :DIC2, :Alk1, :Alk2)
+
+        @test_throws ArgumentError ImplicitCalciumCarbonate(grid; production_partitioning = (soft_CaCO₃ = 0.9, hard_CaCO₃ = 0.2))
+        @test_throws ArgumentError ImplicitCalciumCarbonate(grid; production_partitioning = (; CaCO₃ = 1))
+        @test_throws ArgumentError ImplicitCalciumCarbonate(grid; particulate_fraction = 1.1)
+        @test_throws ArgumentError ImplicitCalciumCarbonate(grid; hard_organic_carbon_ratio = -1)
+
+        # MARBL's 0.01 g C / g CaCO₃
+        @test ic.hard_organic_carbon_ratio ≈ 0.01 * 100.09 / 12.01
+        @test ic.particulate_fraction ≈ 0.67
+    end
+
+    @testset "particulate fraction" begin
+        for f in (0.67, 0.4)
+            model = implicit_calcium_carbonate_model(; open_bottom = true, particulate_fraction = f)
+
+            bgc = model.biogeochemistry.underlying_biogeochemistry
+            ic = bgc.inorganic_carbon
+            aux = biogeochemical_auxiliary_fields(model.biogeochemistry)
+            ρ = bgc.plankton.rain_ratio
+
+            CUDA.@allowscalar for k in Nz-2:Nz
+                # all the calcium carbonate formed, rain ratio × primary production, whatever the organic waste split
+                formed = biological_calcium_carbonate_precipitation(1, 1, k, grid, bgc.plankton, bgc, model.tracers, aux)
+                @test formed > 0
+                @test formed ≈ ρ * primary_production(1, 1, k, grid, bgc.plankton, bgc, model.tracers, aux) rtol = 1e-12
+
+                Π = sum(name -> OceanBioME.implicit_sinking_production(1, 1, k, grid, ic, bgc, model.tracers, aux, Val(name)),
+                        keys(ic.production_partitioning))
+
+                @test Π ≈ f * formed rtol = 1e-12
+
+                # the rest dissolves where it forms
+                dissolution = sinking_calcium_carbonate_dissolution(1, 1, k, values(ic.sinking.remineralisation))
+                @test net_calcium_carbonate_production(1, 1, k, grid, bgc, model.tracers, aux) ≈ Π - dissolution rtol = 1e-12
+            end
+        end
+    end
+
+    @testset "hard organic matter" begin
+        model = implicit_calcium_carbonate_model(; open_bottom = true)
+
+        bgc = model.biogeochemistry.underlying_biogeochemistry
+        ic = bgc.inorganic_carbon
+        detritus = bgc.detritus
+        aux = biogeochemical_auxiliary_fields(model.biogeochemistry)
+        fields = model.tracers
+
+        r = 0.01 * 100.09 / 12.01 / bgc.plankton.carbon_ratio # mol P / mol CaCO₃
+
+        CUDA.@allowscalar begin
+            @test hard_organic_ratio(1, 1, Nz, grid, ic, bgc, fields) ≈ r rtol = 1e-12
+
+            # its production is taken out of the POP's
+            @test OceanBioME.implicit_sinking_production(1, 1, Nz, grid, detritus, bgc, fields, aux, Val(:POP)) ≈
+                    solid_waste(1, 1, Nz, grid, bgc.plankton, bgc, fields, aux) -
+                    r * sum(name -> OceanBioME.implicit_sinking_production(1, 1, Nz, grid, ic, bgc, fields, aux, Val(name)),
+                            keys(ic.production_partitioning)) rtol = 1e-12
+
+            # the organic phosphorus flux through each face, from what is produced and remineralised (into PO₄, as
+            # `dissolved_fraction_of_remineralisation = 0`) above it, is the POP flux and the ratio × the calcium
+            # carbonate flux
+            F = 0.0
+            for k in Nz:-1:1
+                particulate_remineralisation = inorganic_waste(1, 1, k, grid, detritus, bgc, fields, aux) -
+                                               detritus.dissolved_remineralisation_rate * fields.DOP[1, 1, k]
+
+                F += (solid_waste(1, 1, k, grid, bgc.plankton, bgc, fields, aux) - particulate_remineralisation) * Δz
+
+                F_CaCO₃ = ic.sinking.flux.soft_CaCO₃[1, 1, k] + ic.sinking.flux.hard_CaCO₃[1, 1, k]
+
+                @test F ≈ detritus.sinking.flux.POP[1, 1, k] + r * F_CaCO₃ rtol = 1e-10
+            end
+
+            F_hard = r * (ic.sinking.floor_flux.soft_CaCO₃[1, 1, 1] + ic.sinking.floor_flux.hard_CaCO₃[1, 1, 1])
+            @test F_hard > 0
+            @test F ≈ detritus.sinking.floor_flux.POP[1, 1, 1] + F_hard rtol = 1e-10
+        end
+
+        # a ratio of 0 turns it off
+        model = implicit_calcium_carbonate_model(; open_bottom = true, hard_organic_carbon_ratio = 0)
+        bgc = model.biogeochemistry.underlying_biogeochemistry
+        aux = biogeochemical_auxiliary_fields(model.biogeochemistry)
+
+        CUDA.@allowscalar begin
+            @test hard_organic_production(1, 1, Nz, grid, bgc.inorganic_carbon, bgc, model.tracers, aux) == 0
+            @test all(k -> hard_organic_remineralisation(1, 1, k, grid, bgc.inorganic_carbon, bgc, model.tracers, aux) == 0, 1:Nz)
+            @test OceanBioME.implicit_sinking_production(1, 1, Nz, grid, bgc.detritus, bgc, model.tracers, aux, Val(:POP)) ==
+                    solid_waste(1, 1, Nz, grid, bgc.plankton, bgc, model.tracers, aux)
+        end
+    end
+
+    @testset "budget with an open bottom" begin
+        model = implicit_calcium_carbonate_model(; open_bottom = true, timestepper = :QuasiAdamsBashforth2)
+
+        bgc = model.biogeochemistry.underlying_biogeochemistry
+        ic = bgc.inorganic_carbon
+        tracers = model.tracers
+        R_CP = bgc.plankton.carbon_ratio
+        R_AlkP = nitrogen_ratio(bgc.plankton, bgc) + 1
+        Δt = 1day
+
+        inventory(c) = CUDA.@allowscalar sum(interior(c)) * Δz
+
+        phosphorus(tracers) = inventory(tracers.PO₄) + inventory(tracers.DOP)
+        carbon(tracers, DIC) = inventory(DIC) + R_CP * inventory(tracers.DOP)
+        alkalinity(tracers, Alk) = inventory(Alk) + R_AlkP * inventory(tracers.PO₄)
+
+        # the floor fluxes of the state the Euler step's tendencies are computed from
+        F_CaCO₃, F_P = CUDA.@allowscalar begin
+            F_CaCO₃ = ic.sinking.floor_flux.soft_CaCO₃[1, 1, 1] + ic.sinking.floor_flux.hard_CaCO₃[1, 1, 1]
+            F_CaCO₃, bgc.detritus.sinking.floor_flux.POP[1, 1, 1] + hard_organic_ratio(1, 1, 1, grid, ic, bgc, tracers) * F_CaCO₃
+        end
+
+        P₀ = phosphorus(tracers)
+        C₀ = (carbon(tracers, tracers.DIC1), carbon(tracers, tracers.DIC2))
+        A₀ = (alkalinity(tracers, tracers.Alk1), alkalinity(tracers, tracers.Alk2))
+
+        time_step!(model, Δt; euler = true)
+
+        P₁ = phosphorus(tracers)
+        C₁ = (carbon(tracers, tracers.DIC1), carbon(tracers, tracers.DIC2))
+        A₁ = (alkalinity(tracers, tracers.Alk1), alkalinity(tracers, tracers.Alk2))
+
+        @test all(name -> all(isfinite, interior(tracers[name])), keys(tracers))
+
+        @test F_P > 0 && F_CaCO₃ > 0
+        @test (P₁ - P₀) / Δt ≈ -F_P rtol = 1e-8 atol = 1e-13 * P₀ / Δt
+
+        for n in 1:2
+            @test (C₁[n] - C₀[n]) / Δt ≈ -(F_CaCO₃ + R_CP * F_P) rtol = 1e-8 atol = 1e-13 * C₀[n] / Δt
+            @test (A₁[n] - A₀[n]) / Δt ≈ -2 * F_CaCO₃ rtol = 1e-8 atol = 1e-13 * A₀[n] / Δt
+        end
+    end
+
+    @testset "dissolution follows the length scale (machine precision)" begin
+        ℓ = 300.0
+        model = implicit_calcium_carbonate_model(; open_bottom = true,
+                                                   dissolution_lengths = (; CaCO₃ = ℓ),
+                                                   production_partitioning = (; CaCO₃ = 1))
+
+        bgc = model.biogeochemistry.underlying_biogeochemistry
+        sinking = bgc.inorganic_carbon.sinking
+        aux = biogeochemical_auxiliary_fields(model.biogeochemistry)
+
+        CUDA.@allowscalar begin
+            # the flux leaving the bottom of each cell is what entered it and was produced in it, dissolving over ℓ
+            F = 0.0
+            for k in Nz:-1:1
+                Π = OceanBioME.implicit_sinking_production(1, 1, k, grid, bgc.inorganic_carbon, bgc,
+                                                           model.tracers, aux, Val(:CaCO₃))
+                F_in = F
+                F = (F_in + Π * Δz) / (1 + Δz / ℓ)
+
+                @test sinking.remineralisation.CaCO₃[1, 1, k] ≈ Π + (F_in - F) / Δz rtol = 1e-12
+            end
+
+            @test sinking.floor_flux.CaCO₃[1, 1, 1] ≈ F rtol = 1e-12
+
+            # well below the production the flux decays by 1 / (1 + Δz / ℓ) a cell, which is exp(-Δz / ℓ) to
+            # second order in Δz / ℓ
+            R = [sinking.remineralisation.CaCO₃[1, 1, k] for k in 1:Nz]
+            @test R[5] / R[6] ≈ 1 / (1 + Δz / ℓ) rtol = 1e-12
+            @test isapprox(R[5] / R[6], exp(-Δz / ℓ), atol = (Δz / ℓ)^2 / 2)
+        end
+    end
+
+    @testset "carbon and alkalinity conservation" begin
+        model = implicit_calcium_carbonate_model(; open_bottom = false)
+
+        bgc = model.biogeochemistry.underlying_biogeochemistry
+        R_AlkP = nitrogen_ratio(bgc.plankton, bgc) + 1
+
+        # organic matter leaves Alk + R_AlkP PO₄ unchanged, and the calcium carbonate formed is all dissolved in the
+        # same step (the bottom is closed)
+        C₀ = get_conservation_values(model.biogeochemistry, model.tracers)
+        A₀ = CUDA.@allowscalar sum(interior(model.tracers.Alk1)) + R_AlkP * sum(interior(model.tracers.PO₄))
+
+        for _ in 1:10
+            time_step!(model, 1day)
+        end
+
+        C₁ = get_conservation_values(model.biogeochemistry, model.tracers)
+        A₁ = CUDA.@allowscalar sum(interior(model.tracers.Alk1)) + R_AlkP * sum(interior(model.tracers.PO₄))
+
+        # the carbon of each replicate is its DIC and the DOP's carbon
+        @test keys(conserved_tracers(model.biogeochemistry).carbon1) == (:DIC1, :DOP)
+        @test isapprox(C₁.carbon1, C₀.carbon1; rtol = 1e-12)
+        @test isapprox(C₁.carbon2, C₀.carbon2; rtol = 1e-12)
+        @test isapprox(A₁, A₀; rtol = 1e-12)
+
+        # the replicates have the same tendencies (compared on the CPU: `≈` would broadcast a GPU array with a CPU one)
+        @test Array(interior(model.tracers.DIC2) .- interior(model.tracers.DIC1)) ≈ fill(100, 1, 1, Nz) rtol = 1e-12
+        @test Array(interior(model.tracers.Alk2) .- interior(model.tracers.Alk1)) ≈ fill(50, 1, 1, Nz) rtol = 1e-12
+    end
+end
