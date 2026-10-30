@@ -22,9 +22,14 @@ using ..NutrientsPlanktonDetritusModels:
     sinking_particle_mass_flux,
     stores_sinking_flux
 
+using OceanBioME: ImplicitSinking, compute_implicit_sinking!
+
+import OceanBioME: implicit_sinking_production
+
 import Oceananigans.Biogeochemistry:
     required_biogeochemical_tracers,
-    required_biogeochemical_auxiliary_fields
+    required_biogeochemical_auxiliary_fields,
+    update_biogeochemical_state!
 
 import Adapt: adapt_structure
 import Base: show, summary

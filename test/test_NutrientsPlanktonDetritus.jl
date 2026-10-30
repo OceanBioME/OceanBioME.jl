@@ -615,6 +615,63 @@ end
     @test tendency ≈ -M * (22 * Fe′ + 1.2 * FeL) / (365 * 86400)
 end
 
+using OceanBioME: ImplicitSinking, compute_implicit_sinking!, implicit_sinking_production
+using Oceananigans: fields
+
+@testset "SimpleIron with sinking scavenged iron" begin
+    grid = RectilinearGrid(architecture; size=(1, 1, 4), extent=(1, 1, 400))
+    Δz = 100
+
+    @test_throws ArgumentError SimpleIron(sinking = ImplicitSinking(grid, (; POP = 100.0)))
+
+    for open_bottom in (true, false)
+        iron = SimpleIron(scavenging = ParticleScavenging(),
+                          sinking = ImplicitSinking(grid, (; scavenged_Fe = 100.0); open_bottom))
+
+        biogeochemistry = NutrientsPlanktonDetritus(grid;
+                                                    plankton = Abiotic(),
+                                                    nutrients = Nutrients(; phosphate = OceanBioME.PO₄, iron),
+                                                    detritus = DissolvedParticulate(grid, :DOP, :POP;
+                                                                                    dissolution_lengths = (; POP = 100.0),
+                                                                                    implicit_sinking = true,
+                                                                                    store_flux = true),
+                                                    light_attenuation)
+
+        model = NonhydrostaticModel(grid; advection = nothing, biogeochemistry)
+        set!(model, Fe = 1e-3, PO₄ = 1.0)
+
+        bgc = model.biogeochemistry.underlying_biogeochemistry
+        aux = biogeochemical_auxiliary_fields(model.biogeochemistry)
+        sinking = bgc.nutrients.iron.sinking
+
+        # a POP flux of 1e-6 mmol P m⁻² s⁻¹ out of the bottom of every cell, so every cell but the top scavenges
+        interior(bgc.detritus.sinking.flux.POP)[1, 1, 1:4] .= 1e-6
+        compute_implicit_sinking!(model, sinking, bgc.nutrients.iron, bgc)
+
+        scavenged = CUDA.@allowscalar [implicit_sinking_production(1, 1, k, grid, bgc.nutrients.iron, bgc, fields(model), aux,
+                                                                   Val(:scavenged_Fe)) for k in 1:4]
+        released  = CUDA.@allowscalar [sinking.remineralisation.scavenged_Fe[1, 1, k] for k in 1:4]
+        floor     = CUDA.@allowscalar sinking.floor_flux.scavenged_Fe[1, 1, 1]
+
+        @test scavenged[4] == 0 # nothing sinks into the top cell
+        @test all(scavenged[1:3] .> 0)
+        @test all(released .≥ 0)
+
+        # the iron scavenged in the column is released in it or leaves through the floor
+        @test sum(scavenged .- released) * Δz ≈ floor atol = 1e-12 * sum(scavenged) * Δz
+        @test open_bottom ? floor > 0 : floor == 0
+
+        # the dissolved iron loses what is scavenged and gains what is released
+        for k in 1:4
+            tendency = CUDA.@allowscalar bgc(1, 1, k, grid, Val(:Fe), model.clock, model.tracers, aux)
+            @test tendency ≈ released[k] - scavenged[k] atol = 1e-6 * scavenged[1]
+        end
+
+        time_step!(model, 1.0)
+        @test CUDA.@allowscalar all(isfinite, interior(model.tracers.Fe))
+    end
+end
+
 @testset "MITgcmDIC stepping" begin
     grid = RectilinearGrid(architecture; size=(1, 1, 1), extent=(1, 1, 2))
     model = NonhydrostaticModel(grid; advection = nothing, biogeochemistry = MITgcmDIC(grid))
