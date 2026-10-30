@@ -45,6 +45,11 @@ carbonate_replicates(bgc::NutrientsPlanktonDetritus) = carbonate_replicates(bgc.
 carbonate_replicates(bgc::CompleteBiogeochemistry) = carbonate_replicates(bgc.underlying_biogeochemistry)
 carbonate_replicates(::Nothing) = ()
 
+# e.g. a sediment coupled to `DIC` exchanges it with the `DIC` of every replicate
+tracer_replicates(bgc::NutrientsPlanktonDetritus, name) = tracer_replicates(bgc.inorganic_carbon, name)
+tracer_replicates(::AbstractInorganicCarbon{L, tracers}, name) where {L, tracers} =
+    name in tracers ? replicate_name.(name, L) : (name, )
+
 Base.summary(ic::AbstractInorganicCarbon{L}) where L =
     string(nameof(typeof(ic)), length(L) > 1 ? "{realisations = $(length(L))} " : " ", required_biogeochemical_tracers(ic))
 

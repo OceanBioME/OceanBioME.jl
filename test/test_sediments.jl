@@ -165,3 +165,38 @@ models = (NonhydrostaticModel, HydrostaticFreeSurfaceModel) # exercises both `su
         end
     end
 end
+
+# The sediment's carbon goes back into the `DIC` of every replicate, so each replicate evolves exactly as the
+# single system does
+@testset "Sediment carbon reaches every carbonate replicate" begin
+    grid = RectilinearGrid(architecture; size = (1, 1, 4), extent = (1, 1, 40))
+
+    function carbon_column(inorganic_carbon)
+        sediment = SimpleMultiGSediment(grid; sinking_nitrogen = (:sPON, :bPON), sinking_carbon = (:sPOC, :bPOC))
+
+        biogeochemistry = LOBSTER(grid; inorganic_carbon, sediment,
+                                  detritus = CarbonNitrogenDissolvedParticulate(grid),
+                                  oxygen = Oxygen())
+
+        model = NonhydrostaticModel(grid; biogeochemistry)
+
+        set!(model; NO₃ = 10, NH₄ = 1, P = 0.1, Z = 0.1, O₂ = 300, sPON = 1, bPON = 1, sPOC = 6.56, bPOC = 6.56,
+                    (replicate.DIC => 2000 for replicate in carbonate_replicates(biogeochemistry))...)
+
+        for _ in 1:10
+            time_step!(model, 60)
+        end
+
+        return model
+    end
+
+    single = carbon_column(CarbonateSystem())
+    replicated = carbon_column(CarbonateSystem((:a, :b)))
+
+    # the sediment holds carbon, so it is remineralising some
+    @test all(>(0), Array(interior(single.biogeochemistry.sediment.fields.Cf)))
+
+    for replicate in carbonate_replicates(replicated.biogeochemistry)
+        @test Array(interior(replicated.tracers[replicate.DIC])) == Array(interior(single.tracers.DIC))
+    end
+end

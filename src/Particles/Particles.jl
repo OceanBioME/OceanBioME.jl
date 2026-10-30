@@ -7,7 +7,7 @@ using Adapt
 using KernelAbstractions: @kernel, @index
 
 using Oceananigans: NonhydrostaticModel, HydrostaticFreeSurfaceModel
-using OceanBioME: DiscreteBiogeochemistry, ContinuousBiogeochemistry
+using OceanBioME: DiscreteBiogeochemistry, ContinuousBiogeochemistry, tracer_replicates
 
 using Oceananigans.Architectures: architecture, on_architecture
 using Oceananigans.Grids: AbstractGrid
