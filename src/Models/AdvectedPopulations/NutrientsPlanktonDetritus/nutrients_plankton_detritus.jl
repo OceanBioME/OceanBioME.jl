@@ -66,6 +66,10 @@ function update_biogeochemical_state!(model, npd::NutrientsPlanktonDetritus)
     update_biogeochemical_state!(model, npd.plankton, npd)
     update_biogeochemical_state!(model, npd.detritus, npd)
     update_biogeochemical_state!(model, npd.inorganic_carbon, npd)
+
+    # after the detritus and inorganic carbon, since the iron scavenged onto their sinking particles may sink too
+    update_biogeochemical_state!(model, npd.nutrients.iron, npd)
+
     update_biogeochemical_state!(model, npd.oxygen, npd)
 
     return nothing
