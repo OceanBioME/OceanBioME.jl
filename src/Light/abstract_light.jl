@@ -8,6 +8,9 @@ abstract type AbstractSingleBandExponentialLightAttenuation{BA, IN, CA, SP} <: A
 
 const AbstractLight{BA, IN, CA, SP} = AbstractSingleBandExponentialLightAttenuation{BA, IN, CA, SP}
 
+# The integration stops at the first immersed cell since light does not penetrate the seafloor,
+# so cells below it are left at zero rather than being (needlessly) computed
+
 # single band
 @kernel function integrate_light_attenuation!(la::AbstractLight{1, Nothing}, 
                                               PAR, grid, clock, Chl, surface_PAR)
@@ -17,6 +20,8 @@ const AbstractLight{BA, IN, CA, SP} = AbstractSingleBandExponentialLightAttenuat
     PARᵢ = getbc(surface_PAR, i, j, grid, clock, Chl)
 
     @inbounds for k in grid.Nz:-1:1
+        immersed_cell(i, j, k, grid) && break
+
         eᵏᵈᶻ = exponential_face_to_face_attenuation(i, j, k, grid, la, clock, Chl)
         PAR[i, j, k] = - PARᵢ * (1 - eᵏᵈᶻ)/log(eᵏᵈᶻ)
         PARᵢ *= eᵏᵈᶻ
@@ -34,6 +39,8 @@ end
     @inbounds PARᵢ[i, j, grid.Nz+1] = PAR⁰
 
     @inbounds for k in grid.Nz:-1:1
+        immersed_cell(i, j, k, grid) && break
+
         eᵏᵈᶻ = exponential_face_to_face_attenuation(i, j, k, grid, la, clock, Chl)
 
         PARᵢ[i, j, k] = PARᵢ[i, j, k+1] * eᵏᵈᶻ
@@ -54,6 +61,8 @@ end
     K = initial_attenuation(la, eltype(grid))
 
     @inbounds for k in grid.Nz:-1:1
+        immersed_cell(i, j, k, grid) && break
+
         Δz = Δzᵃᵃᶜ(i, j, k, grid)
         t = exponential_face_to_face_attenuation(i, j, k, grid, la, clock, Chl, Δz)
 
@@ -75,6 +84,8 @@ end
     K = initial_attenuation(la, eltype(grid))
 
     @inbounds for k in grid.Nz:-1:1
+        immersed_cell(i, j, k, grid) && break
+
         Δz = Δzᵃᵃᶜ(i, j, k, grid)
         t = exponential_face_to_face_attenuation(i, j, k, grid, la, clock, Chl, Δz)
         K_next = attenuate(K, t, la)

@@ -12,6 +12,9 @@ using Oceananigans.Biogeochemistry: update_biogeochemical_state!,
                                     required_biogeochemical_tracers,
                                     biogeochemical_auxiliary_fields
 using Oceananigans.Fields: ZFaceField
+using Oceananigans.Grids: znode
+
+using OceanBioME.Light: compute_euphotic_depth!
 
 Pᵢ(x,y,z) = 2.5 + z
 
@@ -308,4 +311,71 @@ end
             @test issorted(PAR_interface)
         end
     end
+end
+
+@testset "Light is not computed below the seafloor" begin
+    # Column 1 has `Nz_wet` wet cells above a flat seafloor and column 2 is land. The light in the
+    # wet cells must be the same as on the underlying grid and the cells below the seafloor must stay zero
+    Nz, Nz_wet = 20, 8
+    k_bottom = Nz - Nz_wet + 1 # the last wet cell of column 1, and its bottom face
+
+    bottom(x, y) = ifelse(x < 1, -Nz_wet, 0)
+
+    build_light = (grid -> TwoBandPhotosyntheticallyActiveRadiation(grid, 100),
+                   grid -> TwoBandPhotosyntheticallyActiveRadiation(grid, 100; interface_field = ZFaceField(grid)),
+                   grid -> PrescribedAttenuationPAR(grid, 100; attenuation = 0.1),
+                   grid -> PrescribedAttenuationPAR(grid, 100; attenuation = 0.1, interface_field = ZFaceField(grid)),
+                   grid -> MultiBandPhotosyntheticallyActiveRadiation(grid, 100))
+
+    for FT in (Float64, Float32), light in build_light
+        underlying_grid = RectilinearGrid(architecture, FT; size = (2, 2, Nz), extent = (2, 2, Nz))
+
+        grid = ImmersedBoundaryGrid(underlying_grid, GridFittedBottom(bottom))
+
+        fields = map((grid, underlying_grid)) do grid
+            light_attenuation = light(grid)
+
+            biogeochemistry = NPZD(grid; light_attenuation)
+
+            model = HydrostaticFreeSurfaceModel(grid; biogeochemistry, buoyancy = nothing,
+                                                tracers = unique((required_biogeochemical_tracers(biogeochemistry)..., :T, :S)))
+
+            set!(model, P = 1)
+
+            # the multi band model also returns the total PAR as an operation
+            return filter(f -> f isa Field, values(biogeochemical_auxiliary_fields(light_attenuation)))
+        end
+
+        for (immersed, underlying) in zip(fields...)
+            immersed, underlying = Array(interior(immersed)), Array(interior(underlying))
+
+            @test immersed[1, 1, k_bottom:end] == underlying[1, 1, k_bottom:end]
+            @test all(immersed[1, 1, 1:k_bottom-1] .== 0)
+            @test all(immersed[2, 1, 1:Nz] .== 0) # the top face of an interface field is set to the surface value
+        end
+    end
+end
+
+@testset "Euphotic depth is not searched for below the seafloor" begin
+    # The light drops below the cutoff at ≈ 14 m which is below the seafloor in column 1 but not in column 2
+    Nz = 20
+    bottom(x, y) = ifelse(x < 1, -8, -18)
+
+    grid = ImmersedBoundaryGrid(RectilinearGrid(architecture; size = (2, 2, Nz), extent = (2, 2, Nz)), GridFittedBottom(bottom))
+
+    PAR = CenterField(grid)
+    set!(PAR, (x, y, z) -> 100 * exp(z / 2))
+
+    euphotic_depth = Field{Center, Center, Nothing}(grid)
+    compute_euphotic_depth!(euphotic_depth, PAR, 1e-3)
+
+    zₑᵤ = Array(interior(euphotic_depth))[:, 1, 1]
+
+    surface_PAR = @allowscalar (PAR[1, 1, Nz] + PAR[1, 1, Nz + 1]) / 2 # as in the kernel
+
+    # not reached in the water column so falls back to (below) the bottom of the grid, not somewhere in the seafloor
+    @test zₑᵤ[1] == @allowscalar znode(1, 1, 0, grid, Center(), Center(), Center())
+
+    # the interpolation is exact for an exponential profile
+    @test zₑᵤ[2] ≈ 2 * log(1e-3 * surface_PAR / 100)
 end

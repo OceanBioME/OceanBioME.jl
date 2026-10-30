@@ -40,7 +40,8 @@ export TwoBandPhotosyntheticallyActiveRadiation,
        PARFromShortwave
 
 # airsea flux
-export GasExchange, CarbonDioxideGasExchangeBoundaryCondition, OxygenGasExchangeBoundaryCondition, GasExchangeBoundaryCondition
+export GasExchange, CarbonDioxideGasExchangeBoundaryCondition, OxygenGasExchangeBoundaryCondition, GasExchangeBoundaryCondition,
+       GarciaGordonOxygenSaturation
 
 # carbon chemistry
 export CarbonChemistry

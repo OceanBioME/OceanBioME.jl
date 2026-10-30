@@ -47,7 +47,7 @@ And the silicate and phosphate concentrations are assumed to be zero but can sim
 carbon_chemistry(; DIC, Alk, T, S, silicate = 2, phosphate = 1)
 ```
 
-The same code can also be used to compute ``fCO_2`` when the pH (free) is already known by passing it in the same way:
+The same code can also be used to compute ``fCO_2`` when the (total scale) pH is already known by passing it in the same way:
 ```@example carbon-chem
 carbon_chemistry(; DIC, pH = 8.1, T, S)
 ```
@@ -272,7 +272,8 @@ Alk &\approx \frac{[DIC][\ce{H^+}]K_1}{[\ce{H^+}]^2 + K_1[\ce{H^+}] + K_1K_2}\\
 
 This gives us a second equation from total alkalinity (which we must already know) with one unknown, ``[\ce{H^+}]``. 
 Our model solves for ``[\ce{H^+}]`` using a bisection method to an accuracy of ``10^{-10}``, having approximated the equilibrium constants from parametrisations described below.
-We can then determine the pH as, ``pH = -\log_{10}([\ce{H^+}])``.
+We can then determine the pH as, ``pH = -\log_{10}([\ce{H^+}])``, which is on the "total" scale (`Val(:pHᵗ)`) since ``[\ce{H^+}]`` includes the hydrogen ions bound in ``\ce{HSO_4^-}``.
+The "free" scale pH (`Val(:pHᶠ)`) only counts the free hydrogen ions, ``[\ce{H^+}]/(1 + [\text{Sulf}]/K_S)``, and the "seawater" scale pH (`Val(:pHˢ)`) also counts those bound in ``\ce{HF}``, ``[\ce{H^+}] + [\ce{HF}]``.
 
 ### Carbon dioxide
 Now that we know ``[DIC]``, ``Alk``, and ``[\ce{H^+}]`` we can return to the equation for total dissolved inorganic carbon to find the concentration of aqueous carbon dioxide
