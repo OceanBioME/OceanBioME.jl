@@ -11,6 +11,7 @@ include("test_NutrientsPlanktonDetritus.jl")
 include("test_PISCES.jl")
 include("test_gasexchange_carbon_chem.jl")
 include("test_sediments.jl")
+include("test_checkpointing.jl")
 
 if architecture == CPU()
     # box models (probably) don't work on GPU, and it wouldn't be faster anyway

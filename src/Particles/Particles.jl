@@ -58,6 +58,7 @@ include("tendencies.jl")
 include("time_stepping.jl")
 include("update_tracer_tendencies.jl")
 include("set.jl")
+include("checkpointing.jl")
 
 """
     BiogeochemicalParticles(number;

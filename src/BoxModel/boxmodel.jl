@@ -17,11 +17,11 @@ using Oceananigans.Grids: RectilinearGrid, Flat
 using Oceananigans.TimeSteppers: tick!, TimeStepper
 using Oceananigans: UpdateStateCallsite, TendencyCallsite
 
-using OceanBioME: BoxModelGrid
+using OceanBioME: BoxModelGrid, biogeochemistry_state
 using JLD2
 
 import Oceananigans.Simulations: run!
-import Oceananigans: set!, fields
+import Oceananigans: set!, fields, prognostic_state, restore_prognostic_state!
 import Oceananigans.Fields: regularize_field_boundary_conditions, TracerFields, interpolate
 import Oceananigans.Architectures: architecture
 import Oceananigans.Models: default_nan_checker, iteration, AbstractModel, prognostic_fields
@@ -143,6 +143,19 @@ function set!(model::BoxModel; kwargs...)
 end
 
 default_included_properties(::BoxModel) = [:grid]
+
+prognostic_state(model::BoxModel) = (clock = prognostic_state(model.clock),
+                                     fields = prognostic_state(model.fields),
+                                     timestepper = prognostic_state(model.timestepper),
+                                     biogeochemistry = biogeochemistry_state(model.biogeochemistry))
+
+function restore_prognostic_state!(model::BoxModel, from)
+    restore_prognostic_state!(model.clock, from.clock)
+    restore_prognostic_state!(model.fields, from.fields)
+    restore_prognostic_state!(model.timestepper, from.timestepper)
+    restore_prognostic_state!(model.biogeochemistry, from.biogeochemistry)
+    return model
+end
 
 include("timesteppers.jl")
 include("output_writer.jl")
