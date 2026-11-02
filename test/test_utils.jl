@@ -102,17 +102,20 @@ group_totals(model, groups) = map(group -> sum(scalefactor * tracer_value(model,
     end
 
     @testset "Replicated inorganic carbon" begin
-        for inorganic_carbon in (CarbonateSystem(2), ExplicitCalciumCarbonate(grid; replicates = 2))
+        for (inorganic_carbon, carbon_groups) in ((CarbonateSystem(2), (:carbon1, :carbon2)),
+                                                  (ExplicitCalciumCarbonate(grid; replicates = 2), (:carbon1, :carbon2)),
+                                                  (ExplicitCalciumCarbonate(grid; replicates = (:a, :b)), (:carbon_a, :carbon_b)))
             biogeochemistry = LOBSTER(grid; inorganic_carbon, scale_negatives = true, light_attenuation)
             model = NonhydrostaticModel(grid; biogeochemistry, advection = nothing,
                                         auxiliary_fields = (T = ConstantField(15.0), S = ConstantField(35.0)))
             groups = conserved_tracers(biogeochemistry)
+            a, b = carbonate_replicates(biogeochemistry)
 
-            @test keys(groups) == (:nitrogen, :carbon1, :carbon2)
+            @test keys(groups) == (:nitrogen, carbon_groups...)
 
-            for (DIC1, DIC2) in ((2000, 2000), (2000, 2100))
-                set_tracers!(model; NO₃ = 10, NH₄ = 0.1, P = -0.5, Z = 0.5, DOM = 0.2, sPOM = 0.1, bPOM = 0.1, DIC1, DIC2)
-                inorganic_carbon isa ExplicitCalciumCarbonate && set_tracers!(model; CaCO₃1 = 1, CaCO₃2 = 1)
+            for (DIC_a, DIC_b) in ((2000, 2000), (2000, 2100))
+                set_tracers!(model; NO₃ = 10, NH₄ = 0.1, P = -0.5, Z = 0.5, DOM = 0.2, sPOM = 0.1, bPOM = 0.1, (a.DIC => DIC_a, b.DIC => DIC_b)...)
+                inorganic_carbon isa ExplicitCalciumCarbonate && set_tracers!(model; (a.CaCO₃ => 1, b.CaCO₃ => 1)...)
 
                 before = group_totals(model, groups)
                 update_state!(model)
@@ -121,7 +124,7 @@ group_totals(model, groups) = map(group -> sum(scalefactor * tracer_value(model,
                 @test all(map(≈, after, before))
 
                 # identical replicates stay identical
-                @test (tracer_value(model, :DIC1) == tracer_value(model, :DIC2)) == (DIC1 == DIC2)
+                @test (tracer_value(model, a.DIC) == tracer_value(model, b.DIC)) == (DIC_a == DIC_b)
             end
         end
     end
