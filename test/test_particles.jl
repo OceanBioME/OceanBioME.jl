@@ -137,3 +137,34 @@ end
 
     @test interior(model.tracers.B, 1, 1, 3) .≈ 0.8
 end
+
+struct CarbonUptake end
+
+@inline (::CarbonUptake)(::Val{:A}, t, A) = zero(A)
+@inline (::CarbonUptake)(::Val{:DIC}, t, A) = -0.1
+
+@inline required_particle_fields(::CarbonUptake) = (:A, )
+@inline required_tracers(::CarbonUptake) = tuple()
+@inline coupled_tracers(::CarbonUptake) = (:DIC, )
+
+@testset "Particle-tracer uptake from every carbonate replicate" begin
+    for inorganic_carbon in (CarbonateSystem(), CarbonateSystem(2), CarbonateSystem((:a, :b)))
+        particles = BiogeochemicalParticles(3; grid, biogeochemistry = CarbonUptake(), advection = nothing)
+
+        # with no plankton the particles are the only thing changing the `DIC`
+        biogeochemistry = NutrientsPlanktonDetritus(grid; inorganic_carbon, particles)
+
+        model = NonhydrostaticModel(grid; biogeochemistry)
+
+        DIC_names = map(replicate -> replicate.DIC, carbonate_replicates(biogeochemistry))
+
+        set!(model; (name => 1 for name in DIC_names)...)
+        set!(particles, x = 0.5, y = 0.5)
+
+        time_step!(model, 1)
+
+        for name in DIC_names
+            @test interior(model.tracers[name], 1, 1, 3) .≈ 0.7
+        end
+    end
+end

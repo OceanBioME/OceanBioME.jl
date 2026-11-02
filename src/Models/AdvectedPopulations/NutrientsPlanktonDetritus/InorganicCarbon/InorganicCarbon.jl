@@ -6,6 +6,8 @@ using Oceananigans.Units
 
 using OceanBioME: CompleteBiogeochemistry
 
+import OceanBioME: tracer_replicates
+
 using ..NutrientsPlanktonDetritusModels:
     NutrientsPlanktonDetritus,
     NPD,
