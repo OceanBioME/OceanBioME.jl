@@ -35,9 +35,10 @@ end
 ##### Infastructure to rescale negative values
 #####
 
-struct ScaleNegativeTracers{FA, SA, SH, OT, FV}
+struct ScaleNegativeTracers{FA, SA, FO, SH, OT, FV}
              tracers :: FA
         scalefactors :: SA
+             follows :: FO
               shared :: SH
     first_own_tracer :: OT
   invalid_fill_value :: FV
@@ -45,7 +46,7 @@ end
 
 """
     ScaleNegativeTracers(tracers; scalefactors = ones(length(tracers)), invalid_fill_value = NaN)
-    ScaleNegativeTracers(groups::NamedTuple; invalid_fill_value = NaN)
+    ScaleNegativeTracers(groups::NamedTuple; followers = (), invalid_fill_value = NaN)
 
 Constructs a modifier to scale `tracers` so that none are negative, while conserving their total
 weighted by `scalefactors`. Use like:
@@ -72,6 +73,11 @@ every group is conserved (if none of them is positive, the first one gets the di
 share tracers must therefore be given to the same `ScaleNegativeTracers`, and each group needs at least one
 tracer of its own. Scale factors can not be negative, and a tracer with a zero scale factor is not part of
 the group.
+
+The groups named in `followers` follow the others instead: the others are scaled as if they weren't there,
+and then the tracers that are only in a follower make up the change to its total in the same way. For
+example, the carbon of every replicate of a carbonate system but the first follows, so that the replicates
+don't change the biology they share, or each other.
 
 After scaling, the halos of the tracers are filled again so that the fluxes through the boundaries use the
 scaled values.
@@ -113,17 +119,17 @@ Construct a modifier to scale the conserved tracers in `bgc` biogeochemistry.
 
 Groups whose scale factors have both signs are left out: their total (e.g. the oxygen in
 `NutrientsPlanktonDetritus` models, which counts organic matter as the oxygen needed to respire it)
-can be negative when no tracer is.
+can be negative when no tracer is. The groups in `follower_groups(bgc)` follow the others.
 """
 function ScaleNegativeTracers(bgc::AbstractBiogeochemistry; invalid_fill_value = NaN, warn = false)
     groups = map(group_scalefactors, conserved_tracers(bgc))
 
     names = filter(name -> all(≥(0), values(groups[name])), keys(groups))
 
-    return ScaleNegativeTracers(groups[names]; invalid_fill_value, warn)
+    return ScaleNegativeTracers(groups[names]; followers = follower_groups(bgc), invalid_fill_value, warn)
 end
 
-function ScaleNegativeTracers(groups::NamedTuple; invalid_fill_value = NaN, warn = false)
+function ScaleNegativeTracers(groups::NamedTuple; followers = (), invalid_fill_value = NaN, warn = false)
     warn && error("Warning not currently implemented")
 
     groups = map(group_scalefactors, groups)
@@ -137,14 +143,27 @@ function ScaleNegativeTracers(groups::NamedTuple; invalid_fill_value = NaN, warn
     groups = map(group -> (; (name => s for (name, s) in pairs(group) if s > 0)...), groups)
     groups = (; (group_name => group for (group_name, group) in pairs(groups) if !isempty(group))...)
 
+    followers ⊆ keys(groups) || throw(ArgumentError("The followers $followers are not all groups $(keys(groups))."))
+
     tracers = Tuple(unique(Symbol[name for group in groups for name in keys(group)]))
 
     scalefactors = map(group -> map(name -> float(get(group, name, 0)), tracers), groups)
 
-    shared = map(n -> count(s -> s[n] > 0, values(scalefactors)) > 1, Tuple(1:length(tracers)))
+    follows = map(in(followers), keys(groups))
 
-    first_own_tracer = map(keys(scalefactors), values(scalefactors)) do group_name, s
-        n = findfirst(n -> (s[n] > 0) & !shared[n], 1:length(tracers))
+    # how many of the groups which don't follow each tracer is in
+    leaders = map(n -> count(g -> (scalefactors[g][n] > 0) & !follows[g], 1:length(groups)), Tuple(1:length(tracers)))
+
+    shared = map(>(1), leaders)
+
+    for (n, name) in enumerate(tracers)
+        leaders[n] > 0 || count(s -> s[n] > 0, scalefactors) == 1 ||
+            throw(ArgumentError("$name is in more than one of the followers but in none of the other groups."))
+    end
+
+    # a follower's own tracers are those in none of the groups which don't follow
+    first_own_tracer = map(keys(scalefactors), values(scalefactors), follows) do group_name, s, follower
+        n = findfirst(n -> (s[n] > 0) & ifelse(follower, leaders[n] == 0, !shared[n]), 1:length(tracers))
 
         isnothing(n) && throw(ArgumentError("All of the tracers in the $group_name group are also in other groups, but each " *
                                             "group needs a tracer of its own to make up the changes to its total."))
@@ -152,7 +171,7 @@ function ScaleNegativeTracers(groups::NamedTuple; invalid_fill_value = NaN, warn
         return n
     end
 
-    return ScaleNegativeTracers(tracers, scalefactors, shared, first_own_tracer, invalid_fill_value)
+    return ScaleNegativeTracers(tracers, scalefactors, follows, shared, first_own_tracer, invalid_fill_value)
 end
 
 group_scalefactors(group::NamedTuple) = group
@@ -166,7 +185,8 @@ function show(io::IO, scaler::ScaleNegativeTracers)
     for (n, (group_name, scalefactors)) in enumerate(pairs(scaler.scalefactors))
         group = (; (name => s for (name, s) in zip(scaler.tracers, scalefactors) if s > 0)...)
 
-        print(io, "\n", n == length(scaler.scalefactors) ? "└── " : "├── ", group_name, ": ", group)
+        print(io, "\n", n == length(scaler.scalefactors) ? "└── " : "├── ", group_name,
+                  scaler.follows[n] ? " (follows)" : "", ": ", group)
     end
 end
 
@@ -181,7 +201,7 @@ function update_biogeochemical_state!(model, scale::ScaleNegativeTracers)
 
     launch!(architecture(grid), grid, :xyz, _scale_negative_tracers!,
             map(tracer -> tracer.data, tracers), grid, scalefactors,
-            scale.shared, scale.first_own_tracer, convert(FT, scale.invalid_fill_value))
+            scale.follows, scale.shared, scale.first_own_tracer, convert(FT, scale.invalid_fill_value))
 
     # `update_state!` filled the halos before calling this, so they still hold the values from before the scaling
     synchronize_communication!(tracers)
@@ -190,10 +210,10 @@ function update_biogeochemical_state!(model, scale::ScaleNegativeTracers)
     return nothing
 end
 
-@kernel function _scale_negative_tracers!(tracers, grid, scalefactors, shared, first_own_tracer, invalid_fill_value)
+@kernel function _scale_negative_tracers!(tracers, grid, scalefactors, follows, shared, first_own_tracer, invalid_fill_value)
     i, j, k = @index(Global, NTuple)
 
-    scale_negative_tracers!(i, j, k, grid, tracers, scalefactors, shared, first_own_tracer, invalid_fill_value)
+    scale_negative_tracers!(i, j, k, grid, tracers, scalefactors, follows, shared, first_own_tracer, invalid_fill_value)
 end
 
 # The tracers are passed as a tuple and every loop over them is unrolled with `ntuple`,
@@ -210,7 +230,7 @@ end
     return nothing
 end
 
-@inline function scale_negative_values(c::NTuple{M, Any}, s::NTuple{G, Any}, shared,
+@inline function scale_negative_values(c::NTuple{M, Any}, s::NTuple{G, Any}, follows, shared,
                                        first_own_tracer, invalid_fill_value) where {M, G}
 
     c⁺ = ntuple(n -> ifelse(c[n] > 0, c[n], zero(c[n])), Val(M))
@@ -222,8 +242,8 @@ end
     # the factor that would scale the positive tracers of each group to its total if it was the only group
     f = ntuple(g -> ifelse(p[g] > 0, ifelse(t[g] < 0, invalid_fill_value, t[g]) / p[g], one(p[g])), Val(G))
 
-    # a tracer in several groups is scaled by the smallest factor of its groups
-    φ = ntuple(n -> reduce(min, ntuple(g -> ifelse(s[g][n] > 0, f[g], one(f[g])), Val(G))), Val(M))
+    # a tracer in several groups is scaled by the smallest factor of its groups which don't follow the others
+    φ = ntuple(n -> reduce(min, ntuple(g -> ifelse((s[g][n] > 0) & !follows[g], f[g], one(f[g])), Val(G))), Val(M))
 
     # the tracers which are only in one group then hold the rest of its total (r): what its positive ones held (q)
     # plus the change (Δ) made by zeroing the negative tracers and scaling the shared ones
@@ -239,14 +259,46 @@ end
     β = ntuple(g -> ifelse(q[g] > 0, r[g] / q[g], zero(r[g])), Val(G))
     remainder = ntuple(g -> ifelse(!(q[g] > 0) & (r[g] > 0), r[g], zero(r[g])) / selected(s[g], first_own_tracer[g]), Val(G))
 
-    return ntuple(Val(M)) do n
-        βₙ = sum(ntuple(g -> ifelse(s[g][n] > 0, β[g], zero(β[g])), Val(G)))
+    rescaled = ntuple(Val(M)) do n
+        βₙ = sum(ntuple(g -> ifelse((s[g][n] > 0) & !follows[g], β[g], zero(β[g])), Val(G)))
         remainderₙ = sum(ntuple(g -> ifelse(first_own_tracer[g] == n, remainder[g], zero(remainder[g])), Val(G)))
 
         scaled = ifelse(shared[n], φ[n], βₙ) * c[n]
         filled = ifelse(shared[n], zero(c[n]), remainderₙ)
 
         ifelse(c[n] > 0, scaled, ifelse(isnan(c[n]), c[n], filled))
+    end
+
+    return follow(rescaled, c, c⁺, s, follows, first_own_tracer, invalid_fill_value)
+end
+
+# The followers keep the values that the other groups gave the tracers they share with them, and their own tracers
+# (those in none of the other groups) hold the rest of their totals in the same way. If those can't, because the
+# shared tracers took up more than a follower's total, it is filled like a group whose total is negative
+@inline function follow(rescaled::NTuple{M, Any}, c, c⁺, s::NTuple{G, Any}, follows, first_own_tracer, invalid_fill_value) where {M, G}
+    reduce(|, follows) || return rescaled
+
+    led = ntuple(n -> reduce(|, ntuple(g -> (s[g][n] > 0) & !follows[g], Val(G))), Val(M))
+
+    Δ = ntuple(n -> c[n] - ifelse(led[n], rescaled[n], c⁺[n]), Val(M))
+    own = ntuple(n -> ifelse(led[n], zero(c⁺[n]), c⁺[n]), Val(M))
+    held = ntuple(n -> ifelse(led[n], rescaled[n], zero(rescaled[n])), Val(M))
+
+    q = ntuple(g -> weighted_sum(s[g], own), Val(G))
+
+    r = ntuple(Val(G)) do g
+        rᵍ = q[g] + weighted_sum(s[g], Δ)
+        ifelse(rᵍ < 0, invalid_fill_value - weighted_sum(s[g], held), rᵍ)
+    end
+
+    β = ntuple(g -> ifelse(q[g] > 0, r[g] / q[g], zero(r[g])), Val(G))
+    remainder = ntuple(g -> ifelse(!(q[g] > 0) & (r[g] > 0), r[g], zero(r[g])) / selected(s[g], first_own_tracer[g]), Val(G))
+
+    return ntuple(Val(M)) do n
+        βₙ = sum(ntuple(g -> ifelse((s[g][n] > 0) & follows[g], β[g], zero(β[g])), Val(G)))
+        remainderₙ = sum(ntuple(g -> ifelse(follows[g] & (first_own_tracer[g] == n), remainder[g], zero(remainder[g])), Val(G)))
+
+        ifelse(led[n], rescaled[n], ifelse(c[n] > 0, βₙ * c[n], ifelse(isnan(c[n]), c[n], remainderₙ)))
     end
 end
 
