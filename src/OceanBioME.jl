@@ -11,7 +11,7 @@ export Biogeochemistry
 export NutrientsPlanktonDetritus
 export NPZD, LOBSTER, ImplicitBiology, MITgcmDIC, PISCES, DepthDependantSinkingSpeed, PrescribedLatitude, ModelLatitude, PISCESModel
 
-export Nutrients, NitrateAmmonia, SimpleIron
+export Nutrients, NitrateAmmonia, SimpleIron, ParticleScavenging
 export IronDustDeposition, IronDustDepositionForcing
 export CarbonateSystem, ExplicitCalciumCarbonate, ImplicitCalciumCarbonate
 export Abiotic, ImplicitProductivity, PhytoZoo
