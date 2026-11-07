@@ -1,6 +1,6 @@
 module InorganicCarbonModels
 
-export CarbonateSystem, ExplicitCalciumCarbonate
+export CarbonateSystem, ExplicitCalciumCarbonate, ImplicitCalciumCarbonate
 
 using Oceananigans.Units
 
@@ -37,11 +37,14 @@ import Oceananigans.Biogeochemistry:
 import ..NutrientsPlanktonDetritusModels:
     carbon_ratio,
     component_tendency,
-    component_drift_velocity
+    component_drift_velocity,
+    hard_organic_production,
+    hard_organic_remineralisation
 
 include("abstract_inorganic_carbon.jl")
 include("defaults.jl")
 include("implicit_calcium_carbonate.jl")
 include("explicit_calcium_carbonate.jl")
+include("implicit_sinking_calcium_carbonate.jl")
 
 end # module
