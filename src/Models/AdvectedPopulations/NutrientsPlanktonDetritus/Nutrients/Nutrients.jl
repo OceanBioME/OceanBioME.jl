@@ -20,7 +20,8 @@ using ..NutrientsPlanktonDetritusModels:
     inorganic_iron_waste,
     inorganic_silicon_waste,
     sinking_particle_mass_flux,
-    stores_sinking_flux
+    stores_sinking_flux,
+    particulate_iron_production
 
 using OceanBioME: ImplicitSinking, compute_implicit_sinking!
 

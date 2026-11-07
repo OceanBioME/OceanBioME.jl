@@ -618,7 +618,7 @@ end
 using OceanBioME: ImplicitSinking, compute_implicit_sinking!, implicit_sinking_production
 using Oceananigans: fields
 
-@testset "SimpleIron with sinking scavenged iron" begin
+@testset "SimpleIron with sinking particulate iron" begin
     grid = RectilinearGrid(architecture; size=(1, 1, 4), extent=(1, 1, 400))
     Δz = 100
 
@@ -626,7 +626,7 @@ using Oceananigans: fields
 
     for open_bottom in (true, false)
         iron = SimpleIron(scavenging = ParticleScavenging(),
-                          sinking = ImplicitSinking(grid, (; scavenged_Fe = 100.0); open_bottom))
+                          sinking = ImplicitSinking(grid, (; PFe = 100.0); open_bottom))
 
         biogeochemistry = NutrientsPlanktonDetritus(grid;
                                                     plankton = Abiotic(),
@@ -649,9 +649,9 @@ using Oceananigans: fields
         compute_implicit_sinking!(model, sinking, bgc.nutrients.iron, bgc)
 
         scavenged = CUDA.@allowscalar [implicit_sinking_production(1, 1, k, grid, bgc.nutrients.iron, bgc, fields(model), aux,
-                                                                   Val(:scavenged_Fe)) for k in 1:4]
-        released  = CUDA.@allowscalar [sinking.remineralisation.scavenged_Fe[1, 1, k] for k in 1:4]
-        floor     = CUDA.@allowscalar sinking.floor_flux.scavenged_Fe[1, 1, 1]
+                                                                   Val(:PFe)) for k in 1:4]
+        released  = CUDA.@allowscalar [sinking.remineralisation.PFe[1, 1, k] for k in 1:4]
+        floor     = CUDA.@allowscalar sinking.floor_flux.PFe[1, 1, 1]
 
         @test scavenged[4] == 0 # nothing sinks into the top cell
         @test all(scavenged[1:3] .> 0)
@@ -670,6 +670,60 @@ using Oceananigans: fields
         time_step!(model, 1.0)
         @test CUDA.@allowscalar all(isfinite, interior(model.tracers.Fe))
     end
+end
+
+using OceanBioME.Models.NutrientsPlanktonDetritusModels: solid_waste
+
+@testset "ImplicitProductivity with IronQuota" begin
+    grid = RectilinearGrid(architecture; size=(1, 1, 4), extent=(1, 1, 400))
+    Δz = 100
+
+    plankton = ImplicitProductivity(; iron_ratio = IronQuota(; maximum_ratio = 4e-3, minimum_ratio = 3e-4, saturating_iron = 3e-4),
+                                      nutrient_half_saturations = (phosphate = 0.5, iron = 1e-4))
+
+    iron = SimpleIron(scavenging = 0.0, sinking = ImplicitSinking(grid, (; PFe = 100.0)))
+
+    biogeochemistry = NutrientsPlanktonDetritus(grid;
+                                                plankton,
+                                                nutrients = Nutrients(; phosphate = OceanBioME.PO₄, iron),
+                                                detritus = DissolvedParticulate(grid, :DOP, :POP;
+                                                                                dissolution_lengths = (; POP = 100.0),
+                                                                                implicit_sinking = true),
+                                                light_attenuation)
+
+    model = NonhydrostaticModel(grid; advection = nothing, biogeochemistry)
+
+    # from the bottom: the quota at its minimum, on its ramp, saturated, and above saturation
+    Fe = [1e-5, 1.5e-4, 3e-4, 1e-3]
+    Q  = [3e-4, 2e-3,   4e-3, 4e-3]
+    set!(model, Fe = reshape(Fe, 1, 1, 4), PO₄ = 1.0, DOP = 0.1)
+
+    bgc = model.biogeochemistry.underlying_biogeochemistry
+    aux = biogeochemical_auxiliary_fields(model.biogeochemistry)
+    sinking = bgc.nutrients.iron.sinking
+
+    compute_implicit_sinking!(model, sinking, bgc.nutrients.iron, bgc)
+
+    produced = CUDA.@allowscalar [implicit_sinking_production(1, 1, k, grid, bgc.nutrients.iron, bgc, fields(model), aux,
+                                                              Val(:PFe)) for k in 1:4]
+    waste    = CUDA.@allowscalar [solid_waste(1, 1, k, grid, bgc.plankton, bgc, fields(model), aux) for k in 1:4]
+    released = CUDA.@allowscalar [sinking.remineralisation.PFe[1, 1, k] for k in 1:4]
+    floor    = CUDA.@allowscalar sinking.floor_flux.PFe[1, 1, 1]
+
+    @test all(waste .> 0)
+    @test produced ≈ Q .* waste
+
+    # the particulate iron made in the column is released in it or leaves through the floor
+    @test sum(produced .- released) * Δz ≈ floor atol = 1e-12 * sum(produced) * Δz
+
+    # the organic matter carries no iron, so the dissolved iron loses only the particulate iron and gains its release
+    for k in 1:4
+        tendency = CUDA.@allowscalar bgc(1, 1, k, grid, Val(:Fe), model.clock, model.tracers, aux)
+        @test tendency ≈ released[k] - produced[k] atol = 1e-12 * produced[4]
+    end
+
+    time_step!(model, 1.0)
+    @test CUDA.@allowscalar all(isfinite, interior(model.tracers.Fe))
 end
 
 @testset "MITgcmDIC stepping" begin
