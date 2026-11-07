@@ -59,6 +59,7 @@ import ..NutrientsPlanktonDetritusModels:
     inorganic_waste,
     nutrient_uptake,
     particulate_iron_production,
+    gross_iron_uptake,
     solid_waste,
     dissolved_waste,
     inorganic_nitrogen_waste,

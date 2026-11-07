@@ -24,7 +24,7 @@ using ..NutrientsPlanktonDetritusModels:
     mmol_m⁻²_to_nmol_cm⁻²
 
 import ..NutrientsPlanktonDetritusModels: dissolved_waste, solid_waste, calcium_carbonate_dissolution, inorganic_waste, nutrient_uptake,
-                                          sinking_particle_mass_flux, stores_sinking_flux
+                                          sinking_particle_mass_flux, stores_sinking_flux, particulate_remineralisation
 
 using ..NutrientsPlanktonDetritusModels.NutrientsModels:
     Nutrients,

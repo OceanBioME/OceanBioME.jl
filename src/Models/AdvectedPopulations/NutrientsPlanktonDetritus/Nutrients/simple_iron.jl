@@ -36,13 +36,13 @@ Keyword Arguments
 - `scavenging_rate`: first-order scavenging rate of free iron (1/s)
 - `scavenging`: the scavenging, either that rate or a [`ParticleScavenging`](@ref)
 - `ligand_stability`: ligand–free-iron stability constant (m³/mmol; MITgcm's `ligand_stab = 1e8` m³/mol)
-- `total_ligand`: uniform total ligand concentration (mmol/m³)
+- `total_ligand`: uniform total ligand concentration (mmol/m³), or a [`PrognosticLigand`](@ref) for a ligand tracer `Lig`
 - `sinking`: `nothing`, or the `ImplicitSinking` of the particulate iron (class `PFe`)
 """
-struct SimpleIron{FT, S, SK}
+struct SimpleIron{FT, S, SK, L}
           scavenging :: S
     ligand_stability :: FT
-        total_ligand :: FT
+        total_ligand :: L
              sinking :: SK
 end
 
@@ -81,7 +81,10 @@ function SimpleIron{FT}(; scavenging_rate = 0.19 / (360 * 86400), # 1/s
 
     validate_particulate_iron_sinking(sinking)
 
-    return SimpleIron(convert_scavenging(FT, scavenging), convert(FT, ligand_stability), convert(FT, total_ligand), sinking)
+    total_ligand isa PrognosticLigand && scavenging isa Number &&
+        throw(ArgumentError("a `PrognosticLigand` needs particle scavenging (e.g. `ParticleScavenging()`), not a scavenging rate"))
+
+    return SimpleIron(convert_scavenging(FT, scavenging), convert(FT, ligand_stability), convert_ligand(FT, total_ligand), sinking)
 end
 
 SimpleIron(; kwargs...) = SimpleIron{Float64}(; kwargs...)
@@ -112,19 +115,21 @@ function Base.show(io::IO, si::SimpleIron)
     print(io, summary(si), "\n",
           "├── Scavenging: ", scavenging_summary(si.scavenging), "\n",
           "├── Ligand stability: ", si.ligand_stability, " m³/mmol\n",
-          "├── Total ligand: ", si.total_ligand, " mmol/m³\n",
+          "├── Total ligand: ", ligand_summary(si.total_ligand), "\n",
           "└── Particulate iron: ", isnothing(si.sinking) ? "lost" : "sinks with " * summary(si.sinking))
 end
 
-required_biogeochemical_tracers(::SimpleIron) = (:Fe, )
+required_biogeochemical_tracers(iron::SimpleIron) = (:Fe, ligand_tracers(iron.total_ligand)...)
 
 const SimpleIronNPD{FT} = NutrientsPlanktonDetritus{FT, <:Nutrients{<:Any, <:Any, <:SimpleIron}}
 
-# the free (Fe′) and ligand-bound (FeL) iron, both zero where there is no iron
-@inline function free_and_bound_iron(Fe, iron::SimpleIron)
-    β  = iron.ligand_stability
-    Lₜ = iron.total_ligand
+convert_ligand(FT, Lₜ::Number) = convert(FT, Lₜ)
+ligand_summary(Lₜ::Number) = string(Lₜ, " mmol/m³")
+ligand_tracers(::Number) = ()
+@inline ligand_concentration(i, j, k, Lₜ::Number, fields) = Lₜ
 
+# the free (Fe′) and ligand-bound (FeL) iron for total iron `Fe`, ligand `Lₜ` and stability `β`, both zero where there is no iron
+@inline function free_and_bound_iron(Fe, Lₜ, β)
     discriminant = (β * Fe - β * Lₜ + 1)^2 + 4 * β * Lₜ
     L = (-β * Fe + β * Lₜ - 1 + sqrt(discriminant)) / (2 * β)
 
@@ -133,17 +138,21 @@ const SimpleIronNPD{FT} = NutrientsPlanktonDetritus{FT, <:Nutrients{<:Any, <:Any
     return ifelse(Fe > 0, Fe - FeL, zero(Fe)), ifelse(Fe > 0, FeL, zero(Fe))
 end
 
-@inline free_iron(Fe, iron::SimpleIron) = first(free_and_bound_iron(Fe, iron))
+@inline free_and_bound_iron(i, j, k, iron::SimpleIron, fields) =
+    free_and_bound_iron(@inbounds(fields.Fe[i, j, k]), ligand_concentration(i, j, k, iron.total_ligand, fields), iron.ligand_stability)
 
-@inline iron_scavenging(i, j, k, grid, rate::Number, Fe, bgc) = rate * free_iron(Fe, bgc.nutrients.iron)
+@inline iron_scavenging(i, j, k, grid, rate::Number, bgc, fields) = rate * first(free_and_bound_iron(i, j, k, bgc.nutrients.iron, fields))
 
-@inline function iron_scavenging(i, j, k, grid, s::ParticleScavenging, Fe, bgc::NutrientsPlanktonDetritus{FT}) where FT
-    M = sinking_particle_mass_flux(i, j, k, grid, bgc.detritus, bgc) +
-        sinking_particle_mass_flux(i, j, k, grid, bgc.inorganic_carbon, bgc) # ng cm⁻² s⁻¹
+# the mass flux of the sinking particles which scavenge (ng cm⁻² s⁻¹) into the top of the cell
+@inline scavenging_particle_mass_flux(i, j, k, grid, ::ParticleScavenging, bgc, fields) =
+    sinking_particle_mass_flux(i, j, k, grid, bgc.detritus, bgc) +
+    sinking_particle_mass_flux(i, j, k, grid, bgc.inorganic_carbon, bgc)
 
-    Fe′, FeL = free_and_bound_iron(Fe, bgc.nutrients.iron)
+@inline function iron_scavenging(i, j, k, grid, s, bgc, fields)
+    M = scavenging_particle_mass_flux(i, j, k, grid, s, bgc, fields)
+    Fe′, FeL = free_and_bound_iron(i, j, k, bgc.nutrients.iron, fields)
 
-    return M * (s.free_rate * Fe′ + s.bound_rate * FeL) / convert(FT, 365 * 86400) # MARBL's year
+    return M * (s.free_rate * Fe′ + s.bound_rate * FeL) / convert(eltype(grid), 365 * 86400) # MARBL's year
 end
 
 # `ParticleScavenging` needs the detritus' sinking flux
@@ -156,7 +165,7 @@ validate_iron_scavenging(::SimpleIron{<:Any, <:ParticleScavenging}, detritus) =
 
 # the particulate iron sinks implicitly: it is made where it is scavenged or produced, and the column kernel releases it below
 @inline implicit_sinking_production(i, j, k, grid, iron::SimpleIron, bgc, fields, auxiliary_fields, ::Val{:PFe}) =
-    iron_scavenging(i, j, k, grid, iron.scavenging, @inbounds(fields.Fe[i, j, k]), bgc) +
+    iron_scavenging(i, j, k, grid, iron.scavenging, bgc, fields) +
     particulate_iron_production(i, j, k, grid, bgc.plankton, bgc, fields, auxiliary_fields)
 
 # run after the detritus and inorganic carbon, whose stored fluxes `ParticleScavenging` reads

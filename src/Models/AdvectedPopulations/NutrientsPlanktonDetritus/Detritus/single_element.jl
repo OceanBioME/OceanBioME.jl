@@ -216,6 +216,10 @@ end
     return combined
 end
 
+@inline particulate_remineralisation(i, j, k, grid, detritus::DissolvedParticulate{<:Any, <:Any, <:Any, <:Any, <:Any, <:Any, <:ImplicitSinking}, bgc, fields, auxiliary_fields) =
+    sum(map(R -> @inbounds(R[i, j, k]), values(detritus.sinking.remineralisation))) +
+    hard_organic_remineralisation(i, j, k, grid, bgc.inorganic_carbon, bgc, fields, auxiliary_fields)
+
 @inline @generated function inorganic_waste(i, j, k, grid, detritus::DissolvedParticulate{N, M, DN, PN}, bgc::NPD_DP{FT}, fields, auxiliary_fields) where {N, M, DN, PN, FT}
     combined = Expr(:block)
     push!(combined.args, :(total = zero($FT)))

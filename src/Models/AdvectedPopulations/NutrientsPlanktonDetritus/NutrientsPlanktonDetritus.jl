@@ -4,7 +4,7 @@ export NutrientsPlanktonDetritus
 
 export LOBSTER, NPZD, ImplicitBiology, MITgcmDIC
 
-export Nutrients, N, PO₄, Si, Fe, NitrateAmmonia, SimpleIron, ParticleScavenging
+export Nutrients, N, PO₄, Si, Fe, NitrateAmmonia, SimpleIron, ParticleScavenging, PrognosticLigand
 export CarbonateSystem, ExplicitCalciumCarbonate, ImplicitCalciumCarbonate
 export Abiotic, ImplicitProductivity, IronQuota, PhytoZoo
 export Detritus, DissolvedParticulate, InstantRemineralisationDetritus, CarbonNitrogenDissolvedParticulate
