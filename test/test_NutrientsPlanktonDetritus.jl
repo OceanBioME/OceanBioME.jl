@@ -674,7 +674,7 @@ using Oceananigans: fields
     end
 end
 
-using OceanBioME.Models.NutrientsPlanktonDetritusModels: particulate_iron_production
+using OceanBioME.Models.NutrientsPlanktonDetritusModels: particulate_iron_production, dissolved_waste
 
 @testset "SimpleIron with PrognosticLigand" begin
     grid = RectilinearGrid(architecture; size=(1, 1, 2), extent=(1, 1, 2))
@@ -738,27 +738,44 @@ using OceanBioME.Models.NutrientsPlanktonDetritusModels: particulate_iron_produc
     time_step!(model, 1.0)
     @test CUDA.@allowscalar all(isfinite, interior(model.tracers.Lig))
 
-    # with an `IronQuota` the plankton's iron uptake is their particulate iron production
-    Lₜ = PrognosticLigand(; production_ratio = 0, degradation_ratio = 0, scavenging_rate = 0, photodegradation_rate = 0)
+    # with an `IronQuota` the ligand is lost with the plankton's gross iron uptake, the quota times all of their
+    # production (MARBL's `photoFe`), not only the particulate iron they make
     plankton = ImplicitProductivity(; iron_ratio = IronQuota(), nutrient_half_saturations = (phosphate = 0.5, iron = 1e-4))
 
-    biogeochemistry = NutrientsPlanktonDetritus(grid;
-                                                plankton,
-                                                nutrients = Nutrients(; phosphate = OceanBioME.PO₄,
-                                                                        iron = SimpleIron(; scavenging = ParticleScavenging(),
-                                                                                            total_ligand = Lₜ)),
-                                                detritus = detritus(),
-                                                light_attenuation)
+    function quota_model(Lₜ)
+        biogeochemistry = NutrientsPlanktonDetritus(grid;
+                                                    plankton,
+                                                    nutrients = Nutrients(; phosphate = OceanBioME.PO₄,
+                                                                            iron = SimpleIron(; scavenging = ParticleScavenging(),
+                                                                                                total_ligand = Lₜ)),
+                                                    detritus = detritus(),
+                                                    light_attenuation)
 
-    model = NonhydrostaticModel(grid; advection = nothing, biogeochemistry)
-    set!(model, Fe = Fe, Lig = Lig, PO₄ = 1.0)
+        model = NonhydrostaticModel(grid; advection = nothing, biogeochemistry)
+        set!(model, Fe = Fe, Lig = Lig, PO₄ = 1.0)
 
-    bgc = model.biogeochemistry.underlying_biogeochemistry
-    aux = biogeochemical_auxiliary_fields(model.biogeochemistry)
+        return model, model.biogeochemistry.underlying_biogeochemistry, biogeochemical_auxiliary_fields(model.biogeochemistry)
+    end
 
-    U = CUDA.@allowscalar particulate_iron_production(1, 1, 1, grid, bgc.plankton, bgc, fields(model), aux)
-    @test U > 0
-    @test CUDA.@allowscalar(bgc(1, 1, 1, grid, Val(:Lig), model.clock, model.tracers, aux)) ≈ -ramp * Lₜ.uptake_ratio * U
+    Lig_tendency(model, bgc, aux) = CUDA.@allowscalar bgc(1, 1, 1, grid, Val(:Lig), model.clock, model.tracers, aux)
+
+    # only the uptake (`dissolved_production_ratio` defaults to `production_ratio`)
+    Lₜ = PrognosticLigand(; production_ratio = 0, degradation_ratio = 0, scavenging_rate = 0, photodegradation_rate = 0)
+    model, bgc, aux = quota_model(Lₜ)
+
+    particulate = CUDA.@allowscalar particulate_iron_production(1, 1, 1, grid, bgc.plankton, bgc, fields(model), aux)
+    U = particulate / (1 - plankton.dissolved_fraction_of_waste)
+    @test particulate > 0
+    @test Lig_tendency(model, bgc, aux) ≈ -ramp * Lₜ.uptake_ratio * U
+
+    # only the production from the dissolved organic matter
+    Lₜ = PrognosticLigand(; production_ratio = 0, dissolved_production_ratio = 6e-6, degradation_ratio = 0,
+                            uptake_ratio = 0, scavenging_rate = 0, photodegradation_rate = 0)
+    model, bgc, aux = quota_model(Lₜ)
+
+    Dₚ = CUDA.@allowscalar dissolved_waste(1, 1, 1, grid, bgc.plankton, bgc, fields(model), aux) * carbon_ratio(bgc.plankton, bgc)
+    @test Dₚ > 0
+    @test Lig_tendency(model, bgc, aux) ≈ Lₜ.dissolved_production_ratio * Dₚ
 end
 
 using OceanBioME.Models.NutrientsPlanktonDetritusModels: solid_waste

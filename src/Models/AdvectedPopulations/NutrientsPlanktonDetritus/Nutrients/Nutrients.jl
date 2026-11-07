@@ -23,6 +23,7 @@ using ..NutrientsPlanktonDetritusModels:
     sinking_particle_mass_flux,
     stores_sinking_flux,
     particulate_iron_production,
+    gross_iron_uptake,
     particulate_remineralisation
 
 using Oceananigans.Operators: Δzᶜᶜᶜ
