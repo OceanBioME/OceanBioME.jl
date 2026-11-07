@@ -1,0 +1,273 @@
+<!DOCTYPE html>
+<html lang="en"><head><meta charset="UTF-8"/><meta name="viewport" content="width=device-width, initial-scale=1.0"/><title>Ocean alkalinity enhancement · OceanBioME.jl</title><meta name="title" content="Ocean alkalinity enhancement · OceanBioME.jl"/><meta property="og:title" content="Ocean alkalinity enhancement · OceanBioME.jl"/><meta property="twitter:title" content="Ocean alkalinity enhancement · OceanBioME.jl"/><meta name="description" content="Documentation for OceanBioME.jl."/><meta property="og:description" content="Documentation for OceanBioME.jl."/><meta property="twitter:description" content="Documentation for OceanBioME.jl."/><meta property="og:url" content="https://OceanBioME.github.io/OceanBioME/stable/generated/oae_experiment/"/><meta property="twitter:url" content="https://OceanBioME.github.io/OceanBioME/stable/generated/oae_experiment/"/><link rel="canonical" href="https://OceanBioME.github.io/OceanBioME/stable/generated/oae_experiment/"/><script data-outdated-warner src="../../assets/warner.js"></script><link href="https://cdnjs.cloudflare.com/ajax/libs/lato-font/3.0.0/css/lato-font.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/juliamono/0.63.2/juliamono.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/fontawesome.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/solid.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/brands.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.16.8/katex.min.css" rel="stylesheet" type="text/css"/><script>documenterBaseURL="../.."</script><script src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.6/require.min.js" data-main="../../assets/documenter.js"></script><script src="../../search_index.js"></script><script src="../../siteinfo.js"></script><script src="../../../versions.js"></script><link class="docs-theme-link" rel="stylesheet" type="text/css" href="../../assets/themes/catppuccin-mocha.css" data-theme-name="catppuccin-mocha"/><link class="docs-theme-link" rel="stylesheet" type="text/css" href="../../assets/themes/catppuccin-macchiato.css" data-theme-name="catppuccin-macchiato"/><link class="docs-theme-link" rel="stylesheet" type="text/css" href="../../assets/themes/catppuccin-frappe.css" data-theme-name="catppuccin-frappe"/><link class="docs-theme-link" rel="stylesheet" type="text/css" href="../../assets/themes/catppuccin-latte.css" data-theme-name="catppuccin-latte"/><link class="docs-theme-link" rel="stylesheet" type="text/css" href="../../assets/themes/documenter-dark.css" data-theme-name="documenter-dark" data-theme-primary-dark/><link class="docs-theme-link" rel="stylesheet" type="text/css" href="../../assets/themes/documenter-light.css" data-theme-name="documenter-light" data-theme-primary/><script src="../../assets/themeswap.js"></script><link href="../../assets/documentercitations/citations-hover.css" rel="stylesheet" type="text/css"/><link href="../../assets/documentercitations/citations.css" rel="stylesheet" type="text/css"/><link href="../../assets/citations.css" rel="stylesheet" type="text/css"/><script src="../../assets/documentercitations/citations-data.js"></script><script src="../../assets/documentercitations/citations-hover.js"></script><script src="../../assets/documentercitations/citations-backlinks.js"></script></head><body><div id="documenter"><nav class="docs-sidebar"><a class="docs-logo" href="../../"><img class="docs-light-only" src="../../assets/logo.png" alt="OceanBioME.jl logo"/><img class="docs-dark-only" src="../../assets/logo-dark.png" alt="OceanBioME.jl logo"/></a><div class="docs-package-name"><span class="docs-autofit"><a href="../../">OceanBioME.jl</a></span></div><button class="docs-search-query input is-rounded is-small is-clickable my-2 mx-auto py-1 px-2" id="documenter-search-query">Search docs (Ctrl + /)</button><ul class="docs-menu"><li><a class="tocitem" href="../../">Home</a></li><li><a class="tocitem" href="../../quick_start/">Quick start</a></li><li><input class="collapse-toggle" id="menuitem-3" type="checkbox" checked/><label class="tocitem" for="menuitem-3"><span class="docs-label">Examples</span><i class="docs-chevron"></i></label><ul class="collapsed"><li><a class="tocitem" href="../box/">Box model</a></li><li><a class="tocitem" href="../column/">Simple column model</a></li><li><a class="tocitem" href="../eady/">Baroclinic instability</a></li><li><a class="tocitem" href="../kelp/">Model with particles (kelp) interacting with the biogeochemistry</a></li><li><a class="tocitem" href="../data_assimilation/">Data assimilation</a></li><li class="is-active"><a class="tocitem" href>Ocean alkalinity enhancement</a><ul class="internal"><li><a class="tocitem" href="#Install-dependencies"><span>Install dependencies</span></a></li><li><a class="tocitem" href="#Model-setup"><span>Model setup</span></a></li></ul></li></ul></li><li><input class="collapse-toggle" id="menuitem-4" type="checkbox"/><label class="tocitem" for="menuitem-4"><span class="docs-label">Model components and setup</span><i class="docs-chevron"></i></label><ul class="collapsed"><li><input class="collapse-toggle" id="menuitem-4-1" type="checkbox"/><label class="tocitem" for="menuitem-4-1"><span class="docs-label">Biogeochemical models</span><i class="docs-chevron"></i></label><ul class="collapsed"><li><a class="tocitem" href="../../model_components/biogeochemical/">Overview</a></li><li><a class="tocitem" href="../../model_components/biogeochemical/abstract_NPD_models/">NPD framework</a></li><li><a class="tocitem" href="../../model_components/biogeochemical/LOBSTER/">LOBSTER</a></li><li><a class="tocitem" href="../../model_components/biogeochemical/NPZ/">NPZD</a></li><li><a class="tocitem" href="../../model_components/biogeochemical/ImplicitBiology/">ImplicitBiology</a></li><li><input class="collapse-toggle" id="menuitem-4-1-6" type="checkbox"/><label class="tocitem" for="menuitem-4-1-6"><span class="docs-label">PISCES</span><i class="docs-chevron"></i></label><ul class="collapsed"><li><a class="tocitem" href="../../model_components/biogeochemical/PISCES/PISCES/">PISCES</a></li><li><a class="tocitem" href="../../model_components/biogeochemical/PISCES/notable_differences/">Queries</a></li></ul></li></ul></li><li><a class="tocitem" href="../../model_components/air-sea-gas/">Air-sea gas exchange</a></li><li><a class="tocitem" href="../../model_components/carbon-chemistry/">Carbon chemistry</a></li><li><input class="collapse-toggle" id="menuitem-4-4" type="checkbox"/><label class="tocitem" for="menuitem-4-4"><span class="docs-label">Sediment models</span><i class="docs-chevron"></i></label><ul class="collapsed"><li><a class="tocitem" href="../../model_components/sediments/">Overview</a></li><li><a class="tocitem" href="../../model_components/sediments/simple_multi_g/">Simple Multi-G</a></li><li><a class="tocitem" href="../../model_components/sediments/instant_remineralisation/">Instant remineralisation</a></li></ul></li><li><a class="tocitem" href="../../model_components/light/">Light attenuation models</a></li><li><input class="collapse-toggle" id="menuitem-4-6" type="checkbox"/><label class="tocitem" for="menuitem-4-6"><span class="docs-label">Individuals</span><i class="docs-chevron"></i></label><ul class="collapsed"><li><a class="tocitem" href="../../model_components/individuals/">Overview</a></li><li><a class="tocitem" href="../../model_components/individuals/slatissima/">Sugar Kelp (Broch and Slagstad 2012 ++)</a></li></ul></li><li><a class="tocitem" href="../../model_components/utils/">Utilities</a></li></ul></li><li><input class="collapse-toggle" id="menuitem-5" type="checkbox"/><label class="tocitem" for="menuitem-5"><span class="docs-label">Implementing new models</span><i class="docs-chevron"></i></label><ul class="collapsed"><li><a class="tocitem" href="../../model_implementation/">NPD framework models</a></li><li><a class="tocitem" href="../../model_implementation_custom/">Custom models</a></li></ul></li><li><input class="collapse-toggle" id="menuitem-6" type="checkbox"/><label class="tocitem" for="menuitem-6"><span class="docs-label">Numerical implementation</span><i class="docs-chevron"></i></label><ul class="collapsed"><li><a class="tocitem" href="../../numerical_implementation/positivity-preservation/">Positivity preservation</a></li></ul></li><li><a class="tocitem" href="../../contributing/">Contibutors guide</a></li><li><a class="tocitem" href="../../references/">References</a></li><li><input class="collapse-toggle" id="menuitem-9" type="checkbox"/><label class="tocitem" for="menuitem-9"><span class="docs-label">Appendix</span><i class="docs-chevron"></i></label><ul class="collapsed"><li><a class="tocitem" href="../../appendix/library/">Library</a></li><li><a class="tocitem" href="../../appendix/function_index/">Function index</a></li><li><input class="collapse-toggle" id="menuitem-9-3" type="checkbox"/><label class="tocitem" for="menuitem-9-3"><span class="docs-label">Parameters</span><i class="docs-chevron"></i></label><ul class="collapsed"><li><a class="tocitem" href="../NutrientsPlanktonDetritus_parameters/">NutrientsPlanktonDetritus</a></li><li><a class="tocitem" href="../NutrientsPlanktonDetritus_parameters/">NutrientsPlanktonDetritus</a></li><li><a class="tocitem" href="../SugarKelp_parameters/">SugarKelp</a></li><li><a class="tocitem" href="../TwoBandPhotosyntheticallyActiveRadiation_parameters/">TwoBandPhotosyntheticallyActiveRadiation</a></li><li><a class="tocitem" href="../OceanBioME.Models.SedimentModels.SimpleMultiG_parameters/">OceanBioME.Models.SedimentModels.SimpleMultiG</a></li><li><a class="tocitem" href="../OceanBioME.Models.SedimentModels.InstantRemineralisation_parameters/">OceanBioME.Models.SedimentModels.InstantRemineralisation</a></li><li><a class="tocitem" href="../CarbonChemistry_parameters/">CarbonChemistry</a></li><li><a class="tocitem" href="../O₂ air-sea exchange_parameters/">O₂ air-sea exchange</a></li><li><a class="tocitem" href="../O₂ air-sea exchange_parameters/">O₂ air-sea exchange</a></li></ul></li></ul></li></ul><div class="docs-version-selector field has-addons"><div class="control"><span class="docs-label button is-static is-size-7">Version</span></div><div class="docs-selector control is-expanded"><div class="select is-fullwidth is-size-7"><select id="documenter-version-selector"></select></div></div></div></nav><div class="docs-main"><header class="docs-navbar"><a class="docs-sidebar-button docs-navbar-link fa-solid fa-bars is-hidden-desktop" id="documenter-sidebar-button" href="#"></a><nav class="breadcrumb"><ul class="is-hidden-mobile"><li><a class="is-disabled">Examples</a></li><li class="is-active"><a href>Ocean alkalinity enhancement</a></li></ul><ul class="is-hidden-tablet"><li class="is-active"><a href>Ocean alkalinity enhancement</a></li></ul></nav><div class="docs-right"><a class="docs-navbar-link" href="https://github.com/OceanBioME/OceanBioME.jl" title="View the repository on GitHub"><span class="docs-icon fa-brands"></span><span class="docs-label is-hidden-touch">GitHub</span></a><a class="docs-navbar-link" href="https://github.com/OceanBioME/OceanBioME.jl/blob/main/examples/oae_experiment.jl" title="Edit source on GitHub"><span class="docs-icon fa-solid"></span></a><a class="docs-settings-button docs-navbar-link fa-solid fa-gear" id="documenter-settings-button" href="#" title="Settings"></a><a class="docs-article-toggle-button fa-solid fa-chevron-up" id="documenter-article-toggle-button" href="javascript:;" title="Collapse all docstrings"></a></div></header><article class="content" id="documenter-page"><h1 id="Idealised-ocean-alkalinity-enhancement-(OAE)"><a class="docs-heading-anchor" href="#Idealised-ocean-alkalinity-enhancement-(OAE)">Idealised ocean alkalinity enhancement (OAE)</a><a id="Idealised-ocean-alkalinity-enhancement-(OAE)-1"></a><a class="docs-heading-anchor-permalink" href="#Idealised-ocean-alkalinity-enhancement-(OAE)" title="Permalink"></a></h1><p>In this example we setup a 3D model driven by a constant wind stress, with 3 instances of the carbon chemistry system (DIC, alkalinity, and particulate inorganic carbon):</p><ol><li>the <strong>control</strong>, which receives no alkalinity,</li><li>the <strong>release with secondary precipitation disabled</strong> (<code>calcium_carbonate_precipitation_rate = 0</code>),</li><li>the <strong>release with secondary precipitation active</strong>.</li></ol><p>Replicates 1 and 3 differ only by the alkalinity release, so their difference is the OAE signal; replicates 2 and 3 differ only by the precipitation rate, so their difference is what secondary precipitation costs.</p><p>We use <a href="../../appendix/library/#OceanBioME.Models.NutrientsPlanktonDetritusModels.InorganicCarbonModels.ExplicitCalciumCarbonate"><code>ExplicitCalciumCarbonate</code></a> rather than <a href="../../appendix/library/#OceanBioME.Models.NutrientsPlanktonDetritusModels.InorganicCarbonModels.CarbonateSystem"><code>CarbonateSystem</code></a> so that the particulate inorganic carbon formed by the calcifiers, and by abiotic precipitation once the alkalinity addition pushes the saturation state <code>Ω</code> up, is carried as its own sinking <code>CaCO₃</code> tracer rather than being routed straight back into <code>DIC</code>/<code>Alk</code>.</p><h2 id="Install-dependencies"><a class="docs-heading-anchor" href="#Install-dependencies">Install dependencies</a><a id="Install-dependencies-1"></a><a class="docs-heading-anchor-permalink" href="#Install-dependencies" title="Permalink"></a></h2><p>First we ensure we have the required dependencies installed</p><pre><code class="language-julia hljs">using Pkg
+pkg &quot;add OceanBioME, Oceananigans, CairoMakie&quot;</code></pre><h2 id="Model-setup"><a class="docs-heading-anchor" href="#Model-setup">Model setup</a><a id="Model-setup-1"></a><a class="docs-heading-anchor-permalink" href="#Model-setup" title="Permalink"></a></h2><pre><code class="language-julia hljs">using Oceananigans, OceanBioME, Oceananigans.Units, CUDA
+
+using OceanBioME.Models.GasExchangeModel: CarbonDioxideConcentration
+using OceanBioME.Models.CarbonChemistryModel: KSP_aragonite</code></pre><p>we define the grid and the biogeochemistry, adding in the <code>inorganic_carbon</code> with 3 replicates</p><pre><code class="language-julia hljs">grid = RectilinearGrid(GPU();
+                       size = (64, 64, 8),
+                       extent = (500, 500, 15))
+
+precipitation_rate = 0.03 / day</code></pre><pre><code class="nohighlight hljs">3.472222222222222e-7</code></pre><p>use aragonite rather than the default calcite solubility, as that is the phase usually discussed in the OAE secondary precipitation literature</p><pre><code class="language-julia hljs">carbon_chemistry = CarbonChemistry(; calcium_carbonate_solubility = KSP_aragonite())
+
+biogeochemistry = LOBSTER(grid;
+                          inorganic_carbon =
+                              ExplicitCalciumCarbonate(grid;
+                                                       replicates = 3,
+                                                       carbon_chemistry,
+                                                       calcium_carbonate_precipitation_rate =
+                                                           (precipitation_rate, 0, precipitation_rate),
+                                                       calcium_carbonate_precipitation_exponent = 3))</code></pre><pre><code class="nohighlight hljs">NutrientsPlanktonDetritus{Float64} with (:NO₃, :NH₄, :P, :Z, :DOM, :sPOM, :bPOM, :DIC1, :DIC2, :DIC3, :Alk1, :Alk2, :Alk3, :CaCO₃1, :CaCO₃2, :CaCO₃3) 
+ Light attenuation: TwoBandPhotosyntheticallyActiveRadiation{Float64}
+ Sediment: Nothing
+ Particles: Nothing
+ Modifiers: Nothing</code></pre><p>Secondary precipitation is off by default, so we turn it on for replicates 1 and 3. The rate law is</p><p class="math-container">\[\text{precipitation} = k \max(0, \Omega - 1)^n [CaCO_3],\]</p><p>following the empirical description of calcite precipitation from seawater of <a href="../../references/#Zuddas1994" id="Zuddas1994-cite-1">Zuddas and Mucci (1994)</a> and <a href="../../references/#Zuddas1998" id="Zuddas1998-cite-1">Zuddas and Mucci (1998)</a>. This example is a fictional scenario with fictional parameter values for <code>k</code> and <code>n</code>, chosen only to give a visible, numerically well-behaved precipitation signal - they should not be read as literature values or as a prediction of a real deployment.</p><p>Next we have to construct the boundary conditions for the DIC, changing the defaults to specify that the DIC and Alkalinity for each realisation&#39;s calculation should be its own DIC1/Alk1, DIC2/Alk2, or DIC3/Alk3. Then we can put the boundary conditions together.</p><pre><code class="language-julia hljs">wind_speed = 5 # m/s
+Cᴰ = 2e-3
+ρₐ = 1.2
+ρₒ = 1026
+
+CO₂_flux1 =
+    CarbonDioxideGasExchangeBoundaryCondition(;
+        wind_speed,
+        water_concentration = CarbonDioxideConcentration(; DIC = :DIC1,
+                                                           Alk = :Alk1)
+    )
+CO₂_flux2 =
+    CarbonDioxideGasExchangeBoundaryCondition(;
+        wind_speed,
+        water_concentration = CarbonDioxideConcentration(; DIC = :DIC2,
+                                                           Alk = :Alk2)
+    )
+CO₂_flux3 =
+    CarbonDioxideGasExchangeBoundaryCondition(;
+        wind_speed,
+        water_concentration = CarbonDioxideConcentration(; DIC = :DIC3,
+                                                           Alk = :Alk3)
+    )
+
+wind = FluxBoundaryCondition(-ρₐ/ρₒ * Cᴰ * wind_speed^2)
+
+boundary_conditions = (; DIC1 = FieldBoundaryConditions(top = CO₂_flux1),
+                         DIC2 = FieldBoundaryConditions(top = CO₂_flux2),
+                         DIC3 = FieldBoundaryConditions(top = CO₂_flux3),
+                         u    = FieldBoundaryConditions(top = wind))</code></pre><pre><code class="nohighlight hljs">(DIC1 = Oceananigans.FieldBoundaryConditions, with boundary conditions
+├── west: DefaultBoundaryCondition (FluxBoundaryCondition: Nothing)
+├── east: DefaultBoundaryCondition (FluxBoundaryCondition: Nothing)
+├── south: DefaultBoundaryCondition (FluxBoundaryCondition: Nothing)
+├── north: DefaultBoundaryCondition (FluxBoundaryCondition: Nothing)
+├── bottom: DefaultBoundaryCondition (FluxBoundaryCondition: Nothing)
+├── top: FluxBoundaryCondition: DiscreteBoundaryFunction with GasExchange
+└── immersed: DefaultBoundaryCondition (FluxBoundaryCondition: Nothing), DIC2 = Oceananigans.FieldBoundaryConditions, with boundary conditions
+├── west: DefaultBoundaryCondition (FluxBoundaryCondition: Nothing)
+├── east: DefaultBoundaryCondition (FluxBoundaryCondition: Nothing)
+├── south: DefaultBoundaryCondition (FluxBoundaryCondition: Nothing)
+├── north: DefaultBoundaryCondition (FluxBoundaryCondition: Nothing)
+├── bottom: DefaultBoundaryCondition (FluxBoundaryCondition: Nothing)
+├── top: FluxBoundaryCondition: DiscreteBoundaryFunction with GasExchange
+└── immersed: DefaultBoundaryCondition (FluxBoundaryCondition: Nothing), DIC3 = Oceananigans.FieldBoundaryConditions, with boundary conditions
+├── west: DefaultBoundaryCondition (FluxBoundaryCondition: Nothing)
+├── east: DefaultBoundaryCondition (FluxBoundaryCondition: Nothing)
+├── south: DefaultBoundaryCondition (FluxBoundaryCondition: Nothing)
+├── north: DefaultBoundaryCondition (FluxBoundaryCondition: Nothing)
+├── bottom: DefaultBoundaryCondition (FluxBoundaryCondition: Nothing)
+├── top: FluxBoundaryCondition: DiscreteBoundaryFunction with GasExchange
+└── immersed: DefaultBoundaryCondition (FluxBoundaryCondition: Nothing), u = Oceananigans.FieldBoundaryConditions, with boundary conditions
+├── west: DefaultBoundaryCondition (FluxBoundaryCondition: Nothing)
+├── east: DefaultBoundaryCondition (FluxBoundaryCondition: Nothing)
+├── south: DefaultBoundaryCondition (FluxBoundaryCondition: Nothing)
+├── north: DefaultBoundaryCondition (FluxBoundaryCondition: Nothing)
+├── bottom: DefaultBoundaryCondition (FluxBoundaryCondition: Nothing)
+├── top: FluxBoundaryCondition: -5.84795e-5
+└── immersed: DefaultBoundaryCondition (FluxBoundaryCondition: Nothing))</code></pre><p>Next we define an alkalinity release in a circle in the center for 1 hour</p><pre><code class="language-julia hljs">@inline alkalinity_release(x, y, z, t, params) =
+    ifelse((params.start_time &lt;= t &lt; params.start_time + params.duration) &amp;
+            (z &gt; params.depth) &amp;
+            ((x-250)^2 + (y-250)^2 &lt; params.radius^2),
+            params.release_rate, 0)
+
+total_release = 2.5e7 # 1t NaOH = 25000mol NaOH = 2.5e7 meq Alk
+duration = 1hour
+depth = -1
+radius = 50
+release_rate = total_release/duration/(π*radius^2*abs(depth))
+
+oae = Forcing(alkalinity_release;
+              parameters = (; start_time = 20minutes,
+                              duration,
+                              release_rate,
+                              radius,
+                              depth))</code></pre><pre><code class="nohighlight hljs">ContinuousForcing{@NamedTuple{start_time::Float64, duration::Float64, release_rate::Float64, radius::Int64, depth::Int64}}
+├── func: alkalinity_release (generic function with 1 method)
+├── parameters: (start_time = 1200.0, duration = 3600.0, release_rate = 0.8841941282883075, radius = 50, depth = -1)
+└── field dependencies: ()</code></pre><p>And then put the model together with <code>Alk2</code> and <code>Alk3</code> both receiving the release while <code>Alk1</code> (the control) evolves normally</p><pre><code class="language-julia hljs">model = NonhydrostaticModel(grid;
+                            coriolis = FPlane(latitude = 45),
+                            boundary_conditions,
+                            biogeochemistry,
+                            advection = WENO(),
+                            tracers = (:T, :S),
+                            forcing = (; Alk2 = oae, Alk3 = oae))
+
+set!(model, P = 1, NO₃ = 10,
+            T = 15, S = 35,
+            DIC1 = 2000, Alk1 = 2300, CaCO₃1 = 0.1,
+            DIC2 = 2000, Alk2 = 2300, CaCO₃2 = 0.1,
+            DIC3 = 2000, Alk3 = 2300, CaCO₃3 = 0.1,
+            u = (x, y, z) -&gt; randn()/2)</code></pre><p>Then we can setup a simulation with a variable timestep and progress message and output the tracers, running for longer than the release itself so the air-sea flux has time to respond</p><pre><code class="language-julia hljs">simulation = Simulation(model, Δt = 5, stop_time = 4hours)
+
+conjure_time_step_wizard!(simulation; cfl = 0.5)
+
+prog(sim) =
+    @info prettytime(sim)*&quot; in &quot;*prettytime(sim.run_wall_time)*&quot; with Δt = &quot;*prettytime(sim.Δt)
+
+add_callback!(simulation, prog, IterationInterval(100))</code></pre><p>we save the saturation states alongside the tracers so the state of the explicit calcium carbonate pool can be inspected</p><pre><code class="language-julia hljs">outputs = merge(model.tracers, (; Ω1 = model.auxiliary_fields.Ω1,
+                                  Ω2 = model.auxiliary_fields.Ω2,
+                                  Ω3 = model.auxiliary_fields.Ω3))
+
+simulation.output_writers[:tracers] = JLD2Writer(model, outputs;
+                                                filename = &quot;oae.jld2&quot;,
+                                                schedule = AveragedTimeInterval(20minutes),
+                                                overwrite_existing = true)</code></pre><pre><code class="nohighlight hljs">JLD2Writer scheduled on TimeInterval(20 minutes):
+├── filepath: oae.jld2
+├── 21 outputs: (T, S, NO₃, NH₄, P, Z, DOM, sPOM, bPOM, DIC1, DIC2, DIC3, Alk1, Alk2, Alk3, CaCO₃1, CaCO₃2, CaCO₃3, Ω1, Ω2, Ω3) averaged on AveragedTimeInterval(window=20 minutes, stride=1, interval=20 minutes)
+├── array_type: Array{Float32}
+├── including: [:coriolis, :buoyancy, :closure]
+├── file_splitting: NoFileSplitting
+└── file size: 0 bytes (file not yet created)</code></pre><p>We can also create a <code>BoundaryConditionOperation</code> which records the flux through the top boundary for both the DIC fields which we can save</p><pre><code class="language-julia hljs">qCO₂1 = BoundaryConditionOperation(model.tracers.DIC1, :top, model)
+qCO₂2 = BoundaryConditionOperation(model.tracers.DIC2, :top, model)
+qCO₂3 = BoundaryConditionOperation(model.tracers.DIC3, :top, model)
+
+simulation.output_writers[:carbon_flux] = JLD2Writer(model, (; qCO₂1, qCO₂2, qCO₂3),
+                                                     indices = (:, :, grid.Nz),
+                                                     filename = &quot;oae_surface_flux.jld2&quot;,
+                                                     schedule = TimeInterval(20minutes),
+                                                     overwrite_existing = true)</code></pre><pre><code class="nohighlight hljs">JLD2Writer scheduled on TimeInterval(20 minutes):
+├── filepath: oae_surface_flux.jld2
+├── 3 outputs: (qCO₂1, qCO₂2, qCO₂3)
+├── array_type: Array{Float32}
+├── including: [:coriolis, :buoyancy, :closure]
+├── file_splitting: NoFileSplitting
+└── file size: 0 bytes (file not yet created)</code></pre><p>and then run the simulation</p><pre><code class="language-julia hljs">run!(simulation)</code></pre><pre><code class="nohighlight hljs">[ Info: Initializing simulation...
+[ Info: 0 seconds in 0 seconds with Δt = 2.500 seconds
+[ Info:     ... simulation initialization complete (1.659 minutes)
+[ Info: Executing initial time step...
+[ Info:     ... initial time step complete (7.794 seconds).
+[ Info: 5.498 minutes in 2.711 minutes with Δt = 5.294 seconds
+[ Info: 19.561 minutes in 3.670 minutes with Δt = 13.732 seconds
+[ Info: 50.876 minutes in 4.634 minutes with Δt = 21.040 seconds
+[ Info: 1.342 hours in 5.614 minutes with Δt = 16.211 seconds
+[ Info: 1.723 hours in 6.585 minutes with Δt = 12.067 seconds
+[ Info: 2.041 hours in 7.565 minutes with Δt = 9.739 seconds
+[ Info: 2.306 hours in 8.542 minutes with Δt = 10.382 seconds
+[ Info: 2.562 hours in 9.522 minutes with Δt = 8.712 seconds
+[ Info: 2.805 hours in 10.501 minutes with Δt = 8.608 seconds
+[ Info: 3.033 hours in 11.481 minutes with Δt = 8.163 seconds
+[ Info: 3.255 hours in 12.456 minutes with Δt = 8.253 seconds
+[ Info: 3.486 hours in 13.433 minutes with Δt = 7.984 seconds
+[ Info: 3.696 hours in 14.408 minutes with Δt = 7.630 seconds
+[ Info: 3.907 hours in 15.379 minutes with Δt = 7.117 seconds
+[ Info: Simulation is stopping after running for 15.815 minutes.
+[ Info: Simulation time 4 hours equals or exceeds stop time 4 hours.
+</code></pre><p>Finally we load the data and create some plots</p><pre><code class="language-julia hljs">using CairoMakie, Statistics
+
+fds = FieldDataset(&quot;oae.jld2&quot;)
+fds_surface = FieldDataset(&quot;oae_surface_flux.jld2&quot;)
+
+n = Observable(1)
+
+N = length(fds[&quot;P&quot;])</code></pre><pre><code class="nohighlight hljs">13</code></pre><p>compare replicate 3 (release, precipitation active) with replicate 1 (the control)</p><pre><code class="language-julia hljs">Δ_Alk = @lift (mean(interior(fds[&quot;Alk3&quot;][$n]), dims=3)[:, :, 1] .-
+               mean(interior(fds[&quot;Alk1&quot;][$n]), dims=3)[:, :, 1]).* 15
+Δ_qCO₂ = @lift (interior(fds_surface[&quot;qCO₂3&quot;][$n], :, :, 1) .-
+                interior(fds_surface[&quot;qCO₂1&quot;][$n], :, :, 1)) .* (12+2*16)*1e-3*day
+
+Δ_CaCO₃ = @lift (mean(interior(fds[&quot;CaCO₃3&quot;][$n]), dims=3)[:, :, 1] .-
+                 mean(interior(fds[&quot;CaCO₃1&quot;][$n]), dims=3)[:, :, 1]) .* 15
+
+Δ_Alk_range = maximum(abs, mean(interior(fds[&quot;Alk3&quot;]), dims = 3) .-
+                           mean(interior(fds[&quot;Alk1&quot;]), dims = 3)) .* 15
+Δ_CaCO₃_range = maximum(abs, mean(interior(fds[&quot;CaCO₃3&quot;]), dims = 3) .-
+                             mean(interior(fds[&quot;CaCO₃1&quot;]), dims = 3)) .* 15
+Δ_qCO₂_range = maximum(abs, interior(fds_surface[&quot;qCO₂3&quot;]) .-
+                            interior(fds_surface[&quot;qCO₂1&quot;])) .* (12+2*16)*1e-3*day
+
+xc = xnodes(fds[&quot;P&quot;])
+yc = ynodes(fds[&quot;P&quot;])
+
+fig = Figure(size=(1500, 500))
+
+ax = Axis(fig[1, 1], aspect = DataAspect())
+ax2 = Axis(fig[1, 2], aspect = DataAspect())
+ax3 = Axis(fig[1, 3], aspect = DataAspect())
+
+hm = heatmap!(ax, xc, yc, Δ_Alk, colormap = :balance, colorrange = (-1, 1) .* Δ_Alk_range)
+hm2 = heatmap!(ax2, xc, yc, Δ_qCO₂, colormap = :balance, colorrange = (-1, 1) .* Δ_qCO₂_range)
+hm3 = heatmap!(ax3, xc, yc, Δ_CaCO₃, colormap = :balance, colorrange = (-1, 1) .* Δ_CaCO₃_range)
+
+Colorbar(fig[2, 1], hm, vertical = false,
+                        label = &quot;Alkalinity pertubation (mmol / m²)&quot;,
+                        flip_vertical_label = true)
+Colorbar(fig[2, 2], hm2, vertical = false,
+                         label = &quot;Surface CO₂ flux difference (gCO₂/m²/day)&quot;,
+                         flip_vertical_label = true)
+Colorbar(fig[2, 3], hm3, vertical = false,
+                         label = &quot;Calcium carbonate difference (mmol / m²)&quot;,
+                         flip_vertical_label = true)
+
+supertitle = Label(fig[0, :], (@lift prettytime(fds[&quot;P&quot;].times[$n])))
+
+CairoMakie.record(fig, &quot;oae.mp4&quot;, 1:N, framerate=10) do i
+    @info &quot;$i&quot;
+    n[] = i
+end</code></pre><pre><code class="nohighlight hljs">&quot;oae.mp4&quot;</code></pre><p><video src="../oae.mp4" controls="true" title><a href="../oae.mp4"></a></video></p><pre><code class="language-julia hljs">fig = Figure(size = (1000, 750));
+
+ax = Axis(fig[1, 1], title = &quot;Surface flux (gC/day)&quot;)
+
+surface_area = 500*500
+mmol_to_g = 12/1000
+
+mean_flux(name) = mean(interior(fds_surface[name], :, :, 1, :), dims = (1, 2))[1, 1, :]
+
+total_carbon_flux1 = mean_flux(&quot;qCO₂1&quot;)
+total_carbon_flux2 = mean_flux(&quot;qCO₂2&quot;)
+total_carbon_flux3 = mean_flux(&quot;qCO₂3&quot;)
+
+times = fds_surface[&quot;qCO₂1&quot;].times ./ hours
+
+lines!(ax, times, total_carbon_flux1 .* mmol_to_g * surface_area * day, label = &quot;Control&quot;)
+lines!(ax, times, total_carbon_flux2 .* mmol_to_g * surface_area * day, label = &quot;Release, no precipitation&quot;)
+lines!(ax, times, total_carbon_flux3 .* mmol_to_g * surface_area * day, label = &quot;Release, precipitation&quot;,
+       linestyle = :dash)
+
+Legend(fig[1, 2], ax)</code></pre><pre><code class="nohighlight hljs">Legend()</code></pre><p>Cumulative difference in the air-sea CO₂ flux between replicate pairs</p><pre><code class="language-julia hljs">ax2 = Axis(fig[2, 1], title = &quot;Cumulative CO₂ difference (gC)&quot;)
+
+Δt_save = diff(fds_surface[&quot;qCO₂1&quot;].times)[1]</code></pre><pre><code class="nohighlight hljs">1200.0</code></pre><p>a negative flux is carbon entering the ocean, so <code>a - b</code> is the extra carbon taken up by <code>b</code></p><pre><code class="language-julia hljs">cumulative_uptake(a, b) = cumsum(Δt_save .* (mean_flux(a) .- mean_flux(b)) .* mmol_to_g * surface_area)
+
+lines!(ax2, times, cumulative_uptake(&quot;qCO₂1&quot;, &quot;qCO₂2&quot;),
+       label = &quot;Extra CO₂ taken up, no precipitation&quot;)
+lines!(ax2, times, cumulative_uptake(&quot;qCO₂1&quot;, &quot;qCO₂3&quot;),
+       label = &quot;Extra CO₂ taken up, precipitation&quot;,
+       linestyle = :dash)
+
+Legend(fig[2, 2], ax2)
+
+domain_volume = surface_area * 15</code></pre><pre><code class="nohighlight hljs">3750000</code></pre><p>Finally, the fate of the added alkalinity itself: how much has been realised as CO₂ uptake versus destroyed by precipitation. The uptake is converted to an alkalinity equivalent using the equilibrium efficiency <span>$\eta = \Delta DIC / \Delta TA$</span>, found by asking what <code>DIC</code> equilibrates with the atmosphere before and after an addition:</p><pre><code class="language-julia hljs">function equilibrium_DIC(Alk; target = 413.0, T = 15.0, S = 35.0)
+    lo, hi = 1000.0, 3500.0
+    for _ in 1:60
+        mid = (lo + hi) / 2
+        carbon_chemistry(; DIC = mid, Alk, T, S) &lt; target ? (lo = mid) : (hi = mid)
+    end
+    return (lo + hi) / 2
+end
+
+η = (equilibrium_DIC(2400.0) - equilibrium_DIC(2300.0)) / 100
+
+ax3 = Axis(fig[3, 1], xlabel = &quot;Time (hours)&quot;, ylabel = &quot;Alkalinity (meq)&quot;,
+                      title = &quot;Fate of the added alkalinity (replicate 3 vs control)&quot;)
+
+TA_realised = cumsum(Δt_save .* (mean_flux(&quot;qCO₂1&quot;) .- mean_flux(&quot;qCO₂3&quot;)) .* surface_area) ./ η
+TA_precipitated = [2 * mean(interior(fds[&quot;CaCO₃3&quot;][i]) .- interior(fds[&quot;CaCO₃1&quot;][i])) * domain_volume
+                   for i in 1:N]
+
+lines!(ax3, times, TA_realised, label = &quot;Converted to CO₂ uptake&quot;)
+lines!(ax3, fds[&quot;CaCO₃1&quot;].times./hours, TA_precipitated, label = &quot;Lost to precipitation&quot;)
+
+Legend(fig[3, 2], ax3)
+
+fig</code></pre><p><img src="../oae_experiment-36.svg" alt/></p><hr/><p><em>This page was generated using <a href="https://github.com/fredrikekre/Literate.jl">Literate.jl</a>.</em></p></article><nav class="docs-footer"><a class="docs-footer-prevpage" href="../data_assimilation/">« Data assimilation</a><a class="docs-footer-nextpage" href="../../model_components/biogeochemical/">Overview »</a><div class="flexbox-break"></div><p class="footer-message">Powered by <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> and the <a href="https://julialang.org/">Julia Programming Language</a>.</p></nav></div><div class="modal" id="documenter-settings"><div class="modal-background"></div><div class="modal-card"><header class="modal-card-head"><p class="modal-card-title">Settings</p><button class="delete"></button></header><section class="modal-card-body"><p><label class="label">Theme</label><div class="select"><select id="documenter-themepicker"><option value="auto">Automatic (OS)</option><option value="documenter-light">documenter-light</option><option value="documenter-dark">documenter-dark</option><option value="catppuccin-latte">catppuccin-latte</option><option value="catppuccin-frappe">catppuccin-frappe</option><option value="catppuccin-macchiato">catppuccin-macchiato</option><option value="catppuccin-mocha">catppuccin-mocha</option></select></div></p><hr/><p>This document was generated with <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> version 1.18.0 on <span class="colophon-date" title="Wednesday 2 September 2026 00:12">Wednesday 2 September 2026</span>. Using Julia version 1.12.2.</p></section><footer class="modal-card-foot"></footer></div></div></div></body></html>
