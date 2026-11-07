@@ -24,7 +24,7 @@ No atmospheric pressure enters the water-side concentration (see
 [`CarbonDioxideAirConcentration`](@ref), which carries the only atmospheric pressure on this
 path).
 
-With `warm_start = true` the surface free pH from each solve is stored in a
+With `warm_start = true` the surface total pH from each solve is stored in a
 `Field{Center, Center, Nothing}` on `grid` (the `pH` property) and used as the
 `initial_pH_guess` of the next, which roughly halves the solver iterations since the surface pH
 changes little between time steps. The field starts at zero, and any stored value outside
@@ -85,7 +85,7 @@ end
     # nothing stored yet (the field starts at zero) or a bad value falls back to the default guess
     initial_pH_guess = ifelse((pH⁻ > 0) & (pH⁻ < 14), pH⁻, convert(typeof(DIC), 8))
 
-    CO₂, pHⁿ = carbon_chemistry(; DIC, kwargs..., initial_pH_guess, output = Val((:CO₂, :pHᶠ)))
+    CO₂, pHⁿ = carbon_chemistry(; DIC, kwargs..., initial_pH_guess, output = Val((:CO₂, :pHᵗ)))
 
     # each thread only writes its own column so this is safe on the GPU
     @inbounds pH[i, j, 1] = pHⁿ

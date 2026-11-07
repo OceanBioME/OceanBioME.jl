@@ -33,6 +33,14 @@ function nutrient_uptake end
 @inline hard_organic_production(i, j, k, grid, inorganic_carbon, ::NutrientsPlanktonDetritus{FT}, fields, auxiliary_fields) where FT = zero(FT)
 @inline hard_organic_remineralisation(i, j, k, grid, inorganic_carbon, ::NutrientsPlanktonDetritus{FT}, fields, auxiliary_fields) where FT = zero(FT)
 
+# The iron the plankton put into sinking particles (mmol Fe m⁻³ s⁻¹), which `SimpleIron` carries as its particulate
+# iron. Only `ImplicitProductivity` with an `IronQuota` puts any.
+@inline particulate_iron_production(i, j, k, grid, plankton, ::NutrientsPlanktonDetritus{FT}, fields, auxiliary_fields) where FT = zero(FT)
+
+# The remineralisation of the sinking particulate organic matter (in the plankton's units per second), including that
+# carried by the inorganic carbon's particles
+function particulate_remineralisation end
+
 # The sinking particle mass flux into the top of cell `k` (ng cm⁻² s⁻¹, MARBL's units, positive downward), which
 # `SimpleIron`'s `ParticleScavenging` scales the scavenging with. Only components that sink implicitly and store their
 # flux (`store_flux = true`) contribute; `stores_sinking_flux` says whether one does.

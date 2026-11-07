@@ -154,14 +154,17 @@ end
 
     surface_PAR = getbc(_surface_PAR, i, j, grid, clock, field)
 
-    zᶜ = znodes(grid, Center(), Center(), Center())
-
     k = grid.Nz
-    @inbounds field[i, j, k] = surface_PAR * surface_PAR_division * exp(zᶜ[k] * (kʷ + χ * Chl[i, j, k] ^ e))
+    if !immersed_cell(i, j, k, grid)
+        zᶜ = znode(i, j, k, grid, Center(), Center(), Center())
+        @inbounds field[i, j, k] = surface_PAR * surface_PAR_division * exp(zᶜ * (kʷ + χ * Chl[i, j, k] ^ e))
+    end
 
-    # the rest of the points
+    # the rest of the points, stopping at the seafloor
     for k in grid.Nz-1:-1:1
-        Δz = @inbounds zᶜ[k] - zᶜ[k + 1] 
+        immersed_cell(i, j, k, grid) && break
+
+        Δz = znode(i, j, k, grid, Center(), Center(), Center()) - znode(i, j, k + 1, grid, Center(), Center(), Center())
         @inbounds field[i, j, k] = @inbounds field[i, j, k + 1] * exp(Δz * (kʷ + χ * Chl[i, j, k] ^ e))
     end
 end

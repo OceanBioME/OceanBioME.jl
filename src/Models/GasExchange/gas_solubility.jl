@@ -2,7 +2,12 @@
     PartiallySolubleGas(; air_concentration, solubility)
 
 Parameterises the available concentration of a gas dissolving in water in the form ``\\alpha C_a``
-where ``\alpha`` is the Ostwald solubility coeffieient and ``C_a`` is the concentration in the air.
+where ``\\alpha`` is the Ostwald solubility coefficient and ``C_a`` is the concentration in the air.
+
+The Ostwald coefficient relates the concentrations in the water and in the air at the *same*
+temperature, so ``C_a`` must be the concentration in the (water vapour saturated) air at the
+temperature of the water, ``C_a = x (p_{atm} - p_{H_2O}) / R T``. A constant ``C_a`` is therefore
+only right at one temperature. For oxygen use [`GarciaGordonOxygenSaturation`](@ref) instead.
 """
 struct PartiallySolubleGas{AC, S}
     air_concentration :: AC
@@ -59,7 +64,7 @@ end
     (Tk_100 = Tk / convert(FT, 100);
      exp(sol.A1 + sol.A2 / Tk_100 + sol.A3 * log(Tk_100) + S * (sol.B1 + sol.B2 * Tk_100 + sol.B3 * Tk_100^convert(FT, 2))) * Tk / convert(FT, 273.15))
 
-OxygenSolubility(FT = Float64; A1 = -58.3877, A2 = 85.8079, A3 = 23.8439, B1 = -0.034892, B2 = 0.015578, B3 = -0.0019387) =
+OxygenSolubility(FT = Float64; A1 = -58.3877, A2 = 85.8079, A3 = 23.8439, B1 = -0.034892, B2 = 0.015568, B3 = -0.0019387) =
     Wanninkhof92Solubility{FT}(A1, A2, A3, B1, B2, B3)
 
 struct MolPerKgPerAtmToMMolPerCubicMPerMicroAtm{SO, DE}
@@ -101,8 +106,7 @@ The fit is valid for ``T_{freezing} \\leq T \\leq 40°C`` and ``0 \\leq S \\leq 
 not clamped to that range. Its check value is 282.015 mmol/m³ at ``T = 10°C``, ``S = 35``,
 and ``p_{atm} = 1``.
 
-This is an alternative to a [`PartiallySolubleGas`](@ref) for the `air_concentration` of an
-[`OxygenGasExchangeBoundaryCondition`](@ref).
+This is the default `air_concentration` of an [`OxygenGasExchangeBoundaryCondition`](@ref).
 """
 struct GarciaGordonOxygenSaturation{FT, TP, SP, AP}
           temperature_polynomial :: TP  # MARBL a_0 … a_5

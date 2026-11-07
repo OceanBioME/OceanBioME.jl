@@ -65,3 +65,11 @@ The solubility ``f_f`` is the [Weiss1980](@citet) parameterisation (`FF`), which
 f_f = K_0(1 - p_{H_2O})\gamma,
 ```
 and is therefore the right quantity to multiply a *dry air* mole fraction by. The transfer velocity is a bare piston velocity (its `solubility` is `UnitSolubility`), and the atmospheric pressure enters the flux exactly once, on the air side.
+
+### Oxygen concentration
+
+The water concentration for oxygen is the `O₂` tracer, and the default air concentration is the oxygen saturation concentration of [GarciaGordon1992](@citet) (`GarciaGordonOxygenSaturation`), i.e. the concentration of oxygen in sea water in equilibrium with water vapour saturated air at 1 atm, scaled by the atmospheric pressure (in atm),
+```math
+C_a = [O_2]_{sat}(T, S)p_{atm},
+```
+so that saturated surface water neither takes up nor gives off oxygen. The atmospheric pressure (1 atm by default) can be a number, a function of `(x, y, t)`, or a `Field`, and is set with `OxygenGasExchangeBoundaryCondition(; air_concentration = GarciaGordonOxygenSaturation(; atmospheric_pressure))`.

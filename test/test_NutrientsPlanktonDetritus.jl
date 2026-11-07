@@ -502,11 +502,13 @@ using OceanBioME.Models.NutrientsPlanktonDetritusModels: SingleTracerNutrient
     @test lobster.underlying_biogeochemistry.oxygen |> ((::Oxygen{FT}) where FT) -> FT == Float32
 end
 
-using OceanBioME.Models.NutrientsPlanktonDetritusModels.NutrientsModels: free_iron, free_and_bound_iron
+using OceanBioME.Models.NutrientsPlanktonDetritusModels.NutrientsModels: free_and_bound_iron
 using OceanBioME.Models.NutrientsPlanktonDetritusModels: carbon_ratio
 using Oceananigans.Biogeochemistry: biogeochemical_auxiliary_fields, required_biogeochemical_tracers
 using Oceananigans.Grids: znode, Center
 
+
+free_iron(Fe, iron) = first(free_and_bound_iron(Fe, iron.total_ligand, iron.ligand_stability))
 
 @testset "SimpleIron" begin
     grid = RectilinearGrid(architecture; size=(1, 1, 1), extent=(1, 1, 2))
@@ -579,7 +581,7 @@ end
     CUDA.@allowscalar bgc.detritus.sinking.flux.POP[1, 1, 2] = F
     tendency = CUDA.@allowscalar bgc(1, 1, 1, grid, Val(:Fe), model.clock, model.tracers, aux)
 
-    Fe′, FeL = free_and_bound_iron(1e-3, bgc.nutrients.iron)
+    Fe′, FeL = free_and_bound_iron(1e-3, iron.total_ligand, iron.ligand_stability)
     M = F * carbon_ratio(bgc.plankton, bgc) * 100 * 3 * 12.01 # ng cm⁻² s⁻¹
     @test tendency ≈ -M * (22 * Fe′ + 1.2 * FeL) / (365 * 86400)
 
@@ -618,7 +620,7 @@ end
 using OceanBioME: ImplicitSinking, compute_implicit_sinking!, implicit_sinking_production
 using Oceananigans: fields
 
-@testset "SimpleIron with sinking scavenged iron" begin
+@testset "SimpleIron with sinking particulate iron" begin
     grid = RectilinearGrid(architecture; size=(1, 1, 4), extent=(1, 1, 400))
     Δz = 100
 
@@ -626,7 +628,7 @@ using Oceananigans: fields
 
     for open_bottom in (true, false)
         iron = SimpleIron(scavenging = ParticleScavenging(),
-                          sinking = ImplicitSinking(grid, (; scavenged_Fe = 100.0); open_bottom))
+                          sinking = ImplicitSinking(grid, (; PFe = 100.0); open_bottom))
 
         biogeochemistry = NutrientsPlanktonDetritus(grid;
                                                     plankton = Abiotic(),
@@ -649,9 +651,9 @@ using Oceananigans: fields
         compute_implicit_sinking!(model, sinking, bgc.nutrients.iron, bgc)
 
         scavenged = CUDA.@allowscalar [implicit_sinking_production(1, 1, k, grid, bgc.nutrients.iron, bgc, fields(model), aux,
-                                                                   Val(:scavenged_Fe)) for k in 1:4]
-        released  = CUDA.@allowscalar [sinking.remineralisation.scavenged_Fe[1, 1, k] for k in 1:4]
-        floor     = CUDA.@allowscalar sinking.floor_flux.scavenged_Fe[1, 1, 1]
+                                                                   Val(:PFe)) for k in 1:4]
+        released  = CUDA.@allowscalar [sinking.remineralisation.PFe[1, 1, k] for k in 1:4]
+        floor     = CUDA.@allowscalar sinking.floor_flux.PFe[1, 1, 1]
 
         @test scavenged[4] == 0 # nothing sinks into the top cell
         @test all(scavenged[1:3] .> 0)
@@ -670,6 +672,147 @@ using Oceananigans: fields
         time_step!(model, 1.0)
         @test CUDA.@allowscalar all(isfinite, interior(model.tracers.Fe))
     end
+end
+
+using OceanBioME.Models.NutrientsPlanktonDetritusModels: particulate_iron_production
+
+@testset "SimpleIron with PrognosticLigand" begin
+    grid = RectilinearGrid(architecture; size=(1, 1, 2), extent=(1, 1, 2))
+    Δz = 1
+    PAR = 100 # `light_attenuation`'s
+
+    @test_throws ArgumentError SimpleIron(total_ligand = PrognosticLigand())
+
+    detritus() = DissolvedParticulate(grid, :DOP, :POP; dissolution_lengths = (; POP = 100.0),
+                                      implicit_sinking = true, store_flux = true)
+
+    iron_biogeochemistry(total_ligand) =
+        NutrientsPlanktonDetritus(grid;
+                                  plankton = Abiotic(),
+                                  nutrients = Nutrients(; phosphate = OceanBioME.PO₄,
+                                                          iron = SimpleIron(; scavenging = ParticleScavenging(),
+                                                                              ligand_stability = 1e8, total_ligand)),
+                                  detritus = detritus(),
+                                  light_attenuation)
+
+    Lₜ = PrognosticLigand()
+    biogeochemistry = iron_biogeochemistry(Lₜ)
+    @test :Lig in required_biogeochemical_tracers(biogeochemistry)
+
+    model = NonhydrostaticModel(grid; advection = nothing, biogeochemistry)
+    uniform_model = NonhydrostaticModel(grid; advection = nothing, biogeochemistry = iron_biogeochemistry(1e-3))
+
+    Fe, Lig = 1e-3, 1e-3
+    set!(model, Fe = Fe, Lig = Lig, PO₄ = 1.0)
+    set!(uniform_model, Fe = Fe, PO₄ = 1.0)
+
+    bgc = model.biogeochemistry.underlying_biogeochemistry
+    uniform_bgc = uniform_model.biogeochemistry.underlying_biogeochemistry
+    aux = biogeochemical_auxiliary_fields(model.biogeochemistry)
+
+    # a POP flux of 1e-6 mmol P m⁻² s⁻¹ into the bottom cell, and remineralisation in both
+    F, R = 1e-6, 1e-8
+    for b in (bgc, uniform_bgc)
+        CUDA.@allowscalar b.detritus.sinking.flux.POP[1, 1, 2] = F
+        interior(b.detritus.sinking.remineralisation.POP) .= R
+    end
+
+    # the iron sees the ligand tracer as the uniform ligand
+    for k in 1:2
+        @test CUDA.@allowscalar(bgc(1, 1, k, grid, Val(:Fe), model.clock, model.tracers, aux)) ≈
+              CUDA.@allowscalar(uniform_bgc(1, 1, k, grid, Val(:Fe), uniform_model.clock, uniform_model.tracers, aux))
+    end
+
+    R_C = R * carbon_ratio(bgc.plankton, bgc)
+    M = F * carbon_ratio(bgc.plankton, bgc) * 100 * 3 * 12.01 # ng cm⁻² s⁻¹
+    FeL = last(free_and_bound_iron(Fe, Lig, 1e8))
+    ramp = Lig / Lₜ.low_ligand_threshold
+
+    bottom = CUDA.@allowscalar bgc(1, 1, 1, grid, Val(:Lig), model.clock, model.tracers, aux)
+    top    = CUDA.@allowscalar bgc(1, 1, 2, grid, Val(:Lig), model.clock, model.tracers, aux)
+
+    @test bottom ≈ Lₜ.production_ratio * R_C - Lₜ.scavenging_rate * M * FeL / (365 * 86400) - ramp * Lₜ.degradation_ratio * R_C
+    @test top ≈ Lₜ.production_ratio * R_C - Lₜ.photodegradation_rate * log(PAR) * Lₜ.photodegradation_depth / Δz * Lig -
+                ramp * Lₜ.degradation_ratio * R_C
+
+    time_step!(model, 1.0)
+    @test CUDA.@allowscalar all(isfinite, interior(model.tracers.Lig))
+
+    # with an `IronQuota` the plankton's iron uptake is their particulate iron production
+    Lₜ = PrognosticLigand(; production_ratio = 0, degradation_ratio = 0, scavenging_rate = 0, photodegradation_rate = 0)
+    plankton = ImplicitProductivity(; iron_ratio = IronQuota(), nutrient_half_saturations = (phosphate = 0.5, iron = 1e-4))
+
+    biogeochemistry = NutrientsPlanktonDetritus(grid;
+                                                plankton,
+                                                nutrients = Nutrients(; phosphate = OceanBioME.PO₄,
+                                                                        iron = SimpleIron(; scavenging = ParticleScavenging(),
+                                                                                            total_ligand = Lₜ)),
+                                                detritus = detritus(),
+                                                light_attenuation)
+
+    model = NonhydrostaticModel(grid; advection = nothing, biogeochemistry)
+    set!(model, Fe = Fe, Lig = Lig, PO₄ = 1.0)
+
+    bgc = model.biogeochemistry.underlying_biogeochemistry
+    aux = biogeochemical_auxiliary_fields(model.biogeochemistry)
+
+    U = CUDA.@allowscalar particulate_iron_production(1, 1, 1, grid, bgc.plankton, bgc, fields(model), aux)
+    @test U > 0
+    @test CUDA.@allowscalar(bgc(1, 1, 1, grid, Val(:Lig), model.clock, model.tracers, aux)) ≈ -ramp * Lₜ.uptake_ratio * U
+end
+
+using OceanBioME.Models.NutrientsPlanktonDetritusModels: solid_waste
+
+@testset "ImplicitProductivity with IronQuota" begin
+    grid = RectilinearGrid(architecture; size=(1, 1, 4), extent=(1, 1, 400))
+    Δz = 100
+
+    plankton = ImplicitProductivity(; iron_ratio = IronQuota(; maximum_ratio = 4e-3, minimum_ratio = 3e-4, saturating_iron = 3e-4),
+                                      nutrient_half_saturations = (phosphate = 0.5, iron = 1e-4))
+
+    iron = SimpleIron(scavenging = 0.0, sinking = ImplicitSinking(grid, (; PFe = 100.0)))
+
+    biogeochemistry = NutrientsPlanktonDetritus(grid;
+                                                plankton,
+                                                nutrients = Nutrients(; phosphate = OceanBioME.PO₄, iron),
+                                                detritus = DissolvedParticulate(grid, :DOP, :POP;
+                                                                                dissolution_lengths = (; POP = 100.0),
+                                                                                implicit_sinking = true),
+                                                light_attenuation)
+
+    model = NonhydrostaticModel(grid; advection = nothing, biogeochemistry)
+
+    # from the bottom: the quota at its minimum, on its ramp, saturated, and above saturation
+    Fe = [1e-5, 1.5e-4, 3e-4, 1e-3]
+    Q  = [3e-4, 2e-3,   4e-3, 4e-3]
+    set!(model, Fe = reshape(Fe, 1, 1, 4), PO₄ = 1.0, DOP = 0.1)
+
+    bgc = model.biogeochemistry.underlying_biogeochemistry
+    aux = biogeochemical_auxiliary_fields(model.biogeochemistry)
+    sinking = bgc.nutrients.iron.sinking
+
+    compute_implicit_sinking!(model, sinking, bgc.nutrients.iron, bgc)
+
+    produced = CUDA.@allowscalar [implicit_sinking_production(1, 1, k, grid, bgc.nutrients.iron, bgc, fields(model), aux,
+                                                              Val(:PFe)) for k in 1:4]
+    waste    = CUDA.@allowscalar [solid_waste(1, 1, k, grid, bgc.plankton, bgc, fields(model), aux) for k in 1:4]
+    released = CUDA.@allowscalar [sinking.remineralisation.PFe[1, 1, k] for k in 1:4]
+    floor    = CUDA.@allowscalar sinking.floor_flux.PFe[1, 1, 1]
+
+    @test all(waste .> 0)
+    @test produced ≈ Q .* waste
+
+    # the particulate iron made in the column is released in it or leaves through the floor
+    @test sum(produced .- released) * Δz ≈ floor atol = 1e-12 * sum(produced) * Δz
+
+    # the organic matter carries no iron, so the dissolved iron loses only the particulate iron and gains its release
+    for k in 1:4
+        tendency = CUDA.@allowscalar bgc(1, 1, k, grid, Val(:Fe), model.clock, model.tracers, aux)
+        @test tendency ≈ released[k] - produced[k] atol = 1e-12 * produced[4]
+    end
+
+    time_step!(model, 1.0)
+    @test CUDA.@allowscalar all(isfinite, interior(model.tracers.Fe))
 end
 
 @testset "MITgcmDIC stepping" begin
@@ -1201,8 +1344,8 @@ using OceanBioME.Models.NutrientsPlanktonDetritusModels.InorganicCarbonModels: p
         @test isapprox(C₁.carbon2, C₀.carbon2; rtol = 1e-12)
         @test isapprox(A₁, A₀; rtol = 1e-12)
 
-        # the replicates have the same tendencies
-        @test interior(model.tracers.DIC2) .- interior(model.tracers.DIC1) ≈ fill(100, 1, 1, Nz) rtol = 1e-12
-        @test interior(model.tracers.Alk2) .- interior(model.tracers.Alk1) ≈ fill(50, 1, 1, Nz) rtol = 1e-12
+        # the replicates have the same tendencies (compared on the CPU: `≈` would broadcast a GPU array with a CPU one)
+        @test Array(interior(model.tracers.DIC2) .- interior(model.tracers.DIC1)) ≈ fill(100, 1, 1, Nz) rtol = 1e-12
+        @test Array(interior(model.tracers.Alk2) .- interior(model.tracers.Alk1)) ≈ fill(50, 1, 1, Nz) rtol = 1e-12
     end
 end

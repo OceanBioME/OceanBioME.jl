@@ -11,10 +11,10 @@ export Biogeochemistry
 export NutrientsPlanktonDetritus
 export NPZD, LOBSTER, ImplicitBiology, MITgcmDIC, PISCES, DepthDependantSinkingSpeed, PrescribedLatitude, ModelLatitude, PISCESModel
 
-export Nutrients, NitrateAmmonia, SimpleIron, ParticleScavenging
+export Nutrients, NitrateAmmonia, SimpleIron, ParticleScavenging, PrognosticLigand
 export IronDustDeposition, IronDustDepositionForcing
 export CarbonateSystem, ExplicitCalciumCarbonate, ImplicitCalciumCarbonate
-export Abiotic, ImplicitProductivity, PhytoZoo
+export Abiotic, ImplicitProductivity, IronQuota, PhytoZoo
 export Detritus, DissolvedParticulate, InstantRemineralisationDetritus, CarbonNitrogenDissolvedParticulate
 export Oxygen
 
@@ -40,7 +40,8 @@ export TwoBandPhotosyntheticallyActiveRadiation,
        PARFromShortwave
 
 # airsea flux
-export GasExchange, CarbonDioxideGasExchangeBoundaryCondition, OxygenGasExchangeBoundaryCondition, GasExchangeBoundaryCondition
+export GasExchange, CarbonDioxideGasExchangeBoundaryCondition, OxygenGasExchangeBoundaryCondition, GasExchangeBoundaryCondition,
+       GarciaGordonOxygenSaturation
 
 # carbon chemistry
 export CarbonChemistry
