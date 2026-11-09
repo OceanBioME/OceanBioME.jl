@@ -13,10 +13,10 @@ The default tracer set is `(:PO₄, :DOP, :POP, :DIC, :Alk)`, though this varies
 Community productivity is parameterised as:
 
 ```math
-P = \alpha_\text{max} L_N L_{PAR},
+P = \alpha_\text{max} L_N L_{PAR} L_T,
 ```
 
-where ``\alpha_\text{max}`` is the maximum community productivity, and the nutrient and light limitations are:
+where ``\alpha_\text{max}`` is the maximum community productivity, ``L_T`` is an optional temperature dependence (one by default), and the nutrient and light limitations are:
 
 ```math
 L_{PAR} = \frac{PAR}{PAR + k_{PAR}},
@@ -60,6 +60,7 @@ When `inorganic_carbon = CarbonateSystem()` (the default), dissolved inorganic c
 | ``k_{PO_4}``              | `nutrient_half_saturations.phosphate` | mmol P / m³   |
 | ``k_{NO_3}``              | `nutrient_half_saturations.nitrate`   | mmol N / m³   |
 | ``k_{Fe}``                | `nutrient_half_saturations.iron`      | mmol Fe / m³  |
+| ``L_T``                   | `temperature_dependence`              | -             |
 
 Default detritus parameter values are given in [Parameters](@ref parameters).
 
@@ -84,6 +85,17 @@ biogeochemistry = ImplicitBiology(grid; limiting_nutrients = (:nitrate,))
 # Limit by nitrate and iron (omits phosphate)
 biogeochemistry = ImplicitBiology(grid; limiting_nutrients = (:nitrate, :iron))
 ```
+
+Productivity is independent of temperature by default. An exponential [Eppley (1972)](@cite eppley_1972) response, ``L_T = Q_{10}^{(T - T_r)/10}`` with ``Q_{10} = 1.88`` (Eppley's ``1.066^T``) and ``T_r = 0``°C by default, is added with `EppleyCurve`, which then requires a temperature tracer `T`. ``\alpha_\text{max}`` is then the productivity at ``T_r``:
+
+```julia
+biogeochemistry = ImplicitBiology(grid; temperature_dependence = EppleyCurve())
+
+# a Q₁₀ of 2 referenced to 20°C
+biogeochemistry = ImplicitBiology(grid; temperature_dependence = EppleyCurve(temperature_coefficient = 2, reference_temperature = 20))
+```
+
+Any object callable on the temperature (°C) can be supplied instead of `EppleyCurve` to define a different response.
 
 Carbonate chemistry and oxygen can be added as with any other NPD model:
 

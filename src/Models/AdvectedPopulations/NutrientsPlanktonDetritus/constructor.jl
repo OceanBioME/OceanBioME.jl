@@ -96,7 +96,7 @@ const default_light = TwoBandPhotosyntheticallyActiveRadiation
 const default_surface_PAR = 100
 
 """
-    ImplicitBiology(grid; limiting_nutrients = (:nitrate, :iron, :phosphate), open_bottom = true, kwargs...)
+    ImplicitBiology(grid; limiting_nutrients = (:nitrate, :iron, :phosphate), open_bottom = true, temperature_dependence = nothing, kwargs...)
 
 Construct the `ImplicitBiology` preset of the [`NutrientsPlanktonDetritus`](@ref) framework: a model
 which computes community productivity limited by available nutrients and light without explicitly
@@ -114,6 +114,8 @@ Keyword Arguments
 - `limiting_nutrients`: a tuple of the nutrients that limit productivity, drawn from `:nitrate` (or
   `:ammonia` to split nitrogen into `NO₃`/`NH₄`), `:phosphate`, and `:iron`
 - `open_bottom`: whether detritus can sink out of the bottom of the domain
+- `temperature_dependence`: `nothing` (default) for temperature independent productivity, or a
+  temperature response such as [`EppleyCurve`](@ref) (adds a `T` tracer requirement)
 - `surface_PAR`: the surface photosynthetically active radiation passed to the default light model
 - any other keyword argument is forwarded to [`NutrientsPlanktonDetritus`](@ref) (e.g. `oxygen`,
   `nutrients`, `plankton`, `detritus`, `light_attenuation`)
@@ -121,6 +123,7 @@ Keyword Arguments
 ImplicitBiology(grid::AbstractGrid{FT};
                 limiting_nutrients = (:nitrate, :iron, :phosphate),
                 open_bottom = true,
+                temperature_dependence = nothing,
                 nutrients = Nutrients(:ammonia in limiting_nutrients ? NitrateAmmonia{FT}() : N,
                                       :phosphate in limiting_nutrients ? PO₄ : nothing,
                                       :iron in limiting_nutrients ? Fe : nothing,
@@ -129,7 +132,8 @@ ImplicitBiology(grid::AbstractGrid{FT};
                                                 nutrient_half_saturations =
                                                     (nitrate = 7.17,                     # mmol N/m³
                                                      phosphate = 0.5,                    # mmol N/m³
-                                                     iron = 1e-4)[limiting_nutrients]),  # mmol Fe / m³),
+                                                     iron = 1e-4)[limiting_nutrients],   # mmol Fe / m³
+                                                temperature_dependence),
                 detritus = DissolvedParticulate(grid, :DOP, :POP;
                                                 dissolved_remineralisation_rate = 2/365/day,
                                                 particulate_remineralisation_rate = 0.03/day,
