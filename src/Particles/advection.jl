@@ -1,6 +1,15 @@
 using Oceananigans.Architectures: on_architecture, device, architecture
 using Oceananigans.Biogeochemistry: required_biogeochemical_tracers, biogeochemical_auxiliary_fields
-using Oceananigans.Models.LagrangianParticleTracking: _advect_particles!, total_velocities
+using Oceananigans.Models.LagrangianParticleTracking: LagrangianParticleTracking, _advect_particles!, total_velocities
+
+# Oceananigans 0.117 replaced the kernel's restitution with `ParticleBoundaryConditions` and added an
+# absorption record, `nothing` when no particle is removed; the default reflecting boundary matches the
+# restitution of 1 used before.
+const PARTICLE_BOUNDARY_CONDITIONS = isdefined(LagrangianParticleTracking, :ParticleBoundaryConditions)
+
+@inline advection_kernel_arguments(grid, Δt, velocities) =
+    PARTICLE_BOUNDARY_CONDITIONS ? (LagrangianParticleTracking.ParticleBoundaryConditions(), nothing, grid, Δt, velocities) :
+                                   (1.0, grid, Δt, velocities)
 
 # put nothing to do nothing
 advect_particles!(advection, particles, model, Δt) = nothing
@@ -21,7 +30,7 @@ function advect_particles!(::LagrangianAdvection, particles, model, Δt)
     # Advect particles
     advect_particles_kernel! = _advect_particles!(device(arch), workgroup, worksize)
 
-    advect_particles_kernel!(particles, 1.0, model.grid, Δt, total_velocities(model))
+    advect_particles_kernel!(particles, advection_kernel_arguments(model.grid, Δt, total_velocities(model))...)
 
     return nothing
 end
