@@ -26,7 +26,11 @@ using ..NutrientsPlanktonDetritusModels:
     inorganic_waste,
     inorganic_carbon_waste,
     solid_carbon_waste,
-    dissolved_carbon_waste
+    dissolved_carbon_waste,
+    sinking_flux_into,
+    organic_matter_mass_per_carbon,
+    calcium_carbonate_molar_mass,
+    mmol_m⁻²_to_nmol_cm⁻²
 
 import Base: summary, show
 
@@ -39,7 +43,9 @@ import ..NutrientsPlanktonDetritusModels:
     component_tendency,
     component_drift_velocity,
     hard_organic_production,
-    hard_organic_remineralisation
+    hard_organic_remineralisation,
+    sinking_particle_mass_flux,
+    stores_sinking_flux
 
 include("abstract_inorganic_carbon.jl")
 include("defaults.jl")

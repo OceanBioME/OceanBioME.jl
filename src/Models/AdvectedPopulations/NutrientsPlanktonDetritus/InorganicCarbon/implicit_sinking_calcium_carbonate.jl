@@ -143,6 +143,16 @@ required_biogeochemical_auxiliary_fields(::ImplicitCalciumCarbonate) = tuple()
 update_biogeochemical_state!(model, ic::ImplicitCalciumCarbonate, npd::NPD) =
     compute_implicit_sinking!(model, ic.sinking, ic, npd)
 
+# The sinking mass for `SimpleIron`'s `ParticleScavenging`: the calcium carbonate of every class and the hard organic
+# matter it carries (`hard_organic_carbon_ratio` mol C / mol CaCO₃), as MARBL counts both
+const FluxStoringImplicitCalciumCarbonate = ImplicitCalciumCarbonate{<:Any, <:Any, <:Any, <:ImplicitSinking{<:Any, <:Any, <:Any, <:Any, <:NamedTuple}}
+
+stores_sinking_flux(::FluxStoringImplicitCalciumCarbonate) = true
+
+@inline sinking_particle_mass_flux(i, j, k, grid, ic::FluxStoringImplicitCalciumCarbonate, ::NPD{FT}) where FT =
+    sinking_flux_into(i, j, k, grid, ic.sinking.flux) * convert(FT, mmol_m⁻²_to_nmol_cm⁻²) *
+    (convert(FT, calcium_carbonate_molar_mass) + ic.hard_organic_carbon_ratio * convert(FT, organic_matter_mass_per_carbon))
+
 # With `replicates > 1` the tracers are `DIC1`, `Alk1`, `DIC2`, … rather than `DIC` and `Alk`, and
 # each replicate evolves with the tendency of the base tracer (see `component_tendency` for `CarbonateSystem`).
 @inline @generated function component_tendency(i, j, k, grid, ::ImplicitCalciumCarbonate{N}, ::Val{name},

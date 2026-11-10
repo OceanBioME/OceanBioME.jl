@@ -18,9 +18,13 @@ using ..NutrientsPlanktonDetritusModels:
     silicon_ratio,
     calcium_carbonate_rain_ratio,
     hard_organic_production,
-    hard_organic_remineralisation
+    hard_organic_remineralisation,
+    sinking_flux_into,
+    organic_matter_mass_per_carbon,
+    mmol_m⁻²_to_nmol_cm⁻²
 
-import ..NutrientsPlanktonDetritusModels: dissolved_waste, solid_waste, calcium_carbonate_dissolution, inorganic_waste, nutrient_uptake
+import ..NutrientsPlanktonDetritusModels: dissolved_waste, solid_waste, calcium_carbonate_dissolution, inorganic_waste, nutrient_uptake,
+                                          sinking_particle_mass_flux, stores_sinking_flux
 
 using ..NutrientsPlanktonDetritusModels.NutrientsModels:
     Nutrients,
@@ -62,5 +66,18 @@ include("carbon_nitrogen.jl")
 
 update_biogeochemical_state!(model, detritus::AbstractSinkingDetritus{<:ImplicitSinking}, npd::NutrientsPlanktonDetritus) =
     compute_implicit_sinking!(model, detritus.sinking, detritus, npd)
+
+# The sinking organic matter mass for `SimpleIron`'s `ParticleScavenging`, from the stored implicit sinking flux of
+# single element detritus (in the plankton's units, so the plankton's carbon ratio gives its carbon)
+const FluxStoringImplicitSinking = ImplicitSinking{<:Any, <:Any, <:Any, <:Any, <:NamedTuple}
+
+const FluxStoringSingleElementDetritus = Union{Detritus{<:Any, <:FluxStoringImplicitSinking},
+                                               DissolvedParticulate{<:Any, <:Any, <:Any, <:Any, <:Any, <:Any, <:FluxStoringImplicitSinking}}
+
+stores_sinking_flux(::FluxStoringSingleElementDetritus) = true
+
+@inline sinking_particle_mass_flux(i, j, k, grid, detritus::FluxStoringSingleElementDetritus, bgc::NPD{FT}) where FT =
+    sinking_flux_into(i, j, k, grid, detritus.sinking.flux) * carbon_ratio(bgc.plankton, bgc) *
+    convert(FT, mmol_m⁻²_to_nmol_cm⁻² * organic_matter_mass_per_carbon)
 
 end # module
