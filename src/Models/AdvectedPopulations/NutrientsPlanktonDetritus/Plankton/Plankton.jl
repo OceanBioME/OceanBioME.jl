@@ -1,6 +1,6 @@
 module PlanktonModels
 
-export Abiotic, ImplicitProductivity, PhytoZoo
+export Abiotic, ImplicitProductivity, IronQuota, PhytoZoo
 
 # plankton models *must* define `inorganic_waste`, `nutrient_uptake`, `dissolved_waste`, and `solid_waste`
 # and may define `carbon_ratio`, `nitrogen_ratio`, `phosphate_ratio`, `iron_ratio`, `silicon_ratio`, and `calcium_carbonate_rain_ratio`
@@ -58,6 +58,7 @@ import ..NutrientsPlanktonDetritusModels:
 import ..NutrientsPlanktonDetritusModels:
     inorganic_waste,
     nutrient_uptake,
+    particulate_iron_production,
     solid_waste,
     dissolved_waste,
     inorganic_nitrogen_waste,

@@ -10,18 +10,46 @@ Mainly from MITGCM https://web.mit.edu/globalchange/www/MITJPSPGC_Rpt122.pdf
 Units: mmol P / m³
 Tracers: none
 Default limiting nutrients: N or NO₃, P, Fe
+
+The `iron_ratio` (mol Fe / mol P) is either a number, the Fe:P of all the organic matter, or an [`IronQuota`](@ref).
 """
-struct ImplicitProductivity{FT, LN, TT} <: AbstractPlankton{LN} 
+struct ImplicitProductivity{FT, LN, TT, IR} <: AbstractPlankton{LN}
     maximum_community_productivity :: FT
              light_half_saturation :: FT
        dissolved_fraction_of_waste :: FT
                       carbon_ratio :: FT
                     nitrogen_ratio :: FT
-                        iron_ratio :: FT
+                        iron_ratio :: IR
                         rain_ratio :: FT
 
          nutrient_half_saturations :: NamedTuple{LN, TT}
 end
+
+"""
+    IronQuota(FT = Float64; maximum_ratio = 35e-6 * 117, minimum_ratio = 2.7e-6 * 117, saturating_iron = 3e-4)
+
+An Fe:P (mol Fe / mol P) for [`ImplicitProductivity`](@ref) which varies with the dissolved iron `Fe` (mmol Fe / m³),
+as MARBL's Fe:C for growth (`gQfe`):
+
+    Q = max(minimum_ratio, min(maximum_ratio, maximum_ratio × Fe / saturating_iron))
+
+The defaults are MARBL's small phytoplankton's `gQfe_0` and `gQfe_min` at a C:P of 117, and `gQ_Fe_kFe_thres` × `kFe`.
+
+The iron of the solid waste, Q times it, goes into `SimpleIron`'s particulate iron (`PFe`). The dissolved and
+particulate organic matter carry no iron, so the iron of the dissolved waste is never taken up.
+"""
+struct IronQuota{FT}
+      maximum_ratio :: FT # mol Fe / mol P
+      minimum_ratio :: FT # mol Fe / mol P
+    saturating_iron :: FT # mmol Fe / m³
+end
+
+IronQuota(FT = Float64; maximum_ratio = 35e-6 * 117, minimum_ratio = 2.7e-6 * 117, saturating_iron = 3e-4) =
+    IronQuota(convert(FT, maximum_ratio), convert(FT, minimum_ratio), convert(FT, saturating_iron))
+
+convert_iron_ratio(FT, ratio::Number) = convert(FT, ratio)
+convert_iron_ratio(FT, q::IronQuota) =
+    IronQuota(FT; maximum_ratio = q.maximum_ratio, minimum_ratio = q.minimum_ratio, saturating_iron = q.saturating_iron)
 
 function ImplicitProductivity(FT = Float64; 
                               maximum_community_productivity = 3/(365days), # mmol P / m³ / s
@@ -46,7 +74,7 @@ function ImplicitProductivity(FT = Float64;
                                 convert(FT, dissolved_fraction_of_waste),
                                 convert(FT, carbon_ratio),
                                 convert(FT, nitrogen_ratio),
-                                convert(FT, iron_ratio),
+                                convert_iron_ratio(FT, iron_ratio),
                                 convert(FT, rain_ratio),
                                 nutrient_half_saturations)
 end
@@ -58,7 +86,18 @@ required_biogeochemical_auxiliary_fields(::ImplicitProductivity) = (:PAR, )
 @inline nitrogen_ratio(plankton::ImplicitProductivity, ::NPD{FT}) where FT = plankton.nitrogen_ratio
 @inline carbon_ratio(plankton::ImplicitProductivity, ::NPD{FT}) where FT = plankton.carbon_ratio
 @inline iron_ratio(plankton::ImplicitProductivity, ::NPD{FT}) where FT = plankton.iron_ratio
+@inline iron_ratio(::ImplicitProductivity{<:Any, <:Any, <:Any, <:IronQuota}, ::NPD{FT}) where FT = zero(FT)
 @inline calcium_carbonate_rain_ratio(plankton::ImplicitProductivity, ::NPD{FT}) where FT = plankton.rain_ratio
+
+@inline function particulate_iron_production(i, j, k, grid, plankton::ImplicitProductivity{<:Any, <:Any, <:Any, <:IronQuota},
+                                             bgc::NPD, fields, auxiliary_fields)
+    q = plankton.iron_ratio
+    Fe = @inbounds fields.Fe[i, j, k]
+
+    Q = max(q.minimum_ratio, min(q.maximum_ratio, q.maximum_ratio * Fe / q.saturating_iron))
+
+    return Q * solid_waste(i, j, k, grid, plankton, bgc, fields, auxiliary_fields)
+end
 
 @inline limiting_nutrients(::ImplicitProductivity{<:Any, <:NamedTuple{LN}}) where LN = LN
 
