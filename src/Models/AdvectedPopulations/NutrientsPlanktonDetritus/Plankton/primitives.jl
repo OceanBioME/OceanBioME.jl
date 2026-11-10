@@ -95,3 +95,47 @@ struct AnalyticalLightLimitation end # This formulation is justified because yo
 
 @inline light_limitation(::MondoLightLimitation, PAR, kPAR) = PAR / (kPAR + PAR)
 @inline light_limitation(::AnalyticalLightLimitation, PAR, kPAR) = PAR / sqrt(PAR^2 + kPAR^2)
+
+# temperature limitation - `temperature_dependence` is `nothing` (no dependence), a bare Q₁₀ number
+# (legacy `PhytoZoo` behaviour), or any object callable on the temperature in °C
+
+@inline temperature_limitation(::Nothing, i, j, k, fields) = 1
+
+@inline function temperature_limitation(Q10::Number, i, j, k, fields)
+    T = @inbounds fields.T[i, j, k]
+
+    return Q10 ^ (T / 10)
+end
+
+@inline function temperature_limitation(response, i, j, k, fields)
+    T = @inbounds fields.T[i, j, k]
+
+    return response(T)
+end
+
+"""
+    EppleyCurve(FT = Float64; temperature_coefficient = 1.88, reference_temperature = 0)
+
+An exponential (Eppley, 1972) temperature response, `Q₁₀^((T - Tᵣ) / 10)`, where `Q₁₀` is the
+`temperature_coefficient` and `Tᵣ` the `reference_temperature` (°C). The default `Q₁₀` of 1.88 is
+Eppley's 1.066ᵀ curve, which approximately doubles growth every 10 °C.
+"""
+struct EppleyCurve{FT}
+    temperature_coefficient :: FT
+      reference_temperature :: FT
+end
+
+EppleyCurve(FT = Float64; temperature_coefficient = 1.88, reference_temperature = 0) =
+    EppleyCurve(convert(FT, temperature_coefficient), convert(FT, reference_temperature))
+
+@inline (curve::EppleyCurve)(T) = curve.temperature_coefficient ^ ((T - curve.reference_temperature) / 10)
+
+convert_temperature_dependence(FT, ::Nothing) = nothing
+convert_temperature_dependence(FT, curve::EppleyCurve) = EppleyCurve(FT; curve.temperature_coefficient, curve.reference_temperature)
+convert_temperature_dependence(FT, response) = response
+
+temperature_dependence_summary(::Nothing) = "none"
+temperature_dependence_summary(response) = summary(response)
+
+Base.summary(curve::EppleyCurve) = "EppleyCurve(Q₁₀ = $(curve.temperature_coefficient), Tᵣ = $(curve.reference_temperature)°C)"
+Base.show(io::IO, curve::EppleyCurve) = print(io, summary(curve))

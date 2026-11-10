@@ -1,6 +1,6 @@
 module PlanktonModels
 
-export Abiotic, ImplicitProductivity, PhytoZoo
+export Abiotic, ImplicitProductivity, PhytoZoo, EppleyCurve
 
 # plankton models *must* define `inorganic_waste`, `nutrient_uptake`, `dissolved_waste`, and `solid_waste`
 # and may define `carbon_ratio`, `nitrogen_ratio`, `phosphate_ratio`, `iron_ratio`, `silicon_ratio`, and `calcium_carbonate_rain_ratio`

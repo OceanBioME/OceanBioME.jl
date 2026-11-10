@@ -14,7 +14,7 @@ export NPZD, LOBSTER, ImplicitBiology, MITgcmDIC, PISCES, DepthDependantSinkingS
 export Nutrients, NitrateAmmonia, SimpleIron
 export IronDustDeposition, IronDustDepositionForcing
 export CarbonateSystem, ExplicitCalciumCarbonate
-export Abiotic, ImplicitProductivity, PhytoZoo
+export Abiotic, ImplicitProductivity, PhytoZoo, EppleyCurve
 export Detritus, DissolvedParticulate, InstantRemineralisationDetritus, CarbonNitrogenDissolvedParticulate
 export Oxygen
 
