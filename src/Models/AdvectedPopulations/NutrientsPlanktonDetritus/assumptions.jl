@@ -26,6 +26,13 @@ function nutrient_uptake end
 
 @inline chlorophyll_ratio(plankton, ::Val) = chlorophyll_ratio(plankton)
 
+# Organic matter carried down by the inorganic carbon's particles (MARBL's "hard" POC, ballasted by the CaCO₃), in
+# the plankton's units: its production is taken out of the particulate detritus production and its
+# remineralisation is returned with the detritus' (see `DissolvedParticulate`). Only `ImplicitCalciumCarbonate`
+# carries any.
+@inline hard_organic_production(i, j, k, grid, inorganic_carbon, ::NutrientsPlanktonDetritus{FT}, fields, auxiliary_fields) where FT = zero(FT)
+@inline hard_organic_remineralisation(i, j, k, grid, inorganic_carbon, ::NutrientsPlanktonDetritus{FT}, fields, auxiliary_fields) where FT = zero(FT)
+
 for (element, symbol) in pairs((nitrogen = :N, phosphate = :PO₄, iron = :Fe, silicon = :Si, carbon = :C))
     inorganic_waste_name  = Symbol(:inorganic_, element, :_waste)
     solid_waste_name      = Symbol(:solid_,     element, :_waste)

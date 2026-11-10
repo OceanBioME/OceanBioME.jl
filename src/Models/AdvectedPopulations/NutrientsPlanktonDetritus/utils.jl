@@ -114,8 +114,11 @@ for thing in (PhytoZoo, Detritus, DissolvedParticulate)
     end
 end
 
+# calcium carbonate which sinks on its own rather than being carried by the organic detritus
+const SeparateCalciumCarbonate = Union{ExplicitCalciumCarbonate, ImplicitCalciumCarbonate}
+
 @inline organic_carbon_calcium_carbonate_factor(bgc::NPD{FT}) where FT = one(FT) + calcium_carbonate_rain_ratio(bgc.plankton, bgc)
-@inline organic_carbon_calcium_carbonate_factor(bgc::NPD{FT, <:Any, <:Any, <:Any, <:ExplicitCalciumCarbonate}) where FT = one(FT)
+@inline organic_carbon_calcium_carbonate_factor(bgc::NPD{FT, <:Any, <:Any, <:Any, <:SeparateCalciumCarbonate}) where FT = one(FT)
 
 for thing in (PhytoZoo, Detritus)
     @eval begin
@@ -129,7 +132,7 @@ for thing in (PhytoZoo, Detritus)
     end
 end
 
-function group_element_tracers(group::PhytoZoo, bgc::NPD{<:Any, <:Any, <:Any, <:Any, <:ExplicitCalciumCarbonate}, ::Val{:carbon})
+function group_element_tracers(group::PhytoZoo, bgc::NPD{<:Any, <:Any, <:Any, <:Any, <:SeparateCalciumCarbonate}, ::Val{:carbon})
     R = carbon_ratio(bgc.plankton, bgc)
     ρ = calcium_carbonate_rain_ratio(bgc.plankton, bgc)
 
@@ -153,9 +156,9 @@ function group_element_tracers(::DissolvedParticulate{N, M, DN, PN, <:Any, <:Any
     return NamedTuple{DN}(ntuple(_ -> ratio, N))
 end
 
-inorganic_carbon_tracers(::CarbonateSystem{1}, bgc::NPD{FT}, n) where FT =
+inorganic_carbon_tracers(::Union{CarbonateSystem{1}, ImplicitCalciumCarbonate{1}}, bgc::NPD{FT}, n) where FT =
     (; DIC = one(FT))
-inorganic_carbon_tracers(::CarbonateSystem, bgc::NPD{FT}, n) where FT =
+inorganic_carbon_tracers(::Union{CarbonateSystem, ImplicitCalciumCarbonate}, bgc::NPD{FT}, n) where FT =
     NamedTuple{(Symbol(:DIC, n), )}((one(FT), ))
 
 inorganic_carbon_tracers(::ExplicitCalciumCarbonate{1}, bgc::NPD{FT}, n) where FT =
