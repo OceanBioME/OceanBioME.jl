@@ -1,6 +1,6 @@
 module NutrientsModels 
 
-export Nutrients, SingleTracerNutrient, NitrateAmmonia, SimpleIron, ParticleScavenging, N, PO₄, Fe, Si
+export Nutrients, SingleTracerNutrient, NitrateAmmonia, SimpleIron, ParticleScavenging, PrognosticLigand, N, PO₄, Fe, Si
 
 using Adapt
 
@@ -14,6 +14,7 @@ using ..NutrientsPlanktonDetritusModels:
 
 using ..NutrientsPlanktonDetritusModels:
     inorganic_waste,
+    dissolved_waste,
     nutrient_uptake,
     inorganic_nitrogen_waste,
     inorganic_phosphate_waste,
@@ -21,7 +22,11 @@ using ..NutrientsPlanktonDetritusModels:
     inorganic_silicon_waste,
     sinking_particle_mass_flux,
     stores_sinking_flux,
-    particulate_iron_production
+    particulate_iron_production,
+    gross_iron_uptake,
+    particulate_remineralisation
+
+using Oceananigans.Operators: Δzᶜᶜᶜ
 
 using OceanBioME: ImplicitSinking, compute_implicit_sinking!
 
@@ -85,6 +90,7 @@ const NutrientsNPD{FT} = NutrientsPlanktonDetritus{FT, <:Nutrients}
 include("prognosis.jl")
 include("nitrate_ammonia.jl")
 include("simple_iron.jl")
+include("prognostic_ligand.jl")
 include("defaults.jl")
 include("adapt_show_methods.jl")
 
