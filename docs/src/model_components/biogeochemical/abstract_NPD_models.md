@@ -55,7 +55,7 @@ The `Inorganic Carbon` component can be used to enable carbon chemistry. This co
 - **`CarbonateSystem`** — dissolved inorganic carbon and alkalinity (`DIC`, `Alk`), driven by primary production, remineralisation, and implicit calcite production/dissolution.
 - **`ExplicitCalciumCarbonate`** — as `CarbonateSystem`, but with calcium carbonate (`CaCO₃`) as its own sinking tracer, which dissolves or precipitates depending on its saturation state (`Ω`); requires `grid`.
 
-Both can carry several independent replicates of their tracers, for example to compare a perturbation with a control under the same flow and biology. Replicates are numbered or labelled: `CarbonateSystem(2)` has `DIC1`, `DIC2`, `Alk1` and `Alk2`, while `CarbonateSystem((:control, :release))` has `DIC_control`, `DIC_release`, `Alk_control` and `Alk_release` (a single labelled replicate, `CarbonateSystem(:control)`, also works). [`carbonate_replicates`](@ref) returns the names of each replicate's tracers.
+Both can carry several independent replicates of their tracers, for example to compare a perturbation with a control under the same flow and biology. Replicates are numbered or labelled: `CarbonateSystem(2)` has `DIC1`, `DIC2`, `Alk1` and `Alk2`, while `CarbonateSystem((:control, :release))` has `DIC_control`, `DIC_release`, `Alk_control` and `Alk_release` (a single labelled replicate, `CarbonateSystem(:control)`, also works). [`carbonate_replicates`](@ref) returns the names of each replicate's tracers. Sediments and particles which exchange `DIC` (the `SimpleMultiGSediment` with `sinking_carbon`, and `SugarKelpParticles`) exchange the same flux with every replicate.
 
 ### Oxygen
 

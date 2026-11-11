@@ -6,6 +6,8 @@ using Oceananigans: Clock
 using Oceananigans.Models: AbstractModel
 using Oceananigans.TimeSteppers: TimeStepper
 
+using OceanBioME: tracer_replicates
+
 import Oceananigans.Models: fields, prognostic_fields
 
 import Oceananigans.Biogeochemistry: update_biogeochemical_state!, 
