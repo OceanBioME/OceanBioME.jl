@@ -32,6 +32,13 @@ model = NonhydrostaticModel(grid;
                             tracers = (:T, :S))
 ```
 
+Replicated carbonate systems (e.g. `CarbonateSystem((:control, :release))`) need an exchange for each replicate's `DIC`, which [`carbon_dioxide_gas_exchange_boundary_conditions`](@ref) builds from [`carbonate_replicates`](@ref):
+```julia
+biogeochemistry = LOBSTER(grid; inorganic_carbon = CarbonateSystem((:control, :release)))
+boundary_conditions = carbon_dioxide_gas_exchange_boundary_conditions(biogeochemistry; wind_speed = 5)
+# (DIC_control = FieldBoundaryConditions(top = ...), DIC_release = FieldBoundaryConditions(top = ...))
+```
+
 !!! note
 
     All gas exchange models require temperature (`T`) to be present in the model, and carbon dioxide requires sailinity (`S`), total inorganic carbon (`DIC`), and alkalinity (`Alk`), and optionally can take silicate and phosphate where there names are specified in the keyword argument `silicate_and_phosphate_names`
