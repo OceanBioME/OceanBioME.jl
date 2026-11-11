@@ -17,6 +17,7 @@ NutrientsPlanktonDetritus{Float64} with (:NO₃, :NH₄, :P, :Z, :DOM, :sPOM, :b
  Sediment: Nothing
  Particles: Nothing
  Modifiers: Nothing
+ Negative tracers: Nothing
 ```
 
 ## Model equations
