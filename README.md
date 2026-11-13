@@ -36,12 +36,12 @@ using Oceananigans.Units
 
 grid = RectilinearGrid(CPU(), size = (160, 32), extent = (10000meters, 500meters), topology = (Bounded, Flat, Bounded))
 
-biogeochemistry = NutrientPhytoplanktonZooplanktonDetritus(; grid) 
+biogeochemistry = NPZD(grid)
 
-model = NonhydrostaticModel(; grid, biogeochemistry,
-                              advection = WENO(),
-                              closure = AnisotropicMinimumDissipation(),
-			      buoyancy = SeawaterBuoyancy(constant_salinity = true))
+model = NonhydrostaticModel(grid; biogeochemistry,
+                            advection = WENO(),
+                            closure = AnisotropicMinimumDissipation(),
+                            buoyancy = SeawaterBuoyancy(constant_salinity = true))
 
 @inline front(x, z, μ, δ) = μ + δ * tanh((x - 7000 + 4 * z) / 500)
 
@@ -123,12 +123,16 @@ biogeochemistry and other features we provide read below.
 
 ## Using GPU
 
-To run the same example on a GPU we just need to construct the `grid` on the GPU; the rest is taken care of!
+To run the same example on an NVIDIA GPU we just need to load CUDA and construct the `grid` on the GPU; the rest is taken care of!
 
-Just replace `CPU()` with `GPU()` in the grid construction with everything else left unchanged:
+Just install and load CUDA, and replace `CPU()` with `GPU()` in the grid construction with everything else left unchanged:
 
 ```julia
-grid = RectilinearGrid(GPU(), size = (256, 32), extent = (500meters, 100meters), topology = (Bounded, Flat, Bounded))
+using Pkg; Pkg.add("CUDA")
+
+using CUDA
+
+grid = RectilinearGrid(GPU(), size = (160, 32), extent = (10000meters, 500meters), topology = (Bounded, Flat, Bounded))
 ```
 
 ## Documentation

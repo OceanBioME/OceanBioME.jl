@@ -10,8 +10,7 @@ mol/kg. `water_pressure` is the sea water (hydrostatic) pressure above atmospher
 the surface, and the default of `nothing` means the surface.
 The returned `[CO₃²⁻]` is in mmol/m³, matching `DIC`.
 
-When `pH` is specified the intermediate solve is skipped and the free pH (i.e. -log[H⁺])
-is expected.
+When `pH` is specified the intermediate solve is skipped and the total scale pH is expected.
 """
 function carbonate_concentration(cc::CarbonChemistry;
                                  DIC::FT, T, S, Alk = zero(DIC), pH = nothing,

@@ -55,7 +55,7 @@ julia> carbon_chemistry = CarbonChemistry()
 julia> pCO₂ = carbon_chemistry(; DIC = 2000.0, Alk = 2000.0, T = 10.0, S = 35.0)
 1308.1006995915372
 
-julia> pH = carbon_chemistry(; DIC = 2000.0, Alk = 2000.0, T = 10.0, S = 35.0, output = Val(:pHᶠ))
+julia> pH = carbon_chemistry(; DIC = 2000.0, Alk = 2000.0, T = 10.0, S = 35.0, output = Val(:pHᵗ))
 7.5025291696038705
 
 julia> pCO₂_higher_pH = carbon_chemistry(; DIC = 2000.0, T = 10.0, S = 35.0, pH = 7.5)
@@ -104,11 +104,13 @@ unless `pH` is specified, in which case intermediate computation of `pH` is skip
 
 `DIC` is expected in mmol C/m³, `Alk` meq/m³, `T` in °C, and S in PSU.
 
-When pH is specified the free pH (i.e. -log[H⁺]) is expected.
+When pH is specified the total scale pH (i.e. what `Val(:pHᵗ)` returns) is expected.
 
 Alternatively pCO₂, the aqueous carbon dioxide concentration, and free, total, or sea water
 pH may be returned by setting `output` to Val(:pCO₂), Val(:CO₂), Val(:pHᶠ), Val(:pHᵗ), or
-Val(:pHˢ), which will return `X` in `Val(:X)` instead of fCO₂.
+Val(:pHˢ), which will return `X` in `Val(:X)` instead of fCO₂. The free scale only counts the
+free hydrogen ions, the total scale also counts those bound in bisulfate (HSO₄⁻), and the sea
+water scale also those bound in hydrogen fluoride (HF).
 
 `Val(:CO₂)` gives `[CO₂(aq)]` (equivalently `[H₂CO₃]`) in mmol/m³, matching the units `DIC`
 was supplied in, rather than the ppm of the fugacity and partial pressure outputs.
@@ -184,7 +186,7 @@ end
 
 @inline selected_output(::Val{:fCO₂}, fCO₂, CO₂, H, water_pressure, atmospheric_pressure, Tk, S, Is, sulfate, fluoride, p) = fCO₂ # ppm
 @inline selected_output(::Val{:CO₂}, fCO₂, CO₂, H, water_pressure, atmospheric_pressure, Tk, S, Is, sulfate, fluoride, p) = CO₂ # mmol / m³
-@inline selected_output(::Val{:pHᶠ}, fCO₂, CO₂, H, water_pressure, atmospheric_pressure, Tk, S, Is, sulfate, fluoride, p) = -log10(H) #
+@inline selected_output(::Val{:pHᵗ}, fCO₂, CO₂, H, water_pressure, atmospheric_pressure, Tk, S, Is, sulfate, fluoride, p) = -log10(H) #
 
 @inline function selected_output(::Val{:pCO₂}, fCO₂::FT, CO₂, H, water_pressure, atmospheric_pressure, Tk, S, Is, sulfate, fluoride, p) where FT
     # the total pressure of the gas phase, not the water pressure
@@ -211,21 +213,18 @@ end
     return pCO₂ # ppmv
 end
 
-@inline function selected_output(::Val{:pHᵗ}, fCO₂::FT, CO₂, H, water_pressure, atmospheric_pressure, Tk, S, Is, sulfate, fluoride, p) where FT
+@inline function selected_output(::Val{:pHᶠ}, fCO₂::FT, CO₂, H, water_pressure, atmospheric_pressure, Tk, S, Is, sulfate, fluoride, p) where FT
     KS  = p.sulfate(Tk, S, Is; P = water_pressure)
-    HSO₄⁻ = sulfate / (1 + KS / H)
 
-    return -log10(H + HSO₄⁻)
+    return -log10(H / (1 + sulfate / KS))
 end
 
 @inline function selected_output(::Val{:pHˢ}, fCO₂::FT, CO₂, H, water_pressure, atmospheric_pressure, Tk, S, Is, sulfate, fluoride, p) where FT
     KS  = p.sulfate(Tk, S, Is; P = water_pressure)
-    HSO₄⁻ = sulfate / (1 + KS / H)
-
     KF  = p.fluoride(Tk, S, Is, KS; P = water_pressure)
     HF = fluoride / (1 + KF / H)
 
-    return -log10(H + HSO₄⁻ + HF)
+    return -log10(H + HF)
 end
 
 # solves `alkalinity_residual` for pH

@@ -24,7 +24,7 @@ import Oceananigans.Simulations: run!
 import Oceananigans: set!, fields
 import Oceananigans.Fields: regularize_field_boundary_conditions, TracerFields, interpolate
 import Oceananigans.Architectures: architecture
-import Oceananigans.Models: default_nan_checker, iteration, AbstractModel, prognostic_fields
+import Oceananigans.Models: AbstractModel, prognostic_fields
 import Oceananigans.TimeSteppers: update_state!
 import Oceananigans.OutputWriters: default_included_properties
 
@@ -108,8 +108,6 @@ function update_state!(model::BoxModel, callbacks=[]; compute_tendencies = true)
 end
 
 architecture(model::BoxModel) = architecture(model.grid) # this might be the default fallback
-default_nan_checker(::BoxModel) = nothing
-iteration(model::BoxModel) = model.clock.iteration
 prognostic_fields(model::BoxModel) = @inbounds model.fields[required_biogeochemical_tracers(model.biogeochemistry)]
 fields(model::BoxModel) = model.fields
 

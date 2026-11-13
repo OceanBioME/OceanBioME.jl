@@ -90,9 +90,13 @@ rectilinear_grid = RectilinearGrid(
     extent = (10, 10, 500)
 )
 
+# bounds-preserving WENO needs a horizontal halo one larger than its buffer, and `immersed_latlon_grid`
+# needs one more halo point in every direction, so `WENO(order = 3, bounds)` needs a halo of (4, 4, 3)
+# (and the halo can't be larger than the grid)
 latlon_grid = LatitudeLongitudeGrid(
     architecture;
-    size = (3, 3, 16),
+    size = (4, 4, 16),
+    halo = (4, 4, 3),
     latitude = (0, 10),
     longitude = (0, 10),
     z = (-500, 0)

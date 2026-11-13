@@ -88,14 +88,14 @@ end
 
     for (idx, DIC) in enumerate(DIC)
         pCO₂_results[idx] = carbon_chem(; DIC = Float64(DIC), Alk = Float64(Alk[idx]), T = Float64(T[idx]), S = Float64(S[idx]), output = Val(:pCO₂))
-        pH_results[idx] = carbon_chem(; DIC, Alk = Alk[idx], T = T[idx], S = S[idx], output = Val(:pHᶠ))
+        pH_results[idx] = carbon_chem(; DIC, Alk = Alk[idx], T = T[idx], S = S[idx], output = Val(:pHᵗ))
     end
 
     pCO₂_err = pCO₂ .- pCO₂_results
     pH_err = pH .- pH_results
 
-    # not great not terrible
-    @test (mean(pCO₂_err) < 7.1 && std(pCO₂_err) < 9.1) && (mean(pH_err) < 0.01 && std(pH_err) < 0.01)
+    # not great not terrible (CODAP-NA's pH is on the total scale)
+    @test (mean(pCO₂_err) < 7.1 && std(pCO₂_err) < 9.1) && (abs(mean(pH_err)) < 0.01 && std(pH_err) < 0.01)
 end
 
 grid = RectilinearGrid(architecture; size=(1, 1, 2), extent=(1, 1, 1))
@@ -209,6 +209,54 @@ end
     @test ≈(KspC.pressure_correction(Tk, P), 1.52962; atol=0.00001)
 end
 
+@inline carbon_chemistry_output(i, j, k, grid, carbon_chemistry, args, output) = carbon_chemistry(; args..., output)
+
+@testset "pH scales" begin
+    carbon_chemistry = CarbonChemistry()
+
+    # free and total scale pH from PyCO2SYS 1.8.3.4 with the same constants (`opt_k_carbonic = 10`,
+    # `opt_k_bisulfate = 1`, `opt_k_fluoride = 2`, `opt_total_borate = 1`), with DIC and Alk
+    # converted to μmol/kg with our density
+    reference = ((T = 25.4, S = 36.45, DIC = 2145.0, Alk = 2448.0, pHᶠ = 8.1119, pHᵗ = 8.0015),
+                 (T =  0.0, S = 34.0,  DIC = 2200.0, Alk = 2350.0, pHᶠ = 8.1706, pHᵗ = 8.1298),
+                 (T = 30.0, S = 35.0,  DIC = 1950.0, Alk = 2350.0, pHᶠ = 8.2392, pHᵗ = 8.1138),
+                 (T = 15.0, S = 15.0,  DIC = 1300.0, Alk = 1400.0, pHᶠ = 8.2244, pHᵗ = 8.1741))
+
+    for r in reference
+        args = (; DIC = r.DIC, Alk = r.Alk, T = r.T, S = r.S)
+
+        pHᶠ = carbon_chemistry(; args..., output = Val(:pHᶠ))
+        pHᵗ = carbon_chemistry(; args..., output = Val(:pHᵗ))
+        pHˢ = carbon_chemistry(; args..., output = Val(:pHˢ))
+
+        @test ≈(pHᶠ, r.pHᶠ; atol = 5e-4)
+        @test ≈(pHᵗ, r.pHᵗ; atol = 5e-4)
+
+        # the sea water scale also counts the hydrogen ions bound in HF: [H⁺]ˢ = [H⁺]ᵗ + [HF]
+        fluoride = 0.000067 / 18.9984 * r.S / 1.80655
+        KF = carbon_chemistry.fluoride(r.T + 273.15, r.S)
+
+        @test ≈(10^-pHˢ, 10^-pHᵗ + fluoride / (1 + KF * 10^pHᵗ); rtol = 1e-12)
+
+        # a `pH` input is on the total scale
+        @test ≈(carbon_chemistry(; DIC = r.DIC, T = r.T, S = r.S, pH = pHᵗ), carbon_chemistry(; args...); rtol = 1e-12)
+
+        @test ≈(calcium_carbonate_saturation(carbon_chemistry; DIC = r.DIC, T = r.T, S = r.S, pH = pHᵗ),
+                calcium_carbonate_saturation(carbon_chemistry; args...); rtol = 1e-12)
+    end
+
+    # the same values from inside a kernel on the `architecture`
+    field_grid = RectilinearGrid(architecture; size = (1, 1, 1), extent = (1, 1, 1))
+
+    args = (; DIC = 2145.0, Alk = 2448.0, T = 25.4, S = 36.45)
+
+    for output in (:pHᶠ, :pHᵗ, :pHˢ)
+        pH = KernelFunctionOperation{Center, Center, Center}(carbon_chemistry_output, field_grid, carbon_chemistry, args, Val(output))
+
+        @test ≈(CUDA.@allowscalar(compute!(Field(pH))[1, 1, 1]), carbon_chemistry(; args..., output = Val(output)))
+    end
+end
+
 @testset "Water and atmospheric pressure" begin
     carbon_chemistry = CarbonChemistry()
 
@@ -218,8 +266,8 @@ end
 
     # surface values are unchanged by the separation of the two pressures (values from before
     # it, with the density evaluated at 0 bar)
-    surface = (fCO₂ = 460.8517068223346, CO₂ = 13.167231494430746, pHᶠ = 8.001438638766434,
-               pHᵗ = 7.891118124117329, pHˢ = 7.880742652625449, pCO₂ = 462.31990978647883)
+    surface = (fCO₂ = 460.8517068223346, CO₂ = 13.167231494430746, pHᶠ = 8.111759162965459,
+               pHᵗ = 8.001438638766434, pHˢ = 7.988108208839734, pCO₂ = 462.31990978647883)
 
     for output in outputs
         value = carbon_chemistry(; args..., output = Val(output))
@@ -594,7 +642,7 @@ const MARBL_REFERENCE = (
 
             CO₂ = cc(; args..., output = Val(:CO₂))
 
-            H  = FT(10) ^ -cc(; args..., output = Val(:pHᶠ))
+            H  = FT(10) ^ -cc(; args..., output = Val(:pHᵗ))
             K₁ = cc.carbonic_acid.K1(FT(s.T) + FT(273.15), FT(s.S))
             K₂ = cc.carbonic_acid.K2(FT(s.T) + FT(273.15), FT(s.S))
 
