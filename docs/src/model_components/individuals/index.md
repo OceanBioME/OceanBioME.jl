@@ -1,6 +1,6 @@
 # [Individuals](@id individuals)
 
-The effects of individuals can be modelled in OceanBioME. We have implemented this through custom dynamics in the [Lagrangian Particle tracking feature of Oceananigans](https://clima.github.io/OceananigansDocumentation/stable/model_setup/lagrangian_particles/). We have extended these functionalities to make it easier to implement "active" particles which interact with the tracers. We have then implemented a model of [sugar kelp](@ref sugar-kelp) which can be followed as an example of using this functionality.
+The effects of individuals can be modelled in OceanBioME. We have implemented this through custom dynamics in the [Lagrangian Particle tracking feature of Oceananigans](https://clima.github.io/OceananigansDocumentation/stable/model_setup/lagrangian_particles/). We have extended these functionalities to make it easier to implement "active" particles which interact with the tracers. We have then implemented a model of [sugar kelp](@ref sugar-kelp) which can be followed as an example of using this functionality, and [dissolving particles](@ref dissolving-particles) which sink and release tracers as they dissolve (e.g. for ocean alkalinity enhancement).
 
 To setup particles first create a particle biogeochemistry, e.g.:
 

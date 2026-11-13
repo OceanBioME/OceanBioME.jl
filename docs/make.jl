@@ -25,7 +25,8 @@ examples = [
     "Baroclinic instability" => "eady",
     "Model with particles (kelp) interacting with the biogeochemistry" => "kelp",
     "Data assimilation" => "data_assimilation",
-    "Ocean alkalinity enhancement" => "oae_experiment"
+    "Ocean alkalinity enhancement" => "oae_experiment",
+    "Sinking and dissolving particles" => "dissolving_particles"
 ]
 
 example_pages = [ title => "generated/$(filename).md" for (title, filename) in examples ]
@@ -83,6 +84,7 @@ sediments_pages = [
 individuals_pages = [
     "Overview" => "model_components/individuals/index.md",
     "Sugar Kelp (Broch and Slagstad 2012 ++)" => "model_components/individuals/slatissima.md",
+    "Dissolving particles" => "model_components/individuals/dissolving_particles.md",
 ]
 
 component_pages = [
