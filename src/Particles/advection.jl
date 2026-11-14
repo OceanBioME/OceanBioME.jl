@@ -1,6 +1,6 @@
 using Oceananigans.Architectures: on_architecture, device, architecture
 using Oceananigans.Biogeochemistry: required_biogeochemical_tracers, biogeochemical_auxiliary_fields
-using Oceananigans.Models.LagrangianParticleTracking: ParticleBoundaryConditions, _advect_particles!, total_velocities
+using Oceananigans.Models.LagrangianParticleTracking: ParticleBoundaryConditions, ForwardEulerParticleStep, _advect_particles!, total_velocities
 
 # put nothing to do nothing
 advect_particles!(advection, particles, model, Δt) = nothing
@@ -21,8 +21,10 @@ function advect_particles!(::LagrangianAdvection, particles, model, Δt)
     # Advect particles
     advect_particles_kernel! = _advect_particles!(device(arch), workgroup, worksize)
 
-    # Reflecting boundaries with a restitution of 1, and no absorption record since no particle is removed
-    advect_particles_kernel!(particles, ParticleBoundaryConditions(), nothing, model.grid, Δt, total_velocities(model))
+    # One forward Euler step with no per-particle time-stepper state, reflecting boundaries with a
+    # restitution of 1, no absorption record since no particle is removed, and no drogue depths
+    advect_particles_kernel!(particles, nothing, ForwardEulerParticleStep(), ParticleBoundaryConditions(), nothing,
+                             model.grid, Δt, total_velocities(model), nothing)
 
     return nothing
 end
