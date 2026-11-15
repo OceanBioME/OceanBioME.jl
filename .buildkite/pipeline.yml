@@ -100,6 +100,7 @@ steps:
                 - "kelp"
                 - "data_assimilation"
                 - "oae_experiment"
+                - "dissolving_particles"
           depends_on: "init-gpu"
           agents:
             hostname: "$BUILDKITE_AGENT_META_DATA_HOSTNAME"

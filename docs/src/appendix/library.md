@@ -96,6 +96,12 @@ Modules = [OceanBioME.Models.PISCESModel.Nitrogen]
 Modules = [OceanBioME.Models.SugarKelpModel]
 ```
 
+### Dissolving particles
+
+```@autodocs
+Modules = [OceanBioME.Models.DissolvingParticlesModel]
+```
+
 ### Carbon Chemistry 
 
 ```@autodocs
