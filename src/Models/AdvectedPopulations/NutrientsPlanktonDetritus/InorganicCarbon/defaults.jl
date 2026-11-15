@@ -50,7 +50,8 @@
                                    clock, fields, auxiliary_fields) where FT = 
     bgc(i, j, k, grid, Val(:NH₄), clock, fields, auxiliary_fields)
 
-@inline net_calcium_carbonate_production(i, j, k, grid, bgc, fields, auxiliary_fields) = (
+# the implicit calcium carbonate production, which is the same in every replicate
+@inline net_calcium_carbonate_production(i, j, k, grid, bgc, fields, auxiliary_fields, replicate, label) = (
     calcium_carbonate_rain_ratio(i, j, k, grid, bgc.plankton, bgc, fields)  * (
         primary_production(i, j, k, grid, bgc.plankton, bgc, fields, auxiliary_fields)
       - inorganic_carbon_waste(i, j, k, grid, bgc.plankton, bgc, fields, auxiliary_fields)

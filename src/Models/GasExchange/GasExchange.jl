@@ -12,10 +12,11 @@ export GasExchange,
        CarbonDioxidePolynomialSchmidtNumber,
        OxygenPolynomialSchmidtNumber,
        GarciaGordonOxygenSaturation,
-       CarbonDioxideAirConcentration
+       CarbonDioxideAirConcentration,
+       carbon_dioxide_gas_exchange_boundary_conditions
 
 using Adapt
-using Oceananigans.BoundaryConditions: FluxBoundaryCondition
+using Oceananigans.BoundaryConditions: FluxBoundaryCondition, FieldBoundaryConditions
 using Oceananigans.Fields: Center
 using Oceananigans.Grids: xnode, ynode
 
@@ -26,6 +27,7 @@ using OceanBioME.Models.CarbonChemistryModel:
     phosphate_concentration
 
 using OceanBioME.Models: teos10_polynomial_approximation
+using OceanBioME.Models.NutrientsPlanktonDetritusModels: carbonate_replicates
 
 import Base: show, summary
 import Adapt: adapt_structure
@@ -126,8 +128,9 @@ mole fraction in ppmv; pass a [`CarbonDioxideAirConcentration`](@ref) to control
 and phosphate tracers, or a `NamedTuple`  of values for the `carbon_chemistry` model.
 
 `DIC` and `Alk` name the dissolved inorganic carbon and alkalinity tracers that the default
-`water_concentration` reads, which is how replicate carbonate systems (`DIC1`/`Alk1`, ...) are
-exchanged. They are ignored if `water_concentration` is given explicitly.
+`water_concentration` reads, which is how replicate carbonate systems (`DIC1`/`Alk1`, `DIC_control`/`Alk_control`,
+...) are exchanged (see [`carbon_dioxide_gas_exchange_boundary_conditions`](@ref)). They are ignored if
+`water_concentration` is given explicitly.
 
 `kwargs` are passed on to `GasExchangeBoundaryCondition`.
 
@@ -158,6 +161,20 @@ function CarbonDioxideGasExchangeBoundaryCondition(FT = Float64;
 
     return GasExchangeBoundaryCondition(FT; wind_speed, water_concentration, air_concentration, transfer_velocity, grid, discrete_form, kwargs...)
 end
+
+"""
+    carbon_dioxide_gas_exchange_boundary_conditions(bgc, FT = Float64; kwargs...)
+
+Returns a `NamedTuple` of `FieldBoundaryConditions` with a [`CarbonDioxideGasExchangeBoundaryCondition`](@ref)
+at the top of the dissolved inorganic carbon of every replicate of the carbonate system in `bgc`
+(see [`carbonate_replicates`](@ref)), e.g. `(DIC_control = FieldBoundaryConditions(top = ...), DIC_release = ...)`,
+to use as (or `merge` into) a model's `boundary_conditions`.
+
+`kwargs` are passed on to every `CarbonDioxideGasExchangeBoundaryCondition`.
+"""
+carbon_dioxide_gas_exchange_boundary_conditions(bgc, FT = Float64; kwargs...) =
+    (; (replicate.DIC => FieldBoundaryConditions(top = CarbonDioxideGasExchangeBoundaryCondition(FT; replicate.DIC, replicate.Alk, kwargs...))
+        for replicate in carbonate_replicates(bgc))...)
 
 # a bare number, function, or `Field` `air_concentration` means a dry air mole fraction in ppmv
 carbon_dioxide_air_concentration(FT, carbon_chemistry, mole_fraction) =

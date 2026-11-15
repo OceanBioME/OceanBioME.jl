@@ -1,8 +1,10 @@
 module InorganicCarbonModels
 
-export CarbonateSystem, ExplicitCalciumCarbonate
+export CarbonateSystem, ExplicitCalciumCarbonate, carbonate_replicates
 
 using Oceananigans.Units
+
+using OceanBioME: CompleteBiogeochemistry
 
 using ..NutrientsPlanktonDetritusModels:
     NutrientsPlanktonDetritus,

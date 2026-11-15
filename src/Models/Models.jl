@@ -8,7 +8,7 @@ export NPZD, LOBSTER, ImplicitBiology, MITgcmDIC, PISCES, DepthDependantSinkingS
 
 export N, PO₄, Si, Fe
 export Nutrients, NitrateAmmonia, SimpleIron
-export CarbonateSystem, ExplicitCalciumCarbonate
+export CarbonateSystem, ExplicitCalciumCarbonate, carbonate_replicates
 export Abiotic, ImplicitProductivity, PhytoZoo
 export Detritus, DissolvedParticulate, InstantRemineralisationDetritus, CarbonNitrogenDissolvedParticulate
 export Oxygen
@@ -25,7 +25,8 @@ export GasExchange,
        SchmidtScaledTransferVelocity,
        CarbonDioxidePolynomialSchmidtNumber,
        OxygenPolynomialSchmidtNumber,
-       GarciaGordonOxygenSaturation
+       GarciaGordonOxygenSaturation,
+       carbon_dioxide_gas_exchange_boundary_conditions
 
 include("Sediments/Sediments.jl")
 include("seawater_density.jl")
