@@ -234,6 +234,15 @@ exchange with: just `name`, unless `bgc` replicates it, e.g. `(:DIC1, :DIC2)` fo
 tracer_replicates(bgc, name) = (name, )
 tracer_replicates(bgc::CompleteBiogeochemistry, name) = tracer_replicates(bgc.underlying_biogeochemistry, name)
 
+"""
+    follower_groups(bgc)
+
+Returns the names of the groups of `conserved_tracers(bgc)` that follow the others when negative tracers are
+scaled (see [`ScaleNegativeTracers`](@ref)), e.g. the carbon of every replicate of a carbonate system but the first.
+"""
+follower_groups(bgc) = ()
+follower_groups(bgc::CompleteBiogeochemistry) = follower_groups(bgc.underlying_biogeochemistry)
+
 summary(bgc::CompleteBiogeochemistry) = string("Biogeochemical model based on $(summary(bgc.underlying_biogeochemistry))")
 show(io::IO, model::CompleteBiogeochemistry) =
        print(io, summary(model.underlying_biogeochemistry), " \n",
