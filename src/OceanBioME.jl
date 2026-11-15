@@ -224,6 +224,16 @@ Returns the names of tracers which together are conserved in `model`
 """
 conserved_tracers(model::CompleteBiogeochemistry, args...; kwargs...) = conserved_tracers(model.underlying_biogeochemistry, args...; kwargs...)
 
+"""
+    tracer_replicates(bgc, name)
+
+Returns the names of the tracers of `bgc` that a sediment or particles coupled to the tracer `name`
+exchange with: just `name`, unless `bgc` replicates it, e.g. `(:DIC1, :DIC2)` for `:DIC` with
+`CarbonateSystem(2)` (see [`carbonate_replicates`](@ref)).
+"""
+tracer_replicates(bgc, name) = (name, )
+tracer_replicates(bgc::CompleteBiogeochemistry, name) = tracer_replicates(bgc.underlying_biogeochemistry, name)
+
 summary(bgc::CompleteBiogeochemistry) = string("Biogeochemical model based on $(summary(bgc.underlying_biogeochemistry))")
 show(io::IO, model::CompleteBiogeochemistry) =
        print(io, summary(model.underlying_biogeochemistry), " \n",

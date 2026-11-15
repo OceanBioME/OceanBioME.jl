@@ -16,8 +16,8 @@ function update_tendencies!(bgc, sediment_model::BiogeochemicalSediment, model)
 
     arch = architecture(grid)
 
-    for field_name in coupled_fields
-        G = Gⁿ[field_name]
+    for field_name in coupled_fields, tracer_name in tracer_replicates(bgc, field_name)
+        G = Gⁿ[tracer_name]
 
         args = (Val(field_name), biogeochemistry, sediment_fields, tracked_fields, clock)
 
