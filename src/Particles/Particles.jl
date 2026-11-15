@@ -15,7 +15,7 @@ using Oceananigans.Grids: AbstractGrid
 import Oceananigans.Architectures: architecture
 import Oceananigans.Biogeochemistry: update_tendencies!
 import Oceananigans.Fields: set!
-import Oceananigans.TimeSteppers: step_lagrangian_particles!, update_lagrangian_particle_state!
+import Oceananigans.TimeSteppers: step_lagrangian_particles!, substep_lagrangian_particles!, update_lagrangian_particle_state!
 import Oceananigans.OutputWriters: fetch_output
 import Base: length, size, show, summary
 import Adapt: adapt_structure
@@ -147,6 +147,14 @@ const ModelWithBiogeochemicalParticles = Union{
 
 @inline step_lagrangian_particles!(bgc::BiogeochemistryWithParticles, model, Δt) =
     advect_particles!(bgc.particles.advection, bgc.particles, model, Δt)
+
+# Time steppers advance particles stage by stage through `substep_lagrangian_particles!`, which does
+# nothing when `model.particles` is `nothing`. Biogeochemical particles take one step per time step,
+# at the first stage, as Oceananigans does for particles that extend only `step_lagrangian_particles!`.
+@inline function substep_lagrangian_particles!(::Nothing, model::ModelWithBiogeochemicalParticles, Δt, stage)
+    stage == 1 && step_lagrangian_particles!(model.biogeochemistry, model, Δt)
+    return nothing
+end
 
 @inline update_lagrangian_particle_state!(::Nothing, model::ModelWithBiogeochemicalParticles) =
     update_lagrangian_particle_state!(model.biogeochemistry, model)
