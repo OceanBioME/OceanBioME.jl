@@ -308,6 +308,19 @@ using OceanBioME.Models.NutrientsPlanktonDetritusModels: SingleTracerNutrient
     @test lobster.underlying_biogeochemistry.plankton |> ((::PhytoZoo{<:Any, <:Any, <:Any, FT}) where FT) -> FT == Float32
     @test implicit.underlying_biogeochemistry.plankton |> ((::ImplicitProductivity{FT}) where FT) -> FT == Float32
 
+    # temperature dependence is off by default, and converted and adds a `T` tracer when set
+    @test isnothing(implicit.underlying_biogeochemistry.plankton.temperature_dependence)
+    @test :T ∉ Oceananigans.Biogeochemistry.required_biogeochemical_tracers(implicit)
+
+    eppley = ImplicitBiology(grid; temperature_dependence = EppleyCurve(temperature_coefficient = 2, reference_temperature = 10))
+    curve = eppley.underlying_biogeochemistry.plankton.temperature_dependence
+
+    @test curve isa EppleyCurve{Float32}
+    @test :T ∈ Oceananigans.Biogeochemistry.required_biogeochemical_tracers(eppley)
+    @test curve(10) == 1
+    @test curve(20) == 2
+    @test curve(0) ≈ 0.5
+
     # detritus
     @test npzd.underlying_biogeochemistry.detritus |> ((::Detritus{FT}) where FT) -> FT == Float32
     @test lobster.underlying_biogeochemistry.detritus |> ((::DissolvedParticulate{<:Any, <:Any, <:Any, <:Any, FT}) where FT) -> FT == Float32

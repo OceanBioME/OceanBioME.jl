@@ -2,16 +2,30 @@
     ImplicitProductivity
 
 An implicit plankton which computes a community productivity
-limited by available nutrients and light, but not tracking any
-planktonic biomass.
+limited by available nutrients, light, and (optionally) temperature,
+but not tracking any planktonic biomass.
 
 Mainly from MITGCM https://web.mit.edu/globalchange/www/MITJPSPGC_Rpt122.pdf
 
 Units: mmol P / m³
-Tracers: none
+Tracers: none (`T` when a `temperature_dependence` is supplied)
 Default limiting nutrients: N or NO₃, P, Fe
+
+Keyword Arguments
+=================
+
+- `maximum_community_productivity`: productivity when nutrients and light are saturating (at the
+  reference temperature of the `temperature_dependence` when one is supplied)
+- `light_half_saturation`: PAR at which the light limitation is one half
+- `dissolved_fraction_of_waste`: fraction of the productivity routed to the dissolved detritus pool
+- `carbon_ratio`, `nitrogen_ratio`, `iron_ratio`: elemental ratios to phosphorus
+- `rain_ratio`: calcium carbonate to organic carbon production ratio
+- `nutrient_half_saturations`: named tuple of half saturations for the limiting nutrients
+- `temperature_dependence`: `nothing` (default) for no temperature dependence, or an object callable
+  on the temperature (°C) returning a dimensionless factor, e.g. an [`EppleyCurve`](@ref); requires a
+  `T` tracer
 """
-struct ImplicitProductivity{FT, LN, TT} <: AbstractPlankton{LN} 
+struct ImplicitProductivity{FT, LN, TT, TD} <: AbstractPlankton{LN} 
     maximum_community_productivity :: FT
              light_half_saturation :: FT
        dissolved_fraction_of_waste :: FT
@@ -21,6 +35,8 @@ struct ImplicitProductivity{FT, LN, TT} <: AbstractPlankton{LN}
                         rain_ratio :: FT
 
          nutrient_half_saturations :: NamedTuple{LN, TT}
+
+            temperature_dependence :: TD
 end
 
 function ImplicitProductivity(FT = Float64; 
@@ -33,9 +49,11 @@ function ImplicitProductivity(FT = Float64;
                               rain_ratio = 0.07,                            # mol CaCO₃ / mol C
 
                               nutrient_half_saturations = 
-                                  (phosphate = 0.5,                        # mmol P / m³
+                                  (phosphate = 0.5,                        # mmol P / m³
                                    nitrate = 7.17,                         # mmol N / m³
-                                   iron = 1e-4))                           # mmol Fe / m³)
+                                   iron = 1e-4),                           # mmol Fe / m³)
+
+                              temperature_dependence = nothing)
 
     limiting_nutrients = keys(nutrient_half_saturations)
 
@@ -48,11 +66,14 @@ function ImplicitProductivity(FT = Float64;
                                 convert(FT, nitrogen_ratio),
                                 convert(FT, iron_ratio),
                                 convert(FT, rain_ratio),
-                                nutrient_half_saturations)
+                                nutrient_half_saturations,
+                                convert_temperature_dependence(FT, temperature_dependence))
 end
 
-required_biogeochemical_tracers(::ImplicitProductivity) = tuple()
+required_biogeochemical_tracers(ip::ImplicitProductivity) = isnothing(ip.temperature_dependence) ? tuple() : (:T, )
 required_biogeochemical_auxiliary_fields(::ImplicitProductivity) = (:PAR, )
+
+@inline chlorophyll(::ImplicitProductivity, model) = ZeroField()
 
 @inline phosphate_ratio(::ImplicitProductivity, ::NPD{FT}) where FT = one(FT)
 @inline nitrogen_ratio(plankton::ImplicitProductivity, ::NPD{FT}) where FT = plankton.nitrogen_ratio
@@ -60,7 +81,7 @@ required_biogeochemical_auxiliary_fields(::ImplicitProductivity) = (:PAR, )
 @inline iron_ratio(plankton::ImplicitProductivity, ::NPD{FT}) where FT = plankton.iron_ratio
 @inline calcium_carbonate_rain_ratio(plankton::ImplicitProductivity, ::NPD{FT}) where FT = plankton.rain_ratio
 
-@inline limiting_nutrients(::ImplicitProductivity{<:Any, <:NamedTuple{LN}}) where LN = LN
+@inline limiting_nutrients(::ImplicitProductivity{<:Any, LN}) where LN = LN
 
 @inline nutrient_half_saturations(implicit::ImplicitProductivity, ::Val{:N})   = implicit.nutrient_half_saturations.nitrate
 @inline nutrient_half_saturations(implicit::ImplicitProductivity, ::Val{:NO₃}) = implicit.nutrient_half_saturations.nitrate
@@ -87,8 +108,9 @@ required_biogeochemical_auxiliary_fields(::ImplicitProductivity) = (:PAR, )
 
     Lₙ = nutrient_limitation(i, j, k, grid, bgc.nutrients, plankton, bgc, fields, auxiliary_fields)
     Lₗ = PAR / (PAR + kₗ)
+    Lₜ = temperature_limitation(plankton.temperature_dependence, i, j, k, fields)
 
-    return α * Lₙ * Lₗ
+    return α * Lₙ * Lₗ * Lₜ
 end
 
 @inline nutrient_uptake(i, j, k, grid, 
@@ -110,8 +132,6 @@ end
   * calcium_carbonate_rain_ratio(i, j, k, grid, bgc.plankton, bgc, fields)
 )
 
-@inline chlorophyll(::ImplicitProductivity, model) = ZeroField()
-
 # admin
 
 Adapt.adapt_structure(to, ip::ImplicitProductivity) = 
@@ -123,7 +143,8 @@ Adapt.adapt_structure(to, ip::ImplicitProductivity) =
         adapt(to, ip.nitrogen_ratio),
         adapt(to, ip.iron_ratio),
         adapt(to, ip.rain_ratio),
-        adapt(to, ip.nutrient_half_saturations)
+        adapt(to, ip.nutrient_half_saturations),
+        adapt(to, ip.temperature_dependence)
     )
 
 Base.summary(::ImplicitProductivity) = string("ImplicitProductivity")
@@ -132,6 +153,7 @@ function Base.show(io::IO, ip::ImplicitProductivity)
     msg = summary(ip) * "\n"
     msg *= "├── Community productivity (≤ $(round(ip.maximum_community_productivity*365*day, digits = 1)) mmol P/year) straight to detritus\n"
     msg *= "├── C:N:P:Fe = $(ip.carbon_ratio):$(ip.nitrogen_ratio):1:$(ip.iron_ratio)\n"
+    msg *= "├── Temperature dependence: $(temperature_dependence_summary(ip.temperature_dependence))\n"
     msg *= "└── Limiting nutrients: $(limiting_nutrients(ip))"
 
     print(io, msg)

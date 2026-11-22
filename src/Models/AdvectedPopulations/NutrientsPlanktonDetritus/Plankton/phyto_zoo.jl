@@ -236,14 +236,6 @@ end
     return μ₀ * Lₗ * Lₙ * Lₜ * P
 end
 
-@inline temperature_limitation(::Nothing, i, j, k, fields) = one(eltype(fields.P))
-
-@inline function temperature_limitation(Q10::FT, i, j, k, fields) where FT
-    T = @inbounds fields.T[i, j, k]
-
-    return Q10 ^ (T / convert(FT, 10))
-end
-
 @inline function nitrogen_limitation(i, j, k, grid, 
                                      ::NitrateAmmonia, 
                                      plankton::PhytoZoo,
