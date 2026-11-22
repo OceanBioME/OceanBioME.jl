@@ -213,7 +213,7 @@ end
                                                open_bottom = false))
 
     # we scale to zero at the bottom which in a normal situation is fine but in this situation means the top cell is also not as set
-    first_cell_flux_velocity = CUDA.@allowscalar biogeochemistry.underlying_biogeochemistry.detritus.sinking_speeds.w[1, 1, 2]
+    first_cell_flux_velocity = CUDA.@allowscalar biogeochemistry.underlying_biogeochemistry.detritus.sinking.sinking_speeds.w[1, 1, 2]
 
     model = NonhydrostaticModel(grid; 
                                 biogeochemistry, 
@@ -252,6 +252,192 @@ end
         @test isapprox(model.tracers.sPOM[1, 1, 2], exp(-0.01*100*0.1), atol = 1e-3)
         @test isapprox(model.tracers.bPOM[1, 1, 2], exp(-0.01*100), atol = 1e-3)
     end 
+end
+
+using Oceananigans.Biogeochemistry: update_biogeochemical_state!, required_biogeochemical_tracers
+
+@testset "Implicit particle sinking" begin
+    @testset "Construction and tracer exclusion" begin
+        grid = RectilinearGrid(architecture; size=(1, 1, 10), extent=(1, 1, 100))
+
+        det_npzd = Detritus(grid; implicit_sinking = true)
+        @test det_npzd.sinking isa ImplicitSinking
+        @test required_biogeochemical_tracers(det_npzd) == ()
+
+        det_lob = DissolvedParticulate(grid; implicit_sinking = true)
+        @test det_lob.sinking isa ImplicitSinking
+        tracers_lob = required_biogeochemical_tracers(det_lob)
+        @test :sPOM ∉ tracers_lob
+        @test :bPOM ∉ tracers_lob
+        @test :DOM in tracers_lob
+
+        det_cn = CarbonNitrogenDissolvedParticulate(grid; implicit_sinking = true)
+        @test det_cn.sinking isa ImplicitSinking
+        tracers_cn = required_biogeochemical_tracers(det_cn)
+        @test :sPON ∉ tracers_cn
+        @test :bPOC ∉ tracers_cn
+        @test :DON in tracers_cn
+        @test :DOC in tracers_cn
+    end
+
+    @testset "implicit_sinking flag controls sinking type" begin
+        grid = RectilinearGrid(architecture; size=(1, 1, 10), extent=(1, 1, 100))
+        @test Detritus(grid; implicit_sinking = true).sinking isa ImplicitSinking
+        @test Detritus(grid; implicit_sinking = false).sinking isa ExplicitSinking
+        @test DissolvedParticulate(grid; implicit_sinking = true).sinking isa ImplicitSinking
+        @test DissolvedParticulate(grid; implicit_sinking = false).sinking isa ExplicitSinking
+        @test CarbonNitrogenDissolvedParticulate(grid; implicit_sinking = true).sinking isa ImplicitSinking
+        @test CarbonNitrogenDissolvedParticulate(grid; implicit_sinking = false).sinking isa ExplicitSinking
+    end
+
+    @testset "NPZD implicit integration" begin
+        grid = RectilinearGrid(architecture; size=(1, 1, 50), extent=(1, 1, 200))
+        bgc = NPZD(grid; implicit_sinking = true)
+        model = NonhydrostaticModel(grid; biogeochemistry = bgc)
+        @test !haskey(model.tracers, :D)
+
+        set!(model, N = 10.0, P = 0.1, Z = 0.01)
+        for _ in 1:3; time_step!(model, 60.0); end
+
+        det = bgc.underlying_biogeochemistry.detritus
+        CUDA.@allowscalar begin
+            @test !isnan(model.tracers.N[1, 1, 25])
+            @test !isnan(model.tracers.P[1, 1, 25])
+            @test any(det.sinking.remineralisation.D[1, 1, k] > 0 for k in 1:50)
+            @test det.sinking.floor_flux.D[1, 1, 1] >= 0
+        end
+    end
+
+    @testset "LOBSTER implicit integration" begin
+        grid = RectilinearGrid(architecture; size=(1, 1, 50), extent=(1, 1, 200))
+        bgc = LOBSTER(grid; implicit_sinking = true)
+        model = NonhydrostaticModel(grid; biogeochemistry = bgc)
+        @test !haskey(model.tracers, :sPOM)
+        @test !haskey(model.tracers, :bPOM)
+        @test haskey(model.tracers, :DOM)
+
+        set!(model, NO₃ = 10.0, NH₄ = 0.1, P = 0.1, Z = 0.01, DOM = 0.5)
+        for _ in 1:3; time_step!(model, 60.0); end
+
+        det = bgc.underlying_biogeochemistry.detritus
+        CUDA.@allowscalar begin
+            @test !isnan(model.tracers.NO₃[1, 1, 25])
+            @test !isnan(model.tracers.DOM[1, 1, 25])
+            @test any(det.sinking.remineralisation.sPOM[1, 1, k] > 0 for k in 1:50)
+            @test any(det.sinking.remineralisation.bPOM[1, 1, k] > 0 for k in 1:50)
+        end
+    end
+
+    @testset "CNDP implicit integration" begin
+        grid = RectilinearGrid(architecture; size=(1, 1, 50), extent=(1, 1, 200))
+        bgc = NutrientsPlanktonDetritus(grid;
+            nutrients = Nutrients(NitrateAmmonia{Float64}(), nothing, nothing, nothing),
+            plankton = PhytoZoo(grid),
+            detritus = CarbonNitrogenDissolvedParticulate(grid; implicit_sinking = true),
+            light_attenuation = TwoBandPhotosyntheticallyActiveRadiation(grid, 100))
+        model = NonhydrostaticModel(grid; biogeochemistry = bgc)
+        @test !haskey(model.tracers, :sPON)
+        @test !haskey(model.tracers, :bPOC)
+        @test haskey(model.tracers, :DON)
+        @test haskey(model.tracers, :DOC)
+
+        set!(model, NO₃ = 10.0, NH₄ = 0.1, P = 0.1, Z = 0.01, DON = 0.5, DOC = 5.0)
+        for _ in 1:3; time_step!(model, 60.0); end
+
+        det = bgc.underlying_biogeochemistry.detritus
+        CUDA.@allowscalar begin
+            @test !isnan(model.tracers.DON[1, 1, 25])
+            @test !isnan(model.tracers.DOC[1, 1, 25])
+            @test any(det.sinking.remineralisation.sPON[1, 1, k] > 0 for k in 1:50)
+        end
+    end
+
+    @testset "Column sweep mass balance" begin
+        grid = RectilinearGrid(architecture; size=(1, 1, 10), extent=(1, 1, 100))
+
+        bgc_closed = NPZD(grid; detritus = Detritus(grid; implicit_sinking = true, dissolution_length = 50.0, open_bottom = false))
+        model_closed = NonhydrostaticModel(grid; biogeochemistry = bgc_closed, advection = nothing)
+        set!(model_closed, N = 10.0, P = 1.0, Z = 0.5)
+
+        bgc_open = NPZD(grid; detritus = Detritus(grid; implicit_sinking = true, dissolution_length = 50.0, open_bottom = true))
+        model_open = NonhydrostaticModel(grid; biogeochemistry = bgc_open, advection = nothing)
+        set!(model_open, N = 10.0, P = 1.0, Z = 0.5)
+
+        update_biogeochemical_state!(model_closed.biogeochemistry, model_closed)
+        update_biogeochemical_state!(model_open.biogeochemistry, model_open)
+
+        det_closed = bgc_closed.underlying_biogeochemistry.detritus
+        det_open = bgc_open.underlying_biogeochemistry.detritus
+
+        Δz = 10.0
+        CUDA.@allowscalar begin
+            @test det_closed.sinking.floor_flux.D[1, 1, 1] == 0
+            @test det_open.sinking.floor_flux.D[1, 1, 1] > 0
+
+            total_remin_closed = sum(det_closed.sinking.remineralisation.D[1, 1, k] * Δz for k in 1:10)
+            total_remin_open = sum(det_open.sinking.remineralisation.D[1, 1, k] * Δz for k in 1:10)
+            floor_flux_open = det_open.sinking.floor_flux.D[1, 1, 1]
+
+            @test total_remin_closed > 0
+            @test isapprox(total_remin_closed, total_remin_open + floor_flux_open, rtol = 1e-10)
+        end
+    end
+
+    @testset "Dissolution length shapes remineralisation profile" begin
+        grid = RectilinearGrid(architecture; size=(1, 1, 20), extent=(1, 1, 200))
+
+        bgc_short = NPZD(grid; detritus = Detritus(grid; implicit_sinking = true, dissolution_length = 20.0, open_bottom = true))
+        bgc_long  = NPZD(grid; detritus = Detritus(grid; implicit_sinking = true, dissolution_length = 500.0, open_bottom = true))
+
+        model_short = NonhydrostaticModel(grid; biogeochemistry = bgc_short, advection = nothing)
+        model_long  = NonhydrostaticModel(grid; biogeochemistry = bgc_long, advection = nothing)
+
+        set!(model_short, N = 10.0, P = 1.0, Z = 0.5)
+        set!(model_long,  N = 10.0, P = 1.0, Z = 0.5)
+
+        update_biogeochemical_state!(model_short.biogeochemistry, model_short)
+        update_biogeochemical_state!(model_long.biogeochemistry, model_long)
+
+        det_short = bgc_short.underlying_biogeochemistry.detritus
+        det_long  = bgc_long.underlying_biogeochemistry.detritus
+
+        CUDA.@allowscalar begin
+            @test det_short.sinking.floor_flux.D[1, 1, 1] < det_long.sinking.floor_flux.D[1, 1, 1]
+            @test det_short.sinking.remineralisation.D[1, 1, 20] > det_long.sinking.remineralisation.D[1, 1, 20]
+        end
+    end
+
+    @testset "Sediment coupling" begin
+        grid = RectilinearGrid(architecture; size=(1, 1, 50), extent=(1, 1, 200))
+
+        bgc = NPZD(grid; implicit_sinking = true, sediment = InstantRemineralisationSediment(grid))
+        model = NonhydrostaticModel(grid; biogeochemistry = bgc)
+        set!(model, N = 10.0, P = 0.1, Z = 0.01)
+        for _ in 1:3; time_step!(model, 60.0); end
+        CUDA.@allowscalar @test bgc.sediment.tracked_fields.D[1, 1, 1] > 0
+
+        bgc_lob = LOBSTER(grid; implicit_sinking = true,
+                          sediment = InstantRemineralisationSediment(grid;
+                              sinking_tracers = (:sPOM, :bPOM),
+                              remineralisation_reciever = :NH₄))
+        model_lob = NonhydrostaticModel(grid; biogeochemistry = bgc_lob)
+        set!(model_lob, NO₃ = 10.0, NH₄ = 0.1, P = 0.1, Z = 0.01, DOM = 0.5)
+        for _ in 1:3; time_step!(model_lob, 60.0); end
+        CUDA.@allowscalar @test !isnan(bgc_lob.sediment.tracked_fields.sPOM[1, 1, 1])
+    end
+
+    @testset "Preset constructors pass through" begin
+        grid = RectilinearGrid(architecture; size=(1, 1, 10), extent=(1, 1, 100))
+
+        npzd = NPZD(grid; implicit_sinking = true)
+        @test npzd.underlying_biogeochemistry.detritus.sinking isa ImplicitSinking
+
+        lobster = LOBSTER(grid; implicit_sinking = true)
+        @test lobster.underlying_biogeochemistry.detritus.sinking isa ImplicitSinking
+
+        npzd_sn = NPZD(grid; implicit_sinking = true, scale_negatives = true)
+        @test npzd_sn.underlying_biogeochemistry.detritus.sinking isa ImplicitSinking
+    end
 end
 
 using OceanBioME.Models.NutrientsPlanktonDetritusModels: SingleTracerNutrient

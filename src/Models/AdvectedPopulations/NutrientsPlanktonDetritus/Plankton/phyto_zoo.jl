@@ -378,8 +378,11 @@ end
 @inline edible_particulate_organic_matter(i, j, k, grid, ::InstantRemineralisationDetritus, plankton::PhytoZoo, bgc::NPD{FT}, fields) where FT = 
     zero(FT)
     
-@inline edible_particulate_organic_matter(i, j, k, grid, ::Detritus, plankton::PhytoZoo, bgc, fields) = 
+@inline edible_particulate_organic_matter(i, j, k, grid, ::Detritus, plankton::PhytoZoo, bgc, fields) =
     @inbounds plankton.edible_fraction_of_detritus * fields.D[i, j, k]
+
+@inline edible_particulate_organic_matter(i, j, k, grid, ::Detritus{<:Any, <:ImplicitSinking}, plankton::PhytoZoo, bgc::NPD{FT}, fields) where FT =
+    zero(FT)
 
 @inline edible_particulate_organic_matter(i, j, k, grid, ::DissolvedParticulate{<:Any, 1, <:Any, PN}, plankton::PhytoZoo, bgc, fields) where PN = 
     @inbounds plankton.edible_fraction_of_detritus * getproperty(fields, PN[1])[i, j, k]
@@ -387,8 +390,17 @@ end
 @inline edible_particulate_organic_matter(i, j, k, grid, ::DissolvedParticulate, plankton::PhytoZoo, bgc, fields) =
     @inbounds getproperty(fields, edible_detritus_name(plankton))[i, j, k] 
 
-@inline edible_particulate_organic_matter(i, j, k, grid, ::CarbonNitrogenDissolvedParticulate, plankton::PhytoZoo, bgc, fields) = 
-    @inbounds fields.sPON[i, j, k] 
+@inline edible_particulate_organic_matter(i, j, k, grid, ::DissolvedParticulate{<:Any, <:Any, <:Any, <:Any, <:Any, <:Any, <:ImplicitSinking}, plankton::PhytoZoo, bgc::NPD{FT}, fields) where FT =
+    zero(FT)
+
+@inline edible_particulate_organic_matter(i, j, k, grid, ::DissolvedParticulate{<:Any, 1, <:Any, <:Any, <:Any, <:Any, <:ImplicitSinking}, plankton::PhytoZoo, bgc::NPD{FT}, fields) where FT =
+    zero(FT)
+
+@inline edible_particulate_organic_matter(i, j, k, grid, ::CarbonNitrogenDissolvedParticulate, plankton::PhytoZoo, bgc, fields) =
+    @inbounds fields.sPON[i, j, k]
+
+@inline edible_particulate_organic_matter(i, j, k, grid, ::CarbonNitrogenDissolvedParticulate{<:Any, <:ImplicitSinking}, plankton::PhytoZoo, bgc::NPD{FT}, fields) where FT =
+    zero(FT)
 
 # waste routing
 @inline function solid_waste(i, j, k, grid, plankton::PhytoZoo, bgc, fields, auxiliary_fields)
