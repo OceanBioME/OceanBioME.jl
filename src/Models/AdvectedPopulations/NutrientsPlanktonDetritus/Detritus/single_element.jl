@@ -156,7 +156,7 @@ default_partitioning(::Symbol, FT=Float64) = one(FT)
         return quote
             $(Expr(:meta, :inline))
             @inbounds (
-                solid_waste(i, j, k, grid, bgc.plankton, bgc, fields, auxiliary_fields) * detritus.particulate_waste_partitioning[$m]
+                particulate_production(i, j, k, grid, bgc, fields, auxiliary_fields) * detritus.particulate_waste_partitioning[$m]
               - grazing(i, j, k, grid, val_name, bgc.plankton, bgc, fields, auxiliary_fields)
               - detritus.particulate_remineralisation_rate[$m] * fields[$tracer][i, j, k]
             )
@@ -178,16 +178,25 @@ end
 
     return quote
         $(Expr(:meta, :inline))
-        solid_waste(i, j, k, grid, bgc.plankton, bgc, fields, aux) * detritus.particulate_waste_partitioning[$m]
+        particulate_production(i, j, k, grid, bgc, fields, aux) * detritus.particulate_waste_partitioning[$m]
     end
 end
+
+# The particulate classes are produced from the plankton's solid waste, less the hard organic matter carried by
+# the inorganic carbon's particles (see `ImplicitCalciumCarbonate`), which is taken from each class in proportion
+# to its `particulate_waste_partitioning`. Each class takes back the same share of its remineralisation, which is
+# split between the dissolved and inorganic pools like the class's own.
+@inline particulate_production(i, j, k, grid, bgc, fields, auxiliary_fields) =
+    solid_waste(i, j, k, grid, bgc.plankton, bgc, fields, auxiliary_fields) -
+    hard_organic_production(i, j, k, grid, bgc.inorganic_carbon, bgc, fields, auxiliary_fields)
 
 @inline @generated function dissolved_remineralisation(i, j, k, grid, detritus::DissolvedParticulate{N, M, DN, PN}, bgc::NPD_DP{FT}, fields, auxiliary_fields) where {N, M, DN, PN, FT}
     combined = Expr(:block)
     push!(combined.args, :(total = zero($FT)))
+    push!(combined.args, :(hard = hard_organic_remineralisation(i, j, k, grid, bgc.inorganic_carbon, bgc, fields, auxiliary_fields)))
     for (m, name) in enumerate(PN)
-        push!(combined.args, :(total += fields[$(QuoteNode(name))][i, j, k] *
-                        detritus.particulate_remineralisation_rate[$m] *
+        push!(combined.args, :(total += (fields[$(QuoteNode(name))][i, j, k] * detritus.particulate_remineralisation_rate[$m] +
+                                         hard * detritus.particulate_waste_partitioning[$m]) *
                         detritus.dissolved_fraction_of_remineralisation[$m]))
     end
     push!(combined.args, :(return total))
@@ -197,8 +206,10 @@ end
 @inline @generated function dissolved_remineralisation(i, j, k, grid, detritus::DissolvedParticulate{N, M, DN, PN, <:Any, <:Any, <:ImplicitSinking}, bgc::NPD_DP{FT}, fields, auxiliary_fields) where {N, M, DN, PN, FT}
     combined = Expr(:block)
     push!(combined.args, :(total = zero($FT)))
+    push!(combined.args, :(hard = hard_organic_remineralisation(i, j, k, grid, bgc.inorganic_carbon, bgc, fields, auxiliary_fields)))
     for (m, name) in enumerate(PN)
-        push!(combined.args, :(total += detritus.sinking.remineralisation[$(QuoteNode(name))][i, j, k] *
+        push!(combined.args, :(total += (detritus.sinking.remineralisation[$(QuoteNode(name))][i, j, k] +
+                                         hard * detritus.particulate_waste_partitioning[$m]) *
                         detritus.dissolved_fraction_of_remineralisation[$m]))
     end
     push!(combined.args, :(return total))
@@ -208,9 +219,10 @@ end
 @inline @generated function inorganic_waste(i, j, k, grid, detritus::DissolvedParticulate{N, M, DN, PN}, bgc::NPD_DP{FT}, fields, auxiliary_fields) where {N, M, DN, PN, FT}
     combined = Expr(:block)
     push!(combined.args, :(total = zero($FT)))
+    push!(combined.args, :(hard = hard_organic_remineralisation(i, j, k, grid, bgc.inorganic_carbon, bgc, fields, auxiliary_fields)))
     for (m, name) in enumerate(PN)
-        push!(combined.args, :(total += fields[$(QuoteNode(name))][i, j, k] *
-                        detritus.particulate_remineralisation_rate[$m] *
+        push!(combined.args, :(total += (fields[$(QuoteNode(name))][i, j, k] * detritus.particulate_remineralisation_rate[$m] +
+                                         hard * detritus.particulate_waste_partitioning[$m]) *
                         (one($FT) - detritus.dissolved_fraction_of_remineralisation[$m])))
     end
     for (n, name) in enumerate(DN)
@@ -224,8 +236,10 @@ end
 @inline @generated function inorganic_waste(i, j, k, grid, detritus::DissolvedParticulate{N, M, DN, PN, <:Any, <:Any, <:ImplicitSinking}, bgc::NPD_DP{FT}, fields, auxiliary_fields) where {N, M, DN, PN, FT}
     combined = Expr(:block)
     push!(combined.args, :(total = zero($FT)))
+    push!(combined.args, :(hard = hard_organic_remineralisation(i, j, k, grid, bgc.inorganic_carbon, bgc, fields, auxiliary_fields)))
     for (m, name) in enumerate(PN)
-        push!(combined.args, :(total += detritus.sinking.remineralisation[$(QuoteNode(name))][i, j, k] *
+        push!(combined.args, :(total += (detritus.sinking.remineralisation[$(QuoteNode(name))][i, j, k] +
+                                         hard * detritus.particulate_waste_partitioning[$m]) *
                         (one($FT) - detritus.dissolved_fraction_of_remineralisation[$m])))
     end
     for (n, name) in enumerate(DN)
