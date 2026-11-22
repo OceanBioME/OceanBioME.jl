@@ -37,6 +37,16 @@ function nutrient_uptake end
 # iron. Only `ImplicitProductivity` with an `IronQuota` puts any.
 @inline particulate_iron_production(i, j, k, grid, plankton, ::NutrientsPlanktonDetritus{FT}, fields, auxiliary_fields) where FT = zero(FT)
 
+# The plankton's gross iron uptake (mmol Fe m⁻³ s⁻¹), with all of their production as MARBL's `photoFe`, including the
+# iron of the dissolved waste, which an `IronQuota` returns at once (so never takes from the dissolved iron). With a
+# fixed Fe:P it is the iron `nutrient_uptake`.
+@inline gross_iron_uptake(i, j, k, grid, plankton, bgc, fields, auxiliary_fields) =
+    nutrient_uptake(i, j, k, grid, Val(:Fe), plankton, bgc, fields, auxiliary_fields)
+
+# The remineralisation of the sinking particulate organic matter (in the plankton's units per second), including that
+# carried by the inorganic carbon's particles
+function particulate_remineralisation end
+
 # The sinking particle mass flux into the top of cell `k` (ng cm⁻² s⁻¹, MARBL's units, positive downward), which
 # `SimpleIron`'s `ParticleScavenging` scales the scavenging with. Only components that sink implicitly and store their
 # flux (`store_flux = true`) contribute; `stores_sinking_flux` says whether one does.

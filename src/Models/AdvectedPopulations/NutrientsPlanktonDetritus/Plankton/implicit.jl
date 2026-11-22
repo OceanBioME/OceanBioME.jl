@@ -89,12 +89,16 @@ required_biogeochemical_auxiliary_fields(::ImplicitProductivity) = (:PAR, )
 @inline iron_ratio(::ImplicitProductivity{<:Any, <:Any, <:Any, <:IronQuota}, ::NPD{FT}) where FT = zero(FT)
 @inline calcium_carbonate_rain_ratio(plankton::ImplicitProductivity, ::NPD{FT}) where FT = plankton.rain_ratio
 
-@inline function particulate_iron_production(i, j, k, grid, plankton::ImplicitProductivity{<:Any, <:Any, <:Any, <:IronQuota},
-                                             bgc::NPD, fields, auxiliary_fields)
-    q = plankton.iron_ratio
-    Fe = @inbounds fields.Fe[i, j, k]
+@inline iron_quota(q::IronQuota, Fe) = max(q.minimum_ratio, min(q.maximum_ratio, q.maximum_ratio * Fe / q.saturating_iron))
 
-    Q = max(q.minimum_ratio, min(q.maximum_ratio, q.maximum_ratio * Fe / q.saturating_iron))
+const IronQuotaProductivity = ImplicitProductivity{<:Any, <:Any, <:Any, <:IronQuota}
+
+@inline gross_iron_uptake(i, j, k, grid, plankton::IronQuotaProductivity, bgc::NPD, fields, auxiliary_fields) =
+    iron_quota(plankton.iron_ratio, @inbounds(fields.Fe[i, j, k])) *
+    community_productivity(i, j, k, grid, plankton, bgc, fields, auxiliary_fields)
+
+@inline function particulate_iron_production(i, j, k, grid, plankton::IronQuotaProductivity, bgc::NPD, fields, auxiliary_fields)
+    Q = iron_quota(plankton.iron_ratio, @inbounds(fields.Fe[i, j, k]))
 
     return Q * solid_waste(i, j, k, grid, plankton, bgc, fields, auxiliary_fields)
 end
