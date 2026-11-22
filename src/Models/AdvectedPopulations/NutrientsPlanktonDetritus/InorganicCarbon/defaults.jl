@@ -10,15 +10,15 @@
 #   - particulate_calcium_carbonate_production   — into the solid CaCO₃ pool: ρ × solid carbon waste
 #   - biological_calcium_carbonate_dissolution  — returned straight to DIC/Alk: ρ × (inorganic + dissolved) waste
 @inline biological_calcium_carbonate_precipitation(i, j, k, grid, plankton, bgc, fields, auxiliary_fields) =
-    calcium_carbonate_rain_ratio(i, j, k, grid, bgc.plankton, bgc, fields) *
+    calcium_carbonate_rain_ratio(i, j, k, grid, bgc.plankton, bgc, fields, auxiliary_fields) *
     primary_production(i, j, k, grid, plankton, bgc, fields, auxiliary_fields)
 
 @inline particulate_calcium_carbonate_production(i, j, k, grid, plankton, bgc, fields, auxiliary_fields) =
-    calcium_carbonate_rain_ratio(i, j, k, grid, bgc.plankton, bgc, fields) *
+    calcium_carbonate_rain_ratio(i, j, k, grid, bgc.plankton, bgc, fields, auxiliary_fields) *
     solid_carbon_waste(i, j, k, grid, plankton, bgc, fields, auxiliary_fields)
 
 @inline biological_calcium_carbonate_dissolution(i, j, k, grid, plankton, bgc, fields, auxiliary_fields) =
-    calcium_carbonate_rain_ratio(i, j, k, grid, bgc.plankton, bgc, fields) * (
+    calcium_carbonate_rain_ratio(i, j, k, grid, bgc.plankton, bgc, fields, auxiliary_fields) * (
         inorganic_carbon_waste(i, j, k, grid, plankton, bgc, fields, auxiliary_fields)
       + dissolved_carbon_waste(i, j, k, grid, plankton, bgc, fields, auxiliary_fields)
     )
