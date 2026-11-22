@@ -13,14 +13,15 @@ iron tracer (`Fe`, in mmol Fe/m³) with two processes beyond the standard biolog
 2. **Scavenging**: iron adsorbed onto sinking particles. By default (a number, `scavenging_rate`) free iron
    is removed at that first-order rate, as MITgcm DIC does; with [`ParticleScavenging`](@ref) free and
    ligand-bound iron are removed at rates proportional to the sinking particle mass, as MARBL does.
-   Without `sinking` the scavenged iron is lost. With `sinking`, an [`ImplicitSinking`](@ref) with the one class
-   `scavenged_Fe`, it is carried down and released as dissolved iron over that class's dissolution length, as
-   MARBL's particulate iron (`P_iron`) is released by remineralisation; with an open bottom what reaches the
-   floor leaves through `sinking.floor_flux.scavenged_Fe`, for a sediment to bury or return. E.g., with the
-   dissolution length of the sinking organic matter `ℓ`:
+
+The scavenged iron, and the iron of `ImplicitProductivity`'s solid waste when its `iron_ratio` is an
+[`IronQuota`](@ref), make up the particulate iron, as MARBL's `P_iron`. Without `sinking` it is lost. With `sinking`,
+an [`ImplicitSinking`](@ref) with the one class `PFe`, it is carried down and released as dissolved iron over that
+class's dissolution length; with an open bottom what reaches the floor leaves through `sinking.floor_flux.PFe`, for a
+sediment to bury or return. E.g., with the dissolution length of the sinking organic matter `ℓ`:
 
 ```julia
-SimpleIron(; scavenging = ParticleScavenging(), sinking = ImplicitSinking(grid, (; scavenged_Fe = ℓ)))
+SimpleIron(; scavenging = ParticleScavenging(), sinking = ImplicitSinking(grid, (; PFe = ℓ)))
 ```
 
 Free iron is not capped (as MITgcm DIC without its `MINFE` option), so iron above the total ligand
@@ -36,7 +37,7 @@ Keyword Arguments
 - `scavenging`: the scavenging, either that rate or a [`ParticleScavenging`](@ref)
 - `ligand_stability`: ligand–free-iron stability constant (m³/mmol; MITgcm's `ligand_stab = 1e8` m³/mol)
 - `total_ligand`: uniform total ligand concentration (mmol/m³)
-- `sinking`: `nothing`, or the `ImplicitSinking` of the scavenged iron (class `scavenged_Fe`)
+- `sinking`: `nothing`, or the `ImplicitSinking` of the particulate iron (class `PFe`)
 """
 struct SimpleIron{FT, S, SK}
           scavenging :: S
@@ -78,21 +79,21 @@ function SimpleIron{FT}(; scavenging_rate = 0.19 / (360 * 86400), # 1/s
                           total_ligand = 1e-3,                    # mmol/m³
                           sinking = nothing) where FT
 
-    validate_scavenged_iron_sinking(sinking)
+    validate_particulate_iron_sinking(sinking)
 
     return SimpleIron(convert_scavenging(FT, scavenging), convert(FT, ligand_stability), convert(FT, total_ligand), sinking)
 end
 
 SimpleIron(; kwargs...) = SimpleIron{Float64}(; kwargs...)
 
-validate_scavenged_iron_sinking(::Nothing) = nothing
+validate_particulate_iron_sinking(::Nothing) = nothing
 
-validate_scavenged_iron_sinking(sinking::ImplicitSinking) =
-    keys(sinking.remineralisation) == (:scavenged_Fe, ) ||
-        throw(ArgumentError("the `sinking` of `SimpleIron` must have the one class `scavenged_Fe`, e.g. " *
-                            "`ImplicitSinking(grid, (; scavenged_Fe = ℓ))`, not $(keys(sinking.remineralisation))"))
+validate_particulate_iron_sinking(sinking::ImplicitSinking) =
+    keys(sinking.remineralisation) == (:PFe, ) ||
+        throw(ArgumentError("the `sinking` of `SimpleIron` must have the one class `PFe`, e.g. " *
+                            "`ImplicitSinking(grid, (; PFe = ℓ))`, not $(keys(sinking.remineralisation))"))
 
-validate_scavenged_iron_sinking(sinking) =
+validate_particulate_iron_sinking(sinking) =
     throw(ArgumentError("the `sinking` of `SimpleIron` must be `nothing` or an `ImplicitSinking`, not $(summary(sinking))"))
 
 Adapt.adapt_structure(to, si::SimpleIron) =
@@ -112,7 +113,7 @@ function Base.show(io::IO, si::SimpleIron)
           "├── Scavenging: ", scavenging_summary(si.scavenging), "\n",
           "├── Ligand stability: ", si.ligand_stability, " m³/mmol\n",
           "├── Total ligand: ", si.total_ligand, " mmol/m³\n",
-          "└── Scavenged iron: ", isnothing(si.sinking) ? "lost" : "sinks with " * summary(si.sinking))
+          "└── Particulate iron: ", isnothing(si.sinking) ? "lost" : "sinks with " * summary(si.sinking))
 end
 
 required_biogeochemical_tracers(::SimpleIron) = (:Fe, )
@@ -153,16 +154,17 @@ validate_iron_scavenging(::SimpleIron{<:Any, <:ParticleScavenging}, detritus) =
         throw(ArgumentError("`ParticleScavenging` needs detritus that sinks implicitly and stores its flux " *
                             "(e.g. `DissolvedParticulate(grid; implicit_sinking = true, store_flux = true)`), got $(summary(detritus))"))
 
-# the scavenged iron sinks implicitly: it is made where it is scavenged, and the column kernel releases it below
-@inline implicit_sinking_production(i, j, k, grid, iron::SimpleIron, bgc, fields, auxiliary_fields, ::Val{:scavenged_Fe}) =
-    iron_scavenging(i, j, k, grid, iron.scavenging, @inbounds(fields.Fe[i, j, k]), bgc)
+# the particulate iron sinks implicitly: it is made where it is scavenged or produced, and the column kernel releases it below
+@inline implicit_sinking_production(i, j, k, grid, iron::SimpleIron, bgc, fields, auxiliary_fields, ::Val{:PFe}) =
+    iron_scavenging(i, j, k, grid, iron.scavenging, @inbounds(fields.Fe[i, j, k]), bgc) +
+    particulate_iron_production(i, j, k, grid, bgc.plankton, bgc, fields, auxiliary_fields)
 
 # run after the detritus and inorganic carbon, whose stored fluxes `ParticleScavenging` reads
 update_biogeochemical_state!(model, iron::SimpleIron{<:Any, <:Any, <:ImplicitSinking}, npd::NutrientsPlanktonDetritus) =
     compute_implicit_sinking!(model, iron.sinking, iron, npd)
 
-@inline scavenged_iron_release(i, j, k, ::Nothing, Fe) = zero(Fe)
-@inline scavenged_iron_release(i, j, k, sinking::ImplicitSinking, Fe) = @inbounds sinking.remineralisation.scavenged_Fe[i, j, k]
+@inline particulate_iron_release(i, j, k, ::Nothing, Fe) = zero(Fe)
+@inline particulate_iron_release(i, j, k, sinking::ImplicitSinking, Fe) = @inbounds sinking.remineralisation.PFe[i, j, k]
 
 @inline function (bgc::SimpleIronNPD)(i, j, k, grid, val_name::Val{:Fe}, clock, fields, auxiliary_fields)
     iron = bgc.nutrients.iron
@@ -175,7 +177,8 @@ update_biogeochemical_state!(model, iron::SimpleIron{<:Any, <:Any, <:ImplicitSin
 
     Fe = @inbounds fields.Fe[i, j, k]
 
-    scavenging = iron_scavenging(i, j, k, grid, iron.scavenging, Fe, bgc) - scavenged_iron_release(i, j, k, iron.sinking, Fe)
+    particulate = implicit_sinking_production(i, j, k, grid, iron, bgc, fields, auxiliary_fields, Val(:PFe)) -
+                  particulate_iron_release(i, j, k, iron.sinking, Fe)
 
-    return biological - scavenging
+    return biological - particulate
 end
