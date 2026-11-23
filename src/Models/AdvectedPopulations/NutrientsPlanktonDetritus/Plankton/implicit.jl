@@ -12,15 +12,16 @@ Tracers: none
 Default limiting nutrients: N or NO₃, P, Fe
 
 The `iron_ratio` (mol Fe / mol P) is either a number, the Fe:P of all the organic matter, or an [`IronQuota`](@ref).
+The `rain_ratio` (mol CaCO₃ / mol C) is either a number or a [`GrowthDependentRainRatio`](@ref).
 """
-struct ImplicitProductivity{FT, LN, TT, IR} <: AbstractPlankton{LN}
+struct ImplicitProductivity{FT, LN, TT, IR, RR} <: AbstractPlankton{LN}
     maximum_community_productivity :: FT
              light_half_saturation :: FT
        dissolved_fraction_of_waste :: FT
                       carbon_ratio :: FT
                     nitrogen_ratio :: FT
                         iron_ratio :: IR
-                        rain_ratio :: FT
+                        rain_ratio :: RR
 
          nutrient_half_saturations :: NamedTuple{LN, TT}
 end
@@ -51,6 +52,43 @@ convert_iron_ratio(FT, ratio::Number) = convert(FT, ratio)
 convert_iron_ratio(FT, q::IronQuota) =
     IronQuota(FT; maximum_ratio = q.maximum_ratio, minimum_ratio = q.minimum_ratio, saturating_iron = q.saturating_iron)
 
+"""
+    GrowthDependentRainRatio(FT = Float64;
+                             maximum_ratio = 0.095,
+                             growth_grazing_ratio = 15,
+                             minimum_temperature = -2,
+                             saturating_temperature = 4)
+
+A calcium carbonate rain ratio (mol CaCO₃ / mol C) for [`ImplicitProductivity`](@ref) which varies with the
+community's growth limitation `L` and the temperature `T` (°C):
+
+    R = maximum_ratio × clamp((T - minimum_temperature) / (saturating_temperature - minimum_temperature), 0, 1) / (1 + (growth_grazing_ratio × L)²)
+
+`L` is the community productivity over its `maximum_community_productivity`, so the light × nutrient limitation.
+`1 / (1 + (growth_grazing_ratio × L)²)` is the small phytoplankton's share of the production after Dunne et al. (2005),
+as in BLING (Galbraith et al. 2010), where the large phytoplankton's is (μ / λ)² / (1 + (μ / λ)²) for growth and
+grazing rates with μ / λ = `growth_grazing_ratio` × `L`. The temperature term is that of MARBL's implicit calcifier,
+with its `CaCO3_temp_thres2` and `CaCO3_temp_thres1`.
+
+It needs the temperature tracer `T`, and calcium carbonate which sinks on its own (e.g. `ImplicitCalciumCarbonate`).
+"""
+struct GrowthDependentRainRatio{FT}
+             maximum_ratio :: FT # mol CaCO₃ / mol C
+      growth_grazing_ratio :: FT # –
+       minimum_temperature :: FT # °C
+    saturating_temperature :: FT # °C
+end
+
+GrowthDependentRainRatio(FT = Float64; maximum_ratio = 0.095, growth_grazing_ratio = 15,
+                         minimum_temperature = -2, saturating_temperature = 4) =
+    GrowthDependentRainRatio(convert(FT, maximum_ratio), convert(FT, growth_grazing_ratio),
+                             convert(FT, minimum_temperature), convert(FT, saturating_temperature))
+
+convert_rain_ratio(FT, ratio::Number) = convert(FT, ratio)
+convert_rain_ratio(FT, r::GrowthDependentRainRatio) =
+    GrowthDependentRainRatio(FT; maximum_ratio = r.maximum_ratio, growth_grazing_ratio = r.growth_grazing_ratio,
+                             minimum_temperature = r.minimum_temperature, saturating_temperature = r.saturating_temperature)
+
 function ImplicitProductivity(FT = Float64; 
                               maximum_community_productivity = 3/(365days), # mmol P / m³ / s
                               light_half_saturation = 25.0,                 # W / m²
@@ -75,7 +113,7 @@ function ImplicitProductivity(FT = Float64;
                                 convert(FT, carbon_ratio),
                                 convert(FT, nitrogen_ratio),
                                 convert_iron_ratio(FT, iron_ratio),
-                                convert(FT, rain_ratio),
+                                convert_rain_ratio(FT, rain_ratio),
                                 nutrient_half_saturations)
 end
 
@@ -88,6 +126,24 @@ required_biogeochemical_auxiliary_fields(::ImplicitProductivity) = (:PAR, )
 @inline iron_ratio(plankton::ImplicitProductivity, ::NPD{FT}) where FT = plankton.iron_ratio
 @inline iron_ratio(::ImplicitProductivity{<:Any, <:Any, <:Any, <:IronQuota}, ::NPD{FT}) where FT = zero(FT)
 @inline calcium_carbonate_rain_ratio(plankton::ImplicitProductivity, ::NPD{FT}) where FT = plankton.rain_ratio
+
+const GrowthDependentRainRatioProductivity = ImplicitProductivity{<:Any, <:Any, <:Any, <:Any, <:GrowthDependentRainRatio}
+
+required_biogeochemical_tracers(::GrowthDependentRainRatioProductivity) = (:T, )
+
+@inline function growth_dependent_rain_ratio(r::GrowthDependentRainRatio, L, T)
+    temperature_limitation = clamp((T - r.minimum_temperature) / (r.saturating_temperature - r.minimum_temperature), 0, 1)
+    small_plankton_share = 1 / (1 + (r.growth_grazing_ratio * L)^2)
+
+    return r.maximum_ratio * temperature_limitation * small_plankton_share
+end
+
+@inline function calcium_carbonate_rain_ratio(i, j, k, grid, plankton::GrowthDependentRainRatioProductivity, bgc, fields, auxiliary_fields)
+    T = @inbounds fields.T[i, j, k]
+    L = community_productivity(i, j, k, grid, plankton, bgc, fields, auxiliary_fields) / plankton.maximum_community_productivity
+
+    return growth_dependent_rain_ratio(plankton.rain_ratio, L, T)
+end
 
 @inline iron_quota(q::IronQuota, Fe) = max(q.minimum_ratio, min(q.maximum_ratio, q.maximum_ratio * Fe / q.saturating_iron))
 
