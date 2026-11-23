@@ -42,7 +42,7 @@ model = NonhydrostaticModel(grid; biogeochemistry = bgc, closure,
                             tracer_advection = (N = Centered(), nitrogen_reservoir = nothing))
 
 # Negative N initially occupies cell 1; cell 2 has no N; cells 3+ have N.
-set!(model.tracers.N, (x, y, z) -> x < 1 ? -0.5 : x < 2 ? 0.0 : 1.0)
+set!(model.tracers.N, x -> x < 1 ? -0.5 : x < 2 ? 0.0 : 1.0)
 update_state!(model) # N is nonnegative; the initial deficit is now in the reservoir.
 
 profile(field) = vec(Array(interior(field)))

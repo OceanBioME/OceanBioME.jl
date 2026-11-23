@@ -81,7 +81,7 @@ end
 
     # Cell 1 is negative, cell 2 contains no nutrient, and cells 3+ can
     # repay the diffusing debt. Boundaries are no-flux.
-    set!(model.tracers.N, (x, y, z) -> x < 1 ? -0.5 : x < 2 ? 0.0 : 1.0)
+    set!(model.tracers.N, x -> x < 1 ? -0.5 : x < 2 ? 0.0 : 1.0)
     update_state!(model)
 
     concentrations(field) = vec(Array(interior(field)))
