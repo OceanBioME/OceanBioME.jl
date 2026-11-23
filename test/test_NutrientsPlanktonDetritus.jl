@@ -1158,12 +1158,12 @@ using OceanBioME.Models.NutrientsPlanktonDetritusModels.InorganicCarbonModels: p
     set!(PAR, (x, y, z) -> z > -300 ? 100 * exp(z / 50) : 0)
     light_attenuation = PrescribedPhotosyntheticallyActiveRadiation(PAR)
 
-    function implicit_calcium_carbonate_model(; open_bottom, timestepper = :RungeKutta3, biogeochemistry_kwargs = (;), kwargs...)
+    function implicit_calcium_carbonate_model(; open_bottom, timestepper = :RungeKutta3, biogeochemistry_kwargs = (;), tracers = (), kwargs...)
         inorganic_carbon = ImplicitCalciumCarbonate(grid; replicates = 2, open_bottom, store_flux = true, kwargs...)
         biogeochemistry = MITgcmDIC(grid; inorganic_carbon, light_attenuation, open_bottom, implicit_sinking = true, store_flux = true,
                                     biogeochemistry_kwargs...)
 
-        model = NonhydrostaticModel(grid; biogeochemistry, advection = nothing, timestepper)
+        model = NonhydrostaticModel(grid; biogeochemistry, tracers, advection = nothing, timestepper)
         set!(model, Fe = 1e-3, PO₄ = 2, DOP = 0.1, DIC1 = 2000, Alk1 = 2300, DIC2 = 2100, Alk2 = 2350, O₂ = 200)
 
         return model
@@ -1176,7 +1176,10 @@ using OceanBioME.Models.NutrientsPlanktonDetritusModels.InorganicCarbonModels: p
                                           rain_ratio = GrowthDependentRainRatio(),
                                           nutrient_half_saturations = (phosphate = 0.5, iron = 1.2e-4))
 
-        model = implicit_calcium_carbonate_model(; biogeochemistry_kwargs = (; plankton), kwargs...)
+        # the temperature is the model's tracer, not one the biogeochemistry requires
+        @test :T ∉ required_biogeochemical_tracers(plankton)
+
+        model = implicit_calcium_carbonate_model(; biogeochemistry_kwargs = (; plankton), tracers = (:T, ), kwargs...)
 
         # 2, 0 and -2 °C in the three lit cells
         set!(model, T = (x, y, z) -> 3 + z / 50)

@@ -70,7 +70,9 @@ as in BLING (Galbraith et al. 2010), where the large phytoplankton's is (μ / λ
 grazing rates with μ / λ = `growth_grazing_ratio` × `L`. The temperature term is that of MARBL's implicit calcifier,
 with its `CaCO3_temp_thres2` and `CaCO3_temp_thres1`.
 
-It needs the temperature tracer `T`, and calcium carbonate which sinks on its own (e.g. `ImplicitCalciumCarbonate`).
+It reads the temperature tracer `T`, which the model must carry: it is not among the tracers the biogeochemistry
+requires, since an ocean model which already has `T` (e.g. NumericalEarth's `ocean_simulation`) would be given it
+twice. It also needs calcium carbonate which sinks on its own (e.g. `ImplicitCalciumCarbonate`).
 """
 struct GrowthDependentRainRatio{FT}
              maximum_ratio :: FT # mol CaCO₃ / mol C
@@ -128,8 +130,6 @@ required_biogeochemical_auxiliary_fields(::ImplicitProductivity) = (:PAR, )
 @inline calcium_carbonate_rain_ratio(plankton::ImplicitProductivity, ::NPD{FT}) where FT = plankton.rain_ratio
 
 const GrowthDependentRainRatioProductivity = ImplicitProductivity{<:Any, <:Any, <:Any, <:Any, <:GrowthDependentRainRatio}
-
-required_biogeochemical_tracers(::GrowthDependentRainRatioProductivity) = (:T, )
 
 @inline function growth_dependent_rain_ratio(r::GrowthDependentRainRatio, L, T)
     temperature_limitation = clamp((T - r.minimum_temperature) / (r.saturating_temperature - r.minimum_temperature), 0, 1)
