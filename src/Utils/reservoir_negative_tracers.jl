@@ -28,8 +28,8 @@ The elemental-buffer concept follows the negative-buffer approach in the
 `ocean_bgc_models` research code.
 
 The reservoirs are ordinary Oceananigans tracers. Configure their transport
-with the model's tracer advection and diffusivity settings; the choice of
-reservoir transport will be exposed more conveniently in a subsequent change.
+with the model's `tracer_advection` and tracer-specific diffusivities in `closure`;
+see [Positivity Preservation](@ref pos-preservation) for a runnable example.
 """
 struct ReservoirNegativeTracers{T, S, R, A}
             tracers :: T

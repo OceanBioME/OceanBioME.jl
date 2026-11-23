@@ -62,3 +62,47 @@ using Oceananigans.TimeSteppers: update_state!
     @test_throws ArgumentError ReservoirNegativeTracers(
         (oxygen = (O₂ = 1, P = -7),); repayment_tracers = (oxygen = :O₂,))
 end
+
+@testset "Reservoir diffusion and repayment" begin
+    # An abiotic, single-nutrient model isolates Oceananigans transport from
+    # biological reactions. The reservoir is an ordinary prognostic tracer.
+    grid = RectilinearGrid(architecture; size = 16, x = (0, 16),
+                           topology = (Bounded, Flat, Flat))
+    base = NPZD(grid; plankton = Abiotic(), detritus = InstantRemineralisationDetritus(),
+                light_attenuation = nothing)
+    modifier = ReservoirNegativeTracers(base.underlying_biogeochemistry;
+                                       repayment_tracers = (nitrogen = :N,))
+    bgc = Biogeochemistry(base.underlying_biogeochemistry; modifiers = modifier)
+
+    closure = HorizontalScalarDiffusivity(ν = 0, κ = (N = 0, nitrogen_reservoir = 0.5))
+    model = NonhydrostaticModel(grid; biogeochemistry = bgc, closure,
+                                momentum_advection = nothing,
+                                tracer_advection = (N = Centered(), nitrogen_reservoir = nothing))
+
+    # Cell 1 is negative, cell 2 contains no nutrient, and cells 3+ can
+    # repay the diffusing debt. Boundaries are no-flux.
+    set!(model.tracers.N, (x, y, z) -> x < 1 ? -0.5 : x < 2 ? 0.0 : 1.0)
+    update_state!(model)
+
+    concentrations(field) = vec(Array(interior(field)))
+    N₀ = concentrations(model.tracers.N)
+    R₀ = concentrations(model.tracers.nitrogen_reservoir)
+    inventory₀ = sum(N₀) + sum(R₀)
+
+    @test N₀[1] == 0
+    @test R₀[1] ≈ -0.5
+    @test N₀[2] == R₀[2] == 0
+
+    for _ in 1:12
+        time_step!(model, 0.1)
+    end
+
+    N = concentrations(model.tracers.N)
+    R = concentrations(model.tracers.nitrogen_reservoir)
+    @test all(>=(-1e-12), N)
+    @test all(<=(1e-12), R)
+    @test R[2] < 0               # debt diffuses into the nutrient-free cell
+    @test N[3] < N₀[3]          # some debt reaches and consumes positive N
+    @test R[1] > R₀[1]          # debt has left its original cell
+    @test sum(N) + sum(R) ≈ inventory₀ atol = 1e-9
+end
