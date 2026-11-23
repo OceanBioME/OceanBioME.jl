@@ -22,6 +22,7 @@ function nutrient_uptake end
 @inline silicon_ratio(plankton, ::NutrientsPlanktonDetritus{FT}) where FT = zero(FT)
 
 @inline calcium_carbonate_rain_ratio(i, j, k, grid, plankton, bgc, fields) = calcium_carbonate_rain_ratio(plankton, bgc)
+@inline calcium_carbonate_rain_ratio(i, j, k, grid, plankton, bgc, fields, auxiliary_fields) = calcium_carbonate_rain_ratio(i, j, k, grid, plankton, bgc, fields)
 @inline calcium_carbonate_rain_ratio(plankton, ::NutrientsPlanktonDetritus{FT}) where FT = zero(FT)
 
 @inline chlorophyll_ratio(plankton, ::Val) = chlorophyll_ratio(plankton)

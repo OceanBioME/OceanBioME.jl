@@ -1139,7 +1139,9 @@ end
 end
 
 using OceanBioME.Models.NutrientsPlanktonDetritusModels: nitrogen_ratio, carbon_ratio, solid_waste, inorganic_waste,
-                                                         hard_organic_production, hard_organic_remineralisation
+                                                         hard_organic_production, hard_organic_remineralisation,
+                                                         calcium_carbonate_rain_ratio
+using OceanBioME.Models.NutrientsPlanktonDetritusModels.PlanktonModels: growth_dependent_rain_ratio
 using OceanBioME.Models.NutrientsPlanktonDetritusModels.InorganicCarbonModels: primary_production,
                                                                                biological_calcium_carbonate_precipitation,
                                                                                net_calcium_carbonate_production,
@@ -1156,12 +1158,31 @@ using OceanBioME.Models.NutrientsPlanktonDetritusModels.InorganicCarbonModels: p
     set!(PAR, (x, y, z) -> z > -300 ? 100 * exp(z / 50) : 0)
     light_attenuation = PrescribedPhotosyntheticallyActiveRadiation(PAR)
 
-    function implicit_calcium_carbonate_model(; open_bottom, timestepper = :RungeKutta3, kwargs...)
+    function implicit_calcium_carbonate_model(; open_bottom, timestepper = :RungeKutta3, biogeochemistry_kwargs = (;), tracers = (), kwargs...)
         inorganic_carbon = ImplicitCalciumCarbonate(grid; replicates = 2, open_bottom, store_flux = true, kwargs...)
-        biogeochemistry = MITgcmDIC(grid; inorganic_carbon, light_attenuation, open_bottom, implicit_sinking = true, store_flux = true)
+        biogeochemistry = MITgcmDIC(grid; inorganic_carbon, light_attenuation, open_bottom, implicit_sinking = true, store_flux = true,
+                                    biogeochemistry_kwargs...)
 
-        model = NonhydrostaticModel(grid; biogeochemistry, advection = nothing, timestepper)
+        model = NonhydrostaticModel(grid; biogeochemistry, tracers, advection = nothing, timestepper)
         set!(model, Fe = 1e-3, PO₄ = 2, DOP = 0.1, DIC1 = 2000, Alk1 = 2300, DIC2 = 2100, Alk2 = 2350, O₂ = 200)
+
+        return model
+    end
+
+    function growth_dependent_rain_ratio_model(; kwargs...)
+        plankton = ImplicitProductivity(; maximum_community_productivity = 2 / 360days,
+                                          light_half_saturation = 30,
+                                          carbon_ratio = 117,
+                                          rain_ratio = GrowthDependentRainRatio(),
+                                          nutrient_half_saturations = (phosphate = 0.5, iron = 1.2e-4))
+
+        # the temperature is the model's tracer, not one the biogeochemistry requires
+        @test :T ∉ required_biogeochemical_tracers(plankton)
+
+        model = implicit_calcium_carbonate_model(; biogeochemistry_kwargs = (; plankton), tracers = (:T, ), kwargs...)
+
+        # 2, 0 and -2 °C in the three lit cells
+        set!(model, T = (x, y, z) -> 3 + z / 50)
 
         return model
     end
@@ -1262,8 +1283,60 @@ using OceanBioME.Models.NutrientsPlanktonDetritusModels.InorganicCarbonModels: p
         end
     end
 
-    @testset "budget with an open bottom" begin
-        model = implicit_calcium_carbonate_model(; open_bottom = true, timestepper = :QuasiAdamsBashforth2)
+    @testset "growth dependent rain ratio" begin
+        r = GrowthDependentRainRatio()
+
+        @test growth_dependent_rain_ratio(r, 0, -2) == 0
+        @test growth_dependent_rain_ratio(r, 0, -5) == 0
+        @test growth_dependent_rain_ratio(r, 0, 1) ≈ 0.095 / 2
+        @test growth_dependent_rain_ratio(r, 0, 4) == 0.095
+        @test growth_dependent_rain_ratio(r, 0, 20) == 0.095
+        @test growth_dependent_rain_ratio(r, 1, 20) ≈ 0.095 / (1 + 15^2)
+
+        @test ImplicitProductivity(Float32; rain_ratio = r).rain_ratio isa GrowthDependentRainRatio{Float32}
+        @test ImplicitProductivity(Float32).rain_ratio === 0.07f0
+
+        # a number is the ratio of every cell
+        model = implicit_calcium_carbonate_model(; open_bottom = true)
+        bgc = model.biogeochemistry.underlying_biogeochemistry
+        aux = biogeochemical_auxiliary_fields(model.biogeochemistry)
+
+        @test CUDA.@allowscalar calcium_carbonate_rain_ratio(1, 1, Nz, grid, bgc.plankton, bgc, model.tracers, aux) === 0.07
+
+        model = growth_dependent_rain_ratio_model(; open_bottom = true)
+        bgc = model.biogeochemistry.underlying_biogeochemistry
+        ic = bgc.inorganic_carbon
+        aux = biogeochemical_auxiliary_fields(model.biogeochemistry)
+        α = bgc.plankton.maximum_community_productivity
+
+        ratios = CUDA.@allowscalar map(Nz-2:Nz) do k
+            production = primary_production(1, 1, k, grid, bgc.plankton, bgc, model.tracers, aux)
+            L = production / bgc.plankton.carbon_ratio / α
+            R = growth_dependent_rain_ratio(bgc.plankton.rain_ratio, L, model.tracers.T[1, 1, k])
+
+            formed = biological_calcium_carbonate_precipitation(1, 1, k, grid, bgc.plankton, bgc, model.tracers, aux)
+            @test 0 < L < 1
+            @test formed ≈ R * production rtol = 1e-12
+
+            # the tendencies and the sinking are given the same ratio
+            Π = sum(name -> OceanBioME.implicit_sinking_production(1, 1, k, grid, ic, bgc, model.tracers, aux, Val(name)),
+                    keys(ic.production_partitioning))
+
+            @test Π ≈ ic.particulate_fraction * formed rtol = 1e-12
+
+            R
+        end
+
+        # the temperature term is 0, 1/3 and 2/3 in the three cells
+        @test ratios[1] == 0
+        @test 0 < ratios[2] < 0.095 / 3
+        @test 0 < ratios[3] < 2 * 0.095 / 3
+    end
+
+    @testset "budget with an open bottom, $name rain ratio" for (name, construct_model) in
+            (("constant", implicit_calcium_carbonate_model), ("growth dependent", growth_dependent_rain_ratio_model))
+
+        model = construct_model(; open_bottom = true, timestepper = :QuasiAdamsBashforth2)
 
         bgc = model.biogeochemistry.underlying_biogeochemistry
         ic = bgc.inorganic_carbon
