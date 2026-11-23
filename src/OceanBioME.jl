@@ -157,14 +157,14 @@ biogeochemical_auxiliary_fields(bgc::CompleteBiogeochemistry) =
                               adapt(to, bgc.light_attenuation),
                               nothing,
                               nothing,
-                              nothing)
+                              adapt(to, bgc.modifiers))
 
 @inline adapt_structure(to, bgc::DiscreteBiogeochemistry) = 
     DiscreteBiogeochemistry(adapt(to, bgc.underlying_biogeochemistry),
                             adapt(to, bgc.light_attenuation),
                             nothing,
                             nothing,
-                            nothing)
+                            adapt(to, bgc.modifiers))
 
 function update_tendencies!(bgc::CompleteBiogeochemistry, model)
     update_tendencies!(bgc, bgc.sediment, model)

@@ -75,3 +75,23 @@ uses an explicit diffusion coefficient ``\kappa = 0.5`` and time step
 require correspondingly smaller explicit time steps. In a three-dimensional
 model, supply the desired tracer-specific advection and diffusivities for **all**
 tracers when constructing the Oceananigans model.
+
+### Larger ecosystem models and restart
+
+For LOBSTER with two carbonate-system replicates, use separate repayment
+tracers for each replicated carbon group:
+`repayment_tracers = (nitrogen = :NO₃, carbon1 = :DIC1, carbon2 = :DIC2)`.
+For PISCES, the corresponding groups are
+`(carbon = :DIC, iron = :Fe, phosphate = :PO₄, silicon = :Si, nitrogen = :NO₃)`.
+Each repayment tracer must belong exclusively to its designated conservation
+group. Organic tracers shared by several groups are corrected consistently.
+
+The constructor based on a biogeochemical model selects groups with nonnegative
+stoichiometric coefficients. Consequently, signed oxygen groups are excluded,
+and variables absent from the model's `conserved_tracers` groups (such as PISCES
+chlorophyll) retain their original treatment. The correction's conservation
+guarantee applies to the selected groups, including their reservoirs.
+
+Oceananigans' `Checkpointer` saves reservoir fields along with other prognostic
+tracers. When resuming, recreate the same biogeochemistry and modifiers before
+using the standard `run!(simulation; pickup = true)` workflow.
