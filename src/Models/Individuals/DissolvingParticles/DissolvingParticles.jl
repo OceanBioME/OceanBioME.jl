@@ -23,7 +23,7 @@ module DissolvingParticlesModel
 
 export DissolvingMineral, DissolvingParticles, StokesSinking
 
-using Oceananigans: Biogeochemistry, fields
+using Oceananigans: Biogeochemistry, defaults, fields
 using Oceananigans.Architectures: architecture
 using Oceananigans.Models: LagrangianParticleTracking
 using Oceananigans.Utils: KernelParameters, launch!
@@ -38,7 +38,7 @@ using KernelAbstractions: @kernel, @index
                   particle_density,
                   water_density = 1025,
                   dynamic_viscosity = 1.08e-3,
-                  gravitational_acceleration = 9.81)
+                  gravitational_acceleration = defaults.gravitational_acceleration)
 
 Stokes' law for the vertical velocity (m/s, positive upwards) of a sphere of radius `r` (m) relative to the water,
 
@@ -55,7 +55,7 @@ Keyword Arguments
   `water_density(mineral, particle_fields, tracer_fields)`. Default: 1025.
 - `dynamic_viscosity`: dynamic viscosity of the water, `μ` (kg/m/s), a number or a function called as
   `dynamic_viscosity(mineral, particle_fields, tracer_fields)`. Default: 1.08e-3.
-- `gravitational_acceleration`: `g` (m/s²). Default: 9.81.
+- `gravitational_acceleration`: `g` (m/s²). Default: `Oceananigans.defaults.gravitational_acceleration`.
 
 Example
 =======
@@ -64,7 +64,7 @@ Example
 julia> using OceanBioME
 
 julia> stokes = StokesSinking(particle_density = 2710)
-StokesSinking{Float64, Float64, Float64}(2710.0, 1025.0, 0.00108, 9.81)
+StokesSinking{Float64, Float64, Float64}(2710.0, 1025.0, 0.00108, 9.80665)
 ```
 """
 struct StokesSinking{WD, DV, FT}
@@ -78,7 +78,7 @@ function StokesSinking(FT = Float64;
                        particle_density,
                        water_density = 1025,
                        dynamic_viscosity = 1.08e-3,
-                       gravitational_acceleration = 9.81)
+                       gravitational_acceleration = defaults.gravitational_acceleration)
 
     water_density = maybe_convert(FT, water_density)
     dynamic_viscosity = maybe_convert(FT, dynamic_viscosity)
@@ -101,7 +101,7 @@ end
     DissolvingMineral(FT = Float64;
                       density = 2211,
                       molar_mass = 74.093e-3,
-                      released_tracers = (; DIC = 1, Alk = 2),
+                      released_tracers = (; Alk = 2),
                       dissolution_rate = 1e-8,
                       sinking_speed = StokesSinking(FT; particle_density = density),
                       required_fields = ())
@@ -126,7 +126,9 @@ Keyword Arguments
 - `density`: density of the mineral (kg/m³). Default: 2211.
 - `molar_mass`: molar mass of the mineral (kg/mol). Default: 74.093e-3.
 - `released_tracers`: `NamedTuple` of the moles of each tracer released per mole of mineral dissolved.
-  Default: `(; DIC = 1, Alk = 2)`.
+  Default: `(; Alk = 2)`.
+
+The default `density`, `molar_mass`, and `released_tracers` are for calcium hydroxide, Ca(OH)₂.
 - `dissolution_rate`: speed that the radius shrinks (m/s). Default: 1e-8.
 - `sinking_speed`: vertical velocity of the particles relative to the water (m/s, positive upwards).
   Default: `StokesSinking(FT; particle_density = density)`.
@@ -145,7 +147,7 @@ DissolvingMineral{Float64} biogeochemistry tracking particle `r`adius
 ├── molar mass: 0.10009 kg/mol
 ├── released tracers: (Alk = 2.0, DIC = 1.0) mol/mol
 ├── dissolution rate: 1.0e-8 m/s
-├── sinking speed: StokesSinking{Float64, Float64, Float64}(2710.0, 1025.0, 0.00108, 9.81) m/s
+├── sinking speed: StokesSinking{Float64, Float64, Float64}(2710.0, 1025.0, 0.00108, 9.80665) m/s
 └── required fields: ()
 ```
 """
@@ -164,7 +166,7 @@ end
 function DissolvingMineral(FT = Float64;
                            density = 2211,
                            molar_mass = 74.093e-3,
-                           released_tracers = (; DIC = 1, Alk = 2),
+                           released_tracers = (; Alk = 2),
                            dissolution_rate = 1e-8,
                            sinking_speed = StokesSinking(FT; particle_density = density),
                            required_fields = ())
