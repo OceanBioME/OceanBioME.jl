@@ -19,9 +19,14 @@ Construct a modifier that zeroes any negative tracers excluding those listed in 
     This method is _not_ recommended as a way to preserve positivity of tracers since
     it does not conserve the total tracer.
 """
-@kwdef struct ZeroNegativeTracers{E}
-    exclude :: E = ()
-end
+struct ZeroNegativeTracers{E} end
+
+ZeroNegativeTracers(exclude) = ZeroNegativeTracers{Tuple(exclude)}()
+ZeroNegativeTracers(; exclude = ()) = ZeroNegativeTracers(exclude)
+
+# Keep tracer names in the type rather than in CUDA kernel arguments.
+@inline Base.getproperty(zero::ZeroNegativeTracers{E}, name::Symbol) where E =
+    name === :exclude ? E : getfield(zero, name)
 
 function update_biogeochemical_state!(model, zero::ZeroNegativeTracers)
     for (tracer_name, tracer) in pairs(model.tracers)
@@ -35,13 +40,19 @@ end
 ##### Infastructure to rescale negative values
 #####
 
-struct ScaleNegativeTracers{FA, SA, SH, OT, FV}
-             tracers :: FA
+struct ScaleNegativeTracers{T, SA, SH, OT, FV}
         scalefactors :: SA
               shared :: SH
     first_own_tracer :: OT
   invalid_fill_value :: FV
 end
+
+ScaleNegativeTracers(tracers::Tuple{Vararg{Symbol}}, scalefactors, shared, first_own_tracer, invalid_fill_value) =
+    ScaleNegativeTracers{tracers, typeof(scalefactors), typeof(shared), typeof(first_own_tracer), typeof(invalid_fill_value)}(
+        scalefactors, shared, first_own_tracer, invalid_fill_value)
+
+@inline Base.getproperty(scale::ScaleNegativeTracers{T}, name::Symbol) where T =
+    name === :tracers ? T : getfield(scale, name)
 
 """
     ScaleNegativeTracers(tracers; scalefactors = ones(length(tracers)), invalid_fill_value = NaN)

@@ -31,12 +31,18 @@ The reservoirs are ordinary Oceananigans tracers. Configure their transport
 with the model's `tracer_advection` and tracer-specific diffusivities in `closure`;
 see [Positivity Preservation](@ref pos-preservation) for a runnable example.
 """
-struct ReservoirNegativeTracers{T, S, R, A}
-            tracers :: T
+struct ReservoirNegativeTracers{T, R, S, A}
        scalefactors :: S
-    reservoir_names :: R
   repayment_indices :: A
 end
+
+ReservoirNegativeTracers(tracers::Tuple{Vararg{Symbol}}, scalefactors,
+                         reservoir_names::Tuple{Vararg{Symbol}}, repayment_indices) =
+    ReservoirNegativeTracers{tracers, reservoir_names, typeof(scalefactors), typeof(repayment_indices)}(
+        scalefactors, repayment_indices)
+
+@inline Base.getproperty(modifier::ReservoirNegativeTracers{T, R}, name::Symbol) where {T, R} =
+    name === :tracers ? T : name === :reservoir_names ? R : getfield(modifier, name)
 
 function ReservoirNegativeTracers(bgc::AbstractBiogeochemistry; repayment_tracers, reservoir_names = nothing)
     groups = map(group_scalefactors, conserved_tracers(bgc))

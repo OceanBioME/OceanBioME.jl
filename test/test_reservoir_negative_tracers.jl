@@ -22,6 +22,9 @@ using Adapt: adapt
     base = NPZD(grid; inorganic_carbon, light_attenuation)
     groups = conserved_tracers(base)
     modifier = ReservoirNegativeTracers(base; repayment_tracers = (nitrogen = :N, carbon = :DIC))
+    @test isbitstype(typeof(modifier))
+    @test isbitstype(typeof(ScaleNegativeTracers((:N, :P))))
+    @test isbitstype(typeof(ZeroNegativeTracers(exclude = (:Z,))))
     biogeochemistry = NPZD(grid; inorganic_carbon, light_attenuation, modifiers = modifier)
     model = NonhydrostaticModel(grid; biogeochemistry, advection = nothing)
 
