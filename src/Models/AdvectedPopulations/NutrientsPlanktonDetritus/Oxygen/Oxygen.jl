@@ -32,7 +32,8 @@ import ..NutrientsPlanktonDetritusModels:
 """
     Oxygen([FT = Float64;]
            production_oxygen_carbon_ratio = 131/122,
-           nitrification_oxygen_carbon_ratio = 31/122)
+           nitrification_oxygen_carbon_ratio = 31/122,
+           low_oxygen_limit = nothing)
 
 An optional oxygen component for the `oxygen` slot of any [`NutrientsPlanktonDetritus`](@ref) model
 (including the [`LOBSTER`](@ref), [`NPZD`](@ref), and [`ImplicitBiology`](@ref)
@@ -49,17 +50,38 @@ Keyword Arguments
 - `production_oxygen_carbon_ratio`: moles of O₂ produced per mole of carbon fixed (mol O₂ / mol C)
 - `nitrification_oxygen_carbon_ratio`: moles of O₂ consumed per mole of carbon during nitrification
   (mol O₂ / mol C)
+- `low_oxygen_limit`: the O₂ concentration (mmol O₂ / m³) at and below which the remineralisation of organic
+  waste consumes no O₂; the consumption rises linearly from none there to all of it at twice the limit
+  (see [`ramp`](@ref)). The remineralisation itself is not changed, only the O₂ it takes: where O₂ is low
+  the organic matter is taken to be oxidised by something else, as by the nitrate of denitrification in a
+  model without nitrogen, and the O₂ cannot be driven below the limit by remineralisation. MARBL's is 5 (its
+  `parm_o2_min` and `parm_o2_min_delta`). The default, `nothing`, has no limit
 """
-struct Oxygen{FT}
+struct Oxygen{FT, L}
        production_oxygen_carbon_ratio :: FT
     nitrification_oxygen_carbon_ratio :: FT
+                     low_oxygen_limit :: L
 end
 
-Oxygen(FT = Float64;
-       production_oxygen_carbon_ratio = 131/122,     # mol O₂ / mol C
-       nitrification_oxygen_carbon_ratio = 31/122) = # mol O₂ / mol C
+Oxygen(production_oxygen_carbon_ratio, nitrification_oxygen_carbon_ratio) =
+    Oxygen(production_oxygen_carbon_ratio, nitrification_oxygen_carbon_ratio, nothing)
+
+Oxygen(FT::DataType = Float64;
+       production_oxygen_carbon_ratio = 131/122,    # mol O₂ / mol C
+       nitrification_oxygen_carbon_ratio = 31/122,  # mol O₂ / mol C
+       low_oxygen_limit = nothing) =                # mmol O₂ / m³
     Oxygen(convert(FT, production_oxygen_carbon_ratio),
-           convert(FT, nitrification_oxygen_carbon_ratio))
+           convert(FT, nitrification_oxygen_carbon_ratio),
+           isnothing(low_oxygen_limit) ? nothing : convert(FT, low_oxygen_limit))
+
+"""
+    ramp(limit, O₂)
+
+The fraction of the remineralisation's oxygen demand which is taken from the O₂: none at and below `limit`,
+all of it at and above twice `limit`, linear between; all of it everywhere when `limit` is `nothing`.
+"""
+@inline ramp(::Nothing, O₂) = one(O₂)
+@inline ramp(limit, O₂) = clamp((O₂ - limit) / limit, zero(O₂), one(O₂))
 
 required_biogeochemical_tracers(::Oxygen) = (:O₂, )
 required_biogeochemical_auxiliary_fields(::Oxygen) = tuple()
@@ -71,10 +93,13 @@ const OxygenNPD{FT, NUT} = NutrientsPlanktonDetritus{FT, <:Any, <:Any, <:Any, <:
     rP = bgc.oxygen.production_oxygen_carbon_ratio
     rN = bgc.oxygen.nitrification_oxygen_carbon_ratio
 
+    O₂ = @inbounds fields.O₂[i, j, k]
+    consumed = ramp(bgc.oxygen.low_oxygen_limit, O₂)
+
     return (rP + rN) * (
         primary_production(i, j, k, grid,bgc.plankton, bgc, fields, auxiliary_fields)
-      - inorganic_carbon_waste(i, j, k, grid,bgc.plankton, bgc, fields, auxiliary_fields)
-      - inorganic_carbon_waste(i, j, k, grid,bgc.detritus, bgc, fields, auxiliary_fields)
+      - consumed * inorganic_carbon_waste(i, j, k, grid,bgc.plankton, bgc, fields, auxiliary_fields)
+      - consumed * inorganic_carbon_waste(i, j, k, grid,bgc.detritus, bgc, fields, auxiliary_fields)
     )
 end
 
@@ -87,11 +112,14 @@ end
     # PP from NO₃ - nitrification etc.
     net_nitrate_production = bgc(i, j, k, grid, Val(:NO₃), clock, fields, auxiliary_fields)
 
+    O₂ = @inbounds fields.O₂[i, j, k]
+    consumed = ramp(bgc.oxygen.low_oxygen_limit, O₂)
+
     return (
         rP * primary_production(i, j, k, grid,bgc.plankton, bgc, fields, auxiliary_fields)
       - rN * rC * net_nitrate_production
-      - rP * inorganic_carbon_waste(i, j, k, grid,bgc.plankton, bgc, fields, auxiliary_fields)
-      - rP * inorganic_carbon_waste(i, j, k, grid,bgc.detritus, bgc, fields, auxiliary_fields)
+      - consumed * rP * inorganic_carbon_waste(i, j, k, grid,bgc.plankton, bgc, fields, auxiliary_fields)
+      - consumed * rP * inorganic_carbon_waste(i, j, k, grid,bgc.detritus, bgc, fields, auxiliary_fields)
     )
 end
 
@@ -102,11 +130,14 @@ const OxygenCNDP{FT} = NutrientsPlanktonDetritus{FT, <:Nutrients{<:SingleTracerN
     rP = bgc.oxygen.production_oxygen_carbon_ratio
     rN = bgc.oxygen.nitrification_oxygen_carbon_ratio
 
+    O₂ = @inbounds fields.O₂[i, j, k]
+    consumed = ramp(bgc.oxygen.low_oxygen_limit, O₂)
+
     return (
         (rP + rN) * (primary_production(i, j, k, grid, bgc.plankton, bgc, fields, auxiliary_fields)
-                     - inorganic_carbon_waste(i, j, k, grid, bgc.plankton, bgc, fields, auxiliary_fields))
-        - rP * inorganic_carbon_waste(i, j, k, grid,bgc.detritus, bgc, fields, auxiliary_fields)
-        - rN * inorganic_nitrogen_waste(i, j, k, grid,bgc.detritus, bgc, fields, auxiliary_fields) * carbon_ratio(i, j, k, grid,bgc.plankton, bgc,fields) / nitrogen_ratio(i, j, k, grid,bgc.plankton, bgc,fields)
+                     - consumed * inorganic_carbon_waste(i, j, k, grid, bgc.plankton, bgc, fields, auxiliary_fields))
+        - consumed * rP * inorganic_carbon_waste(i, j, k, grid,bgc.detritus, bgc, fields, auxiliary_fields)
+        - consumed * rN * inorganic_nitrogen_waste(i, j, k, grid,bgc.detritus, bgc, fields, auxiliary_fields) * carbon_ratio(i, j, k, grid,bgc.plankton, bgc,fields) / nitrogen_ratio(i, j, k, grid,bgc.plankton, bgc,fields)
     )
 end
 end
