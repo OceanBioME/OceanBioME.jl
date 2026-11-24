@@ -188,9 +188,7 @@ function Base.show(io::IO, particles::BiogeochemicalParticles)
 end
 
 # User may want to overload this to not output parameters over and over again
-function fetch_output(particles::BiogeochemicalParticles, model)
-    names = propertynames(particles.fields)
-    return NamedTuple{names}([getproperty(particles.fields, name) for name in names])
-end
+fetch_output(particles::BiogeochemicalParticles, model) =
+    (; x = particles.x, y = particles.y, z = particles.z, particles.fields...)
 
 end #module
