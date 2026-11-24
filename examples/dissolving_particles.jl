@@ -74,12 +74,25 @@ scalefactor = 1 / (mineral.density * 4π / 3 * sum(r₀.^3)) # 1 kg / total part
 
 set!(particles, r = r₀, x = x₀, z = z₀, scalefactors = scalefactor)
 
-# We save the alkalinity, its horizontal average and integral, and the particle positions and radii
-Alk = model.tracers.Alk
+# ## Diagnosing the pH
+# The pH is not a model variable, so we diagnose it from the carbonate chemistry with a `KernelFunctionOperation`,
+# which is computed in every cell when it is saved. The model has no temperature or salinity, so we choose
+# constant values of 10 °C and 35.
+carbon_chemistry = CarbonChemistry()
 
+@inline total_scale_pH(i, j, k, grid, carbon_chemistry, DIC, Alk, T, S) =
+    @inbounds carbon_chemistry(; DIC = DIC[i, j, k], Alk = Alk[i, j, k], T, S, output = Val(:pHᵗ))
+
+(; DIC, Alk) = model.tracers
+
+pH = KernelFunctionOperation{Center, Center, Center}(total_scale_pH, grid, carbon_chemistry, DIC, Alk, 10.0, 35.0)
+
+# We save the alkalinity, its horizontal average and integral, the pH, and the particle positions and radii
 filename = "dissolving_particles"
 
-simulation.output_writers[:alkalinity] = JLD2Writer(model, (; Alk, mean_Alk = Average(Alk, dims = 1), total_Alk = Integral(Alk));
+outputs = (; Alk, pH, mean_Alk = Average(Alk, dims = 1), total_Alk = Integral(Alk))
+
+simulation.output_writers[:alkalinity] = JLD2Writer(model, outputs;
                                                     filename = "$filename.jld2",
                                                     schedule = TimeInterval(1minute),
                                                     overwrite_files = true)
@@ -95,8 +108,9 @@ simulation.stop_time = 3hours
 run!(simulation)
 
 # ## Results
-# First we load the alkalinity and particle output
+# First we load the alkalinity, pH, and particle output
 Alk = FieldTimeSeries("$filename.jld2", "Alk")
+pH = FieldTimeSeries("$filename.jld2", "pH")
 mean_Alk = FieldTimeSeries("$filename.jld2", "mean_Alk")
 total_Alk = FieldTimeSeries("$filename.jld2", "total_Alk")
 
@@ -112,22 +126,31 @@ x, z, r = (stack(getproperty.(states, name)) for name in (:x, :z, :r))
 nothing #hide
 
 # and animate the particles sinking and dissolving through the turbulence, with each particle drawn
-# at its current size (magnified)
+# at its current size (magnified), alongside the pH
 frame = Observable(1)
 
 Alkₙ = @lift Alk[$frame] - Alk₀
+pHₙ = @lift pH[$frame]
 positions = @lift Point2f.(x[:, $frame], z[:, $frame])
 sizes = @lift 2e5 * r[:, $frame]
 title = @lift prettytime(times[$frame] - times[1]) * " after release"
 
-fig = Figure(size = (700, 600), fontsize = 20)
+fig = Figure(size = (1300, 650), fontsize = 20)
 
-ax = Axis(fig[1, 1]; title, xlabel = "x (m)", ylabel = "z (m)", aspect = DataAspect())
+Label(fig[0, 1:4], title)
+
+ax = Axis(fig[1, 1], title = "Alkalinity increase and particles", xlabel = "x (m)", ylabel = "z (m)", aspect = DataAspect())
 
 hm = heatmap!(ax, Alkₙ, colormap = Reverse(:deep), colorrange = (0, 80))
 scatter!(ax, positions, markersize = sizes, color = :white)
 
-Colorbar(fig[1, 2], hm, label = "Alkalinity increase (mmol/m³)")
+Colorbar(fig[1, 2], hm, label = "mmol/m³")
+
+ax = Axis(fig[1, 3], title = "pH", xlabel = "x (m)", aspect = DataAspect())
+
+hm = heatmap!(ax, pHₙ, colormap = :viridis, colorrange = (8.27, 8.33))
+
+Colorbar(fig[1, 4], hm)
 
 record(fig, "$filename.mp4", eachindex(times), framerate = 12) do i
     frame[] = i
