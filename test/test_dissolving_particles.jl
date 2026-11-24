@@ -70,7 +70,7 @@ end
 
     w = 0.01 # m/s
 
-    particles = DissolvingParticles(2; grid, mineral_parameters = (; sinking_speed = w, dissolution_rate = 0))
+    particles = DissolvingParticles(2; grid, mineral_parameters = (; sinking_speed = -w, dissolution_rate = 0))
 
     # the second particle has already dissolved so shouldn't sink
     set!(particles, r = [1e-4, 0], x = 1, y = 1, z = -1)
@@ -86,10 +86,12 @@ end
     @test z[1] ≈ -1 - 10 * 10 * w
     @test z[2] ≈ -1
 
+    @test on_architecture(CPU(), particles.fields.sinking_speed) ≈ [-w, 0]
+
     stokes = StokesSinking(; particle_density = 2025, water_density = 1025,
                              dynamic_viscosity = 1e-3, gravitational_acceleration = 9)
 
-    @test stokes(1e-4) ≈ 2 * 1000 * 9 * 1e-8 / (9 * 1e-3)
+    @test stokes(nothing, (; r = 1e-4), NamedTuple()) ≈ - 2 * 1000 * 9 * 1e-8 / (9 * 1e-3)
 end
 
 @testset "Dissolving particles depending on model fields" begin
@@ -98,11 +100,9 @@ end
     r₀ = 1e-4 # m
     Δt = 1
 
-    stokes = StokesSinking(; particle_density = 2025, water_density = T -> 1000 + T)
-
     particles = DissolvingParticles(1; grid, mineral_parameters = (; required_fields = (:T, ),
-                                                                     dissolution_rate = (r, T) -> 1e-9 * T,
-                                                                     sinking_speed = stokes))
+                                                                     dissolution_rate = (mineral, particle_fields, tracer_fields) -> 1e-9 * tracer_fields.T,
+                                                                     sinking_speed = (mineral, particle_fields, tracer_fields) -> - 1e-3 * tracer_fields.T))
 
     set!(particles, r = r₀, x = 1, y = 1, z = -1)
 
@@ -113,9 +113,25 @@ end
     time_step!(model, Δt)
 
     @test particle_radii(particles)[1] ≈ r₀ - 1e-8 * Δt
+    @test on_architecture(CPU(), particles.z)[1] ≈ -1 - 1e-2 * Δt
 
-    # sinks as if the water density were 1010 kg/m³ (up to the small change in radius during the step)
-    w = StokesSinking(; particle_density = 2025, water_density = 1010)(r₀)
+    stokes = StokesSinking(; particle_density = 2025,
+                             water_density = (mineral, particle_fields, tracer_fields) -> 1000 + tracer_fields.T,
+                             dynamic_viscosity = (mineral, particle_fields, tracer_fields) -> 1e-4 * tracer_fields.T)
 
-    @test isapprox(on_architecture(CPU(), particles.z)[1] + 1, - w * Δt; rtol = 1e-3)
+    particles = DissolvingParticles(1; grid, mineral_parameters = (; required_fields = (:T, ),
+                                                                     dissolution_rate = 0,
+                                                                     sinking_speed = stokes))
+
+    set!(particles, r = r₀, x = 1, y = 1, z = -1)
+
+    model = dissolving_particle_model(grid, particles; tracers = :T)
+
+    set!(model, T = 10)
+
+    time_step!(model, Δt)
+
+    w = StokesSinking(; particle_density = 2025, water_density = 1010, dynamic_viscosity = 1e-3)(nothing, (; r = r₀), nothing)
+
+    @test on_architecture(CPU(), particles.z)[1] ≈ -1 + w * Δt
 end

@@ -190,6 +190,7 @@ function update_biogeochemical_state!(bgc::CompleteBiogeochemistry, model)
     update_biogeochemical_state!(model, bgc.light_attenuation)
     update_biogeochemical_state!(model, bgc.underlying_biogeochemistry)
     update_biogeochemical_state!(model, bgc.sediment)
+    update_biogeochemical_state!(model, bgc.particles)
 end
 
 update_biogeochemical_state!(model, modifiers::Tuple) = [update_biogeochemical_state!(model, modifier) for modifier in modifiers]

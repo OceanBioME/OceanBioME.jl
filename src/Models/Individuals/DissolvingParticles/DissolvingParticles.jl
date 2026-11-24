@@ -1,11 +1,14 @@
 """
-This module adds active particles which sink, dissolve, and release material into tracer fields. For example, mineral particles added to the ocean for the purpose of ocean alkalinity enhancement (OAE) or dissolving secondarary mineral precipitate.
-
-The particles are defined by a radius, r (m), which sets how fast they dissolve and sink.
+Active particles which sink, dissolve, and release material into tracer fields, for example mineral
+particles added to the ocean for ocean alkalinity enhancement, or dissolving secondary mineral precipitate.
 
 Prognostic properties
 =====================
 * Radius: r (m)
+
+Diagnostic properties
+=====================
+* Vertical velocity relative to the water: sinking_speed (m/s, positive upwards)
 
 Tracer dependencies
 ===================
@@ -20,17 +23,15 @@ module DissolvingParticlesModel
 
 export DissolvingMineral, DissolvingParticles, StokesSinking
 
-using Adapt
+using Oceananigans: Biogeochemistry, fields
+using Oceananigans.Architectures: architecture
+using Oceananigans.Models: LagrangianParticleTracking
+using Oceananigans.Utils: KernelParameters, launch!
 
-using Oceananigans: fields
-using Oceananigans.Grids: AbstractGrid
+using OceanBioME: Particles
+using OceanBioME.Particles: BiogeochemicalParticles, extract_tracer_values, required_tracers
 
-using OceanBioME.Particles: BiogeochemicalParticles, LagrangianAdvection, extract_tracer_values
-
-import OceanBioME.Particles: required_particle_fields, required_tracers, coupled_tracers, update_particle_state!, advect_particles!
-import Oceananigans.Models.LagrangianParticleTracking: particle_w_velocity
-
-import Base: summary, show
+using KernelAbstractions: @kernel, @index
 
 """
     StokesSinking(FT = Float64;
@@ -39,26 +40,37 @@ import Base: summary, show
                   dynamic_viscosity = 1.08e-3,
                   gravitational_acceleration = 9.81)
 
-Function to calculate Stokes' law for the speed (m/s) at which a sphere of radius `r` (m) sinks,
-called as `stokes(r, field_values...)`:
+Stokes' law for the vertical velocity (m/s, positive upwards) of a sphere of radius `r` (m) relative to the water,
 
-```math
-w = \\frac{2(\\rho_p - \\rho)gr^2}{9\\mu},
+    w = 2 (ρ - ρₚ) g r² / 9μ,
+
+valid at small particle Reynolds number, `2 r |w| ρ / μ`. It is called as
+`stokes(mineral, particle_fields, tracer_fields)` and reads the radius from `particle_fields.r`.
+
+Keyword Arguments
+=================
+
+- `particle_density`: density of the particle, `ρₚ` (kg/m³).
+- `water_density`: density of the water, `ρ` (kg/m³), a number or a function called as
+  `water_density(mineral, particle_fields, tracer_fields)`. Default: 1025.
+- `dynamic_viscosity`: dynamic viscosity of the water, `μ` (kg/m/s), a number or a function called as
+  `dynamic_viscosity(mineral, particle_fields, tracer_fields)`. Default: 1.08e-3.
+- `gravitational_acceleration`: `g` (m/s²). Default: 9.81.
+
+Example
+=======
+
+```jldoctest
+julia> using OceanBioME
+
+julia> stokes = StokesSinking(particle_density = 2710)
+StokesSinking{Float64, Float64, Float64}(2710.0, 1025.0, 0.00108, 9.81)
 ```
-
-where ``\\rho_p`` is the `particle_density` (kg/m³), ``\\rho`` the `water_density` (kg/m³),
-``\\mu`` the `dynamic_viscosity` (kg/m/s), and ``g`` the `gravitational_acceleration` (m/s²).
-
-The `water_density` can be a number or a function of the values of the mineral's `required_fields`
-(see [`DissolvingMineral`](@ref)), e.g. `water_density = (T, S) -> ...` with `required_fields = (:T, :S)`.
-
-This is only valid when the particle Reynolds number, ``2rw\\rho/\\mu``, is small,
-i.e. for particles smaller than about 100 μm.
 """
-struct StokesSinking{FT, R}
+struct StokesSinking{WD, DV, FT}
               particle_density :: FT
-                 water_density :: R
-             dynamic_viscosity :: FT
+                 water_density :: WD
+             dynamic_viscosity :: DV
     gravitational_acceleration :: FT
 end
 
@@ -69,61 +81,57 @@ function StokesSinking(FT = Float64;
                        gravitational_acceleration = 9.81)
 
     water_density = maybe_convert(FT, water_density)
+    dynamic_viscosity = maybe_convert(FT, dynamic_viscosity)
 
-    return StokesSinking{FT, typeof(water_density)}(particle_density, water_density, dynamic_viscosity, gravitational_acceleration)
+    return StokesSinking(convert(FT, particle_density), water_density, dynamic_viscosity,
+                         convert(FT, gravitational_acceleration))
 end
 
-@inline function (stokes::StokesSinking)(r, field_values...)
+@inline function (stokes::StokesSinking)(mineral, particle_fields, tracer_fields)
+    r  = particle_fields.r
     ρₚ = stokes.particle_density
-    ρ  = evaluate(stokes.water_density, field_values...)
-    μ  = stokes.dynamic_viscosity
+    ρ  = evaluate(stokes.water_density, mineral, particle_fields, tracer_fields)
+    μ  = evaluate(stokes.dynamic_viscosity, mineral, particle_fields, tracer_fields)
     g  = stokes.gravitational_acceleration
 
-    return 2 * (ρₚ - ρ) * g * r^2 / (9 * μ)
+    return 2 * (ρ - ρₚ) * g * r^2 / (9 * μ)
 end
 
 """
     DissolvingMineral(FT = Float64;
                       density = 2211,
                       molar_mass = 74.093e-3,
-                      released_tracers = (; Alk = 2),
+                      released_tracers = (; DIC = 1, Alk = 2),
                       dissolution_rate = 1e-8,
                       sinking_speed = StokesSinking(FT; particle_density = density),
                       required_fields = ())
 
-Mineral particles which dissolve and release material into tracer fields as they sink.
-The only property tracked is the particle radius, `r` (m), which sets how fast the particles dissolve and sink.
+Spherical mineral particles of radius `r` (m) which dissolve, release tracers, and sink.
 
-The radius shrinks at the `dissolution_rate`,
+The radius shrinks at the dissolution rate `k` (m/s),
 
-```math
-\\frac{dr}{dt} = -k(r),
-```
+    dr/dt = -k,
 
-so each particle loses volume at a rate of ``4\\pi r^2 k(r)`` and releases tracers at
-``4\\pi r^2 k(r) \\nu / V_m``, where ``\\nu`` is the moles of tracer released per mole of mineral (`released_tracers`) and ``V_m`` is the molar volume (`molar_mass / density`).
-The released tracers are converted from moles to mmol to match the units of the tracers in OceanBioME.
+so each particle releases `4π r² k θ ρₚ / M` of each tracer (mol/s, converted to mmol/s),
+where `θ` is the moles of tracer released per mole of mineral, `ρₚ` the `density`,
+and `M` the `molar_mass`.
 
-Particles also sink relative to the water at `sinking_speed` when they are advected by
-`LagrangianAdvection` (the default for `BiogeochemicalParticles`).
-
-`dissolution_rate` and `sinking_speed` can depend on model fields (tracers, velocities, or auxiliary fields)
-at the particle position by listing their names in `required_fields`. The functions are then called with the
-radius followed by the field values, e.g. `required_fields = (:T, )` and `dissolution_rate = (r, T) -> ...`.
+`dissolution_rate` and `sinking_speed` are numbers or functions called as
+`f(mineral, particle_fields, tracer_fields)`, where `particle_fields` is a `NamedTuple` of the particle's
+`r` and `sinking_speed`, and `tracer_fields` is a `NamedTuple` of the `required_fields` at the particle position.
 
 Keyword Arguments
 =================
 
-- `density`: density of the mineral (kg/m³)
-- `molar_mass`: molar mass of the mineral (kg/mol)
-- `released_tracers`: `NamedTuple` of the moles of each tracer released per mole of mineral dissolved,
-  e.g. `(; Alk = 2, DIC = 1)` for calcium carbonate
-- `dissolution_rate`: the speed (m/s) that the radius shrinks, ``k(r)``, either a number or a function of radius (and `required_fields`)
-- `sinking_speed`: the speed (m/s, positive downwards) that the particles sink, either a number or a function of radius (and `required_fields`)
-- `required_fields`: names of the model fields that `dissolution_rate` and `sinking_speed` depend on
-
-The default values of `density`, `molar_mass`, and `released_tracers` are for calcium hydroxide (hydrated lime, Ca(OH)₂), and by default the particles sink according to Stokes' law (see [`StokesSinking`](@ref)).
-The default `dissolution_rate` of 1e-8 m/s is only illustrative (a 100 μm particle dissolves in about 3 hours), and should be set for the mineral and conditions being modelled.
+- `density`: density of the mineral (kg/m³). Default: 2211.
+- `molar_mass`: molar mass of the mineral (kg/mol). Default: 74.093e-3.
+- `released_tracers`: `NamedTuple` of the moles of each tracer released per mole of mineral dissolved.
+  Default: `(; DIC = 1, Alk = 2)`.
+- `dissolution_rate`: speed that the radius shrinks (m/s). Default: 1e-8.
+- `sinking_speed`: vertical velocity of the particles relative to the water (m/s, positive upwards).
+  Default: `StokesSinking(FT; particle_density = density)`.
+- `required_fields`: names of the model fields (tracers, velocities, or auxiliary fields) passed to
+  `dissolution_rate` and `sinking_speed`. Default: `()`.
 
 Example
 =======
@@ -137,7 +145,7 @@ DissolvingMineral{Float64} biogeochemistry tracking particle `r`adius
 ├── molar mass: 0.10009 kg/mol
 ├── released tracers: (Alk = 2.0, DIC = 1.0) mol/mol
 ├── dissolution rate: 1.0e-8 m/s
-├── sinking speed: StokesSinking{Float64, Float64}(2710.0, 1025.0, 0.00108, 9.81) m/s
+├── sinking speed: StokesSinking{Float64, Float64, Float64}(2710.0, 1025.0, 0.00108, 9.81) m/s
 └── required fields: ()
 ```
 """
@@ -148,7 +156,6 @@ struct DissolvingMineral{FT, R, D, W, F}
     dissolution_rate :: D
        sinking_speed :: W
 
-    # the names of the `required_fields` are a type parameter so that they are known inside kernels
     DissolvingMineral(density::FT, molar_mass::FT, released_tracers::R, dissolution_rate::D, sinking_speed::W,
                       required_fields::Tuple) where {FT, R, D, W} =
         new{FT, R, D, W, required_fields}(density, molar_mass, released_tracers, dissolution_rate, sinking_speed)
@@ -157,102 +164,113 @@ end
 function DissolvingMineral(FT = Float64;
                            density = 2211,
                            molar_mass = 74.093e-3,
-                           released_tracers = (; Alk = 2),
+                           released_tracers = (; DIC = 1, Alk = 2),
                            dissolution_rate = 1e-8,
                            sinking_speed = StokesSinking(FT; particle_density = density),
                            required_fields = ())
 
-    released_tracers = map(ν -> convert(FT, ν), released_tracers)
+    released_tracers = map(θ -> convert(FT, θ), released_tracers)
     dissolution_rate = maybe_convert(FT, dissolution_rate)
     sinking_speed = maybe_convert(FT, sinking_speed)
 
-    return DissolvingMineral(convert(FT, density), convert(FT, molar_mass), released_tracers, dissolution_rate, sinking_speed,
-                             required_fields)
+    return DissolvingMineral(convert(FT, density), convert(FT, molar_mass), released_tracers,
+                             dissolution_rate, sinking_speed, required_fields)
 end
 
 maybe_convert(FT, value::Number) = convert(FT, value)
 maybe_convert(FT, func) = func
 
-# `dissolution_rate`, `sinking_speed`, and `water_density` can either be numbers or functions
 @inline evaluate(value::Number, args...) = value
 @inline evaluate(func, args...) = func(args...)
 
 """
-    DissolvingParticles(n; grid, mineral_parameters = NamedTuple(), kwargs...)
+    DissolvingParticles(n;
+                        grid,
+                        mineral_parameters = NamedTuple(),
+                        biogeochemistry = DissolvingMineral(eltype(grid); mineral_parameters...),
+                        kwargs...)
 
-Sets up `n` dissolving `BiogeochemicalParticles` with default [`DissolvingMineral`](@ref) parameters except those specified in `mineral_parameters`. `kwargs` are passed onto `BiogeochemicalParticles`.
+Return `n` `BiogeochemicalParticles` on `grid` with `DissolvingMineral` `biogeochemistry`.
+`mineral_parameters` are keyword arguments for `DissolvingMineral`, and `kwargs` are passed to
+`BiogeochemicalParticles`.
 """
-DissolvingParticles(n; grid::AbstractGrid{FT}, mineral_parameters = NamedTuple(), kwargs...) where FT =
-    BiogeochemicalParticles(n; grid, biogeochemistry = DissolvingMineral(FT; mineral_parameters...), kwargs...)
+DissolvingParticles(n;
+                    grid,
+                    mineral_parameters = NamedTuple(),
+                    biogeochemistry = DissolvingMineral(eltype(grid); mineral_parameters...),
+                    kwargs...) =
+    BiogeochemicalParticles(n; grid, biogeochemistry, kwargs...)
 
-@inline required_particle_fields(::DissolvingMineral) = (:r, )
-@inline required_tracers(::DissolvingMineral{<:Any, <:Any, <:Any, <:Any, F}) where F = F
-@inline coupled_tracers(mineral::DissolvingMineral) = keys(mineral.released_tracers)
+@inline Particles.required_particle_fields(::DissolvingMineral) = (:r, :sinking_speed)
+@inline Particles.required_tracers(::DissolvingMineral{<:Any, <:Any, <:Any, <:Any, F}) where F = F
+@inline Particles.coupled_tracers(mineral::DissolvingMineral) = keys(mineral.released_tracers)
 
-# Volume of mineral dissolving per second (m³/s), which stops once the particle has fully dissolved
-@inline dissolution(mineral, r, field_values...) =
-    ifelse(r > 0, 4π * r^2 * evaluate(mineral.dissolution_rate, r, field_values...), zero(r))
+@inline function dissolution_rate(mineral, r, w, field_values...)
+    particle_fields = (; r, sinking_speed = w)
+    tracer_fields = NamedTuple{required_tracers(mineral)}(field_values)
 
-# Change in radius (m/s)
-@inline (mineral::DissolvingMineral)(::Val{:r}, t, r, field_values...) =
-    - ifelse(r > 0, evaluate(mineral.dissolution_rate, r, field_values...), zero(r))
-
-# Release of each tracer (mmol/s)
-@inline function (mineral::DissolvingMineral)(::Val{tracer}, t, r, field_values...) where tracer
-    molar_volume = mineral.molar_mass / mineral.density # m³/mol
-    ν = mineral.released_tracers[tracer] # mol tracer / mol mineral
-
-    return 1000 * ν * dissolution(mineral, r, field_values...) / molar_volume
+    return evaluate(mineral.dissolution_rate, mineral, particle_fields, tracer_fields) * (r > 0)
 end
 
-@inline sinking_speed(mineral, r, field_values...) =
-    ifelse(r > 0, evaluate(mineral.sinking_speed, r, field_values...), zero(r))
+@inline (mineral::DissolvingMineral)(::Val{:r}, t, r, w, field_values...) =
+    - dissolution_rate(mineral, r, w, field_values...)
+
+@inline (mineral::DissolvingMineral)(::Val{:sinking_speed}, t, r, w, field_values...) = zero(r)
+
+@inline dissolution(mineral, r::FT, w, field_values...) where FT =
+    convert(FT, 4π) * r^2 * dissolution_rate(mineral, r, w, field_values...) # m³ / s
+
+@inline function (mineral::DissolvingMineral{FT})(::Val{tracer}, t, r, w, field_values...) where {FT, tracer}
+    mineral_concentration = convert(FT, 1000) * mineral.density / mineral.molar_mass # mmol / m³
+    θ = mineral.released_tracers[tracer] # mol tracer / mol mineral
+    dissolution_rate = dissolution(mineral, r, w, field_values...) # m³ / s
+
+    return θ * dissolution_rate * mineral_concentration # mmol / s
+end
+
+@inline sinking_speed(mineral, particle_fields, tracer_fields) =
+    evaluate(mineral.sinking_speed, mineral, particle_fields, tracer_fields) * (particle_fields.r > 0)
 
 const DissolvingBiogeochemicalParticles = BiogeochemicalParticles{<:Any, <:DissolvingMineral}
 
-# Oceananigans' particle advection only passes the particles into `particle_w_velocity`, so we
-# wrap them with the model fields so that the sinking speed can depend on the `required_fields`
-struct ParticlesWithFields{P, G, F, X, Y, Z}
-    particles :: P
-         grid :: G
-       fields :: F
-            x :: X # read by Oceananigans' particle advection
-            y :: Y
-            z :: Z
-end
+@inline LagrangianParticleTracking.particle_w_velocity(particles::DissolvingBiogeochemicalParticles, n, w) =
+    @inbounds w + particles.fields.sinking_speed[n]
 
-ParticlesWithFields(particles, grid, fields) =
-    ParticlesWithFields(particles, grid, fields, particles.x, particles.y, particles.z)
-
-Adapt.adapt_structure(to, p::ParticlesWithFields) =
-    ParticlesWithFields(adapt(to, p.particles), adapt(to, p.grid), adapt(to, p.fields))
-
-Base.length(p::ParticlesWithFields) = length(p.particles)
-
-advect_particles!(advection::LagrangianAdvection, particles::DissolvingBiogeochemicalParticles, model, Δt) =
-    advect_particles!(advection, ParticlesWithFields(particles, model.grid, fields(model)), model, Δt)
-
-# The particles sink relative to the water when they're moved by `LagrangianAdvection`
-@inline function particle_w_velocity(p::ParticlesWithFields, n, w)
-    particles = p.particles
-
-    r = @inbounds particles.fields.r[n]
-    field_values = extract_tracer_values(nothing, particles.field_interpolation, particles, p.grid, p.fields, n)
-
-    return w - sinking_speed(particles.biogeochemistry, r, field_values...)
-end
-
-# The final timestep of dissolution can overshoot to a negative radius, so we clip it
-# (this doesn't change what was released because nothing is released when `r ≤ 0`)
-function update_particle_state!(particles::DissolvingBiogeochemicalParticles, model, Δt)
+function Particles.update_particle_state!(particles::DissolvingBiogeochemicalParticles, model, Δt)
     r = particles.fields.r
     r .= max.(r, 0)
+
     return nothing
 end
 
-summary(::DissolvingMineral{FT}) where FT = "DissolvingMineral{$FT} biogeochemistry"
+Biogeochemistry.update_biogeochemical_state!(model, particles::DissolvingBiogeochemicalParticles) =
+    update_sinking_speed!(particles, model)
 
-show(io::IO, mineral::DissolvingMineral) =
+function update_sinking_speed!(particles, model)
+    grid = model.grid
+
+    launch!(architecture(grid), grid, KernelParameters(1:length(particles)),
+            _update_sinking_speed!, particles, grid, fields(model))
+
+    return nothing
+end
+
+@kernel function _update_sinking_speed!(particles, grid, fields)
+    n = @index(Global)
+
+    mineral = particles.biogeochemistry
+
+    particle_fields = map(field -> @inbounds(field[n]), particles.fields)
+
+    tracer_values = extract_tracer_values(nothing, particles.field_interpolation, particles, grid, fields, n)
+    tracer_fields = NamedTuple{required_tracers(mineral)}(tracer_values)
+
+    @inbounds particles.fields.sinking_speed[n] = sinking_speed(mineral, particle_fields, tracer_fields)
+end
+
+Base.summary(::DissolvingMineral{FT}) where FT = "DissolvingMineral{$FT} biogeochemistry"
+
+Base.show(io::IO, mineral::DissolvingMineral) =
     print(io, summary(mineral), " tracking particle `r`adius", "\n",
               "├── density: ", mineral.density, " kg/m³", "\n",
               "├── molar mass: ", mineral.molar_mass, " kg/mol", "\n",
