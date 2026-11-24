@@ -84,9 +84,7 @@ simulation.output_writers[:alkalinity] = JLD2Writer(model, (; Alk, mean_Alk = Av
                                                     schedule = TimeInterval(1minute),
                                                     overwrite_files = true)
 
-particle_state(model) = (; x = Array(particles.x), z = Array(particles.z), r = Array(particles.fields.r))
-
-simulation.output_writers[:particles] = JLD2Writer(model, (; particles = particle_state);
+simulation.output_writers[:particles] = JLD2Writer(model, (; particles);
                                                    filename = "$(filename)_particles.jld2",
                                                    schedule = TimeInterval(1minute),
                                                    overwrite_files = true)
