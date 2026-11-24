@@ -502,6 +502,40 @@ using OceanBioME.Models.NutrientsPlanktonDetritusModels: SingleTracerNutrient
     @test lobster.underlying_biogeochemistry.oxygen |> ((::Oxygen{FT}) where FT) -> FT == Float32
 end
 
+using OceanBioME.Models.NutrientsPlanktonDetritusModels.OxygenModels: ramp
+
+@testset "Oxygen's low oxygen limit" begin
+    @test ramp(nothing, 1.0) == 1
+    @test ramp(5.0, 2.0) == 0
+    @test ramp(5.0, 5.0) == 0
+    @test ramp(5.0, 7.5) == 0.5
+    @test ramp(5.0, 12.0) == 1
+
+    @test isnothing(Oxygen().low_oxygen_limit)
+    @test Oxygen(Float32; low_oxygen_limit = 5).low_oxygen_limit === 5f0
+
+    # in the dark there is only remineralisation: it takes O₂ unless the O₂ is at or below the limit
+    grid = RectilinearGrid(architecture; size = (1, 1, 1), extent = (1, 1, 2))
+    dark = PrescribedPhotosyntheticallyActiveRadiation(ConstantField(0))
+
+    function oxygen_change(limit, O₂)
+        oxygen = Oxygen(; production_oxygen_carbon_ratio = 170 / 117, nitrification_oxygen_carbon_ratio = 0, low_oxygen_limit = limit)
+        biogeochemistry = MITgcmDIC(grid; oxygen, light_attenuation = dark)
+        model = NonhydrostaticModel(grid; biogeochemistry, advection = nothing, tracers = (:T, :S))
+
+        set!(model, Fe = 1e-4, PO₄ = 1.0, DOP = 0.1, POP = 0.1, DIC = 2000.0, Alk = 2300.0, O₂ = O₂, T = 10, S = 35)
+        time_step!(model, 60)
+
+        return CUDA.@allowscalar model.tracers.O₂[1, 1, 1] - O₂
+    end
+
+    @test oxygen_change(nothing, 3.0) < 0
+    @test oxygen_change(5.0, 3.0) == 0
+    @test oxygen_change(nothing, 7.5) < oxygen_change(5.0, 7.5) < 0
+    @test oxygen_change(5.0, 7.5) ≈ oxygen_change(nothing, 7.5) / 2 rtol = 1e-3
+    @test oxygen_change(5.0, 200.0) == oxygen_change(nothing, 200.0)
+end
+
 using OceanBioME.Models.NutrientsPlanktonDetritusModels.NutrientsModels: free_and_bound_iron
 using OceanBioME.Models.NutrientsPlanktonDetritusModels: carbon_ratio
 using Oceananigans.Biogeochemistry: biogeochemical_auxiliary_fields, required_biogeochemical_tracers
