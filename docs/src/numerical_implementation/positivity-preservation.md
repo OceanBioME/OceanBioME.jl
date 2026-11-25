@@ -1,21 +1,23 @@
 # [Positivity Preservation](@id pos-preservation)
 
-Negative biogeochemical tracer concentrations can arise from the numerical
-discretisation of physical transport, particularly isoneutral (Redi) diffusion.
-These negative values can subsequently cause numerical errors when evaluating
-biogeochemical processes.
+It is common in BGC models to behave badly if any tracers go bellow zero, analytically this is fine because they (usually) can not get below zero, and it is unphysical for the concentration of something to be negative. Issues arise when the inaccuracy in numerical integration making some tracer become negative, usually leading to explosions (e.g. ``\exp(-C) \to \inf``), or bounds errors (e.g. ``\log(C)``). Essentially this occurs when the local error in the numerical scheme is sufficiently large that more than the available amount of tracer is consumed.
 
-OceanBioME.jl provides three modifiers for correcting negative tracer
-concentrations. [`ZeroNegativeTracers`](@ref) sets negative concentrations to zero,
-increasing the affected tracer inventories. [`ScaleNegativeTracers`](@ref) rescales
-concentrations within specified conservation groups, preserving their weighted
-totals when sufficient nonnegative inventory is available.
+Positivity-preserving numerical schemes exist, but can be complex to implement.
+OceanBioME.jl provides three modifiers for correcting negative tracer concentrations.
+The simplest, [`ZeroNegativeTracers`](@ref), resets negative tracers to zero,
+but increases the affected tracer inventories. [`ScaleNegativeTracers`](@ref)
+instead increases negative tracers to zero and removes the difference from other
+tracers in the same conservation group, preserving its weighted total when
+sufficient nonnegative inventory is available.
+
+These corrections can introduce local, transient changes to the solution;
+smaller time steps can reduce how frequently they are needed.
+
 [`ReservoirNegativeTracers`](@ref) instead retains unresolved deficits in
 additional prognostic reservoir tracers, allowing deficits to be transported
 and subsequently repaid while conserving the selected elemental inventories.
 
-These methods correct tracer concentrations during model state updates. Their
-configuration is described in [Utilities](@ref utils).
+See [Utilities](@ref utils) for usage.
 
 ## Conservative negative-tracer reservoirs
 
