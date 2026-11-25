@@ -19,7 +19,25 @@ and subsequently repaid while conserving the selected elemental inventories.
 
 See [Utilities](@ref utils) for usage.
 
-## Conservative negative-tracer reservoirs
+## ZeroNegativeTracers
+
+`ZeroNegativeTracers` sets negative concentrations to zero without redistributing
+the difference which can generate mass.
+
+## ScaleNegativeTracers
+
+For a single conservation group, `ScaleNegativeTracers` sets
+negative concentrations to zero and multiplies positive concentrations by
+``t/p``, where ``t`` is the original weighted total and ``p`` is the weighted
+total of positive concentrations. A negative group total cannot be preserved
+using only nonnegative concentrations.
+
+Tracers may belong to multiple conservation groups, such as nitrogen and carbon.
+These groups must be passed to the same `ScaleNegativeTracers` modifier: separate
+modifiers act sequentially and may change totals preserved by earlier corrections.
+Each group needs at least one tracer that is not shared with another group.
+
+## ReservoirNegativeTracers
 
 `ReservoirNegativeTracers` transfers negative concentrations into signed
 reservoirs, one per eligible conservation group. For an elemental group with
