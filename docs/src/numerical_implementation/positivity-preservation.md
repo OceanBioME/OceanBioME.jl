@@ -1,12 +1,22 @@
 # [Positivity Preservation](@id pos-preservation)
 
-It is common in BGC models to behave badly if any tracers go bellow zero, analytically this is fine because they (usually) can not get below zero, and it is unphysical for the concentration of something to be negative. Issues arise when the inaccuracy in numerical integration making some tracer become negative, usually leading to explosions (e.g. ``\exp(-C) \to \inf``), or bounds errors (e.g. ``\log(C)``). Essentially this occurs when the local error in the numerical scheme is sufficiently large that more than the available amount of tracer is consumed.
+Negative biogeochemical tracer concentrations can arise from the numerical
+discretisation of physical transport, particularly isoneutral (Redi) diffusion.
+These negative values can subsequently cause numerical errors when evaluating
+biogeochemical processes.
 
-There exists a set of numerical schemes which overcome this and guarantee positivity (provided a positivity preserving advection scheme and well-behaved diffusion scheme are used) but are complex to implement. Although we may do this in the future we have not yet done so in the meantime have provided some utilities which maintain positivity. The simplest option is to reset any negative tracers to zero, but this causes the model to gain mass. A slightly more complex version is to increase negative tracers to zero and remove the difference from other tracers with in the same conserved system.
+OceanBioME.jl provides three modifiers for correcting negative tracer
+concentrations. [`ZeroNegativeTracers`](@ref) sets negative concentrations to zero,
+increasing the affected tracer inventories. [`ScaleNegativeTracers`](@ref) rescales
+concentrations within specified conservation groups, preserving their weighted
+totals when sufficient nonnegative inventory is available.
+[`ReservoirNegativeTracers`](@ref) instead retains unresolved deficits in
+additional prognostic reservoir tracers, allowing deficits to be transported
+and subsequently repaid while conserving the selected elemental inventories.
 
-We have found this to be a satisfactory solution (when balanced against using much smaller time steps), as it tends to cause only a small and local transient change to the solution.
+These methods correct tracer concentrations during model state updates. Their
+configuration is described in [Utilities](@ref utils).
 
-See model components page for usage.
 ## Conservative negative-tracer reservoirs
 
 `ReservoirNegativeTracers` transfers negative concentrations into signed
@@ -91,22 +101,14 @@ require correspondingly smaller explicit time steps. In a three-dimensional
 model, supply the desired tracer-specific advection and diffusivities for **all**
 tracers when constructing the Oceananigans model.
 
-### Larger ecosystem models and restart
+### Conservation groups and repayment tracers
 
-For LOBSTER with two carbonate-system replicates, use separate repayment
-tracers for each replicated carbon group:
-`repayment_tracers = (nitrogen = :NO₃, carbon1 = :DIC1, carbon2 = :DIC2)`.
-For PISCES, the corresponding groups are
-`(carbon = :DIC, iron = :Fe, phosphate = :PO₄, silicon = :Si, nitrogen = :NO₃)`.
-Each repayment tracer must belong exclusively to its designated conservation
-group. Organic tracers shared by several groups are corrected consistently.
+Each conservation group requires a repayment tracer that belongs exclusively to
+that group. Tracers shared by multiple conservation groups are corrected
+consistently.
 
-The constructor based on a biogeochemical model selects groups with nonnegative
-stoichiometric coefficients. Consequently, signed oxygen groups are excluded,
-and variables absent from the model's `conserved_tracers` groups (such as PISCES
-chlorophyll) retain their original treatment. The correction's conservation
-guarantee applies to the selected groups, including their reservoirs.
-
-Oceananigans' `Checkpointer` saves reservoir fields along with other prognostic
-tracers. When resuming, recreate the same biogeochemistry and modifiers before
-using the standard `run!(simulation; pickup = true)` workflow.
+When constructed from a biogeochemical model, `ReservoirNegativeTracers` selects
+conservation groups with nonnegative stoichiometric coefficients. Groups with
+signed coefficients (such as oxygen) are excluded, while tracers absent from the
+model's `conserved_tracers` groups retain their original treatment. Conservation
+is guaranteed for the selected groups, including their reservoirs.
