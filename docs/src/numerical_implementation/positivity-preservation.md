@@ -6,15 +6,12 @@ There exists a set of numerical schemes which overcome this and guarantee positi
 OceanBioME.jl provides three modifiers for correcting negative tracer concentrations,
 described below.
 
-These corrections can introduce local, transient changes to the solution;
-smaller time steps can reduce how frequently they are needed.
-
 See [Utilities](@ref utils) for usage.
 
 ## ClipNegativeTracers
 
 `ClipNegativeTracers` sets negative concentrations to zero without redistributing
-the difference, increasing the affected tracer inventories.
+the difference, and thus generates mass.
 
 ## ScaleNegativeTracers
 
