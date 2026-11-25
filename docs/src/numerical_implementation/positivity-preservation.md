@@ -2,7 +2,8 @@
 
 It is common in BGC models to behave badly if any tracers go bellow zero, analytically this is fine because they (usually) can not get below zero, and it is unphysical for the concentration of something to be negative. Issues arise when the inaccuracy in numerical integration making some tracer become negative, usually leading to explosions (e.g. ``\exp(-C) \to \inf``), or bounds errors (e.g. ``\log(C)``). Essentially this occurs when the local error in the numerical scheme is sufficiently large that more than the available amount of tracer is consumed.
 
-Positivity-preserving numerical schemes exist, but can be complex to implement.
+
+There exists a set of numerical schemes which overcome this and guarantee positivity (provided a positivity preserving advection scheme and well-behaved diffusion scheme are used) but are complex to implement. Although we may do this in the future we have not yet done so in the meantime have provided some utilities which maintain positivity. 
 OceanBioME.jl provides three modifiers for correcting negative tracer concentrations.
 The simplest, [`ClipNegativeTracers`](@ref), resets negative tracers to zero,
 but increases the affected tracer inventories. [`ScaleNegativeTracers`](@ref)
