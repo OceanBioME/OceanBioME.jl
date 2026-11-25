@@ -15,7 +15,7 @@ simulation.callbacks[:wizard] = Callback(wizard, IterationInterval(10))
 ```
 
 ## Negative tracer corrections
-OceanBioME.jl provides `ZeroNegativeTracers`, `ScaleNegativeTracers`, and
+OceanBioME.jl provides `ClipNegativeTracers`, `ScaleNegativeTracers`, and
 `ReservoirNegativeTracers` for correcting negative tracer concentrations. See
 [Positivity preservation](@ref pos-preservation) for their conservation
 properties and an example using transported reservoirs.
@@ -38,7 +38,7 @@ biogeochemistry = Biogeochemistry(...; modifiers = negativity_protection)
 ```
 Separate `ScaleNegativeTracers` modifiers are applied one after the other, so each would change the totals of the others. The `scale_negatives = true` option of the models does this for the groups given by `OceanBioME.conserved_tracers(biogeochemistry)`. Alternatively, force to zero by:
 ```julia
-negativity_protection = ZeroNegativeTracers()
+negativity_protection = ClipNegativeTracers()
 biogeochemistry = Biogeochemistry(...; modifiers = negativity_protection)
 ```
 The latter optionally takes a named tuple of parameters that may include `exclude`, which can be a tuple of tracer names (Symbols) which are allowed to be negative.

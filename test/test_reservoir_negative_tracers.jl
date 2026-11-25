@@ -24,10 +24,10 @@ using Adapt: adapt
     modifier = ReservoirNegativeTracers(base; repayment_tracers = (nitrogen = :N, carbon = :DIC))
     @test isbitstype(typeof(modifier))
     @test isbitstype(typeof(ScaleNegativeTracers((:N, :P))))
-    @test isbitstype(typeof(ZeroNegativeTracers(exclude = (:Z,))))
+    @test isbitstype(typeof(ClipNegativeTracers(exclude = (:Z,))))
     @test hasproperty(modifier, :tracers) && hasproperty(modifier, :reservoir_names)
     @test hasproperty(ScaleNegativeTracers((:N, :P)), :tracers)
-    @test hasproperty(ZeroNegativeTracers(exclude = (:Z,)), :exclude)
+    @test hasproperty(ClipNegativeTracers(exclude = (:Z,)), :exclude)
     biogeochemistry = NPZD(grid; inorganic_carbon, light_attenuation, modifiers = modifier)
     model = NonhydrostaticModel(grid; biogeochemistry, advection = nothing)
 

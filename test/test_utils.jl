@@ -25,7 +25,7 @@ end
 function test_negative_zeroing(arch)
     grid = RectilinearGrid(arch, size = (1, 1, 1), extent = (1, 1, 1))
 
-    model = NonhydrostaticModel(grid; biogeochemistry = NPZD(grid; modifiers = ZeroNegativeTracers(; exclude = (:Z, ))))
+    model = NonhydrostaticModel(grid; biogeochemistry = NPZD(grid; modifiers = ClipNegativeTracers(; exclude = (:Z, ))))
 
     set!(model, N = 2, P = -1, Z = -1)
 

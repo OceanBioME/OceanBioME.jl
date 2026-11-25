@@ -4,7 +4,7 @@ It is common in BGC models to behave badly if any tracers go bellow zero, analyt
 
 Positivity-preserving numerical schemes exist, but can be complex to implement.
 OceanBioME.jl provides three modifiers for correcting negative tracer concentrations.
-The simplest, [`ZeroNegativeTracers`](@ref), resets negative tracers to zero,
+The simplest, [`ClipNegativeTracers`](@ref), resets negative tracers to zero,
 but increases the affected tracer inventories. [`ScaleNegativeTracers`](@ref)
 instead increases negative tracers to zero and removes the difference from other
 tracers in the same conservation group, preserving its weighted total when
@@ -19,10 +19,10 @@ and subsequently repaid while conserving the selected elemental inventories.
 
 See [Utilities](@ref utils) for usage.
 
-## ZeroNegativeTracers
+## ClipNegativeTracers
 
-`ZeroNegativeTracers` sets negative concentrations to zero without redistributing
-the difference which can generate mass.
+`ClipNegativeTracers` sets negative concentrations to zero without redistributing
+the difference.
 
 ## ScaleNegativeTracers
 

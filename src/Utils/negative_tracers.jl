@@ -11,7 +11,7 @@ import Base: summary, show
 import Oceananigans.Biogeochemistry: update_tendencies!, update_biogeochemical_state!
 
 """
-    ZeroNegativeTracers(; exclude = ())
+    ClipNegativeTracers(; exclude = ())
 
 Construct a modifier that zeroes any negative tracers excluding those listed in `exclude`.
 
@@ -19,17 +19,17 @@ Construct a modifier that zeroes any negative tracers excluding those listed in 
     This method is _not_ recommended as a way to preserve positivity of tracers since
     it does not conserve the total tracer.
 """
-struct ZeroNegativeTracers{E} end
+struct ClipNegativeTracers{E} end
 
-ZeroNegativeTracers(exclude) = ZeroNegativeTracers{Tuple(exclude)}()
-ZeroNegativeTracers(; exclude = ()) = ZeroNegativeTracers(exclude)
+ClipNegativeTracers(exclude) = ClipNegativeTracers{Tuple(exclude)}()
+ClipNegativeTracers(; exclude = ()) = ClipNegativeTracers(exclude)
 
 # Keep tracer names in the type rather than in CUDA kernel arguments.
-@inline Base.getproperty(zero::ZeroNegativeTracers{E}, name::Symbol) where E =
+@inline Base.getproperty(zero::ClipNegativeTracers{E}, name::Symbol) where E =
     name === :exclude ? E : getfield(zero, name)
-Base.propertynames(::ZeroNegativeTracers, private::Bool=false) = (:exclude,)
+Base.propertynames(::ClipNegativeTracers, private::Bool=false) = (:exclude,)
 
-function update_biogeochemical_state!(model, zero::ZeroNegativeTracers)
+function update_biogeochemical_state!(model, zero::ClipNegativeTracers)
     for (tracer_name, tracer) in pairs(model.tracers)
         if !(tracer_name in zero.exclude)
             parent(tracer) .= max.(0.0, parent(tracer))
@@ -68,7 +68,7 @@ modifier = ScaleNegativeTracers((:P, :Z, :N))
 biogeochemistry = Biogeochemistry(...; modifier)
 ```
 This method is better, though still imperfect, method to prevent numerical errors that lead to
-negative tracer values compared to [`ZeroNegativeTracers`](@ref). Please see [discussion in
+negative tracer values compared to [`ClipNegativeTracers`](@ref). Please see [discussion in
 github](https://github.com/OceanBioME/OceanBioME.jl/discussions/48).
 
 In each cell where a tracer is negative, the negative tracers are set to zero and the positive ones are

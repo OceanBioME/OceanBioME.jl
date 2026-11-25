@@ -53,7 +53,7 @@ export Sediments, FlatSediment
 export column_advection_timescale, sinking_advection_timescale, Budget
 
 # Positivity preservation utilities
-export ScaleNegativeTracers, ZeroNegativeTracers, ReservoirNegativeTracers
+export ScaleNegativeTracers, ClipNegativeTracers, ReservoirNegativeTracers
 
 # Oceananigans extensions
 export ColumnField, isacolumn
