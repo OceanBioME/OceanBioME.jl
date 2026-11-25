@@ -16,9 +16,9 @@ simulation.callbacks[:wizard] = Callback(wizard, IterationInterval(10))
 
 ## Negative tracer corrections
 OceanBioME.jl provides `ClipNegativeTracers`, `ScaleNegativeTracers`, and
-`ReservoirNegativeTracers` for correcting negative tracer concentrations. See
+`AntiNegativeTracers` for correcting negative tracer concentrations. See
 [Positivity preservation](@ref pos-preservation) for their conservation
-properties and an example using transported reservoirs.
+properties and an example using transported anti-tracers.
 
 `ScaleNegativeTracers` can be configured as follows:
 ```julia

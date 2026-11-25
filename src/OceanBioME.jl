@@ -53,7 +53,7 @@ export Sediments, FlatSediment
 export column_advection_timescale, sinking_advection_timescale, Budget
 
 # Positivity preservation utilities
-export ScaleNegativeTracers, ClipNegativeTracers, ReservoirNegativeTracers
+export ScaleNegativeTracers, ClipNegativeTracers, AntiNegativeTracers
 
 # Oceananigans extensions
 export ColumnField, isacolumn
@@ -175,15 +175,15 @@ end
 update_tendencies!(bgc, modifier, model) = nothing
 update_tendencies!(bgc, modifiers::Tuple, model) = [update_tendencies!(bgc, modifier, model) for modifier in modifiers]
 
-# Registered reservoirs are passive tracers with zero biological tendencies.
-@inline is_reservoir_tendency(modifiers, i, j, k, grid, ::Val{name}, args...) where name =
+# Anti-tracers are passive tracers with zero biological tendencies.
+@inline is_anti_tracer_tendency(modifiers, i, j, k, grid, ::Val{name}, args...) where name =
     name in modifier_tracers(modifiers)
-@inline is_reservoir_tendency(modifiers, args...) = false
+@inline is_anti_tracer_tendency(modifiers, args...) = false
 
 @inline (bgc::ContinuousBiogeochemistry)(args...) =
-    is_reservoir_tendency(bgc.modifiers, args...) ? zero(args[4]) : bgc.underlying_biogeochemistry(args...)
+    is_anti_tracer_tendency(bgc.modifiers, args...) ? zero(args[4]) : bgc.underlying_biogeochemistry(args...)
 @inline (bgc::DiscreteBiogeochemistry)(args...) =
-    is_reservoir_tendency(bgc.modifiers, args...) ? zero(args[4]) :
+    is_anti_tracer_tendency(bgc.modifiers, args...) ? zero(args[4]) :
     bgc.underlying_biogeochemistry(args..., biogeochemical_auxiliary_fields(bgc))
 
 @inline (bgc::ContinuousBiogeochemistry{nothing})(i, j, k, grid, args...) = zero(grid)
