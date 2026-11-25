@@ -25,6 +25,9 @@ using Adapt: adapt
     @test isbitstype(typeof(modifier))
     @test isbitstype(typeof(ScaleNegativeTracers((:N, :P))))
     @test isbitstype(typeof(ZeroNegativeTracers(exclude = (:Z,))))
+    @test hasproperty(modifier, :tracers) && hasproperty(modifier, :reservoir_names)
+    @test hasproperty(ScaleNegativeTracers((:N, :P)), :tracers)
+    @test hasproperty(ZeroNegativeTracers(exclude = (:Z,)), :exclude)
     biogeochemistry = NPZD(grid; inorganic_carbon, light_attenuation, modifiers = modifier)
     model = NonhydrostaticModel(grid; biogeochemistry, advection = nothing)
 
@@ -173,42 +176,39 @@ end
     end
 end
 
-@testset "Reservoir checkpoint restart" begin
+@testset "Reservoir checkpoint restart (CPU)" begin
     # Oceananigans checkpoints the reservoir as an ordinary prognostic tracer.
-    # Keep file I/O on CPU; the model compatibility tests above run on the
-    # selected CPU or GPU architecture.
-    if architecture isa CPU
-        function restart_model()
-            grid = RectilinearGrid(CPU(), size = (1, 1, 1), extent = (1, 1, 1))
-            base = NPZD(grid; plankton = Abiotic(),
-                        detritus = InstantRemineralisationDetritus(), light_attenuation = nothing)
-            modifier = ReservoirNegativeTracers(base.underlying_biogeochemistry;
-                                               repayment_tracers = (nitrogen = :N,))
-            bgc = Biogeochemistry(base.underlying_biogeochemistry; modifiers = modifier)
-            model = NonhydrostaticModel(grid; biogeochemistry = bgc, advection = nothing)
-            set_tracers!(model; N = 0.1, nitrogen_reservoir = -0.6)
-            return model
+    # Exercise CPU checkpoint I/O on either test host (CPU or GPU).
+    function restart_model()
+        grid = RectilinearGrid(CPU(), size = (1, 1, 1), extent = (1, 1, 1))
+        base = NPZD(grid; plankton = Abiotic(),
+                    detritus = InstantRemineralisationDetritus(), light_attenuation = nothing)
+        modifier = ReservoirNegativeTracers(base.underlying_biogeochemistry;
+                                           repayment_tracers = (nitrogen = :N,))
+        bgc = Biogeochemistry(base.underlying_biogeochemistry; modifiers = modifier)
+        model = NonhydrostaticModel(grid; biogeochemistry = bgc, advection = nothing)
+        set_tracers!(model; N = 0.1, nitrogen_reservoir = -0.6)
+        return model
+    end
+
+    mktempdir() do dir
+        original = Simulation(restart_model(); Δt = 0.1, stop_iteration = 2)
+        original.output_writers[:checkpoint] = Checkpointer(original.model;
+            schedule = IterationInterval(2), prefix = "reservoir", dir)
+        run!(original)
+        @test isfile(joinpath(dir, "reservoir_iteration2.jld2"))
+
+        resumed = Simulation(restart_model(); Δt = 0.1, stop_iteration = 3)
+        resumed.output_writers[:checkpoint] = Checkpointer(resumed.model;
+            schedule = IterationInterval(2), prefix = "reservoir", dir)
+        run!(resumed; pickup = :highest_iteration)
+
+        uninterrupted = Simulation(restart_model(); Δt = 0.1, stop_iteration = 3)
+        run!(uninterrupted)
+        @test resumed.model.clock.iteration == uninterrupted.model.clock.iteration == 3
+        for name in (:N, :nitrogen_reservoir)
+            @test tracer_value(resumed.model, name) ≈ tracer_value(uninterrupted.model, name)
         end
-
-        mktempdir() do dir
-            original = Simulation(restart_model(); Δt = 0.1, stop_iteration = 2)
-            original.output_writers[:checkpoint] = Checkpointer(original.model;
-                schedule = IterationInterval(2), prefix = "reservoir", dir)
-            run!(original)
-            @test isfile(joinpath(dir, "reservoir_iteration2.jld2"))
-
-            resumed = Simulation(restart_model(); Δt = 0.1, stop_iteration = 3)
-            resumed.output_writers[:checkpoint] = Checkpointer(resumed.model;
-                schedule = IterationInterval(2), prefix = "reservoir", dir)
-            run!(resumed; pickup = :highest_iteration)
-
-            uninterrupted = Simulation(restart_model(); Δt = 0.1, stop_iteration = 3)
-            run!(uninterrupted)
-            @test resumed.model.clock.iteration == uninterrupted.model.clock.iteration == 3
-            for name in (:N, :nitrogen_reservoir)
-                @test tracer_value(resumed.model, name) ≈ tracer_value(uninterrupted.model, name)
-            end
-            @test tracer_value(resumed.model, :nitrogen_reservoir) < 0
-        end
+        @test tracer_value(resumed.model, :nitrogen_reservoir) < 0
     end
 end

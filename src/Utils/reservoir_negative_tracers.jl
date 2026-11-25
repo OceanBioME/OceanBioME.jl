@@ -43,6 +43,8 @@ ReservoirNegativeTracers(tracers::Tuple{Vararg{Symbol}}, scalefactors,
 
 @inline Base.getproperty(modifier::ReservoirNegativeTracers{T, R}, name::Symbol) where {T, R} =
     name === :tracers ? T : name === :reservoir_names ? R : getfield(modifier, name)
+Base.propertynames(::ReservoirNegativeTracers, private::Bool=false) =
+    (:tracers, :scalefactors, :reservoir_names, :repayment_indices)
 
 function ReservoirNegativeTracers(bgc::AbstractBiogeochemistry; repayment_tracers, reservoir_names = nothing)
     groups = map(group_scalefactors, conserved_tracers(bgc))

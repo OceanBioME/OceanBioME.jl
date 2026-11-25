@@ -17,6 +17,21 @@ can subsequently move through the domain and be repaid by a designated
 nonnegative inorganic tracer. Including the reservoir in inventory diagnostics
 is essential for measuring conservation.
 
+Let ``T_i^+ = \max(T_i, 0)`` and let ``b_g`` denote the repayment tracer for
+group ``g``. Each repayment tracer belongs exclusively to its own group. The
+correction computes
+
+```math
+\begin{aligned}
+d_g &= R_g + \sum_i a_{gi} (T_i - T_i^+), \\
+q_g &= T_{b_g}^+ + d_g / a_{g b_g}, \\
+T_{b_g}' &= \max(q_g, 0), \qquad R_g' = a_{g b_g} \min(q_g, 0).
+\end{aligned}
+```
+
+All other concentrations become ``T_i^+``. This preserves each selected
+group's elemental inventory during the local correction.
+
 The reservoirs are **ordinary Oceananigans prognostic tracers** with zero
 biological tendencies. Oceananigans handles their transport and boundary
 conditions. The following example uses its tracer-specific advection and

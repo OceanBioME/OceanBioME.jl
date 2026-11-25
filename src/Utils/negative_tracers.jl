@@ -27,6 +27,7 @@ ZeroNegativeTracers(; exclude = ()) = ZeroNegativeTracers(exclude)
 # Keep tracer names in the type rather than in CUDA kernel arguments.
 @inline Base.getproperty(zero::ZeroNegativeTracers{E}, name::Symbol) where E =
     name === :exclude ? E : getfield(zero, name)
+Base.propertynames(::ZeroNegativeTracers, private::Bool=false) = (:exclude,)
 
 function update_biogeochemical_state!(model, zero::ZeroNegativeTracers)
     for (tracer_name, tracer) in pairs(model.tracers)
@@ -53,6 +54,8 @@ ScaleNegativeTracers(tracers::Tuple{Vararg{Symbol}}, scalefactors, shared, first
 
 @inline Base.getproperty(scale::ScaleNegativeTracers{T}, name::Symbol) where T =
     name === :tracers ? T : getfield(scale, name)
+Base.propertynames(::ScaleNegativeTracers, private::Bool=false) =
+    (:tracers, :scalefactors, :shared, :first_own_tracer, :invalid_fill_value)
 
 """
     ScaleNegativeTracers(tracers; scalefactors = ones(length(tracers)), invalid_fill_value = NaN)
