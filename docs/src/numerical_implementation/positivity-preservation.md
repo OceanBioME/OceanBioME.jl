@@ -28,17 +28,20 @@ Each group needs at least one tracer that is not shared with another group.
 
 ## ReservoirNegativeTracers
 
-`ReservoirNegativeTracers` transfers negative concentrations into signed
-reservoirs, one per eligible conservation group. For an elemental group with
-tracer concentrations ``T_i`` and coefficients ``a_i``, the local correction
-preserves ``\sum_i a_i T_i + R``, where ``R \leq 0`` is the reservoir. Deficits
-can subsequently move through the domain and be repaid by a designated
-nonnegative inorganic tracer. Including the reservoir in inventory diagnostics
-is essential for measuring conservation.
+`ReservoirNegativeTracers` sets negative tracer concentrations to zero,
+offsetting the resulting elemental deficits against a designated inorganic
+tracer. Any remaining deficit is stored in a non-positive reservoir, one per
+selected conservation group. For tracer concentrations ``T_i`` and
+stoichiometric weights ``a_i``, the correction preserves
+``\sum_i a_i T_i + R`` within each grid cell, where ``R \leq 0`` is the
+outstanding deficit. Reservoirs can subsequently be transported between
+grid cells, allowing deficits to be offset where the inorganic tracer is
+available.
 
-Let ``T_i^+ = \max(T_i, 0)`` and let ``b_g`` denote the repayment tracer for
-group ``g``. Each repayment tracer belongs exclusively to its own group. The
-correction computes
+Let ``T_i^+ = \max(T_i, 0)`` and let ``b_g`` denote the inorganic tracer used
+to offset the deficit for group ``g`` (specified by `repayment_tracers`).
+Each such tracer belongs exclusively to its own group. The correction
+applied within each grid cell computes
 
 ```math
 \begin{aligned}
@@ -48,15 +51,15 @@ T_{b_g}' &= \max(q_g, 0), \qquad R_g' = a_{g b_g} \min(q_g, 0).
 \end{aligned}
 ```
 
-All other concentrations become ``T_i^+``. This preserves each selected
-group's elemental inventory during the local correction.
+All other concentrations become ``T_i^+``.
 
-The reservoirs are **ordinary Oceananigans prognostic tracers** with zero
-biological tendencies. Oceananigans handles their transport and boundary
-conditions. The following example uses its tracer-specific advection and
-horizontal diffusion options: only the reservoir diffuses, and neither field
-has a prescribed velocity. The simple abiotic configuration isolates the
-correction from biological production and consumption.
+The reservoirs are ordinary Oceananigans tracers with zero biological
+tendencies. Oceananigans handles their transport and boundary conditions.
+The following example uses tracer-specific diffusion to illustrate reservoir
+transport: diffusion of the original nutrient tracer is disabled, while
+the reservoir diffuses between grid cells. Both tracers can undergo advection
+and diffusion in general simulations. The simple abiotic configuration
+isolates the correction from biological production and consumption.
 
 ```@example reservoir_diffusion
 using OceanBioME, Oceananigans, CairoMakie
@@ -117,7 +120,7 @@ that group. Tracers shared by multiple conservation groups are corrected
 consistently.
 
 When constructed from a biogeochemical model, `ReservoirNegativeTracers` selects
-conservation groups with nonnegative stoichiometric coefficients. Groups with
-signed coefficients (such as oxygen) are excluded, while tracers absent from the
-model's `conserved_tracers` groups retain their original treatment. Conservation
+conservation groups with nonnegative stoichiometric weights. Groups with
+negative weights (such as some oxygen groups) are excluded, while tracers
+absent from the model's `conserved_tracers` groups retain their original treatment. Conservation
 is guaranteed for the selected groups, including their reservoirs.

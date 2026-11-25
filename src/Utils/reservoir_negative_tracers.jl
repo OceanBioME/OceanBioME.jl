@@ -2,10 +2,11 @@
     ReservoirNegativeTracers(groups; repayment_tracers, reservoir_names)
     ReservoirNegativeTracers(bgc::AbstractBiogeochemistry; repayment_tracers, reservoir_names)
 
-Construct a conservative negative-tracer correction with one signed reservoir per
-conservation group. `groups` maps group names to tracer coefficients, following
-[`ScaleNegativeTracers`](@ref). `repayment_tracers` maps each group to a tracer
-which can repay its reservoir (typically an inorganic nutrient).
+Construct a conservative negative-tracer correction with one non-positive reservoir
+per conservation group. `groups` maps group names to tracer stoichiometric
+weights, following [`ScaleNegativeTracers`](@ref). `repayment_tracers` maps
+each group to a tracer whose concentration can be reduced to offset its
+deficit (typically an inorganic nutrient).
 
 For example:
 ```julia
@@ -14,18 +15,19 @@ modifier = ReservoirNegativeTracers(
     repayment_tracers = (nitrogen = :N,))
 ```
 
-The corresponding reservoir is named `:nitrogen_reservoir` by default. It is
-registered as a prognostic tracer when the modifier is used in `Biogeochemistry`.
-The biological tracer concentrations are made nonnegative while the weighted
-sum of each group's tracers and its reservoir is conserved *in each cell*.
+By default, each reservoir is named after its conservation group, followed by
+`_reservoir` (e.g. `:nitrogen_reservoir` or `:phosphate_reservoir`). Custom
+names can be specified using `reservoir_names`. The reservoirs are automatically
+added to the model's tracers when the modifier is used in `Biogeochemistry`.
+The correction removes negative concentrations from tracers in each selected
+conservation group while preserving the group's total elemental inventory,
+including its reservoir, within each grid cell.
 
 Repayment tracers must be unique to their group: a repayment tracer cannot
-contribute to another selected conservation group. Groups with negative
-coefficients are not supported; the model-based constructor skips them, as in
-`ScaleNegativeTracers(bgc)`.
-
-The elemental-buffer concept follows the negative-buffer approach in the
-`ocean_bgc_models` research code.
+contribute to another selected conservation group. Stoichiometric weights
+are the weights used to calculate elemental inventories. Groups containing
+negative weights (such as some oxygen groups) are skipped by the model-based
+constructor and rejected by the explicit-group constructor.
 
 The reservoirs are ordinary Oceananigans tracers. Configure their transport
 with the model's `tracer_advection` and tracer-specific diffusivities in `closure`;
