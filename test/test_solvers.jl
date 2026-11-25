@@ -29,6 +29,8 @@ f5′(x, p) = 2 * p.a * x
     # Plain newton raphson
     solver = NewtonRaphsonSolver()
 
+    # make all this parallel in a kernel to check it will run on a GPU correctly
+
     correct1 = map(x0 -> solver(f1, f1′, x0, nothing) == X1, (-10, -1, 0, 1, 10, 100))
     @test all(correct1 .== (false, true, true, true, false, false))
 
