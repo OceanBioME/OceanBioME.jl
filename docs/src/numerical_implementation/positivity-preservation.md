@@ -35,28 +35,114 @@ negative when the correction cannot be fully annihilated using a selected tracer
 Anti-tracers can be transported between grid cells, allowing annihilation
 wherever the selected tracer is available.
 
-For tracer concentrations ``T_i``, stoichiometric weights ``a_{gi}``, and the
-anti-tracer value ``A_g \leq 0``, the correction preserves
-``\sum_i a_{gi} T_i + A_g`` within each grid cell. Let
-``T_i^+ = \max(T_i, 0)`` and let ``b_g`` denote the existing tracer selected
-for annihilation in group ``g`` (specified by `annihilation_tracers`). Each
-such tracer belongs exclusively to its own group. The correction applied
-within each grid cell computes
+### One nutrient and its anti-tracer
+
+For a single nutrient tracer ``T`` (e.g. ``N``) and its anti-tracer
+``A \leq 0``, both in the same nutrient units, the correction in each grid
+cell is
 
 ```math
 \begin{aligned}
-\widetilde{A}_g &= A_g + \sum_i a_{gi} (T_i - T_i^+), \\
-q_g &= T_{b_g}^+ + \widetilde{A}_g / a_{g b_g}, \\
-T_{b_g}' &= \max(q_g, 0), \qquad A_g' = a_{g b_g} \min(q_g, 0).
+\widetilde{T} &= \max(T + A, 0), \\
+\widetilde{A} &= \min(T + A, 0).
 \end{aligned}
 ```
 
-Here, ``A_g`` is the anti-tracer value before correction, ``\widetilde{A}_g``
-is its value after incorporating negative tracer concentrations but before
-annihilation, and ``A_g'`` is its updated value after annihilation. Primes
-denote updated values.
+``T`` and ``A`` are the values **before** correction; tildes denote the
+values **after** correction, including annihilation. The combined inventory
+is conserved:
 
-All other concentrations become ``T_i^+``.
+```math
+T + A = \widetilde{T} + \widetilde{A}.
+```
+
+If ``A = 0`` before correction, this simplifies to
+
+```math
+T = \widetilde{T} + \widetilde{A}.
+```
+
+For example, a negative tracer concentration with ``T = -0.5`` and ``A = 0`` gives
+
+```math
+\begin{aligned}
+\widetilde{T} &= 0, \\
+\widetilde{A} &= -0.5.
+\end{aligned}
+```
+
+Conversely, for ``T = 1`` and ``A = -0.2``, annihilation gives
+
+```math
+\begin{aligned}
+\widetilde{T} &= 0.8, \\
+\widetilde{A} &= 0.
+\end{aligned}
+```
+
+### Multiple tracers and conservation groups
+
+The same correction applies when several tracers contribute to a conserved
+quantity, such as nitrogen or carbon. For each conservation group ``g``, define:
+
+- ``T_g^{\mathrm{ann}}``: the **existing tracer selected for annihilation** in
+  group ``g``, such as ``N`` for nitrogen or ``DIC`` for carbon.
+- ``\alpha_g^{\mathrm{ann}} > 0``: the stoichiometric weight of that selected
+  tracer in group ``g``.
+- ``T_i``: the concentrations of the **other tracers** in the group. The index
+  ``i`` runs over these tracers only; it excludes ``T_g^{\mathrm{ann}}``.
+- ``a_{gi} \geq 0``: the stoichiometric weight of each of those other tracers
+  in group ``g``.
+- ``A_g \leq 0``: the anti-tracer value associated with group ``g``.
+
+For example, if the nitrogen group contains ``N``, ``P``, and ``Z``, we can
+choose ``T_{\mathrm{N}}^{\mathrm{ann}} = N``. The sum over ``i`` then contains
+only ``P`` and ``Z``. For a carbon group, we might instead choose
+``T_{\mathrm{C}}^{\mathrm{ann}} = \mathrm{DIC}``. Tracers such as ``P`` and ``Z``
+can contribute to both groups, with different stoichiometric weights; each
+selected annihilation tracer must belong exclusively to its group. The
+selection is configured using `annihilation_tracers`.
+
+First, combine the selected tracer with its anti-tracer and the negative
+contributions of the other tracers:
+
+```math
+q_g = T_g^{\mathrm{ann}} +
+      \frac{A_g + \displaystyle\sum_i a_{gi}\min(T_i, 0)}
+           {\alpha_g^{\mathrm{ann}}}.
+```
+
+The sum includes only the other tracers, because the selected tracer is
+already included as ``T_g^{\mathrm{ann}}``. Each ``\min(T_i, 0)`` contributes
+only if that tracer is negative. Dividing by ``\alpha_g^{\mathrm{ann}}``
+expresses the anti-tracer value in the units of the selected tracer.
+
+The corrected values are
+
+```math
+\begin{aligned}
+\widetilde{T}_g^{\mathrm{ann}} &= \max(q_g, 0), \\
+\widetilde{T}_i &= \max(T_i, 0), \qquad \text{for each other tracer }i, \\
+\widetilde{A}_g &= \alpha_g^{\mathrm{ann}}\min(q_g, 0).
+\end{aligned}
+```
+
+As in the single-nutrient case, a tilde denotes the value **after** the
+complete correction, including annihilation. When ``q_g \geq 0``, the
+anti-tracer is fully annihilated; otherwise, the remaining negative value
+is retained in ``\widetilde{A}_g``.
+
+For each group, the correction conserves its weighted inventory within each
+grid cell:
+
+```math
+\begin{aligned}
+&\alpha_g^{\mathrm{ann}}T_g^{\mathrm{ann}} +
+ \sum_i a_{gi}T_i + A_g \\
+&\qquad = \alpha_g^{\mathrm{ann}}\widetilde{T}_g^{\mathrm{ann}} +
+ \sum_i a_{gi}\widetilde{T}_i + \widetilde{A}_g.
+\end{aligned}
+```
 
 The anti-tracers are ordinary Oceananigans tracers with zero biological
 tendencies. Oceananigans handles their transport and boundary conditions.
@@ -155,7 +241,8 @@ fig
 The first stage shows the prescribed negative N concentration in cell 1, with
 Anti-N initially zero. The correction sets N to zero there and stores its
 negative value in Anti-N. Over time, Anti-N diffuses through cells without N;
-where N is available, annihilation reduces its concentration. By ``t = 50``, all Anti-N has been annihilated. N itself does not diffuse in this example.
+where N is available, annihilation reduces its concentration. By ``t = 50``,
+almost all Anti-N has been annihilated. N itself does not diffuse in this example.
 The figure shows all five grid cells. The combined inventory remains constant
 under the no-flux boundaries. This example uses an explicit diffusion coefficient ``\kappa = 0.5`` and time step
 ``\Delta t = 0.1`` on a grid with ``\Delta x = 1``; larger diffusivities
