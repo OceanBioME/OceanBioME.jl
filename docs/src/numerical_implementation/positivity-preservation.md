@@ -29,9 +29,9 @@ Each group needs at least one tracer that is not shared with another group.
 ## AntiNegativeTracers
 
 `AntiNegativeTracers` sets negative tracer concentrations to zero while
-conserving the elemental inventory of each selected conservation group. One
-additional **anti-tracer** is introduced per group. Its value becomes negative
-when the correction cannot be fully annihilated using a selected tracer.
+conserving elemental inventories. Each selected conservation group (e.g.
+nitrogen or carbon) receives one additional **anti-tracer**. Its value becomes
+negative when the correction cannot be fully annihilated using a selected tracer.
 Anti-tracers can be transported between grid cells, allowing annihilation
 wherever the selected tracer is available.
 
@@ -51,6 +51,11 @@ T_{b_g}' &= \max(q_g, 0), \qquad A_g' = a_{g b_g} \min(q_g, 0).
 \end{aligned}
 ```
 
+Here, ``A_g`` is the anti-tracer value before correction, ``\widetilde{A}_g``
+is its value after incorporating negative tracer concentrations but before
+annihilation, and ``A_g'`` is its updated value after annihilation. Primes
+denote updated values.
+
 All other concentrations become ``T_i^+``.
 
 The anti-tracers are ordinary Oceananigans tracers with zero biological
@@ -65,7 +70,7 @@ isolates the correction from biological production and consumption.
 using OceanBioME, Oceananigans, CairoMakie
 using Oceananigans.TimeSteppers: update_state!
 
-grid = RectilinearGrid(size = 16, x = (0, 16), topology = (Bounded, Flat, Flat))
+grid = RectilinearGrid(size = 5, x = (0, 5), topology = (Bounded, Flat, Flat))
 
 base = NPZD(grid; plankton = Abiotic(), detritus = InstantRemineralisationDetritus(),
             light_attenuation = nothing)
@@ -80,35 +85,79 @@ model = NonhydrostaticModel(grid; biogeochemistry = bgc, closure,
 
 # Negative N initially occupies cell 1; cell 2 has no N; cells 3+ have N.
 set!(model.tracers.N, x -> x < 1 ? -0.5 : x < 2 ? 0.0 : 1.0)
-update_state!(model) # N is nonnegative; the initial negative value is now in the anti-tracer.
+set!(model.tracers.nitrogen_anti_tracer, 0)
 
 profile(field) = vec(Array(interior(field)))
+N_before = profile(model.tracers.N)
+A_before = profile(model.tracers.nitrogen_anti_tracer)
+
+update_state!(model) # N becomes nonnegative; the negative value is stored in Anti-N.
 N_initial = profile(model.tracers.N)
 A_initial = profile(model.tracers.nitrogen_anti_tracer)
 
-simulation = Simulation(model; Δt = 0.1, stop_iteration = 12)
+simulation = Simulation(model; Δt = 0.1, stop_iteration = 60)
 run!(simulation)
+N_6 = profile(model.tracers.N)
+A_6 = profile(model.tracers.nitrogen_anti_tracer)
 
+simulation.stop_iteration = 500
+run!(simulation)
 N_final = profile(model.tracers.N)
 A_final = profile(model.tracers.nitrogen_anti_tracer)
+@assert isapprox(sum(N_before) + sum(A_before), sum(N_initial) + sum(A_initial); atol = 1e-9)
 @assert isapprox(sum(N_initial) + sum(A_initial), sum(N_final) + sum(A_final); atol = 1e-9)
+@assert sum(abs, A_final) < 1e-4 # Almost all Anti-N has been annihilated.
+nothing
+```
 
-x = 0.5:1:15.5
-fig = Figure(size = (800, 390))
-ax = Axis(fig[1, 1]; xlabel = "x", ylabel = "Concentration")
-lines!(ax, x, N_initial; label = "N: initially", linestyle = :dash, color = :dodgerblue)
-lines!(ax, x, N_final; label = "N: after diffusion", color = :dodgerblue)
-lines!(ax, x, A_initial; label = "Anti-tracer: initially", linestyle = :dash, color = :darkorange)
-lines!(ax, x, A_final; label = "Anti-tracer: after diffusion", color = :darkorange)
-axislegend(ax; position = :rb)
+The saved concentrations are plotted before correction, immediately after
+correction, and at two subsequent times.
+
+```@example anti_tracer_diffusion
+# Show N and Anti-N in every grid cell, before and after correction and transport.
+cells = 1:5
+stages = ((N_before, A_before), (N_initial, A_initial),
+          (N_6, A_6), (N_final, A_final))
+stage_titles = ("Before correction", "After correction (t = 0)",
+                "Diffusion and annihilation (t = 6)", "Complete annihilation (t = 50)")
+
+fig = Figure(size = (900, 950))
+axes = Axis[]
+color_map = cgrad([:darkorange, :white, :dodgerblue], [0, 1/3, 1])
+for (stage, (N, A)) in enumerate(stages)
+    ax = Axis(fig[stage, 1]; title = stage_titles[stage],
+              yticks = ([1, 2], ["Anti-N", "N"]), xticks = cells,
+              xlabel = stage == 4 ? "Grid cell" : "",
+              xgridvisible = false, ygridvisible = false)
+    push!(axes, ax)
+
+    values = hcat(A[cells], N[cells]) # Anti-N below N on the same grid-cell axis.
+    heatmap!(ax, cells, 1:2, values; colormap = color_map,
+             colorrange = (-0.5, 1.0))
+    for j in 1:2, i in eachindex(cells)
+        value = values[i, j]
+        label = abs(value) < 0.005 ? "0" : string(round(value; digits = 2))
+        text!(ax, label; position = (cells[i], j), align = (:center, :center),
+              color = abs(value) > 0.35 ? :white : :black, fontsize = 15)
+    end
+    vlines!(ax, 1.5:1:4.5; color = (:black, 0.2), linewidth = 1)
+    hlines!(ax, [1.5]; color = (:black, 0.2), linewidth = 1)
+    xlims!(ax, 0.5, 5.5)
+    ylims!(ax, 0.5, 2.5)
+    stage < 4 && hidexdecorations!(ax)
+end
+linkxaxes!(axes...)
+Colorbar(fig[1:4, 2]; colormap = color_map, limits = (-0.5, 1.0),
+         label = "Tracer value")
 fig
 ```
 
-The negative anti-tracer value first enters a nutrient-free neighbouring
-cell by diffusion. Upon reaching cells with available N, annihilation reduces
-both the magnitude of the anti-tracer value and the concentration of N. The
-combined inventory remains constant under the no-flux boundaries. This example
-uses an explicit diffusion coefficient ``\kappa = 0.5`` and time step
+The first stage shows the prescribed negative N concentration in cell 1, with
+Anti-N initially zero. The correction sets N to zero there and stores its
+negative value in Anti-N. Over time, Anti-N diffuses through cells without N;
+where N is available, annihilation reduces its concentration. By ``t = 50``, all Anti-N has been annihilated. N itself does not diffuse in this example.
+The figure shows all five grid cells. The combined inventory remains constant
+under the no-flux boundaries. This example uses an explicit diffusion coefficient ``\kappa = 0.5`` and time step
 ``\Delta t = 0.1`` on a grid with ``\Delta x = 1``; larger diffusivities
 require correspondingly smaller explicit time steps. In a three-dimensional
 model, supply the desired tracer-specific advection and diffusivities for **all**
