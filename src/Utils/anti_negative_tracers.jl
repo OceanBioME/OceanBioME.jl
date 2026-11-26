@@ -24,8 +24,10 @@ The correction sets negative tracer concentrations to zero. Any change that
 cannot be annihilated using the selected tracer is reflected in the negative
 value of the anti-tracer. Annihilation reduces both the concentration of that
 tracer and the magnitude of the anti-tracer's negative value. The weighted
-inventory, including the anti-tracer value, is conserved within each grid cell
-during the correction.
+inventory is conserved within each grid cell during the correction. Each
+anti-tracer uses the same units as the existing tracer selected for annihilation.
+Its value is weighted by that tracer's stoichiometric weight when computing the
+elemental inventory.
 
 The tracer selected for annihilation must belong exclusively to its conservation
 group. Stoichiometric weights are the weights used to calculate elemental
@@ -172,15 +174,14 @@ end
                                       weights::NTuple{G, Any}, annihilation_indices) where {M, G}
     nonnegative = ntuple(n -> max(c[n], zero(c[n])), Val(M))
     negative_parts = ntuple(n -> c[n] - nonnegative[n], Val(M))
-    anti_values = ntuple(g -> a[g] + weighted_sum(weights[g], negative_parts), Val(G))
+    anti_values = ntuple(g -> a[g] + weighted_sum(weights[g], negative_parts) /
+                                  selected(weights[g], annihilation_indices[g]), Val(G))
 
     # Annihilate each anti-tracer value with its selected nonnegative tracer.
     # Any remaining negative anti-tracer value is conserved.
-    combined = ntuple(g -> selected(nonnegative, annihilation_indices[g]) +
-                            anti_values[g] / selected(weights[g], annihilation_indices[g]), Val(G))
+    combined = ntuple(g -> selected(nonnegative, annihilation_indices[g]) + anti_values[g], Val(G))
     tracer_values = ntuple(g -> max(combined[g], zero(combined[g])), Val(G))
-    new_anti_tracers = ntuple(g -> min(combined[g], zero(combined[g])) *
-                                 selected(weights[g], annihilation_indices[g]), Val(G))
+    new_anti_tracers = ntuple(g -> min(combined[g], zero(combined[g])), Val(G))
 
     corrected = ntuple(Val(M)) do n
         nonnegative[n] + sum(ntuple(g -> ifelse(annihilation_indices[g] == n,

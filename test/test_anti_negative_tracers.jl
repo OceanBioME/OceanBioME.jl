@@ -14,6 +14,20 @@ using Adapt: adapt
         @test anti_tracers[1] ≈ FT(-0.75)
         @test sum((FT(0.25), FT(-1))) ≈ sum(corrected) + anti_tracers[1]
         @test anti_negative_values(corrected, anti_tracers, weights, (1,)) == (corrected, anti_tracers)
+
+        # Anti-tracer values use the selected tracer's units, even for a non-unit weight.
+        weights = ((FT(2), FT(3)),)
+        c, a = (FT(0.5), FT(-0.5)), (FT(-0.1),)
+        corrected, anti_tracers = anti_negative_values(c, a, weights, (1,))
+        @test corrected == (zero(FT), zero(FT))
+        @test anti_tracers[1] ≈ FT(-0.35)
+        @test isapprox(sum(weights[1] .* c) + weights[1][1] * a[1],
+                       sum(weights[1] .* corrected) + weights[1][1] * anti_tracers[1])
+        @test anti_negative_values(corrected, anti_tracers, weights, (1,)) == (corrected, anti_tracers)
+
+        corrected, anti_tracers = anti_negative_values((one(FT), FT(-0.5)), a, weights, (1,))
+        @test corrected[1] ≈ FT(0.15)
+        @test anti_tracers == (zero(FT),)
     end
 
     grid = RectilinearGrid(architecture, size = (1, 1, 1), extent = (1, 1, 1))
@@ -171,7 +185,8 @@ end
     for g in eachindex(anti_values)
         weights = pisces_modifier.scalefactors[g]
         inventory(values) = sum(w * v for (w, v) in zip(weights, values))
-        @test inventory(corrected) + anti_values[g] ≈ inventory(c)
+        alpha = weights[pisces_modifier.annihilation_indices[g]]
+        @test inventory(corrected) + alpha * anti_values[g] ≈ inventory(c) + alpha * a[g]
     end
 end
 

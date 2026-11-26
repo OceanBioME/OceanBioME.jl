@@ -93,7 +93,8 @@ quantity, such as nitrogen or carbon. For each conservation group ``g``, define:
   ``i`` runs over these tracers only; it excludes ``T_g^{\mathrm{ann}}``.
 - ``a_{gi} \geq 0``: the stoichiometric weight of each of those other tracers
   in group ``g``.
-- ``A_g \leq 0``: the anti-tracer value associated with group ``g``.
+- ``A_g \leq 0``: the anti-tracer value for group ``g``, expressed in the
+  same units as ``T_g^{\mathrm{ann}}``.
 
 For example, if the nitrogen group contains ``N``, ``P``, and ``Z``, we can
 choose ``T_{\mathrm{N}}^{\mathrm{ann}} = N``. The sum over ``i`` then contains
@@ -107,15 +108,16 @@ First, combine the selected tracer with its anti-tracer and the negative
 contributions of the other tracers:
 
 ```math
-q_g = T_g^{\mathrm{ann}} +
-      \frac{A_g + \displaystyle\sum_i a_{gi}\min(T_i, 0)}
-           {\alpha_g^{\mathrm{ann}}}.
+q_g = T_g^{\mathrm{ann}} + A_g +
+      \sum_i \frac{a_{gi}}{\alpha_g^{\mathrm{ann}}}\min(T_i, 0).
 ```
 
 The sum includes only the other tracers, because the selected tracer is
 already included as ``T_g^{\mathrm{ann}}``. Each ``\min(T_i, 0)`` contributes
-only if that tracer is negative. Dividing by ``\alpha_g^{\mathrm{ann}}``
-expresses the anti-tracer value in the units of the selected tracer.
+only if that tracer is negative. The ratio
+``a_{gi} / \alpha_g^{\mathrm{ann}}`` converts its contribution into the
+units of the tracer selected for annihilation, which are also the units of
+``A_g``.
 
 The corrected values are
 
@@ -123,7 +125,7 @@ The corrected values are
 \begin{aligned}
 \widetilde{T}_g^{\mathrm{ann}} &= \max(q_g, 0), \\
 \widetilde{T}_i &= \max(T_i, 0), \qquad \text{for each other tracer }i, \\
-\widetilde{A}_g &= \alpha_g^{\mathrm{ann}}\min(q_g, 0).
+\widetilde{A}_g &= \min(q_g, 0).
 \end{aligned}
 ```
 
@@ -133,14 +135,15 @@ anti-tracer is fully annihilated; otherwise, the remaining negative value
 is retained in ``\widetilde{A}_g``.
 
 For each group, the correction conserves its weighted inventory within each
-grid cell:
+grid cell. The stoichiometric weight ``\alpha_g^{\mathrm{ann}}`` multiplies
+both the selected tracer and the anti-tracer because they share the same units:
 
 ```math
 \begin{aligned}
-&\alpha_g^{\mathrm{ann}}T_g^{\mathrm{ann}} +
- \sum_i a_{gi}T_i + A_g \\
-&\qquad = \alpha_g^{\mathrm{ann}}\widetilde{T}_g^{\mathrm{ann}} +
- \sum_i a_{gi}\widetilde{T}_i + \widetilde{A}_g.
+&\alpha_g^{\mathrm{ann}}(T_g^{\mathrm{ann}} + A_g) +
+ \sum_i a_{gi}T_i \\
+&\qquad = \alpha_g^{\mathrm{ann}}(\widetilde{T}_g^{\mathrm{ann}} + \widetilde{A}_g) +
+ \sum_i a_{gi}\widetilde{T}_i.
 \end{aligned}
 ```
 
