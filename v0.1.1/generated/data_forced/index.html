@@ -1,0 +1,588 @@
+<!DOCTYPE html>
+<html lang="en"><head><meta charset="UTF-8"/><meta name="viewport" content="width=device-width, initial-scale=1.0"/><title>Data forced column model · OceanBioME.jl</title><script data-outdated-warner src="../../assets/warner.js"></script><link rel="canonical" href="https://OceanBioME.github.io/OceanBioME/stable/generated/data_forced/"/><link href="https://cdnjs.cloudflare.com/ajax/libs/lato-font/3.0.0/css/lato-font.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/juliamono/0.045/juliamono.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/fontawesome.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/solid.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/brands.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.13.24/katex.min.css" rel="stylesheet" type="text/css"/><script>documenterBaseURL="../.."</script><script src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.6/require.min.js" data-main="../../assets/documenter.js"></script><script src="../../siteinfo.js"></script><script src="../../../versions.js"></script><link class="docs-theme-link" rel="stylesheet" type="text/css" href="../../assets/themes/documenter-dark.css" data-theme-name="documenter-dark" data-theme-primary-dark/><link class="docs-theme-link" rel="stylesheet" type="text/css" href="../../assets/themes/documenter-light.css" data-theme-name="documenter-light" data-theme-primary/><script src="../../assets/themeswap.js"></script></head><body><div id="documenter"><nav class="docs-sidebar"><a class="docs-logo" href="../../"><img class="docs-light-only" src="../../assets/logo.png" alt="OceanBioME.jl logo"/><img class="docs-dark-only" src="../../assets/logo-dark.png" alt="OceanBioME.jl logo"/></a><div class="docs-package-name"><span class="docs-autofit"><a href="../../">OceanBioME.jl</a></span></div><form class="docs-search" action="../../search/"><input class="docs-search-query" id="documenter-search-query" name="q" type="text" placeholder="Search docs"/></form><ul class="docs-menu"><li><a class="tocitem" href="../../">Home</a></li><li><a class="tocitem" href="../../quick_start/">Quick start</a></li><li><input class="collapse-toggle" id="menuitem-3" type="checkbox"/><label class="tocitem" for="menuitem-3"><span class="docs-label">Model components and setup</span><i class="docs-chevron"></i></label><ul class="collapsed"><li><input class="collapse-toggle" id="menuitem-3-1" type="checkbox"/><label class="tocitem" for="menuitem-3-1"><span class="docs-label">Biogeochemical models</span><i class="docs-chevron"></i></label><ul class="collapsed"><li><a class="tocitem" href="../../model_components/biogeochemical/">Overview</a></li><li><a class="tocitem" href="../../model_components/biogeochemical/LOBSTER/">LOBSTER</a></li><li><a class="tocitem" href="../../model_components/biogeochemical/NPZ/">NPZD</a></li></ul></li><li><a class="tocitem" href="../../model_components/air-sea-gas/">Air-sea gas exchange</a></li><li><input class="collapse-toggle" id="menuitem-3-3" type="checkbox"/><label class="tocitem" for="menuitem-3-3"><span class="docs-label">Sediment models</span><i class="docs-chevron"></i></label><ul class="collapsed"><li><a class="tocitem" href="../../model_components/sediment/">Overview</a></li></ul></li><li><a class="tocitem" href="../../model_components/light/">Light attenuation models</a></li><li><input class="collapse-toggle" id="menuitem-3-5" type="checkbox"/><label class="tocitem" for="menuitem-3-5"><span class="docs-label">Individuals</span><i class="docs-chevron"></i></label><ul class="collapsed"><li><a class="tocitem" href="../../model_components/individuals/">Overview</a></li><li><a class="tocitem" href="../../model_components/individuals/slatissima/">Sugar Kelp (Broch and Slagstad 2012 ++)</a></li></ul></li><li><a class="tocitem" href="../../model_components/utils/">Utilities</a></li></ul></li><li><input class="collapse-toggle" id="menuitem-4" type="checkbox" checked/><label class="tocitem" for="menuitem-4"><span class="docs-label">Examples</span><i class="docs-chevron"></i></label><ul class="collapsed"><li><a class="tocitem" href="../column/">Simple column model</a></li><li class="is-active"><a class="tocitem" href>Data forced column model</a><ul class="internal"><li><a class="tocitem" href="#Install-dependencies"><span>Install dependencies</span></a></li><li><a class="tocitem" href="#Model-setup"><span>Model setup</span></a></li><li><a class="tocitem" href="#Load-external-forcing-data"><span>Load external forcing data</span></a></li><li><a class="tocitem" href="#Grid-and-PAR-field"><span>Grid and PAR field</span></a></li><li><a class="tocitem" href="#Biogeochemical-and-Oceananigans-model"><span>Biogeochemical and Oceananigans model</span></a></li><li><a class="tocitem" href="#Simulation"><span>Simulation</span></a></li><li><a class="tocitem" href="#Run!"><span>Run!</span></a></li></ul></li><li><a class="tocitem" href="../kelp/">Model with particles (kelp) interacting with the biogeochemistry</a></li><li><a class="tocitem" href="../box/">Box model</a></li><li><a class="tocitem" href="../eady/">Baroclinical instability</a></li></ul></li><li><input class="collapse-toggle" id="menuitem-5" type="checkbox"/><label class="tocitem" for="menuitem-5"><span class="docs-label">Numerical implementation</span><i class="docs-chevron"></i></label><ul class="collapsed"><li><a class="tocitem" href="../../numerical_implementation/positivity-preservation/">Positivity preservation</a></li></ul></li><li><a class="tocitem" href="../../gallery/">Gallery</a></li><li><a class="tocitem" href="../../references/">References</a></li><li><input class="collapse-toggle" id="menuitem-8" type="checkbox"/><label class="tocitem" for="menuitem-8"><span class="docs-label">Appendix</span><i class="docs-chevron"></i></label><ul class="collapsed"><li><a class="tocitem" href="../../appendix/library/">Library</a></li><li><a class="tocitem" href="../../appendix/function_index/">Function index</a></li><li><input class="collapse-toggle" id="menuitem-8-3" type="checkbox"/><label class="tocitem" for="menuitem-8-3"><span class="docs-label">Parameters</span><i class="docs-chevron"></i></label><ul class="collapsed"><li><a class="tocitem" href="../../appendix/params/">Overview</a></li><li><a class="tocitem" href="../../appendix/params/LOBSTER/">LOBSTER</a></li><li><a class="tocitem" href="../../appendix/params/SLatissima/">SLatissima</a></li></ul></li></ul></li></ul><div class="docs-version-selector field has-addons"><div class="control"><span class="docs-label button is-static is-size-7">Version</span></div><div class="docs-selector control is-expanded"><div class="select is-fullwidth is-size-7"><select id="documenter-version-selector"></select></div></div></div></nav><div class="docs-main"><header class="docs-navbar"><nav class="breadcrumb"><ul class="is-hidden-mobile"><li><a class="is-disabled">Examples</a></li><li class="is-active"><a href>Data forced column model</a></li></ul><ul class="is-hidden-tablet"><li class="is-active"><a href>Data forced column model</a></li></ul></nav><div class="docs-right"><a class="docs-edit-link" href="https://oceanbiome.github.io/OceanBioME.jl/examples/data_forced.jl" title="Edit on GitHub"><span class="docs-icon fab"></span><span class="docs-label is-hidden-touch">Edit on GitHub</span></a><a class="docs-settings-button fas fa-cog" id="documenter-settings-button" href="#" title="Settings"></a><a class="docs-sidebar-button fa fa-bars is-hidden-desktop" id="documenter-sidebar-button" href="#"></a></div></header><article class="content" id="documenter-page"><h1 id="One-dimensional-column-forced-by-external-data-with-carbonate-chemistry"><a class="docs-heading-anchor" href="#One-dimensional-column-forced-by-external-data-with-carbonate-chemistry">One dimensional column forced by external data with carbonate chemistry</a><a id="One-dimensional-column-forced-by-external-data-with-carbonate-chemistry-1"></a><a class="docs-heading-anchor-permalink" href="#One-dimensional-column-forced-by-external-data-with-carbonate-chemistry" title="Permalink"></a></h1><p>In this example we will setup a simple 1D column with the <a href="generated/@ref LOBSTER">LOBSTER</a> biogeochemical model and observe its evolution. This demonstrates:</p><ul><li>How to setup OceanBioME&#39;s biogeochemical models</li><li>How to load external forcing data</li><li>How to run with optional tracer sets such as carbonate chemistry</li><li>How to setup a non-uniform grid for better near surface resolution</li><li>How to visualise results</li></ul><p>This is forced by mixing layer depth and surface photosynthetically available radiation (PAR) data from the Mercator Ocean model and NASA VIIRS observations</p><h2 id="Install-dependencies"><a class="docs-heading-anchor" href="#Install-dependencies">Install dependencies</a><a id="Install-dependencies-1"></a><a class="docs-heading-anchor-permalink" href="#Install-dependencies" title="Permalink"></a></h2><p>First we will check we have the dependencies installed</p><pre><code class="language-julia hljs">using Pkg
+pkg&quot;add OceanBioME, Oceananigans, Printf, Plots, GLMakie, NetCDF, JLD2, DataDeps, Interpolations&quot;</code></pre><h2 id="Model-setup"><a class="docs-heading-anchor" href="#Model-setup">Model setup</a><a id="Model-setup-1"></a><a class="docs-heading-anchor-permalink" href="#Model-setup" title="Permalink"></a></h2><p>First load the required packages</p><pre><code class="language-julia hljs">using Oceananigans, Random, Printf, NetCDF, Interpolations, DataDeps
+using Oceananigans.Units: second, minute, minutes, hour, hours, day, days, year, years
+using Oceananigans.Operators: ∂zᶜᶜᶜ
+using OceanBioME</code></pre><h2 id="Load-external-forcing-data"><a class="docs-heading-anchor" href="#Load-external-forcing-data">Load external forcing data</a><a id="Load-external-forcing-data-1"></a><a class="docs-heading-anchor-permalink" href="#Load-external-forcing-data" title="Permalink"></a></h2><p>Loading the forcing data from our online copy</p><pre><code class="language-julia hljs">dd = DataDep(
+    &quot;example_data&quot;,
+    &quot;example data from subpolar re analysis and observational products&quot;,
+    &quot;https://github.com/OceanBioME/OceanBioME_example_data/raw/main/subpolar.nc&quot;
+)
+register(dd)
+filename = datadep&quot;example_data/subpolar.nc&quot;
+times = ncread(filename, &quot;time&quot;)
+temp = ncread(filename, &quot;temp&quot;)
+salinity = ncread(filename, &quot;so&quot;)
+mld = ncread(filename, &quot;mld&quot;)
+par = ncread(filename, &quot;par&quot;)
+
+temperature_itp = LinearInterpolation(times, temp)
+salinity_itp = LinearInterpolation(times, salinity)
+mld_itp = LinearInterpolation(times, mld)
+PAR_itp = LinearInterpolation(times, par)
+
+t_function(x, y, z, t) = temperature_itp(mod(t, 364days))
+s_function(x, y, z, t) = salinity_itp(mod(t, 364days))
+surface_PAR(x, y, t) = PAR_itp(mod(t, 364days))
+κₜ(x, y, z, t) = 2e-2*max(1-(z+mld_itp(mod(t,364days))/2)^2/(mld_itp(mod(t,364days))/2)^2,0)+1e-4</code></pre><pre><code class="nohighlight hljs">κₜ (generic function with 1 method)</code></pre><h2 id="Grid-and-PAR-field"><a class="docs-heading-anchor" href="#Grid-and-PAR-field">Grid and PAR field</a><a id="Grid-and-PAR-field-1"></a><a class="docs-heading-anchor-permalink" href="#Grid-and-PAR-field" title="Permalink"></a></h2><p>Define the grid (in this case a non uniform grid for better resolution near the surface) and an extra Oceananigans field for the PAR to be stored in</p><pre><code class="language-julia hljs">Nz = 33
+Lz = 600
+refinement = 10
+stretching = 5.754
+h(k) = (k - 1) / Nz
+ζ₀(k) = 1 + (h(k) - 1) / refinement
+Σ(k) = (1 - exp(-stretching * h(k))) / (1 - exp(-stretching))
+z_faces(k) = Lz * (ζ₀(k) * Σ(k) - 1)
+
+grid = RectilinearGrid(size = (1, 1, Nz), x = (0, 20), y = (0, 20), z = z_faces)</code></pre><pre><code class="nohighlight hljs">1×1×33 RectilinearGrid{Float64, Oceananigans.Grids.Periodic, Oceananigans.Grids.Periodic, Oceananigans.Grids.Bounded} on Oceananigans.Architectures.CPU with 3×3×3 halo
+├── Periodic x ∈ [0.0, 20.0)   regularly spaced with Δx=20.0
+├── Periodic y ∈ [0.0, 20.0)   regularly spaced with Δy=20.0
+└── Bounded  z ∈ [-600.0, 0.0] variably spaced with min(Δz)=2.18055, max(Δz)=86.9713</code></pre><h2 id="Biogeochemical-and-Oceananigans-model"><a class="docs-heading-anchor" href="#Biogeochemical-and-Oceananigans-model">Biogeochemical and Oceananigans model</a><a id="Biogeochemical-and-Oceananigans-model-1"></a><a class="docs-heading-anchor-permalink" href="#Biogeochemical-and-Oceananigans-model" title="Permalink"></a></h2><p>Here we instantiate the LOBSTER model with carbonate chemistry and a surface flux of DIC (CO₂)</p><pre><code class="language-julia hljs">CO₂_flux = GasExchange(; gas = :CO₂, temperature = t_function, salinity = s_function)
+model = NonhydrostaticModel(; grid,
+                              closure = ScalarDiffusivity(ν=κₜ, κ=κₜ),
+                              biogeochemistry = LOBSTER(; grid,
+                                                          surface_phytosynthetically_active_radiation = surface_PAR,
+                                                          carbonates = true),
+                              boundary_conditions = (DIC = FieldBoundaryConditions(top = CO₂_flux), ),
+                              advection = nothing,)
+
+set!(model, P = 0.03, Z = 0.03, NO₃ = 11.0, NH₄ = 0.05, DIC = 2200.0, Alk = 2400.0)</code></pre><h2 id="Simulation"><a class="docs-heading-anchor" href="#Simulation">Simulation</a><a id="Simulation-1"></a><a class="docs-heading-anchor-permalink" href="#Simulation" title="Permalink"></a></h2><p>Next we setup the simulation along with some callbacks that:</p><ul><li>Show the progress of the simulation</li><li>Store the output</li><li>Prevent the tracers from going negative from numerical error (see discussion of this in the <a href="../../numerical_implementation/positivity-preservation/#pos-preservation">positivity preservation</a> implimentation page)</li><li>Adapt the timestep length to reduce the run time</li></ul><pre><code class="language-julia hljs">simulation = Simulation(model, Δt=1minutes, stop_time=100days)
+
+progress_message(sim) = @printf(&quot;Iteration: %04d, time: %s, Δt: %s, wall time: %s\n&quot;,
+                                iteration(sim),
+                                prettytime(sim),
+                                prettytime(sim.Δt),
+                                prettytime(sim.run_wall_time))
+
+simulation.callbacks[:progress] = Callback(progress_message, IterationInterval(100))
+
+filename = &quot;data_forced&quot;
+simulation.output_writers[:profiles] = JLD2OutputWriter(model,
+                                                        merge(model.tracers, model.auxiliary_fields),
+                                                        filename = &quot;$filename.jld2&quot;,
+                                                        schedule = TimeInterval(1day),
+                                                        overwrite_existing = true)</code></pre><pre><code class="nohighlight hljs">JLD2OutputWriter scheduled on TimeInterval(1 day):
+├── filepath: ./data_forced.jld2
+├── 10 outputs: (NO₃, NH₄, P, Z, sPOM, bPOM, DOM, DIC, Alk, PAR)
+├── array type: Array{Float64}
+├── including: [:grid, :coriolis, :buoyancy, :closure]
+└── max filesize: Inf YiB</code></pre><p>TODO: make tendency callback to force no NaNs in tendencies</p><pre><code class="language-julia hljs">scale_negative_tracers = ScaleNegativeTracers(; model, tracers = (:NO₃, :NH₄, :P, :Z, :sPOM, :bPOM, :DOM))
+simulation.callbacks[:neg] = Callback(scale_negative_tracers; callsite = UpdateStateCallsite())
+
+wizard = TimeStepWizard(cfl = 0.2, diffusive_cfl = 0.2, max_change = 2.0, min_change = 0.5, cell_diffusion_timescale = column_diffusion_timescale, cell_advection_timescale = column_advection_timescale)
+simulation.callbacks[:wizard] = Callback(wizard, IterationInterval(10))</code></pre><pre><code class="nohighlight hljs">Callback of TimeStepWizard(cfl=0.2, max_Δt=Inf, min_Δt=0.0) on IterationInterval(10)</code></pre><h2 id="Run!"><a class="docs-heading-anchor" href="#Run!">Run!</a><a id="Run!-1"></a><a class="docs-heading-anchor-permalink" href="#Run!" title="Permalink"></a></h2><p>Finally we run the simulation</p><pre><code class="language-julia hljs">run!(simulation)</code></pre><pre><code class="nohighlight hljs">[ Info: Initializing simulation...
+Iteration: 0000, time: 0 seconds, Δt: 1 minute, wall time: 0 seconds
+[ Info:     ... simulation initialization complete (7.707 seconds)
+[ Info: Executing initial time step...
+[ Info:     ... initial time step complete (2.438 minutes).
+Iteration: 0100, time: 5.043 hours, Δt: 3.140 minutes, wall time: 2.578 minutes
+Iteration: 0200, time: 10.277 hours, Δt: 3.140 minutes, wall time: 2.588 minutes
+Iteration: 0300, time: 15.510 hours, Δt: 3.140 minutes, wall time: 2.597 minutes
+Iteration: 0400, time: 20.743 hours, Δt: 3.140 minutes, wall time: 2.607 minutes
+Iteration: 0500, time: 1.081 days, Δt: 3.140 minutes, wall time: 2.616 minutes
+Iteration: 0600, time: 1.299 days, Δt: 3.140 minutes, wall time: 2.626 minutes
+Iteration: 0700, time: 1.517 days, Δt: 3.140 minutes, wall time: 2.636 minutes
+Iteration: 0800, time: 1.735 days, Δt: 3.140 minutes, wall time: 2.645 minutes
+Iteration: 0900, time: 1.953 days, Δt: 3.140 minutes, wall time: 2.655 minutes
+Iteration: 1000, time: 2.170 days, Δt: 3.140 minutes, wall time: 2.664 minutes
+Iteration: 1100, time: 2.388 days, Δt: 3.140 minutes, wall time: 2.673 minutes
+Iteration: 1200, time: 2.606 days, Δt: 3.140 minutes, wall time: 2.683 minutes
+Iteration: 1300, time: 2.824 days, Δt: 3.140 minutes, wall time: 2.692 minutes
+Iteration: 1400, time: 3.041 days, Δt: 3.140 minutes, wall time: 2.702 minutes
+Iteration: 1500, time: 3.259 days, Δt: 3.140 minutes, wall time: 2.711 minutes
+Iteration: 1600, time: 3.478 days, Δt: 3.140 minutes, wall time: 2.721 minutes
+Iteration: 1700, time: 3.696 days, Δt: 3.140 minutes, wall time: 2.730 minutes
+Iteration: 1800, time: 3.914 days, Δt: 3.140 minutes, wall time: 2.739 minutes
+Iteration: 1900, time: 4.131 days, Δt: 3.140 minutes, wall time: 2.749 minutes
+Iteration: 2000, time: 4.349 days, Δt: 3.140 minutes, wall time: 2.758 minutes
+Iteration: 2100, time: 4.567 days, Δt: 3.140 minutes, wall time: 2.768 minutes
+Iteration: 2200, time: 4.785 days, Δt: 3.140 minutes, wall time: 2.777 minutes
+Iteration: 2300, time: 5.002 days, Δt: 3.140 minutes, wall time: 2.787 minutes
+Iteration: 2400, time: 5.220 days, Δt: 3.140 minutes, wall time: 2.796 minutes
+Iteration: 2500, time: 5.438 days, Δt: 3.140 minutes, wall time: 2.806 minutes
+Iteration: 2600, time: 5.656 days, Δt: 3.140 minutes, wall time: 2.815 minutes
+Iteration: 2700, time: 5.874 days, Δt: 3.140 minutes, wall time: 2.824 minutes
+Iteration: 2800, time: 6.092 days, Δt: 3.140 minutes, wall time: 2.834 minutes
+Iteration: 2900, time: 6.310 days, Δt: 3.140 minutes, wall time: 2.844 minutes
+Iteration: 3000, time: 6.528 days, Δt: 3.140 minutes, wall time: 2.854 minutes
+Iteration: 3100, time: 6.746 days, Δt: 3.140 minutes, wall time: 2.864 minutes
+Iteration: 3200, time: 6.964 days, Δt: 3.140 minutes, wall time: 2.873 minutes
+Iteration: 3300, time: 7.181 days, Δt: 3.140 minutes, wall time: 2.883 minutes
+Iteration: 3400, time: 7.399 days, Δt: 3.140 minutes, wall time: 2.893 minutes
+Iteration: 3500, time: 7.617 days, Δt: 3.140 minutes, wall time: 2.902 minutes
+Iteration: 3600, time: 7.835 days, Δt: 3.140 minutes, wall time: 2.911 minutes
+Iteration: 3700, time: 8.052 days, Δt: 3.140 minutes, wall time: 2.921 minutes
+Iteration: 3800, time: 8.270 days, Δt: 3.140 minutes, wall time: 2.930 minutes
+Iteration: 3900, time: 8.488 days, Δt: 3.140 minutes, wall time: 2.939 minutes
+Iteration: 4000, time: 8.706 days, Δt: 3.140 minutes, wall time: 2.949 minutes
+Iteration: 4100, time: 8.925 days, Δt: 3.140 minutes, wall time: 2.958 minutes
+Iteration: 4200, time: 9.142 days, Δt: 3.140 minutes, wall time: 2.968 minutes
+Iteration: 4300, time: 9.360 days, Δt: 3.140 minutes, wall time: 2.978 minutes
+Iteration: 4400, time: 9.578 days, Δt: 3.140 minutes, wall time: 2.987 minutes
+Iteration: 4500, time: 9.796 days, Δt: 3.140 minutes, wall time: 2.996 minutes
+Iteration: 4600, time: 10.013 days, Δt: 3.140 minutes, wall time: 3.006 minutes
+Iteration: 4700, time: 10.231 days, Δt: 3.140 minutes, wall time: 3.015 minutes
+Iteration: 4800, time: 10.449 days, Δt: 3.140 minutes, wall time: 3.025 minutes
+Iteration: 4900, time: 10.667 days, Δt: 3.140 minutes, wall time: 3.033 minutes
+Iteration: 5000, time: 10.885 days, Δt: 3.140 minutes, wall time: 3.042 minutes
+Iteration: 5100, time: 11.102 days, Δt: 3.140 minutes, wall time: 3.052 minutes
+Iteration: 5200, time: 11.321 days, Δt: 3.140 minutes, wall time: 3.061 minutes
+Iteration: 5300, time: 11.539 days, Δt: 3.140 minutes, wall time: 3.071 minutes
+Iteration: 5400, time: 11.757 days, Δt: 3.140 minutes, wall time: 3.080 minutes
+Iteration: 5500, time: 11.975 days, Δt: 3.140 minutes, wall time: 3.089 minutes
+Iteration: 5600, time: 12.192 days, Δt: 3.140 minutes, wall time: 3.099 minutes
+Iteration: 5700, time: 12.410 days, Δt: 3.140 minutes, wall time: 3.108 minutes
+Iteration: 5800, time: 12.628 days, Δt: 3.140 minutes, wall time: 3.118 minutes
+Iteration: 5900, time: 12.846 days, Δt: 3.140 minutes, wall time: 3.127 minutes
+Iteration: 6000, time: 13.063 days, Δt: 3.140 minutes, wall time: 3.136 minutes
+Iteration: 6100, time: 13.281 days, Δt: 3.140 minutes, wall time: 3.146 minutes
+Iteration: 6200, time: 13.499 days, Δt: 3.140 minutes, wall time: 3.156 minutes
+Iteration: 6300, time: 13.717 days, Δt: 3.140 minutes, wall time: 3.166 minutes
+Iteration: 6400, time: 13.935 days, Δt: 3.140 minutes, wall time: 3.175 minutes
+Iteration: 6500, time: 14.153 days, Δt: 3.140 minutes, wall time: 3.184 minutes
+Iteration: 6600, time: 14.371 days, Δt: 3.140 minutes, wall time: 3.194 minutes
+Iteration: 6700, time: 14.589 days, Δt: 3.140 minutes, wall time: 3.203 minutes
+Iteration: 6800, time: 14.807 days, Δt: 3.140 minutes, wall time: 3.213 minutes
+Iteration: 6900, time: 15.024 days, Δt: 3.140 minutes, wall time: 3.222 minutes
+Iteration: 7000, time: 15.242 days, Δt: 3.140 minutes, wall time: 3.232 minutes
+Iteration: 7100, time: 15.460 days, Δt: 3.140 minutes, wall time: 3.241 minutes
+Iteration: 7200, time: 15.678 days, Δt: 3.140 minutes, wall time: 3.251 minutes
+Iteration: 7300, time: 15.896 days, Δt: 3.140 minutes, wall time: 3.260 minutes
+Iteration: 7400, time: 16.113 days, Δt: 3.140 minutes, wall time: 3.270 minutes
+Iteration: 7500, time: 16.331 days, Δt: 3.140 minutes, wall time: 3.280 minutes
+Iteration: 7600, time: 16.549 days, Δt: 3.140 minutes, wall time: 3.289 minutes
+Iteration: 7700, time: 16.768 days, Δt: 3.140 minutes, wall time: 3.298 minutes
+Iteration: 7800, time: 16.986 days, Δt: 3.140 minutes, wall time: 3.308 minutes
+Iteration: 7900, time: 17.203 days, Δt: 3.140 minutes, wall time: 3.317 minutes
+Iteration: 8000, time: 17.421 days, Δt: 3.140 minutes, wall time: 3.327 minutes
+Iteration: 8100, time: 17.639 days, Δt: 3.140 minutes, wall time: 3.336 minutes
+Iteration: 8200, time: 17.857 days, Δt: 3.140 minutes, wall time: 3.346 minutes
+Iteration: 8300, time: 18.074 days, Δt: 3.140 minutes, wall time: 3.356 minutes
+Iteration: 8400, time: 18.292 days, Δt: 3.140 minutes, wall time: 3.365 minutes
+Iteration: 8500, time: 18.510 days, Δt: 3.140 minutes, wall time: 3.375 minutes
+Iteration: 8600, time: 18.728 days, Δt: 3.140 minutes, wall time: 3.384 minutes
+Iteration: 8700, time: 18.946 days, Δt: 3.140 minutes, wall time: 3.393 minutes
+Iteration: 8800, time: 19.164 days, Δt: 3.140 minutes, wall time: 3.403 minutes
+Iteration: 8900, time: 19.382 days, Δt: 3.140 minutes, wall time: 3.412 minutes
+Iteration: 9000, time: 19.600 days, Δt: 3.140 minutes, wall time: 3.422 minutes
+Iteration: 9100, time: 19.818 days, Δt: 3.140 minutes, wall time: 3.431 minutes
+Iteration: 9200, time: 20.035 days, Δt: 3.140 minutes, wall time: 3.440 minutes
+Iteration: 9300, time: 20.253 days, Δt: 3.140 minutes, wall time: 3.450 minutes
+Iteration: 9400, time: 20.471 days, Δt: 3.140 minutes, wall time: 3.460 minutes
+Iteration: 9500, time: 20.689 days, Δt: 3.140 minutes, wall time: 3.469 minutes
+Iteration: 9600, time: 20.907 days, Δt: 3.140 minutes, wall time: 3.478 minutes
+Iteration: 9700, time: 21.124 days, Δt: 3.140 minutes, wall time: 3.489 minutes
+Iteration: 9800, time: 21.342 days, Δt: 3.140 minutes, wall time: 3.497 minutes
+Iteration: 9900, time: 21.560 days, Δt: 3.140 minutes, wall time: 3.507 minutes
+Iteration: 10000, time: 21.778 days, Δt: 3.140 minutes, wall time: 3.516 minutes
+Iteration: 10100, time: 21.997 days, Δt: 3.140 minutes, wall time: 3.525 minutes
+Iteration: 10200, time: 22.214 days, Δt: 3.140 minutes, wall time: 3.536 minutes
+Iteration: 10300, time: 22.432 days, Δt: 3.140 minutes, wall time: 3.545 minutes
+Iteration: 10400, time: 22.650 days, Δt: 3.140 minutes, wall time: 3.554 minutes
+Iteration: 10500, time: 22.868 days, Δt: 3.140 minutes, wall time: 3.564 minutes
+Iteration: 10600, time: 23.085 days, Δt: 3.140 minutes, wall time: 3.573 minutes
+Iteration: 10700, time: 23.303 days, Δt: 3.140 minutes, wall time: 3.583 minutes
+Iteration: 10800, time: 23.521 days, Δt: 3.140 minutes, wall time: 3.592 minutes
+Iteration: 10900, time: 23.739 days, Δt: 3.140 minutes, wall time: 3.601 minutes
+Iteration: 11000, time: 23.957 days, Δt: 3.140 minutes, wall time: 3.611 minutes
+Iteration: 11100, time: 24.174 days, Δt: 3.140 minutes, wall time: 3.620 minutes
+Iteration: 11200, time: 24.392 days, Δt: 3.140 minutes, wall time: 3.630 minutes
+Iteration: 11300, time: 24.611 days, Δt: 3.140 minutes, wall time: 3.639 minutes
+Iteration: 11400, time: 24.829 days, Δt: 3.140 minutes, wall time: 3.649 minutes
+Iteration: 11500, time: 25.046 days, Δt: 3.140 minutes, wall time: 3.658 minutes
+Iteration: 11600, time: 25.264 days, Δt: 3.140 minutes, wall time: 3.667 minutes
+Iteration: 11700, time: 25.482 days, Δt: 3.140 minutes, wall time: 3.677 minutes
+Iteration: 11800, time: 25.700 days, Δt: 3.140 minutes, wall time: 3.686 minutes
+Iteration: 11900, time: 25.918 days, Δt: 3.140 minutes, wall time: 3.695 minutes
+Iteration: 12000, time: 26.135 days, Δt: 3.140 minutes, wall time: 3.705 minutes
+Iteration: 12100, time: 26.353 days, Δt: 3.140 minutes, wall time: 3.715 minutes
+Iteration: 12200, time: 26.571 days, Δt: 3.140 minutes, wall time: 3.724 minutes
+Iteration: 12300, time: 26.789 days, Δt: 3.140 minutes, wall time: 3.733 minutes
+Iteration: 12400, time: 27.007 days, Δt: 3.140 minutes, wall time: 3.743 minutes
+Iteration: 12500, time: 27.225 days, Δt: 3.140 minutes, wall time: 3.752 minutes
+Iteration: 12600, time: 27.443 days, Δt: 3.140 minutes, wall time: 3.762 minutes
+Iteration: 12700, time: 27.661 days, Δt: 3.140 minutes, wall time: 3.771 minutes
+Iteration: 12800, time: 27.879 days, Δt: 3.140 minutes, wall time: 3.780 minutes
+Iteration: 12900, time: 28.096 days, Δt: 3.140 minutes, wall time: 3.790 minutes
+Iteration: 13000, time: 28.314 days, Δt: 3.140 minutes, wall time: 3.799 minutes
+Iteration: 13100, time: 28.532 days, Δt: 3.140 minutes, wall time: 3.808 minutes
+Iteration: 13200, time: 28.750 days, Δt: 3.140 minutes, wall time: 3.818 minutes
+Iteration: 13300, time: 28.968 days, Δt: 3.140 minutes, wall time: 3.827 minutes
+Iteration: 13400, time: 29.185 days, Δt: 3.140 minutes, wall time: 3.837 minutes
+Iteration: 13500, time: 29.403 days, Δt: 3.140 minutes, wall time: 3.846 minutes
+Iteration: 13600, time: 29.621 days, Δt: 3.140 minutes, wall time: 3.856 minutes
+Iteration: 13700, time: 29.840 days, Δt: 3.140 minutes, wall time: 3.865 minutes
+Iteration: 13800, time: 30.057 days, Δt: 3.140 minutes, wall time: 3.874 minutes
+Iteration: 13900, time: 30.275 days, Δt: 3.140 minutes, wall time: 3.884 minutes
+Iteration: 14000, time: 30.493 days, Δt: 3.140 minutes, wall time: 3.893 minutes
+Iteration: 14100, time: 30.711 days, Δt: 3.140 minutes, wall time: 3.902 minutes
+Iteration: 14200, time: 30.929 days, Δt: 3.140 minutes, wall time: 3.912 minutes
+Iteration: 14300, time: 31.146 days, Δt: 3.140 minutes, wall time: 3.923 minutes
+Iteration: 14400, time: 31.364 days, Δt: 3.140 minutes, wall time: 3.933 minutes
+Iteration: 14500, time: 31.582 days, Δt: 3.140 minutes, wall time: 3.942 minutes
+Iteration: 14600, time: 31.800 days, Δt: 3.140 minutes, wall time: 3.951 minutes
+Iteration: 14700, time: 32.017 days, Δt: 3.140 minutes, wall time: 3.961 minutes
+Iteration: 14800, time: 32.235 days, Δt: 3.140 minutes, wall time: 3.971 minutes
+Iteration: 14900, time: 32.454 days, Δt: 3.140 minutes, wall time: 3.980 minutes
+Iteration: 15000, time: 32.672 days, Δt: 3.140 minutes, wall time: 3.989 minutes
+Iteration: 15100, time: 32.890 days, Δt: 3.140 minutes, wall time: 3.999 minutes
+Iteration: 15200, time: 33.107 days, Δt: 3.140 minutes, wall time: 4.008 minutes
+Iteration: 15300, time: 33.325 days, Δt: 3.140 minutes, wall time: 4.017 minutes
+Iteration: 15400, time: 33.543 days, Δt: 3.140 minutes, wall time: 4.027 minutes
+Iteration: 15500, time: 33.761 days, Δt: 3.140 minutes, wall time: 4.036 minutes
+Iteration: 15600, time: 33.979 days, Δt: 3.140 minutes, wall time: 4.046 minutes
+Iteration: 15700, time: 34.196 days, Δt: 3.140 minutes, wall time: 4.055 minutes
+Iteration: 15800, time: 34.414 days, Δt: 3.140 minutes, wall time: 4.064 minutes
+Iteration: 15900, time: 34.632 days, Δt: 3.140 minutes, wall time: 4.074 minutes
+Iteration: 16000, time: 34.850 days, Δt: 3.140 minutes, wall time: 4.083 minutes
+Iteration: 16100, time: 35.068 days, Δt: 3.140 minutes, wall time: 4.093 minutes
+Iteration: 16200, time: 35.286 days, Δt: 3.140 minutes, wall time: 4.102 minutes
+Iteration: 16300, time: 35.504 days, Δt: 3.140 minutes, wall time: 4.111 minutes
+Iteration: 16400, time: 35.722 days, Δt: 3.140 minutes, wall time: 4.120 minutes
+Iteration: 16500, time: 35.940 days, Δt: 3.140 minutes, wall time: 4.129 minutes
+Iteration: 16600, time: 36.157 days, Δt: 3.140 minutes, wall time: 4.139 minutes
+Iteration: 16700, time: 36.375 days, Δt: 3.140 minutes, wall time: 4.149 minutes
+Iteration: 16800, time: 36.593 days, Δt: 3.140 minutes, wall time: 4.158 minutes
+Iteration: 16900, time: 36.811 days, Δt: 3.140 minutes, wall time: 4.168 minutes
+Iteration: 17000, time: 37.028 days, Δt: 3.140 minutes, wall time: 4.177 minutes
+Iteration: 17100, time: 37.246 days, Δt: 3.140 minutes, wall time: 4.187 minutes
+Iteration: 17200, time: 37.464 days, Δt: 3.140 minutes, wall time: 4.196 minutes
+Iteration: 17300, time: 37.683 days, Δt: 3.140 minutes, wall time: 4.205 minutes
+Iteration: 17400, time: 37.901 days, Δt: 3.140 minutes, wall time: 4.214 minutes
+Iteration: 17500, time: 38.118 days, Δt: 3.140 minutes, wall time: 4.224 minutes
+Iteration: 17600, time: 38.336 days, Δt: 3.140 minutes, wall time: 4.233 minutes
+Iteration: 17700, time: 38.554 days, Δt: 3.140 minutes, wall time: 4.242 minutes
+Iteration: 17800, time: 38.772 days, Δt: 3.140 minutes, wall time: 4.251 minutes
+Iteration: 17900, time: 38.990 days, Δt: 3.140 minutes, wall time: 4.261 minutes
+Iteration: 18000, time: 39.207 days, Δt: 3.140 minutes, wall time: 4.270 minutes
+Iteration: 18100, time: 39.425 days, Δt: 3.140 minutes, wall time: 4.280 minutes
+Iteration: 18200, time: 39.643 days, Δt: 3.140 minutes, wall time: 4.289 minutes
+Iteration: 18300, time: 39.861 days, Δt: 3.140 minutes, wall time: 4.299 minutes
+Iteration: 18400, time: 40.078 days, Δt: 3.140 minutes, wall time: 4.308 minutes
+Iteration: 18500, time: 40.297 days, Δt: 3.140 minutes, wall time: 4.317 minutes
+Iteration: 18600, time: 40.515 days, Δt: 3.140 minutes, wall time: 4.327 minutes
+Iteration: 18700, time: 40.733 days, Δt: 3.140 minutes, wall time: 4.336 minutes
+Iteration: 18800, time: 40.951 days, Δt: 3.140 minutes, wall time: 4.346 minutes
+Iteration: 18900, time: 41.168 days, Δt: 3.140 minutes, wall time: 4.355 minutes
+Iteration: 19000, time: 41.386 days, Δt: 3.140 minutes, wall time: 4.364 minutes
+Iteration: 19100, time: 41.604 days, Δt: 3.140 minutes, wall time: 4.374 minutes
+Iteration: 19200, time: 41.822 days, Δt: 3.140 minutes, wall time: 4.383 minutes
+Iteration: 19300, time: 42.039 days, Δt: 3.140 minutes, wall time: 4.393 minutes
+Iteration: 19400, time: 42.257 days, Δt: 3.140 minutes, wall time: 4.401 minutes
+Iteration: 19500, time: 42.475 days, Δt: 3.140 minutes, wall time: 4.411 minutes
+Iteration: 19600, time: 42.693 days, Δt: 3.140 minutes, wall time: 4.420 minutes
+Iteration: 19700, time: 42.911 days, Δt: 3.140 minutes, wall time: 4.429 minutes
+Iteration: 19800, time: 43.129 days, Δt: 3.140 minutes, wall time: 4.439 minutes
+Iteration: 19900, time: 43.347 days, Δt: 3.140 minutes, wall time: 4.448 minutes
+Iteration: 20000, time: 43.565 days, Δt: 3.140 minutes, wall time: 4.458 minutes
+Iteration: 20100, time: 43.783 days, Δt: 3.140 minutes, wall time: 4.467 minutes
+Iteration: 20200, time: 44 days, Δt: 3.140 minutes, wall time: 4.476 minutes
+Iteration: 20300, time: 44.218 days, Δt: 3.140 minutes, wall time: 4.486 minutes
+Iteration: 20400, time: 44.436 days, Δt: 3.140 minutes, wall time: 4.495 minutes
+Iteration: 20500, time: 44.654 days, Δt: 3.140 minutes, wall time: 4.504 minutes
+Iteration: 20600, time: 44.872 days, Δt: 3.140 minutes, wall time: 4.514 minutes
+Iteration: 20700, time: 45.089 days, Δt: 3.140 minutes, wall time: 4.523 minutes
+Iteration: 20800, time: 45.307 days, Δt: 3.140 minutes, wall time: 4.533 minutes
+Iteration: 20900, time: 45.526 days, Δt: 3.140 minutes, wall time: 4.542 minutes
+Iteration: 21000, time: 45.744 days, Δt: 3.140 minutes, wall time: 4.552 minutes
+Iteration: 21100, time: 45.962 days, Δt: 3.140 minutes, wall time: 4.561 minutes
+Iteration: 21200, time: 46.179 days, Δt: 3.140 minutes, wall time: 4.570 minutes
+Iteration: 21300, time: 46.397 days, Δt: 3.140 minutes, wall time: 4.580 minutes
+Iteration: 21400, time: 46.615 days, Δt: 3.140 minutes, wall time: 4.589 minutes
+Iteration: 21500, time: 46.833 days, Δt: 3.140 minutes, wall time: 4.598 minutes
+Iteration: 21600, time: 47.050 days, Δt: 3.140 minutes, wall time: 4.608 minutes
+Iteration: 21700, time: 47.268 days, Δt: 3.140 minutes, wall time: 4.617 minutes
+Iteration: 21800, time: 47.486 days, Δt: 3.140 minutes, wall time: 4.627 minutes
+Iteration: 21900, time: 47.704 days, Δt: 3.140 minutes, wall time: 4.636 minutes
+Iteration: 22000, time: 47.922 days, Δt: 3.140 minutes, wall time: 4.646 minutes
+Iteration: 22100, time: 48.140 days, Δt: 3.140 minutes, wall time: 4.655 minutes
+Iteration: 22200, time: 48.358 days, Δt: 3.140 minutes, wall time: 4.665 minutes
+Iteration: 22300, time: 48.576 days, Δt: 3.140 minutes, wall time: 4.675 minutes
+Iteration: 22400, time: 48.794 days, Δt: 3.140 minutes, wall time: 4.684 minutes
+Iteration: 22500, time: 49.011 days, Δt: 3.140 minutes, wall time: 4.694 minutes
+Iteration: 22600, time: 49.229 days, Δt: 3.140 minutes, wall time: 4.703 minutes
+Iteration: 22700, time: 49.447 days, Δt: 3.140 minutes, wall time: 4.712 minutes
+Iteration: 22800, time: 49.665 days, Δt: 3.140 minutes, wall time: 4.722 minutes
+Iteration: 22900, time: 49.883 days, Δt: 3.140 minutes, wall time: 4.731 minutes
+Iteration: 23000, time: 50.100 days, Δt: 3.140 minutes, wall time: 4.741 minutes
+Iteration: 23100, time: 50.318 days, Δt: 3.140 minutes, wall time: 4.751 minutes
+Iteration: 23200, time: 50.536 days, Δt: 3.140 minutes, wall time: 4.760 minutes
+Iteration: 23300, time: 50.754 days, Δt: 3.140 minutes, wall time: 4.769 minutes
+Iteration: 23400, time: 50.973 days, Δt: 3.140 minutes, wall time: 4.779 minutes
+Iteration: 23500, time: 51.190 days, Δt: 3.140 minutes, wall time: 4.789 minutes
+Iteration: 23600, time: 51.408 days, Δt: 3.140 minutes, wall time: 4.798 minutes
+Iteration: 23700, time: 51.626 days, Δt: 3.140 minutes, wall time: 4.808 minutes
+Iteration: 23800, time: 51.844 days, Δt: 3.140 minutes, wall time: 4.816 minutes
+Iteration: 23900, time: 52.061 days, Δt: 3.140 minutes, wall time: 4.826 minutes
+Iteration: 24000, time: 52.279 days, Δt: 3.140 minutes, wall time: 4.835 minutes
+Iteration: 24100, time: 52.497 days, Δt: 3.140 minutes, wall time: 4.844 minutes
+Iteration: 24200, time: 52.715 days, Δt: 3.140 minutes, wall time: 4.854 minutes
+Iteration: 24300, time: 52.933 days, Δt: 3.140 minutes, wall time: 4.863 minutes
+Iteration: 24400, time: 53.150 days, Δt: 3.140 minutes, wall time: 4.873 minutes
+Iteration: 24500, time: 53.369 days, Δt: 3.140 minutes, wall time: 4.883 minutes
+Iteration: 24600, time: 53.587 days, Δt: 3.140 minutes, wall time: 4.892 minutes
+Iteration: 24700, time: 53.805 days, Δt: 3.140 minutes, wall time: 4.901 minutes
+Iteration: 24800, time: 54.022 days, Δt: 3.140 minutes, wall time: 4.911 minutes
+Iteration: 24900, time: 54.240 days, Δt: 3.140 minutes, wall time: 4.920 minutes
+Iteration: 25000, time: 54.458 days, Δt: 3.140 minutes, wall time: 4.930 minutes
+Iteration: 25100, time: 54.676 days, Δt: 3.140 minutes, wall time: 4.939 minutes
+Iteration: 25200, time: 54.894 days, Δt: 3.140 minutes, wall time: 4.949 minutes
+Iteration: 25300, time: 55.111 days, Δt: 3.140 minutes, wall time: 4.958 minutes
+Iteration: 25400, time: 55.329 days, Δt: 3.140 minutes, wall time: 4.967 minutes
+Iteration: 25500, time: 55.547 days, Δt: 3.140 minutes, wall time: 4.977 minutes
+Iteration: 25600, time: 55.765 days, Δt: 3.140 minutes, wall time: 4.986 minutes
+Iteration: 25700, time: 55.983 days, Δt: 3.140 minutes, wall time: 4.996 minutes
+Iteration: 25800, time: 56.201 days, Δt: 3.140 minutes, wall time: 5.005 minutes
+Iteration: 25900, time: 56.419 days, Δt: 3.140 minutes, wall time: 5.014 minutes
+Iteration: 26000, time: 56.637 days, Δt: 3.140 minutes, wall time: 5.024 minutes
+Iteration: 26100, time: 56.855 days, Δt: 3.140 minutes, wall time: 5.033 minutes
+Iteration: 26200, time: 57.072 days, Δt: 3.140 minutes, wall time: 5.043 minutes
+Iteration: 26300, time: 57.290 days, Δt: 3.140 minutes, wall time: 5.052 minutes
+Iteration: 26400, time: 57.508 days, Δt: 3.140 minutes, wall time: 5.062 minutes
+Iteration: 26500, time: 57.726 days, Δt: 3.140 minutes, wall time: 5.071 minutes
+Iteration: 26600, time: 57.944 days, Δt: 3.140 minutes, wall time: 5.080 minutes
+Iteration: 26700, time: 58.161 days, Δt: 3.140 minutes, wall time: 5.090 minutes
+Iteration: 26800, time: 58.379 days, Δt: 3.140 minutes, wall time: 5.099 minutes
+Iteration: 26900, time: 58.597 days, Δt: 3.140 minutes, wall time: 5.109 minutes
+Iteration: 27000, time: 58.816 days, Δt: 3.140 minutes, wall time: 5.118 minutes
+Iteration: 27100, time: 59.033 days, Δt: 3.140 minutes, wall time: 5.127 minutes
+Iteration: 27200, time: 59.251 days, Δt: 3.140 minutes, wall time: 5.137 minutes
+Iteration: 27300, time: 59.469 days, Δt: 3.140 minutes, wall time: 5.146 minutes
+Iteration: 27400, time: 59.687 days, Δt: 3.140 minutes, wall time: 5.157 minutes
+Iteration: 27500, time: 59.905 days, Δt: 3.140 minutes, wall time: 5.166 minutes
+Iteration: 27600, time: 60.122 days, Δt: 3.140 minutes, wall time: 5.175 minutes
+Iteration: 27700, time: 60.340 days, Δt: 3.140 minutes, wall time: 5.185 minutes
+Iteration: 27800, time: 60.558 days, Δt: 3.140 minutes, wall time: 5.195 minutes
+Iteration: 27900, time: 60.776 days, Δt: 3.140 minutes, wall time: 5.204 minutes
+Iteration: 28000, time: 60.994 days, Δt: 3.140 minutes, wall time: 5.213 minutes
+Iteration: 28100, time: 61.212 days, Δt: 3.140 minutes, wall time: 5.223 minutes
+Iteration: 28200, time: 61.430 days, Δt: 3.140 minutes, wall time: 5.233 minutes
+Iteration: 28300, time: 61.648 days, Δt: 3.140 minutes, wall time: 5.242 minutes
+Iteration: 28400, time: 61.866 days, Δt: 3.140 minutes, wall time: 5.252 minutes
+Iteration: 28500, time: 62.083 days, Δt: 3.140 minutes, wall time: 5.261 minutes
+Iteration: 28600, time: 62.301 days, Δt: 3.140 minutes, wall time: 5.270 minutes
+Iteration: 28700, time: 62.519 days, Δt: 3.140 minutes, wall time: 5.280 minutes
+Iteration: 28800, time: 62.737 days, Δt: 3.140 minutes, wall time: 5.289 minutes
+Iteration: 28900, time: 62.955 days, Δt: 3.140 minutes, wall time: 5.299 minutes
+Iteration: 29000, time: 63.172 days, Δt: 3.140 minutes, wall time: 5.308 minutes
+Iteration: 29100, time: 63.390 days, Δt: 3.140 minutes, wall time: 5.318 minutes
+Iteration: 29200, time: 63.608 days, Δt: 3.140 minutes, wall time: 5.327 minutes
+Iteration: 29300, time: 63.826 days, Δt: 3.140 minutes, wall time: 5.337 minutes
+Iteration: 29400, time: 64.044 days, Δt: 3.140 minutes, wall time: 5.347 minutes
+Iteration: 29500, time: 64.262 days, Δt: 3.140 minutes, wall time: 5.356 minutes
+Iteration: 29600, time: 64.480 days, Δt: 3.140 minutes, wall time: 5.366 minutes
+Iteration: 29700, time: 64.698 days, Δt: 3.140 minutes, wall time: 5.375 minutes
+Iteration: 29800, time: 64.916 days, Δt: 3.140 minutes, wall time: 5.384 minutes
+Iteration: 29900, time: 65.133 days, Δt: 3.140 minutes, wall time: 5.394 minutes
+Iteration: 30000, time: 65.351 days, Δt: 3.140 minutes, wall time: 5.403 minutes
+Iteration: 30100, time: 65.569 days, Δt: 3.140 minutes, wall time: 5.413 minutes
+Iteration: 30200, time: 65.787 days, Δt: 3.140 minutes, wall time: 5.421 minutes
+Iteration: 30300, time: 66.004 days, Δt: 3.140 minutes, wall time: 5.431 minutes
+Iteration: 30400, time: 66.222 days, Δt: 3.140 minutes, wall time: 5.441 minutes
+Iteration: 30500, time: 66.440 days, Δt: 3.140 minutes, wall time: 5.450 minutes
+Iteration: 30600, time: 66.659 days, Δt: 3.140 minutes, wall time: 5.461 minutes
+Iteration: 30700, time: 66.877 days, Δt: 3.140 minutes, wall time: 5.469 minutes
+Iteration: 30800, time: 67.094 days, Δt: 3.140 minutes, wall time: 5.479 minutes
+Iteration: 30900, time: 67.312 days, Δt: 3.140 minutes, wall time: 5.489 minutes
+Iteration: 31000, time: 67.530 days, Δt: 3.140 minutes, wall time: 5.498 minutes
+Iteration: 31100, time: 67.748 days, Δt: 3.140 minutes, wall time: 5.508 minutes
+Iteration: 31200, time: 67.966 days, Δt: 3.140 minutes, wall time: 5.516 minutes
+Iteration: 31300, time: 68.183 days, Δt: 3.140 minutes, wall time: 5.526 minutes
+Iteration: 31400, time: 68.401 days, Δt: 3.140 minutes, wall time: 5.536 minutes
+Iteration: 31500, time: 68.619 days, Δt: 3.140 minutes, wall time: 5.545 minutes
+Iteration: 31600, time: 68.837 days, Δt: 3.140 minutes, wall time: 5.555 minutes
+Iteration: 31700, time: 69.055 days, Δt: 3.140 minutes, wall time: 5.564 minutes
+Iteration: 31800, time: 69.273 days, Δt: 3.140 minutes, wall time: 5.573 minutes
+Iteration: 31900, time: 69.491 days, Δt: 3.140 minutes, wall time: 5.583 minutes
+Iteration: 32000, time: 69.709 days, Δt: 3.140 minutes, wall time: 5.592 minutes
+Iteration: 32100, time: 69.927 days, Δt: 3.140 minutes, wall time: 5.602 minutes
+Iteration: 32200, time: 70.144 days, Δt: 3.140 minutes, wall time: 5.611 minutes
+Iteration: 32300, time: 70.362 days, Δt: 3.140 minutes, wall time: 5.622 minutes
+Iteration: 32400, time: 70.580 days, Δt: 3.140 minutes, wall time: 5.631 minutes
+Iteration: 32500, time: 70.798 days, Δt: 3.140 minutes, wall time: 5.640 minutes
+Iteration: 32600, time: 71.015 days, Δt: 3.140 minutes, wall time: 5.650 minutes
+Iteration: 32700, time: 71.233 days, Δt: 3.140 minutes, wall time: 5.659 minutes
+Iteration: 32800, time: 71.451 days, Δt: 3.140 minutes, wall time: 5.669 minutes
+Iteration: 32900, time: 71.669 days, Δt: 3.140 minutes, wall time: 5.678 minutes
+Iteration: 33000, time: 71.887 days, Δt: 3.140 minutes, wall time: 5.687 minutes
+Iteration: 33100, time: 72.105 days, Δt: 3.140 minutes, wall time: 5.697 minutes
+Iteration: 33200, time: 72.323 days, Δt: 3.140 minutes, wall time: 5.706 minutes
+Iteration: 33300, time: 72.541 days, Δt: 3.140 minutes, wall time: 5.716 minutes
+Iteration: 33400, time: 72.759 days, Δt: 3.140 minutes, wall time: 5.725 minutes
+Iteration: 33500, time: 72.977 days, Δt: 3.140 minutes, wall time: 5.734 minutes
+Iteration: 33600, time: 73.194 days, Δt: 3.140 minutes, wall time: 5.744 minutes
+Iteration: 33700, time: 73.412 days, Δt: 3.140 minutes, wall time: 5.753 minutes
+Iteration: 33800, time: 73.630 days, Δt: 3.140 minutes, wall time: 5.763 minutes
+Iteration: 33900, time: 73.848 days, Δt: 3.140 minutes, wall time: 5.772 minutes
+Iteration: 34000, time: 74.065 days, Δt: 3.140 minutes, wall time: 5.782 minutes
+Iteration: 34100, time: 74.283 days, Δt: 3.140 minutes, wall time: 5.791 minutes
+Iteration: 34200, time: 74.502 days, Δt: 3.140 minutes, wall time: 5.800 minutes
+Iteration: 34300, time: 74.720 days, Δt: 3.140 minutes, wall time: 5.810 minutes
+Iteration: 34400, time: 74.938 days, Δt: 3.140 minutes, wall time: 5.819 minutes
+Iteration: 34500, time: 75.155 days, Δt: 3.140 minutes, wall time: 5.828 minutes
+Iteration: 34600, time: 75.373 days, Δt: 3.140 minutes, wall time: 5.838 minutes
+Iteration: 34700, time: 75.591 days, Δt: 3.140 minutes, wall time: 5.847 minutes
+Iteration: 34800, time: 75.809 days, Δt: 3.140 minutes, wall time: 5.856 minutes
+Iteration: 34900, time: 76.026 days, Δt: 3.140 minutes, wall time: 5.865 minutes
+Iteration: 35000, time: 76.244 days, Δt: 3.140 minutes, wall time: 5.875 minutes
+Iteration: 35100, time: 76.462 days, Δt: 3.140 minutes, wall time: 5.884 minutes
+Iteration: 35200, time: 76.680 days, Δt: 3.140 minutes, wall time: 5.894 minutes
+Iteration: 35300, time: 76.898 days, Δt: 3.140 minutes, wall time: 5.904 minutes
+Iteration: 35400, time: 77.116 days, Δt: 3.140 minutes, wall time: 5.913 minutes
+Iteration: 35500, time: 77.334 days, Δt: 3.140 minutes, wall time: 5.924 minutes
+Iteration: 35600, time: 77.552 days, Δt: 3.140 minutes, wall time: 5.933 minutes
+Iteration: 35700, time: 77.770 days, Δt: 3.140 minutes, wall time: 5.942 minutes
+Iteration: 35800, time: 77.988 days, Δt: 3.140 minutes, wall time: 5.952 minutes
+Iteration: 35900, time: 78.205 days, Δt: 3.140 minutes, wall time: 5.961 minutes
+Iteration: 36000, time: 78.423 days, Δt: 3.140 minutes, wall time: 5.971 minutes
+Iteration: 36100, time: 78.641 days, Δt: 3.140 minutes, wall time: 5.980 minutes
+Iteration: 36200, time: 78.859 days, Δt: 3.140 minutes, wall time: 5.989 minutes
+Iteration: 36300, time: 79.076 days, Δt: 3.140 minutes, wall time: 5.999 minutes
+Iteration: 36400, time: 79.294 days, Δt: 3.140 minutes, wall time: 6.008 minutes
+Iteration: 36500, time: 79.512 days, Δt: 3.140 minutes, wall time: 6.018 minutes
+Iteration: 36600, time: 79.730 days, Δt: 3.140 minutes, wall time: 6.026 minutes
+Iteration: 36700, time: 79.949 days, Δt: 3.140 minutes, wall time: 6.035 minutes
+Iteration: 36800, time: 80.166 days, Δt: 3.140 minutes, wall time: 6.045 minutes
+Iteration: 36900, time: 80.384 days, Δt: 3.140 minutes, wall time: 6.055 minutes
+Iteration: 37000, time: 80.602 days, Δt: 3.140 minutes, wall time: 6.064 minutes
+Iteration: 37100, time: 80.820 days, Δt: 3.140 minutes, wall time: 6.073 minutes
+Iteration: 37200, time: 81.037 days, Δt: 3.140 minutes, wall time: 6.082 minutes
+Iteration: 37300, time: 81.255 days, Δt: 3.140 minutes, wall time: 6.092 minutes
+Iteration: 37400, time: 81.473 days, Δt: 3.140 minutes, wall time: 6.102 minutes
+Iteration: 37500, time: 81.691 days, Δt: 3.140 minutes, wall time: 6.112 minutes
+Iteration: 37600, time: 81.909 days, Δt: 3.140 minutes, wall time: 6.121 minutes
+Iteration: 37700, time: 82.126 days, Δt: 3.140 minutes, wall time: 6.130 minutes
+Iteration: 37800, time: 82.345 days, Δt: 3.140 minutes, wall time: 6.139 minutes
+Iteration: 37900, time: 82.563 days, Δt: 3.140 minutes, wall time: 6.148 minutes
+Iteration: 38000, time: 82.781 days, Δt: 3.140 minutes, wall time: 6.158 minutes
+Iteration: 38100, time: 82.999 days, Δt: 3.140 minutes, wall time: 6.167 minutes
+Iteration: 38200, time: 83.216 days, Δt: 3.140 minutes, wall time: 6.177 minutes
+Iteration: 38300, time: 83.434 days, Δt: 3.140 minutes, wall time: 6.186 minutes
+Iteration: 38400, time: 83.652 days, Δt: 3.140 minutes, wall time: 6.196 minutes
+Iteration: 38500, time: 83.870 days, Δt: 3.140 minutes, wall time: 6.205 minutes
+Iteration: 38600, time: 84.087 days, Δt: 3.140 minutes, wall time: 6.214 minutes
+Iteration: 38700, time: 84.305 days, Δt: 3.140 minutes, wall time: 6.224 minutes
+Iteration: 38800, time: 84.523 days, Δt: 3.140 minutes, wall time: 6.233 minutes
+Iteration: 38900, time: 84.741 days, Δt: 3.140 minutes, wall time: 6.242 minutes
+Iteration: 39000, time: 84.959 days, Δt: 3.140 minutes, wall time: 6.251 minutes
+Iteration: 39100, time: 85.177 days, Δt: 3.140 minutes, wall time: 6.261 minutes
+Iteration: 39200, time: 85.395 days, Δt: 3.140 minutes, wall time: 6.270 minutes
+Iteration: 39300, time: 85.613 days, Δt: 3.140 minutes, wall time: 6.279 minutes
+Iteration: 39400, time: 85.831 days, Δt: 3.140 minutes, wall time: 6.288 minutes
+Iteration: 39500, time: 86.048 days, Δt: 3.140 minutes, wall time: 6.298 minutes
+Iteration: 39600, time: 86.266 days, Δt: 3.140 minutes, wall time: 6.307 minutes
+Iteration: 39700, time: 86.484 days, Δt: 3.140 minutes, wall time: 6.317 minutes
+Iteration: 39800, time: 86.702 days, Δt: 3.140 minutes, wall time: 6.326 minutes
+Iteration: 39900, time: 86.920 days, Δt: 3.140 minutes, wall time: 6.335 minutes
+Iteration: 40000, time: 87.137 days, Δt: 3.140 minutes, wall time: 6.345 minutes
+Iteration: 40100, time: 87.355 days, Δt: 3.140 minutes, wall time: 6.354 minutes
+Iteration: 40200, time: 87.573 days, Δt: 3.140 minutes, wall time: 6.364 minutes
+Iteration: 40300, time: 87.792 days, Δt: 3.140 minutes, wall time: 6.373 minutes
+Iteration: 40400, time: 88.009 days, Δt: 3.140 minutes, wall time: 6.382 minutes
+Iteration: 40500, time: 88.227 days, Δt: 3.140 minutes, wall time: 6.392 minutes
+Iteration: 40600, time: 88.445 days, Δt: 3.140 minutes, wall time: 6.401 minutes
+Iteration: 40700, time: 88.663 days, Δt: 3.140 minutes, wall time: 6.411 minutes
+Iteration: 40800, time: 88.881 days, Δt: 3.140 minutes, wall time: 6.420 minutes
+Iteration: 40900, time: 89.098 days, Δt: 3.140 minutes, wall time: 6.429 minutes
+Iteration: 41000, time: 89.316 days, Δt: 3.140 minutes, wall time: 6.439 minutes
+Iteration: 41100, time: 89.534 days, Δt: 3.140 minutes, wall time: 6.448 minutes
+Iteration: 41200, time: 89.752 days, Δt: 3.140 minutes, wall time: 6.458 minutes
+Iteration: 41300, time: 89.970 days, Δt: 3.140 minutes, wall time: 6.467 minutes
+Iteration: 41400, time: 90.188 days, Δt: 3.140 minutes, wall time: 6.477 minutes
+Iteration: 41500, time: 90.406 days, Δt: 3.140 minutes, wall time: 6.486 minutes
+Iteration: 41600, time: 90.624 days, Δt: 3.140 minutes, wall time: 6.495 minutes
+Iteration: 41700, time: 90.842 days, Δt: 3.140 minutes, wall time: 6.504 minutes
+Iteration: 41800, time: 91.059 days, Δt: 3.140 minutes, wall time: 6.513 minutes
+Iteration: 41900, time: 91.277 days, Δt: 3.140 minutes, wall time: 6.523 minutes
+Iteration: 42000, time: 91.495 days, Δt: 3.140 minutes, wall time: 6.532 minutes
+Iteration: 42100, time: 91.713 days, Δt: 3.140 minutes, wall time: 6.541 minutes
+Iteration: 42200, time: 91.931 days, Δt: 3.140 minutes, wall time: 6.551 minutes
+Iteration: 42300, time: 92.148 days, Δt: 3.140 minutes, wall time: 6.561 minutes
+Iteration: 42400, time: 92.366 days, Δt: 3.140 minutes, wall time: 6.571 minutes
+Iteration: 42500, time: 92.584 days, Δt: 3.140 minutes, wall time: 6.579 minutes
+Iteration: 42600, time: 92.802 days, Δt: 3.140 minutes, wall time: 6.589 minutes
+Iteration: 42700, time: 93.020 days, Δt: 3.140 minutes, wall time: 6.599 minutes
+Iteration: 42800, time: 93.238 days, Δt: 3.140 minutes, wall time: 6.608 minutes
+Iteration: 42900, time: 93.456 days, Δt: 3.140 minutes, wall time: 6.619 minutes
+Iteration: 43000, time: 93.674 days, Δt: 3.140 minutes, wall time: 6.628 minutes
+Iteration: 43100, time: 93.892 days, Δt: 3.140 minutes, wall time: 6.638 minutes
+Iteration: 43200, time: 94.109 days, Δt: 3.140 minutes, wall time: 6.648 minutes
+Iteration: 43300, time: 94.316 days, Δt: 2.747 minutes, wall time: 6.657 minutes
+Iteration: 43400, time: 94.488 days, Δt: 2.268 minutes, wall time: 6.667 minutes
+Iteration: 43500, time: 94.629 days, Δt: 1.862 minutes, wall time: 6.676 minutes
+Iteration: 43600, time: 94.746 days, Δt: 1.550 minutes, wall time: 6.685 minutes
+Iteration: 43700, time: 94.843 days, Δt: 1.289 minutes, wall time: 6.694 minutes
+Iteration: 43800, time: 94.925 days, Δt: 1.092 minutes, wall time: 6.703 minutes
+Iteration: 43900, time: 94.995 days, Δt: 56.991 seconds, wall time: 6.713 minutes
+Iteration: 44000, time: 95.062 days, Δt: 1.025 minutes, wall time: 6.722 minutes
+Iteration: 44100, time: 95.140 days, Δt: 1.195 minutes, wall time: 6.733 minutes
+Iteration: 44200, time: 95.230 days, Δt: 1.406 minutes, wall time: 6.741 minutes
+Iteration: 44300, time: 95.338 days, Δt: 1.675 minutes, wall time: 6.750 minutes
+Iteration: 44400, time: 95.467 days, Δt: 2.006 minutes, wall time: 6.760 minutes
+Iteration: 44500, time: 95.621 days, Δt: 2.412 minutes, wall time: 6.769 minutes
+Iteration: 44600, time: 95.807 days, Δt: 2.895 minutes, wall time: 6.779 minutes
+Iteration: 44700, time: 96.020 days, Δt: 3.140 minutes, wall time: 6.788 minutes
+Iteration: 44800, time: 96.238 days, Δt: 3.140 minutes, wall time: 6.797 minutes
+Iteration: 44900, time: 96.456 days, Δt: 3.140 minutes, wall time: 6.807 minutes
+Iteration: 45000, time: 96.674 days, Δt: 3.140 minutes, wall time: 6.816 minutes
+Iteration: 45100, time: 96.892 days, Δt: 3.140 minutes, wall time: 6.826 minutes
+Iteration: 45200, time: 97.109 days, Δt: 3.140 minutes, wall time: 6.835 minutes
+Iteration: 45300, time: 97.327 days, Δt: 3.140 minutes, wall time: 6.845 minutes
+Iteration: 45400, time: 97.545 days, Δt: 3.140 minutes, wall time: 6.854 minutes
+Iteration: 45500, time: 97.763 days, Δt: 3.140 minutes, wall time: 6.864 minutes
+Iteration: 45600, time: 97.981 days, Δt: 3.140 minutes, wall time: 6.873 minutes
+Iteration: 45700, time: 98.198 days, Δt: 3.140 minutes, wall time: 6.882 minutes
+Iteration: 45800, time: 98.416 days, Δt: 3.140 minutes, wall time: 6.891 minutes
+Iteration: 45900, time: 98.635 days, Δt: 3.140 minutes, wall time: 6.901 minutes
+Iteration: 46000, time: 98.853 days, Δt: 3.140 minutes, wall time: 6.910 minutes
+Iteration: 46100, time: 99.070 days, Δt: 3.140 minutes, wall time: 6.920 minutes
+Iteration: 46200, time: 99.288 days, Δt: 3.140 minutes, wall time: 6.929 minutes
+Iteration: 46300, time: 99.506 days, Δt: 3.140 minutes, wall time: 6.938 minutes
+Iteration: 46400, time: 99.724 days, Δt: 3.140 minutes, wall time: 6.948 minutes
+Iteration: 46500, time: 99.919 days, Δt: 2.548 minutes, wall time: 6.957 minutes
+[ Info: Simulation is stopping after running for 6.961 minutes.
+[ Info: Simulation time 100 days equals or exceeds stop time 100 days.
+</code></pre><p>Now we can visualise the results with some post processing to diagnose the air-sea CO₂ flux</p><pre><code class="language-julia hljs">P = FieldTimeSeries(&quot;$filename.jld2&quot;, &quot;P&quot;)
+NO₃ = FieldTimeSeries(&quot;$filename.jld2&quot;, &quot;NO₃&quot;)
+Z = FieldTimeSeries(&quot;$filename.jld2&quot;, &quot;Z&quot;)
+sPOM = FieldTimeSeries(&quot;$filename.jld2&quot;, &quot;sPOM&quot;)
+bPOM = FieldTimeSeries(&quot;$filename.jld2&quot;, &quot;bPOM&quot;)
+DIC = FieldTimeSeries(&quot;$filename.jld2&quot;, &quot;DIC&quot;)
+Alk = FieldTimeSeries(&quot;$filename.jld2&quot;, &quot;Alk&quot;)
+
+x, y, z = nodes(P)
+times = P.times
+
+air_sea_CO₂_flux = zeros(size(P)[4])
+carbon_export = zeros(size(P)[4])
+for (i, t) in enumerate(times)
+    air_sea_CO₂_flux[i] = CO₂_flux.condition.parameters(0.0, 0.0, t, DIC[1, 1, end, i], Alk[1, 1, end, i], t_function(1, 1, 0, t), s_function(1, 1, 0, t))
+    carbon_export[i] = model.biogeochemistry.organic_redfield * (sPOM[1, 1, end - 20, i] * model.biogeochemistry.sinking_velocities.sPOM.w[1, 1, end - 20] .+ bPOM[1, 1, end - 20, i] * model.biogeochemistry.sinking_velocities.bPOM.w[1, 1, end - 20])
+end
+
+using CairoMakie
+f=Figure(backgroundcolor=RGBf(1, 1, 1), fontsize=30, resolution = (1920, 1600))
+
+axP = Axis(f[1, 1:2], ylabel=&quot;z (m)&quot;, xlabel=&quot;Time (days)&quot;, title=&quot;Phytoplankton concentration (mmol N/m³)&quot;)
+hmP = heatmap!(times./days, float.(z[end-23:end]), float.(P[1, 1, end-23:end, 1:end])&#39;, colormap=:batlow)
+cbP = Colorbar(f[1, 3], hmP)
+
+axNO₃ = Axis(f[1, 4:5], ylabel=&quot;z (m)&quot;, xlabel=&quot;Time (days)&quot;, title=&quot;Nitrate concentration (mmol N/m³)&quot;)
+hmNO₃ = heatmap!(times./days, float.(z[end-23:end]), float.(NO₃[1, 1, end-23:end, 1:end])&#39;, colormap=:batlow)
+cbNO₃ = Colorbar(f[1, 6], hmNO₃)
+
+axZ = Axis(f[2, 1:2], ylabel=&quot;z (m)&quot;, xlabel=&quot;Time (days)&quot;, title=&quot;Zooplankton concentration (mmol N/m³)&quot;)
+hmZ = heatmap!(times./days, float.(z[end-23:end]), float.(Z[1, 1, end-23:end, 1:end])&#39;, colormap=:batlow)
+cbZ = Colorbar(f[2, 3], hmZ)
+
+axD = Axis(f[2, 4:5], ylabel=&quot;z (m)&quot;, xlabel=&quot;Time (days)&quot;, title=&quot;Detritus concentration (mmol N/m³)&quot;)
+hmD = heatmap!(times./days, float.(z[end-23:end]), float.(sPOM[1, 1, end-23:end, 1:end])&#39; .+ float.(bPOM[1, 1, end-23:end, 1:end])&#39;, colormap=:batlow)
+cbD = Colorbar(f[2, 6], hmD)
+
+axfDIC = Axis(f[3, 1:6], xlabel=&quot;Time (days)&quot;, title=&quot;Air-sea CO₂ flux and Sinking&quot;, ylabel=&quot;Flux (kgCO₂/m²/year)&quot;)
+hmfDIC = lines!(times ./ days, cumsum(air_sea_CO₂_flux) .* (12 + 16 * 2) .* year / (1000 * 1000), label=&quot;Air-sea flux&quot;)
+hmfExp = lines!(times ./ days, cumsum(carbon_export) .* (12 + 16 * 2) .* year / (1000 * 1000), label=&quot;Sinking export&quot;)
+
+f[3, 5] = Legend(f, axfDIC, &quot;&quot;, framevisible = false)
+
+save(&quot;data_forced.png&quot;, f)</code></pre><pre><code class="nohighlight hljs">CairoMakie.Screen{IMAGE}
+</code></pre><p><img src="../data_forced.png" alt="Results"/></p><hr/><p><em>This page was generated using <a href="https://github.com/fredrikekre/Literate.jl">Literate.jl</a>.</em></p></article><nav class="docs-footer"><a class="docs-footer-prevpage" href="../column/">« Simple column model</a><a class="docs-footer-nextpage" href="../kelp/">Model with particles (kelp) interacting with the biogeochemistry »</a><div class="flexbox-break"></div><p class="footer-message">Powered by <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> and the <a href="https://julialang.org/">Julia Programming Language</a>.</p></nav></div><div class="modal" id="documenter-settings"><div class="modal-background"></div><div class="modal-card"><header class="modal-card-head"><p class="modal-card-title">Settings</p><button class="delete"></button></header><section class="modal-card-body"><p><label class="label">Theme</label><div class="select"><select id="documenter-themepicker"><option value="documenter-light">documenter-light</option><option value="documenter-dark">documenter-dark</option></select></div></p><hr/><p>This document was generated with <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> version 0.27.24 on <span class="colophon-date" title="Sunday 9 April 2023 20:34">Sunday 9 April 2023</span>. Using Julia version 1.8.5.</p></section><footer class="modal-card-foot"></footer></div></div></div></body></html>

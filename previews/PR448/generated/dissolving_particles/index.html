@@ -1,0 +1,306 @@
+<!DOCTYPE html>
+<html lang="en"><head><meta charset="UTF-8"/><meta name="viewport" content="width=device-width, initial-scale=1.0"/><meta name="referrer" content="no-referrer"/><title>Sinking and dissolving particles · OceanBioME.jl</title><meta name="title" content="Sinking and dissolving particles · OceanBioME.jl"/><meta property="og:title" content="Sinking and dissolving particles · OceanBioME.jl"/><meta property="twitter:title" content="Sinking and dissolving particles · OceanBioME.jl"/><meta name="description" content="Documentation for OceanBioME.jl."/><meta property="og:description" content="Documentation for OceanBioME.jl."/><meta property="twitter:description" content="Documentation for OceanBioME.jl."/><meta property="og:url" content="https://OceanBioME.github.io/OceanBioME/stable/generated/dissolving_particles/"/><meta property="twitter:url" content="https://OceanBioME.github.io/OceanBioME/stable/generated/dissolving_particles/"/><link rel="canonical" href="https://OceanBioME.github.io/OceanBioME/stable/generated/dissolving_particles/"/><script data-outdated-warner src="../../assets/warner.js"></script><link href="https://cdnjs.cloudflare.com/ajax/libs/lato-font/3.0.0/css/lato-font.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/juliamono/0.63.2/juliamono.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/fontawesome.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/solid.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/brands.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.16.8/katex.min.css" rel="stylesheet" type="text/css"/><script>documenterBaseURL="../.."</script><script src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.6/require.min.js" data-main="../../assets/documenter.js"></script><script src="../../search_index.js"></script><script src="../../siteinfo.js"></script><script src="../../../versions.js"></script><link class="docs-theme-link" rel="stylesheet" type="text/css" href="../../assets/themes/catppuccin-mocha.css" data-theme-name="catppuccin-mocha"/><link class="docs-theme-link" rel="stylesheet" type="text/css" href="../../assets/themes/catppuccin-macchiato.css" data-theme-name="catppuccin-macchiato"/><link class="docs-theme-link" rel="stylesheet" type="text/css" href="../../assets/themes/catppuccin-frappe.css" data-theme-name="catppuccin-frappe"/><link class="docs-theme-link" rel="stylesheet" type="text/css" href="../../assets/themes/catppuccin-latte.css" data-theme-name="catppuccin-latte"/><link class="docs-theme-link" rel="stylesheet" type="text/css" href="../../assets/themes/documenter-dark.css" data-theme-name="documenter-dark" data-theme-primary-dark/><link class="docs-theme-link" rel="stylesheet" type="text/css" href="../../assets/themes/documenter-light.css" data-theme-name="documenter-light" data-theme-primary/><script src="../../assets/themeswap.js"></script><link href="../../assets/documentercitations/citations-hover.css" rel="stylesheet" type="text/css"/><link href="../../assets/documentercitations/citations.css" rel="stylesheet" type="text/css"/><link href="../../assets/citations.css" rel="stylesheet" type="text/css"/><script src="../../assets/documentercitations/citations-data.js"></script><script src="../../assets/documentercitations/citations-hover.js"></script><script src="../../assets/documentercitations/citations-backlinks.js"></script></head><body><div id="documenter"><nav class="docs-sidebar"><a class="docs-logo" href="../../"><img class="docs-light-only" src="../../assets/logo.png" alt="OceanBioME.jl logo"/><img class="docs-dark-only" src="../../assets/logo-dark.png" alt="OceanBioME.jl logo"/></a><div class="docs-package-name"><span class="docs-autofit"><a href="../../">OceanBioME.jl</a></span></div><button class="docs-search-query input is-rounded is-small is-clickable my-2 mx-auto py-1 px-2" id="documenter-search-query">Search docs (Ctrl + /)</button><ul class="docs-menu"><li><a class="tocitem" href="../../">Home</a></li><li><a class="tocitem" href="../../quick_start/">Quick start</a></li><li><input class="collapse-toggle" id="menuitem-3" type="checkbox" checked/><label class="tocitem" for="menuitem-3"><span class="docs-label">Examples</span><i class="docs-chevron"></i></label><ul class="collapsed"><li><a class="tocitem" href="../box/">Box model</a></li><li><a class="tocitem" href="../column/">Simple column model</a></li><li><a class="tocitem" href="../eady/">Baroclinic instability</a></li><li><a class="tocitem" href="../kelp/">Model with particles (kelp) interacting with the biogeochemistry</a></li><li><a class="tocitem" href="../data_assimilation/">Data assimilation</a></li><li><a class="tocitem" href="../oae_experiment/">Ocean alkalinity enhancement</a></li><li class="is-active"><a class="tocitem" href>Sinking and dissolving particles</a><ul class="internal"><li><a class="tocitem" href="#Install-dependencies"><span>Install dependencies</span></a></li><li><a class="tocitem" href="#Model-setup"><span>Model setup</span></a></li><li><a class="tocitem" href="#Hydrated-lime"><span>Hydrated lime</span></a></li><li><a class="tocitem" href="#Spin-up"><span>Spin up</span></a></li><li><a class="tocitem" href="#Release"><span>Release</span></a></li><li><a class="tocitem" href="#Diagnosing-the-pH"><span>Diagnosing the pH</span></a></li><li><a class="tocitem" href="#Results"><span>Results</span></a></li><li><a class="tocitem" href="#Calcite-with-saturation-dependent-dissolution"><span>Calcite with saturation dependent dissolution</span></a></li></ul></li></ul></li><li><input class="collapse-toggle" id="menuitem-4" type="checkbox"/><label class="tocitem" for="menuitem-4"><span class="docs-label">Model components and setup</span><i class="docs-chevron"></i></label><ul class="collapsed"><li><input class="collapse-toggle" id="menuitem-4-1" type="checkbox"/><label class="tocitem" for="menuitem-4-1"><span class="docs-label">Biogeochemical models</span><i class="docs-chevron"></i></label><ul class="collapsed"><li><a class="tocitem" href="../../model_components/biogeochemical/">Overview</a></li><li><a class="tocitem" href="../../model_components/biogeochemical/abstract_NPD_models/">NPD framework</a></li><li><a class="tocitem" href="../../model_components/biogeochemical/LOBSTER/">LOBSTER</a></li><li><a class="tocitem" href="../../model_components/biogeochemical/NPZ/">NPZD</a></li><li><a class="tocitem" href="../../model_components/biogeochemical/ImplicitBiology/">ImplicitBiology</a></li><li><input class="collapse-toggle" id="menuitem-4-1-6" type="checkbox"/><label class="tocitem" for="menuitem-4-1-6"><span class="docs-label">PISCES</span><i class="docs-chevron"></i></label><ul class="collapsed"><li><a class="tocitem" href="../../model_components/biogeochemical/PISCES/PISCES/">PISCES</a></li><li><a class="tocitem" href="../../model_components/biogeochemical/PISCES/notable_differences/">Queries</a></li></ul></li></ul></li><li><a class="tocitem" href="../../model_components/air-sea-gas/">Air-sea gas exchange</a></li><li><a class="tocitem" href="../../model_components/carbon-chemistry/">Carbon chemistry</a></li><li><input class="collapse-toggle" id="menuitem-4-4" type="checkbox"/><label class="tocitem" for="menuitem-4-4"><span class="docs-label">Sediment models</span><i class="docs-chevron"></i></label><ul class="collapsed"><li><a class="tocitem" href="../../model_components/sediments/">Overview</a></li><li><a class="tocitem" href="../../model_components/sediments/simple_multi_g/">Simple Multi-G</a></li><li><a class="tocitem" href="../../model_components/sediments/instant_remineralisation/">Instant remineralisation</a></li></ul></li><li><a class="tocitem" href="../../model_components/light/">Light attenuation models</a></li><li><input class="collapse-toggle" id="menuitem-4-6" type="checkbox"/><label class="tocitem" for="menuitem-4-6"><span class="docs-label">Individuals</span><i class="docs-chevron"></i></label><ul class="collapsed"><li><a class="tocitem" href="../../model_components/individuals/">Overview</a></li><li><a class="tocitem" href="../../model_components/individuals/slatissima/">Sugar Kelp (Broch and Slagstad 2012 ++)</a></li><li><a class="tocitem" href="../../model_components/individuals/dissolving_particles/">Dissolving particles</a></li></ul></li><li><a class="tocitem" href="../../model_components/utils/">Utilities</a></li></ul></li><li><input class="collapse-toggle" id="menuitem-5" type="checkbox"/><label class="tocitem" for="menuitem-5"><span class="docs-label">Implementing new models</span><i class="docs-chevron"></i></label><ul class="collapsed"><li><a class="tocitem" href="../../model_implementation/">NPD framework models</a></li><li><a class="tocitem" href="../../model_implementation_custom/">Custom models</a></li></ul></li><li><input class="collapse-toggle" id="menuitem-6" type="checkbox"/><label class="tocitem" for="menuitem-6"><span class="docs-label">Numerical implementation</span><i class="docs-chevron"></i></label><ul class="collapsed"><li><a class="tocitem" href="../../numerical_implementation/positivity-preservation/">Positivity preservation</a></li></ul></li><li><a class="tocitem" href="../../contributing/">Contibutors guide</a></li><li><a class="tocitem" href="../../references/">References</a></li><li><input class="collapse-toggle" id="menuitem-9" type="checkbox"/><label class="tocitem" for="menuitem-9"><span class="docs-label">Appendix</span><i class="docs-chevron"></i></label><ul class="collapsed"><li><a class="tocitem" href="../../appendix/library/">Library</a></li><li><a class="tocitem" href="../../appendix/function_index/">Function index</a></li><li><input class="collapse-toggle" id="menuitem-9-3" type="checkbox"/><label class="tocitem" for="menuitem-9-3"><span class="docs-label">Parameters</span><i class="docs-chevron"></i></label><ul class="collapsed"><li><a class="tocitem" href="../NutrientsPlanktonDetritus_parameters/">NutrientsPlanktonDetritus</a></li><li><a class="tocitem" href="../SugarKelp_parameters/">SugarKelp</a></li><li><a class="tocitem" href="../TwoBandPhotosyntheticallyActiveRadiation_parameters/">TwoBandPhotosyntheticallyActiveRadiation</a></li><li><a class="tocitem" href="../OceanBioME.Models.SedimentModels.SimpleMultiG_parameters/">OceanBioME.Models.SedimentModels.SimpleMultiG</a></li><li><a class="tocitem" href="../OceanBioME.Models.SedimentModels.InstantRemineralisation_parameters/">OceanBioME.Models.SedimentModels.InstantRemineralisation</a></li><li><a class="tocitem" href="../CarbonChemistry_parameters/">CarbonChemistry</a></li><li><a class="tocitem" href="../O₂ air-sea exchange_parameters/">O₂ air-sea exchange</a></li></ul></li></ul></li></ul><div class="docs-version-selector field has-addons"><div class="control"><span class="docs-label button is-static is-size-7">Version</span></div><div class="docs-selector control is-expanded"><div class="select is-fullwidth is-size-7"><select id="documenter-version-selector"></select></div></div></div></nav><div class="docs-main"><header class="docs-navbar"><a class="docs-sidebar-button docs-navbar-link fa-solid fa-bars is-hidden-desktop" id="documenter-sidebar-button" href="#"></a><nav class="breadcrumb"><ul class="is-hidden-mobile"><li><a class="is-disabled">Examples</a></li><li class="is-active"><a href>Sinking and dissolving particles</a></li></ul><ul class="is-hidden-tablet"><li class="is-active"><a href>Sinking and dissolving particles</a></li></ul></nav><div class="docs-right"><a class="docs-navbar-link" href="https://github.com/OceanBioME/OceanBioME.jl" title="View the repository on GitHub"><span class="docs-icon fa-brands"></span><span class="docs-label is-hidden-touch">GitHub</span></a><a class="docs-navbar-link" href="https://github.com/OceanBioME/OceanBioME.jl/blob/main/examples/dissolving_particles.jl" title="Edit source on GitHub"><span class="docs-icon fa-solid"></span></a><a class="docs-settings-button docs-navbar-link fa-solid fa-gear" id="documenter-settings-button" href="#" title="Settings"></a><a class="docs-article-toggle-button fa-solid fa-chevron-up" id="documenter-article-toggle-button" href="javascript:;" title="Collapse all docstrings"></a></div></header><article class="content" id="documenter-page"><h1 id="dissolving-particles-example"><a class="docs-heading-anchor" href="#dissolving-particles-example">Sinking and dissolving particles in two-dimensional turbulence</a><a id="dissolving-particles-example-1"></a><a class="docs-heading-anchor-permalink" href="#dissolving-particles-example" title="Permalink"></a></h1><p>In this example we release mineral particles at the surface of a two-dimensional turbulent flow, as might be done for ocean alkalinity enhancement. The particles sink and dissolve, releasing alkalinity into the water.</p><p>We first release hydrated lime (calcium hydroxide) with the default parameters, where large particles sink out of the eddies before they dissolve while small particles dissolve near the surface. We then release calcite, with a dissolution rate which depends on the calcite saturation of the water, across a front between strongly undersaturated water and water which is close to saturation.</p><h2 id="Install-dependencies"><a class="docs-heading-anchor" href="#Install-dependencies">Install dependencies</a><a id="Install-dependencies-1"></a><a class="docs-heading-anchor-permalink" href="#Install-dependencies" title="Permalink"></a></h2><p>First we check we have the dependencies installed</p><pre><code class="language-julia hljs">using Pkg
+pkg&quot;add OceanBioME, Oceananigans, CairoMakie, JLD2&quot;</code></pre><h2 id="Model-setup"><a class="docs-heading-anchor" href="#Model-setup">Model setup</a><a id="Model-setup-1"></a><a class="docs-heading-anchor-permalink" href="#Model-setup" title="Permalink"></a></h2><pre><code class="language-julia hljs">using OceanBioME, Oceananigans, Oceananigans.Units
+using CairoMakie, JLD2, Printf, Random
+
+using OceanBioME.Models.CarbonChemistryModel: calcium_carbonate_saturation
+
+Random.seed!(1234)</code></pre><p>We use a two-dimensional domain which is 64 m wide and deep, and periodic in x</p><pre><code class="language-julia hljs">grid = RectilinearGrid(size = (128, 128), x = (0, 64), z = (-64, 0),
+                       topology = (Periodic, Flat, Bounded))</code></pre><pre><code class="nohighlight hljs">128×1×128 RectilinearGrid{Float64, Periodic, Flat, Bounded} on CPU with 3×0×3 halo
+├── Periodic x ∈ [0.0, 64.0)  regularly spaced with Δx=0.5
+├── Flat y                    
+└── Bounded  z ∈ [-64.0, 0.0] regularly spaced with Δz=0.5</code></pre><h2 id="Hydrated-lime"><a class="docs-heading-anchor" href="#Hydrated-lime">Hydrated lime</a><a id="Hydrated-lime-1"></a><a class="docs-heading-anchor-permalink" href="#Hydrated-lime" title="Permalink"></a></h2><p><a href="../../appendix/library/#OceanBioME.Models.DissolvingParticlesModel.DissolvingParticles-Tuple{Any}"><code>DissolvingParticles</code></a> are spheres whose radius shrinks at a <code>dissolution_rate</code>, and which sink at a <code>sinking_speed</code>. By default the radius shrinks at a constant rate and the particles sink according to Stokes&#39; law, so they slow down as they dissolve. Both can instead be functions of the particle properties and the model fields at the particle, see <a href="../../appendix/library/#OceanBioME.Models.DissolvingParticlesModel.DissolvingMineral"><code>DissolvingMineral</code></a>. The default mineral is calcium hydroxide, which releases two moles of alkalinity per mole dissolved.</p><pre><code class="language-julia hljs">n = 1000
+
+particles = DissolvingParticles(n; grid)</code></pre><pre><code class="nohighlight hljs">1000 BiogeochemicalParticles with DissolvingMineral{Float64} biogeochemistry:
+├── fields: (:r, :sinking_speed)
+└── coupled tracers: (:Alk,)
+</code></pre><p>The particles start with zero radius, so they do nothing until we release them.</p><p>We couple the particles to a carbonate system without any biology, which has the alkalinity (<code>Alk</code>) tracer that the particles release, and dissolved inorganic carbon (<code>DIC</code>)</p><pre><code class="language-julia hljs">biogeochemistry = NutrientsPlanktonDetritus(grid; inorganic_carbon = CarbonateSystem(), particles)
+
+model = NonhydrostaticModel(grid; biogeochemistry, advection = WENO(order = 5))</code></pre><pre><code class="nohighlight hljs">NonhydrostaticModel{CPU, RectilinearGrid}(time = 0 seconds, iteration = 0)
+├── grid: 128×1×128 RectilinearGrid{Float64, Periodic, Flat, Bounded} on CPU with 3×0×3 halo
+├── timestepper: RungeKutta3TimeStepper
+├── advection scheme:
+│   ├── momentum: WENO{3, Float64, Oceananigans.Utils.BackendOptimizedDivision}(order=5)
+│   ├── DIC: WENO{3, Float64, Oceananigans.Utils.BackendOptimizedDivision}(order=5)
+│   └── Alk: WENO{3, Float64, Oceananigans.Utils.BackendOptimizedDivision}(order=5)
+├── tracers: (DIC, Alk)
+├── closure: Nothing
+├── buoyancy: Nothing
+└── coriolis: Nothing</code></pre><h2 id="Spin-up"><a class="docs-heading-anchor" href="#Spin-up">Spin up</a><a id="Spin-up-1"></a><a class="docs-heading-anchor-permalink" href="#Spin-up" title="Permalink"></a></h2><p>We start from random velocities and let the turbulence develop for 30 minutes</p><pre><code class="language-julia hljs">Alk₀ = 2300 # mmol/m³
+
+uᵢ(x, z) = 0.02 * randn() # m/s
+
+set!(model, u = uᵢ, w = uᵢ, DIC = 2000, Alk = Alk₀)
+
+simulation = Simulation(model, Δt = 1, stop_time = 30minutes)
+
+conjure_time_step_wizard!(simulation, cfl = 0.5, max_Δt = 10)
+
+progress(sim) = @printf(&quot;Iteration: %04d, time: %s, Δt: %s, wall time: %s\n&quot;,
+                        iteration(sim), prettytime(sim), prettytime(sim.Δt), prettytime(sim.run_wall_time))
+
+add_callback!(simulation, progress, TimeInterval(30minutes))
+
+run!(simulation)</code></pre><pre><code class="nohighlight hljs">[ Info: Initializing simulation...
+Iteration: 0000, time: 0 seconds, Δt: 1.100 seconds, wall time: 0 seconds
+[ Info:     ... simulation initialization complete (954.910 ms)
+[ Info: Executing initial time step...
+[ Info:     ... initial time step complete (1.220 seconds).
+[ Info: Simulation is stopping after running for 3.614 seconds.
+[ Info: Simulation time 30 minutes equals or exceeds stop time 30 minutes.
+Iteration: 0323, time: 30 minutes, Δt: 10 seconds, wall time: 3.614 seconds
+</code></pre><h2 id="Release"><a class="docs-heading-anchor" href="#Release">Release</a><a id="Release-1"></a><a class="docs-heading-anchor-permalink" href="#Release" title="Permalink"></a></h2><p>Now we release the particles in a 16 m wide patch at the surface, with radii between 20 and 80 μm.</p><p>Each computational particle stands for many real particles, the number of which is set by the <code>scalefactors</code>. Here we release 1 kg of lime per metre in the (flat) y direction.</p><pre><code class="language-julia hljs">r₀ = 20e-6 .+ 60e-6 * rand(n)
+x₀ = 24 .+ 16 * rand(n)
+z₀ = - rand(n)
+
+mineral = particles.biogeochemistry
+
+scalefactor = 1 / (mineral.density * 4π / 3 * sum(r₀.^3)) # 1 kg / total particle mass
+
+set!(particles, r = r₀, x = x₀, z = z₀, scalefactors = scalefactor)
+
+release_time = time(simulation)</code></pre><pre><code class="nohighlight hljs">1800.0</code></pre><h2 id="Diagnosing-the-pH"><a class="docs-heading-anchor" href="#Diagnosing-the-pH">Diagnosing the pH</a><a id="Diagnosing-the-pH-1"></a><a class="docs-heading-anchor-permalink" href="#Diagnosing-the-pH" title="Permalink"></a></h2><p>The pH is not a model variable, so we diagnose it from the carbonate chemistry with a <code>KernelFunctionOperation</code>, which is computed in every cell when it is saved. The model has no temperature or salinity, so we choose constant values of 10 °C and 35.</p><pre><code class="language-julia hljs">carbon_chemistry = CarbonChemistry()
+
+@inline total_scale_pH(i, j, k, grid, carbon_chemistry, DIC, Alk, T, S) =
+    @inbounds carbon_chemistry(; DIC = DIC[i, j, k], Alk = Alk[i, j, k], T, S, output = Val(:pHᵗ))
+
+(; DIC, Alk) = model.tracers
+
+pH = KernelFunctionOperation{Center, Center, Center}(total_scale_pH, grid, carbon_chemistry, DIC, Alk, 10.0, 35.0)</code></pre><pre><code class="nohighlight hljs">KernelFunctionOperation at (Center, Center, Center)
+├── grid: 128×1×128 RectilinearGrid{Float64, Periodic, Flat, Bounded} on CPU with 3×0×3 halo
+├── kernel_function: total_scale_pH (generic function with 1 method)
+└── arguments: (&quot;CarbonChemistry&quot;, &quot;Field&quot;, &quot;Field&quot;, &quot;Float64&quot;, &quot;Float64&quot;)</code></pre><p>We save the alkalinity, its horizontal average and integral, the pH, and the particle positions and radii</p><pre><code class="language-julia hljs">filename = &quot;dissolving_particles&quot;
+
+outputs = (; Alk, pH, mean_Alk = Average(Alk, dims = 1), total_Alk = Integral(Alk))
+
+simulation.output_writers[:alkalinity] = JLD2Writer(model, outputs;
+                                                    filename = &quot;$filename.jld2&quot;,
+                                                    schedule = TimeInterval(1minute),
+                                                    overwrite_files = true)
+
+simulation.output_writers[:particles] = JLD2Writer(model, (; particles);
+                                                   filename = &quot;$(filename)_particles.jld2&quot;,
+                                                   schedule = TimeInterval(1minute),
+                                                   overwrite_files = true)</code></pre><pre><code class="nohighlight hljs">JLD2Writer scheduled on TimeInterval(1 minute):
+├── filepath: dissolving_particles_particles.jld2
+├── 1 outputs: particles
+├── array_type: Array{Float32}
+├── including: [:coriolis, :buoyancy, :closure]
+├── file_splitting: NoFileSplitting
+└── file size: 0 bytes (file not yet created)</code></pre><p>and run for long enough that the largest particles dissolve</p><pre><code class="language-julia hljs">simulation.stop_time = 3hours
+
+run!(simulation)</code></pre><pre><code class="nohighlight hljs">[ Info: Initializing simulation...
+[ Info:     ... simulation initialization complete (6.785 seconds)
+[ Info: Executing initial time step...
+[ Info:     ... initial time step complete (4.035 seconds).
+Iteration: 0503, time: 1 hour, Δt: 10 seconds, wall time: 12.511 seconds
+Iteration: 0683, time: 1.500 hours, Δt: 10 seconds, wall time: 14.182 seconds
+Iteration: 0863, time: 2 hours, Δt: 10 seconds, wall time: 16.066 seconds
+Iteration: 1043, time: 2.500 hours, Δt: 10 seconds, wall time: 18.264 seconds
+[ Info: Simulation is stopping after running for 20.536 seconds.
+[ Info: Simulation time 3 hours equals or exceeds stop time 3 hours.
+Iteration: 1223, time: 3 hours, Δt: 10 seconds, wall time: 20.536 seconds
+</code></pre><h2 id="Results"><a class="docs-heading-anchor" href="#Results">Results</a><a id="Results-1"></a><a class="docs-heading-anchor-permalink" href="#Results" title="Permalink"></a></h2><p>First we load the alkalinity, pH, and particle output</p><pre><code class="language-julia hljs">Alk = FieldTimeSeries(&quot;$filename.jld2&quot;, &quot;Alk&quot;)
+pH = FieldTimeSeries(&quot;$filename.jld2&quot;, &quot;pH&quot;)
+mean_Alk = FieldTimeSeries(&quot;$filename.jld2&quot;, &quot;mean_Alk&quot;)
+total_Alk = FieldTimeSeries(&quot;$filename.jld2&quot;, &quot;total_Alk&quot;)
+
+times = Alk.times
+
+function particle_output(filename)
+    file = jldopen(filename)
+    states = [file[&quot;timeseries/particles/$iteration&quot;] for iteration in keys(file[&quot;timeseries/t&quot;])]
+    close(file)
+
+    return (stack(getproperty.(states, name)) for name in (:x, :z, :r))
+end
+
+x, z, r = particle_output(&quot;$(filename)_particles.jld2&quot;)</code></pre><p>and animate the particles sinking and dissolving through the turbulence, with each particle drawn at its current size (magnified), alongside the pH</p><pre><code class="language-julia hljs">frame = Observable(1)
+
+Alkₙ = @lift Alk[$frame] - Alk₀
+pHₙ = @lift pH[$frame]
+positions = @lift Point2f.(x[:, $frame], z[:, $frame])
+sizes = @lift 2e5 * r[:, $frame]
+title = @lift prettytime(times[$frame] - release_time) * &quot; after release&quot;
+
+fig = Figure(size = (1300, 650), fontsize = 20)
+
+Label(fig[0, 1:4], title)
+
+ax = Axis(fig[1, 1], title = &quot;Alkalinity increase and particles&quot;, xlabel = &quot;x (m)&quot;, ylabel = &quot;z (m)&quot;, aspect = DataAspect())
+
+hm = heatmap!(ax, Alkₙ, colormap = Reverse(:deep), colorrange = (0, 80))
+scatter!(ax, positions, markersize = sizes, color = :white)
+
+Colorbar(fig[1, 2], hm, label = &quot;mmol/m³&quot;)
+
+ax = Axis(fig[1, 3], title = &quot;pH and particles&quot;, xlabel = &quot;x (m)&quot;, aspect = DataAspect())
+
+hm = heatmap!(ax, pHₙ, colormap = :viridis, colorrange = (8.27, 8.4))
+scatter!(ax, positions, markersize = sizes, color = :white)
+
+Colorbar(fig[1, 4], hm)
+
+record(fig, &quot;$filename.mp4&quot;, eachindex(times), framerate = 12) do i
+    frame[] = i
+end</code></pre><p><video src="../dissolving_particles.mp4" controls="true" title><a href="../dissolving_particles.mp4"></a></video></p><p>To see how the turbulence changes where the particles dissolve, we compare the depth at which each particle finished dissolving with the depth it would reach in still water. A particle sinking at the Stokes&#39; law speed, <span>$w ∝ r²$</span>, while its radius shrinks at a constant rate <span>$k$</span>, sinks <span>$|w(r₀)| r₀ / 3k$</span> before it has dissolved.</p><pre><code class="language-julia hljs">dissolution_depth = [-z[p, findfirst(iszero, r[p, :])] for p in 1:n]
+
+k = mineral.dissolution_rate
+
+still_water_depth(r) = - mineral.sinking_speed(mineral, (; r), nothing) * r / 3k</code></pre><p>We also check that the alkalinity lost from the particles is gained by the water</p><pre><code class="language-julia hljs">θ = mineral.released_tracers.Alk # mol Alk / mol mineral
+
+mineral_concentration = 1000 * mineral.density / mineral.molar_mass # mmol / m³
+
+particle_alkalinity = scalefactor * θ * mineral_concentration * 4π / 3 * vec(sum(r.^3, dims = 1))
+dissolved_alkalinity = interior(total_Alk, 1, 1, 1, :) .- total_Alk[1, 1, 1, 1]</code></pre><p>and plot these along with the particle radii and the horizontally averaged alkalinity increase</p><pre><code class="language-julia hljs">hours_after_release = (times .- release_time) / hour
+
+fig = Figure(size = (1200, 900), fontsize = 20)
+
+ax = Axis(fig[1, 1], xlabel = &quot;Initial radius (μm)&quot;, ylabel = &quot;Depth (m)&quot;, title = &quot;Depth when fully dissolved&quot;,
+          yreversed = true, limits = (nothing, (0, 64)))
+
+scatter!(ax, 1e6 * r₀, dissolution_depth, color = (:black, 0.3), label = &quot;Turbulence&quot;)
+lines!(ax, 20:80, still_water_depth.(1e-6 * (20:80)), color = :red, linewidth = 3, label = &quot;Still water&quot;)
+axislegend(ax, position = :lb)
+
+ax = Axis(fig[1, 3], xlabel = &quot;Time (hours)&quot;, ylabel = &quot;Radius (μm)&quot;, title = &quot;Particle radius&quot;)
+
+for p in 1:10:n
+    lines!(ax, hours_after_release, 1e6 * r[p, :], color = r₀[p], colormap = :viridis, colorrange = (20e-6, 80e-6))
+end
+
+ax = Axis(fig[2, 1], xlabel = &quot;Time (hours)&quot;, ylabel = &quot;z (m)&quot;, title = &quot;Horizontally averaged alkalinity increase&quot;)
+
+hm = heatmap!(ax, hours_after_release, znodes(mean_Alk), interior(mean_Alk, 1, 1, :, :)&#39; .- Alk₀, colormap = Reverse(:deep))
+Colorbar(fig[2, 2], hm, label = &quot;mmol/m³&quot;)
+
+ax = Axis(fig[2, 3], xlabel = &quot;Time (hours)&quot;, ylabel = &quot;Fraction of alkalinity&quot;, title = &quot;Alkalinity budget&quot;)
+
+lines!(ax, hours_after_release, particle_alkalinity / particle_alkalinity[1], linewidth = 3, label = &quot;In particles&quot;)
+lines!(ax, hours_after_release, dissolved_alkalinity / particle_alkalinity[1], linewidth = 3, label = &quot;Dissolved&quot;)
+lines!(ax, hours_after_release, (particle_alkalinity .+ dissolved_alkalinity) / particle_alkalinity[1],
+       linewidth = 3, linestyle = :dash, color = :black, label = &quot;Total&quot;)
+axislegend(ax, position = :rc)
+
+fig</code></pre><p><img src="../dissolving_particles-32.svg" alt/></p><h2 id="Calcite-with-saturation-dependent-dissolution"><a class="docs-heading-anchor" href="#Calcite-with-saturation-dependent-dissolution">Calcite with saturation dependent dissolution</a><a id="Calcite-with-saturation-dependent-dissolution-1"></a><a class="docs-heading-anchor-permalink" href="#Calcite-with-saturation-dependent-dissolution" title="Permalink"></a></h2><p>Calcite only dissolves in water which is undersaturated, and as it dissolves it raises the saturation state of the water around it. The calcite saturation state, <code>Ω</code>, is computed from the dissolved inorganic carbon and alkalinity by <code>CarbonChemistry</code>, at the same constant temperature and salinity as the pH.</p><pre><code class="language-julia hljs">@inline calcite_saturation(carbon_chemistry, DIC, Alk) =
+    calcium_carbonate_saturation(carbon_chemistry; DIC, Alk, T = 10.0, S = 35.0)</code></pre><pre><code class="nohighlight hljs">calcite_saturation (generic function with 1 method)</code></pre><p>The <code>dissolution_rate</code> of a <a href="../../appendix/library/#OceanBioME.Models.DissolvingParticlesModel.DissolvingMineral"><code>DissolvingMineral</code></a> can be any function of the mineral, the particle&#39;s fields, and the <code>required_fields</code> of the model at the particle. Here the radius shrinks at a rate proportional to the undersaturation, <code>1 - Ω</code>.</p><pre><code class="language-julia hljs">struct SaturationLimitedDissolution{C, FT}
+    carbon_chemistry :: C
+        maximum_rate :: FT # m/s
+end
+
+@inline function (dissolution::SaturationLimitedDissolution)(mineral, particle_fields, tracer_fields)
+    Ω = calcite_saturation(dissolution.carbon_chemistry, tracer_fields.DIC, tracer_fields.Alk)
+
+    return dissolution.maximum_rate * max(0, 1 - Ω)
+end
+
+calcite = DissolvingMineral(density = 2710,
+                            molar_mass = 100.09e-3,
+                            released_tracers = (; DIC = 1, Alk = 2),
+                            dissolution_rate = SaturationLimitedDissolution(carbon_chemistry, 4e-8),
+                            required_fields = (:DIC, :Alk))</code></pre><pre><code class="nohighlight hljs">DissolvingMineral{Float64} biogeochemistry tracking particle `r`adius
+├── density: 2710.0 kg/m³
+├── molar mass: 0.10009 kg/mol
+├── released tracers: (DIC = 1.0, Alk = 2.0) mol/mol
+├── dissolution rate: Main.var&quot;##142&quot;.SaturationLimitedDissolution{OceanBioME.Models.CarbonChemistryModel.CarbonChemistry{OceanBioME.Models.CarbonChemistryModel.K0{Float64}, @NamedTuple{K1::OceanBioME.Models.CarbonChemistryModel.K1{Float64, OceanBioME.Models.CarbonChemistryModel.PressureCorrection{Float64}}, K2::OceanBioME.Models.CarbonChemistryModel.K2{Float64, OceanBioME.Models.CarbonChemistryModel.PressureCorrection{Float64}}}, OceanBioME.Models.CarbonChemistryModel.KB{Float64, OceanBioME.Models.CarbonChemistryModel.PressureCorrection{Float64}}, OceanBioME.Models.CarbonChemistryModel.KS{OceanBioME.Models.CarbonChemistryModel.IonicStrength{Float64}, Float64, OceanBioME.Models.CarbonChemistryModel.PressureCorrection{Float64}}, OceanBioME.Models.CarbonChemistryModel.KF{OceanBioME.Models.CarbonChemistryModel.IonicStrength{Float64}, OceanBioME.Models.CarbonChemistryModel.KS{OceanBioME.Models.CarbonChemistryModel.IonicStrength{Float64}, Float64, OceanBioME.Models.CarbonChemistryModel.PressureCorrection{Float64}}, Float64, OceanBioME.Models.CarbonChemistryModel.PressureCorrection{Float64}}, @NamedTuple{KP1::OceanBioME.Models.CarbonChemistryModel.KP{Float64, OceanBioME.Models.CarbonChemistryModel.PressureCorrection{Float64}}, KP2::OceanBioME.Models.CarbonChemistryModel.KP{Float64, OceanBioME.Models.CarbonChemistryModel.PressureCorrection{Float64}}, KP3::OceanBioME.Models.CarbonChemistryModel.KP{Float64, OceanBioME.Models.CarbonChemistryModel.PressureCorrection{Float64}}}, OceanBioME.Models.CarbonChemistryModel.KSi{OceanBioME.Models.CarbonChemistryModel.IonicStrength{Float64}, Float64, OceanBioME.Models.CarbonChemistryModel.PressureCorrection{Float64}}, OceanBioME.Models.CarbonChemistryModel.KW{Float64, OceanBioME.Models.CarbonChemistryModel.PressureCorrection{Float64}}, OceanBioME.Models.CarbonChemistryModel.IonicStrength{Float64}, OceanBioME.Models.CarbonChemistryModel.KSP{Float64, OceanBioME.Models.CarbonChemistryModel.PressureCorrection{Float64}}, typeof(OceanBioME.Models.teos10_polynomial_approximation), OceanBioME.Models.CarbonChemistryModel.PolynomialVirialCoefficientForCarbonDioxide{Float64}, OceanBioME.Models.CarbonChemistryModel.CrossVirialCoefficientForCarbonDioxide{Float64}, OceanBioME.DampedNewtonRaphsonSolver{Float64, Int64, @NamedTuple{lower::Float64, upper::Nothing}}}, Float64}(`CarbonChemistry` model which solves for pCO₂ and pH, 4.0e-8) m/s
+├── sinking speed: OceanBioME.Models.DissolvingParticlesModel.StokesSinking{Float64, Float64, Float64}(2710.0, 1025.0, 0.00108, 9.80665) m/s
+└── required fields: (:DIC, :Alk)</code></pre><p>We put the calcite particles into a new model, which starts from the turbulence at the end of the last simulation</p><pre><code class="language-julia hljs">calcite_particles = DissolvingParticles(n; grid, biogeochemistry = calcite)
+
+biogeochemistry = NutrientsPlanktonDetritus(grid; inorganic_carbon = CarbonateSystem(), particles = calcite_particles)
+
+calcite_model = NonhydrostaticModel(grid; biogeochemistry, advection = WENO(order = 5))</code></pre><pre><code class="nohighlight hljs">NonhydrostaticModel{CPU, RectilinearGrid}(time = 0 seconds, iteration = 0)
+├── grid: 128×1×128 RectilinearGrid{Float64, Periodic, Flat, Bounded} on CPU with 3×0×3 halo
+├── timestepper: RungeKutta3TimeStepper
+├── advection scheme:
+│   ├── momentum: WENO{3, Float64, Oceananigans.Utils.BackendOptimizedDivision}(order=5)
+│   ├── DIC: WENO{3, Float64, Oceananigans.Utils.BackendOptimizedDivision}(order=5)
+│   └── Alk: WENO{3, Float64, Oceananigans.Utils.BackendOptimizedDivision}(order=5)
+├── tracers: (DIC, Alk)
+├── closure: Nothing
+├── buoyancy: Nothing
+└── coriolis: Nothing</code></pre><p>and split the domain down the middle. The left half has more dissolved inorganic carbon and is strongly undersaturated, while the right half is close to saturation.</p><pre><code class="language-julia hljs">DICᵢ(x, z) = ifelse(x &lt; 32, 2400, 2310) # mmol/m³
+
+set!(calcite_model, u = model.velocities.u, w = model.velocities.w, DIC = DICᵢ, Alk = Alk₀)
+
+(calcite_saturation(carbon_chemistry, 2400.0, 2300.0), calcite_saturation(carbon_chemistry, 2310.0, 2300.0))</code></pre><pre><code class="nohighlight hljs">(0.5249618944181442, 0.9449810335366925)</code></pre><p>The particles are released with the same sizes and positions as the lime, which straddle the front</p><pre><code class="language-julia hljs">scalefactor = 1 / (calcite.density * 4π / 3 * sum(r₀.^3)) # 1 kg / total particle mass
+
+set!(calcite_particles, r = r₀, x = x₀, z = z₀, scalefactors = scalefactor)</code></pre><p>This time we diagnose the saturation state with a <code>KernelFunctionOperation</code></p><pre><code class="language-julia hljs">@inline calcite_saturation(i, j, k, grid, carbon_chemistry, DIC, Alk) =
+    @inbounds calcite_saturation(carbon_chemistry, DIC[i, j, k], Alk[i, j, k])
+
+(; DIC, Alk) = calcite_model.tracers
+
+Ω = KernelFunctionOperation{Center, Center, Center}(calcite_saturation, grid, carbon_chemistry, DIC, Alk)
+
+simulation = Simulation(calcite_model, Δt = 1, stop_time = 2.5hours)
+
+conjure_time_step_wizard!(simulation, cfl = 0.5, max_Δt = 10)
+
+add_callback!(simulation, progress, TimeInterval(30minutes))
+
+filename = &quot;dissolving_calcite&quot;
+
+simulation.output_writers[:saturation] = JLD2Writer(calcite_model, (; Ω);
+                                                    filename = &quot;$filename.jld2&quot;,
+                                                    schedule = TimeInterval(1minute),
+                                                    overwrite_files = true)
+
+simulation.output_writers[:particles] = JLD2Writer(calcite_model, (; particles = calcite_particles);
+                                                   filename = &quot;$(filename)_particles.jld2&quot;,
+                                                   schedule = TimeInterval(1minute),
+                                                   overwrite_files = true)
+
+run!(simulation)</code></pre><pre><code class="nohighlight hljs">[ Info: Initializing simulation...
+Iteration: 0000, time: 0 seconds, Δt: 1.100 seconds, wall time: 0 seconds
+[ Info:     ... simulation initialization complete (776.021 ms)
+[ Info: Executing initial time step...
+[ Info:     ... initial time step complete (559.165 ms).
+Iteration: 0329, time: 30 minutes, Δt: 10 seconds, wall time: 10.410 seconds
+Iteration: 0509, time: 1 hour, Δt: 10 seconds, wall time: 16.251 seconds
+Iteration: 0689, time: 1.500 hours, Δt: 10 seconds, wall time: 22.365 seconds
+Iteration: 0869, time: 2 hours, Δt: 10 seconds, wall time: 28.196 seconds
+[ Info: Simulation is stopping after running for 34.068 seconds.
+[ Info: Simulation time 2.500 hours equals or exceeds stop time 2.500 hours.
+Iteration: 1049, time: 2.500 hours, Δt: 10 seconds, wall time: 34.068 seconds
+</code></pre><p>We animate the particles sinking through the saturation state, where undersaturated water is blue and supersaturated water is red</p><pre><code class="language-julia hljs">Ω = FieldTimeSeries(&quot;$filename.jld2&quot;, &quot;Ω&quot;)
+
+times = Ω.times
+
+x, z, r = particle_output(&quot;$(filename)_particles.jld2&quot;)
+
+frame = Observable(1)
+
+Ωₙ = @lift Ω[$frame]
+positions = @lift Point2f.(x[:, $frame], z[:, $frame])
+sizes = @lift 2e5 * r[:, $frame]
+title = @lift &quot;Calcite saturation and particles, &quot; * prettytime(times[$frame]) * &quot; after release&quot;
+
+fig = Figure(size = (700, 600), fontsize = 20)
+
+ax = Axis(fig[1, 1]; title, xlabel = &quot;x (m)&quot;, ylabel = &quot;z (m)&quot;, aspect = DataAspect())
+
+hm = heatmap!(ax, Ωₙ, colormap = :balance, colorrange = (0.5, 1.5))
+scatter!(ax, positions, markersize = sizes, color = :black)
+
+Colorbar(fig[1, 2], hm, label = &quot;Ω&quot;)
+
+record(fig, &quot;$filename.mp4&quot;, eachindex(times), framerate = 12) do i
+    frame[] = i
+end</code></pre><p><video src="../dissolving_calcite.mp4" controls="true" title><a href="../dissolving_calcite.mp4"></a></video></p><p>The particles released into the undersaturated water dissolve as they sink, while those released close to saturation dissolve much more slowly, and the largest reach the bottom. We can see this in the radius of each particle, and in the fraction of the calcite released on each side of the front which is left.</p><pre><code class="language-julia hljs">undersaturated = x₀ .&lt; 32
+
+remaining(released) = vec(sum(r[released, :].^3, dims = 1)) / sum(r₀[released].^3)
+
+fig = Figure(size = (1200, 500), fontsize = 20)
+
+ax = Axis(fig[1, 1], xlabel = &quot;Time (hours)&quot;, ylabel = &quot;Radius (μm)&quot;, title = &quot;Particle radius&quot;)
+
+for p in 1:10:n
+    lines!(ax, times / hour, 1e6 * r[p, :], color = ifelse(undersaturated[p], :dodgerblue, :firebrick))
+end
+
+ax = Axis(fig[1, 2], xlabel = &quot;Time (hours)&quot;, ylabel = &quot;Fraction of calcite remaining&quot;, title = &quot;Calcite remaining&quot;)
+
+lines!(ax, times / hour, remaining(undersaturated), linewidth = 3, color = :dodgerblue, label = &quot;Released undersaturated&quot;)
+lines!(ax, times / hour, remaining(.!undersaturated), linewidth = 3, color = :firebrick, label = &quot;Released near saturation&quot;)
+axislegend(ax, position = :lb)
+
+fig</code></pre><p><img src="../dissolving_particles-49.svg" alt/></p><hr/><p><em>This page was generated using <a href="https://github.com/fredrikekre/Literate.jl">Literate.jl</a>.</em></p></article><nav class="docs-footer"><a class="docs-footer-prevpage" href="../oae_experiment/">« Ocean alkalinity enhancement</a><a class="docs-footer-nextpage" href="../../model_components/biogeochemical/">Overview »</a><div class="flexbox-break"></div><p class="footer-message">Powered by <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> and the <a href="https://julialang.org/">Julia Programming Language</a>.</p></nav></div><div class="modal" id="documenter-settings"><div class="modal-background"></div><div class="modal-card"><header class="modal-card-head"><p class="modal-card-title">Settings</p><button class="delete"></button></header><section class="modal-card-body"><p><label class="label">Theme</label><div class="select"><select id="documenter-themepicker"><option value="auto">Automatic (OS)</option><option value="documenter-light">documenter-light</option><option value="documenter-dark">documenter-dark</option><option value="catppuccin-latte">catppuccin-latte</option><option value="catppuccin-frappe">catppuccin-frappe</option><option value="catppuccin-macchiato">catppuccin-macchiato</option><option value="catppuccin-mocha">catppuccin-mocha</option></select></div></p><hr/><p>This document was generated with <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> version 1.20.0 on <span class="colophon-date" title="Tuesday 24 November 2026 18:35">Tuesday 24 November 2026</span>. Using Julia version 1.13.0.</p></section><footer class="modal-card-foot"></footer></div></div></div></body></html>
