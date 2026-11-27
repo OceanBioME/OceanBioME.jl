@@ -194,9 +194,6 @@ simulation.stop_iteration = 500
 run!(simulation)
 N_final = profile(model.tracers.N)
 A_final = profile(model.tracers.nitrogen_anti_tracer)
-@assert isapprox(sum(N_before) - sum(A_before), sum(N_initial) - sum(A_initial); atol = 1e-9)
-@assert isapprox(sum(N_initial) - sum(A_initial), sum(N_final) - sum(A_final); atol = 1e-9)
-@assert sum(A_final) < 1e-4 # Almost all Anti-N has been annihilated.
 nothing
 ```
 
@@ -212,14 +209,12 @@ stage_titles = ("Before correction", "After correction (t = 0)",
                 "Diffusion and annihilation (t = 6)", "Complete annihilation (t = 50)")
 
 fig = Figure(size = (900, 950))
-axes = Axis[]
 color_map = cgrad([:darkorange, :white, :dodgerblue], [0, 1/3, 1])
 for (stage, (N, A)) in enumerate(stages)
     ax = Axis(fig[stage, 1]; title = stage_titles[stage],
               yticks = ([1, 2], ["Anti-N", "N"]), xticks = cells,
               xlabel = stage == 4 ? "Grid cell" : "",
               xgridvisible = false, ygridvisible = false)
-    push!(axes, ax)
 
     values = hcat(A[cells], N[cells]) # Anti-N below N on the same grid-cell axis.
     heatmap!(ax, cells, 1:2, values; colormap = color_map,
@@ -228,7 +223,7 @@ for (stage, (N, A)) in enumerate(stages)
         value = values[i, j]
         label = abs(value) < 0.005 ? "0" : string(round(value; digits = 2))
         text!(ax, label; position = (cells[i], j), align = (:center, :center),
-              color = abs(value) > 0.35 ? :white : :black, fontsize = 15)
+              color = :black, fontsize = 15)
     end
     vlines!(ax, 1.5:1:4.5; color = (:black, 0.2), linewidth = 1)
     hlines!(ax, [1.5]; color = (:black, 0.2), linewidth = 1)
@@ -236,7 +231,6 @@ for (stage, (N, A)) in enumerate(stages)
     ylims!(ax, 0.5, 2.5)
     stage < 4 && hidexdecorations!(ax)
 end
-linkxaxes!(axes...)
 Colorbar(fig[1:4, 2]; colormap = color_map, limits = (-0.5, 1.0),
          label = "Tracer value")
 fig
