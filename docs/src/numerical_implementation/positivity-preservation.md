@@ -177,23 +177,20 @@ model = NonhydrostaticModel(grid; biogeochemistry = bgc, closure,
 set!(model.tracers.N, x -> x < 1 ? -0.5 : x < 2 ? 0.0 : 1.0)
 set!(model.tracers.nitrogen_anti_tracer, 0)
 
-profile(field) = vec(Array(interior(field)))
-N_before = profile(model.tracers.N)
-A_before = profile(model.tracers.nitrogen_anti_tracer)
+snapshot() = (vec(Array(interior(model.tracers.N))),
+              vec(Array(interior(model.tracers.nitrogen_anti_tracer))))
+before = snapshot()
 
 update_state!(model) # N becomes nonnegative; the negative value is stored in Anti-N.
-N_initial = profile(model.tracers.N)
-A_initial = profile(model.tracers.nitrogen_anti_tracer)
+initial = snapshot()
 
 simulation = Simulation(model; Δt = 0.1, stop_iteration = 60)
 run!(simulation)
-N_6 = profile(model.tracers.N)
-A_6 = profile(model.tracers.nitrogen_anti_tracer)
+at_6 = snapshot()
 
 simulation.stop_iteration = 500
 run!(simulation)
-N_final = profile(model.tracers.N)
-A_final = profile(model.tracers.nitrogen_anti_tracer)
+final = snapshot()
 nothing
 ```
 
@@ -201,38 +198,28 @@ The saved concentrations are plotted before correction, immediately after
 correction, and at two subsequent times.
 
 ```@example anti_tracer_diffusion
-# Show N and Anti-N in every grid cell, before and after correction and transport.
-cells = 1:5
-stages = ((N_before, A_before), (N_initial, A_initial),
-          (N_6, A_6), (N_final, A_final))
-stage_titles = ("Before correction", "After correction (t = 0)",
-                "Diffusion and annihilation (t = 6)", "Complete annihilation (t = 50)")
+stages = (("Before correction", before),
+          ("After correction (t = 0)", initial),
+          ("Diffusion and annihilation (t = 6)", at_6),
+          ("Complete annihilation (t = 50)", final))
 
 fig = Figure(size = (900, 950))
-color_map = cgrad([:darkorange, :white, :dodgerblue], [0, 1/3, 1])
-for (stage, (N, A)) in enumerate(stages)
-    ax = Axis(fig[stage, 1]; title = stage_titles[stage],
-              yticks = ([1, 2], ["Anti-N", "N"]), xticks = cells,
-              xlabel = stage == 4 ? "Grid cell" : "",
+colormap = cgrad([:darkorange, :white, :dodgerblue], [0, 1/3, 1])
+for (stage, (title, (N, A))) in enumerate(stages)
+    ax = Axis(fig[stage, 1]; title, yticks = ([1, 2], ["Anti-N", "N"]),
+              xticks = 1:5, xlabel = "Grid cell", limits = (0.5, 5.5, 0.5, 2.5),
               xgridvisible = false, ygridvisible = false)
-
-    values = hcat(A[cells], N[cells]) # Anti-N below N on the same grid-cell axis.
-    heatmap!(ax, cells, 1:2, values; colormap = color_map,
-             colorrange = (-0.5, 1.0))
-    for j in 1:2, i in eachindex(cells)
-        value = values[i, j]
-        label = abs(value) < 0.005 ? "0" : string(round(value; digits = 2))
-        text!(ax, label; position = (cells[i], j), align = (:center, :center),
-              color = :black, fontsize = 15)
+    values = hcat(A, N) # Anti-N below N.
+    heatmap!(ax, 1:5, 1:2, values; colormap, colorrange = (-0.5, 1.0))
+    for j in 1:2, i in 1:5
+        value = round(values[i, j]; digits = 2)
+        text!(ax, iszero(value) ? "0" : string(value);
+              position = (i, j), align = (:center, :center), color = :black, fontsize = 15)
     end
-    vlines!(ax, 1.5:1:4.5; color = (:black, 0.2), linewidth = 1)
+    vlines!(ax, 1.5:4.5; color = (:black, 0.2), linewidth = 1)
     hlines!(ax, [1.5]; color = (:black, 0.2), linewidth = 1)
-    xlims!(ax, 0.5, 5.5)
-    ylims!(ax, 0.5, 2.5)
     stage < 4 && hidexdecorations!(ax)
 end
-Colorbar(fig[1:4, 2]; colormap = color_map, limits = (-0.5, 1.0),
-         label = "Tracer value")
 fig
 ```
 
