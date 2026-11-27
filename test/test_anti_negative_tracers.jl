@@ -4,25 +4,25 @@ using Oceananigans.TimeSteppers: update_state!
 using Adapt: adapt
 
 @testset "AntiNegativeTracers" begin
-    # Pure-cell calculation: a negative total survives as a negative anti-tracer value,
+    # Pure-cell calculation: a negative total survives as a positive anti-tracer value,
     # and the correction is idempotent when there is nothing left to annihilate it.
     for FT in (Float32, Float64)
         weights = ((one(FT), one(FT)),)
         corrected, anti_tracers = anti_negative_values((FT(0.25), FT(-1)),
                                                       (zero(FT),), weights, (1,))
         @test corrected == (zero(FT), zero(FT))
-        @test anti_tracers[1] ≈ FT(-0.75)
-        @test sum((FT(0.25), FT(-1))) ≈ sum(corrected) + anti_tracers[1]
+        @test anti_tracers[1] ≈ FT(0.75)
+        @test sum((FT(0.25), FT(-1))) ≈ sum(corrected) - anti_tracers[1]
         @test anti_negative_values(corrected, anti_tracers, weights, (1,)) == (corrected, anti_tracers)
 
         # Anti-tracer values use the selected tracer's units, even for a non-unit weight.
         weights = ((FT(2), FT(3)),)
-        c, a = (FT(0.5), FT(-0.5)), (FT(-0.1),)
+        c, a = (FT(0.5), FT(-0.5)), (FT(0.1),)
         corrected, anti_tracers = anti_negative_values(c, a, weights, (1,))
         @test corrected == (zero(FT), zero(FT))
-        @test anti_tracers[1] ≈ FT(-0.35)
-        @test isapprox(sum(weights[1] .* c) + weights[1][1] * a[1],
-                       sum(weights[1] .* corrected) + weights[1][1] * anti_tracers[1])
+        @test anti_tracers[1] ≈ FT(0.35)
+        @test isapprox(sum(weights[1] .* c) - weights[1][1] * a[1],
+                       sum(weights[1] .* corrected) - weights[1][1] * anti_tracers[1])
         @test anti_negative_values(corrected, anti_tracers, weights, (1,)) == (corrected, anti_tracers)
 
         corrected, anti_tracers = anti_negative_values((one(FT), FT(-0.5)), a, weights, (1,))
@@ -58,18 +58,18 @@ using Adapt: adapt
         before = group_totals(model, groups)
         update_state!(model)
         after = group_totals(model, groups)
-        after = (nitrogen = after.nitrogen + tracer_value(model, :nitrogen_anti_tracer),
-                carbon = after.carbon + tracer_value(model, :carbon_anti_tracer))
+        after = (nitrogen = after.nitrogen - tracer_value(model, :nitrogen_anti_tracer),
+                carbon = after.carbon - tracer_value(model, :carbon_anti_tracer))
 
         @test all(map(≈, before, after))
         @test all(name -> tracer_value(model, name) >= 0, (:N, :P, :Z, :D, :DIC))
-        @test tracer_value(model, :nitrogen_anti_tracer) <= 0
-        @test tracer_value(model, :carbon_anti_tracer) <= 0
+        @test tracer_value(model, :nitrogen_anti_tracer) >= 0
+        @test tracer_value(model, :carbon_anti_tracer) >= 0
     end
 
     # Annihilation with available nutrient leaves the two conserved inventories unchanged.
     set_tracers!(model; N = 2, P = 0, Z = 0, D = 0, DIC = 10,
-                        nitrogen_anti_tracer = -0.5, carbon_anti_tracer = -1)
+                        nitrogen_anti_tracer = 0.5, carbon_anti_tracer = 1)
     update_state!(model)
     @test tracer_value(model, :N) ≈ 1.5
     @test tracer_value(model, :DIC) ≈ 9
@@ -107,10 +107,10 @@ end
     concentrations(field) = vec(Array(interior(field)))
     N₀ = concentrations(model.tracers.N)
     A₀ = concentrations(model.tracers.nitrogen_anti_tracer)
-    inventory₀ = sum(N₀) + sum(A₀)
+    inventory₀ = sum(N₀) - sum(A₀)
 
     @test N₀[1] == 0
-    @test A₀[1] ≈ -0.5
+    @test A₀[1] ≈ 0.5
     @test N₀[2] == A₀[2] == 0
 
     for _ in 1:12
@@ -120,11 +120,11 @@ end
     N = concentrations(model.tracers.N)
     A = concentrations(model.tracers.nitrogen_anti_tracer)
     @test all(>=(-1e-12), N)
-    @test all(<=(1e-12), A)
-    @test A[2] < 0            # anti-tracer diffuses into the nutrient-free cell
+    @test all(>=(-1e-12), A)
+    @test A[2] > 0            # anti-tracer diffuses into the nutrient-free cell
     @test N[3] < N₀[3]       # annihilation reduces N in a neighbouring cell
-    @test A[1] > A₀[1]       # anti-tracer value has left its original cell
-    @test sum(N) + sum(A) ≈ inventory₀ atol = 1e-9
+    @test A[1] < A₀[1]       # anti-tracer value has left its original cell
+    @test sum(N) - sum(A) ≈ inventory₀ atol = 1e-9
 end
 
 @testset "Anti-tracer model compatibility" begin
@@ -154,11 +154,11 @@ end
     update_state!(model)
     after = group_totals(model, groups)
 
-    @test all(name -> isapprox(after[name] + tracer_value(model, Symbol(name, :_anti_tracer)),
+    @test all(name -> isapprox(after[name] - tracer_value(model, Symbol(name, :_anti_tracer)),
                                before[name]), keys(groups))
     @test all(name -> tracer_value(model, name) >= 0,
               (:NO₃, :NH₄, :P, :Z, :DOM, :sPOM, :bPOM, :DIC1, :DIC2))
-    @test tracer_value(model, :carbon1_anti_tracer) < 0
+    @test tracer_value(model, :carbon1_anti_tracer) > 0
     @test tracer_value(model, :carbon2_anti_tracer) ≈ 0
 
     # PISCES exposes five independent elemental budgets. Verify that inferred
@@ -181,12 +181,12 @@ end
     corrected, anti_values = anti_negative_values(c, a, pisces_modifier.scalefactors,
                                                  pisces_modifier.annihilation_indices)
     @test all(>=(0), corrected)
-    @test all(<=(0), anti_values)
+    @test all(>=(0), anti_values)
     for g in eachindex(anti_values)
         weights = pisces_modifier.scalefactors[g]
         inventory(values) = sum(w * v for (w, v) in zip(weights, values))
         alpha = weights[pisces_modifier.annihilation_indices[g]]
-        @test inventory(corrected) + alpha * anti_values[g] ≈ inventory(c) + alpha * a[g]
+        @test inventory(corrected) - alpha * anti_values[g] ≈ inventory(c) - alpha * a[g]
     end
 end
 
@@ -201,7 +201,7 @@ end
                                        annihilation_tracers = (nitrogen = :N,))
         bgc = Biogeochemistry(base.underlying_biogeochemistry; modifiers = modifier)
         model = NonhydrostaticModel(grid; biogeochemistry = bgc, advection = nothing)
-        set_tracers!(model; N = 0.1, nitrogen_anti_tracer = -0.6)
+        set_tracers!(model; N = 0.1, nitrogen_anti_tracer = 0.6)
         return model
     end
 
@@ -223,6 +223,6 @@ end
         for name in (:N, :nitrogen_anti_tracer)
             @test tracer_value(resumed.model, name) ≈ tracer_value(uninterrupted.model, name)
         end
-        @test tracer_value(resumed.model, :nitrogen_anti_tracer) < 0
+        @test tracer_value(resumed.model, :nitrogen_anti_tracer) > 0
     end
 end

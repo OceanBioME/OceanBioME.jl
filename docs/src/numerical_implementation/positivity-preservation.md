@@ -30,21 +30,21 @@ Each group needs at least one tracer that is not shared with another group.
 
 `AntiNegativeTracers` sets negative tracer concentrations to zero while
 conserving elemental inventories. Each selected conservation group (e.g.
-nitrogen or carbon) receives one additional **anti-tracer**. Its value becomes
-negative when the correction cannot be fully annihilated using a selected tracer.
+nitrogen or carbon) receives one additional **anti-tracer**. Its value is
+nonnegative and represents the remaining deficit after annihilation.
 Anti-tracers can be transported between grid cells, allowing annihilation
 wherever the selected tracer is available.
 
 ### One nutrient and its anti-tracer
 
 For a single nutrient tracer ``T`` (e.g. ``N``) and its anti-tracer
-``A \leq 0``, both in the same nutrient units, the correction in each grid
+``A \geq 0``, both in the same nutrient units, the correction in each grid
 cell is
 
 ```math
 \begin{aligned}
-\widetilde{T} &= \max(T + A, 0), \\
-\widetilde{A} &= \min(T + A, 0).
+\widetilde{T} &= \max(T - A, 0), \\
+\widetilde{A} &= \max(A - T, 0).
 \end{aligned}
 ```
 
@@ -53,13 +53,13 @@ values **after** correction, including annihilation. The combined inventory
 is conserved:
 
 ```math
-T + A = \widetilde{T} + \widetilde{A}.
+T - A = \widetilde{T} - \widetilde{A}.
 ```
 
 If ``A = 0`` before correction, this simplifies to
 
 ```math
-T = \widetilde{T} + \widetilde{A}.
+T = \widetilde{T} - \widetilde{A}.
 ```
 
 For example, a negative tracer concentration with ``T = -0.5`` and ``A = 0`` gives
@@ -67,11 +67,11 @@ For example, a negative tracer concentration with ``T = -0.5`` and ``A = 0`` giv
 ```math
 \begin{aligned}
 \widetilde{T} &= 0, \\
-\widetilde{A} &= -0.5.
+\widetilde{A} &= 0.5.
 \end{aligned}
 ```
 
-Conversely, for ``T = 1`` and ``A = -0.2``, annihilation gives
+Conversely, for ``T = 1`` and ``A = 0.2``, annihilation gives
 
 ```math
 \begin{aligned}
@@ -93,7 +93,7 @@ quantity, such as nitrogen or carbon. For each conservation group ``g``, define:
   ``i`` runs over these tracers only; it excludes ``T_g^{\mathrm{ann}}``.
 - ``a_{gi} \geq 0``: the stoichiometric weight of each of those other tracers
   in group ``g``.
-- ``A_g \leq 0``: the anti-tracer value for group ``g``, expressed in the
+- ``A_g \geq 0``: the anti-tracer value for group ``g``, expressed in the
   same units as ``T_g^{\mathrm{ann}}``.
 
 For example, if the nitrogen group contains ``N``, ``P``, and ``Z``, we can
@@ -104,11 +104,11 @@ can contribute to both groups, with different stoichiometric weights; each
 selected annihilation tracer must belong exclusively to its group. The
 selection is configured using `annihilation_tracers`.
 
-First, combine the selected tracer with its anti-tracer and the negative
-contributions of the other tracers:
+First, subtract the anti-tracer value from the selected tracer and account
+for the negative contributions of the other tracers:
 
 ```math
-q_g = T_g^{\mathrm{ann}} + A_g +
+q_g = T_g^{\mathrm{ann}} - A_g +
       \sum_i \frac{a_{gi}}{\alpha_g^{\mathrm{ann}}}\min(T_i, 0).
 ```
 
@@ -125,24 +125,25 @@ The corrected values are
 \begin{aligned}
 \widetilde{T}_g^{\mathrm{ann}} &= \max(q_g, 0), \\
 \widetilde{T}_i &= \max(T_i, 0), \qquad \text{for each other tracer }i, \\
-\widetilde{A}_g &= \min(q_g, 0).
+\widetilde{A}_g &= \max(-q_g, 0).
 \end{aligned}
 ```
 
 As in the single-nutrient case, a tilde denotes the value **after** the
 complete correction, including annihilation. When ``q_g \geq 0``, the
-anti-tracer is fully annihilated; otherwise, the remaining negative value
-is retained in ``\widetilde{A}_g``.
+anti-tracer is fully annihilated; otherwise, the remaining deficit
+is retained as a positive ``\widetilde{A}_g``.
 
 For each group, the correction conserves its weighted inventory within each
 grid cell. The stoichiometric weight ``\alpha_g^{\mathrm{ann}}`` multiplies
-both the selected tracer and the anti-tracer because they share the same units:
+both the selected tracer and the anti-tracer because they share the same units;
+the anti-tracer is subtracted because its value represents a deficit:
 
 ```math
 \begin{aligned}
-&\alpha_g^{\mathrm{ann}}(T_g^{\mathrm{ann}} + A_g) +
+&\alpha_g^{\mathrm{ann}}(T_g^{\mathrm{ann}} - A_g) +
  \sum_i a_{gi}T_i \\
-&\qquad = \alpha_g^{\mathrm{ann}}(\widetilde{T}_g^{\mathrm{ann}} + \widetilde{A}_g) +
+&\qquad = \alpha_g^{\mathrm{ann}}(\widetilde{T}_g^{\mathrm{ann}} - \widetilde{A}_g) +
  \sum_i a_{gi}\widetilde{T}_i.
 \end{aligned}
 ```
@@ -193,9 +194,9 @@ simulation.stop_iteration = 500
 run!(simulation)
 N_final = profile(model.tracers.N)
 A_final = profile(model.tracers.nitrogen_anti_tracer)
-@assert isapprox(sum(N_before) + sum(A_before), sum(N_initial) + sum(A_initial); atol = 1e-9)
-@assert isapprox(sum(N_initial) + sum(A_initial), sum(N_final) + sum(A_final); atol = 1e-9)
-@assert sum(abs, A_final) < 1e-4 # Almost all Anti-N has been annihilated.
+@assert isapprox(sum(N_before) - sum(A_before), sum(N_initial) - sum(A_initial); atol = 1e-9)
+@assert isapprox(sum(N_initial) - sum(A_initial), sum(N_final) - sum(A_final); atol = 1e-9)
+@assert sum(A_final) < 1e-4 # Almost all Anti-N has been annihilated.
 nothing
 ```
 
@@ -242,8 +243,8 @@ fig
 ```
 
 The first stage shows the prescribed negative N concentration in cell 1, with
-Anti-N initially zero. The correction sets N to zero there and stores its
-negative value in Anti-N. Over time, Anti-N diffuses through cells without N;
+Anti-N initially zero. The correction sets N to zero there and stores the
+deficit as a positive Anti-N value. Over time, Anti-N diffuses through cells without N;
 where N is available, annihilation reduces its concentration. By ``t = 50``,
 almost all Anti-N has been annihilated. N itself does not diffuse in this example.
 The figure shows all five grid cells. The combined inventory remains constant
